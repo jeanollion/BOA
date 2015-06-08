@@ -12,45 +12,48 @@
 		<relativePath />
 	</parent>
 
-	<groupId>sc.fiji</groupId>
-	<artifactId>Process_Pixels</artifactId>
+	<groupId>ljp</groupId>
+	<artifactId>testMavenMongo</artifactId>
 	<version>0.1.0-SNAPSHOT</version>
 
-	<name>plugins/Process_Pixels.jar</name>
-	<description>A Maven project implementing an ImageJ 1.x plugin</description>
+	<name>ProjectTestMavenMongo</name>
+	<description>Test Maven and Mongo and Morphia</description>
 
 	<developers>
 		<developer>
-			<id>dscho</id>
-			<name>Johannes Schindelin</name>
-			<email>johannes.schindelin@gmx.de</email>
-			<url>http://loci.wisc.edu/people/johannes-schindelin</url>
-			<organization>UW-Madison LOCI</organization>
-			<organizationUrl>http://loci.wisc.edu/</organizationUrl>
+			<id>jeanollion</id>
+			<name>Jean Ollion</name>
+			<email>jean.ollion@gmail.com</email>
+			<organization>LJP</organization>
+			<organizationUrl>http://www.labos.upmc.fr/ljp/</organizationUrl>
 			<roles>
-				<role>architect</role>
 				<role>developer</role>
 			</roles>
-			<timezone>-6</timezone>
+			<timezone>2</timezone>
 		</developer>
 	</developers>
 
 	<scm>
-		<connection>scm:git:git://github.com/imagej/minimal-ij1-plugin</connection>
-		<developerConnection>scm:git:git@github.com:imagej/minimal-ij1-plugin</developerConnection>
+		<connection>scm:git:git://github.com/jeanollion/testMavenMongo</connection>
+		<developerConnection>scm:git:git@github.com:jeanollion/testMavenMongo</developerConnection>
 		<tag>HEAD</tag>
-		<url>https://github.com/imagej/minimal-ij1-plugin</url>
+		<url>https://github.com/jeanollion/testMavenMongo</url>
 	</scm>
 
 	<properties>
-		<main-class>Process_Pixels</main-class>
+		<main-class>TestMaven_Mongo</main-class>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>net.imagej</groupId>
 			<artifactId>ij</artifactId>
-		</dependency>
+                </dependency>
+                <dependency>
+                    <groupId>org.mongodb.morphia</groupId>
+                        <artifactId>morphia</artifactId>
+                    <version>1.0.0</version>
+                </dependency>
 	</dependencies>
 
 	<build>
