@@ -13,7 +13,7 @@
 	</parent>
 
 	<groupId>ljp</groupId>
-	<artifactId>testMavenMongo</artifactId>
+	<artifactId>Test_MavenMongo</artifactId>
 	<version>0.1.0-SNAPSHOT</version>
 
 	<name>ProjectTestMavenMongo</name>
@@ -21,7 +21,7 @@
 
 	<developers>
 		<developer>
-			<id>jeanollion</id>
+			<id>jollion</id>
 			<name>Jean Ollion</name>
 			<email>jean.ollion@gmail.com</email>
 			<organization>LJP</organization>
@@ -41,19 +41,44 @@
 	</scm>
 
 	<properties>
-		<main-class>TestMaven_Mongo</main-class>
+		<main-class>TestMavenMongo</main-class>
 	</properties>
 
 	<dependencies>
-		<dependency>
-			<groupId>net.imagej</groupId>
-			<artifactId>ij</artifactId>
-                </dependency>
-                <dependency>
-                    <groupId>org.mongodb.morphia</groupId>
-                        <artifactId>morphia</artifactId>
-                    <version>1.0.0</version>
-                </dependency>
+            <dependency>
+                <groupId>net.imagej</groupId>
+                <artifactId>ij</artifactId>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.sun</groupId>
+                        <artifactId>tools</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.mongodb.morphia</groupId>
+                <artifactId>morphia</artifactId>
+                <version>1.0.0</version>
+            </dependency>
+            
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit-dep</artifactId>
+                <version>4.10</version>
+                <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.hamcrest</groupId>
+                        <artifactId>hamcrest-core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest-library</artifactId>
+                <version>1.2.1</version>
+                <scope>test</scope>
+            </dependency>
 	</dependencies>
 
 	<build>
