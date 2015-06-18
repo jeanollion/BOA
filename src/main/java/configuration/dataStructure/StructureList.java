@@ -30,10 +30,9 @@ public class StructureList extends SimpleListParameter<Structure> {
     public StructureList() {
         super("Structures", 10);
     }
-
+    
     @Override
-    public Structure createChildInstance(String name) {
-        return new Structure(name);
+    public Structure createChildInstance() {
+        return new Structure("new Structure");
     }
-
 }

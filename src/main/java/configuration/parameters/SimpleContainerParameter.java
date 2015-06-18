@@ -67,7 +67,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     public void remove(MutableTreeNode node) {}
 
     @Override
-    public void setUserObject(Object object) {}
+    public void setUserObject(Object object) {this.name=object.toString();}
 
     @Override
     public void removeFromParent() {

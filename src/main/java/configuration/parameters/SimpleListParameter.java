@@ -33,7 +33,7 @@ import org.mongodb.morphia.annotations.Transient;
  */
 
 @Embedded
-public abstract class SimpleListParameter<T extends Parameter> implements ListParameter {
+public abstract class SimpleListParameter<T extends Parameter> implements ListParameter<T> {
     protected String name;
     @Transient protected ContainerParameter parent;
     protected ArrayList<T> children;
@@ -47,8 +47,6 @@ public abstract class SimpleListParameter<T extends Parameter> implements ListPa
         this.name = name;
         children = new ArrayList<T>();
     }
-    
-    public abstract T createChildInstance(String name);
     
     @Override
     public ArrayList<Parameter> getPath(){
@@ -71,7 +69,9 @@ public abstract class SimpleListParameter<T extends Parameter> implements ListPa
 
     @Override
     public void remove(MutableTreeNode node) {
+        System.out.println("removing node:"+((T)node).toString() +" total number: "+children.size());
         children.remove((T)node);
+        System.out.println("removed node:"+((T)node).toString() +" total number: "+children.size());
     }
 
     @Override

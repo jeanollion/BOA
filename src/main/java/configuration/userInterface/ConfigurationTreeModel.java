@@ -19,6 +19,7 @@ package configuration.userInterface;
 
 import configuration.parameters.ContainerParameter;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.MutableTreeNode;
 
 /**
  *
@@ -30,5 +31,12 @@ public class ConfigurationTreeModel extends DefaultTreeModel {
         super(root);
         if (root instanceof TreeModelContainer) ((TreeModelContainer)root).setModel(this);
     }
-    
+    @Override
+    public void insertNodeInto(MutableTreeNode newChild, MutableTreeNode parent, int index) {
+        super.insertNodeInto(newChild, parent, index);
+        newChild.setParent(parent);
+    }
+    public void insertNodeInto(MutableTreeNode newChild, MutableTreeNode parent) {
+        this.insertNodeInto(newChild, parent, parent.getChildCount());
+    }
 }

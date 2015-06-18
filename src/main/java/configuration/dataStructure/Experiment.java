@@ -46,11 +46,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         super(name);
         choice = new ChoiceParameter("Choice name", new String[]{"choice 1", "choice2"}, "choice 1");
         structures = new StructureList();
-        init(choice, structures);
-    }
-    
-    private void init(Parameter... parameters) { 
-        super.initChildren(parameters);
+        super.initChildren(choice, structures);
     }
 
     @Override

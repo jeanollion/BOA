@@ -22,7 +22,8 @@ import javax.swing.tree.MutableTreeNode;
 /**
  *
  * @author jollion
+ * @param <T> type of children
  */
-public interface ListParameter extends ContainerParameter {
-    
+public interface ListParameter<T extends Parameter> extends ContainerParameter {
+    public abstract T createChildInstance();
 }

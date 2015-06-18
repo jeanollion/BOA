@@ -31,6 +31,7 @@ public class Structure extends SimpleContainerParameter {
     public Structure(String name) {
         super(name);
         choice = new ChoiceParameter("Structure Choice", new String[]{"structure choice 1", "structure choice 2"}, "structure choice 1");
+        super.initChildren(choice);
     }
     
     // morphia

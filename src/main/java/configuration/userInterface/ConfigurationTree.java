@@ -19,7 +19,9 @@ package configuration.userInterface;
 
 import configuration.dataStructure.Experiment;
 import configuration.parameters.ContainerParameter;
+import configuration.parameters.ListParameter;
 import configuration.parameters.Parameter;
+import configuration.parameters.SimpleListParameter;
 import java.awt.Component;
 import java.awt.GridLayout;
 import java.awt.Rectangle;
@@ -61,8 +63,56 @@ public class ConfigurationTree extends JPanel {
                     Rectangle pathBounds = tree.getUI().getPathBounds(tree, path);
                     if (pathBounds != null && pathBounds.contains(e.getX(), e.getY())) {
                         JPopupMenu menu = new JPopupMenu();
-                        
-                        if (path.getLastPathComponent() instanceof Parameter) {
+                        Object lastO = path.getLastPathComponent();
+                        if (lastO instanceof Parameter) {
+                            if (lastO instanceof ListParameter) { // specific actions for ListParameters
+                                final ListParameter lp = (ListParameter)lastO;
+                                menu.add(new AbstractAction("Add to list") {
+                                    @Override
+                                    public void actionPerformed(ActionEvent ae) {
+                                        Parameter p = lp.createChildInstance();
+                                        p.setUserObject("structure:"+lp.getChildCount());
+                                        treeModel.insertNodeInto(p, lp);
+                                    }
+                                });
+                            } else if (path.getPathCount()>=2 && path.getPathComponent(path.getPathCount()-2) instanceof ListParameter) { // specific actions for children of ListParameters 
+                                final ListParameter lp = (ListParameter)path.getPathComponent(path.getPathCount()-2);
+                                final Parameter selectedP = (Parameter)lastO;
+                                final int idx = lp.getIndex(selectedP);
+                                menu.add(new AbstractAction("Add") {
+                                    @Override
+                                    public void actionPerformed(ActionEvent ae) {
+                                        Parameter p = lp.createChildInstance();
+                                        treeModel.insertNodeInto(p, lp, idx+1);
+                                        //probleme de mis a jour de l'afichage, résolu si on met tree.updateUI() mais essayer de le résoudre sans...
+                                    }
+                                });
+                                menu.add(new AbstractAction("Remove") {
+                                    @Override
+                                    public void actionPerformed(ActionEvent ae) {
+                                        treeModel.removeNodeFromParent(selectedP);
+                                    }
+                                });
+                                AbstractAction up = new AbstractAction("Up") {
+                                    @Override
+                                    public void actionPerformed(ActionEvent ae) {
+                                        treeModel.removeNodeFromParent(selectedP);
+                                        treeModel.insertNodeInto(lp, selectedP, idx-1);
+                                    }
+                                };
+                                if (idx==0) up.setEnabled(false);
+                                menu.add(up);
+                                AbstractAction down = new AbstractAction("Down") {
+                                    @Override
+                                    public void actionPerformed(ActionEvent ae) {
+                                        treeModel.removeNodeFromParent(selectedP);
+                                        treeModel.insertNodeInto(lp, selectedP, idx+1);
+                                    }
+                                };
+                                if (idx==lp.getChildCount()-1) down.setEnabled(false);
+                                menu.add(down);
+                                menu.addSeparator();
+                            }
                             Parameter p = (Parameter) path.getLastPathComponent();
                             Object[] ui = p.getDisplayComponents();
                             for (Object o : ui) {
