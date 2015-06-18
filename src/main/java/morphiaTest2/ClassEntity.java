@@ -1,4 +1,4 @@
-package morphiaTest;
+package morphiaTest2;
 
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.annotations.Embedded;
@@ -32,12 +32,12 @@ import org.mongodb.morphia.utils.IndexDirection;
  *
  * @author jollion
  */
-@Entity
+@Entity(value = "ClassEntity", noClassnameStored = false)
 public class ClassEntity {
     @Id public ObjectId id;
     @Indexed(value=IndexDirection.DESC, unique=true, dropDups=true)
     private String name;
-    private ClassEntity(){}
+    protected ClassEntity(){}
     
     public ObjectId getId() {
         return id;

@@ -20,7 +20,8 @@ import java.util.List;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import morphiaTest.ClassEntity;
+import morphiaTest2.ClassEntity;
+import morphiaTest2.ClassEntityDerived;
 import org.mongodb.morphia.Datastore;
 import org.mongodb.morphia.Key;
 import org.mongodb.morphia.Morphia;
@@ -88,24 +89,29 @@ public class TestMavenMongo implements PlugIn {
         MongoClient mongo=new MongoClient("localhost");
         
         if (isConnected(mongo)) {
-            for (String s : mongo.listDatabaseNames()) {
-                IJ.log("db:" + s);
-            }
-            
             datastore = morphia.createDatastore(mongo, "testMavenMongo");
             datastore.ensureIndexes();
-            try {
-                ClassEntity e = new ClassEntity("testEntity3");
-                Key<ClassEntity> f = datastore.save(e);
-                logger.log(Level.INFO, "entity e:{0} result key:{1}", new Object[]{e.id, f.getId()});
-            } catch (Exception ex) {
-                logger.log(Level.INFO, "save problem", ex);
+            
+            //datastore.save(new ClassEntity("testEntity"));
+            //datastore.save(new ClassEntity("testEntity2"));
+            //datastore.save(new ClassEntityDerived("DerivedtestEntity"));
+            
+            ClassEntityDAO dao = new ClassEntityDAO(ClassEntity.class, mongo, morphia, "testMavenMongo");
+            dao.update(dao.createQuery().disableValidation().filter("className", "morphiaTest.ClassEntity"), dao.createUpdateOperations().disableValidation().set("className", ClassEntity.class.getName()));
+            dao.update(dao.createQuery().disableValidation().filter("className", "morphiaTest.ClassEntityDerived"), dao.createUpdateOperations().disableValidation().set("className", ClassEntityDerived.class.getName()));
+            
+            for (ClassEntity r : dao.find()) {
+                boolean b = (r instanceof ClassEntityDerived);
+                logger.log(Level.INFO, "entity found: "+r.getName()+" instance of derived:"+b);
+                if ("DerivedtestEntity".equals(r.getName())) {
+                    ClassEntityDerived d = (ClassEntityDerived)r;
+                    logger.log(Level.INFO, "derived entity "+d.getNewIntParameter());
+                }
             }
             
-            Query<ClassEntity> query = datastore.createQuery(ClassEntity.class);
-            List<ClassEntity> entities = query.asList();
             
-            for (ClassEntity r : entities) logger.log(Level.INFO, "entity found:{0} emb object{1}", new Object[]{r.getName(), r.getEm().getName()});
+            //ClassEntityDerivedDAO dao2 = new ClassEntityDerivedDAO(ClassEntityDerived.class, mongo, morphia, "testMavenMongo");
+            //for (ClassEntityDerived r : dao2.find()) logger.log(Level.INFO, "derived entity found:{0}", new Object[]{r.getName()});
             
         }
         
