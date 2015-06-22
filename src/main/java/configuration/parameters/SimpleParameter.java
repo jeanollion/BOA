@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2015 ImageJ
- *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -17,6 +15,7 @@
  */
 package configuration.parameters;
 
+import configuration.dataStructure.Experiment;
 import configuration.userInterface.ConfigurationTreeModel;
 import configuration.userInterface.TreeModelContainer;
 import java.util.ArrayList;
@@ -37,6 +36,10 @@ public abstract class SimpleParameter implements Parameter {
     
     @Transient
     private ContainerParameter parent;
+    
+    protected SimpleParameter(String name) {
+        this.name=name;
+    }
     
     @Override
     public TreeNode getChildAt(int childIndex) {
@@ -128,8 +131,24 @@ public abstract class SimpleParameter implements Parameter {
         return null;
     }
     
+    public static Experiment getExperiment(Parameter p) {
+        if (p instanceof Experiment) return (Experiment)p;
+        Parameter root=p;
+        while(root.getParent()!=null) {
+            root = (Parameter)root.getParent();
+            if (root instanceof Experiment) {
+                return (Experiment)root;
+            }
+        }
+        return null;
+    }
+    
     @Override
     public String toString() {
         return name;
     }
+    
+    // morphia
+    
+    protected SimpleParameter() {}
 }

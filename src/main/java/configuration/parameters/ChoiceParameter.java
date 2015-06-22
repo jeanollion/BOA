@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2015 ImageJ
- *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -17,6 +15,8 @@
  */
 package configuration.parameters;
 
+import configuration.parameters.ui.ParameterUI;
+import configuration.parameters.ui.ChoiceParameterUI;
 import java.util.Arrays;
 import org.mongodb.morphia.annotations.Transient;
 
@@ -25,7 +25,6 @@ import org.mongodb.morphia.annotations.Transient;
  * @author jollion
  */
 public class ChoiceParameter extends SimpleParameter {
-    @Transient
     String[] listChoice;
     String selectedItem;
     @Transient 
@@ -33,7 +32,7 @@ public class ChoiceParameter extends SimpleParameter {
     ChoiceParameterUI gui;
     
     public ChoiceParameter(String name, String[] listChoice, String selectedItem) {
-        this.name = name;
+        super(name);
         this.listChoice=listChoice;
         this.selectedItem=selectedItem;
     }
@@ -55,8 +54,11 @@ public class ChoiceParameter extends SimpleParameter {
     public String toString() {return name + ": "+ selectedItem;}
 
     @Override
-    public Object[] getDisplayComponents() {
+    public ParameterUI getUI() {
         if (gui==null) gui = new ChoiceParameterUI(this);
-        return gui.actions;
+        return gui;
     }
+    
+    // morphia 
+    private ChoiceParameter(){super();}
 }

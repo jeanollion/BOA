@@ -9,6 +9,10 @@
 import com.mongodb.MongoClient;
 import com.mongodb.MongoSocketOpenException;
 import com.mongodb.client.MongoDatabase;
+import configuration.dataStructure.Experiment;
+import configuration.dataStructure.Structure;
+import configuration.dataStructure.StructureList;
+import configuration.dataStructure.dao.ExperimentDAO;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
@@ -68,15 +72,16 @@ public class TestMavenMongo implements PlugIn {
 		new ImageJ();
                 
 		// open the Clown sample
-		//ImagePlus image = IJ.openImage("http://imagej.net/images/clown.jpg");
-		//image.show();
+		ImagePlus image = IJ.openImage("http://imagej.net/images/clown.jpg");
+		image.show();
 
 		// run the plugin
 		IJ.runPlugIn(clazz.getName(), "");
                 */
                 
-                TestMavenMongo test = new TestMavenMongo();
-                test.run("");
+                //TestMavenMongo test = new TestMavenMongo();
+                //test.run("");
+                //test.testExperiment();
 	}
     /**
      * 
@@ -84,19 +89,23 @@ public class TestMavenMongo implements PlugIn {
      */
     @Override
     public void run(String string) {
+        System.out.println("run ok!");
+        
+    }
+    
+    public void testEntity() {
         morphia.mapPackage("morphiaTest");
         Logger logger = Logger.getLogger("testMavenMongo");
         MongoClient mongo=new MongoClient("localhost");
         
         if (isConnected(mongo)) {
-            datastore = morphia.createDatastore(mongo, "testMavenMongo");
-            datastore.ensureIndexes();
-            
+
             //datastore.save(new ClassEntity("testEntity"));
             //datastore.save(new ClassEntity("testEntity2"));
             //datastore.save(new ClassEntityDerived("DerivedtestEntity"));
             
             ClassEntityDAO dao = new ClassEntityDAO(ClassEntity.class, mongo, morphia, "testMavenMongo");
+            // query pour mettre a jour les className...
             dao.update(dao.createQuery().disableValidation().filter("className", "morphiaTest.ClassEntity"), dao.createUpdateOperations().disableValidation().set("className", ClassEntity.class.getName()));
             dao.update(dao.createQuery().disableValidation().filter("className", "morphiaTest.ClassEntityDerived"), dao.createUpdateOperations().disableValidation().set("className", ClassEntityDerived.class.getName()));
             
@@ -114,8 +123,38 @@ public class TestMavenMongo implements PlugIn {
             //for (ClassEntityDerived r : dao2.find()) logger.log(Level.INFO, "derived entity found:{0}", new Object[]{r.getName()});
             
         }
+    }
+    
+    public void testExperiment() {
+        morphia.mapPackage("configuration.dataStructure");
+        morphia.mapPackage("configuration.parameters");
+        Logger logger = Logger.getLogger("testMavenMongo");
+        MongoClient mongo=new MongoClient("localhost");
+        ExperimentDAO dao = new ExperimentDAO(Experiment.class, mongo, morphia, "testMavenMongo");
+        if (isConnected(mongo)) {
+            //if (dao.count()==0) { // remove 
+                Experiment exp = new Experiment("test morphia2");
+                dao.save(exp);
+            //}
+            for (Experiment xp : dao.find()) {
+                logger.log(Level.INFO, "entity found: "+xp.toString()+ " choice:"+xp.choice.getSelectedItem()+ " childs nb:"+xp.getChildCount());
+                StructureList list = xp.getStructures();
+                if (list.getChildCount()>0) {
+                    Structure s = (Structure)list.getChildAt(0);
+                    logger.log(Level.INFO, "structure 0: "+s.toString());
+                }
+            }
+            
+            
+            //ClassEntityDerivedDAO dao2 = new ClassEntityDerivedDAO(ClassEntityDerived.class, mongo, morphia, "testMavenMongo");
+            //for (ClassEntityDerived r : dao2.find()) logger.log(Level.INFO, "derived entity found:{0}", new Object[]{r.getName()});
+            
+        } else {
+            logger.log(Level.SEVERE, "no connection to database");
+        }
         
     }
+    
     /**
      * 
      * @param mongo

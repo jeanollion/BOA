@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2015 ImageJ
- *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -17,13 +15,13 @@
  */
 package configuration.parameters;
 
-import javax.swing.tree.MutableTreeNode;
-
 /**
  *
  * @author jollion
- * @param <T> type of children
  */
-public interface ListParameter<T extends Parameter> extends ContainerParameter {
-    public abstract T createChildInstance();
+public interface ListParameter extends ContainerParameter { //<T extends Parameter>
+    public abstract Parameter createChildInstance();
+    public void insert(Parameter child);
+    public void removeAllElements();
+    public int getUnMutableIndex();
 }

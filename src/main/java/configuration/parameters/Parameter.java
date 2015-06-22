@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2015 ImageJ
- *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -17,6 +15,7 @@
  */
 package configuration.parameters;
 
+import configuration.parameters.ui.ParameterUI;
 import java.util.ArrayList;
 import javax.swing.tree.MutableTreeNode;
 
@@ -26,5 +25,5 @@ import javax.swing.tree.MutableTreeNode;
  */
 public interface Parameter extends MutableTreeNode {
     public ArrayList<Parameter> getPath();
-    public Object[] getDisplayComponents();
+    public ParameterUI getUI();
 }

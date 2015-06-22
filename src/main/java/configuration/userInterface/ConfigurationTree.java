@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2015 ImageJ
- *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -20,7 +18,9 @@ package configuration.userInterface;
 import configuration.dataStructure.Experiment;
 import configuration.parameters.ContainerParameter;
 import configuration.parameters.ListParameter;
+import configuration.parameters.ui.ListParameterUI;
 import configuration.parameters.Parameter;
+import configuration.parameters.ui.ParameterUI;
 import configuration.parameters.SimpleListParameter;
 import java.awt.Component;
 import java.awt.GridLayout;
@@ -29,12 +29,17 @@ import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.Icon;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
+import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
@@ -42,18 +47,24 @@ import javax.swing.tree.TreeSelectionModel;
  *
  * @author jollion
  */
-public class ConfigurationTree extends JPanel {
+public class ConfigurationTree {
     protected Experiment rootParameter;
     protected ConfigurationTreeModel treeModel;
     protected JTree tree;
+    protected JScrollPane scroll;
     
     public ConfigurationTree() {
-        super(new GridLayout(1,0));
         rootParameter = new Experiment("Test Experiment");
         treeModel = new ConfigurationTreeModel(rootParameter);
         tree = new JTree(treeModel);
+        treeModel.setJTree(tree);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-        
+        DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
+        Icon personIcon = null;
+        renderer.setLeafIcon(personIcon);
+        renderer.setClosedIcon(personIcon);
+        renderer.setOpenIcon(personIcon);
+        tree.setCellRenderer(renderer);
         tree.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
@@ -66,58 +77,21 @@ public class ConfigurationTree extends JPanel {
                         Object lastO = path.getLastPathComponent();
                         if (lastO instanceof Parameter) {
                             if (lastO instanceof ListParameter) { // specific actions for ListParameters
-                                final ListParameter lp = (ListParameter)lastO;
-                                menu.add(new AbstractAction("Add to list") {
-                                    @Override
-                                    public void actionPerformed(ActionEvent ae) {
-                                        Parameter p = lp.createChildInstance();
-                                        p.setUserObject("structure:"+lp.getChildCount());
-                                        treeModel.insertNodeInto(p, lp);
-                                    }
-                                });
+                                ListParameter lp = (ListParameter)lastO;
+                                ListParameterUI listUI = (ListParameterUI)lp.getUI();
+                                addToMenu(listUI.getDisplayComponent(), menu);
                             } else if (path.getPathCount()>=2 && path.getPathComponent(path.getPathCount()-2) instanceof ListParameter) { // specific actions for children of ListParameters 
-                                final ListParameter lp = (ListParameter)path.getPathComponent(path.getPathCount()-2);
-                                final Parameter selectedP = (Parameter)lastO;
-                                final int idx = lp.getIndex(selectedP);
-                                menu.add(new AbstractAction("Add") {
-                                    @Override
-                                    public void actionPerformed(ActionEvent ae) {
-                                        Parameter p = lp.createChildInstance();
-                                        treeModel.insertNodeInto(p, lp, idx+1);
-                                        //probleme de mis a jour de l'afichage, résolu si on met tree.updateUI() mais essayer de le résoudre sans...
-                                    }
-                                });
-                                menu.add(new AbstractAction("Remove") {
-                                    @Override
-                                    public void actionPerformed(ActionEvent ae) {
-                                        treeModel.removeNodeFromParent(selectedP);
-                                    }
-                                });
-                                AbstractAction up = new AbstractAction("Up") {
-                                    @Override
-                                    public void actionPerformed(ActionEvent ae) {
-                                        treeModel.removeNodeFromParent(selectedP);
-                                        treeModel.insertNodeInto(lp, selectedP, idx-1);
-                                    }
-                                };
-                                if (idx==0) up.setEnabled(false);
-                                menu.add(up);
-                                AbstractAction down = new AbstractAction("Down") {
-                                    @Override
-                                    public void actionPerformed(ActionEvent ae) {
-                                        treeModel.removeNodeFromParent(selectedP);
-                                        treeModel.insertNodeInto(lp, selectedP, idx+1);
-                                    }
-                                };
-                                if (idx==lp.getChildCount()-1) down.setEnabled(false);
-                                menu.add(down);
+                                ListParameter lp = (ListParameter)path.getPathComponent(path.getPathCount()-2);
+                                Parameter selectedP = (Parameter)lastO;
+                                ListParameterUI listUI = (ListParameterUI)lp.getUI();
+                                addToMenu(listUI.getChildDisplayComponent(selectedP), menu);
                                 menu.addSeparator();
                             }
                             Parameter p = (Parameter) path.getLastPathComponent();
-                            Object[] ui = p.getDisplayComponents();
-                            for (Object o : ui) {
-                                if (o instanceof Component) menu.add((Component)o);
-                                
+                            ParameterUI ui = p.getUI();
+                            if (ui!=null) {
+                                ui.refresh();
+                                addToMenu(ui.getDisplayComponent(), menu);
                             }
                         }
                         
@@ -127,7 +101,19 @@ public class ConfigurationTree extends JPanel {
             }
         });
         
-        JScrollPane scrollPane = new JScrollPane(tree);
-        add(scrollPane);
+        scroll = new JScrollPane(tree);
+    }
+    
+    public JScrollPane getUI() {
+        return scroll;
+    }
+    
+    public static void addToMenu(Object[] UIElements, JPopupMenu menu) {
+        if (menu.getComponentCount()>0) menu.addSeparator();
+        for (Object o : UIElements) {
+            if (o instanceof Action) menu.add((Action)o);
+            else if (o instanceof JMenuItem) menu.add((JMenuItem)o);
+            else if (o instanceof Component) menu.add((Component)o);
+        }
     }
 }

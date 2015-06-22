@@ -15,36 +15,20 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package configuration.dataStructure;
+package configuration.dataStructure.dao;
 
-import configuration.parameters.Parameter;
-import configuration.parameters.SimpleListParameter;
-import org.mongodb.morphia.annotations.Embedded;
+import com.mongodb.MongoClient;
+import configuration.dataStructure.Experiment;
+import org.mongodb.morphia.Morphia;
+import org.mongodb.morphia.dao.BasicDAO;
 
 /**
  *
  * @author jollion
  */
-@Embedded
-public class StructureList extends SimpleListParameter {
+public class ExperimentDAO extends BasicDAO<Experiment, String>{
 
-    public StructureList(int unMutableIndex) {
-        super("Structures", unMutableIndex);
-    }
-    
-    @Override
-    public Structure createChildInstance() {
-        return new Structure("new Structure");
-    }
-    
-    public Structure createChildInstance(String name) {
-        return new Structure(name);
-    }
-    
-    public String[] getStructuresAsString() {
-        String[] res = new String[children.size()];
-        int i=0;
-        for (Parameter s : children) res[i++] = s.toString();
-        return res;
+    public ExperimentDAO(Class<Experiment> entityClass, MongoClient mongoClient, Morphia morphia, String dbName) {
+        super(entityClass, mongoClient, morphia, dbName);
     }
 }

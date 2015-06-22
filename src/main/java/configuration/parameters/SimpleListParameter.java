@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2015 ImageJ
- *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -17,35 +15,48 @@
  */
 package configuration.parameters;
 
-import java.awt.Component;
+import configuration.parameters.ui.SimpleListParameterUI;
+import configuration.parameters.ui.ListParameterUI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import org.mongodb.morphia.annotations.Embedded;
+import org.mongodb.morphia.annotations.PostLoad;
 import org.mongodb.morphia.annotations.Transient;
 
 /**
- *
+ * 
  * @author jollion
- * @param <T> type of children
  */
 
 @Embedded
-public abstract class SimpleListParameter<T extends Parameter> implements ListParameter<T> {
+public abstract class SimpleListParameter implements ListParameter {
+
     protected String name;
+    protected ArrayList<Parameter> children;
+    protected int unMutableIndex;
+    @Transient protected ListParameterUI ui;
     @Transient protected ContainerParameter parent;
-    protected ArrayList<T> children;
-    
-    public SimpleListParameter(String name, int childrenSize) {
+    /**
+     * 
+     * @param name : name of the parameter
+     * @param unMutableIndex : index of the last object that cannot be modified
+     */
+    public SimpleListParameter(String name, int unMutableIndex) {
         this.name = name;
-        children = new ArrayList<T>(childrenSize);
+        children = new ArrayList<Parameter>(10);
+        this.unMutableIndex=unMutableIndex;
     }
-    
+    /**
+     * 
+     * @param name : name of the parameter
+     */
     public SimpleListParameter(String name) {
         this.name = name;
-        children = new ArrayList<T>();
+        children = new ArrayList<Parameter>(10);
+        this.unMutableIndex=-1;
     }
     
     @Override
@@ -53,14 +64,30 @@ public abstract class SimpleListParameter<T extends Parameter> implements ListPa
         return SimpleParameter.getPath(this);
     }
     
+    public void setUnmutableIndex(int unMutableIndex) {
+        this.unMutableIndex=unMutableIndex;
+    }
+    
+    public int getUnMutableIndex() {
+        return unMutableIndex;
+    }
+    
     @Override
     public String toString() {return name;}
     
     @Override
     public void insert(MutableTreeNode child, int index) {
-        if (index>=children.size()) children.add((T)child);
-        else children.add(index, (T)child);
+        if (index>=children.size()) children.add((Parameter)child);
+        else children.add(index, (Parameter)child);
+        child.setParent(this);
     }
+    
+    @Override
+    public void insert(Parameter child) {
+        children.add((Parameter)child);
+        child.setParent(this);
+    }
+    
 
     @Override
     public void remove(int index) {
@@ -69,9 +96,9 @@ public abstract class SimpleListParameter<T extends Parameter> implements ListPa
 
     @Override
     public void remove(MutableTreeNode node) {
-        System.out.println("removing node:"+((T)node).toString() +" total number: "+children.size());
-        children.remove((T)node);
-        System.out.println("removed node:"+((T)node).toString() +" total number: "+children.size());
+        System.out.println("removing node:"+((Parameter)node).toString() +" total number: "+children.size());
+        children.remove((Parameter)node);
+        System.out.println("removed node:"+((Parameter)node).toString() +" total number: "+children.size());
     }
 
     @Override
@@ -82,6 +109,11 @@ public abstract class SimpleListParameter<T extends Parameter> implements ListPa
     @Override
     public void removeFromParent() {
         if (parent!=null) this.parent.remove(this);
+    }
+    
+    @Override 
+    public void removeAllElements() {
+        children=new ArrayList<Parameter>(children.size());
     }
 
     @Override
@@ -125,7 +157,9 @@ public abstract class SimpleListParameter<T extends Parameter> implements ListPa
     }
     
     @Override
-    public Object[] getDisplayComponents() {
-        return new Object[0];
+    public ListParameterUI getUI() {
+        if (ui==null) ui=new SimpleListParameterUI(this);
+        return ui;
     }
+    @PostLoad void postLoad() {for (Parameter p : children) p.setParent(this);}
 }

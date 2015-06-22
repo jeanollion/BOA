@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2015 jollion
- *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -15,36 +13,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package configuration.dataStructure;
+package configuration.parameters.ui;
 
 import configuration.parameters.Parameter;
-import configuration.parameters.SimpleListParameter;
-import org.mongodb.morphia.annotations.Embedded;
 
 /**
  *
  * @author jollion
  */
-@Embedded
-public class StructureList extends SimpleListParameter {
-
-    public StructureList(int unMutableIndex) {
-        super("Structures", unMutableIndex);
-    }
-    
-    @Override
-    public Structure createChildInstance() {
-        return new Structure("new Structure");
-    }
-    
-    public Structure createChildInstance(String name) {
-        return new Structure(name);
-    }
-    
-    public String[] getStructuresAsString() {
-        String[] res = new String[children.size()];
-        int i=0;
-        for (Parameter s : children) res[i++] = s.toString();
-        return res;
-    }
+public interface ListParameterUI extends ParameterUI {
+    public Object[] getChildDisplayComponent(Parameter child);
 }

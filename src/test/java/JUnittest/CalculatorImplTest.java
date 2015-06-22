@@ -70,10 +70,10 @@ public class CalculatorImplTest {
     @org.junit.Test
     public void testDivide() {
         System.out.println("divide");
-        int a = 0;
-        int b = 0;
+        int a = 1;
+        int b = 1;
         CalculatorImpl instance = new CalculatorImpl();
-        int expResult = 0;
+        int expResult = 1;
         int result = instance.divide(a, b);
         assertEquals(expResult, result);
     }

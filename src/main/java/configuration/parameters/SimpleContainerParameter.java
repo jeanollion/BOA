@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2015 ImageJ
- *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -17,6 +15,7 @@
  */
 package configuration.parameters;
 
+import configuration.parameters.ui.ParameterUI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,12 +32,8 @@ import org.mongodb.morphia.annotations.Transient;
 @Embedded
 public abstract class SimpleContainerParameter implements ContainerParameter {
     protected String name;
-    
-    @Transient
-    protected ContainerParameter parent;
-    
-    @Transient
-    protected ArrayList<Parameter> children;
+    @Transient protected ContainerParameter parent;
+    @Transient protected ArrayList<Parameter> children;
     
     protected SimpleContainerParameter(){}
     
@@ -50,6 +45,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     protected void initChildren(Parameter... parameters) {
         children = new ArrayList<Parameter>(parameters.length);
         children.addAll(Arrays.asList(parameters));
+        for (Parameter p : parameters) p.setParent(this);
     }
     
     @Override
@@ -59,15 +55,14 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
 
     @Override
     public void insert(MutableTreeNode child, int index) {}
-
+    
     @Override
     public void remove(int index) {}
 
     @Override
     public void remove(MutableTreeNode node) {}
 
-    @Override
-    public void setUserObject(Object object) {this.name=object.toString();}
+    @Override public void setUserObject(Object object) {this.name=object.toString();}
 
     @Override
     public void removeFromParent() {
@@ -98,8 +93,8 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     public String toString() {return name;}
     
     @Override
-    public Object[] getDisplayComponents() {
-        return new Object[0];
+    public ParameterUI getUI() {
+        return null;
     }
 
     @Override

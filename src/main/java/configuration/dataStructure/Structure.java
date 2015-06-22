@@ -18,6 +18,9 @@ package configuration.dataStructure;
 
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.SimpleContainerParameter;
+import configuration.parameters.StructureParameter;
+import configuration.parameters.StructureParameterParent;
+import javax.swing.tree.MutableTreeNode;
 import org.mongodb.morphia.annotations.Embedded;
 import org.mongodb.morphia.annotations.PostLoad;
 
@@ -27,14 +30,21 @@ import org.mongodb.morphia.annotations.PostLoad;
  */
 @Embedded
 public class Structure extends SimpleContainerParameter {
-    ChoiceParameter choice;
+    ChoiceParameter choice = new ChoiceParameter("Structure Choice", new String[]{"structure choice 1", "structure choice 2"}, "structure choice 1");
+    StructureParameterParent parentStructure =  new StructureParameterParent("Parent Structure", -1, 0);;
+    
     public Structure(String name) {
         super(name);
-        choice = new ChoiceParameter("Structure Choice", new String[]{"structure choice 1", "structure choice 2"}, "structure choice 1");
-        super.initChildren(choice);
+        super.initChildren(choice, parentStructure);
+    }
+    
+    @Override 
+    public void setParent(MutableTreeNode newParent) {
+        super.setParent(newParent);
+        parentStructure.setMaxStructure(parent.getIndex(this));
     }
     
     // morphia
     private Structure(){}
-    @PostLoad void postLoad() {super.initChildren(choice);}
+    @PostLoad void postLoad() {super.initChildren(choice, parentStructure);}
 }

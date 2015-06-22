@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2015 ImageJ
- *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -31,8 +29,8 @@ public class TreeTest extends JPanel {
     public TreeTest() {
         super(new BorderLayout());
         ConfigurationTree tree = new ConfigurationTree();
-        tree.setPreferredSize(new Dimension(300, 150));
-        add(tree, BorderLayout.CENTER);
+        //tree.setPreferredSize(new Dimension(300, 150));
+        add(tree.getUI(), BorderLayout.CENTER);
     }
     
     private static void createAndShowGUI() {

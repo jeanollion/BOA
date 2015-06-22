@@ -13,15 +13,13 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package configuration.userInterface;
-
-import javax.swing.tree.DefaultTreeModel;
+package configuration.parameters.ui;
 
 /**
  *
  * @author jollion
  */
-public interface TreeModelContainer {
-    public ConfigurationTreeModel getModel();
-    public void setModel(ConfigurationTreeModel model);
+public interface ParameterUI {
+    public Object[] getDisplayComponent();
+    public void refresh();
 }
