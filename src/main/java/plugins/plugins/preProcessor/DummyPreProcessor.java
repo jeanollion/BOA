@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 ImageJ
+ * Copyright (C) 2015 jollion
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -15,32 +15,19 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package JUnittest;
+package plugins.plugins.preProcessor;
+
+import configuration.parameters.Parameter;
+import plugins.PreProcessor;
 
 /**
  *
  * @author jollion
  */
-public class CalculatorImpl implements Calculator {
+public class DummyPreProcessor implements PreProcessor {
 
-    @Override
-    public int multiply(int a, int b) {
-        return a * b;
-    }
-
-    @Override
-    public int divide(int a, int b) {
-        return (a) / b;
-    }
-
-    @Override
-    public int add(int a, int b) {
-        return a + b;
-    }
-
-    @Override
-    public int substract(int a, int b) {
-        return a - b;
+    public Parameter[] getParameters() {
+        return new Parameter[0];
     }
     
 }

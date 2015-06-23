@@ -26,4 +26,9 @@ import javax.swing.tree.MutableTreeNode;
 public interface Parameter extends MutableTreeNode {
     public ArrayList<Parameter> getPath();
     public ParameterUI getUI();
+    public boolean sameContent(Parameter other);
+    public void setContentFrom(Parameter other);
+    public Parameter duplicate();
+    public String getName();
+    public void setName(String name);
 }

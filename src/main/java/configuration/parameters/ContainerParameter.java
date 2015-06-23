@@ -19,6 +19,6 @@ package configuration.parameters;
  *
  * @author jollion
  */
-public interface ContainerParameter extends Parameter{
+public interface ContainerParameter extends Parameter {
     
 }

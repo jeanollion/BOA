@@ -18,6 +18,7 @@ package configuration.dataStructure;
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.ContainerParameter;
 import configuration.parameters.Parameter;
+import configuration.parameters.PluginParameter;
 import configuration.parameters.SimpleContainerParameter;
 import configuration.parameters.SimpleListParameter;
 import configuration.parameters.SimpleParameter;
@@ -36,6 +37,7 @@ import org.mongodb.morphia.annotations.Entity;
 import org.mongodb.morphia.annotations.Id;
 import org.mongodb.morphia.annotations.PostLoad;
 import org.mongodb.morphia.annotations.Transient;
+import plugins.Thresholder;
 
 /**
  *
@@ -46,23 +48,65 @@ import org.mongodb.morphia.annotations.Transient;
 @Entity(value = "Experiment", noClassnameStored = true)
 public class Experiment implements ContainerParameter, TreeModelContainer {
     @Id protected String name;
-    public ChoiceParameter choice;
-    StructureList structures;
+    PluginParameter thresholder;
+    //StructureList structures;
+    SimpleListParameter structures;
     @Transient ConfigurationTreeModel model;
     @Transient protected ArrayList<Parameter> children;
-    public String test;
     public Experiment(String name) {
         this.name=name;
-        choice = new ChoiceParameter("Choice name", new String[]{"choice 1", "choice2"}, "choice 1");
-        structures = new StructureList(1);
+        structures = new SimpleListParameter("Structures",1, Structure.class);
         structures.insert(structures.createChildInstance("Channels"));
         structures.insert(structures.createChildInstance("Bacteries"));
+        thresholder = new PluginParameter("test thresholder", Thresholder.class);
+        
         initChildren();
     }
     
-    public StructureList getStructures() {return structures;}
+    public SimpleListParameter getStructures() {return structures;}
     
-    public String[] getStructuresAsString() {return structures.getStructuresAsString();}
+    public String[] getStructuresAsString() {return structures.getChildrenString();}
+    
+    @Override
+    public boolean sameContent(Parameter other) {
+        if (other instanceof Experiment) {
+            Experiment otherXP= (Experiment) other;
+            if (!structures.sameContent(otherXP)) return false;
+            // add other parameters here ...
+            return true;
+        } else return false;
+    }
+    @Override
+    public void setContentFrom(Parameter other) {
+        if (other instanceof Experiment) {
+            Experiment otherXP = (Experiment) other;
+            this.structures.setContentFrom(otherXP);
+            // add other parameters here ...
+            this.thresholder.setContentFrom(otherXP);
+        } else throw new IllegalArgumentException("wrong parameter type");
+    }
+    
+    protected void initChildren() {
+        children = new ArrayList<Parameter>(2);
+        children.add(thresholder); // for testing purpose
+        children.add(structures);
+        // add other parameters here ...
+        for (Parameter p : children) p.setParent(this);
+    }
+    
+    @Override
+    public Experiment duplicate() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+    @Override
+    public String getName() {
+        return name;
+    }
+    
+    @Override
+    public void setName(String name) {
+        this.name=name;
+    }
     
     @Override
     public ConfigurationTreeModel getModel() {
@@ -74,12 +118,7 @@ public class Experiment implements ContainerParameter, TreeModelContainer {
         this.model=model;
     }
     
-    protected void initChildren() {
-        children = new ArrayList<Parameter>(2);
-        children.add(choice);
-        children.add(structures);
-        for (Parameter p : children) p.setParent(this);
-    }
+    
     
     @Override
     public ArrayList<Parameter> getPath() {
@@ -151,6 +190,10 @@ public class Experiment implements ContainerParameter, TreeModelContainer {
     private Experiment(){}
     
     @PostLoad void postLoad() {initChildren();}
+
+    
+
+    
 
     
     

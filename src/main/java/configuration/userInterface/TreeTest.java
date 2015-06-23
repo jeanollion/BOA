@@ -19,6 +19,7 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import plugins.PluginFactory;
 
 /**
  *
@@ -49,6 +50,8 @@ public class TreeTest extends JPanel {
     }
     
     public static void main(String[] args) {
+        PluginFactory.findPlugins("plugins.plugins");
+        //PluginFactory.findPlugins("plugins.plugins.thresholders");
         //Schedule a job for the event-dispatching thread:
         //creating and showing this application's GUI.
         javax.swing.SwingUtilities.invokeLater(new Runnable() {

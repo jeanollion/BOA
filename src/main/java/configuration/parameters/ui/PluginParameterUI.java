@@ -15,9 +15,9 @@
  */
 package configuration.parameters.ui;
 
-import configuration.parameters.ChoiceParameter;
-import java.awt.Component;
+import configuration.parameters.PluginParameter;
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
 import javax.swing.AbstractAction;
 import javax.swing.JMenuItem;
 
@@ -25,20 +25,20 @@ import javax.swing.JMenuItem;
  *
  * @author jollion
  */
-public class ChoiceParameterUI implements ParameterUI {
-    ChoiceParameter choice;
+public class PluginParameterUI implements ParameterUI {
+    PluginParameter parameter;
     JMenuItem[] actions;
-    public ChoiceParameterUI(ChoiceParameter choice_) {
-        this.choice = choice_;
-        final String[] choices = choice.getChoices();
-        this.actions = new JMenuItem[choices.length];
+    public PluginParameterUI(PluginParameter parameter_) {
+        this.parameter = parameter_;
+        final ArrayList<String> choices = parameter.getPluginNames();
+        this.actions = new JMenuItem[choices.size()];
         for (int i = 0; i < actions.length; i++) {
-            actions[i] = new JMenuItem(choices[i]);
+            actions[i] = new JMenuItem(choices.get(i));
             actions[i].setAction(
-                new AbstractAction(choices[i]) {
+                new AbstractAction(choices.get(i)) {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
-                        choice.setSelectedItem(ae.getActionCommand());
+                        parameter.setPlugin(ae.getActionCommand());
                     }
                 }
             );
@@ -46,8 +46,9 @@ public class ChoiceParameterUI implements ParameterUI {
         refresh();
     }
     public void refresh() {
-        int sel = choice.getSelectedIndex();
-        if (sel>=0) actions[sel].setArmed(true);
+        String pname = parameter.getPluginName();
+        if (pname==null) return;
+        for (JMenuItem j : actions) if (pname.equals(j.getText())) j.setArmed(true);
     }
     public JMenuItem[] getDisplayComponent() {return actions;}
 }

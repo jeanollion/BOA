@@ -40,7 +40,7 @@ public class ChoiceParameter extends SimpleParameter {
     public String[] getChoices() {return listChoice;}
     public String getSelectedItem() {return selectedItem;}
     public int getSelectedIndex() {return selectedIndex;}
-    public void setSeletectItem(String selectedItem) {
+    public void setSelectedItem(String selectedItem) {
         this.selectedIndex=Arrays.binarySearch(listChoice, selectedItem);
         if (selectedIndex==-1) this.selectedItem = "no item selected";
         else this.selectedItem=selectedItem;
@@ -57,6 +57,26 @@ public class ChoiceParameter extends SimpleParameter {
     public ParameterUI getUI() {
         if (gui==null) gui = new ChoiceParameterUI(this);
         return gui;
+    }
+    
+    
+
+    public boolean sameContent(Parameter other) {
+        if (other instanceof ChoiceParameter) {
+            return this.getSelectedItem().equals((ChoiceParameter)other);
+        }
+        else return false;
+        
+    }
+
+    public void setContentFrom(Parameter other) {
+        if (other instanceof ChoiceParameter) {
+            setSelectedItem(((ChoiceParameter)other).getSelectedItem());
+        } else throw new IllegalArgumentException("wrong parameter type");
+    }
+
+    public Parameter duplicate() {
+        return new ChoiceParameter(name, listChoice, selectedItem);
     }
     
     // morphia 

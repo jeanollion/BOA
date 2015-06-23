@@ -37,6 +37,25 @@ public class StructureParameter extends SimpleParameter {
         else this.selectedStructure = selectedStructure;
         this.allowNoSelection=allowNoSelection;
     }
+    
+    public boolean sameContent(Parameter other) {
+        if (other instanceof StructureParameter) {
+            StructureParameter otherP = (StructureParameter) other;
+            return selectedStructure==otherP.selectedStructure;
+        } else return false;
+    }
+
+    public void setContentFrom(Parameter other) {
+        if (other instanceof StructureParameter) {
+            StructureParameter otherP = (StructureParameter) other;
+            this.setSelectedStructure(otherP.selectedStructure);
+        } else throw new IllegalArgumentException("wrong parameter type");
+    }
+
+    public Parameter duplicate() {
+        return new StructureParameter(name, selectedStructure, allowNoSelection);
+    }
+    
     public int getSelectedStructure() {
         return selectedStructure;
     }
@@ -76,10 +95,15 @@ public class StructureParameter extends SimpleParameter {
     }
 
     public void setSelectedStructure(int selectedStructure) {
-        if (allowNoSelection) this.selectedStructure = selectedStructure-1;
+        if (allowNoSelection) {
+            if (selectedStructure>=0) this.selectedStructure = selectedStructure-1;
+            else this.selectedStructure=-1;
+        }
         else this.selectedStructure = selectedStructure;
     }
 
     // morphia
     protected StructureParameter(){super();}
+
+    
 }

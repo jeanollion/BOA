@@ -42,6 +42,16 @@ public abstract class SimpleParameter implements Parameter {
     }
     
     @Override
+    public String getName(){
+        return name;
+    }
+    
+    @Override
+    public void setName(String name) {
+        this.name=name;
+    }
+    
+    @Override
     public TreeNode getChildAt(int childIndex) {
         return null;
     }

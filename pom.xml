@@ -6,19 +6,18 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>ljp</groupId>
-	<artifactId>functionalBioImageCore</artifactId>
+	<artifactId>functional-bioimage-core</artifactId>
 	<version>0.1.0-SNAPSHOT</version>
 
-	<name>functionalBioImageCore</name>
+	<name>functional-bioimage-core</name>
 	<description>Test Maven and Mongo and Morphia</description>
 
 	<developers>
 		<developer>
-			<id>jollion</id>
+			<id>jeanollion</id>
 			<name>Jean Ollion</name>
 			<email>jean.ollion@gmail.com</email>
 			<organization>LJP</organization>
-			<organizationUrl>http://www.labos.upmc.fr/ljp/</organizationUrl>
 			<roles>
 				<role>developer</role>
 			</roles>
@@ -27,10 +26,10 @@
 	</developers>
 
 	<scm>
-		<connection>scm:git:git://github.com/jeanollion/testMavenMongo</connection>
-		<developerConnection>scm:git:git@github.com:jeanollion/testMavenMongo</developerConnection>
+		<connection>scm:git:git://github.com/jeanollion/functional-bioimage-core</connection>
+		<developerConnection>scm:git:git@github.com:jeanollion/functional-bioimage-core</developerConnection>
 		<tag>HEAD</tag>
-		<url>https://github.com/jeanollion/testMavenMongo</url>
+		<url>https://github.com/jeanollion/functional-bioimage-core</url>
 	</scm>
 
 	<properties>
@@ -48,7 +47,7 @@
             <dependency>
                 <groupId>org.mongodb.morphia</groupId>
                 <artifactId>morphia</artifactId>
-                <version>1.0.0</version>
+                <version>1.0.1</version>
             </dependency>
             
             <dependency>

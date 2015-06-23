@@ -1,12 +1,5 @@
-
-import com.mongodb.MongoClient;
-import morphiaTest2.ClassEntity;
-import morphiaTest2.ClassEntityDerived;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.dao.BasicDAO;
-
 /*
- * Copyright (C) 2015 ImageJ
+ * Copyright (C) 2015 jollion
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -22,15 +15,12 @@ import org.mongodb.morphia.dao.BasicDAO;
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+package plugins;
 
 /**
  *
  * @author jollion
  */
-public class ClassEntityDAO extends BasicDAO<ClassEntity, String>{
-
-    public ClassEntityDAO(Class<ClassEntity> entityClass, MongoClient mongoClient, Morphia morphia, String dbName) {
-        super(entityClass, mongoClient, morphia, dbName);
-    }
+public interface Thresholder extends Plugin {
     
 }

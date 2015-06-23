@@ -17,10 +17,12 @@
  */
 package plugins;
 
+import configuration.parameters.Parameter;
+
 /**
  *
  * @author jollion
  */
 public interface Plugin {
-    
+    public Parameter[] getParameters();
 }

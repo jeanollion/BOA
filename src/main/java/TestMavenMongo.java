@@ -7,29 +7,16 @@
  */
 
 import com.mongodb.MongoClient;
-import com.mongodb.MongoSocketOpenException;
-import com.mongodb.client.MongoDatabase;
 import configuration.dataStructure.Experiment;
 import configuration.dataStructure.Structure;
-import configuration.dataStructure.StructureList;
 import configuration.dataStructure.dao.ExperimentDAO;
-import ij.IJ;
-import ij.ImageJ;
+import configuration.parameters.SimpleListParameter;
 import ij.ImagePlus;
-import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
-import ij.plugin.filter.PlugInFilter;
-import ij.process.ImageProcessor;
-import java.util.List;
-import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import morphiaTest2.ClassEntity;
-import morphiaTest2.ClassEntityDerived;
 import org.mongodb.morphia.Datastore;
-import org.mongodb.morphia.Key;
 import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.query.Query;
 
 /**
  * ProcessPixels
@@ -93,38 +80,6 @@ public class TestMavenMongo implements PlugIn {
         
     }
     
-    public void testEntity() {
-        morphia.mapPackage("morphiaTest");
-        Logger logger = Logger.getLogger("testMavenMongo");
-        MongoClient mongo=new MongoClient("localhost");
-        
-        if (isConnected(mongo)) {
-
-            //datastore.save(new ClassEntity("testEntity"));
-            //datastore.save(new ClassEntity("testEntity2"));
-            //datastore.save(new ClassEntityDerived("DerivedtestEntity"));
-            
-            ClassEntityDAO dao = new ClassEntityDAO(ClassEntity.class, mongo, morphia, "testMavenMongo");
-            // query pour mettre a jour les className...
-            dao.update(dao.createQuery().disableValidation().filter("className", "morphiaTest.ClassEntity"), dao.createUpdateOperations().disableValidation().set("className", ClassEntity.class.getName()));
-            dao.update(dao.createQuery().disableValidation().filter("className", "morphiaTest.ClassEntityDerived"), dao.createUpdateOperations().disableValidation().set("className", ClassEntityDerived.class.getName()));
-            
-            for (ClassEntity r : dao.find()) {
-                boolean b = (r instanceof ClassEntityDerived);
-                logger.log(Level.INFO, "entity found: "+r.getName()+" instance of derived:"+b);
-                if ("DerivedtestEntity".equals(r.getName())) {
-                    ClassEntityDerived d = (ClassEntityDerived)r;
-                    logger.log(Level.INFO, "derived entity "+d.getNewIntParameter());
-                }
-            }
-            
-            
-            //ClassEntityDerivedDAO dao2 = new ClassEntityDerivedDAO(ClassEntityDerived.class, mongo, morphia, "testMavenMongo");
-            //for (ClassEntityDerived r : dao2.find()) logger.log(Level.INFO, "derived entity found:{0}", new Object[]{r.getName()});
-            
-        }
-    }
-    
     public void testExperiment() {
         morphia.mapPackage("configuration.dataStructure");
         morphia.mapPackage("configuration.parameters");
@@ -137,8 +92,8 @@ public class TestMavenMongo implements PlugIn {
                 dao.save(exp);
             //}
             for (Experiment xp : dao.find()) {
-                logger.log(Level.INFO, "entity found: "+xp.toString()+ " choice:"+xp.choice.getSelectedItem()+ " childs nb:"+xp.getChildCount());
-                StructureList list = xp.getStructures();
+                logger.log(Level.INFO, "entity found: "+xp.toString()+ " childs nb:"+xp.getChildCount());
+                SimpleListParameter list = xp.getStructures();
                 if (list.getChildCount()>0) {
                     Structure s = (Structure)list.getChildAt(0);
                     logger.log(Level.INFO, "structure 0: "+s.toString());

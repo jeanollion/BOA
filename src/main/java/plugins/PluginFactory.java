@@ -18,20 +18,75 @@
 package plugins;
 
 import core.Core;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.List;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  * @author jollion
  */
 public class PluginFactory {
-    static TreeMap<String, Class> plugins;
-    public static void findPluginsIJ() {
+
+    private static TreeMap<String, Class> plugins = new TreeMap<String, Class>();
+
+    public static void findPlugins(String packageName) {
         try {
-            plugins = new TreeMap<String, Class>();
+            for (Class c : getClasses(packageName)) {
+                if (Plugin.class.isAssignableFrom(c)) plugins.put(c.getSimpleName(), c);
+            }
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(PluginFactory.class.getName()).log(Level.WARNING, ex.getMessage(), ex);
+        } catch (IOException ex) {
+            Logger.getLogger(PluginFactory.class.getName()).log(Level.WARNING, ex.getMessage(), ex);
+        }            
+    }
+    
+    // from : http://www.dzone.com/snippets/get-all-classes-within-package
+    private static Class[] getClasses(String packageName) throws ClassNotFoundException, IOException {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        assert classLoader != null;
+        String path = packageName.replace('.', '/');
+        Enumeration<URL> resources = classLoader.getResources(path);
+        List<File> dirs = new ArrayList<File>();
+        while (resources.hasMoreElements()) {
+            URL resource = resources.nextElement();
+            dirs.add(new File(resource.getFile()));
+        }
+        ArrayList<Class> classes = new ArrayList<Class>();
+        for (File directory : dirs) {
+            classes.addAll(findClasses(directory, packageName));
+        }
+        return classes.toArray(new Class[classes.size()]);
+    }
+    
+    private static List<Class> findClasses(File directory, String packageName) throws ClassNotFoundException {
+        List<Class> classes = new ArrayList<Class>();
+        if (!directory.exists()) {
+            return classes;
+        }
+        File[] files = directory.listFiles();
+        for (File file : files) {
+            if (file.isDirectory()) {
+                assert !file.getName().contains(".");
+                classes.addAll(findClasses(file, packageName + "." + file.getName()));
+            } else if (file.getName().endsWith(".class")) {
+                classes.add(Class.forName(packageName + '.' + file.getName().substring(0, file.getName().length() - 6)));
+            }
+        }
+        return classes;
+    }
+
+    public static void findPluginsIJ() { // a tester...
+        try {
             Hashtable<String, String> table = ij.Menus.getCommands();
             ClassLoader loader = ij.IJ.getClassLoader();
             Enumeration ks = table.keys();
@@ -40,11 +95,12 @@ public class PluginFactory {
                 String className = table.get(command);
                 testClassIJ(command, className, loader);
             }
-            Core.getLogger().info("number of plugins found: "+plugins.size());
+            Core.getLogger().info("number of plugins found: " + plugins.size());
         } catch (Exception e) {
             Core.getLogger().log(Level.CONFIG, e.getMessage(), e);
         }
     }
+
     private static void testClassIJ(String command, String className, ClassLoader loader) {
         if (!className.startsWith("ij.")) {
             if (className.endsWith("\")")) {
@@ -70,7 +126,7 @@ public class PluginFactory {
             }
         }
     }
-    
+
     public static Plugin getPlugin(String s) {
         if (s == null) {
             return null;
@@ -89,5 +145,27 @@ public class PluginFactory {
             Core.getLogger().log(Level.CONFIG, e.getMessage(), e);
         }
         return null;
+    }
+
+    public static <T extends Plugin> T getPlugin(Class<T> clazz, String className) {
+        try {
+            T instance = (T) plugins.get(className).newInstance();
+            return instance;
+        } catch (InstantiationException ex) {
+            Logger.getLogger(PluginFactory.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
+        } catch (IllegalAccessException ex) {
+            Logger.getLogger(PluginFactory.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
+        }
+        return null;
+    }
+
+    public static <T extends Plugin> ArrayList<String> getPluginNames(Class<T> clazz) {
+        ArrayList<String> res = new ArrayList<String>();
+        for (Entry<String, Class> e : plugins.entrySet()) {
+            if (clazz.isAssignableFrom(e.getValue())) {
+                res.add(e.getKey());
+            }
+        }
+        return res;
     }
 }

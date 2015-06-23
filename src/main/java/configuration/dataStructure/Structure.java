@@ -17,8 +17,8 @@
 package configuration.dataStructure;
 
 import configuration.parameters.ChoiceParameter;
+import configuration.parameters.Parameter;
 import configuration.parameters.SimpleContainerParameter;
-import configuration.parameters.StructureParameter;
 import configuration.parameters.StructureParameterParent;
 import javax.swing.tree.MutableTreeNode;
 import org.mongodb.morphia.annotations.Embedded;
@@ -35,6 +35,10 @@ public class Structure extends SimpleContainerParameter {
     
     public Structure(String name) {
         super(name);
+        initChildList();
+    }
+    
+    private void initChildList() {
         super.initChildren(choice, parentStructure);
     }
     
@@ -44,7 +48,23 @@ public class Structure extends SimpleContainerParameter {
         parentStructure.setMaxStructure(parent.getIndex(this));
     }
     
+    public void setContentFrom(Parameter other) {
+        if (other instanceof Structure) {
+            Structure otherP = (Structure) other;
+            this.choice.setContentFrom(otherP.choice);
+            this.parentStructure.setContentFrom(otherP.parentStructure);
+        } else throw new IllegalArgumentException("wrong parameter type");
+    }
+
+    public Structure duplicate() {
+        Structure res=new Structure(name);
+        res.setContentFrom(this);
+        return res;
+    }
+    
     // morphia
-    private Structure(){}
-    @PostLoad void postLoad() {super.initChildren(choice, parentStructure);}
+    public Structure(){}
+    @PostLoad void postLoad() {initChildList();}
+
+    
 }

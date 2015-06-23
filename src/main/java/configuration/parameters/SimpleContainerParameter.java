@@ -49,8 +49,31 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     }
     
     @Override
+    public String getName(){
+        return name;
+    }
+    
+    @Override
+    public void setName(String name) {
+        this.name=name;
+    }
+    
+    @Override
     public ArrayList<Parameter> getPath() {
         return SimpleParameter.getPath(this);
+    }
+    
+    @Override
+    public boolean sameContent(Parameter other) { // ne check pas le nom ..
+        if (other instanceof ContainerParameter) {
+            ContainerParameter otherLP = (ContainerParameter)other;
+            if (otherLP.getChildCount()==this.getChildCount()) {
+                for (int i = 0; i<getChildCount(); i++) {
+                    if (!((Parameter)this.getChildAt(i)).sameContent((Parameter)otherLP.getChildAt(i))) return false;
+                }
+                return true;
+            } else return false;
+        } else return false;
     }
 
     @Override

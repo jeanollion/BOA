@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 ImageJ
+ * Copyright (C) 2015 jollion
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -15,23 +15,19 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package JUnittest;
+package plugins.plugins.thresholders;
+
+import configuration.parameters.Parameter;
+import configuration.parameters.PluginParameter;
+import plugins.PreProcessor;
+import plugins.Thresholder;
 
 /**
  *
  * @author jollion
  */
-public interface Calculator {
-
-
-    int multiply(int a, int b);
-
-    int divide(int a, int b);
-
-    int add(int a, int b);
-
-    int substract(int a, int b);
-
-    
-
+public class DummyThresholder1 implements Thresholder {
+    public Parameter[] getParameters() {
+        return new Parameter[]{new PluginParameter("PreProcessing", PreProcessor.class)};
+    }
 }

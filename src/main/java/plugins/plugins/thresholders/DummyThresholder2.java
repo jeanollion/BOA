@@ -15,36 +15,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package configuration.dataStructure;
+package plugins.plugins.thresholders;
 
 import configuration.parameters.Parameter;
-import configuration.parameters.SimpleListParameter;
-import org.mongodb.morphia.annotations.Embedded;
+import plugins.Thresholder;
 
 /**
  *
  * @author jollion
  */
-@Embedded
-public class StructureList extends SimpleListParameter {
-
-    public StructureList(int unMutableIndex) {
-        super("Structures", unMutableIndex);
-    }
-    
-    @Override
-    public Structure createChildInstance() {
-        return new Structure("new Structure");
-    }
-    
-    public Structure createChildInstance(String name) {
-        return new Structure(name);
-    }
-    
-    public String[] getStructuresAsString() {
-        String[] res = new String[children.size()];
-        int i=0;
-        for (Parameter s : children) res[i++] = s.toString();
-        return res;
+public class DummyThresholder2 implements Thresholder {
+    public Parameter[] getParameters() {
+        return new Parameter[0];
     }
 }
