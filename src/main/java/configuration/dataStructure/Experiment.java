@@ -50,7 +50,7 @@ public class Experiment implements ContainerParameter, TreeModelContainer {
     StructureList structures;
     @Transient ConfigurationTreeModel model;
     @Transient protected ArrayList<Parameter> children;
-    
+    public String test;
     public Experiment(String name) {
         this.name=name;
         choice = new ChoiceParameter("Choice name", new String[]{"choice 1", "choice2"}, "choice 1");

@@ -6,10 +6,10 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>ljp</groupId>
-	<artifactId>Test_MavenMongo</artifactId>
+	<artifactId>functionalBioImageCore</artifactId>
 	<version>0.1.0-SNAPSHOT</version>
 
-	<name>ProjectTestMavenMongo</name>
+	<name>functionalBioImageCore</name>
 	<description>Test Maven and Mongo and Morphia</description>
 
 	<developers>
@@ -41,9 +41,9 @@
 
 	<dependencies>
             <dependency>
-                <groupId>gov.nih.imagej</groupId>
-                <artifactId>imagej</artifactId>
-                <version>1.47</version>
+                <groupId>net.imagej</groupId>
+                <artifactId>ij</artifactId>
+                <version>1.49u</version>
             </dependency>
             <dependency>
                 <groupId>org.mongodb.morphia</groupId>
