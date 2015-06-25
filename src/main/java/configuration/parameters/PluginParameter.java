@@ -87,12 +87,22 @@ public class PluginParameter extends SimpleContainerParameter { //<T extends Plu
     public void setContentFrom(Parameter other) {
         if (other instanceof PluginParameter && ((PluginParameter)other).pluginType.equals(pluginType)) {
             PluginParameter otherPP = (PluginParameter) other;
-            this.pluginName=otherPP.pluginName;
-            if (otherPP.pluginParameters!=null) {
-                this.pluginParameters=new Parameter[otherPP.pluginParameters.length];
-                for (int i = 0; i<pluginParameters.length;i++) pluginParameters[i]=otherPP.pluginParameters[i].duplicate();
-                super.initChildren(pluginParameters);
-            } else this.pluginParameters=null;
+            if (otherPP.pluginName != null && otherPP.pluginName.equals(this.pluginName) && pluginParameters!=null) {
+                for (int i = 0; i < pluginParameters.length; i++) {
+                    pluginParameters[i] = otherPP.pluginParameters[i].duplicate();
+                }
+            } else {
+                this.pluginName = otherPP.pluginName;
+                if (otherPP.pluginParameters != null) {
+                    this.pluginParameters = new Parameter[otherPP.pluginParameters.length];
+                    for (int i = 0; i < pluginParameters.length; i++) {
+                        pluginParameters[i] = otherPP.pluginParameters[i].duplicate();
+                    }
+                    super.initChildren(pluginParameters);
+                } else {
+                    this.pluginParameters = null;
+                }
+            }
         } else throw new IllegalArgumentException("wrong parameter type");
     }
 

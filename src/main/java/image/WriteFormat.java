@@ -1,4 +1,6 @@
 /*
+ * Copyright (C) 2015 jollion
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -13,13 +15,24 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package configuration.parameters.ui;
+package image;
 
 /**
  *
  * @author jollion
  */
-public interface ParameterUI {
-    public Object[] getDisplayComponent();
-    public void refreshArming();
-}
+public enum WriteFormat {
+        PNG(".png"),
+        TIF(".tif");
+
+        final private String extension;
+
+        //Constructeur
+        WriteFormat(String extension) {
+            this.extension=extension;
+        }
+
+        public String getExtension() {
+            return extension;
+        }
+    }

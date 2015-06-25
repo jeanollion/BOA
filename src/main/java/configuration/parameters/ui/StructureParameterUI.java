@@ -46,14 +46,14 @@ public class StructureParameterUI implements ParameterUI {
                 }
             );
         }
-        refresh();
+        refreshArming();
     }
     
     private static int getIndex(String[] array, String key) {
         for (int i = 0; i<array.length; i++) if (key.equals(array[i])) return i;
         return -1;
     }
-    public void refresh() {
+    public void refreshArming() {
         int sel = structure.getSelectedStructure();
         if (structure.isAllowNoSelection()) sel++;
         if (sel>=0) actions[sel].setArmed(true);

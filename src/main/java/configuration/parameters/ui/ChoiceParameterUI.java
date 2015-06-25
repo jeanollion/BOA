@@ -43,9 +43,9 @@ public class ChoiceParameterUI implements ParameterUI {
                 }
             );
         }
-        refresh();
+        refreshArming();
     }
-    public void refresh() {
+    public void refreshArming() {
         int sel = choice.getSelectedIndex();
         if (sel>=0) actions[sel].setArmed(true);
     }

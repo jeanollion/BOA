@@ -43,9 +43,9 @@ public class PluginParameterUI implements ParameterUI {
                 }
             );
         }
-        refresh();
+        refreshArming();
     }
-    public void refresh() {
+    public void refreshArming() {
         String pname = parameter.getPluginName();
         if (pname==null) return;
         for (JMenuItem j : actions) if (pname.equals(j.getText())) j.setArmed(true);

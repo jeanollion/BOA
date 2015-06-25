@@ -116,5 +116,5 @@ public class SimpleListParameterUI implements ListParameterUI{
         return childActions;
     }
     
-    @Override public void refresh(){}
+    @Override public void refreshArming(){}
 }

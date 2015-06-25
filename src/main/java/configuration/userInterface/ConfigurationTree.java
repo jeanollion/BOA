@@ -90,7 +90,7 @@ public class ConfigurationTree {
                             Parameter p = (Parameter) path.getLastPathComponent();
                             ParameterUI ui = p.getUI();
                             if (ui!=null) {
-                                ui.refresh();
+                                ui.refreshArming();
                                 addToMenu(ui.getDisplayComponent(), menu);
                             }
                         }
