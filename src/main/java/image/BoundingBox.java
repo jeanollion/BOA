@@ -23,7 +23,6 @@ package image;
  */
 public class BoundingBox {
 
-    
     int xMin, xMax, yMin, yMax, zMin, zMax, count;
     public BoundingBox(){}
     public BoundingBox(int xMin, int xMax, int yMin, int yMax, int zMin, int zMax) {
@@ -49,6 +48,22 @@ public class BoundingBox {
         zMax=z;
         count=1;
     }
+    /**
+     * 
+     * @param image
+     * @param useOffset 
+     */
+    public BoundingBox(Image image, boolean useOffset) {
+        if (useOffset) {
+            xMin=image.getOffsetX();
+            yMin=image.getOffsetY();
+            zMin=image.getOffsetZ();
+        }
+        xMax=xMin+image.getSizeX()-1;
+        yMax=yMin+image.getSizeY()-1;
+        zMax=zMin+image.getSizeZ()-1;
+    }
+    
     /**
      * Modify the bounds so that is contains the {@param x} coordinate
      * @param x coordinate in the X-Axis
@@ -156,15 +171,35 @@ public class BoundingBox {
         return count;
     }
     
-    public int getXLength() {
+    public int getSizeX() {
         return xMax-xMin+1;
     }
     
-    public int getYLength() {
+    public int getSizeY() {
         return yMax-yMin+1;
     }
     
-    public int getZLength() {
+    public int getSizeZ() {
         return zMax-zMin+1;
+    }
+    
+    @Override
+    public boolean equals(Object other) {
+        if (other instanceof BoundingBox) {
+            BoundingBox otherBB = (BoundingBox) other;
+            return xMin==otherBB.getxMin() && yMin==otherBB.getyMin() && zMin==otherBB.getzMin() && xMax==otherBB.getxMax() && yMax==otherBB.getyMax() && zMax==otherBB.getzMax();
+        } else return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 29 * hash + this.xMin;
+        hash = 29 * hash + this.xMax;
+        hash = 29 * hash + this.yMin;
+        hash = 29 * hash + this.yMax;
+        hash = 29 * hash + this.zMin;
+        hash = 29 * hash + this.zMax;
+        return hash;
     }
 }

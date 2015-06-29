@@ -17,6 +17,7 @@
  */
 package image;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,9 +26,12 @@ import loci.common.services.DependencyException;
 import loci.common.services.ServiceException;
 import loci.common.services.ServiceFactory;
 import loci.formats.FormatException;
+import loci.formats.FormatTools;
 import loci.formats.IFormatWriter;
+import loci.formats.MetadataTools;
 import loci.formats.meta.IMetadata;
 import loci.formats.services.OMEXMLService;
+import ome.units.UNITS;
 import ome.units.quantity.Length;
 import ome.units.unit.Unit;
 import ome.xml.model.enums.DimensionOrder;
@@ -47,21 +51,22 @@ public class ImageWriter {
      * @param extension defines the output format
      */
     public static void writeToFile(Image image, String path, String fileName, WriteFormat extension) {
+        if (fileName==null) fileName=image.getName();
         image = TypeConverter.toCommonImageType(image);
+        String fullPath = path+File.separator+fileName+extension.getExtension();
         try {
-            IFormatWriter writer = new loci.formats.ImageWriter().getWriter(path+fileName+extension.getExtension());
+            IFormatWriter writer = new loci.formats.ImageWriter();
             writer.setMetadataRetrieve(generateMetadata(image));
-            writer.setSeries(0);
-            Logger.getLogger(ImageWriter.class.getName()).info("writing file:"+path);
+            writer.setId(fullPath);
+            Logger.getLogger(ImageWriter.class.getName()).info("writing file:"+fullPath);
             Logger.getLogger(ImageWriter.class.getName()).info("image count: "+writer.getMetadataRetrieve().getImageCount());
             Logger.getLogger(ImageWriter.class.getName()).info("color model==null? "+(writer.getColorModel()==null));
             Logger.getLogger(ImageWriter.class.getName()).info("compression "+writer.getCompression());
             boolean littleEndian = !writer.getMetadataRetrieve().getPixelsBinDataBigEndian(0, 0);
-            writer.setId(path);
+            writer.setSeries(0);
             Logger.getLogger(ImageWriter.class.getName()).info("format: "+writer.getFormat());
             for (int z = 0; z<image.sizeZ; z++) {
                 writer.saveBytes(z, getBytePlane(image, z, littleEndian));
-                
             }
             writer.close();
         } catch (FormatException ex) {
@@ -82,6 +87,17 @@ public class ImageWriter {
     }
     
     public static IMetadata generateMetadata(Image image) {
+        IMetadata meta = MetadataTools.createOMEXMLMetadata();
+        String pixelType;
+        if (image instanceof ImageByte) pixelType=FormatTools.getPixelTypeString(FormatTools.UINT8);
+        else if (image instanceof ImageShort) pixelType=FormatTools.getPixelTypeString(FormatTools.UINT16);
+        else if (image instanceof ImageFloat) pixelType=FormatTools.getPixelTypeString(FormatTools.FLOAT); //UINT32?
+        else throw new IllegalArgumentException("Image should be of type byte, short or float");
+        MetadataTools.populateMetadata(meta, 0, null, false, "XYZCT", pixelType, image.getSizeX(), image.getSizeY(), image.getSizeZ(), 1, 1, 1);
+        return meta;
+    }
+    
+    public static IMetadata generateMetadata2(Image image) {
         ServiceFactory factory;
         IMetadata meta=null;
         try {
@@ -89,26 +105,30 @@ public class ImageWriter {
             OMEXMLService service = factory.getInstance(OMEXMLService.class);
             try {
                 meta = service.createOMEXMLMetadata();
+                meta.createRoot();
+                
                 meta.setImageID("Image:0", 0);
                 meta.setPixelsID("Pixels:0", 0);
-                meta.setPixelsDimensionOrder(DimensionOrder.XYZCT,0);
-                 if (meta.getPixelsBinDataCount(0) == 0 || meta.getPixelsBinDataBigEndian(0, 0) == null) {
+                /*if (meta.getPixelsBinDataCount(0) == 0 || meta.getPixelsBinDataBigEndian(0, 0) == null) {
                     meta.setPixelsBinDataBigEndian(Boolean.FALSE, 0, 0);
-                }
-                meta.setPixelsSizeX(new PositiveInteger(image.sizeX), 0);
-                meta.setPixelsSizeY(new PositiveInteger(image.sizeY), 0);
-                meta.setPixelsSizeZ(new PositiveInteger(image.sizeZ), 0);
-                meta.setPixelsSizeT(new PositiveInteger(1), 0);
-                meta.setPixelsSizeC(new PositiveInteger(1), 0);
-                meta.setChannelID("Channel:0:" + 0, 0, 0);
-                meta.setChannelSamplesPerPixel(new PositiveInteger(1),0,0);
+                }*/
+                meta.setPixelsBinDataBigEndian(Boolean.TRUE,0,0);
+                meta.setPixelsDimensionOrder(DimensionOrder.XYZCT,0);
                 if (image instanceof ImageByte) meta.setPixelsType(PixelType.UINT8,0);
                 else if (image instanceof ImageShort) meta.setPixelsType(PixelType.UINT16,0);
-                else if (image instanceof ImageFloat) meta.setPixelsType(PixelType.UINT32,0);
-                Unit<Length> unit = Unit.CreateBaseUnit("", "µm");
-                meta.setPixelsPhysicalSizeX(new Length(image.getScaleXY(), unit), 0);
-                meta.setPixelsPhysicalSizeY(new Length(image.getScaleXY(), unit), 0);
-                meta.setPixelsPhysicalSizeZ(new Length(image.getScaleZ(), unit), 0);
+                else if (image instanceof ImageFloat) meta.setPixelsType(PixelType.FLOAT,0); //UINT32?
+                meta.setPixelsSizeX(new PositiveInteger(image.getSizeX()), 0);
+                meta.setPixelsSizeY(new PositiveInteger(image.getSizeY()), 0);
+                meta.setPixelsSizeZ(new PositiveInteger(image.getSizeZ()), 0);
+                meta.setPixelsSizeT(new PositiveInteger(1), 0);
+                meta.setPixelsSizeC(new PositiveInteger(1), 0);     
+                meta.setChannelID("Channel:0:" + 0, 0, 0);
+                meta.setChannelSamplesPerPixel(new PositiveInteger(1),0,0);
+                /*meta.setPixelsPhysicalSizeX(new Length(image.getScaleXY(), UNITS.MICROM), 0);
+                System.out.println("unit xy:"+image.getScaleXY()+ " name:"+UNITS.MICROM.getSymbol());
+                meta.setPixelsPhysicalSizeY(new Length(image.getScaleXY(), UNITS.MICROM), 0);
+                meta.setPixelsPhysicalSizeZ(new Length(image.getScaleZ(), UNITS.MICROM), 0);
+                System.out.println("unit xy:"+image.getScaleZ()+ " name:"+UNITS.MICROM.getSymbol());*/
             } catch (ServiceException ex) {
                 Logger.getLogger(ImageWriter.class.getName()).log(Level.SEVERE, null, ex);
             }

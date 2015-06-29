@@ -35,4 +35,5 @@ public enum WriteFormat {
         public String getExtension() {
             return extension;
         }
+        @Override public String toString() {return extension;}
     }

@@ -25,12 +25,24 @@ public class ImageIOCoordinates {
     int serie, channel, timePoint;
     BoundingBox bounds;
 
+    public ImageIOCoordinates(int serie, int channel, int timePoint) {
+        this.serie = serie;
+        this.channel = channel;
+        this.timePoint = timePoint;
+    }
+    
     public ImageIOCoordinates(int serie, int channel, int timePoint, BoundingBox bounds) {
         this.serie = serie;
         this.channel = channel;
         this.timePoint = timePoint;
         this.bounds = bounds;
     }
+    
+    public ImageIOCoordinates(BoundingBox bounds) {
+        this.bounds=bounds;
+    }
+    
+    public ImageIOCoordinates() {}
 
     public int getSerie() {
         return serie;

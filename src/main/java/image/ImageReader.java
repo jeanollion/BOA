@@ -20,6 +20,7 @@ package image;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.process.ImageProcessor;
+import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,9 +42,32 @@ import ome.units.quantity.Length;
  */
 public class ImageReader {
     ImageProcessorReader reader;
-    
+    IMetadata meta;
     public ImageReader(String imagePath) {
+        init(imagePath);
+    }
+    
+    public ImageReader(String path, String imageTitle, WriteFormat extension) {
+        System.out.println("path: "+path+File.separator+imageTitle+extension);
+        init(path+File.separator+imageTitle+extension);
+    }
+    
+    private void init(String imagePath) {
         reader = new ImageProcessorReader(new ChannelSeparator(LociPrefs.makeImageReader()));
+        ServiceFactory factory;
+        try {
+            factory = new ServiceFactory();
+            OMEXMLService service = factory.getInstance(OMEXMLService.class);
+            try {
+                meta = service.createOMEXMLMetadata();
+                reader.setMetadataStore(meta);
+            } catch (ServiceException ex) {
+                Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } catch (DependencyException ex) {
+            Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
         try {
             reader.setId(imagePath);
         } catch (FormatException ex) {
@@ -63,21 +87,7 @@ public class ImageReader {
     
     public Image openChannel(ImageIOCoordinates coords) {
         Image res = null;
-        // metadata
-        ServiceFactory factory;
-        IMetadata meta = null;
-        try {
-            factory = new ServiceFactory();
-            OMEXMLService service = factory.getInstance(OMEXMLService.class);
-            try {
-                meta = service.createOMEXMLMetadata();
-                reader.setMetadataStore(meta);
-            } catch (ServiceException ex) {
-                Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        } catch (DependencyException ex) {
-            Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        
         reader.setSeries(coords.getSerie());
         int width = reader.getSizeX();
         int height = reader.getSizeY();
@@ -96,10 +106,11 @@ public class ImageReader {
                 if (coords.getBounds()==null) {
                     ip = reader.openProcessors(reader.getIndex(z, coords.getChannel(), coords.getTimePoint()))[0];
                 } else {
-                    ip = reader.openProcessors(reader.getIndex(z, coords.getChannel(), coords.getTimePoint()), coords.getBounds().getxMin(), coords.getBounds().getyMin(), coords.getBounds().getXLength(), coords.getBounds().getYLength())[0];
+                    ip = reader.openProcessors(reader.getIndex(z, coords.getChannel(), coords.getTimePoint()), coords.getBounds().getxMin(), coords.getBounds().getyMin(), coords.getBounds().getSizeX(), coords.getBounds().getSizeY())[0];
                 }
                 stack.addSlice("" + (z + 1), ip);
                 res = IJImageWrapper.wrap(new ImagePlus("", stack));
+                if (coords.getBounds()!=null) res.setOffset(coords.getBounds().getxMin(), coords.getBounds().getyMin(), coords.getBounds().getzMin());
                 if (meta != null) {
                     Length lxy = meta.getPixelsPhysicalSizeX(0);
                     Length lz = meta.getPixelsPhysicalSizeZ(0);

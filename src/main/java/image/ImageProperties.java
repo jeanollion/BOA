@@ -13,5 +13,5 @@ public interface ImageProperties {
     public float getScaleXY();
     public float getScaleZ();
     public boolean contains(int x, int y, int z);
-     public boolean containsWithOffset(int x, int y, int z);
+    public boolean containsWithOffset(int x, int y, int z);
 }

@@ -22,6 +22,12 @@ package image;
  * @author jollion
  */
 public class TypeConverter {
+    
+    /**
+     * 
+     * @param image input image to be converted
+     * @return a new ImageFloat values casted as float
+     */
     public static ImageFloat toFloat(Image image) {
         ImageFloat res = new ImageFloat(image.getName(), image);
         float[][] newPixels = res.getPixelArray();
@@ -32,7 +38,13 @@ public class TypeConverter {
         }
         return res;
     }
-    public static ImageByte toByte(ImageMask image) {
+    
+    /**
+     * 
+     * @param image input image to be converted
+     * @return a mask represented as an ImageByte, each non-zero voxel of {@param image} has a value of 1
+     */
+    public static ImageByte toByteMask(ImageMask image) {
         ImageByte res = new ImageByte(image.getName(), image);
         byte[][] newPixels = res.getPixelArray();
         for (int z = 0; z<image.getSizeZ(); ++z) {
@@ -42,11 +54,15 @@ public class TypeConverter {
         }
         return res;
     }
-    
+    /**
+     * 
+     * @param image input image
+     * @return an image of type ImageByte, ImageShort or ImageFloat. If {@param image} is of type ImageByte, ImageShort or ImageFloat {@Return}={@param image}. If {@param image} is of type ImageInt, it is cast as a FloatImage {@link TypeConverter#toFloat(image.Image) }. If {@param image} is a mask if will be converted to a mask: {@link TypeConverter#toByteMask(image.ImageMask) }
+     */
     public static Image toCommonImageType(Image image) {
         if (image instanceof ImageByte || image instanceof ImageShort || image instanceof ImageFloat) return image;
         else if (image instanceof ImageInt) return toFloat(image);
-        else if (image instanceof ImageMask) return toByte((ImageMask)image);
+        else if (image instanceof ImageMask) return toByteMask((ImageMask)image);
         else return toFloat(image);
     }
 }

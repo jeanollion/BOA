@@ -87,7 +87,7 @@ public class IJImageWrapper {
         } else if (image instanceof ImageInt) {
             return getImagePlus(TypeConverter.toFloat(image));
         } else if (image instanceof ImageMask) {
-            return getImagePlus(TypeConverter.toByte((ImageMask)image));
+            return getImagePlus(TypeConverter.toByteMask((ImageMask)image));
         }
         return new ImagePlus(image.getName(), st);
     }
