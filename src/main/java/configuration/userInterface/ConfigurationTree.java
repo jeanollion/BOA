@@ -15,13 +15,17 @@
  */
 package configuration.userInterface;
 
+import com.mongodb.MongoClient;
 import configuration.dataStructure.Experiment;
+import configuration.dataStructure.dao.ExperimentDAO;
 import configuration.parameters.ContainerParameter;
 import configuration.parameters.ListParameter;
 import configuration.parameters.ui.ListParameterUI;
 import configuration.parameters.Parameter;
 import configuration.parameters.ui.ParameterUI;
 import configuration.parameters.SimpleListParameter;
+import configuration.parameters.ui.ArmableUI;
+import configuration.parameters.ui.ChoiceParameterUI;
 import java.awt.Component;
 import java.awt.GridLayout;
 import java.awt.Rectangle;
@@ -42,6 +46,8 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
+import org.mongodb.morphia.Morphia;
+import org.mongodb.morphia.query.Query;
 
 /**
  *
@@ -55,6 +61,7 @@ public class ConfigurationTree {
     
     public ConfigurationTree() {
         rootParameter = new Experiment("Test Experiment");
+        //rootParameter = getExperiment(); // for test morphia
         treeModel = new ConfigurationTreeModel(rootParameter);
         tree = new JTree(treeModel);
         treeModel.setJTree(tree);
@@ -90,7 +97,7 @@ public class ConfigurationTree {
                             Parameter p = (Parameter) path.getLastPathComponent();
                             ParameterUI ui = p.getUI();
                             if (ui!=null) {
-                                ui.refreshArming();
+                                if (ui instanceof ChoiceParameterUI) ((ArmableUI)ui).refreshArming();
                                 addToMenu(ui.getDisplayComponent(), menu);
                             }
                         }
@@ -102,6 +109,15 @@ public class ConfigurationTree {
         });
         
         scroll = new JScrollPane(tree);
+    }
+    
+    public Experiment getExperiment() {
+        MongoClient mongo=new MongoClient();
+        Morphia morphia = new Morphia();
+        morphia.mapPackage("configuration.dataStructure");
+        morphia.mapPackage("configuration.parameters");
+        ExperimentDAO dao = new ExperimentDAO(Experiment.class, mongo, morphia, "testMavenMongo");
+        return dao.get("test maven mongo");
     }
     
     public JScrollPane getUI() {

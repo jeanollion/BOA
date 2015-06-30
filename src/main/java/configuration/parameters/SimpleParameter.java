@@ -129,29 +129,7 @@ public abstract class SimpleParameter implements Parameter {
         }
     }
     
-    public static ConfigurationTreeModel getModel(Parameter p) {
-        if (p instanceof TreeModelContainer) return ((TreeModelContainer)p).getModel();
-        Parameter root=p;
-        while(root.getParent()!=null) {
-            root = (Parameter)root.getParent();
-            if (root instanceof TreeModelContainer) {
-                return ((TreeModelContainer)root).getModel();
-            }
-        }
-        return null;
-    }
     
-    public static Experiment getExperiment(Parameter p) {
-        if (p instanceof Experiment) return (Experiment)p;
-        Parameter root=p;
-        while(root.getParent()!=null) {
-            root = (Parameter)root.getParent();
-            if (root instanceof Experiment) {
-                return (Experiment)root;
-            }
-        }
-        return null;
-    }
     
     @Override
     public String toString() {

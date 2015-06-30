@@ -1,4 +1,6 @@
 /*
+ * Copyright (C) 2015 jollion
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -13,12 +15,15 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package configuration.parameters.ui;
+package configuration.parameters;
 
 /**
- *
+ * An actionable parameter is used by a conditional parameter: when its content is modified, it should also call the setObjectValue method of the conditional parameter, and its UI object should call the ConfigurationModel.nodeStructureChanged method to update the tree
  * @author jollion
  */
-public interface ParameterUI {
-    public Object[] getDisplayComponent();
+public interface ActionableParameter extends Parameter {
+    public Object getValue();
+    public void setValue(Object value);
+    public void setConditionalParameter(ConditionalParameter cond);
+    public ConditionalParameter getConditionalParameter();
 }

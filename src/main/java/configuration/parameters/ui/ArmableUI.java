@@ -1,4 +1,6 @@
 /*
+ * Copyright (C) 2015 jollion
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -19,6 +21,6 @@ package configuration.parameters.ui;
  *
  * @author jollion
  */
-public interface ParameterUI {
-    public Object[] getDisplayComponent();
+public interface ArmableUI extends ParameterUI{
+    public void refreshArming();
 }

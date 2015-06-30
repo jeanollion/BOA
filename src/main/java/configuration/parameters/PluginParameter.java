@@ -88,9 +88,7 @@ public class PluginParameter extends SimpleContainerParameter { //<T extends Plu
         if (other instanceof PluginParameter && ((PluginParameter)other).pluginType.equals(pluginType)) {
             PluginParameter otherPP = (PluginParameter) other;
             if (otherPP.pluginName != null && otherPP.pluginName.equals(this.pluginName) && pluginParameters!=null) {
-                for (int i = 0; i < pluginParameters.length; i++) {
-                    pluginParameters[i] = otherPP.pluginParameters[i].duplicate();
-                }
+                ParameterUtils.setContent(pluginParameters, otherPP.pluginParameters);
             } else {
                 this.pluginName = otherPP.pluginName;
                 if (otherPP.pluginParameters != null) {
@@ -127,8 +125,13 @@ public class PluginParameter extends SimpleContainerParameter { //<T extends Plu
         return new PluginParameterUI(this);
     }
     
+    @Override
+    public String toString() {
+        return name+ ": "+this.getPluginName();
+    }
+    
     // morphia
-    private PluginParameter(){}
+    PluginParameter(){}
     @PostLoad void postLoad() {super.initChildren(pluginParameters);}
 
     

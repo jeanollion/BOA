@@ -17,29 +17,26 @@ public abstract class Image implements ImageProperties {
     protected ImageWrapper wrapper;
     protected LUT lut=LUT.Grays;
     
-    protected Image(String name, int sizeX, int sizeY, int sizeZ) {
-        this.name=name;
-        this.sizeX=sizeX;
-        this.sizeY=sizeY;
+    protected Image(String name, int sizeX, int sizeY, int sizeZ, int offsetX, int offsetY, int offsetZ, float scaleXY, float scaleZ) {
+        this.name = name;
+        this.sizeX = sizeX;
+        this.sizeY = sizeY;
         this.sizeZ=sizeZ>=1?sizeZ:1;
         this.sizeXY=sizeX*sizeY;
         this.sizeXYZ=sizeXY*sizeZ;
-        this.scaleXY=1;
-        this.scaleZ=1;
+        this.offsetX = offsetX;
+        this.offsetY = offsetY;
+        this.offsetZ = offsetZ;
+        this.scaleXY = scaleXY;
+        this.scaleZ = scaleZ;
+    }
+    
+    protected Image(String name, int sizeX, int sizeY, int sizeZ) {
+        this(name, sizeX, sizeY, sizeZ, 0, 0, 0, 1, 1);
     }
     
     protected Image(String name, ImageProperties properties) {
-        this.name=name;
-        this.sizeX=properties.getSizeX();
-        this.sizeY=properties.getSizeY();
-        this.sizeZ=properties.getSizeZ();
-        this.sizeXY=sizeX*sizeY;
-        this.sizeXYZ=sizeXY*sizeZ;
-        this.offsetX=properties.getOffsetX();
-        this.offsetY=properties.getOffsetY();
-        this.offsetZ=properties.getOffsetZ();
-        this.scaleXY=properties.getScaleXY();
-        this.scaleZ=properties.getScaleZ();
+        this(name, properties.getSizeX(), properties.getSizeY(), properties.getSizeZ(), properties.getOffsetX(), properties.getOffsetY(), properties.getOffsetZ(), properties.getScaleXY(), properties.getScaleZ());
     }
     
     //public abstract float getPixel(float x, float y, float z); // interpolation

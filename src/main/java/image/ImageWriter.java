@@ -22,21 +22,13 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import loci.common.DataTools;
-import loci.common.services.DependencyException;
-import loci.common.services.ServiceException;
-import loci.common.services.ServiceFactory;
 import loci.formats.FormatException;
 import loci.formats.FormatTools;
 import loci.formats.IFormatWriter;
 import loci.formats.MetadataTools;
 import loci.formats.meta.IMetadata;
-import loci.formats.services.OMEXMLService;
 import ome.units.UNITS;
 import ome.units.quantity.Length;
-import ome.units.unit.Unit;
-import ome.xml.model.enums.DimensionOrder;
-import ome.xml.model.enums.PixelType;
-import ome.xml.model.primitives.PositiveInteger;
 
 /**
  *
@@ -94,9 +86,12 @@ public class ImageWriter {
         else if (image instanceof ImageFloat) pixelType=FormatTools.getPixelTypeString(FormatTools.FLOAT); //UINT32?
         else throw new IllegalArgumentException("Image should be of type byte, short or float");
         MetadataTools.populateMetadata(meta, 0, null, false, "XYZCT", pixelType, image.getSizeX(), image.getSizeY(), image.getSizeZ(), 1, 1, 1);
+        meta.setPixelsPhysicalSizeX(new Length(image.getScaleXY(), UNITS.MICROM), 0);
+        meta.setPixelsPhysicalSizeY(new Length(image.getScaleXY(), UNITS.MICROM), 0);
+        meta.setPixelsPhysicalSizeZ(new Length(image.getScaleZ(), UNITS.MICROM), 0);
         return meta;
     }
-    
+    /*
     public static IMetadata generateMetadata2(Image image) {
         ServiceFactory factory;
         IMetadata meta=null;
@@ -106,13 +101,12 @@ public class ImageWriter {
             try {
                 meta = service.createOMEXMLMetadata();
                 meta.createRoot();
-                
                 meta.setImageID("Image:0", 0);
                 meta.setPixelsID("Pixels:0", 0);
-                /*if (meta.getPixelsBinDataCount(0) == 0 || meta.getPixelsBinDataBigEndian(0, 0) == null) {
+                if (meta.getPixelsBinDataCount(0) == 0 || meta.getPixelsBinDataBigEndian(0, 0) == null) {
                     meta.setPixelsBinDataBigEndian(Boolean.FALSE, 0, 0);
-                }*/
-                meta.setPixelsBinDataBigEndian(Boolean.TRUE,0,0);
+                }
+                //meta.setPixelsBinDataBigEndian(Boolean.TRUE,0,0);
                 meta.setPixelsDimensionOrder(DimensionOrder.XYZCT,0);
                 if (image instanceof ImageByte) meta.setPixelsType(PixelType.UINT8,0);
                 else if (image instanceof ImageShort) meta.setPixelsType(PixelType.UINT16,0);
@@ -124,11 +118,9 @@ public class ImageWriter {
                 meta.setPixelsSizeC(new PositiveInteger(1), 0);     
                 meta.setChannelID("Channel:0:" + 0, 0, 0);
                 meta.setChannelSamplesPerPixel(new PositiveInteger(1),0,0);
-                /*meta.setPixelsPhysicalSizeX(new Length(image.getScaleXY(), UNITS.MICROM), 0);
-                System.out.println("unit xy:"+image.getScaleXY()+ " name:"+UNITS.MICROM.getSymbol());
+                meta.setPixelsPhysicalSizeX(new Length(image.getScaleXY(), UNITS.MICROM), 0);
                 meta.setPixelsPhysicalSizeY(new Length(image.getScaleXY(), UNITS.MICROM), 0);
                 meta.setPixelsPhysicalSizeZ(new Length(image.getScaleZ(), UNITS.MICROM), 0);
-                System.out.println("unit xy:"+image.getScaleZ()+ " name:"+UNITS.MICROM.getSymbol());*/
             } catch (ServiceException ex) {
                 Logger.getLogger(ImageWriter.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -136,5 +128,5 @@ public class ImageWriter {
             Logger.getLogger(ImageWriter.class.getName()).log(Level.SEVERE, null, ex);
         }
         return meta;
-    }
+    }*/
 }

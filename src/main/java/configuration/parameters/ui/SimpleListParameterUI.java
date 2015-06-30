@@ -17,6 +17,7 @@ package configuration.parameters.ui;
 
 import configuration.parameters.ListParameter;
 import configuration.parameters.Parameter;
+import configuration.parameters.ParameterUtils;
 import configuration.parameters.SimpleParameter;
 import configuration.parameters.ui.ListParameterUI;
 import configuration.userInterface.ConfigurationTreeModel;
@@ -37,7 +38,7 @@ public class SimpleListParameterUI implements ListParameterUI{
     
     public SimpleListParameterUI(ListParameter list_) {
         this.list = list_;
-        this.model= SimpleParameter.getModel(list);
+        this.model= ParameterUtils.getModel(list);
         this.actions = new JMenuItem[2];
         actions[0] = new JMenuItem(actionNames[0]);
         actions[0].setAction(
@@ -116,5 +117,4 @@ public class SimpleListParameterUI implements ListParameterUI{
         return childActions;
     }
     
-    @Override public void refreshArming(){}
 }

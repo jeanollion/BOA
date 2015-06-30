@@ -43,9 +43,13 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     }
     
     protected void initChildren(Parameter... parameters) {
-        children = new ArrayList<Parameter>(parameters.length);
-        children.addAll(Arrays.asList(parameters));
-        for (Parameter p : parameters) p.setParent(this);
+        if (parameters==null) {
+            children = new ArrayList<Parameter>(0);
+        } else {
+            children = new ArrayList<Parameter>(parameters.length);
+            children.addAll(Arrays.asList(parameters));
+            for (Parameter p : parameters) p.setParent(this);
+        }
     }
     
     @Override
@@ -64,7 +68,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     }
     
     @Override
-    public boolean sameContent(Parameter other) { // ne check pas le nom ..
+    public boolean sameContent(Parameter other) {
         if (other instanceof ContainerParameter) {
             ContainerParameter otherLP = (ContainerParameter)other;
             if (otherLP.getChildCount()==this.getChildCount()) {

@@ -87,7 +87,6 @@ public class ImageReader {
     
     public Image openChannel(ImageIOCoordinates coords) {
         Image res = null;
-        
         reader.setSeries(coords.getSerie());
         int width = reader.getSizeX();
         int height = reader.getSizeY();
@@ -136,4 +135,13 @@ public class ImageReader {
         res[2] = reader.getSizeC();
         return res;
     }
+    
+    
+    public static Image openChannel(String filePath) {
+        ImageReader reader = new ImageReader(filePath);
+        Image im = reader.openChannel(new ImageIOCoordinates());
+        reader.closeReader();
+        return im;
+    }
+    
 }

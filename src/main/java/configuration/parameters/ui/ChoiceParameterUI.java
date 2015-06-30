@@ -16,6 +16,9 @@
 package configuration.parameters.ui;
 
 import configuration.parameters.ChoiceParameter;
+import configuration.parameters.ConditionalParameter;
+import configuration.parameters.ParameterUtils;
+import configuration.userInterface.ConfigurationTreeModel;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
@@ -25,11 +28,16 @@ import javax.swing.JMenuItem;
  *
  * @author jollion
  */
-public class ChoiceParameterUI implements ParameterUI {
+public class ChoiceParameterUI implements ArmableUI {
     ChoiceParameter choice;
+    ConditionalParameter cond;
+    ConfigurationTreeModel model;
     JMenuItem[] actions;
     public ChoiceParameterUI(ChoiceParameter choice_) {
         this.choice = choice_;
+        cond = choice.getConditionalParameter();
+        if (cond!=null) this.model= ParameterUtils.getModel(cond);
+        else this.model= ParameterUtils.getModel(choice);
         final String[] choices = choice.getChoices();
         this.actions = new JMenuItem[choices.length];
         for (int i = 0; i < actions.length; i++) {
@@ -39,15 +47,24 @@ public class ChoiceParameterUI implements ParameterUI {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
                         choice.setSelectedItem(ae.getActionCommand());
+                        if (cond!=null) model.nodeStructureChanged(cond);
+                        else if (model!=null) model.nodeChanged(choice);
                     }
                 }
             );
         }
         refreshArming();
     }
+    @Override
     public void refreshArming() {
+        unArm();
         int sel = choice.getSelectedIndex();
         if (sel>=0) actions[sel].setArmed(true);
     }
+    
+    public void unArm() {
+        for (JMenuItem a:actions) a.setArmed(false);
+    }
+
     public JMenuItem[] getDisplayComponent() {return actions;}
 }

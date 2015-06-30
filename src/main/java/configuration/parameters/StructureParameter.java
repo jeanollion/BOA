@@ -65,7 +65,7 @@ public class StructureParameter extends SimpleParameter {
     }
     
     protected Experiment getXP() {
-        if (xp==null) xp= SimpleParameter.getExperiment(this);
+        if (xp==null) xp= ParameterUtils.getExperiment(this);
         return xp;
     }
     

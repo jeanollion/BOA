@@ -21,6 +21,7 @@ import configuration.parameters.Parameter;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.TreeNode;
 
 /**
  *
@@ -68,5 +69,6 @@ public class ConfigurationTreeModel extends DefaultTreeModel {
         }
         if (tree!=null) tree.updateUI();
     }
+
     
 }

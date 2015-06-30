@@ -1,4 +1,6 @@
 /*
+ * Copyright (C) 2015 jollion
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -13,12 +15,20 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package configuration.parameters.ui;
+package plugin.dummyPlugins;
+
+import configuration.parameters.NumberParameter;
+import configuration.parameters.Parameter;
+import plugins.Thresholder;
 
 /**
  *
  * @author jollion
  */
-public interface ParameterUI {
-    public Object[] getDisplayComponent();
+public class DummyThresholder implements Thresholder {
+
+    public Parameter[] getParameters() {
+        return new Parameter[]{new NumberParameter("number", 2, 2.22)};
+    }
+    
 }

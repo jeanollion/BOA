@@ -235,6 +235,9 @@ public class SimpleListParameter implements ListParameter {
         if (ui==null) ui=new SimpleListParameterUI(this);
         return ui;
     }
+    
+    // morphia
+    SimpleListParameter(){}
     @PostLoad void postLoad() {for (Parameter p : children) p.setParent(this);}
 
     

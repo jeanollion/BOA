@@ -63,7 +63,7 @@ public class Structure extends SimpleContainerParameter {
     }
     
     // morphia
-    public Structure(){}
+    public Structure(){super(); initChildList();}
     @PostLoad void postLoad() {initChildList();}
 
     

@@ -15,8 +15,11 @@
  */
 package configuration.dataStructure;
 
+import configuration.parameters.BooleanParameter;
 import configuration.parameters.ChoiceParameter;
+import configuration.parameters.ConditionalParameter;
 import configuration.parameters.ContainerParameter;
+import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
 import configuration.parameters.SimpleContainerParameter;
@@ -48,8 +51,11 @@ import plugins.Thresholder;
 @Entity(value = "Experiment", noClassnameStored = true)
 public class Experiment implements ContainerParameter, TreeModelContainer {
     @Id protected String name;
-    PluginParameter thresholder;
-    //StructureList structures;
+    //@Transient ChoiceParameter choiceCond = new ChoiceParameter("test cond",new String[]{"1", "2", "3"}, "1");
+    @Transient ChoiceParameter choiceCond = new BooleanParameter("test cond", true);
+    ConditionalParameter cond = new ConditionalParameter(choiceCond);
+    @Transient PluginParameter cond1 = new PluginParameter("thres1", Thresholder.class);
+    @Transient PluginParameter cond2 = new PluginParameter("thres2", Thresholder.class);
     SimpleListParameter structures;
     @Transient ConfigurationTreeModel model;
     @Transient protected ArrayList<Parameter> children;
@@ -58,8 +64,10 @@ public class Experiment implements ContainerParameter, TreeModelContainer {
         structures = new SimpleListParameter("Structures",1, Structure.class);
         structures.insert(structures.createChildInstance("Channels"));
         structures.insert(structures.createChildInstance("Bacteries"));
-        thresholder = new PluginParameter("test thresholder", Thresholder.class);
-        
+        //cond.setAction("1", new Parameter[]{cond1});
+        //cond.setAction("2", new Parameter[]{cond2});
+        cond.setAction(true, new Parameter[]{cond1});
+        cond.setAction(false, new Parameter[]{cond2});
         initChildren();
     }
     
@@ -69,35 +77,43 @@ public class Experiment implements ContainerParameter, TreeModelContainer {
     
     @Override
     public boolean sameContent(Parameter other) {
-        if (other instanceof Experiment) {
-            Experiment otherXP= (Experiment) other;
-            if (!structures.sameContent(otherXP)) return false;
-            // add other parameters here ...
-            return true;
+        if (other instanceof ContainerParameter) {
+            ContainerParameter otherLP = (ContainerParameter)other;
+            if (otherLP.getChildCount()==this.getChildCount()) {
+                for (int i = 0; i<getChildCount(); i++) {
+                    if (!((Parameter)this.getChildAt(i)).sameContent((Parameter)otherLP.getChildAt(i))) return false;
+                }
+                return true;
+            } else return false;
         } else return false;
     }
+    
+    
     @Override
     public void setContentFrom(Parameter other) {
         if (other instanceof Experiment) {
             Experiment otherXP = (Experiment) other;
-            this.structures.setContentFrom(otherXP);
+            this.structures.setContentFrom(otherXP.structures);
+            cond.setContentFrom(otherXP.cond);
             // add other parameters here ...
-            this.thresholder.setContentFrom(otherXP);
         } else throw new IllegalArgumentException("wrong parameter type");
     }
     
     protected void initChildren() {
         children = new ArrayList<Parameter>(2);
-        children.add(thresholder); // for testing purpose
         children.add(structures);
+        children.add(cond);
         // add other parameters here ...
         for (Parameter p : children) p.setParent(this);
     }
     
     @Override
     public Experiment duplicate() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        Experiment newXP = new Experiment(name);
+        newXP.setContentFrom(this);
+        return this;
     }
+    
     @Override
     public String getName() {
         return name;

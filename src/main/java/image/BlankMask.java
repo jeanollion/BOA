@@ -1,86 +1,19 @@
 package image;
 
-public class BlankMask implements ImageProperties, ImageMask {
-    protected String name;
-    protected int sizeX;
-    protected int sizeY;
-    protected int sizeZ;
-    protected int sizeXY;
-    protected int sizeXYZ;
-    protected int offsetX;
-    protected int offsetY;
-    protected int offsetZ;
-    protected float scaleXY;
-    protected float scaleZ;
+public class BlankMask extends Image implements ImageMask {
 
-    protected BlankMask(String name, int sizeX, int sizeY, int sizeZ) {
-        this.name=name;
-        this.sizeX=sizeX;
-        this.sizeY=sizeY;
-        this.sizeZ=sizeZ>=1?sizeZ:1;
-        this.sizeXY=sizeX*sizeY;
-        this.sizeXYZ=sizeXY*sizeZ;
-        this.scaleXY=1;
-        this.scaleZ=1;
+    public BlankMask(String name, int sizeX, int sizeY, int sizeZ, int offsetX, int offsetY, int offsetZ, float scaleXY, float scaleZ) {
+        super(name, sizeX, sizeY, sizeZ, offsetX, offsetY, offsetZ, scaleXY, scaleZ);
+    }
+
+    public BlankMask(String name, int sizeX, int sizeY, int sizeZ) {
+        this(name, sizeX, sizeY, sizeZ, 0, 0, 0, 1, 1);
     }
     
     public BlankMask(String name, ImageProperties properties) {
-        this.name=name;
-        this.sizeX=properties.getSizeX();
-        this.sizeY=properties.getSizeY();
-        this.sizeZ=properties.getSizeZ();
-        this.sizeXY=sizeX*sizeY;
-        this.sizeXYZ=sizeXY*sizeZ;
-        this.offsetX=properties.getOffsetX();
-        this.offsetY=properties.getOffsetY();
-        this.offsetZ=properties.getOffsetZ();
-        this.scaleXY=properties.getScaleXY();
-        this.scaleZ=properties.getScaleZ();
+        this(name, properties.getSizeX(), properties.getSizeY(), properties.getSizeZ(), properties.getOffsetX(), properties.getOffsetY(), properties.getOffsetZ(), properties.getScaleXY(), properties.getScaleZ());
     }
     
-    public String getName() {
-        return name;
-    }
-
-    public int getSizeX() {
-        return sizeX;
-    }
-
-    public int getSizeY() {
-        return sizeY;
-    }
-
-    public int getSizeZ() {
-        return sizeZ;
-    }
-
-    public int getSizeXY() {
-        return sizeXY;
-    }
-
-    public int getSizeXYZ() {
-        return sizeXYZ;
-    }
-
-    public int getOffsetX() {
-        return offsetX;
-    }
-
-    public int getOffsetY() {
-        return offsetY;
-    }
-
-    public int getOffsetZ() {
-        return offsetZ;
-    }
-
-    public float getScaleXY() {
-        return scaleXY;
-    }
-
-    public float getScaleZ() {
-        return scaleZ;
-    }
 
     public boolean insideMask(int x, int y, int z) {
         return true;
@@ -99,6 +32,36 @@ public class BlankMask implements ImageProperties, ImageMask {
     public boolean containsWithOffset(int x, int y, int z) {
         x-=offsetX; y-=offsetY; z-=offsetZ;
         return (x >= 0 && x < sizeX && y >= 0 && y-offsetY < sizeY && z >= 0 && z < sizeZ);
+    }
+
+    @Override
+    public float getPixel(int x, int y, int z) {
+        return 1;
+    }
+
+    @Override
+    public float getPixel(int xz, int z) {
+        return 1;
+    }
+
+    @Override
+    public void setPixel(int x, int y, int z, Number value) {
+        
+    }
+
+    @Override
+    public void setPixel(int xy, int z, Number value) {
+        
+    }
+
+    @Override
+    public Image duplicate(String name) {
+        return new BlankMask(name, sizeX, sizeY, sizeZ, offsetX, offsetY, offsetZ, scaleXY, scaleZ);
+    }
+
+    @Override
+    public Object getPixelArray() {
+        return TypeConverter.toByteMask(this).getPixelArray();
     }
     
 }

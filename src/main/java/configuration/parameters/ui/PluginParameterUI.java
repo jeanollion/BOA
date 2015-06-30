@@ -15,7 +15,9 @@
  */
 package configuration.parameters.ui;
 
+import configuration.parameters.ParameterUtils;
 import configuration.parameters.PluginParameter;
+import configuration.userInterface.ConfigurationTreeModel;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import javax.swing.AbstractAction;
@@ -25,11 +27,13 @@ import javax.swing.JMenuItem;
  *
  * @author jollion
  */
-public class PluginParameterUI implements ParameterUI {
+public class PluginParameterUI implements ArmableUI {
     PluginParameter parameter;
     JMenuItem[] actions;
+    ConfigurationTreeModel model;
     public PluginParameterUI(PluginParameter parameter_) {
         this.parameter = parameter_;
+        this.model= ParameterUtils.getModel(parameter);
         final ArrayList<String> choices = parameter.getPluginNames();
         this.actions = new JMenuItem[choices.size()];
         for (int i = 0; i < actions.length; i++) {
@@ -39,12 +43,14 @@ public class PluginParameterUI implements ParameterUI {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
                         parameter.setPlugin(ae.getActionCommand());
+                        if (model!=null) model.nodeChanged(parameter);
                     }
                 }
             );
         }
         refreshArming();
     }
+    @Override
     public void refreshArming() {
         String pname = parameter.getPluginName();
         if (pname==null) return;

@@ -24,27 +24,32 @@ import org.mongodb.morphia.annotations.Transient;
  *
  * @author jollion
  */
-public class ChoiceParameter extends SimpleParameter {
+public class ChoiceParameter extends SimpleParameter implements ActionableParameter {
     String[] listChoice;
     String selectedItem;
-    @Transient 
-    int selectedIndex;
-    ChoiceParameterUI gui;
-    
+    @Transient int selectedIndex;
+    @Transient ChoiceParameterUI gui;
+    @Transient ConditionalParameter cond;
     public ChoiceParameter(String name, String[] listChoice, String selectedItem) {
         super(name);
         this.listChoice=listChoice;
-        this.selectedItem=selectedItem;
+        setSelectedItem(selectedItem);
     }
     
     public String[] getChoices() {return listChoice;}
     public String getSelectedItem() {return selectedItem;}
     public int getSelectedIndex() {return selectedIndex;}
+    
     public void setSelectedItem(String selectedItem) {
         this.selectedIndex=Arrays.binarySearch(listChoice, selectedItem);
         if (selectedIndex==-1) this.selectedItem = "no item selected";
         else this.selectedItem=selectedItem;
+        setCondValue();
     }
+    protected void setCondValue() {
+        if (cond!=null) cond.setActionValue(selectedItem);
+    }
+    
     public void setSelectedIndex(int selectedIndex) {
         this.selectedItem=listChoice[selectedIndex];
         this.selectedIndex=selectedIndex;
@@ -79,6 +84,32 @@ public class ChoiceParameter extends SimpleParameter {
         return new ChoiceParameter(name, listChoice, selectedItem);
     }
     
+    // actionable parameter
+    public Object getValue() {
+        return getSelectedItem();
+    }
+
+    public void setValue(Object value) {
+        this.setSelectedItem(value.toString());
+    }
+    
+    public void setConditionalParameter(ConditionalParameter cond) {
+        this.cond=cond;
+    }
+    /**
+     * 
+     * @return the asociated conditional parameter, or null if no conditionalParameter is associated
+     */
+    public ConditionalParameter getConditionalParameter() {
+        return cond;
+    }
+    
     // morphia 
-    private ChoiceParameter(){super();}
+    ChoiceParameter(){super();}
+
+    
+
+    
+
+    
 }
