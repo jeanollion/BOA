@@ -44,9 +44,11 @@ public abstract class Image implements ImageProperties {
     public abstract float getPixel(int xz, int z);
     public abstract void setPixel(int x, int y, int z, Number value);
     public abstract void setPixel(int xy, int z, Number value);
-    public abstract Object getPixelArray();
+    public abstract Object[] getPixelArray();
     public abstract Image duplicate(String name);
-
+    public abstract Image newImage(String name, ImageProperties properties);
+    public abstract Image crop(BoundingBox bounds);
+    
     @Override
     public boolean contains(int x, int y, int z) {
         return (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ);
@@ -79,6 +81,12 @@ public abstract class Image implements ImageProperties {
         this.scaleXY=scaleXY;
         this.scaleZ=scaleZ;
     }
+    
+    public BoundingBox getBoundingBox() {
+        BoundingBox res = new BoundingBox(0, sizeX-1, 0, sizeY-1, 0, sizeZ-1);
+        res.translate(offsetX, offsetY, offsetZ);
+        return res;
+    }
 
     /**
      * 
@@ -103,9 +111,55 @@ public abstract class Image implements ImageProperties {
         return new float[]{min, max};
     }
 
-    //public abstract Image crop(int[] bounds);
+    protected Image cropI(BoundingBox bounds) {
+        //bounds.trimToImage(this);
+        Image res = newImage(name, bounds.getImageProperties("", scaleXY, scaleZ));
+        res.setCalibration(this);
+        int x_min = bounds.getxMin();
+        int y_min = bounds.getyMin();
+        int z_min = bounds.getzMin();
+        int x_max = bounds.getxMax();
+        int y_max = bounds.getyMax();
+        int z_max = bounds.getzMax();
+        int sX = x_max - x_min + 1;
+        int oZ = -z_min;
+        int oY_i = 0;
+        int oX = 0;
+        if (x_min <= -1) {
+            oX=-x_min;
+            x_min = 0;
+        }
+        if (x_max >= sizeX) {
+            x_max = sizeX - 1;
+        }
+        if (y_min <= -1) {
+            oY_i = -sX * y_min;
+            y_min = 0;
+        }
+        if (y_max >= sizeY) {
+            y_max = sizeY - 1;
+        }
+        if (z_min <= -1) {
+            z_min = 0;
+        }
+        if (z_max >= sizeZ) {
+            z_max = sizeZ - 1;
+        }
+        int sXo = x_max - x_min + 1;
+        for (int z = z_min; z <= z_max; z++) {
+            int offY = y_min * sizeX;
+            int oY = oY_i;
+            for (int y = y_min; y <= y_max; y++) {
+                System.arraycopy(getPixelArray()[z], offY + x_min, res.getPixelArray()[z + oZ], oY + oX, sXo);
+                oY += sX;
+                offY += sizeX;
+            }
+        }
+        return res;
+    }
+    
     //public abstract Image[] crop(int[][] bounds);
-
+    
     public int getSizeX() {
         return sizeX;
     }

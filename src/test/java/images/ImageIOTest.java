@@ -58,53 +58,17 @@ import ome.xml.model.primitives.PositiveInteger;
 import org.junit.Assert;
 import static org.junit.Assert.fail;
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 /**
  *
  * @author jollion
  */
-public class ImageTest {
+public class ImageIOTest {
     @Rule
     public TemporaryFolder testFolder = new TemporaryFolder();
     
-    /**
-     * simple set / get on image byte
-     */
-    @org.junit.Test
-    public void testImageByte() {
-        ImageByte imByte = new ImageByte("im test byte", 2, 3, 2);
-        imByte.setPixel(3, 1, 10);
-        assertEquals("Read voxel value: byte", imByte.getPixelInt(1, 1, 1), 10);
-        
-        imByte.setPixel(1, 0, 1, 10.5f);
-        assertEquals("Read voxel value: float cast to byte", imByte.getPixelInt(1, 0, 1), 10);
-    }
-    
-    /**
-     * simple set / get on image int
-     */
-    @org.junit.Test
-    public void testImageInt() {
-        ImageInt imInt = new ImageInt("im test int", 2, 2, 2);
-        imInt.setPixel(1,0, 1, Integer.MAX_VALUE);
-        assertEquals("Read voxel value: integer", imInt.getPixelInt(1, 0, 1), Integer.MAX_VALUE);
-    }
-    
-    /**
-     * type conversion test
-     */
-    @org.junit.Test
-    public void testImageSimpleConversion() {
-        ImageInt imInt = new ImageInt("im test int", 2, 2, 2);
-        imInt.setPixel(0, 1, 1, Integer.MAX_VALUE);
-        imInt.setPixel(0, 0, 1, 2);
-        ImageByte imByte = TypeConverter.toByteMask(imInt);
-        assertEquals("Read voxel value: mask", imByte.getPixelInt(0, 1, 1), 1);
-        
-        ImageFloat imFloat = TypeConverter.toFloat(imInt);
-        assertEquals("Read voxel value: int cast to float", imFloat.getPixel(0, 0, 1), 2f);
-    }
     
     @org.junit.Test
     public void testWriteFile() {
@@ -116,39 +80,39 @@ public class ImageTest {
         try {
             writer.setId(testFolder.newFolder("testImage").getAbsolutePath() + File.separator + "testIm.tif");
         } catch (FormatException ex) {
-            Logger.getLogger(ImageTest.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ImageIOTest.class.getName()).log(Level.SEVERE, null, ex);
             fail("An error occured trying to set ID");
         } catch (IOException ex) {
-            Logger.getLogger(ImageTest.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ImageIOTest.class.getName()).log(Level.SEVERE, null, ex);
             fail("An error occured trying to set ID");
         }
         try {
             writer.setSeries(0);
         } catch (FormatException ex) {
-            Logger.getLogger(ImageTest.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ImageIOTest.class.getName()).log(Level.SEVERE, null, ex);
             fail("An error occured trying to set series");
         }
         for (int z = 0; z < 2; z++) {
             try {
                 writer.saveBytes(z, new byte[4 * 3]);
             } catch (FormatException ex) {
-                Logger.getLogger(ImageTest.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(ImageIOTest.class.getName()).log(Level.SEVERE, null, ex);
                 fail("An error occured trying to write plane");
             } catch (IOException ex) {
-                Logger.getLogger(ImageTest.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(ImageIOTest.class.getName()).log(Level.SEVERE, null, ex);
                 fail("An error occured trying to write plane");
             }
         }
         try {
             writer.close();
         } catch (IOException ex) {
-            Logger.getLogger(ImageTest.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ImageIOTest.class.getName()).log(Level.SEVERE, null, ex);
             fail("An error occured trying to close writer");
         }
     }
     
-    @org.junit.Test
-    public void testWriteFile2() {
+    //@org.junit.Test
+    public void testIOImageData() {
         String id = testFolder.newFolder("imageTest").getAbsolutePath()+File.separator+"imageTest.png";
 
         int w = 512, h = 512, c = 1, z = 2;
@@ -229,6 +193,7 @@ public class ImageTest {
             writer.saveBytes(0, img);
             writer.saveBytes(1, img);
             writer.close();
+            
         } catch (Exception e) {
             fail("problem writing image to disk");
         }
@@ -316,7 +281,7 @@ public class ImageTest {
      */
     @org.junit.Test
     public void testIOTIFByte() {
-        //testIO(WriteFormat.TIF, 0);
+        testIO(WriteFormat.TIF, 0);
     }
     
     /**
@@ -324,7 +289,7 @@ public class ImageTest {
      */
     @org.junit.Test
     public void testIOTIFShort() {
-        //testIO(WriteFormat.TIF, 1);
+        testIO(WriteFormat.TIF, 1);
     }
     
     /**
@@ -332,7 +297,7 @@ public class ImageTest {
      */
     @org.junit.Test
     public void testIOTIFFloat() {
-        //testIO(WriteFormat.TIF, 2);
+        testIO(WriteFormat.TIF, 2);
     }
     
     /**
@@ -340,38 +305,40 @@ public class ImageTest {
      */
     @org.junit.Test
     public void testIOPNGByte() {
-        //testIO(WriteFormat.PNG, 0);
+        testIO(WriteFormat.PNG, 0);
     }
     
     /**
      * I/O APNG Short
      */
-    @org.junit.Test
+    @Test
     public void testIOPNGShort() {
-        //testIO(WriteFormat.PNG, 1);
+        testIO(WriteFormat.PNG, 1);
     }
     
     /**
-     * I/O APNG Float
+     * I/O APNG Short
      */
-    @org.junit.Test
+    @Test(expected=IllegalArgumentException.class)
     public void testIOPNGFloat() {
-        //testIO(WriteFormat.PNG, 2);
+        testIO(WriteFormat.PNG, 2);
     }
     
     private void testIO(WriteFormat extension, int type) {
-        String title = "im2Test"+type;
+        String title = "im3Test"+type;
         Image imTest;
         if (type==0) imTest = new ImageByte(title, 2, 2, 4);
         else if (type==1) imTest = new ImageShort(title, 2, 2, 3);
         else imTest = new ImageFloat(title, 2, 2, 3);
         imTest.setPixel(1, 0, 2, 2);
         imTest.setCalibration(0.1f, 0.23f);
-        //File folder = testFolder.newFolder("TestImages");
-        File folder = new File("/tmp");
+        File folder = testFolder.newFolder("TestImages");
+        //File folder = new File("/tmp");
         try {
             ImageWriter.writeToFile(imTest, folder.getAbsolutePath(), null, extension);
-        } catch (Exception ex) {
+        } catch (IllegalArgumentException ex) {
+            throw(ex);
+        }catch (Exception ex) {
             Logger.getLogger(ImageWriter.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
             fail("An error occured trying to write an image in "+extension+" format");
         }
@@ -385,7 +352,12 @@ public class ImageTest {
         }
         int[] stc = reader.getSTCNumbers();
         System.out.println("Series:"+stc[0]+" time:"+stc[1]+" c:"+stc[2]);
-        //Assert.assertArrayEquals("Retrive Image Serie/TimePoint/Channel number", new int[]{1, 1, 1}, stc);
+        
+        //Test file dimension: 
+        Assert.assertEquals("testing file series number", 1, stc[0]);
+        Assert.assertEquals("testing file timePoints number", 1, stc[1]);
+        Assert.assertEquals("testing file channels number", 1, stc[2]);
+        
         Image im=null;
         try {
             im = reader.openChannel(new ImageIOCoordinates());
@@ -394,23 +366,30 @@ public class ImageTest {
             fail("An error occured trying to read image");
         }
         reader.closeReader();
+        
+        // test file type
         if (type==0) Assert.assertTrue("image type verification", im instanceof ImageByte);
         else if (type==1) Assert.assertTrue("image type verification", im instanceof ImageShort);
         else Assert.assertTrue("image type verification", im instanceof ImageFloat);
         
-        //Assert.assertArrayEquals("Retrieve Image Resolution", new float[]{0.1f, 0.23f}, new float[]{im.getScaleXY(), im.getScaleZ()}, 0.001f);
+        // test image dimensions
+        Assert.assertEquals("testing image width", imTest.getSizeX(), im.getSizeX());
+        Assert.assertEquals("testing image heigth", imTest.getSizeY(), im.getSizeY());
+        Assert.assertEquals("testing image depth", imTest.getSizeZ(), im.getSizeZ());
+        
+        if (!extension.equals(WriteFormat.PNG)) Assert.assertArrayEquals("Retrieve Image Resolution", new float[]{0.1f, 0.23f}, new float[]{im.getScaleXY(), im.getScaleZ()}, 0.001f);
         
         Assert.assertEquals("Retrieve pixel value", 2f, im.getPixel(1, 0, 2), 0.0001f);
         
     }
     
-    /*@org.junit.Test
+    @org.junit.Test
     public void testIOView() {
-        String title = "im test short";
+        String title = "imTestShort";
         ImageShort imShort = new ImageShort(title, 5, 6, 7);
         imShort.setPixel(2, 3, 5, 3);
         imShort.setCalibration(0.1f, 0.23f);
-        File folder = testFolder.newFolder("Test Images");
+        File folder = testFolder.newFolder("TestImages");
         ImageWriter.writeToFile(imShort, folder.getAbsolutePath(), null, WriteFormat.TIF);
         ImageReader reader = new ImageReader(folder.getAbsolutePath(), title, WriteFormat.TIF);
         BoundingBox bb=new BoundingBox(1, 2, 3, 4, 3, 5);
@@ -418,8 +397,23 @@ public class ImageTest {
         reader.closeReader();
         BoundingBox retrieveBB = new BoundingBox(im, true);
         Assert.assertEquals("Retrieve Image View: Dimensions", bb, retrieveBB);
-        
         Assert.assertEquals("Retrieve pixel value", 3, im.getPixelInt(2-im.getOffsetX(), 3-im.getOffsetY(), 5-im.getOffsetZ()));
-        
-    }*/
+    }
+    
+    @Test
+    public void testIOViewPNG() {
+        String title = "imTestShort";
+        ImageShort imShort = new ImageShort(title, 5, 6, 7);
+        imShort.setPixel(2, 3, 5, 3);
+        imShort.setCalibration(0.1f, 0.23f);
+        File folder = testFolder.newFolder("TestImages");
+        ImageWriter.writeToFile(imShort, folder.getAbsolutePath(), null, WriteFormat.PNG);
+        ImageReader reader = new ImageReader(folder.getAbsolutePath(), title, WriteFormat.PNG);
+        BoundingBox bb=new BoundingBox(1, 2, 3, 4, 3, 5);
+        ImageShort im = (ImageShort)reader.openChannel(new ImageIOCoordinates(bb));
+        reader.closeReader();
+        BoundingBox retrieveBB = new BoundingBox(im, true);
+        Assert.assertEquals("Retrieve Image View: Dimensions", bb, retrieveBB);
+        Assert.assertEquals("Retrieve pixel value", 3, im.getPixelInt(2-im.getOffsetX(), 3-im.getOffsetY(), 5-im.getOffsetZ()));
+    }
 }

@@ -19,7 +19,12 @@ package image;
 
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.io.FileInfo;
+import ij.io.FileOpener;
+import ij.io.Opener;
+import ij.io.TiffDecoder;
 import ij.process.ImageProcessor;
+import static image.WriteFormat.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -41,18 +46,34 @@ import ome.units.quantity.Length;
  * @author jollion
  */
 public class ImageReader {
+    WriteFormat extension;
+    String path;
+    String imageTitle;
+    
+    //BioFormats
     ImageProcessorReader reader;
     IMetadata meta;
+    boolean invertTZ;
+    
+    
     public ImageReader(String imagePath) {
-        init(imagePath);
+        init();
     }
     
     public ImageReader(String path, String imageTitle, WriteFormat extension) {
-        System.out.println("path: "+path+File.separator+imageTitle+extension);
-        init(path+File.separator+imageTitle+extension);
+        this.extension=extension;
+        this.path=path;
+        this.imageTitle=imageTitle;
+        this.invertTZ=extension.getInvertTZ();
+        //System.out.println("path: "+path+File.separator+imageTitle+extension);
+        init();
     }
     
-    private void init(String imagePath) {
+    public String getImagePath() {
+        return path+File.separator+imageTitle+extension;
+    }
+    
+    private void init() {
         reader = new ImageProcessorReader(new ChannelSeparator(LociPrefs.makeImageReader()));
         ServiceFactory factory;
         try {
@@ -69,55 +90,83 @@ public class ImageReader {
         }
         
         try {
-            reader.setId(imagePath);
+            reader.setId(getImagePath());
         } catch (FormatException ex) {
-            Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, "An error occurred while opering image: "+imagePath+" "+ex.getMessage(), ex);
+            Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, "An error occurred while opering image: "+getImagePath()+" "+ex.getMessage(), ex);
         } catch (IOException ex) {
-            Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, "An error occurred while opering image: "+imagePath+" "+ex.getMessage(), ex);
+            Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, "An error occurred while opering image: "+getImagePath()+" "+ex.getMessage(), ex);
         }
     }
     
+    
     public void closeReader() {
+        if (reader==null) return;
         try {
             reader.close();
         } catch (IOException ex) {
             Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
         }
     }
+    public Image openChannel() {
+        return openChannel(new ImageIOCoordinates());
+    }
     
     public Image openChannel(ImageIOCoordinates coords) {
         Image res = null;
         reader.setSeries(coords.getSerie());
-        int width = reader.getSizeX();
-        int height = reader.getSizeY();
-        int sizeZ = reader.getSizeZ();
+        int sizeX = reader.getSizeX();
+        int sizeY = reader.getSizeY();
+        int sizeZ = invertTZ?reader.getSizeT():reader.getSizeZ();
+        //if (coords.getBounds()!=null) coords.getBounds().trimToImage(new BlankMask("", sizeX, sizeY, sizeZ));
+        
         int zMin, zMax;
         if (coords.getBounds()!=null) {
             zMin=Math.max(coords.getBounds().getzMin(), 0);
             zMax=Math.min(coords.getBounds().getzMax(), sizeZ-1);
+            if (extension.getSupportView()) {
+                sizeX = coords.getBounds().getSizeX();
+                sizeY = coords.getBounds().getSizeY();
+            }
+            
         } else {
             zMin=0; zMax=sizeZ-1;
         }
-        ImageStack stack = new ImageStack(width, height);
+        ImageStack stack = new ImageStack(sizeX, sizeY);
         for (int z = zMin; z <= zMax; z++) {
+            int locZ = invertTZ?coords.getTimePoint():z;
+            int locT = invertTZ?z:coords.getTimePoint();
             ImageProcessor ip;
             try {
-                if (coords.getBounds()==null) {
-                    ip = reader.openProcessors(reader.getIndex(z, coords.getChannel(), coords.getTimePoint()))[0];
+                if (coords.getBounds()==null || extension.equals(PNG)) {
+                    ip = reader.openProcessors(reader.getIndex(locZ, coords.getChannel(), locT))[0];
                 } else {
-                    ip = reader.openProcessors(reader.getIndex(z, coords.getChannel(), coords.getTimePoint()), coords.getBounds().getxMin(), coords.getBounds().getyMin(), coords.getBounds().getSizeX(), coords.getBounds().getSizeY())[0];
+                    ip = reader.openProcessors(reader.getIndex(locZ, coords.getChannel(), locT), coords.getBounds().getxMin(), coords.getBounds().getyMin(), coords.getBounds().getSizeX(), coords.getBounds().getSizeY())[0];
                 }
                 stack.addSlice("" + (z + 1), ip);
                 res = IJImageWrapper.wrap(new ImagePlus("", stack));
+                if (!extension.getSupportView() && coords.getBounds()!=null) { // crop
+                    BoundingBox bounds = coords.getBounds().duplicate();
+                    bounds.zMin=0;
+                    bounds.zMax=res.sizeZ-1;
+                    res=res.crop(bounds);
+                }
                 if (coords.getBounds()!=null) res.setOffset(coords.getBounds().getxMin(), coords.getBounds().getyMin(), coords.getBounds().getzMin());
                 if (meta != null) {
                     Length lxy = meta.getPixelsPhysicalSizeX(0);
                     Length lz = meta.getPixelsPhysicalSizeZ(0);
-                    if (lxy != null && lz != null) {
-                        res.setCalibration(lxy.value().floatValue(), lz.value().floatValue()); //xy.unit().getSymbol()
-                    } else {
-                        Logger.getLogger(ImageReader.class.getName()).log(Level.WARNING, "No calibration found for image: {0}", reader.getCurrentFile());
+                    float scaleXY=0, scaleZ=0;
+                    
+                    if (lxy!=null) {
+                        if (lz==null) {
+                            lz=lxy;
+                            if (res.getSizeZ()>1) {
+                                Logger.getLogger(ImageReader.class.getName()).log(Level.WARNING, "No calibration in Z dimension found for image: {0}", reader.getCurrentFile());
+                            }
+                        }
+                        if (scaleXY==0) scaleXY=lxy.value().floatValue();
+                        if (scaleZ==0) scaleZ=lz.value().floatValue();
                     }
+                    if (scaleXY!=0 && scaleZ!=0) res.setCalibration(scaleXY, scaleZ);
                 }
             } catch (FormatException ex) {
                 Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, "An error occurred while opering image: " + reader.getCurrentFile() + " channel:" + coords.getChannel() + " t:" + coords.getTimePoint() + " s:" + coords.getSerie() + ex.getMessage(), ex);
@@ -128,10 +177,29 @@ public class ImageReader {
         return res;
     }
     
+    /*private float[] getTifCalibrationIJ() {
+        try {
+            TiffDecoder td = new TiffDecoder(path, this.imageTitle + extension);
+            FileInfo[] info = td.getTiffInfo();
+            if (info[0].pixelWidth > 0) {
+                new FileOpener(info[0]).decodeDescriptionString(info[0]);
+                float[] res = new float[]{(float) info[0].pixelWidth, (float)info[0].pixelDepth};
+                System.out.println("calibration IJ: xy:" + res[0] + " z:" + res[1]);
+                return res;
+            } else {
+                return new float[]{1, 1};
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, null, ex);
+            return new float[]{1, 1};
+        }
+    }*/
+
+    
     public int[] getSTCNumbers() {
         int[] res = new int[3];
         res[0] = reader.getSeriesCount();
-        res[1] = reader.getSizeT();
+        res[1] = invertTZ?reader.getSizeZ():reader.getSizeT();
         res[2] = reader.getSizeC();
         return res;
     }
@@ -144,4 +212,37 @@ public class ImageReader {
         return im;
     }
     
+    public static Image openIJTif(String filePath) {
+        File file = new File(filePath);
+        TiffDecoder td = new TiffDecoder(file.getParent(), file.getName());
+
+        FileInfo[] info = null;
+        
+        try {
+            info = td.getTiffInfo();
+            ImagePlus imp = null;
+            //System.out.println("opening file: depth:"+info.length+ " info0:"+info[0].toString());
+            if (info.length > 1) { // try to open as stack
+                Opener o = new Opener();
+                o.setSilentMode(true);
+                imp = o.openTiffStack(info);
+
+            } else {
+                Opener o = new Opener();
+                imp = o.openTiff(file.getParent(), file.getName());
+            }
+            imp.setTitle(file.getName());
+            if (imp != null) {
+                Image im = IJImageWrapper.wrap(imp);
+                if (info[0].pixelWidth>0.0) {
+                    im.setCalibration((float)info[0].pixelWidth, info[0].pixelDepth>0.0?(float)info[0].pixelDepth:(float)info[0].pixelWidth);
+                }
+                return im;
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return null;
+    }
 }

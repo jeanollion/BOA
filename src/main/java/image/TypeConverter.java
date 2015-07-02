@@ -42,6 +42,22 @@ public class TypeConverter {
     /**
      * 
      * @param image input image to be converted
+     * @return a new ImageShort values casted as short (if values exceed 65535 they will be equal to 65535) 
+     */
+    public static ImageShort toShort(Image image) {
+        ImageShort res = new ImageShort(image.getName(), image);
+        short[][] newPixels = res.getPixelArray();
+        for (int z = 0; z<image.getSizeZ(); ++z) {
+            for (int xy = 0; xy<image.getSizeXY(); ++xy) {
+                newPixels[z][xy]=(short)image.getPixel(xy, z);
+            }
+        }
+        return res;
+    }
+    
+    /**
+     * 
+     * @param image input image to be converted
      * @return a mask represented as an ImageByte, each non-zero voxel of {@param image} has a value of 1
      */
     public static ImageByte toByteMask(ImageMask image) {
@@ -57,11 +73,15 @@ public class TypeConverter {
     /**
      * 
      * @param image input image
-     * @return an image of type ImageByte, ImageShort or ImageFloat. If {@param image} is of type ImageByte, ImageShort or ImageFloat {@Return}={@param image}. If {@param image} is of type ImageInt, it is cast as a FloatImage {@link TypeConverter#toFloat(image.Image) }. If {@param image} is a mask if will be converted to a mask: {@link TypeConverter#toByteMask(image.ImageMask) }
+     * @return an image of type ImageByte, ImageShort or ImageFloat. If {@param image} is of type ImageByte, ImageShort or ImageFloat {@Return}={@param image}. If {@param image} is of type ImageInt, it is cast as a ShortImage {@link TypeConverter#toShort(image.Image) } if its maximum value is inferior to 65535 or a FloatImage {@link TypeConverter#toFloat(image.Image) }. If {@param image} is a mask if will be converted to a mask: {@link TypeConverter#toByteMask(image.ImageMask) }
      */
     public static Image toCommonImageType(Image image) {
         if (image instanceof ImageByte || image instanceof ImageShort || image instanceof ImageFloat) return image;
-        else if (image instanceof ImageInt) return toFloat(image);
+        else if (image instanceof ImageInt) {
+            float[] mm = image.getMinAndMax(null);
+            if (mm[1]>(65535)) return toFloat(image);
+            else return toShort(image);
+        }
         else if (image instanceof ImageMask) return toByteMask((ImageMask)image);
         else return toFloat(image);
     }

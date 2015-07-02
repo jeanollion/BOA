@@ -14,6 +14,9 @@ public class BlankMask extends Image implements ImageMask {
         this(name, properties.getSizeX(), properties.getSizeY(), properties.getSizeZ(), properties.getOffsetX(), properties.getOffsetY(), properties.getOffsetZ(), properties.getScaleXY(), properties.getScaleZ());
     }
     
+    public BlankMask(String name, BoundingBox bounds, float scaleXY, float scaleZ) {
+        this(name, bounds.getSizeX(), bounds.getSizeY(), bounds.getSizeZ(), bounds.getxMin(), bounds.getyMin(), bounds.getzMin(), scaleXY, scaleZ);
+    }
 
     public boolean insideMask(int x, int y, int z) {
         return true;
@@ -60,8 +63,18 @@ public class BlankMask extends Image implements ImageMask {
     }
 
     @Override
-    public Object getPixelArray() {
+    public Object[] getPixelArray() {
         return TypeConverter.toByteMask(this).getPixelArray();
+    }
+
+    @Override
+    public Image newImage(String name, ImageProperties properties) {
+        return new BlankMask(name, properties);
+    }
+
+    @Override
+    public BlankMask crop(BoundingBox bounds) {
+        return (BlankMask) cropI(bounds);
     }
     
 }

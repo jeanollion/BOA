@@ -70,4 +70,14 @@ public class ImageFloat extends Image {
         return pixels;
     }
 
+    @Override
+    public ImageFloat newImage(String name, ImageProperties properties) {
+        return new ImageFloat(name, properties);
+    }
+
+    @Override
+    public ImageFloat crop(BoundingBox bounds) {
+        return (ImageFloat) cropI(bounds);
+    }
+
 }

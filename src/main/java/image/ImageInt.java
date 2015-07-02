@@ -88,4 +88,14 @@ public class ImageInt extends ImageInteger {
     public int[][] getPixelArray() {
         return pixels;
     }
+    
+    @Override
+    public ImageInt newImage(String name, ImageProperties properties) {
+        return new ImageInt(name, properties);
+    }
+    
+    @Override
+    public ImageShort crop(BoundingBox bounds) {
+        return (ImageShort) cropI(bounds);
+    }
 }

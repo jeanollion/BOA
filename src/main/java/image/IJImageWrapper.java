@@ -19,6 +19,7 @@ package image;
 
 import ij.ImagePlus;
 import ij.ImageStack;
+import ij.measure.Calibration;
 
 /**
  *
@@ -89,6 +90,16 @@ public class IJImageWrapper {
         } else if (image instanceof ImageMask) {
             return getImagePlus(TypeConverter.toByteMask((ImageMask)image));
         }
-        return new ImagePlus(image.getName(), st);
+        ImagePlus ip= new ImagePlus(image.getName(), st);
+        Calibration cal = new Calibration();
+        cal.pixelWidth=image.getScaleXY();
+        cal.pixelHeight=image.getScaleXY();
+        cal.pixelDepth=image.getScaleZ();
+        cal.xOrigin=image.getOffsetX();
+        cal.yOrigin=image.getOffsetY();
+        cal.zOrigin=image.getOffsetZ();
+        cal.setUnit("um");
+        ip.setCalibration(cal);
+        return ip;
     }
 }

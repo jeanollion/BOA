@@ -17,7 +17,16 @@
  */
 package image;
 
+import ij.ImagePlus;
+import ij.io.FileInfo;
+import ij.io.FileSaver;
+import ij.io.TiffEncoder;
+import static image.WriteFormat.*;
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -45,7 +54,15 @@ public class ImageWriter {
     public static void writeToFile(Image image, String path, String fileName, WriteFormat extension) {
         if (fileName==null) fileName=image.getName();
         image = TypeConverter.toCommonImageType(image);
+        if (image instanceof ImageFloat && extension.equals(PNG)) throw new IllegalArgumentException("Float image cannot be written as PNG");
         String fullPath = path+File.separator+fileName+extension.getExtension();
+        File f = new File(fullPath);
+        if (f.exists()) f.delete();
+        if (extension.equals(WriteFormat.TIF)) writeToFileTIF(image, fullPath);
+        else writeToFileBioFormat(image, fullPath);
+    }
+    
+    private static void writeToFileBioFormat(Image image, String fullPath) {
         try {
             IFormatWriter writer = new loci.formats.ImageWriter();
             writer.setMetadataRetrieve(generateMetadata(image));
@@ -90,6 +107,28 @@ public class ImageWriter {
         meta.setPixelsPhysicalSizeY(new Length(image.getScaleXY(), UNITS.MICROM), 0);
         meta.setPixelsPhysicalSizeZ(new Length(image.getScaleZ(), UNITS.MICROM), 0);
         return meta;
+    }
+    
+    private static void writeToFileTIF(Image image, String fullPath) {
+        ImagePlus img = IJImageWrapper.getImagePlus(image);
+        //System.out.println("image cal: x:"+img.getCalibration().pixelWidth+ " z:"+img.getCalibration().pixelDepth);
+        FileInfo fi = img.getFileInfo();
+        fi.info = img.getInfoProperty();
+        FileSaver fs = new FileSaver(img);
+        fi.description = fs.getDescriptionString();
+        fi.sliceLabels = img.getStack().getSliceLabels();
+        //System.out.println("fi image cal: x:"+fi.pixelWidth+ " z:"+fi.pixelDepth+ " nimages:"+fi.nImages);
+        TiffEncoder te = new TiffEncoder(fi);
+        try {
+            DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(fullPath)));
+            te.write(out);
+            out.close();
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(ImageWriter.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(ImageWriter.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
     }
     /*
     public static IMetadata generateMetadata2(Image image) {

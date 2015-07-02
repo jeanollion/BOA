@@ -89,4 +89,14 @@ public class ImageByte extends ImageInteger {
     public byte[][] getPixelArray() {
         return pixels;
     }
+    
+    @Override
+    public ImageByte newImage(String name, ImageProperties properties) {
+        return new ImageByte(name, properties);
+    }
+    
+    @Override
+    public ImageByte crop(BoundingBox bounds) {
+        return (ImageByte) cropI(bounds);
+    }
 }

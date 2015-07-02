@@ -142,6 +142,17 @@ public class BoundingBox {
     public boolean sameBounds(ImageProperties properties) {
         return xMin==0 && yMin==0 && zMin==0 && xMax==(properties.getSizeX()-1) && yMax==(properties.getSizeY()-1) && zMax==(properties.getSizeZ()-1);
     }
+    /**
+     * Translate the bounding box in the 3 axes
+     * @param dX translation in the X-Axis in pixels
+     * @param dY translation in the Y-Axis in pixels
+     * @param dZ translation in the X-Axis in pixels
+     * @return the same instance of boundgin box, after the translation operation
+     */
+    public BoundingBox translate(int dX, int dY, int dZ) {
+        xMin+=dX; xMax+=dX; yMin+=dY; yMax+=dY; zMin+=dZ; zMax+=dZ;
+        return this;
+    }
     
     public int getxMin() {
         return xMin;
@@ -201,5 +212,17 @@ public class BoundingBox {
         hash = 29 * hash + this.zMin;
         hash = 29 * hash + this.zMax;
         return hash;
+    }
+    
+    public ImageProperties getImageProperties(String name, float scaleXY, float scaleZ) {
+        return new BlankMask(name, this, scaleXY, scaleZ);
+    }
+    
+    public ImageProperties getImageProperties() {
+        return new BlankMask("", this, 1, 1);
+    }
+    
+    public BoundingBox duplicate() {
+        return new BoundingBox(xMin, xMax, yMin, yMax, zMin, zMax);
     }
 }

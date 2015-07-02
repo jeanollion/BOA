@@ -22,18 +22,28 @@ package image;
  * @author jollion
  */
 public enum WriteFormat {
-        PNG(".png"),
-        TIF(".tif");
+        PNG(".png", true, false),
+        TIF(".tif", false, true), // si on n'écrit pas avec le writer de bio-formats
+        OMETIF(".ome.tiff", false, true);
 
         final private String extension;
-
-        //Constructeur
-        WriteFormat(String extension) {
+        final private boolean invertTZ;
+        final private boolean view;
+        
+        WriteFormat(String extension, boolean invertTZ, boolean view) {
             this.extension=extension;
+            this.invertTZ=invertTZ;
+            this.view=view;
         }
 
         public String getExtension() {
             return extension;
+        }
+        public boolean getInvertTZ() {
+            return invertTZ;
+        }
+        public boolean getSupportView() {
+            return view;
         }
         @Override public String toString() {return extension;}
     }
