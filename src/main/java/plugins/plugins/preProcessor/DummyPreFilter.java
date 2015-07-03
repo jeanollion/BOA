@@ -18,13 +18,19 @@
 package plugins.plugins.preProcessor;
 
 import configuration.parameters.Parameter;
-import plugins.PreProcessor;
+import dataStructure.objects.StructureObjectPreFilter;
+import image.Image;
+import plugins.PreFilter;
 
 /**
  *
  * @author jollion
  */
-public class DummyPreProcessor implements PreProcessor {
+public class DummyPreFilter implements PreFilter{
+
+    public Image runPreFilter(Image input, StructureObjectPreFilter structureObject) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 
     public Parameter[] getParameters() {
         return new Parameter[0];

@@ -360,7 +360,7 @@ public class ImageIOTest {
         
         Image im=null;
         try {
-            im = reader.openChannel(new ImageIOCoordinates());
+            im = reader.openImage(new ImageIOCoordinates());
         } catch (Exception ex) {
             Logger.getLogger(ImageWriter.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
             fail("An error occured trying to read image");
@@ -393,7 +393,7 @@ public class ImageIOTest {
         ImageWriter.writeToFile(imShort, folder.getAbsolutePath(), null, WriteFormat.TIF);
         ImageReader reader = new ImageReader(folder.getAbsolutePath(), title, WriteFormat.TIF);
         BoundingBox bb=new BoundingBox(1, 2, 3, 4, 3, 5);
-        ImageShort im = (ImageShort)reader.openChannel(new ImageIOCoordinates(bb));
+        ImageShort im = (ImageShort)reader.openImage(new ImageIOCoordinates(bb));
         reader.closeReader();
         BoundingBox retrieveBB = new BoundingBox(im, true);
         Assert.assertEquals("Retrieve Image View: Dimensions", bb, retrieveBB);
@@ -410,7 +410,7 @@ public class ImageIOTest {
         ImageWriter.writeToFile(imShort, folder.getAbsolutePath(), null, WriteFormat.PNG);
         ImageReader reader = new ImageReader(folder.getAbsolutePath(), title, WriteFormat.PNG);
         BoundingBox bb=new BoundingBox(1, 2, 3, 4, 3, 5);
-        ImageShort im = (ImageShort)reader.openChannel(new ImageIOCoordinates(bb));
+        ImageShort im = (ImageShort)reader.openImage(new ImageIOCoordinates(bb));
         reader.closeReader();
         BoundingBox retrieveBB = new BoundingBox(im, true);
         Assert.assertEquals("Retrieve Image View: Dimensions", bb, retrieveBB);

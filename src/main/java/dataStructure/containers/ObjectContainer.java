@@ -15,22 +15,16 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package configuration.dataStructure;
+package dataStructure.containers;
+
+import dataStructure.objects.Object3D;
+import org.mongodb.morphia.annotations.Embedded;
 
 /**
  *
  * @author jollion
  */
-public abstract class ImageContainer {
-    String fileName;
-    float scaleXY, scaleZ;
-    int offsetX, offsetY, offsetZ;
-    
-    public ImageContainer(String fileName, float scaleXY, float scaleZ, int offsetX, int offsetY, int offsetZ) {
-        this.scaleXY = scaleXY;
-        this.scaleZ = scaleZ;
-        this.offsetX = offsetX;
-        this.offsetY = offsetY;
-        this.offsetZ = offsetZ;
-    }
+@Embedded
+public interface ObjectContainer {
+    public Object3D getObject();
 }

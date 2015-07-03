@@ -15,25 +15,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package configuration.dataStructure;
-
-import image.BlankMask;
-import image.ImageProperties;
+package dataStructure.objects;
 
 /**
  *
  * @author jollion
  */
-public class ImageContainerMask extends ImageContainer {
-    int sizeX, sizeY, sizeZ;
+public abstract class Rotation {
     
-    public ImageContainerMask(String fileName, ImageProperties image) {
-        super(fileName, image.getScaleXY(), image.getScaleZ(), image.getOffsetX(), image.getOffsetY(), image.getOffsetZ());
-        this.sizeX=image.getSizeX();
-        this.sizeY=image.getSizeY();
-        this.sizeZ=image.getSizeZ();
-    }
-    public BlankMask getImage() {
-        return new BlankMask(fileName, sizeX, sizeY, sizeZ, offsetX, offsetY, offsetZ, scaleXY, scaleZ);
-    }
 }

@@ -108,10 +108,10 @@ public class ImageReader {
         }
     }
     public Image openChannel() {
-        return openChannel(new ImageIOCoordinates());
+        return openImage(new ImageIOCoordinates());
     }
     
-    public Image openChannel(ImageIOCoordinates coords) {
+    public Image openImage(ImageIOCoordinates coords) {
         Image res = null;
         reader.setSeries(coords.getSerie());
         int sizeX = reader.getSizeX();
@@ -205,9 +205,13 @@ public class ImageReader {
     }
     
     
-    public static Image openChannel(String filePath) {
+    public static Image openImage(String filePath) {
+        return ImageReader.openImage(filePath, new ImageIOCoordinates());
+    }
+    
+    public static Image openImage(String filePath, ImageIOCoordinates ioCoords) {
         ImageReader reader = new ImageReader(filePath);
-        Image im = reader.openChannel(new ImageIOCoordinates());
+        Image im = reader.openImage(ioCoords);
         reader.closeReader();
         return im;
     }

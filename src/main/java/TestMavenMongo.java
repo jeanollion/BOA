@@ -7,9 +7,9 @@
  */
 
 import com.mongodb.MongoClient;
-import configuration.dataStructure.Experiment;
-import configuration.dataStructure.Structure;
-import configuration.dataStructure.dao.ExperimentDAO;
+import dataStructure.configuration.Experiment;
+import dataStructure.configuration.Structure;
+import dataStructure.configuration.ExperimentDAO;
 import configuration.parameters.SimpleListParameter;
 import ij.ImagePlus;
 import ij.plugin.PlugIn;

@@ -1,4 +1,6 @@
 /*
+ * Copyright (C) 2015 jollion
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -13,22 +15,16 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package configuration.parameters;
+package plugins;
+
+import dataStructure.objects.StructureObjectProcessing;
+import image.Image;
+import image.ImageInteger;
 
 /**
  *
  * @author jollion
  */
-public interface ListParameter extends ContainerParameter { //<T extends Parameter>
-    public abstract Parameter createChildInstance();
-    /**
-     * 
-     * @param child to be inserted in the list
-     * @return the same instance of ListParameter
-     */
-    public ListParameter insert(Parameter child);
-    public void removeAllElements();
-    public int getUnMutableIndex();
-    public boolean isDeactivatable();
-    public void setActivatedAll(boolean activated);
+public interface PostFilter extends Plugin {
+    public ImageInteger runPostFilter(ImageInteger input, StructureObjectProcessing structureObject);
 }

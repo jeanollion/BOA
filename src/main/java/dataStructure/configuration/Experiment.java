@@ -13,7 +13,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package configuration.dataStructure;
+package dataStructure.configuration;
 
 import configuration.parameters.BooleanParameter;
 import configuration.parameters.ChoiceParameter;
@@ -37,7 +37,11 @@ import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.annotations.Entity;
+import org.mongodb.morphia.annotations.Field;
 import org.mongodb.morphia.annotations.Id;
+import org.mongodb.morphia.annotations.Index;
+import org.mongodb.morphia.annotations.IndexOptions;
+import org.mongodb.morphia.annotations.Indexes;
 import org.mongodb.morphia.annotations.PostLoad;
 import org.mongodb.morphia.annotations.Transient;
 import plugins.Thresholder;
@@ -45,23 +49,26 @@ import plugins.Thresholder;
 /**
  *
  * @author jollion
- * @param <Structure>
+ * 
  */
 
 @Entity(value = "Experiment", noClassnameStored = true)
+@Indexes(@Index(fields=@Field(value="name"), options=@IndexOptions(unique=true)))
 public class Experiment implements ContainerParameter, TreeModelContainer {
-    @Id protected String name;
+    @Id protected ObjectId id;
+    protected String name;
     //@Transient ChoiceParameter choiceCond = new ChoiceParameter("test cond",new String[]{"1", "2", "3"}, "1");
     @Transient ChoiceParameter choiceCond = new BooleanParameter("test cond", true);
     ConditionalParameter cond = new ConditionalParameter(choiceCond);
     @Transient PluginParameter cond1 = new PluginParameter("thres1", Thresholder.class);
     @Transient PluginParameter cond2 = new PluginParameter("thres2", Thresholder.class);
-    SimpleListParameter structures;
+    SimpleListParameter structures= new SimpleListParameter("Structures", 1 , Structure.class);
+    
     @Transient ConfigurationTreeModel model;
     @Transient protected ArrayList<Parameter> children;
+    
     public Experiment(String name) {
         this.name=name;
-        structures = new SimpleListParameter("Structures",1, Structure.class);
         structures.insert(structures.createChildInstance("Channels"));
         structures.insert(structures.createChildInstance("Bacteries"));
         //cond.setAction("1", new Parameter[]{cond1});
@@ -72,6 +79,10 @@ public class Experiment implements ContainerParameter, TreeModelContainer {
     }
     
     public SimpleListParameter getStructures() {return structures;}
+    
+    public Structure getStructure(int structureIdx) {
+        return (Structure)structures.getChildAt(structureIdx);
+    }
     
     public String[] getStructuresAsString() {return structures.getChildrenString();}
     

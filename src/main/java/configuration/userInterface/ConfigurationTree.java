@@ -16,8 +16,8 @@
 package configuration.userInterface;
 
 import com.mongodb.MongoClient;
-import configuration.dataStructure.Experiment;
-import configuration.dataStructure.dao.ExperimentDAO;
+import dataStructure.configuration.Experiment;
+import dataStructure.configuration.ExperimentDAO;
 import configuration.parameters.ContainerParameter;
 import configuration.parameters.ListParameter;
 import configuration.parameters.ui.ListParameterUI;
@@ -39,6 +39,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.event.TreeModelEvent;
@@ -83,23 +84,21 @@ public class ConfigurationTree {
                         JPopupMenu menu = new JPopupMenu();
                         Object lastO = path.getLastPathComponent();
                         if (lastO instanceof Parameter) {
-                            if (lastO instanceof ListParameter) { // specific actions for ListParameters
-                                ListParameter lp = (ListParameter)lastO;
-                                ListParameterUI listUI = (ListParameterUI)lp.getUI();
-                                addToMenu(listUI.getDisplayComponent(), menu);
-                            } else if (path.getPathCount()>=2 && path.getPathComponent(path.getPathCount()-2) instanceof ListParameter) { // specific actions for children of ListParameters 
-                                ListParameter lp = (ListParameter)path.getPathComponent(path.getPathCount()-2);
-                                Parameter selectedP = (Parameter)lastO;
-                                ListParameterUI listUI = (ListParameterUI)lp.getUI();
-                                addToMenu(listUI.getChildDisplayComponent(selectedP), menu);
-                                menu.addSeparator();
-                            }
-                            Parameter p = (Parameter) path.getLastPathComponent();
+                            Parameter p = (Parameter) lastO;
                             ParameterUI ui = p.getUI();
                             if (ui!=null) {
                                 if (ui instanceof ChoiceParameterUI) ((ArmableUI)ui).refreshArming();
                                 addToMenu(ui.getDisplayComponent(), menu);
+                                menu.addSeparator();
                             }
+                            if (path.getPathCount()>=2 && path.getPathComponent(path.getPathCount()-2) instanceof ListParameter) { // specific actions for children of ListParameters 
+                            ListParameter lp = (ListParameter)path.getPathComponent(path.getPathCount()-2);
+                            ListParameterUI listUI = (ListParameterUI)lp.getUI();
+                            addToMenu(listUI.getChildDisplayComponent(p), menu);
+                                //menu.addSeparator();
+                            }
+                             
+                            
                         }
                         
                         menu.show(tree, pathBounds.x, pathBounds.y + pathBounds.height);
@@ -117,7 +116,8 @@ public class ConfigurationTree {
         morphia.mapPackage("configuration.dataStructure");
         morphia.mapPackage("configuration.parameters");
         ExperimentDAO dao = new ExperimentDAO(Experiment.class, mongo, morphia, "testMavenMongo");
-        return dao.get("test maven mongo");
+        
+        return dao.getExperiment();
     }
     
     public JScrollPane getUI() {
@@ -125,11 +125,13 @@ public class ConfigurationTree {
     }
     
     public static void addToMenu(Object[] UIElements, JPopupMenu menu) {
-        if (menu.getComponentCount()>0) menu.addSeparator();
+        //if (menu.getComponentCount()>0) menu.addSeparator();
         for (Object o : UIElements) {
             if (o instanceof Action) menu.add((Action)o);
             else if (o instanceof JMenuItem) menu.add((JMenuItem)o);
+            else if (o instanceof JSeparator) menu.addSeparator();
             else if (o instanceof Component) menu.add((Component)o);
+            
         }
     }
 }

@@ -38,16 +38,23 @@ import plugins.PluginFactory;
  * @param <T> class of plugin
  */
 @Embedded
-public class PluginParameter extends SimpleContainerParameter { //<T extends Plugin> // TODO generic quand supporté par morphia
-    @Transient private static HashMap<Class, ArrayList<String>> pluginNames=new HashMap<Class, ArrayList<String>>();
+public class PluginParameter extends SimpleContainerParameter implements Deactivatable { //<T extends Plugin> // TODO generic quand supporté par morphia
+    @Transient private static HashMap<Class<? extends Plugin>, ArrayList<String>> pluginNames=new HashMap<Class<? extends Plugin>, ArrayList<String>>();
     protected Parameter[] pluginParameters;
-    protected String pluginName;
-    protected Class pluginType;
+    protected String pluginName=NOPLUGIN;
+    protected Class<? extends Plugin> pluginType;
+    protected boolean activated=true;
+    @Transient private static String NOPLUGIN;
     
-    public PluginParameter(String name, Class pluginType) {
+    public PluginParameter(String name, Class<? extends Plugin> pluginType) {
         super(name);
         this.pluginType=pluginType;
         super.initChildren();
+    }
+    
+    @Override
+    protected void initChildList() {
+        if (pluginParameters!=null) super.initChildren(pluginParameters);
     }
     
     public ArrayList<String> getPluginNames() {
@@ -58,12 +65,17 @@ public class PluginParameter extends SimpleContainerParameter { //<T extends Plu
         return pluginName;
     }
     
+    public boolean isOnePluginSet() {
+        return (pluginName!=null && !NOPLUGIN.equals(pluginName));
+    }
+    
     public void setPlugin(String pluginName) {
+        if (NOPLUGIN.equals(pluginName)) throw new IllegalArgumentException("Plugin name can't be: "+NOPLUGIN);
         if (!pluginName.equals(this.pluginName)) {
             Plugin instance = PluginFactory.getPlugin(pluginType, pluginName);
             if (instance==null) {
                 Core.getLogger().log(Level.WARNING, "Couldn't find plugin: {0}", pluginName);
-                this.pluginName="no plugin selected";
+                this.pluginName=NOPLUGIN;
                 this.pluginParameters=null;
                 return;
             }
@@ -74,7 +86,9 @@ public class PluginParameter extends SimpleContainerParameter { //<T extends Plu
     }
     
     public Plugin getPlugin() {
+        if (!isOnePluginSet()) return null;
         Plugin instance = PluginFactory.getPlugin(pluginType, pluginName);
+        if (instance==null) return null;
         Parameter[] params = instance.getParameters();
         if (params.length==this.pluginParameters.length) {
             for (int i = 0; i<params.length; i++) params[i].setContentFrom(pluginParameters[i]);
@@ -84,6 +98,7 @@ public class PluginParameter extends SimpleContainerParameter { //<T extends Plu
         return instance;
     }
     
+    @Override
     public void setContentFrom(Parameter other) {
         if (other instanceof PluginParameter && ((PluginParameter)other).pluginType.equals(pluginType)) {
             PluginParameter otherPP = (PluginParameter) other;
@@ -96,7 +111,7 @@ public class PluginParameter extends SimpleContainerParameter { //<T extends Plu
                     for (int i = 0; i < pluginParameters.length; i++) {
                         pluginParameters[i] = otherPP.pluginParameters[i].duplicate();
                     }
-                    super.initChildren(pluginParameters);
+                    initChildList();
                 } else {
                     this.pluginParameters = null;
                 }
@@ -104,13 +119,14 @@ public class PluginParameter extends SimpleContainerParameter { //<T extends Plu
         } else throw new IllegalArgumentException("wrong parameter type");
     }
 
+    @Override
     public PluginParameter duplicate() {
         PluginParameter res = new PluginParameter(name, pluginType);
         res.setContentFrom(this);
         return res;
     }
     
-    private static synchronized ArrayList<String> getPluginNames(Class clazz) {
+    private static synchronized ArrayList<String> getPluginNames(Class<? extends Plugin> clazz) {
         ArrayList<String> res = pluginNames.get(clazz);
         if (res==null) {
             res=PluginFactory.getPluginNames(clazz);
@@ -127,12 +143,26 @@ public class PluginParameter extends SimpleContainerParameter { //<T extends Plu
     
     @Override
     public String toString() {
-        return name+ ": "+this.getPluginName();
+        String res = name+ ": "+this.getPluginName();
+        if (isActivated()) return res;
+        else return "<HTML><S>"+res+"<HTML></S>";
+    }
+    
+    // deactivatable interface
+    public boolean isActivated() {
+        return activated;
+    }
+
+    public void setActivated(boolean activated) {
+        this.activated=activated;
     }
     
     // morphia
-    PluginParameter(){}
-    @PostLoad void postLoad() {super.initChildren(pluginParameters);}
+    PluginParameter(){super();}
+
+    
+
+    
 
     
 }

@@ -1,4 +1,6 @@
 /*
+ * Copyright (C) 2015 jollion
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -19,16 +21,7 @@ package configuration.parameters;
  *
  * @author jollion
  */
-public interface ListParameter extends ContainerParameter { //<T extends Parameter>
-    public abstract Parameter createChildInstance();
-    /**
-     * 
-     * @param child to be inserted in the list
-     * @return the same instance of ListParameter
-     */
-    public ListParameter insert(Parameter child);
-    public void removeAllElements();
-    public int getUnMutableIndex();
-    public boolean isDeactivatable();
-    public void setActivatedAll(boolean activated);
+public interface Deactivatable {
+    public boolean isActivated();
+    public void setActivated(boolean activated);
 }

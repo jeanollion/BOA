@@ -17,7 +17,7 @@
  */
 package configuration.parameters;
 
-import configuration.dataStructure.Experiment;
+import dataStructure.configuration.Experiment;
 import configuration.parameters.ui.ParameterUI;
 import configuration.parameters.ui.StructureParameterUI;
 import org.mongodb.morphia.annotations.Transient;

@@ -4,6 +4,10 @@ import java.util.TreeMap;
 
 public abstract class ImageInteger extends Image implements ImageMask {
 
+    protected ImageInteger(String name, int sizeX, int sizeY, int sizeZ, int offsetX, int offsetY, int offsetZ, float scaleXY, float scaleZ) {
+        super(name, sizeX, sizeY, sizeZ, offsetX, offsetY, offsetZ, scaleXY, scaleZ);
+    }
+    
     protected ImageInteger(String name, int sizeX, int sizeY, int sizeZ) {
         super(name, sizeX, sizeY, sizeZ);
     }

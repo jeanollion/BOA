@@ -15,15 +15,18 @@
  */
 package configuration.parameters.ui;
 
+import configuration.parameters.Deactivatable;
 import configuration.parameters.ListParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.ParameterUtils;
 import configuration.parameters.SimpleParameter;
 import configuration.parameters.ui.ListParameterUI;
 import configuration.userInterface.ConfigurationTreeModel;
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.JMenuItem;
+import javax.swing.JSeparator;
 
 /**
  *
@@ -31,17 +34,20 @@ import javax.swing.JMenuItem;
  */
 public class SimpleListParameterUI implements ListParameterUI{
     ListParameter list;
-    JMenuItem[] actions;
+    Object[] actions;
     ConfigurationTreeModel model;
     static String[] actionNames=new String[]{"Add Element", "Remove All"};
     static String[] childActionNames=new String[]{"Add", "Remove", "Up", "Down"};
+    static String[] deactivatableNames=new String[]{"Deactivate All", "Activate All"};
+    static String[] childDeactivatableNames=new String[]{"Deactivate", "Activate"};
     
     public SimpleListParameterUI(ListParameter list_) {
         this.list = list_;
         this.model= ParameterUtils.getModel(list);
-        this.actions = new JMenuItem[2];
-        actions[0] = new JMenuItem(actionNames[0]);
-        actions[0].setAction(
+        this.actions = new Object[list.isDeactivatable()?5:2];
+        JMenuItem action = new JMenuItem(actionNames[0]);
+        actions[0] = action;
+        action.setAction(
             new AbstractAction(actionNames[0]) {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
@@ -50,8 +56,9 @@ public class SimpleListParameterUI implements ListParameterUI{
                 }
             }
         );
-        actions[1] = new JMenuItem(actionNames[1]);
-        actions[1].setAction(
+        action = new JMenuItem(actionNames[1]);
+        actions[1]=action;
+        action.setAction(
             new AbstractAction(actionNames[1]) {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
@@ -60,16 +67,41 @@ public class SimpleListParameterUI implements ListParameterUI{
                 }
             }
         );
+        if (list.isDeactivatable()) {
+            actions[2]=new JSeparator();
+            action = new JMenuItem(deactivatableNames[0]);
+            actions[3]=action;
+            action.setAction(
+                new AbstractAction(deactivatableNames[0]) {
+                    @Override
+                    public void actionPerformed(ActionEvent ae) {
+                        list.setActivatedAll(false);
+                        model.nodeStructureChanged(list);
+                    }
+                }
+            );
+            action = new JMenuItem(deactivatableNames[1]);
+            actions[4]=action;
+            action.setAction(
+                new AbstractAction(deactivatableNames[1]) {
+                    @Override
+                    public void actionPerformed(ActionEvent ae) {
+                        list.setActivatedAll(true);
+                        model.nodeStructureChanged(list);
+                    }
+                }
+            );
+        }
     }
-    public JMenuItem[] getDisplayComponent() {return actions;}
+    public Object[] getDisplayComponent() {return actions;}
     
-    public JMenuItem[] getChildDisplayComponent(final Parameter child) {
+    public Component[] getChildDisplayComponent(final Parameter child) {
         final int unMutableIdx = list.getUnMutableIndex();
         final int idx = list.getIndex(child);
         final boolean mutable = idx>unMutableIdx;
-        JMenuItem[] childActions = new JMenuItem[4];
+        Component[] childActions = new Component[list.isDeactivatable()?7:4];
         childActions[0] = new JMenuItem(childActionNames[0]);
-        childActions[0].setAction(
+        ((JMenuItem)childActions[0]).setAction(
             new AbstractAction(childActionNames[0]) {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
@@ -79,7 +111,7 @@ public class SimpleListParameterUI implements ListParameterUI{
             }
         );
         childActions[1] = new JMenuItem(childActionNames[1]);
-        childActions[1].setAction(
+        ((JMenuItem)childActions[1]).setAction(
             new AbstractAction(childActionNames[1]) {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
@@ -88,7 +120,7 @@ public class SimpleListParameterUI implements ListParameterUI{
             }
         );
         childActions[2] = new JMenuItem(childActionNames[2]);
-        childActions[2].setAction(
+        ((JMenuItem)childActions[2]).setAction(
             new AbstractAction(childActionNames[2]) {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
@@ -96,9 +128,8 @@ public class SimpleListParameterUI implements ListParameterUI{
                 }
             }
         );
-        
         childActions[3] = new JMenuItem(childActionNames[3]);
-        childActions[3].setAction(
+        ((JMenuItem)childActions[3]).setAction(
             new AbstractAction(childActionNames[3]) {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
@@ -106,6 +137,7 @@ public class SimpleListParameterUI implements ListParameterUI{
                 }
             }
         );
+        
         if (!mutable) {
             childActions[1].setEnabled(false);
             childActions[2].setEnabled(false);
@@ -114,6 +146,39 @@ public class SimpleListParameterUI implements ListParameterUI{
         if (idx==unMutableIdx+1) childActions[2].setEnabled(false);
         if (idx==0) childActions[2].setEnabled(false);
         if (idx==list.getChildCount()-1) childActions[3].setEnabled(false);
+        
+        if (list.isDeactivatable()) {
+            childActions[4]=new JSeparator();
+            childActions[5] = new JMenuItem(childActionNames[0]);
+            ((JMenuItem)childActions[5]).setAction(
+                    new AbstractAction(childDeactivatableNames[0]) {
+                        @Override
+                        public void actionPerformed(ActionEvent ae) {
+                            ((Deactivatable)child).setActivated(false);
+                            model.nodeChanged(child);
+                        }
+                    }
+            );
+            childActions[6] = new JMenuItem(childActionNames[1]);
+            ((JMenuItem)childActions[6]).setAction(
+                    new AbstractAction(childDeactivatableNames[1]) {
+                        @Override
+                        public void actionPerformed(ActionEvent ae) {
+                            ((Deactivatable)child).setActivated(true);
+                            model.nodeChanged(child);
+                        }
+                    }
+            );
+            if (((Deactivatable)child).isActivated()) childActions[6].setEnabled(false);
+            else childActions[5].setEnabled(false);
+            if (!mutable) {
+                childActions[5].setEnabled(false);
+                childActions[6].setEnabled(false);
+            }
+        }
+        
+        
+        
         return childActions;
     }
     

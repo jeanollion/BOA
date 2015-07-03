@@ -1,6 +1,6 @@
 package image;
 
-public class BlankMask extends Image implements ImageMask {
+public class BlankMask extends ImageInteger implements ImageMask {
 
     public BlankMask(String name, int sizeX, int sizeY, int sizeZ, int offsetX, int offsetY, int offsetZ, float scaleXY, float scaleZ) {
         super(name, sizeX, sizeY, sizeZ, offsetX, offsetY, offsetZ, scaleXY, scaleZ);
@@ -76,5 +76,22 @@ public class BlankMask extends Image implements ImageMask {
     public BlankMask crop(BoundingBox bounds) {
         return (BlankMask) cropI(bounds);
     }
+    
+    // ImageInteger metods
+    @Override
+    public int getPixelInt(int x, int y, int z) {
+        return 1;
+    }
+
+    @Override
+    public int getPixelInt(int xy, int z) {
+        return 1;
+    }
+
+    @Override
+    public void setPixel(int x, int y, int z, int value) {}
+
+    @Override
+    public void setPixel(int xy, int z, int value) {}
     
 }

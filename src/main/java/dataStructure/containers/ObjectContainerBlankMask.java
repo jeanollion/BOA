@@ -15,19 +15,42 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugins.plugins.thresholders;
+package dataStructure.containers;
 
-import configuration.parameters.Parameter;
-import configuration.parameters.PluginParameter;
-import plugins.PreFilter;
-import plugins.Thresholder;
+import dataStructure.objects.Object3D;
+import image.BlankMask;
+import image.BoundingBox;
+import image.Image;
+import image.ImageIOCoordinates;
+import image.ImageProperties;
+import java.io.File;
+import org.mongodb.morphia.annotations.Embedded;
 
 /**
  *
  * @author jollion
  */
-public class DummyThresholder1 implements Thresholder {
-    public Parameter[] getParameters() {
-        return new Parameter[]{new PluginParameter("PreProcessing", PreFilter.class)};
+
+@Embedded
+public class ObjectContainerBlankMask implements ObjectContainer {
+    //String filePath;
+    float scaleXY, scaleZ;
+    BoundingBox bounds;
+    
+    public ObjectContainerBlankMask(BoundingBox bounds) {
+        this.bounds=bounds;
     }
+    
+    public BlankMask getImage() {
+        return bounds.getImageProperties("", scaleXY, scaleZ);
+    }
+    
+    public Object3D getObject() {
+        return new Object3D(getImage());
+    }
+    
+    //morphia
+    private ObjectContainerBlankMask(){}
+
+    
 }

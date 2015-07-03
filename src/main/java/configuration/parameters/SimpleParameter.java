@@ -15,7 +15,7 @@
  */
 package configuration.parameters;
 
-import configuration.dataStructure.Experiment;
+import dataStructure.configuration.Experiment;
 import configuration.userInterface.ConfigurationTreeModel;
 import configuration.userInterface.TreeModelContainer;
 import java.util.ArrayList;

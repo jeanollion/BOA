@@ -18,10 +18,12 @@ package configuration.userInterface;
 import configuration.parameters.ContainerParameter;
 import configuration.parameters.ListParameter;
 import configuration.parameters.Parameter;
+import java.util.ArrayList;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 
 /**
  *
@@ -44,8 +46,12 @@ public class ConfigurationTreeModel extends DefaultTreeModel {
     }
     public void insertNodeInto(Parameter newChild, ListParameter parent) {
         this.insertNodeInto(newChild, parent, parent.getChildCount());
-        if (tree!=null) tree.updateUI();
+        if (tree!=null) {
+            if (parent.getChildCount()==1) tree.expandPath(getPath(parent));
+            tree.updateUI();
+        }
     }
+    
     @Override
     public void removeNodeFromParent(MutableTreeNode node) {
         super.removeNodeFromParent(node);
@@ -70,5 +76,17 @@ public class ConfigurationTreeModel extends DefaultTreeModel {
         if (tree!=null) tree.updateUI();
     }
 
-    
+    public static TreePath getPath(TreeNode treeNode) {
+        ArrayList<Object> nodes = new ArrayList<Object>();
+        if (treeNode != null) {
+            nodes.add(treeNode);
+            treeNode = treeNode.getParent();
+            while (treeNode != null) {
+                nodes.add(0, treeNode);
+                treeNode = treeNode.getParent();
+            }
+        }
+
+        return nodes.isEmpty() ? null : new TreePath(nodes.toArray());
+    }
 }

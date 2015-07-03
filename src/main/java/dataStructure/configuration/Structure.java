@@ -14,7 +14,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package configuration.dataStructure;
+package dataStructure.configuration;
 
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.Parameter;
@@ -30,16 +30,25 @@ import org.mongodb.morphia.annotations.PostLoad;
  */
 @Embedded
 public class Structure extends SimpleContainerParameter {
-    ChoiceParameter choice = new ChoiceParameter("Structure Choice", new String[]{"structure choice 1", "structure choice 2"}, "structure choice 1");
     StructureParameterParent parentStructure =  new StructureParameterParent("Parent Structure", -1, 0);;
+    ProcessingChain processingChain = new ProcessingChain("Processing Chain");
     
     public Structure(String name) {
         super(name);
         initChildList();
     }
     
-    private void initChildList() {
-        super.initChildren(choice, parentStructure);
+    public ProcessingChain getProcessingChain() {
+        return processingChain;
+    }
+    
+    public int getParentStructure() {
+        return parentStructure.getSelectedStructure();
+    }
+    
+    @Override
+    protected void initChildList() {
+        super.initChildren(parentStructure, processingChain);
     }
     
     @Override 
@@ -47,15 +56,8 @@ public class Structure extends SimpleContainerParameter {
         super.setParent(newParent);
         parentStructure.setMaxStructure(parent.getIndex(this));
     }
-    
-    public void setContentFrom(Parameter other) {
-        if (other instanceof Structure) {
-            Structure otherP = (Structure) other;
-            this.choice.setContentFrom(otherP.choice);
-            this.parentStructure.setContentFrom(otherP.parentStructure);
-        } else throw new IllegalArgumentException("wrong parameter type");
-    }
 
+    @Override
     public Structure duplicate() {
         Structure res=new Structure(name);
         res.setContentFrom(this);
@@ -63,8 +65,8 @@ public class Structure extends SimpleContainerParameter {
     }
     
     // morphia
-    public Structure(){super(); initChildList();}
-    @PostLoad void postLoad() {initChildList();}
+    public Structure(){super(); initChildList();} // mettre dans la clase abstraite SimpleContainerParameter?
+    
 
     
 }

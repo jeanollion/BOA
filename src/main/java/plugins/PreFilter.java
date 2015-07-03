@@ -15,20 +15,15 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package configuration.dataStructure.dao;
+package plugins;
 
-import com.mongodb.MongoClient;
-import configuration.dataStructure.Experiment;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.dao.BasicDAO;
+import dataStructure.objects.StructureObjectPreFilter;
+import image.Image;
 
 /**
  *
  * @author jollion
  */
-public class ExperimentDAO extends BasicDAO<Experiment, String>{
-
-    public ExperimentDAO(Class<Experiment> entityClass, MongoClient mongoClient, Morphia morphia, String dbName) {
-        super(entityClass, mongoClient, morphia, dbName);
-    }
+public interface PreFilter extends Plugin {
+    public Image runPreFilter(Image input, StructureObjectPreFilter structureObject);
 }

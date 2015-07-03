@@ -40,8 +40,12 @@ public class SimpleListParameter implements ListParameter {
     protected ArrayList<Parameter> children;
     protected int unMutableIndex;
     protected Class<? extends Parameter> childrenClass;
+    protected Parameter childInstance;
+    
     @Transient protected ListParameterUI ui;
     @Transient protected ContainerParameter parent;
+    
+    
     /**
      * 
      * @param name : name of the parameter
@@ -64,19 +68,52 @@ public class SimpleListParameter implements ListParameter {
         this.unMutableIndex=-1;
     }
     
+    public SimpleListParameter(String name, int unMutableIndex, Parameter childInstance) { // TODO generic quand supporté par morphia
+        this.childInstance=childInstance;
+        this.name = name;
+        children = new ArrayList<Parameter>(10);
+        this.unMutableIndex=unMutableIndex;
+        this.childrenClass=childInstance.getClass();
+    }
+    
+    public SimpleListParameter(String name, Parameter childInstance) { // TODO generic quand supporté par morphia
+        this.childInstance=childInstance;
+        this.name = name;
+        children = new ArrayList<Parameter>(10);
+        this.unMutableIndex=-1;
+        this.childrenClass=childInstance.getClass();
+    }
+    
     @Override
     public Parameter createChildInstance() {
-        try {
-            Parameter instance = childrenClass.newInstance();
-            instance.setName("new "+childrenClass.getSimpleName());
-            return instance;
-        } catch (InstantiationException ex) {
-            Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
-        } catch (IllegalAccessException ex) {
-            Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
+        if (childInstance == null && childrenClass != null) {
+            try {
+                Parameter instance = childrenClass.newInstance();
+                instance.setName("new " + childrenClass.getSimpleName());
+                return instance;
+            } catch (InstantiationException ex) {
+                Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
+            } catch (IllegalAccessException ex) {
+                Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
+            }
+        } else if (childInstance != null) {
+            return childInstance.duplicate();
         }
         return null;
     }
+    
+    @Override
+    public boolean isDeactivatable() {
+        return Deactivatable.class.isAssignableFrom(this.childrenClass);
+    }
+    
+    @Override
+    public void setActivatedAll(boolean activated) {
+        if (isDeactivatable()) {
+            for (Parameter p: children) ((Deactivatable)p).setActivated(activated);
+        }
+    }
+    
     
     public Parameter createChildInstance(String name) {
         Parameter instance = createChildInstance();
@@ -96,6 +133,14 @@ public class SimpleListParameter implements ListParameter {
         for (Parameter s : children) res[i++] = s.toString();
         return res;
     }
+    
+    public ArrayList<Parameter> getChildren() { // todo generic...
+        return children;
+    }
+    
+    /*public Parameter[] getChildren() { // todo generic...
+        return children.toArray(new Parameter[children.size()]);
+    }*/
     
     @Override
     public String getName(){
@@ -157,9 +202,10 @@ public class SimpleListParameter implements ListParameter {
     }
     
     @Override
-    public void insert(Parameter child) {
+    public SimpleListParameter insert(Parameter child) {
         children.add((Parameter)child);
         child.setParent(this);
+        return this;
     }
     
 
@@ -187,7 +233,8 @@ public class SimpleListParameter implements ListParameter {
     
     @Override 
     public void removeAllElements() {
-        children=new ArrayList<Parameter>(children.size());
+        if (this.unMutableIndex<0) children=new ArrayList<Parameter>(children.size());
+        else for (int i = children.size()-1;i>unMutableIndex;--i) children.remove(i);
     }
 
     @Override

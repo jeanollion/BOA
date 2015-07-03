@@ -18,8 +18,9 @@
 package morphia;
 
 import com.mongodb.MongoClient;
-import configuration.dataStructure.Experiment;
-import configuration.dataStructure.dao.ExperimentDAO;
+import dataStructure.configuration.Experiment;
+import dataStructure.configuration.ExperimentDAO;
+import org.bson.types.ObjectId;
 import org.junit.After;
 import org.junit.AfterClass;
 import static org.junit.Assert.assertEquals;
@@ -89,7 +90,7 @@ public class MorphiaTest {
     @org.junit.Test
     public void testMorphiaExperiment() {
         ExperimentDAO dao = new ExperimentDAO(Experiment.class, mongo, morphia, "testMavenMongo");
-        for (String id : dao.findIds()) dao.deleteById(id);
+        for (ObjectId id : dao.findIds()) dao.deleteById(id);
         Experiment xp = new Experiment("test maven mongo");
         dao.save(xp);
         xp = new Experiment("test maven mongo2");
@@ -103,7 +104,7 @@ public class MorphiaTest {
     @org.junit.Test
     public void testMorphiaExperimentId() {
         ExperimentDAO dao = new ExperimentDAO(Experiment.class, mongo, morphia, "testMavenMongo");
-        for (String id : dao.findIds()) dao.deleteById(id);
+        for (ObjectId id : dao.findIds()) dao.deleteById(id);
         Experiment xp = new Experiment("test maven mongo");
         dao.save(xp);
         xp = new Experiment("test maven mongo");

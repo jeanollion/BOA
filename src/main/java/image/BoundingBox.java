@@ -17,14 +17,25 @@
  */
 package image;
 
+import dataStructure.objects.Voxel3D;
+import org.mongodb.morphia.annotations.Embedded;
+
 /**
  *
  * @author jollion
  */
+@Embedded
 public class BoundingBox {
 
     int xMin, xMax, yMin, yMax, zMin, zMax, count;
-    public BoundingBox(){}
+    public BoundingBox(){
+        xMin=Integer.MAX_VALUE;
+        yMin=Integer.MAX_VALUE;
+        zMin=Integer.MAX_VALUE;
+        xMin=Integer.MIN_VALUE;
+        yMin=Integer.MIN_VALUE;
+        zMin=Integer.MIN_VALUE;
+    }
     public BoundingBox(int xMin, int xMax, int yMin, int yMax, int zMin, int zMax) {
         this.xMin = xMin;
         this.xMax = xMax;
@@ -97,6 +108,13 @@ public class BoundingBox {
             zMax = z;
         }
     }
+    
+    public void expand(Voxel3D v) {
+        expandX(v.x);
+        expandY(v.y);
+        expandZ(v.z);
+    }
+    
     public void addToCounter() {
         count++;
     }
@@ -214,7 +232,7 @@ public class BoundingBox {
         return hash;
     }
     
-    public ImageProperties getImageProperties(String name, float scaleXY, float scaleZ) {
+    public BlankMask getImageProperties(String name, float scaleXY, float scaleZ) {
         return new BlankMask(name, this, scaleXY, scaleZ);
     }
     
@@ -224,5 +242,10 @@ public class BoundingBox {
     
     public BoundingBox duplicate() {
         return new BoundingBox(xMin, xMax, yMin, yMax, zMin, zMax);
+    }
+    
+    public BoundingBox addOffset(BoundingBox other) {
+        this.translate(other.xMin, other.yMin, other.zMin);
+        return this;
     }
 }

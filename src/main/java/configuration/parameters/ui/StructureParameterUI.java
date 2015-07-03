@@ -15,10 +15,12 @@
  */
 package configuration.parameters.ui;
 
-import configuration.dataStructure.Experiment;
+import dataStructure.configuration.Experiment;
 import configuration.parameters.ChoiceParameter;
+import configuration.parameters.ParameterUtils;
 import configuration.parameters.SimpleParameter;
 import configuration.parameters.StructureParameter;
+import configuration.userInterface.ConfigurationTreeModel;
 import java.awt.event.ActionEvent;
 import java.util.Arrays;
 import javax.swing.AbstractAction;
@@ -28,11 +30,13 @@ import javax.swing.JMenuItem;
  *
  * @author jollion
  */
-public class StructureParameterUI implements ParameterUI {
+public class StructureParameterUI implements ArmableUI {
     StructureParameter structure;
+    ConfigurationTreeModel model;
     JMenuItem[] actions;
     public StructureParameterUI(StructureParameter structure_) {
         this.structure = structure_;
+        this.model= ParameterUtils.getModel(structure);
         final String[] choices = structure.getStructureNames();
         this.actions = new JMenuItem[choices.length];
         for (int i = 0; i < actions.length; i++) {
@@ -42,6 +46,7 @@ public class StructureParameterUI implements ParameterUI {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
                         structure.setSelectedStructure(getIndex(choices, ae.getActionCommand()));
+                        if (model!=null) model.nodeChanged(structure);
                     }
                 }
             );

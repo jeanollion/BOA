@@ -23,6 +23,7 @@ package configuration.parameters;
  */
 public class StructureParameterParent extends StructureParameter {
     int maxStructure;
+    
     public StructureParameterParent(String name, int selectedStructure, int maxStructure) {
         super(name, selectedStructure, true);
         this.maxStructure=maxStructure;
@@ -42,7 +43,7 @@ public class StructureParameterParent extends StructureParameter {
         }
         if (allowNoSelection) {
             String[] res = new String[maxStructure+1];
-            res[0] = "no selection";
+            res[0] = "root";
             System.arraycopy(choices, 0, res, 1, maxStructure);
             return res;
         } else {

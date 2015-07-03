@@ -15,33 +15,16 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package configuration.dataStructure;
+package plugins;
 
+import dataStructure.objects.StructureObjectProcessing;
 import image.Image;
-import image.ImageReader;
-import java.io.File;
-import org.mongodb.morphia.annotations.Embedded;
+import image.ImageInteger;
 
 /**
  *
  * @author jollion
  */
-
-@Embedded
-public class ImageContainerReal extends ImageContainer {
-    String imageName;
-
-    public ImageContainerReal(String fileName, Image image) {
-        super(fileName, image.getScaleXY(), image.getScaleZ(), image.getOffsetX(), image.getOffsetY(), image.getOffsetZ());
-        this.imageName=fileName;
-    }
-    
-    public Image getImage(String folderPath) {
-        Image image = ImageReader.openChannel(folderPath+File.separator+imageName);
-        image.setOffset(offsetX, offsetY, offsetZ);
-        image.setCalibration(scaleXY, scaleZ);
-        return image;
-    }
+public interface Segmenter extends Plugin {
+    public ImageInteger runSegmenter(Image input, StructureObjectProcessing structureObject);
 }
-
-

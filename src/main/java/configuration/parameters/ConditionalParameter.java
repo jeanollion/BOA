@@ -51,6 +51,7 @@ public class ConditionalParameter extends SimpleContainerParameter {
         if (actionValue.equals(action.getValue())) setActionValue(action.getValue());
     }
 
+    @Override
     public void setContentFrom(Parameter other) {
         if (other instanceof ConditionalParameter) {
             ConditionalParameter otherC = (ConditionalParameter)other;
@@ -59,7 +60,7 @@ public class ConditionalParameter extends SimpleContainerParameter {
             } else {
                 action.setValue(otherC.getActionableParameter().getValue());
                 currentParameters=ParameterUtils.duplicateArray(otherC.currentParameters);
-                initChildren();
+                initChildList();
             }
             action.setContentFrom(otherC.action);
         } else throw new IllegalArgumentException("wrong parameter type");
@@ -71,9 +72,10 @@ public class ConditionalParameter extends SimpleContainerParameter {
         if (actionValue==null) return;
         currentParameters=parameters.get(actionValue);
         if (!action.getValue().equals(actionValue)) this.action.setValue(actionValue); // avoid loop
-        initChildren();
+        initChildList();
     }
 
+    @Override
     public Parameter duplicate() {
         ConditionalParameter cond = new ConditionalParameter((ActionableParameter)action.duplicate());
         for (Entry<Object, Parameter[]> e : this.parameters.entrySet()) cond.setAction(e.getKey(), e.getValue());
@@ -98,7 +100,8 @@ public class ConditionalParameter extends SimpleContainerParameter {
         return action.getUI();
     }
     
-    protected void initChildren() {
+    @Override
+    protected void initChildList() {
         if (this.currentParameters==null) children = new ArrayList<Parameter>(0);
         else children=new ArrayList<Parameter>(Arrays.asList(currentParameters));
         for (Parameter p : children) p.setParent(this);
@@ -106,5 +109,4 @@ public class ConditionalParameter extends SimpleContainerParameter {
     
     // morphia
     ConditionalParameter(){super();}
-    @PostLoad void postLoad() {initChildren();}
 }

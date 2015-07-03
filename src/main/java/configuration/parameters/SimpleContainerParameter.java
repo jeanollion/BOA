@@ -23,6 +23,7 @@ import java.util.Enumeration;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import org.mongodb.morphia.annotations.Embedded;
+import org.mongodb.morphia.annotations.PostLoad;
 import org.mongodb.morphia.annotations.Transient;
 
 /**
@@ -34,7 +35,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     protected String name;
     @Transient protected ContainerParameter parent;
     @Transient protected ArrayList<Parameter> children;
-    
+
     protected SimpleContainerParameter(){}
     
     public SimpleContainerParameter(String name, Parameter... parameters) {
@@ -49,6 +50,18 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
             children = new ArrayList<Parameter>(parameters.length);
             children.addAll(Arrays.asList(parameters));
             for (Parameter p : parameters) p.setParent(this);
+        }
+    }
+    
+    protected abstract void initChildList();
+    
+    @Override
+    public void setContentFrom(Parameter other) {
+        if (other instanceof SimpleContainerParameter) {
+            SimpleContainerParameter otherP = (SimpleContainerParameter) other;
+            for (int i = 0; i<children.size(); i++) children.get(i).setContentFrom((Parameter)otherP.getChildAt(i));
+        } else {
+            throw new IllegalArgumentException("wrong parameter type");
         }
     }
     
@@ -143,5 +156,8 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     public Enumeration children() {
         return Collections.enumeration(children);
     }
+    
+    // morphia
+    @PostLoad void postLoad() {initChildList();}
     
 }

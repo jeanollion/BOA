@@ -17,13 +17,17 @@
  */
 package image;
 
+import org.mongodb.morphia.annotations.Embedded;
+import org.mongodb.morphia.annotations.Transient;
+
 /**
  *
  * @author jollion
  */
+@Embedded
 public class ImageIOCoordinates {
     int serie, channel, timePoint;
-    BoundingBox bounds;
+    @Transient BoundingBox bounds;
 
     public ImageIOCoordinates(int serie, int channel, int timePoint) {
         this.serie = serie;
@@ -59,4 +63,13 @@ public class ImageIOCoordinates {
     public BoundingBox getBounds() {
         return bounds;
     }
+    
+    public void setBounds(BoundingBox bounds) {
+        this.bounds=bounds;
+    }
+    
+    public ImageIOCoordinates duplicate() {
+        return new ImageIOCoordinates(serie, channel, timePoint, (bounds!=null)?bounds.duplicate():null);
+    }
+    
 }
