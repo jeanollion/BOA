@@ -15,7 +15,9 @@
  */
 package configuration.parameters.ui;
 
+import configuration.parameters.ActionableParameter;
 import configuration.parameters.ChoiceParameter;
+import configuration.parameters.ChoosableParameter;
 import configuration.parameters.ConditionalParameter;
 import configuration.parameters.ParameterUtils;
 import configuration.userInterface.ConfigurationTreeModel;
@@ -29,16 +31,26 @@ import javax.swing.JMenuItem;
  * @author jollion
  */
 public class ChoiceParameterUI implements ArmableUI {
-    ChoiceParameter choice;
+    ChoosableParameter choice;
     ConditionalParameter cond;
     ConfigurationTreeModel model;
     JMenuItem[] actions;
-    public ChoiceParameterUI(ChoiceParameter choice_) {
+    int inc;
+    public ChoiceParameterUI(ChoosableParameter choice_) {
         this.choice = choice_;
-        cond = choice.getConditionalParameter();
+        if (choice.isAllowNoSelection()) inc=1;
+        else inc=0;
+        if (choice instanceof ActionableParameter) cond = ((ActionableParameter)choice).getConditionalParameter();
         if (cond!=null) this.model= ParameterUtils.getModel(cond);
         else this.model= ParameterUtils.getModel(choice);
-        final String[] choices = choice.getChoices();
+        final String[] choices;
+        if (choice.isAllowNoSelection()) {
+            String[] c = choice.getChoiceList();
+            String[] res = new String[c.length+1];
+            res[0] = "no selection";
+            System.arraycopy(c, 0, res, 1, c.length);
+            choices=res;
+        } else choices=choice.getChoiceList();
         this.actions = new JMenuItem[choices.length];
         for (int i = 0; i < actions.length; i++) {
             actions[i] = new JMenuItem(choices[i]);
@@ -46,6 +58,7 @@ public class ChoiceParameterUI implements ArmableUI {
                 new AbstractAction(choices[i]) {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
+                        //if (ae.getActionCommand().equals("no selection"))
                         choice.setSelectedItem(ae.getActionCommand());
                         if (cond!=null) model.nodeStructureChanged(cond);
                         else if (model!=null) model.nodeChanged(choice);
@@ -59,7 +72,8 @@ public class ChoiceParameterUI implements ArmableUI {
     public void refreshArming() {
         unArm();
         int sel = choice.getSelectedIndex();
-        if (sel>=0) actions[sel].setArmed(true);
+        if (sel>=0) actions[sel+inc].setArmed(true);
+        if (inc>0 && sel<0) actions[0].setArmed(true);
     }
     
     public void unArm() {

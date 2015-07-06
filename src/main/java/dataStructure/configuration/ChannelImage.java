@@ -17,25 +17,39 @@
  */
 package dataStructure.configuration;
 
-import com.mongodb.MongoClient;
-import dataStructure.configuration.Experiment;
-import org.bson.types.ObjectId;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.dao.BasicDAO;
-import org.mongodb.morphia.query.Query;
+import configuration.parameters.Parameter;
+import configuration.parameters.SimpleContainerParameter;
+import configuration.parameters.ui.NameEditorUI;
+import configuration.parameters.ui.ParameterUI;
 
 /**
  *
  * @author jollion
  */
-public class ExperimentDAO extends BasicDAO<Experiment, ObjectId>{
+public class ChannelImage extends SimpleContainerParameter {
+    NameEditorUI ui;
+    
+    public ChannelImage(String name) {
+        super(name);
+    }
+    
+    @Override
+    protected void initChildList() {
+        
+    }
 
-    public ExperimentDAO(Class<Experiment> entityClass, MongoClient mongoClient, Morphia morphia, String dbName) {
-        super(entityClass, mongoClient, morphia, dbName);
-        this.ensureIndexes();
+    public Parameter duplicate() {
+        ChannelImage dup = new ChannelImage(name);
+        dup.setContentFrom(this);
+        return dup;
     }
-    public Experiment getExperiment() {
-        Query<Experiment> query = this.getDatastore().createQuery(this.getEntityClass());
-        return query.get();
+    
+    @Override
+    public ParameterUI getUI() {
+        if (ui==null) ui=new NameEditorUI(this, false);
+        return ui;
     }
+    
+    // morphia
+    public ChannelImage(){super(); initChildList();} // mettre dans la clase abstraite SimpleContainerParameter?
 }

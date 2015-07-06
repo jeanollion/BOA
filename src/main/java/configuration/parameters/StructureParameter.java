@@ -17,19 +17,20 @@
  */
 package configuration.parameters;
 
+import configuration.parameters.ui.ChoiceParameterUI;
 import dataStructure.configuration.Experiment;
 import configuration.parameters.ui.ParameterUI;
-import configuration.parameters.ui.StructureParameterUI;
 import org.mongodb.morphia.annotations.Transient;
+import utils.Utils;
 
 /**
  *
  * @author jollion
  */
-public class StructureParameter extends SimpleParameter {
-    int selectedStructure;
-    boolean allowNoSelection;
-    @Transient private Experiment xp;
+public class StructureParameter extends SimpleParameter implements ChoosableParameter {
+    protected int selectedStructure;
+    protected boolean allowNoSelection;
+    @Transient protected Experiment xp;
     
     public StructureParameter(String name, int selectedStructure, boolean allowNoSelection) {
         super(name);
@@ -48,7 +49,7 @@ public class StructureParameter extends SimpleParameter {
     public void setContentFrom(Parameter other) {
         if (other instanceof StructureParameter) {
             StructureParameter otherP = (StructureParameter) other;
-            this.setSelectedStructure(otherP.selectedStructure);
+            this.setSelectedIndex(otherP.selectedStructure);
         } else throw new IllegalArgumentException("wrong parameter type");
     }
 
@@ -56,7 +57,7 @@ public class StructureParameter extends SimpleParameter {
         return new StructureParameter(name, selectedStructure, allowNoSelection);
     }
     
-    public int getSelectedStructure() {
+    public int getSelectedIndex() {
         return selectedStructure;
     }
 
@@ -69,41 +70,48 @@ public class StructureParameter extends SimpleParameter {
         return xp;
     }
     
-    public String[] getStructureNames() {
+    
+    
+    @Override 
+    public String toString(){
+        if (selectedStructure>=0) return name+": "+getChoiceList()[selectedStructure];
+        else return name+": no selected structure";
+    }
+    
+    public ParameterUI getUI() {
+        return new ChoiceParameterUI(this);
+    }
+
+    public void setSelectedIndex(int selectedStructure) {
+        if (allowNoSelection) {
+            if (selectedStructure>=0) this.selectedStructure = selectedStructure;
+            else this.selectedStructure=-1;
+        }
+        else {
+            if (selectedStructure<0) this.selectedStructure=0;
+            else this.selectedStructure = selectedStructure;
+        }
+    }
+    
+    // choosable parameter
+    public void setSelectedItem(String item) {
+        setSelectedIndex(Utils.getIndex(this.getChoiceList(), item));
+    }
+    
+    public String[] getChoiceList() {
         String[] choices;
         if (getXP()!=null) {
             choices=getXP().getStructuresAsString();
         } else {
             choices = new String[]{"error"}; //no experiment in the tree, make a static method to get experiment...
         }
-        if (allowNoSelection) {
-            String[] res = new String[choices.length+1];
-            res[0] = "no selection";
-            System.arraycopy(choices, 0, res, 1, choices.length);
-            return res;
-        } else return choices;
+        return choices;
     }
     
-    @Override 
-    public String toString(){
-        if (allowNoSelection) return name+": "+getStructureNames()[selectedStructure+1];
-        else return name+": "+getStructureNames()[selectedStructure];
-    }
-    
-    public ParameterUI getUI() {
-        return new StructureParameterUI(this);
-    }
-
-    public void setSelectedStructure(int selectedStructure) {
-        if (allowNoSelection) {
-            if (selectedStructure>=0) this.selectedStructure = selectedStructure-1;
-            else this.selectedStructure=-1;
-        }
-        else this.selectedStructure = selectedStructure;
-    }
 
     // morphia
     protected StructureParameter(){super();}
 
     
+
 }

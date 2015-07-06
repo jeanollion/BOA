@@ -19,6 +19,8 @@ import configuration.parameters.BooleanParameter;
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.ConditionalParameter;
 import configuration.parameters.ContainerParameter;
+import configuration.parameters.FileChooser;
+import configuration.parameters.FileChooser.FileChooserOption;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
@@ -57,25 +59,55 @@ import plugins.Thresholder;
 public class Experiment implements ContainerParameter, TreeModelContainer {
     @Id protected ObjectId id;
     protected String name;
-    //@Transient ChoiceParameter choiceCond = new ChoiceParameter("test cond",new String[]{"1", "2", "3"}, "1");
-    @Transient ChoiceParameter choiceCond = new BooleanParameter("test cond", true);
+    protected FileChooser imagePath = new FileChooser("Image Path", FileChooserOption.DIRECTORIES_ONLY);
+    @Transient ChoiceParameter choiceCond = new ChoiceParameter("test cond", new String[]{"true", "false2"}, "false2", true);
     ConditionalParameter cond = new ConditionalParameter(choiceCond);
     @Transient PluginParameter cond1 = new PluginParameter("thres1", Thresholder.class);
     @Transient PluginParameter cond2 = new PluginParameter("thres2", Thresholder.class);
-    SimpleListParameter structures= new SimpleListParameter("Structures", 1 , Structure.class);
+    SimpleListParameter structures= new SimpleListParameter("Structures", -1 , Structure.class);
+    SimpleListParameter channelImages= new SimpleListParameter("Channel Images", -1 , ChannelImage.class);
     
     @Transient ConfigurationTreeModel model;
     @Transient protected ArrayList<Parameter> children;
     
     public Experiment(String name) {
         this.name=name;
-        structures.insert(structures.createChildInstance("Channels"));
-        structures.insert(structures.createChildInstance("Bacteries"));
+        Structure channels = new Structure("Channels", -1);
+        structures.insert(channels);
+        Structure bacteries = new Structure("Bacteries", 0);
+        structures.insert(bacteries);
         //cond.setAction("1", new Parameter[]{cond1});
         //cond.setAction("2", new Parameter[]{cond2});
-        cond.setAction(true, new Parameter[]{cond1});
-        cond.setAction(false, new Parameter[]{cond2});
+        cond.setAction("true", new Parameter[]{cond1});
+        cond.setAction("false", new Parameter[]{cond2});
         initChildren();
+    }
+    
+    public Experiment(String name, Structure... defaultStructures) {
+        this.name=name;
+        for (Structure s : defaultStructures) structures.insert(s);
+        structures.setUnmutableIndex(defaultStructures.length-1);
+        initChildren();
+    }
+    
+    protected void initChildren() {
+        children = new ArrayList<Parameter>(2);
+        children.add(channelImages);
+        children.add(structures);
+        children.add(cond);
+        children.add(imagePath);
+        // add other parameters here ...
+        for (Parameter p : children) p.setParent(this);
+    }
+    
+    public String getOutputImagePath() {
+        return imagePath.getFirstSelectedFilePath();
+    }
+    
+    public int[] getStructureToChannelCorrespondance() {
+        int[] res = new int[structures.getChildCount()];
+        for (int i = 0; i<res.length; i++) res[i] = getStructure(i).getChannelImage();
+        return res;
     }
     
     public SimpleListParameter getStructures() {return structures;}
@@ -84,7 +116,73 @@ public class Experiment implements ContainerParameter, TreeModelContainer {
         return (Structure)structures.getChildAt(structureIdx);
     }
     
+    public int getStructureNB() {
+        return structures.getChildCount();
+    }
+    
+    public int getChannelImageNB() {
+        return channelImages.getChildCount();
+    }
+    
     public String[] getStructuresAsString() {return structures.getChildrenString();}
+    
+    public String[] getChannelImagesAsString() {return channelImages.getChildrenString();}
+    
+    /**
+     * 
+     * @param structureIdx
+     * @return the number of parent before the root (0 if the parent is the root)
+     */
+    public int getHierachicalOrder(int structureIdx) {
+        int order=0;
+        int p = getStructure(structureIdx).getParentStructure();
+        while(p>=0) {
+            p=getStructure(p).getParentStructure();
+            ++order;
+        }
+        return order;
+    }
+    /**
+     * 
+     * @param structureIdx
+     * @return an array of structure index, starting from the first structure after the root structure, ending at the structure index (included)
+     */
+    public int[] getPathToRoot(int structureIdx) {
+        ArrayList<Integer> pathToRoot = new ArrayList<Integer>(this.getStructureNB());
+        int p = getStructure(structureIdx).getParentStructure();
+        pathToRoot.add(structureIdx);
+        while(p>=0) {
+            pathToRoot.add(p);
+            p=getStructure(p).getParentStructure();
+        }
+        int[] res = new int[pathToRoot.size()];
+        int idx = res.length-1;
+        for (int s : pathToRoot) res[idx--] = s;
+        return res;
+    }
+    
+    /**
+     * 
+     * @return a matrix of structure indexes. the fisrt dimension represent the hierachical orders, the second dimension the structures at the given hierarchical order, sorted by the index of the structure
+     */
+    public int[][] getStructuresInHierarchicalOrder() {
+        int[] orders = new int[getStructureNB()];
+        int maxOrder=0;
+        for (int i = 0; i<orders.length;++i) {
+            orders[i]=getHierachicalOrder(i);
+            if (orders[i]>maxOrder) maxOrder=orders[i];
+        }
+        int[] resCount = new int[maxOrder+1];
+        for (int i = 0; i<orders.length;++i) resCount[orders[i]]++;
+        int[][] res = new int[maxOrder+1][];
+        int[] idx = new int[maxOrder+1];
+        for (int i = 0; i<resCount.length;++i) res[i]=new int[resCount[i]];
+        for (int i = 0; i<orders.length;++i) {
+            res[orders[i]][idx[orders[i]]]=i;
+            idx[orders[i]]++;
+        }
+        return res;
+    }
     
     @Override
     public boolean sameContent(Parameter other) {
@@ -99,23 +197,14 @@ public class Experiment implements ContainerParameter, TreeModelContainer {
         } else return false;
     }
     
-    
     @Override
     public void setContentFrom(Parameter other) {
         if (other instanceof Experiment) {
-            Experiment otherXP = (Experiment) other;
-            this.structures.setContentFrom(otherXP.structures);
-            cond.setContentFrom(otherXP.cond);
-            // add other parameters here ...
-        } else throw new IllegalArgumentException("wrong parameter type");
-    }
-    
-    protected void initChildren() {
-        children = new ArrayList<Parameter>(2);
-        children.add(structures);
-        children.add(cond);
-        // add other parameters here ...
-        for (Parameter p : children) p.setParent(this);
+            Experiment otherP = (Experiment) other;
+            for (int i = 0; i<children.size(); i++) children.get(i).setContentFrom((Parameter)otherP.getChildAt(i));
+        } else {
+            throw new IllegalArgumentException("wrong parameter type");
+        }
     }
     
     @Override

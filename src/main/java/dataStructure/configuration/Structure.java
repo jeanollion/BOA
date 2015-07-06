@@ -16,10 +16,13 @@
  */
 package dataStructure.configuration;
 
+import configuration.parameters.ChannelImageParameter;
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.SimpleContainerParameter;
-import configuration.parameters.StructureParameterParent;
+import configuration.parameters.ParentStructureParameter;
+import configuration.parameters.ui.NameEditorUI;
+import configuration.parameters.ui.ParameterUI;
 import javax.swing.tree.MutableTreeNode;
 import org.mongodb.morphia.annotations.Embedded;
 import org.mongodb.morphia.annotations.PostLoad;
@@ -30,12 +33,23 @@ import org.mongodb.morphia.annotations.PostLoad;
  */
 @Embedded
 public class Structure extends SimpleContainerParameter {
-    StructureParameterParent parentStructure =  new StructureParameterParent("Parent Structure", -1, 0);;
+    ParentStructureParameter parentStructure =  new ParentStructureParameter("Parent Structure", -1, 0);;
+    ChannelImageParameter channelImage = new ChannelImageParameter("Channel Image", -1);
     ProcessingChain processingChain = new ProcessingChain("Processing Chain");
-    
+    NameEditorUI ui;
     public Structure(String name) {
+        this(name, -1);
+    }
+    
+    public Structure(String name, int parentStructure) {
         super(name);
+        this.parentStructure.setSelectedIndex(parentStructure);
         initChildList();
+    }
+    
+    @Override
+    protected void initChildList() {
+        super.initChildren(parentStructure, channelImage, processingChain);
     }
     
     public ProcessingChain getProcessingChain() {
@@ -43,12 +57,11 @@ public class Structure extends SimpleContainerParameter {
     }
     
     public int getParentStructure() {
-        return parentStructure.getSelectedStructure();
+        return parentStructure.getSelectedIndex();
     }
     
-    @Override
-    protected void initChildList() {
-        super.initChildren(parentStructure, processingChain);
+    public int getChannelImage() {
+        return channelImage.getSelectedIndex();
     }
     
     @Override 
@@ -59,9 +72,15 @@ public class Structure extends SimpleContainerParameter {
 
     @Override
     public Structure duplicate() {
-        Structure res=new Structure(name);
+        Structure res=new Structure(name, parentStructure.getSelectedIndex());
         res.setContentFrom(this);
         return res;
+    }
+    
+    @Override
+    public ParameterUI getUI() {
+        if (ui==null) ui=new NameEditorUI(this, false);
+        return ui;
     }
     
     // morphia

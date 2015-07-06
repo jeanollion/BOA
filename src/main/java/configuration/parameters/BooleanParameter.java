@@ -24,11 +24,11 @@ package configuration.parameters;
 public class BooleanParameter extends ChoiceParameter {
     
     public BooleanParameter(String name, boolean defaultValue) {
-        super(name, new String[]{"false", "true"}, defaultValue?"true":"false");
+        super(name, new String[]{"false", "true"}, defaultValue?"true":"false", false);
     }
     
     public BooleanParameter(String name, String[] listChoice, boolean defaultValue) {
-        super(name, listChoice, defaultValue?"true":"false");
+        super(name, listChoice, defaultValue?"true":"false", false);
         if (listChoice.length!=2) throw new IllegalArgumentException("List choice should be of length 2");
     }
     

@@ -21,10 +21,10 @@ package configuration.parameters;
  *
  * @author jollion
  */
-public class StructureParameterParent extends StructureParameter {
+public class ParentStructureParameter extends StructureParameter {
     int maxStructure;
     
-    public StructureParameterParent(String name, int selectedStructure, int maxStructure) {
+    public ParentStructureParameter(String name, int selectedStructure, int maxStructure) {
         super(name, selectedStructure, true);
         this.maxStructure=maxStructure;
     }
@@ -34,25 +34,18 @@ public class StructureParameterParent extends StructureParameter {
     }
     
     @Override
-    public String[] getStructureNames() {
+    public String[] getChoiceList() {
         String[] choices;
         if (getXP()!=null) {
             choices=getXP().getStructuresAsString();
         } else {
-            choices = new String[]{"error"}; //no experiment in the tree, make a static method to get experiment...
+            choices = new String[]{"error: no xp found in tree"};
         }
-        if (allowNoSelection) {
-            String[] res = new String[maxStructure+1];
-            res[0] = "root";
-            System.arraycopy(choices, 0, res, 1, maxStructure);
-            return res;
-        } else {
-            String[] res = new String[maxStructure];
-            System.arraycopy(choices, 0, res, 0, maxStructure);
-            return res;
-        }
+        String[] res = new String[maxStructure];
+        System.arraycopy(choices, 0, res, 0, maxStructure);
+        return res;
     }
 
     // morphia
-    private StructureParameterParent(){super();}
+    private ParentStructureParameter(){super();}
 }

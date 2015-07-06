@@ -15,27 +15,26 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.configuration;
+package dataStructure.objects;
 
+import dataStructure.configuration.*;
 import com.mongodb.MongoClient;
 import dataStructure.configuration.Experiment;
 import org.bson.types.ObjectId;
 import org.mongodb.morphia.Morphia;
 import org.mongodb.morphia.dao.BasicDAO;
 import org.mongodb.morphia.query.Query;
+import org.mongodb.morphia.query.QueryResults;
 
 /**
  *
  * @author jollion
  */
-public class ExperimentDAO extends BasicDAO<Experiment, ObjectId>{
+public class RootObjectDAO extends BasicDAO<StructureObjectRoot, ObjectId>{
 
-    public ExperimentDAO(Class<Experiment> entityClass, MongoClient mongoClient, Morphia morphia, String dbName) {
-        super(entityClass, mongoClient, morphia, dbName);
+    public RootObjectDAO(Class<StructureObjectRoot> entityClass, MongoClient mongoClient, Morphia morphia) {
+        super(entityClass, mongoClient, morphia, "RootObjects");
         this.ensureIndexes();
     }
-    public Experiment getExperiment() {
-        Query<Experiment> query = this.getDatastore().createQuery(this.getEntityClass());
-        return query.get();
-    }
+    
 }

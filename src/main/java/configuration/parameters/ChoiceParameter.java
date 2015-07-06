@@ -19,40 +19,44 @@ import configuration.parameters.ui.ParameterUI;
 import configuration.parameters.ui.ChoiceParameterUI;
 import java.util.Arrays;
 import org.mongodb.morphia.annotations.Transient;
+import utils.Utils;
 
 /**
  *
  * @author jollion
  */
-public class ChoiceParameter extends SimpleParameter implements ActionableParameter {
+public class ChoiceParameter extends SimpleParameter implements ActionableParameter, ChoosableParameter {
     String[] listChoice;
     String selectedItem;
+    boolean allowNoSelection;
     @Transient int selectedIndex;
     @Transient ChoiceParameterUI gui;
     @Transient ConditionalParameter cond;
-    public ChoiceParameter(String name, String[] listChoice, String selectedItem) {
+    public ChoiceParameter(String name, String[] listChoice, String selectedItem, boolean allowNoSelection) {
         super(name);
         this.listChoice=listChoice;
         setSelectedItem(selectedItem);
+        this.allowNoSelection=allowNoSelection;
     }
     
-    public String[] getChoices() {return listChoice;}
     public String getSelectedItem() {return selectedItem;}
     public int getSelectedIndex() {return selectedIndex;}
     
     public void setSelectedItem(String selectedItem) {
-        this.selectedIndex=Arrays.binarySearch(listChoice, selectedItem);
+        this.selectedIndex=Utils.getIndex(listChoice, selectedItem);
         if (selectedIndex==-1) this.selectedItem = "no item selected";
         else this.selectedItem=selectedItem;
         setCondValue();
     }
-    protected void setCondValue() {
-        if (cond!=null) cond.setActionValue(selectedItem);
-    }
     
     public void setSelectedIndex(int selectedIndex) {
-        this.selectedItem=listChoice[selectedIndex];
-        this.selectedIndex=selectedIndex;
+        if (selectedIndex>=0) {
+            this.selectedItem=listChoice[selectedIndex];
+            this.selectedIndex=selectedIndex;
+        } else {
+            selectedIndex=-1;
+            selectedItem="no item selected";
+        }
     }
     
     @Override
@@ -63,9 +67,6 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
         if (gui==null) gui = new ChoiceParameterUI(this);
         return gui;
     }
-    
-    
-
     public boolean sameContent(Parameter other) {
         if (other instanceof ChoiceParameter) {
             return this.getSelectedItem().equals((ChoiceParameter)other);
@@ -81,10 +82,25 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
     }
 
     public Parameter duplicate() {
-        return new ChoiceParameter(name, listChoice, selectedItem);
+        return new ChoiceParameter(name, listChoice, selectedItem, allowNoSelection);
+    }
+    
+    // choosable parameter
+
+    public boolean isAllowNoSelection() {
+        return this.allowNoSelection;
     }
     
     // actionable parameter
+    public String[] getChoiceList() {
+        return listChoice;
+    }
+    
+    
+    protected void setCondValue() {
+        if (cond!=null) cond.setActionValue(selectedItem);
+    }
+    
     public Object getValue() {
         return getSelectedItem();
     }
@@ -106,6 +122,8 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
     
     // morphia 
     ChoiceParameter(){super();}
+
+    
 
     
 

@@ -17,6 +17,8 @@
  */
 package images;
 
+import dataStructure.objects.ImageLabeller;
+import dataStructure.objects.Object3D;
 import image.BoundingBox;
 import image.ImageByte;
 import image.ImageFloat;
@@ -100,4 +102,93 @@ public class ImageManipulationTest {
         assertArrayEquals("voxel values2", im.getPixelArray()[4], imCrop2.getPixelArray()[4]);
     }
     
+    @Test
+    public void testImageLabeller2D() {
+        ImageByte mask = new ImageByte("", 11, 6, 1);
+        //spot1
+        mask.setPixel(0, 0, 0, 1);
+        mask.setPixel(0, 1, 0, 1);
+        mask.setPixel(1, 0, 0, 1);
+        mask.setPixel(1, 1, 0, 1);
+        
+        //spot2
+        mask.setPixel(8, 0, 0, 1);
+        mask.setPixel(7, 1, 0, 1);
+        mask.setPixel(8, 1, 0, 1);
+        mask.setPixel(9, 1, 0, 1);
+        mask.setPixel(8, 2, 0, 1);
+        
+        //spot3
+        mask.setPixel(4, 3, 0, 1);
+        mask.setPixel(3, 2, 0, 1);
+        mask.setPixel(5, 2, 0, 1);
+        mask.setPixel(3, 4, 0, 1);
+        mask.setPixel(5, 4, 0, 1);
+        
+        int[] sizes = new int[]{4, 5, 5};
+        
+        Object3D[] objects = ImageLabeller.labelImage(mask);
+        assertEquals("Number of object detected", 3, objects.length);
+        int i=0;
+        int[] observedSizes = new int[objects.length];
+        for (Object3D o : objects) observedSizes[i++]=o.getVoxels().size();
+        assertArrayEquals("Size of objects", sizes, observedSizes);
+        
+        ImageByte mask2 = new ImageByte("", mask);
+        for (Object3D o : objects) o.draw(mask2, 1);
+        for (int z = 0; z < mask2.getSizeZ(); ++z) assertArrayEquals("Spot voxels slice:"+z, mask.getPixelArray()[z], mask2.getPixelArray()[z]);       
+    }
+    
+    @Test
+    public void testImageLabeller3D() {
+        ImageByte mask = new ImageByte("", 11, 6, 4);
+        //spot1
+        mask.setPixel(0, 0, 0, 1);
+        mask.setPixel(0, 1, 0, 1);
+        mask.setPixel(1, 0, 0, 1);
+        mask.setPixel(1, 1, 0, 1);
+        mask.setPixel(0, 0, 1, 1);
+        mask.setPixel(0, 1, 1, 1);
+        mask.setPixel(1, 0, 1, 1);
+        mask.setPixel(1, 1, 1, 1);
+        
+        //spot2
+        mask.setPixel(8, 0, 1, 1);
+        mask.setPixel(7, 1, 1, 1);
+        mask.setPixel(8, 1, 1, 1);
+        mask.setPixel(9, 1, 1, 1);
+        mask.setPixel(8, 2, 1, 1);
+        mask.setPixel(8, 1, 0, 1);
+        mask.setPixel(8, 1, 2, 1);
+        
+        //spot3
+        mask.setPixel(4, 3, 1, 1);
+        mask.setPixel(3, 2, 0, 1);
+        mask.setPixel(5, 2, 0, 1);
+        mask.setPixel(3, 4, 0, 1);
+        mask.setPixel(5, 4, 0, 1);
+        mask.setPixel(3, 2, 1, 1);
+        mask.setPixel(5, 2, 1, 1);
+        mask.setPixel(3, 4, 1, 1);
+        mask.setPixel(5, 4, 1, 1);
+        
+        //spot4
+        mask.setPixel(0, 0, 3, 1);
+        mask.setPixel(0, 1, 3, 1);
+        mask.setPixel(1, 0, 3, 1);
+        mask.setPixel(1, 1, 3, 1);
+        
+        int[] sizes = new int[]{8, 7, 9, 4};
+        
+        Object3D[] objects = ImageLabeller.labelImage(mask);
+        assertEquals("Number of object detected", 4, objects.length);
+        int i=0;
+        int[] observedSizes = new int[objects.length];
+        for (Object3D o : objects) observedSizes[i++]=o.getVoxels().size();
+        assertArrayEquals("Size of objects", sizes, observedSizes);
+        
+        ImageByte mask2 = new ImageByte("", mask);
+        for (Object3D o : objects) o.draw(mask2, 1);
+        for (int z = 0; z < mask2.getSizeZ(); ++z) assertArrayEquals("Spot voxels slice:"+z, mask.getPixelArray()[z], mask2.getPixelArray()[z]);       
+    }
 }

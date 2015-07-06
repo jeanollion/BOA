@@ -38,6 +38,10 @@ public class ConfigurationTreeModel extends DefaultTreeModel {
     public void setJTree(JTree tree) {
         this.tree=tree;
     }
+    public JTree getTree() {
+        return tree;
+    }
+    
     @Override
     public void insertNodeInto(MutableTreeNode newChild, MutableTreeNode parent, int index) {
         super.insertNodeInto(newChild, parent, index);

@@ -39,12 +39,13 @@ import plugins.PluginFactory;
  */
 @Embedded
 public class PluginParameter extends SimpleContainerParameter implements Deactivatable { //<T extends Plugin> // TODO generic quand supporté par morphia
+    @Transient private final static String NOPLUGIN="none";
     @Transient private static HashMap<Class<? extends Plugin>, ArrayList<String>> pluginNames=new HashMap<Class<? extends Plugin>, ArrayList<String>>();
     protected Parameter[] pluginParameters;
     protected String pluginName=NOPLUGIN;
     protected Class<? extends Plugin> pluginType;
     protected boolean activated=true;
-    @Transient private static String NOPLUGIN;
+    
     
     public PluginParameter(String name, Class<? extends Plugin> pluginType) {
         super(name);

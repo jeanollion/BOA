@@ -36,15 +36,15 @@ public class Object3D {
     
     public Object3D(ArrayList<Voxel3D> voxels, float scaleXY, float scaleZ) {
         this.voxels=voxels;
-        this.scaleXY=mask.getScaleXY();
-        this.scaleZ=mask.getScaleZ();
+        this.scaleXY=scaleXY;
+        this.scaleZ=scaleZ;
         createBoundsFromVoxels();
     }
     
     public Object3D(ArrayList<Voxel3D> voxels, float scaleXY, float scaleZ, BoundingBox bounds) {
         this.voxels=voxels;
-        this.scaleXY=mask.getScaleXY();
-        this.scaleZ=mask.getScaleZ();
+        this.scaleXY=scaleXY;
+        this.scaleZ=scaleZ;
         this.bounds=bounds;
     }
     
@@ -116,5 +116,8 @@ public class Object3D {
         } else return null;
     }
     
+    public void draw(ImageInteger mask, int label) {
+        for (Voxel3D v : getVoxels()) mask.setPixel(v.x, v.y, v.z, label);
+    }
     
 }

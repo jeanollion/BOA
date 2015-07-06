@@ -96,6 +96,7 @@ public class MorphiaTest {
         xp = new Experiment("test maven mongo2");
         dao.save(xp);
         assertEquals(2, dao.count());
+        for (ObjectId id : dao.findIds()) dao.deleteById(id);
     }
     
     /**
@@ -108,7 +109,12 @@ public class MorphiaTest {
         Experiment xp = new Experiment("test maven mongo");
         dao.save(xp);
         xp = new Experiment("test maven mongo");
-        dao.save(xp);
-        assertEquals(1, dao.count());
+        try {
+            dao.save(xp);
+        } catch(Exception e) {
+            
+        }
+        assertEquals("test unique index on experiment name", 1, dao.count());
+        //for (ObjectId id : dao.findIds()) dao.deleteById(id);
     }
 }
