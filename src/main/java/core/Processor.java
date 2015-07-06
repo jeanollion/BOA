@@ -27,9 +27,9 @@ import java.util.ArrayList;
  * @author jollion
  */
 public class Processor {
-    public static StructureObjectRoot initRoot(Experiment xp) {
+    /*public static StructureObjectRoot initRoot(Experiment xp) {
         
-    }
+    }*/
     
     public static void preProcessImages(StructureObjectRoot root, Experiment xp) {
         
