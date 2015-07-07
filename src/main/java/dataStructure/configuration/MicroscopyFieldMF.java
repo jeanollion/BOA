@@ -15,28 +15,27 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugin;
+package dataStructure.configuration;
 
+import configuration.parameters.NumberParameter;
 import configuration.parameters.PluginParameter;
-import org.junit.Assert;
-import plugins.Plugin;
-import plugins.PluginFactory;
-import plugins.Thresholder;
+import plugins.Crop;
+import plugins.Rotation;
 
 /**
  *
  * @author jollion
  */
-public class PluginFactoryTest {
+public class MicroscopyFieldMF extends MicroscopyField {
+    NumberParameter numberOfChannels = new NumberParameter("Number of Micro-Fluidic Channels", 0);
+    PluginParameter preCrop = new PluginParameter("Pre-Cropping", Crop.class, true);
+    PluginParameter rotation = new PluginParameter("Rotation", Rotation.class, true);
+    PluginParameter crop = new PluginParameter("Pre-Cropping", Crop.class, true);
     
-    @org.junit.Test
-    public void testInternalPlugin() {
-        String pluginName="DummyThresholder";
-        PluginFactory.findPlugins("plugin.dummyPlugins");
-        PluginParameter thresholder = new PluginParameter("Tresholder", Thresholder.class, true);
-        Assert.assertTrue("Internal plugin search:", thresholder.getPluginNames().contains(pluginName));
-        thresholder.setPlugin(pluginName);
-        Plugin p =  thresholder.getPlugin();
-        Assert.assertTrue("Internal plugin instanciation:", p instanceof Thresholder);
+    @Override
+    protected void initChildList() {
+        super.initChildList();
+        initChildren(numberOfChannels, preCrop, rotation, crop);
     }
+    
 }

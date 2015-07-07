@@ -21,7 +21,6 @@ import image.BoundingBox;
 import image.Image;
 import image.ImageIOCoordinates;
 import image.ImageReader;
-import java.io.File;
 import org.mongodb.morphia.annotations.Embedded;
 import org.mongodb.morphia.annotations.PostLoad;
 
@@ -54,9 +53,18 @@ public class ImageContainer {
         else bounds=image.getBoundingBox();
     }
     
+    public ImageContainer(String filePath, ImageIOCoordinates ioCoords, float scaleXY, float scaleZ) {
+        this.filePath=filePath;
+        this.ioCoordinates=ioCoords;
+        this.bounds=ioCoords.getBounds();
+        if (scaleXY!=0) this.scaleXY=scaleXY;
+        if (scaleZ!=0) this.scaleZ=scaleZ;
+    }
+    
     public Image getImage() {
+        if (bounds!=null) ioCoordinates.setBounds(bounds);
         Image image = ImageReader.openImage(filePath, ioCoordinates);
-        image.setCalibration(scaleXY, scaleZ);
+        if (scaleXY!=0 && scaleZ!=0) image.setCalibration(scaleXY, scaleZ);
         return image;
     }
     

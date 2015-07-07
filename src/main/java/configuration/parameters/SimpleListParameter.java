@@ -84,6 +84,11 @@ public class SimpleListParameter implements ListParameter {
         this.childrenClass=childInstance.getClass();
     }
     
+    public boolean containsElement(String name) {
+        for (Parameter p : children) if (p.getName().equals(name)) return true;
+        return false;
+    }
+    
     @Override
     public Parameter createChildInstance() {
         if (childInstance == null && childrenClass != null) {

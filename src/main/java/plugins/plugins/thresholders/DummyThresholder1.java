@@ -28,6 +28,6 @@ import plugins.Thresholder;
  */
 public class DummyThresholder1 implements Thresholder {
     public Parameter[] getParameters() {
-        return new Parameter[]{new PluginParameter("PreProcessing", PreFilter.class)};
+        return new Parameter[]{new PluginParameter("PreProcessing", PreFilter.class, false)};
     }
 }

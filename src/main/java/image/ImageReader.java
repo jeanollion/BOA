@@ -24,7 +24,7 @@ import ij.io.FileOpener;
 import ij.io.Opener;
 import ij.io.TiffDecoder;
 import ij.process.ImageProcessor;
-import static image.WriteFormat.*;
+import static image.ImageFormat.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -46,31 +46,60 @@ import ome.units.quantity.Length;
  * @author jollion
  */
 public class ImageReader {
-    WriteFormat extension;
+    ImageFormat extension;
     String path;
     String imageTitle;
+    String fullPath;
     
     //BioFormats
     ImageProcessorReader reader;
     IMetadata meta;
     boolean invertTZ;
+    boolean supportView;
     
-    
-    public ImageReader(String imagePath) {
-        init();
-    }
-    
-    public ImageReader(String path, String imageTitle, WriteFormat extension) {
+    public ImageReader(String path, String imageTitle, ImageFormat extension) {
         this.extension=extension;
         this.path=path;
         this.imageTitle=imageTitle;
         this.invertTZ=extension.getInvertTZ();
+        this.supportView=extension.getSupportView();
         //System.out.println("path: "+path+File.separator+imageTitle+extension);
         init();
     }
     
+    public ImageReader(String fullPath) {
+        File f= new File(fullPath);
+        path  = f.getParent();
+        imageTitle = f.getName();
+        int extIdx = imageTitle.indexOf(".");
+        imageTitle = f.getName().substring(0, extIdx);
+        this.extension=ImageFormat.getExtension(f.getName().substring(extIdx));
+        if (extension==null) {
+            this.fullPath=fullPath;
+            invertTZ=false;
+            supportView=true;
+        } else {
+            invertTZ=extension.getInvertTZ();
+            this.supportView=extension.getSupportView();
+        }
+        init();
+    }
+
+    public ImageFormat getExtension() {
+        return extension;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public String getImageTitle() {
+        return imageTitle;
+    }
+    
     public String getImagePath() {
-        return path+File.separator+imageTitle+extension;
+        if (fullPath!=null) return fullPath;
+        else return path+File.separator+imageTitle+extension;
     }
     
     private void init() {
@@ -123,7 +152,7 @@ public class ImageReader {
         if (coords.getBounds()!=null) {
             zMin=Math.max(coords.getBounds().getzMin(), 0);
             zMax=Math.min(coords.getBounds().getzMax(), sizeZ-1);
-            if (extension.getSupportView()) {
+            if (this.supportView) {
                 sizeX = coords.getBounds().getSizeX();
                 sizeY = coords.getBounds().getSizeY();
             }
@@ -137,14 +166,15 @@ public class ImageReader {
             int locT = invertTZ?z:coords.getTimePoint();
             ImageProcessor ip;
             try {
-                if (coords.getBounds()==null || extension.equals(PNG)) {
+                if (coords.getBounds()==null || PNG.equals(extension)) {
                     ip = reader.openProcessors(reader.getIndex(locZ, coords.getChannel(), locT))[0];
+                    
                 } else {
                     ip = reader.openProcessors(reader.getIndex(locZ, coords.getChannel(), locT), coords.getBounds().getxMin(), coords.getBounds().getyMin(), coords.getBounds().getSizeX(), coords.getBounds().getSizeY())[0];
                 }
                 stack.addSlice("" + (z + 1), ip);
                 res = IJImageWrapper.wrap(new ImagePlus("", stack));
-                if (!extension.getSupportView() && coords.getBounds()!=null) { // crop
+                if (!supportView && coords.getBounds()!=null) { // crop
                     BoundingBox bounds = coords.getBounds().duplicate();
                     bounds.zMin=0;
                     bounds.zMax=res.sizeZ-1;
@@ -196,11 +226,13 @@ public class ImageReader {
     }*/
 
     
-    public int[] getSTCNumbers() {
-        int[] res = new int[3];
-        res[0] = reader.getSeriesCount();
-        res[1] = invertTZ?reader.getSizeZ():reader.getSizeT();
-        res[2] = reader.getSizeC();
+    public int[][] getSTCNumbers() {
+        int[][] res = new int[reader.getSeriesCount()][2];
+        for (int i = 0; i<res.length; i++) {
+            reader.setSeries(i);
+            res[i][0] = invertTZ?reader.getSizeZ():reader.getSizeT();
+            res[i][1] = reader.getSizeC();
+        }
         return res;
     }
     

@@ -149,7 +149,12 @@ public class PluginFactory {
 
     public static <T extends Plugin> T getPlugin(Class<T> clazz, String className) {
         try {
-            T instance = (T) plugins.get(className).newInstance();
+            Class plugClass = plugins.get(className);
+            if (plugClass==null) {
+                Logger.getLogger(PluginFactory.class.getName()).log(Level.WARNING, "plugin :{0} of class: {1} not found", new Object[]{className, clazz});
+                return null;
+            }
+            T instance = (T) plugClass.newInstance();
             return instance;
         } catch (InstantiationException ex) {
             Logger.getLogger(PluginFactory.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);

@@ -15,28 +15,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugin;
+package plugins;
 
-import configuration.parameters.PluginParameter;
-import org.junit.Assert;
-import plugins.Plugin;
-import plugins.PluginFactory;
-import plugins.Thresholder;
+import dataStructure.objects.StructureObjectPreFilter;
+import image.Image;
 
 /**
  *
  * @author jollion
  */
-public class PluginFactoryTest {
-    
-    @org.junit.Test
-    public void testInternalPlugin() {
-        String pluginName="DummyThresholder";
-        PluginFactory.findPlugins("plugin.dummyPlugins");
-        PluginParameter thresholder = new PluginParameter("Tresholder", Thresholder.class, true);
-        Assert.assertTrue("Internal plugin search:", thresholder.getPluginNames().contains(pluginName));
-        thresholder.setPlugin(pluginName);
-        Plugin p =  thresholder.getPlugin();
-        Assert.assertTrue("Internal plugin instanciation:", p instanceof Thresholder);
-    }
+public interface Transformation extends Plugin {
+    public void computeParameters(int structureIdx, StructureObjectPreFilter structureObject);
+    public Image applyTransformation(Image input);
+    public boolean isTimeDependent();
 }

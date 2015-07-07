@@ -36,6 +36,7 @@ public class ChoiceParameterUI implements ArmableUI {
     ConfigurationTreeModel model;
     JMenuItem[] actions;
     int inc;
+    public static String NO_SELECTION="no selection";
     public ChoiceParameterUI(ChoosableParameter choice_) {
         this.choice = choice_;
         if (choice.isAllowNoSelection()) inc=1;
@@ -47,7 +48,7 @@ public class ChoiceParameterUI implements ArmableUI {
         if (choice.isAllowNoSelection()) {
             String[] c = choice.getChoiceList();
             String[] res = new String[c.length+1];
-            res[0] = "no selection";
+            res[0] = NO_SELECTION;
             System.arraycopy(c, 0, res, 1, c.length);
             choices=res;
         } else choices=choice.getChoiceList();

@@ -21,21 +21,25 @@ package image;
  *
  * @author jollion
  */
-public enum WriteFormat {
-        PNG(".png", true, false),
-        TIF(".tif", false, true), // si on n'écrit pas avec le writer de bio-formats
-        OMETIF(".ome.tiff", false, true);
+public enum ImageFormat {
+        PNG(".png", true, false, false),
+        TIF(".tif", false, true, false), // si on n'écrit pas avec le writer de bio-formats
+        OMETIF(".ome.tiff", false, true, true);
 
         final private String extension;
         final private boolean invertTZ;
         final private boolean view;
-        
-        WriteFormat(String extension, boolean invertTZ, boolean view) {
+        final private boolean allowMultipleTimeAndChannel;
+        ImageFormat(String extension, boolean invertTZ, boolean view, boolean allowMutlipleTimeAndChannel) {
             this.extension=extension;
             this.invertTZ=invertTZ;
             this.view=view;
+            this.allowMultipleTimeAndChannel=allowMutlipleTimeAndChannel;
         }
-
+        public static ImageFormat getExtension(String extension) {
+            for (ImageFormat e : ImageFormat.values()) if (e.getExtension().equals(extension)) return e;
+            return null;
+        }
         public String getExtension() {
             return extension;
         }
@@ -44,6 +48,9 @@ public enum WriteFormat {
         }
         public boolean getSupportView() {
             return view;
+        }
+        public boolean getSupportMultipleTimeAndChannel() {
+            return this.allowMultipleTimeAndChannel;
         }
         @Override public String toString() {return extension;}
     }

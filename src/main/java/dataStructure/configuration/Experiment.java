@@ -15,24 +15,18 @@
  */
 package dataStructure.configuration;
 
-import configuration.parameters.BooleanParameter;
 import configuration.parameters.ChoiceParameter;
-import configuration.parameters.ConditionalParameter;
 import configuration.parameters.ContainerParameter;
 import configuration.parameters.FileChooser;
 import configuration.parameters.FileChooser.FileChooserOption;
-import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
-import configuration.parameters.SimpleContainerParameter;
 import configuration.parameters.SimpleListParameter;
 import configuration.parameters.SimpleParameter;
 import configuration.parameters.ui.ParameterUI;
 import configuration.userInterface.ConfigurationTreeModel;
 import configuration.userInterface.TreeModelContainer;
-import java.awt.Component;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import javax.swing.tree.MutableTreeNode;
@@ -60,12 +54,11 @@ public class Experiment implements ContainerParameter, TreeModelContainer {
     @Id protected ObjectId id;
     protected String name;
     protected FileChooser imagePath = new FileChooser("Image Path", FileChooserOption.DIRECTORIES_ONLY);
-    @Transient ChoiceParameter choiceCond = new ChoiceParameter("test cond", new String[]{"true", "false2"}, "false2", true);
-    ConditionalParameter cond = new ConditionalParameter(choiceCond);
-    @Transient PluginParameter cond1 = new PluginParameter("thres1", Thresholder.class);
-    @Transient PluginParameter cond2 = new PluginParameter("thres2", Thresholder.class);
     SimpleListParameter structures= new SimpleListParameter("Structures", -1 , Structure.class);
-    SimpleListParameter channelImages= new SimpleListParameter("Channel Images", -1 , ChannelImage.class);
+    SimpleListParameter channelImages= new SimpleListParameter("Channel Images", 0 , ChannelImage.class);
+    SimpleListParameter fields= new SimpleListParameter("Fields", 0 , MicroscopyField.class);
+    ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.BIOFORMATS.getMethod(), false);
+    
     
     @Transient ConfigurationTreeModel model;
     @Transient protected ArrayList<Parameter> children;
@@ -76,10 +69,7 @@ public class Experiment implements ContainerParameter, TreeModelContainer {
         structures.insert(channels);
         Structure bacteries = new Structure("Bacteries", 0);
         structures.insert(bacteries);
-        //cond.setAction("1", new Parameter[]{cond1});
-        //cond.setAction("2", new Parameter[]{cond2});
-        cond.setAction("true", new Parameter[]{cond1});
-        cond.setAction("false", new Parameter[]{cond2});
+        channelImages.insert(new ChannelImage());
         initChildren();
     }
     
@@ -87,17 +77,34 @@ public class Experiment implements ContainerParameter, TreeModelContainer {
         this.name=name;
         for (Structure s : defaultStructures) structures.insert(s);
         structures.setUnmutableIndex(defaultStructures.length-1);
+        channelImages.insert(new ChannelImage("Channel1"));
         initChildren();
     }
     
     protected void initChildren() {
         children = new ArrayList<Parameter>(2);
+        children.add(importMethod);
         children.add(channelImages);
         children.add(structures);
-        children.add(cond);
         children.add(imagePath);
         // add other parameters here ...
         for (Parameter p : children) p.setParent(this);
+    }
+    
+    public SimpleListParameter getMicroscopyFields() {
+        return fields;
+    }
+    
+    public MicroscopyField getMicroscopyField(int fieldIdx) {
+        return (MicroscopyField)fields.getChildAt(fieldIdx);
+    }
+    
+    public SimpleListParameter getChannelImages() {
+        return channelImages;
+    }
+    
+    public ImportImageMethod getImportImageMethod() {
+        return ImportImageMethod.getValueOf(this.importMethod.getSelectedItem());
     }
     
     public String getOutputImagePath() {
@@ -308,7 +315,31 @@ public class Experiment implements ContainerParameter, TreeModelContainer {
     @PostLoad void postLoad() {initChildren();}
 
     
-
+    public enum ImportImageMethod{
+        BIOFORMATS("Bio-Formats");
+        private final String name;
+        ImportImageMethod(String name) {
+            this.name=name;
+        }
+        @Override
+        public String toString() {return name;}
+        public String getMethod(){return name;}
+        public static String[] getChoices() {
+            ImportImageMethod[] all = ImportImageMethod.values();
+            String[] res = new String[all.length];
+            int i = 0;
+            for (ImportImageMethod m : all) res[i++]=m.name;
+            return res;
+        }
+        public static ImportImageMethod getValueOf(String method) {
+            for (ImportImageMethod m : ImportImageMethod.values()) if (m.getMethod().equals(method)) return m;
+            return null;
+        }
+        /*public static ImportImageMethod getMethod(String name) {
+            if (BioFormats.getMethod().equals(name)) return BioFormats;
+            else return null;
+        }*/
+    }
     
 
     

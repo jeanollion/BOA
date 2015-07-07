@@ -18,15 +18,32 @@
 package core;
 
 import dataStructure.configuration.Experiment;
+import dataStructure.configuration.MicroscopyField;
+import dataStructure.containers.MultipleImageContainer;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectRoot;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
  * @author jollion
  */
 public class Processor {
+    public static void importFiles(String[] selectedFiles, Experiment xp) {
+        ArrayList<MultipleImageContainer> images = ImageFieldFactory.importImages(selectedFiles, xp);
+        for (MultipleImageContainer c : images) {
+            if (!xp.getMicroscopyFields().containsElement(c.getName())) {
+                MicroscopyField f = (MicroscopyField)xp.getMicroscopyFields().createChildInstance(c.getName());
+                xp.getMicroscopyFields().insert(f);
+                f.setImages(c);
+            } else {
+                Logger.getLogger(Processor.class.getName()).log(Level.WARNING, "Image: {0} already present in fields was no added", c.getName());
+            }
+        }
+    }
+    
     /*public static StructureObjectRoot initRoot(Experiment xp) {
         
     }*/

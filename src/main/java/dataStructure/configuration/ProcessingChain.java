@@ -34,9 +34,9 @@ import plugins.Segmenter;
  */
 public class ProcessingChain extends SimpleContainerParameter {
     
-    SimpleListParameter preFilters = new SimpleListParameter("Pre-Filters", new PluginParameter("Pre-Filter", PreFilter.class));
-    PluginParameter segmenter = new PluginParameter("Segmentation algorithm", Segmenter.class);
-    SimpleListParameter postFilters = new SimpleListParameter("Post-Filters", new PluginParameter("Post-Filter", PostFilter.class));
+    SimpleListParameter preFilters = new SimpleListParameter("Pre-Filters", new PluginParameter("Pre-Filter", PreFilter.class, false));
+    PluginParameter segmenter = new PluginParameter("Segmentation algorithm", Segmenter.class, false);
+    SimpleListParameter postFilters = new SimpleListParameter("Post-Filters", new PluginParameter("Post-Filter", PostFilter.class, false));
     
     public ProcessingChain(String name) {
         super(name);

@@ -49,7 +49,7 @@ public class Structure extends SimpleContainerParameter {
     
     @Override
     protected void initChildList() {
-        super.initChildren(parentStructure, channelImage, processingChain);
+        initChildren(parentStructure, channelImage, processingChain);
     }
     
     public ProcessingChain getProcessingChain() {
