@@ -15,7 +15,7 @@ public abstract class ImageInteger extends Image implements ImageMask {
     protected ImageInteger(String name, ImageProperties properties) {
         super(name, properties);
     } 
-
+    @Override public abstract ImageInteger duplicate(String name);
     public abstract int getPixelInt(int x, int y, int z);
     public abstract int getPixelInt(int xy, int z);
     public abstract void setPixel(int x, int y, int z, int value);
@@ -57,4 +57,53 @@ public abstract class ImageInteger extends Image implements ImageMask {
         return bounds;
     }
 
+    public ImageByte cropLabel(int label, BoundingBox bounds) {
+        //bounds.trimToImage(this);
+        ImageByte res = new ImageByte(name, bounds.getImageProperties("", scaleXY, scaleZ));
+        byte[][] pixels = res.getPixelArray();
+        res.setCalibration(this);
+        int x_min = bounds.getxMin();
+        int y_min = bounds.getyMin();
+        int z_min = bounds.getzMin();
+        int x_max = bounds.getxMax();
+        int y_max = bounds.getyMax();
+        int z_max = bounds.getzMax();
+        int sX = x_max - x_min + 1;
+        int oZ = -z_min;
+        int oY_i = 0;
+        int oX = 0;
+        if (x_min <= -1) {
+            oX=-x_min;
+            x_min = 0;
+        }
+        if (x_max >= sizeX) {
+            x_max = sizeX - 1;
+        }
+        if (y_min <= -1) {
+            oY_i = -sX * y_min;
+            y_min = 0;
+        }
+        if (y_max >= sizeY) {
+            y_max = sizeY - 1;
+        }
+        if (z_min <= -1) {
+            z_min = 0;
+        }
+        if (z_max >= sizeZ) {
+            z_max = sizeZ - 1;
+        }
+        for (int z = z_min; z <= z_max; ++z) {
+            int oY = oY_i;
+            for (int y = y_min; y <= y_max; ++y) {
+                for (int x = x_min; x<=x_max; ++x) {
+                    if (getPixelInt(x, y, z) == label) {
+                        pixels[z + oZ][oY + x + oX] = (byte) 1;
+                    }
+                }
+                oY += sX;
+            }
+        }
+        res.setOffset(x_min, y_min, z_min);
+        return res;
+    }
 }

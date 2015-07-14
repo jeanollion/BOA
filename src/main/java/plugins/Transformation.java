@@ -17,15 +17,22 @@
  */
 package plugins;
 
-import dataStructure.objects.StructureObjectPreFilter;
+import configuration.parameters.Parameter;
+import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
 
 /**
  *
  * @author jollion
  */
-public interface Transformation extends Plugin {
-    public void computeParameters(int structureIdx, StructureObjectPreFilter structureObject);
+public interface Transformation extends ImageProcessingPlugin {
+    public void computeParameters(int structureIdx, StructureObjectPreProcessing structureObject);
     public Image applyTransformation(Image input);
     public boolean isTimeDependent();
+    /**
+     * 
+     * @return an array of objects that store parameters computed after the {@link Transformation#computeParameters(int, dataStructure.objects.StructureObjectPreFilter)} method and that will be used for the {@link Transformation#applyTransformation(image.Image) } method
+     */
+    public Object[] getConfigurationParameters();
+
 }

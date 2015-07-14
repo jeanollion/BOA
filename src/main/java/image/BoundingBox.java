@@ -109,6 +109,12 @@ public class BoundingBox {
         }
     }
     
+    public void expand(int x, int y, int z) {
+        expandX(x);
+        expandY(y);
+        expandZ(z);
+    }
+    
     public void expand(Voxel3D v) {
         expandX(v.x);
         expandY(v.y);

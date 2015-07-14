@@ -4,6 +4,8 @@ import dataStructure.containers.ImageContainer;
 import dataStructure.containers.ImageContainer;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
+import dataStructure.containers.MultipleImageContainer;
+import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
 import java.io.File;
@@ -22,14 +24,12 @@ import org.mongodb.morphia.annotations.Transient;
 @Indexes(@Index(fields={@Field(value="timePoint"), @Field(value="structureIdx")}, options=@IndexOptions(unique=true)))
 public class StructureObjectRoot extends StructureObjectAbstract {
     //protected ObjectId experimentId;
-    @Embedded protected ImageContainer[] correctedImageContainersC;
-    @Embedded protected ImageContainer[] uncorrectedImageContainersC;
-    @Transient private Image[] uncorrectedImagesC;
+    @Embedded protected MultipleImageContainer imageContainer;
     @Transient protected int[] structureToImageFileCorrespondenceC;
     
-    public StructureObjectRoot(int timePoint, Object3D object, Experiment xp, ImageContainer[] uncorrectedImagesC) {
-        super(timePoint, object, xp);
-        this.uncorrectedImageContainersC=uncorrectedImagesC;
+    public StructureObjectRoot(int timePoint, Experiment xp, BlankMask mask, MultipleImageContainer imageContainer) {
+        super(timePoint, new Object3D(mask), xp);
+        this.imageContainer=imageContainer;
         this.structureToImageFileCorrespondenceC=xp.getStructureToChannelCorrespondance();
     }
     
@@ -37,7 +37,12 @@ public class StructureObjectRoot extends StructureObjectAbstract {
         this.objectContainer=object.getObjectContainer(null); // blankmask
     }
     
-    public ArrayList<StructureObject> getAllChildren(int[] pathToRoot) { // copie dans l'objet root??
+    /**
+     * 
+     * @param pathToRoot array of structure indices, in hierachical order, from the root to the given structure
+     * @return all the objects of the last structure of the path
+     */
+    public ArrayList<StructureObject> getAllObjects(int[] pathToRoot) { // copie dans l'objet root??
         ArrayList<StructureObject> currentChildren = new ArrayList<StructureObject>(getChildObjects(pathToRoot[0]).length);
         Collections.addAll(currentChildren, getChildObjects(pathToRoot[0]));
         for (int i = 1; i<pathToRoot.length; ++i) {
@@ -56,14 +61,14 @@ public class StructureObjectRoot extends StructureObjectAbstract {
     public Image getRawImage(int structureIdx) {
         int channelIdx = this.structureToImageFileCorrespondenceC[structureIdx];
         if (rawImagesS[channelIdx]==null) {
-            rawImagesS[channelIdx]=correctedImageContainersC[channelIdx].getImage();
+            rawImagesS[channelIdx]=imageContainer.getImage(0, channelIdx);
         }
         return rawImagesS[channelIdx];
     }
     
     public Image openRawImage(int structureIdx, BoundingBox bounds) {
         int channelIdx = this.structureToImageFileCorrespondenceC[structureIdx];
-        if (rawImagesS[channelIdx]==null) return correctedImageContainersC[channelIdx].getImage();
+        if (rawImagesS[channelIdx]==null) return imageContainer.getImage(0, channelIdx, bounds);
         else return rawImagesS[channelIdx].crop(bounds);
     }
     

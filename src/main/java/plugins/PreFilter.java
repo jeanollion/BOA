@@ -17,13 +17,13 @@
  */
 package plugins;
 
-import dataStructure.objects.StructureObjectPreFilter;
+import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
 
 /**
  *
  * @author jollion
  */
-public interface PreFilter extends Plugin {
-    public Image runPreFilter(Image input, StructureObjectPreFilter structureObject);
+public interface PreFilter extends ImageProcessingPlugin {
+    public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject);
 }

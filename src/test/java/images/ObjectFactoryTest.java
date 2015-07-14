@@ -15,25 +15,47 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugins.plugins.preProcessor;
+package images;
 
-import configuration.parameters.Parameter;
-import dataStructure.objects.StructureObjectPreFilter;
-import image.Image;
-import plugins.PreFilter;
+import dataStructure.objects.Object3D;
+import image.ImageByte;
+import image.ObjectFactory;
+import static org.junit.Assert.fail;
+import org.junit.Test;
 
 /**
  *
  * @author jollion
  */
-public class DummyPreFilter implements PreFilter{
-
-    public Image runPreFilter(Image input, StructureObjectPreFilter structureObject) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    public Parameter[] getParameters() {
-        return new Parameter[0];
+public class ObjectFactoryTest {
+    @Test
+    public void testGetObjectsVoxels() {
+        ImageByte im = new ImageByte("", 3, 4, 5);
+        im.setPixel(0, 0, 0, 1);
+        im.setPixel(1, 0, 0, 1);
+        
+        im.setPixel(2, 1, 1, 3);
+        im.setPixel(3, 1, 1, 3);
+        
+        Object3D[] obs = ObjectFactory.getObjectsVoxels(im, false);
+        
+        
+        
+        fail("");
     }
     
+    @Test
+    public void testGetObjectsBounds() {
+        fail("");
+    }
+    
+    @Test
+    public void testGetObjectsImages() {
+        fail("");
+    }
+    
+    @Test
+    public void testRelabelImage() {
+        fail("");
+    }
 }

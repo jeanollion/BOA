@@ -25,4 +25,5 @@ import configuration.parameters.Parameter;
  */
 public interface Plugin {
     public Parameter[] getParameters();
+    public boolean does3D();
 }

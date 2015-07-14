@@ -17,6 +17,8 @@
  */
 package dataStructure.containers;
 
+import image.BoundingBox;
+import image.Image;
 import image.ImageIOCoordinates;
 import image.ImageReader;
 import org.mongodb.morphia.annotations.Embedded;
@@ -27,22 +29,25 @@ import org.mongodb.morphia.annotations.Embedded;
  */
 @Embedded
 public class MultipleImageContainer {
-    String imagesPath;
+    String filePath;
     String name;
     int timePointNumber, channelNumber;
     int serie;
+    float scaleXY, scaleZ;
+    BoundingBox bounds;
+    
     FileType fileType;
     
     public MultipleImageContainer(String name, String imagePath, int serie, int timePointNumber, int channelNumber) {
         fileType = FileType.SINGLE_FILE;
         this.name = name;
         this.serie=serie;
-        imagesPath = imagePath;
+        filePath = imagePath;
         this.timePointNumber = timePointNumber;
         this.channelNumber=channelNumber;
     }
     
-    public String getPath(){return imagesPath;}
+    public String getPath(){return filePath;}
     
     public String getName(){return name;}
 
@@ -81,6 +86,25 @@ public class MultipleImageContainer {
         if (fileType.equals(FileType.SINGLE_FILE)) {
             return new ImageIOCoordinates(serie, channel, timePoint);
         } else return null;
+    }
+    
+    public Image getImage(int timePoint, int channel) {
+        if (this.timePointNumber==1) timePoint=0;
+        ImageIOCoordinates ioCoordinates = getImageIOCoordinates(timePoint, channel);
+        if (bounds!=null) ioCoordinates.setBounds(bounds);
+        Image image = ImageReader.openImage(filePath, ioCoordinates);
+        if (scaleXY!=0 && scaleZ!=0) image.setCalibration(scaleXY, scaleZ);
+        return image;
+    }
+    
+    public Image getImage(int timePoint, int channel, BoundingBox bounds) {
+        if (this.timePointNumber==1) timePoint=0;
+        ImageIOCoordinates ioCoordinates = getImageIOCoordinates(timePoint, channel);
+        ImageIOCoordinates ioCoords = ioCoordinates.duplicate();
+        ioCoords.setBounds(bounds);
+        Image image = ImageReader.openImage(filePath, ioCoords);
+        image.setCalibration(scaleXY, scaleZ);
+        return image;
     }
     
     private enum FileType {

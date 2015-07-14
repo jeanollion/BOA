@@ -1,0 +1,109 @@
+/*
+ * Copyright (C) 2015 jollion
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+package image;
+
+import dataStructure.objects.Object3D;
+import dataStructure.objects.Voxel3D;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map.Entry;
+import java.util.TreeMap;
+
+/**
+ *
+ * @author jollion
+ */
+public class ObjectFactory {
+    public static Object3D[] getObjectsVoxels(ImageInteger labelImage, boolean ensureContinuousLabels) {
+        HashMap<Integer, ArrayList<Voxel3D>> objects = new HashMap<Integer, ArrayList<Voxel3D>>();
+        int label;
+        int sizeX = labelImage.getSizeX();
+        for (int z = 0; z < labelImage.getSizeZ(); ++z) {
+            for (int xy = 0; xy < labelImage.getSizeXY(); ++xy) {
+                label = labelImage.getPixelInt(xy, z);
+                if (label != 0) {
+                    ArrayList<Voxel3D> al = objects.get(label);
+                    if (al == null) {
+                        al = new ArrayList<Voxel3D>();
+                        objects.put(label, al);
+                    }
+                    al.add(new Voxel3D(xy % sizeX, xy / sizeX, z));
+                }
+            }
+        }
+        TreeMap<Integer, ArrayList<Voxel3D>> tm = new TreeMap(objects);
+        Object3D[] res = new Object3D[tm.size()];
+        int i = 0;
+        for (Entry<Integer, ArrayList<Voxel3D>> e : tm.entrySet()) {
+            res[i] = new Object3D(e.getValue(), ensureContinuousLabels?(i + 1):e.getKey(), labelImage.getScaleXY(), labelImage.getScaleZ());
+            ++i;
+        }
+        return res;
+    }
+    
+    
+    public static TreeMap<Integer, BoundingBox> getBounds(ImageInteger labelImage) {
+        HashMap<Integer, BoundingBox> bounds = new HashMap<Integer, BoundingBox>();
+        int label;
+        int sizeX = labelImage.getSizeX();
+        for (int z = 0; z<labelImage.getSizeZ(); ++z) {
+            for (int xy = 0; xy < labelImage.getSizeXY(); ++xy) {
+                label = labelImage.getPixelInt(xy, z);
+                if (label != 0) {
+                    BoundingBox b = bounds.get(label);
+                    if (b == null) {
+                        b = new BoundingBox(xy % sizeX, xy / sizeX, z);
+                        bounds.put(label, b);
+                    } else b.expand(xy % sizeX, xy / sizeX, z);
+                    
+                }
+            }
+        }
+        return new TreeMap<Integer, BoundingBox>(bounds);
+    }
+    
+    public static Object3D[] getObjectsImage(ImageInteger labelImage, boolean ensureContinuousLabels) {
+        TreeMap<Integer, BoundingBox> bounds = getBounds(labelImage);
+        Object3D[] res = new Object3D[bounds.size()];
+        int i = 0;
+        for (Entry<Integer, BoundingBox> e : bounds.entrySet()) {
+            ImageByte label = labelImage.cropLabel(e.getKey(), e.getValue());
+            res[i] = new Object3D(label, ensureContinuousLabels?(i + 1):e.getKey());
+            ++i;
+        }
+        return res;
+    }
+    
+    public static void relabelImage(ImageInteger labelImage) {
+        TreeMap<Integer, BoundingBox> bounds = getBounds(labelImage);
+        int newLabel = 1;
+        int currentLabel;
+        for (Entry<Integer, BoundingBox> e : bounds.entrySet()) {
+            currentLabel = e.getKey();
+            for (int z = 0; z<e.getValue().getzMax(); ++z) {
+                for (int y = 0; y<e.getValue().getyMax(); ++y) {
+                    for (int x = 0; x<e.getValue().getxMax(); ++x) {
+                        if (labelImage.getPixelInt(x, y, z)==currentLabel) labelImage.setPixel(x, y, z, newLabel);
+                    }
+                }
+            }
+            ++newLabel;
+        }
+    }
+    
+}

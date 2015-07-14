@@ -22,29 +22,33 @@ public class Object3D {
     protected float scaleXY, scaleZ;
     protected ImageInteger mask; //lazy -> use getter
     BoundingBox bounds;
-     protected ArrayList<Voxel3D> voxels; //lazy -> use getter // coordonnées des voxel -> par rapport au parent
+    protected int label;
+    protected ArrayList<Voxel3D> voxels; //lazy -> use getter // coordonnées des voxel -> par rapport au parent
     /**
      * 
      * @param mask : image containing only the object, and whose bounding box is the same as the one of the object
      */
-    public Object3D(ImageInteger mask) {
+    public Object3D(ImageInteger mask, int label) {
         this.mask=mask;
         this.bounds=mask.getBoundingBox();
         this.scaleXY=mask.getScaleXY();
         this.scaleZ=mask.getScaleZ();
+        this.label=label;
     }
     
-    public Object3D(ArrayList<Voxel3D> voxels, float scaleXY, float scaleZ) {
+    public Object3D(ArrayList<Voxel3D> voxels, int label, float scaleXY, float scaleZ) {
         this.voxels=voxels;
         this.scaleXY=scaleXY;
         this.scaleZ=scaleZ;
+        this.label=label;
         createBoundsFromVoxels();
     }
     
-    public Object3D(ArrayList<Voxel3D> voxels, float scaleXY, float scaleZ, BoundingBox bounds) {
+    public Object3D(ArrayList<Voxel3D> voxels, int label, float scaleXY, float scaleZ, BoundingBox bounds) {
         this.voxels=voxels;
         this.scaleXY=scaleXY;
         this.scaleZ=scaleZ;
+        this.label=label;
         this.bounds=bounds;
     }
     

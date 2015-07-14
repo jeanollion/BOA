@@ -78,6 +78,7 @@ public class ImageContainer {
     
     //morphia
     private ImageContainer(){};
+
     @PostLoad void postLoad() {ioCoordinates.setBounds(bounds);}
 }
 

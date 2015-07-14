@@ -15,23 +15,41 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugins.plugins.thresholders;
+package plugins.transformations;
 
+import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
-import configuration.parameters.PluginParameter;
-import plugins.PreFilter;
-import plugins.Thresholder;
+import dataStructure.objects.StructureObjectPreProcessing;
+import image.Image;
+import plugins.Transformation;
+import processing.ImageTransformation;
 
 /**
  *
  * @author jollion
  */
-public class DummyThresholder1 implements Thresholder {
-    public Parameter[] getParameters() {
-        return new Parameter[]{new PluginParameter("PreProcessing", PreFilter.class, false)};
+public class SimpleRotationXY implements Transformation {
+    NumberParameter angle = new NumberParameter("angle", 0, 4);
+    Parameter[] parameters = new Parameter[]{angle};
+    
+    public void computeParameters(int structureIdx, StructureObjectPreProcessing structureObject) {
+        
     }
 
-    public boolean does3D() {
-        return true;
+    public Image applyTransformation(Image input) {
+        return ImageTransformation.rotateXY(input, angle.getValue().floatValue());
     }
+
+    public boolean isTimeDependent() {
+        return false;
+    }
+
+    public Parameter[] getParameters() {
+        return parameters;
+    }
+
+    public Parameter[] getConfigurationParameters() {
+        return null;
+    }
+    
 }

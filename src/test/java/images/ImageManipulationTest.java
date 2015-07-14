@@ -17,7 +17,7 @@
  */
 package images;
 
-import dataStructure.objects.ImageLabeller;
+import image.ImageLabeller;
 import dataStructure.objects.Object3D;
 import image.BoundingBox;
 import image.ImageByte;
@@ -96,6 +96,33 @@ public class ImageManipulationTest {
         im.setPixel(2, 3, 4, 1);
         BoundingBox bounds = new BoundingBox(-1, 3, -2, 5, -3, 4);
         ImageByte imCrop = im.crop(bounds);
+        BoundingBox bounds2 = im.getBoundingBox();
+        bounds2.translate(1, 2, 3);
+        ImageByte imCrop2 = imCrop.crop(bounds2);
+        assertArrayEquals("voxel values2", im.getPixelArray()[4], imCrop2.getPixelArray()[4]);
+    }
+    
+    @Test
+    public void testCropLabel() {
+        ImageByte im = new ImageByte("", 4, 5, 6);
+        im.setPixel(2, 3, 4, 2);
+        im.setPixel(3, 3, 4, 2);
+        im.setPixel(2, 4, 4, 1);
+        im.setPixel(2, 3, 5, 1);
+        
+        ImageByte imCrop = im.cropLabel(2, new BoundingBox(2, 3, 3, 4, 4, 5));
+        assertEquals("voxel value 1", 1, imCrop.getPixel(2-imCrop.getOffsetX(), 3-imCrop.getOffsetY(), 4-imCrop.getOffsetZ()));
+        assertEquals("voxel value 1", 1, imCrop.getPixel(3-imCrop.getOffsetX(), 3-imCrop.getOffsetY(), 4-imCrop.getOffsetZ()));
+        assertEquals("voxel value 1", 0, imCrop.getPixel(2-imCrop.getOffsetX(), 4-imCrop.getOffsetY(), 4-imCrop.getOffsetZ()));
+        assertEquals("voxel value 1", 0, imCrop.getPixel(2-imCrop.getOffsetX(), 3-imCrop.getOffsetY(), 5-imCrop.getOffsetZ()));
+    }
+    
+    @Test
+    public void testCropLabelImageNegativeValues() {
+        ImageByte im = new ImageByte("", 4, 5, 6);
+        im.setPixel(2, 3, 4, 1);
+        BoundingBox bounds = new BoundingBox(-1, 3, -2, 5, -3, 4);
+        ImageByte imCrop = im.cropLabel(1, bounds);
         BoundingBox bounds2 = im.getBoundingBox();
         bounds2.translate(1, 2, 3);
         ImageByte imCrop2 = imCrop.crop(bounds2);
@@ -191,4 +218,7 @@ public class ImageManipulationTest {
         for (Object3D o : objects) o.draw(mask2, 1);
         for (int z = 0; z < mask2.getSizeZ(); ++z) assertArrayEquals("Spot voxels slice:"+z, mask.getPixelArray()[z], mask2.getPixelArray()[z]);       
     }
+    
+    
+    
 }

@@ -29,9 +29,11 @@ import static processing.PluginSequenceRunner.*;
 public class StructureObject extends StructureObjectAbstract {
     protected int structureIdx;
     protected int idx;
-    protected ObjectId parentId;
+    @Reference(lazy=true) protected StructureObjectAbstract parent;
     
-    @Transient protected StructureObjectAbstract parent;
+    protected Vector3D registrationOffset;
+    protected Vector3D registrationRotation;
+    
     
     
     public StructureObject(int timePoint, int structureIdx, int idx, Object3D object, StructureObjectAbstract parent, Experiment xp) {
@@ -39,11 +41,18 @@ public class StructureObject extends StructureObjectAbstract {
         this.structureIdx = structureIdx;
         this.idx = idx;
         this.parent=parent;
-        this.parentId=parent.id;
     }
     
     protected void setObjectContainer(Experiment xp) {
         this.objectContainer=object.getObjectContainer(xp.getOutputImagePath()+File.separator+"processed_t"+timePoint+"_s"+structureIdx+".png");
+    }
+    
+    public void setRegistrationOffset(Vector3D offset) {
+        this.registrationOffset=offset;
+    }
+    
+    public void setRegistrationRotation(Vector3D angles) {
+        this.registrationRotation=angles;
     }
     
     @Override
@@ -83,9 +92,8 @@ public class StructureObject extends StructureObjectAbstract {
         return parent;
     }
     
-    public void setParent(StructureObjectAbstract parent) {
+    public void setStructureParent(StructureObjectAbstract parent) {
         this.parent=parent;
-        this.parentId=parent.id;
     }
 
     public StructureObjectRoot getRoot() {

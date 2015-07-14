@@ -39,6 +39,15 @@ public abstract class Image implements ImageProperties {
         this(name, properties.getSizeX(), properties.getSizeY(), properties.getSizeZ(), properties.getOffsetX(), properties.getOffsetY(), properties.getOffsetZ(), properties.getScaleXY(), properties.getScaleZ());
     }
     
+    public void setName(String name) {
+        this.name=name;
+    }
+    
+    @Override
+    public boolean sameSize(ImageProperties other) {
+        return sizeX==other.getSizeX() && sizeY==other.getSizeY() && sizeZ==other.getSizeZ();
+    }
+    
     //public abstract float getPixel(float x, float y, float z); // interpolation
     public abstract float getPixel(int x, int y, int z);
     public abstract float getPixel(int xz, int z);
@@ -157,6 +166,7 @@ public abstract class Image implements ImageProperties {
         }
         return res;
     }
+    
     
     //public abstract Image[] crop(int[][] bounds);
     

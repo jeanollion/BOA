@@ -25,6 +25,6 @@ import image.ImageInteger;
  *
  * @author jollion
  */
-public interface Segmenter extends Plugin {
+public interface Segmenter extends ImageProcessingPlugin {
     public ImageInteger runSegmenter(Image input, StructureObjectProcessing structureObject);
 }

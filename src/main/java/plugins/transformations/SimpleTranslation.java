@@ -20,37 +20,26 @@ package plugins.transformations;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObjectPreProcessing;
-import image.BoundingBox;
 import image.Image;
-import plugins.Cropper;
+import plugins.Transformation;
+import processing.ImageTransformation;
 
 /**
  *
  * @author jollion
  */
-public class SimpleCrop implements Cropper {
-    NumberParameter xMin = new NumberParameter("X-Min", 0, 0);
-    NumberParameter yMin = new NumberParameter("Y-Min", 0, 0);
-    NumberParameter zMin = new NumberParameter("Z-Min", 0, 0);
-    NumberParameter xLength = new NumberParameter("X-Length", 0, 0);
-    NumberParameter yLength = new NumberParameter("Y-Length", 0, 0);
-    NumberParameter zLength = new NumberParameter("Z-Length", 0, 0);
-    Parameter[] parameters = new Parameter[]{xMin, xLength, yMin, yLength, zMin, zLength};
-    BoundingBox bounds;
+public class SimpleTranslation implements Transformation {
+    NumberParameter X = new NumberParameter("X", 0, 0);
+    NumberParameter Y = new NumberParameter("Y", 0, 0);
+    NumberParameter Z = new NumberParameter("Z", 0, 0);
+    Parameter[] parameters = new Parameter[]{X, Y, Z};
     
     public void computeParameters(int structureIdx, StructureObjectPreProcessing structureObject) {
-        Image input = structureObject.getRawImage(structureIdx);
-        if (xLength.getValue().intValue()==0) xLength.setValue(input.getSizeX()-xMin.getValue().intValue());
-        if (yLength.getValue().intValue()==0) yLength.setValue(input.getSizeY()-yMin.getValue().intValue());
-        if (zLength.getValue().intValue()==0) zLength.setValue(input.getSizeZ()-zMin.getValue().intValue());
-        bounds = new BoundingBox(xMin.getValue().intValue(), xMin.getValue().intValue()+xLength.getValue().intValue()-1, 
-        yMin.getValue().intValue(), yMin.getValue().intValue()+yLength.getValue().intValue()-1, 
-        zMin.getValue().intValue(), zMin.getValue().intValue()+zLength.getValue().intValue()-1);
-        bounds.trimToImage(input);
+        
     }
 
     public Image applyTransformation(Image input) {
-        return input.crop(bounds);
+        return ImageTransformation.translate(input, X.getValue().intValue(), Y.getValue().intValue(), Z.getValue().intValue(), 2);
     }
 
     public boolean isTimeDependent() {

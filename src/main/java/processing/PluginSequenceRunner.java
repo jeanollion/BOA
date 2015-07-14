@@ -17,7 +17,7 @@
  */
 package processing;
 
-import dataStructure.objects.StructureObjectPreFilter;
+import dataStructure.objects.StructureObjectPreProcessing;
 import dataStructure.objects.StructureObjectProcessing;
 import image.BlankMask;
 import image.Image;
@@ -32,12 +32,17 @@ import plugins.Segmenter;
  * @author jollion
  */
 public class PluginSequenceRunner {
-    public static Image preFilterImage(Image input, StructureObjectPreFilter structureObject, ArrayList<PreFilter> preProcessors) {
-        if (preProcessors==null) return input;
-        for (PreFilter p : preProcessors) {
-            input = p.runPreFilter(input, structureObject);
+    public static Image preFilterImage(Image input, StructureObjectPreProcessing structureObject, ArrayList<PreFilter> preFilters) {
+        if (preFilters==null || preFilters.isEmpty()) return input;
+        else {
+            Image currentImage = input.duplicate("");
+            for (PreFilter p : preFilters) {
+                currentImage = p.runPreFilter(currentImage, structureObject);
+                currentImage.setCalibration(input);
+                if (currentImage.sameSize(input)) currentImage.setOffset(input);
+            }
+            return currentImage;
         }
-        return input;
     }
     
     public static ImageInteger segmentImage(Image input, StructureObjectProcessing structureObject, Segmenter segmenter) {
@@ -45,11 +50,16 @@ public class PluginSequenceRunner {
         else return segmenter.runSegmenter(input, structureObject);
     }
     
-    public static ImageInteger postFilterImage(ImageInteger input, StructureObjectProcessing structureObject, ArrayList<PostFilter> preProcessors) {
-        if (preProcessors==null) return input;
-        for (PostFilter p : preProcessors) {
-            input = p.runPostFilter(input, structureObject);
+    public static ImageInteger postFilterImage(ImageInteger input, StructureObjectProcessing structureObject, ArrayList<PostFilter> postFilters) {
+        if (postFilters==null || postFilters.isEmpty()) return input;
+        else {
+            ImageInteger currentImage = input.duplicate("");
+            for (PostFilter p : postFilters) {
+                currentImage = p.runPostFilter(currentImage, structureObject);
+                currentImage.setCalibration(input);
+                if (currentImage.sameSize(input)) currentImage.setOffset(input);
+            }
+            return currentImage;
         }
-        return input;
     }
 }

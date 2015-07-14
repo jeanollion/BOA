@@ -1,5 +1,6 @@
 package dataStructure.objects;
 
+import image.ImageLabeller;
 import dataStructure.containers.ImageContainer;
 import dataStructure.configuration.Experiment;
 import dataStructure.containers.ObjectContainer;
@@ -8,6 +9,7 @@ import image.BoundingBox;
 import image.Image;
 import image.ImageByte;
 import image.ImageInteger;
+import image.ImageMask;
 import java.io.File;
 import java.util.ArrayList;
 import org.bson.types.ObjectId;
@@ -24,18 +26,25 @@ import org.mongodb.morphia.annotations.Transient;
 import plugins.Segmenter;
 import static processing.PluginSequenceRunner.*;
 
-
-public abstract class StructureObjectAbstract implements StructureObjectMeasurement {
+@Indexes(@Index(fields={@Field(value="newTrackBranch")}))
+public abstract class StructureObjectAbstract implements StructureObjectPostProcessing, Track {
     @Id protected ObjectId id;
+    @Reference(lazy=true, idOnly=true) protected StructureObject[][] childrenSM;
+    
+    // track-related attributes
     protected int timePoint;
+    @Reference(lazy=true) protected StructureObjectAbstract parentTrack;
+    @Reference(lazy=true) protected StructureObjectAbstract childTrack;
+    protected boolean newTrackBranch=true;
+    //@Transient protected boolean parentTrackLoaded=false;
+    //@Transient protected boolean childTrackLoaded=false;
+    
+    // mask and images
     @Transient Object3D object;
-    
     @Embedded protected ObjectContainer objectContainer;
-    
-    @Transient protected StructureObject[][] childrenSM;
-    
     @Transient protected Image[] rawImagesS;
     @Transient protected Image[] preProcessedImageS;
+    
     
     public StructureObjectAbstract(int timePoint, Object3D object, Experiment xp) {
         this.timePoint = timePoint;
@@ -43,7 +52,39 @@ public abstract class StructureObjectAbstract implements StructureObjectMeasurem
         this.childrenSM=new StructureObject[xp.getStructureNB()][];
         this.rawImagesS=new Image[xp.getStructureNB()];
         this.preProcessedImageS=new Image[xp.getStructureNB()];
-        
+    }
+    
+    /**
+     * 
+     * @param parent the parent of the current object in the track
+     * @param isChildOfParent if true, sets this instance as the child of {@parent} 
+     */
+    public void setParentTrack(StructureObjectPreProcessing parent, boolean isChildOfParent) {
+        this.parentTrack=(StructureObjectAbstract)parent;
+        if (isChildOfParent) {
+            parentTrack.childTrack=this;
+            newTrackBranch=false;
+        }
+        else this.newTrackBranch=true;
+    }
+    
+    @Override
+    public StructureObjectAbstract getParentTrack() {
+        return parentTrack;
+    }
+    
+    @Override
+    public StructureObjectAbstract getChildTrack() {
+        return childTrack;
+    }
+    
+    
+    public ImageMask getMask() {
+        return object.getMask();
+    }
+    
+    public BoundingBox getBounds() {
+        return object.getBounds();
     }
     
     protected abstract void setObjectContainer(Experiment xp);

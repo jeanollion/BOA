@@ -15,27 +15,33 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.configuration;
+package plugins.plugins.preFilter;
 
-import configuration.parameters.NumberParameter;
-import configuration.parameters.PluginParameter;
-import plugins.Cropper;
-import plugins.Rotation;
+import configuration.parameters.Parameter;
+import dataStructure.objects.StructureObjectPreProcessing;
+import image.Image;
+import plugins.PreFilter;
 
 /**
  *
  * @author jollion
  */
-public class MicroscopyFieldMF extends MicroscopyField {
-    NumberParameter numberOfChannels = new NumberParameter("Number of Micro-Fluidic Channels", 0);
-    PluginParameter preCrop = new PluginParameter("Pre-Cropping", Cropper.class, true);
-    PluginParameter rotation = new PluginParameter("Rotation", Rotation.class, true);
-    PluginParameter crop = new PluginParameter("Pre-Cropping", Cropper.class, true);
-    
-    @Override
-    protected void initChildList() {
-        super.initChildList();
-        initChildren(numberOfChannels, preCrop, rotation, crop);
+public class DummyPreFilter implements PreFilter{
+
+    public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    public Parameter[] getParameters() {
+        return new Parameter[0];
+    }
+
+    public boolean isTimeDependent() {
+        return false;
+    }
+
+    public boolean does3D() {
+        return true;
     }
     
 }

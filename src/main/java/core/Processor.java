@@ -21,10 +21,18 @@ import dataStructure.configuration.Experiment;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.containers.MultipleImageContainer;
 import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectAbstract;
+import dataStructure.objects.StructureObjectPostProcessing;
+import dataStructure.objects.StructureObjectPreProcessing;
 import dataStructure.objects.StructureObjectRoot;
+import dataStructure.objects.Track;
+import image.ImageInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import plugins.Tracker;
+import processing.PluginSequenceRunner;
 
 /**
  *
@@ -52,11 +60,39 @@ public class Processor {
         
     }
     
+    
     public static void processStructure(int structureIdx, StructureObjectRoot root, Experiment xp) {
         // get all parent objects of the structure
-        ArrayList<StructureObject> allParents = root.getAllChildren(xp.getPathToRoot(xp.getStructure(structureIdx).getParentStructure()));
+        ArrayList<StructureObject> allParents = root.getAllObjects(xp.getPathToRoot(xp.getStructure(structureIdx).getParentStructure()));
+        for (StructureObject parent : allParents) {
+            segmentObjects(structureIdx, parent, xp);
+        }
+        
+    }
+    
+    public static void segmentObjects(int structureIdx, StructureObject parent, Experiment xp) {
+        // segmentation
+        parent.createPreFilterImage(structureIdx, xp); // the filtered image is set in the objects as it can be further used
+        ImageInteger seg = PluginSequenceRunner.segmentImage(parent.getFilteredImage(structureIdx), parent, xp.getStructure(structureIdx).getProcessingChain().getSegmenter());
+        seg = PluginSequenceRunner.postFilterImage(seg, parent, xp.getStructure(structureIdx).getProcessingChain().getPostfilters());
+        
+        // creation des structureObjects
         
         
-        
+    }
+    
+    public static void trackRoot(Experiment xp, StructureObjectRoot[] rootsT) {
+        for (int i = 1; i<rootsT.length; ++i) {
+            rootsT[i].setParentTrack(rootsT[i-1], true);
+        }
+    }
+    
+    public static void track(Experiment xp, Tracker tracker, StructureObjectPostProcessing parentTrack, int structureIdx) {
+        // TODO gestion de la memoire vive -> si trop ouvert, fermer les images & masques des temps précédents.
+        // Multithread -> attention à l'interaction avec la gestion de la memoire..
+        while(parentTrack.getChildTrack()!=null) {
+            tracker.assignParents(parentTrack.getChildObjects(structureIdx), parentTrack.getChildTrack().getChildObjects(structureIdx));
+            parentTrack = parentTrack.getChildTrack();
+        }
     }
 }

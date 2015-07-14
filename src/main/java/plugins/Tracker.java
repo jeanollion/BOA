@@ -17,14 +17,21 @@
  */
 package plugins;
 
+import dataStructure.objects.StructureObjectAbstract;
+import dataStructure.objects.StructureObjectPostProcessing;
+import dataStructure.objects.StructureObjectPreProcessing;
 import dataStructure.objects.StructureObjectProcessing;
-import image.Image;
-import image.ImageInteger;
+import dataStructure.objects.Track;
 
 /**
  *
  * @author jollion
  */
-public interface PostFilter extends ImageProcessingPlugin {
-    public ImageInteger runPostFilter(ImageInteger input, StructureObjectProcessing structureObject);
+public interface Tracker extends Plugin {
+    /**
+     * assign {@param parents} to {@param children} using the method {@link StructureObjectAbstract#setParentTrack(dataStructure.objects.Track, boolean) }
+     * @param parents objects that share a given parent object
+     * @param children objects that share a given parent object that is the childTrack of the parent of the {@param parents} objects
+     */
+    public void assignParents(StructureObjectPreProcessing[] parents, StructureObjectPreProcessing[] children);
 }
