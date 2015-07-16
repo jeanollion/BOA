@@ -15,21 +15,21 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugins.plugins.thresholders;
+package images;
 
-import configuration.parameters.Parameter;
-import plugins.Thresholder;
+import image.ImageReader;
+import org.junit.Test;
 
 /**
  *
  * @author jollion
  */
-public class DummyThresholder2 implements Thresholder {
-    public Parameter[] getParameters() {
-        return new Parameter[0];
-    }
-
-    public boolean does3D() {
-        return true;
+public class TestND {
+    @Test
+    public void testDim() {
+        ImageReader r = new ImageReader("/data/Images/mg6300WT_LB_LR62silicium_oil37.nd2");
+        int[][] stc = r.getSTCNumbers();
+        System.out.println("number of series: "+stc.length+ " time points: "+stc[0][0]+ " channels: "+stc[0][1]);
+        
     }
 }

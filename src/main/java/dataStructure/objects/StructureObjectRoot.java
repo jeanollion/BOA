@@ -28,7 +28,7 @@ public class StructureObjectRoot extends StructureObjectAbstract {
     @Transient protected int[] structureToImageFileCorrespondenceC;
     
     public StructureObjectRoot(int timePoint, Experiment xp, BlankMask mask, MultipleImageContainer imageContainer) {
-        super(timePoint, new Object3D(mask), xp);
+        super(timePoint, new Object3D(mask, 1), xp);
         this.imageContainer=imageContainer;
         this.structureToImageFileCorrespondenceC=xp.getStructureToChannelCorrespondance();
     }

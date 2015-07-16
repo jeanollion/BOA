@@ -64,5 +64,9 @@ public class SimpleCrop implements Cropper {
     public Parameter[] getConfigurationParameters() {
         return null;
     }
+
+    public boolean does3D() {
+        return true;
+    }
     
 }

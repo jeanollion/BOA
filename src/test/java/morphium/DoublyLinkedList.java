@@ -15,24 +15,46 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugin.dummyPlugins;
+package morphium;
 
-import configuration.parameters.NumberParameter;
-import configuration.parameters.Parameter;
-import plugins.Thresholder;
+
 
 /**
  *
  * @author jollion
  */
-public class DummyThresholder implements Thresholder {
 
-    public Parameter[] getParameters() {
-        return new Parameter[]{new NumberParameter("number", 2, 2.22)};
-    }
-
-    public boolean does3D() {
-        return true;
+//@NoCache
+//@Entity
+//@PartialUpdate
+public class DoublyLinkedList {
+    //ObjectId id; //@Id 
+    int value;
+    private DoublyLinkedList parent; //@Reference(lazyLoading=true) 
+    private DoublyLinkedList child; //@Reference(lazyLoading=true) 
+    public enum Fields {id, value, parent, child};
+    
+    //@PartialUpdate("parent")
+    public void setParent(DoublyLinkedList parent) {
+        this.parent = parent;
     }
     
+    //@PartialUpdate("child")
+    public void setChild(DoublyLinkedList child) {
+        this.child = child;
+    }
+    
+    public DoublyLinkedList(int value) {
+        this.value = value;
+    }
+
+    public DoublyLinkedList getParent() {
+        return parent;
+    }
+
+    public DoublyLinkedList getChild() {
+        return child;
+    }
+    
+    public DoublyLinkedList(){};
 }

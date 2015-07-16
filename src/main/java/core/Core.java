@@ -17,6 +17,7 @@
  */
 package core;
 
+
 import java.util.logging.Logger;
 
 
@@ -27,7 +28,6 @@ import java.util.logging.Logger;
 public class Core {
     private static final Core INSTANCE = new Core();
     private static final Logger log = Logger.getLogger(Core.class.getName());
-    
     
     public static Core getInstance() {return INSTANCE;}
     public static Logger getLogger(){return log;}

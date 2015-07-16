@@ -58,7 +58,7 @@ public class ImageLabeller {
     }
     
     public static Object3D[] labelImage(ImageInteger mask) {
-        if (mask instanceof BlankMask) return new Object3D[]{new Object3D(mask)};
+        if (mask instanceof BlankMask) return new Object3D[]{new Object3D(mask, 1)};
         else {
             ImageLabeller il = new ImageLabeller(mask);
             if (mask.getSizeZ()>1) il.neigh=ImageLabeller.neigh3D;
@@ -74,7 +74,7 @@ public class ImageLabeller {
         for (Spot s : spots.values()) {
             ArrayList<Voxel3D> voxels = s.voxels;
             voxels = new ArrayList(new HashSet(voxels)); // revmove duplicate voxels because of neighbourhood overlap
-            res[label++]= new Object3D(voxels, mask.getScaleXY(), mask.getScaleZ());
+            res[label++]= new Object3D(voxels, label, mask.getScaleXY(), mask.getScaleZ());
         }
         return res;
     }

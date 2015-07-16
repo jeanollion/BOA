@@ -58,7 +58,7 @@ public class BlankMask extends ImageInteger implements ImageMask {
     }
 
     @Override
-    public Image duplicate(String name) {
+    public BlankMask duplicate(String name) {
         return new BlankMask(name, sizeX, sizeY, sizeZ, offsetX, offsetY, offsetZ, scaleXY, scaleZ);
     }
 

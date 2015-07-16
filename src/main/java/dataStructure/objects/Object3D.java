@@ -52,6 +52,10 @@ public class Object3D {
         this.bounds=bounds;
     }
     
+    public int getLabel() {
+        return label;
+    }
+    
     protected void createMask() {
         mask = new ImageByte("", getBounds().getImageProperties("", scaleXY, scaleZ));
         for (Voxel3D v : voxels) mask.setPixel(v.x, v.y, v.z, 1);
@@ -106,17 +110,17 @@ public class Object3D {
             else {
                 if (voxels!=null) {
                     if (voxels.size()<MAX_VOX) return new ObjectContainerVoxels(this);
-                    else return new ImageIntegerContainer(path, mask);
+                    else return new ImageIntegerContainer(path, mask, label);
                 } else {
                     if (mask.getSizeXYZ()<MAX_VOX*2) {
                         if (getVoxels().size()<MAX_VOX) return new ObjectContainerVoxels(this);
-                        else return new ImageIntegerContainer(path, mask);
-                    } else return new ImageIntegerContainer(path, mask);
+                        else return new ImageIntegerContainer(path, mask, label);
+                    } else return new ImageIntegerContainer(path, mask, label);
                 }
             }
         } else if (voxels!=null) {
             if (voxels.size()<MAX_VOX) return new ObjectContainerVoxels(this);
-            else return new ImageIntegerContainer(path, getMask());
+            else return new ImageIntegerContainer(path, getMask(), label);
         } else return null;
     }
     

@@ -23,5 +23,5 @@ package measurement;
  */
 public class GeometricalMeasurements {
     
-    public float distanceCenter
+    public float distanceCenter;
 }

@@ -30,9 +30,15 @@ import org.mongodb.morphia.annotations.Embedded;
  */
 @Embedded
 public class ImageIntegerContainer extends ImageContainer implements ObjectContainer {
-
+    int label=1;
+    
     public ImageIntegerContainer(String filePath, ImageInteger image) {
         super(filePath, image);
+    }
+    
+    public ImageIntegerContainer(String filePath, ImageInteger image, int label) {
+        this(filePath, image);
+        this.label=label;
     }
     
     public ImageIntegerContainer(String filePath, ImageInteger image, ImageIOCoordinates ioCoords) {
@@ -50,7 +56,7 @@ public class ImageIntegerContainer extends ImageContainer implements ObjectConta
     
     public Object3D getObject() { // attension s'assurer que l'image ne contient qu'un seul objet et bounds(image) = bounds(object)
         ImageInteger mask = getImage();
-        return new Object3D(mask);
+        return new Object3D(mask, label);
     }
     
 }

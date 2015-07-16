@@ -20,10 +20,6 @@ package dataStructure.containers;
 import dataStructure.objects.Object3D;
 import image.BlankMask;
 import image.BoundingBox;
-import image.Image;
-import image.ImageIOCoordinates;
-import image.ImageProperties;
-import java.io.File;
 import org.mongodb.morphia.annotations.Embedded;
 
 /**
@@ -46,7 +42,7 @@ public class ObjectContainerBlankMask implements ObjectContainer {
     }
     
     public Object3D getObject() {
-        return new Object3D(getImage());
+        return new Object3D(getImage(), 1);
     }
     
     //morphia

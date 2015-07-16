@@ -15,21 +15,25 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugins.plugins.thresholders;
+package morphia;
 
-import configuration.parameters.Parameter;
-import plugins.Thresholder;
+import org.bson.types.ObjectId;
+import org.mongodb.morphia.annotations.Entity;
+import org.mongodb.morphia.annotations.Id;
+import org.mongodb.morphia.annotations.Reference;
 
 /**
  *
  * @author jollion
  */
-public class DummyThresholder2 implements Thresholder {
-    public Parameter[] getParameters() {
-        return new Parameter[0];
+@Entity
+public class SimpleEntity {
+    protected int value;
+    @Id ObjectId id;
+    @Reference(lazy=true) SimpleEntity ref;
+    public SimpleEntity(int value) {
+        this.value = value;
     }
-
-    public boolean does3D() {
-        return true;
-    }
+    
+    private SimpleEntity(){}
 }

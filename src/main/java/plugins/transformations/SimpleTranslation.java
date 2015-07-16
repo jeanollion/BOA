@@ -53,5 +53,9 @@ public class SimpleTranslation implements Transformation {
     public Parameter[] getConfigurationParameters() {
         return null;
     }
+
+    public boolean does3D() {
+        return true;
+    }
     
 }

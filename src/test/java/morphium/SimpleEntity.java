@@ -15,21 +15,30 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugins.plugins.thresholders;
+package morphium;
 
-import configuration.parameters.Parameter;
-import plugins.Thresholder;
+import de.caluga.morphium.annotations.Entity;
+import de.caluga.morphium.annotations.Id;
+import de.caluga.morphium.annotations.Reference;
+import org.bson.types.ObjectId;
 
 /**
  *
  * @author jollion
  */
-public class DummyThresholder2 implements Thresholder {
-    public Parameter[] getParameters() {
-        return new Parameter[0];
+@Entity
+public class SimpleEntity {
+
+    protected int value;
+    @Id
+    ObjectId id;
+    @Reference SimpleEntity ref;
+    @Reference(lazyLoading = true) SimpleEntity lazyRef;
+
+    public SimpleEntity(int value) {
+        this.value = value;
     }
 
-    public boolean does3D() {
-        return true;
+    public SimpleEntity() {
     }
 }

@@ -106,7 +106,7 @@ public class DoublyLinkedListTest {
         assertEquals("test fetch l2 from lazy 3 after update", 2, l2Fetched3.getValue());
     }
     
-    @Test
+    //@Test
     public void testDoublyLinkedList() {
         MongoClient mongo=new MongoClient();
         Morphia morphia = new Morphia();

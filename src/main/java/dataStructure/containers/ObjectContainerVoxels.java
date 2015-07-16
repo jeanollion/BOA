@@ -35,6 +35,7 @@ public class ObjectContainerVoxels implements ObjectContainer {
     ArrayList<Voxel3D> voxels; // a convertir en tableau si morphia ne veut pas. 
     BoundingBox bounds;
     float scaleXY, scaleZ;
+    int label; 
     
     public ObjectContainerVoxels(Object3D object) {
         bounds=object.getBounds();
@@ -42,10 +43,11 @@ public class ObjectContainerVoxels implements ObjectContainer {
         voxels = object.getVoxels();
         scaleXY=object.getScaleXY();
         scaleZ=object.getScaleZ();
+        this.label=object.getLabel();
     }
     
     public Object3D getObject() {
-        return new Object3D(voxels, scaleXY, scaleZ, bounds);
+        return new Object3D(voxels, label, scaleXY, scaleZ, bounds);
     }
     
     public ArrayList<Voxel3D> getVoxels() {

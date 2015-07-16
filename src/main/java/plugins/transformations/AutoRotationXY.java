@@ -23,33 +23,40 @@ import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
 import plugins.Transformation;
 import processing.ImageTransformation;
+import processing.RadonProjection;
 
 /**
  *
  * @author jollion
  */
-public class SimpleRotationXY implements Transformation {
-    NumberParameter angle = new NumberParameter("Angle (degree)", 4, 0);
-    Parameter[] parameters = new Parameter[]{angle};
+public class AutoRotationXY implements Transformation {
+    NumberParameter minAngle = new NumberParameter("Minimal Angle for search", 2, -10);
+    NumberParameter maxAngle = new NumberParameter("Maximal Angle for search", 2, 10);
+    NumberParameter precision1 = new NumberParameter("Angular Precision of first seach", 2, 1);
+    NumberParameter precision2 = new NumberParameter("Angular Precision", 0, 0.1);
+    Parameter[] parameters = new Parameter[]{minAngle, maxAngle, precision1, precision2};
+    Float[] internalParams;
     
     public void computeParameters(int structureIdx, StructureObjectPreProcessing structureObject) {
-        
+        Image image = structureObject.getRawImage(structureIdx);
+        float angle = (float)RadonProjection.computeRotationAngleXY(image, (int)(image.getSizeZ()/2), minAngle.getValue().doubleValue()+90, maxAngle.getValue().doubleValue()+90, precision1.getValue().doubleValue(), precision2.getValue().doubleValue());
+        internalParams = new Float[]{-angle+90};
     }
 
     public Image applyTransformation(Image input) {
-        return ImageTransformation.rotateXY(input, angle.getValue().floatValue());
+        return ImageTransformation.rotateXY(input, internalParams[0]);
     }
 
     public boolean isTimeDependent() {
         return false;
     }
 
-    public Parameter[] getParameters() {
-        return parameters;
+    public Object[] getConfigurationParameters() {
+        return internalParams;
     }
 
-    public Object[] getConfigurationParameters() {
-        return null;
+    public Parameter[] getParameters() {
+        return parameters;
     }
 
     public boolean does3D() {
