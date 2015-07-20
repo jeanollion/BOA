@@ -45,6 +45,22 @@ import ome.units.quantity.Length;
  * @author jollion
  */
 public class ImageWriter {
+    public static ImageFormat defExtension = ImageFormat.OMETIF;
+    
+    public static void writeToFile(Image image, String fullPath) {
+        File f= new File(fullPath);
+        String path  = f.getParent();
+        String imageTitle = f.getName();
+        int extIdx = imageTitle.indexOf(".");
+        ImageFormat extension=null;
+        if (extIdx>0) {
+            imageTitle = f.getName().substring(0, extIdx);
+            extension=ImageFormat.getExtension(f.getName().substring(extIdx));
+        }
+        if (extension==null) extension = defExtension;
+        writeToFile(image, path, imageTitle, extension);
+    }
+    
     /**
      * 
      * @param image image that will be written
