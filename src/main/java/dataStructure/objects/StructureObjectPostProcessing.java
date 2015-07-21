@@ -9,5 +9,5 @@ public interface StructureObjectPostProcessing extends StructureObjectProcessing
      * @return the structureObjects of the structure {@param structureIdx} that have this structureObject as parent
      */
     public StructureObjectPostProcessing[] getChildObjects(int structureIdx);
-    @Override public StructureObjectPostProcessing getChildTrack();
+    @Override public StructureObjectPostProcessing getNext();
 }

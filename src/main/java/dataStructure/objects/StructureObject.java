@@ -1,40 +1,32 @@
 package dataStructure.objects;
 
-import dataStructure.containers.ImageContainer;
+import dataStructure.objects.dao.ObjectDAO;
+import dataStructure.containers.ObjectContainerImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.containers.ObjectContainer;
+import de.caluga.morphium.annotations.Entity;
+import de.caluga.morphium.annotations.Index;
+import de.caluga.morphium.annotations.Transient;
+import de.caluga.morphium.annotations.lifecycle.PreStore;
 import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
 import image.ImageByte;
 import image.ImageInteger;
 import java.io.File;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import org.bson.types.ObjectId;
-import org.mongodb.morphia.annotations.Embedded;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Field;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.Index;
-import org.mongodb.morphia.annotations.IndexOptions;
-import org.mongodb.morphia.annotations.Indexes;
-import org.mongodb.morphia.annotations.PrePersist;
-import org.mongodb.morphia.annotations.Reference;
-import org.mongodb.morphia.annotations.Transient;
-import plugins.Segmenter;
-import static processing.PluginSequenceRunner.*;
 
-@Entity(value = "Objects", noClassnameStored = true)
-@Indexes(@Index(fields={@Field(value="parentId"), @Field(value="structureIdx"), @Field(value="idx")}, options=@IndexOptions(unique=true)))
+
+@Entity(collectionName = "Objects")
+@Index(value={"parentId structureIdx idx", "newTrackBranch"}, options={"unique:1", ""})
 public class StructureObject extends StructureObjectAbstract {
     protected int structureIdx;
     protected int idx;
-    @Reference(lazy=true) protected StructureObjectAbstract parent;
-    
-    protected Vector3D registrationOffset;
-    protected Vector3D registrationRotation;
-    
-    
+    protected ObjectId parentId;
+    @Transient protected StructureObjectAbstract parent;
+    //Registrator -> registration locale
     
     public StructureObject(int timePoint, int structureIdx, int idx, Object3D object, StructureObjectAbstract parent, Experiment xp) {
         super(timePoint, object, xp);
@@ -44,17 +36,22 @@ public class StructureObject extends StructureObjectAbstract {
     }
     
     protected void setObjectContainer(Experiment xp) {
-        this.objectContainer=object.getObjectContainer(xp.getOutputImagePath()+File.separator+"processed_t"+timePoint+"_s"+structureIdx+".png");
+        this.objectContainer=object.getObjectContainer(xp.getOutputImageDirectory()+File.separator+"processed_t"+timePoint+"_s"+structureIdx+".png");
     }
     
-    public void setRegistrationOffset(Vector3D offset) {
-        this.registrationOffset=offset;
+    protected String getFileName(boolean extension) {
+        return "s"+new DecimalFormat("00").format(structureIdx)+"_idx"+new DecimalFormat("00000").format(idx)+(extension?".png":"");
     }
     
-    public void setRegistrationRotation(Vector3D angles) {
-        this.registrationRotation=angles;
+    protected String getSubDirectory() {
+        return parent.getSubDirectory()+File.separator+getFileName(false);
     }
     
+    @Override
+    public void createObjectContainer() {
+        this.objectContainer=object.getObjectContainer(parent.getSubDirectory()+File.separator+this.getFileName(true));
+    }
+
     @Override
     public Image getRawImage(int structureIdx) {
         if (rawImagesS[structureIdx]==null) { // chercher l'image chez le parent avec les bounds
@@ -122,26 +119,14 @@ public class StructureObject extends StructureObjectAbstract {
     
     // DAO methods
     
-    public void save(ObjectDAO dao) {
-        //TODO tester si objectId!=null -> remplacer ou updater 
-        //TODO voir s'il existe une query groupée
-        if (this.id!=null) delete(dao); //TODO remove id?
-        dao.save(this);
+    public void save() {
+        getRoot().objectDAO.store(this);
     }
     
-    public void update(ObjectDAO dao) {
-        //TODO
+    public void delete() {
+        getRoot().objectDAO.delete(this);
     }
     
-    public void delete(ObjectDAO dao) {
-        dao.delete(this);
-    }
-
-    @Override
-    public StructureObject[] getChildObjects(int structureIdx) {
-        return childrenSM[structureIdx];
-    }
-    
-    // morphia
-    //@PrePersist void prePersist() {parentId=parent.id; createObjectContainer();}
+    // morphium
+    @PreStore void preStore() {parentId=parent.id; createObjectContainer();}
 }

@@ -18,19 +18,21 @@ package configuration.parameters;
 import dataStructure.configuration.Experiment;
 import configuration.userInterface.ConfigurationTreeModel;
 import configuration.userInterface.TreeModelContainer;
+import de.caluga.morphium.annotations.Embedded;
+import de.caluga.morphium.annotations.Transient;
+import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
-import org.mongodb.morphia.annotations.Embedded;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  *
  * @author jollion
  */
-@Embedded
+@Embedded(polymorph = true)
+@Lifecycle
 public abstract class SimpleParameter implements Parameter {
     protected String name;
     

@@ -22,7 +22,7 @@ import configuration.parameters.ui.ParameterUI;
 import java.io.File;
 import java.util.Arrays;
 import javax.swing.JFileChooser;
-import org.mongodb.morphia.annotations.Transient;
+import de.caluga.morphium.annotations.Transient;
 import utils.Utils;
 
 /**

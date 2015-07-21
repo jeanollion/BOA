@@ -96,7 +96,7 @@ public class ConfigurationTest {
         Processor.importFiles(files, xp);
         assertEquals("number of fields detected", 2, xp.getMicroscopyFields().getChildCount());
         MultipleImageContainer c = xp.getMicroscopyField(0).getImages();
-        ImageReader reader = new ImageReader(c.getPath());
+        ImageReader reader = new ImageReader(c.getFilePath());
         assertEquals("extension:", ImageFormat.OMETIF.getExtension(), reader.getExtension().getExtension());
         ImageByte im00 = (ImageByte)reader.openImage(c.getImageIOCoordinates(0, 0));
         ImageIOTest.assertImageByte(images[0][0], im00);

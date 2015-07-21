@@ -19,23 +19,21 @@ package dataStructure.configuration;
 
 import com.mongodb.MongoClient;
 import dataStructure.configuration.Experiment;
+import de.caluga.morphium.DAO;
+import de.caluga.morphium.Morphium;
 import org.bson.types.ObjectId;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.dao.BasicDAO;
-import org.mongodb.morphia.query.Query;
 
 /**
  *
  * @author jollion
  */
-public class ExperimentDAO extends BasicDAO<Experiment, ObjectId>{
+public class ExperimentDAO extends DAO<Experiment>{
 
-    public ExperimentDAO(Class<Experiment> entityClass, MongoClient mongoClient, Morphia morphia, String dbName) {
-        super(entityClass, mongoClient, morphia, dbName);
-        this.ensureIndexes();
+    public ExperimentDAO(Morphium morphium) {
+        super(morphium, Experiment.class);
+        morphium.ensureIndicesFor(Experiment.class);
     }
     public Experiment getExperiment() {
-        Query<Experiment> query = this.getDatastore().createQuery(this.getEntityClass());
-        return query.get();
+        return this.getQuery().get();
     }
 }

@@ -23,7 +23,7 @@ import configuration.userInterface.ConfigurationTreeModel;
 import java.awt.Dimension;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import org.mongodb.morphia.annotations.Transient;
+import de.caluga.morphium.annotations.Transient;
 
 /**
  *

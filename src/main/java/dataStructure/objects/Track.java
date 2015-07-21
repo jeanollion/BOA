@@ -22,7 +22,7 @@ package dataStructure.objects;
  * @author jollion
  */
 public interface Track {
-    public StructureObjectPreProcessing getParentTrack();
-    public StructureObjectPreProcessing getChildTrack();
+    public StructureObjectPreProcessing getPrevious();
+    public StructureObjectPreProcessing getNext();
     public void setParentTrack(StructureObjectPreProcessing parent, boolean isChildOfParent);
 }

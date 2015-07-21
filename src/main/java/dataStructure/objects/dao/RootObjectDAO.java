@@ -15,22 +15,27 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package core;
+package dataStructure.objects.dao;
 
-import java.util.logging.Logger;
-
+import dataStructure.objects.StructureObjectRoot;
+import de.caluga.morphium.DAO;
+import de.caluga.morphium.Morphium;
 
 /**
  *
  * @author jollion
  */
-public class Core {
-    private static final Core INSTANCE = new Core();
-    private static final Logger log = Logger.getLogger(Core.class.getName());
-    
-    public static Core getInstance() {return INSTANCE;}
-    public static Logger getLogger(){return log;}
-    private Core(){
-        System.out.println("Init Core...");
+public class RootObjectDAO extends DAO<StructureObjectRoot>{
+    Morphium morphium;
+    public RootObjectDAO(Morphium morphium) {
+        super(morphium, StructureObjectRoot.class);
+        morphium.ensureIndicesFor(StructureObjectRoot.class);
+        this.morphium=morphium;
+    }
+    public void store(StructureObjectRoot o) {
+        morphium.store(o);
+    }
+    public void delete(StructureObjectRoot o) {
+        morphium.delete(o);
     }
 }

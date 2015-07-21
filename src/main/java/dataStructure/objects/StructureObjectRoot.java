@@ -1,40 +1,53 @@
 package dataStructure.objects;
 
-import dataStructure.containers.ImageContainer;
-import dataStructure.containers.ImageContainer;
+import dataStructure.objects.dao.RootObjectDAO;
+import dataStructure.objects.dao.ObjectDAO;
+import dataStructure.containers.ObjectContainerImage;
+import dataStructure.containers.ObjectContainerImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.containers.MultipleImageContainer;
+import de.caluga.morphium.annotations.Embedded;
+import de.caluga.morphium.annotations.Entity;
+import de.caluga.morphium.annotations.Index;
+import de.caluga.morphium.annotations.Transient;
 import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
 import java.io.File;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import org.bson.types.ObjectId;
-import org.mongodb.morphia.annotations.Embedded;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Field;
-import org.mongodb.morphia.annotations.Index;
-import org.mongodb.morphia.annotations.IndexOptions;
-import org.mongodb.morphia.annotations.Indexes;
-import org.mongodb.morphia.annotations.Transient;
 
-@Entity(value = "RootObjects", noClassnameStored = true)
-@Indexes(@Index(fields={@Field(value="timePoint"), @Field(value="structureIdx")}, options=@IndexOptions(unique=true)))
+
+@Entity(collectionName = "RootObjects")
+@Index(value={"timePoint", "newTrackBranch"})
 public class StructureObjectRoot extends StructureObjectAbstract {
     //protected ObjectId experimentId;
-    @Embedded protected MultipleImageContainer imageContainer;
+    @Transient protected MultipleImageContainer preProcessedImages;
     @Transient protected int[] structureToImageFileCorrespondenceC;
+    @Transient protected RootObjectDAO rootObjectDAO;
+    @Transient protected ObjectDAO objectDAO;
+    @Transient String outputFileDirectory;
     
-    public StructureObjectRoot(int timePoint, Experiment xp, BlankMask mask, MultipleImageContainer imageContainer) {
+    public StructureObjectRoot(int timePoint, Experiment xp, BlankMask mask, MultipleImageContainer preProcessedImages) {
         super(timePoint, new Object3D(mask, 1), xp);
-        this.imageContainer=imageContainer;
+        this.preProcessedImages=preProcessedImages;
         this.structureToImageFileCorrespondenceC=xp.getStructureToChannelCorrespondance();
+        this.outputFileDirectory=xp.getOutputImageDirectory();
     }
     
-    protected void setObjectContainer(Experiment xp) {
-        this.objectContainer=object.getObjectContainer(null); // blankmask
+    protected String getOutputFileDirectory() {return outputFileDirectory;}
+    
+    // for output object
+    protected String getSubDirectory() {
+        return getOutputFileDirectory()+File.separator+"processed"+File.separator+new DecimalFormat("00000").format(timePoint);
+    }
+    
+    @Override
+    public void createObjectContainer() {
+        this.objectContainer=object.getObjectContainer(null); // blank masks
     }
     
     /**
@@ -61,14 +74,14 @@ public class StructureObjectRoot extends StructureObjectAbstract {
     public Image getRawImage(int structureIdx) {
         int channelIdx = this.structureToImageFileCorrespondenceC[structureIdx];
         if (rawImagesS[channelIdx]==null) {
-            rawImagesS[channelIdx]=imageContainer.getImage(0, channelIdx);
+            rawImagesS[channelIdx]=preProcessedImages.getImage(0, channelIdx);
         }
         return rawImagesS[channelIdx];
     }
     
     public Image openRawImage(int structureIdx, BoundingBox bounds) {
         int channelIdx = this.structureToImageFileCorrespondenceC[structureIdx];
-        if (rawImagesS[channelIdx]==null) return imageContainer.getImage(0, channelIdx, bounds);
+        if (rawImagesS[channelIdx]==null) return preProcessedImages.getImage(0, channelIdx, bounds);
         else return rawImagesS[channelIdx].crop(bounds);
     }
     
@@ -89,18 +102,13 @@ public class StructureObjectRoot extends StructureObjectAbstract {
     
     // DAO methods
     public void save(RootObjectDAO dao) {
-        //TODO tester si objectId!=null -> remplacer ou updater 
-        //TODO voir s'il existe une query groupée
-        if (this.id!=null) delete(dao); //TODO remove id?
-        dao.save(this);
-    }
-    
-    public void update(RootObjectDAO dao) {
-        //TODO
+        dao.store(this);
     }
     
     public void delete(RootObjectDAO dao) {
         dao.delete(this);
     }
+
+    
     
 }

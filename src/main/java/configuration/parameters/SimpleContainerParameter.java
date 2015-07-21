@@ -16,21 +16,23 @@
 package configuration.parameters;
 
 import configuration.parameters.ui.ParameterUI;
+import de.caluga.morphium.annotations.Embedded;
+import de.caluga.morphium.annotations.Transient;
+import de.caluga.morphium.annotations.lifecycle.Lifecycle;
+import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
-import org.mongodb.morphia.annotations.Embedded;
-import org.mongodb.morphia.annotations.PostLoad;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  *
  * @author jollion
  */
-@Embedded
+@Embedded(polymorph = true)
+@Lifecycle
 public abstract class SimpleContainerParameter implements ContainerParameter {
     protected String name;
     @Transient protected ContainerParameter parent;
@@ -115,7 +117,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     }
 
     @Override
-    public TreeNode getParent() {
+    public ContainerParameter getParent() {
         return parent;
     }
 
@@ -138,7 +140,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     }
 
     @Override
-    public TreeNode getChildAt(int childIndex) {
+    public Parameter getChildAt(int childIndex) {
         return children.get(childIndex);
     }
 
@@ -157,7 +159,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
         return Collections.enumeration(children);
     }
     
-    // morphia
-    @PostLoad void postLoad() {initChildList();}
+    // morphium
+    @PostLoad public void postLoad() {initChildList();}
     
 }

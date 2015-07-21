@@ -17,8 +17,7 @@ package configuration.parameters;
 
 import configuration.parameters.ui.ParameterUI;
 import configuration.parameters.ui.ChoiceParameterUI;
-import java.util.Arrays;
-import org.mongodb.morphia.annotations.Transient;
+import de.caluga.morphium.annotations.Transient;
 import utils.Utils;
 
 /**

@@ -20,7 +20,7 @@ package configuration.parameters;
 import configuration.parameters.ui.ChoiceParameterUI;
 import dataStructure.configuration.Experiment;
 import configuration.parameters.ui.ParameterUI;
-import org.mongodb.morphia.annotations.Transient;
+import de.caluga.morphium.annotations.Transient;
 import utils.Utils;
 
 /**

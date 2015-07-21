@@ -20,37 +20,46 @@ package dataStructure.containers;
 import dataStructure.objects.Object3D;
 import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
-import image.BlankMask;
 import image.BoundingBox;
+import image.Image;
+import image.ImageFormat;
+import image.ImageIOCoordinates;
+import image.ImageInteger;
+import image.ImageReader;
+import image.ImageWriter;
 
 /**
  *
  * @author jollion
  */
 
-public class ObjectContainerBlankMask extends ObjectContainer {
-    
-    public ObjectContainerBlankMask(BoundingBox bounds, float scaleXY, float scaleZ) {
-        super(bounds, scaleXY, scaleZ);
+@Embedded(polymorph=true)
+public class ObjectContainerImage extends ObjectContainer {
+    int label;
+    @Transient String filePath;
+    public ObjectContainerImage(Object3D object, String filePath) {
+        super(object.getBounds(), object.getScaleXY(), object.getScaleZ());
+        this.label=object.getLabel();
+        this.filePath = filePath;
     }
-    
-    public BlankMask getImage(float scaleXY, float scaleZ) {
-        return bounds.getImageProperties("", scaleXY, scaleZ);
+
+    public ImageInteger getImage() {
+        Image image = ImageReader.openImage(filePath, new ImageIOCoordinates());
+        image.setOffset(bounds.getxMin(), bounds.getyMin(), bounds.getzMin());
+        image.setCalibration(scaleXY, scaleZ);
+        return (ImageInteger)image;
     }
-    
-    public Object3D getObject() {
-        return new Object3D(getImage(scaleXY, scaleZ), 1);
-    }
-    
+
     public void updateObject(Object3D object) {
-        bounds = object.getBounds();
+        ImageWriter.writeToFile(object.getMask(), filePath, ImageFormat.PNG);
     }
     
-    //morphia
-    public ObjectContainerBlankMask(){}
-
-
+    public Object3D getObject() { 
+        ImageInteger mask = getImage();
+        return new Object3D(mask, label);
+    }
     
+    //morphium
+    public ObjectContainerImage(){};
 
-    
 }

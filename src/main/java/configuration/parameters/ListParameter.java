@@ -19,13 +19,14 @@ package configuration.parameters;
  *
  * @author jollion
  */
-public interface ListParameter extends ContainerParameter { //<T extends Parameter>
+public interface ListParameter<T extends Parameter> extends ContainerParameter { //<T extends Parameter>
     public abstract Parameter createChildInstance();
     /**
      * 
      * @param child to be inserted in the list
      * @return the same instance of ListParameter
      */
+    public Class<T> getChildClass();
     public ListParameter insert(Parameter child);
     public void removeAllElements();
     public int getUnMutableIndex();

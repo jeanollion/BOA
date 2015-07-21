@@ -27,9 +27,10 @@ import java.util.HashMap;
 import java.util.logging.Level;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
-import org.mongodb.morphia.annotations.Embedded;
-import org.mongodb.morphia.annotations.PostLoad;
-import org.mongodb.morphia.annotations.Transient;
+import de.caluga.morphium.annotations.Embedded;
+import de.caluga.morphium.annotations.Transient;
+import de.caluga.morphium.annotations.lifecycle.PostLoad;
+import java.util.logging.Logger;
 import plugins.Plugin;
 import plugins.PluginFactory;
 
@@ -38,25 +39,26 @@ import plugins.PluginFactory;
  * @author jollion
  * @param <T> class of plugin
  */
-@Embedded
-public class PluginParameter extends SimpleContainerParameter implements Deactivatable, ChoosableParameter { //<T extends Plugin> // TODO generic quand supporté par morphia
+public class PluginParameter<T extends Plugin> extends SimpleContainerParameter implements Deactivatable, ChoosableParameter { //<T extends Plugin> // TODO generic quand supporté par morphia
     @Transient private static HashMap<Class<? extends Plugin>, ArrayList<String>> pluginNames=new HashMap<Class<? extends Plugin>, ArrayList<String>>();
     protected Parameter[] pluginParameters;
     protected String pluginName=NO_SELECTION;
-    protected Class<? extends Plugin> pluginType;
+    @Transient protected Class<T> pluginClass;
+    protected String pluginClassName;
     protected boolean allowNoSelection;
     protected boolean activated=true;
     @Transient protected boolean pluginSet=false;
     
-    public PluginParameter(String name, Class<? extends Plugin> pluginType, boolean allowNoSelection) {
+    public PluginParameter(String name, Class<T> pluginClass, boolean allowNoSelection) {
         super(name);
-        this.pluginType=pluginType;
+        this.pluginClass=pluginClass;
+        this.pluginClassName=pluginClass.getName();
         this.allowNoSelection=allowNoSelection;
         super.initChildren();
     }
     
-    public PluginParameter(String name, Class<? extends Plugin> pluginType, boolean allowNoSelection, String defautlMethod) {
-        this(name, pluginType, allowNoSelection);
+    public PluginParameter(String name, Class<T> pluginClass, boolean allowNoSelection, String defautlMethod) {
+        this(name, pluginClass, allowNoSelection);
         this.pluginName=defautlMethod; // do not call setPlugin Method because plugins are no initiated at startup
     }
     
@@ -83,7 +85,7 @@ public class PluginParameter extends SimpleContainerParameter implements Deactiv
             this.pluginSet=false;
             
         } else if (!pluginSet || !pluginName.equals(this.pluginName)) {
-            Plugin instance = PluginFactory.getPlugin(pluginType, pluginName);
+            Plugin instance = PluginFactory.getPlugin(pluginClass, pluginName);
             if (instance==null) {
                 Core.getLogger().log(Level.WARNING, "Couldn't find plugin: {0}", pluginName);
                 this.pluginName=NO_SELECTION;
@@ -99,7 +101,7 @@ public class PluginParameter extends SimpleContainerParameter implements Deactiv
     
     public Plugin getPlugin() {
         if (!isOnePluginSet()) return null;
-        Plugin instance = PluginFactory.getPlugin(pluginType, pluginName);
+        Plugin instance = PluginFactory.getPlugin(pluginClass, pluginName);
         if (instance==null) return null;
         Parameter[] params = instance.getParameters();
         if (params.length==this.pluginParameters.length) {
@@ -112,7 +114,7 @@ public class PluginParameter extends SimpleContainerParameter implements Deactiv
     
     @Override
     public void setContentFrom(Parameter other) {
-        if (other instanceof PluginParameter && ((PluginParameter)other).pluginType.equals(pluginType)) {
+        if (other instanceof PluginParameter && ((PluginParameter)other).pluginClass.equals(pluginClass)) {
             PluginParameter otherPP = (PluginParameter) other;
             if (otherPP.pluginName != null && otherPP.pluginName.equals(this.pluginName) && pluginParameters!=null) {
                 ParameterUtils.setContent(pluginParameters, otherPP.pluginParameters);
@@ -133,7 +135,7 @@ public class PluginParameter extends SimpleContainerParameter implements Deactiv
 
     @Override
     public PluginParameter duplicate() {
-        PluginParameter res = new PluginParameter(name, pluginType, allowNoSelection);
+        PluginParameter res = new PluginParameter(name, pluginClass, allowNoSelection);
         res.setContentFrom(this);
         return res;
     }
@@ -176,12 +178,12 @@ public class PluginParameter extends SimpleContainerParameter implements Deactiv
     
     
     public ArrayList<String> getPluginNames() {
-        return getPluginNames(pluginType);
+        return getPluginNames(pluginClass);
     }
 
     @Override
     public String[] getChoiceList() {
-        ArrayList<String> res = getPluginNames(pluginType);
+        ArrayList<String> res = getPluginNames(pluginClass);
         return res.toArray(new String[res.size()]);
     }
 
@@ -199,12 +201,17 @@ public class PluginParameter extends SimpleContainerParameter implements Deactiv
     
     
     // morphia
-    PluginParameter(){super();}
-
-
+    public PluginParameter(){
+        super();
+    }
     
-
-    
-
-    
+    @Override
+    @PostLoad public void postLoad() {
+        super.postLoad();
+        try {
+            pluginClass = (Class<T>) Class.forName(pluginClassName);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(PluginParameter.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
 }

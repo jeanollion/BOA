@@ -23,7 +23,6 @@ import configuration.parameters.SimpleContainerParameter;
 import configuration.parameters.SimpleListParameter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import org.mongodb.morphia.annotations.PostLoad;
 import plugins.PostFilter;
 import plugins.PreFilter;
 import plugins.Segmenter;
@@ -34,9 +33,9 @@ import plugins.Segmenter;
  */
 public class ProcessingChain extends SimpleContainerParameter {
     
-    SimpleListParameter preFilters = new SimpleListParameter("Pre-Filters", new PluginParameter("Pre-Filter", PreFilter.class, false));
+    SimpleListParameter<PluginParameter> preFilters = new SimpleListParameter("Pre-Filters", new PluginParameter("Pre-Filter", PreFilter.class, false));
     PluginParameter segmenter = new PluginParameter("Segmentation algorithm", Segmenter.class, false);
-    SimpleListParameter postFilters = new SimpleListParameter("Post-Filters", new PluginParameter("Post-Filter", PostFilter.class, false));
+    SimpleListParameter<PluginParameter> postFilters = new SimpleListParameter("Post-Filters", new PluginParameter("Post-Filter", PostFilter.class, false));
     
     public ProcessingChain(String name) {
         super(name);
@@ -45,7 +44,7 @@ public class ProcessingChain extends SimpleContainerParameter {
     
     public ArrayList<PreFilter> getPrefilters() {
         ArrayList<PreFilter> res = new ArrayList<PreFilter> (preFilters.getChildCount());
-        for (Parameter p : preFilters.getChildren()) if (((PluginParameter)p).isOnePluginSet() && ((PluginParameter)p).isActivated()) res.add((PreFilter)((PluginParameter)p).getPlugin());
+        for (PluginParameter p : preFilters.getChildren()) if (((PluginParameter)p).isOnePluginSet() && ((PluginParameter)p).isActivated()) res.add((PreFilter)((PluginParameter)p).getPlugin());
         return res;
         //return preFilters.getChildren().toArray(new PreFilter[preFilters.getChildCount()]);
         //return Arrays.copyOf(preFilters.getChildren().toArray(new Parameter[preFilters.getChildCount()]), preFilters.getChildCount(), PreFilter[].class);

@@ -16,6 +16,7 @@
 package configuration.parameters;
 
 import configuration.parameters.ui.ParameterUI;
+import de.caluga.morphium.annotations.Embedded;
 import java.util.ArrayList;
 import javax.swing.tree.MutableTreeNode;
 
@@ -23,6 +24,7 @@ import javax.swing.tree.MutableTreeNode;
  *
  * @author jollion
  */
+@Embedded(polymorph = true)
 public interface Parameter extends MutableTreeNode {
     public ArrayList<Parameter> getPath();
     public ParameterUI getUI();

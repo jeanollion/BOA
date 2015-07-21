@@ -18,13 +18,27 @@
 package dataStructure.containers;
 
 import dataStructure.objects.Object3D;
-import org.mongodb.morphia.annotations.Embedded;
+import de.caluga.morphium.annotations.Embedded;
+import de.caluga.morphium.annotations.Transient;
+import image.BoundingBox;
 
 /**
  *
  * @author jollion
  */
-@Embedded
-public interface ObjectContainer {
-    public Object3D getObject();
+
+@Embedded(polymorph=true)
+public abstract class ObjectContainer {
+    @Transient protected float scaleXY, scaleZ;
+    BoundingBox bounds;
+    public ObjectContainer(BoundingBox bounds, float scaleXY, float scaleZ) {
+        this.bounds=bounds;
+        this.scaleXY=scaleXY;
+        this.scaleZ=scaleZ;
+    }
+    public abstract Object3D getObject();
+    public abstract void updateObject(Object3D object);
+    
+    //morphium
+    protected ObjectContainer(){};
 }

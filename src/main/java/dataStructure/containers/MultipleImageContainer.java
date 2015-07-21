@@ -17,11 +17,12 @@
  */
 package dataStructure.containers;
 
+import de.caluga.morphium.annotations.Embedded;
+import de.caluga.morphium.annotations.Transient;
 import image.BoundingBox;
 import image.Image;
 import image.ImageIOCoordinates;
 import image.ImageReader;
-import org.mongodb.morphia.annotations.Embedded;
 
 /**
  *
@@ -35,7 +36,6 @@ public class MultipleImageContainer {
     int serie;
     float scaleXY, scaleZ;
     BoundingBox bounds;
-    
     FileType fileType;
     
     public MultipleImageContainer(String name, String imagePath, int serie, int timePointNumber, int channelNumber) {
@@ -47,7 +47,11 @@ public class MultipleImageContainer {
         this.channelNumber=channelNumber;
     }
     
-    public String getPath(){return filePath;}
+    public void setImagePath(String path) {
+        this.filePath=path;
+    }
+    
+    public String getFilePath(){return filePath;}
     
     public String getName(){return name;}
 

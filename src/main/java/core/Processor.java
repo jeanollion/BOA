@@ -90,9 +90,9 @@ public class Processor {
     public static void track(Experiment xp, Tracker tracker, StructureObjectPostProcessing parentTrack, int structureIdx) {
         // TODO gestion de la memoire vive -> si trop ouvert, fermer les images & masques des temps précédents.
         // Multithread -> attention à l'interaction avec la gestion de la memoire..
-        while(parentTrack.getChildTrack()!=null) {
-            tracker.assignParents(parentTrack.getChildObjects(structureIdx), parentTrack.getChildTrack().getChildObjects(structureIdx));
-            parentTrack = parentTrack.getChildTrack();
+        while(parentTrack.getNext()!=null) {
+            tracker.assignParents(parentTrack.getChildObjects(structureIdx), parentTrack.getNext().getChildObjects(structureIdx));
+            parentTrack = parentTrack.getNext();
         }
     }
 }

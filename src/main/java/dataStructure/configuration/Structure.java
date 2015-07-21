@@ -24,14 +24,12 @@ import configuration.parameters.ParentStructureParameter;
 import configuration.parameters.ui.NameEditorUI;
 import configuration.parameters.ui.ParameterUI;
 import javax.swing.tree.MutableTreeNode;
-import org.mongodb.morphia.annotations.Embedded;
-import org.mongodb.morphia.annotations.PostLoad;
 
 /**
  *
  * @author jollion
  */
-@Embedded
+
 public class Structure extends SimpleContainerParameter {
     ParentStructureParameter parentStructure =  new ParentStructureParameter("Parent Structure", -1, 0);;
     ChannelImageParameter channelImage = new ChannelImageParameter("Channel Image", -1);

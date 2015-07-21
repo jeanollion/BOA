@@ -17,6 +17,11 @@ package configuration.parameters;
 
 import configuration.parameters.ui.SimpleListParameterUI;
 import configuration.parameters.ui.ListParameterUI;
+import de.caluga.morphium.annotations.Embedded;
+import de.caluga.morphium.annotations.Transient;
+import de.caluga.morphium.annotations.lifecycle.Lifecycle;
+import de.caluga.morphium.annotations.lifecycle.PostLoad;
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -24,23 +29,22 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
-import org.mongodb.morphia.annotations.Embedded;
-import org.mongodb.morphia.annotations.PostLoad;
-import org.mongodb.morphia.annotations.Transient;
 
 /**
  * 
  * @author jollion
  */
 
-@Embedded
-public class SimpleListParameter implements ListParameter {
+@Embedded(polymorph = true)
+@Lifecycle
+public class SimpleListParameter<T extends Parameter> implements ListParameter {
 
     protected String name;
-    protected ArrayList<Parameter> children;
+    protected ArrayList<T> children;
     protected int unMutableIndex;
-    protected Class<? extends Parameter> childrenClass;
-    protected Parameter childInstance;
+    @Transient protected Class<T> childClass;
+    protected String childClassName;
+    protected T childInstance;
     
     @Transient protected ListParameterUI ui;
     @Transient protected ContainerParameter parent;
@@ -51,50 +55,57 @@ public class SimpleListParameter implements ListParameter {
      * @param name : name of the parameter
      * @param unMutableIndex : index of the last object that cannot be modified
      */
-    public SimpleListParameter(String name, int unMutableIndex, Class<? extends Parameter> childrenClass) { // TODO generic quand supporté par morphia
-        this.childrenClass=childrenClass;
+    public SimpleListParameter(String name, int unMutableIndex, Class<T> childClass) { // TODO generic quand supporté par morphia
         this.name = name;
-        children = new ArrayList<Parameter>(10);
+        children = new ArrayList<T>(10);
         this.unMutableIndex=unMutableIndex;
+        this.childClass = childClass;
+        this.childClassName=childClass.getName();
     }
     /**
      * 
      * @param name : name of the parameter
      */
-    public SimpleListParameter(String name, Class<? extends Parameter> childrenClass) {
-        this.childrenClass=childrenClass;
+    public SimpleListParameter(String name, Class<T> childClass) {
+        //this.childrenClass=childrenClass;
         this.name = name;
-        children = new ArrayList<Parameter>(10);
+        children = new ArrayList<T>(10);
         this.unMutableIndex=-1;
+        this.childClass = childClass;
+        this.childClassName=childClass.getName();
     }
     
-    public SimpleListParameter(String name, int unMutableIndex, Parameter childInstance) { // TODO generic quand supporté par morphia
+    public SimpleListParameter(String name, int unMutableIndex, T childInstance) { // TODO generic quand supporté par morphia
         this.childInstance=childInstance;
         this.name = name;
-        children = new ArrayList<Parameter>(10);
+        children = new ArrayList<T>(10);
         this.unMutableIndex=unMutableIndex;
-        this.childrenClass=childInstance.getClass();
+        this.childClass=(Class<T>)childInstance.getClass();
     }
     
-    public SimpleListParameter(String name, Parameter childInstance) { // TODO generic quand supporté par morphia
+    public SimpleListParameter(String name, T childInstance) { // TODO generic quand supporté par morphia
         this.childInstance=childInstance;
         this.name = name;
-        children = new ArrayList<Parameter>(10);
+        children = new ArrayList<T>(10);
         this.unMutableIndex=-1;
-        this.childrenClass=childInstance.getClass();
+        this.childClass=(Class<T>)childInstance.getClass();
     }
     
     public boolean containsElement(String name) {
         for (Parameter p : children) if (p.getName().equals(name)) return true;
         return false;
     }
+
+    public Class<T> getChildClass() {
+        return childClass;
+    }
     
     @Override
     public Parameter createChildInstance() {
-        if (childInstance == null && childrenClass != null) {
+        if (childInstance == null && getChildClass() != null) {
             try {
-                Parameter instance = childrenClass.newInstance();
-                instance.setName("new " + childrenClass.getSimpleName());
+                Parameter instance = childClass.newInstance();
+                instance.setName("new " + childClass.getSimpleName());
                 return instance;
             } catch (InstantiationException ex) {
                 Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
@@ -109,7 +120,7 @@ public class SimpleListParameter implements ListParameter {
     
     @Override
     public boolean isDeactivatable() {
-        return Deactivatable.class.isAssignableFrom(this.childrenClass);
+        return Deactivatable.class.isAssignableFrom(this.childClass);
     }
     
     @Override
@@ -127,7 +138,7 @@ public class SimpleListParameter implements ListParameter {
     }
 
     public Parameter duplicate() {
-        SimpleListParameter res = new SimpleListParameter(name, unMutableIndex, childrenClass);
+        SimpleListParameter res = new SimpleListParameter(name, unMutableIndex, childClass);
         res.setContentFrom(this);
         return res;
     }
@@ -139,7 +150,7 @@ public class SimpleListParameter implements ListParameter {
         return res;
     }
     
-    public ArrayList<Parameter> getChildren() { // todo generic...
+    public ArrayList<T> getChildren() { // todo generic...
         return children;
     }
     
@@ -176,15 +187,18 @@ public class SimpleListParameter implements ListParameter {
     }
 
     @Override
-    public void setContentFrom(Parameter other) { // TODO type-safe copy?
+    public void setContentFrom(Parameter other) {
         if (other instanceof ListParameter) {
             ListParameter otherLP = (ListParameter)other;
-            this.unMutableIndex = otherLP.getUnMutableIndex();
-            this.name=otherLP.getName();
-            this.children=new ArrayList<Parameter>(otherLP.getChildCount());
-            for (int i = 0; i<otherLP.getChildCount(); i++) this.children.add(((Parameter)otherLP.getChildAt(i)).duplicate());
-            for (Parameter p : children) p.setParent(this);
-            ui=null;
+            if (otherLP.getChildClass()!=this.getChildClass()) throw new IllegalArgumentException("setContentFrom: wrong parameter type : child class is:"+getChildClass() + " but should be: "+otherLP.getChildClass());
+            else {
+                this.unMutableIndex = otherLP.getUnMutableIndex();
+                this.name=otherLP.getName();
+                this.children=new ArrayList<T>(otherLP.getChildCount());
+                for (int i = 0; i<otherLP.getChildCount(); i++) this.children.add((T)(((Parameter)otherLP.getChildAt(i)).duplicate()));
+                for (Parameter p : children) p.setParent(this);
+                ui=null;
+            }
         } else throw new IllegalArgumentException("wrong parameter type");
     }
     
@@ -196,19 +210,20 @@ public class SimpleListParameter implements ListParameter {
         return unMutableIndex;
     }
     
+    
     @Override
     public String toString() {return name;}
     
     @Override
     public void insert(MutableTreeNode child, int index) {
-        if (index>=children.size()) children.add((Parameter)child);
-        else children.add(index, (Parameter)child);
+        if (index>=children.size()) children.add((T)child);
+        else children.add(index, (T)child);
         child.setParent(this);
     }
     
     @Override
     public SimpleListParameter insert(Parameter child) {
-        children.add((Parameter)child);
+        children.add((T)child);
         child.setParent(this);
         return this;
     }
@@ -222,7 +237,7 @@ public class SimpleListParameter implements ListParameter {
     @Override
     public void remove(MutableTreeNode node) {
         System.out.println("removing node:"+((Parameter)node).toString() +" total number: "+children.size());
-        children.remove((Parameter)node);
+        children.remove((T)node);
         System.out.println("removed node:"+((Parameter)node).toString() +" total number: "+children.size());
     }
 
@@ -238,7 +253,7 @@ public class SimpleListParameter implements ListParameter {
     
     @Override 
     public void removeAllElements() {
-        if (this.unMutableIndex<0) children=new ArrayList<Parameter>(children.size());
+        if (this.unMutableIndex<0) children=new ArrayList<T>(children.size());
         else for (int i = children.size()-1;i>unMutableIndex;--i) children.remove(i);
     }
 
@@ -248,7 +263,7 @@ public class SimpleListParameter implements ListParameter {
     }
 
     @Override
-    public TreeNode getChildAt(int childIndex) {
+    public T getChildAt(int childIndex) {
         return children.get(childIndex);
     }
 
@@ -258,7 +273,7 @@ public class SimpleListParameter implements ListParameter {
     }
 
     @Override
-    public TreeNode getParent() {
+    public ContainerParameter getParent() {
         return parent;
     }
 
@@ -288,9 +303,17 @@ public class SimpleListParameter implements ListParameter {
         return ui;
     }
     
-    // morphia
-    SimpleListParameter(){}
-    @PostLoad void postLoad() {for (Parameter p : children) p.setParent(this);}
+    // morphium
+
+    @PostLoad public void postLoad() {
+        for (Parameter p : children) p.setParent(this);
+        if (this.childInstance!=null) this.childClass=(Class<T>)childInstance.getClass();
+        else try {
+            childClass = (Class<T>) Class.forName(childClassName);
+        } catch (ClassNotFoundException ex) {
+            Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
 
     
 }

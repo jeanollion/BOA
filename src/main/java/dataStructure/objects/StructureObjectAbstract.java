@@ -1,9 +1,12 @@
 package dataStructure.objects;
 
+import dataStructure.objects.dao.ObjectDAO;
 import image.ImageLabeller;
-import dataStructure.containers.ImageContainer;
+import dataStructure.containers.ObjectContainerImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.containers.ObjectContainer;
+import de.caluga.morphium.annotations.Id;
+import de.caluga.morphium.annotations.Transient;
 import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
@@ -13,38 +16,26 @@ import image.ImageMask;
 import java.io.File;
 import java.util.ArrayList;
 import org.bson.types.ObjectId;
-import org.mongodb.morphia.annotations.Embedded;
-import org.mongodb.morphia.annotations.Entity;
-import org.mongodb.morphia.annotations.Field;
-import org.mongodb.morphia.annotations.Id;
-import org.mongodb.morphia.annotations.Index;
-import org.mongodb.morphia.annotations.IndexOptions;
-import org.mongodb.morphia.annotations.Indexes;
-import org.mongodb.morphia.annotations.PrePersist;
-import org.mongodb.morphia.annotations.Reference;
-import org.mongodb.morphia.annotations.Transient;
-import plugins.Segmenter;
 import static processing.PluginSequenceRunner.*;
 
-@Indexes(@Index(fields={@Field(value="newTrackBranch")}))
 public abstract class StructureObjectAbstract implements StructureObjectPostProcessing, Track {
     @Id protected ObjectId id;
-    @Reference(lazy=true, idOnly=true) protected StructureObject[][] childrenSM;
+    @Transient protected StructureObject[][] childrenSM;
     
     // track-related attributes
     protected int timePoint;
-    @Reference(lazy=true) protected StructureObjectAbstract parentTrack;
-    @Reference(lazy=true) protected StructureObjectAbstract childTrack;
+    protected ObjectId previousId, nextId;
+    @Transient protected StructureObjectAbstract previous;
+    @Transient protected StructureObjectAbstract next;
     protected boolean newTrackBranch=true;
     //@Transient protected boolean parentTrackLoaded=false;
     //@Transient protected boolean childTrackLoaded=false;
     
     // mask and images
     @Transient Object3D object;
-    @Embedded protected ObjectContainer objectContainer;
+    protected ObjectContainer objectContainer;
     @Transient protected Image[] rawImagesS;
     @Transient protected Image[] preProcessedImageS;
-    
     
     public StructureObjectAbstract(int timePoint, Object3D object, Experiment xp) {
         this.timePoint = timePoint;
@@ -52,30 +43,33 @@ public abstract class StructureObjectAbstract implements StructureObjectPostProc
         this.childrenSM=new StructureObject[xp.getStructureNB()][];
         this.rawImagesS=new Image[xp.getStructureNB()];
         this.preProcessedImageS=new Image[xp.getStructureNB()];
+        this.objectContainer=object.getObjectContainer(xp.getOutputImageDirectory());
     }
+    
+    protected abstract String getSubDirectory();
     
     /**
      * 
      * @param parent the parent of the current object in the track
-     * @param isChildOfParent if true, sets this instance as the child of {@parent} 
+     * @param isChildOfParent if true, sets this instance as the child of {@param parent} 
      */
     public void setParentTrack(StructureObjectPreProcessing parent, boolean isChildOfParent) {
-        this.parentTrack=(StructureObjectAbstract)parent;
+        this.previous=(StructureObjectAbstract)parent;
         if (isChildOfParent) {
-            parentTrack.childTrack=this;
+            previous.next=this;
             newTrackBranch=false;
         }
         else this.newTrackBranch=true;
     }
     
     @Override
-    public StructureObjectAbstract getParentTrack() {
-        return parentTrack;
+    public StructureObjectAbstract getPrevious() {
+        return previous;
     }
     
     @Override
-    public StructureObjectAbstract getChildTrack() {
-        return childTrack;
+    public StructureObjectAbstract getNext() {
+        return next;
     }
     
     
@@ -86,8 +80,6 @@ public abstract class StructureObjectAbstract implements StructureObjectPostProc
     public BoundingBox getBounds() {
         return object.getBounds();
     }
-    
-    protected abstract void setObjectContainer(Experiment xp);
     
     public abstract Image getRawImage(int structureIdx);
     
@@ -113,6 +105,7 @@ public abstract class StructureObjectAbstract implements StructureObjectPostProc
     
 
     public StructureObject[] getChildObjects(int structureIdx) {
+        if (childrenSM[structureIdx]==null) childrenSM[structureIdx]=getRoot().objectDAO.getObjects(this.id, structureIdx);
         return childrenSM[structureIdx];
     }
 
@@ -127,9 +120,7 @@ public abstract class StructureObjectAbstract implements StructureObjectPostProc
         return timePoint;
     }
     
-    public void createObjectContainer(String path) {
-        this.objectContainer=object.getObjectContainer(path); // Ajouter le nom de l'image..
-    }
+    public abstract void createObjectContainer();
     
     // DAO methods
     
@@ -141,6 +132,4 @@ public abstract class StructureObjectAbstract implements StructureObjectPostProc
         this.childrenSM[structureIdx]=dao.getObjects(id, structureIdx);
     }
     
-    // morphia
-    //@PrePersist void prePersist() {parentId=parent.id; createObjectContainer();}
 }

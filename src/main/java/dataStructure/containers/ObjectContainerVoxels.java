@@ -19,31 +19,29 @@ package dataStructure.containers;
 
 import dataStructure.objects.Object3D;
 import dataStructure.objects.Voxel3D;
+import de.caluga.morphium.annotations.Embedded;
 import image.BoundingBox;
-import image.Image;
-import image.ImageByte;
 import java.util.ArrayList;
-import java.util.Set;
-import org.mongodb.morphia.annotations.Embedded;
 
 /**
  *
  * @author jollion
  */
-@Embedded
-public class ObjectContainerVoxels implements ObjectContainer {
-    ArrayList<Voxel3D> voxels; // a convertir en tableau si morphia ne veut pas. 
-    BoundingBox bounds;
-    float scaleXY, scaleZ;
-    int label; 
-    
+@Embedded(polymorph=true)
+public class ObjectContainerVoxels extends ObjectContainer {
+    ArrayList<Voxel3D> voxels;
+    int label;
+
     public ObjectContainerVoxels(Object3D object) {
-        bounds=object.getBounds();
-        //voxels=object.getVoxels().toArray(new Voxel3D[object.getVoxels().size()]);
+        super(object.getBounds(), object.getScaleXY(), object.getScaleZ());
+        voxels=object.getVoxels();
+        label=object.getLabel();
+    }
+    
+    public void updateObject(Object3D object) {
         voxels = object.getVoxels();
-        scaleXY=object.getScaleXY();
-        scaleZ=object.getScaleZ();
-        this.label=object.getLabel();
+        bounds=object.getBounds();
+        label = object.getLabel();
     }
     
     public Object3D getObject() {
@@ -55,7 +53,6 @@ public class ObjectContainerVoxels implements ObjectContainer {
     }
     
     //morphia
-    private ObjectContainerVoxels(){};
+    public ObjectContainerVoxels(){};
 
-    
 }

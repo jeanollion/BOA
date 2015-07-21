@@ -20,7 +20,6 @@ import configuration.parameters.ContainerParameter;
 import configuration.parameters.FileChooser;
 import configuration.parameters.FileChooser.FileChooserOption;
 import configuration.parameters.Parameter;
-import configuration.parameters.SimpleContainerParameter;
 import configuration.parameters.SimpleListParameter;
 import configuration.parameters.SimpleParameter;
 import configuration.parameters.ui.ParameterUI;
@@ -48,8 +47,10 @@ import org.bson.types.ObjectId;
 //@Indexes(@Index(fields=@Field(value="name"), options=@IndexOptions(unique=true)))
 @Entity(collectionName = "Experiment", polymorph=false)
 @Index(value="name", options="unique:1")
-public class Experiment extends SimpleContainerParameter implements TreeModelContainer {
+@Lifecycle
+public class Experiment_legacy implements ContainerParameter, TreeModelContainer {
     @Id protected ObjectId id;
+    protected String name;
     protected FileChooser imagePath = new FileChooser("Output Image Path", FileChooserOption.DIRECTORIES_ONLY);
     SimpleListParameter<Structure> structures= new SimpleListParameter("Structures", -1 , Structure.class);
     SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter("Channel Images", 0 , ChannelImage.class);
@@ -58,9 +59,10 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     
     @Transient ConfigurationTreeModel model;
+    @Transient protected ArrayList<Parameter> children;
     
-    public Experiment(String name) {
-        super(name);
+    public Experiment_legacy(String name) {
+        this.name=name;
         Structure channels = new Structure("Channels", -1);
         structures.insert(channels);
         Structure bacteries = new Structure("Bacteries", 0);
@@ -69,16 +71,22 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         initChildren();
     }
     
-    public Experiment(String name, Structure... defaultStructures) {
-        super(name);
+    public Experiment_legacy(String name, Structure... defaultStructures) {
+        this.name=name;
         for (Structure s : defaultStructures) structures.insert(s);
         structures.setUnmutableIndex(defaultStructures.length-1);
         channelImages.insert(new ChannelImage("Channel1"));
         initChildren();
     }
     
-    protected void initChildList() {
-        super.initChildren(importMethod, channelImages, structures, imagePath);
+    protected void initChildren() {
+        children = new ArrayList<Parameter>(2);
+        children.add(importMethod);
+        children.add(channelImages);
+        children.add(structures);
+        children.add(imagePath);
+        // add other parameters here ...
+        for (Parameter p : children) p.setParent(this);
     }
     
     public SimpleListParameter<MicroscopyField> getMicroscopyFields() {
@@ -181,7 +189,45 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         return res;
     }
     
-    // model container methods
+    @Override
+    public boolean sameContent(Parameter other) {
+        if (other instanceof ContainerParameter) {
+            ContainerParameter otherLP = (ContainerParameter)other;
+            if (otherLP.getChildCount()==this.getChildCount()) {
+                for (int i = 0; i<getChildCount(); i++) {
+                    if (!((Parameter)this.getChildAt(i)).sameContent((Parameter)otherLP.getChildAt(i))) return false;
+                }
+                return true;
+            } else return false;
+        } else return false;
+    }
+    
+    @Override
+    public void setContentFrom(Parameter other) {
+        if (other instanceof Experiment_legacy) {
+            Experiment_legacy otherP = (Experiment_legacy) other;
+            for (int i = 0; i<children.size(); i++) children.get(i).setContentFrom((Parameter)otherP.getChildAt(i));
+        } else {
+            throw new IllegalArgumentException("wrong parameter type");
+        }
+    }
+    
+    @Override
+    public Experiment_legacy duplicate() {
+        Experiment_legacy newXP = new Experiment_legacy(name);
+        newXP.setContentFrom(this);
+        return this;
+    }
+    
+    @Override
+    public String getName() {
+        return name;
+    }
+    
+    @Override
+    public void setName(String name) {
+        this.name=name;
+    }
     
     @Override
     public ConfigurationTreeModel getModel() {
@@ -193,13 +239,79 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         this.model=model;
     }
     
+    
+    
     @Override
-    public Experiment duplicate() {
-        Experiment newXP = new Experiment(name);
-        newXP.setContentFrom(this);
-        return this;
+    public ArrayList<Parameter> getPath() {
+        return SimpleParameter.getPath(this);
     }
 
+    @Override
+    public void insert(MutableTreeNode child, int index) {}
+    
+    @Override
+    public void remove(int index) {}
+
+    @Override
+    public void remove(MutableTreeNode node) {}
+
+    @Override public void setUserObject(Object object) {this.name=object.toString();}
+
+    @Override
+    public void removeFromParent() { }
+
+    @Override
+    public void setParent(MutableTreeNode newParent) {}
+
+    @Override
+    public TreeNode getParent() {
+        return null;
+    }
+
+    @Override
+    public boolean getAllowsChildren() {
+        return true;
+    }
+
+    @Override
+    public boolean isLeaf() {
+        return false;
+    }
+    
+    @Override
+    public String toString() {return name;}
+    
+    @Override
+    public ParameterUI getUI() {
+        return null;
+    }
+
+    @Override
+    public TreeNode getChildAt(int childIndex) {
+        return children.get(childIndex);
+    }
+   
+    @Override
+    public int getChildCount() {
+        return children.size();
+    }
+
+    @Override
+    public int getIndex(TreeNode node) {
+        return children.indexOf((Parameter)node);
+    }
+
+    @Override
+    public Enumeration children() {
+        return Collections.enumeration(children);
+    }
+    
+    
+    // morphia
+    public Experiment_legacy(){}
+    
+    @PostLoad public void postLoad() {initChildren();}
+    
     public enum ImportImageMethod {
         BIOFORMATS("Bio-Formats");
         private final String name;

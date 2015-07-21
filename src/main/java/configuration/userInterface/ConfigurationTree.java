@@ -26,12 +26,17 @@ import configuration.parameters.ui.ParameterUI;
 import configuration.parameters.SimpleListParameter;
 import configuration.parameters.ui.ArmableUI;
 import configuration.parameters.ui.ChoiceParameterUI;
+import de.caluga.morphium.Morphium;
+import de.caluga.morphium.MorphiumConfig;
 import java.awt.Component;
 import java.awt.GridLayout;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.net.UnknownHostException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.Icon;
@@ -47,8 +52,6 @@ import javax.swing.event.TreeModelListener;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
-import org.mongodb.morphia.Morphia;
-import org.mongodb.morphia.query.Query;
 
 /**
  *
@@ -61,8 +64,8 @@ public class ConfigurationTree {
     protected JScrollPane scroll;
     
     public ConfigurationTree() {
-        rootParameter = new Experiment("Test Experiment");
-        //rootParameter = getExperiment(); // for test morphia
+        //rootParameter = new Experiment("Test Experiment");
+        rootParameter = getExperiment(); // for test morphia
         treeModel = new ConfigurationTreeModel(rootParameter);
         tree = new JTree(treeModel);
         treeModel.setJTree(tree);
@@ -111,13 +114,26 @@ public class ConfigurationTree {
     }
     
     public Experiment getExperiment() {
-        MongoClient mongo=new MongoClient();
-        Morphia morphia = new Morphia();
-        morphia.mapPackage("configuration.dataStructure");
-        morphia.mapPackage("configuration.parameters");
-        ExperimentDAO dao = new ExperimentDAO(Experiment.class, mongo, morphia, "testMavenMongo");
-        
-        return dao.getExperiment();
+        try {
+            MorphiumConfig cfg = new MorphiumConfig();
+            cfg.setDatabase("testdb");
+            cfg.addHost("localhost", 27017);
+            Morphium m=new Morphium(cfg);
+            ExperimentDAO dao = new ExperimentDAO(m);
+            Experiment xp = dao.getExperiment();
+            
+            if (xp==null) {
+                xp = new Experiment("xp test UI");
+                m.store(xp);
+                m=new Morphium(cfg);
+                dao = new ExperimentDAO(m);
+                xp = dao.getExperiment();
+            }
+            return xp;
+        } catch (UnknownHostException ex) {
+            Logger.getLogger(ConfigurationTree.class.getName()).log(Level.SEVERE, null, ex);
+            return new Experiment("warning no db connection");
+        }
     }
     
     public JScrollPane getUI() {
