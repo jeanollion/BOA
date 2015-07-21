@@ -1,7 +1,6 @@
 package dataStructure.objects;
 
-import dataStructure.containers.ImageContainer;
-import dataStructure.containers.ImageIntegerContainer;
+import dataStructure.containers.ObjectContainerImage;
 import dataStructure.containers.ObjectContainer;
 import dataStructure.containers.ObjectContainerBlankMask;
 import dataStructure.containers.ObjectContainerVoxels;
@@ -10,8 +9,6 @@ import image.BoundingBox;
 import image.ImageByte;
 import image.ImageInteger;
 import java.util.ArrayList;
-import java.util.Set;
-import org.mongodb.morphia.annotations.Transient;
 /**
  * 
  * @author jollion
@@ -62,6 +59,7 @@ public class Object3D {
     }
 
     protected void createVoxels() {
+        voxels=new ArrayList<Voxel3D>();
         for (int z = 0; z < mask.getSizeZ(); ++z) {
             for (int y = 0; y < mask.getSizeY(); ++y) {
                 for (int x = 0; x < mask.getSizeX(); ++x) {
@@ -104,23 +102,23 @@ public class Object3D {
         return bounds;
     }
     
-    public ObjectContainer getObjectContainer(String path) {
+    public ObjectContainer getObjectContainer(String filePath) {
         if (mask!=null) {
-            if (mask instanceof BlankMask) return new ObjectContainerBlankMask(bounds);
+            if (mask instanceof BlankMask) return new ObjectContainerBlankMask(bounds, scaleXY, scaleZ);
             else {
                 if (voxels!=null) {
                     if (voxels.size()<MAX_VOX) return new ObjectContainerVoxels(this);
-                    else return new ImageIntegerContainer(path, mask, label);
+                    else return new ObjectContainerImage();
                 } else {
                     if (mask.getSizeXYZ()<MAX_VOX*2) {
                         if (getVoxels().size()<MAX_VOX) return new ObjectContainerVoxels(this);
-                        else return new ImageIntegerContainer(path, mask, label);
-                    } else return new ImageIntegerContainer(path, mask, label);
+                        else return new ObjectContainerImage(this, filePath);
+                    } else return new ObjectContainerImage(this, filePath);
                 }
             }
         } else if (voxels!=null) {
-            if (voxels.size()<MAX_VOX) return new ObjectContainerVoxels(this);
-            else return new ImageIntegerContainer(path, getMask(), label);
+            if (voxels.size()<MAX_VOX) return new ObjectContainerImage(this, filePath);
+            else return new ObjectContainerImage(this, filePath);
         } else return null;
     }
     

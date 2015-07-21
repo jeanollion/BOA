@@ -68,12 +68,13 @@ public abstract class ImageInteger extends Image implements ImageMask {
         int x_max = bounds.getxMax();
         int y_max = bounds.getyMax();
         int z_max = bounds.getzMax();
-        int sX = x_max - x_min + 1;
+        res.setOffset(bounds);
+        int sX = res.getSizeX();
         int oZ = -z_min;
         int oY_i = 0;
         int oX = 0;
+        oX=-x_min;
         if (x_min <= -1) {
-            oX=-x_min;
             x_min = 0;
         }
         if (x_max >= sizeX) {
@@ -103,7 +104,6 @@ public abstract class ImageInteger extends Image implements ImageMask {
                 oY += sX;
             }
         }
-        res.setOffset(x_min, y_min, z_min);
         return res;
     }
 }

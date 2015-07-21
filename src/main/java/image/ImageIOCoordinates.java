@@ -17,8 +17,9 @@
  */
 package image;
 
-import org.mongodb.morphia.annotations.Embedded;
-import org.mongodb.morphia.annotations.Transient;
+import de.caluga.morphium.annotations.Embedded;
+import de.caluga.morphium.annotations.Transient;
+
 
 /**
  *

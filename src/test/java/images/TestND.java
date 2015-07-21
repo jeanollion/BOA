@@ -25,7 +25,7 @@ import org.junit.Test;
  * @author jollion
  */
 public class TestND {
-    @Test
+    //@Test
     public void testDim() {
         ImageReader r = new ImageReader("/data/Images/mg6300WT_LB_LR62silicium_oil37.nd2");
         int[][] stc = r.getSTCNumbers();

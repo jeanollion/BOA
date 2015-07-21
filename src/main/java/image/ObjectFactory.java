@@ -95,9 +95,10 @@ public class ObjectFactory {
         int currentLabel;
         for (Entry<Integer, BoundingBox> e : bounds.entrySet()) {
             currentLabel = e.getKey();
-            for (int z = 0; z<e.getValue().getzMax(); ++z) {
-                for (int y = 0; y<e.getValue().getyMax(); ++y) {
-                    for (int x = 0; x<e.getValue().getxMax(); ++x) {
+            BoundingBox b= e.getValue();
+            for (int z = b.zMin; z<=b.zMax; ++z) {
+                for (int y = b.yMin; y<=b.yMax; ++y) {
+                    for (int x = b.xMin; x<=b.xMax; ++x) {
                         if (labelImage.getPixelInt(x, y, z)==currentLabel) labelImage.setPixel(x, y, z, newLabel);
                     }
                 }

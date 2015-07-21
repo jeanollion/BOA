@@ -80,6 +80,12 @@ public abstract class Image implements ImageProperties {
         this.offsetY=offsetY;
         this.offsetZ=offsetZ;
     }
+    
+    public void setOffset(BoundingBox bounds) {
+        this.offsetX=bounds.xMin;
+        this.offsetY=bounds.yMin;
+        this.offsetZ=bounds.zMin;
+    }
 
     public void setCalibration(ImageProperties properties) {
         this.scaleXY=properties.getScaleXY();
@@ -124,6 +130,7 @@ public abstract class Image implements ImageProperties {
         //bounds.trimToImage(this);
         Image res = newImage(name, bounds.getImageProperties("", scaleXY, scaleZ));
         res.setCalibration(this);
+        res.setOffset(bounds);
         int x_min = bounds.getxMin();
         int y_min = bounds.getyMin();
         int z_min = bounds.getzMin();
@@ -155,10 +162,10 @@ public abstract class Image implements ImageProperties {
             z_max = sizeZ - 1;
         }
         int sXo = x_max - x_min + 1;
-        for (int z = z_min; z <= z_max; z++) {
+        for (int z = z_min; z <= z_max; ++z) {
             int offY = y_min * sizeX;
             int oY = oY_i;
-            for (int y = y_min; y <= y_max; y++) {
+            for (int y = y_min; y <= y_max; ++y) {
                 System.arraycopy(getPixelArray()[z], offY + x_min, res.getPixelArray()[z + oZ], oY + oX, sXo);
                 oY += sX;
                 offY += sizeX;

@@ -18,7 +18,7 @@
 package image;
 
 import dataStructure.objects.Voxel3D;
-import org.mongodb.morphia.annotations.Embedded;
+import de.caluga.morphium.annotations.Embedded;
 
 /**
  *
@@ -223,6 +223,8 @@ public class BoundingBox {
         if (other instanceof BoundingBox) {
             BoundingBox otherBB = (BoundingBox) other;
             return xMin==otherBB.getxMin() && yMin==otherBB.getyMin() && zMin==otherBB.getzMin() && xMax==otherBB.getxMax() && yMax==otherBB.getyMax() && zMax==otherBB.getzMax();
+        } else if (other instanceof ImageProperties) {
+            return this.sameBounds((ImageProperties)other);
         } else return false;
     }
 

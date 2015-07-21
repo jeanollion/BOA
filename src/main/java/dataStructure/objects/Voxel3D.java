@@ -1,7 +1,7 @@
 package dataStructure.objects;
 
-import org.mongodb.morphia.annotations.Embedded;
-import org.mongodb.morphia.annotations.Transient;
+import de.caluga.morphium.annotations.Embedded;
+import de.caluga.morphium.annotations.Transient;
 
 @Embedded
 public class Voxel3D implements Comparable<Voxel3D>{
@@ -44,6 +44,11 @@ public class Voxel3D implements Comparable<Voxel3D>{
         hash = 97 * hash + this.y;
         hash = 97 * hash + this.z;
         return hash;
+    }
+
+    @Override
+    public String toString() {
+        return "Voxel3D{" + "x=" + x + ", y=" + y + ", z=" + z + ", value=" + value + '}';
     }
     
     //morphia
