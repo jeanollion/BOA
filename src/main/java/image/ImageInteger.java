@@ -106,4 +106,15 @@ public abstract class ImageInteger extends Image implements ImageMask {
         }
         return res;
     }
+    
+    public abstract void appendBinaryMasks(int startLabel, ImageMask... masks);
+    
+    public static ImageInteger mergeBinary(ImageProperties properties, ImageMask... masks) {
+        ImageInteger res;
+        if (masks.length<=255) res = new ImageByte("merge", properties);
+        else if (masks.length<65535) res = new ImageShort("merge", properties);
+        else res = new ImageInt("merge", properties);
+        res.appendBinaryMasks(1, masks);
+        return res;
+    }
 }

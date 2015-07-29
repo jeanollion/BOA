@@ -29,8 +29,12 @@ public class ParentStructureParameter extends StructureParameter {
         this.maxStructure=maxStructure;
     }
 
-    public void setMaxStructure(int maxStructure) {
+    public void setMaxStructureIdx(int maxStructure) {
         this.maxStructure = maxStructure;
+    }
+    
+    public int getMaxStructureIdx() {
+        return maxStructure;
     }
     
     @Override

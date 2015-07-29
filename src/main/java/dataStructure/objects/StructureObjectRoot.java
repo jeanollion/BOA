@@ -1,7 +1,5 @@
 package dataStructure.objects;
 
-import dataStructure.objects.dao.RootObjectDAO;
-import dataStructure.objects.dao.ObjectDAO;
 import dataStructure.containers.ObjectContainerImage;
 import dataStructure.containers.ObjectContainerImage;
 import dataStructure.configuration.Experiment;
@@ -56,12 +54,30 @@ public class StructureObjectRoot extends StructureObjectAbstract {
      * @return all the objects of the last structure of the path
      */
     public ArrayList<StructureObject> getAllObjects(int[] pathToRoot) { // copie dans l'objet root??
+        if (pathToRoot.length==0) return new ArrayList<StructureObject>(0);
         ArrayList<StructureObject> currentChildren = new ArrayList<StructureObject>(getChildObjects(pathToRoot[0]).length);
         Collections.addAll(currentChildren, getChildObjects(pathToRoot[0]));
         for (int i = 1; i<pathToRoot.length; ++i) {
             currentChildren = getAllChildren(currentChildren, pathToRoot[i]);
         }
         return currentChildren;
+    }
+    
+    public ArrayList<StructureObjectAbstract> getAllParentObjects(int[] pathToRoot) {
+        if (pathToRoot.length==0) return new ArrayList<StructureObjectAbstract>(0);
+        else if (pathToRoot.length==1) {
+            ArrayList<StructureObjectAbstract> res = new ArrayList<StructureObjectAbstract>(1);
+            res.add(this);
+            return res;
+        } else {
+            int[] pathToRoot2 = new int[pathToRoot.length-1];
+            for (int i = 0; i<pathToRoot2.length; ++i) pathToRoot2[i]=pathToRoot[i];
+            ArrayList<StructureObject> allParents = getAllObjects(pathToRoot2);
+            ArrayList<StructureObjectAbstract> res = new ArrayList<StructureObjectAbstract>(allParents.size());
+            res.addAll(allParents);
+            return res;
+        }
+        
     }
     
     private static ArrayList<StructureObject> getAllChildren(ArrayList<StructureObject> parents, int childrenStructureIdx) {

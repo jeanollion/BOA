@@ -33,9 +33,9 @@ import plugins.Segmenter;
  */
 public class ProcessingChain extends SimpleContainerParameter {
     
-    SimpleListParameter<PluginParameter> preFilters = new SimpleListParameter("Pre-Filters", new PluginParameter("Pre-Filter", PreFilter.class, false));
-    PluginParameter segmenter = new PluginParameter("Segmentation algorithm", Segmenter.class, false);
-    SimpleListParameter<PluginParameter> postFilters = new SimpleListParameter("Post-Filters", new PluginParameter("Post-Filter", PostFilter.class, false));
+    SimpleListParameter<PluginParameter<PreFilter>> preFilters = new SimpleListParameter<PluginParameter<PreFilter>>("Pre-Filters", new PluginParameter<PreFilter>("Pre-Filter", PreFilter.class, false));
+    PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, false);
+    SimpleListParameter<PluginParameter<PostFilter>> postFilters = new SimpleListParameter<PluginParameter<PostFilter>>("Post-Filters", new PluginParameter<PostFilter>("Post-Filter", PostFilter.class, false));
     
     public ProcessingChain(String name) {
         super(name);
@@ -57,8 +57,20 @@ public class ProcessingChain extends SimpleContainerParameter {
     }
     
     public Segmenter getSegmenter() {
-        if (segmenter.isActivated()) return (Segmenter)segmenter.getPlugin();
+        if (segmenter.isActivated()) return segmenter.getPlugin();
         else return null;
+    }
+    
+    public void setSegmenter (Segmenter segmenter) {
+        this.segmenter.setPlugin(segmenter);
+    }
+    
+    public void addPreFilters(PreFilter... preFilter) {
+        for (PreFilter p : preFilter) this.preFilters.insert(new PluginParameter<PreFilter>("Pre-Filter", false, PreFilter.class, p));
+    }
+    
+    public void addPostFilters(PostFilter... postFilter) {
+        for (PostFilter p : postFilter) this.postFilters.insert(new PluginParameter<PostFilter>("Post-Filter", false, PostFilter.class, p));
     }
     
     @Override

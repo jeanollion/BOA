@@ -15,11 +15,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.objects.dao;
+package dataStructure.objects;
 
 import dataStructure.objects.StructureObjectRoot;
 import de.caluga.morphium.DAO;
 import de.caluga.morphium.Morphium;
+import java.util.Arrays;
 
 /**
  *
@@ -34,8 +35,19 @@ public class RootObjectDAO extends DAO<StructureObjectRoot>{
     }
     public void store(StructureObjectRoot o) {
         morphium.store(o);
+        updateNextId(o);
     }
     public void delete(StructureObjectRoot o) {
         morphium.delete(o);
+    }
+    public void store(StructureObjectRoot[] objects) {
+        for (StructureObjectRoot o : objects) morphium.store(o);
+        for (StructureObjectRoot o : objects) updateNextId(o);
+    }
+    private void updateNextId(StructureObjectRoot o) {
+        if (o.next != null && o.nextId == null && o.next.id != null) {
+            o.nextId = o.next.id;
+            morphium.updateUsingFields(o, "next_id");
+        }
     }
 }

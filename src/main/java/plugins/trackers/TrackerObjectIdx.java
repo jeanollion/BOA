@@ -33,7 +33,6 @@ public class TrackerObjectIdx implements Tracker {
         for (int i = 0; i<Math.min(parents.length, children.length); ++i) {
             parents[i].setParentTrack(children[i], true);
         }
-        
     }
 
     public Parameter[] getParameters() {

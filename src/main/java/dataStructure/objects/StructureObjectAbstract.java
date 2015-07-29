@@ -1,12 +1,14 @@
 package dataStructure.objects;
 
-import dataStructure.objects.dao.ObjectDAO;
 import image.ImageLabeller;
 import dataStructure.containers.ObjectContainerImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.containers.ObjectContainer;
 import de.caluga.morphium.annotations.Id;
 import de.caluga.morphium.annotations.Transient;
+import de.caluga.morphium.annotations.lifecycle.Lifecycle;
+import de.caluga.morphium.annotations.lifecycle.PostStore;
+import de.caluga.morphium.annotations.lifecycle.PreStore;
 import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
@@ -18,6 +20,7 @@ import java.util.ArrayList;
 import org.bson.types.ObjectId;
 import static processing.PluginSequenceRunner.*;
 
+@Lifecycle
 public abstract class StructureObjectAbstract implements StructureObjectPostProcessing, Track {
     @Id protected ObjectId id;
     @Transient protected StructureObject[][] childrenSM;
@@ -99,8 +102,14 @@ public abstract class StructureObjectAbstract implements StructureObjectPostProc
         if (seg instanceof BlankMask) childrenSM[structureIdx]=new StructureObject[0];
         else {
             seg = postFilterImage(seg, this, xp.getStructure(structureIdx).getProcessingChain().getPostfilters());
-            ImageLabeller.labelImage(seg);
+            Object3D[] objects = ImageLabeller.labelImage(seg);
+            childrenSM[structureIdx] = new StructureObject[objects.length];
+            for (int i = 0; i<objects.length; ++i) childrenSM[structureIdx][i]=new StructureObject(timePoint, structureIdx, i, objects[i], this, xp);
         }
+    }
+    
+    public void saveChildren(int structureIdx) {
+        getRoot().objectDAO.store(childrenSM[structureIdx]);
     }
     
 
@@ -130,6 +139,14 @@ public abstract class StructureObjectAbstract implements StructureObjectPostProc
     
     public void populateChildren(int structureIdx, ObjectDAO dao) {
         this.childrenSM[structureIdx]=dao.getObjects(id, structureIdx);
+    }
+    
+    // lifecycle
+    @PreStore
+    public void preStore() {
+        if (this.previous!=null) previousId=previous.id; 
+        if (this.next!=null) nextId=next.id;
+        createObjectContainer();
     }
     
 }

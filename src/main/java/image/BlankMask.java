@@ -94,4 +94,5 @@ public class BlankMask extends ImageInteger implements ImageMask {
     @Override
     public void setPixel(int xy, int z, int value) {}
     
+    public void appendBinaryMasks(int startLabel, ImageMask... masks){}
 }

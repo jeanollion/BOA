@@ -98,4 +98,28 @@ public class ImageInt extends ImageInteger {
     public ImageShort crop(BoundingBox bounds) {
         return (ImageShort) cropI(bounds);
     }
+    
+    public void appendBinaryMasks(int startLabel, ImageMask... masks) {
+        if (startLabel==-1) startLabel = (int)this.getMinAndMax(null)[1]+1;
+        if (startLabel<0) startLabel=1;
+        if (masks == null ) return;
+        for (int idx = 0; idx < masks.length; ++idx) {
+            int label = idx+startLabel;
+            ImageMask currentImage = masks[idx];
+            for (int z = 0; z < currentImage.getSizeZ(); ++z) {
+                for (int y = 0; y < currentImage.getSizeY(); ++y) {
+                    for (int x = 0; x < currentImage.getSizeX(); ++x) {
+                        if (currentImage.contains(x, y, z)) {
+                            int xx = x + currentImage.getOffsetX();
+                            int yy = y + currentImage.getOffsetY();
+                            int zz = z + currentImage.getOffsetZ();
+                            if (zz >= 0 && zz < sizeZ && xx >= 0 && xx < sizeX && yy >= 0 && yy < sizeY) {
+                                pixels[zz][xx + yy * sizeX] = label;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

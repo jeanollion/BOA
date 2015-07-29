@@ -1,6 +1,5 @@
 package dataStructure.objects;
 
-import dataStructure.objects.dao.ObjectDAO;
 import dataStructure.containers.ObjectContainerImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.containers.ObjectContainer;
@@ -128,5 +127,10 @@ public class StructureObject extends StructureObjectAbstract {
     }
     
     // morphium
-    @PreStore void preStore() {parentId=parent.id; createObjectContainer();}
+    @Override
+    @PreStore 
+    public void preStore() {
+        super.preStore();
+        if (parent!=null) parentId=parent.id;
+    }
 }

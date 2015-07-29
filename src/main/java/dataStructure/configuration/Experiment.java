@@ -107,10 +107,10 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         return res;
     }
     
-    public SimpleListParameter getStructures() {return structures;}
+    public SimpleListParameter<Structure> getStructures() {return structures;}
     
     public Structure getStructure(int structureIdx) {
-        return (Structure)structures.getChildAt(structureIdx);
+        return structures.getChildAt(structureIdx);
     }
     
     public int getStructureNB() {
@@ -178,6 +178,14 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
             res[orders[i]][idx[orders[i]]]=i;
             idx[orders[i]]++;
         }
+        return res;
+    }
+    
+    public int[] getStructuresInHierarchicalOrderAsArray() {
+        int[][] so=getStructuresInHierarchicalOrder();
+        int[] res = new int[this.getStructureNB()];
+        int idx=0;
+        for (int[] o : so) for (int s:o) res[idx++]=s;
         return res;
     }
     

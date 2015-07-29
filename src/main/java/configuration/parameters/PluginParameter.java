@@ -37,29 +37,44 @@ import plugins.PluginFactory;
 /**
  *
  * @author jollion
- * @param <T> class of plugin
+ * @param <T> type of plugin
  */
 public class PluginParameter<T extends Plugin> extends SimpleContainerParameter implements Deactivatable, ChoosableParameter { //<T extends Plugin> // TODO generic quand supporté par morphia
     @Transient private static HashMap<Class<? extends Plugin>, ArrayList<String>> pluginNames=new HashMap<Class<? extends Plugin>, ArrayList<String>>();
     protected Parameter[] pluginParameters;
     protected String pluginName=NO_SELECTION;
-    @Transient protected Class<T> pluginClass;
-    protected String pluginClassName;
+    @Transient protected Class<T> pluginType;
+    protected String pluginTypeName;
     protected boolean allowNoSelection;
     protected boolean activated=true;
     @Transient protected boolean pluginSet=false;
     
-    public PluginParameter(String name, Class<T> pluginClass, boolean allowNoSelection) {
+    public PluginParameter(String name, Class<T> pluginType, boolean allowNoSelection) {
         super(name);
-        this.pluginClass=pluginClass;
-        this.pluginClassName=pluginClass.getName();
+        this.pluginType=pluginType;
+        this.pluginTypeName=pluginType.getName();
         this.allowNoSelection=allowNoSelection;
         super.initChildren();
     }
     
-    public PluginParameter(String name, Class<T> pluginClass, boolean allowNoSelection, String defautlMethod) {
-        this(name, pluginClass, allowNoSelection);
+    public PluginParameter(String name, Class<T> pluginType, boolean allowNoSelection, String defautlMethod) {
+        this(name, pluginType, allowNoSelection);
         this.pluginName=defautlMethod; // do not call setPlugin Method because plugins are no initiated at startup
+    }
+    
+    public PluginParameter(String name, boolean allowNoSelection, Class<T> pluginType, T pluginInstance) {
+        this(name, pluginType, allowNoSelection);
+        this.pluginParameters=pluginInstance.getParameters();
+        super.initChildren();
+        this.pluginName=pluginInstance.getClass().getSimpleName();
+        this.pluginSet=true;
+    }
+    
+    public void setPlugin(T pluginInstance) {
+        this.pluginParameters=pluginInstance.getParameters();
+        super.initChildren();
+        this.pluginName=pluginInstance.getClass().getSimpleName();
+        this.pluginSet=true;
     }
     
     @Override
@@ -73,7 +88,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     }
     
     public boolean isOnePluginSet() {
-        if (!pluginSet && !NO_SELECTION.equals(pluginName)) setPlugin(pluginName); // case of default plugin 
+        if (!pluginSet && !NO_SELECTION.equals(pluginName)) setPlugin(pluginName); // case of constructor with default plugin 
         return pluginSet;
         //return (pluginName!=null && !NOPLUGIN.equals(pluginName));
     }
@@ -85,7 +100,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
             this.pluginSet=false;
             
         } else if (!pluginSet || !pluginName.equals(this.pluginName)) {
-            Plugin instance = PluginFactory.getPlugin(pluginClass, pluginName);
+            Plugin instance = PluginFactory.getPlugin(pluginType, pluginName);
             if (instance==null) {
                 Core.getLogger().log(Level.WARNING, "Couldn't find plugin: {0}", pluginName);
                 this.pluginName=NO_SELECTION;
@@ -99,9 +114,9 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         }
     }
     
-    public Plugin getPlugin() {
+    public T getPlugin() {
         if (!isOnePluginSet()) return null;
-        Plugin instance = PluginFactory.getPlugin(pluginClass, pluginName);
+        T instance = PluginFactory.getPlugin(pluginType, pluginName);
         if (instance==null) return null;
         Parameter[] params = instance.getParameters();
         if (params.length==this.pluginParameters.length) {
@@ -114,7 +129,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     
     @Override
     public void setContentFrom(Parameter other) {
-        if (other instanceof PluginParameter && ((PluginParameter)other).pluginClass.equals(pluginClass)) {
+        if (other instanceof PluginParameter && ((PluginParameter)other).pluginType.equals(pluginType)) {
             PluginParameter otherPP = (PluginParameter) other;
             if (otherPP.pluginName != null && otherPP.pluginName.equals(this.pluginName) && pluginParameters!=null) {
                 ParameterUtils.setContent(pluginParameters, otherPP.pluginParameters);
@@ -135,7 +150,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
 
     @Override
     public PluginParameter duplicate() {
-        PluginParameter res = new PluginParameter(name, pluginClass, allowNoSelection);
+        PluginParameter res = new PluginParameter(name, pluginType, allowNoSelection);
         res.setContentFrom(this);
         return res;
     }
@@ -178,12 +193,12 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     
     
     public ArrayList<String> getPluginNames() {
-        return getPluginNames(pluginClass);
+        return getPluginNames(pluginType);
     }
 
     @Override
     public String[] getChoiceList() {
-        ArrayList<String> res = getPluginNames(pluginClass);
+        ArrayList<String> res = getPluginNames(pluginType);
         return res.toArray(new String[res.size()]);
     }
 
@@ -209,7 +224,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     @PostLoad public void postLoad() {
         super.postLoad();
         try {
-            pluginClass = (Class<T>) Class.forName(pluginClassName);
+            pluginType = (Class<T>) Class.forName(pluginTypeName);
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(PluginParameter.class.getName()).log(Level.SEVERE, null, ex);
         }

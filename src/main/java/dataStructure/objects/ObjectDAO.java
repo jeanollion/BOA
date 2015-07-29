@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.objects.dao;
+package dataStructure.objects;
 
 import dataStructure.configuration.*;
 import com.mongodb.MongoClient;
@@ -59,5 +59,27 @@ public class ObjectDAO extends DAO<StructureObject>{
     
     public void store(StructureObject o) {
         morphium.store(o);
+    }
+    
+    public void store(StructureObject[] objects) {
+        for (StructureObject o : objects) morphium.store(o);
+        for (StructureObject o : objects) updateNextId(o);
+    }
+    
+    public void updateTrackLinks(StructureObject o) {
+        boolean prev = o.previous!=null && o.previousId==null && o.previous.id!=null;
+        boolean next = o.next!=null && o.nextId==null && o.next.id!=null;
+        if (prev) o.previousId=o.previous.id;
+        if (next) o.nextId=o.next.id;
+        if (prev && next) morphium.updateUsingFields(o, "next_id", "previous_id");
+        else if (prev) morphium.updateUsingFields(o, "previous_id");
+        else if (next) morphium.updateUsingFields(o, "next_id");
+    }
+    
+    private void updateNextId(StructureObject o) {
+        if (o.next != null && o.nextId == null && o.next.id != null) {
+            o.nextId = o.next.id;
+            morphium.updateUsingFields(o, "next_id");
+        }
     }
 }

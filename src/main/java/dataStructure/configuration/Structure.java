@@ -21,9 +21,11 @@ import configuration.parameters.ChoiceParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.SimpleContainerParameter;
 import configuration.parameters.ParentStructureParameter;
+import configuration.parameters.PluginParameter;
 import configuration.parameters.ui.NameEditorUI;
 import configuration.parameters.ui.ParameterUI;
 import javax.swing.tree.MutableTreeNode;
+import plugins.Tracker;
 
 /**
  *
@@ -34,6 +36,8 @@ public class Structure extends SimpleContainerParameter {
     ParentStructureParameter parentStructure =  new ParentStructureParameter("Parent Structure", -1, 0);;
     ChannelImageParameter channelImage = new ChannelImageParameter("Channel Image", -1);
     ProcessingChain processingChain = new ProcessingChain("Processing Chain");
+    PluginParameter<Tracker> tracker = new PluginParameter<Tracker>("Tracker", Tracker.class, true);
+    
     NameEditorUI ui;
     public Structure(String name) {
         this(name, -1);
@@ -54,8 +58,21 @@ public class Structure extends SimpleContainerParameter {
         return processingChain;
     }
     
+    public Tracker getTracker() {
+        return this.tracker.getPlugin();
+    }
+    
+    public void setTracker(Tracker tracker) {
+        this.tracker.setPlugin(tracker);
+    }
+    
     public int getParentStructure() {
         return parentStructure.getSelectedIndex();
+    }
+    
+    public void setParentStructure(int parentIdx) {
+        if (parentIdx>=parentStructure.getMaxStructureIdx()) throw new IllegalArgumentException("Parent Structure ("+parentIdx+") cannot be superior to max structure ("+parentStructure.getMaxStructureIdx()+")");
+        parentStructure.setSelectedIndex(parentIdx);
     }
     
     public int getChannelImage() {
@@ -65,7 +82,7 @@ public class Structure extends SimpleContainerParameter {
     @Override 
     public void setParent(MutableTreeNode newParent) {
         super.setParent(newParent);
-        parentStructure.setMaxStructure(parent.getIndex(this));
+        parentStructure.setMaxStructureIdx(parent.getIndex(this));
     }
 
     @Override

@@ -37,7 +37,7 @@ import javax.swing.tree.TreeNode;
 
 @Embedded(polymorph = true)
 @Lifecycle
-public class SimpleListParameter<T extends Parameter> implements ListParameter {
+public class SimpleListParameter<T extends Parameter> implements ListParameter<T> {
 
     protected String name;
     protected ArrayList<T> children;
@@ -101,10 +101,10 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter {
     }
     
     @Override
-    public Parameter createChildInstance() {
+    public T createChildInstance() {
         if (childInstance == null && getChildClass() != null) {
             try {
-                Parameter instance = childClass.newInstance();
+                T instance = childClass.newInstance();
                 instance.setName("new " + childClass.getSimpleName());
                 return instance;
             } catch (InstantiationException ex) {
@@ -113,7 +113,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter {
                 Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
             }
         } else if (childInstance != null) {
-            return childInstance.duplicate();
+            return (T)childInstance.duplicate();
         }
         return null;
     }
@@ -131,8 +131,8 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter {
     }
     
     
-    public Parameter createChildInstance(String name) {
-        Parameter instance = createChildInstance();
+    public T createChildInstance(String name) {
+        T instance = createChildInstance();
         instance.setName(name);
         return instance;
     }
@@ -220,14 +220,14 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter {
         else children.add(index, (T)child);
         child.setParent(this);
     }
-    
+
     @Override
-    public SimpleListParameter insert(Parameter child) {
-        children.add((T)child);
-        child.setParent(this);
-        return this;
+    public void insert(T... child) {
+        for (T c : child) {
+            children.add(c);
+            c.setParent(this);
+        }
     }
-    
 
     @Override
     public void remove(int index) {
