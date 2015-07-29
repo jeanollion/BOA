@@ -17,10 +17,14 @@
  */
 package dataStructure.objects;
 
+import dataStructure.configuration.Experiment;
+import dataStructure.containers.MultipleImageContainerSingleFile;
 import dataStructure.objects.StructureObjectRoot;
 import de.caluga.morphium.DAO;
 import de.caluga.morphium.Morphium;
+import de.caluga.morphium.query.Query;
 import java.util.Arrays;
+import org.bson.types.ObjectId;
 
 /**
  *
@@ -44,10 +48,39 @@ public class RootObjectDAO extends DAO<StructureObjectRoot>{
         for (StructureObjectRoot o : objects) morphium.store(o);
         for (StructureObjectRoot o : objects) updateNextId(o);
     }
+    
+    private Query<StructureObjectRoot> getQuery(String name, int timePoint) {
+        return super.getQuery().f("name").eq(name).f("time_point").eq(timePoint);
+    }
+    
+    public StructureObjectRoot getObject(ObjectId id) {//, Experiment xp, MultipleImageContainerSingleFile preProcessedImages, ObjectDAO objectDAO) {
+        StructureObjectRoot root =  super.getQuery().getById(id); // FIXEME: setup??
+        //if (root==null) System.out.println("object root:"+id+ " not found!");
+        //root.setUp(xp, preProcessedImages, this, objectDAO);
+        return root;
+    }
+    
+    public StructureObjectRoot getRoot(String name, int timePoint, Experiment xp, ObjectDAO objectDAO) {
+        StructureObjectRoot root= getQuery(name, timePoint).get();
+        root.setUp(xp, this, objectDAO);
+        return root;
+    }
+    
     private void updateNextId(StructureObjectRoot o) {
         if (o.next != null && o.nextId == null && o.next.id != null) {
             o.nextId = o.next.id;
             morphium.updateUsingFields(o, "next_id");
         }
     }
+    
+    public void updateTrackLinks(StructureObjectAbstract o) {
+        boolean prev = o.previous!=null && o.previousId==null && o.previous.id!=null;
+        boolean next = o.next!=null && o.nextId==null && o.next.id!=null;
+        if (prev) o.previousId=o.previous.id;
+        if (next) o.nextId=o.next.id;
+        if (prev && next) morphium.updateUsingFields(o, "next_id", "previous_id");
+        else if (prev) morphium.updateUsingFields(o, "previous_id");
+        else if (next) morphium.updateUsingFields(o, "next_id");
+    }
+    
 }

@@ -18,7 +18,7 @@
 package core;
 
 import dataStructure.configuration.Experiment;
-import dataStructure.containers.MultipleImageContainer;
+import dataStructure.containers.MultipleImageContainerSingleFile;
 import image.ImageReader;
 import java.io.File;
 import java.util.ArrayList;
@@ -31,13 +31,13 @@ import java.util.logging.Logger;
  */
 
 public class ImageFieldFactory {
-    public static ArrayList<MultipleImageContainer> importImages(String[] path, Experiment xp) {
-        ArrayList<MultipleImageContainer> res = new ArrayList<MultipleImageContainer>();
+    public static ArrayList<MultipleImageContainerSingleFile> importImages(String[] path, Experiment xp) {
+        ArrayList<MultipleImageContainerSingleFile> res = new ArrayList<MultipleImageContainerSingleFile>();
         for (String p : path) ImageFieldFactory.importImages(new File(p), xp, res);
         return res;
     }
     
-    protected static void importImages(File f, Experiment xp, ArrayList<MultipleImageContainer> containersTC) {
+    protected static void importImages(File f, Experiment xp, ArrayList<MultipleImageContainerSingleFile> containersTC) {
         if (f.isDirectory()) {
             for (File ff : f.listFiles()) ImageFieldFactory.importImages(ff, xp, containersTC);
         } else {
@@ -47,7 +47,7 @@ public class ImageFieldFactory {
         }
     }
     
-    protected static void importFieldBioFormats(File image, Experiment xp, ArrayList<MultipleImageContainer> containersTC) {
+    protected static void importFieldBioFormats(File image, Experiment xp, ArrayList<MultipleImageContainerSingleFile> containersTC) {
         ImageReader reader=null;
         try {
             reader = new ImageReader(image.getAbsolutePath());
@@ -59,7 +59,7 @@ public class ImageFieldFactory {
             int s = 0;
             for (int[] tc:stc) {
                 if (tc[1]==xp.getChannelImageNB()) {
-                    containersTC.add(new MultipleImageContainer(removeExtension(image.getName()), image.getAbsolutePath(),s, tc[0], tc[1]));
+                    containersTC.add(new MultipleImageContainerSingleFile(removeExtension(image.getName()), image.getAbsolutePath(),s, tc[0], tc[1]));
                     Logger.getLogger(ImageFieldFactory.class.getName()).log(Level.INFO, "Imported Image: {0}", image.getAbsolutePath());
                 } else {
                     Logger.getLogger(ImageFieldFactory.class.getName()).log(Level.WARNING, "Invalid Image: {0} has: {1} channels instead of: {2}", new Object[]{image.getAbsolutePath(), tc[1], xp.getChannelImageNB()});

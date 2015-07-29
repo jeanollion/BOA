@@ -23,7 +23,7 @@ import configuration.parameters.PluginParameter;
 import configuration.parameters.SimpleContainerParameter;
 import configuration.parameters.SimpleListParameter;
 import configuration.parameters.StructureParameter;
-import dataStructure.containers.MultipleImageContainer;
+import dataStructure.containers.MultipleImageContainerSingleFile;
 import plugins.PreFilter;
 
 /**
@@ -32,7 +32,7 @@ import plugins.PreFilter;
  */
 public class MicroscopyField extends SimpleContainerParameter {
     StructureParameter preProcessingStructure = new StructureParameter("Pre-Processing Structure", 0, false);
-    MultipleImageContainer images;
+    MultipleImageContainerSingleFile images;
     //ui: bouton droit = selectionner un champ?
     
     public MicroscopyField(String name) {
@@ -45,11 +45,11 @@ public class MicroscopyField extends SimpleContainerParameter {
         initChildren(preProcessingStructure);
     }
     
-    public void setImages(MultipleImageContainer images) {
+    public void setImages(MultipleImageContainerSingleFile images) {
         this.images=images;
     }
     
-    public MultipleImageContainer getImages() {
+    public MultipleImageContainerSingleFile getImages() {
         return images;
     }
     

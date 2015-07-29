@@ -29,9 +29,9 @@ import dataStructure.objects.Track;
  */
 public interface Tracker extends Plugin {
     /**
-     * assign {@param parents} to {@param children} using the method {@link StructureObjectAbstract#setParentTrack(dataStructure.objects.Track, boolean) }
-     * @param parents objects that share a given parent object
-     * @param children objects that share a given parent object that is the childTrack of the parent of the {@param parents} objects
+     * assign {@param previous} to {@param next} using the method {@link StructureObjectAbstract#setParentTrack(dataStructure.objects.Track, boolean) }
+     * @param previous objects that share a given parent object
+     * @param next objects that share a given parent object that is the next object of the parent of the {@param previous} objects
      */
-    public void assignParents(StructureObjectPreProcessing[] parents, StructureObjectPreProcessing[] children);
+    public void assignPrevious(StructureObjectPreProcessing[] previous, StructureObjectPreProcessing[] next);
 }

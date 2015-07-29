@@ -29,9 +29,9 @@ import plugins.Tracker;
  */
 public class TrackerObjectIdx implements Tracker {
 
-    public void assignParents(StructureObjectPreProcessing[] parents, StructureObjectPreProcessing[] children) {
+    public void assignPrevious(StructureObjectPreProcessing[] parents, StructureObjectPreProcessing[] children) {
         for (int i = 0; i<Math.min(parents.length, children.length); ++i) {
-            parents[i].setParentTrack(children[i], true);
+            parents[i].setPreviousInTrack(children[i], true);
         }
     }
 

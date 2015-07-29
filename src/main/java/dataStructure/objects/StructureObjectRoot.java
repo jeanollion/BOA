@@ -1,51 +1,61 @@
 package dataStructure.objects;
 
-import dataStructure.containers.ObjectContainerImage;
-import dataStructure.containers.ObjectContainerImage;
+import core.ImagePath;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.containers.MultipleImageContainer;
 import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Entity;
 import de.caluga.morphium.annotations.Index;
+import de.caluga.morphium.annotations.Reference;
 import de.caluga.morphium.annotations.Transient;
+import de.caluga.morphium.annotations.caching.Cache;
 import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
+import image.ImageReader;
 import java.io.File;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import org.bson.types.ObjectId;
 
-
+@Cache
 @Entity(collectionName = "RootObjects")
-@Index(value={"timePoint", "newTrackBranch"})
+@Index(value={"time_point,new_track_branch", "name,time_point"})
 public class StructureObjectRoot extends StructureObjectAbstract {
-    //protected ObjectId experimentId;
-    @Transient protected MultipleImageContainer preProcessedImages;
-    @Transient protected int[] structureToImageFileCorrespondenceC;
+    @Reference(lazyLoading=true) Experiment xp;
     @Transient protected RootObjectDAO rootObjectDAO;
     @Transient protected ObjectDAO objectDAO;
-    @Transient String outputFileDirectory;
-    
-    public StructureObjectRoot(int timePoint, Experiment xp, BlankMask mask, MultipleImageContainer preProcessedImages) {
+    String name;
+    public StructureObjectRoot(String name, int timePoint, Experiment xp, BlankMask mask, RootObjectDAO rootObjectDAO, ObjectDAO objectDAO) {
         super(timePoint, new Object3D(mask, 1), xp);
-        this.preProcessedImages=preProcessedImages;
-        this.structureToImageFileCorrespondenceC=xp.getStructureToChannelCorrespondance();
-        this.outputFileDirectory=xp.getOutputImageDirectory();
+        this.name=name;
+        setUp(xp, rootObjectDAO, objectDAO);
+        
     }
     
-    protected String getOutputFileDirectory() {return outputFileDirectory;}
+    public void setUp(Experiment xp, RootObjectDAO rootObjectDAO, ObjectDAO objectDAO) {
+        this.xp=xp;
+        //this.structureToImageFileCorrespondenceS=xp.getStructureToChannelCorrespondance();
+        //this.outputFileDirectory=xp.getOutputImageDirectory();
+        this.rootObjectDAO=rootObjectDAO;
+        this.objectDAO=objectDAO;
+    }
     
-    // for output object
-    protected String getSubDirectory() {
-        return getOutputFileDirectory()+File.separator+"processed"+File.separator+new DecimalFormat("00000").format(timePoint);
+    public int getChannelImageIdx(int structureIdx) {
+        return xp.getChannelImageIdx(structureIdx);
+    }
+    
+    public String getOutputFileDirectory() {return xp.getOutputImageDirectory();}
+    
+    public String getName() {
+        return name;
     }
     
     @Override
     public void createObjectContainer() {
-        this.objectContainer=object.getObjectContainer(null); // blank masks
+        this.objectContainer=object.getObjectContainer(null); // blank mask
     }
     
     /**
@@ -88,22 +98,20 @@ public class StructureObjectRoot extends StructureObjectAbstract {
     
     @Override
     public Image getRawImage(int structureIdx) {
-        int channelIdx = this.structureToImageFileCorrespondenceC[structureIdx];
-        if (rawImagesS[channelIdx]==null) {
-            rawImagesS[channelIdx]=preProcessedImages.getImage(0, channelIdx);
-        }
-        return rawImagesS[channelIdx];
+        int channelIdx = getChannelImageIdx(structureIdx);
+        if (rawImagesC.get(channelIdx)==null) rawImagesC.set(ImagePath.openPreProcessedImage(channelIdx, timePoint, name, this.getOutputFileDirectory()), channelIdx);
+        return rawImagesC.get(channelIdx);
     }
     
     public Image openRawImage(int structureIdx, BoundingBox bounds) {
-        int channelIdx = this.structureToImageFileCorrespondenceC[structureIdx];
-        if (rawImagesS[channelIdx]==null) return preProcessedImages.getImage(0, channelIdx, bounds);
-        else return rawImagesS[channelIdx].crop(bounds);
+        int channelIdx = getChannelImageIdx(structureIdx);
+        if (rawImagesC.get(channelIdx)==null) return ImagePath.openPreProcessedImage(channelIdx, timePoint, name, this.getOutputFileDirectory(), bounds);
+        else return rawImagesC.get(channelIdx).crop(bounds);
     }
     
     @Override
     public StructureObjectRoot getFirstParentWithOpenedRawImage(int structureIdx) {
-        if (rawImagesS[structureIdx]!=null) return this;
+        if (rawImagesC.get(getChannelImageIdx(structureIdx))!=null) return this;
         else return null;
     }
     
@@ -113,6 +121,8 @@ public class StructureObjectRoot extends StructureObjectAbstract {
     @Override
     public int[] getPathToRoot() {return new int[0];}
     
+    @Override 
+    public boolean isRoot() {return true;}
     
     // getUncorrectedImage
     
@@ -125,6 +135,23 @@ public class StructureObjectRoot extends StructureObjectAbstract {
         dao.delete(this);
     }
 
+    @Override
+    public void updateTrackLinks() {
+        rootObjectDAO.updateTrackLinks(this);
+    }
     
+    @Override
+    public StructureObjectRoot getPrevious() {
+        if (previous==null && previousId!=null) previous = rootObjectDAO.getObject(previousId);
+        return (StructureObjectRoot)previous;
+    }
+    
+    @Override
+    public StructureObjectRoot getNext() {
+        if (next==null && nextId!=null) {
+            next = rootObjectDAO.getObject(nextId);
+        }
+        return (StructureObjectRoot)next;
+    }
     
 }

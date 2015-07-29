@@ -1,11 +1,13 @@
 package dataStructure.objects;
 
+import core.ImagePath;
 import dataStructure.containers.ObjectContainerImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.containers.ObjectContainer;
 import de.caluga.morphium.annotations.Entity;
 import de.caluga.morphium.annotations.Index;
 import de.caluga.morphium.annotations.Transient;
+import de.caluga.morphium.annotations.caching.Cache;
 import de.caluga.morphium.annotations.lifecycle.PreStore;
 import image.BlankMask;
 import image.BoundingBox;
@@ -17,14 +19,14 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import org.bson.types.ObjectId;
 
-
+@Cache
 @Entity(collectionName = "Objects")
-@Index(value={"parentId structureIdx idx", "newTrackBranch"}, options={"unique:1", ""})
+@Index(value={"parent_id,structure_idx,idx", "new_track_branch"}, options={"unique:1", ""})
 public class StructureObject extends StructureObjectAbstract {
     protected int structureIdx;
     protected int idx;
     protected ObjectId parentId;
-    @Transient protected StructureObjectAbstract parent;
+    @Transient private StructureObjectAbstract parent;
     //Registrator -> registration locale
     
     public StructureObject(int timePoint, int structureIdx, int idx, Object3D object, StructureObjectAbstract parent, Experiment xp) {
@@ -38,38 +40,37 @@ public class StructureObject extends StructureObjectAbstract {
         this.objectContainer=object.getObjectContainer(xp.getOutputImageDirectory()+File.separator+"processed_t"+timePoint+"_s"+structureIdx+".png");
     }
     
-    protected String getFileName(boolean extension) {
-        return "s"+new DecimalFormat("00").format(structureIdx)+"_idx"+new DecimalFormat("00000").format(idx)+(extension?".png":"");
+    public int getStructureIdx() {
+        return structureIdx;
     }
     
-    protected String getSubDirectory() {
-        return parent.getSubDirectory()+File.separator+getFileName(false);
-    }
+    public int getIdx() {return idx;}
     
     @Override
     public void createObjectContainer() {
-        this.objectContainer=object.getObjectContainer(parent.getSubDirectory()+File.separator+this.getFileName(true));
+        this.objectContainer=object.getObjectContainer(ImagePath.getProcessedImageFile(this));
     }
 
     @Override
     public Image getRawImage(int structureIdx) {
-        if (rawImagesS[structureIdx]==null) { // chercher l'image chez le parent avec les bounds
+        int channelIdx = getRoot().getChannelImageIdx(structureIdx);
+        if (rawImagesC.get(channelIdx)==null) { // chercher l'image chez le parent avec les bounds
             StructureObjectAbstract parentWithImage=getFirstParentWithOpenedRawImage(structureIdx);
             if (parentWithImage!=null) {
                 BoundingBox bb=getRelativeBoundingBox(parentWithImage);
-                rawImagesS[structureIdx]=parentWithImage.getRawImage(structureIdx).crop(bb);
+                rawImagesC.set(parentWithImage.getRawImage(structureIdx).crop(bb), channelIdx);
             } else { // opens only the bb of the object
                 StructureObjectRoot root = getRoot();
                 BoundingBox bb=getRelativeBoundingBox(root);
-                rawImagesS[structureIdx]=root.openRawImage(structureIdx, bb);
+                rawImagesC.set(root.openRawImage(structureIdx, bb), channelIdx);
             }
         }
-        return rawImagesS[structureIdx];
+        return rawImagesC.get(channelIdx);
     }
     
     @Override
     public StructureObjectAbstract getFirstParentWithOpenedRawImage(int structureIdx) {
-        if (parent.rawImagesS[structureIdx]!=null) return parent;
+        if (parent.rawImagesC.get(getRoot().getChannelImageIdx(structureIdx))!=null) return parent;
         else return parent.getFirstParentWithOpenedRawImage(structureIdx);
     }
     
@@ -80,7 +81,6 @@ public class StructureObject extends StructureObjectAbstract {
             nextParent=((StructureObject)nextParent).parent;
             res.addOffset(nextParent.object.bounds);
         } while(nextParent!=stop);
-        
         return res;
     }
 
@@ -88,13 +88,13 @@ public class StructureObject extends StructureObjectAbstract {
         return parent;
     }
     
-    public void setStructureParent(StructureObjectAbstract parent) {
+    public void setParent(StructureObjectAbstract parent) {
         this.parent=parent;
     }
 
     public StructureObjectRoot getRoot() {
         if (parent!=null) {
-            if (parent instanceof StructureObjectRoot) return (StructureObjectRoot)parent;
+            if (parent.isRoot()) return (StructureObjectRoot)parent;
             else return parent.getRoot();
         } else return null;
     }
@@ -125,6 +125,26 @@ public class StructureObject extends StructureObjectAbstract {
     public void delete() {
         getRoot().objectDAO.delete(this);
     }
+    
+    @Override
+    public void updateTrackLinks() {
+        getRoot().objectDAO.updateTrackLinks(this);
+    }
+    
+    @Override
+    public StructureObject getPrevious() {
+        if (previous==null && previousId!=null) previous = getRoot().objectDAO.getObject(previousId);
+        return (StructureObject)previous;
+    }
+    
+    @Override
+    public StructureObject getNext() {
+        if (next==null && nextId!=null) next = getRoot().objectDAO.getObject(nextId);
+        return (StructureObject)next;
+    }
+    
+    @Override 
+    public boolean isRoot() {return false;}
     
     // morphium
     @Override

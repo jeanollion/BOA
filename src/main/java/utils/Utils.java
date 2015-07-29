@@ -17,6 +17,7 @@
  */
 package utils;
 
+import de.caluga.morphium.Morphium;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,5 +48,23 @@ public class Utils {
         if (allowSpecialCharacters) return true;
         Matcher m = p.matcher(s);
         return !m.find();
+    }
+    
+    public static void waitForWrites(Morphium m) {
+        int count = 0;
+        while (m.getWriteBufferCount() > 0) {
+            count++;
+            if (count % 100 == 0)
+                //log.info("still " + MorphiumSingleton.get().getWriteBufferCount() + " writers active (" + MorphiumSingleton.get().getBufferedWriterBufferCount() + " + " + MorphiumSingleton.get().getWriterBufferCount() + ")");
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+            }
+        }
+        //waiting for it to be persisted
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
+        }
     }
 }

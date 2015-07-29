@@ -30,6 +30,7 @@ import de.caluga.morphium.annotations.Entity;
 import de.caluga.morphium.annotations.Id;
 import de.caluga.morphium.annotations.Index;
 import de.caluga.morphium.annotations.Transient;
+import de.caluga.morphium.annotations.caching.Cache;
 import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import java.util.ArrayList;
@@ -45,7 +46,7 @@ import org.bson.types.ObjectId;
  * 
  */
 
-//@Indexes(@Index(fields=@Field(value="name"), options=@IndexOptions(unique=true)))
+@Cache
 @Entity(collectionName = "Experiment", polymorph=false)
 @Index(value="name", options="unique:1")
 public class Experiment extends SimpleContainerParameter implements TreeModelContainer {
@@ -89,7 +90,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         return (MicroscopyField)fields.getChildAt(fieldIdx);
     }
     
-    public SimpleListParameter getChannelImages() {
+    public SimpleListParameter<ChannelImage> getChannelImages() {
         return channelImages;
     }
     
@@ -106,6 +107,8 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         for (int i = 0; i<res.length; i++) res[i] = getStructure(i).getChannelImage();
         return res;
     }
+    
+    public int getChannelImageIdx(int structureIdx) {return getStructure(structureIdx).getChannelImage();}
     
     public SimpleListParameter<Structure> getStructures() {return structures;}
     

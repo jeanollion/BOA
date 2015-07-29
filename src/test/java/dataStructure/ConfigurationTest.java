@@ -21,7 +21,7 @@ import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.Structure;
-import dataStructure.containers.MultipleImageContainer;
+import dataStructure.containers.MultipleImageContainerSingleFile;
 import image.ImageByte;
 import image.ImageReader;
 import image.ImageWriter;
@@ -95,7 +95,7 @@ public class ConfigurationTest {
         String[] files = new String[]{folder.getAbsolutePath()};
         Processor.importFiles(files, xp);
         assertEquals("number of fields detected", 2, xp.getMicroscopyFields().getChildCount());
-        MultipleImageContainer c = xp.getMicroscopyField(0).getImages();
+        MultipleImageContainerSingleFile c = xp.getMicroscopyField(0).getImages();
         ImageReader reader = new ImageReader(c.getFilePath());
         assertEquals("extension:", ImageFormat.OMETIF.getExtension(), reader.getExtension().getExtension());
         ImageByte im00 = (ImageByte)reader.openImage(c.getImageIOCoordinates(0, 0));

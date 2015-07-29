@@ -37,11 +37,16 @@ public class ObjectDAO extends DAO<StructureObject>{
         super(morphium, StructureObject.class);
         morphium.ensureIndicesFor(StructureObject.class);
         this.morphium=morphium;
+        
     }
     
     private Query<StructureObject> getQuery(ObjectId parentId, int structureIdx) {
         // voir si la query est optimisée pour index composé
         return super.getQuery().f("parentId").eq(parentId).f("structureIdx").eq(structureIdx);
+    }
+    
+    public StructureObject getObject(ObjectId id) {
+        return super.getQuery().getById(id);
     }
     
     public StructureObject[] getObjects(ObjectId parentId, int structureIdx) {

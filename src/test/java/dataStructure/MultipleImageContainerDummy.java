@@ -15,14 +15,32 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.objects;
+package dataStructure;
+
+import dataStructure.containers.MultipleImageContainer;
+import image.BlankMask;
+import image.BoundingBox;
+import image.Image;
+import image.ImageProperties;
 
 /**
  *
  * @author jollion
  */
-public interface Track {
-    public StructureObjectPreProcessing getPrevious();
-    public StructureObjectPreProcessing getNext();
-    public void setPreviousInTrack(StructureObjectPreProcessing parent, boolean isChildOfParent);
+public class MultipleImageContainerDummy extends MultipleImageContainer {
+    ImageProperties properties;
+    public MultipleImageContainerDummy(ImageProperties properties) {
+        this.properties=properties;
+    }
+    
+    @Override
+    public Image getImage(int timePoint, int channel) {
+        return new BlankMask("@t:"+timePoint+" @c:"+channel, properties);
+    }
+
+    @Override
+    public Image getImage(int timePoint, int channel, BoundingBox bounds) {
+        return bounds.getImageProperties("@t:"+timePoint+" @c:"+channel, properties.getScaleXY(), properties.getScaleZ());
+    }
+    
 }

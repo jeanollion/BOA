@@ -1,5 +1,6 @@
 package dataStructure.objects;
 
+import core.ImagePath;
 import image.ImageLabeller;
 import dataStructure.containers.ObjectContainerImage;
 import dataStructure.configuration.Experiment;
@@ -7,6 +8,7 @@ import dataStructure.containers.ObjectContainer;
 import de.caluga.morphium.annotations.Id;
 import de.caluga.morphium.annotations.Transient;
 import de.caluga.morphium.annotations.lifecycle.Lifecycle;
+import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import de.caluga.morphium.annotations.lifecycle.PostStore;
 import de.caluga.morphium.annotations.lifecycle.PreStore;
 import image.BlankMask;
@@ -17,13 +19,15 @@ import image.ImageInteger;
 import image.ImageMask;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import org.bson.types.ObjectId;
 import static processing.PluginSequenceRunner.*;
+import utils.SmallArray;
 
 @Lifecycle
 public abstract class StructureObjectAbstract implements StructureObjectPostProcessing, Track {
     @Id protected ObjectId id;
-    @Transient protected StructureObject[][] childrenSM;
+    @Transient protected SmallArray<StructureObject[]> childrenSM=new SmallArray<StructureObject[]>();
     
     // track-related attributes
     protected int timePoint;
@@ -31,34 +35,26 @@ public abstract class StructureObjectAbstract implements StructureObjectPostProc
     @Transient protected StructureObjectAbstract previous;
     @Transient protected StructureObjectAbstract next;
     protected boolean newTrackBranch=true;
-    //@Transient protected boolean parentTrackLoaded=false;
-    //@Transient protected boolean childTrackLoaded=false;
     
     // mask and images
     @Transient Object3D object;
     protected ObjectContainer objectContainer;
-    @Transient protected Image[] rawImagesS;
-    @Transient protected Image[] preProcessedImageS;
+    @Transient protected SmallArray<Image> rawImagesC=new SmallArray<Image>();
+    @Transient protected SmallArray<Image> preProcessedImageS=new SmallArray<Image>();
     
     public StructureObjectAbstract(int timePoint, Object3D object, Experiment xp) {
         this.timePoint = timePoint;
         this.object=object;
-        this.childrenSM=new StructureObject[xp.getStructureNB()][];
-        this.rawImagesS=new Image[xp.getStructureNB()];
-        this.preProcessedImageS=new Image[xp.getStructureNB()];
-        this.objectContainer=object.getObjectContainer(xp.getOutputImageDirectory());
     }
-    
-    protected abstract String getSubDirectory();
     
     /**
      * 
      * @param parent the parent of the current object in the track
-     * @param isChildOfParent if true, sets this instance as the child of {@param parent} 
+     * @param isNewBranch if true, sets this instance as the child of {@param parent} 
      */
-    public void setParentTrack(StructureObjectPreProcessing parent, boolean isChildOfParent) {
+    public void setPreviousInTrack(StructureObjectPreProcessing parent, boolean isNewBranch) {
         this.previous=(StructureObjectAbstract)parent;
-        if (isChildOfParent) {
+        if (isNewBranch) {
             previous.next=this;
             newTrackBranch=false;
         }
@@ -66,56 +62,52 @@ public abstract class StructureObjectAbstract implements StructureObjectPostProc
     }
     
     @Override
-    public StructureObjectAbstract getPrevious() {
-        return previous;
-    }
+    public abstract StructureObjectAbstract getPrevious();
     
     @Override
-    public StructureObjectAbstract getNext() {
-        return next;
-    }
+    public abstract StructureObjectAbstract getNext();
     
+    public ImageMask getMask() {return object.getMask();}
     
-    public ImageMask getMask() {
-        return object.getMask();
-    }
+    public BoundingBox getBounds() {return object.getBounds();}
     
-    public BoundingBox getBounds() {
-        return object.getBounds();
-    }
+    public ObjectId getId() {return id;}
     
     public abstract Image getRawImage(int structureIdx);
     
     public abstract StructureObjectAbstract getFirstParentWithOpenedRawImage(int structureIdx);
     
     public Image getFilteredImage(int structureIdx) {
-        return preProcessedImageS[structureIdx];
+        return preProcessedImageS.get(structureIdx);
     }
     
     public void createPreFilterImage(int structureIdx, Experiment xp) {
-        preProcessedImageS[structureIdx]=preFilterImage(getRawImage(structureIdx), this, xp.getStructure(structureIdx).getProcessingChain().getPrefilters());
+        Image raw = getRawImage(structureIdx);
+        if (raw!=null) preProcessedImageS.set(preFilterImage(getRawImage(structureIdx), this, xp.getStructure(structureIdx).getProcessingChain().getPrefilters()), structureIdx);
     }
+    
     
     public void segmentChildren(int structureIdx, Experiment xp) {
         if (getFilteredImage(structureIdx)==null) createPreFilterImage(structureIdx, xp);
         ImageInteger seg = segmentImage(getFilteredImage(structureIdx), this, xp.getStructure(structureIdx).getProcessingChain().getSegmenter());
-        if (seg instanceof BlankMask) childrenSM[structureIdx]=new StructureObject[0];
+        if (seg instanceof BlankMask) childrenSM.set(new StructureObject[0], structureIdx);
         else {
             seg = postFilterImage(seg, this, xp.getStructure(structureIdx).getProcessingChain().getPostfilters());
             Object3D[] objects = ImageLabeller.labelImage(seg);
-            childrenSM[structureIdx] = new StructureObject[objects.length];
-            for (int i = 0; i<objects.length; ++i) childrenSM[structureIdx][i]=new StructureObject(timePoint, structureIdx, i, objects[i], this, xp);
+            StructureObject[] res = new StructureObject[objects.length];
+            childrenSM.set(res, structureIdx);
+            for (int i = 0; i<objects.length; ++i) res[i]=new StructureObject(timePoint, structureIdx, i, objects[i], this, xp);
         }
     }
     
     public void saveChildren(int structureIdx) {
-        getRoot().objectDAO.store(childrenSM[structureIdx]);
+        getRoot().objectDAO.store(childrenSM.get(structureIdx));
     }
     
 
     public StructureObject[] getChildObjects(int structureIdx) {
-        if (childrenSM[structureIdx]==null) childrenSM[structureIdx]=getRoot().objectDAO.getObjects(this.id, structureIdx);
-        return childrenSM[structureIdx];
+        if (childrenSM.getAndExtend(structureIdx)==null) return populateChildren(structureIdx, getRoot().objectDAO);
+        else return childrenSM.getQuick(structureIdx);
     }
 
     public abstract StructureObjectRoot getRoot();
@@ -137,16 +129,24 @@ public abstract class StructureObjectAbstract implements StructureObjectPostProc
         dao.deleteChildren(id, structureIdx);
     }
     
-    public void populateChildren(int structureIdx, ObjectDAO dao) {
-        this.childrenSM[structureIdx]=dao.getObjects(id, structureIdx);
+    public StructureObject[] populateChildren(int structureIdx, ObjectDAO dao) {
+        StructureObject[] os =dao.getObjects(id, structureIdx);
+        for (StructureObject o : os) o.setParent(this);
+        childrenSM.set(os, structureIdx);
+        return os;
     }
     
+    public abstract void updateTrackLinks();
+    
+    public abstract boolean isRoot();
+    
     // lifecycle
-    @PreStore
-    public void preStore() {
+    @PreStore public void preStore() {
         if (this.previous!=null) previousId=previous.id; 
         if (this.next!=null) nextId=next.id;
         createObjectContainer();
     }
-    
+    @PostLoad public void postLoad() {
+        this.object=objectContainer.getObject();
+    }
 }

@@ -34,7 +34,7 @@ import plugins.Tracker;
 
 public class Structure extends SimpleContainerParameter {
     ParentStructureParameter parentStructure =  new ParentStructureParameter("Parent Structure", -1, 0);;
-    ChannelImageParameter channelImage = new ChannelImageParameter("Channel Image", -1);
+    ChannelImageParameter channelImage = new ChannelImageParameter("Channel Image", 0);
     ProcessingChain processingChain = new ProcessingChain("Processing Chain");
     PluginParameter<Tracker> tracker = new PluginParameter<Tracker>("Tracker", Tracker.class, true);
     

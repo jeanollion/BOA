@@ -19,7 +19,7 @@ package core;
 
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.MicroscopyField;
-import dataStructure.containers.MultipleImageContainer;
+import dataStructure.containers.MultipleImageContainerSingleFile;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectAbstract;
@@ -42,8 +42,8 @@ import processing.PluginSequenceRunner;
  */
 public class Processor {
     public static void importFiles(String[] selectedFiles, Experiment xp) {
-        ArrayList<MultipleImageContainer> images = ImageFieldFactory.importImages(selectedFiles, xp);
-        for (MultipleImageContainer c : images) {
+        ArrayList<MultipleImageContainerSingleFile> images = ImageFieldFactory.importImages(selectedFiles, xp);
+        for (MultipleImageContainerSingleFile c : images) {
             if (!xp.getMicroscopyFields().containsElement(c.getName())) {
                 MicroscopyField f = (MicroscopyField)xp.getMicroscopyFields().createChildInstance(c.getName());
                 xp.getMicroscopyFields().insert(f);
@@ -74,18 +74,18 @@ public class Processor {
     
     public static void trackRoot(Experiment xp, StructureObjectRoot[] rootsT) {
         for (int i = 1; i<rootsT.length; ++i) {
-            rootsT[i].setParentTrack(rootsT[i-1], true);
+            rootsT[i].setPreviousInTrack(rootsT[i-1], true);
         }
     }
     
     public static void track(Experiment xp, Tracker tracker, StructureObjectAbstract parentTrack, int structureIdx, boolean updateObjects) {
         if (tracker==null) return;
         // TODO gestion de la memoire vive -> si trop ouvert, fermer les images & masques des temps précédents.
-        // Multithread -> attention à l'interaction avec la gestion de la memoire..
         while(parentTrack.getNext()!=null) {
-            tracker.assignParents(parentTrack.getChildObjects(structureIdx), parentTrack.getNext().getChildObjects(structureIdx));
-            if (updateObjects) ....
+            tracker.assignPrevious(parentTrack.getChildObjects(structureIdx), parentTrack.getNext().getChildObjects(structureIdx));
+            if (updateObjects) for (StructureObject o : parentTrack.getChildObjects(structureIdx)) o.updateTrackLinks();
             parentTrack = parentTrack.getNext();
         }
+        if (updateObjects) for (StructureObject o : parentTrack.getChildObjects(structureIdx)) o.updateTrackLinks(); // update the last one
     }
 }

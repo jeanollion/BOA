@@ -48,6 +48,7 @@ public class FileChooser extends SimpleParameter{
     }
     
     public String getFirstSelectedFilePath() {
+        if (selectedFiles.length==0) return null;
         return selectedFiles[0];
     }
     
