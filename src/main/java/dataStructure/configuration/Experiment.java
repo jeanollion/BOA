@@ -19,6 +19,7 @@ import configuration.parameters.ChoiceParameter;
 import configuration.parameters.ContainerParameter;
 import configuration.parameters.FileChooser;
 import configuration.parameters.FileChooser.FileChooserOption;
+import configuration.parameters.MultipleChoiceParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.SimpleContainerParameter;
 import configuration.parameters.SimpleListParameter;
@@ -26,6 +27,9 @@ import configuration.parameters.SimpleParameter;
 import configuration.parameters.ui.ParameterUI;
 import configuration.userInterface.ConfigurationTreeModel;
 import configuration.userInterface.TreeModelContainer;
+import dataStructure.containers.ImageDAO;
+import dataStructure.containers.ImageDAOFactory;
+import dataStructure.containers.SimulationImageDAO;
 import de.caluga.morphium.annotations.Entity;
 import de.caluga.morphium.annotations.Id;
 import de.caluga.morphium.annotations.Index;
@@ -34,10 +38,6 @@ import de.caluga.morphium.annotations.caching.Cache;
 import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import javax.swing.tree.MutableTreeNode;
-import javax.swing.tree.TreeNode;
 import org.bson.types.ObjectId;
 
 /**
@@ -56,38 +56,40 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter("Channel Images", 0 , ChannelImage.class);
     SimpleListParameter<MicroscopyField> fields= new SimpleListParameter("Fields", 0 , MicroscopyField.class);
     ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.BIOFORMATS.getMethod(), false);
-    
+    public enum ImageDAOTypes {LocalFileSystem, Simulation};
+    ImageDAOTypes imageDAOType=ImageDAOTypes.LocalFileSystem;
     
     @Transient ConfigurationTreeModel model;
     
     public Experiment(String name) {
         super(name);
-        Structure channels = new Structure("Channels", -1);
-        structures.insert(channels);
-        Structure bacteries = new Structure("Bacteries", 0);
-        structures.insert(bacteries);
-        channelImages.insert(new ChannelImage());
-        initChildren();
+        initChildList();
     }
     
     public Experiment(String name, Structure... defaultStructures) {
         super(name);
         for (Structure s : defaultStructures) structures.insert(s);
         structures.setUnmutableIndex(defaultStructures.length-1);
-        channelImages.insert(new ChannelImage("Channel1"));
-        initChildren();
+        initChildList();
+    }
+    public void setImageDAOType(ImageDAOTypes type) {
+        this.imageDAOType=type;
+    }
+    public ImageDAO getImageDAO() {
+        if (imageDAOType.equals(ImageDAOTypes.Simulation)) return new SimulationImageDAO();
+        else return ImageDAOFactory.getLocalFileSystemImageDAO(getOutputImageDirectory()); //if (imageDAOType.equals(ImageDAOTypes.LocalFileSystem))
     }
     
     protected void initChildList() {
-        super.initChildren(importMethod, channelImages, structures, imagePath);
+        super.initChildren(importMethod, fields, channelImages, structures, imagePath);
     }
     
     public SimpleListParameter<MicroscopyField> getMicroscopyFields() {
         return fields;
     }
     
-    public MicroscopyField getMicroscopyField(int fieldIdx) {
-        return (MicroscopyField)fields.getChildAt(fieldIdx);
+    public MicroscopyField getMicroscopyField(String fieldName) {
+        return fields.getChildByName(fieldName);
     }
     
     public SimpleListParameter<ChannelImage> getChannelImages() {

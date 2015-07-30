@@ -15,33 +15,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.containers;
+package plugins;
 
-import dataStructure.objects.Object3D;
-import dataStructure.objects.StructureObjectAbstract;
-import de.caluga.morphium.annotations.Embedded;
-import de.caluga.morphium.annotations.Transient;
-import image.BoundingBox;
+import dataStructure.containers.InputImage;
+
 
 /**
  *
  * @author jollion
  */
-
-@Embedded(polymorph=true)
-public abstract class ObjectContainer {
-    @Transient protected float scaleXY, scaleZ;
-    BoundingBox bounds;
-    public ObjectContainer(BoundingBox bounds, float scaleXY, float scaleZ) {
-        this.bounds=bounds;
-        this.scaleXY=scaleXY;
-        this.scaleZ=scaleZ;
-    }
-    public void setScale(float scaleXY, float scaleZ) {
-        this.scaleXY=scaleXY;
-        this.scaleZ=scaleZ;
-    }
-    public abstract Object3D getObject();
-    public abstract void updateObject(Object3D object);
-    
+public interface Registration extends Transformation {
 }

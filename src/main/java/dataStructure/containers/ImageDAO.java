@@ -15,15 +15,23 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugins;
+package dataStructure.containers;
 
-import dataStructure.objects.StructureObjectPreProcessing;
-import dataStructure.objects.Track;
-import dataStructure.objects.Vector3D;
+import dataStructure.objects.StructureObject;
+import image.BoundingBox;
+import image.Image;
+import image.ImageInteger;
 
 /**
  *
  * @author jollion
  */
-public interface SpatialRegistrator extends Transformation {
+public interface ImageDAO {
+    
+    public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName);
+    public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName, BoundingBox bounds);
+    public void writePreProcessedImage(Image image, int channelImageIdx, int timePoint, String microscopyFieldName);
+    
+    public ImageInteger openMask(StructureObject object);
+    public void writeMask(ImageInteger mask, StructureObject object);
 }

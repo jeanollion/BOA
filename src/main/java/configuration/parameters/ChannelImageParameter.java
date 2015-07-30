@@ -29,11 +29,10 @@ public class ChannelImageParameter extends StructureParameter {
     
     @Override
     public String[] getChoiceList() {
-        String[] choices;
         if (getXP()!=null) {
-            return choices=getXP().getChannelImagesAsString();
+            return getXP().getChannelImagesAsString();
         } else {
-            return choices = new String[]{"error: no xp found in tree"};
+            return new String[]{"error: no xp found in tree"};
         }
     }
 

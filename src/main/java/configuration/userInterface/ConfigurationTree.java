@@ -26,6 +26,7 @@ import configuration.parameters.ui.ParameterUI;
 import configuration.parameters.SimpleListParameter;
 import configuration.parameters.ui.ArmableUI;
 import configuration.parameters.ui.ChoiceParameterUI;
+import configuration.parameters.ui.MultipleChoiceParameterUI;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
 import java.awt.Component;
@@ -64,8 +65,8 @@ public class ConfigurationTree {
     protected JScrollPane scroll;
     
     public ConfigurationTree() {
-        //rootParameter = new Experiment("Test Experiment");
-        rootParameter = getExperiment(); // for test morphia
+        rootParameter = new Experiment("Test Experiment");
+        //rootParameter = getExperiment(); // for test morphia
         treeModel = new ConfigurationTreeModel(rootParameter);
         tree = new JTree(treeModel);
         treeModel.setJTree(tree);
@@ -91,6 +92,7 @@ public class ConfigurationTree {
                             ParameterUI ui = p.getUI();
                             if (ui!=null) {
                                 if (ui instanceof ChoiceParameterUI) ((ArmableUI)ui).refreshArming();
+                                if (ui instanceof MultipleChoiceParameterUI) ((MultipleChoiceParameterUI)ui).addMenuListener(menu);
                                 addToMenu(ui.getDisplayComponent(), menu);
                                 menu.addSeparator();
                             }
@@ -100,8 +102,6 @@ public class ConfigurationTree {
                             addToMenu(listUI.getChildDisplayComponent(p), menu);
                                 //menu.addSeparator();
                             }
-                             
-                            
                         }
                         
                         menu.show(tree, pathBounds.x, pathBounds.y + pathBounds.height);

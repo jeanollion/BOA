@@ -64,10 +64,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     
     public PluginParameter(String name, boolean allowNoSelection, Class<T> pluginType, T pluginInstance) {
         this(name, pluginType, allowNoSelection);
-        this.pluginParameters=pluginInstance.getParameters();
-        super.initChildren();
-        this.pluginName=pluginInstance.getClass().getSimpleName();
-        this.pluginSet=true;
+        setPlugin(pluginInstance);
     }
     
     public void setPlugin(T pluginInstance) {
@@ -100,17 +97,14 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
             this.pluginSet=false;
             
         } else if (!pluginSet || !pluginName.equals(this.pluginName)) {
-            Plugin instance = PluginFactory.getPlugin(pluginType, pluginName);
+            T instance = PluginFactory.getPlugin(pluginType, pluginName);
             if (instance==null) {
                 Core.getLogger().log(Level.WARNING, "Couldn't find plugin: {0}", pluginName);
                 this.pluginName=NO_SELECTION;
                 this.pluginParameters=null;
                 return;
             }
-            pluginParameters=instance.getParameters();
-            super.initChildren(pluginParameters);
-            this.pluginName=pluginName;
-            this.pluginSet=true;
+            setPlugin(instance);
         }
     }
     
@@ -149,7 +143,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     }
 
     @Override
-    public PluginParameter duplicate() {
+    public PluginParameter<T> duplicate() {
         PluginParameter res = new PluginParameter(name, pluginType, allowNoSelection);
         res.setContentFrom(this);
         return res;
@@ -191,7 +185,6 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         this.setPlugin(item);
     }
     
-    
     public ArrayList<String> getPluginNames() {
         return getPluginNames(pluginType);
     }
@@ -213,7 +206,6 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     public boolean isAllowNoSelection() {
         return allowNoSelection;
     }
-    
     
     // morphia
     public PluginParameter(){

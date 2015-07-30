@@ -29,19 +29,17 @@ import image.ImageReader;
  * @author jollion
  */
 
-public class MultipleImageContainerSingleFile extends MultipleImageContainer{
+public class MultipleImageContainerSingleFile extends MultipleImageContainer {
     String filePath;
     String name;
     int timePointNumber, channelNumber;
-    int serie;
-    float scaleXY, scaleZ;
+    int series;
     BoundingBox bounds;
-    FileType fileType;
+    private ImageReader reader;
     
-    public MultipleImageContainerSingleFile(String name, String imagePath, int serie, int timePointNumber, int channelNumber) {
-        fileType = FileType.SINGLE_FILE;
+    public MultipleImageContainerSingleFile(String name, String imagePath, int series, int timePointNumber, int channelNumber) {
         this.name = name;
-        this.serie=serie;
+        this.series=series;
         filePath = imagePath;
         this.timePointNumber = timePointNumber;
         this.channelNumber=channelNumber;
@@ -63,33 +61,13 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer{
         return channelNumber;
     }
     
-    
-    public ImageIOCoordinates[][] getImageIOCoordinatesTC() {
-        ImageIOCoordinates[][] icTC = new ImageIOCoordinates[timePointNumber][channelNumber];
-        if (fileType.equals(FileType.SINGLE_FILE)) {
-            for (int t = 0; t < timePointNumber; t++) {
-                for (int c = 0; c < channelNumber; c++) {
-                    icTC[t][c] = new ImageIOCoordinates(serie, c, t);
-                }
-            }
-            return icTC;
-        } else return null;
+    protected ImageIOCoordinates getImageIOCoordinates(int timePoint, int channel) {
+        return new ImageIOCoordinates(series, channel, timePoint);
     }
     
-    public ImageIOCoordinates[] getImageIOCoordinatesC(int timePoint) {
-        ImageIOCoordinates[] icC = new ImageIOCoordinates[channelNumber];
-        if (fileType.equals(FileType.SINGLE_FILE)) {
-            for (int c = 0; c < channelNumber; c++) {
-                icC[c] = new ImageIOCoordinates(serie, c, timePoint);
-            }   
-            return icC;
-        } else return null;
-    }
-    
-    public ImageIOCoordinates getImageIOCoordinates(int timePoint, int channel) {
-        if (fileType.equals(FileType.SINGLE_FILE)) {
-            return new ImageIOCoordinates(serie, channel, timePoint);
-        } else return null;
+    protected ImageReader getReader() {
+        if (reader==null) reader = new ImageReader(filePath);
+        return reader;
     }
     
     @Override
@@ -97,8 +75,12 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer{
         if (this.timePointNumber==1) timePoint=0;
         ImageIOCoordinates ioCoordinates = getImageIOCoordinates(timePoint, channel);
         if (bounds!=null) ioCoordinates.setBounds(bounds);
-        Image image = ImageReader.openImage(filePath, ioCoordinates);
+        Image image = getReader().openImage(ioCoordinates);
         if (scaleXY!=0 && scaleZ!=0) image.setCalibration(scaleXY, scaleZ);
+        else {
+            scaleXY = image.getScaleXY();
+            scaleZ = image.getScaleZ();
+        }
         return image;
     }
     
@@ -108,12 +90,16 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer{
         ImageIOCoordinates ioCoordinates = getImageIOCoordinates(timePoint, channel);
         ImageIOCoordinates ioCoords = ioCoordinates.duplicate();
         ioCoords.setBounds(bounds);
-        Image image = ImageReader.openImage(filePath, ioCoords);
-        image.setCalibration(scaleXY, scaleZ);
+        Image image = getReader().openImage(ioCoordinates);
+        if (scaleXY!=0 && scaleZ!=0) image.setCalibration(scaleXY, scaleZ);
+        else {
+            scaleXY = image.getScaleXY();
+            scaleZ = image.getScaleZ();
+        }
         return image;
     }
-    
-    private enum FileType {
-        SINGLE_FILE;
+    public void close() {
+        if (reader!=null) reader.closeReader();
+        reader = null;
     }
 }

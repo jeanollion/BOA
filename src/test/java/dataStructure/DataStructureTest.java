@@ -23,6 +23,7 @@ import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.Structure;
+import dataStructure.containers.MultipleImageContainer;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectPostProcessing;
 import dataStructure.objects.StructureObjectRoot;
@@ -32,14 +33,19 @@ import dataStructure.objects.StructureObjectAbstract;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
 import image.BlankMask;
+import image.Image;
 import image.ImageByte;
 import image.ImageFormat;
 import image.ImageWriter;
+import images.ImageIOTest;
+import java.io.File;
 import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import plugins.PluginFactory;
 import plugins.trackers.TrackerObjectIdx;
 
@@ -47,7 +53,49 @@ import plugins.trackers.TrackerObjectIdx;
  *
  * @author jollion
  */
-public class StructureObjectTest {
+public class DataStructureTest {
+    @Rule
+    public TemporaryFolder testFolder = new TemporaryFolder();
+    
+    public static ImageByte[][] createDummyImagesTC(int timePointNumber, int channelNumber) {
+        ImageByte[][] images = new ImageByte[timePointNumber][channelNumber];
+        for (int t = 0; t<timePointNumber; t++) {
+            for (int c = 0; c<channelNumber;c++) {
+                images[t][c] = new ImageByte("t"+t+"c"+c, 6, 5, 4);
+                images[t][c].setPixel(t, c, c, 1);
+            }
+        }
+        return images;
+    }
+    
+    @Test
+    public void importFieldTest() {
+        // creation de l'image de test
+        String title = "imageTestMultiple";
+        ImageFormat format = ImageFormat.OMETIF;
+        File folder = testFolder.newFolder("TestImages");
+        int timePoint = 3;
+        int channel = 2;
+        ImageByte[][] images = createDummyImagesTC(timePoint, channel);
+        ImageByte[][] images2 = createDummyImagesTC(timePoint, channel+1);
+        ImageByte[][] images3 = createDummyImagesTC(timePoint+1, channel);
+        
+        ImageWriter.writeToFile(folder.getAbsolutePath(), title, format, images);
+        File folder2 = new File(folder.getAbsolutePath()+File.separator+"subFolder");
+        folder2.mkdir();
+        ImageWriter.writeToFile(folder2.getAbsolutePath(), title, format, images);
+        ImageWriter.writeToFile(folder2.getAbsolutePath(), title+"2", format, images, images, images2, images3);
+        
+        Experiment xp = new Experiment("testXP", new Structure("structure"));
+        xp.getChannelImages().insert(new ChannelImage("channel1"), new ChannelImage("channel2"));
+        
+        String[] files = new String[]{folder.getAbsolutePath()};
+        Processor.importFiles(files, xp);
+        assertEquals("number of fields detected", 6-1-1, xp.getMicroscopyFields().getChildCount()); // 6 - 1 (unique title) - 1 (channel number)
+        MultipleImageContainer c = xp.getMicroscopyField(title).getImages();
+        ImageIOTest.assertImageByte(images[0][0], (ImageByte)c.getImage(0, 0));
+    }
+    
     @Test
     public void StructureObjectTest() {
         try {
@@ -140,7 +188,7 @@ public class StructureObjectTest {
             ImageWriter.writeToFile(maskBactos, "/tmp", "mask Bactos t0", ImageFormat.PNG);
             
         } catch (UnknownHostException ex) {
-            Logger.getLogger(StructureObjectTest.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(DataStructureTest.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     private static ImageByte getMask(StructureObjectRoot root, int[] pathToRoot) {

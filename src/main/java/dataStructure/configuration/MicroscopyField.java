@@ -23,6 +23,9 @@ import configuration.parameters.PluginParameter;
 import configuration.parameters.SimpleContainerParameter;
 import configuration.parameters.SimpleListParameter;
 import configuration.parameters.StructureParameter;
+import dataStructure.containers.ImageDAO;
+import dataStructure.containers.InputImage;
+import dataStructure.containers.MultipleImageContainer;
 import dataStructure.containers.MultipleImageContainerSingleFile;
 import plugins.PreFilter;
 
@@ -31,45 +34,67 @@ import plugins.PreFilter;
  * @author jollion
  */
 public class MicroscopyField extends SimpleContainerParameter {
-    StructureParameter preProcessingStructure = new StructureParameter("Pre-Processing Structure", 0, false);
-    MultipleImageContainerSingleFile images;
+    
+    
+    MultipleImageContainer images;
     //ui: bouton droit = selectionner un champ?
     
     public MicroscopyField(String name) {
         super(name);
     }
     
+    public InputImage[][] getInputImagesTC() {
+        ImageDAO dao = getExperiment().getImageDAO();
+        InputImage[][] res = new InputImage[images.getTimePointNumber()][images.getChannelNumber()];
+        for (int t = 0; t<res.length; ++t) {
+           for (int c = 0; c<res[0].length; ++c) {
+               res[t][c] = new InputImage(c, t, name, images, dao, true);
+            } 
+        }
+        return res;
+    }
+    
+    public InputImage getInputImage(int timePoint, int channelIdx) {
+        return new InputImage(channelIdx, timePoint, name, images, getExperiment().getImageDAO(), true);
+    }
+    
+    protected Experiment getExperiment() {
+        return (Experiment) parent.getParent();
+    }
+    
+    public float getScaleXY(){
+        if (images!=null) return images.getScaleXY();
+        else return 1;
+    }
+    public float getScaleZ(){
+        if (images!=null) return images.getScaleZ();
+        else return 1;
+    }
     
     @Override
     protected void initChildList() {
-        initChildren(preProcessingStructure);
+        initChildren();
     }
     
-    public void setImages(MultipleImageContainerSingleFile images) {
+    public void setImages(MultipleImageContainer images) {
         this.images=images;
     }
     
-    public MultipleImageContainerSingleFile getImages() {
+    public MultipleImageContainer getImages() {
         return images;
     }
     
-    
-    
     @Override
     public String toString() {
-        if (images!=null) return name + " number of time points: "+images.getTimePointNumber();
+        if (images!=null) return name;// + " number of time points: "+images.getTimePointNumber();
         return name + " no selected images";
     }
     
-
     @Override
     public Parameter duplicate() {
         MicroscopyField field = new MicroscopyField("new Microscopy Field");
         field.setContentFrom(this);
         return field;
     }
-    
-        // morphia
-    public MicroscopyField(){super(); initChildList();} // mettre dans la clase abstraite SimpleContainerParameter?
     
 }

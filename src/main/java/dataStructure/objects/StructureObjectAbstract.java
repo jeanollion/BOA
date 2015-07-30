@@ -1,9 +1,9 @@
 package dataStructure.objects;
 
-import core.ImagePath;
 import image.ImageLabeller;
 import dataStructure.containers.ObjectContainerImage;
 import dataStructure.configuration.Experiment;
+import dataStructure.configuration.MicroscopyField;
 import dataStructure.containers.ObjectContainer;
 import de.caluga.morphium.annotations.Id;
 import de.caluga.morphium.annotations.Transient;
@@ -37,7 +37,7 @@ public abstract class StructureObjectAbstract implements StructureObjectPostProc
     protected boolean newTrackBranch=true;
     
     // mask and images
-    @Transient Object3D object;
+    @Transient private Object3D object;
     protected ObjectContainer objectContainer;
     @Transient protected SmallArray<Image> rawImagesC=new SmallArray<Image>();
     @Transient protected SmallArray<Image> preProcessedImageS=new SmallArray<Image>();
@@ -67,9 +67,18 @@ public abstract class StructureObjectAbstract implements StructureObjectPostProc
     @Override
     public abstract StructureObjectAbstract getNext();
     
-    public ImageMask getMask() {return object.getMask();}
+    protected Object3D getObject() {
+        if (object==null) {
+            MicroscopyField f = getRoot().getMicroscopyField();
+            objectContainer.setScale(f.getScaleXY(), f.getScaleZ());
+            object=objectContainer.getObject();
+        }
+        return object;
+    }
     
-    public BoundingBox getBounds() {return object.getBounds();}
+    public ImageMask getMask() {return getObject().getMask();}
+    
+    public BoundingBox getBounds() {return getObject().getBounds();}
     
     public ObjectId getId() {return id;}
     
@@ -145,8 +154,5 @@ public abstract class StructureObjectAbstract implements StructureObjectPostProc
         if (this.previous!=null) previousId=previous.id; 
         if (this.next!=null) nextId=next.id;
         createObjectContainer();
-    }
-    @PostLoad public void postLoad() {
-        this.object=objectContainer.getObject();
     }
 }

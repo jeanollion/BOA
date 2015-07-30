@@ -1,21 +1,13 @@
 package dataStructure.objects;
 
-import core.ImagePath;
-import dataStructure.containers.ObjectContainerImage;
 import dataStructure.configuration.Experiment;
-import dataStructure.containers.ObjectContainer;
 import de.caluga.morphium.annotations.Entity;
 import de.caluga.morphium.annotations.Index;
 import de.caluga.morphium.annotations.Transient;
 import de.caluga.morphium.annotations.caching.Cache;
 import de.caluga.morphium.annotations.lifecycle.PreStore;
-import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
-import image.ImageByte;
-import image.ImageInteger;
-import java.io.File;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import org.bson.types.ObjectId;
 
@@ -36,20 +28,11 @@ public class StructureObject extends StructureObjectAbstract {
         this.parent=parent;
     }
     
-    protected void setObjectContainer(Experiment xp) {
-        this.objectContainer=object.getObjectContainer(xp.getOutputImageDirectory()+File.separator+"processed_t"+timePoint+"_s"+structureIdx+".png");
-    }
-    
-    public int getStructureIdx() {
-        return structureIdx;
-    }
-    
+    public int getStructureIdx() {return structureIdx;}
     public int getIdx() {return idx;}
     
     @Override
-    public void createObjectContainer() {
-        this.objectContainer=object.getObjectContainer(ImagePath.getProcessedImageFile(this));
-    }
+    public void createObjectContainer() {this.objectContainer=getObject().getObjectContainer(this);}
 
     @Override
     public Image getRawImage(int structureIdx) {
@@ -76,21 +59,17 @@ public class StructureObject extends StructureObjectAbstract {
     
     protected BoundingBox getRelativeBoundingBox(StructureObjectAbstract stop) {
         StructureObjectAbstract nextParent=this;
-        BoundingBox res = object.bounds.duplicate();
+        BoundingBox res = getObject().bounds.duplicate();
         do {
             nextParent=((StructureObject)nextParent).parent;
-            res.addOffset(nextParent.object.bounds);
+            res.addOffset(nextParent.getObject().bounds);
         } while(nextParent!=stop);
         return res;
     }
 
-    public StructureObjectAbstract getParent() {
-        return parent;
-    }
+    public StructureObjectAbstract getParent() {return parent;}
     
-    public void setParent(StructureObjectAbstract parent) {
-        this.parent=parent;
-    }
+    public void setParent(StructureObjectAbstract parent) {this.parent=parent;}
 
     public StructureObjectRoot getRoot() {
         if (parent!=null) {
@@ -148,9 +127,9 @@ public class StructureObject extends StructureObjectAbstract {
     
     // morphium
     @Override
-    @PreStore 
-    public void preStore() {
+    @PreStore public void preStore() {
         super.preStore();
         if (parent!=null) parentId=parent.id;
     }
+    
 }

@@ -61,7 +61,7 @@ public class SimpleCrop implements Cropper {
         return parameters;
     }
     
-    public Parameter[] getConfigurationParameters() {
+    public Parameter[] getConfigurationData() {
         return null;
     }
 

@@ -32,4 +32,5 @@ public interface ListParameter<T extends Parameter> extends ContainerParameter {
     public int getUnMutableIndex();
     public boolean isDeactivatable();
     public void setActivatedAll(boolean activated);
+    public T getChildByName(String name);
 }

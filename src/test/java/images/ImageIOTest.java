@@ -433,11 +433,22 @@ public class ImageIOTest {
                 images[t][c].setPixel(t, c, c, 1);
             }
         }
-        ImageWriter.writeToFile(images, folder.getAbsolutePath(), title, format);
+        int timePoint2 = 2;
+        int channel2 = 3;
+        ImageByte[][] images2 = new ImageByte[timePoint2][channel2];
+        for (int t = 0; t<timePoint2; t++) {
+            for (int c = 0; c<channel2;c++) {
+                images2[t][c] = new ImageByte(title+"t"+t+"c"+c, 6, 5, 4);
+                images2[t][c].setPixel(t, c, c, 1);
+            }
+        }
+        ImageWriter.writeToFile(folder.getAbsolutePath(), title, format, images, images2);
         ImageReader reader = new ImageReader(folder.getAbsolutePath(), title, format);
-        assertEquals("Retrieve Image series", 1, reader.getSTCNumbers().length);
+        assertEquals("Retrieve Image series", 2, reader.getSTCNumbers().length);
         assertEquals("Retrieve Image time points", timePoint, reader.getSTCNumbers()[0][0]);
-        assertEquals("Retrieve Image series", channel, reader.getSTCNumbers()[0][1]);
+        assertEquals("Retrieve Image channels", channel, reader.getSTCNumbers()[0][1]);
+        assertEquals("Retrieve Image time points serie 2", timePoint2, reader.getSTCNumbers()[1][0]);
+        assertEquals("Retrieve Image channel serie 2", channel2, reader.getSTCNumbers()[1][1]);
         
         for (int t = 0; t<timePoint; t++) {
             for (int c = 0; c<channel;c++) {

@@ -21,7 +21,7 @@ package configuration.parameters;
  *
  * @author jollion
  */
-public interface ChoosableParameter extends Parameter{
+public interface ChoosableParameter extends Parameter {
     public void setSelectedItem(String item);
     public String[] getChoiceList();
     public int getSelectedIndex();

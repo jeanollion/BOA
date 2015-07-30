@@ -261,6 +261,12 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     public void setParent(MutableTreeNode newParent) {
         this.parent=(ContainerParameter)newParent;
     }
+    
+    @Override
+    public T getChildByName(String name) { // returns the first occurence..
+        for (T child : children) if (name.equals(child.getName())) return child;
+        return null;
+    }
 
     @Override
     public T getChildAt(int childIndex) {

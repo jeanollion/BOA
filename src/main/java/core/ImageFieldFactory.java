@@ -21,6 +21,7 @@ import dataStructure.configuration.Experiment;
 import dataStructure.containers.MultipleImageContainerSingleFile;
 import image.ImageReader;
 import java.io.File;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,6 +32,7 @@ import java.util.logging.Logger;
  */
 
 public class ImageFieldFactory {
+    private final static DecimalFormat nf3 = new DecimalFormat("000");
     public static ArrayList<MultipleImageContainerSingleFile> importImages(String[] path, Experiment xp) {
         ArrayList<MultipleImageContainerSingleFile> res = new ArrayList<MultipleImageContainerSingleFile>();
         for (String p : path) ImageFieldFactory.importImages(new File(p), xp, res);
@@ -57,9 +59,11 @@ public class ImageFieldFactory {
         if (reader!=null) {
             int[][] stc = reader.getSTCNumbers();
             int s = 0;
+            String end = "";
             for (int[] tc:stc) {
+                if (stc.length>1) end = "_s"+nf3.format(s);
                 if (tc[1]==xp.getChannelImageNB()) {
-                    containersTC.add(new MultipleImageContainerSingleFile(removeExtension(image.getName()), image.getAbsolutePath(),s, tc[0], tc[1]));
+                    containersTC.add(new MultipleImageContainerSingleFile(removeExtension(image.getName())+end, image.getAbsolutePath(),s, tc[0], tc[1]));
                     Logger.getLogger(ImageFieldFactory.class.getName()).log(Level.INFO, "Imported Image: {0}", image.getAbsolutePath());
                 } else {
                     Logger.getLogger(ImageFieldFactory.class.getName()).log(Level.WARNING, "Invalid Image: {0} has: {1} channels instead of: {2}", new Object[]{image.getAbsolutePath(), tc[1], xp.getChannelImageNB()});

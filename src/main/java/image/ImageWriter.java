@@ -84,32 +84,34 @@ public class ImageWriter {
      * @param fileName name of the file without the extension
      * @param extension the extension of the file that must be compatible with multiple slices, timepoints and channels images. 
      */
-    public static void writeToFile(Image[][] imageTC, String folderPath, String fileName, ImageFormat extension) {
+    public static void writeToFile(String folderPath, String fileName, ImageFormat extension, Image[][]... imageTC) {
         if (!extension.getSupportMultipleTimeAndChannel()) throw new IllegalArgumentException("the format does not support multiple time points and channels");
         try {
+            System.out.println("series:"+imageTC.length);
+            for (int s = 0; s<imageTC.length; ++s) System.out.println("serie #:"+s+ " time points: "+imageTC[s].length+ " channels: "+imageTC[s][0].length);
             String fullPath = folderPath+File.separator+fileName+extension;
             IFormatWriter writer = new loci.formats.ImageWriter();
-            writer.setMetadataRetrieve(generateMetadata(imageTC[0][0], imageTC[0].length, imageTC.length));
+            writer.setMetadataRetrieve(generateMetadata(imageTC));
             writer.setId(fullPath);
-            Logger.getLogger(ImageWriter.class.getName()).info("writing file:"+fullPath);
+            /*Logger.getLogger(ImageWriter.class.getName()).info("writing file:"+fullPath);
             Logger.getLogger(ImageWriter.class.getName()).info("image count: "+writer.getMetadataRetrieve().getImageCount());
             Logger.getLogger(ImageWriter.class.getName()).info("color model==null? "+(writer.getColorModel()==null));
-            Logger.getLogger(ImageWriter.class.getName()).info("compression "+writer.getCompression());
+            Logger.getLogger(ImageWriter.class.getName()).info("compression "+writer.getCompression());*/
             boolean littleEndian = !writer.getMetadataRetrieve().getPixelsBinDataBigEndian(0, 0);
-            writer.setSeries(0);
-            Logger.getLogger(ImageWriter.class.getName()).info("format: "+writer.getFormat());
-            int i = 0;
-            for (int t = 0; t<imageTC.length; t++){
-                for (int c = 0; c<imageTC[0].length; c++) {
-                    System.out.println("save image: time: "+t+" channel: "+c);
-                    Image curIm = imageTC[t][c];
-                    for (int z = 0; z<curIm.sizeZ; z++) {
-                        writer.saveBytes(i++, getBytePlane(curIm, z, littleEndian));
-                        
+            for (int series = 0; series<imageTC.length; ++series) {
+                writer.setSeries(series);
+                int i = 0;
+                for (int t = 0; t<imageTC[series].length; t++){
+                    for (int c = 0; c<imageTC[series][0].length; c++) {
+                        System.out.println("save image: time: "+t+" channel: "+c);
+                        Image curIm = imageTC[series][t][c];
+                        for (int z = 0; z<curIm.sizeZ; z++) {
+                            writer.saveBytes(i++, getBytePlane(curIm, z, littleEndian));
+
+                        }
                     }
                 }
             }
-            
             writer.close();
         } catch (FormatException ex) {
             Logger.getLogger(ImageWriter.class.getName()).log(Level.SEVERE, null, ex);
@@ -161,10 +163,29 @@ public class ImageWriter {
         else throw new IllegalArgumentException("Image should be of type byte, short or float");
         
         MetadataTools.populateMetadata(meta, 0, null, false, "XYZCT", pixelType, image.getSizeX(), image.getSizeY(), image.getSizeZ(), channelNumber, timePointNumber, 1);
-        System.out.println("NTimes:"+timePointNumber+" NChannel:"+channelNumber);
+        //System.out.println("NTimes:"+timePointNumber+" NChannel:"+channelNumber);
         meta.setPixelsPhysicalSizeX(new Length(image.getScaleXY(), UNITS.MICROM), 0);
         meta.setPixelsPhysicalSizeY(new Length(image.getScaleXY(), UNITS.MICROM), 0);
         meta.setPixelsPhysicalSizeZ(new Length(image.getScaleZ(), UNITS.MICROM), 0);
+        return meta;
+    }
+    
+    public static IMetadata generateMetadata(Image[][][] imageSTC) {
+        IMetadata meta = MetadataTools.createOMEXMLMetadata();
+        String pixelType;
+        for (int series = 0; series < imageSTC.length; ++series) {
+            
+            if (imageSTC[series][0][0] instanceof ImageByte) pixelType=FormatTools.getPixelTypeString(FormatTools.UINT8);
+            else if (imageSTC[series][0][0] instanceof ImageShort) pixelType=FormatTools.getPixelTypeString(FormatTools.UINT16);
+            else if (imageSTC[series][0][0] instanceof ImageFloat) pixelType=FormatTools.getPixelTypeString(FormatTools.FLOAT); //UINT32?
+            else throw new IllegalArgumentException("Image should be of type byte, short or float");
+
+            MetadataTools.populateMetadata(meta, series, null, false, "XYZCT", pixelType, imageSTC[series][0][0].getSizeX(), imageSTC[series][0][0].getSizeY(), imageSTC[series][0][0].getSizeZ(), imageSTC[series][0].length, imageSTC[series].length, 1);
+            //System.out.println("NTimes:"+timePointNumber+" NChannel:"+channelNumber);
+            meta.setPixelsPhysicalSizeX(new Length(imageSTC[series][0][0].getScaleXY(), UNITS.MICROM), 0);
+            meta.setPixelsPhysicalSizeY(new Length(imageSTC[series][0][0].getScaleXY(), UNITS.MICROM), 0);
+            meta.setPixelsPhysicalSizeZ(new Length(imageSTC[series][0][0].getScaleZ(), UNITS.MICROM), 0);
+        }
         return meta;
     }
     

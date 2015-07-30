@@ -21,6 +21,6 @@ package plugins;
  *
  * @author jollion
  */
-public interface Cropper extends Transformation {
+public interface Cropper extends TransformationTimeIndependent {
     
 }

@@ -1,8 +1,9 @@
 package dataStructure.objects;
 
-import core.ImagePath;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
+import dataStructure.configuration.MicroscopyField;
+import dataStructure.containers.ImageDAO;
 import dataStructure.containers.MultipleImageContainer;
 import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Entity;
@@ -27,10 +28,10 @@ public class StructureObjectRoot extends StructureObjectAbstract {
     @Reference(lazyLoading=true) Experiment xp;
     @Transient protected RootObjectDAO rootObjectDAO;
     @Transient protected ObjectDAO objectDAO;
-    String name;
-    public StructureObjectRoot(String name, int timePoint, Experiment xp, BlankMask mask, RootObjectDAO rootObjectDAO, ObjectDAO objectDAO) {
+    String fieldName;
+    public StructureObjectRoot(String fieldName, int timePoint, Experiment xp, BlankMask mask, RootObjectDAO rootObjectDAO, ObjectDAO objectDAO) {
         super(timePoint, new Object3D(mask, 1), xp);
-        this.name=name;
+        this.fieldName=fieldName;
         setUp(xp, rootObjectDAO, objectDAO);
         
     }
@@ -47,15 +48,23 @@ public class StructureObjectRoot extends StructureObjectAbstract {
         return xp.getChannelImageIdx(structureIdx);
     }
     
+    public MicroscopyField getMicroscopyField() {
+        return xp.getMicroscopyField(fieldName);
+    }
+    
     public String getOutputFileDirectory() {return xp.getOutputImageDirectory();}
     
     public String getName() {
-        return name;
+        return fieldName;
     }
     
     @Override
     public void createObjectContainer() {
-        this.objectContainer=object.getObjectContainer(null); // blank mask
+        this.objectContainer=getObject().getObjectContainer(null); // blank mask
+    }
+    
+    public ImageDAO getImageDAO() {
+        return xp.getImageDAO();
     }
     
     /**
@@ -99,13 +108,13 @@ public class StructureObjectRoot extends StructureObjectAbstract {
     @Override
     public Image getRawImage(int structureIdx) {
         int channelIdx = getChannelImageIdx(structureIdx);
-        if (rawImagesC.get(channelIdx)==null) rawImagesC.set(ImagePath.openPreProcessedImage(channelIdx, timePoint, name, this.getOutputFileDirectory()), channelIdx);
+        if (rawImagesC.get(channelIdx)==null) rawImagesC.set(getImageDAO().openPreProcessedImage(channelIdx, timePoint, fieldName), channelIdx);
         return rawImagesC.get(channelIdx);
     }
     
     public Image openRawImage(int structureIdx, BoundingBox bounds) {
         int channelIdx = getChannelImageIdx(structureIdx);
-        if (rawImagesC.get(channelIdx)==null) return ImagePath.openPreProcessedImage(channelIdx, timePoint, name, this.getOutputFileDirectory(), bounds);
+        if (rawImagesC.get(channelIdx)==null) return getImageDAO().openPreProcessedImage(channelIdx, timePoint, fieldName, bounds);
         else return rawImagesC.get(channelIdx).crop(bounds);
     }
     

@@ -17,8 +17,7 @@
  */
 package plugins;
 
-import configuration.parameters.Parameter;
-import dataStructure.objects.StructureObjectPreProcessing;
+import dataStructure.containers.InputImages;
 import image.Image;
 
 /**
@@ -26,13 +25,17 @@ import image.Image;
  * @author jollion
  */
 public interface Transformation extends ImageProcessingPlugin {
-    public void computeParameters(int structureIdx, StructureObjectPreProcessing structureObject);
+    public static enum SelectionMode{Single, Multiple, All, None};
+    /**
+     * This method compute configuration data necesary for {@link Transformation#applyTransformation(image.Image)} method; data is retrieved by the {@link Transformation#getConfigurationData() } method; in this metohd the objects should not be modified but created de novo.
+     * @param inputImages 
+     */
+    public void computeConfigurationData(InputImages inputImages);
     public Image applyTransformation(Image input);
-    public boolean isTimeDependent();
     /**
      * 
-     * @return an array of objects that store parameters computed after the {@link Transformation#computeParameters(int, dataStructure.objects.StructureObjectPreFilter)} method and that will be used for the {@link Transformation#applyTransformation(image.Image) } method
+     * @return an array of objects that store parameters computed after the {@link Transformation#computeConfigurationData(dataStructure.containers.InputImages) } method and that will be used for the {@link Transformation#applyTransformation(image.Image) } method. The objects contained in the array can be modified by the program in order to retrieve de configuration data. The content of these objects should never be modified 
      */
-    public Object[] getConfigurationParameters();
-
+    public Object[] getConfigurationData();
+    public SelectionMode getChannelSelectionMode();
 }

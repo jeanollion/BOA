@@ -1,5 +1,6 @@
 package dataStructure.objects;
 
+import dataStructure.containers.ImageDAO;
 import dataStructure.containers.ObjectContainerImage;
 import dataStructure.containers.ObjectContainer;
 import dataStructure.containers.ObjectContainerBlankMask;
@@ -102,23 +103,23 @@ public class Object3D {
         return bounds;
     }
     
-    public ObjectContainer getObjectContainer(String filePath) {
+    public ObjectContainer getObjectContainer(StructureObject structureObject) {
         if (mask!=null) {
             if (mask instanceof BlankMask) return new ObjectContainerBlankMask(bounds, scaleXY, scaleZ);
             else {
                 if (voxels!=null) {
                     if (voxels.size()<MAX_VOX) return new ObjectContainerVoxels(this);
-                    else return new ObjectContainerImage();
+                    else return new ObjectContainerImage(structureObject, this);
                 } else {
                     if (mask.getSizeXYZ()<MAX_VOX*2) {
                         if (getVoxels().size()<MAX_VOX) return new ObjectContainerVoxels(this);
-                        else return new ObjectContainerImage(this, filePath);
-                    } else return new ObjectContainerImage(this, filePath);
+                        else return new ObjectContainerImage(structureObject, this);
+                    } else return new ObjectContainerImage(structureObject, this);
                 }
             }
         } else if (voxels!=null) {
-            if (voxels.size()<MAX_VOX) return new ObjectContainerImage(this, filePath);
-            else return new ObjectContainerImage(this, filePath);
+            if (voxels.size()<MAX_VOX) return new ObjectContainerImage(structureObject, this);
+            else return new ObjectContainerImage(structureObject, this);
         } else return null;
     }
     

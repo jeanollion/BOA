@@ -21,14 +21,14 @@ import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
-import plugins.Transformation;
+import plugins.TransformationTimeIndependent;
 import processing.ImageTransformation;
 
 /**
  *
  * @author jollion
  */
-public class SimpleRotationXY implements Transformation {
+public class SimpleRotationXY implements TransformationTimeIndependent {
     NumberParameter angle = new NumberParameter("Angle (degree)", 4, 0);
     Parameter[] parameters = new Parameter[]{angle};
     
@@ -48,7 +48,7 @@ public class SimpleRotationXY implements Transformation {
         return parameters;
     }
 
-    public Object[] getConfigurationParameters() {
+    public Object[] getConfigurationData() {
         return null;
     }
 

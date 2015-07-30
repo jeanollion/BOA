@@ -18,6 +18,8 @@
 package dataStructure.containers;
 
 import dataStructure.objects.Object3D;
+import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectAbstract;
 import dataStructure.objects.Voxel3D;
 import de.caluga.morphium.annotations.Embedded;
 import image.BoundingBox;
@@ -52,7 +54,4 @@ public class ObjectContainerVoxels extends ObjectContainer {
         return voxels;
     }
     
-    //morphia
-    public ObjectContainerVoxels(){};
-
 }

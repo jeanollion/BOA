@@ -18,8 +18,7 @@
 package dataStructure.containers;
 
 import dataStructure.objects.Object3D;
-import de.caluga.morphium.annotations.Embedded;
-import de.caluga.morphium.annotations.Transient;
+import dataStructure.objects.StructureObjectAbstract;
 import image.BlankMask;
 import image.BoundingBox;
 
@@ -45,12 +44,4 @@ public class ObjectContainerBlankMask extends ObjectContainer {
     public void updateObject(Object3D object) {
         bounds = object.getBounds();
     }
-    
-    //morphia
-    public ObjectContainerBlankMask(){}
-
-
-    
-
-    
 }

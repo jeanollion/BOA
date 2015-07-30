@@ -38,6 +38,14 @@ public class Utils {
         return res;
     }
     
+    public static String getStringArrayAsStringTrim(int maxSize, String... stringArray) {
+        String array = getStringArrayAsString(stringArray);
+        if (maxSize<4) maxSize=5;
+        if (array.length()>=maxSize) {
+            return array.substring(0, maxSize-4)+"...]";
+        } else return array;
+    }
+    
     public static int getIndex(String[] array, String key) {
         for (int i = 0; i<array.length; i++) if (key.equals(array[i])) return i;
         return -1;

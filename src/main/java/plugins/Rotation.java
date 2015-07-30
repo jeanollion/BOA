@@ -21,6 +21,6 @@ package plugins;
  *
  * @author jollion
  */
-public interface Rotation extends Transformation {
+public interface Rotation extends TransformationTimeIndependent {
     
 }

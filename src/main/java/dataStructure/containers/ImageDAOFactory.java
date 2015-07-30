@@ -17,31 +17,22 @@
  */
 package dataStructure.containers;
 
-import dataStructure.objects.Object3D;
-import dataStructure.objects.StructureObjectAbstract;
-import de.caluga.morphium.annotations.Embedded;
-import de.caluga.morphium.annotations.Transient;
-import image.BoundingBox;
+import java.util.HashMap;
 
 /**
  *
  * @author jollion
  */
-
-@Embedded(polymorph=true)
-public abstract class ObjectContainer {
-    @Transient protected float scaleXY, scaleZ;
-    BoundingBox bounds;
-    public ObjectContainer(BoundingBox bounds, float scaleXY, float scaleZ) {
-        this.bounds=bounds;
-        this.scaleXY=scaleXY;
-        this.scaleZ=scaleZ;
-    }
-    public void setScale(float scaleXY, float scaleZ) {
-        this.scaleXY=scaleXY;
-        this.scaleZ=scaleZ;
-    }
-    public abstract Object3D getObject();
-    public abstract void updateObject(Object3D object);
+public class ImageDAOFactory {
     
+    static HashMap<String, LocalFileSystemImageDAO> localDirDAO = new HashMap<String, LocalFileSystemImageDAO>(1);
+    
+    public static LocalFileSystemImageDAO getLocalFileSystemImageDAO(String localDirectory) {
+        LocalFileSystemImageDAO dao = localDirDAO.get(localDirectory);
+        if (dao==null) {
+            dao = new LocalFileSystemImageDAO(localDirectory);
+            localDirDAO.put(localDirectory, dao);
+        }
+        return dao;
+    }
 }

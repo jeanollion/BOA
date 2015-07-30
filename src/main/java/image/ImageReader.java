@@ -136,6 +136,7 @@ public class ImageReader {
             Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
         }
     }
+    
     public Image openChannel() {
         return openImage(new ImageIOCoordinates());
     }

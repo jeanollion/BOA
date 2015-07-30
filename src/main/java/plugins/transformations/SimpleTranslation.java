@@ -21,14 +21,14 @@ import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
-import plugins.Transformation;
+import plugins.TransformationTimeIndependent;
 import processing.ImageTransformation;
 
 /**
  *
  * @author jollion
  */
-public class SimpleTranslation implements Transformation {
+public class SimpleTranslation implements TransformationTimeIndependent {
     NumberParameter X = new NumberParameter("X", 0, 0);
     NumberParameter Y = new NumberParameter("Y", 0, 0);
     NumberParameter Z = new NumberParameter("Z", 0, 0);
@@ -50,7 +50,7 @@ public class SimpleTranslation implements Transformation {
         return parameters;
     }
     
-    public Parameter[] getConfigurationParameters() {
+    public Parameter[] getConfigurationData() {
         return null;
     }
 

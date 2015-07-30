@@ -19,9 +19,10 @@ package plugins.transformations;
 
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
+import dataStructure.containers.InputImage;
 import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
-import plugins.Transformation;
+import plugins.TransformationTimeIndependent;
 import processing.ImageTransformation;
 import processing.RadonProjection;
 
@@ -29,7 +30,7 @@ import processing.RadonProjection;
  *
  * @author jollion
  */
-public class AutoRotationXY implements Transformation {
+public class AutoRotationXY implements TransformationTimeIndependent {
     NumberParameter minAngle = new NumberParameter("Minimal Angle for search", 2, -10);
     NumberParameter maxAngle = new NumberParameter("Maximal Angle for search", 2, 10);
     NumberParameter precision1 = new NumberParameter("Angular Precision of first seach", 2, 1);
@@ -37,7 +38,7 @@ public class AutoRotationXY implements Transformation {
     Parameter[] parameters = new Parameter[]{minAngle, maxAngle, precision1, precision2};
     Float[] internalParams;
     
-    public void computeParameters(int structureIdx, StructureObjectPreProcessing structureObject) {
+    public void computeParameters(InputImage[][] imagesTC) {
         Image image = structureObject.getRawImage(structureIdx);
         float angle = (float)RadonProjection.computeRotationAngleXY(image, (int)(image.getSizeZ()/2), minAngle.getValue().doubleValue()+90, maxAngle.getValue().doubleValue()+90, precision1.getValue().doubleValue(), precision2.getValue().doubleValue());
         internalParams = new Float[]{-angle+90};
@@ -51,7 +52,7 @@ public class AutoRotationXY implements Transformation {
         return false;
     }
 
-    public Object[] getConfigurationParameters() {
+    public Object[] getConfigurationData() {
         return internalParams;
     }
 
