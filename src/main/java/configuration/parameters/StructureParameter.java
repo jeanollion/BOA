@@ -32,6 +32,10 @@ public class StructureParameter extends SimpleParameter implements ChoosablePara
     protected boolean allowNoSelection;
     @Transient protected Experiment xp;
     
+    public StructureParameter(String name) {
+        this(name, -1, false);
+    }
+    
     public StructureParameter(String name, int selectedStructure, boolean allowNoSelection) {
         super(name);
         if (selectedStructure<-1) this.selectedStructure=-1;
@@ -50,13 +54,10 @@ public class StructureParameter extends SimpleParameter implements ChoosablePara
         if (other instanceof StructureParameter) {
             StructureParameter otherP = (StructureParameter) other;
             this.setSelectedIndex(otherP.selectedStructure);
+            this.allowNoSelection=otherP.allowNoSelection;
         } else throw new IllegalArgumentException("wrong parameter type");
     }
 
-    public Parameter duplicate() {
-        return new StructureParameter(name, selectedStructure, allowNoSelection);
-    }
-    
     public int getSelectedIndex() {
         return selectedStructure;
     }
@@ -70,11 +71,9 @@ public class StructureParameter extends SimpleParameter implements ChoosablePara
         return xp;
     }
     
-    
-    
     @Override 
     public String toString(){
-        if (selectedStructure>=0) return name+": "+getChoiceList()[selectedStructure];
+        if (selectedStructure>=0 && getChoiceList().length>selectedStructure) return name+": "+getChoiceList()[selectedStructure];
         else return name+": no selected structure";
     }
     
@@ -107,11 +106,4 @@ public class StructureParameter extends SimpleParameter implements ChoosablePara
         }
         return choices;
     }
-    
-
-    // morphia
-    protected StructureParameter(){super();}
-
-    
-
 }

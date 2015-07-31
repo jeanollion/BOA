@@ -24,6 +24,10 @@ package configuration.parameters;
 public class ParentStructureParameter extends StructureParameter {
     int maxStructure;
     
+    public ParentStructureParameter(String name) {
+        this(name, -1, 0);
+    }
+    
     public ParentStructureParameter(String name, int selectedStructure, int maxStructure) {
         super(name, selectedStructure, true);
         this.maxStructure=maxStructure;
@@ -49,7 +53,4 @@ public class ParentStructureParameter extends StructureParameter {
         System.arraycopy(choices, 0, res, 0, maxStructure);
         return res;
     }
-
-    // morphia
-    private ParentStructureParameter(){super();}
 }

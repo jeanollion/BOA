@@ -57,7 +57,7 @@ public class MultipleChoiceParameterUI implements ParameterUI{
             items[i] = new JCheckBoxMenuItem(choices[i]);
             items[i].setUI(new StayOpenCheckBoxMenuItemUI());
         }
-        this.updateSelectedItemsToUI();
+        updateSelectedItemsToUI();
         menuItems = new JMenuItem[4];
         menuItems[0] = new JMenuItem("Select All");
         menuItems[0].setAction(
@@ -105,12 +105,16 @@ public class MultipleChoiceParameterUI implements ParameterUI{
         
     }
     
-    public void updateSelectedItemsToParameter() {
+    public int[] getSelectedItems() {
         ArrayList<Integer> selectedItems = new ArrayList<Integer>();
         for (int i = 0; i<items.length; ++i) if (items[i].isSelected()) selectedItems.add(i);
         int[] sel = new int[selectedItems.size()];
         for (int i = 0; i<sel.length; ++i) sel[i]=selectedItems.get(i);
-        choice.setSelectedItems(sel);
+        return sel;
+    }
+    
+    public void updateSelectedItemsToParameter() {
+        choice.setSelectedItems(getSelectedItems() );
         if (model!=null) model.nodeChanged(choice);
     }
     
@@ -125,12 +129,10 @@ public class MultipleChoiceParameterUI implements ParameterUI{
             
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
                 updateSelectedItemsToUI();
-                System.out.println("menu will become visible");
             }
 
             public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
                 updateSelectedItemsToParameter();
-                System.out.println("menu will become invisible");
             }
 
             public void popupMenuCanceled(PopupMenuEvent e) {

@@ -52,10 +52,11 @@ import org.bson.types.ObjectId;
 public class Experiment extends SimpleContainerParameter implements TreeModelContainer {
     @Id protected ObjectId id;
     protected FileChooser imagePath = new FileChooser("Output Image Path", FileChooserOption.DIRECTORIES_ONLY);
-    SimpleListParameter<Structure> structures= new SimpleListParameter("Structures", -1 , Structure.class);
-    SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter("Channel Images", 0 , ChannelImage.class);
-    SimpleListParameter<MicroscopyField> fields= new SimpleListParameter("Fields", 0 , MicroscopyField.class);
+    SimpleListParameter<Structure> structures= new SimpleListParameter<Structure>("Structures", -1 , Structure.class);
+    SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter<ChannelImage>("Channel Images", 0 , ChannelImage.class);
+    SimpleListParameter<MicroscopyField> fields= new SimpleListParameter<MicroscopyField>("Fields", 0 , MicroscopyField.class);
     ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.BIOFORMATS.getMethod(), false);
+    PreProcessingChain templatePreProcessingChain = new PreProcessingChain("Template PrePrecessing Chain");
     public enum ImageDAOTypes {LocalFileSystem, Simulation};
     ImageDAOTypes imageDAOType=ImageDAOTypes.LocalFileSystem;
     
@@ -72,6 +73,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         structures.setUnmutableIndex(defaultStructures.length-1);
         initChildList();
     }
+    
     public void setImageDAOType(ImageDAOTypes type) {
         this.imageDAOType=type;
     }
@@ -81,7 +83,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     protected void initChildList() {
-        super.initChildren(importMethod, fields, channelImages, structures, imagePath);
+        super.initChildren(importMethod, templatePreProcessingChain, fields, channelImages, structures, imagePath);
     }
     
     public SimpleListParameter<MicroscopyField> getMicroscopyFields() {
@@ -90,6 +92,13 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     public MicroscopyField getMicroscopyField(String fieldName) {
         return fields.getChildByName(fieldName);
+    }
+    
+    public int getTimePointNumber() {
+        MicroscopyField f= fields.getChildAt(0);
+        if (f!=null) {
+            return f.images.getTimePointNumber();
+        } else return 0;
     }
     
     public SimpleListParameter<ChannelImage> getChannelImages() {
@@ -129,6 +138,8 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     public String[] getStructuresAsString() {return structures.getChildrenString();}
     
     public String[] getChannelImagesAsString() {return channelImages.getChildrenString();}
+    
+    public String[] getFieldsAsString() {return fields.getChildrenString();}
     
     /**
      * 
@@ -204,13 +215,6 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     @Override
     public void setModel(ConfigurationTreeModel model) {
         this.model=model;
-    }
-    
-    @Override
-    public Experiment duplicate() {
-        Experiment newXP = new Experiment(name);
-        newXP.setContentFrom(this);
-        return this;
     }
 
     public enum ImportImageMethod {

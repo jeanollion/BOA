@@ -84,23 +84,11 @@ public class Structure extends SimpleContainerParameter {
         super.setParent(newParent);
         parentStructure.setMaxStructureIdx(parent.getIndex(this));
     }
-
-    @Override
-    public Structure duplicate() {
-        Structure res=new Structure(name, parentStructure.getSelectedIndex());
-        res.setContentFrom(this);
-        return res;
-    }
     
     @Override
     public ParameterUI getUI() {
         if (ui==null) ui=new NameEditorUI(this, false);
         return ui;
     }
-    
-    // morphia
-    public Structure(){super(); initChildList();} // mettre dans la clase abstraite SimpleContainerParameter?
-    
-
     
 }

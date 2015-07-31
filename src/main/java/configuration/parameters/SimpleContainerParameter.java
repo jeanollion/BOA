@@ -20,10 +20,13 @@ import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
 import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import de.caluga.morphium.annotations.lifecycle.PostLoad;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 
@@ -38,11 +41,8 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     @Transient protected ContainerParameter parent;
     @Transient protected ArrayList<Parameter> children;
 
-    protected SimpleContainerParameter(){}
-    
-    public SimpleContainerParameter(String name, Parameter... parameters) {
+    public SimpleContainerParameter(String name) {
         this.name=name;
-        initChildren(parameters);
     }
     
     protected void initChildren(Parameter... parameters) {
@@ -51,7 +51,12 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
         } else {
             children = new ArrayList<Parameter>(parameters.length);
             children.addAll(Arrays.asList(parameters));
-            for (Parameter p : parameters) p.setParent(this);
+            int idx = 0;
+            for (Parameter p : parameters) {
+                if (p==null) System.out.println("param null:"+idx);
+                p.setParent(this);
+                idx++;
+            }
         }
     }
     
@@ -65,6 +70,28 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
         } else {
             throw new IllegalArgumentException("wrong parameter type");
         }
+    }
+    
+    @Override
+    public Parameter duplicate() {
+        try {
+            Parameter p = (Parameter) this.getClass().getDeclaredConstructor(String.class).newInstance(name);
+            p.setContentFrom(this);
+            return p;
+        } catch (NoSuchMethodException ex) {
+            Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (SecurityException ex) {
+            Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InstantiationException ex) {
+            Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalArgumentException ex) {
+            Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (InvocationTargetException ex) {
+            Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
     }
     
     @Override

@@ -27,5 +27,6 @@ import image.Image;
  * @author jollion
  */
 public interface TransformationTimeIndependent extends Transformation {
-    public SelectionMode getTimePointSelectionMode();
+    public SelectionMode getConfigurationTimePointSelectionMode();
+    public SelectionMode getOutputChannelSelectionMode();
 }

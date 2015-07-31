@@ -68,11 +68,10 @@ public class NumberParameter extends SimpleParameter {
     }
 
     public void setContentFrom(Parameter other) {
-        if (other instanceof NumberParameter) this.value=((NumberParameter)other).getValue();
-    }
-
-    public Parameter duplicate() {
-        return new NumberParameter(this.name, decimalPlaces, value);
+        if (other instanceof NumberParameter) {
+            this.value=((NumberParameter)other).getValue();
+            this.decimalPlaces = ((NumberParameter)other).decimalPlaces;
+        }
     }
     
     class FloatParameterUI implements ParameterUI {
@@ -110,5 +109,9 @@ public class NumberParameter extends SimpleParameter {
             if (model!=null) model.nodeChanged(parameter);
         }
     }
-
+    
+    @Override public NumberParameter duplicate() {
+        return new NumberParameter(name, decimalPlaces, value);
+    }
+    
 }

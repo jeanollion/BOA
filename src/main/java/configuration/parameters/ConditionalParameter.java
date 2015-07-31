@@ -30,8 +30,8 @@ import de.caluga.morphium.annotations.Transient;
  */
 public class ConditionalParameter extends SimpleContainerParameter {
     ActionableParameter action;
-    @Transient HashMap<Object, Parameter[]> parameters;
-    Parameter[] currentParameters;
+    HashMap<Object, Parameter[]> parameters;
+    Object currentValue;
     
     public ConditionalParameter(ActionableParameter action) {
         this(action, new HashMap<Object, Parameter[]>(4));
@@ -49,19 +49,16 @@ public class ConditionalParameter extends SimpleContainerParameter {
         this.parameters.put(actionValue, parameters);
         if (actionValue.equals(action.getValue())) setActionValue(action.getValue());
     }
+    
 
     @Override
     public void setContentFrom(Parameter other) {
         if (other instanceof ConditionalParameter) {
             ConditionalParameter otherC = (ConditionalParameter)other;
-            if ((otherC.getActionableParameter().getValue()).equals(this.action.getValue()) && currentParameters.length==otherC.currentParameters.length) {
-                ParameterUtils.setContent(currentParameters, otherC.currentParameters);
-            } else {
-                action.setValue(otherC.getActionableParameter().getValue());
-                currentParameters=ParameterUtils.duplicateArray(otherC.currentParameters);
-                initChildList();
-            }
-            action.setContentFrom(otherC.action);
+            action=(ActionableParameter)otherC.action.duplicate();
+            action.setConditionalParameter(this);
+            parameters=new HashMap<Object, Parameter[]>(otherC.parameters.size());
+            for (Entry<Object, Parameter[]> e : otherC.parameters.entrySet()) setAction(e.getKey(), e.getValue());
         } else throw new IllegalArgumentException("wrong parameter type");
     }
     
@@ -69,17 +66,14 @@ public class ConditionalParameter extends SimpleContainerParameter {
     
     public void setActionValue(Object actionValue) {
         if (actionValue==null) return;
-        currentParameters=parameters.get(actionValue);
+        currentValue = actionValue;
         if (!action.getValue().equals(actionValue)) this.action.setValue(actionValue); // avoid loop
         initChildList();
     }
-
-    @Override
-    public Parameter duplicate() {
-        ConditionalParameter cond = new ConditionalParameter((ActionableParameter)action.duplicate());
-        for (Entry<Object, Parameter[]> e : this.parameters.entrySet()) cond.setAction(e.getKey(), e.getValue());
-        cond.setContentFrom(this);
-        return cond;
+    
+    public Parameter[] getCurrentParameters() {
+        if (parameters.containsKey(currentValue)) return parameters.get(currentValue);
+        else return null;
     }
     
     @Override
@@ -101,11 +95,12 @@ public class ConditionalParameter extends SimpleContainerParameter {
     
     @Override
     protected void initChildList() {
-        if (this.currentParameters==null) children = new ArrayList<Parameter>(0);
-        else children=new ArrayList<Parameter>(Arrays.asList(currentParameters));
-        for (Parameter p : children) p.setParent(this);
+        if (!parameters.containsKey(currentValue)) super.initChildren();
+        else super.initChildren(getCurrentParameters());
     }
-    
-    // morphia
-    ConditionalParameter(){super();}
+    @Override public ConditionalParameter duplicate() {
+        ConditionalParameter res = new ConditionalParameter(action); // action will be duplicated in setContent method
+        res.setContentFrom(this);
+        return res;
+    }
 }

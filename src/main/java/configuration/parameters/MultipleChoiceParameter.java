@@ -35,10 +35,27 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
     String[] listChoice;
     @Transient MultipleChoiceParameterUI ui;
     @Transient int trimSize=30;
+    
     public MultipleChoiceParameter(String name, String[] listChoice, int[] selectedItems) {
         super(name);
         this.listChoice=listChoice;
         this.selectedItems=selectedItems;
+    }
+    
+    public MultipleChoiceParameter(String name, String[] listChoice, boolean selectAll) {
+        super(name);
+        this.listChoice=listChoice;
+        if (selectAll) {
+            this.selectedItems=new int[listChoice.length];
+            for (int i = 0; i<selectedItems.length; ++i) selectedItems[i]=i;
+        } else selectedItems=new int[0];
+    }
+    
+    public static String[] createChoiceList(int startElement, int endElement) {
+        String[] res = new String[endElement-startElement+1];
+        int paddingSize=String.valueOf(endElement).length();
+        for (int i = startElement; i<=endElement; ++i) res[i-startElement] = Utils.formatInteger(paddingSize, i);
+        return res;
     }
     
     public void setTrimSize(int trimSize) {
@@ -89,6 +106,7 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
 
     public void setContentFrom(Parameter other) {
         if (other instanceof ChoosableParameterMultiple) {
+            this.listChoice=((ChoosableParameterMultiple)other).getChoiceList();
             this.setSelectedItems(((ChoosableParameterMultiple)other).getSelectedItems());
         } else if (other instanceof ChoosableParameter) {
             String sel = ((ChoosableParameter)other).getChoiceList()[((ChoosableParameter)other).getSelectedIndex()];
@@ -96,8 +114,9 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
             if (i>=0) this.selectedItems=new int[]{i};
         } else throw new IllegalArgumentException("wrong parameter type");
     }
-
-    public Parameter duplicate() {
+    
+    @Override
+    public MultipleChoiceParameter duplicate() {
         return new MultipleChoiceParameter(name, listChoice, selectedItems);
     }
 }

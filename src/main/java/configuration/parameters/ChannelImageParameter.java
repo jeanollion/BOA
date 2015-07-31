@@ -23,6 +23,10 @@ package configuration.parameters;
  */
 public class ChannelImageParameter extends StructureParameter {
     
+    public ChannelImageParameter(String name) {
+        this(name, -1);
+    }
+    
     public ChannelImageParameter(String name, int selectedStructure) {
         super(name, selectedStructure, false);
     }
@@ -35,7 +39,5 @@ public class ChannelImageParameter extends StructureParameter {
             return new String[]{"error: no xp found in tree"};
         }
     }
-
-    // morphia
-    private ChannelImageParameter(){super();}
+    
 }

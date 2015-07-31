@@ -37,12 +37,6 @@ public class ChannelImage extends SimpleContainerParameter {
     protected void initChildList() {
         
     }
-
-    public Parameter duplicate() {
-        ChannelImage dup = new ChannelImage(name);
-        dup.setContentFrom(this);
-        return dup;
-    }
     
     @Override
     public ParameterUI getUI() {
@@ -50,6 +44,4 @@ public class ChannelImage extends SimpleContainerParameter {
         return ui;
     }
     
-    // morphia
-    public ChannelImage(){super(); initChildList();} // mettre dans la clase abstraite SimpleContainerParameter?
 }

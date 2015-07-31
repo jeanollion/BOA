@@ -18,6 +18,7 @@
 package utils;
 
 import de.caluga.morphium.Morphium;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,6 +48,7 @@ public class Utils {
     }
     
     public static int getIndex(String[] array, String key) {
+        if (key==null) return -1;
         for (int i = 0; i<array.length; i++) if (key.equals(array[i])) return i;
         return -1;
     }
@@ -74,5 +76,9 @@ public class Utils {
             Thread.sleep(500);
         } catch (InterruptedException e) {
         }
+    }
+    
+    public static String formatInteger(int paddingSize, int number) {
+        return String.format(Locale.US, "%0" + paddingSize + "d", number);
     }
 }

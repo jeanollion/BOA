@@ -24,6 +24,8 @@ import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 
@@ -35,9 +37,7 @@ import javax.swing.tree.TreeNode;
 @Lifecycle
 public abstract class SimpleParameter implements Parameter {
     protected String name;
-    
-    @Transient
-    private ContainerParameter parent;
+    @Transient private ContainerParameter parent;
     
     protected SimpleParameter(String name) {
         this.name=name;
@@ -51,6 +51,20 @@ public abstract class SimpleParameter implements Parameter {
     @Override
     public void setName(String name) {
         this.name=name;
+    }
+    
+    @Override
+    public Parameter duplicate() {
+        try {
+            Parameter p = (Parameter)this.getClass().newInstance();
+            p.setName(name);
+            p.setContentFrom(this);
+            return p;
+        } catch (InstantiationException ex) {
+            Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, null, ex);
+        } catch (IllegalAccessException ex) {
+            Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, null, ex);
+        } return null;
     }
     
     @Override
@@ -131,14 +145,9 @@ public abstract class SimpleParameter implements Parameter {
         }
     }
     
-    
-    
     @Override
     public String toString() {
         return name;
     }
     
-    // morphia
-    
-    protected SimpleParameter() {}
 }

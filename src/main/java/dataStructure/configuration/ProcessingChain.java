@@ -78,14 +78,5 @@ public class ProcessingChain extends SimpleContainerParameter {
         super.initChildren(preFilters, segmenter, postFilters);
     }
 
-    @Override
-    public Parameter duplicate() {
-        ProcessingChain pc = new ProcessingChain(name);
-        pc.setContentFrom(this);
-        return pc;
-    }
-    
-    // morphia
-    public ProcessingChain(){super(); initChildList();}
     
 }

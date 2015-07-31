@@ -31,6 +31,7 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
     @Transient int selectedIndex;
     @Transient ChoiceParameterUI gui;
     @Transient ConditionalParameter cond;
+    
     public ChoiceParameter(String name, String[] listChoice, String selectedItem, boolean allowNoSelection) {
         super(name);
         this.listChoice=listChoice;
@@ -76,12 +77,12 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
 
     public void setContentFrom(Parameter other) {
         if (other instanceof ChoiceParameter) {
-            setSelectedItem(((ChoiceParameter)other).getSelectedItem());
+            ChoiceParameter otherC = (ChoiceParameter)other;
+            this.listChoice=otherC.listChoice;
+            this.allowNoSelection=otherC.allowNoSelection;
+            this.selectedIndex=otherC.selectedIndex;
+            if (otherC.cond!=null) this.cond=(ConditionalParameter)otherC.cond.duplicate();
         } else throw new IllegalArgumentException("wrong parameter type");
-    }
-
-    public Parameter duplicate() {
-        return new ChoiceParameter(name, listChoice, selectedItem, allowNoSelection);
     }
     
     // choosable parameter
@@ -119,14 +120,8 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
         return cond;
     }
     
-    // morphia 
-    ChoiceParameter(){super();}
-
-    
-
-    
-
-    
-
+    @Override public ChoiceParameter duplicate() {
+        return new ChoiceParameter(name, listChoice, selectedItem, allowNoSelection);
+    }
     
 }

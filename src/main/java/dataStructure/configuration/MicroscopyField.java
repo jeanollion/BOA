@@ -37,10 +37,21 @@ public class MicroscopyField extends SimpleContainerParameter {
     
     
     MultipleImageContainer images;
+    PreProcessingChain preProcessingChain=new PreProcessingChain("Pre-Processing chain");
     //ui: bouton droit = selectionner un champ?
     
     public MicroscopyField(String name) {
         super(name);
+        initChildList();
+    }
+    
+    @Override
+    protected void initChildList() {
+        initChildren(preProcessingChain);
+    }
+    
+    public void setPreProcessingChains(PreProcessingChain ppc) {
+        preProcessingChain.setContentFrom(ppc);
     }
     
     public InputImage[][] getInputImagesTC() {
@@ -71,10 +82,7 @@ public class MicroscopyField extends SimpleContainerParameter {
         else return 1;
     }
     
-    @Override
-    protected void initChildList() {
-        initChildren();
-    }
+    
     
     public void setImages(MultipleImageContainer images) {
         this.images=images;
@@ -88,13 +96,6 @@ public class MicroscopyField extends SimpleContainerParameter {
     public String toString() {
         if (images!=null) return name;// + " number of time points: "+images.getTimePointNumber();
         return name + " no selected images";
-    }
-    
-    @Override
-    public Parameter duplicate() {
-        MicroscopyField field = new MicroscopyField("new Microscopy Field");
-        field.setContentFrom(this);
-        return field;
     }
     
 }

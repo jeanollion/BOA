@@ -25,17 +25,17 @@ import image.Image;
  * @author jollion
  */
 public interface Transformation extends ImageProcessingPlugin {
-    public static enum SelectionMode{Single, Multiple, All, None};
+    public  static enum SelectionMode{SINGLE, MULTIPLE, ALL};
     /**
      * This method compute configuration data necesary for {@link Transformation#applyTransformation(image.Image)} method; data is retrieved by the {@link Transformation#getConfigurationData() } method; in this metohd the objects should not be modified but created de novo.
+     * @param channelIdx
      * @param inputImages 
      */
-    public void computeConfigurationData(InputImages inputImages);
+    public void computeConfigurationData(int channelIdx, InputImages inputImages);
     public Image applyTransformation(Image input);
     /**
      * 
-     * @return an array of objects that store parameters computed after the {@link Transformation#computeConfigurationData(dataStructure.containers.InputImages) } method and that will be used for the {@link Transformation#applyTransformation(image.Image) } method. The objects contained in the array can be modified by the program in order to retrieve de configuration data. The content of these objects should never be modified 
+     * @return an array of objects that store parameters computed after the {@link Transformation#computeConfigurationData(dataStructure.containers.InputImages) } method and that will be used for the {@link Transformation#applyTransformation(image.Image) } method. The objects contained in the array can be modified by the program in order to retrieve de configuration data. The content of these objects should be of type: Number, primitive types, Strings or arrays of Number, primitive types or strings 
      */
     public Object[] getConfigurationData();
-    public SelectionMode getChannelSelectionMode();
 }

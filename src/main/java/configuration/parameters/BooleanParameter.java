@@ -23,6 +23,10 @@ package configuration.parameters;
  */
 public class BooleanParameter extends ChoiceParameter {
     
+    public BooleanParameter(String name) {
+        this(name, false);
+    }
+    
     public BooleanParameter(String name, boolean defaultValue) {
         super(name, new String[]{"false", "true"}, defaultValue?"true":"false", false);
     }
@@ -57,6 +61,4 @@ public class BooleanParameter extends ChoiceParameter {
         if (value instanceof String) super.setValue(value);
     }
     
-    // morphia 
-    BooleanParameter(){super();}
 }

@@ -25,44 +25,28 @@ import image.Image;
  */
 public class InputImages {
     InputImage[][] imageTC;
-    int[] timePoints, channels;
-    int currentTimePointIdx, currentChannelIdx;
+    int[] timePoints;
+    int currentTimePointIdx;
 
-    public InputImages(InputImage[][] imageTC, int[] timePoints, int[] channels) {
+    public InputImages(InputImage[][] imageTC, int[] timePoints) {
         this.imageTC = imageTC;
         this.timePoints = timePoints;
-        this.channels = channels;
     }
 
-    public InputImages(InputImage[][] imageTC, int[] timePoints, int[] channels, int currentTimePointIdx, int currentChannelIdx) {
+    public InputImages(InputImage[][] imageTC, int[] timePoints, int currentTimePointIdx) {
         this.imageTC = imageTC;
         this.timePoints = timePoints;
-        this.channels = channels;
         this.currentTimePointIdx = currentTimePointIdx;
-        this.currentChannelIdx = currentChannelIdx;
     }
     
     public int getCurrentTimePoint() {return timePoints[currentTimePointIdx];}
-    public int getCurrentChannel() {return channels[currentChannelIdx];}
-    public Image getCurrentImage() {
+    public Image getCurrentImage(int channelIdx) {
         // TODO check memory ici
-        return imageTC[getCurrentTimePoint()][getCurrentChannel()].getImage();
-    }
-    public boolean nextChannel() {
-        if (currentChannelIdx<(channels.length-1)) {
-            ++currentChannelIdx;
-            return true;
-        } else return false;
+        return imageTC[getCurrentTimePoint()][channelIdx].getImage();
     }
     public boolean nextTimePoint() {
         if (currentTimePointIdx<(timePoints.length-1)) {
             ++currentTimePointIdx;
-            return true;
-        } else return false;
-    }
-    public boolean previousChannel() {
-        if (currentChannelIdx>0) {
-            --currentChannelIdx;
             return true;
         } else return false;
     }

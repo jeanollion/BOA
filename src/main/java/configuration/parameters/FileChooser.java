@@ -33,6 +33,7 @@ public class FileChooser extends SimpleParameter{
     protected String[] selectedFiles=new String[0];
     protected FileChooserOption option = FileChooserOption.DIRECTORIES_ONLY;
     @Transient FileChooserUI ui;
+    
     public FileChooser(String name, FileChooserOption option) {
         super(name);
         this.option=option;
@@ -72,19 +73,18 @@ public class FileChooser extends SimpleParameter{
 
     public void setContentFrom(Parameter other) {
         if (other instanceof FileChooser) {
+            this.option=((FileChooser)other).option;
             this.selectedFiles=Arrays.copyOf(((FileChooser)other).selectedFiles, ((FileChooser)other).selectedFiles.length);
         } else throw new IllegalArgumentException("wrong parameter type");
-    }
-
-    public Parameter duplicate() {
-        FileChooser fc = new FileChooser(name, option);
-        fc.setContentFrom(this);
-        return fc;
     }
     
     @Override public String toString() {return name+" :"+Utils.getStringArrayAsString(selectedFiles);}
     
     public FileChooserOption getOption() {return option;}
+    
+    @Override public FileChooser duplicate() {
+        return new FileChooser(name, option);
+    }
     
     public enum FileChooserOption {
         DIRECTORIES_ONLY(JFileChooser.DIRECTORIES_ONLY, false), 

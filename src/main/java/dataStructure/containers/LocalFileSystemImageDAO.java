@@ -27,16 +27,13 @@ import image.ImageInteger;
 import image.ImageReader;
 import image.ImageWriter;
 import java.io.File;
-import java.text.DecimalFormat;
-import java.util.HashMap;
+import utils.Utils;
 
 /**
  *
  * @author jollion
  */
 public class LocalFileSystemImageDAO implements ImageDAO {
-    private final static DecimalFormat nf5 = new DecimalFormat("00000");
-    private final static DecimalFormat nf2 = new DecimalFormat("00");
     String directory;
     
     public LocalFileSystemImageDAO(String localDirectory) {
@@ -93,18 +90,18 @@ public class LocalFileSystemImageDAO implements ImageDAO {
     
     
     protected static String getPreProcessedImagePath(int channelImageIdx, int timePoint, String microscopyFieldName, String imageDirectory) {
-        return imageDirectory+File.separator+microscopyFieldName+File.separator+"pre_processed"+File.separator+"t"+nf5.format(timePoint)+"_"+nf2.format(channelImageIdx); // extension?
+        return imageDirectory+File.separator+microscopyFieldName+File.separator+"pre_processed"+File.separator+"t"+Utils.formatInteger(5, timePoint)+"_"+Utils.formatInteger(2, channelImageIdx); // extension?
     }
     
     protected static String getProcessedImageDirectory(StructureObjectRoot root) {
-        return root.getOutputFileDirectory()+File.separator+root.getName()+File.separator+"processed"+File.separator+"t"+nf5.format(root.getTimePoint());
+        return root.getOutputFileDirectory()+File.separator+root.getName()+File.separator+"processed"+File.separator+"t"+Utils.formatInteger(5, root.getTimePoint());
     }
     protected static String getProcessedImageDirectory(StructureObject object) {
         if (object.getParent().isRoot()) return getProcessedImageDirectory(object.getRoot())+File.separator+getImageFileName(object, false);
         else return getProcessedImageDirectory((StructureObject)object.getParent())+File.separator+getImageFileName(object, false);
     }
     protected static String getImageFileName(StructureObject object, boolean extension) {
-        return "s"+nf2.format(object.getStructureIdx())+"_idx"+nf5.format(object.getIdx())+(extension?".png":"");
+        return "s"+Utils.formatInteger(2, object.getStructureIdx())+"_idx"+Utils.formatInteger(5, object.getIdx())+(extension?".png":"");
     }
     protected static String getProcessedImageFile(StructureObject object) {
         if (object.getParent().isRoot()) return getProcessedImageDirectory(object.getRoot())+File.separator+getImageFileName(object, true);

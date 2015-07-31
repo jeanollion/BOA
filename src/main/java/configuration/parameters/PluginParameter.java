@@ -69,7 +69,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     
     public void setPlugin(T pluginInstance) {
         this.pluginParameters=pluginInstance.getParameters();
-        super.initChildren();
+        initChildList();
         this.pluginName=pluginInstance.getClass().getSimpleName();
         this.pluginSet=true;
     }
@@ -125,6 +125,9 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     public void setContentFrom(Parameter other) {
         if (other instanceof PluginParameter && ((PluginParameter)other).pluginType.equals(pluginType)) {
             PluginParameter otherPP = (PluginParameter) other;
+            this.activated=otherPP.activated;
+            this.allowNoSelection=otherPP.allowNoSelection;
+            
             if (otherPP.pluginName != null && otherPP.pluginName.equals(this.pluginName) && pluginParameters!=null) {
                 ParameterUtils.setContent(pluginParameters, otherPP.pluginParameters);
             } else {
@@ -205,11 +208,6 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
 
     public boolean isAllowNoSelection() {
         return allowNoSelection;
-    }
-    
-    // morphia
-    public PluginParameter(){
-        super();
     }
     
     @Override

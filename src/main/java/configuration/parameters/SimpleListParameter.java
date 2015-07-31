@@ -21,6 +21,7 @@ import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
 import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import de.caluga.morphium.annotations.lifecycle.PostLoad;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,7 +56,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
      * @param name : name of the parameter
      * @param unMutableIndex : index of the last object that cannot be modified
      */
-    public SimpleListParameter(String name, int unMutableIndex, Class<T> childClass) { // TODO generic quand supporté par morphia
+    public SimpleListParameter(String name, int unMutableIndex, Class<T> childClass) {
         this.name = name;
         children = new ArrayList<T>(10);
         this.unMutableIndex=unMutableIndex;
@@ -75,7 +76,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
         this.childClassName=childClass.getName();
     }
     
-    public SimpleListParameter(String name, int unMutableIndex, T childInstance) { // TODO generic quand supporté par morphia
+    public SimpleListParameter(String name, int unMutableIndex, T childInstance) {
         this.childInstance=childInstance;
         this.name = name;
         children = new ArrayList<T>(10);
@@ -83,7 +84,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
         this.childClass=(Class<T>)childInstance.getClass();
     }
     
-    public SimpleListParameter(String name, T childInstance) { // TODO generic quand supporté par morphia
+    public SimpleListParameter(String name, T childInstance) {
         this.childInstance=childInstance;
         this.name = name;
         children = new ArrayList<T>(10);
@@ -104,13 +105,21 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     public T createChildInstance() {
         if (childInstance == null && getChildClass() != null) {
             try {
-                T instance = childClass.newInstance();
-                instance.setName("new " + childClass.getSimpleName());
+                T instance;
+                instance = childClass.getDeclaredConstructor(String.class).newInstance("new " + childClass.getSimpleName());
                 return instance;
+            } catch (NoSuchMethodException ex) {
+                Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (SecurityException ex) {
+                Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
             } catch (InstantiationException ex) {
-                Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
+                Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IllegalAccessException ex) {
-                Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
+                Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IllegalArgumentException ex) {
+                Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (InvocationTargetException ex) {
+                Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
             }
         } else if (childInstance != null) {
             return (T)childInstance.duplicate();
@@ -130,15 +139,14 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
         }
     }
     
-    
     public T createChildInstance(String name) {
         T instance = createChildInstance();
         instance.setName(name);
         return instance;
     }
 
-    public Parameter duplicate() {
-        SimpleListParameter res = new SimpleListParameter(name, unMutableIndex, childClass);
+    public SimpleListParameter<T> duplicate() {
+        SimpleListParameter<T> res = new SimpleListParameter<T>(name, unMutableIndex, childClass);
         res.setContentFrom(this);
         return res;
     }
@@ -150,13 +158,9 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
         return res;
     }
     
-    public ArrayList<T> getChildren() { // todo generic...
+    public ArrayList<T> getChildren() {
         return children;
     }
-    
-    /*public Parameter[] getChildren() { // todo generic...
-        return children.toArray(new Parameter[children.size()]);
-    }*/
     
     @Override
     public String getName(){
@@ -321,5 +325,4 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
         }
     }
 
-    
 }
