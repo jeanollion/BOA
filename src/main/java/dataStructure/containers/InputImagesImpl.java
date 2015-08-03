@@ -27,13 +27,16 @@ import plugins.TransformationTimeIndependent;
  */
 public class InputImagesImpl implements InputImages{
     InputImage[][] imageTC;
-
-    public InputImagesImpl(InputImage[][] imageTC) {
+    int defaultTimePoint;
+    
+    public InputImagesImpl(InputImage[][] imageTC, int defaultTimePoint) {
         this.imageTC = imageTC;
+        this.defaultTimePoint= defaultTimePoint;
     }
     
     public int getTimePointNumber() {return imageTC.length;}
     public int getChannelNumber() {return imageTC[0].length;}
+    public int getDefaultTimePoint() {return defaultTimePoint;}
     
     public void addTransformation(int[] channelIndicies, Transformation transfo) {
         if (channelIndicies!=null) for (int c : channelIndicies) addTransformation(c, transfo);

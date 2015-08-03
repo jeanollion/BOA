@@ -67,7 +67,7 @@ public class MicroscopyField extends SimpleContainerParameter {
                res[t][c] = new InputImage(c, t, name, images, dao, true);
             } 
         }
-        return new InputImagesImpl(res);
+        return new InputImagesImpl(res, Math.min(50, getExperiment().getTimePointNumber()-1));
     }
     
     protected Experiment getExperiment() {

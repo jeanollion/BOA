@@ -27,4 +27,5 @@ public interface InputImages {
     public Image getImage(int channelIdx, int timePoint);
     public int getTimePointNumber();
     public int getChannelNumber();
+    public int getDefaultTimePoint();
 }
