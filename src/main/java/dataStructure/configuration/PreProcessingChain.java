@@ -23,6 +23,7 @@ import configuration.parameters.ParameterUtils;
 import configuration.parameters.PluginParameter;
 import configuration.parameters.SimpleContainerParameter;
 import configuration.parameters.SimpleListParameter;
+import configuration.parameters.TransformationPluginParameter;
 import configuration.parameters.ui.MultipleChoiceParameterUI;
 import configuration.parameters.ui.ParameterUI;
 import de.caluga.morphium.annotations.Transient;
@@ -49,8 +50,8 @@ import utils.Utils;
  */
 public class PreProcessingChain extends SimpleContainerParameter {
     
-    SimpleListParameter<PluginParameter<TransformationTimeIndependent>> constantTransformations= new SimpleListParameter<PluginParameter<TransformationTimeIndependent>>("Constant transformations", new PluginParameter<TransformationTimeIndependent>("Transformation", TransformationTimeIndependent.class, false));
-    PluginParameter<Registration> registration = new PluginParameter<Registration>("Transformation", Registration.class, false);
+    SimpleListParameter<TransformationPluginParameter<TransformationTimeIndependent>> constantTransformations= new SimpleListParameter<TransformationPluginParameter<TransformationTimeIndependent>>("Constant transformations", new TransformationPluginParameter<TransformationTimeIndependent>("Transformation", TransformationTimeIndependent.class, false));
+    TransformationPluginParameter<Registration> registration = new TransformationPluginParameter<Registration>("Transformation", Registration.class, false);
     
     public PreProcessingChain(String name) {
         super(name);
@@ -60,6 +61,19 @@ public class PreProcessingChain extends SimpleContainerParameter {
     @Override
     protected void initChildList() {
         super.initChildren(constantTransformations, registration);
+    }
+    
+    public TransformationTimeIndependent[] getTransformationsTimeIndependent() {
+        TransformationTimeIndependent[] res = new TransformationTimeIndependent[constantTransformations.getChildCount()];
+        int idx = 0;
+        for (PluginParameter<TransformationTimeIndependent> p: constantTransformations.getChildren()) {
+            res[idx++]=p.getPlugin();
+        }
+        return res;
+    }
+    
+    public Registration getRegistration() {
+        return registration.getPlugin();
     }
     
     @Override public ParameterUI getUI() {

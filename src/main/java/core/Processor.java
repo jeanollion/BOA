@@ -19,6 +19,8 @@ package core;
 
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.MicroscopyField;
+import dataStructure.configuration.PreProcessingChain;
+import dataStructure.containers.InputImagesImpl;
 import dataStructure.containers.MultipleImageContainerSingleFile;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
@@ -59,7 +61,12 @@ public class Processor {
     }*/
     
     public static void preProcessImages(StructureObjectRoot root, Experiment xp) {
-        
+        for (int i = 0; i<xp.getMicrocopyFieldNB(); ++i) {
+            MicroscopyField f = xp.getMicroscopyField(i);
+            InputImagesImpl images = f.getInputImages();
+            PreProcessingChain ppc = f.getPreProcessingChain();
+            for (TransformationTimeIndependent tranfo : ppc.get)
+        }
     }
     
     

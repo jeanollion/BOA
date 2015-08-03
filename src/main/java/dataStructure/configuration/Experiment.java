@@ -94,6 +94,10 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         return fields.getChildByName(fieldName);
     }
     
+    public MicroscopyField getMicroscopyField(int fieldIdx) {
+        return fields.getChildAt(fieldIdx);
+    }
+    
     public int getTimePointNumber() {
         MicroscopyField f= fields.getChildAt(0);
         if (f!=null) {
@@ -133,6 +137,10 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     public int getChannelImageNB() {
         return channelImages.getChildCount();
+    }
+    
+    public int getMicrocopyFieldNB() {
+        return fields.getChildCount();
     }
     
     public String[] getStructuresAsString() {return structures.getChildrenString();}

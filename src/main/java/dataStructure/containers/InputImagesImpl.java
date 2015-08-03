@@ -1,0 +1,75 @@
+/*
+ * Copyright (C) 2015 jollion
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+package dataStructure.containers;
+
+import image.Image;
+import plugins.TransformationTimeIndependent;
+
+/**
+ *
+ * @author jollion
+ */
+public class InputImagesImpl implements InputImages{
+    InputImage[][] imageTC;
+    int[] timePoints;
+    int currentTimePointIdx;
+
+    public InputImagesImpl(InputImage[][] imageTC) {
+        this.imageTC = imageTC;
+    }
+
+    public InputImagesImpl(InputImage[][] imageTC, int[] timePoints, int currentTimePointIdx) {
+        this.imageTC = imageTC;
+        this.timePoints = timePoints;
+        this.currentTimePointIdx = currentTimePointIdx;
+    }
+    
+    public void setTimePoints(int[] timePoints, int currentTimePointIdx) {
+        this.timePoints = timePoints;
+        this.currentTimePointIdx = currentTimePointIdx;
+    }
+    
+    public int getCurrentTimePoint() {return timePoints[currentTimePointIdx];}
+    
+    public Image getCurrentImage(int channelIdx) {
+        // TODO check memory ici
+        return imageTC[getCurrentTimePoint()][channelIdx].getImage();
+    }
+    public boolean nextTimePoint() {
+        if (currentTimePointIdx<(timePoints.length-1)) {
+            ++currentTimePointIdx;
+            return true;
+        } else return false;
+    }
+    public boolean previousTimePoint() {
+        if (currentTimePointIdx>0) {
+            --currentTimePointIdx;
+            return true;
+        } else return false;
+    }
+    
+    public void addTransformation(TransformationTimeIndependent transfo) {
+        for (int c = 0; c<imageTC[0].length; ++c) addTransformation(transfo, c);
+    }
+    
+    public void addTransformation(TransformationTimeIndependent transfo, int channelIdx) {
+        for (int t = 0; t<this.imageTC.length; ++t) {
+            imageTC[t][channelIdx].addTransformation(transfo);
+        }
+    }
+}

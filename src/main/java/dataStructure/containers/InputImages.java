@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 jollion
+ * Copyright (C) 2015 nasique
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -21,39 +21,11 @@ import image.Image;
 
 /**
  *
- * @author jollion
+ * @author nasique
  */
-public class InputImages {
-    InputImage[][] imageTC;
-    int[] timePoints;
-    int currentTimePointIdx;
-
-    public InputImages(InputImage[][] imageTC, int[] timePoints) {
-        this.imageTC = imageTC;
-        this.timePoints = timePoints;
-    }
-
-    public InputImages(InputImage[][] imageTC, int[] timePoints, int currentTimePointIdx) {
-        this.imageTC = imageTC;
-        this.timePoints = timePoints;
-        this.currentTimePointIdx = currentTimePointIdx;
-    }
-    
-    public int getCurrentTimePoint() {return timePoints[currentTimePointIdx];}
-    public Image getCurrentImage(int channelIdx) {
-        // TODO check memory ici
-        return imageTC[getCurrentTimePoint()][channelIdx].getImage();
-    }
-    public boolean nextTimePoint() {
-        if (currentTimePointIdx<(timePoints.length-1)) {
-            ++currentTimePointIdx;
-            return true;
-        } else return false;
-    }
-    public boolean previousTimePoint() {
-        if (currentTimePointIdx>0) {
-            --currentTimePointIdx;
-            return true;
-        } else return false;
-    }
+public interface InputImages {
+    public int getCurrentTimePoint();
+    public Image getCurrentImage(int channelIdx);
+    public boolean nextTimePoint();
+    public boolean previousTimePoint();
 }

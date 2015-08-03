@@ -25,6 +25,7 @@ import configuration.parameters.SimpleListParameter;
 import configuration.parameters.StructureParameter;
 import dataStructure.containers.ImageDAO;
 import dataStructure.containers.InputImage;
+import dataStructure.containers.InputImagesImpl;
 import dataStructure.containers.MultipleImageContainer;
 import dataStructure.containers.MultipleImageContainerSingleFile;
 import plugins.PreFilter;
@@ -54,7 +55,11 @@ public class MicroscopyField extends SimpleContainerParameter {
         preProcessingChain.setContentFrom(ppc);
     }
     
-    public InputImage[][] getInputImagesTC() {
+    public PreProcessingChain getPreProcessingChain() {
+        return preProcessingChain;
+    }
+    
+    public InputImagesImpl getInputImages() {
         ImageDAO dao = getExperiment().getImageDAO();
         InputImage[][] res = new InputImage[images.getTimePointNumber()][images.getChannelNumber()];
         for (int t = 0; t<res.length; ++t) {
@@ -62,11 +67,7 @@ public class MicroscopyField extends SimpleContainerParameter {
                res[t][c] = new InputImage(c, t, name, images, dao, true);
             } 
         }
-        return res;
-    }
-    
-    public InputImage getInputImage(int timePoint, int channelIdx) {
-        return new InputImage(channelIdx, timePoint, name, images, getExperiment().getImageDAO(), true);
+        return new InputImagesImpl(res);
     }
     
     protected Experiment getExperiment() {
