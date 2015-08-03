@@ -51,7 +51,7 @@ import utils.Utils;
 public class PreProcessingChain extends SimpleContainerParameter {
     
     SimpleListParameter<TransformationPluginParameter<TransformationTimeIndependent>> constantTransformations= new SimpleListParameter<TransformationPluginParameter<TransformationTimeIndependent>>("Constant transformations", new TransformationPluginParameter<TransformationTimeIndependent>("Transformation", TransformationTimeIndependent.class, false));
-    TransformationPluginParameter<Registration> registration = new TransformationPluginParameter<Registration>("Transformation", Registration.class, false);
+    TransformationPluginParameter<Registration> registration = new TransformationPluginParameter<Registration>("Transformation", Registration.class, true);
     
     public PreProcessingChain(String name) {
         super(name);
@@ -63,17 +63,12 @@ public class PreProcessingChain extends SimpleContainerParameter {
         super.initChildren(constantTransformations, registration);
     }
     
-    public TransformationTimeIndependent[] getTransformationsTimeIndependent() {
-        TransformationTimeIndependent[] res = new TransformationTimeIndependent[constantTransformations.getChildCount()];
-        int idx = 0;
-        for (PluginParameter<TransformationTimeIndependent> p: constantTransformations.getChildren()) {
-            res[idx++]=p.getPlugin();
-        }
-        return res;
+    public ArrayList<TransformationPluginParameter<TransformationTimeIndependent>> getTransformationsTimeIndependent() {
+        return constantTransformations.getChildren();
     }
     
-    public Registration getRegistration() {
-        return registration.getPlugin();
+    public TransformationPluginParameter<Registration> getRegistration() {
+        return registration;
     }
     
     @Override public ParameterUI getUI() {

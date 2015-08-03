@@ -20,6 +20,7 @@ package dataStructure.containers;
 import image.Image;
 import java.util.ArrayList;
 import java.util.Iterator;
+import plugins.Transformation;
 import plugins.TransformationTimeIndependent;
 
 /**
@@ -34,7 +35,7 @@ public class InputImage {
     String microscopyFieldName;
     Image image;
     boolean imageSavedInDAO=false, saveToDAO=true;
-    ArrayList<TransformationTimeIndependent> transformationsToApply;
+    ArrayList<Transformation> transformationsToApply;
     
     public InputImage(int channelIdx, int timePoint, String microscopyFieldName, MultipleImageContainer imageSources, ImageDAO dao, boolean saveToDAO) {
         this.imageSources = imageSources;
@@ -43,9 +44,9 @@ public class InputImage {
         this.timePoint = timePoint;
         this.microscopyFieldName = microscopyFieldName;
         this.saveToDAO=saveToDAO;
-        transformationsToApply=new ArrayList<TransformationTimeIndependent>();
+        transformationsToApply=new ArrayList<Transformation>();
     }
-    public void addTransformation(TransformationTimeIndependent t) {
+    public void addTransformation(Transformation t) {
         transformationsToApply.add(t);
     }
     
@@ -63,9 +64,9 @@ public class InputImage {
     }
     
     private void applyTransformations() {
-        Iterator<TransformationTimeIndependent> it = transformationsToApply.iterator();
+        Iterator<Transformation> it = transformationsToApply.iterator();
         while(it.hasNext()) {
-            image = it.next().applyTransformation(image);
+            image = it.next().applyTransformation(channelIdx, timePoint, image);
             it.remove();
         }
     }

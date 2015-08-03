@@ -18,6 +18,7 @@
 package dataStructure.containers;
 
 import image.Image;
+import plugins.Transformation;
 import plugins.TransformationTimeIndependent;
 
 /**
@@ -26,50 +27,36 @@ import plugins.TransformationTimeIndependent;
  */
 public class InputImagesImpl implements InputImages{
     InputImage[][] imageTC;
-    int[] timePoints;
-    int currentTimePointIdx;
 
     public InputImagesImpl(InputImage[][] imageTC) {
         this.imageTC = imageTC;
     }
-
-    public InputImagesImpl(InputImage[][] imageTC, int[] timePoints, int currentTimePointIdx) {
-        this.imageTC = imageTC;
-        this.timePoints = timePoints;
-        this.currentTimePointIdx = currentTimePointIdx;
+    
+    public int getTimePointNumber() {return imageTC.length;}
+    public int getChannelNumber() {return imageTC[0].length;}
+    
+    public void addTransformation(int[] channelIndicies, Transformation transfo) {
+        if (channelIndicies!=null) for (int c : channelIndicies) addTransformation(c, transfo);
+        else for (int c = 0; c<imageTC[0].length; ++c) addTransformation(c, transfo);
     }
     
-    public void setTimePoints(int[] timePoints, int currentTimePointIdx) {
-        this.timePoints = timePoints;
-        this.currentTimePointIdx = currentTimePointIdx;
-    }
-    
-    public int getCurrentTimePoint() {return timePoints[currentTimePointIdx];}
-    
-    public Image getCurrentImage(int channelIdx) {
-        // TODO check memory ici
-        return imageTC[getCurrentTimePoint()][channelIdx].getImage();
-    }
-    public boolean nextTimePoint() {
-        if (currentTimePointIdx<(timePoints.length-1)) {
-            ++currentTimePointIdx;
-            return true;
-        } else return false;
-    }
-    public boolean previousTimePoint() {
-        if (currentTimePointIdx>0) {
-            --currentTimePointIdx;
-            return true;
-        } else return false;
-    }
-    
-    public void addTransformation(TransformationTimeIndependent transfo) {
-        for (int c = 0; c<imageTC[0].length; ++c) addTransformation(transfo, c);
-    }
-    
-    public void addTransformation(TransformationTimeIndependent transfo, int channelIdx) {
+    public void addTransformation(int channelIdx, Transformation transfo) {
         for (int t = 0; t<this.imageTC.length; ++t) {
             imageTC[t][channelIdx].addTransformation(transfo);
+        }
+    }
+
+    public Image getImage(int channelIdx, int timePoint) {
+        return imageTC[timePoint][channelIdx].getImage();
+    }
+    
+    public void applyTranformationsSaveAndClose() {
+        for (int t = 0; t<getTimePointNumber(); ++t) {
+            for (int c = 0; c<getChannelNumber(); ++c) {
+                imageTC[t][c].getImage();
+                imageTC[t][c].saveToDAO=true;
+                imageTC[t][c].closeImage();
+            }
         }
     }
 }

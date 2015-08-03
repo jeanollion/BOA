@@ -32,7 +32,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     Object[] configurationData;
     ChannelImageParameter inputChannel = new ChannelImageParameter("Configuration Channel", -1);
     Parameter outputChannel;
-    Parameter inputTimePoints;
+    //Parameter inputTimePoints;
     
     public TransformationPluginParameter(String name, Class<T> pluginType, boolean allowNoSelection) {
         super(name, pluginType, allowNoSelection);
@@ -50,22 +50,25 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     public void setPlugin(T pluginInstance) {
         if (pluginInstance instanceof TransformationTimeIndependent) {
             Experiment xp = ParameterUtils.getExperiment(this);
-            SelectionMode it = ((TransformationTimeIndependent)pluginInstance).getConfigurationTimePointSelectionMode();
+            //SelectionMode it = ((TransformationTimeIndependent)pluginInstance).getConfigurationTimePointSelectionMode();
             SelectionMode oc = ((TransformationTimeIndependent)pluginInstance).getOutputChannelSelectionMode();
-            String[] timeChoiceList = MultipleChoiceParameter.createChoiceList(0, xp.getTimePointNumber()-1);
-            if (SelectionMode.MULTIPLE.equals(it)) inputTimePoints = new MultipleChoiceParameter("Configuration TimePoints", timeChoiceList, new int[]{Math.min(50, timeChoiceList.length-1)});
+            //String[] timeChoiceList = MultipleChoiceParameter.createChoiceList(0, xp.getTimePointNumber()-1);
+            /*if (SelectionMode.MULTIPLE.equals(it)) inputTimePoints = new MultipleChoiceParameter("Configuration TimePoints", timeChoiceList, new int[]{Math.min(50, timeChoiceList.length-1)});
             else if (SelectionMode.SINGLE.equals(it)) inputTimePoints = new ChoiceParameter("Configuration TimePoints", timeChoiceList, timeChoiceList[Math.min(50, timeChoiceList.length-1)], false);
-            else inputTimePoints=null;
+            else inputTimePoints=null;*/
             if (SelectionMode.MULTIPLE.equals(oc)) outputChannel = new MultipleChoiceParameter("Channels on which apply transformation", xp.getChannelImagesAsString(), true);
             else if (SelectionMode.SINGLE.equals(oc)) outputChannel = new ChoiceParameter("Channels on which apply transformation", xp.getChannelImagesAsString(), null, false);
             else outputChannel=null;
-            
         } else {
             outputChannel=null;
-            inputTimePoints=null;
+            //inputTimePoints=null;
         }
         super.setPlugin(pluginInstance);
         configurationData = duplicateConfigurationDataArray(pluginInstance.getConfigurationData());
+    }
+    
+    public void setConfigurationData(Object[] configurationData) {
+        this.configurationData = duplicateConfigurationDataArray(configurationData);
     }
     
     public int[] getOutputChannels() { // if null -> all selected
@@ -75,14 +78,14 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         else return null;
     }
     
-    public int[] getInputTimePoints() { // if null -> all selected
+    /*public int[] getInputTimePoints() { // if null -> all selected
         if (inputTimePoints==null) return null;
         else if (inputTimePoints instanceof MultipleChoiceParameter) return ((MultipleChoiceParameter)inputTimePoints).getSelectedItems();
         else if (inputTimePoints instanceof ChoiceParameter) return new int[]{((ChoiceParameter)inputTimePoints).getSelectedIndex()};
         else return null;
-    }
+    }*/
     
-    public int getIntputChannel() {
+    public int getInputChannel() {
         return inputChannel.getSelectedIndex();
     }
     
@@ -91,7 +94,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         ArrayList<Parameter> p = new ArrayList<Parameter>();
         p.add(inputChannel);
         if (outputChannel!=null) p.add(outputChannel);
-        if (inputTimePoints!=null) p.add(inputTimePoints);
+        //if (inputTimePoints!=null) p.add(inputTimePoints);
         if (pluginParameters!=null) p.addAll(Arrays.asList(pluginParameters));
         super.initChildren(p.toArray(new Parameter[p.size()]));
     }

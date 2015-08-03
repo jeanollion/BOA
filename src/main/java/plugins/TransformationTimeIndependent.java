@@ -17,16 +17,12 @@
  */
 package plugins;
 
-import configuration.parameters.Parameter;
-import dataStructure.containers.InputImage;
-import dataStructure.objects.StructureObjectPreProcessing;
-import image.Image;
 
 /**
  *
  * @author jollion
  */
 public interface TransformationTimeIndependent extends Transformation {
-    public SelectionMode getConfigurationTimePointSelectionMode();
+    //public SelectionMode getConfigurationTimePointSelectionMode();
     public SelectionMode getOutputChannelSelectionMode();
 }

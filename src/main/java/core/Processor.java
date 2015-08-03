@@ -17,6 +17,7 @@
  */
 package core;
 
+import configuration.parameters.TransformationPluginParameter;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.PreProcessingChain;
@@ -35,7 +36,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import plugins.Registration;
 import plugins.Tracker;
+import plugins.TransformationTimeIndependent;
 import processing.PluginSequenceRunner;
 
 /**
@@ -65,7 +68,19 @@ public class Processor {
             MicroscopyField f = xp.getMicroscopyField(i);
             InputImagesImpl images = f.getInputImages();
             PreProcessingChain ppc = f.getPreProcessingChain();
-            for (TransformationTimeIndependent tranfo : ppc.get)
+            for (TransformationPluginParameter<TransformationTimeIndependent> tpp : ppc.getTransformationsTimeIndependent()) {
+                TransformationTimeIndependent transfo = tpp.getPlugin();
+                transfo.computeConfigurationData(tpp.getInputChannel(), images);
+                tpp.setConfigurationData(transfo.getConfigurationData());
+                images.addTransformation(tpp.getOutputChannels(), transfo);
+            }
+            TransformationPluginParameter<Registration> tpp = ppc.getRegistration();
+            Registration r = tpp.getPlugin();
+            if (r!=null) {
+                r.computeConfigurationData(tpp.getInputChannel(), images);
+                images.addTransformation(null, r);
+            }
+            images.applyTranformationsSaveAndClose();
         }
     }
     

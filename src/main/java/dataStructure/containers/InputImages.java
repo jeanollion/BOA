@@ -24,8 +24,7 @@ import image.Image;
  * @author nasique
  */
 public interface InputImages {
-    public int getCurrentTimePoint();
-    public Image getCurrentImage(int channelIdx);
-    public boolean nextTimePoint();
-    public boolean previousTimePoint();
+    public Image getImage(int channelIdx, int timePoint);
+    public int getTimePointNumber();
+    public int getChannelNumber();
 }
