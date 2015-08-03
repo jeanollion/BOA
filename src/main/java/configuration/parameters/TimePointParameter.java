@@ -24,18 +24,18 @@ import de.caluga.morphium.annotations.Transient;
  *
  * @author nasique
  */
-public class StructureParameter extends IndexChoiceParameter {
+public class TimePointParameter extends IndexChoiceParameter {
     @Transient protected Experiment xp;
     
-    public StructureParameter(String name) {
+    public TimePointParameter(String name) {
         super(name);
     }
-    public StructureParameter(String name, int selectedStructure, boolean allowNoSelection, boolean multipleSelection) {
-        super(name, selectedStructure, allowNoSelection, multipleSelection);
+    public TimePointParameter(String name, int selectedTimePoint, boolean allowNoSelection, boolean multipleSelection) {
+        super(name, selectedTimePoint, allowNoSelection, multipleSelection);
     }
     
-    public StructureParameter(String name, int[] selectedStructures, boolean allowNoSelection) {
-        super(name, selectedStructures, allowNoSelection);
+    public TimePointParameter(String name, int[] selectedTimePoints, boolean allowNoSelection) {
+        super(name, selectedTimePoints, allowNoSelection);
     }
     
     protected Experiment getXP() {
@@ -43,14 +43,21 @@ public class StructureParameter extends IndexChoiceParameter {
         return xp;
     }
     
+    @Override 
+    public int getSelectedIndex() {
+        if (getXP()!=null && getXP().getTimePointNumber()<=super.getSelectedIndex()) return getXP().getTimePointNumber()-1;
+        else return super.getSelectedIndex();
+    }
+    
     @Override
     public String[] getChoiceList() {
         String[] choices;
         if (getXP()!=null) {
-            choices=getXP().getStructuresAsString();
+            choices=ParameterUtils.createChoiceList(0, getXP().getTimePointNumber());
         } else {
             choices = new String[]{"error, no experiment in the tree"}; //no experiment in the tree, make a static method to get experiment...
         }
         return choices;
     }
+    
 }

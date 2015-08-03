@@ -15,8 +15,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugins.transformations;
+package plugins.plugins.transformations;
 
+import configuration.parameters.ChoiceParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.containers.InputImage;
@@ -36,7 +37,8 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     NumberParameter maxAngle = new NumberParameter("Maximal Angle for search", 2, 10);
     NumberParameter precision1 = new NumberParameter("Angular Precision of first seach", 2, 1);
     NumberParameter precision2 = new NumberParameter("Angular Precision", 0, 0.1);
-    Parameter[] parameters = new Parameter[]{minAngle, maxAngle, precision1, precision2};
+    ChoiceParameter interpolation = new ChoiceParameter("Interpolation", ImageTransformation.InterpolationScheme.getValues(), ImageTransformation.InterpolationScheme.LINEAR.toString(), false);
+    Parameter[] parameters = new Parameter[]{minAngle, maxAngle, precision1, precision2, interpolation};
     Float[] internalParams;
 
     public boolean isTimeDependent() {
@@ -66,7 +68,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     }
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        return ImageTransformation.rotateXY(image, internalParams[0]);
+        return ImageTransformation.rotateXY(image, internalParams[0], ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()));
     }
     
 }

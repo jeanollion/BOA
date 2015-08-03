@@ -15,31 +15,48 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugins.transformations;
+package plugins.plugins.transformations;
 
+import configuration.parameters.ChoiceParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
+import dataStructure.containers.InputImages;
 import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
 import plugins.TransformationTimeIndependent;
 import processing.ImageTransformation;
+import processing.ImageTransformation.Axis;
 
 /**
  *
  * @author jollion
  */
-public class SimpleTranslation implements TransformationTimeIndependent {
-    NumberParameter X = new NumberParameter("X", 0, 0);
-    NumberParameter Y = new NumberParameter("Y", 0, 0);
-    NumberParameter Z = new NumberParameter("Z", 0, 0);
-    Parameter[] parameters = new Parameter[]{X, Y, Z};
+public class Filp implements TransformationTimeIndependent {
     
-    public void computeParameters(int structureIdx, StructureObjectPreProcessing structureObject) {
-        
+    ChoiceParameter direction = new ChoiceParameter("Flip Axis Direction", new String[]{Axis.X.toString(), Axis.Y.toString(), Axis.Z.toString()}, Axis.Y.toString(), false);
+    Parameter[] p = new Parameter[]{direction};
+    public Filp() {}
+    
+    public Filp(Axis axis) {
+        direction.setSelectedItem(axis.toString());
     }
 
-    public Image applyTransformation(Image input) {
-        return ImageTransformation.translate(input, X.getValue().intValue(), Y.getValue().intValue(), Z.getValue().intValue(), 2);
+    public Image applyTransformation(int channelIdx, int timePoint, Image image) {
+        Axis axis;
+        switch (direction.getSelectedIndex()) {
+            case 0:
+                axis=Axis.X;
+                break;
+            case 1: 
+            default: 
+                axis=Axis.Y;
+                break;
+            case 2: 
+                axis = Axis.Z;
+                break;
+        }
+        ImageTransformation.filp(image, axis);
+        return image;
     }
 
     public boolean isTimeDependent() {
@@ -47,7 +64,7 @@ public class SimpleTranslation implements TransformationTimeIndependent {
     }
 
     public Parameter[] getParameters() {
-        return parameters;
+        return p;
     }
     
     public Parameter[] getConfigurationData() {
@@ -56,6 +73,14 @@ public class SimpleTranslation implements TransformationTimeIndependent {
 
     public boolean does3D() {
         return true;
+    }
+
+    public SelectionMode getOutputChannelSelectionMode() {
+        return SelectionMode.ALL;
+    }
+
+    public void computeConfigurationData(int channelIdx, InputImages inputImages) {
+        
     }
     
 }

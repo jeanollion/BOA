@@ -36,6 +36,7 @@ public class BoundingBox {
         yMin=Integer.MIN_VALUE;
         zMin=Integer.MIN_VALUE;
     }
+    
     public BoundingBox(int xMin, int xMax, int yMin, int yMax, int zMin, int zMax) {
         this.xMin = xMin;
         this.xMax = xMax;

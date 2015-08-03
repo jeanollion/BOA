@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugins.transformations;
+package plugins.plugins.transformations;
 
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
@@ -81,6 +81,5 @@ public class SimpleCrop implements Cropper {
     public SelectionMode getOutputChannelSelectionMode() {
         return SelectionMode.ALL;
     }
-
     
 }

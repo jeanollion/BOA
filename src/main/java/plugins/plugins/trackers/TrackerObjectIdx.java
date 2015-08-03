@@ -15,41 +15,28 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugins.transformations;
+package plugins.plugins.trackers;
 
-import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObjectPreProcessing;
-import image.Image;
-import plugins.TransformationTimeIndependent;
-import processing.ImageTransformation;
+import dataStructure.objects.StructureObjectProcessing;
+import dataStructure.objects.Track;
+import plugins.Tracker;
 
 /**
  *
  * @author jollion
  */
-public class SimpleRotationXY implements TransformationTimeIndependent {
-    NumberParameter angle = new NumberParameter("Angle (degree)", 4, 0);
-    Parameter[] parameters = new Parameter[]{angle};
-    
-    public void computeParameters(int structureIdx, StructureObjectPreProcessing structureObject) {
-        
-    }
+public class TrackerObjectIdx implements Tracker {
 
-    public Image applyTransformation(Image input) {
-        return ImageTransformation.rotateXY(input, angle.getValue().floatValue());
-    }
-
-    public boolean isTimeDependent() {
-        return false;
+    public void assignPrevious(StructureObjectPreProcessing[] parents, StructureObjectPreProcessing[] children) {
+        for (int i = 0; i<Math.min(parents.length, children.length); ++i) {
+            parents[i].setPreviousInTrack(children[i], true);
+        }
     }
 
     public Parameter[] getParameters() {
-        return parameters;
-    }
-
-    public Object[] getConfigurationData() {
-        return null;
+        return new Parameter[0];
     }
 
     public boolean does3D() {

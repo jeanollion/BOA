@@ -48,6 +48,7 @@ public class MultipleChoiceParameterUI implements ParameterUI{
     ConfigurationTreeModel model;
     JCheckBoxMenuItem[] items;
     JMenuItem[] menuItems;
+    boolean multiple=true;
     public MultipleChoiceParameterUI(ChoosableParameterMultiple choice_) {
         this.choice = choice_;
         this.model= ParameterUtils.getModel(choice);
@@ -114,7 +115,7 @@ public class MultipleChoiceParameterUI implements ParameterUI{
     }
     
     public void updateSelectedItemsToParameter() {
-        choice.setSelectedItems(getSelectedItems() );
+        choice.setSelectedIndicies(getSelectedItems() );
         if (model!=null) model.nodeChanged(choice);
     }
     

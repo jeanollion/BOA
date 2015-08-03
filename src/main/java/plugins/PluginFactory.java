@@ -41,7 +41,10 @@ public class PluginFactory {
     public static void findPlugins(String packageName) {
         try {
             for (Class c : getClasses(packageName)) {
-                if (Plugin.class.isAssignableFrom(c)) plugins.put(c.getSimpleName(), c);
+                if (Plugin.class.isAssignableFrom(c)) {
+                    plugins.put(c.getSimpleName(), c);
+                    //System.out.println("plugin found: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());
+                }
             }
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(PluginFactory.class.getName()).log(Level.WARNING, ex.getMessage(), ex);
@@ -148,9 +151,11 @@ public class PluginFactory {
     }
 
     public static <T extends Plugin> T getPlugin(Class<T> clazz, String className) {
+        //System.out.println("get plugin: class type"+clazz.getCanonicalName()+ " class name: "+className);
         try {
             Class plugClass = plugins.get(className);
             if (plugClass==null) {
+                //System.out.println("get not found.. ");
                 Logger.getLogger(PluginFactory.class.getName()).log(Level.WARNING, "plugin :{0} of class: {1} not found", new Object[]{className, clazz});
                 return null;
             }

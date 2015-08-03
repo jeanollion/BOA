@@ -72,8 +72,9 @@ public class ImageReader {
         path  = f.getParent();
         imageTitle = f.getName();
         int extIdx = imageTitle.indexOf(".");
+        if (extIdx<=0) extIdx=imageTitle.length()-1;
+        else extension=ImageFormat.getExtension(f.getName().substring(extIdx));
         imageTitle = f.getName().substring(0, extIdx);
-        this.extension=ImageFormat.getExtension(f.getName().substring(extIdx));
         if (extension==null) {
             this.fullPath=fullPath;
             invertTZ=false;

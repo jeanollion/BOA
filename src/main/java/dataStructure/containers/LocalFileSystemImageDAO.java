@@ -64,7 +64,8 @@ public class LocalFileSystemImageDAO implements ImageDAO {
 
     public void writePreProcessedImage(Image image, int channelImageIdx, int timePoint, String microscopyFieldName) {
         String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName, directory);
-        //File f = new File(path);
+        File f = new File(path);
+        f.mkdirs();
         //if (f.exists()) f.delete();
         ImageWriter.writeToFile(image, path, ImageFormat.TIF);
     }
@@ -82,15 +83,14 @@ public class LocalFileSystemImageDAO implements ImageDAO {
     
     public void writeMask(ImageInteger mask, StructureObject object) {
         String path = getProcessedImageFile(object);
-        //File f = new File(path);
+        File f = new File(path);
+        f.mkdirs();
         //if (f.exists()) f.delete();
         ImageWriter.writeToFile(mask, path, ImageFormat.PNG);
     }
     
-    
-    
     protected static String getPreProcessedImagePath(int channelImageIdx, int timePoint, String microscopyFieldName, String imageDirectory) {
-        return imageDirectory+File.separator+microscopyFieldName+File.separator+"pre_processed"+File.separator+"t"+Utils.formatInteger(5, timePoint)+"_"+Utils.formatInteger(2, channelImageIdx); // extension?
+        return imageDirectory+File.separator+microscopyFieldName+File.separator+"pre_processed"+File.separator+"t"+Utils.formatInteger(5, timePoint)+"_"+Utils.formatInteger(2, channelImageIdx)+".tif"; // extension?
     }
     
     protected static String getProcessedImageDirectory(StructureObjectRoot root) {

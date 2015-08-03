@@ -210,7 +210,7 @@ public class JNumericField extends JTextField {
 
             int precisionLength = 0, dotLength = 0, minusLength = 0;
             int textLength = text.length();
-
+            if (textLength==0) return;
             try {
                 if (format == NUMERIC) {
                     if (!((text.equals(negativeChars)) && (text.length() == 1)))

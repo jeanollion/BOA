@@ -29,6 +29,16 @@ public class ImageByte extends ImageInteger {
         this.pixels=new byte[][]{pixels};
     }
     
+    @Override
+    public ImageByte getZPlane(int idxZ) {
+        if (idxZ>=sizeZ) throw new IllegalArgumentException("Z-plane cannot be superior to sizeZ");
+        else {
+            ImageByte res = new ImageByte(name, sizeX, pixels[idxZ]);
+            res.setCalibration(this);
+            res.setOffset(offsetX, offsetY, offsetZ+idxZ);
+            return res;
+        }
+    }
     
     @Override
     public int getPixelInt(int x, int y, int z) {
@@ -123,5 +133,7 @@ public class ImageByte extends ImageInteger {
             }
         }
     }
+
+    
     
 }

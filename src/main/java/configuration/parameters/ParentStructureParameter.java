@@ -29,7 +29,7 @@ public class ParentStructureParameter extends StructureParameter {
     }
     
     public ParentStructureParameter(String name, int selectedStructure, int maxStructure) {
-        super(name, selectedStructure, true);
+        super(name, selectedStructure, true, false);
         this.maxStructure=maxStructure;
     }
 

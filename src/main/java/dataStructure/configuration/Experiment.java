@@ -99,8 +99,9 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     public int getTimePointNumber() {
+        if (fields.getChildCount()==0) return 0;
         MicroscopyField f= fields.getChildAt(0);
-        if (f!=null) {
+        if (f!=null && f.images!=null) {
             return f.images.getTimePointNumber();
         } else return 0;
     }
@@ -115,6 +116,10 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     public String getOutputImageDirectory() {
         return imagePath.getFirstSelectedFilePath();
+    }
+    
+    public void setOutputImageDirectory(String outputPath) {
+        imagePath.setSelectedFilePath(outputPath);
     }
     
     public int[] getStructureToChannelCorrespondance() {

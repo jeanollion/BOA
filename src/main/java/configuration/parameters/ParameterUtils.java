@@ -20,42 +20,75 @@ package configuration.parameters;
 import dataStructure.configuration.Experiment;
 import configuration.userInterface.ConfigurationTreeModel;
 import configuration.userInterface.TreeModelContainer;
+import utils.Utils;
 
 /**
  *
  * @author jollion
  */
 public class ParameterUtils {
+
     public static ConfigurationTreeModel getModel(Parameter p) {
-        if (p instanceof TreeModelContainer) return ((TreeModelContainer)p).getModel();
-        Parameter root=p;
-        while(root.getParent()!=null) {
-            root = (Parameter)root.getParent();
+        if (p instanceof TreeModelContainer) {
+            return ((TreeModelContainer) p).getModel();
+        }
+        Parameter root = p;
+        while (root.getParent() != null) {
+            root = (Parameter) root.getParent();
             if (root instanceof TreeModelContainer) {
-                return ((TreeModelContainer)root).getModel();
+                return ((TreeModelContainer) root).getModel();
             }
         }
         return null;
     }
-    
+
     public static Experiment getExperiment(Parameter p) {
-        if (p instanceof Experiment) return (Experiment)p;
-        Parameter root=p;
-        while(root.getParent()!=null) {
-            root = (Parameter)root.getParent();
+        if (p instanceof Experiment) {
+            return (Experiment) p;
+        }
+        Parameter root = p;
+        while (root.getParent() != null) {
+            root = (Parameter) root.getParent();
             if (root instanceof Experiment) {
-                return (Experiment)root;
+                return (Experiment) root;
             }
         }
         return null;
     }
-    
+
     public static void setContent(Parameter[] recieve, Parameter[] give) {
-        for (int i = 0; i<recieve.length;i++) recieve[i].setContentFrom(give[i]);
+        for (int i = 0; i < recieve.length; i++) {
+            recieve[i].setContentFrom(give[i]);
+        }
     }
+
     public static Parameter[] duplicateArray(Parameter[] parameters) {
         Parameter[] res = new Parameter[parameters.length];
-        for (int i = 0; i<parameters.length; ++i) res[i]=parameters[i].duplicate();
+        for (int i = 0; i < parameters.length; ++i) {
+            res[i] = parameters[i].duplicate();
+        }
+        return res;
+    }
+
+    public static boolean arraysEqual(int[] array1, int[] array2) {
+        if (array1.length == array2.length) {
+            for (int i = 0; i < array1.length; ++i) {
+                if (array1[i] != array2[i]) {
+                    return false;
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static String[] createChoiceList(int startElement, int endElement) {
+        String[] res = new String[endElement - startElement + 1];
+        int paddingSize = String.valueOf(endElement).length();
+        for (int i = startElement; i <= endElement; ++i) {
+            res[i - startElement] = Utils.formatInteger(paddingSize, i);
+        }
         return res;
     }
 }

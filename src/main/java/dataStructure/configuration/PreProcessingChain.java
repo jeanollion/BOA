@@ -51,7 +51,7 @@ import utils.Utils;
 public class PreProcessingChain extends SimpleContainerParameter {
     
     SimpleListParameter<TransformationPluginParameter<TransformationTimeIndependent>> constantTransformations= new SimpleListParameter<TransformationPluginParameter<TransformationTimeIndependent>>("Constant transformations", new TransformationPluginParameter<TransformationTimeIndependent>("Transformation", TransformationTimeIndependent.class, false));
-    TransformationPluginParameter<Registration> registration = new TransformationPluginParameter<Registration>("Transformation", Registration.class, true);
+    TransformationPluginParameter<Registration> registration = new TransformationPluginParameter<Registration>("Registration", Registration.class, true);
     
     public PreProcessingChain(String name) {
         super(name);
@@ -69,6 +69,26 @@ public class PreProcessingChain extends SimpleContainerParameter {
     
     public TransformationPluginParameter<Registration> getRegistration() {
         return registration;
+    }
+    
+    public void setRegistration(Registration r) {
+        this.registration.setPlugin(r);
+    }
+    
+    public void addTransformations(TransformationTimeIndependent... transformations) {
+        for (TransformationTimeIndependent transfo : transformations) {
+            TransformationPluginParameter<TransformationTimeIndependent> tpp= new TransformationPluginParameter<TransformationTimeIndependent>("Transformation", TransformationTimeIndependent.class, false);
+            constantTransformations.insert(tpp);
+            tpp.setPlugin(transfo);
+        }
+    }
+    
+    public void addTransformation(int inputChannel, int[] outputChannel, TransformationTimeIndependent transformation) {
+        TransformationPluginParameter<TransformationTimeIndependent> tpp= new TransformationPluginParameter<TransformationTimeIndependent>("Transformation", TransformationTimeIndependent.class, false);
+        constantTransformations.insert(tpp);
+        tpp.setPlugin(transformation);
+        tpp.setInputChannel(inputChannel);
+        tpp.setOutputChannel(outputChannel);
     }
     
     @Override public ParameterUI getUI() {

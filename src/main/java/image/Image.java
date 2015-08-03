@@ -43,6 +43,8 @@ public abstract class Image implements ImageProperties {
         this.name=name;
     }
     
+    public abstract Image getZPlane(int idxZ);
+    
     @Override
     public boolean sameSize(ImageProperties other) {
         return sizeX==other.getSizeX() && sizeY==other.getSizeY() && sizeZ==other.getSizeZ();

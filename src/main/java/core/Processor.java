@@ -63,25 +63,28 @@ public class Processor {
         
     }*/
     
-    public static void preProcessImages(StructureObjectRoot root, Experiment xp) {
+    public static void preProcessImages(Experiment xp) {
         for (int i = 0; i<xp.getMicrocopyFieldNB(); ++i) {
-            MicroscopyField f = xp.getMicroscopyField(i);
-            InputImagesImpl images = f.getInputImages();
-            PreProcessingChain ppc = f.getPreProcessingChain();
-            for (TransformationPluginParameter<TransformationTimeIndependent> tpp : ppc.getTransformationsTimeIndependent()) {
-                TransformationTimeIndependent transfo = tpp.getPlugin();
-                transfo.computeConfigurationData(tpp.getInputChannel(), images);
-                tpp.setConfigurationData(transfo.getConfigurationData());
-                images.addTransformation(tpp.getOutputChannels(), transfo);
-            }
-            TransformationPluginParameter<Registration> tpp = ppc.getRegistration();
-            Registration r = tpp.getPlugin();
-            if (r!=null) {
-                r.computeConfigurationData(tpp.getInputChannel(), images);
-                images.addTransformation(null, r);
-            }
-            images.applyTranformationsSaveAndClose();
+            preProcessImages(xp.getMicroscopyField(i));
         }
+    }
+    
+    public static void preProcessImages(MicroscopyField field) {
+        InputImagesImpl images = field.getInputImages();
+        PreProcessingChain ppc = field.getPreProcessingChain();
+        for (TransformationPluginParameter<TransformationTimeIndependent> tpp : ppc.getTransformationsTimeIndependent()) {
+            TransformationTimeIndependent transfo = tpp.getPlugin();
+            transfo.computeConfigurationData(tpp.getInputChannel(), images);
+            tpp.setConfigurationData(transfo.getConfigurationData());
+            images.addTransformation(tpp.getOutputChannels(), transfo);
+        }
+        TransformationPluginParameter<Registration> tpp = ppc.getRegistration();
+        Registration r = tpp.getPlugin();
+        if (r != null) {
+            r.computeConfigurationData(tpp.getInputChannel(), images);
+            images.addTransformation(null, r);
+        }
+        images.applyTranformationsSaveAndClose();
     }
     
     

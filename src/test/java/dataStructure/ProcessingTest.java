@@ -22,7 +22,9 @@ import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
+import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
+import dataStructure.containers.ImageDAO;
 import dataStructure.containers.MultipleImageContainer;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectPostProcessing;
@@ -43,17 +45,19 @@ import java.net.UnknownHostException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import plugins.PluginFactory;
-import plugins.trackers.TrackerObjectIdx;
+import plugins.plugins.trackers.TrackerObjectIdx;
+import plugins.plugins.transformations.SimpleTranslation;
 
 /**
  *
  * @author jollion
  */
-public class DataStructureTest {
+public class ProcessingTest {
     @Rule
     public TemporaryFolder testFolder = new TemporaryFolder();
     
@@ -97,6 +101,45 @@ public class DataStructureTest {
     }
     
     @Test
+    public void preProcessingTest() {
+        // set-up XP
+        File daoFolder = testFolder.newFolder("TestPreProcessingDAOFolder");
+        Experiment xp = new Experiment("test");
+        ChannelImage ci1 = xp.getChannelImages().createChildInstance();
+        ChannelImage ci2 = xp.getChannelImages().createChildInstance();
+        xp.getChannelImages().insert(ci1, ci2);
+        xp.setOutputImageDirectory(daoFolder.getAbsolutePath());
+        xp.setImageDAOType(Experiment.ImageDAOTypes.LocalFileSystem);
+        
+        // import fields
+        ImageByte[][] images = createDummyImagesTC(3, 2);
+        images[0][0].setPixel(0, 0, 0, 1);
+        File folder = testFolder.newFolder("TestImagesPreProcessing");
+        ImageWriter.writeToFile(folder.getAbsolutePath(), "field1", ImageFormat.OMETIF, images);
+        Processor.importFiles(new String[]{folder.getAbsolutePath()}, xp);
+        MicroscopyField f = xp.getMicroscopyField(0);
+        assertEquals("number of fields detected", 1, xp.getMicroscopyFields().getChildCount());
+        
+        //set-up pre-processing chains
+        PluginFactory.findPlugins("plugins.plugins.transformations");
+        SimpleTranslation t = new SimpleTranslation(1, 0, 0);
+        f.getPreProcessingChain().addTransformation(0, null, t);
+        SimpleTranslation t2 = new SimpleTranslation(0, 1, 0);
+        f.getPreProcessingChain().addTransformation(0, null, t2);
+        
+        //pre-process
+        Processor.preProcessImages(xp);
+        
+        // test 
+        ImageDAO dao = xp.getImageDAO();
+        Image image = dao.openPreProcessedImage(0, 0, "field1");
+        assertTrue("Image saved in DAO", image!=null);
+        SimpleTranslation tInv = new SimpleTranslation(-1, -1, 0);
+        Image imageInv = tInv.applyTransformation(0, 0, image);
+        ImageIOTest.assertImageByte(images[0][0], (ImageByte)imageInv);
+    }
+    
+    //@Test
     public void StructureObjectTest() {
         try {
             // set-up experiment structure
@@ -188,7 +231,7 @@ public class DataStructureTest {
             ImageWriter.writeToFile(maskBactos, "/tmp", "mask Bactos t0", ImageFormat.PNG);
             
         } catch (UnknownHostException ex) {
-            Logger.getLogger(DataStructureTest.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ProcessingTest.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     private static ImageByte getMask(StructureObjectRoot root, int[] pathToRoot) {

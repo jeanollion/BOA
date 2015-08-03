@@ -30,6 +30,17 @@ public class ImageInt extends ImageInteger {
     }
     
     @Override
+    public ImageInt getZPlane(int idxZ) {
+        if (idxZ>=sizeZ) throw new IllegalArgumentException("Z-plane cannot be superior to sizeZ");
+        else {
+            ImageInt res = new ImageInt(name, sizeX, pixels[idxZ]);
+            res.setCalibration(this);
+            res.setOffset(offsetX, offsetY, offsetZ+idxZ);
+            return res;
+        }
+    }
+    
+    @Override
     public int getPixelInt(int x, int y, int z) {
         return pixels[z][x + y * sizeX];
     }
