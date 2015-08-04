@@ -91,11 +91,12 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     }
     
     public void setPlugin(String pluginName) {
+        //System.out.println(toString()+ ": set plugin: "+pluginName+ " currentStatus: pluginSet?"+pluginSet+" plugin name: "+pluginName);
         if (NO_SELECTION.equals(pluginName)) {
             this.pluginParameters=null;
             this.pluginName=NO_SELECTION;
             this.pluginSet=false;
-            
+            super.initChildren();
         } else if (!pluginSet || !pluginName.equals(this.pluginName)) {
             T instance = PluginFactory.getPlugin(pluginType, pluginName);
             if (instance==null) {

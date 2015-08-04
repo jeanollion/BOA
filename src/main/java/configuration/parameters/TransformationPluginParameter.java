@@ -31,7 +31,7 @@ import plugins.TransformationTimeIndependent;
 public class TransformationPluginParameter<T extends Transformation> extends PluginParameter<T> {
     Object[] configurationData;
     ChannelImageParameter inputChannel = new ChannelImageParameter("Configuration Channel", -1);
-    ChannelImageParameter outputChannel;
+    ChannelImageParameter outputChannel=null;
     //Parameter inputTimePoints;
     
     public TransformationPluginParameter(String name, Class<T> pluginType, boolean allowNoSelection) {
@@ -49,15 +49,12 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     
     @Override 
     public void setPlugin(T pluginInstance) {
-        if (pluginInstance instanceof TransformationTimeIndependent) {
-            Experiment xp = ParameterUtils.getExperiment(this);
-            if (xp!=null) {
-                SelectionMode oc = ((TransformationTimeIndependent)pluginInstance).getOutputChannelSelectionMode();
-                if (SelectionMode.MULTIPLE.equals(oc)) outputChannel = new ChannelImageParameter("Channels on which apply transformation", null);
-                else if (SelectionMode.SINGLE.equals(oc)) outputChannel = new ChannelImageParameter("Channels on which apply transformation", -1);
-                else outputChannel=null;
-            }
-        } else outputChannel=null;
+        if (pluginInstance instanceof TransformationTimeIndependent) {  
+            SelectionMode oc = ((TransformationTimeIndependent)pluginInstance).getOutputChannelSelectionMode();
+            if (SelectionMode.MULTIPLE.equals(oc)) outputChannel = new ChannelImageParameter("Channels on which apply transformation", null);
+            else if (SelectionMode.SINGLE.equals(oc)) outputChannel = new ChannelImageParameter("Channels on which apply transformation", -1);
+            else outputChannel=null;
+        }
         super.setPlugin(pluginInstance);
         configurationData = duplicateConfigurationDataArray(pluginInstance.getConfigurationData());
     }
@@ -96,6 +93,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         p.add(inputChannel);
         if (outputChannel!=null) p.add(outputChannel);
         if (pluginParameters!=null) p.addAll(Arrays.asList(pluginParameters));
+        //System.out.println("init child list! for: "+toString()+ " number of pp:"+(pluginParameters==null?0:pluginParameters.length)+" number total:"+p.size());
         super.initChildren(p.toArray(new Parameter[p.size()]));
     }
     
@@ -116,6 +114,13 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
             TransformationPluginParameter otherPP = (TransformationPluginParameter) other;
             this.configurationData=duplicateConfigurationDataArray(otherPP.configurationData);
         } else throw new IllegalArgumentException("wrong parameter type");
+    }
+    
+    @Override
+    public TransformationPluginParameter<T> duplicate() {
+        TransformationPluginParameter res = new TransformationPluginParameter(name, pluginType, allowNoSelection);
+        res.setContentFrom(this);
+        return res;
     }
     
     private static Object[] duplicateConfigurationDataArray(Object[] in) {

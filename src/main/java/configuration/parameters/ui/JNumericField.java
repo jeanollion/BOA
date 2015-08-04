@@ -19,6 +19,7 @@ package configuration.parameters.ui;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.text.DecimalFormat;
 import javax.swing.JTextField;
 import javax.swing.text.*;
 
@@ -46,7 +47,7 @@ public class JNumericField extends JTextField {
     private String allowedChars = null;
     private boolean allowNegative = false;
     private int precision = 0;
-
+    private DecimalFormat df = new DecimalFormat("#0");
     protected PlainDocument numberFieldFilter;
     
     public JNumericField(int precision) {
@@ -107,6 +108,7 @@ public class JNumericField extends JTextField {
             precision = iPrecision;
         else
             precision = DEF_PRECISION;
+        df.setMaximumFractionDigits(precision);
     }
 
     public int getPrecision() {
@@ -114,6 +116,7 @@ public class JNumericField extends JTextField {
     }
 
     public Number getNumber() {
+        if (getText().length()==0 || getText().equals("-")) return null;
         Number number = null;
         if (format == NUMERIC)
             number = new Integer(getText());
@@ -124,32 +127,33 @@ public class JNumericField extends JTextField {
     }
 
     public void setNumber(Number value) {
-        setText(String.valueOf(value));
+        setText(df.format(value));
+        //setText(String.valueOf(value));
     }
 
     public int getInt() {
         return Integer.parseInt(getText());
     }
 
-    public void setInt(int value) {
+    /*public void setInt(int value) {
         setText(String.valueOf(value));
-    }
+    }*/
 
     public float getFloat() {
         return (new Float(getText())).floatValue();
     }
 
-    public void setFloat(float value) {
+    /*public void setFloat(float value) {
         setText(String.valueOf(value));
-    }
+    }*/
 
     public double getDouble() {
         return (new Double(getText())).doubleValue();
     }
 
-    public void setDouble(double value) {
+    /*public void setDouble(double value) {
         setText(String.valueOf(value));
-    }
+    }*/
 
     public int getFormat() {
         return format;
@@ -170,6 +174,7 @@ public class JNumericField extends JTextField {
             allowedChars = FM_DECIMAL;
             break;
         }
+        df.setMaximumFractionDigits(precision);
     }
 
     public void setAllowNegative(boolean b) {

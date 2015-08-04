@@ -17,6 +17,7 @@
  */
 package plugins.plugins.transformations;
 
+import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
@@ -43,8 +44,8 @@ public class ImageStabilizerXY implements Registration {
     TimePointParameter ref = new TimePointParameter("Reference time point", 50, false, false);
     ChoiceParameter transformationType = new ChoiceParameter("Transformation", new String[]{"Translation"}, "Translation", false); //, "Affine"
     ChoiceParameter pyramidLevel = new ChoiceParameter("Pyramid Level", new String[]{"0", "1", "2", "3", "4"}, "4", false);
-    NumberParameter alpha = new NumberParameter("Template Update Coefficient [0-1]", 2, 0.9);
-    NumberParameter maxIter = new NumberParameter("Maximum Iterations", 0, 200);
+    BoundedNumberParameter alpha = new BoundedNumberParameter("Template Update Coefficient [0-1]", 2, 0.9, 0, 1);
+    BoundedNumberParameter maxIter = new BoundedNumberParameter("Maximum Iterations", 0, 200, 1, null);
     NumberParameter tol = new NumberParameter("Error Tolerance", 7, 1e-7);
     Parameter[] parameters = new Parameter[]{ref, transformationType, pyramidLevel, alpha, maxIter, tol};
     double[][] translationTXY;

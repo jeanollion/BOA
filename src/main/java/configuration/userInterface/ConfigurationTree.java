@@ -63,6 +63,7 @@ public class ConfigurationTree {
     protected ConfigurationTreeModel treeModel;
     protected JTree tree;
     protected JScrollPane scroll;
+    private static boolean soutParent=false;
     
     public ConfigurationTree() {
         rootParameter = new Experiment("Test Experiment");
@@ -105,6 +106,22 @@ public class ConfigurationTree {
                         }
                         
                         menu.show(tree, pathBounds.x, pathBounds.y + pathBounds.height);
+                    }
+                } 
+                if (soutParent && SwingUtilities.isLeftMouseButton(e)) {
+                    TreePath path = tree.getPathForLocation(e.getX(), e.getY());
+                    tree.setSelectionPath(path);
+                    Rectangle pathBounds = tree.getUI().getPathBounds(tree, path);
+                    if (pathBounds != null && pathBounds.contains(e.getX(), e.getY())) {
+                        Object lastO = path.getLastPathComponent();
+                        if (lastO instanceof Parameter) {
+                            Parameter p = (Parameter) lastO;
+                            if (p.getParent() == null) {
+                                System.out.println(p.toString() + " no parent");
+                            } else {
+                                System.out.println(p.toString() + ": has parent: " + p.getParent().toString());
+                            }
+                        }
                     }
                 }
             }

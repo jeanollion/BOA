@@ -17,6 +17,8 @@
  */
 package plugins.plugins.preFilter;
 
+import configuration.parameters.ChoiceParameter;
+import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
@@ -27,13 +29,14 @@ import plugins.PreFilter;
  * @author jollion
  */
 public class DummyPreFilter implements PreFilter{
-
+    NumberParameter n1 = new NumberParameter("number1", 2, 2);
+    ChoiceParameter c1 = new ChoiceParameter("CHoice", new String[]{"c1", "c2"}, "c1", true);
     public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     public Parameter[] getParameters() {
-        return new Parameter[0];
+        return new Parameter[]{n1, c1};
     }
 
     public boolean isTimeDependent() {

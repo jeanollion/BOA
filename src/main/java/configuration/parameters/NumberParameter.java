@@ -18,6 +18,7 @@
 package configuration.parameters;
 
 import configuration.parameters.ui.JNumericField;
+import configuration.parameters.ui.NumberParameterUI;
 import configuration.parameters.ui.ParameterUI;
 import configuration.userInterface.ConfigurationTreeModel;
 import java.awt.Dimension;
@@ -30,7 +31,7 @@ import de.caluga.morphium.annotations.Transient;
  * @author jollion
  */
 public class NumberParameter extends SimpleParameter {
-    @Transient FloatParameterUI ui;
+    //@Transient NumberParameterUI ui;
     Number value;
     int decimalPlaces;
     
@@ -45,8 +46,11 @@ public class NumberParameter extends SimpleParameter {
     }
     
     public ParameterUI getUI() {
-        if (ui==null) ui=new FloatParameterUI(this);
-        return ui;
+        return new NumberParameterUI(this);
+    }
+    
+    public int getDecimalPlaceNumber() {
+        return decimalPlaces;
     }
     
     public Number getValue() {
@@ -71,42 +75,6 @@ public class NumberParameter extends SimpleParameter {
         if (other instanceof NumberParameter) {
             this.value=((NumberParameter)other).getValue();
             this.decimalPlaces = ((NumberParameter)other).decimalPlaces;
-        }
-    }
-    
-    class FloatParameterUI implements ParameterUI {
-        JNumericField number;
-        NumberParameter parameter;
-        ConfigurationTreeModel model;
-        public FloatParameterUI(NumberParameter parameter_) {
-            this.parameter=parameter_;
-            this.number=new JNumericField(parameter.decimalPlaces);
-            this.number.setNumber(parameter.getValue());
-            this.model= ParameterUtils.getModel(parameter);
-            this.number.getDocument().addDocumentListener(new DocumentListener() {
-
-                public void insertUpdate(DocumentEvent e) {
-                    updateNumber();
-                }
-
-                public void removeUpdate(DocumentEvent e) {
-                    updateNumber();
-                }
-
-                public void changedUpdate(DocumentEvent e) {
-                    updateNumber();
-                }
-            });
-        }
-        @Override
-        public Object[] getDisplayComponent() {
-            return new Object[]{number};
-        }
-        
-        private void updateNumber() {
-            parameter.setValue(number.getNumber());
-            number.setPreferredSize(new Dimension(number.getText().length()*9, number.getPreferredSize().height));
-            if (model!=null) model.nodeChanged(parameter);
         }
     }
     

@@ -76,6 +76,16 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
         return allowNoSelection;
     }
     
+    public void setMonoSelection(int selectedIndex) {
+        this.multipleSelection=false;
+        this.selectedIndicies=new int[]{selectedIndex};
+    }
+    
+    public void setMultipleSelection(int[] selectedIndicies) {
+        this.multipleSelection=true;
+        this.selectedIndicies=selectedIndicies;
+    }
+    
     @Override 
     public String toString(){
         if (!multipleSelection) {

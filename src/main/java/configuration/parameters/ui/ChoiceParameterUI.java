@@ -62,7 +62,7 @@ public class ChoiceParameterUI implements ArmableUI {
                         //if (ae.getActionCommand().equals("no selection"))
                         choice.setSelectedItem(ae.getActionCommand());
                         if (cond!=null) model.nodeStructureChanged(cond);
-                        else if (model!=null) model.nodeChanged(choice);
+                        else if (model!=null) model.nodeStructureChanged(choice);
                     }
                 }
             );
