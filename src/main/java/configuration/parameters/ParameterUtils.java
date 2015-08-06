@@ -20,6 +20,7 @@ package configuration.parameters;
 import dataStructure.configuration.Experiment;
 import configuration.userInterface.ConfigurationTreeModel;
 import configuration.userInterface.TreeModelContainer;
+import dataStructure.configuration.MicroscopyField;
 import utils.Utils;
 
 /**
@@ -54,6 +55,31 @@ public class ParameterUtils {
             }
         }
         return null;
+    }
+    
+    public static MicroscopyField getMicroscopyFiedl(Parameter p) {
+        if (p instanceof MicroscopyField) {
+            return (MicroscopyField) p;
+        }
+        Parameter parent = p;
+        while (parent.getParent() != null) {
+            parent = (Parameter) parent.getParent();
+            if (parent instanceof MicroscopyField) {
+                return (MicroscopyField) parent;
+            }
+        }
+        return null;
+    }
+    
+    public static int getTimePointNumber(Parameter p) {
+        MicroscopyField f = getMicroscopyFiedl(p);
+        if (f!=null) {
+            if (f.getImages()!=null) return f.getImages().getTimePointNumber();
+            else return 0;
+        } else {
+            Experiment xp = getExperiment(p);
+            return xp.getTimePointNumber();
+        }
     }
 
     public static void setContent(Parameter[] recieve, Parameter[] give) {

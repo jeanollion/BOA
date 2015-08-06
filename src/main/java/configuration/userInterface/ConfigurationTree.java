@@ -63,7 +63,7 @@ public class ConfigurationTree {
     protected ConfigurationTreeModel treeModel;
     protected JTree tree;
     protected JScrollPane scroll;
-    private static boolean soutParent=false;
+    private static final boolean soutParent=false;
     
     public ConfigurationTree() {
         rootParameter = new Experiment("Test Experiment");

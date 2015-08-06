@@ -56,7 +56,6 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter<ChannelImage>("Channel Images", 0 , ChannelImage.class);
     SimpleListParameter<MicroscopyField> fields= new SimpleListParameter<MicroscopyField>("Fields", 0 , MicroscopyField.class);
     ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.BIOFORMATS.getMethod(), false);
-    PreProcessingChain templatePreProcessingChain = new PreProcessingChain("Template PrePrecessing Chain");
     public enum ImageDAOTypes {LocalFileSystem, Simulation};
     ImageDAOTypes imageDAOType=ImageDAOTypes.LocalFileSystem;
     
@@ -83,7 +82,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     protected void initChildList() {
-        super.initChildren(importMethod, templatePreProcessingChain, fields, channelImages, structures, imagePath);
+        super.initChildren(importMethod, fields, channelImages, structures, imagePath);
     }
     
     public SimpleListParameter<MicroscopyField> getMicroscopyFields() {
@@ -146,6 +145,19 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     public int getMicrocopyFieldNB() {
         return fields.getChildCount();
+    }
+    
+    public int[] getChildStructures(int structureIdx) {
+        ArrayList<Integer> childrenAL = new ArrayList<Integer>(2);
+        int idx = 0;
+        for (Structure s : structures.getChildren()) {
+            if (s.getParentStructure()==structureIdx) childrenAL.add(idx);
+            idx++;
+        }
+        int [] childrenArray=new int[childrenAL.size()];
+        idx = 0;
+        for (int i : childrenAL) childrenArray[idx++]=i;
+        return childrenArray;
     }
     
     public String[] getStructuresAsString() {return structures.getChildrenString();}
