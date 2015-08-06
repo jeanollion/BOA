@@ -18,7 +18,6 @@
 package dataStructure.containers;
 
 import dataStructure.objects.Object3D;
-import dataStructure.objects.StructureObjectAbstract;
 import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
 import image.BoundingBox;

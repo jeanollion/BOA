@@ -21,6 +21,7 @@ import dataStructure.configuration.Experiment;
 import configuration.userInterface.ConfigurationTreeModel;
 import configuration.userInterface.TreeModelContainer;
 import dataStructure.configuration.MicroscopyField;
+import java.util.ArrayList;
 import utils.Utils;
 
 /**
@@ -87,6 +88,12 @@ public class ParameterUtils {
             recieve[i].setContentFrom(give[i]);
         }
     }
+    
+    public static void setContent(ArrayList<Parameter> recieve, ArrayList<Parameter> give) {
+        for (int i = 0; i < recieve.size(); i++) {
+            recieve.get(i).setContentFrom(give.get(i));
+        }
+    }
 
     public static Parameter[] duplicateArray(Parameter[] parameters) {
         Parameter[] res = new Parameter[parameters.length];
@@ -116,5 +123,48 @@ public class ParameterUtils {
             res[i - startElement] = Utils.formatInteger(paddingSize, i);
         }
         return res;
+    }
+
+    public static Object duplicateConfigurationData(Object in) {
+        if (in != null) {
+            if (in instanceof Number) {
+                if (in instanceof Double || in instanceof Float) {
+                    return ((Number) in).doubleValue();
+                } else if (in instanceof Long) {
+                    return ((Number) in).longValue();
+                } else {
+                    return ((Number) in).intValue();
+                }
+            } else if (in instanceof String) {
+                return (String) in;
+            } else if (in.getClass().isArray()) {
+                if (in instanceof Object[]) {
+                    return duplicateConfigurationDataArray((Object[]) in);
+                }
+            } else if (in instanceof int[]) {
+                int length = ((int[]) in).length;
+                int[] res = new int[length];
+                System.arraycopy(in, 0, res, 0, length);
+                return res;
+            } else if (in instanceof double[]) {
+                int length = ((double[]) in).length;
+                double[] res = new double[length];
+                System.arraycopy(in, 0, res, 0, length);
+                return res;
+            }
+        }
+        return null;
+    }
+
+    public static Object[] duplicateConfigurationDataArray(Object[] in) {
+        if (in != null) {
+            Object[] res = new Object[in.length];
+            for (int i = 0; i < res.length; ++i) {
+                res[i] = duplicateConfigurationData(in[i]);
+            }
+            return res;
+        } else {
+            return null;
+        }
     }
 }

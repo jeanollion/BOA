@@ -34,7 +34,7 @@ import plugins.Segmenter;
 public class DummySegmenter implements Segmenter {
     BooleanParameter segDir = new BooleanParameter("Segmentation direction", new String[]{"X", "Y"}, true);
     NumberParameter objectNb = new NumberParameter("Number of Objects", 0, 2);
-    Parameter[] parameters = new Parameter[]{segDir, objectNb};
+    Parameter[] parameters = new Parameter[]{objectNb, segDir};
     
     public DummySegmenter(boolean dirX, int objectNb) {
         this.segDir.setSelected(dirX);

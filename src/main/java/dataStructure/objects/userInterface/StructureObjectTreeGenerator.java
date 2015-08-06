@@ -17,24 +17,12 @@
  */
 package dataStructure.objects.userInterface;
 
-import configuration.parameters.ListParameter;
-import configuration.parameters.Parameter;
-import configuration.parameters.ui.ArmableUI;
-import configuration.parameters.ui.ChoiceParameterUI;
-import configuration.parameters.ui.ListParameterUI;
-import configuration.parameters.ui.MultipleChoiceParameterUI;
-import configuration.parameters.ui.ParameterUI;
-import static configuration.userInterface.ConfigurationTree.addToMenu;
-import configuration.userInterface.ConfigurationTreeModel;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.ObjectDAO;
-import dataStructure.objects.RootObjectDAO;
-import dataStructure.objects.StructureObjectRoot;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.Icon;
-import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
@@ -49,7 +37,6 @@ import javax.swing.tree.TreeSelectionModel;
 public class StructureObjectTreeGenerator {
     Experiment xp;
     ObjectDAO objectDAO;
-    RootObjectDAO rootDAO;
     String currentFieldName;
     int currentTimePoint;
     StructureNode currentRootStructure;
@@ -87,7 +74,7 @@ public class StructureObjectTreeGenerator {
         this.currentFieldName=fieldName;
         this.currentTimePoint=timePoint;
         currentRootStructure = new StructureNode(this, -1, null);
-        currentRootStructure.setRootObject(rootDAO.getRoot(currentFieldName, currentTimePoint, xp, objectDAO));
+        currentRootStructure.setRootObject(objectDAO.getRoot(currentFieldName, currentTimePoint));
         treeModel = new StructureObjectTreeModel(currentRootStructure.getChildAt(0));
         tree.setModel(treeModel);
     }

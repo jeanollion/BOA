@@ -19,6 +19,7 @@ package image;
 
 import dataStructure.objects.Voxel3D;
 import de.caluga.morphium.annotations.Embedded;
+import de.caluga.morphium.annotations.Transient;
 
 /**
  *
@@ -27,7 +28,8 @@ import de.caluga.morphium.annotations.Embedded;
 @Embedded
 public class BoundingBox {
 
-    int xMin, xMax, yMin, yMax, zMin, zMax, count;
+    int xMin, xMax, yMin, yMax, zMin, zMax;
+    @Transient int count;
     public BoundingBox(){
         xMin=Integer.MAX_VALUE;
         yMin=Integer.MAX_VALUE;

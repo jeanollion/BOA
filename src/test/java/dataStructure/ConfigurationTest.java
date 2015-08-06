@@ -20,21 +20,31 @@ package dataStructure;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
+import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.Structure;
 import dataStructure.containers.MultipleImageContainer;
 import dataStructure.containers.MultipleImageContainerSingleFile;
+import de.caluga.morphium.Morphium;
+import de.caluga.morphium.MorphiumConfig;
 import image.ImageByte;
 import image.ImageReader;
 import image.ImageWriter;
 import image.ImageFormat;
 import images.ImageIOTest;
 import java.io.File;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import plugin.dummyPlugins.DummySegmenter;
+import plugins.PluginFactory;
+import plugins.plugins.trackers.TrackerObjectIdx;
 
 /**
  *
@@ -46,11 +56,11 @@ public class ConfigurationTest {
     @Test
     public void testHierarchicalStructureOrder() {
         
-        Structure s0 = new Structure("StructureIdx0", -1);
-        Structure s1 = new Structure("StructureIdx1", 0);
-        Structure s2 = new Structure("StructureIdx2", 0);
-        Structure s3 = new Structure("StructureIdx3", 1);
-        Structure s4 = new Structure("StructureIdx4", -1);
+        Structure s0 = new Structure("StructureIdx0", -1, 0);
+        Structure s1 = new Structure("StructureIdx1", 0, 0);
+        Structure s2 = new Structure("StructureIdx2", 0, 0);
+        Structure s3 = new Structure("StructureIdx3", 1, 0);
+        Structure s4 = new Structure("StructureIdx4", -1, 0);
         Experiment xp = new Experiment("test XP", s0, s1, s2, s3, s4);
         assertEquals("Structure 2", s2, xp.getStructure(2));
         
@@ -67,5 +77,72 @@ public class ConfigurationTest {
         
     }
     
+    @Test
+    public void testStroreSimpleXPMorphium() {
+        try {
+            MorphiumConfig cfg = new MorphiumConfig();
+            cfg.setDatabase("testdb");
+            cfg.addHost("localhost", 27017);
+            Morphium m=new Morphium(cfg);
+            m.clearCollection(Experiment.class);
+            
+            Experiment xp = new Experiment("test xp");
+            int idx = xp.getStructureNB();
+            xp.getStructures().insert(xp.getStructures().createChildInstance("structureTest"));
+            m.store(xp);
+            
+            m=new Morphium(cfg);
+            ExperimentDAO dao = new ExperimentDAO(m);
+            xp = dao.getExperiment();
+            
+            assertEquals("structure nb", idx+1, xp.getStructureNB());
+            assertEquals("structure name", "structureTest", xp.getStructure(idx).getName());
+            assertTrue("xp init postLoad", xp.getChildCount()>0);
+            
+        } catch (UnknownHostException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
+        }
+    }
     
+    @Test
+    public void testStroreCompleteXPMorphium() {
+        try {
+            MorphiumConfig cfg = new MorphiumConfig();
+            cfg.setDatabase("testdb");
+            cfg.addHost("localhost", 27017);
+            Morphium m=new Morphium(cfg);
+            m.clearCollection(Experiment.class);
+            
+            // set-up experiment structure
+            Experiment xp = new Experiment("test");
+            ChannelImage image = xp.getChannelImages().createChildInstance();
+            xp.getChannelImages().insert(image);
+            Structure microChannel = xp.getStructures().createChildInstance("MicroChannel");
+            Structure bacteries = xp.getStructures().createChildInstance("Bacteries");
+            xp.getStructures().insert(microChannel);
+            bacteries.setParentStructure(0);
+            int idx = xp.getStructureNB();
+            
+            // set-up processing chain
+            PluginFactory.findPlugins("plugin.dummyPlugins");
+            microChannel.getProcessingChain().setSegmenter(new DummySegmenter(true, 2));
+            bacteries.getProcessingChain().setSegmenter(new DummySegmenter(false, 3));
+            
+            // set-up traking
+            PluginFactory.findPlugins("plugins.plugins.trackers");
+            microChannel.setTracker(new TrackerObjectIdx());
+            bacteries.setTracker(new TrackerObjectIdx());
+            
+            m.store(xp);
+            m=new Morphium(cfg);
+            ExperimentDAO dao = new ExperimentDAO(m);
+            xp = dao.getExperiment();
+            
+            assertEquals("structure nb", idx, xp.getStructureNB());
+            assertTrue("xp init postLoad", xp.getChildCount()>0);
+            
+        } catch (UnknownHostException ex) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
+        }
+    }
 }

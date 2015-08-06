@@ -32,6 +32,7 @@ import utils.Utils;
  */
 
 public class ImageFieldFactory {
+    private final static String seriesSeparator = "_xy";
     public static ArrayList<MultipleImageContainerSingleFile> importImages(String[] path, Experiment xp) {
         ArrayList<MultipleImageContainerSingleFile> res = new ArrayList<MultipleImageContainerSingleFile>();
         for (String p : path) ImageFieldFactory.importImages(new File(p), xp, res);
@@ -56,11 +57,12 @@ public class ImageFieldFactory {
             Logger.getLogger(ImageFieldFactory.class.getName()).log(Level.WARNING, "Image could not be read: {0}", image.getAbsolutePath());
         }
         if (reader!=null) {
-            int[][] stc = reader.getSTCNumbers();
+            int[][] stc = reader.getSTCXYZNumbers();
             int s = 0;
             String end = "";
+            int digits=(int)(Math.log10(stc.length)+0.5);
             for (int[] tc:stc) {
-                if (stc.length>1) end = "_s"+Utils.formatInteger(3, s);
+                if (stc.length>1) end = seriesSeparator+Utils.formatInteger(digits, s);
                 if (tc[1]==xp.getChannelImageNB()) {
                     containersTC.add(new MultipleImageContainerSingleFile(removeExtension(image.getName())+end, image.getAbsolutePath(),s, tc[0], tc[1]));
                     Logger.getLogger(ImageFieldFactory.class.getName()).log(Level.INFO, "Imported Image: {0}", image.getAbsolutePath());

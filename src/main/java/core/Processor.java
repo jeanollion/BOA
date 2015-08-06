@@ -23,23 +23,15 @@ import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.PreProcessingChain;
 import dataStructure.containers.InputImagesImpl;
 import dataStructure.containers.MultipleImageContainerSingleFile;
-import dataStructure.objects.Object3D;
+import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
-import dataStructure.objects.StructureObjectAbstract;
-import dataStructure.objects.StructureObjectPostProcessing;
-import dataStructure.objects.StructureObjectPreProcessing;
-import dataStructure.objects.StructureObjectRoot;
-import dataStructure.objects.Track;
-import image.ImageInteger;
-import image.ImageLabeller;
+import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import plugins.Registration;
 import plugins.Tracker;
 import plugins.TransformationTimeIndependent;
-import processing.PluginSequenceRunner;
 
 /**
  *
@@ -87,30 +79,31 @@ public class Processor {
         images.applyTranformationsSaveAndClose();
     }
     
-    
-    public static void processStructure(int structureIdx, StructureObjectRoot root, Experiment xp, boolean store) {
+    public static void processStructure(int structureIdx, StructureObject root, ObjectDAO dao) {
+        if (!root.isRoot()) throw new IllegalArgumentException("this method only applies to root objects");
+        System.out.println("Segmenting structure: "+structureIdx+ " timePoint: "+root.getTimePoint());
+        //Logger.getLogger(Processor.class.getName()).log(Level.INFO, "Segmenting structure: "+structureIdx+ " timePoint: "+root.getTimePoint());
         // get all parent objects of the structure
-        ArrayList<StructureObjectAbstract> allParents = root.getAllParentObjects(xp.getPathToRoot(structureIdx));
-        for (StructureObjectAbstract parent : allParents) {
-            parent.segmentChildren(structureIdx, xp);
-            if (store) parent.saveChildren(structureIdx);
+        ArrayList<StructureObject> allParents = StructureObjectUtils.getAllParentObjects(root, root.getExperiment().getPathToRoot(structureIdx));
+        for (StructureObject parent : allParents) {
+            parent.segmentChildren(structureIdx);
+            if (dao!=null) dao.store(parent.getChildObjects(structureIdx));
         }
     }
     
-    public static void trackRoot(Experiment xp, StructureObjectRoot[] rootsT) {
-        for (int i = 1; i<rootsT.length; ++i) {
-            rootsT[i].setPreviousInTrack(rootsT[i-1], true);
-        }
+    public static void trackRoot(Experiment xp, StructureObject[] rootsT, ObjectDAO dao) {
+        for (int i = 1; i<rootsT.length; ++i) rootsT[i].setPreviousInTrack(rootsT[i-1], false);
+        if (dao!=null) dao.updateTrackAttributes(rootsT);
     }
     
-    public static void track(Experiment xp, Tracker tracker, StructureObjectAbstract parentTrack, int structureIdx, boolean updateObjects) {
+    public static void track(Experiment xp, Tracker tracker, StructureObject parentTrack, int structureIdx, ObjectDAO dao) {
         if (tracker==null) return;
         // TODO gestion de la memoire vive -> si trop ouvert, fermer les images & masques des temps précédents.
         while(parentTrack.getNext()!=null) {
             tracker.assignPrevious(parentTrack.getChildObjects(structureIdx), parentTrack.getNext().getChildObjects(structureIdx));
-            if (updateObjects) for (StructureObject o : parentTrack.getChildObjects(structureIdx)) o.updateTrackLinks();
+            if (dao!=null) dao.updateTrackAttributes(parentTrack.getChildObjects(structureIdx));
             parentTrack = parentTrack.getNext();
         }
-        if (updateObjects) for (StructureObject o : parentTrack.getChildObjects(structureIdx)) o.updateTrackLinks(); // update the last one
+        if (dao!=null) dao.updateTrackAttributes(parentTrack.getChildObjects(structureIdx)); // update the last one
     }
 }

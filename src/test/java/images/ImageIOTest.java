@@ -351,7 +351,7 @@ public class ImageIOTest {
             Logger.getLogger(ImageWriter.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
             fail("An error occured trying to initialize reader");
         }
-        int[][] stc = reader.getSTCNumbers();
+        int[][] stc = reader.getSTCXYZNumbers();
         System.out.println("Series:"+stc.length+" time:"+stc[0][0]+" c:"+stc[0][1]);
         
         //Test file dimension: 
@@ -444,11 +444,11 @@ public class ImageIOTest {
         }
         ImageWriter.writeToFile(folder.getAbsolutePath(), title, format, images, images2);
         ImageReader reader = new ImageReader(folder.getAbsolutePath(), title, format);
-        assertEquals("Retrieve Image series", 2, reader.getSTCNumbers().length);
-        assertEquals("Retrieve Image time points", timePoint, reader.getSTCNumbers()[0][0]);
-        assertEquals("Retrieve Image channels", channel, reader.getSTCNumbers()[0][1]);
-        assertEquals("Retrieve Image time points serie 2", timePoint2, reader.getSTCNumbers()[1][0]);
-        assertEquals("Retrieve Image channel serie 2", channel2, reader.getSTCNumbers()[1][1]);
+        assertEquals("Retrieve Image series", 2, reader.getSTCXYZNumbers().length);
+        assertEquals("Retrieve Image time points", timePoint, reader.getSTCXYZNumbers()[0][0]);
+        assertEquals("Retrieve Image channels", channel, reader.getSTCXYZNumbers()[0][1]);
+        assertEquals("Retrieve Image time points serie 2", timePoint2, reader.getSTCXYZNumbers()[1][0]);
+        assertEquals("Retrieve Image channel serie 2", channel2, reader.getSTCXYZNumbers()[1][1]);
         
         for (int t = 0; t<timePoint; t++) {
             for (int c = 0; c<channel;c++) {

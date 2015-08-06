@@ -27,11 +27,8 @@ import dataStructure.configuration.Structure;
 import dataStructure.containers.ImageDAO;
 import dataStructure.containers.MultipleImageContainer;
 import dataStructure.objects.StructureObject;
-import dataStructure.objects.StructureObjectPostProcessing;
-import dataStructure.objects.StructureObjectRoot;
 import dataStructure.objects.ObjectDAO;
-import dataStructure.objects.RootObjectDAO;
-import dataStructure.objects.StructureObjectAbstract;
+import dataStructure.objects.StructureObjectUtils;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
 import image.BlankMask;
@@ -52,6 +49,7 @@ import org.junit.rules.TemporaryFolder;
 import plugins.PluginFactory;
 import plugins.plugins.trackers.TrackerObjectIdx;
 import plugins.plugins.transformations.SimpleTranslation;
+import utils.MorphuimUtils;
 
 /**
  *
@@ -61,18 +59,18 @@ public class ProcessingTest {
     @Rule
     public TemporaryFolder testFolder = new TemporaryFolder();
     
-    public static ImageByte[][] createDummyImagesTC(int timePointNumber, int channelNumber) {
+    public static ImageByte[][] createDummyImagesTC(int sizeX, int sizeY, int sizeZ, int timePointNumber, int channelNumber) {
         ImageByte[][] images = new ImageByte[timePointNumber][channelNumber];
         for (int t = 0; t<timePointNumber; t++) {
             for (int c = 0; c<channelNumber;c++) {
-                images[t][c] = new ImageByte("t"+t+"c"+c, 6, 5, 4);
+                images[t][c] = new ImageByte("t"+t+"c"+c, sizeX, sizeY, sizeZ);
                 images[t][c].setPixel(t, c, c, 1);
             }
         }
         return images;
     }
     
-    @Test
+    //@Test
     public void importFieldTest() {
         // creation de l'image de test
         String title = "imageTestMultiple";
@@ -80,9 +78,9 @@ public class ProcessingTest {
         File folder = testFolder.newFolder("TestImages");
         int timePoint = 3;
         int channel = 2;
-        ImageByte[][] images = createDummyImagesTC(timePoint, channel);
-        ImageByte[][] images2 = createDummyImagesTC(timePoint, channel+1);
-        ImageByte[][] images3 = createDummyImagesTC(timePoint+1, channel);
+        ImageByte[][] images = createDummyImagesTC(6, 5 ,4,  timePoint, channel);
+        ImageByte[][] images2 = createDummyImagesTC(6, 5 ,4, timePoint, channel+1);
+        ImageByte[][] images3 = createDummyImagesTC(6, 5 ,4, timePoint+1, channel);
         
         ImageWriter.writeToFile(folder.getAbsolutePath(), title, format, images);
         File folder2 = new File(folder.getAbsolutePath()+File.separator+"subFolder");
@@ -100,7 +98,7 @@ public class ProcessingTest {
         ImageIOTest.assertImageByte(images[0][0], (ImageByte)c.getImage(0, 0));
     }
     
-    @Test
+    //@Test
     public void preProcessingTest() {
         // set-up XP
         File daoFolder = testFolder.newFolder("TestPreProcessingDAOFolder");
@@ -109,10 +107,11 @@ public class ProcessingTest {
         ChannelImage ci2 = xp.getChannelImages().createChildInstance();
         xp.getChannelImages().insert(ci1, ci2);
         xp.setOutputImageDirectory(daoFolder.getAbsolutePath());
+        //xp.setOutputImageDirectory("/tmp");
         xp.setImageDAOType(Experiment.ImageDAOTypes.LocalFileSystem);
         
         // import fields
-        ImageByte[][] images = createDummyImagesTC(3, 2);
+        ImageByte[][] images = createDummyImagesTC(6, 5 ,4, 3, 2);
         images[0][0].setPixel(0, 0, 0, 1);
         File folder = testFolder.newFolder("TestImagesPreProcessing");
         ImageWriter.writeToFile(folder.getAbsolutePath(), "field1", ImageFormat.OMETIF, images);
@@ -130,6 +129,20 @@ public class ProcessingTest {
         //pre-process
         Processor.preProcessImages(xp);
         
+        // passage through morphium
+        MorphiumConfig cfg = new MorphiumConfig();
+        cfg.setDatabase("testdb");
+        try {
+            cfg.addHost("localhost", 27017);
+        } catch (UnknownHostException ex) {
+            Logger.getLogger(ProcessingTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        Morphium m=new Morphium(cfg);
+        m.clearCollection(Experiment.class);
+        m.store(xp);
+        m=new Morphium(cfg);
+        xp = m.createQueryFor(Experiment.class).getById(xp.getId());
+        
         // test 
         ImageDAO dao = xp.getImageDAO();
         Image image = dao.openPreProcessedImage(0, 0, "field1");
@@ -139,16 +152,61 @@ public class ProcessingTest {
         ImageIOTest.assertImageByte(images[0][0], (ImageByte)imageInv);
     }
     
+    private static ImageByte getMask(StructureObject root, int[] pathToRoot) {
+        ImageByte mask = new ImageByte("mask", root.getMask());
+        int startLabel = 1;
+        for (StructureObject o : StructureObjectUtils.getAllObjects(root, pathToRoot)) mask.appendBinaryMasks(startLabel++, o.getMask());
+        return mask;
+    }
+    
+    @Test
+    public void StructureObjectTestStore() {
+        MorphiumConfig cfg = new MorphiumConfig();
+        cfg.setDatabase("testdb");
+        try {
+            cfg.addHost("localhost", 27017);
+        } catch (UnknownHostException ex) {
+            Logger.getLogger(ProcessingTest.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        Morphium m=new Morphium(cfg);
+        m.clearCollection(StructureObject.class);
+        m.clearCollection(Experiment.class);
+        Experiment xp = new Experiment("test");
+        m.store(xp);
+        StructureObject r = new StructureObject("test", 0, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), xp);
+        StructureObject r2 = new StructureObject("test", 1, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), xp);
+        StructureObject r3 = new StructureObject("test", 3, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), xp);
+        ObjectDAO dao = new ObjectDAO(m);
+        dao.store(r, r2, r3);
+        r2.setPreviousInTrack(r, true);
+        r3.setPreviousInTrack(r2, true);
+        dao.store(r, r2, r3);
+        MorphuimUtils.waitForWrites(m);
+        MorphuimUtils.addDereferencingListeners(m);
+        r2 = dao.getObject(r2.getId());
+        r = dao.getObject(r.getId());
+        assertTrue("r2 retrieved", r!=null);
+        assertEquals("r unique instanciation", r, r2.getPrevious());
+        assertEquals("xp unique instanciation", xp, r2.getExperiment());
+        m=new Morphium(cfg);
+        MorphuimUtils.addDereferencingListeners(m);
+        dao = new ObjectDAO(m);
+        r2 = dao.getObject(r2.getId());
+        assertTrue("r2 retrieved", r!=null);
+        assertEquals("r retrieved 2", "test", r2.getFieldName());
+        assertEquals("r previous ", r.getId(), r2.getPrevious().getId());
+    }
+    
     //@Test
     public void StructureObjectTest() {
         try {
             // set-up experiment structure
             Experiment xp = new Experiment("test");
-            ChannelImage image = xp.getChannelImages().createChildInstance();
+            ChannelImage image = new ChannelImage("ChannelImage");
             xp.getChannelImages().insert(image);
             xp.getStructures().removeAllElements();
-            Structure microChannel = xp.getStructures().createChildInstance("MicroChannel");
-            Structure bacteries = xp.getStructures().createChildInstance("Bacteries");
+            Structure microChannel = new Structure("MicroChannel", -1, 0);
+            Structure bacteries = new Structure("Bacteries", 0, 0);
             xp.getStructures().insert(microChannel, bacteries);
             bacteries.setParentStructure(0);
             
@@ -158,48 +216,55 @@ public class ProcessingTest {
             bacteries.getProcessingChain().setSegmenter(new DummySegmenter(false, 3));
             
             // set-up traking
-            PluginFactory.findPlugins("plugins.trackers");
+            PluginFactory.findPlugins("plugins.plugins.trackers");
             microChannel.setTracker(new TrackerObjectIdx());
             bacteries.setTracker(new TrackerObjectIdx());
             
+            // set up fields
+            ImageByte[][] images = createDummyImagesTC(50, 50, 1, 3, 1);
+            File folder = testFolder.newFolder("TestInputImagesStructureObject");
+            ImageWriter.writeToFile(folder.getAbsolutePath(), "field1", ImageFormat.OMETIF, images);
+            Processor.importFiles(new String[]{folder.getAbsolutePath()}, xp);
+            File outputFolder = testFolder.newFolder("TestOutputImagesStructureObject");
+            xp.setOutputImageDirectory(outputFolder.getAbsolutePath());
+            
+            //save to morphium
             MorphiumConfig cfg = new MorphiumConfig();
             cfg.setDatabase("testdb");
             cfg.addHost("localhost", 27017);
             Morphium m=new Morphium(cfg);
             m.clearCollection(Experiment.class);
-            m.clearCollection(StructureObjectRoot.class);
             m.clearCollection(StructureObject.class);
             m.store(xp);
-            RootObjectDAO rootDAO = new RootObjectDAO(m);
-            ObjectDAO objectDAO = new ObjectDAO(m);
+            /*m=new Morphium(cfg);
+            ExperimentDAO xpDAO = new ExperimentDAO(m);
+            xp=xpDAO.getExperiment();*/
+            ObjectDAO dao = new ObjectDAO(m);
             
-            StructureObjectRoot[] root = new StructureObjectRoot[3];
-            BlankMask mask = new BlankMask("rootMask", 50,50, 2);
-            for (int t = 0; t<root.length; ++t) root[t] = new StructureObjectRoot("test", t, xp, mask, rootDAO, objectDAO);
-            Processor.trackRoot(xp, root);
-            rootDAO.store(root); // attention si passage aux lazy refs -> necesaire de faire en deux temps
+            Processor.preProcessImages(xp);
+            StructureObject[] root = xp.getMicroscopyField(0).createRootObjects();
+            dao.store(root); 
+            Processor.trackRoot(xp, root, dao);
             
-            for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
-                for (int t = 0; t<root.length; ++t) Processor.processStructure(s, root[t], xp, true); // process
-                for (StructureObjectAbstract o : root[0].getAllParentObjects(xp.getPathToRoot(s))) Processor.track(xp, xp.getStructure(s).getTracker(), o, s, true); // structure
+            /*for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
+                for (int t = 0; t<root.length; ++t) Processor.processStructure(s, root[t], dao); // process
+                for (StructureObject o : StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s))) Processor.track(xp, xp.getStructure(s).getTracker(), o, s, dao); // structure
             }
-            utils.Utils.waitForWrites(m);
-            
-            StructureObjectRoot rootFetch = rootDAO.getObject(root[0].getId());
+            MorphuimUtils.waitForWrites(m);
+            */
+            System.out.println("root 0 id: "+root[0].getId());
+            StructureObject rootFetch = dao.getObject(root[0].getId());
             assertEquals("root fetch @t=0", root[0].getId(), rootFetch.getId());
             // retrieve
             m=new Morphium(cfg);
-            rootDAO = new RootObjectDAO(m);
-            objectDAO = new ObjectDAO(m);
+            MorphuimUtils.addDereferencingListeners(m);
+            dao = new ObjectDAO(m);
             
-            rootFetch = rootDAO.getObject(root[0].getId());
+            rootFetch = dao.getObject(root[0].getId());
             assertEquals("root fetch @t=0 (2)", root[0].getId(), rootFetch.getId());
             
-            //for (int t = 0; t<root.length; ++t) root[t]=rootDAO.getRoot("test", t, xp, null, objectDAO); //attention si pas getById -> pas la même instance. résolut dans le cas des lazyLoading
-            for (int t = 0; t<root.length; ++t) {
-                root[t]=rootDAO.getObject(root[t].getId());
-                root[t].setUp(xp, rootDAO, objectDAO);
-            }
+            for (int t = 0; t<root.length; ++t) root[t]=dao.getObject(root[t].getId());
+            
             for (int t = 1; t<root.length; ++t) {
                 assertEquals("root track:"+(t-1)+"->"+t, root[t], root[t-1].getNext());
                 assertEquals("root track:"+(t)+"->"+(t-1), root[t-1], root[t].getPrevious());
@@ -234,10 +299,5 @@ public class ProcessingTest {
             Logger.getLogger(ProcessingTest.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    private static ImageByte getMask(StructureObjectRoot root, int[] pathToRoot) {
-        ImageByte mask = new ImageByte("mask", root.getMask());
-        int startLabel = 1;
-        for (StructureObject o : root.getAllObjects(pathToRoot)) mask.appendBinaryMasks(startLabel++, o.getMask());
-        return mask;
-    }
+    
 }

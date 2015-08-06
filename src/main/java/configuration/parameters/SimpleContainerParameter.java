@@ -18,6 +18,7 @@ package configuration.parameters;
 import configuration.parameters.ui.ParameterUI;
 import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
+import de.caluga.morphium.annotations.caching.Cache;
 import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import java.lang.reflect.InvocationTargetException;
@@ -43,6 +44,21 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
 
     public SimpleContainerParameter(String name) {
         this.name=name;
+    }
+    
+    protected void initChildren(ArrayList<Parameter> parameters) {
+        if (parameters==null) {
+            children = new ArrayList<Parameter>(0);
+        } else {
+            children = new ArrayList<Parameter>(parameters.size());
+            children.addAll(parameters);
+            int idx = 0;
+            for (Parameter p : parameters) {
+                if (p==null) System.out.println("param null:"+idx);
+                p.setParent(this);
+                idx++;
+            }
+        }
     }
     
     protected void initChildren(Parameter... parameters) {
@@ -188,5 +204,5 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     
     // morphium
     @PostLoad public void postLoad() {initChildList();}
-    
+    protected SimpleContainerParameter() {}
 }

@@ -28,6 +28,9 @@ import dataStructure.containers.InputImage;
 import dataStructure.containers.InputImagesImpl;
 import dataStructure.containers.MultipleImageContainer;
 import dataStructure.containers.MultipleImageContainerSingleFile;
+import dataStructure.objects.StructureObject;
+import de.caluga.morphium.annotations.Transient;
+import image.BlankMask;
 import plugins.PreFilter;
 
 /**
@@ -35,7 +38,6 @@ import plugins.PreFilter;
  * @author jollion
  */
 public class MicroscopyField extends SimpleContainerParameter {
-    
     
     MultipleImageContainer images;
     PreProcessingChain preProcessingChain=new PreProcessingChain("Pre-Processing chain");
@@ -69,6 +71,21 @@ public class MicroscopyField extends SimpleContainerParameter {
         }
         return new InputImagesImpl(res, Math.min(50, images.getTimePointNumber()-1));
     }
+    
+    public BlankMask getMask() {
+        BlankMask mask = getExperiment().getImageDAO().getPreProcessedImageProperties(name);
+        mask.setCalibration(images.getScaleXY(), images.getScaleZ());
+        return mask;
+    }
+    
+    public StructureObject[] createRootObjects() {
+        StructureObject[] res = new StructureObject[getImages().getTimePointNumber()];
+        for (int t = 0; t<res.length; ++t) {
+            res[t] = new StructureObject(this.name, t, getMask(), getExperiment());
+        }
+        return res;
+    }
+    
     
     protected Experiment getExperiment() {
         return (Experiment) parent.getParent();

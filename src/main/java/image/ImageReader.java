@@ -228,16 +228,18 @@ public class ImageReader {
     }*/
 
     
-    public int[][] getSTCNumbers() {
-        int[][] res = new int[reader.getSeriesCount()][2];
+    public int[][] getSTCXYZNumbers() {
+        int[][] res = new int[reader.getSeriesCount()][5];
         for (int i = 0; i<res.length; i++) {
             reader.setSeries(i);
             res[i][0] = invertTZ?reader.getSizeZ():reader.getSizeT();
             res[i][1] = reader.getSizeC();
+            res[i][2]=reader.getSizeX();
+            res[i][3]=reader.getSizeY();
+            res[i][4]=reader.getSizeZ();
         }
         return res;
     }
-    
     
     public static Image openImage(String filePath) {
         return ImageReader.openImage(filePath, new ImageIOCoordinates());

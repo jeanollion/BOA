@@ -17,8 +17,9 @@
  */
 package dataStructure.containers;
 
+import core.Processor;
 import dataStructure.objects.StructureObject;
-import dataStructure.objects.StructureObjectRoot;
+import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
 import image.ImageFormat;
@@ -27,6 +28,8 @@ import image.ImageInteger;
 import image.ImageReader;
 import image.ImageWriter;
 import java.io.File;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import utils.Utils;
 
 /**
@@ -44,7 +47,23 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName, directory);
         File f = new File(path);
         if (f.exists()) {
+            System.out.println("Opening pre-processed image:  channel: "+channelImageIdx+ " timePoint: "+timePoint+ " fieldName: "+microscopyFieldName);
+            //Logger.getLogger(LocalFileSystemImageDAO.class.getName()).log(Level.INFO, "Opening pre-processed image:  channel: "+channelImageIdx+ " timePoint: "+timePoint+ " fieldName: "+microscopyFieldName);
             return ImageReader.openImage(path);
+        } else {
+            System.out.println("Try to open pre-processed image but file not found:  channel: "+channelImageIdx+ " timePoint: "+timePoint+ " fieldName: "+microscopyFieldName);
+            return null;
+        }
+    }
+    
+    public BlankMask getPreProcessedImageProperties(String microscopyFieldName) {
+        String path = getPreProcessedImagePath(0, 0, microscopyFieldName, directory);
+        File f = new File(path);
+        if (f.exists()) {
+            ImageReader reader = new ImageReader(path);
+            int[][] STCXYZ = reader.getSTCXYZNumbers();
+            reader.closeReader();
+            return new BlankMask("", STCXYZ[0][2], STCXYZ[0][3], STCXYZ[0][4], 0, 0, 0, 0, 0);
         } else {
             //log
             return null;
@@ -90,23 +109,25 @@ public class LocalFileSystemImageDAO implements ImageDAO {
     }
     
     protected static String getPreProcessedImagePath(int channelImageIdx, int timePoint, String microscopyFieldName, String imageDirectory) {
-        return imageDirectory+File.separator+microscopyFieldName+File.separator+"pre_processed"+File.separator+"t"+Utils.formatInteger(5, timePoint)+"_"+Utils.formatInteger(2, channelImageIdx)+".tif"; // extension?
+        return imageDirectory+File.separator+microscopyFieldName+File.separator+"pre_processed"+File.separator+"t"+Utils.formatInteger(5, timePoint)+"_c"+Utils.formatInteger(2, channelImageIdx)+".tif";
     }
     
-    protected static String getProcessedImageDirectory(StructureObjectRoot root) {
-        return root.getOutputFileDirectory()+File.separator+root.getName()+File.separator+"processed"+File.separator+"t"+Utils.formatInteger(5, root.getTimePoint());
+    private static String getProcessedImageDirectoryRoot(StructureObject root) {
+        return root.getExperiment().getOutputImageDirectory()+File.separator+root.getFieldName()+File.separator+"processed"+File.separator+"t"+Utils.formatInteger(5, root.getTimePoint());
+    }
+    private static String getImageFileName(StructureObject object) {
+        return "s"+Utils.formatInteger(2, object.getStructureIdx())+"_idx"+Utils.formatInteger(5, object.getIdx());
     }
     protected static String getProcessedImageDirectory(StructureObject object) {
-        if (object.getParent().isRoot()) return getProcessedImageDirectory(object.getRoot())+File.separator+getImageFileName(object, false);
-        else return getProcessedImageDirectory((StructureObject)object.getParent())+File.separator+getImageFileName(object, false);
-    }
-    protected static String getImageFileName(StructureObject object, boolean extension) {
-        return "s"+Utils.formatInteger(2, object.getStructureIdx())+"_idx"+Utils.formatInteger(5, object.getIdx())+(extension?".png":"");
+        if (object.isRoot()) throw new IllegalArgumentException("root objects are not pre-Processed");
+        if (object.getParent().isRoot()) return getProcessedImageDirectoryRoot(object.getParent())+File.separator+getImageFileName(object);
+        else return getProcessedImageDirectory((StructureObject)object.getParent())+File.separator+getImageFileName(object);
     }
     protected static String getProcessedImageFile(StructureObject object) {
-        if (object.getParent().isRoot()) return getProcessedImageDirectory(object.getRoot())+File.separator+getImageFileName(object, true);
-        else return getProcessedImageDirectory((StructureObject)object.getParent())+File.separator+getImageFileName(object, true);
+        return getProcessedImageDirectory(object)+".png";
     }
+
+    
     
     
 }

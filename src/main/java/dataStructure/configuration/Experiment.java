@@ -29,7 +29,6 @@ import configuration.userInterface.ConfigurationTreeModel;
 import configuration.userInterface.TreeModelContainer;
 import dataStructure.containers.ImageDAO;
 import dataStructure.containers.ImageDAOFactory;
-import dataStructure.containers.SimulationImageDAO;
 import de.caluga.morphium.annotations.Entity;
 import de.caluga.morphium.annotations.Id;
 import de.caluga.morphium.annotations.Index;
@@ -56,7 +55,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter<ChannelImage>("Channel Images", 0 , ChannelImage.class);
     SimpleListParameter<MicroscopyField> fields= new SimpleListParameter<MicroscopyField>("Fields", 0 , MicroscopyField.class);
     ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.BIOFORMATS.getMethod(), false);
-    public enum ImageDAOTypes {LocalFileSystem, Simulation};
+    public enum ImageDAOTypes {LocalFileSystem}; //Simulation
     ImageDAOTypes imageDAOType=ImageDAOTypes.LocalFileSystem;
     
     @Transient ConfigurationTreeModel model;
@@ -77,8 +76,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         this.imageDAOType=type;
     }
     public ImageDAO getImageDAO() {
-        if (imageDAOType.equals(ImageDAOTypes.Simulation)) return new SimulationImageDAO();
-        else return ImageDAOFactory.getLocalFileSystemImageDAO(getOutputImageDirectory()); //if (imageDAOType.equals(ImageDAOTypes.LocalFileSystem))
+        return ImageDAOFactory.getLocalFileSystemImageDAO(getOutputImageDirectory()); //if (imageDAOType.equals(ImageDAOTypes.LocalFileSystem))
     }
     
     protected void initChildList() {
@@ -104,6 +102,8 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
             return f.images.getTimePointNumber();
         } else return 0;
     }
+    
+    public ObjectId getId() {return id;}
     
     public SimpleListParameter<ChannelImage> getChannelImages() {
         return channelImages;
@@ -268,7 +268,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         }*/
     }
     
+    // morphium
+    public Experiment(){}
 
-    
-    
 }

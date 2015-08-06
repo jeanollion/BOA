@@ -56,11 +56,11 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
             else outputChannel=null;
         }
         super.setPlugin(pluginInstance);
-        configurationData = duplicateConfigurationDataArray(pluginInstance.getConfigurationData());
+        configurationData = ParameterUtils.duplicateConfigurationDataArray(pluginInstance.getConfigurationData());
     }
     
     public void setConfigurationData(Object[] configurationData) {
-        this.configurationData = duplicateConfigurationDataArray(configurationData);
+        this.configurationData = ParameterUtils.duplicateConfigurationDataArray(configurationData);
     }
     
     public void setOutputChannel(int... channelIdx) { // null -> all selected
@@ -89,12 +89,12 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     
     @Override
     protected void initChildList() {
-        ArrayList<Parameter> p = new ArrayList<Parameter>();
+        ArrayList<Parameter> p = new ArrayList<Parameter>(2+(pluginParameters!=null?pluginParameters.size():0));
         p.add(inputChannel);
         if (outputChannel!=null) p.add(outputChannel);
-        if (pluginParameters!=null) p.addAll(Arrays.asList(pluginParameters));
+        if (pluginParameters!=null) p.addAll(pluginParameters);
         //System.out.println("init child list! for: "+toString()+ " number of pp:"+(pluginParameters==null?0:pluginParameters.length)+" number total:"+p.size());
-        super.initChildren(p.toArray(new Parameter[p.size()]));
+        super.initChildren(p);
     }
     
     @Override
@@ -102,7 +102,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         T instance = super.getPlugin();
         if (instance!=null) {
             Object[] target = instance.getConfigurationData();
-            if (target!=null && configurationData!=null) for (int i = 0; i<target.length; ++i) target[i] = duplicateConfigurationData(configurationData[i]);
+            if (target!=null && configurationData!=null) for (int i = 0; i<target.length; ++i) target[i] = ParameterUtils.duplicateConfigurationData(configurationData[i]);
         }
         return instance;
     }
@@ -112,7 +112,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         super.setContentFrom(other);
         if (other instanceof TransformationPluginParameter && ((TransformationPluginParameter)other).pluginType.equals(pluginType)) {
             TransformationPluginParameter otherPP = (TransformationPluginParameter) other;
-            this.configurationData=duplicateConfigurationDataArray(otherPP.configurationData);
+            this.configurationData=ParameterUtils.duplicateConfigurationDataArray(otherPP.configurationData);
         } else throw new IllegalArgumentException("wrong parameter type");
     }
     
@@ -122,42 +122,4 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         res.setContentFrom(this);
         return res;
     }
-    
-    private static Object[] duplicateConfigurationDataArray(Object[] in) {
-        if (in!=null) {
-            Object[] res  = new Object[in.length];
-            for (int i = 0; i<res.length; ++i) res[i] = duplicateConfigurationData(in[i]);
-            return res;
-        } else return null;
-    }
-    
-    private static Object duplicateConfigurationData(Object in) {
-        if (in != null) {
-            if (in instanceof Number) {
-                if (in instanceof Double || in instanceof Float) {
-                    return ((Number) in).doubleValue();
-                } else if (in instanceof Long) {
-                    return ((Number) in).longValue();
-                } else {
-                    return ((Number) in).intValue();
-                }
-            } else if (in instanceof String) {
-                return ((String) in); // Strings are immutable
-            } else if (in.getClass().isArray()) {
-                if (in instanceof Object[]) return duplicateConfigurationDataArray((Object[])in);
-                } else if (in instanceof int[]) {
-                    int length = ((int[]) in).length;
-                    int[] res = new int[length];
-                    System.arraycopy(in, 0, res, 0, length);
-                    return res;
-                } else if (in instanceof double[]) {
-                    int length = ((double[]) in).length;
-                    double[] res = new double[length];
-                    System.arraycopy(in, 0, res, 0, length);
-                    return res;
-                }
-            }
-        return null;
-    }
-
 }

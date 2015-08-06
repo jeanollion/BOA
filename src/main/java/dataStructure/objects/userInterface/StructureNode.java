@@ -18,7 +18,6 @@
 package dataStructure.objects.userInterface;
 
 import dataStructure.objects.StructureObject;
-import dataStructure.objects.StructureObjectRoot;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -54,7 +53,7 @@ public class StructureNode implements TreeNode {
         return children;
     }
     
-    public void setRootObject(StructureObjectRoot root) {
+    public void setRootObject(StructureObject root) {
         if (idx<0) throw new IllegalArgumentException("cannot set root object to a structure that is not root");
         ObjectNode rootNode = new ObjectNode(this, 1, root);
         this.children=new ObjectNode[]{rootNode};

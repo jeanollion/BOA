@@ -17,6 +17,7 @@ package configuration.parameters;
 
 import configuration.parameters.ui.ParameterUI;
 import configuration.parameters.ui.ChoiceParameterUI;
+import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
 import utils.Utils;
 

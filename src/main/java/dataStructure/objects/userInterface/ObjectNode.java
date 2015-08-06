@@ -17,7 +17,7 @@
  */
 package dataStructure.objects.userInterface;
 
-import dataStructure.objects.StructureObjectAbstract;
+import dataStructure.objects.StructureObject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -29,11 +29,11 @@ import utils.SmallArray;
  * @author nasique
  */
 public class ObjectNode implements TreeNode {
-    StructureObjectAbstract data;
+    StructureObject data;
     StructureNode parent;
     StructureNode[] children;
     int idx;
-    public ObjectNode(StructureNode parent, int idx, StructureObjectAbstract data) {
+    public ObjectNode(StructureNode parent, int idx, StructureObject data) {
         this.data=data;
         this.idx=idx;
         int[] childrenIndicies = parent.generator.xp.getChildStructures(parent.idx);

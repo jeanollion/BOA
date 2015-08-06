@@ -17,6 +17,9 @@
  */
 package configuration.parameters;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  *
  * @author jollion
@@ -35,6 +38,10 @@ public class ParentStructureParameter extends StructureParameter {
 
     public void setMaxStructureIdx(int maxStructure) {
         this.maxStructure = maxStructure;
+        if (this.getSelectedIndex()>maxStructure) {
+            this.setSelectedIndex(-1);
+            Logger.getLogger(getClass().getName()).log(Level.WARNING, "parentStructureParameter:{0}set max structure ({1}) <current selected structure ({2}) -> selected structure set to -1", new Object[]{toString(), maxStructure, this.getSelectedIndex()});
+        }
     }
     
     public int getMaxStructureIdx() {
@@ -47,10 +54,17 @@ public class ParentStructureParameter extends StructureParameter {
         if (getXP()!=null) {
             choices=getXP().getStructuresAsString();
         } else {
-            choices = new String[]{"error: no xp found in tree"};
+           return new String[]{"error: no xp found in tree"};
         }
+        if (maxStructure<=0) return new String[]{};
         String[] res = new String[maxStructure];
         System.arraycopy(choices, 0, res, 0, maxStructure);
         return res;
+    }
+    
+    @Override
+    public void setSelectedIndex(int structureIdx) {
+        if (maxStructure>=0 && structureIdx>maxStructure) throw new IllegalArgumentException("Parent Structure ("+structureIdx+") cannot be superior to max structure ("+maxStructure+")");
+        super.setSelectedIndex(structureIdx);
     }
 }

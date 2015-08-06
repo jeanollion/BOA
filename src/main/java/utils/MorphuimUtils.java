@@ -17,6 +17,7 @@
  */
 package utils;
 
+import dataStructure.configuration.Experiment;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.AnnotationAndReflectionHelper;
 import de.caluga.morphium.DereferencingListener;
@@ -33,27 +34,52 @@ import org.bson.types.ObjectId;
  */
 public class MorphuimUtils {
     public static void addDereferencingListeners(Morphium m) {
-        m.addDereferencingListener(new DereferencingListener<StructureObject, StructureObject, ObjectId>() {
-                AnnotationAndReflectionHelper r = new AnnotationAndReflectionHelper(true);
-                @Override
-                public void wouldDereference(StructureObject entityIncludingReference, String fieldInEntity, ObjectId id, Class typeReferenced, boolean lazy) throws MorphiumAccessVetoException {}
+        m.addDereferencingListener(new DereferencingListener<Object, StructureObject, ObjectId>() {
+            AnnotationAndReflectionHelper r = new AnnotationAndReflectionHelper(true);
 
-                @Override
-                public StructureObject didDereference(StructureObject entitiyIncludingReference, String fieldInEntity, StructureObject referencedObject, boolean lazy) {
-                    //if (referencedObject!=null) System.out.println("did dereference: "+entitiyIncludingReference.value+ " refrence: "+referencedObject.value+ " lazy:"+lazy+ " field:"+fieldInEntity);
-                    if (lazy) {
-                        try {
-                            Field f = r.getField(entitiyIncludingReference.getClass(), fieldInEntity);
-                            f.set(entitiyIncludingReference, referencedObject);
-                        } catch (IllegalArgumentException ex) {
-                            Logger.getLogger(MorphuimUtils.class.getName()).log(Level.SEVERE, null, ex);
-                        } catch (IllegalAccessException ex) {
-                            Logger.getLogger(MorphuimUtils.class.getName()).log(Level.SEVERE, null, ex);
-                        }
+            @Override
+            public void wouldDereference(StructureObject entityIncludingReference, String fieldInEntity, ObjectId id, Class typeReferenced, boolean lazy) throws MorphiumAccessVetoException {
+            }
+
+            @Override
+            public Object didDereference(StructureObject entitiyIncludingReference, String fieldInEntity, Object referencedObject, boolean lazy) {
+                //if (referencedObject!=null) System.out.println("did dereference: "+entitiyIncludingReference.value+ " refrence: "+referencedObject.value+ " lazy:"+lazy+ " field:"+fieldInEntity);
+                if (lazy) {
+                    try {
+                        Field f = r.getField(entitiyIncludingReference.getClass(), fieldInEntity);
+                        f.set(entitiyIncludingReference, referencedObject);
+                    } catch (IllegalArgumentException ex) {
+                        Logger.getLogger(MorphuimUtils.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (IllegalAccessException ex) {
+                        Logger.getLogger(MorphuimUtils.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                    return referencedObject;
                 }
-            }); 
+                return referencedObject;
+            }
+        });
+        /*m.addDereferencingListener(new DereferencingListener<Experiment, StructureObject, ObjectId>() {
+            AnnotationAndReflectionHelper r = new AnnotationAndReflectionHelper(true);
+
+            @Override
+            public void wouldDereference(StructureObject entityIncludingReference, String fieldInEntity, ObjectId id, Class typeReferenced, boolean lazy) throws MorphiumAccessVetoException {
+            }
+
+            @Override
+            public Experiment didDereference(StructureObject entitiyIncludingReference, String fieldInEntity, Experiment referencedObject, boolean lazy) {
+                //if (referencedObject!=null) System.out.println("did dereference: "+entitiyIncludingReference.value+ " refrence: "+referencedObject.value+ " lazy:"+lazy+ " field:"+fieldInEntity);
+                if (lazy) {
+                    try {
+                        Field f = r.getField(entitiyIncludingReference.getClass(), fieldInEntity);
+                        f.set(entitiyIncludingReference, referencedObject);
+                    } catch (IllegalArgumentException ex) {
+                        Logger.getLogger(MorphuimUtils.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (IllegalAccessException ex) {
+                        Logger.getLogger(MorphuimUtils.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+                return referencedObject;
+            }
+        });*/
     }
 
     public static void waitForWrites(Morphium m) {
