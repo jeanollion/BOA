@@ -270,5 +270,5 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     // morphium
     public Experiment(){}
-
+    public void callLazyLoading(){}
 }

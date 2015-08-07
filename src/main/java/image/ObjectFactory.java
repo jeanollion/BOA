@@ -77,8 +77,8 @@ public class ObjectFactory {
         return new TreeMap<Integer, BoundingBox>(bounds);
     }
     
-    public static Object3D[] getObjectsImage(ImageInteger labelImage, boolean ensureContinuousLabels) {
-        TreeMap<Integer, BoundingBox> bounds = getBounds(labelImage);
+    public static Object3D[] getObjectsImage(ImageInteger labelImage, TreeMap<Integer, BoundingBox> bounds,  boolean ensureContinuousLabels) {
+        if (bounds==null) bounds = getBounds(labelImage);
         Object3D[] res = new Object3D[bounds.size()];
         int i = 0;
         for (Entry<Integer, BoundingBox> e : bounds.entrySet()) {
@@ -89,17 +89,19 @@ public class ObjectFactory {
         return res;
     }
     
-    public static void relabelImage(ImageInteger labelImage) {
-        TreeMap<Integer, BoundingBox> bounds = getBounds(labelImage);
+    public static void relabelImage(ImageInteger labelImage, TreeMap<Integer, BoundingBox> bounds) {
+        if (bounds==null) bounds = getBounds(labelImage);
         int newLabel = 1;
         int currentLabel;
         for (Entry<Integer, BoundingBox> e : bounds.entrySet()) {
             currentLabel = e.getKey();
-            BoundingBox b= e.getValue();
-            for (int z = b.zMin; z<=b.zMax; ++z) {
-                for (int y = b.yMin; y<=b.yMax; ++y) {
-                    for (int x = b.xMin; x<=b.xMax; ++x) {
-                        if (labelImage.getPixelInt(x, y, z)==currentLabel) labelImage.setPixel(x, y, z, newLabel);
+            if (currentLabel!=newLabel) {
+                BoundingBox b= e.getValue();
+                for (int z = b.zMin; z<=b.zMax; ++z) {
+                    for (int y = b.yMin; y<=b.yMax; ++y) {
+                        for (int x = b.xMin; x<=b.xMax; ++x) {
+                            if (labelImage.getPixelInt(x, y, z)==currentLabel) labelImage.setPixel(x, y, z, newLabel);
+                        }
                     }
                 }
             }

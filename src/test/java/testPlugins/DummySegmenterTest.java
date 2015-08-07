@@ -15,34 +15,35 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugin;
+package testPlugins;
 
+import dataStructure.objects.Object3D;
 import image.ImageByte;
+import image.ImageFormat;
+import image.ImageInteger;
+import image.ImageLabeller;
+import image.ImageWriter;
 import images.ImageIOTest;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
-import processing.ImageTransformation;
+import testPlugins.dummyPlugins.DummySegmenter;
 
 /**
  *
  * @author nasique
  */
-public class TransformationTest {
+public class DummySegmenterTest {
     @Test
-    public void filpTest() {
-        ImageByte test = new ImageByte("", 5, 4, 3);
-        test.setPixel(0, 0, 0, 1);
-        test.setPixel(1, 1, 1, 1);
-        ImageByte test2=test.duplicate("");
-        ImageTransformation.filp(test2, ImageTransformation.Axis.X);
-        assertEquals("filp-X", 1, test2.getPixelInt(test.getSizeX()-1, 0, 0));
-        ImageTransformation.filp(test2, ImageTransformation.Axis.X);
-        ImageIOTest.assertImageByte(test, test2);
+    public void testDummySegmenter() {
+        DummySegmenter s = new DummySegmenter(true, 2);
+        ImageByte in = new ImageByte("", 50, 50, 2);
+        ImageInteger res = s.runSegmenter(in, null);
+        Object3D[] obs = ImageLabeller.labelImage(res);
+        assertEquals("number of objects", 2, obs.length);
         
-        ImageTransformation.filp(test2, ImageTransformation.Axis.Y);
-        assertEquals("filp-Y", 1, test2.getPixelInt(0, test.getSizeY()-1, 0));
-        ImageTransformation.filp(test2, ImageTransformation.Axis.Y);
-        ImageTransformation.filp(test2, ImageTransformation.Axis.Z);
-        assertEquals("filp-Z", 1, test2.getPixelInt(0, 0, test.getSizeZ()-1));
+        // reconstruction de l'image
+        ImageInteger res2 = ImageInteger.mergeBinary(in, obs[0].getMask(), obs[1].getMask());
+        ImageIOTest.assertImageByte((ImageByte)res2, (ImageByte)res);
+        
     }
 }

@@ -77,10 +77,37 @@ public class ObjectFactoryTest {
     
     @Test
     public void testGetObjectsImages() {
-        Object3D[] obs = ObjectFactory.getObjectsImage(im, false);
+        Object3D[] obs = ObjectFactory.getObjectsImage(im, null, false);
         assertEquals("object number", 2, obs.length);
         ImageIOTest.assertImageByte((ImageByte)obs[0].getMask(), (ImageByte)o1.getMask());
         ImageIOTest.assertImageByte((ImageByte)obs[1].getMask(), (ImageByte)o3.getMask());
+    }
+    
+    @Test 
+    public void testConversionVoxelMask() {
+        Object3D[] obs = ObjectFactory.getObjectsVoxels(im, false);
+        ImageByte imtest = new ImageByte("", im);
+        int label=1;
+        for (Object3D o : obs) o.draw(imtest, label++);
+        ImageByte imtest2 = new ImageByte("", im);
+        label = 1;
+        for (Object3D o : obs) imtest2.appendBinaryMasks(label++, o.getMask());
+        ImageIOTest.assertImageByte(imtest, imtest2);
+    }
+    
+    @Test 
+    public void testConversionMaskVoxels() {
+        Object3D[] obs = ObjectFactory.getObjectsImage(im, null, false);
+        ImageByte imtest = new ImageByte("", im);
+        int label=1;
+        for (Object3D o : obs) {
+            o.getVoxels(); // get voxels to ensure draw with voxels over draw with mask
+            o.draw(imtest, label++);
+        }
+        ImageByte imtest2 = new ImageByte("", im);
+        label = 1;
+        for (Object3D o : obs) imtest2.appendBinaryMasks(label++, o.getMask());
+        ImageIOTest.assertImageByte(imtest, imtest2);
     }
     
     @Test
@@ -92,7 +119,7 @@ public class ObjectFactoryTest {
         imRelabel.setPixel(3, 1, 1, 2);
         
         ImageByte im2 = im.duplicate("");
-        ObjectFactory.relabelImage(im2);
+        ObjectFactory.relabelImage(im2, null);
         ImageIOTest.assertImageByte(imRelabel, im2);
     }
 }

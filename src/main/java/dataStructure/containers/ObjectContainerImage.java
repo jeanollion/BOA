@@ -51,7 +51,7 @@ public class ObjectContainerImage extends ObjectContainer {
     }
     
     public Object3D getObject() { 
-        ImageInteger mask = structureObject.getExperiment().getImageDAO().openMask((StructureObject)structureObject);
+        ImageInteger mask = getImage();
         return new Object3D(mask, label);
     }
     

@@ -46,6 +46,7 @@ public class PluginSequenceRunner {
     }
     
     public static ImageInteger segmentImage(Image input, StructureObjectProcessing structureObject, Segmenter segmenter) {
+        System.out.println("segmenting: "+structureObject+ " segmenter: "+(segmenter==null?"null":segmenter.getClass()));
         if (segmenter==null) return new BlankMask("", input);
         else return segmenter.runSegmenter(input, structureObject);
     }

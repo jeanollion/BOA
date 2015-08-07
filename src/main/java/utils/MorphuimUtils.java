@@ -43,7 +43,7 @@ public class MorphuimUtils {
 
             @Override
             public Object didDereference(StructureObject entitiyIncludingReference, String fieldInEntity, Object referencedObject, boolean lazy) {
-                //if (referencedObject!=null) System.out.println("did dereference: "+entitiyIncludingReference.value+ " refrence: "+referencedObject.value+ " lazy:"+lazy+ " field:"+fieldInEntity);
+                if (referencedObject!=null) System.out.println("did dereference: "+entitiyIncludingReference.getFieldName()+ " refrence: "+referencedObject.getClass().getSimpleName()+ " lazy:"+lazy+ " field:"+fieldInEntity);
                 if (lazy) {
                     try {
                         Field f = r.getField(entitiyIncludingReference.getClass(), fieldInEntity);

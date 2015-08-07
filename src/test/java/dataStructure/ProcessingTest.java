@@ -17,7 +17,8 @@
  */
 package dataStructure;
 
-import plugin.dummyPlugins.DummySegmenter;
+import configuration.parameters.NumberParameter;
+import testPlugins.dummyPlugins.DummySegmenter;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
@@ -47,6 +48,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import plugins.PluginFactory;
+import plugins.Segmenter;
 import plugins.plugins.trackers.TrackerObjectIdx;
 import plugins.plugins.transformations.SimpleTranslation;
 import utils.MorphuimUtils;
@@ -159,7 +161,7 @@ public class ProcessingTest {
         return mask;
     }
     
-    @Test
+    //@Test
     public void StructureObjectTestStore() {
         MorphiumConfig cfg = new MorphiumConfig();
         cfg.setDatabase("testdb");
@@ -187,7 +189,7 @@ public class ProcessingTest {
         r = dao.getObject(r.getId());
         assertTrue("r2 retrieved", r!=null);
         assertEquals("r unique instanciation", r, r2.getPrevious());
-        assertEquals("xp unique instanciation", xp, r2.getExperiment());
+        assertEquals("xp unique instanciation", r.getExperiment(), r2.getExperiment());
         m=new Morphium(cfg);
         MorphuimUtils.addDereferencingListeners(m);
         dao = new ObjectDAO(m);
@@ -197,7 +199,7 @@ public class ProcessingTest {
         assertEquals("r previous ", r.getId(), r2.getPrevious().getId());
     }
     
-    //@Test
+    @Test
     public void StructureObjectTest() {
         try {
             // set-up experiment structure
@@ -211,10 +213,12 @@ public class ProcessingTest {
             bacteries.setParentStructure(0);
             
             // set-up processing chain
-            PluginFactory.findPlugins("plugin.dummyPlugins");
+            PluginFactory.findPlugins("testPlugins.dummyPlugins");
+            
             microChannel.getProcessingChain().setSegmenter(new DummySegmenter(true, 2));
             bacteries.getProcessingChain().setSegmenter(new DummySegmenter(false, 3));
-            
+            assertTrue("segmenter set", microChannel.getProcessingChain().getSegmenter() instanceof DummySegmenter);
+            assertEquals("segmenter set (2)", 2, ((NumberParameter)microChannel.getProcessingChain().getSegmenter().getParameters()[0]).getValue().intValue());
             // set-up traking
             PluginFactory.findPlugins("plugins.plugins.trackers");
             microChannel.setTracker(new TrackerObjectIdx());
@@ -227,7 +231,7 @@ public class ProcessingTest {
             Processor.importFiles(new String[]{folder.getAbsolutePath()}, xp);
             File outputFolder = testFolder.newFolder("TestOutputImagesStructureObject");
             xp.setOutputImageDirectory(outputFolder.getAbsolutePath());
-            
+            xp.setOutputImageDirectory("/tmp");
             //save to morphium
             MorphiumConfig cfg = new MorphiumConfig();
             cfg.setDatabase("testdb");
@@ -246,12 +250,12 @@ public class ProcessingTest {
             dao.store(root); 
             Processor.trackRoot(xp, root, dao);
             
-            /*for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
+            for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
                 for (int t = 0; t<root.length; ++t) Processor.processStructure(s, root[t], dao); // process
                 for (StructureObject o : StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s))) Processor.track(xp, xp.getStructure(s).getTracker(), o, s, dao); // structure
             }
             MorphuimUtils.waitForWrites(m);
-            */
+            
             System.out.println("root 0 id: "+root[0].getId());
             StructureObject rootFetch = dao.getObject(root[0].getId());
             assertEquals("root fetch @t=0", root[0].getId(), rootFetch.getId());

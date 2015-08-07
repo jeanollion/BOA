@@ -10,12 +10,15 @@ import image.BoundingBox;
 import image.ImageByte;
 import image.ImageInteger;
 import java.util.ArrayList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 /**
  * 
  * @author jollion
  * 
  */
 public class Object3D {
+    private final static Logger logger = LoggerFactory.getLogger(Object3D.class);
     static final int MAX_VOX = 5000; //(10 vox ~ 1kb)
     protected float scaleXY, scaleZ;
     protected ImageInteger mask; //lazy -> use getter
@@ -56,7 +59,7 @@ public class Object3D {
     
     protected void createMask() {
         mask = new ImageByte("", getBounds().getImageProperties("", scaleXY, scaleZ));
-        for (Voxel3D v : voxels) mask.setPixel(v.x, v.y, v.z, 1);
+        for (Voxel3D v : voxels) mask.setPixelWithOffset(v.x, v.y, v.z, 1);
     }
 
     protected void createVoxels() {
@@ -64,7 +67,7 @@ public class Object3D {
         for (int z = 0; z < mask.getSizeZ(); ++z) {
             for (int y = 0; y < mask.getSizeY(); ++y) {
                 for (int x = 0; x < mask.getSizeX(); ++x) {
-                    if (mask.contains(x, y, z)) {
+                    if (mask.insideMask(x, y, z)) {
                         voxels.add(new Voxel3D(x+mask.getOffsetX(), y+mask.getOffsetY(), z+mask.getOffsetZ()));
                     }
                 }
@@ -93,13 +96,14 @@ public class Object3D {
     protected void createBoundsFromVoxels() {
         bounds = new BoundingBox();
         for (Voxel3D v : voxels) bounds.expand(v);
+        logger.debug("create bounds from voxels: {}", bounds);
     }
 
     public BoundingBox getBounds() {
-        /*if (bounds==null) {
+        if (bounds==null) {
             if (mask!=null) bounds=mask.getBoundingBox();
             else if (voxels!=null) createBoundsFromVoxels(); // pas d'offset
-        }*/
+        }
         return bounds;
     }
     
@@ -124,7 +128,18 @@ public class Object3D {
     }
     
     public void draw(ImageInteger mask, int label) {
-        for (Voxel3D v : getVoxels()) mask.setPixel(v.x, v.y, v.z, label);
+        if (voxels !=null) for (Voxel3D v : getVoxels()) mask.setPixel(v.x, v.y, v.z, label);
+        else {
+            for (int z = 0; z < mask.getSizeZ(); ++z) {
+                for (int y = 0; y < mask.getSizeY(); ++y) {
+                    for (int x = 0; x < mask.getSizeX(); ++x) {
+                        if (mask.insideMask(x, y, z)) {
+                            mask.setPixel(x, y, z, label);
+                        }
+                    }
+                }
+            }
+        }
     }
     
 }

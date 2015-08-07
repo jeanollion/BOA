@@ -81,13 +81,15 @@ public class Processor {
     
     public static void processStructure(int structureIdx, StructureObject root, ObjectDAO dao) {
         if (!root.isRoot()) throw new IllegalArgumentException("this method only applies to root objects");
-        System.out.println("Segmenting structure: "+structureIdx+ " timePoint: "+root.getTimePoint());
+        
         //Logger.getLogger(Processor.class.getName()).log(Level.INFO, "Segmenting structure: "+structureIdx+ " timePoint: "+root.getTimePoint());
         // get all parent objects of the structure
         ArrayList<StructureObject> allParents = StructureObjectUtils.getAllParentObjects(root, root.getExperiment().getPathToRoot(structureIdx));
+        System.out.println("Segmenting structure: "+structureIdx+ " timePoint: "+root.getTimePoint()+ " number of parents: "+allParents.size());
         for (StructureObject parent : allParents) {
             parent.segmentChildren(structureIdx);
             if (dao!=null) dao.store(parent.getChildObjects(structureIdx));
+            System.out.println("segmenting structure:"+structureIdx+ " from parent: " + parent+ " number of objects: "+ parent.getChildObjects(structureIdx).length);
         }
     }
     

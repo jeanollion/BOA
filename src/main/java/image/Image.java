@@ -54,6 +54,7 @@ public abstract class Image implements ImageProperties {
     public abstract float getPixel(int x, int y, int z);
     public abstract float getPixel(int xz, int z);
     public abstract void setPixel(int x, int y, int z, Number value);
+    public abstract void setPixelWithOffset(int x, int y, int z, Number value);
     public abstract void setPixel(int xy, int z, Number value);
     public abstract Object[] getPixelArray();
     public abstract Image duplicate(String name);

@@ -42,7 +42,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import plugin.dummyPlugins.DummySegmenter;
+import testPlugins.dummyPlugins.DummySegmenter;
 import plugins.PluginFactory;
 import plugins.plugins.trackers.TrackerObjectIdx;
 

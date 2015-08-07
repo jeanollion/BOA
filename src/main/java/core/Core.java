@@ -17,7 +17,11 @@
  */
 package core;
 
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 
 /**
@@ -27,10 +31,15 @@ import java.util.logging.Logger;
 public class Core {
     private static final Core INSTANCE = new Core();
     private static final Logger log = Logger.getLogger(Core.class.getName());
-    
+    private static Handler logHandler;
     public static Core getInstance() {return INSTANCE;}
     public static Logger getLogger(){return log;}
     private Core(){
         System.out.println("Init Core...");
+        logHandler = new ConsoleHandler();
+        logHandler.setFormatter(new SimpleFormatter());
+        logHandler.setLevel(Level.ALL);
+        log.addHandler(logHandler);
+        log.log(Level.INFO, "Init Core...");
     }
 }
