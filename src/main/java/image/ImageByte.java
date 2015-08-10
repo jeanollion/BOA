@@ -35,7 +35,7 @@ public class ImageByte extends ImageInteger {
         else {
             ImageByte res = new ImageByte(name, sizeX, pixels[idxZ]);
             res.setCalibration(this);
-            res.setOffset(offsetX, offsetY, offsetZ+idxZ);
+            res.addOffset(offsetX, offsetY, offsetZ+idxZ);
             return res;
         }
     }

@@ -17,11 +17,10 @@
  */
 package core;
 
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
+import java.util.Collections;
+import loci.common.DebugTools;
+import org.apache.log4j.Level;
+
 
 
 /**
@@ -29,17 +28,27 @@ import java.util.logging.SimpleFormatter;
  * @author jollion
  */
 public class Core {
+    
     private static final Core INSTANCE = new Core();
-    private static final Logger log = Logger.getLogger(Core.class.getName());
-    private static Handler logHandler;
     public static Core getInstance() {return INSTANCE;}
-    public static Logger getLogger(){return log;}
     private Core(){
         System.out.println("Init Core...");
-        logHandler = new ConsoleHandler();
-        logHandler.setFormatter(new SimpleFormatter());
-        logHandler.setLevel(Level.ALL);
-        log.addHandler(logHandler);
-        log.log(Level.INFO, "Init Core...");
+        /*LogManager.getLogger("org.mongodb.driver.connection").setLevel(org.apache.log4j.Level.OFF);
+        LogManager.getLogger("org.mongodb.driver.management").setLevel(org.apache.log4j.Level.OFF);
+        LogManager.getLogger("org.mongodb.driver.cluster").setLevel(org.apache.log4j.Level.OFF);
+        LogManager.getLogger("org.mongodb.driver.protocol.insert").setLevel(org.apache.log4j.Level.OFF);
+        LogManager.getLogger("org.mongodb.driver.protocol.query").setLevel(org.apache.log4j.Level.OFF);
+        LogManager.getLogger("org.mongodb.driver.protocol.update").setLevel(org.apache.log4j.Level.OFF);
+        LogManager.getLogger("loci.formats").setLevel(org.apache.log4j.Level.OFF);
+        LogManager.getLogger("loci.common").setLevel(org.apache.log4j.Level.OFF);
+        LogManager.getLogger("loci.common.Location").setLevel(Level.OFF);
+        LogManager.getLogger("loci.formats.in.MinimalTiffReader").setLevel(Level.OFF);
+        LogManager.getLogger("loci.formats.FormatHandler").setLevel(Level.OFF);
+        LogManager.getLogger("loci.formats.ImageReader").setLevel(Level.OFF);
+        LogManager.getLogger("loci.formats.in.TiffReader").setLevel(Level.OFF);
+        LogManager.getLogger("loci.formats.in.BaseTiffReader").setLevel(Level.OFF);*/
+        java.util.logging.Logger mongoLogger = java.util.logging.Logger.getLogger("com.mongodb" );
+        mongoLogger.setLevel(java.util.logging.Level.SEVERE);
+        //DebugTools.enableLogging("ERROR");
     }
 }

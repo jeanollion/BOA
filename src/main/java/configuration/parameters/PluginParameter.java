@@ -41,6 +41,7 @@ import plugins.PluginFactory;
  * @param <T> type of plugin
  */
 public class PluginParameter<T extends Plugin> extends SimpleContainerParameter implements Deactivatable, ChoosableParameter {
+    
     @Transient private static HashMap<Class<? extends Plugin>, ArrayList<String>> pluginNames=new HashMap<Class<? extends Plugin>, ArrayList<String>>();
     protected ArrayList<Parameter> pluginParameters;
     protected String pluginName=NO_SELECTION;
@@ -101,7 +102,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         } else if (!pluginSet || !pluginName.equals(this.pluginName)) {
             T instance = PluginFactory.getPlugin(pluginType, pluginName);
             if (instance==null) {
-                Core.getLogger().log(Level.WARNING, "Couldn't find plugin: {0}", pluginName);
+                Parameter.logger.error("Couldn't find plugin: {}", pluginName);
                 this.pluginName=NO_SELECTION;
                 this.pluginParameters=null;
                 return;
@@ -113,12 +114,16 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     public T getPlugin() {
         if (!isOnePluginSet()) return null;
         T instance = PluginFactory.getPlugin(pluginType, pluginName);
+        if (Parameter.logger.isTraceEnabled()) Parameter.logger.trace("instanciating plugin: type {}, name {} instance==null? {} current parameters {}", pluginType, pluginName, instance==null, pluginParameters.size());
         if (instance==null) return null;
         Parameter[] params = instance.getParameters();
         if (params.length==this.pluginParameters.size()) {
-            for (int i = 0; i<params.length; i++) params[i].setContentFrom(pluginParameters.get(i));
+            for (int i = 0; i<params.length; i++) {
+                params[i].setContentFrom(pluginParameters.get(i));
+                if (Parameter.logger.isTraceEnabled()) Parameter.logger.trace("set content from: reference: {} target: {}", pluginParameters.get(i), params[i]);
+            }
         } else {
-            Core.getLogger().log(Level.WARNING, "Couldn't parametrize plugin: {0}", pluginName);
+            Parameter.logger.error("Couldn't parametrize plugin: {}", pluginName);
         }
         
         return instance;

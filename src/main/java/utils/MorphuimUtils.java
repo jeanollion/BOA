@@ -24,15 +24,16 @@ import de.caluga.morphium.DereferencingListener;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumAccessVetoException;
 import java.lang.reflect.Field;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.bson.types.ObjectId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author jollion
  */
 public class MorphuimUtils {
+    public final static Logger logger = LoggerFactory.getLogger(MorphuimUtils.class);
     public static void addDereferencingListeners(Morphium m) {
         m.addDereferencingListener(new DereferencingListener<Object, StructureObject, ObjectId>() {
             AnnotationAndReflectionHelper r = new AnnotationAndReflectionHelper(true);
@@ -43,15 +44,15 @@ public class MorphuimUtils {
 
             @Override
             public Object didDereference(StructureObject entitiyIncludingReference, String fieldInEntity, Object referencedObject, boolean lazy) {
-                if (referencedObject!=null) System.out.println("did dereference: "+entitiyIncludingReference.getFieldName()+ " refrence: "+referencedObject.getClass().getSimpleName()+ " lazy:"+lazy+ " field:"+fieldInEntity);
+                if (referencedObject!=null && logger.isTraceEnabled()) logger.trace("did dereference: {} refrence: {} lazy: {} field: {}", entitiyIncludingReference.getFieldName(), referencedObject.getClass().getSimpleName(), lazy, fieldInEntity);
                 if (lazy) {
                     try {
                         Field f = r.getField(entitiyIncludingReference.getClass(), fieldInEntity);
                         f.set(entitiyIncludingReference, referencedObject);
                     } catch (IllegalArgumentException ex) {
-                        Logger.getLogger(MorphuimUtils.class.getName()).log(Level.SEVERE, null, ex);
+                        logger.error("referencing error", ex);
                     } catch (IllegalAccessException ex) {
-                        Logger.getLogger(MorphuimUtils.class.getName()).log(Level.SEVERE, null, ex);
+                        logger.error("referencing error", ex);
                     }
                 }
                 return referencedObject;

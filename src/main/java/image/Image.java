@@ -71,33 +71,43 @@ public abstract class Image implements ImageProperties {
         x-=offsetX; y-=offsetY; z-=offsetZ;
         return (x >= 0 && x < sizeX && y >= 0 && y-offsetY < sizeY && z >= 0 && z < sizeZ);
     }
-
-    public void setOffset(ImageProperties properties) {
-        this.offsetX=properties.getOffsetX();
-        this.offsetY=properties.getOffsetY();
-        this.offsetZ=properties.getOffsetZ();
+    
+    public Image resetOffset() {
+        offsetX=offsetY=offsetZ=0;
+        return this;
     }
     
-    public void setOffset(int offsetX, int offsetY, int offsetZ) {
-        this.offsetX=offsetX;
-        this.offsetY=offsetY;
-        this.offsetZ=offsetZ;
+    public Image addOffset(ImageProperties properties) {
+        this.offsetX+=properties.getOffsetX();
+        this.offsetY+=properties.getOffsetY();
+        this.offsetZ+=properties.getOffsetZ();
+        return this;
     }
     
-    public void setOffset(BoundingBox bounds) {
+    public Image addOffset(int offsetX, int offsetY, int offsetZ) {
+        this.offsetX+=offsetX;
+        this.offsetY+=offsetY;
+        this.offsetZ+=offsetZ;
+        return this;
+    }
+    
+    public Image addOffset(BoundingBox bounds) {
         this.offsetX=bounds.xMin;
         this.offsetY=bounds.yMin;
         this.offsetZ=bounds.zMin;
+        return this;
     }
 
-    public void setCalibration(ImageProperties properties) {
+    public Image setCalibration(ImageProperties properties) {
         this.scaleXY=properties.getScaleXY();
         this.scaleZ=properties.getScaleZ();
+        return this;
     }
     
-    public void setCalibration(float scaleXY, float scaleZ) {
+    public Image setCalibration(float scaleXY, float scaleZ) {
         this.scaleXY=scaleXY;
         this.scaleZ=scaleZ;
+        return this;
     }
     
     public BoundingBox getBoundingBox() {
@@ -133,7 +143,7 @@ public abstract class Image implements ImageProperties {
         //bounds.trimToImage(this);
         Image res = newImage(name, bounds.getImageProperties("", scaleXY, scaleZ));
         res.setCalibration(this);
-        res.setOffset(bounds);
+        res.resetOffset().addOffset(bounds);
         int x_min = bounds.getxMin();
         int y_min = bounds.getyMin();
         int z_min = bounds.getzMin();

@@ -27,8 +27,8 @@ import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import plugins.Registration;
 import plugins.Tracker;
 import plugins.TransformationTimeIndependent;
@@ -38,6 +38,8 @@ import plugins.TransformationTimeIndependent;
  * @author jollion
  */
 public class Processor {
+    public static final Logger logger = LoggerFactory.getLogger(Processor.class);
+    
     public static void importFiles(String[] selectedFiles, Experiment xp) {
         ArrayList<MultipleImageContainerSingleFile> images = ImageFieldFactory.importImages(selectedFiles, xp);
         for (MultipleImageContainerSingleFile c : images) {
@@ -46,7 +48,7 @@ public class Processor {
                 xp.getMicroscopyFields().insert(f);
                 f.setImages(c);
             } else {
-                Logger.getLogger(Processor.class.getName()).log(Level.WARNING, "Image: {0} already present in fields was no added", c.getName());
+                logger.warn("Image: {} already present in fields was no added", c.getName());
             }
         }
     }
@@ -85,20 +87,22 @@ public class Processor {
         //Logger.getLogger(Processor.class.getName()).log(Level.INFO, "Segmenting structure: "+structureIdx+ " timePoint: "+root.getTimePoint());
         // get all parent objects of the structure
         ArrayList<StructureObject> allParents = StructureObjectUtils.getAllParentObjects(root, root.getExperiment().getPathToRoot(structureIdx));
-        System.out.println("Segmenting structure: "+structureIdx+ " timePoint: "+root.getTimePoint()+ " number of parents: "+allParents.size());
+        if (logger.isDebugEnabled()) logger.debug("Segmenting structure: {} timePoint: {} number of parents: {}", structureIdx, root.getTimePoint(), allParents.size());
         for (StructureObject parent : allParents) {
             parent.segmentChildren(structureIdx);
             if (dao!=null) dao.store(parent.getChildObjects(structureIdx));
-            System.out.println("segmenting structure:"+structureIdx+ " from parent: " + parent+ " number of objects: "+ parent.getChildObjects(structureIdx).length);
+            if (logger.isDebugEnabled()) logger.debug("Segmenting structure: {} from parent: {} number of objects: {}", structureIdx, parent, parent.getChildObjects(structureIdx).length);
         }
     }
     
     public static void trackRoot(Experiment xp, StructureObject[] rootsT, ObjectDAO dao) {
+        logger.debug("tracking root objects. dao==null? {}", dao==null);
         for (int i = 1; i<rootsT.length; ++i) rootsT[i].setPreviousInTrack(rootsT[i-1], false);
         if (dao!=null) dao.updateTrackAttributes(rootsT);
     }
     
     public static void track(Experiment xp, Tracker tracker, StructureObject parentTrack, int structureIdx, ObjectDAO dao) {
+        if (logger.isDebugEnabled()) logger.debug("tracking objects from structure: {} parentTrack: {} / Tracker: {} / dao==null? {}", structureIdx, parentTrack, tracker==null?"NULL":tracker.getClass(), dao==null);
         if (tracker==null) return;
         // TODO gestion de la memoire vive -> si trop ouvert, fermer les images & masques des temps précédents.
         while(parentTrack.getNext()!=null) {

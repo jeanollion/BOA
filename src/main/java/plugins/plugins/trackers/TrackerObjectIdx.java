@@ -21,6 +21,7 @@ import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObjectPreProcessing;
 import dataStructure.objects.StructureObjectProcessing;
 import dataStructure.objects.Track;
+import plugins.Plugin;
 import plugins.Tracker;
 
 /**
@@ -29,9 +30,10 @@ import plugins.Tracker;
  */
 public class TrackerObjectIdx implements Tracker {
 
-    public void assignPrevious(StructureObjectPreProcessing[] parents, StructureObjectPreProcessing[] children) {
-        for (int i = 0; i<Math.min(parents.length, children.length); ++i) {
-            parents[i].setPreviousInTrack(children[i], true);
+    public void assignPrevious(StructureObjectPreProcessing[] previous, StructureObjectPreProcessing[] next) {
+        for (int i = 0; i<Math.min(previous.length, next.length); ++i) {
+            next[i].setPreviousInTrack(previous[i], false);
+            Plugin.logger.trace("assign previous {} to next {}", previous[i], next[i]);
         }
     }
 

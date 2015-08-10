@@ -29,6 +29,7 @@ import image.BoundingBox;
 
 @Embedded(polymorph=true)
 public abstract class ObjectContainer {
+    public static final int MAX_VOX = 5000; //(10 vox ~ 1kb)
     @Transient protected float scaleXY, scaleZ;
     BoundingBox bounds;
     public ObjectContainer(BoundingBox bounds, float scaleXY, float scaleZ) {

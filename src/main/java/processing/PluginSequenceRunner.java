@@ -23,6 +23,7 @@ import image.BlankMask;
 import image.Image;
 import image.ImageInteger;
 import java.util.ArrayList;
+import plugins.Plugin;
 import plugins.PostFilter;
 import plugins.PreFilter;
 import plugins.Segmenter;
@@ -39,14 +40,14 @@ public class PluginSequenceRunner {
             for (PreFilter p : preFilters) {
                 currentImage = p.runPreFilter(currentImage, structureObject);
                 currentImage.setCalibration(input);
-                if (currentImage.sameSize(input)) currentImage.setOffset(input);
+                if (currentImage.sameSize(input)) currentImage.resetOffset().addOffset(input);
             }
             return currentImage;
         }
     }
     
     public static ImageInteger segmentImage(Image input, StructureObjectProcessing structureObject, Segmenter segmenter) {
-        System.out.println("segmenting: "+structureObject+ " segmenter: "+(segmenter==null?"null":segmenter.getClass()));
+        Plugin.logger.debug("segmenting: {} segmenter class: {} segmenter {}", structureObject, (segmenter==null?"null":segmenter.getClass()), segmenter);
         if (segmenter==null) return new BlankMask("", input);
         else return segmenter.runSegmenter(input, structureObject);
     }
@@ -58,7 +59,7 @@ public class PluginSequenceRunner {
             for (PostFilter p : postFilters) {
                 currentImage = p.runPostFilter(currentImage, structureObject);
                 currentImage.setCalibration(input);
-                if (currentImage.sameSize(input)) currentImage.setOffset(input);
+                if (currentImage.sameSize(input)) currentImage.resetOffset().addOffset(input);
             }
             return currentImage;
         }

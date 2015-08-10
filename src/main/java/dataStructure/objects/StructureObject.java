@@ -129,6 +129,9 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     }
     public boolean isRoot() {return structureIdx==-1;}
     public StructureObject[] getChildObjects(int structureIdx) {return this.childrenSM.get(structureIdx);}
+    public void setChildObjects(StructureObject[] children, int structureIdx) {
+        this.childrenSM.set(children, structureIdx);
+    }
     // track-related methods
     /**
      * 
@@ -165,10 +168,15 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         return object;
     }
     
-    public ImageMask getMask() {return getObject().getMask();}
+    public ImageInteger getMask() {return getObject().getMask();}
     public BoundingBox getBounds() {return getObject().getBounds();}
-    public void createObjectContainer() {this.objectContainer=object.getObjectContainer(this);}
-
+    protected void createObjectContainer() {this.objectContainer=object.getObjectContainer(this);}
+    public void updateObjectContainer(){
+        // TODO: only if changes -> transient variable to record changes..
+        if (objectContainer==null) createObjectContainer();
+        logger.debug("updating object container: {} of object: {}", objectContainer.getClass(), this );
+        objectContainer.updateObject(object);
+    }
     public Image getRawImage(int structureIdx) {
         int channelIdx = xp.getChannelImageIdx(structureIdx);
         if (rawImagesC.get(channelIdx)==null) { // chercher l'image chez le parent avec les bounds
@@ -204,7 +212,8 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         else return parent.getFirstParentWithOpenedRawImage(structureIdx);
     }
     
-    protected BoundingBox getRelativeBoundingBox(StructureObject stop) {
+    public BoundingBox getRelativeBoundingBox(StructureObject stop) {
+        if (stop==null) stop=getRoot();
         StructureObject nextParent=this;
         BoundingBox res = object.bounds.duplicate();
         logger.debug("relative bounding box: from: {} to {}", this, stop);

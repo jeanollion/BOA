@@ -35,7 +35,7 @@ public class ImageFloat extends Image {
         else {
             ImageFloat res = new ImageFloat(name, sizeX, pixels[idxZ]);
             res.setCalibration(this);
-            res.setOffset(offsetX, offsetY, offsetZ+idxZ);
+            res.addOffset(offsetX, offsetY, offsetZ+idxZ);
             return res;
         }
     }

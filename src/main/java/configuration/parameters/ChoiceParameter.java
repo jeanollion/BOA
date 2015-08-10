@@ -77,10 +77,12 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
     }
 
     public void setContentFrom(Parameter other) {
+        if (other!=null) Parameter.logger.trace("Parameter {} set content from {}", this.getClass(), other.getClass());
         if (other instanceof ChoiceParameter) {
             ChoiceParameter otherC = (ChoiceParameter)other;
             this.listChoice=otherC.listChoice;
             this.allowNoSelection=otherC.allowNoSelection;
+            this.selectedItem=otherC.selectedItem;
             this.selectedIndex=otherC.selectedIndex;
             if (otherC.cond!=null) this.cond=(ConditionalParameter)otherC.cond.duplicate();
         } else throw new IllegalArgumentException("wrong parameter type");

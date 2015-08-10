@@ -41,9 +41,7 @@ public class ObjectContainerImage extends ObjectContainer {
 
     public ImageInteger getImage() {
         Image image = structureObject.getExperiment().getImageDAO().openMask((StructureObject)structureObject);
-        image.setOffset(bounds.getxMin(), bounds.getyMin(), bounds.getzMin());
-        image.setCalibration(scaleXY, scaleZ);
-        return (ImageInteger)image;
+        return (ImageInteger) image.resetOffset().addOffset(bounds.getxMin(), bounds.getyMin(), bounds.getzMin()).setCalibration(scaleXY, scaleZ);
     }
 
     public void updateObject(Object3D object) {

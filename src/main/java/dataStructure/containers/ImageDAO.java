@@ -22,13 +22,15 @@ import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
 import image.ImageInteger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author jollion
  */
 public interface ImageDAO {
-    
+    public final static Logger logger = LoggerFactory.getLogger(ImageDAO.class);
     public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName);
     public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName, BoundingBox bounds);
     public BlankMask getPreProcessedImageProperties(String microscopyFieldName);

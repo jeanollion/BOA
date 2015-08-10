@@ -64,7 +64,10 @@ public class ObjectDAO extends DAO<StructureObject>{
     
     public void store(StructureObject...objects) {
         if (objects==null) return;
-        for (StructureObject o : objects) morphium.store(o);
+        for (StructureObject o : objects) {
+            o.updateObjectContainer();
+            morphium.store(o);
+        }
     }
     // track-specific methods
     

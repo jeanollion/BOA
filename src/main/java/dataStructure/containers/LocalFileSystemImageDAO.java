@@ -47,11 +47,23 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName, directory);
         File f = new File(path);
         if (f.exists()) {
-            System.out.println("Opening pre-processed image:  channel: "+channelImageIdx+ " timePoint: "+timePoint+ " fieldName: "+microscopyFieldName);
-            //Logger.getLogger(LocalFileSystemImageDAO.class.getName()).log(Level.INFO, "Opening pre-processed image:  channel: "+channelImageIdx+ " timePoint: "+timePoint+ " fieldName: "+microscopyFieldName);
+            logger.debug("Opening pre-processed image:  channel: {} timePoint: {} fieldName: {}", channelImageIdx, timePoint, microscopyFieldName);
             return ImageReader.openImage(path);
         } else {
-            System.out.println("Try to open pre-processed image but file not found:  channel: "+channelImageIdx+ " timePoint: "+timePoint+ " fieldName: "+microscopyFieldName);
+            logger.error("pre-processed image: {} not found", path);
+            //System.out.println("Try to open pre-processed image but file not found:  channel: "+channelImageIdx+ " timePoint: "+timePoint+ " fieldName: "+microscopyFieldName);
+            return null;
+        }
+    }
+    
+    public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName, BoundingBox bounds) {
+        String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName, directory);
+        File f = new File(path);
+        if (f.exists()) {
+            logger.debug("Opening pre-processed image:  channel: {} timePoint: {} fieldName: {} bounds: {}", channelImageIdx, timePoint, microscopyFieldName, bounds);
+            return ImageReader.openImage(path, new ImageIOCoordinates(bounds));
+        } else {
+            logger.error("pre-processed image: {} not found", path);
             return null;
         }
     }
@@ -65,26 +77,18 @@ public class LocalFileSystemImageDAO implements ImageDAO {
             reader.closeReader();
             return new BlankMask("", STCXYZ[0][2], STCXYZ[0][3], STCXYZ[0][4], 0, 0, 0, 0, 0);
         } else {
-            //log
+            logger.error("getPreProcessedImageProperties: pre-processed image {} not found", path);
             return null;
         }
     }
 
-    public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName, BoundingBox bounds) {
-        String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName, directory);
-        File f = new File(path);
-        if (f.exists()) {
-            return ImageReader.openImage(path, new ImageIOCoordinates(bounds));
-        } else {
-            //log
-            return null;
-        }
-    }
+    
 
     public void writePreProcessedImage(Image image, int channelImageIdx, int timePoint, String microscopyFieldName) {
         String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName, directory);
         File f = new File(path);
         f.mkdirs();
+        logger.debug("writing preprocessed image to path: {}", path);
         //if (f.exists()) f.delete();
         ImageWriter.writeToFile(image, path, ImageFormat.TIF);
     }
@@ -93,9 +97,10 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         String path = getProcessedImageFile(object);
         File f = new File(path);
         if (f.exists()) {
+            logger.debug("opening mask of object: {}", object);
             return (ImageInteger)ImageReader.openImage(path);
         } else {
-            //log
+            logger.error("mask {} not found", path);
             return null;
         }
     }
@@ -104,6 +109,7 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         String path = getProcessedImageFile(object);
         File f = new File(path);
         f.mkdirs();
+        logger.debug("writing mask image to path: {}", path);
         //if (f.exists()) f.delete();
         ImageWriter.writeToFile(mask, path, ImageFormat.PNG);
     }

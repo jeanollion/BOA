@@ -35,7 +35,7 @@ public class ImageInt extends ImageInteger {
         else {
             ImageInt res = new ImageInt(name, sizeX, pixels[idxZ]);
             res.setCalibration(this);
-            res.setOffset(offsetX, offsetY, offsetZ+idxZ);
+            res.addOffset(offsetX, offsetY, offsetZ+idxZ);
             return res;
         }
     }

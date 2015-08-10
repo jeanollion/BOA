@@ -3,6 +3,7 @@ package dataStructure.objects;
 import dataStructure.containers.ImageDAO;
 import dataStructure.containers.ObjectContainerImage;
 import dataStructure.containers.ObjectContainer;
+import static dataStructure.containers.ObjectContainer.MAX_VOX;
 import dataStructure.containers.ObjectContainerBlankMask;
 import dataStructure.containers.ObjectContainerVoxels;
 import image.BlankMask;
@@ -19,7 +20,6 @@ import org.slf4j.LoggerFactory;
  */
 public class Object3D {
     private final static Logger logger = LoggerFactory.getLogger(Object3D.class);
-    static final int MAX_VOX = 5000; //(10 vox ~ 1kb)
     protected float scaleXY, scaleZ;
     protected ImageInteger mask; //lazy -> use getter
     BoundingBox bounds;

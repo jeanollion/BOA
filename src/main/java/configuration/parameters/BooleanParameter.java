@@ -33,9 +33,9 @@ public class BooleanParameter extends ChoiceParameter {
         super(name, new String[]{"false", "true"}, defaultValue?"true":"false", false);
     }
     
-    public BooleanParameter(String name, String[] listChoice, boolean defaultValue) {
-        super(name, listChoice, defaultValue?listChoice[0]:listChoice[1], false);
-        if (listChoice.length!=2) throw new IllegalArgumentException("List choice should be of length 2");
+    public BooleanParameter(String name, String choice1, String choice2, boolean defaultValue) {
+        super(name, new String[]{choice1, choice2}, defaultValue?choice1:choice2, false);
+        //if (listChoice.length!=2) throw new IllegalArgumentException("List choice should be of length 2");
     }
     
     public boolean getSelected() {

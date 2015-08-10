@@ -35,7 +35,7 @@ public class ImageShort extends ImageInteger {
         else {
             ImageShort res = new ImageShort(name, sizeX, pixels[idxZ]);
             res.setCalibration(this);
-            res.setOffset(offsetX, offsetY, offsetZ+idxZ);
+            res.addOffset(offsetX, offsetY, offsetZ+idxZ);
             return res;
         }
     }
