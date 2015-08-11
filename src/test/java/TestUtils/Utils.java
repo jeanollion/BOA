@@ -22,6 +22,9 @@ import ij.ImageJ;
 import ij.ImagePlus;
 import image.IJImageWrapper;
 import image.Image;
+import image.ImageByte;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  *
@@ -34,5 +37,12 @@ public class Utils {
         float[] minAndMax = image.getMinAndMax(null);
         ip.setDisplayRange(minAndMax[0], minAndMax[1]);
         ip.show();
+    }
+
+    public static void assertImageByte(ImageByte expected, ImageByte actual) {
+        assertEquals("image comparison: sizeZ", expected.getSizeZ(), actual.getSizeZ());
+        for (int z = 0; z < expected.getSizeZ(); z++) {
+            assertArrayEquals("image comparison " + expected.getName() + " plane: " + z, expected.getPixelArray()[z], actual.getPixelArray()[z]);
+        }
     }
 }

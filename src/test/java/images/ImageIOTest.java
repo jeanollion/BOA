@@ -17,6 +17,7 @@
  */
 package images;
 
+import TestUtils.Utils;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.process.ImageProcessor;
@@ -452,16 +453,10 @@ public class ImageIOTest {
         
         for (int t = 0; t<timePoint; t++) {
             for (int c = 0; c<channel;c++) {
-                assertImageByte(images[t][c], (ImageByte)reader.openImage(new ImageIOCoordinates(0, c, t)));
+                Utils.assertImageByte(images[t][c], (ImageByte)reader.openImage(new ImageIOCoordinates(0, c, t)));
             }
         }
     }
     
-    public static void assertImageByte(ImageByte expected, ImageByte actual) {
-        assertEquals("image comparison: sizeZ", expected.getSizeZ(), actual.getSizeZ());
-        for (int z = 0; z<expected.getSizeZ(); z++) {
-            assertArrayEquals("image comparison "+expected.getName()+ " plane: "+z, expected.getPixelArray()[z], actual.getPixelArray()[z]);
-        }
-    }
     
 }

@@ -17,6 +17,7 @@
  */
 package images;
 
+import TestUtils.Utils;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.Voxel3D;
 import image.BoundingBox;
@@ -79,8 +80,8 @@ public class ObjectFactoryTest {
     public void testGetObjectsImages() {
         Object3D[] obs = ObjectFactory.getObjectsImage(im, null, false);
         assertEquals("object number", 2, obs.length);
-        ImageIOTest.assertImageByte((ImageByte)obs[0].getMask(), (ImageByte)o1.getMask());
-        ImageIOTest.assertImageByte((ImageByte)obs[1].getMask(), (ImageByte)o3.getMask());
+        Utils.assertImageByte((ImageByte)obs[0].getMask(), (ImageByte)o1.getMask());
+        Utils.assertImageByte((ImageByte)obs[1].getMask(), (ImageByte)o3.getMask());
     }
     
     @Test 
@@ -92,7 +93,7 @@ public class ObjectFactoryTest {
         ImageByte imtest2 = new ImageByte("", im);
         label = 1;
         for (Object3D o : obs) imtest2.appendBinaryMasks(label++, o.getMask());
-        ImageIOTest.assertImageByte(imtest, imtest2);
+        Utils.assertImageByte(imtest, imtest2);
     }
     
     @Test 
@@ -107,7 +108,7 @@ public class ObjectFactoryTest {
         ImageByte imtest2 = new ImageByte("", im);
         label = 1;
         for (Object3D o : obs) imtest2.appendBinaryMasks(label++, o.getMask());
-        ImageIOTest.assertImageByte(imtest, imtest2);
+        Utils.assertImageByte(imtest, imtest2);
     }
     
     @Test
@@ -120,6 +121,6 @@ public class ObjectFactoryTest {
         
         ImageByte im2 = im.duplicate("");
         ObjectFactory.relabelImage(im2, null);
-        ImageIOTest.assertImageByte(imRelabel, im2);
+        Utils.assertImageByte(imRelabel, im2);
     }
 }

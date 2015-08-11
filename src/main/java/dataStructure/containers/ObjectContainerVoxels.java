@@ -18,6 +18,8 @@
 package dataStructure.containers;
 
 import dataStructure.objects.Object3D;
+import dataStructure.objects.Voxel;
+import dataStructure.objects.Voxel2D;
 import dataStructure.objects.Voxel3D;
 import de.caluga.morphium.annotations.Embedded;
 import java.util.ArrayList;
@@ -28,27 +30,61 @@ import java.util.ArrayList;
  */
 @Embedded(polymorph=true)
 public class ObjectContainerVoxels extends ObjectContainer {
-    ArrayList<Voxel3D> voxels;
+    int[] x, y, z;
     int label;
 
     public ObjectContainerVoxels(Object3D object) {
         super(object.getBounds(), object.getScaleXY(), object.getScaleZ());
-        voxels=object.getVoxels();
+        createCoordsArrays(object);
         label=object.getLabel();
     }
     
     public void updateObject(Object3D object) {
-        voxels = object.getVoxels();
+        createCoordsArrays(object);
         bounds=object.getBounds();
         label = object.getLabel();
     }
     
-    public Object3D getObject() {
-        return new Object3D(voxels, label, scaleXY, scaleZ, bounds);
+    private void createCoordsArrays(Object3D object) {
+        if (object.is3D()) {
+            ArrayList<Voxel3D> voxels = object.getVoxels();
+            x = new int[voxels.size()];
+            y = new int[voxels.size()];
+            z = new int[voxels.size()];
+            int idx = 0;
+            for (Voxel3D v : voxels) {
+                x[idx]=v.x;
+                y[idx]=v.y;
+                z[idx++]=v.z;
+            }
+        } else {
+            ArrayList<Voxel2D> voxels = object.getVoxels();
+            x = new int[voxels.size()];
+            y = new int[voxels.size()];
+            z = null;
+            int idx = 0;
+            for (Voxel2D v : voxels) {
+                x[idx]=v.x;
+                y[idx++]=v.y;
+            }
+        }
     }
     
-    public ArrayList<Voxel3D> getVoxels() {
-        return voxels;
+    private ArrayList<? extends Voxel> getVoxels() {
+        if (x==null || y==null) return new ArrayList(0);
+        if (z!=null) {
+            ArrayList<Voxel3D> voxels = new ArrayList<Voxel3D>(x.length);
+            for (int i  = 0; i<x.length; ++i) voxels.add(new Voxel3D(x[i], y[i], z[i]));
+            return voxels;
+        } else {
+            ArrayList<Voxel2D> voxels = new ArrayList<Voxel2D>(x.length);
+            for (int i  = 0; i<x.length; ++i) voxels.add(new Voxel2D(x[i], y[i]));
+            return voxels;
+        }
+    }
+    
+    public Object3D getObject() {
+        return new Object3D(getVoxels(), label, scaleXY, scaleZ, bounds);
     }
     
 }

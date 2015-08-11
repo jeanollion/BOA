@@ -17,6 +17,7 @@
  */
 package testPlugins;
 
+import TestUtils.Utils;
 import image.ImageByte;
 import images.ImageIOTest;
 import static org.junit.Assert.assertEquals;
@@ -37,7 +38,7 @@ public class TransformationTest {
         ImageTransformation.filp(test2, ImageTransformation.Axis.X);
         assertEquals("filp-X", 1, test2.getPixelInt(test.getSizeX()-1, 0, 0));
         ImageTransformation.filp(test2, ImageTransformation.Axis.X);
-        ImageIOTest.assertImageByte(test, test2);
+        Utils.assertImageByte(test, test2);
         
         ImageTransformation.filp(test2, ImageTransformation.Axis.Y);
         assertEquals("filp-Y", 1, test2.getPixelInt(0, test.getSizeY()-1, 0));

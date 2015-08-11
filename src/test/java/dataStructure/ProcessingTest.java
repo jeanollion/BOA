@@ -17,6 +17,7 @@
  */
 package dataStructure;
 
+import TestUtils.Utils;
 import static TestUtils.Utils.showImageIJ;
 import configuration.parameters.NumberParameter;
 import testPlugins.dummyPlugins.DummySegmenter;
@@ -101,7 +102,7 @@ public class ProcessingTest {
         Processor.importFiles(files, xp);
         assertEquals("number of fields detected", 6-1-1, xp.getMicroscopyFields().getChildCount()); // 6 - 1 (unique title) - 1 (channel number)
         MultipleImageContainer c = xp.getMicroscopyField(title).getImages();
-        ImageIOTest.assertImageByte(images[0][0], (ImageByte)c.getImage(0, 0));
+        Utils.assertImageByte(images[0][0], (ImageByte)c.getImage(0, 0));
     }
     
     //@Test
@@ -155,7 +156,7 @@ public class ProcessingTest {
         assertTrue("Image saved in DAO", image!=null);
         SimpleTranslation tInv = new SimpleTranslation(-1, -1, 0);
         Image imageInv = tInv.applyTransformation(0, 0, image);
-        ImageIOTest.assertImageByte(images[0][0], (ImageByte)imageInv);
+        Utils.assertImageByte(images[0][0], (ImageByte)imageInv);
     }
     
     private static ImageByte getMask(StructureObject root, int[] pathToRoot) {
