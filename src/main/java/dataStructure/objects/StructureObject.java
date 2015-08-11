@@ -250,11 +250,11 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
             for (int i = 0; i<objects.length; ++i) res[i]=new StructureObject(fieldName, timePoint, structureIdx, i, objects[i], this, xp);
         }
     }
-    @Override
+    /*@Override
     public String toString() {
         if (isRoot()) return "Root Object: fieldName: "+fieldName + " timePoint: "+timePoint;
         else return "Object: fieldName: "+fieldName+ " timePoint: "+timePoint+ " structureIdx: "+structureIdx+ " parentId: "+parent.id+ " idx: "+idx;
-    }
+    }*/
     // morphium-related methods
     /*@PreStore public void preStore() {
         createObjectContainer();

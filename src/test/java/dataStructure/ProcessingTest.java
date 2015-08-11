@@ -17,6 +17,7 @@
  */
 package dataStructure;
 
+import static TestUtils.Utils.showImageIJ;
 import configuration.parameters.NumberParameter;
 import testPlugins.dummyPlugins.DummySegmenter;
 import core.Processor;
@@ -39,14 +40,16 @@ import image.ImageFormat;
 import image.ImageWriter;
 import images.ImageIOTest;
 import java.io.File;
+import java.io.IOException;
 import java.net.UnknownHostException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import plugins.PluginFactory;
 import plugins.Segmenter;
 import plugins.plugins.trackers.TrackerObjectIdx;
@@ -58,6 +61,7 @@ import utils.MorphuimUtils;
  * @author jollion
  */
 public class ProcessingTest {
+    public final static Logger logger = LoggerFactory.getLogger(ProcessingTest.class);
     @Rule
     public TemporaryFolder testFolder = new TemporaryFolder();
     
@@ -137,7 +141,7 @@ public class ProcessingTest {
         try {
             cfg.addHost("localhost", 27017);
         } catch (UnknownHostException ex) {
-            Logger.getLogger(ProcessingTest.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error("create morphium", ex);
         }
         Morphium m=new Morphium(cfg);
         m.clearCollection(Experiment.class);
@@ -157,7 +161,7 @@ public class ProcessingTest {
     private static ImageByte getMask(StructureObject root, int[] pathToRoot) {
         ImageByte mask = new ImageByte("mask", root.getMask());
         int startLabel = 1;
-        for (StructureObject o : StructureObjectUtils.getAllObjects(root, pathToRoot)) mask.appendBinaryMasks(startLabel++, o.getMask());
+        for (StructureObject o : StructureObjectUtils.getAllObjects(root, pathToRoot)) mask.appendBinaryMasks(startLabel++, o.getMask().addOffset(o.getRelativeBoundingBox(null)));
         return mask;
     }
     
@@ -168,7 +172,7 @@ public class ProcessingTest {
         try {
             cfg.addHost("localhost", 27017);
         } catch (UnknownHostException ex) {
-            Logger.getLogger(ProcessingTest.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error("create morphium", ex);
         }
         Morphium m=new Morphium(cfg);
         m.clearCollection(StructureObject.class);
@@ -256,10 +260,12 @@ public class ProcessingTest {
             }
             MorphuimUtils.waitForWrites(m);
             
-            System.out.println("root 0 id: "+root[0].getId());
             StructureObject rootFetch = dao.getObject(root[0].getId());
             assertEquals("root fetch @t=0", root[0].getId(), rootFetch.getId());
             // retrieve
+            cfg = new MorphiumConfig();
+            cfg.setDatabase("testdb");
+            cfg.addHost("localhost", 27017);
             m=new Morphium(cfg);
             MorphuimUtils.addDereferencingListeners(m);
             dao = new ObjectDAO(m);
@@ -267,9 +273,15 @@ public class ProcessingTest {
             rootFetch = dao.getObject(root[0].getId());
             assertEquals("root fetch @t=0 (2)", root[0].getId(), rootFetch.getId());
             
-            for (int t = 0; t<root.length; ++t) root[t]=dao.getObject(root[t].getId());
+            for (int t = 0; t<root.length; ++t) {
+                root[t]=dao.getObject(root[t].getId());
+                for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
+                    for (StructureObject parent : StructureObjectUtils.getAllParentObjects(root[t], xp.getPathToRoot(s))) parent.setChildObjects(dao.getObjects(parent.getId(), s), s);
+                }
+            }
             
             for (int t = 1; t<root.length; ++t) {
+                logger.trace("root track: {}->{} / expected: {} / actual: {}", t-1, t, root[t], root[t-1].getNext());
                 assertEquals("root track:"+(t-1)+"->"+t, root[t], root[t-1].getNext());
                 assertEquals("root track:"+(t)+"->"+(t-1), root[t-1], root[t].getPrevious());
             }
@@ -282,7 +294,7 @@ public class ProcessingTest {
                     assertEquals("mc:"+i+" track:"+(t)+"->"+(t-1), microChannels[t-1][i], microChannels[t][i].getPrevious());
                 }
             }
-            for (int i = 0; i<microChannels.length; ++i) {
+            for (int i = 0; i<microChannels[0].length; ++i) {
                 StructureObject[][] bactos = new StructureObject[root.length][];
                 for (int t = 0; t<root.length; ++t) bactos[t] = microChannels[t][i].getChildObjects(1);
                 for (int t = 0; t<root.length; ++t) assertEquals("number of bacteries @t:"+t+" @mc:"+i, 3, bactos[t].length);
@@ -294,14 +306,18 @@ public class ProcessingTest {
                 }
             }
             // creation des images @t0: 
-            ImageByte maskMC = getMask(root[0], xp.getPathToRoot(0));
-            ImageWriter.writeToFile(maskMC, "/tmp", "mask MC t0", ImageFormat.PNG);
-            ImageByte maskBactos = getMask(root[0], xp.getPathToRoot(1));
-            ImageWriter.writeToFile(maskBactos, "/tmp", "mask Bactos t0", ImageFormat.PNG);
+            //ImageByte maskMC = getMask(root[0], xp.getPathToRoot(0));
+            //ImageByte maskBactos = getMask(root[0], xp.getPathToRoot(1));
+            //return new ImageByte[]{maskMC, maskBactos};
             
         } catch (UnknownHostException ex) {
-            Logger.getLogger(ProcessingTest.class.getName()).log(Level.SEVERE, null, ex);
-        }
+            logger.error("create morphium", ex);
+        } //return null;
     }
-    
+    /*public static void main(String[] args) throws IOException {
+        ProcessingTest t = new ProcessingTest();
+        t.testFolder.create();
+        Image[] images = t.StructureObjectTest();
+        for (Image i : images) showImageIJ(i);
+    }*/
 }
