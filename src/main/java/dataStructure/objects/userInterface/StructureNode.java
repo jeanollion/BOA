@@ -18,6 +18,7 @@
 package dataStructure.objects.userInterface;
 
 import dataStructure.objects.StructureObject;
+import static dataStructure.objects.userInterface.StructureObjectTreeGenerator.logger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -29,23 +30,32 @@ import utils.SmallArray;
  * @author nasique
  */
 public class StructureNode implements TreeNode {
-    ObjectNode parent;
+    TreeNode parent; // can be either TimePointNode or ObjectNode
     ObjectNode[] children;
-    StructureObjectTreeGenerator generator;
     int idx;
     
-    public StructureNode(StructureObjectTreeGenerator generator, int structureIdx, ObjectNode parent) {
+    public StructureNode(int structureIdx, ObjectNode parent) {
         this.parent=parent;
-        this.generator=generator;
         this.idx=structureIdx;
     }
     
-    public ObjectNode[] getChildrenNode() {
+    public StructureNode(int structureIdx, TimePointNode parent) {
+        this.parent=parent;
+        this.idx=structureIdx;
+    }
+    
+    public ObjectNode[] getChildren() {
         if (idx>=0) {
             if (children==null) {
-                StructureObject[] data = parent.data.getChildObjects(idx);
+                StructureObject parentObject = getParentObject();
+                StructureObject[] data = parentObject.getChildObjects(idx);
+                if (data==null) {
+                    data = getGenerator().objectDAO.getObjects(parentObject.getId(), idx);
+                    parentObject.setChildObjects(data, idx);
+                    if (logger.isDebugEnabled()) logger.debug("retrieving object from db: fieldName: {} timePoint: {} structure: {}, nb objects: {}", getTimePointNode().parent.fieldName, getTimePointNode().timePoint, idx, data==null?"null":data.length);
+                }
                 if (data!=null) {
-                    children = new ObjectNode[children.length];
+                    children = new ObjectNode[data.length];
                     for (int i = 0; i<children.length; ++i) children[i] = new ObjectNode(this, i, data[i]);
                 }
             }
@@ -53,36 +63,37 @@ public class StructureNode implements TreeNode {
         return children;
     }
     
-    public void setRootObject(StructureObject root) {
-        if (idx<0) throw new IllegalArgumentException("cannot set root object to a structure that is not root");
-        ObjectNode rootNode = new ObjectNode(this, 1, root);
-        this.children=new ObjectNode[]{rootNode};
+    public StructureObject getParentObject() {
+        return (parent instanceof TimePointNode) ? ((TimePointNode)parent).getData() : ((ObjectNode)parent).data;
+    }
+    
+    public TimePointNode getTimePointNode() {
+        return (parent instanceof TimePointNode) ? ((TimePointNode)parent) : ((ObjectNode)parent).parent.getTimePointNode();
     }
     
     public void createChildren() {
         children=null;
-        getChildrenNode();
+        getChildren();
     }
     
-    public StructureObject[] getChildren() {
-        return parent.data.getChildObjects(parent.getIndex(this));
+    public StructureObjectTreeGenerator getGenerator() {
+        return (parent instanceof TimePointNode) ? ((TimePointNode)parent).getGenerator() : ((ObjectNode)parent).getGenerator();
     }
     
     // TreeNode implementation
     @Override public String toString() {
-        if (idx==-1) return "Root Structure";
-        else return generator.xp.getStructure(idx).getName();
+        return getGenerator().xp.getStructure(idx).getName();
     }
     
     public ObjectNode getChildAt(int childIndex) {
-        return children[childIndex];
+        return getChildren()[childIndex];
     }
 
     public int getChildCount() {
-        return children.length;
+        return getChildren().length;
     }
 
-    public ObjectNode getParent() {
+    public TreeNode getParent() {
         return parent;
     }
 
@@ -100,7 +111,7 @@ public class StructureNode implements TreeNode {
     }
 
     public Enumeration children() {
-        if (getChildrenNode()==null) return Collections.emptyEnumeration();
-        return Collections.enumeration(Arrays.asList(children));
+        if (getChildren()==null) return Collections.emptyEnumeration();
+        return Collections.enumeration(Arrays.asList(getChildren()));
     }
 }

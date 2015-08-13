@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class Object3D<T extends Voxel> {
-    private final static Logger logger = LoggerFactory.getLogger(Object3D.class);
+    public final static Logger logger = LoggerFactory.getLogger(Object3D.class);
     protected float scaleXY, scaleZ;
     protected ImageInteger mask; //lazy -> use getter
     BoundingBox bounds;
@@ -135,14 +135,18 @@ public class Object3D<T extends Voxel> {
         } else return null;
     }
     
-    public void draw(ImageInteger mask, int label) {
-        if (voxels !=null) for (T v : getVoxels()) mask.setPixel(v.x, v.y, v.getZ(), label);
+    public void draw(ImageInteger image, int label) {
+        if (voxels !=null) {
+            logger.trace("drawing from VOXELS of object: {} with label: {} on image: {} ", this, label, image);
+            for (T v : getVoxels()) image.setPixel(v.x, v.y, v.getZ(), label);
+        }
         else {
+            logger.trace("drawing from IMAGE of object: {} with label: {} on image: {} ", this, label, mask);
             for (int z = 0; z < mask.getSizeZ(); ++z) {
                 for (int y = 0; y < mask.getSizeY(); ++y) {
                     for (int x = 0; x < mask.getSizeX(); ++x) {
                         if (mask.insideMask(x, y, z)) {
-                            mask.setPixel(x, y, z, label);
+                            image.setPixel(x+mask.getOffsetX(), y+mask.getOffsetZ(), z+mask.getOffsetZ(), label);
                         }
                     }
                 }

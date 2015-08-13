@@ -19,6 +19,7 @@ package dataStructure.objects.userInterface;
 
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.ObjectDAO;
+import de.caluga.morphium.Morphium;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -29,24 +30,30 @@ import javax.swing.SwingUtilities;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author nasique
  */
 public class StructureObjectTreeGenerator {
+    public final static Logger logger = LoggerFactory.getLogger(StructureObjectTreeGenerator.class);
     Experiment xp;
     ObjectDAO objectDAO;
-    String currentFieldName;
-    int currentTimePoint;
-    StructureNode currentRootStructure;
     
     protected StructureObjectTreeModel treeModel;
-    protected JTree tree;
+    JTree tree;
     protected JScrollPane scroll;
+    protected ExperimentNode experimentNode;
     
-    public StructureObjectTreeGenerator() {
-        tree=new JTree();
+    public StructureObjectTreeGenerator(Experiment xp, Morphium m) {
+        System.out.println("logger is debug mode?"+logger.isDebugEnabled());
+        this.objectDAO=new ObjectDAO(m);
+        this.xp=xp;
+        this.experimentNode=new ExperimentNode(this);
+        treeModel = new StructureObjectTreeModel(experimentNode);
+        tree=new JTree(treeModel);
         scroll = new JScrollPane(tree);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.CONTIGUOUS_TREE_SELECTION);
         DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
@@ -68,15 +75,6 @@ public class StructureObjectTreeGenerator {
                 }
             }
         });
-    }
-    
-    public void generateTree(String fieldName, int timePoint) {
-        this.currentFieldName=fieldName;
-        this.currentTimePoint=timePoint;
-        currentRootStructure = new StructureNode(this, -1, null);
-        currentRootStructure.setRootObject(objectDAO.getRoot(currentFieldName, currentTimePoint));
-        treeModel = new StructureObjectTreeModel(currentRootStructure.getChildAt(0));
-        tree.setModel(treeModel);
     }
     
 }

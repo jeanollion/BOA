@@ -17,14 +17,14 @@
  */
 package plugins;
 
+import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObjectProcessing;
 import image.Image;
-import image.ImageInteger;
 
 /**
  *
  * @author jollion
  */
 public interface Segmenter extends ImageProcessingPlugin {
-    public ImageInteger runSegmenter(Image input, StructureObjectProcessing structureObject);
+    public ObjectPopulation runSegmenter(Image input, StructureObjectProcessing structureObject);
 }

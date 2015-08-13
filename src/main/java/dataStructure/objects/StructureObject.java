@@ -238,16 +238,14 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     
     public void segmentChildren(int structureIdx) {
         if (getFilteredImage(structureIdx)==null) createPreFilterImage(structureIdx);
-        ImageInteger seg = segmentImage(getFilteredImage(structureIdx), this, xp.getStructure(structureIdx).getProcessingChain().getSegmenter());
-        if (seg instanceof BlankMask) childrenSM.set(new StructureObject[0], structureIdx);
+        ObjectPopulation seg = segmentImage(getFilteredImage(structureIdx), this, xp.getStructure(structureIdx).getProcessingChain().getSegmenter());
+        if (seg.getObjects().isEmpty()) childrenSM.set(new StructureObject[0], structureIdx);
         else {
             seg = postFilterImage(seg, this, xp.getStructure(structureIdx).getProcessingChain().getPostfilters());
-            TreeMap<Integer, BoundingBox> bounds = ObjectFactory.getBounds(seg);
-            ObjectFactory.relabelImage(seg, bounds);
-            Object3D[] objects = ObjectFactory.getObjectsImage(seg, bounds, true);
-            StructureObject[] res = new StructureObject[objects.length];
+            seg.relabel();
+            StructureObject[] res = new StructureObject[seg.getObjects().size()];
             childrenSM.set(res, structureIdx);
-            for (int i = 0; i<objects.length; ++i) res[i]=new StructureObject(fieldName, timePoint, structureIdx, i, objects[i], this, xp);
+            for (int i = 0; i<res.length; ++i) res[i]=new StructureObject(fieldName, timePoint, structureIdx, i, seg.getObjects().get(i), this, xp);
         }
     }
     /*@Override

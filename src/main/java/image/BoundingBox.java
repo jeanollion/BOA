@@ -128,6 +128,15 @@ public class BoundingBox {
         if (v instanceof Voxel3D) expandZ(v.getZ());
     }
     
+    public void expand(BoundingBox other) {
+        expandX(other.xMin);
+        expandX(other.xMax);
+        expandY(other.yMin);
+        expandY(other.yMax);
+        expandZ(other.zMin);
+        expandZ(other.zMax);
+    }
+    
     public void addToCounter() {
         count++;
     }

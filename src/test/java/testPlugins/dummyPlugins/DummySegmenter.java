@@ -20,11 +20,15 @@ package testPlugins.dummyPlugins;
 import configuration.parameters.BooleanParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
+import dataStructure.objects.Object3D;
+import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObjectProcessing;
 import image.BlankMask;
 import image.Image;
 import image.ImageInteger;
 import image.ImageMask;
+import java.util.ArrayList;
+import java.util.Arrays;
 import plugins.Segmenter;
 
 /**
@@ -41,7 +45,7 @@ public class DummySegmenter implements Segmenter {
         this.objectNb.setValue(objectNb);
     }
     
-    public ImageInteger runSegmenter(Image input, StructureObjectProcessing structureObject) {
+    public ObjectPopulation runSegmenter(Image input, StructureObjectProcessing structureObject) {
         ImageMask mask;
         if (structureObject==null) mask = new BlankMask("", input);
         else mask = structureObject.getMask();
@@ -57,7 +61,9 @@ public class DummySegmenter implements Segmenter {
             int w = (int)(mask.getSizeX()*0.8d);
             for (int i = 0; i<nb; ++i) masks[i] = new BlankMask("object"+i, w, (int)h, mask.getSizeZ(), (int)(0.1*mask.getSizeX()) ,(int)((2*i+1)*h), 0, mask.getScaleXY(), mask.getScaleZ());
         }
-        return ImageInteger.mergeBinary(mask, masks);
+        ArrayList<Object3D> objects = new ArrayList<Object3D>(nb); int idx=1;
+        for (BlankMask m :masks) objects.add(new Object3D(m, idx++));
+        return new ObjectPopulation(objects, input);
     }
 
     public boolean isTimeDependent() {

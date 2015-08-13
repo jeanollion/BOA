@@ -77,6 +77,10 @@ public class ObjectFactory {
         return new TreeMap<Integer, BoundingBox>(bounds);
     }
     
+    public static Object3D[] getObjectsImage(ImageInteger labelImage, boolean ensureContinuousLabels) {
+        return getObjectsImage(labelImage, null, ensureContinuousLabels);
+    }
+    
     public static Object3D[] getObjectsImage(ImageInteger labelImage, TreeMap<Integer, BoundingBox> bounds,  boolean ensureContinuousLabels) {
         if (bounds==null) bounds = getBounds(labelImage);
         Object3D[] res = new Object3D[bounds.size()];
@@ -87,6 +91,10 @@ public class ObjectFactory {
             ++i;
         }
         return res;
+    }
+    
+    public static void relabelImage(ImageInteger labelImage){
+        relabelImage(labelImage, null);
     }
     
     public static void relabelImage(ImageInteger labelImage, TreeMap<Integer, BoundingBox> bounds) {

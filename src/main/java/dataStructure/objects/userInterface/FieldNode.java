@@ -17,29 +17,32 @@
  */
 package dataStructure.objects.userInterface;
 
-import dataStructure.objects.StructureObject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import javax.swing.tree.TreeNode;
-import utils.SmallArray;
 
 /**
  *
  * @author nasique
  */
-public class ObjectNode implements TreeNode {
-    StructureObject data;
-    StructureNode parent;
-    StructureNode[] children;
-    int idx;
-    public ObjectNode(StructureNode parent, int idx, StructureObject data) {
-        this.data=data;
-        this.idx=idx;
-        this.parent = parent;
-        int[] childrenIndicies = getGenerator().xp.getChildStructures(parent.idx);
-        children = new StructureNode[childrenIndicies.length];
-        for (int i = 0; i<children.length; ++i) children[i]=new StructureNode(childrenIndicies[i], this);
+public class FieldNode implements TreeNode {
+    ExperimentNode parent;
+    TimePointNode[] children;
+    String fieldName;
+    
+    public FieldNode(ExperimentNode parent, String fieldName) {
+        this.parent=parent;
+        this.fieldName=fieldName;
+    }
+    
+    public TimePointNode[] getChildren() {
+        if (children==null) {
+            int timePointNb = getGenerator().xp.getTimePointNumber();
+            children = new TimePointNode[timePointNb];
+            for (int i = 0; i<timePointNb; ++i) children[i]=new TimePointNode(this, i);
+        }
+        return children;
     }
     
     public StructureObjectTreeGenerator getGenerator() {
@@ -48,24 +51,24 @@ public class ObjectNode implements TreeNode {
     
     // TreeNode implementation
     @Override public String toString() {
-        return "Object: "+idx;
+        return fieldName;
     }
     
-    public StructureNode getChildAt(int childIndex) {
-        return children[childIndex];
+    public TimePointNode getChildAt(int childIndex) {
+        return getChildren()[childIndex];
     }
 
     public int getChildCount() {
-        return children.length;
+        return getChildren().length;
     }
 
-    public TreeNode getParent() {
+    public ExperimentNode getParent() {
         return parent;
     }
 
     public int getIndex(TreeNode node) {
         if (node==null) return -1;
-        for (int i = 0; i<children.length; ++i) if (node.equals(children[i])) return i;
+        for (int i = 0; i<getChildren().length; ++i) if (node.equals(children[i])) return i;
         return -1;
     }
 
@@ -78,7 +81,7 @@ public class ObjectNode implements TreeNode {
     }
 
     public Enumeration children() {
-        return Collections.enumeration(Arrays.asList(children));
+        return Collections.enumeration(Arrays.asList(getChildren()));
     }
     
 }
