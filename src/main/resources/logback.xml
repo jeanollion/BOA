@@ -9,6 +9,7 @@
   </appender>
     <logger name="org.mongodb" level="error"/>
     <logger name="loci" level="error"/>
+    <logger name="de.caluga.morphium" level="error"/>
   <root level="debug">
     <appender-ref ref="STDOUT" />
   </root>

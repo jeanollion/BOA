@@ -32,7 +32,7 @@ import static processing.PluginSequenceRunner.segmentImage;
 import utils.SmallArray;
 
 @Cache
-//@Lifecycle -> bug a cause de la structure circulaire
+@Lifecycle //-> bug a cause de la structure circulaire
 @Entity(collectionName = "Objects")
 @Index(value={"field_name, time_point, structure_idx", "parent,structure_idx,idx", "new_track_branch, time_point"}, options={"", "", ""})
 public class StructureObject implements StructureObjectPostProcessing, Track {
@@ -248,15 +248,18 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
             for (int i = 0; i<res.length; ++i) res[i]=new StructureObject(fieldName, timePoint, structureIdx, i, seg.getObjects().get(i), this, xp);
         }
     }
-    /*@Override
+    @Override
     public String toString() {
         if (isRoot()) return "Root Object: fieldName: "+fieldName + " timePoint: "+timePoint;
         else return "Object: fieldName: "+fieldName+ " timePoint: "+timePoint+ " structureIdx: "+structureIdx+ " parentId: "+parent.id+ " idx: "+idx;
-    }*/
+    }
+    
     // morphium-related methods
     /*@PreStore public void preStore() {
-        createObjectContainer();
+        logger.debug("prestore run for object: {}", this);
+        //createObjectContainer();
     }*/
+    
     public void callLazyLoading(){} // for lazy-loading listener
     
     public StructureObject(){}

@@ -194,6 +194,13 @@ public class ProcessingTest {
         assertTrue("r2 retrieved", r!=null);
         assertEquals("r unique instanciation", r, r2.getPrevious());
         assertEquals("xp unique instanciation", r.getExperiment(), r2.getExperiment());
+        cfg = new MorphiumConfig();
+        cfg.setDatabase("testdb");
+        try {
+            cfg.addHost("localhost", 27017);
+        } catch (UnknownHostException ex) {
+            Utils.logger.error("create morphium", ex);
+        }
         m=new Morphium(cfg);
         MorphuimUtils.addDereferencingListeners(m);
         dao = new ObjectDAO(m);
