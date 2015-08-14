@@ -18,6 +18,7 @@ import image.ImageFormat;
 import image.ImageInteger;
 import image.ImageLabeller;
 import image.ImageMask;
+import image.ImageProperties;
 import image.ImageWriter;
 import image.ObjectFactory;
 import static image.ObjectFactory.getBounds;
@@ -167,7 +168,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         }
         return object;
     }
-    
+    public ImageProperties getMaskProperties() {return getObject().getImageProperties();}
     public ImageInteger getMask() {return getObject().getMask();}
     public BoundingBox getBounds() {return getObject().getBounds();}
     protected void createObjectContainer() {this.objectContainer=object.getObjectContainer(this);}
@@ -248,6 +249,18 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
             for (int i = 0; i<res.length; ++i) res[i]=new StructureObject(fieldName, timePoint, structureIdx, i, seg.getObjects().get(i), this, xp);
         }
     }
+    
+    public ObjectPopulation getObjectPopulation(int structureIdx) {
+        StructureObject[] child = this.childrenSM.get(structureIdx);
+        if (child==null || child.length==0) return new ObjectPopulation(new ArrayList<Object3D>(0), this.getMaskProperties());
+        else {
+            ArrayList<Object3D> objects = new ArrayList<Object3D>(child.length);
+            for (StructureObject s : child) objects.add(s.getObject());
+            return new ObjectPopulation(objects, this.getMaskProperties());
+        }
+        
+    }
+    
     @Override
     public String toString() {
         if (isRoot()) return "Root Object: fieldName: "+fieldName + " timePoint: "+timePoint;

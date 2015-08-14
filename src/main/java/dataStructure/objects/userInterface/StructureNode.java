@@ -17,11 +17,17 @@
  */
 package dataStructure.objects.userInterface;
 
+import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import static dataStructure.objects.userInterface.StructureObjectTreeGenerator.logger;
+import image.BlankMask;
+import java.awt.event.ActionEvent;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import javax.swing.AbstractAction;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.tree.TreeNode;
 import utils.SmallArray;
 
@@ -82,7 +88,7 @@ public class StructureNode implements TreeNode, UIContainer {
     
     // UIContainer implementation
     @Override public Object[] getDisplayComponent() {
-        return new Object[0];
+        return (new StructureNodeUI(this)).getDisplayComponent();
     }
     
     // TreeNode implementation
@@ -118,5 +124,41 @@ public class StructureNode implements TreeNode, UIContainer {
     public Enumeration children() {
         if (getChildren()==null) return Collections.emptyEnumeration();
         return Collections.enumeration(Arrays.asList(getChildren()));
+    }
+    class StructureNodeUI {
+        StructureNode structureNode;
+        JMenuItem[] actions;
+        JMenuItem[] subActions;
+        public StructureNodeUI(StructureNode sn) {
+            this.structureNode=sn;
+            this.actions = new JMenuItem[2];
+            actions[0] = new JMenuItem("Open Segmentation Mask");
+            actions[0].setAction(
+                new AbstractAction("Open Segmentation Mask") {
+                    @Override
+                    public void actionPerformed(ActionEvent ae) {
+                        logger.debug("opening object mask for structure: {}", idx);
+                        ObjectPopulation pop = structureNode.getParentObject().getObjectPopulation(idx);
+                        ImageDisplayerFactory.getImageDisplayer().showImage(pop.getLabelImage());
+                    }
+                }
+            );
+            JMenu subMenu = new JMenu("Open Raw Input Image");
+            actions[1] = subMenu;
+            String[] structureNames = structureNode.getParentObject().getExperiment().getStructuresAsString();
+            subActions=new JMenuItem[structureNames.length];
+            for (int i = 0; i < subActions.length; i++) {
+                subActions[i] = new JMenuItem(structureNames[i]);
+                subActions[i].setAction(
+                    new AbstractAction(structureNames[i]) {
+                        @Override
+                        public void actionPerformed(ActionEvent ae) {
+                            logger.debug("opening input image for structure: {}", ae.getActionCommand());
+                        }
+                    }
+                );
+            }
+        }
+        public Object[] getDisplayComponent() {return actions;}
     }
 }

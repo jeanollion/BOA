@@ -11,6 +11,7 @@ import image.BlankMask;
 import image.BoundingBox;
 import image.ImageByte;
 import image.ImageInteger;
+import image.ImageProperties;
 import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,6 +90,11 @@ public class Object3D<T extends Voxel> {
                 }
             }
         }
+    }
+    
+    public ImageProperties getImageProperties() {
+        if (mask!=null) return mask;
+        else return getBounds().getImageProperties("", scaleXY, scaleZ);
     }
     
     public ImageInteger getMask() {

@@ -42,9 +42,9 @@ public class ObjectPopulation {
         this.labelImage=labelImage;
     }
 
-    public ObjectPopulation(ArrayList<Object3D> objects) {
+    /*public ObjectPopulation(ArrayList<Object3D> objects) {
         this.objects = objects;
-    }
+    }*/
     
     public ObjectPopulation(ArrayList<Object3D> objects, ImageProperties properties) {
         this.objects = objects;
