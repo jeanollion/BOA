@@ -92,7 +92,6 @@ public class PreProcessingChain extends SimpleContainerParameter {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
                         for (int f : fieldUI.getSelectedItems()) {
-                            System.out.println("overrinding config for field:"+f);
                             xp.fields.getChildAt(f).setPreProcessingChains(ppc);
                         }
                     }
