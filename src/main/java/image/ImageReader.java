@@ -27,8 +27,6 @@ import ij.process.ImageProcessor;
 import static image.ImageFormat.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import loci.common.services.DependencyException;
 import loci.common.services.ServiceException;
 import loci.common.services.ServiceFactory;
@@ -39,7 +37,7 @@ import loci.formats.services.OMEXMLService;
 import loci.plugins.util.ImageProcessorReader;
 import loci.plugins.util.LociPrefs;
 import ome.units.quantity.Length;
-
+import static image.Image.logger;
 
 /**
  *
@@ -113,18 +111,18 @@ public class ImageReader {
                 meta = service.createOMEXMLMetadata();
                 reader.setMetadataStore(meta);
             } catch (ServiceException ex) {
-                Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, null, ex);
+                logger.error(ex.getMessage(), ex);
             }
         } catch (DependencyException ex) {
-            Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error(ex.getMessage(), ex);
         }
         
         try {
             reader.setId(getImagePath());
         } catch (FormatException ex) {
-            Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, "An error occurred while opering image: "+getImagePath()+" "+ex.getMessage(), ex);
+            logger.error("An error occurred while opering image: "+getImagePath(),  ex);
         } catch (IOException ex) {
-            Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, "An error occurred while opering image: "+getImagePath()+" "+ex.getMessage(), ex);
+            logger.error("An error occurred while opering image: "+getImagePath(),  ex);
         }
     }
     
@@ -134,7 +132,7 @@ public class ImageReader {
         try {
             reader.close();
         } catch (IOException ex) {
-            Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
+            logger.error("An error occurred while closing reader for image: "+getImagePath(),  ex);
         }
     }
     
@@ -192,7 +190,7 @@ public class ImageReader {
                         if (lz==null) {
                             lz=lxy;
                             if (res.getSizeZ()>1) {
-                                Logger.getLogger(ImageReader.class.getName()).log(Level.WARNING, "No calibration in Z dimension found for image: {0}", reader.getCurrentFile());
+                                logger.warn("No calibration in Z dimension found for image: {}, while image haz more than one Z plane", reader.getCurrentFile());
                             }
                         }
                         if (scaleXY==0) scaleXY=lxy.value().floatValue();
@@ -201,9 +199,9 @@ public class ImageReader {
                     if (scaleXY!=0 && scaleZ!=0) res.setCalibration(scaleXY, scaleZ);
                 }
             } catch (FormatException ex) {
-                Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, "An error occurred while opering image: " + reader.getCurrentFile() + " channel:" + coords.getChannel() + " t:" + coords.getTimePoint() + " s:" + coords.getSerie() + ex.getMessage(), ex);
+                logger.error("An error occurred while opering image: " + reader.getCurrentFile() + " channel:" + coords.getChannel() + " t:" + coords.getTimePoint() + " series :" + coords.getSerie(), ex);
             } catch (IOException ex) {
-                Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, "An error occurred while opering image: " + reader.getCurrentFile() + " channel:" + coords.getChannel() + " t:" + coords.getTimePoint() + " s:" + coords.getSerie() + ex.getMessage(), ex);
+                logger.error("An error occurred while opering image: " + reader.getCurrentFile() + " channel:" + coords.getChannel() + " t:" + coords.getTimePoint() + " series :" + coords.getSerie(), ex);
             }
         }
         return res;
@@ -280,7 +278,7 @@ public class ImageReader {
                 return im;
             }
         } catch (IOException ex) {
-            Logger.getLogger(ImageReader.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error("an error occured while opening tif image", ex);
         }
 
         return null;

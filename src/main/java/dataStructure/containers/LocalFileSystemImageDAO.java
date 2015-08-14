@@ -22,14 +22,13 @@ import dataStructure.objects.StructureObject;
 import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
+import static image.Image.logger;
 import image.ImageFormat;
 import image.ImageIOCoordinates;
 import image.ImageInteger;
 import image.ImageReader;
 import image.ImageWriter;
 import java.io.File;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import utils.Utils;
 
 /**

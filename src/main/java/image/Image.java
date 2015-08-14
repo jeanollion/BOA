@@ -1,8 +1,11 @@
 package image;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 public abstract class Image implements ImageProperties {
-
+    public final static Logger logger = LoggerFactory.getLogger(Image.class);
     protected String name;
     protected int sizeX;
     protected int sizeY;

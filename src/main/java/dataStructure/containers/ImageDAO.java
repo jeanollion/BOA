@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
  * @author jollion
  */
 public interface ImageDAO {
-    public final static Logger logger = LoggerFactory.getLogger(ImageDAO.class);
     public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName);
     public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName, BoundingBox bounds);
     public BlankMask getPreProcessedImageProperties(String microscopyFieldName);
