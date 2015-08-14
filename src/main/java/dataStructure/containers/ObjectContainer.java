@@ -18,6 +18,7 @@
 package dataStructure.containers;
 
 import dataStructure.objects.Object3D;
+import dataStructure.objects.StructureObject;
 import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
 import image.BoundingBox;
@@ -31,18 +32,19 @@ import image.BoundingBox;
 public abstract class ObjectContainer {
     public static final int MAX_VOX_3D = 5000; //(10 vox ~ 1kb)
     public static final int MAX_VOX_2D = 7500; //(10 vox ~ 1kb)
-    @Transient protected float scaleXY, scaleZ;
+    @Transient protected StructureObject structureObject;
     BoundingBox bounds;
-    public ObjectContainer(BoundingBox bounds, float scaleXY, float scaleZ) {
-        this.bounds=bounds;
-        this.scaleXY=scaleXY;
-        this.scaleZ=scaleZ;
+    
+    public ObjectContainer(StructureObject structureObject) {
+        this.structureObject=structureObject;
+        this.bounds=structureObject.getBounds();
     }
-    public void setScale(float scaleXY, float scaleZ) {
-        this.scaleXY=scaleXY;
-        this.scaleZ=scaleZ;
+    public void setStructureObject(StructureObject structureObject) {
+        this.structureObject=structureObject;
     }
+    protected float getScaleXY() {return structureObject.getMicroscopyField().getScaleXY();}
+    protected float getScaleZ() {return structureObject.getMicroscopyField().getScaleZ();}
     public abstract Object3D getObject();
-    public abstract void updateObject(Object3D object);
+    public abstract void updateObject();
     
 }

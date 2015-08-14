@@ -18,6 +18,7 @@
 package dataStructure.containers;
 
 import dataStructure.objects.Object3D;
+import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
 import dataStructure.objects.Voxel2D;
 import dataStructure.objects.Voxel3D;
@@ -31,18 +32,16 @@ import java.util.ArrayList;
 @Embedded(polymorph=true)
 public class ObjectContainerVoxels extends ObjectContainer {
     int[] x, y, z;
-    int label;
 
-    public ObjectContainerVoxels(Object3D object) {
-        super(object.getBounds(), object.getScaleXY(), object.getScaleZ());
-        createCoordsArrays(object);
-        label=object.getLabel();
+    public ObjectContainerVoxels(StructureObject structureObject) {
+        super(structureObject);
+        createCoordsArrays(structureObject.getObject());
     }
     
-    public void updateObject(Object3D object) {
-        createCoordsArrays(object);
-        bounds=object.getBounds();
-        label = object.getLabel();
+    @Override
+    public void updateObject() {
+        createCoordsArrays(structureObject.getObject());
+        bounds=structureObject.getObject().getBounds();
     }
     
     private void createCoordsArrays(Object3D object) {
@@ -84,7 +83,7 @@ public class ObjectContainerVoxels extends ObjectContainer {
     }
     
     public Object3D getObject() {
-        return new Object3D(getVoxels(), label, scaleXY, scaleZ, bounds);
+        return new Object3D(getVoxels(), structureObject.getIdx()+1, getScaleXY(), getScaleZ(), bounds);
     }
     
 }

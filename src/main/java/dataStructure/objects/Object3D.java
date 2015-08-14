@@ -22,9 +22,8 @@ import org.slf4j.LoggerFactory;
  */
 public class Object3D<T extends Voxel> {
     public final static Logger logger = LoggerFactory.getLogger(Object3D.class);
-    protected float scaleXY, scaleZ;
     protected ImageInteger mask; //lazy -> use getter
-    BoundingBox bounds;
+    protected BoundingBox bounds;
     protected int label;
     protected ArrayList<T> voxels; //lazy -> use getter // coordonnées des voxel -> par rapport au parent
     protected Class<T> type;
@@ -35,8 +34,6 @@ public class Object3D<T extends Voxel> {
     public Object3D(ImageInteger mask, int label) {
         this.mask=mask;
         this.bounds=mask.getBoundingBox();
-        this.scaleXY=mask.getScaleXY();
-        this.scaleZ=mask.getScaleZ();
         this.label=label;
     }
     
@@ -47,15 +44,11 @@ public class Object3D<T extends Voxel> {
     
     public Object3D(ArrayList<T> voxels, int label, float scaleXY, float scaleZ) {
         this.voxels=voxels;
-        this.scaleXY=scaleXY;
-        this.scaleZ=scaleZ;
         this.label=label;
     }
     
     public Object3D(ArrayList<T> voxels, int label, float scaleXY, float scaleZ, BoundingBox bounds) {
         this.voxels=voxels;
-        this.scaleXY=scaleXY;
-        this.scaleZ=scaleZ;
         this.label=label;
         this.bounds=bounds;
     }
@@ -65,7 +58,7 @@ public class Object3D<T extends Voxel> {
     }
     
     protected void createMask() {
-        mask = new ImageByte("", getBounds().getImageProperties("", scaleXY, scaleZ));
+        mask = new ImageByte("", getBounds().getImageProperties("", 1, 1));
         for (T v : voxels) mask.setPixelWithOffset(v.x, v.y, v.getZ(), 1);
     }
 
@@ -94,7 +87,7 @@ public class Object3D<T extends Voxel> {
     
     public ImageProperties getImageProperties() {
         if (mask!=null) return mask;
-        else return getBounds().getImageProperties("", scaleXY, scaleZ);
+        else return getBounds().getImageProperties("", 1, 1);
     }
     
     public ImageInteger getMask() {
@@ -105,14 +98,6 @@ public class Object3D<T extends Voxel> {
     public ArrayList<T> getVoxels() {
         if (voxels==null) createVoxels();
         return voxels;
-    }
-
-    public float getScaleXY() {
-        return scaleXY;
-    }
-
-    public float getScaleZ() {
-        return scaleZ;
     }
     
     protected void createBoundsFromVoxels() {
@@ -131,19 +116,19 @@ public class Object3D<T extends Voxel> {
     
     public ObjectContainer getObjectContainer(StructureObject structureObject) {
         if (mask!=null) {
-            if (mask instanceof BlankMask) return new ObjectContainerBlankMask(getBounds(), scaleXY, scaleZ);
+            if (mask instanceof BlankMask) return new ObjectContainerBlankMask(structureObject);
             else {
                 if (voxels!=null) {
-                    if (!voxelsSizeOverLimit()) return new ObjectContainerVoxels(this);
-                    else return new ObjectContainerImage(structureObject, this);
+                    if (!voxelsSizeOverLimit()) return new ObjectContainerVoxels(structureObject);
+                    else return new ObjectContainerImage(structureObject);
                 } else {
-                    if (!maskSizeOverLimit()) return new ObjectContainerVoxels(this);
-                    else return new ObjectContainerImage(structureObject, this);
+                    if (!maskSizeOverLimit()) return new ObjectContainerVoxels(structureObject);
+                    else return new ObjectContainerImage(structureObject);
                 }
             }
         } else if (voxels!=null) {
-            if (voxelsSizeOverLimit()) return new ObjectContainerImage(structureObject, this);
-            else return new ObjectContainerVoxels(this);
+            if (voxelsSizeOverLimit()) return new ObjectContainerImage(structureObject);
+            else return new ObjectContainerVoxels(structureObject);
         } else return null;
     }
     
@@ -153,12 +138,12 @@ public class Object3D<T extends Voxel> {
             for (T v : getVoxels()) image.setPixel(v.x, v.y, v.getZ(), label);
         }
         else {
-            logger.trace("drawing from IMAGE of object: {} with label: {} on image: {} ", this, label, mask);
+            logger.trace("drawing from IMAGE of object: {} with label: {} on image: {} mask offsetX: {} mask offsetY: {} mask offsetZ: {}", this, label, mask, mask.getOffsetX(), mask.getOffsetY(), mask.getOffsetZ());
             for (int z = 0; z < mask.getSizeZ(); ++z) {
                 for (int y = 0; y < mask.getSizeY(); ++y) {
                     for (int x = 0; x < mask.getSizeX(); ++x) {
                         if (mask.insideMask(x, y, z)) {
-                            image.setPixel(x+mask.getOffsetX(), y+mask.getOffsetZ(), z+mask.getOffsetZ(), label);
+                            image.setPixel(x+mask.getOffsetX(), y+mask.getOffsetY(), z+mask.getOffsetZ(), label);
                         }
                     }
                 }

@@ -31,26 +31,23 @@ import image.ImageInteger;
 
 @Embedded(polymorph=true)
 public class ObjectContainerImage extends ObjectContainer {
-    int label;
-    @Transient StructureObject structureObject;
-    public ObjectContainerImage(StructureObject structureObject, Object3D object) {
-        super(object.getBounds(), object.getScaleXY(), object.getScaleZ());
-        this.structureObject=structureObject;
-        this.label=object.getLabel();
+
+    public ObjectContainerImage(StructureObject structureObject) {
+        super(structureObject);
     }
 
     public ImageInteger getImage() {
         Image image = structureObject.getExperiment().getImageDAO().openMask((StructureObject)structureObject);
-        return (ImageInteger) image.resetOffset().addOffset(bounds.getxMin(), bounds.getyMin(), bounds.getzMin()).setCalibration(scaleXY, scaleZ);
+        return (ImageInteger) image.resetOffset().addOffset(bounds.getxMin(), bounds.getyMin(), bounds.getzMin()).setCalibration(getScaleXY(), getScaleZ());
     }
 
-    public void updateObject(Object3D object) {
-        structureObject.getExperiment().getImageDAO().writeMask(object.getMask(), (StructureObject)structureObject);
+    public void updateObject() {
+        structureObject.getExperiment().getImageDAO().writeMask(structureObject.getObject().getMask(), (StructureObject)structureObject);
     }
     
     public Object3D getObject() { 
         ImageInteger mask = getImage();
-        return new Object3D(mask, label);
+        return new Object3D(mask, structureObject.getIdx()+1);
     }
     
 }

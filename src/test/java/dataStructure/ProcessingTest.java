@@ -71,6 +71,7 @@ public class ProcessingTest {
             for (int c = 0; c<channelNumber;c++) {
                 images[t][c] = new ImageByte("t"+t+"c"+c, sizeX, sizeY, sizeZ);
                 images[t][c].setPixel(t, c, c, 1);
+                images[t][c].setCalibration(0.1f, 0.23f);
             }
         }
         return images;
@@ -237,6 +238,7 @@ public class ProcessingTest {
             
             // set up fields
             ImageByte[][] images = createDummyImagesTC(50, 50, 1, 3, 1);
+            images[0][0].setPixel(12, 12, 0, 2);
             File folder = testFolder.newFolder("TestInputImagesStructureObject");
             ImageWriter.writeToFile(folder.getAbsolutePath(), "field1", ImageFormat.OMETIF, images);
             Processor.importFiles(new String[]{folder.getAbsolutePath()}, xp);

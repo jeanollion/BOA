@@ -64,6 +64,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         this.fieldName=fieldName;
         this.timePoint = timePoint;
         this.object=object;
+        this.object.label=idx+1;
         this.structureIdx = structureIdx;
         this.idx = idx;
         this.parent=parent;
@@ -96,6 +97,9 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         if (xp==null) return null;
         xp.callLazyLoading();
         return xp;
+    }
+    public MicroscopyField getMicroscopyField() {
+        return getExperiment().getMicroscopyField(fieldName);
     }
     public StructureObject getParent() {
         if (parent==null) return null;
@@ -160,10 +164,9 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     }
     
     // object- and image-related methods
-    protected Object3D getObject() {
+    public Object3D getObject() {
         if (object==null) {
-            MicroscopyField f = xp.getMicroscopyField(fieldName);
-            objectContainer.setScale(f.getScaleXY(), f.getScaleZ());
+            objectContainer.setStructureObject(this);
             object=objectContainer.getObject();
         }
         return object;
@@ -176,7 +179,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         // TODO: only if changes -> transient variable to record changes..
         if (objectContainer==null) createObjectContainer();
         logger.debug("updating object container: {} of object: {}", objectContainer.getClass(), this );
-        objectContainer.updateObject(object);
+        objectContainer.updateObject();
     }
     public Image getRawImage(int structureIdx) {
         int channelIdx = xp.getChannelImageIdx(structureIdx);
@@ -216,13 +219,13 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     public BoundingBox getRelativeBoundingBox(StructureObject stop) {
         if (stop==null) stop=getRoot();
         StructureObject nextParent=this;
-        BoundingBox res = object.bounds.duplicate();
+        BoundingBox res = getObject().getBounds().duplicate();
         logger.debug("relative bounding box: from: {} to {}", this, stop);
         logger.debug("init bounds: {}", res);
         do {
             nextParent=nextParent.getParent();
-            res.addOffset(nextParent.object.bounds);
             logger.debug("bounds + offset {} from {}", res, nextParent);
+            res.addOffset(nextParent.getObject().getBounds());
         } while(nextParent!=stop);
         
         return res;
@@ -264,7 +267,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     @Override
     public String toString() {
         if (isRoot()) return "Root Object: fieldName: "+fieldName + " timePoint: "+timePoint;
-        else return "Object: fieldName: "+fieldName+ " timePoint: "+timePoint+ " structureIdx: "+structureIdx+ " parentId: "+parent.id+ " idx: "+idx;
+        else return "Object: fieldName: "+fieldName+ " timePoint: "+timePoint+ " structureIdx: "+structureIdx+ " parentId: "+getParent().id+ " idx: "+idx;
     }
     
     // morphium-related methods

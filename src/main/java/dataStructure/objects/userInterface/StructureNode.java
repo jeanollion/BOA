@@ -21,6 +21,7 @@ import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import static dataStructure.objects.userInterface.StructureObjectTreeGenerator.logger;
 import image.BlankMask;
+import image.Image;
 import java.awt.event.ActionEvent;
 import java.util.Arrays;
 import java.util.Collections;
@@ -139,13 +140,14 @@ public class StructureNode implements TreeNode, UIContainer {
                     public void actionPerformed(ActionEvent ae) {
                         logger.debug("opening object mask for structure: {}", idx);
                         ObjectPopulation pop = structureNode.getParentObject().getObjectPopulation(idx);
-                        ImageDisplayerFactory.getImageDisplayer().showImage(pop.getLabelImage());
+                        ImageDisplayerFactory.getImageDisplayer().showImage(pop.getLabelImage().setName("Object Mask of structure: "+structureNode.toString()));
                     }
                 }
             );
             JMenu subMenu = new JMenu("Open Raw Input Image");
             actions[1] = subMenu;
             String[] structureNames = structureNode.getParentObject().getExperiment().getStructuresAsString();
+            
             subActions=new JMenuItem[structureNames.length];
             for (int i = 0; i < subActions.length; i++) {
                 subActions[i] = new JMenuItem(structureNames[i]);
@@ -153,12 +155,19 @@ public class StructureNode implements TreeNode, UIContainer {
                     new AbstractAction(structureNames[i]) {
                         @Override
                         public void actionPerformed(ActionEvent ae) {
-                            logger.debug("opening input image for structure: {}", ae.getActionCommand());
+                            if (logger.isDebugEnabled()) logger.debug("opening input image for structure: {} of idx: {}", ae.getActionCommand(), getStructureIdx(ae.getActionCommand()));
+                            Image image = structureNode.getParentObject().getRawImage(getStructureIdx(ae.getActionCommand()));
+                            ImageDisplayerFactory.getImageDisplayer().showImage(image.setName("Channel Image of structure: "+ae.getActionCommand()));
                         }
                     }
                 );
+                subMenu.add(subActions[i]);
             }
         }
         public Object[] getDisplayComponent() {return actions;}
+        private int getStructureIdx(String name) {
+            for (int i = 0; i<subActions.length; ++i) if (subActions[i].getActionCommand().equals(name)) return i;
+            return -1;
+        }
     }
 }

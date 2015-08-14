@@ -92,11 +92,11 @@ public class MicroscopyField extends SimpleContainerParameter {
     }
     
     public float getScaleXY(){
-        if (images!=null) return images.getScaleXY();
+        if (images!=null && images.getScaleXY()!=0) return images.getScaleXY();
         else return 1;
     }
     public float getScaleZ(){
-        if (images!=null) return images.getScaleZ();
+        if (images!=null && images.getScaleZ()!=0) return images.getScaleZ();
         else return 1;
     }
     

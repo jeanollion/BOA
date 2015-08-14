@@ -19,10 +19,13 @@ package images;
 
 import TestUtils.Utils;
 import dataStructure.objects.Object3D;
+import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.Voxel3D;
 import image.BoundingBox;
 import image.ImageByte;
 import image.ObjectFactory;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.TreeMap;
 import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -34,8 +37,8 @@ import org.junit.Test;
  *
  * @author jollion
  */
-public class ObjectFactoryTest {
-    ImageByte im;
+public class ObjectManipulationTest {
+    ImageByte im, imRelabel;
     BoundingBox bound1, bound3;
     Object3D o1, o3;
     @Before
@@ -45,7 +48,11 @@ public class ObjectFactoryTest {
         im.setPixel(1, 0, 0, 1);
         im.setPixel(2, 1, 1, 3);
         im.setPixel(3, 1, 1, 3);
-        
+        imRelabel = new ImageByte("", 4, 4, 5);
+        imRelabel.setPixel(0, 0, 0, 1);
+        imRelabel.setPixel(1, 0, 0, 1);
+        imRelabel.setPixel(2, 1, 1, 2);
+        imRelabel.setPixel(3, 1, 1, 2);
         
         bound1=new BoundingBox(0, 1, 0, 0,0,0);
         bound3 = new BoundingBox(2, 3, 1,1,1,1);
@@ -63,14 +70,8 @@ public class ObjectFactoryTest {
         assertEquals("object3 vox number:", 2, obs[1].getVoxels().size());
         assertTrue("object3 vox1:", new Voxel3D(2, 1, 1).equals(obs[1].getVoxels().get(0)));
         assertTrue("object3 vox2:", new Voxel3D(3, 1, 1).equals(obs[1].getVoxels().get(1)));
-        for (int i = 0; i<obs[0].getVoxels().size(); ++i) {
-            Utils.logger.trace("o1 vox: expected: {} actual: {}", o1.getVoxels().get(i), obs[0].getVoxels().get(i) );
-            assertTrue("o1 vox:"+i, obs[0].getVoxels().get(i).equals(o1.getVoxels().get(i)));
-        }
-        for (int i = 0; i<obs[1].getVoxels().size(); ++i) {
-            Utils.logger.trace("o3 vox: expected: {} actual: {}", o3.getVoxels().get(i), obs[1].getVoxels().get(i) );
-            assertTrue("o3 vox:"+i, obs[1].getVoxels().get(i).equals(o3.getVoxels().get(i)));
-        }
+        assertObject3DVoxels(o1, obs[0]);
+        assertObject3DVoxels(o3, obs[1]);
     }
     
     @Test
@@ -118,14 +119,32 @@ public class ObjectFactoryTest {
     
     @Test
     public void testRelabelImage() {
-        ImageByte imRelabel = new ImageByte("", 4, 4, 5);
-        imRelabel.setPixel(0, 0, 0, 1);
-        imRelabel.setPixel(1, 0, 0, 1);
-        imRelabel.setPixel(2, 1, 1, 2);
-        imRelabel.setPixel(3, 1, 1, 2);
-        
         ImageByte im2 = im.duplicate("");
         ObjectFactory.relabelImage(im2, null);
         Utils.assertImageByte(imRelabel, im2);
+    }
+    
+    @Test 
+    public void testObjectPopulation() {
+        ObjectPopulation popObj = new ObjectPopulation(new ArrayList<Object3D>(Arrays.asList(new Object3D[]{o1, o3})), im);
+        Utils.assertImageByte(im, (ImageByte)popObj.getLabelImage());
+        popObj.relabel();
+        Utils.assertImageByte(imRelabel, (ImageByte)popObj.getLabelImage());
+        popObj = new ObjectPopulation(new ArrayList<Object3D>(Arrays.asList(new Object3D[]{o1, o3})), im);
+        popObj.relabel();
+        Utils.assertImageByte(imRelabel, (ImageByte)popObj.getLabelImage());
+        
+        ObjectPopulation popIm = new ObjectPopulation(im);
+        assertEquals("number of objects", 2, popIm.getObjects().size());
+        assertObject3DVoxels(o1, popIm.getObjects().get(0));
+        assertObject3DVoxels(o3, popIm.getObjects().get(1));
+    }
+    
+    public static void assertObject3DVoxels(Object3D expected, Object3D actual) {
+        assertEquals("object voxel number", expected.getVoxels().size(), actual.getVoxels().size());
+        for (int i = 0; i<expected.getVoxels().size(); ++i) {
+            Utils.logger.trace("assert voxel: {} expected: {} actual: {}", i, expected.getVoxels().get(i), actual.getVoxels().get(i));
+            assertTrue("voxel: "+i, expected.getVoxels().get(i).equals(actual.getVoxels().get(i)));
+        }
     }
 }

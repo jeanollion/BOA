@@ -56,7 +56,7 @@ public class StructureObjectTreeGenerator {
         treeModel = new StructureObjectTreeModel(experimentNode);
         tree=new JTree(treeModel);
         scroll = new JScrollPane(tree);
-        tree.getSelectionModel().setSelectionMode(TreeSelectionModel.CONTIGUOUS_TREE_SELECTION);
+        tree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
         DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
         Icon personIcon = null;
         renderer.setLeafIcon(personIcon);
@@ -73,10 +73,12 @@ public class StructureObjectTreeGenerator {
                     if (pathBounds != null && pathBounds.contains(e.getX(), e.getY())) {
                         JPopupMenu menu = new JPopupMenu();
                         Object lastO = path.getLastPathComponent();
+                        logger.debug("right-click on element: {}", lastO);
                         if (lastO instanceof UIContainer) {
                             UIContainer UIC=(UIContainer)lastO;
                             addToMenu(UIC.getDisplayComponent(), menu);
                         }
+                        menu.show(tree, pathBounds.x, pathBounds.y + pathBounds.height);
                     }
                 }
             }

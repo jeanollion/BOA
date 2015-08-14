@@ -17,6 +17,7 @@
  */
 package dataStructure.objects;
 
+import static dataStructure.objects.Object3D.logger;
 import image.BlankMask;
 import image.BoundingBox;
 import image.ImageByte;
@@ -67,8 +68,10 @@ public class ObjectPopulation {
         if (objects.size()<=255) labelImage = new ImageByte("merge", properties);
         else if (objects.size()<=65535) labelImage = new ImageShort("merge", properties);
         else labelImage = new ImageInt("merge", properties);
-        Object3D.logger.debug("creating image: properties: {} imagetype: {} number of objects: {}", properties, labelImage.getClass(), objects.size());
-        for (Object3D o : objects) o.draw(labelImage, o.getLabel());
+        logger.debug("creating image: properties: {} imagetype: {} number of objects: {}", properties, labelImage.getClass(), objects.size());
+        for (Object3D o : objects) {
+            o.draw(labelImage, o.getLabel());
+        }
     }
     
     private void constructObjects() {
@@ -94,10 +97,10 @@ public class ObjectPopulation {
         if (properties == null) {
             if (labelImage != null) {
                 properties = new BlankMask("", labelImage);
-            } else if (!objects.isEmpty()) {
+            } else if (!objects.isEmpty()) { //unscaled, no offset for label image..
                 BoundingBox box = new BoundingBox(0,0,0,0,0,0);
                 for (Object3D o : objects) box.expand(o.getBounds());
-                properties = box.getImageProperties("labelImage", objects.get(0).scaleXY, objects.get(0).scaleZ);
+                properties = box.getImageProperties(); 
             }
         }
         return properties;

@@ -18,6 +18,7 @@
 package dataStructure.containers;
 
 import dataStructure.objects.Object3D;
+import dataStructure.objects.StructureObject;
 import image.BlankMask;
 import image.BoundingBox;
 
@@ -28,19 +29,21 @@ import image.BoundingBox;
 
 public class ObjectContainerBlankMask extends ObjectContainer {
     
-    public ObjectContainerBlankMask(BoundingBox bounds, float scaleXY, float scaleZ) {
-        super(bounds, scaleXY, scaleZ);
+    public ObjectContainerBlankMask(StructureObject structureObject) {
+        super(structureObject);
     }
     
-    public BlankMask getImage(float scaleXY, float scaleZ) {
-        return bounds.getImageProperties("", scaleXY, scaleZ);
+    public BlankMask getImage() {
+        return bounds.getImageProperties("", getScaleXY(), getScaleZ());
     }
     
+    @Override
     public Object3D getObject() {
-        return new Object3D(getImage(scaleXY, scaleZ), 1);
+        return new Object3D(getImage(), structureObject.getIdx()+1);
     }
     
-    public void updateObject(Object3D object) {
-        bounds = object.getBounds();
+    @Override
+    public void updateObject() {
+        bounds = structureObject.getObject().getBounds();
     }
 }

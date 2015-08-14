@@ -42,8 +42,9 @@ public abstract class Image implements ImageProperties {
         this(name, properties.getSizeX(), properties.getSizeY(), properties.getSizeZ(), properties.getOffsetX(), properties.getOffsetY(), properties.getOffsetZ(), properties.getScaleXY(), properties.getScaleZ());
     }
     
-    public void setName(String name) {
+    public Image setName(String name) {
         this.name=name;
+        return this;
     }
     
     public abstract Image getZPlane(int idxZ);
