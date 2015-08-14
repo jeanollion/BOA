@@ -15,10 +15,11 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugins.transformations;
+package plugins.plugins.transformations;
 
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
+import dataStructure.containers.InputImages;
 import dataStructure.objects.StructureObjectPreProcessing;
 import image.BoundingBox;
 import image.Image;
@@ -37,9 +38,9 @@ public class SimpleCrop implements Cropper {
     NumberParameter zLength = new NumberParameter("Z-Length", 0, 0);
     Parameter[] parameters = new Parameter[]{xMin, xLength, yMin, yLength, zMin, zLength};
     BoundingBox bounds;
-    
-    public void computeParameters(int structureIdx, StructureObjectPreProcessing structureObject) {
-        Image input = structureObject.getRawImage(structureIdx);
+    int[] configurationData;
+    public void computeConfigurationData(int channelIdx, InputImages inputImages) {
+        Image input = inputImages.getImage(channelIdx, inputImages.getDefaultTimePoint());
         if (xLength.getValue().intValue()==0) xLength.setValue(input.getSizeX()-xMin.getValue().intValue());
         if (yLength.getValue().intValue()==0) yLength.setValue(input.getSizeY()-yMin.getValue().intValue());
         if (zLength.getValue().intValue()==0) zLength.setValue(input.getSizeZ()-zMin.getValue().intValue());
@@ -47,10 +48,18 @@ public class SimpleCrop implements Cropper {
         yMin.getValue().intValue(), yMin.getValue().intValue()+yLength.getValue().intValue()-1, 
         zMin.getValue().intValue(), zMin.getValue().intValue()+zLength.getValue().intValue()-1);
         bounds.trimToImage(input);
+        configurationData = new int[6];
+        configurationData[0]=bounds.getxMin();
+        configurationData[1]=bounds.getxMax();
+        configurationData[2]=bounds.getyMin();
+        configurationData[3]=bounds.getyMax();
+        configurationData[4]=bounds.getzMin();
+        configurationData[5]=bounds.getzMax();
     }
 
-    public Image applyTransformation(Image input) {
-        return input.crop(bounds);
+    public Image applyTransformation(int channelIdx, int timePoint, Image image) {
+        if (bounds==null) bounds= new BoundingBox(configurationData[0], configurationData[1], configurationData[2], configurationData[3], configurationData[4], configurationData[5]);
+        return image.crop(bounds);
     }
 
     public boolean isTimeDependent() {
@@ -67,6 +76,10 @@ public class SimpleCrop implements Cropper {
 
     public boolean does3D() {
         return true;
+    }
+
+    public SelectionMode getOutputChannelSelectionMode() {
+        return SelectionMode.ALL;
     }
     
 }

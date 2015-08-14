@@ -15,41 +15,20 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugins.transformations;
+package testPlugins.dummyPlugins;
 
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
-import dataStructure.objects.StructureObjectPreProcessing;
-import image.Image;
-import plugins.TransformationTimeIndependent;
-import processing.ImageTransformation;
+import plugins.Thresholder;
 
 /**
  *
  * @author jollion
  */
-public class SimpleRotationXY implements TransformationTimeIndependent {
-    NumberParameter angle = new NumberParameter("Angle (degree)", 4, 0);
-    Parameter[] parameters = new Parameter[]{angle};
-    
-    public void computeParameters(int structureIdx, StructureObjectPreProcessing structureObject) {
-        
-    }
-
-    public Image applyTransformation(Image input) {
-        return ImageTransformation.rotateXY(input, angle.getValue().floatValue());
-    }
-
-    public boolean isTimeDependent() {
-        return false;
-    }
+public class DummyThresholder implements Thresholder {
 
     public Parameter[] getParameters() {
-        return parameters;
-    }
-
-    public Object[] getConfigurationData() {
-        return null;
+        return new Parameter[]{new NumberParameter("number", 2, 2.22)};
     }
 
     public boolean does3D() {

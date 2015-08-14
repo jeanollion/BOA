@@ -18,7 +18,6 @@
 package dataStructure.containers;
 
 import dataStructure.objects.Object3D;
-import dataStructure.objects.StructureObjectAbstract;
 import image.BlankMask;
 import image.BoundingBox;
 

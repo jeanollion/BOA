@@ -15,13 +15,17 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugin;
+package testPlugins;
 
 import configuration.parameters.PluginParameter;
 import org.junit.Assert;
+import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 import plugins.Plugin;
 import plugins.PluginFactory;
+import plugins.Segmenter;
 import plugins.Thresholder;
+import testPlugins.dummyPlugins.DummySegmenter;
 
 /**
  *
@@ -29,14 +33,21 @@ import plugins.Thresholder;
  */
 public class PluginFactoryTest {
     
-    @org.junit.Test
+    @Test
     public void testInternalPlugin() {
         String pluginName="DummyThresholder";
-        PluginFactory.findPlugins("plugin.dummyPlugins");
-        PluginParameter thresholder = new PluginParameter("Tresholder", Thresholder.class, true);
+        PluginFactory.findPlugins("testPlugins.dummyPlugins");
+        assertTrue("dummy thresholder found", PluginFactory.getPlugin(Thresholder.class, pluginName) instanceof Thresholder);
+        Plugin pp = PluginFactory.getPlugin("DummySegmenter");
+        if (pp==null) System.out.println("Dummy Segmenter not found ");
+        else System.out.println("Dummy Segmenter search: "+pp.getClass());
+        assertTrue("dummy segmenter found", PluginFactory.getPlugin(Segmenter.class, "DummySegmenter") instanceof Segmenter);
+        PluginParameter<Thresholder> thresholder = new PluginParameter<Thresholder>("Tresholder", Thresholder.class, true);
         Assert.assertTrue("Internal plugin search:", thresholder.getPluginNames().contains(pluginName));
         thresholder.setPlugin(pluginName);
         Plugin p =  thresholder.getPlugin();
         Assert.assertTrue("Internal plugin instanciation:", p instanceof Thresholder);
+        
+        
     }
 }

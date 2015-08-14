@@ -17,12 +17,16 @@
  */
 package processing;
 
+import dataStructure.objects.Object3D;
+import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObjectPreProcessing;
 import dataStructure.objects.StructureObjectProcessing;
 import image.BlankMask;
 import image.Image;
 import image.ImageInteger;
+import image.ImageProperties;
 import java.util.ArrayList;
+import plugins.Plugin;
 import plugins.PostFilter;
 import plugins.PreFilter;
 import plugins.Segmenter;
@@ -39,27 +43,28 @@ public class PluginSequenceRunner {
             for (PreFilter p : preFilters) {
                 currentImage = p.runPreFilter(currentImage, structureObject);
                 currentImage.setCalibration(input);
-                if (currentImage.sameSize(input)) currentImage.setOffset(input);
+                if (currentImage.sameSize(input)) currentImage.resetOffset().addOffset(input);
             }
             return currentImage;
         }
     }
     
-    public static ImageInteger segmentImage(Image input, StructureObjectProcessing structureObject, Segmenter segmenter) {
-        if (segmenter==null) return new BlankMask("", input);
-        else return segmenter.runSegmenter(input, structureObject);
+    public static ObjectPopulation segmentImage(Image input, StructureObjectProcessing structureObject, Segmenter segmenter) {
+        Plugin.logger.debug("segmenting: {} segmenter class: {} segmenter {}", structureObject, (segmenter==null?"null":segmenter.getClass()), segmenter);
+        if (segmenter==null) return new ObjectPopulation(new ArrayList<Object3D>(0), new BlankMask("", input));
+        else return segmenter.runSegmenter(input, structureObject).setProperties(input, true);
     }
     
-    public static ImageInteger postFilterImage(ImageInteger input, StructureObjectProcessing structureObject, ArrayList<PostFilter> postFilters) {
-        if (postFilters==null || postFilters.isEmpty()) return input;
+    public static ObjectPopulation postFilterImage(ObjectPopulation objectPopulation, StructureObjectProcessing structureObject, ArrayList<PostFilter> postFilters) {
+        if (postFilters==null || postFilters.isEmpty()) return objectPopulation;
         else {
-            ImageInteger currentImage = input.duplicate("");
+            ImageProperties initialProperites = objectPopulation.getImageProperties();
+            ObjectPopulation currentObjectPopulation=objectPopulation;
             for (PostFilter p : postFilters) {
-                currentImage = p.runPostFilter(currentImage, structureObject);
-                currentImage.setCalibration(input);
-                if (currentImage.sameSize(input)) currentImage.setOffset(input);
+                currentObjectPopulation = p.runPostFilter(currentObjectPopulation, structureObject);
+                currentObjectPopulation.setProperties(initialProperites, true);
             }
-            return currentImage;
+            return currentObjectPopulation;
         }
     }
 }

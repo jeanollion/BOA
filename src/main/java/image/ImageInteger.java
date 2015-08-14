@@ -19,7 +19,13 @@ public abstract class ImageInteger extends Image implements ImageMask {
     public abstract int getPixelInt(int x, int y, int z);
     public abstract int getPixelInt(int xy, int z);
     public abstract void setPixel(int x, int y, int z, int value);
+    public abstract void setPixelWithOffset(int x, int y, int z, int value);
     public abstract void setPixel(int xy, int z, int value);
+    
+    @Override public ImageInteger resetOffset() {return (ImageInteger)super.resetOffset();}
+    @Override public ImageInteger addOffset(BoundingBox bounds) {return (ImageInteger)super.addOffset(bounds);}
+    @Override public ImageInteger addOffset(ImageProperties properties) {return (ImageInteger)super.addOffset(properties);}
+    @Override public ImageInteger addOffset(int offsetX, int offsetY, int offsetZ) {return (ImageInteger)super.addOffset(offsetX, offsetY, offsetZ);}
     
     /**
      * 
@@ -68,7 +74,7 @@ public abstract class ImageInteger extends Image implements ImageMask {
         int x_max = bounds.getxMax();
         int y_max = bounds.getyMax();
         int z_max = bounds.getzMax();
-        res.setOffset(bounds);
+        res.resetOffset().addOffset(bounds);
         int sX = res.getSizeX();
         int oZ = -z_min;
         int oY_i = 0;
@@ -107,12 +113,18 @@ public abstract class ImageInteger extends Image implements ImageMask {
         return res;
     }
     
+    /**
+     * 
+     * @param startLabel if (startLabel==-1) startLabel = max+1
+     * @param masks 
+     */
     public abstract void appendBinaryMasks(int startLabel, ImageMask... masks);
     
     public static ImageInteger mergeBinary(ImageProperties properties, ImageMask... masks) {
+        if (masks==null || masks.length==0) return new ImageByte("merge", properties);
         ImageInteger res;
         if (masks.length<=255) res = new ImageByte("merge", properties);
-        else if (masks.length<65535) res = new ImageShort("merge", properties);
+        else if (masks.length<=65535) res = new ImageShort("merge", properties);
         else res = new ImageInt("merge", properties);
         res.appendBinaryMasks(1, masks);
         return res;

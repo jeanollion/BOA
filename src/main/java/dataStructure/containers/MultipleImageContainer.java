@@ -18,6 +18,7 @@
 package dataStructure.containers;
 
 import de.caluga.morphium.annotations.Embedded;
+import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
 
@@ -25,7 +26,7 @@ import image.Image;
  *
  * @author jollion
  */
-@Embedded
+@Embedded(polymorph=true)
 public abstract class MultipleImageContainer {
     float scaleXY, scaleZ;
     public abstract int getTimePointNumber();

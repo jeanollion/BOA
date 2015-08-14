@@ -29,6 +29,16 @@ public class ImageByte extends ImageInteger {
         this.pixels=new byte[][]{pixels};
     }
     
+    @Override
+    public ImageByte getZPlane(int idxZ) {
+        if (idxZ>=sizeZ) throw new IllegalArgumentException("Z-plane cannot be superior to sizeZ");
+        else {
+            ImageByte res = new ImageByte(name, sizeX, pixels[idxZ]);
+            res.setCalibration(this);
+            res.addOffset(offsetX, offsetY, offsetZ+idxZ);
+            return res;
+        }
+    }
     
     @Override
     public int getPixelInt(int x, int y, int z) {
@@ -54,6 +64,11 @@ public class ImageByte extends ImageInteger {
     public void setPixel(int x, int y, int z, int value) {
         pixels[z][x + y * sizeX] = (byte) value;
     }
+    
+    @Override
+    public void setPixelWithOffset(int x, int y, int z, int value) {
+        pixels[z-offsetZ][x-offsetX + (y-offsetY) * sizeX] = (byte)value;
+    }
 
     @Override
     public void setPixel(int xy, int z, int value) {
@@ -63,6 +78,11 @@ public class ImageByte extends ImageInteger {
     @Override
     public void setPixel(int x, int y, int z, Number value) {
         pixels[z][x + y * sizeX] = value.byteValue();
+    }
+    
+    @Override
+    public void setPixelWithOffset(int x, int y, int z, Number value) {
+        pixels[z-offsetZ][x-offsetX + (y-offsetY) * sizeX] = value.byteValue();
     }
 
     @Override
@@ -100,21 +120,22 @@ public class ImageByte extends ImageInteger {
         return (ImageByte) cropI(bounds);
     }
     
+    @Override
     public void appendBinaryMasks(int startLabel, ImageMask... masks) {
+        if (masks == null || masks.length==0) return;
         if (startLabel==-1) startLabel = (int)this.getMinAndMax(null)[1]+1;
-        if (startLabel<0) startLabel=1;
-        if (masks == null ) return;
+        //if (startLabel<0) startLabel=1;
         for (int idx = 0; idx < masks.length; ++idx) {
             int label = idx+startLabel;
             ImageMask currentImage = masks[idx];
             for (int z = 0; z < currentImage.getSizeZ(); ++z) {
                 for (int y = 0; y < currentImage.getSizeY(); ++y) {
                     for (int x = 0; x < currentImage.getSizeX(); ++x) {
-                        if (currentImage.contains(x, y, z)) {
+                        if (currentImage.insideMask(x, y, z)) {
                             int xx = x + currentImage.getOffsetX();
                             int yy = y + currentImage.getOffsetY();
                             int zz = z + currentImage.getOffsetZ();
-                            if (zz >= 0 && zz < sizeZ && xx >= 0 && xx < sizeX && yy >= 0 && yy < sizeY) {
+                            if (contains(xx, yy, zz)) {
                                 pixels[zz][xx + yy * sizeX] = (byte)label;
                             }
                         }
@@ -123,5 +144,7 @@ public class ImageByte extends ImageInteger {
             }
         }
     }
+
+    
     
 }

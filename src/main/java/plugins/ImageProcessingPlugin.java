@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 jollion
+ * Copyright (C) 2015 nasique
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -19,8 +19,8 @@ package plugins;
 
 /**
  *
- * @author jollion
+ * @author nasique
  */
 public interface ImageProcessingPlugin extends Plugin {
-    public boolean isTimeDependent();
+    
 }

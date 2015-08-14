@@ -30,6 +30,7 @@ import javax.swing.tree.TreeNode;
 import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
 import de.caluga.morphium.annotations.lifecycle.PostLoad;
+import java.util.Arrays;
 import java.util.logging.Logger;
 import plugins.Plugin;
 import plugins.PluginFactory;
@@ -39,9 +40,10 @@ import plugins.PluginFactory;
  * @author jollion
  * @param <T> type of plugin
  */
-public class PluginParameter<T extends Plugin> extends SimpleContainerParameter implements Deactivatable, ChoosableParameter { //<T extends Plugin> // TODO generic quand supporté par morphia
+public class PluginParameter<T extends Plugin> extends SimpleContainerParameter implements Deactivatable, ChoosableParameter {
+    
     @Transient private static HashMap<Class<? extends Plugin>, ArrayList<String>> pluginNames=new HashMap<Class<? extends Plugin>, ArrayList<String>>();
-    protected Parameter[] pluginParameters;
+    protected ArrayList<Parameter> pluginParameters;
     protected String pluginName=NO_SELECTION;
     @Transient protected Class<T> pluginType;
     protected String pluginTypeName;
@@ -68,7 +70,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     }
     
     public void setPlugin(T pluginInstance) {
-        this.pluginParameters=pluginInstance.getParameters();
+        this.pluginParameters=new ArrayList<Parameter>(Arrays.asList(pluginInstance.getParameters()));
         initChildList();
         this.pluginName=pluginInstance.getClass().getSimpleName();
         this.pluginSet=true;
@@ -91,15 +93,16 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     }
     
     public void setPlugin(String pluginName) {
+        //System.out.println(toString()+ ": set plugin: "+pluginName+ " currentStatus: pluginSet?"+pluginSet+" plugin name: "+pluginName);
         if (NO_SELECTION.equals(pluginName)) {
             this.pluginParameters=null;
             this.pluginName=NO_SELECTION;
             this.pluginSet=false;
-            
+            super.initChildren();
         } else if (!pluginSet || !pluginName.equals(this.pluginName)) {
             T instance = PluginFactory.getPlugin(pluginType, pluginName);
             if (instance==null) {
-                Core.getLogger().log(Level.WARNING, "Couldn't find plugin: {0}", pluginName);
+                Parameter.logger.error("Couldn't find plugin: {}", pluginName);
                 this.pluginName=NO_SELECTION;
                 this.pluginParameters=null;
                 return;
@@ -111,13 +114,18 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     public T getPlugin() {
         if (!isOnePluginSet()) return null;
         T instance = PluginFactory.getPlugin(pluginType, pluginName);
+        if (Parameter.logger.isTraceEnabled()) Parameter.logger.trace("instanciating plugin: type {}, name {} instance==null? {} current parameters {}", pluginType, pluginName, instance==null, pluginParameters.size());
         if (instance==null) return null;
         Parameter[] params = instance.getParameters();
-        if (params.length==this.pluginParameters.length) {
-            for (int i = 0; i<params.length; i++) params[i].setContentFrom(pluginParameters[i]);
+        if (params.length==this.pluginParameters.size()) {
+            for (int i = 0; i<params.length; i++) {
+                params[i].setContentFrom(pluginParameters.get(i));
+                if (Parameter.logger.isTraceEnabled()) Parameter.logger.trace("set content from: reference: {} target: {}", pluginParameters.get(i), params[i]);
+            }
         } else {
-            Core.getLogger().log(Level.WARNING, "Couldn't parametrize plugin: {0}", pluginName);
+            Parameter.logger.error("Couldn't parametrize plugin: {}", pluginName);
         }
+        
         return instance;
     }
     
@@ -133,10 +141,9 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
             } else {
                 this.pluginName = otherPP.pluginName;
                 if (otherPP.pluginParameters != null) {
-                    this.pluginParameters = new Parameter[otherPP.pluginParameters.length];
-                    for (int i = 0; i < pluginParameters.length; i++) {
-                        pluginParameters[i] = otherPP.pluginParameters[i].duplicate();
-                    }
+                    this.pluginParameters = new ArrayList<Parameter>(otherPP.pluginParameters.size());
+                    ArrayList<Parameter> pp= otherPP.pluginParameters;
+                    for (Parameter p : pp) pluginParameters.add(p.duplicate());
                     initChildList();
                 } else {
                     this.pluginParameters = null;

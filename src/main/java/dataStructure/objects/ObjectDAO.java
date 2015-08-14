@@ -42,7 +42,7 @@ public class ObjectDAO extends DAO<StructureObject>{
     
     private Query<StructureObject> getQuery(ObjectId parentId, int structureIdx) {
         // voir si la query est optimisée pour index composé
-        return super.getQuery().f("parentId").eq(parentId).f("structureIdx").eq(structureIdx);
+        return super.getQuery().f("parent").eq(parentId).f("structure_idx").eq(structureIdx);
     }
     
     public StructureObject getObject(ObjectId id) {
@@ -62,29 +62,31 @@ public class ObjectDAO extends DAO<StructureObject>{
         morphium.delete(o);
     }
     
-    public void store(StructureObject o) {
-        morphium.store(o);
-    }
-    
-    public void store(StructureObject[] objects) {
-        for (StructureObject o : objects) morphium.store(o);
-        for (StructureObject o : objects) updateNextId(o);
-    }
-    
-    public void updateTrackLinks(StructureObject o) {
-        boolean prev = o.previous!=null && o.previousId==null && o.previous.id!=null;
-        boolean next = o.next!=null && o.nextId==null && o.next.id!=null;
-        if (prev) o.previousId=o.previous.id;
-        if (next) o.nextId=o.next.id;
-        if (prev && next) morphium.updateUsingFields(o, "next_id", "previous_id");
-        else if (prev) morphium.updateUsingFields(o, "previous_id");
-        else if (next) morphium.updateUsingFields(o, "next_id");
-    }
-    
-    private void updateNextId(StructureObject o) {
-        if (o.next != null && o.nextId == null && o.next.id != null) {
-            o.nextId = o.next.id;
-            morphium.updateUsingFields(o, "next_id");
+    public void store(StructureObject...objects) {
+        if (objects==null) return;
+        for (StructureObject o : objects) {
+            o.updateObjectContainer();
+            morphium.store(o);
         }
+    }
+    // track-specific methods
+    
+    public void updateTrackAttributes(StructureObject... objects) {
+        if (objects==null) return;
+        for (StructureObject o : objects) { //TODO utiliser update quand bug resolu
+            //morphium.updateUsingFields(object, "next", "previous");
+            //System.out.println("update track attribute:"+ o.timePoint+ " next null?"+(o.next==null)+ "previous null?"+(o.previous==null));
+            morphium.store(o);
+        }
+    }
+    
+    // root-specific methods
+    
+    private Query<StructureObject> getRootQuery(String fieldName, int timePoint) {
+        return super.getQuery().f("field_name").eq(fieldName).f("time_point").eq(timePoint).f("structure_idx").eq(-1);
+    }
+    
+    public StructureObject getRoot(String fieldName, int timePoint) {
+        return getRootQuery(fieldName, timePoint).get();
     }
 }

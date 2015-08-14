@@ -17,6 +17,7 @@
  */
 package images;
 
+import TestUtils.Utils;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.Voxel3D;
 import image.BoundingBox;
@@ -48,7 +49,7 @@ public class ObjectFactoryTest {
         
         bound1=new BoundingBox(0, 1, 0, 0,0,0);
         bound3 = new BoundingBox(2, 3, 1,1,1,1);
-        o1 = new Object3D(im.cropLabel(1, bound1), 1);
+        o1 = new Object3D<Voxel3D>(im.cropLabel(1, bound1), 1, Voxel3D.class);
         o3 = new Object3D(im.cropLabel(3, bound3), 3);
         
     }
@@ -61,10 +62,15 @@ public class ObjectFactoryTest {
         assertTrue("object1 vox2:", new Voxel3D(1, 0, 0).equals(obs[0].getVoxels().get(1)));
         assertEquals("object3 vox number:", 2, obs[1].getVoxels().size());
         assertTrue("object3 vox1:", new Voxel3D(2, 1, 1).equals(obs[1].getVoxels().get(0)));
-        System.out.println("voxel 1 o3:"+obs[1].getVoxels().get(1));
         assertTrue("object3 vox2:", new Voxel3D(3, 1, 1).equals(obs[1].getVoxels().get(1)));
-        for (int i = 0; i<obs[0].getVoxels().size(); ++i) assertTrue("o1 vox:"+i, obs[0].getVoxels().get(i).equals(o1.getVoxels().get(i)));
-        for (int i = 0; i<obs[1].getVoxels().size(); ++i) assertTrue("o3 vox:"+i, obs[1].getVoxels().get(i).equals(o3.getVoxels().get(i)));
+        for (int i = 0; i<obs[0].getVoxels().size(); ++i) {
+            Utils.logger.trace("o1 vox: expected: {} actual: {}", o1.getVoxels().get(i), obs[0].getVoxels().get(i) );
+            assertTrue("o1 vox:"+i, obs[0].getVoxels().get(i).equals(o1.getVoxels().get(i)));
+        }
+        for (int i = 0; i<obs[1].getVoxels().size(); ++i) {
+            Utils.logger.trace("o3 vox: expected: {} actual: {}", o3.getVoxels().get(i), obs[1].getVoxels().get(i) );
+            assertTrue("o3 vox:"+i, obs[1].getVoxels().get(i).equals(o3.getVoxels().get(i)));
+        }
     }
     
     @Test
@@ -77,10 +83,37 @@ public class ObjectFactoryTest {
     
     @Test
     public void testGetObjectsImages() {
-        Object3D[] obs = ObjectFactory.getObjectsImage(im, false);
+        Object3D[] obs = ObjectFactory.getObjectsImage(im, null, false);
         assertEquals("object number", 2, obs.length);
-        ImageIOTest.assertImageByte((ImageByte)obs[0].getMask(), (ImageByte)o1.getMask());
-        ImageIOTest.assertImageByte((ImageByte)obs[1].getMask(), (ImageByte)o3.getMask());
+        Utils.assertImageByte((ImageByte)obs[0].getMask(), (ImageByte)o1.getMask());
+        Utils.assertImageByte((ImageByte)obs[1].getMask(), (ImageByte)o3.getMask());
+    }
+    
+    @Test 
+    public void testConversionVoxelMask() {
+        Object3D[] obs = ObjectFactory.getObjectsVoxels(im, false);
+        ImageByte imtest = new ImageByte("", im);
+        int label=1;
+        for (Object3D o : obs) o.draw(imtest, label++);
+        ImageByte imtest2 = new ImageByte("", im);
+        label = 1;
+        for (Object3D o : obs) imtest2.appendBinaryMasks(label++, o.getMask());
+        Utils.assertImageByte(imtest, imtest2);
+    }
+    
+    @Test 
+    public void testConversionMaskVoxels() {
+        Object3D[] obs = ObjectFactory.getObjectsImage(im, null, false);
+        ImageByte imtest = new ImageByte("", im);
+        int label=1;
+        for (Object3D o : obs) {
+            o.getVoxels(); // get voxels to ensure draw with voxels over draw with mask
+            o.draw(imtest, label++);
+        }
+        ImageByte imtest2 = new ImageByte("", im);
+        label = 1;
+        for (Object3D o : obs) imtest2.appendBinaryMasks(label++, o.getMask());
+        Utils.assertImageByte(imtest, imtest2);
     }
     
     @Test
@@ -92,7 +125,7 @@ public class ObjectFactoryTest {
         imRelabel.setPixel(3, 1, 1, 2);
         
         ImageByte im2 = im.duplicate("");
-        ObjectFactory.relabelImage(im2);
-        ImageIOTest.assertImageByte(imRelabel, im2);
+        ObjectFactory.relabelImage(im2, null);
+        Utils.assertImageByte(imRelabel, im2);
     }
 }

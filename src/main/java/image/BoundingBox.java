@@ -17,8 +17,10 @@
  */
 package image;
 
+import dataStructure.objects.Voxel;
 import dataStructure.objects.Voxel3D;
 import de.caluga.morphium.annotations.Embedded;
+import de.caluga.morphium.annotations.Transient;
 
 /**
  *
@@ -27,15 +29,17 @@ import de.caluga.morphium.annotations.Embedded;
 @Embedded
 public class BoundingBox {
 
-    int xMin, xMax, yMin, yMax, zMin, zMax, count;
+    int xMin, xMax, yMin, yMax, zMin, zMax;
+    @Transient int count;
     public BoundingBox(){
         xMin=Integer.MAX_VALUE;
         yMin=Integer.MAX_VALUE;
         zMin=Integer.MAX_VALUE;
-        xMin=Integer.MIN_VALUE;
-        yMin=Integer.MIN_VALUE;
-        zMin=Integer.MIN_VALUE;
+        xMax=Integer.MIN_VALUE;
+        yMax=Integer.MIN_VALUE;
+        zMax=Integer.MIN_VALUE;
     }
+    
     public BoundingBox(int xMin, int xMax, int yMin, int yMax, int zMin, int zMax) {
         this.xMin = xMin;
         this.xMax = xMax;
@@ -82,7 +86,8 @@ public class BoundingBox {
     public void expandX(int x) {
         if (x < xMin) {
             xMin = x;
-        } else if (x > xMax) {
+        } 
+        if (x > xMax) {
             xMax = x;
         }
     }
@@ -93,7 +98,8 @@ public class BoundingBox {
     public void expandY(int y) {
         if (y < yMin) {
             yMin = y;
-        } else if (y > yMax) {
+        } 
+        if (y > yMax) {
             yMax = y;
         }
     }
@@ -104,7 +110,8 @@ public class BoundingBox {
     public void expandZ(int z) {
         if (z < zMin) {
             zMin = z;
-        } else if (z > zMax) {
+        } 
+        if (z > zMax) {
             zMax = z;
         }
     }
@@ -115,10 +122,19 @@ public class BoundingBox {
         expandZ(z);
     }
     
-    public void expand(Voxel3D v) {
+    public void expand(Voxel v) {
         expandX(v.x);
         expandY(v.y);
-        expandZ(v.z);
+        if (v instanceof Voxel3D) expandZ(v.getZ());
+    }
+    
+    public void expand(BoundingBox other) {
+        expandX(other.xMin);
+        expandX(other.xMax);
+        expandY(other.yMin);
+        expandY(other.yMax);
+        expandZ(other.zMin);
+        expandZ(other.zMax);
     }
     
     public void addToCounter() {
@@ -164,14 +180,14 @@ public class BoundingBox {
     }
     
     public boolean sameBounds(ImageProperties properties) {
-        return xMin==0 && yMin==0 && zMin==0 && xMax==(properties.getSizeX()-1) && yMax==(properties.getSizeY()-1) && zMax==(properties.getSizeZ()-1);
+        return xMin==properties.getOffsetX() && yMin==properties.getOffsetY() && zMin==properties.getOffsetZ() && xMax==(properties.getSizeX()-1+properties.getOffsetX()) && yMax==(properties.getSizeY()-1+properties.getOffsetY()) && zMax==(properties.getSizeZ()-1+properties.getOffsetZ());
     }
     /**
      * Translate the bounding box in the 3 axes
      * @param dX translation in the X-Axis in pixels
      * @param dY translation in the Y-Axis in pixels
      * @param dZ translation in the X-Axis in pixels
-     * @return the same instance of boundgin box, after the translation operation
+     * @return the same instance of bounding box, after the translation operation
      */
     public BoundingBox translate(int dX, int dY, int dZ) {
         xMin+=dX; xMax+=dX; yMin+=dY; yMax+=dY; zMin+=dZ; zMax+=dZ;
@@ -255,5 +271,10 @@ public class BoundingBox {
     public BoundingBox addOffset(BoundingBox other) {
         this.translate(other.xMin, other.yMin, other.zMin);
         return this;
+    }
+    
+    @Override
+    public String toString() {
+        return "xMin: "+xMin+" xMax: "+xMax+" yMin: "+yMin+" yMax: "+yMax+" zMin: "+zMin+" zMax: "+zMax;
     }
 }

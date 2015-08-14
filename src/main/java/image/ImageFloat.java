@@ -29,6 +29,16 @@ public class ImageFloat extends Image {
         this.pixels=new float[][]{pixels};
     }
     
+    @Override
+    public ImageFloat getZPlane(int idxZ) {
+        if (idxZ>=sizeZ) throw new IllegalArgumentException("Z-plane cannot be superior to sizeZ");
+        else {
+            ImageFloat res = new ImageFloat(name, sizeX, pixels[idxZ]);
+            res.setCalibration(this);
+            res.addOffset(offsetX, offsetY, offsetZ+idxZ);
+            return res;
+        }
+    }
     
     @Override
     public float getPixel(int x, int y, int z) {
@@ -52,6 +62,15 @@ public class ImageFloat extends Image {
     
     public void setPixel(int x, int y, int z, float value) {
         pixels[z][x+y*sizeX]=value;
+    }
+    
+    public void setPixelWithOffset(int x, int y, int z, float value) {
+        pixels[z-offsetZ][x-offsetX + (y-offsetY) * sizeX] = value;
+    }
+    
+    @Override
+    public void setPixelWithOffset(int x, int y, int z, Number value) {
+        pixels[z-offsetZ][x-offsetX + (y-offsetY) * sizeX] = value.floatValue();
     }
 
     public void setPixel(int xy, int z, float value) {

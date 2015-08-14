@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 jollion
+ * Copyright (C) 2015 nasique
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -15,24 +15,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugin.dummyPlugins;
+package dataStructure.objects.userInterface;
 
-import configuration.parameters.NumberParameter;
-import configuration.parameters.Parameter;
-import plugins.Thresholder;
+import image.Image;
 
 /**
  *
- * @author jollion
+ * @author nasique
  */
-public class DummyThresholder implements Thresholder {
-
-    public Parameter[] getParameters() {
-        return new Parameter[]{new NumberParameter("number", 2, 2.22)};
-    }
-
-    public boolean does3D() {
-        return true;
-    }
-    
+public interface ImageDisplayer {
+    public void showImage(Image image);
 }

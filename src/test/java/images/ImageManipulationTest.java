@@ -39,7 +39,7 @@ public class ImageManipulationTest {
     /**
      * simple set / get on image byte
      */
-    @org.junit.Test
+    @Test
     public void testImageByte() {
         ImageByte imByte = new ImageByte("im test byte", 2, 3, 2);
         imByte.setPixel(3, 1, 10);
@@ -52,7 +52,7 @@ public class ImageManipulationTest {
     /**
      * simple set / get on image int
      */
-    @org.junit.Test
+    @Test
     public void testImageInt() {
         ImageInt imInt = new ImageInt("im test int", 2, 2, 2);
         imInt.setPixel(1,0, 1, Integer.MAX_VALUE);
@@ -62,7 +62,7 @@ public class ImageManipulationTest {
     /**
      * type conversion test
      */
-    @org.junit.Test
+    @Test
     public void testImageSimpleConversion() {
         ImageInt imInt = new ImageInt("im test int", 2, 2, 2);
         imInt.setPixel(0, 1, 1, Integer.MAX_VALUE);

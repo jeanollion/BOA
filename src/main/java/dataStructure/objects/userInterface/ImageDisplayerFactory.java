@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 jollion
+ * Copyright (C) 2015 nasique
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -15,32 +15,22 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugins.trackers;
+package dataStructure.objects.userInterface;
 
-import configuration.parameters.Parameter;
-import dataStructure.objects.StructureObjectPreProcessing;
-import dataStructure.objects.StructureObjectProcessing;
-import dataStructure.objects.Track;
-import plugins.Tracker;
+import static dataStructure.objects.userInterface.ImageDisplayerFactory.ImageDisplayerType.IJ;
 
 /**
  *
- * @author jollion
+ * @author nasique
  */
-public class TrackerObjectIdx implements Tracker {
-
-    public void assignPrevious(StructureObjectPreProcessing[] parents, StructureObjectPreProcessing[] children) {
-        for (int i = 0; i<Math.min(parents.length, children.length); ++i) {
-            parents[i].setPreviousInTrack(children[i], true);
+public class ImageDisplayerFactory {
+    private static ImageDisplayer currentImageDisplayer;
+    public static enum ImageDisplayerType {IJ};
+    private static ImageDisplayerType currentImageDisplayerType = IJ;
+    public static ImageDisplayer getImageDisplayer() {
+        if (currentImageDisplayer==null) {
+            if (currentImageDisplayerType.equals(IJ)) currentImageDisplayer = new IJImageDisplayer();
         }
+        return currentImageDisplayer;
     }
-
-    public Parameter[] getParameters() {
-        return new Parameter[0];
-    }
-
-    public boolean does3D() {
-        return true;
-    }
-    
 }

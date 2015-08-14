@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 jollion
+ * Copyright (C) 2015 nasique
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,53 +17,25 @@
  */
 package configuration.parameters;
 
-import configuration.parameters.ui.ChoiceParameterUI;
 import dataStructure.configuration.Experiment;
-import configuration.parameters.ui.ParameterUI;
 import de.caluga.morphium.annotations.Transient;
-import utils.Utils;
 
 /**
  *
- * @author jollion
+ * @author nasique
  */
-public class StructureParameter extends SimpleParameter implements ChoosableParameter {
-    protected int selectedStructure;
-    protected boolean allowNoSelection;
+public class StructureParameter extends IndexChoiceParameter {
     @Transient protected Experiment xp;
     
     public StructureParameter(String name) {
-        this(name, -1, false);
-    }
-    
-    public StructureParameter(String name, int selectedStructure, boolean allowNoSelection) {
         super(name);
-        if (selectedStructure<-1) this.selectedStructure=-1;
-        else this.selectedStructure = selectedStructure;
-        this.allowNoSelection=allowNoSelection;
+    }
+    public StructureParameter(String name, int selectedStructure, boolean allowNoSelection, boolean multipleSelection) {
+        super(name, selectedStructure, allowNoSelection, multipleSelection);
     }
     
-    public boolean sameContent(Parameter other) {
-        if (other instanceof StructureParameter) {
-            StructureParameter otherP = (StructureParameter) other;
-            return selectedStructure==otherP.selectedStructure;
-        } else return false;
-    }
-
-    public void setContentFrom(Parameter other) {
-        if (other instanceof StructureParameter) {
-            StructureParameter otherP = (StructureParameter) other;
-            this.setSelectedIndex(otherP.selectedStructure);
-            this.allowNoSelection=otherP.allowNoSelection;
-        } else throw new IllegalArgumentException("wrong parameter type");
-    }
-
-    public int getSelectedIndex() {
-        return selectedStructure;
-    }
-
-    public boolean isAllowNoSelection() {
-        return allowNoSelection;
+    public StructureParameter(String name, int[] selectedStructures, boolean allowNoSelection) {
+        super(name, selectedStructures, allowNoSelection);
     }
     
     protected Experiment getXP() {
@@ -71,38 +43,13 @@ public class StructureParameter extends SimpleParameter implements ChoosablePara
         return xp;
     }
     
-    @Override 
-    public String toString(){
-        if (selectedStructure>=0 && getChoiceList().length>selectedStructure) return name+": "+getChoiceList()[selectedStructure];
-        else return name+": no selected structure";
-    }
-    
-    public ParameterUI getUI() {
-        return new ChoiceParameterUI(this);
-    }
-
-    public void setSelectedIndex(int selectedStructure) {
-        if (allowNoSelection) {
-            if (selectedStructure>=0) this.selectedStructure = selectedStructure;
-            else this.selectedStructure=-1;
-        }
-        else {
-            if (selectedStructure<0) this.selectedStructure=0;
-            else this.selectedStructure = selectedStructure;
-        }
-    }
-    
-    // choosable parameter
-    public void setSelectedItem(String item) {
-        setSelectedIndex(Utils.getIndex(this.getChoiceList(), item));
-    }
-    
+    @Override
     public String[] getChoiceList() {
         String[] choices;
         if (getXP()!=null) {
             choices=getXP().getStructuresAsString();
         } else {
-            choices = new String[]{"error"}; //no experiment in the tree, make a static method to get experiment...
+            choices = new String[]{"error, no experiment in the tree"}; //no experiment in the tree, make a static method to get experiment...
         }
         return choices;
     }

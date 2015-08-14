@@ -18,18 +18,21 @@
 package dataStructure.containers;
 
 import dataStructure.objects.StructureObject;
+import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
 import image.ImageInteger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author jollion
  */
 public interface ImageDAO {
-    
     public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName);
     public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName, BoundingBox bounds);
+    public BlankMask getPreProcessedImageProperties(String microscopyFieldName);
     public void writePreProcessedImage(Image image, int channelImageIdx, int timePoint, String microscopyFieldName);
     
     public ImageInteger openMask(StructureObject object);

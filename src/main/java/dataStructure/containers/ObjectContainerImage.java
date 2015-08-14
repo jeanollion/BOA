@@ -19,16 +19,10 @@ package dataStructure.containers;
 
 import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
-import dataStructure.objects.StructureObjectAbstract;
 import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
-import image.BoundingBox;
 import image.Image;
-import image.ImageFormat;
-import image.ImageIOCoordinates;
 import image.ImageInteger;
-import image.ImageReader;
-import image.ImageWriter;
 
 /**
  *
@@ -46,18 +40,16 @@ public class ObjectContainerImage extends ObjectContainer {
     }
 
     public ImageInteger getImage() {
-        Image image = structureObject.getRoot().getImageDAO().openMask((StructureObject)structureObject);
-        image.setOffset(bounds.getxMin(), bounds.getyMin(), bounds.getzMin());
-        image.setCalibration(scaleXY, scaleZ);
-        return (ImageInteger)image;
+        Image image = structureObject.getExperiment().getImageDAO().openMask((StructureObject)structureObject);
+        return (ImageInteger) image.resetOffset().addOffset(bounds.getxMin(), bounds.getyMin(), bounds.getzMin()).setCalibration(scaleXY, scaleZ);
     }
 
     public void updateObject(Object3D object) {
-        structureObject.getRoot().getImageDAO().writeMask(object.getMask(), (StructureObject)structureObject);
+        structureObject.getExperiment().getImageDAO().writeMask(object.getMask(), (StructureObject)structureObject);
     }
     
     public Object3D getObject() { 
-        ImageInteger mask = structureObject.getRoot().getImageDAO().openMask((StructureObject)structureObject);
+        ImageInteger mask = getImage();
         return new Object3D(mask, label);
     }
     

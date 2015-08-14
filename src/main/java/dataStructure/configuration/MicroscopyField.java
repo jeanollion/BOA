@@ -25,8 +25,12 @@ import configuration.parameters.SimpleListParameter;
 import configuration.parameters.StructureParameter;
 import dataStructure.containers.ImageDAO;
 import dataStructure.containers.InputImage;
+import dataStructure.containers.InputImagesImpl;
 import dataStructure.containers.MultipleImageContainer;
 import dataStructure.containers.MultipleImageContainerSingleFile;
+import dataStructure.objects.StructureObject;
+import de.caluga.morphium.annotations.Transient;
+import image.BlankMask;
 import plugins.PreFilter;
 
 /**
@@ -34,7 +38,6 @@ import plugins.PreFilter;
  * @author jollion
  */
 public class MicroscopyField extends SimpleContainerParameter {
-    
     
     MultipleImageContainer images;
     PreProcessingChain preProcessingChain=new PreProcessingChain("Pre-Processing chain");
@@ -54,7 +57,11 @@ public class MicroscopyField extends SimpleContainerParameter {
         preProcessingChain.setContentFrom(ppc);
     }
     
-    public InputImage[][] getInputImagesTC() {
+    public PreProcessingChain getPreProcessingChain() {
+        return preProcessingChain;
+    }
+    
+    public InputImagesImpl getInputImages() {
         ImageDAO dao = getExperiment().getImageDAO();
         InputImage[][] res = new InputImage[images.getTimePointNumber()][images.getChannelNumber()];
         for (int t = 0; t<res.length; ++t) {
@@ -62,12 +69,23 @@ public class MicroscopyField extends SimpleContainerParameter {
                res[t][c] = new InputImage(c, t, name, images, dao, true);
             } 
         }
+        return new InputImagesImpl(res, Math.min(50, images.getTimePointNumber()-1));
+    }
+    
+    public BlankMask getMask() {
+        BlankMask mask = getExperiment().getImageDAO().getPreProcessedImageProperties(name);
+        mask.setCalibration(images.getScaleXY(), images.getScaleZ());
+        return mask;
+    }
+    
+    public StructureObject[] createRootObjects() {
+        StructureObject[] res = new StructureObject[getImages().getTimePointNumber()];
+        for (int t = 0; t<res.length; ++t) {
+            res[t] = new StructureObject(this.name, t, getMask(), getExperiment());
+        }
         return res;
     }
     
-    public InputImage getInputImage(int timePoint, int channelIdx) {
-        return new InputImage(channelIdx, timePoint, name, images, getExperiment().getImageDAO(), true);
-    }
     
     protected Experiment getExperiment() {
         return (Experiment) parent.getParent();

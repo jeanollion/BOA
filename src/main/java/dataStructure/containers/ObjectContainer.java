@@ -18,7 +18,6 @@
 package dataStructure.containers;
 
 import dataStructure.objects.Object3D;
-import dataStructure.objects.StructureObjectAbstract;
 import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
 import image.BoundingBox;
@@ -30,6 +29,8 @@ import image.BoundingBox;
 
 @Embedded(polymorph=true)
 public abstract class ObjectContainer {
+    public static final int MAX_VOX_3D = 5000; //(10 vox ~ 1kb)
+    public static final int MAX_VOX_2D = 7500; //(10 vox ~ 1kb)
     @Transient protected float scaleXY, scaleZ;
     BoundingBox bounds;
     public ObjectContainer(BoundingBox bounds, float scaleXY, float scaleZ) {

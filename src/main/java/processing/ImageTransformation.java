@@ -20,39 +20,70 @@ package processing;
 import image.Image;
 import image.ImageProperties;
 import image.ImagescienceWrapper;
+import imagescience.image.Axes;
 import imagescience.image.Coordinates;
 import imagescience.image.Dimensions;
 import imagescience.transform.Rotate;
 import imagescience.transform.Turn;
 import imagescience.transform.Translate;
 import imagescience.transform.Embed;
+import imagescience.transform.Mirror;
 /**
  *
  * @author jollion
  */
 public class ImageTransformation {
-    
-    public static Image rotateXY(Image image, float angle) {
-        if (angle%90==0) {
-            return turn(image, (int)angle/90, 0, 0);
-        } else return rotate(image, angle, 0, 0, 2, true, true);
+    public static enum Axis {
+        X, Y, Z, XY, XZ, YZ;
+        public  static Axes getAxes(Axis axis) {
+            if (Axis.X.equals(axis)) return new Axes(true);
+            else if (Axis.Y.equals(axis)) return new Axes(false, true);
+            else if (Axis.Z.equals(axis)) return new Axes(false, false, true);
+            else if (Axis.XY.equals(axis)) return new Axes(true, true, false);
+            else if (Axis.XZ.equals(axis)) return new Axes(true, false, true);
+            else if (Axis.YZ.equals(axis)) return new Axes(false, true, true);
+            else return new Axes();
+        }
+    };
+    public static enum InterpolationScheme {
+        NEAREST(0), LINEAR(1), CUBIC(2), BSPLINE3(3), OMOMS3(4), BSPLINE5(5);
+        private final int value;
+        InterpolationScheme(int value){
+            this.value = value;
+        }
+        public int getValue(){return value;};
+        public static String[] getValues() {
+            String[] values = new String[InterpolationScheme.values().length]; int idx = 0;
+            for (InterpolationScheme s : InterpolationScheme.values()) values[idx++]=s.toString();
+            return values;
+        }
     }
     
-    public static Image rotate(Image image, float zAngle, float yAngle, float xAngle, int interpolation, boolean fit, boolean antialiasing) {
-        return ImagescienceWrapper.wrap((new  Rotate()).run(ImagescienceWrapper.getImagescience(image), zAngle, yAngle, xAngle, interpolation, fit, antialiasing));
+    public static Image rotateXY(Image image, float angle, InterpolationScheme interpolation) {
+        if (angle%90==0) {
+            return turn(image, (int)angle/90, 0, 0);
+        } else return rotate(image, angle, 0, 0, interpolation, true, true);
+    }
+    
+    public static Image rotate(Image image, float zAngle, float yAngle, float xAngle, InterpolationScheme scheme, boolean fit, boolean antialiasing) {
+        return ImagescienceWrapper.wrap((new  Rotate()).run(ImagescienceWrapper.getImagescience(image), zAngle, yAngle, xAngle, scheme.getValue(), fit, antialiasing));
     }
     
     public static Image turn(Image image, int times90z, int times90y, int times90x) {
         return ImagescienceWrapper.wrap((new Turn()).run(ImagescienceWrapper.getImagescience(image), times90z, times90y, times90x));
     }
     
-    public static Image translate(Image image, int xTrans, int yTrans, int zTrans, int interpolation) {
-        return ImagescienceWrapper.wrap((new  Translate()).run(ImagescienceWrapper.getImagescience(image), xTrans, yTrans, zTrans, interpolation));
+    public static Image translate(Image image, double xTrans, double yTrans, double zTrans, InterpolationScheme scheme) {
+        return ImagescienceWrapper.wrap((new  Translate()).run(ImagescienceWrapper.getImagescience(image), xTrans, yTrans, zTrans, scheme.getValue()));
     }
     
     public static Image resize(Image image, ImageProperties newImage, int posX, int posY, int posZ) {
         Dimensions dim = new Dimensions(newImage.getSizeX(), newImage.getSizeY(), newImage.getSizeZ(), 1, 1);
         Coordinates pos = new Coordinates(posX, posY, posZ);
         return ImagescienceWrapper.wrap((new Embed()).run(ImagescienceWrapper.getImagescience(image), dim, pos, 0));
+    }
+    
+    public static void filp(Image image, Axis axis) {
+        new Mirror().run(ImagescienceWrapper.getImagescience(image), Axis.getAxes(axis));
     }
 }

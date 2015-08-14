@@ -33,8 +33,9 @@ import javax.swing.tree.TreeNode;
  *
  * @author jollion
  */
-@Embedded(polymorph = true)
+
 @Lifecycle
+@Embedded(polymorph = true)
 public abstract class SimpleParameter implements Parameter {
     protected String name;
     @Transient private ContainerParameter parent;

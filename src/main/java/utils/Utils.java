@@ -60,23 +60,6 @@ public class Utils {
         return !m.find();
     }
     
-    public static void waitForWrites(Morphium m) {
-        int count = 0;
-        while (m.getWriteBufferCount() > 0) {
-            count++;
-            if (count % 100 == 0)
-                //log.info("still " + MorphiumSingleton.get().getWriteBufferCount() + " writers active (" + MorphiumSingleton.get().getBufferedWriterBufferCount() + " + " + MorphiumSingleton.get().getWriterBufferCount() + ")");
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException ex) {
-            }
-        }
-        //waiting for it to be persisted
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-        }
-    }
     
     public static String formatInteger(int paddingSize, int number) {
         return String.format(Locale.US, "%0" + paddingSize + "d", number);

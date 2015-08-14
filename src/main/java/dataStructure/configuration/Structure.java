@@ -33,19 +33,20 @@ import plugins.Tracker;
  */
 
 public class Structure extends SimpleContainerParameter {
-    ParentStructureParameter parentStructure =  new ParentStructureParameter("Parent Structure", -1, 0);;
+    ParentStructureParameter parentStructure =  new ParentStructureParameter("Parent Structure", -1, -1);
     ChannelImageParameter channelImage = new ChannelImageParameter("Channel Image", 0);
     ProcessingChain processingChain = new ProcessingChain("Processing Chain");
     PluginParameter<Tracker> tracker = new PluginParameter<Tracker>("Tracker", Tracker.class, true);
     
     NameEditorUI ui;
     public Structure(String name) {
-        this(name, -1);
+        this(name, -1, -1);
     }
     
-    public Structure(String name, int parentStructure) {
+    public Structure(String name, int parentStructure, int channelImage) {
         super(name);
         this.parentStructure.setSelectedIndex(parentStructure);
+        this.channelImage.setSelectedIndex(channelImage);
         initChildList();
     }
     
@@ -71,7 +72,6 @@ public class Structure extends SimpleContainerParameter {
     }
     
     public void setParentStructure(int parentIdx) {
-        if (parentIdx>=parentStructure.getMaxStructureIdx()) throw new IllegalArgumentException("Parent Structure ("+parentIdx+") cannot be superior to max structure ("+parentStructure.getMaxStructureIdx()+")");
         parentStructure.setSelectedIndex(parentIdx);
     }
     

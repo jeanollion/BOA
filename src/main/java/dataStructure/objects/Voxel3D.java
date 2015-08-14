@@ -1,15 +1,9 @@
 package dataStructure.objects;
 
-import de.caluga.morphium.annotations.Embedded;
-import de.caluga.morphium.annotations.Transient;
 
-@Embedded
-public class Voxel3D implements Comparable<Voxel3D>{
+public class Voxel3D extends Voxel implements Comparable<Voxel3D>{
 
-    public int x;
-    public int y;
     public int z;
-    @Transient float value;
 
     public Voxel3D(int x, int y, int z) {
         this.x = x;
@@ -21,6 +15,8 @@ public class Voxel3D implements Comparable<Voxel3D>{
         this(x, y, z);
         this.value = value;
     }
+    
+    public int getZ() {return z;}
 
     @Override
     public int compareTo(Voxel3D other) {
@@ -51,6 +47,4 @@ public class Voxel3D implements Comparable<Voxel3D>{
         return "Voxel3D{" + "x=" + x + ", y=" + y + ", z=" + z + ", value=" + value + '}';
     }
     
-    //morphia
-    private Voxel3D(){};
 }

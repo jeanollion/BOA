@@ -34,7 +34,7 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
     int[] selectedItems;
     String[] listChoice;
     @Transient MultipleChoiceParameterUI ui;
-    @Transient int trimSize=30;
+    @Transient int displayTrimSize=50;
     
     public MultipleChoiceParameter(String name, String[] listChoice, int[] selectedItems) {
         super(name);
@@ -45,21 +45,13 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
     public MultipleChoiceParameter(String name, String[] listChoice, boolean selectAll) {
         super(name);
         this.listChoice=listChoice;
-        if (selectAll) {
-            this.selectedItems=new int[listChoice.length];
-            for (int i = 0; i<selectedItems.length; ++i) selectedItems[i]=i;
-        } else selectedItems=new int[0];
+        if (selectAll) setAllSelectedItems();
+        else selectedItems=new int[0];
     }
     
-    public static String[] createChoiceList(int startElement, int endElement) {
-        String[] res = new String[endElement-startElement+1];
-        int paddingSize=String.valueOf(endElement).length();
-        for (int i = startElement; i<=endElement; ++i) res[i-startElement] = Utils.formatInteger(paddingSize, i);
-        return res;
-    }
     
     public void setTrimSize(int trimSize) {
-        this.trimSize=trimSize;
+        this.displayTrimSize=trimSize;
     }
     
     public ParameterUI getUI() {
@@ -68,8 +60,14 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
     }
     
     // multiple choice parameter implementation
-    public void setSelectedItems(int[] selectedItems) {
-        this.selectedItems = selectedItems;
+    public void setSelectedIndicies(int[] selectedItems) {
+        if (selectedItems==null) this.selectedItems=new int[0];
+        else this.selectedItems = selectedItems;
+    }
+    
+    public void setAllSelectedItems() {
+        this.selectedItems=new int[listChoice.length];
+        for (int i = 0; i<selectedItems.length; ++i) selectedItems[i]=i;
     }
 
     public int[] getSelectedItems() {
@@ -91,23 +89,19 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
     
     @Override
     public String toString() {
-        return name +": "+ Utils.getStringArrayAsStringTrim(trimSize, getSelectedItemsNames());
+        return name +": "+ Utils.getStringArrayAsStringTrim(displayTrimSize, getSelectedItemsNames());
     }
     
     public boolean sameContent(Parameter other) { // checks only indicies
         if (other instanceof ChoosableParameterMultiple) {
-            ChoosableParameterMultiple cm = (ChoosableParameterMultiple)other;
-            if (cm.getSelectedItems().length==this.getSelectedItems().length) {
-                for (int i = 0; i<getSelectedItems().length; ++i) if (cm.getSelectedItems()[i]!=getSelectedItems()[i]) return false;
-                return true;
-            } else return false;
+            return ParameterUtils.arraysEqual(getSelectedItems(), ((ChoosableParameterMultiple)other).getSelectedItems());
         } else return false;
     }
 
     public void setContentFrom(Parameter other) {
         if (other instanceof ChoosableParameterMultiple) {
             this.listChoice=((ChoosableParameterMultiple)other).getChoiceList();
-            this.setSelectedItems(((ChoosableParameterMultiple)other).getSelectedItems());
+            this.setSelectedIndicies(((ChoosableParameterMultiple)other).getSelectedItems());
         } else if (other instanceof ChoosableParameter) {
             String sel = ((ChoosableParameter)other).getChoiceList()[((ChoosableParameter)other).getSelectedIndex()];
             int i = Utils.getIndex(listChoice, sel);

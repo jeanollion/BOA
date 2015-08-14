@@ -29,7 +29,6 @@ import configuration.userInterface.ConfigurationTreeModel;
 import configuration.userInterface.TreeModelContainer;
 import dataStructure.containers.ImageDAO;
 import dataStructure.containers.ImageDAOFactory;
-import dataStructure.containers.SimulationImageDAO;
 import de.caluga.morphium.annotations.Entity;
 import de.caluga.morphium.annotations.Id;
 import de.caluga.morphium.annotations.Index;
@@ -56,8 +55,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter<ChannelImage>("Channel Images", 0 , ChannelImage.class);
     SimpleListParameter<MicroscopyField> fields= new SimpleListParameter<MicroscopyField>("Fields", 0 , MicroscopyField.class);
     ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.BIOFORMATS.getMethod(), false);
-    PreProcessingChain templatePreProcessingChain = new PreProcessingChain("Template PrePrecessing Chain");
-    public enum ImageDAOTypes {LocalFileSystem, Simulation};
+    public enum ImageDAOTypes {LocalFileSystem}; //Simulation
     ImageDAOTypes imageDAOType=ImageDAOTypes.LocalFileSystem;
     
     @Transient ConfigurationTreeModel model;
@@ -78,12 +76,11 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         this.imageDAOType=type;
     }
     public ImageDAO getImageDAO() {
-        if (imageDAOType.equals(ImageDAOTypes.Simulation)) return new SimulationImageDAO();
-        else return ImageDAOFactory.getLocalFileSystemImageDAO(getOutputImageDirectory()); //if (imageDAOType.equals(ImageDAOTypes.LocalFileSystem))
+        return ImageDAOFactory.getLocalFileSystemImageDAO(getOutputImageDirectory()); //if (imageDAOType.equals(ImageDAOTypes.LocalFileSystem))
     }
     
     protected void initChildList() {
-        super.initChildren(importMethod, templatePreProcessingChain, fields, channelImages, structures, imagePath);
+        super.initChildren(importMethod, fields, channelImages, structures, imagePath);
     }
     
     public SimpleListParameter<MicroscopyField> getMicroscopyFields() {
@@ -94,12 +91,19 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         return fields.getChildByName(fieldName);
     }
     
+    public MicroscopyField getMicroscopyField(int fieldIdx) {
+        return fields.getChildAt(fieldIdx);
+    }
+    
     public int getTimePointNumber() {
+        if (fields.getChildCount()==0) return 0;
         MicroscopyField f= fields.getChildAt(0);
-        if (f!=null) {
+        if (f!=null && f.images!=null) {
             return f.images.getTimePointNumber();
         } else return 0;
     }
+    
+    public ObjectId getId() {return id;}
     
     public SimpleListParameter<ChannelImage> getChannelImages() {
         return channelImages;
@@ -111,6 +115,10 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     public String getOutputImageDirectory() {
         return imagePath.getFirstSelectedFilePath();
+    }
+    
+    public void setOutputImageDirectory(String outputPath) {
+        imagePath.setSelectedFilePath(outputPath);
     }
     
     public int[] getStructureToChannelCorrespondance() {
@@ -133,6 +141,23 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     public int getChannelImageNB() {
         return channelImages.getChildCount();
+    }
+    
+    public int getMicrocopyFieldNB() {
+        return fields.getChildCount();
+    }
+    
+    public int[] getChildStructures(int structureIdx) {
+        ArrayList<Integer> childrenAL = new ArrayList<Integer>(2);
+        int idx = 0;
+        for (Structure s : structures.getChildren()) {
+            if (s.getParentStructure()==structureIdx) childrenAL.add(idx);
+            idx++;
+        }
+        int [] childrenArray=new int[childrenAL.size()];
+        idx = 0;
+        for (int i : childrenAL) childrenArray[idx++]=i;
+        return childrenArray;
     }
     
     public String[] getStructuresAsString() {return structures.getChildrenString();}
@@ -243,7 +268,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         }*/
     }
     
-
-    
-    
+    // morphium
+    public Experiment(){}
+    public void callLazyLoading(){}
 }

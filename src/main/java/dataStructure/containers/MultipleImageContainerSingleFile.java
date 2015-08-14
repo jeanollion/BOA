@@ -33,13 +33,13 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
     String filePath;
     String name;
     int timePointNumber, channelNumber;
-    int series;
+    int seriesIdx;
     BoundingBox bounds;
-    private ImageReader reader;
+    @Transient private ImageReader reader;
     
     public MultipleImageContainerSingleFile(String name, String imagePath, int series, int timePointNumber, int channelNumber) {
         this.name = name;
-        this.series=series;
+        this.seriesIdx=series;
         filePath = imagePath;
         this.timePointNumber = timePointNumber;
         this.channelNumber=channelNumber;
@@ -62,7 +62,7 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
     }
     
     protected ImageIOCoordinates getImageIOCoordinates(int timePoint, int channel) {
-        return new ImageIOCoordinates(series, channel, timePoint);
+        return new ImageIOCoordinates(seriesIdx, channel, timePoint);
     }
     
     protected ImageReader getReader() {

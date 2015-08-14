@@ -27,8 +27,12 @@ public class ChannelImageParameter extends StructureParameter {
         this(name, -1);
     }
     
-    public ChannelImageParameter(String name, int selectedStructure) {
-        super(name, selectedStructure, false);
+    public ChannelImageParameter(String name, int selectedChannel) {
+        super(name, selectedChannel, false, false);
+    }
+    
+    public ChannelImageParameter(String name, int[] selectedChannels) {
+        super(name, selectedChannels, false);
     }
     
     @Override

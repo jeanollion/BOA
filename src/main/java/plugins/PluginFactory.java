@@ -27,8 +27,8 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -36,17 +36,22 @@ import java.util.logging.Logger;
  */
 public class PluginFactory {
 
-    private static TreeMap<String, Class> plugins = new TreeMap<String, Class>();
-
+    private final static TreeMap<String, Class> plugins = new TreeMap<String, Class>();
+    private final static Logger logger = LoggerFactory.getLogger(PluginFactory.class);
+    
     public static void findPlugins(String packageName) {
         try {
             for (Class c : getClasses(packageName)) {
-                if (Plugin.class.isAssignableFrom(c)) plugins.put(c.getSimpleName(), c);
+                //Class<?> clazz = Class.forName(c);
+                if (Plugin.class.isAssignableFrom(c)) { // ne check pas l'heritage indirect!!
+                    plugins.put(c.getSimpleName(), c);
+                    System.out.println("plugin found: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());
+                } else System.out.println("class is no plugin: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());
             }
         } catch (ClassNotFoundException ex) {
-            Logger.getLogger(PluginFactory.class.getName()).log(Level.WARNING, ex.getMessage(), ex);
+            logger.warn("find plugins", ex);
         } catch (IOException ex) {
-            Logger.getLogger(PluginFactory.class.getName()).log(Level.WARNING, ex.getMessage(), ex);
+            logger.warn("find plugins", ex);
         }            
     }
     
@@ -95,9 +100,10 @@ public class PluginFactory {
                 String className = table.get(command);
                 testClassIJ(command, className, loader);
             }
-            Core.getLogger().info("number of plugins found: " + plugins.size());
-        } catch (Exception e) {
-            Core.getLogger().log(Level.CONFIG, e.getMessage(), e);
+            
+            logger.info("number of plugins found: " + plugins.size());
+        } catch (Exception ex) {
+            logger.warn("find plugins IJ", ex);
         }
     }
 
@@ -116,9 +122,9 @@ public class PluginFactory {
                         plugins.put(simpleName, c);
                     }
                 }
-            } catch (ClassNotFoundException e) {
-                Core.getLogger().log(Level.CONFIG, e.getMessage(), e);
-            } catch (NoClassDefFoundError e) {
+            } catch (ClassNotFoundException ex) {
+                logger.warn("test class IJ", ex);
+            } catch (NoClassDefFoundError ex) {
                 int dotIndex = className.indexOf('.');
                 if (dotIndex >= 0) {
                     testClassIJ(command, className.substring(dotIndex + 1), loader);
@@ -139,27 +145,30 @@ public class PluginFactory {
             if (res != null && res instanceof Plugin) {
                 return ((Plugin) res);
             }
-        } catch (InstantiationException e) {
-            Core.getLogger().log(Level.CONFIG, e.getMessage(), e);
-        } catch (IllegalAccessException e) {
-            Core.getLogger().log(Level.CONFIG, e.getMessage(), e);
+        } catch (InstantiationException ex) {
+            System.out.println("instnc execpion:"+ex.getMessage());
+            logger.warn("getPlugin", ex);
+        } catch (IllegalAccessException ex) {
+            logger.warn("test class IJ", ex);
         }
         return null;
     }
 
     public static <T extends Plugin> T getPlugin(Class<T> clazz, String className) {
+        //System.out.println("get plugin: class type"+clazz.getCanonicalName()+ " class name: "+className);
         try {
             Class plugClass = plugins.get(className);
             if (plugClass==null) {
-                Logger.getLogger(PluginFactory.class.getName()).log(Level.WARNING, "plugin :{0} of class: {1} not found", new Object[]{className, clazz});
+                //System.out.println("get not found.. ");
+                logger.error("plugin :{} of class: {} not found", className, clazz);
                 return null;
             }
             T instance = (T) plugClass.newInstance();
             return instance;
         } catch (InstantiationException ex) {
-            Logger.getLogger(PluginFactory.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
+            logger.error("plugin :{} of class: {} could not be instanciated, missing null constructor?", className, clazz, ex);
         } catch (IllegalAccessException ex) {
-            Logger.getLogger(PluginFactory.class.getName()).log(Level.SEVERE, ex.getMessage(), ex);
+            logger.error("plugin :{} of class: {} could not be instanciated", className, clazz, ex);
         }
         return null;
     }

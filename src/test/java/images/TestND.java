@@ -28,7 +28,7 @@ public class TestND {
     //@Test
     public void testDim() {
         ImageReader r = new ImageReader("/data/Images/mg6300WT_LB_LR62silicium_oil37.nd2");
-        int[][] stc = r.getSTCNumbers();
+        int[][] stc = r.getSTCXYZNumbers();
         System.out.println("number of series: "+stc.length+ " time points: "+stc[0][0]+ " channels: "+stc[0][1]);
         //>5min .. 60 series 985 timePoints 1 channel
     }

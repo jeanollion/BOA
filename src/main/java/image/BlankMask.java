@@ -17,6 +17,11 @@ public class BlankMask extends ImageInteger implements ImageMask {
     public BlankMask(String name, BoundingBox bounds, float scaleXY, float scaleZ) {
         this(name, bounds.getSizeX(), bounds.getSizeY(), bounds.getSizeZ(), bounds.getxMin(), bounds.getyMin(), bounds.getzMin(), scaleXY, scaleZ);
     }
+    
+    @Override
+    public Image getZPlane(int idxZ) {
+        return new BlankMask(name, sizeX, sizeY, 1, offsetX, offsetY, offsetZ+idxZ, scaleXY, scaleZ);
+    }
 
     public boolean insideMask(int x, int y, int z) {
         return true;
@@ -95,4 +100,12 @@ public class BlankMask extends ImageInteger implements ImageMask {
     public void setPixel(int xy, int z, int value) {}
     
     public void appendBinaryMasks(int startLabel, ImageMask... masks){}
+
+    @Override
+    public void setPixelWithOffset(int x, int y, int z, int value) {
+    }
+
+    @Override
+    public void setPixelWithOffset(int x, int y, int z, Number value) {
+    }
 }

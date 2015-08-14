@@ -56,7 +56,7 @@ public class ImageFeatures {
         for (int i = 0; i < res.length; i++) {
             res[i].setName(image.getName() + ":structure:" + (i + 1));
             res[i].setCalibration(image);
-            res[i].setOffset(image);
+            res[i].resetOffset().addOffset(image);
         }
         return res;
     }
@@ -70,7 +70,7 @@ public class ImageFeatures {
         for (int i =0;i<dims; i++) {
             res[i] = (ImageFloat)ImagescienceWrapper.wrap(differentiator.run(is.duplicate(), scale, i==0?1:0, i==1?1:0, i==2?1:0));
             res[i].setCalibration(image);
-            res[i].setOffset(image);
+            res[i].resetOffset().addOffset(image);
         }
         return res;
     }
@@ -167,7 +167,7 @@ public class ImageFeatures {
         for (int i=0;i<res.length;i++) {
             res[i] = (ImageFloat)ImagescienceWrapper.wrap((imagescience.image.Image) vector.get(i));
             res[i].setCalibration(image);
-            res[i].setOffset(image);
+            res[i].resetOffset().addOffset(image);
             res[i].setName(image.getName() + ":hessian" + (i + 1));
         }
         return res;
@@ -181,7 +181,7 @@ public class ImageFeatures {
         ImageFloat res = (ImageFloat)ImagescienceWrapper.wrap(differentiator.run(ImagescienceWrapper.getImagescience(image), scaleXY, 0, 0, 0));
         image.setCalibration(old_scaleXY, old_scaleZ);
         res.setCalibration(old_scaleXY, old_scaleZ);
-        res.setOffset(image);
+        res.resetOffset().addOffset(image);
         return res;
     }
 }

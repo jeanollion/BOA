@@ -18,12 +18,15 @@
 package plugins;
 
 import configuration.parameters.Parameter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author jollion
  */
 public interface Plugin {
+    public final static Logger logger = LoggerFactory.getLogger(Plugin.class);
     public Parameter[] getParameters();
     public boolean does3D();
 }
