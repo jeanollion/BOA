@@ -29,7 +29,7 @@ import utils.SmallArray;
  *
  * @author nasique
  */
-public class StructureNode implements TreeNode {
+public class StructureNode implements TreeNode, UIContainer {
     TreeNode parent; // can be either TimePointNode or ObjectNode
     ObjectNode[] children;
     int idx;
@@ -78,6 +78,11 @@ public class StructureNode implements TreeNode {
     
     public StructureObjectTreeGenerator getGenerator() {
         return (parent instanceof TimePointNode) ? ((TimePointNode)parent).getGenerator() : ((ObjectNode)parent).getGenerator();
+    }
+    
+    // UIContainer implementation
+    @Override public Object[] getDisplayComponent() {
+        return new Object[0];
     }
     
     // TreeNode implementation

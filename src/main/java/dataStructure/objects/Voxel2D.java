@@ -39,7 +39,7 @@ public class Voxel2D extends Voxel implements Comparable<Voxel2D>{
 
     @Override
     public String toString() {
-        return "Voxel3D{" + "x=" + x + ", y=" + y + ", value=" + value + '}';
+        return "Voxel2D{" + "x=" + x + ", y=" + y + ", value=" + value + '}';
     }
     
 }

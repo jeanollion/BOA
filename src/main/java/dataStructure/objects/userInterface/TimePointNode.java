@@ -27,7 +27,7 @@ import javax.swing.tree.TreeNode;
  *
  * @author nasique
  */
-public class TimePointNode implements TreeNode {
+public class TimePointNode implements TreeNode, UIContainer {
     FieldNode parent;
     int timePoint;
     private StructureNode[] children;
@@ -57,6 +57,11 @@ public class TimePointNode implements TreeNode {
             for (int i = 0; i<children.length; ++i) children[i]=new StructureNode(childrenIndicies[i], this);
         }
         return children;
+    }
+    
+    // UIContainer implementation
+    @Override public Object[] getDisplayComponent() {
+        return new Object[0];
     }
     
     // TreeNode implementation

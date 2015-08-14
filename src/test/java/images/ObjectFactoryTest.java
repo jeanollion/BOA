@@ -49,7 +49,7 @@ public class ObjectFactoryTest {
         
         bound1=new BoundingBox(0, 1, 0, 0,0,0);
         bound3 = new BoundingBox(2, 3, 1,1,1,1);
-        o1 = new Object3D(im.cropLabel(1, bound1), 1);
+        o1 = new Object3D<Voxel3D>(im.cropLabel(1, bound1), 1, Voxel3D.class);
         o3 = new Object3D(im.cropLabel(3, bound3), 3);
         
     }
@@ -62,10 +62,15 @@ public class ObjectFactoryTest {
         assertTrue("object1 vox2:", new Voxel3D(1, 0, 0).equals(obs[0].getVoxels().get(1)));
         assertEquals("object3 vox number:", 2, obs[1].getVoxels().size());
         assertTrue("object3 vox1:", new Voxel3D(2, 1, 1).equals(obs[1].getVoxels().get(0)));
-        System.out.println("voxel 1 o3:"+obs[1].getVoxels().get(1));
         assertTrue("object3 vox2:", new Voxel3D(3, 1, 1).equals(obs[1].getVoxels().get(1)));
-        for (int i = 0; i<obs[0].getVoxels().size(); ++i) assertTrue("o1 vox:"+i, obs[0].getVoxels().get(i).equals(o1.getVoxels().get(i)));
-        for (int i = 0; i<obs[1].getVoxels().size(); ++i) assertTrue("o3 vox:"+i, obs[1].getVoxels().get(i).equals(o3.getVoxels().get(i)));
+        for (int i = 0; i<obs[0].getVoxels().size(); ++i) {
+            Utils.logger.trace("o1 vox: expected: {} actual: {}", o1.getVoxels().get(i), obs[0].getVoxels().get(i) );
+            assertTrue("o1 vox:"+i, obs[0].getVoxels().get(i).equals(o1.getVoxels().get(i)));
+        }
+        for (int i = 0; i<obs[1].getVoxels().size(); ++i) {
+            Utils.logger.trace("o3 vox: expected: {} actual: {}", o3.getVoxels().get(i), obs[1].getVoxels().get(i) );
+            assertTrue("o3 vox:"+i, obs[1].getVoxels().get(i).equals(o3.getVoxels().get(i)));
+        }
     }
     
     @Test

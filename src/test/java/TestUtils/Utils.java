@@ -17,6 +17,7 @@
  */
 package TestUtils;
 
+import dataStructure.ProcessingTest;
 import ij.IJ;
 import ij.ImageJ;
 import ij.ImagePlus;
@@ -25,12 +26,15 @@ import image.Image;
 import image.ImageByte;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author nasique
  */
 public class Utils {
+    public static final Logger logger = LoggerFactory.getLogger(ProcessingTest.class);
     public static void showImageIJ(Image image) {
         if (IJ.getInstance()==null) new ImageJ();
         ImagePlus ip = IJImageWrapper.getImagePlus(image);

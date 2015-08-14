@@ -26,7 +26,7 @@ import javax.swing.tree.TreeNode;
  *
  * @author nasique
  */
-public class FieldNode implements TreeNode {
+public class FieldNode implements TreeNode, UIContainer {
     ExperimentNode parent;
     TimePointNode[] children;
     String fieldName;
@@ -47,6 +47,11 @@ public class FieldNode implements TreeNode {
     
     public StructureObjectTreeGenerator getGenerator() {
         return parent.getGenerator();
+    }
+    
+    // UIContainer implementation
+    @Override public Object[] getDisplayComponent() {
+        return new Object[0];
     }
     
     // TreeNode implementation

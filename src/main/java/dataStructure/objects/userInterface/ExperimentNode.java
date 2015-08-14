@@ -26,7 +26,7 @@ import javax.swing.tree.TreeNode;
  *
  * @author nasique
  */
-public class ExperimentNode implements TreeNode {
+public class ExperimentNode implements TreeNode, UIContainer {
     protected final StructureObjectTreeGenerator generator;
     FieldNode[] children;
     
@@ -45,6 +45,11 @@ public class ExperimentNode implements TreeNode {
             for (int i = 0; i<children.length; ++i) children[i] = new FieldNode(this, fieldNames[i]);
         }
         return children;
+    }
+    
+    // UIContainer implementation
+    @Override public Object[] getDisplayComponent() {
+        return new Object[0];
     }
     
     // TreeNode implementation

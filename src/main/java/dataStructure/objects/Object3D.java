@@ -26,6 +26,7 @@ public class Object3D<T extends Voxel> {
     BoundingBox bounds;
     protected int label;
     protected ArrayList<T> voxels; //lazy -> use getter // coordonnées des voxel -> par rapport au parent
+    protected Class<T> type;
     /**
      * 
      * @param mask : image containing only the object, and whose bounding box is the same as the one of the object
@@ -36,6 +37,11 @@ public class Object3D<T extends Voxel> {
         this.scaleXY=mask.getScaleXY();
         this.scaleZ=mask.getScaleZ();
         this.label=label;
+    }
+    
+    public Object3D(ImageInteger mask, int label, Class<T> type) {
+        this(mask, label);
+        this.type=type;
     }
     
     public Object3D(ArrayList<T> voxels, int label, float scaleXY, float scaleZ) {
@@ -64,7 +70,7 @@ public class Object3D<T extends Voxel> {
 
     protected void createVoxels() {
         voxels=new ArrayList<T>();
-        if (mask.getSizeZ() > 1) {
+        if (mask.getSizeZ() > 1 || mask.getOffsetZ()>0 || (type!=null && type.equals(Voxel3D.class))) {
             for (int z = 0; z < mask.getSizeZ(); ++z) {
                 for (int y = 0; y < mask.getSizeY(); ++y) {
                     for (int x = 0; x < mask.getSizeX(); ++x) {

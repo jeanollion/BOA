@@ -62,7 +62,6 @@ import utils.MorphuimUtils;
  * @author jollion
  */
 public class ProcessingTest {
-    public final static Logger logger = LoggerFactory.getLogger(ProcessingTest.class);
     @Rule
     public TemporaryFolder testFolder = new TemporaryFolder();
     
@@ -77,7 +76,7 @@ public class ProcessingTest {
         return images;
     }
     
-    //@Test
+    @Test
     public void importFieldTest() {
         // creation de l'image de test
         String title = "imageTestMultiple";
@@ -105,7 +104,7 @@ public class ProcessingTest {
         Utils.assertImageByte(images[0][0], (ImageByte)c.getImage(0, 0));
     }
     
-    //@Test
+    @Test
     public void preProcessingTest() {
         // set-up XP
         File daoFolder = testFolder.newFolder("TestPreProcessingDAOFolder");
@@ -142,7 +141,7 @@ public class ProcessingTest {
         try {
             cfg.addHost("localhost", 27017);
         } catch (UnknownHostException ex) {
-            logger.error("create morphium", ex);
+            Utils.logger.error("create morphium", ex);
         }
         Morphium m=new Morphium(cfg);
         m.clearCollection(Experiment.class);
@@ -166,14 +165,14 @@ public class ProcessingTest {
         return mask;
     }
     
-    //@Test
+    @Test
     public void StructureObjectTestStore() {
         MorphiumConfig cfg = new MorphiumConfig();
         cfg.setDatabase("testdb");
         try {
             cfg.addHost("localhost", 27017);
         } catch (UnknownHostException ex) {
-            logger.error("create morphium", ex);
+            Utils.logger.error("create morphium", ex);
         }
         Morphium m=new Morphium(cfg);
         m.clearCollection(StructureObject.class);
@@ -282,7 +281,7 @@ public class ProcessingTest {
             }
             
             for (int t = 1; t<root.length; ++t) {
-                logger.trace("root track: {}->{} / expected: {} / actual: {}", t-1, t, root[t], root[t-1].getNext());
+                Utils.logger.trace("root track: {}->{} / expected: {} / actual: {}", t-1, t, root[t], root[t-1].getNext());
                 assertEquals("root track:"+(t-1)+"->"+t, root[t], root[t-1].getNext());
                 assertEquals("root track:"+(t)+"->"+(t-1), root[t-1], root[t].getPrevious());
             }
@@ -312,7 +311,7 @@ public class ProcessingTest {
             //return new ImageByte[]{maskMC, maskBactos};
             
         } catch (UnknownHostException ex) {
-            logger.error("create morphium", ex);
+            Utils.logger.error("create morphium", ex);
         } //return null;
     }
     /*public static void main(String[] args) throws IOException {

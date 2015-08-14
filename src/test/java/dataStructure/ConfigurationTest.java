@@ -17,31 +17,18 @@
  */
 package dataStructure;
 
-import core.Processor;
+import TestUtils.Utils;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.Structure;
-import dataStructure.containers.MultipleImageContainer;
-import dataStructure.containers.MultipleImageContainerSingleFile;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
-import image.ImageByte;
-import image.ImageReader;
-import image.ImageWriter;
-import image.ImageFormat;
-import images.ImageIOTest;
-import java.io.File;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import testPlugins.dummyPlugins.DummySegmenter;
 import plugins.PluginFactory;
 import plugins.plugins.trackers.TrackerObjectIdx;
@@ -100,7 +87,7 @@ public class ConfigurationTest {
             assertTrue("xp init postLoad", xp.getChildCount()>0);
             
         } catch (UnknownHostException ex) {
-            Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
+            Utils.logger.error("couldnot connect to db", ex);
         }
     }
     
@@ -142,7 +129,7 @@ public class ConfigurationTest {
             assertTrue("xp init postLoad", xp.getChildCount()>0);
             
         } catch (UnknownHostException ex) {
-            Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
+            Utils.logger.error("couldnot connect to db", ex);
         }
     }
 }

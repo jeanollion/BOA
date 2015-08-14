@@ -17,6 +17,7 @@
  */
 package dataStructure.objects.userInterface;
 
+import static configuration.userInterface.ConfigurationTree.addToMenu;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.ObjectDAO;
 import de.caluga.morphium.Morphium;
@@ -24,6 +25,7 @@ import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import javax.swing.Icon;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
@@ -48,7 +50,6 @@ public class StructureObjectTreeGenerator {
     protected ExperimentNode experimentNode;
     
     public StructureObjectTreeGenerator(Experiment xp, Morphium m) {
-        System.out.println("logger is debug mode?"+logger.isDebugEnabled());
         this.objectDAO=new ObjectDAO(m);
         this.xp=xp;
         this.experimentNode=new ExperimentNode(this);
@@ -70,11 +71,15 @@ public class StructureObjectTreeGenerator {
                     tree.setSelectionPath(path);
                     Rectangle pathBounds = tree.getUI().getPathBounds(tree, path);
                     if (pathBounds != null && pathBounds.contains(e.getX(), e.getY())) {
-                        
+                        JPopupMenu menu = new JPopupMenu();
+                        Object lastO = path.getLastPathComponent();
+                        if (lastO instanceof UIContainer) {
+                            UIContainer UIC=(UIContainer)lastO;
+                            addToMenu(UIC.getDisplayComponent(), menu);
+                        }
                     }
                 }
             }
         });
     }
-    
 }

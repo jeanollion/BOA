@@ -28,7 +28,7 @@ import utils.SmallArray;
  *
  * @author nasique
  */
-public class ObjectNode implements TreeNode {
+public class ObjectNode implements TreeNode, UIContainer {
     StructureObject data;
     StructureNode parent;
     StructureNode[] children;
@@ -44,6 +44,11 @@ public class ObjectNode implements TreeNode {
     
     public StructureObjectTreeGenerator getGenerator() {
         return parent.getGenerator();
+    }
+    
+    // UIContainer implementation
+    @Override public Object[] getDisplayComponent() {
+        return new Object[0];
     }
     
     // TreeNode implementation
