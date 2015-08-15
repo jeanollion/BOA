@@ -28,6 +28,7 @@ import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import plugins.PluginFactory;
+import utils.MorphiumUtils;
 
 /**
  *
@@ -43,6 +44,7 @@ public class TreeTest extends JPanel {
             cfg.setDatabase("testdb");
             cfg.addHost("localhost", 27017);
             Morphium m=new Morphium(cfg);
+            MorphiumUtils.addDereferencingListeners(m);
             ExperimentDAO dao = new ExperimentDAO(m);
             Experiment xp = dao.getExperiment();
             
@@ -54,7 +56,7 @@ public class TreeTest extends JPanel {
                 xp = dao.getExperiment();
             }
             StructureObjectTreeGenerator generator = new StructureObjectTreeGenerator(xp, m);
-            //tree.setPreferredSize(new Dimension(300, 150));
+            generator.tree.setPreferredSize(new Dimension(400, 400));
             add(generator.scroll, BorderLayout.CENTER);
         
         } catch (UnknownHostException ex) {

@@ -17,8 +17,10 @@
  */
 package dataStructure.objects;
 
+import static dataStructure.objects.StructureObject.logger;
 import java.util.ArrayList;
 import java.util.Collections;
+import utils.Utils;
 
 /**
  *
@@ -27,34 +29,42 @@ import java.util.Collections;
 public class StructureObjectUtils {
     /**
      * 
-     * @param root
-     * @param pathToRoot array of structure indices, in hierachical order, from the root to the given structure
+     * @param referenceStructureObject
+     * @param pathToStructure array of structure indices, in hierachical order, from the root to the given structure
      * @return all the objects of the last structure of the path
      */
-    public static ArrayList<StructureObject> getAllObjects(StructureObject root, int[] pathToRoot) {
-        if (pathToRoot.length==0) return new ArrayList<StructureObject>(0);
-        ArrayList<StructureObject> currentChildren = new ArrayList<StructureObject>(root.getChildObjects(pathToRoot[0]).length);
-        Collections.addAll(currentChildren, root.getChildObjects(pathToRoot[0]));
-        for (int i = 1; i<pathToRoot.length; ++i) currentChildren = getAllChildren(currentChildren, pathToRoot[i]);
+    public static ArrayList<StructureObject> getAllObjects(StructureObject referenceStructureObject, int[] pathToStructure) {
+        //logger.debug("getAllObjects: path to structure: length: {}, elements: {}", pathToStructure.length, pathToStructure);
+        if (pathToStructure.length==0) return new ArrayList<StructureObject>(0);
+        ArrayList<StructureObject> currentChildren = new ArrayList<StructureObject>(referenceStructureObject.getChildObjects(pathToStructure[0]).length);
+        Collections.addAll(currentChildren, referenceStructureObject.getChildObjects(pathToStructure[0]));
+        //logger.debug("getAllObjects: current structure {} current number of objects: {}", pathToStructure[0], currentChildren.size());
+        for (int i = 1; i<pathToStructure.length; ++i) {
+            currentChildren = getAllChildren(currentChildren, pathToStructure[i]);
+            //logger.debug("getAllObjects: current structure {} current number of objects: {}", pathToStructure[i], currentChildren.size());
+        }
         return currentChildren;
     }
     
     private static ArrayList<StructureObject> getAllChildren(ArrayList<StructureObject> parents, int childrenStructureIdx) {
         ArrayList<StructureObject> res = new ArrayList<StructureObject>();
-        for (StructureObject parent : parents) Collections.addAll(res, parent.getChildObjects(childrenStructureIdx));
+        for (StructureObject parent : parents) {
+            //logger.debug("getAllChildren: current object {} childrenStructureIdx : {} number of objects: {}", parent,childrenStructureIdx, parent.getChildObjects(childrenStructureIdx)==null?"null": parent.getChildObjects(childrenStructureIdx).length);
+            Collections.addAll(res, parent.getChildObjects(childrenStructureIdx));
+        }
         return res;
     } 
     
-    public static ArrayList<StructureObject> getAllParentObjects(StructureObject root, int[] pathToRoot) {
-        if (pathToRoot.length==0) return new ArrayList<StructureObject>(0);
-        else if (pathToRoot.length==1) {
+    public static ArrayList<StructureObject> getAllParentObjects(StructureObject referenceStructutre, int[] pathToStructure) {
+        if (pathToStructure.length==0) return new ArrayList<StructureObject>(0);
+        else if (pathToStructure.length==1) {
             ArrayList<StructureObject> res = new ArrayList<StructureObject>(1);
-            res.add(root);
+            res.add(referenceStructutre);
             return res;
         } else {
-            int[] pathToRoot2 = new int[pathToRoot.length-1];
-            System.arraycopy(pathToRoot, 0, pathToRoot2, 0, pathToRoot2.length);
-            return getAllObjects(root, pathToRoot2);
+            int[] pathToRoot2 = new int[pathToStructure.length-1];
+            System.arraycopy(pathToStructure, 0, pathToRoot2, 0, pathToRoot2.length);
+            return getAllObjects(referenceStructutre, pathToRoot2);
         }
     }
     

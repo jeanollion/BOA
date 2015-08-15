@@ -37,7 +37,7 @@ import utils.SmallArray;
 @Entity(collectionName = "Objects")
 @Index(value={"field_name, time_point, structure_idx", "parent,structure_idx,idx", "new_track_branch, time_point"}, options={"", "", ""})
 public class StructureObject implements StructureObjectPostProcessing, Track {
-    private final static Logger logger = LoggerFactory.getLogger(StructureObject.class);
+    public final static Logger logger = LoggerFactory.getLogger(StructureObject.class);
     //structure-related attributes
     @Id protected ObjectId id;
     @Reference(lazyLoading=true, automaticStore=false) protected StructureObject parent;
@@ -136,6 +136,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     public StructureObject[] getChildObjects(int structureIdx) {return this.childrenSM.get(structureIdx);}
     public void setChildObjects(StructureObject[] children, int structureIdx) {
         this.childrenSM.set(children, structureIdx);
+        for (StructureObject o : children) o.setParent(this);
     }
     // track-related methods
     /**
@@ -216,7 +217,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         else return parent.getFirstParentWithOpenedRawImage(structureIdx);
     }
     
-    public BoundingBox getRelativeBoundingBox(StructureObject stop) {
+    public BoundingBox getRelativeBoundingBox(StructureObject stop) throws RuntimeException {
         if (stop==null) stop=getRoot();
         StructureObject nextParent=this;
         BoundingBox res = getObject().getBounds().duplicate();
@@ -224,9 +225,11 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         logger.debug("init bounds: {}", res);
         do {
             nextParent=nextParent.getParent();
-            logger.debug("bounds + offset {} from {}", res, nextParent);
+            if (nextParent==null) throw new RuntimeException("GetRelativeBoundingBoxError: stop structure object is not in parent tree");
             res.addOffset(nextParent.getObject().getBounds());
-        } while(nextParent!=stop);
+            logger.debug("bounds + offset {} from {}", res, nextParent);
+            if (!stop.equals(nextParent) && nextParent.getId().equals(stop.getId())) logger.error("stop condition cannot be reached: stop ({}) and parent ({}) not equals but same object", stop, nextParent);
+        } while(!stop.equals(nextParent));
         
         return res;
     }
@@ -264,11 +267,11 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         
     }
     
-    @Override
+    /*@Override
     public String toString() {
         if (isRoot()) return "Root Object: fieldName: "+fieldName + " timePoint: "+timePoint;
         else return "Object: fieldName: "+fieldName+ " timePoint: "+timePoint+ " structureIdx: "+structureIdx+ " parentId: "+getParent().id+ " idx: "+idx;
-    }
+    }*/
     
     // morphium-related methods
     /*@PreStore public void preStore() {

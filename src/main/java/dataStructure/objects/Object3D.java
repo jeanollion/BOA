@@ -150,6 +150,29 @@ public class Object3D<T extends Voxel> {
             }
         }
     }
+    
+    public void draw(ImageInteger image, int label, BoundingBox additionalOffset) {
+        if (voxels !=null) {
+            logger.trace("drawing from VOXELS of object: {} with label: {} on image: {} ", this, label, image);
+            for (T v : getVoxels()) image.setPixel(v.x+additionalOffset.getxMin(), v.y+additionalOffset.getyMin(), v.getZ()+additionalOffset.getzMin(), label);
+        }
+        else {
+            int offX = mask.getOffsetX()+additionalOffset.getxMin();
+            int offY = mask.getOffsetY()+additionalOffset.getyMin();
+            int offZ = mask.getOffsetZ()+additionalOffset.getzMin();
+            logger.trace("drawing from IMAGE of object: {} with label: {} on image: {} mask offsetX: {} mask offsetY: {} mask offsetZ: {}", this, label, mask, offX, offY, offZ);
+            for (int z = 0; z < mask.getSizeZ(); ++z) {
+                for (int y = 0; y < mask.getSizeY(); ++y) {
+                    for (int x = 0; x < mask.getSizeX(); ++x) {
+                        if (mask.insideMask(x, y, z)) {
+                            image.setPixel(x+offX, y+offY, z+offZ, label);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
     private boolean voxelsSizeOverLimit() {
         if (is3D()) return voxels.size()>MAX_VOX_3D;
         else return voxels.size()>MAX_VOX_2D;

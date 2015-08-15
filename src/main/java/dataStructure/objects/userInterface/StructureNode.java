@@ -19,10 +19,13 @@ package dataStructure.objects.userInterface;
 
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectUtils;
 import static dataStructure.objects.userInterface.StructureObjectTreeGenerator.logger;
 import image.BlankMask;
 import image.Image;
+import image.ImageInteger;
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -87,6 +90,8 @@ public class StructureNode implements TreeNode, UIContainer {
         return (parent instanceof TimePointNode) ? ((TimePointNode)parent).getGenerator() : ((ObjectNode)parent).getGenerator();
     }
     
+    
+    
     // UIContainer implementation
     @Override public Object[] getDisplayComponent() {
         return (new StructureNodeUI(this)).getDisplayComponent();
@@ -129,10 +134,11 @@ public class StructureNode implements TreeNode, UIContainer {
     class StructureNodeUI {
         StructureNode structureNode;
         JMenuItem[] actions;
-        JMenuItem[] subActions;
+        JMenuItem[] openRaw;
+        JMenuItem[] openSeg;
         public StructureNodeUI(StructureNode sn) {
             this.structureNode=sn;
-            this.actions = new JMenuItem[2];
+            this.actions = new JMenuItem[3];
             actions[0] = new JMenuItem("Open Segmentation Mask");
             actions[0].setAction(
                 new AbstractAction("Open Segmentation Mask") {
@@ -144,29 +150,55 @@ public class StructureNode implements TreeNode, UIContainer {
                     }
                 }
             );
-            JMenu subMenu = new JMenu("Open Raw Input Image");
-            actions[1] = subMenu;
             String[] structureNames = structureNode.getParentObject().getExperiment().getStructuresAsString();
+            int[] childStructures = structureNode.getParentObject().getExperiment().getAllChildStructures(idx);
+            JMenu segSubMenu = new JMenu("Open Segmented Image");
+            actions[1] = segSubMenu;
+            openSeg=new JMenuItem[childStructures.length];
+            for (int i = 0; i < openSeg.length; i++) {
+                openSeg[i] = new JMenuItem(structureNames[childStructures[i]]);
+                openSeg[i].setAction(
+                    new AbstractAction(structureNames[childStructures[i]]) {
+                        @Override
+                        public void actionPerformed(ActionEvent ae) {
+                            if (logger.isDebugEnabled()) logger.debug("opening segmented image for structure: {} of idx: {} from structure idx: {}", ae.getActionCommand(), getStructureIdx(ae.getActionCommand(), openRaw), structureNode.getParentObject().getStructureIdx());
+                            int[] path = structureNode.getParentObject().getExperiment().getPathToStructure(structureNode.getParentObject().getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
+                            if (parent instanceof TimePointNode) ((TimePointNode)parent).loadAllChildObjects(path);
+                            else ((ObjectNode)parent).loadAllChildObjects(path, 0);
+                            ArrayList<StructureObject> objects = StructureObjectUtils.getAllObjects(structureNode.getParentObject(), path);
+                            int maxLabel = 0; 
+                            for (StructureObject o : objects) if (o.getObject().getLabel()>maxLabel) maxLabel = o.getObject().getLabel();
+                            if (logger.isDebugEnabled()) logger.debug("child objects found: {} max label: {}", objects.size(), maxLabel);
+                            ImageInteger displayImage = ImageInteger.createEmptyLabelImage("Segmented Image of structure: "+ae.getActionCommand(), maxLabel, structureNode.getParentObject().getMaskProperties());
+                            for (StructureObject o : objects) o.getObject().draw(displayImage, o.getObject().getLabel(), o.getParent().getRelativeBoundingBox(structureNode.getParentObject()));
+                            ImageDisplayerFactory.getImageDisplayer().showImage(displayImage);
+                        }
+                    }
+                );
+                segSubMenu.add(openSeg[i]);
+            }
             
-            subActions=new JMenuItem[structureNames.length];
-            for (int i = 0; i < subActions.length; i++) {
-                subActions[i] = new JMenuItem(structureNames[i]);
-                subActions[i].setAction(
+            JMenu rawSubMenu = new JMenu("Open Raw Input Image");
+            actions[2] = rawSubMenu;
+            openRaw=new JMenuItem[structureNames.length];
+            for (int i = 0; i < openRaw.length; i++) {
+                openRaw[i] = new JMenuItem(structureNames[i]);
+                openRaw[i].setAction(
                     new AbstractAction(structureNames[i]) {
                         @Override
                         public void actionPerformed(ActionEvent ae) {
-                            if (logger.isDebugEnabled()) logger.debug("opening input image for structure: {} of idx: {}", ae.getActionCommand(), getStructureIdx(ae.getActionCommand()));
-                            Image image = structureNode.getParentObject().getRawImage(getStructureIdx(ae.getActionCommand()));
+                            if (logger.isDebugEnabled()) logger.debug("opening input image for structure: {} of idx: {}", ae.getActionCommand(), getStructureIdx(ae.getActionCommand(), openRaw));
+                            Image image = structureNode.getParentObject().getRawImage(getStructureIdx(ae.getActionCommand(), openRaw));
                             ImageDisplayerFactory.getImageDisplayer().showImage(image.setName("Channel Image of structure: "+ae.getActionCommand()));
                         }
                     }
                 );
-                subMenu.add(subActions[i]);
+                rawSubMenu.add(openRaw[i]);
             }
         }
         public Object[] getDisplayComponent() {return actions;}
-        private int getStructureIdx(String name) {
-            for (int i = 0; i<subActions.length; ++i) if (subActions[i].getActionCommand().equals(name)) return i;
+        private int getStructureIdx(String name, JMenuItem[] actions) {
+            for (int i = 0; i<actions.length; ++i) if (actions[i].getActionCommand().equals(name)) return i;
             return -1;
         }
     }

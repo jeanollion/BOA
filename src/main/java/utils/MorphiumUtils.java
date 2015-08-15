@@ -32,8 +32,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author jollion
  */
-public class MorphuimUtils {
-    public final static Logger logger = LoggerFactory.getLogger(MorphuimUtils.class);
+public class MorphiumUtils {
+    public final static Logger logger = LoggerFactory.getLogger(MorphiumUtils.class);
     public static void addDereferencingListeners(Morphium m) {
         m.addDereferencingListener(new DereferencingListener<Object, StructureObject, ObjectId>() {
             AnnotationAndReflectionHelper r = new AnnotationAndReflectionHelper(true);

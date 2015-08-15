@@ -18,6 +18,8 @@
 package dataStructure.objects.userInterface;
 
 import dataStructure.objects.StructureObject;
+import static dataStructure.objects.userInterface.StructureObjectTreeGenerator.logger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -44,6 +46,24 @@ public class ObjectNode implements TreeNode, UIContainer {
     
     public StructureObjectTreeGenerator getGenerator() {
         return parent.getGenerator();
+    }
+    
+    public void loadAllChildObjects(int[] pathToChildStructureIdx, int currentIdxInPath) {
+        /*int pathIdx; // start from index of current structure in the path, if present
+        for (pathIdx=0; pathIdx<pathToChildStructureIdx.length; ++pathIdx) {
+            if (pathToChildStructureIdx[pathIdx]==parent.idx) break;
+            else if (pathIdx==pathToChildStructureIdx.length-1) return;
+        }*/
+        int childIdx = getChildStructureIdx(pathToChildStructureIdx[currentIdxInPath]);
+        if (childIdx>=0) {
+            children[childIdx].getChildren();
+            if (currentIdxInPath<(pathToChildStructureIdx.length-1)) for (ObjectNode o : children[childIdx].getChildren()) o.loadAllChildObjects(pathToChildStructureIdx, currentIdxInPath+1);
+        } else logger.warn("could not loadAllChildObjects: structure {} not in children of structure: {} [ pathToChildStructureIdx: {} currentIdxInPath: {} ] ", pathToChildStructureIdx[currentIdxInPath], parent.idx, pathToChildStructureIdx, currentIdxInPath);
+    }
+    
+    public int getChildStructureIdx(int structureIdx) {
+        for (int i = 0; i<children.length; ++i) if (children[i].idx==structureIdx) return i;
+        return -1;
     }
     
     // UIContainer implementation

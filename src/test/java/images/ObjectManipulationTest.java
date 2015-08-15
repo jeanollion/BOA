@@ -41,6 +41,7 @@ public class ObjectManipulationTest {
     ImageByte im, imRelabel;
     BoundingBox bound1, bound3;
     Object3D o1, o3;
+    
     @Before
     public void setUp() {
         im = new ImageByte("", 4, 4, 5);

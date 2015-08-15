@@ -18,6 +18,7 @@
 package utils;
 
 import de.caluga.morphium.Morphium;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -63,5 +64,22 @@ public class Utils {
     
     public static String formatInteger(int paddingSize, int number) {
         return String.format(Locale.US, "%0" + paddingSize + "d", number);
+    }
+    
+    public static int[] toArray(ArrayList<Integer> arrayList, boolean reverseOrder) {
+        int[] res=new int[arrayList.size()];
+        if (reverseOrder) {
+            int idx = res.length-1;
+            for (int s : arrayList) res[idx--] = s;
+        } else for (int i = 0; i<res.length; ++i) res[i] = arrayList.get(i);
+        return res;
+    }
+    public static<T> T[] toArrayGeneric(ArrayList<T> arrayList, boolean reverseOrder) {
+        Object[] res=new Object[arrayList.size()];
+        if (reverseOrder) {
+            int idx = res.length-1;
+            for (Object o : arrayList) res[idx--] = o;
+        } else for (int i = 0; i<res.length; ++i) res[i] = arrayList.get(i);
+        return (T[])res;
     }
 }

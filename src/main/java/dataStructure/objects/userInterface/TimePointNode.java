@@ -18,6 +18,7 @@
 package dataStructure.objects.userInterface;
 
 import dataStructure.objects.StructureObject;
+import static dataStructure.objects.userInterface.StructureObjectTreeGenerator.logger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -57,6 +58,17 @@ public class TimePointNode implements TreeNode, UIContainer {
             for (int i = 0; i<children.length; ++i) children[i]=new StructureNode(childrenIndicies[i], this);
         }
         return children;
+    }
+    
+    public void loadAllChildObjects(int[] pathToChildStructureIdx) {
+        int childIdx = getChildStructureIdx(pathToChildStructureIdx[0]);
+        if (childIdx>=0) for (ObjectNode o : children[childIdx].getChildren()) o.loadAllChildObjects(pathToChildStructureIdx, 1);
+        else logger.warn("could not loadAllChildObjects: structure {} not in children [ pathToChildStructureIdx: {} from root object ] ", pathToChildStructureIdx[0], pathToChildStructureIdx);
+    }
+    
+    public int getChildStructureIdx(int structureIdx) {
+        for (int i = 0; i<children.length; ++i) if (children[i].idx==structureIdx) return i;
+        return -1;
     }
     
     // UIContainer implementation

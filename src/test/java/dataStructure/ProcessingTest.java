@@ -55,7 +55,7 @@ import plugins.PluginFactory;
 import plugins.Segmenter;
 import plugins.plugins.trackers.TrackerObjectIdx;
 import plugins.plugins.transformations.SimpleTranslation;
-import utils.MorphuimUtils;
+import utils.MorphiumUtils;
 
 /**
  *
@@ -147,7 +147,7 @@ public class ProcessingTest {
         Morphium m=new Morphium(cfg);
         m.clearCollection(Experiment.class);
         m.store(xp);
-        m=new Morphium(cfg);
+        m.clearCachefor(Experiment.class);
         xp = m.createQueryFor(Experiment.class).getById(xp.getId());
         
         // test 
@@ -188,27 +188,22 @@ public class ProcessingTest {
         r2.setPreviousInTrack(r, true);
         r3.setPreviousInTrack(r2, true);
         dao.store(r, r2, r3);
-        MorphuimUtils.waitForWrites(m);
-        MorphuimUtils.addDereferencingListeners(m);
+        MorphiumUtils.waitForWrites(m);
+        MorphiumUtils.addDereferencingListeners(m);
         r2 = dao.getObject(r2.getId());
         r = dao.getObject(r.getId());
         assertTrue("r2 retrieved", r!=null);
         assertEquals("r unique instanciation", r, r2.getPrevious());
         assertEquals("xp unique instanciation", r.getExperiment(), r2.getExperiment());
-        cfg = new MorphiumConfig();
-        cfg.setDatabase("testdb");
-        try {
-            cfg.addHost("localhost", 27017);
-        } catch (UnknownHostException ex) {
-            Utils.logger.error("create morphium", ex);
-        }
-        m=new Morphium(cfg);
-        MorphuimUtils.addDereferencingListeners(m);
+        m.clearCachefor(StructureObject.class);
+        MorphiumUtils.addDereferencingListeners(m);
         dao = new ObjectDAO(m);
         r2 = dao.getObject(r2.getId());
         assertTrue("r2 retrieved", r!=null);
         assertEquals("r retrieved 2", "test", r2.getFieldName());
         assertEquals("r previous ", r.getId(), r2.getPrevious().getId());
+        
+        assertEquals("r unique instanciation query from fieldName & time point", r2, dao.getRoot("test", 1));
     }
     
     @Test
@@ -267,16 +262,14 @@ public class ProcessingTest {
                 for (int t = 0; t<root.length; ++t) Processor.processStructure(s, root[t], dao); // process
                 for (StructureObject o : StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s))) Processor.track(xp, xp.getStructure(s).getTracker(), o, s, dao); // structure
             }
-            MorphuimUtils.waitForWrites(m);
+            MorphiumUtils.waitForWrites(m);
             
             StructureObject rootFetch = dao.getObject(root[0].getId());
             assertEquals("root fetch @t=0", root[0].getId(), rootFetch.getId());
             // retrieve
-            cfg = new MorphiumConfig();
-            cfg.setDatabase("testdb");
-            cfg.addHost("localhost", 27017);
-            m=new Morphium(cfg);
-            MorphuimUtils.addDereferencingListeners(m);
+            m.clearCachefor(StructureObject.class);
+            m.clearCachefor(Experiment.class);
+            MorphiumUtils.addDereferencingListeners(m);
             dao = new ObjectDAO(m);
             
             rootFetch = dao.getObject(root[0].getId());

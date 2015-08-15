@@ -64,10 +64,7 @@ public class ObjectPopulation {
     
     private void constructLabelImage() {
         if (objects==null || objects.isEmpty()) return;
-        getImageProperties();
-        if (objects.size()<=255) labelImage = new ImageByte("merge", properties);
-        else if (objects.size()<=65535) labelImage = new ImageShort("merge", properties);
-        else labelImage = new ImageInt("merge", properties);
+        labelImage = ImageInteger.createEmptyLabelImage("labelImage", objects.size(), getImageProperties());
         logger.debug("creating image: properties: {} imagetype: {} number of objects: {}", properties, labelImage.getClass(), objects.size());
         for (Object3D o : objects) {
             o.draw(labelImage, o.getLabel());

@@ -38,6 +38,7 @@ import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import java.util.ArrayList;
 import org.bson.types.ObjectId;
+import static utils.Utils.toArray;
 
 /**
  *
@@ -147,8 +148,21 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         return fields.getChildCount();
     }
     
+    
+    
+    public String[] getStructuresAsString() {return structures.getChildrenString();}
+    
+    public String[] getChannelImagesAsString() {return channelImages.getChildrenString();}
+    
+    public String[] getFieldsAsString() {return fields.getChildrenString();}
+    
+    /**
+     * 
+     * @param structureIdx
+     * @return indexes of structures that are direct children of the structure of index {@param structureIdx}
+     */
     public int[] getChildStructures(int structureIdx) {
-        ArrayList<Integer> childrenAL = new ArrayList<Integer>(2);
+        ArrayList<Integer> childrenAL = new ArrayList<Integer>(5);
         int idx = 0;
         for (Structure s : structures.getChildren()) {
             if (s.getParentStructure()==structureIdx) childrenAL.add(idx);
@@ -159,12 +173,25 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         for (int i : childrenAL) childrenArray[idx++]=i;
         return childrenArray;
     }
-    
-    public String[] getStructuresAsString() {return structures.getChildrenString();}
-    
-    public String[] getChannelImagesAsString() {return channelImages.getChildrenString();}
-    
-    public String[] getFieldsAsString() {return fields.getChildrenString();}
+    /**
+     * 
+     * @param structureIdx
+     * @return return the direct or indirect children of the structure of index: {@param structureIdx}
+     */
+    public int[] getAllChildStructures(int structureIdx) {
+        ArrayList<Integer> allChildrenAL = new ArrayList<Integer>(10);
+        int[][] orders = getStructuresInHierarchicalOrder();
+        int startIdx = this.getHierachicalOrder(structureIdx)+1;
+        for (int i = startIdx; i<orders.length; ++i) {
+            int childrenAtCurrentOrderCount = 0;
+            for (int s : orders[i]) {
+                int p = getStructure(s).getParentStructure();
+                if (p==structureIdx || allChildrenAL.contains(p)) allChildrenAL.add(s); childrenAtCurrentOrderCount++;
+            }
+            if (childrenAtCurrentOrderCount==0) break;
+        }
+        return toArray(allChildrenAL, false);
+    }
     
     /**
      * 
@@ -186,22 +213,29 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
      * @return an array of structure index, starting from the first structure after the root structure, ending at the structure index (included)
      */
     public int[] getPathToRoot(int structureIdx) {
-        ArrayList<Integer> pathToRoot = new ArrayList<Integer>(this.getStructureNB());
-        int p = getStructure(structureIdx).getParentStructure();
-        pathToRoot.add(structureIdx);
-        while(p>=0) {
-            pathToRoot.add(p);
+        return getPathToStructure(-1, structureIdx);
+    }
+    /**
+     * 
+     * @param startStructureIdx start structure (excluded) anterior to {@param stopStructureIdx} in the structure hierarchy
+     * @param stopStructureIdx stop structure (included) posterior to {@param stopStructureIdx} in the structure hierarchy
+     * @return 
+     */
+    public int[] getPathToStructure(int startStructureIdx, int stopStructureIdx) {
+        ArrayList<Integer> pathToStructure = new ArrayList<Integer>(this.getStructureNB());
+        pathToStructure.add(stopStructureIdx);
+        int p = getStructure(stopStructureIdx).getParentStructure();
+        while(p!=startStructureIdx) {
+            if (p<0) return new int[0]; // no path found between structures
+            pathToStructure.add(p);
             p=getStructure(p).getParentStructure();
         }
-        int[] res = new int[pathToRoot.size()];
-        int idx = res.length-1;
-        for (int s : pathToRoot) res[idx--] = s;
-        return res;
+        return toArray(pathToStructure, true);
     }
     
     /**
      * 
-     * @return a matrix of structure indexes. the fisrt dimension represent the hierachical orders, the second dimension the structures at the given hierarchical order, sorted by the index of the structure
+     * @return a matrix of structure indexes. the fisrt dimension represent the hierarchical orders, the second dimension the structures at the given hierarchical order, sorted by the index of the structure
      */
     public int[][] getStructuresInHierarchicalOrder() {
         int[] orders = new int[getStructureNB()];

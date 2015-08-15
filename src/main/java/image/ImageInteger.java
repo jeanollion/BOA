@@ -15,6 +15,13 @@ public abstract class ImageInteger extends Image implements ImageMask {
     protected ImageInteger(String name, ImageProperties properties) {
         super(name, properties);
     } 
+    
+    public static ImageInteger createEmptyLabelImage(String name, int maxLabelNumber, ImageProperties properties) {
+        if (maxLabelNumber<=255) return new ImageByte(name, properties);
+        else if (maxLabelNumber<=65535) return new ImageShort(name, properties);
+        else return new ImageInt(name, properties);
+    }
+    
     @Override public abstract ImageInteger duplicate(String name);
     public abstract int getPixelInt(int x, int y, int z);
     public abstract int getPixelInt(int xy, int z);
@@ -123,9 +130,7 @@ public abstract class ImageInteger extends Image implements ImageMask {
     public static ImageInteger mergeBinary(ImageProperties properties, ImageMask... masks) {
         if (masks==null || masks.length==0) return new ImageByte("merge", properties);
         ImageInteger res;
-        if (masks.length<=255) res = new ImageByte("merge", properties);
-        else if (masks.length<=65535) res = new ImageShort("merge", properties);
-        else res = new ImageInt("merge", properties);
+        res = createEmptyLabelImage("merge", masks.length, properties);
         res.appendBinaryMasks(1, masks);
         return res;
     }

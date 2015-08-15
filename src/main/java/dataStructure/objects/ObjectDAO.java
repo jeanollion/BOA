@@ -85,8 +85,14 @@ public class ObjectDAO extends DAO<StructureObject>{
     private Query<StructureObject> getRootQuery(String fieldName, int timePoint) {
         return super.getQuery().f("field_name").eq(fieldName).f("time_point").eq(timePoint).f("structure_idx").eq(-1);
     }
+    private ObjectId getRootId(String fieldName, int timePoint) {
+        Query<StructureObject> q = getRootQuery(fieldName, timePoint);
+        q.setReturnedFields("_id");
+        return q.get().id;
+    }
     
     public StructureObject getRoot(String fieldName, int timePoint) {
-        return getRootQuery(fieldName, timePoint).get();
+        return this.getObject(getRootId(fieldName, timePoint)); // in order to have unique instanciation of objects
+        //return getRootQuery(fieldName, timePoint).get();
     }
 }
