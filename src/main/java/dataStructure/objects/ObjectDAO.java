@@ -121,8 +121,8 @@ public class ObjectDAO extends DAO<StructureObject>{
         }
     }
     
-    public StructureObject[] getTrackHeads(StructureObject parentTrack) {
-        List<StructureObject> list =  super.getQuery().f("is_track_head").eq(true).f("parent_track_head_id").eq(parentTrack.getTrackHeadId()).sort("time_point", "idx").asList();
+    public StructureObject[] getTrackHeads(StructureObject parentTrack, int structureIdx) {
+        List<StructureObject> list =  super.getQuery().f("is_track_head").eq(true).f("parent_track_head_id").eq(parentTrack.getTrackHeadId()).f("structure_idx").eq(structureIdx).sort("time_point", "idx").asList();
         return this.checkCache(list);
     }
     

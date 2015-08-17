@@ -283,7 +283,7 @@ public class ProcessingTest {
                 assertEquals("root track:"+(t)+"->"+(t-1), root[t-1], root[t].getPrevious());
             }
             StructureObject[][] microChannels = new StructureObject[root.length][];
-            assertEquals("number of track heads for microchannels", 2, dao.getTrackHeads(root[0]).length);
+            assertEquals("number of track heads for microchannels", 2, dao.getTrackHeads(root[0], 0).length);
             for (int t = 0; t<root.length; ++t) microChannels[t] = root[t].getChildObjects(0);
             for (int t = 0; t<root.length; ++t) assertEquals("number of microchannels @t:"+t, 2, microChannels[t].length);
             for (int i = 0; i<microChannels[0].length; ++i) {
@@ -293,7 +293,7 @@ public class ProcessingTest {
                 }
             }
             for (int i = 0; i<microChannels[0].length; ++i) {
-                assertEquals("number of track heads for bacteries @ mc:"+i, 3, dao.getTrackHeads(microChannels[0][i]).length);
+                assertEquals("number of track heads for bacteries @ mc:"+i, 3, dao.getTrackHeads(microChannels[0][i], 1).length);
                 StructureObject[][] bactos = new StructureObject[root.length][];
                 for (int t = 0; t<root.length; ++t) bactos[t] = microChannels[t][i].getChildObjects(1);
                 for (int t = 0; t<root.length; ++t) assertEquals("number of bacteries @t:"+t+" @mc:"+i, 3, bactos[t].length);

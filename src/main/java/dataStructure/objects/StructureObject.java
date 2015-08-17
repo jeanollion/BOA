@@ -34,7 +34,7 @@ import utils.SmallArray;
 
 @Lifecycle //-> bug a cause de la structure circulaire
 @Entity(collectionName = "Objects")
-@Index(value={"field_name, time_point, structure_idx", "parent,structure_idx,idx", "track_head_id, time_point", "is_track_head, parent_track_head_id, time_point, idx"})
+@Index(value={"field_name, time_point, structure_idx", "parent,structure_idx,idx", "track_head_id, time_point", "is_track_head, parent_track_head_id, structure_idx, time_point, idx"})
 public class StructureObject implements StructureObjectPostProcessing, Track {
     public final static Logger logger = LoggerFactory.getLogger(StructureObject.class);
     //structure-related attributes

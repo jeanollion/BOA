@@ -18,13 +18,11 @@
 package dataStructure.objects.userInterface;
 
 import dataStructure.objects.StructureObject;
-import static dataStructure.objects.userInterface.StructureObjectTreeGenerator.logger;
-import java.util.ArrayList;
+import static configuration.userInterface.GUI.logger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import javax.swing.tree.TreeNode;
-import utils.SmallArray;
 
 /**
  *

@@ -30,9 +30,11 @@ import javax.swing.tree.TreeNode;
 public class TrackExperimentNode implements TreeNode, UIContainer {
     protected final TrackTreeGenerator generator;
     ArrayList<RootTrackNode> children;
-    
-    public TrackExperimentNode(TrackTreeGenerator generator) {
+    int structureIdx; 
+    public TrackExperimentNode(TrackTreeGenerator generator, int structureIdx) {
         this.generator=generator;
+        this.structureIdx=structureIdx;
+        getChildren();
     }
     
     public TrackTreeGenerator getGenerator() {
@@ -41,9 +43,9 @@ public class TrackExperimentNode implements TreeNode, UIContainer {
     
     public ArrayList<RootTrackNode> getChildren() {
         if (children==null) {
-            String[] fieldNames = generator.xp.getFieldsAsString();
+            String[] fieldNames = generator.xpDAO.getExperiment().getFieldsAsString();
             children= new ArrayList<RootTrackNode>(fieldNames.length);
-            for (String fieldName : fieldNames) children.add(new RootTrackNode(this, fieldName));
+            for (String fieldName : fieldNames) children.add(new RootTrackNode(this, fieldName, structureIdx));
         }
         return children;
     }
@@ -55,7 +57,7 @@ public class TrackExperimentNode implements TreeNode, UIContainer {
     
     // TreeNode implementation
     @Override public String toString() {
-        return generator.xp.getName();
+        return generator.xpDAO.getExperiment().getName();
     }
     
     public RootTrackNode getChildAt(int childIndex) {

@@ -18,6 +18,7 @@
 package dataStructure.objects.userInterface;
 
 import static configuration.userInterface.ConfigurationTree.addToMenu;
+import static configuration.userInterface.GUI.logger;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.objects.ObjectDAO;
@@ -41,7 +42,6 @@ import org.slf4j.LoggerFactory;
  * @author nasique
  */
 public class StructureObjectTreeGenerator {
-    public final static Logger logger = LoggerFactory.getLogger(StructureObjectTreeGenerator.class);
     ExperimentDAO xpDAO;
     ObjectDAO objectDAO;
     Experiment xp;
@@ -60,10 +60,10 @@ public class StructureObjectTreeGenerator {
         scroll = new JScrollPane(tree);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
         DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
-        Icon personIcon = null;
-        renderer.setLeafIcon(personIcon);
-        renderer.setClosedIcon(personIcon);
-        renderer.setOpenIcon(personIcon);
+        Icon icon = null;
+        renderer.setLeafIcon(icon);
+        renderer.setClosedIcon(icon);
+        renderer.setOpenIcon(icon);
         tree.setCellRenderer(renderer);
         tree.addMouseListener(new MouseAdapter() {
             @Override

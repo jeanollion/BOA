@@ -36,19 +36,21 @@ public class RootTrackNode implements TreeNode {
     private ArrayList<TrackNode> children;
     private TreeMap<Integer, ArrayList<StructureObject>> remainingTrackHeadsTM;
     private StructureObject parentTrackHead;
-    
+    int structureIdx;
     TrackExperimentNode parent;
     String fieldName;
     
-    public RootTrackNode(TrackTreeGenerator generator, StructureObject parentTrackHead) {
+    public RootTrackNode(TrackTreeGenerator generator, StructureObject parentTrackHead, int structureIdx) {
         this.generator = generator;
         this.parentTrackHead=parentTrackHead;
+        this.structureIdx=structureIdx;
     }
     
-    public RootTrackNode(TrackExperimentNode parent, String fieldName) { // constructor when parent == root
+    public RootTrackNode(TrackExperimentNode parent, String fieldName, int structureIdx) { // constructor when parent == root
         this.generator = parent.generator;
         this.parent = parent;
         this.fieldName=fieldName;
+        this.structureIdx=structureIdx;
     }
     
     public StructureObject getParentTrackHead() {
@@ -61,7 +63,7 @@ public class RootTrackNode implements TreeNode {
     
     public TreeMap<Integer, ArrayList<StructureObject>> getRemainingTrackHeads() {
         if (remainingTrackHeadsTM==null) {
-            StructureObject[] trackHeads = generator.objectDAO.getTrackHeads(getParentTrackHead());
+            StructureObject[] trackHeads = generator.objectDAO.getTrackHeads(getParentTrackHead(), structureIdx);
             HashMap<Integer, ArrayList<StructureObject>> map  = new HashMap<Integer, ArrayList<StructureObject>> (trackHeads[trackHeads.length].getTimePoint()-trackHeads[0].getTimePoint()+1);
             int currentTimePoint = trackHeads[0].getTimePoint();
             int lastIdx = 0;

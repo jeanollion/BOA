@@ -31,43 +31,69 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import static configuration.userInterface.GUI.logger;
+import javax.swing.tree.DefaultTreeModel;
 /**
  *
  * @author nasique
  */
 public class TrackTreeGenerator {
-    public final static Logger logger = LoggerFactory.getLogger(TrackTreeGenerator.class);
     ExperimentDAO xpDAO;
     ObjectDAO objectDAO;
-    Experiment xp;
     protected StructureObjectTreeModel treeModel;
     JTree tree;
-
-    public TrackTreeGenerator(ObjectDAO dao, ExperimentDAO xpDAO, StructureObject parentTrack) {
+    TrackTreeController controller;
+    public TrackTreeGenerator(ObjectDAO dao, ExperimentDAO xpDAO, TrackTreeController controller) {
         this.objectDAO=dao;
         this.xpDAO=xpDAO;
-        xp = xpDAO.getExperiment();
-        generateTree(new RootTrackNode(this, parentTrack));
+        this.controller=controller;
     }
     
-    public TrackTreeGenerator(ObjectDAO dao, ExperimentDAO xpDAO) {
-        this.objectDAO=dao;
-        this.xpDAO=xpDAO;
-        xp = xpDAO.getExperiment();
-        generateTree(new TrackExperimentNode(this));
+    public StructureObject getSelectedTrack() {
+        if (hasSelection()) return ((TrackNode)tree.getSelectionPath().getLastPathComponent()).trackHead;
+        else return null;
     }
     
+    public boolean hasSelection() {return tree!=null?tree.getSelectionCount()>0:false;}
+    
+    public boolean hasSingleSelection() {return tree!=null?tree.getSelectionCount()==1:false;}
+    
+    public boolean isRootSet() {return treeModel!=null && treeModel.getRoot()!=null;}
+    
+    public void clearTree() {
+        tree=null;
+        treeModel=null;
+    }
+    
+    public void setRootParentTrack(boolean force, int structureIdx) {
+        if (force || !isRootSet()) generateTree(new TrackExperimentNode(this, structureIdx));
+    }
+    
+    public JTree getTree() {return tree;}
+    
+    public void setParentTrack(StructureObject parentTrack, int structureIdx) {
+        generateTree(new RootTrackNode(this, parentTrack, structureIdx));
+    }
+    
+    
+    private int getStructure() {
+        if (isRootSet()) {
+            Object root = treeModel.getRoot();
+            if (root instanceof TrackExperimentNode) return ((TrackExperimentNode)root).structureIdx;
+            if (root instanceof RootTrackNode) return ((RootTrackNode)root).structureIdx;
+        }
+        return -1;
+    }
     private void generateTree(TreeNode root) {
         treeModel = new StructureObjectTreeModel(root);
         tree=new JTree(treeModel);
-        tree.setRootVisible(false);
+        //tree.setRootVisible(false);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
         DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
         Icon personIcon = null;
@@ -75,6 +101,14 @@ public class TrackTreeGenerator {
         renderer.setClosedIcon(personIcon);
         renderer.setOpenIcon(personIcon);
         tree.setCellRenderer(renderer);
+        tree.addTreeSelectionListener(new TreeSelectionListener() {
+            @Override public void valueChanged(TreeSelectionEvent e) {
+                if (logger.isDebugEnabled()) logger.debug("selection changed on tree of structure: {} event: {}", getStructure(), e);
+                if (controller==null) return;
+                if (tree.getSelectionCount()==1) controller.updateParentTracks(controller.getTreeIdx(getStructure()));
+                else controller.clearTreeFromIdx(controller.getTreeIdx(getStructure())+1);
+            }
+        });
         tree.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {

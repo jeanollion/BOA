@@ -17,20 +17,88 @@
  */
 package configuration.userInterface;
 
+import dataStructure.configuration.Experiment;
+import dataStructure.configuration.ExperimentDAO;
+import dataStructure.objects.ObjectDAO;
+import dataStructure.objects.userInterface.StructureObjectTreeGenerator;
+import dataStructure.objects.userInterface.TrackTreeController;
+import de.caluga.morphium.Morphium;
+import de.caluga.morphium.MorphiumConfig;
+import java.awt.Dimension;
+import java.net.UnknownHostException;
+import java.util.logging.Level;
+import javax.swing.ComboBoxModel;
 import javax.swing.JFrame;
+import javax.swing.JTree;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import utils.MorphiumUtils;
 
 /**
  *
  * @author nasique
  */
 public class GUI extends javax.swing.JFrame {
-
+    public static final Logger logger = LoggerFactory.getLogger(GUI.class);
+    TrackTreeController trackTreeController;
+    ExperimentDAO xpDAO;
+    ObjectDAO objectDAO;
+    Morphium m;
     /**
      * Creates new form GUI
      */
     public GUI() {
         initComponents();
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        
+        initDB();
+        trackTreeController = new TrackTreeController(objectDAO, xpDAO);
+        setTrackTreeStructures(xpDAO.getExperiment().getStructuresAsString());
+    }
+    
+    private void setTrackTreeStructures(String[] structureNames) {
+        this.trackStructureJCB.removeAllItems();
+        for (String s: structureNames) trackStructureJCB.addItem(s);
+        if (structureNames.length>0) {
+            trackStructureJCB.setSelectedIndex(0);
+            setStructure(0);
+        }
+    }
+    
+    private void setStructure(int structureIdx) {
+        trackTreeController.setStructure(structureIdx);
+        displayTrackTrees();
+    }
+    
+    private void displayTrackTrees() {
+        this.trackSubPanel.removeAll();
+        for (JTree tree : trackTreeController.getTrees()) trackSubPanel.add(tree);
+        trackSubPanel.revalidate();
+        trackSubPanel.repaint();
+    }
+    
+    private void initDB() {
+        try {
+            MorphiumConfig cfg = new MorphiumConfig();
+            cfg.setDatabase("testTrack");
+            cfg.addHost("localhost", 27017);
+            m=new Morphium(cfg);
+            
+            xpDAO = new ExperimentDAO(m);
+            objectDAO = new ObjectDAO(m, xpDAO);
+            Experiment xp = xpDAO.getExperiment();
+            MorphiumUtils.addDereferencingListeners(m, objectDAO, xpDAO);
+            if (xp==null) {
+                xp = new Experiment("xp test UI");
+                xpDAO.store(xp);
+                xpDAO.clearCache();
+            }
+            
+            //.setPreferredSize(new Dimension(400, 400));
+        } catch (UnknownHostException ex) {
+            logger.error("db connection error", ex);
+        }
+        
     }
 
     /**
@@ -46,13 +114,13 @@ public class GUI extends javax.swing.JFrame {
         ConfigurationPanel = new javax.swing.JPanel();
         DataPanel = new javax.swing.JPanel();
         ControlPanel = new javax.swing.JPanel();
-        TimeStructureJCB = new javax.swing.JComboBox();
+        trackStructureJCB = new javax.swing.JComboBox();
         ObjectTreeJSP = new javax.swing.JSplitPane();
         StructurePanel = new javax.swing.JPanel();
         StructureJSP = new javax.swing.JScrollPane();
         TimePanel = new javax.swing.JPanel();
         TimeJSP = new javax.swing.JScrollPane();
-        TimeSubPanel = new javax.swing.JPanel();
+        trackSubPanel = new javax.swing.JPanel();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -71,31 +139,32 @@ public class GUI extends javax.swing.JFrame {
 
         ControlPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createTitledBorder("Controls")));
 
+        trackStructureJCB.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                trackStructureJCBActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout ControlPanelLayout = new javax.swing.GroupLayout(ControlPanel);
         ControlPanel.setLayout(ControlPanelLayout);
         ControlPanelLayout.setHorizontalGroup(
             ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(ControlPanelLayout.createSequentialGroup()
-                .addComponent(TimeStructureJCB, 0, 88, Short.MAX_VALUE)
-                .addContainerGap())
+            .addComponent(trackStructureJCB, 0, 162, Short.MAX_VALUE)
         );
         ControlPanelLayout.setVerticalGroup(
             ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(ControlPanelLayout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(TimeStructureJCB, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addComponent(trackStructureJCB, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, Short.MAX_VALUE))
         );
 
-        StructurePanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Structure Browsing"));
+        StructurePanel.setBorder(javax.swing.BorderFactory.createTitledBorder("SegmentedObjects"));
 
         javax.swing.GroupLayout StructurePanelLayout = new javax.swing.GroupLayout(StructurePanel);
         StructurePanel.setLayout(StructurePanelLayout);
         StructurePanelLayout.setHorizontalGroup(
             StructurePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, StructurePanelLayout.createSequentialGroup()
-                .addGap(0, 0, Short.MAX_VALUE)
-                .addComponent(StructureJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 100, javax.swing.GroupLayout.PREFERRED_SIZE))
+            .addComponent(StructureJSP, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 100, Short.MAX_VALUE)
         );
         StructurePanelLayout.setVerticalGroup(
             StructurePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -103,16 +172,17 @@ public class GUI extends javax.swing.JFrame {
         );
 
         ObjectTreeJSP.setLeftComponent(StructurePanel);
+        StructurePanel.getAccessibleContext().setAccessibleName("Segmented Objects");
 
-        TimePanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Time Browsin"));
+        TimePanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Tracks"));
 
-        TimeJSP.setViewportView(TimeSubPanel);
+        TimeJSP.setViewportView(trackSubPanel);
 
         javax.swing.GroupLayout TimePanelLayout = new javax.swing.GroupLayout(TimePanel);
         TimePanel.setLayout(TimePanelLayout);
         TimePanelLayout.setHorizontalGroup(
             TimePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 381, Short.MAX_VALUE)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 319, Short.MAX_VALUE)
         );
         TimePanelLayout.setVerticalGroup(
             TimePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -128,7 +198,7 @@ public class GUI extends javax.swing.JFrame {
             .addGroup(DataPanelLayout.createSequentialGroup()
                 .addComponent(ControlPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(ObjectTreeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 511, Short.MAX_VALUE)
+                .addComponent(ObjectTreeJSP)
                 .addContainerGap())
         );
         DataPanelLayout.setVerticalGroup(
@@ -156,6 +226,11 @@ public class GUI extends javax.swing.JFrame {
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
+
+    private void trackStructureJCBActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_trackStructureJCBActionPerformed
+        logger.debug("trackStructureJCBActionPerformed: selected index: {}", trackStructureJCB.getSelectedIndex());
+        this.trackTreeController.setStructure(this.trackStructureJCB.getSelectedIndex());
+    }//GEN-LAST:event_trackStructureJCBActionPerformed
 
     /**
      * @param args the command line arguments
@@ -201,8 +276,8 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JPanel StructurePanel;
     private javax.swing.JScrollPane TimeJSP;
     private javax.swing.JPanel TimePanel;
-    private javax.swing.JComboBox TimeStructureJCB;
-    private javax.swing.JPanel TimeSubPanel;
     private javax.swing.JTabbedPane jTabbedPane1;
+    private javax.swing.JComboBox trackStructureJCB;
+    private javax.swing.JPanel trackSubPanel;
     // End of variables declaration//GEN-END:variables
 }

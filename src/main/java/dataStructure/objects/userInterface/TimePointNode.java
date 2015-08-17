@@ -17,8 +17,8 @@
  */
 package dataStructure.objects.userInterface;
 
+import static configuration.userInterface.GUI.logger;
 import dataStructure.objects.StructureObject;
-import static dataStructure.objects.userInterface.StructureObjectTreeGenerator.logger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -46,7 +46,7 @@ public class TimePointNode implements TreeNode, UIContainer {
     public StructureObject getData() {
         if (data==null) {
             data = getGenerator().objectDAO.getRoot(parent.fieldName, timePoint);
-            StructureObjectTreeGenerator.logger.debug("Time Point: {} retrieving root object from db: {}", timePoint, data);
+            logger.debug("Time Point: {} retrieving root object from db: {}", timePoint, data);
         }
         return data;
     }

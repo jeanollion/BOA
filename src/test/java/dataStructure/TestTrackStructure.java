@@ -21,6 +21,7 @@ import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
+import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectDAO;
@@ -60,6 +61,8 @@ public class TestTrackStructure {
             Structure bacteries = new Structure("Bacteries", 0, 0);
             xp.getStructures().insert(microChannel, bacteries);
             bacteries.setParentStructure(0);
+            MicroscopyField f = (MicroscopyField)xp.getMicroscopyFields().createChildInstance("field1");
+            xp.getMicroscopyFields().insert(f);
             xpDAO.store(xp);
             
             StructureObject[] rootT = new StructureObject[5];
@@ -94,7 +97,7 @@ public class TestTrackStructure {
             m.clearCachefor(StructureObject.class);
             
             // retrive tracks head for microChannels
-            StructureObject[] mcHeads = dao.getTrackHeads(rootT[0]);
+            StructureObject[] mcHeads = dao.getTrackHeads(rootT[0], 0);
             assertEquals("number of heads for microChannels", 1, mcHeads.length);
             assertEquals("head for microChannel", mcT[0].getId(), mcHeads[0].getId());
             assertEquals("head for microChannel (unique instanciation)", dao.getObject(mcT[0].getId()), mcHeads[0]);
@@ -107,11 +110,11 @@ public class TestTrackStructure {
             for (int i = 0; i<mcTrack.length; ++i) assertEquals("microChannel track element: "+i+ " unique instanciation", dao.getObject(mcT[i].getId()), mcTrack[i]);
             
             // retrive tracks head for bacteries
-            StructureObject[] bHeads = dao.getTrackHeads(mcT[0]);
+            StructureObject[] bHeads = dao.getTrackHeads(mcT[0], 1);
             assertEquals("number of heads for bacteries", 5, bHeads.length);
             assertEquals("head for bacteries (0)", bTM[0][0].getId(), bHeads[0].getId());
             assertEquals("head for bacteries (3)", bTM[1][1].getId(), bHeads[2].getId());
-            assertEquals("head for micro bacteries (0, unique instanciation)", dao.getObject(bTM[0][0].getId()), bHeads[0]);
+            assertEquals("head for bacteries (0, unique instanciation)", dao.getObject(bTM[0][0].getId()), bHeads[0]);
             
             // retrieve bacteries track
             StructureObject[] bTrack0 = dao.getTrack(bHeads[0]);

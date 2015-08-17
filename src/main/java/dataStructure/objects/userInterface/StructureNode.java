@@ -17,11 +17,10 @@
  */
 package dataStructure.objects.userInterface;
 
+import static configuration.userInterface.GUI.logger;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
-import static dataStructure.objects.userInterface.StructureObjectTreeGenerator.logger;
-import image.BlankMask;
 import image.Image;
 import image.ImageInteger;
 import java.awt.event.ActionEvent;
@@ -33,7 +32,6 @@ import javax.swing.AbstractAction;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.tree.TreeNode;
-import utils.SmallArray;
 
 /**
  *
