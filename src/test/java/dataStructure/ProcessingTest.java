@@ -179,29 +179,28 @@ public class ProcessingTest {
         m.clearCollection(StructureObject.class);
         m.clearCollection(Experiment.class);
         Experiment xp = new Experiment("test");
-        m.store(xp);
+        ExperimentDAO xpDAO= new ExperimentDAO(m);
+        xpDAO.store(xp);
         StructureObject r = new StructureObject("test", 0, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), xp);
         StructureObject r2 = new StructureObject("test", 1, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), xp);
         StructureObject r3 = new StructureObject("test", 3, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), xp);
-        ObjectDAO dao = new ObjectDAO(m);
+        ObjectDAO dao = new ObjectDAO(m, xpDAO);
         dao.store(r, r2, r3);
         r2.setPreviousInTrack(r, true);
         r3.setPreviousInTrack(r2, true);
         dao.store(r, r2, r3);
         MorphiumUtils.waitForWrites(m);
-        MorphiumUtils.addDereferencingListeners(m);
+        MorphiumUtils.addDereferencingListeners(m, dao, xpDAO);
         r2 = dao.getObject(r2.getId());
         r = dao.getObject(r.getId());
         assertTrue("r2 retrieved", r!=null);
         assertEquals("r unique instanciation", r, r2.getPrevious());
         assertEquals("xp unique instanciation", r.getExperiment(), r2.getExperiment());
-        m.clearCachefor(StructureObject.class);
-        MorphiumUtils.addDereferencingListeners(m);
-        dao = new ObjectDAO(m);
+        dao.clearCache();
         r2 = dao.getObject(r2.getId());
         assertTrue("r2 retrieved", r!=null);
         assertEquals("r retrieved 2", "test", r2.getFieldName());
-        assertEquals("r previous ", r.getId(), r2.getPrevious().getId());
+        //assertEquals("r previous ", r.getId(), r2.getPrevious().getId()); // not lazy anymore
         
         assertEquals("r unique instanciation query from fieldName & time point", r2, dao.getRoot("test", 1));
     }
@@ -247,11 +246,9 @@ public class ProcessingTest {
             Morphium m=new Morphium(cfg);
             m.clearCollection(Experiment.class);
             m.clearCollection(StructureObject.class);
-            m.store(xp);
-            /*m=new Morphium(cfg);
-            ExperimentDAO xpDAO = new ExperimentDAO(m);
-            xp=xpDAO.getExperiment();*/
-            ObjectDAO dao = new ObjectDAO(m);
+            ExperimentDAO xpDAO= new ExperimentDAO(m);
+            xpDAO.store(xp);
+            ObjectDAO dao = new ObjectDAO(m, xpDAO);
             
             Processor.preProcessImages(xp);
             StructureObject[] root = xp.getMicroscopyField(0).createRootObjects();
@@ -267,14 +264,12 @@ public class ProcessingTest {
             StructureObject rootFetch = dao.getObject(root[0].getId());
             assertEquals("root fetch @t=0", root[0].getId(), rootFetch.getId());
             // retrieve
-            m.clearCachefor(StructureObject.class);
-            m.clearCachefor(Experiment.class);
-            MorphiumUtils.addDereferencingListeners(m);
-            dao = new ObjectDAO(m);
+            dao.clearCache();
             
             rootFetch = dao.getObject(root[0].getId());
             assertEquals("root fetch @t=0 (2)", root[0].getId(), rootFetch.getId());
             
+            root = dao.getTrack(dao.getObject(root[0].getId()));
             for (int t = 0; t<root.length; ++t) {
                 root[t]=dao.getObject(root[t].getId());
                 for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
@@ -288,22 +283,24 @@ public class ProcessingTest {
                 assertEquals("root track:"+(t)+"->"+(t-1), root[t-1], root[t].getPrevious());
             }
             StructureObject[][] microChannels = new StructureObject[root.length][];
+            assertEquals("number of track heads for microchannels", 2, dao.getTrackHeads(root[0]).length);
             for (int t = 0; t<root.length; ++t) microChannels[t] = root[t].getChildObjects(0);
             for (int t = 0; t<root.length; ++t) assertEquals("number of microchannels @t:"+t, 2, microChannels[t].length);
             for (int i = 0; i<microChannels[0].length; ++i) {
                 for (int t = 1; t<root.length; ++t) {
-                    assertEquals("mc:"+i+" track:"+(t-1)+"->"+t, microChannels[t][i],  microChannels[t-1][i].getNext());
-                    assertEquals("mc:"+i+" track:"+(t)+"->"+(t-1), microChannels[t-1][i], microChannels[t][i].getPrevious());
+                    assertEquals("mc:"+i+" trackHead:"+t, microChannels[0][i].getId(),  microChannels[t][i].getTrackHeadId());
+                    assertEquals("mc:"+i+" parenttrackHead:"+t, root[0].getId(),  microChannels[t][i].getParentTrackHeadId());
                 }
             }
             for (int i = 0; i<microChannels[0].length; ++i) {
+                assertEquals("number of track heads for bacteries @ mc:"+i, 3, dao.getTrackHeads(microChannels[0][i]).length);
                 StructureObject[][] bactos = new StructureObject[root.length][];
                 for (int t = 0; t<root.length; ++t) bactos[t] = microChannels[t][i].getChildObjects(1);
                 for (int t = 0; t<root.length; ++t) assertEquals("number of bacteries @t:"+t+" @mc:"+i, 3, bactos[t].length);
                 for (int b = 0; b<bactos[0].length; ++b) {
                     for (int t = 1; t<root.length; ++t) {
-                        assertEquals("mc: "+i+ " bact:"+b+" track:"+(t-1)+"->"+t, bactos[t][i],  bactos[t-1][i].getNext());
-                        assertEquals("mc: "+i+ " bact:"+b+" track:"+(t)+"->"+(t-1), bactos[t-1][i], bactos[t][i].getPrevious());
+                        assertEquals("mc:"+i+ " bact:"+b+" trackHead:"+t, bactos[0][i].getId(),  bactos[t][i].getTrackHeadId());
+                        assertEquals("mc:"+i+ " bact:"+b+" parenttrackHead:"+t, microChannels[0][i].getId(),  bactos[t][i].getParentTrackHeadId());
                     }
                 }
             }

@@ -32,10 +32,9 @@ import static processing.PluginSequenceRunner.preFilterImage;
 import static processing.PluginSequenceRunner.segmentImage;
 import utils.SmallArray;
 
-@Cache
 @Lifecycle //-> bug a cause de la structure circulaire
 @Entity(collectionName = "Objects")
-@Index(value={"field_name, time_point, structure_idx", "parent,structure_idx,idx", "new_track_branch, time_point"}, options={"", "", ""})
+@Index(value={"field_name, time_point, structure_idx", "parent,structure_idx,idx", "track_head_id, time_point", "is_track_head, parent_track_head_id, time_point, idx"})
 public class StructureObject implements StructureObjectPostProcessing, Track {
     public final static Logger logger = LoggerFactory.getLogger(StructureObject.class);
     //structure-related attributes
@@ -50,7 +49,8 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     // track-related attributes
     protected int timePoint;
     @Reference(lazyLoading=true, automaticStore=false) protected StructureObject previous, next;
-    protected boolean newTrackBranch=true;
+    protected ObjectId parentTrackHeadId, trackHeadId;
+    protected boolean isTrackHead=true;
     
     // object- and images-related attributes
     @Transient private Object3D object;
@@ -64,7 +64,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         this.fieldName=fieldName;
         this.timePoint = timePoint;
         this.object=object;
-        this.object.label=idx+1;
+        if (object!=null) this.object.label=idx+1;
         this.structureIdx = structureIdx;
         this.idx = idx;
         this.parent=parent;
@@ -81,7 +81,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     public StructureObject(String fieldName, int timePoint, BlankMask mask, Experiment xp) {
         this.fieldName=fieldName;
         this.timePoint=timePoint;
-        this.object=new Object3D(mask, 1);
+        if (mask!=null) this.object=new Object3D(mask, 1);
         this.structureIdx = -1;
         this.idx = 0;
         this.xp=xp;
@@ -142,26 +142,60 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     /**
      * 
      * @param previous the previous object in the track
-     * @param isNewBranch if true, sets this instance as the next of {@param previous} 
+     * @param isTrackHead if true, sets this instance as the next of {@param previous} 
      */
-    public void setPreviousInTrack(StructureObjectPreProcessing previous, boolean isNewBranch) {
+    public void setPreviousInTrack(StructureObjectPreProcessing previous, boolean isTrackHead) {
         this.previous=(StructureObject)previous;
-        if (!isNewBranch) {
-            ((StructureObject)previous).next=this;
-            newTrackBranch=false;
-        } else this.newTrackBranch=true;
+        if (this.previous.isTrackHead && this.previous.trackHeadId==null) this.previous.trackHeadId=this.previous.getId();
+        this.parentTrackHeadId=this.previous.parentTrackHeadId;
+        if (this.parentTrackHeadId==null && parent!=null) {
+            this.parentTrackHeadId=parent.getTrackHeadId();
+            this.previous.setParentTrackHeadId(parentTrackHeadId);
+        }
+        if (!isTrackHead) {
+            this.previous.next=this;
+            this.isTrackHead=false;
+            this.trackHeadId= this.previous.isTrackHead? this.previous.id : this.previous.trackHeadId;
+        } else {
+            this.isTrackHead=true;
+            this.trackHeadId=this.id; //this.trackHead=this;
+        }
+    }
+    
+    public void setParentTrackHeadId(ObjectId parentTrackHeadId) {
+        this.parentTrackHeadId=parentTrackHeadId;
     }
     
     public StructureObject getPrevious() {
-        if (previous==null) return null;
-        previous.callLazyLoading();
+        //if (previous==null) return null;
+        //previous.callLazyLoading();
         return previous;
     }
     
     public StructureObject getNext() {
-        if (next==null) return null;
-        next.callLazyLoading();
+        //if (next==null) return null;
+        //next.callLazyLoading();
         return next;
+    }
+    
+    public ObjectId getTrackHeadId() {
+        /*if (trackHead==null) {
+            if (isTrackHead) return this;
+            else return null;
+        }
+        trackHead.callLazyLoading();
+        return trackHead;*/
+        return trackHeadId;
+    }
+    
+    public ObjectId getParentTrackHeadId() {
+        /*if (trackHead==null) {
+            if (isTrackHead) return this;
+            else return null;
+        }
+        trackHead.callLazyLoading();
+        return trackHead;*/
+        return parentTrackHeadId;
     }
     
     // object- and image-related methods

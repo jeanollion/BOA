@@ -105,6 +105,7 @@ public class Processor {
         if (logger.isDebugEnabled()) logger.debug("tracking objects from structure: {} parentTrack: {} / Tracker: {} / dao==null? {}", structureIdx, parentTrack, tracker==null?"NULL":tracker.getClass(), dao==null);
         if (tracker==null) return;
         // TODO gestion de la memoire vive -> si trop ouvert, fermer les images & masques des temps précédents.
+        for (StructureObject o : parentTrack.getChildObjects(structureIdx)) o.setParentTrackHeadId(parentTrack.getTrackHeadId());
         while(parentTrack.getNext()!=null) {
             tracker.assignPrevious(parentTrack.getChildObjects(structureIdx), parentTrack.getNext().getChildObjects(structureIdx));
             if (dao!=null) dao.updateTrackAttributes(parentTrack.getChildObjects(structureIdx));

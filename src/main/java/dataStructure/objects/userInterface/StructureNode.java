@@ -152,7 +152,7 @@ public class StructureNode implements TreeNode, UIContainer {
             );
             String[] structureNames = structureNode.getParentObject().getExperiment().getStructuresAsString();
             int[] childStructures = structureNode.getParentObject().getExperiment().getAllChildStructures(idx);
-            JMenu segSubMenu = new JMenu("Open Segmented Image");
+            JMenu segSubMenu = new JMenu("Open Child Segmented Image");
             actions[1] = segSubMenu;
             openSeg=new JMenuItem[childStructures.length];
             for (int i = 0; i < openSeg.length; i++) {

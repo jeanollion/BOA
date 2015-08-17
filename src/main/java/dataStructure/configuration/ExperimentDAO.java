@@ -28,12 +28,29 @@ import org.bson.types.ObjectId;
  * @author jollion
  */
 public class ExperimentDAO extends DAO<Experiment>{
-
+    Experiment cache;
+    Morphium morphium;
     public ExperimentDAO(Morphium morphium) {
         super(morphium, Experiment.class);
         morphium.ensureIndicesFor(Experiment.class);
+        this.morphium=morphium;
     }
     public Experiment getExperiment() {
-        return this.getQuery().get();
+        if (cache!=null) return cache;
+        else {
+            cache = this.getQuery().get();
+            return cache;
+        }
     }
+    
+    public void store(Experiment xp) {
+        cache=xp;
+        morphium.store(xp);
+    }
+    
+    public void setToCache(Experiment xp) {
+        cache=xp;
+    }
+    
+    public void clearCache() {cache=null;}
 }

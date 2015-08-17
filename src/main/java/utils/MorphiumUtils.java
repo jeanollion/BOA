@@ -18,6 +18,8 @@
 package utils;
 
 import dataStructure.configuration.Experiment;
+import dataStructure.configuration.ExperimentDAO;
+import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.AnnotationAndReflectionHelper;
 import de.caluga.morphium.DereferencingListener;
@@ -34,27 +36,48 @@ import org.slf4j.LoggerFactory;
  */
 public class MorphiumUtils {
     public final static Logger logger = LoggerFactory.getLogger(MorphiumUtils.class);
-    public static void addDereferencingListeners(Morphium m) {
+    public static void addDereferencingListeners(Morphium m, final ObjectDAO objectDao_, final ExperimentDAO xpDao_) {
         m.addDereferencingListener(new DereferencingListener<Object, StructureObject, ObjectId>() {
+            ObjectDAO objectDAO=objectDao_;
+            ExperimentDAO xpDAO = xpDao_;
             AnnotationAndReflectionHelper r = new AnnotationAndReflectionHelper(true);
 
             @Override
             public void wouldDereference(StructureObject entityIncludingReference, String fieldInEntity, ObjectId id, Class typeReferenced, boolean lazy) throws MorphiumAccessVetoException {
+                if (logger.isTraceEnabled()) logger.trace("would dereference: {} refrence: {} lazy: {} field: {}", entityIncludingReference.getFieldName(), typeReferenced.getSimpleName(), lazy, fieldInEntity);
+                Object o = null;
+                if (StructureObject.class.equals(typeReferenced)) o = objectDAO.getObject(id);
+                else if (Experiment.class.equals(typeReferenced)) o = xpDAO.getExperiment();
+                if (o != null) {
+                    logger.trace("would dereference: object found");
+                    try {
+                        Field f = r.getField(entityIncludingReference.getClass(), fieldInEntity);
+                        f.set(entityIncludingReference, o);
+                    } catch (IllegalArgumentException ex) {
+                        logger.error("referencing error", ex);
+                    } catch (IllegalAccessException ex) {
+                        logger.error("referencing error", ex);
+                    }
+                    throw new MorphiumAccessVetoException();
+                }
             }
 
             @Override
             public Object didDereference(StructureObject entitiyIncludingReference, String fieldInEntity, Object referencedObject, boolean lazy) {
                 if (referencedObject!=null && logger.isTraceEnabled()) logger.trace("did dereference: {} refrence: {} lazy: {} field: {}", entitiyIncludingReference.getFieldName(), referencedObject.getClass().getSimpleName(), lazy, fieldInEntity);
                 //else if (logger.isTraceEnabled()) logger.trace("did dereference: {} null refrence lazy: {} field: {}", entitiyIncludingReference.getFieldName(), lazy, fieldInEntity);
-                if (lazy) {
-                    try {
-                        Field f = r.getField(entitiyIncludingReference.getClass(), fieldInEntity);
-                        f.set(entitiyIncludingReference, referencedObject);
-                    } catch (IllegalArgumentException ex) {
-                        logger.error("referencing error", ex);
-                    } catch (IllegalAccessException ex) {
-                        logger.error("referencing error", ex);
-                    }
+                
+                try {
+                    Field f = r.getField(entitiyIncludingReference.getClass(), fieldInEntity);
+                    f.set(entitiyIncludingReference, referencedObject);
+                } catch (IllegalArgumentException ex) {
+                    logger.error("referencing error", ex);
+                } catch (IllegalAccessException ex) {
+                    logger.error("referencing error", ex);
+                }
+                if (referencedObject!=null) {
+                    if (referencedObject instanceof StructureObject) objectDAO.setToCache((StructureObject)referencedObject);
+                    else if (referencedObject instanceof Experiment) xpDAO.setToCache((Experiment)referencedObject);
                 }
                 return referencedObject;
             }

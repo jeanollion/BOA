@@ -46,7 +46,6 @@ import static utils.Utils.toArray;
  * 
  */
 
-@Cache
 @Entity(collectionName = "Experiment", polymorph=false)
 @Index(value="name", options="unique:1")
 public class Experiment extends SimpleContainerParameter implements TreeModelContainer {

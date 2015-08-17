@@ -17,6 +17,7 @@
  */
 package dataStructure.objects.userInterface;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -26,27 +27,25 @@ import javax.swing.tree.TreeNode;
  *
  * @author nasique
  */
-public class FieldNode implements TreeNode, UIContainer {
-    ExperimentNode parent;
-    TimePointNode[] children;
-    String fieldName;
+public class TrackExperimentNode implements TreeNode, UIContainer {
+    protected final TrackTreeGenerator generator;
+    ArrayList<RootTrackNode> children;
     
-    public FieldNode(ExperimentNode parent, String fieldName) {
-        this.parent=parent;
-        this.fieldName=fieldName;
+    public TrackExperimentNode(TrackTreeGenerator generator) {
+        this.generator=generator;
     }
     
-    public TimePointNode[] getChildren() { // charger tous les root object d'un coup en une requete?
+    public TrackTreeGenerator getGenerator() {
+        return generator;
+    }
+    
+    public ArrayList<RootTrackNode> getChildren() {
         if (children==null) {
-            int timePointNb = getGenerator().xp.getTimePointNumber();
-            children = new TimePointNode[timePointNb];
-            for (int i = 0; i<timePointNb; ++i) children[i]=new TimePointNode(this, i);
+            String[] fieldNames = generator.xp.getFieldsAsString();
+            children= new ArrayList<RootTrackNode>(fieldNames.length);
+            for (String fieldName : fieldNames) children.add(new RootTrackNode(this, fieldName));
         }
         return children;
-    }
-    
-    public StructureObjectTreeGenerator getGenerator() {
-        return parent.getGenerator();
     }
     
     // UIContainer implementation
@@ -56,25 +55,23 @@ public class FieldNode implements TreeNode, UIContainer {
     
     // TreeNode implementation
     @Override public String toString() {
-        return fieldName;
+        return generator.xp.getName();
     }
     
-    public TimePointNode getChildAt(int childIndex) {
-        return getChildren()[childIndex];
+    public RootTrackNode getChildAt(int childIndex) {
+        return getChildren().get(childIndex);
     }
 
     public int getChildCount() {
-        return getChildren().length;
+        return getChildren().size();
     }
 
-    public ExperimentNode getParent() {
-        return parent;
+    public TreeNode getParent() {
+        return null;
     }
 
     public int getIndex(TreeNode node) {
-        if (node==null) return -1;
-        for (int i = 0; i<getChildren().length; ++i) if (node.equals(children[i])) return i;
-        return -1;
+        return getChildren().indexOf(node);
     }
 
     public boolean getAllowsChildren() {
@@ -86,7 +83,6 @@ public class FieldNode implements TreeNode, UIContainer {
     }
 
     public Enumeration children() {
-        return Collections.enumeration(Arrays.asList(getChildren()));
+        return Collections.enumeration(getChildren());
     }
-    
 }
