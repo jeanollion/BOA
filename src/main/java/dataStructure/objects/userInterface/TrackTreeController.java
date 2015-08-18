@@ -17,6 +17,7 @@
  */
 package dataStructure.objects.userInterface;
 
+import configuration.userInterface.GUI;
 import static configuration.userInterface.GUI.logger;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.objects.ObjectDAO;
@@ -48,7 +49,7 @@ public class TrackTreeController {
         }
         generatorS=newGeneratorS;
         updateParentTracks();
-        
+        if (logger.isTraceEnabled()) logger.trace("track tree controller set structure: number of generators: {}", generatorS.size());
     }
     
     private int getLastTreeIdxWithSingleSelection() {
@@ -60,25 +61,25 @@ public class TrackTreeController {
     
     private void updateParentTracks() {
         int lastTreeIdx = getLastTreeIdxWithSingleSelection();
-        if (lastTreeIdx>=0) {
-            if (lastTreeIdx+1<structurePathToRoot.length && !generatorS.get(structurePathToRoot[lastTreeIdx+1]).hasSelection()) {
-                updateParentTracks(lastTreeIdx);
-            }
-        } else clearTreeFromIdx(1);
+        if (lastTreeIdx+1<structurePathToRoot.length && !generatorS.get(structurePathToRoot[lastTreeIdx+1]).hasSelection()) {
+            updateParentTracks(lastTreeIdx);
+        }
     }
     /**
      * Updates the parent track for the tree after {@param lastSelectedTreeIdx} and clear the following trees.
      * @param lastSelectedTreeIdx 
      */
     public void updateParentTracks(int lastSelectedTreeIdx) {
-        if (lastSelectedTreeIdx+1<structurePathToRoot.length) {
+        logger.debug("update parent track lastSelectedIdx: {} number of structures: {}", lastSelectedTreeIdx, structurePathToRoot.length);
+        if (lastSelectedTreeIdx==-1) setParentTrackOnRootTree();
+        else if (lastSelectedTreeIdx+1<structurePathToRoot.length) {
             logger.debug("setting parent track on tree for structure: {}", structurePathToRoot[lastSelectedTreeIdx+1]);
             generatorS.get(structurePathToRoot[lastSelectedTreeIdx+1]).setParentTrack(generatorS.get(structurePathToRoot[lastSelectedTreeIdx]).getSelectedTrack(), structurePathToRoot[lastSelectedTreeIdx+1]);
-            clearTreeFromIdx(lastSelectedTreeIdx+2);
+            clearTreesFromIdx(lastSelectedTreeIdx+2);
         }
     }
     
-    public void clearTreeFromIdx(int treeIdx) {
+    public void clearTreesFromIdx(int treeIdx) {
         for (int i = treeIdx; i < structurePathToRoot.length; ++i) {
             logger.debug("clearing tree for structure: {}", structurePathToRoot[i]);
             generatorS.get(structurePathToRoot[i]).clearTree();
@@ -87,7 +88,7 @@ public class TrackTreeController {
     
     public void setParentTrackOnRootTree() {
         generatorS.get(structurePathToRoot[0]).setRootParentTrack(false, structurePathToRoot[0]);
-        clearTreeFromIdx(1);
+        clearTreesFromIdx(1);
     }
     
     public int getTreeIdx(int structureIdx) {
@@ -95,9 +96,13 @@ public class TrackTreeController {
         return 0;
     }
     
-    public ArrayList<JTree> getTrees() {
+    /*public ArrayList<JTree> getTrees() {
         ArrayList<JTree> res = new ArrayList<JTree>(structurePathToRoot.length);
         for (TrackTreeGenerator generator : generatorS.values()) if (generator.getTree()!=null) res.add(generator.getTree());
         return res;
+    }*/
+    
+    public HashMap<Integer, TrackTreeGenerator> getGeneratorS() {
+        return generatorS;
     }
 }

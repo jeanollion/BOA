@@ -38,6 +38,7 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import static configuration.userInterface.GUI.logger;
+import configuration.userInterface.TransparentTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 /**
  *
@@ -56,7 +57,7 @@ public class TrackTreeGenerator {
     }
     
     public StructureObject getSelectedTrack() {
-        if (hasSelection()) return ((TrackNode)tree.getSelectionPath().getLastPathComponent()).trackHead;
+        if (hasSelection() && tree.getSelectionPath().getLastPathComponent() instanceof TrackNode) return ((TrackNode)tree.getSelectionPath().getLastPathComponent()).trackHead;
         else return null;
     }
     
@@ -95,20 +96,13 @@ public class TrackTreeGenerator {
         tree=new JTree(treeModel);
         //tree.setRootVisible(false);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
-        DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
+        tree.setOpaque(false);
+        DefaultTreeCellRenderer renderer = new TransparentTreeCellRenderer();
         Icon personIcon = null;
         renderer.setLeafIcon(personIcon);
         renderer.setClosedIcon(personIcon);
         renderer.setOpenIcon(personIcon);
         tree.setCellRenderer(renderer);
-        tree.addTreeSelectionListener(new TreeSelectionListener() {
-            @Override public void valueChanged(TreeSelectionEvent e) {
-                if (logger.isDebugEnabled()) logger.debug("selection changed on tree of structure: {} event: {}", getStructure(), e);
-                if (controller==null) return;
-                if (tree.getSelectionCount()==1) controller.updateParentTracks(controller.getTreeIdx(getStructure()));
-                else controller.clearTreeFromIdx(controller.getTreeIdx(getStructure())+1);
-            }
-        });
         tree.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {

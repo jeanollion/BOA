@@ -52,5 +52,10 @@ public class ExperimentDAO extends DAO<Experiment>{
         cache=xp;
     }
     
+    public Experiment checkAgainstCache(Experiment e) {
+        if (cache==null) setToCache(e);
+        return cache;
+    }
+    
     public void clearCache() {cache=null;}
 }

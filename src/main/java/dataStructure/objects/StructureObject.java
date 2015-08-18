@@ -3,6 +3,7 @@ package dataStructure.objects;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.containers.ObjectContainer;
+import de.caluga.morphium.MorphiumAccessVetoException;
 import de.caluga.morphium.annotations.Entity;
 import de.caluga.morphium.annotations.Id;
 import de.caluga.morphium.annotations.Index;
@@ -48,7 +49,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     
     // track-related attributes
     protected int timePoint;
-    @Reference(lazyLoading=true, automaticStore=false) protected StructureObject previous, next;
+    @Reference(lazyLoading=true, automaticStore=false) public StructureObject previous, next;
     protected ObjectId parentTrackHeadId, trackHeadId;
     protected boolean isTrackHead=true;
     
@@ -95,7 +96,8 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     public int getIdx() {return idx;}
     public Experiment getExperiment() {
         if (xp==null) return null;
-        xp.callLazyLoading();
+        try {xp.callLazyLoading();}
+        catch (MorphiumAccessVetoException e) {}
         return xp;
     }
     public MicroscopyField getMicroscopyField() {
@@ -103,7 +105,8 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     }
     public StructureObject getParent() {
         if (parent==null) return null;
-        parent.callLazyLoading();
+        try {parent.callLazyLoading();}
+        catch (MorphiumAccessVetoException e) {}
         return parent;
     }
     public void setParent(StructureObject parent) {this.parent=parent;}
@@ -144,21 +147,16 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
      * @param previous the previous object in the track
      * @param isTrackHead if true, sets this instance as the next of {@param previous} 
      */
-    public void setPreviousInTrack(StructureObjectPreProcessing previous, boolean isTrackHead) {
+    @Override public void setPreviousInTrack(StructureObjectPreProcessing previous, boolean isTrackHead) {
+        if (((StructureObject)previous).getTimePoint()!=this.getTimePoint()-1) throw new RuntimeException("setPrevious in track should be of time: "+(timePoint-1) +"but is: "+((StructureObject)previous).getTimePoint());
         this.previous=(StructureObject)previous;
-        if (this.previous.isTrackHead && this.previous.trackHeadId==null) this.previous.trackHeadId=this.previous.getId();
-        this.parentTrackHeadId=this.previous.parentTrackHeadId;
-        if (this.parentTrackHeadId==null && parent!=null) {
-            this.parentTrackHeadId=parent.getTrackHeadId();
-            this.previous.setParentTrackHeadId(parentTrackHeadId);
-        }
         if (!isTrackHead) {
             this.previous.next=this;
             this.isTrackHead=false;
-            this.trackHeadId= this.previous.isTrackHead? this.previous.id : this.previous.trackHeadId;
+            this.trackHeadId= this.previous.getTrackHeadId();
         } else {
             this.isTrackHead=true;
-            this.trackHeadId=this.id; //this.trackHead=this;
+            this.trackHeadId=this.id;
         }
     }
     
@@ -167,14 +165,16 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     }
     
     public StructureObject getPrevious() {
-        //if (previous==null) return null;
-        //previous.callLazyLoading();
+        if (previous==null) return null;
+        try {previous.callLazyLoading();}
+        catch (MorphiumAccessVetoException e) {}
         return previous;
     }
     
     public StructureObject getNext() {
-        //if (next==null) return null;
-        //next.callLazyLoading();
+        if (next==null) return null;
+        try {next.callLazyLoading();}
+        catch (MorphiumAccessVetoException e) {}
         return next;
     }
     
@@ -185,6 +185,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         }
         trackHead.callLazyLoading();
         return trackHead;*/
+        if (trackHeadId==null && isTrackHead) trackHeadId = id;
         return trackHeadId;
     }
     
@@ -313,7 +314,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         //createObjectContainer();
     }*/
     
-    public void callLazyLoading(){} // for lazy-loading listener
+    public void callLazyLoading() throws MorphiumAccessVetoException{} // for lazy-loading listener
     
     public StructureObject(){}
 }

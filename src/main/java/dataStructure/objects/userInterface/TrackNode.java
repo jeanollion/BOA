@@ -17,6 +17,7 @@
  */
 package dataStructure.objects.userInterface;
 
+import static configuration.userInterface.GUI.logger;
 import dataStructure.objects.StructureObject;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import javax.swing.tree.TreeNode;
+import org.bson.types.ObjectId;
 
 /**
  *
@@ -54,28 +56,36 @@ public class TrackNode implements TreeNode {
             if (getTrack().length<=1) children=new ArrayList<TrackNode>(0);
             else {
                 children=new ArrayList<TrackNode>();
-                List<StructureObject> trackList=Arrays.asList(track);
-                Iterator<Entry<Integer, ArrayList<StructureObject>>> it = root.getRemainingTrackHeads().subMap(track[1].getTimePoint(), true, track[track.length].getTimePoint(), true).entrySet().iterator();
+                Iterator<Entry<Integer, ArrayList<StructureObject>>> it = root.getRemainingTrackHeads().subMap(track[1].getTimePoint(), true, track[track.length-1].getTimePoint(), true).entrySet().iterator();
+                //if (logger.isTraceEnabled()) logger.trace("looking for children for node: {} timePoint left: {} timePoint right:{} head submap: {}", toString(), track[1].getTimePoint(), track[track.length-1].getTimePoint(), root.getRemainingTrackHeads().subMap(track[1].getTimePoint(), true, track[track.length-1].getTimePoint(), true).size());
                 while (it.hasNext()) {
                     ArrayList<StructureObject> e = it.next().getValue();
                     Iterator<StructureObject> subIt = e.iterator();
                     while (subIt.hasNext()) {
                         StructureObject o = subIt.next();
-                        if (trackList.contains(o.getPrevious())) {
+                        if (trackContainscontainsId(o.getPrevious())) {
                             children.add(new TrackNode(this, root, o));
-                            it.remove();
+                            subIt.remove();
                         }
+                        //if (logger.isTraceEnabled()) logger.trace("looking for structureObject: {} in track of node: {} found? {}", o, toString(), trackContainscontainsId(o.getPrevious()));
                     }
                     if (e.isEmpty()) it.remove();
                 }
             }
+            //logger.trace("get children: {} number of children: {} remaining distinct timePoint in root: {}", toString(),  children.size(), root.getRemainingTrackHeads().size());
         } 
         return children;
     }
-    
+    private boolean trackContainscontainsId(StructureObject object) {
+        for (StructureObject o : getTrack()) if (o.getId().equals(object.getId())) {
+            if (!o.equals(object)) logger.error("unique instanciation failed for {} and {} ", o, object);
+            return true;
+        }
+        return false;
+    }
     // TreeNode implementation
     @Override public String toString() {
-        return "Track: t="+trackHead.getTimePoint()+ " idx="+trackHead.getIdx();
+        return "Track: Head idx="+trackHead.getIdx()+ " t="+trackHead.getTimePoint()+" length: "+getTrack().length; //TODO lazy loading track length if necessary
     }
     
     public TrackNode getChildAt(int childIndex) {

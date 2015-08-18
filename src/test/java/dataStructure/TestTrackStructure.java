@@ -84,7 +84,7 @@ public class TestTrackStructure {
             bTM[1][1].setPreviousInTrack(bTM[0][0], true);
             for (int i= 2; i<mcT.length; ++i) bTM[i][1].setPreviousInTrack(bTM[i-1][1], false);
             bTM[3][2].setPreviousInTrack(bTM[2][1], true); bTM[4][2].setPreviousInTrack(bTM[3][2], false);
-            bTM[1][2].setPreviousInTrack(bTM[0][1], true); bTM[2][2].setPreviousInTrack(bTM[1][2], false);
+            bTM[1][2].setPreviousInTrack(bTM[0][1], false); bTM[2][2].setPreviousInTrack(bTM[1][2], false);
             /*
             0.0->4
             -1->4
@@ -113,7 +113,10 @@ public class TestTrackStructure {
             StructureObject[] bHeads = dao.getTrackHeads(mcT[0], 1);
             assertEquals("number of heads for bacteries", 5, bHeads.length);
             assertEquals("head for bacteries (0)", bTM[0][0].getId(), bHeads[0].getId());
-            assertEquals("head for bacteries (3)", bTM[1][1].getId(), bHeads[2].getId());
+            assertEquals("head for bacteries (1)", bTM[0][1].getId(), bHeads[1].getId());
+            assertEquals("head for bacteries (2)", bTM[0][2].getId(), bHeads[2].getId());
+            assertEquals("head for bacteries (3)", bTM[1][1].getId(), bHeads[3].getId());
+            assertEquals("head for bacteries (4)", bTM[3][2].getId(), bHeads[4].getId());
             assertEquals("head for bacteries (0, unique instanciation)", dao.getObject(bTM[0][0].getId()), bHeads[0]);
             
             // retrieve bacteries track

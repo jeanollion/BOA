@@ -21,15 +21,22 @@ import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.userInterface.StructureObjectTreeGenerator;
+import dataStructure.objects.userInterface.TrackNode;
 import dataStructure.objects.userInterface.TrackTreeController;
+import dataStructure.objects.userInterface.TrackTreeGenerator;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
 import java.awt.Dimension;
 import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.logging.Level;
 import javax.swing.ComboBoxModel;
 import javax.swing.JFrame;
+import javax.swing.JScrollPane;
 import javax.swing.JTree;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.MorphiumUtils;
@@ -44,16 +51,18 @@ public class GUI extends javax.swing.JFrame {
     ExperimentDAO xpDAO;
     ObjectDAO objectDAO;
     Morphium m;
+    private final GUI instance;
+    private HashMap<Integer, JTree> currentTrees;
     /**
      * Creates new form GUI
      */
     public GUI() {
         initComponents();
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        
         initDB();
         trackTreeController = new TrackTreeController(objectDAO, xpDAO);
         setTrackTreeStructures(xpDAO.getExperiment().getStructuresAsString());
+        this.instance=this;
     }
     
     private void setTrackTreeStructures(String[] structureNames) {
@@ -70,9 +79,47 @@ public class GUI extends javax.swing.JFrame {
         displayTrackTrees();
     }
     
-    private void displayTrackTrees() {
+    public void displayTrackTrees() {
         this.trackSubPanel.removeAll();
-        for (JTree tree : trackTreeController.getTrees()) trackSubPanel.add(tree);
+        HashMap<Integer, JTree> newCurrentTrees = new HashMap<Integer, JTree>(trackTreeController.getGeneratorS().size());
+        for (Entry<Integer, TrackTreeGenerator> e : trackTreeController.getGeneratorS().entrySet()) {
+            final Entry<Integer, TrackTreeGenerator> entry = e;
+            final JTree tree = entry.getValue().getTree();
+            if (tree!=null) {
+                if (currentTrees==null || !currentTrees.containsValue(tree)) {
+                    // for the background color need non opaque... : see: http://stackoverflow.com/questions/14563433/jtree-set-background-of-node-to-non-opaque
+                    //tree.setBackground(trackSubPanel.getBackground());
+                    //logger.trace("current background color: {}", tree.getBackground());
+                    
+                    removeTreeSelectionListeners(tree);
+                    tree.addTreeSelectionListener(new TreeSelectionListener() {
+                        @Override
+                        public void valueChanged(TreeSelectionEvent e) {
+                            if (logger.isDebugEnabled()) {
+                                logger.debug("selection changed on tree of structure: {} event: {}", entry.getKey(), e);
+                            }
+                            if (trackTreeController == null) {
+                                return;
+                            }
+                            if (tree.getSelectionCount() == 1 && tree.getSelectionPath().getLastPathComponent() instanceof TrackNode) {
+                                trackTreeController.updateParentTracks(trackTreeController.getTreeIdx(entry.getKey()));
+                            } else {
+                                trackTreeController.clearTreesFromIdx(trackTreeController.getTreeIdx(entry.getKey()) + 1);
+                            }
+                            instance.displayTrackTrees();
+                        }
+                    });
+                    //tree.setPreferredSize(new Dimension(200, 400));
+                }
+                JScrollPane jsp = new JScrollPane(tree);
+                jsp.getViewport().setOpaque(false);
+                jsp.setOpaque(false);
+                trackSubPanel.add(jsp);
+                newCurrentTrees.put(e.getKey(), tree);
+            }
+        }
+        currentTrees = newCurrentTrees;
+        logger.trace("display track tree: number of trees: {} subpanel component count: {}",trackTreeController.getGeneratorS().size(), trackSubPanel.getComponentCount() );
         trackSubPanel.revalidate();
         trackSubPanel.repaint();
     }
@@ -101,6 +148,10 @@ public class GUI extends javax.swing.JFrame {
         
     }
 
+    private static void removeTreeSelectionListeners(JTree tree) {
+        for (TreeSelectionListener t : tree.getTreeSelectionListeners()) tree.removeTreeSelectionListener(t);
+    }
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -176,6 +227,7 @@ public class GUI extends javax.swing.JFrame {
 
         TimePanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Tracks"));
 
+        trackSubPanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
         TimeJSP.setViewportView(trackSubPanel);
 
         javax.swing.GroupLayout TimePanelLayout = new javax.swing.GroupLayout(TimePanel);
@@ -186,7 +238,9 @@ public class GUI extends javax.swing.JFrame {
         );
         TimePanelLayout.setVerticalGroup(
             TimePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 401, Short.MAX_VALUE)
+            .addGroup(TimePanelLayout.createSequentialGroup()
+                .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 389, Short.MAX_VALUE)
+                .addContainerGap())
         );
 
         ObjectTreeJSP.setRightComponent(TimePanel);
@@ -228,8 +282,9 @@ public class GUI extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void trackStructureJCBActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_trackStructureJCBActionPerformed
-        logger.debug("trackStructureJCBActionPerformed: selected index: {}", trackStructureJCB.getSelectedIndex());
-        this.trackTreeController.setStructure(this.trackStructureJCB.getSelectedIndex());
+        
+        logger.debug("trackStructureJCBActionPerformed: selected index: {} action event: {}", trackStructureJCB.getSelectedIndex(), evt);
+        this.setStructure(this.trackStructureJCB.getSelectedIndex());
     }//GEN-LAST:event_trackStructureJCBActionPerformed
 
     /**

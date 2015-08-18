@@ -59,14 +59,21 @@ public class MorphiumUtils {
                         logger.error("referencing error", ex);
                     }
                     throw new MorphiumAccessVetoException();
+                    //logger.trace("would dereference: {} previous field: {}", o, entityIncludingReference.previous);
                 }
             }
 
             @Override
             public Object didDereference(StructureObject entitiyIncludingReference, String fieldInEntity, Object referencedObject, boolean lazy) {
+                // todo solve problem with didDereference..
+                logger.trace("did dereference: {} previous field: {}", referencedObject, entitiyIncludingReference.previous);
+                
                 if (referencedObject!=null && logger.isTraceEnabled()) logger.trace("did dereference: {} refrence: {} lazy: {} field: {}", entitiyIncludingReference.getFieldName(), referencedObject.getClass().getSimpleName(), lazy, fieldInEntity);
                 //else if (logger.isTraceEnabled()) logger.trace("did dereference: {} null refrence lazy: {} field: {}", entitiyIncludingReference.getFieldName(), lazy, fieldInEntity);
-                
+                if (referencedObject!=null) {
+                    if (referencedObject instanceof StructureObject) referencedObject=objectDAO.checkAgainstCache((StructureObject)referencedObject);
+                    else if (referencedObject instanceof Experiment) referencedObject=xpDAO.checkAgainstCache((Experiment)referencedObject);
+                }
                 try {
                     Field f = r.getField(entitiyIncludingReference.getClass(), fieldInEntity);
                     f.set(entitiyIncludingReference, referencedObject);
@@ -75,11 +82,9 @@ public class MorphiumUtils {
                 } catch (IllegalAccessException ex) {
                     logger.error("referencing error", ex);
                 }
-                if (referencedObject!=null) {
-                    if (referencedObject instanceof StructureObject) objectDAO.setToCache((StructureObject)referencedObject);
-                    else if (referencedObject instanceof Experiment) xpDAO.setToCache((Experiment)referencedObject);
-                }
+                logger.trace("did dereference: after cache check: {} previous field: {}", referencedObject, entitiyIncludingReference.previous);
                 return referencedObject;
+                //return null;
             }
         });
         /*m.addDereferencingListener(new DereferencingListener<Experiment, StructureObject, ObjectId>() {

@@ -21,6 +21,7 @@ import dataStructure.configuration.*;
 import com.mongodb.MongoClient;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.StructureObject;
+import static dataStructure.objects.StructureObject.logger;
 import de.caluga.morphium.DAO;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.query.Query;
@@ -56,8 +57,11 @@ public class ObjectDAO extends DAO<StructureObject>{
         StructureObject res = idCache.get(id);
         if (res==null)  {
             res= super.getQuery().getById(id);
-            if (res!=null) setToCache(res);
-        }
+            if (res!=null) {
+                setToCache(res);
+                logger.trace("structure object {} of Id {} was NOT in cache", res, id);
+            }
+        } else logger.trace("structure object {} of Id {} was already in cache", res, id);
         return res;
     }
     
@@ -65,7 +69,8 @@ public class ObjectDAO extends DAO<StructureObject>{
     
     public void setToCache(StructureObject o) {idCache.put(o.getId(), o);}
     
-    private StructureObject checkCache(StructureObject o) {
+    public StructureObject checkAgainstCache(StructureObject o) {
+        if (o==null) return null;
         StructureObject res = idCache.get(o.getId());
         if (res==null)  {
             setToCache(o);
@@ -77,16 +82,16 @@ public class ObjectDAO extends DAO<StructureObject>{
     
     
     
-    private StructureObject[] checkCache(List<StructureObject> list) {
+    private StructureObject[] checkAgainstCache(List<StructureObject> list) {
         StructureObject[] res= new StructureObject[list.size()];
         int idx=0;
-        for (StructureObject o : list) res[idx++] = checkCache(o);
+        for (StructureObject o : list) res[idx++] = checkAgainstCache(o);
         return res;
     }
     
     public StructureObject[] getObjects(ObjectId parentId, int structureIdx) {
         List<StructureObject> list = this.getQuery(parentId, structureIdx).sort("idx").asList();
-        return checkCache(list);
+        return checkAgainstCache(list);
     }
     
     public void deleteChildren(ObjectId parentId, int structureIdx) {
@@ -113,7 +118,12 @@ public class ObjectDAO extends DAO<StructureObject>{
     
     public void updateTrackAttributes(StructureObject... objects) {
         if (objects==null) return;
-        for (StructureObject o : objects) { //TODO utiliser update quand bug resolu
+        for (StructureObject o : objects) { //TODO utiliser updateUsingFields quand bug resolu
+            if (o.getParent()!=null) o.setParentTrackHeadId(o.getParent().getTrackHeadId());
+            if (o.getTrackHeadId()==null) {
+                if (o.isTrackHead) o.trackHeadId=o.getId();
+                else if (o.getPrevious()!=null) o.trackHeadId=o.previous.getTrackHeadId();
+            }
             //morphium.updateUsingFields(o, "parent_track_head_id", "track_head_id");
             //morphium.updateUsingFields(object, "next", "previous");
             //System.out.println("update track attribute:"+ o.timePoint+ " next null?"+(o.next==null)+ "previous null?"+(o.previous==null));
@@ -123,13 +133,14 @@ public class ObjectDAO extends DAO<StructureObject>{
     
     public StructureObject[] getTrackHeads(StructureObject parentTrack, int structureIdx) {
         List<StructureObject> list =  super.getQuery().f("is_track_head").eq(true).f("parent_track_head_id").eq(parentTrack.getTrackHeadId()).f("structure_idx").eq(structureIdx).sort("time_point", "idx").asList();
-        return this.checkCache(list);
+        logger.trace("track head query: parentTrack: {} structure: {} result length: {}", parentTrack.getTrackHeadId(), structureIdx, list.size());
+        return this.checkAgainstCache(list);
     }
     
     public StructureObject[] getTrack(StructureObject track) {
         List<StructureObject> list =  super.getQuery().f("track_head_id").eq(track.getTrackHeadId()).sort("time_point").asList();
-        StructureObject[] res  = checkCache(list);
-        for (int i = 1; i<list.size(); ++i) {
+        StructureObject[] res  = checkAgainstCache(list);
+        for (int i = 1; i<res.length; ++i) {
             res[i].previous=res[i-1];
             res[i-1].next=res[i];
         }
@@ -148,6 +159,6 @@ public class ObjectDAO extends DAO<StructureObject>{
     }*/
     
     public StructureObject getRoot(String fieldName, int timePoint) {
-        return checkCache(getRootQuery(fieldName, timePoint).get());
+        return ObjectDAO.this.checkAgainstCache(getRootQuery(fieldName, timePoint).get());
     }
 }
