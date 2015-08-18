@@ -16,8 +16,8 @@
 package configuration.parameters;
 
 import dataStructure.configuration.Experiment;
-import configuration.userInterface.ConfigurationTreeModel;
-import configuration.userInterface.TreeModelContainer;
+import boa.gui.configuration.ConfigurationTreeModel;
+import boa.gui.configuration.TreeModelContainer;
 import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
 import de.caluga.morphium.annotations.lifecycle.Lifecycle;

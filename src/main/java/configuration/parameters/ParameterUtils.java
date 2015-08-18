@@ -18,8 +18,8 @@
 package configuration.parameters;
 
 import dataStructure.configuration.Experiment;
-import configuration.userInterface.ConfigurationTreeModel;
-import configuration.userInterface.TreeModelContainer;
+import boa.gui.configuration.ConfigurationTreeModel;
+import boa.gui.configuration.TreeModelContainer;
 import dataStructure.configuration.MicroscopyField;
 import java.util.ArrayList;
 import utils.Utils;

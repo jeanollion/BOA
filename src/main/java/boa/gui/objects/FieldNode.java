@@ -15,8 +15,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.objects.userInterface;
+package boa.gui.objects;
 
+import dataStructure.configuration.MicroscopyField;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -26,25 +27,30 @@ import javax.swing.tree.TreeNode;
  *
  * @author nasique
  */
-public class ExperimentNode implements TreeNode, UIContainer {
-    protected final StructureObjectTreeGenerator generator;
-    FieldNode[] children;
+public class FieldNode implements TreeNode, UIContainer {
+    ExperimentNode parent;
+    TimePointNode[] children;
+    String fieldName;
     
-    public ExperimentNode(StructureObjectTreeGenerator generator) {
-        this.generator=generator;
+    public FieldNode(ExperimentNode parent, String fieldName) {
+        this.parent=parent;
+        this.fieldName=fieldName;
+    }
+    
+    public TimePointNode[] getChildren() { // charger tous les root object d'un coup en une requete?
+        if (children==null) {
+            int timePointNb;
+            MicroscopyField f = getGenerator().getExperiment().getMicroscopyField(fieldName);
+            if (f!=null && f.getImages()!=null) timePointNb = f.getImages().getTimePointNumber();
+            else timePointNb=0;
+            children = new TimePointNode[timePointNb];
+            for (int i = 0; i<timePointNb; ++i) children[i]=new TimePointNode(this, i);
+        }
+        return children;
     }
     
     public StructureObjectTreeGenerator getGenerator() {
-        return generator;
-    }
-    
-    public FieldNode[] getChildren() {
-        if (children==null) {
-            String[] fieldNames = generator.xp.getFieldsAsString();
-            children= new FieldNode[fieldNames.length];
-            for (int i = 0; i<children.length; ++i) children[i] = new FieldNode(this, fieldNames[i]);
-        }
-        return children;
+        return parent.getGenerator();
     }
     
     // UIContainer implementation
@@ -54,10 +60,10 @@ public class ExperimentNode implements TreeNode, UIContainer {
     
     // TreeNode implementation
     @Override public String toString() {
-        return generator.xp.getName();
+        return fieldName;
     }
     
-    public FieldNode getChildAt(int childIndex) {
+    public TimePointNode getChildAt(int childIndex) {
         return getChildren()[childIndex];
     }
 
@@ -65,8 +71,8 @@ public class ExperimentNode implements TreeNode, UIContainer {
         return getChildren().length;
     }
 
-    public TreeNode getParent() {
-        return null;
+    public ExperimentNode getParent() {
+        return parent;
     }
 
     public int getIndex(TreeNode node) {
@@ -86,4 +92,5 @@ public class ExperimentNode implements TreeNode, UIContainer {
     public Enumeration children() {
         return Collections.enumeration(Arrays.asList(getChildren()));
     }
+    
 }

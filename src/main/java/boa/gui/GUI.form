@@ -158,17 +158,17 @@
                   <Layout>
                     <DimensionLayout dim="0">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="StructureJSP" alignment="1" pref="100" max="32767" attributes="0"/>
+                          <Component id="structureJSP" alignment="1" pref="100" max="32767" attributes="0"/>
                       </Group>
                     </DimensionLayout>
                     <DimensionLayout dim="1">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="StructureJSP" alignment="0" pref="401" max="32767" attributes="0"/>
+                          <Component id="structureJSP" alignment="0" pref="401" max="32767" attributes="0"/>
                       </Group>
                     </DimensionLayout>
                   </Layout>
                   <SubComponents>
-                    <Container class="javax.swing.JScrollPane" name="StructureJSP">
+                    <Container class="javax.swing.JScrollPane" name="structureJSP">
 
                       <Layout class="org.netbeans.modules.form.compat2.layouts.support.JScrollPaneSupportLayout"/>
                     </Container>
@@ -196,10 +196,7 @@
                     </DimensionLayout>
                     <DimensionLayout dim="1">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Group type="102" alignment="0" attributes="0">
-                              <Component id="TimeJSP" pref="389" max="32767" attributes="0"/>
-                              <EmptySpace max="-2" attributes="0"/>
-                          </Group>
+                          <Component id="TimeJSP" alignment="0" pref="401" max="32767" attributes="0"/>
                       </Group>
                     </DimensionLayout>
                   </Layout>
@@ -211,7 +208,7 @@
                         <Container class="javax.swing.JPanel" name="trackSubPanel">
 
                           <Layout class="org.netbeans.modules.form.compat2.layouts.DesignFlowLayout">
-                            <Property name="alignment" type="int" value="0"/>
+                            <Property name="alignment" type="int" value="3"/>
                           </Layout>
                         </Container>
                       </SubComponents>

@@ -22,6 +22,10 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.swing.JComboBox;
+import javax.swing.JPopupMenu;
+import javax.swing.JScrollBar;
+import javax.swing.JScrollPane;
 
 /**
  *
@@ -81,5 +85,24 @@ public class Utils {
             for (Object o : arrayList) res[idx--] = o;
         } else for (int i = 0; i<res.length; ++i) res[i] = arrayList.get(i);
         return (T[])res;
+    }
+    
+    public static void addHorizontalScrollBar(JComboBox box) {
+        if (box.getItemCount() == 0) return;
+        Object comp = box.getUI().getAccessibleChild(box, 0);
+        if (!(comp instanceof JPopupMenu)) {
+            return;
+        }
+        JPopupMenu popup = (JPopupMenu) comp;
+        int n = popup.getComponentCount();
+        int i = 0;
+        while (i<n) {
+            if (popup.getComponent(i) instanceof JScrollPane) {
+                JScrollPane scrollPane = (JScrollPane) popup.getComponent(i);
+                scrollPane.setHorizontalScrollBar(new JScrollBar(JScrollBar.HORIZONTAL));
+                scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+            }
+            i++;
+        }
     }
 }

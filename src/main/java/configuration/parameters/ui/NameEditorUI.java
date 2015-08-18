@@ -19,7 +19,7 @@ package configuration.parameters.ui;
 
 import configuration.parameters.Parameter;
 import configuration.parameters.ParameterUtils;
-import configuration.userInterface.ConfigurationTreeModel;
+import boa.gui.configuration.ConfigurationTreeModel;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;

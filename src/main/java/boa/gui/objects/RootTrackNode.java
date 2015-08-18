@@ -15,9 +15,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.objects.userInterface;
+package boa.gui.objects;
 
-import static configuration.userInterface.GUI.logger;
+import static boa.gui.GUI.logger;
 import dataStructure.objects.StructureObject;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -108,7 +108,7 @@ public class RootTrackNode implements TreeNode {
     }
     
     // TreeNode implementation
-    @Override public String toString() {return (fieldName!=null?fieldName: "")+" structure: "+structureIdx;}
+    @Override public String toString() {return (fieldName!=null?fieldName+"::": "")+generator.xpDAO.getExperiment().getStructure(structureIdx).getName();}
     
     public TrackNode getChildAt(int childIndex) {
         return getChildren().get(childIndex);

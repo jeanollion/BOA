@@ -13,9 +13,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.objects.userInterface;
+package boa.gui.objects;
 
-import configuration.userInterface.*;
+import boa.gui.configuration.ConfigurationTree;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.objects.ObjectDAO;
@@ -42,7 +42,7 @@ public class ObjectTreeTest extends JPanel {
         super(new BorderLayout());
         StructureObjectTreeGenerator generator = createTreeGenerator();
         //tree.setPreferredSize(new Dimension(300, 150));
-        add(generator.scroll, BorderLayout.CENTER);
+        add(new JScrollPane(generator.tree), BorderLayout.CENTER);
     }
     
     public static StructureObjectTreeGenerator createTreeGenerator() {
@@ -50,6 +50,7 @@ public class ObjectTreeTest extends JPanel {
         try {
             MorphiumConfig cfg = new MorphiumConfig();
             cfg.setDatabase("testdb");
+            //cfg.setDatabase("testTrack");
             cfg.addHost("localhost", 27017);
             Morphium m=new Morphium(cfg);
             
@@ -63,7 +64,7 @@ public class ObjectTreeTest extends JPanel {
                 xpDAO.clearCache();
             }
             StructureObjectTreeGenerator generator = new StructureObjectTreeGenerator(objectDAO, xpDAO);
-            generator.tree.setPreferredSize(new Dimension(400, 400));
+            generator.getTree().setPreferredSize(new Dimension(400, 400));
             return generator;
         
         } catch (UnknownHostException ex) {

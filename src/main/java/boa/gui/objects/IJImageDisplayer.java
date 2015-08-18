@@ -15,14 +15,24 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.objects.userInterface;
+package boa.gui.objects;
 
+import ij.IJ;
+import ij.ImageJ;
+import ij.ImagePlus;
+import image.IJImageWrapper;
 import image.Image;
 
 /**
  *
  * @author nasique
  */
-public interface ImageDisplayer {
-    public void showImage(Image image);
+public class IJImageDisplayer implements ImageDisplayer {
+    public void showImage(Image image) {
+        if (IJ.getInstance()==null) new ImageJ();
+        ImagePlus ip = IJImageWrapper.getImagePlus(image);
+        float[] minAndMax = image.getMinAndMax(null);
+        ip.setDisplayRange(minAndMax[0], minAndMax[1]);
+        ip.show();
+    }
 }

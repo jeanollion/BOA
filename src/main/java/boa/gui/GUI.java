@@ -15,15 +15,15 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package configuration.userInterface;
+package boa.gui;
 
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.objects.ObjectDAO;
-import dataStructure.objects.userInterface.StructureObjectTreeGenerator;
-import dataStructure.objects.userInterface.TrackNode;
-import dataStructure.objects.userInterface.TrackTreeController;
-import dataStructure.objects.userInterface.TrackTreeGenerator;
+import boa.gui.objects.StructureObjectTreeGenerator;
+import boa.gui.objects.TrackNode;
+import boa.gui.objects.TrackTreeController;
+import boa.gui.objects.TrackTreeGenerator;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
 import java.awt.Dimension;
@@ -40,6 +40,7 @@ import javax.swing.event.TreeSelectionListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.MorphiumUtils;
+import static utils.Utils.addHorizontalScrollBar;
 
 /**
  *
@@ -47,22 +48,38 @@ import utils.MorphiumUtils;
  */
 public class GUI extends javax.swing.JFrame {
     public static final Logger logger = LoggerFactory.getLogger(GUI.class);
-    TrackTreeController trackTreeController;
+    private final GUI instance;
+    
+    // db-related attributes
     ExperimentDAO xpDAO;
     ObjectDAO objectDAO;
     Morphium m;
-    private final GUI instance;
+    
+    // track-related attributes
+    TrackTreeController trackTreeController;
     private HashMap<Integer, JTree> currentTrees;
+    
+    // structure-related attributes
+    StructureObjectTreeGenerator structureObjectTreeGenerator;
+    
     /**
      * Creates new form GUI
      */
     public GUI() {
+        this.instance=this;
         initComponents();
+        addHorizontalScrollBar(trackStructureJCB);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         initDB();
+        
+        structureObjectTreeGenerator = new StructureObjectTreeGenerator(objectDAO, xpDAO);
+        structureJSP.setViewportView(structureObjectTreeGenerator.getTree());
+        structureJSP.getViewport().setOpaque(false);
+        structureJSP.setOpaque(false);
+        
         trackTreeController = new TrackTreeController(objectDAO, xpDAO);
         setTrackTreeStructures(xpDAO.getExperiment().getStructuresAsString());
-        this.instance=this;
+        
     }
     
     private void setTrackTreeStructures(String[] structureNames) {
@@ -87,10 +104,6 @@ public class GUI extends javax.swing.JFrame {
             final JTree tree = entry.getValue().getTree();
             if (tree!=null) {
                 if (currentTrees==null || !currentTrees.containsValue(tree)) {
-                    // for the background color need non opaque... : see: http://stackoverflow.com/questions/14563433/jtree-set-background-of-node-to-non-opaque
-                    //tree.setBackground(trackSubPanel.getBackground());
-                    //logger.trace("current background color: {}", tree.getBackground());
-                    
                     removeTreeSelectionListeners(tree);
                     tree.addTreeSelectionListener(new TreeSelectionListener() {
                         @Override
@@ -111,10 +124,10 @@ public class GUI extends javax.swing.JFrame {
                     });
                     //tree.setPreferredSize(new Dimension(200, 400));
                 }
-                JScrollPane jsp = new JScrollPane(tree);
+                /*JScrollPane jsp = new JScrollPane(tree);
                 jsp.getViewport().setOpaque(false);
-                jsp.setOpaque(false);
-                trackSubPanel.add(jsp);
+                jsp.setOpaque(false);*/
+                trackSubPanel.add(tree);
                 newCurrentTrees.put(e.getKey(), tree);
             }
         }
@@ -127,7 +140,7 @@ public class GUI extends javax.swing.JFrame {
     private void initDB() {
         try {
             MorphiumConfig cfg = new MorphiumConfig();
-            cfg.setDatabase("testTrack");
+            cfg.setDatabase("testdb");
             cfg.addHost("localhost", 27017);
             m=new Morphium(cfg);
             
@@ -168,7 +181,7 @@ public class GUI extends javax.swing.JFrame {
         trackStructureJCB = new javax.swing.JComboBox();
         ObjectTreeJSP = new javax.swing.JSplitPane();
         StructurePanel = new javax.swing.JPanel();
-        StructureJSP = new javax.swing.JScrollPane();
+        structureJSP = new javax.swing.JScrollPane();
         TimePanel = new javax.swing.JPanel();
         TimeJSP = new javax.swing.JScrollPane();
         trackSubPanel = new javax.swing.JPanel();
@@ -215,11 +228,11 @@ public class GUI extends javax.swing.JFrame {
         StructurePanel.setLayout(StructurePanelLayout);
         StructurePanelLayout.setHorizontalGroup(
             StructurePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(StructureJSP, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 100, Short.MAX_VALUE)
+            .addComponent(structureJSP, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 100, Short.MAX_VALUE)
         );
         StructurePanelLayout.setVerticalGroup(
             StructurePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(StructureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 401, Short.MAX_VALUE)
+            .addComponent(structureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 401, Short.MAX_VALUE)
         );
 
         ObjectTreeJSP.setLeftComponent(StructurePanel);
@@ -227,7 +240,7 @@ public class GUI extends javax.swing.JFrame {
 
         TimePanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Tracks"));
 
-        trackSubPanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
+        trackSubPanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEADING));
         TimeJSP.setViewportView(trackSubPanel);
 
         javax.swing.GroupLayout TimePanelLayout = new javax.swing.GroupLayout(TimePanel);
@@ -238,9 +251,7 @@ public class GUI extends javax.swing.JFrame {
         );
         TimePanelLayout.setVerticalGroup(
             TimePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(TimePanelLayout.createSequentialGroup()
-                .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 389, Short.MAX_VALUE)
-                .addContainerGap())
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 401, Short.MAX_VALUE)
         );
 
         ObjectTreeJSP.setRightComponent(TimePanel);
@@ -327,11 +338,11 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JPanel ControlPanel;
     private javax.swing.JPanel DataPanel;
     private javax.swing.JSplitPane ObjectTreeJSP;
-    private javax.swing.JScrollPane StructureJSP;
     private javax.swing.JPanel StructurePanel;
     private javax.swing.JScrollPane TimeJSP;
     private javax.swing.JPanel TimePanel;
     private javax.swing.JTabbedPane jTabbedPane1;
+    private javax.swing.JScrollPane structureJSP;
     private javax.swing.JComboBox trackStructureJCB;
     private javax.swing.JPanel trackSubPanel;
     // End of variables declaration//GEN-END:variables

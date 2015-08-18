@@ -15,10 +15,10 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.objects.userInterface;
+package boa.gui.objects;
 
-import static configuration.userInterface.GUI.logger;
 import dataStructure.objects.StructureObject;
+import static boa.gui.GUI.logger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -28,42 +28,35 @@ import javax.swing.tree.TreeNode;
  *
  * @author nasique
  */
-public class TimePointNode implements TreeNode, UIContainer {
-    FieldNode parent;
-    int timePoint;
-    private StructureNode[] children;
-    private StructureObject data;
-    
-    public TimePointNode(FieldNode parent, int timePoint) {
-        this.timePoint=timePoint;
-        this.parent=parent;
+public class ObjectNode implements TreeNode, UIContainer {
+    StructureObject data;
+    StructureNode parent;
+    StructureNode[] children;
+    int idx;
+    public ObjectNode(StructureNode parent, int idx, StructureObject data) {
+        this.data=data;
+        this.idx=idx;
+        this.parent = parent;
+        int[] childrenIndicies = getGenerator().getExperiment().getChildStructures(parent.idx);
+        children = new StructureNode[childrenIndicies.length];
+        for (int i = 0; i<children.length; ++i) children[i]=new StructureNode(childrenIndicies[i], this);
     }
     
     public StructureObjectTreeGenerator getGenerator() {
         return parent.getGenerator();
     }
     
-    public StructureObject getData() {
-        if (data==null) {
-            data = getGenerator().objectDAO.getRoot(parent.fieldName, timePoint);
-            logger.debug("Time Point: {} retrieving root object from db: {}", timePoint, data);
-        }
-        return data;
-    }
-    
-    public StructureNode[] getChildren() {
-        if (children==null) {
-            int[] childrenIndicies = getGenerator().xp.getChildStructures(-1);
-            children = new StructureNode[childrenIndicies.length];
-            for (int i = 0; i<children.length; ++i) children[i]=new StructureNode(childrenIndicies[i], this);
-        }
-        return children;
-    }
-    
-    public void loadAllChildObjects(int[] pathToChildStructureIdx) {
-        int childIdx = getChildStructureIdx(pathToChildStructureIdx[0]);
-        if (childIdx>=0) for (ObjectNode o : children[childIdx].getChildren()) o.loadAllChildObjects(pathToChildStructureIdx, 1);
-        else logger.warn("could not loadAllChildObjects: structure {} not in children [ pathToChildStructureIdx: {} from root object ] ", pathToChildStructureIdx[0], pathToChildStructureIdx);
+    public void loadAllChildObjects(int[] pathToChildStructureIdx, int currentIdxInPath) {
+        /*int pathIdx; // start from index of current structure in the path, if present
+        for (pathIdx=0; pathIdx<pathToChildStructureIdx.length; ++pathIdx) {
+            if (pathToChildStructureIdx[pathIdx]==parent.idx) break;
+            else if (pathIdx==pathToChildStructureIdx.length-1) return;
+        }*/
+        int childIdx = getChildStructureIdx(pathToChildStructureIdx[currentIdxInPath]);
+        if (childIdx>=0) {
+            children[childIdx].getChildren();
+            if (currentIdxInPath<(pathToChildStructureIdx.length-1)) for (ObjectNode o : children[childIdx].getChildren()) o.loadAllChildObjects(pathToChildStructureIdx, currentIdxInPath+1);
+        } else logger.warn("could not loadAllChildObjects: structure {} not in children of structure: {} [ pathToChildStructureIdx: {} currentIdxInPath: {} ] ", pathToChildStructureIdx[currentIdxInPath], parent.idx, pathToChildStructureIdx, currentIdxInPath);
     }
     
     public int getChildStructureIdx(int structureIdx) {
@@ -78,15 +71,15 @@ public class TimePointNode implements TreeNode, UIContainer {
     
     // TreeNode implementation
     @Override public String toString() {
-        return "Time Point: "+timePoint;
+        return "Object: "+idx;
     }
     
     public StructureNode getChildAt(int childIndex) {
-        return getChildren()[childIndex];
+        return children[childIndex];
     }
 
     public int getChildCount() {
-        return getChildren().length;
+        return children.length;
     }
 
     public TreeNode getParent() {
@@ -95,7 +88,7 @@ public class TimePointNode implements TreeNode, UIContainer {
 
     public int getIndex(TreeNode node) {
         if (node==null) return -1;
-        for (int i = 0; i<getChildren().length; ++i) if (node.equals(children[i])) return i;
+        for (int i = 0; i<children.length; ++i) if (node.equals(children[i])) return i;
         return -1;
     }
 
@@ -108,7 +101,7 @@ public class TimePointNode implements TreeNode, UIContainer {
     }
 
     public Enumeration children() {
-        return Collections.enumeration(Arrays.asList(getChildren()));
+        return Collections.enumeration(Arrays.asList(children));
     }
     
 }

@@ -15,9 +15,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.objects.userInterface;
+package boa.gui.objects;
 
-import static configuration.userInterface.GUI.logger;
+import static boa.gui.GUI.logger;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
@@ -97,7 +97,7 @@ public class StructureNode implements TreeNode, UIContainer {
     
     // TreeNode implementation
     @Override public String toString() {
-        return getGenerator().xp.getStructure(idx).getName();
+        return getGenerator().getExperiment().getStructure(idx).getName();
     }
     
     public ObjectNode getChildAt(int childIndex) {

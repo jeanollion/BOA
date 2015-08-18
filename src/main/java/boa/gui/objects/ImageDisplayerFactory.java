@@ -1,4 +1,6 @@
 /*
+ * Copyright (C) 2015 nasique
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -13,15 +15,22 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package configuration.userInterface;
+package boa.gui.objects;
 
-import javax.swing.tree.DefaultTreeModel;
+import static boa.gui.objects.ImageDisplayerFactory.ImageDisplayerType.IJ;
 
 /**
  *
- * @author jollion
+ * @author nasique
  */
-public interface TreeModelContainer {
-    public ConfigurationTreeModel getModel();
-    public void setModel(ConfigurationTreeModel model);
+public class ImageDisplayerFactory {
+    private static ImageDisplayer currentImageDisplayer;
+    public static enum ImageDisplayerType {IJ};
+    private static ImageDisplayerType currentImageDisplayerType = IJ;
+    public static ImageDisplayer getImageDisplayer() {
+        if (currentImageDisplayer==null) {
+            if (currentImageDisplayerType.equals(IJ)) currentImageDisplayer = new IJImageDisplayer();
+        }
+        return currentImageDisplayer;
+    }
 }

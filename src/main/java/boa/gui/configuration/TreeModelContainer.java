@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2015 nasique
- *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -15,19 +13,15 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.objects.userInterface;
+package boa.gui.configuration;
 
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeNode;
 
 /**
  *
- * @author nasique
+ * @author jollion
  */
-public class StructureObjectTreeModel extends DefaultTreeModel {
-
-    public StructureObjectTreeModel(TreeNode root) {
-        super(root);
-    }
-    
+public interface TreeModelContainer {
+    public ConfigurationTreeModel getModel();
+    public void setModel(ConfigurationTreeModel model);
 }

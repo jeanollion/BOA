@@ -20,7 +20,7 @@ import configuration.parameters.ChoiceParameter;
 import configuration.parameters.ChoosableParameter;
 import configuration.parameters.ConditionalParameter;
 import configuration.parameters.ParameterUtils;
-import configuration.userInterface.ConfigurationTreeModel;
+import boa.gui.configuration.ConfigurationTreeModel;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
