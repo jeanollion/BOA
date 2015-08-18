@@ -22,6 +22,12 @@ public abstract class ImageInteger extends Image implements ImageMask {
         else return new ImageInt(name, properties);
     }
     
+    public static int getMaxValue(ImageInteger image, boolean limitToShort) {
+        if (image instanceof ImageByte) return 255;
+        else if (image instanceof ImageShort || limitToShort) return 65635;
+        else return Integer.MAX_VALUE;
+    }
+    
     @Override public abstract ImageInteger duplicate(String name);
     public abstract int getPixelInt(int x, int y, int z);
     public abstract int getPixelInt(int xy, int z);
