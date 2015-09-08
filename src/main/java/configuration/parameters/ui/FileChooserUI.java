@@ -19,7 +19,7 @@ package configuration.parameters.ui;
 
 import configuration.parameters.FileChooser;
 import configuration.parameters.ParameterUtils;
-import configuration.userInterface.ConfigurationTreeModel;
+import boa.gui.configuration.ConfigurationTreeModel;
 import java.io.File;
 import javax.swing.JFileChooser;
 

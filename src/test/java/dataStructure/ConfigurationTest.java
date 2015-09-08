@@ -28,6 +28,7 @@ import java.net.UnknownHostException;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import org.junit.Before;
 import org.junit.Test;
 import testPlugins.dummyPlugins.DummySegmenter;
 import plugins.PluginFactory;
@@ -38,17 +39,32 @@ import plugins.plugins.trackers.TrackerObjectIdx;
  * @author jollion
  */
 public class ConfigurationTest {
-    
+    Experiment xp;
+    Structure s0, s1, s2, s3, s4, s5, s6;
+    @Before
+    public void setUp() {
+        s0 = new Structure("StructureIdx0", -1, 0);
+        s1 = new Structure("StructureIdx1", 0, 0);
+        s2 = new Structure("StructureIdx2", 0, 0);
+        s3 = new Structure("StructureIdx3", 1, 0);
+        s4 = new Structure("StructureIdx4", -1, 0);
+        s5 = new Structure("StructureIdx5", 3, 0);
+        s6 = new Structure("StructureIdx6", 3, 0);
+        xp = new Experiment("test XP", s0, s1, s2, s3, s4, s5, s6);
+        /*
+        root
+        -s0
+        --s1
+        ---s3
+        ----s5
+        ----s6
+        --s2
+        -s4
+        */
+    }
     
     @Test
     public void testHierarchicalStructureOrder() {
-        
-        Structure s0 = new Structure("StructureIdx0", -1, 0);
-        Structure s1 = new Structure("StructureIdx1", 0, 0);
-        Structure s2 = new Structure("StructureIdx2", 0, 0);
-        Structure s3 = new Structure("StructureIdx3", 1, 0);
-        Structure s4 = new Structure("StructureIdx4", -1, 0);
-        Experiment xp = new Experiment("test XP", s0, s1, s2, s3, s4);
         assertEquals("Structure 2", s2, xp.getStructure(2));
         
         assertEquals("Hierarchical order s0:", 0, xp.getHierachicalOrder(0));
@@ -56,12 +72,28 @@ public class ConfigurationTest {
         assertEquals("Hierarchical order s2:", 1, xp.getHierachicalOrder(2));
         assertEquals("Hierarchical order s3:", 2, xp.getHierachicalOrder(3));
         assertEquals("Hierarchical order s4:", 0, xp.getHierachicalOrder(4));
+        assertEquals("Hierarchical order s5:", 3, xp.getHierachicalOrder(5));
+        assertEquals("Hierarchical order s5:", 3, xp.getHierachicalOrder(6));
         
         int[][] orders = xp.getStructuresInHierarchicalOrder();
         assertArrayEquals("orders 0:", new int[]{0, 4}, orders[0]);
         assertArrayEquals("orders 1:", new int[]{1, 2}, orders[1]);
         assertArrayEquals("orders 2:", new int[]{3}, orders[2]);
-        
+        assertArrayEquals("orders 3:", new int[]{5,6}, orders[3]);
+    }
+    
+    @Test
+    public void testPathToStructure() {
+        assertArrayEquals("path to structure 0->6", new int[]{1, 3, 6}, xp.getPathToStructure(0, 6));
+        assertArrayEquals("path to structure 2->6", new int[]{}, xp.getPathToStructure(2, 6)); // 6 is not an indirect child of 2
+        assertArrayEquals("path to root 6", new int[]{0, 1, 3, 6}, xp.getPathToRoot(6));
+    }
+    
+    @Test
+    public void testGetChildren() {
+        assertArrayEquals("getChildren 3", new int[]{5, 6}, xp.getChildStructures(3));
+        assertArrayEquals("getChildren 2", new int[]{}, xp.getChildStructures(2));
+        assertArrayEquals("getAllChildren 0", new int[]{1, 2, 3, 5, 6}, xp.getAllChildStructures(0));
     }
     
     @Test

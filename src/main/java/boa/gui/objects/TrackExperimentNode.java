@@ -15,9 +15,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.objects.userInterface;
+package boa.gui.objects;
 
-import dataStructure.objects.StructureObject;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -27,34 +27,25 @@ import javax.swing.tree.TreeNode;
  *
  * @author nasique
  */
-public class TimePointNode implements TreeNode, UIContainer {
-    FieldNode parent;
-    int timePoint;
-    private StructureNode[] children;
-    private StructureObject data;
-    
-    public TimePointNode(FieldNode parent, int timePoint) {
-        this.timePoint=timePoint;
-        this.parent=parent;
+public class TrackExperimentNode implements TreeNode, UIContainer {
+    protected final TrackTreeGenerator generator;
+    ArrayList<RootTrackNode> children;
+    int structureIdx; 
+    public TrackExperimentNode(TrackTreeGenerator generator, int structureIdx) {
+        this.generator=generator;
+        this.structureIdx=structureIdx;
+        getChildren();
     }
     
-    public StructureObjectTreeGenerator getGenerator() {
-        return parent.getGenerator();
+    public TrackTreeGenerator getGenerator() {
+        return generator;
     }
     
-    public StructureObject getData() {
-        if (data==null) {
-            data = getGenerator().objectDAO.getRoot(parent.fieldName, timePoint);
-            StructureObjectTreeGenerator.logger.debug("Time Point: {} retrieving root object from db: {}", timePoint, data);
-        }
-        return data;
-    }
-    
-    public StructureNode[] getChildren() {
+    public ArrayList<RootTrackNode> getChildren() {
         if (children==null) {
-            int[] childrenIndicies = getGenerator().xp.getChildStructures(-1);
-            children = new StructureNode[childrenIndicies.length];
-            for (int i = 0; i<children.length; ++i) children[i]=new StructureNode(childrenIndicies[i], this);
+            String[] fieldNames = generator.xpDAO.getExperiment().getFieldsAsString();
+            children= new ArrayList<RootTrackNode>(fieldNames.length);
+            for (String fieldName : fieldNames) children.add(new RootTrackNode(this, fieldName, structureIdx));
         }
         return children;
     }
@@ -66,25 +57,23 @@ public class TimePointNode implements TreeNode, UIContainer {
     
     // TreeNode implementation
     @Override public String toString() {
-        return "Time Point: "+timePoint;
+        return generator.xpDAO.getExperiment().getName();
     }
     
-    public StructureNode getChildAt(int childIndex) {
-        return getChildren()[childIndex];
+    public RootTrackNode getChildAt(int childIndex) {
+        return getChildren().get(childIndex);
     }
 
     public int getChildCount() {
-        return getChildren().length;
+        return getChildren().size();
     }
 
     public TreeNode getParent() {
-        return parent;
+        return null;
     }
 
     public int getIndex(TreeNode node) {
-        if (node==null) return -1;
-        for (int i = 0; i<getChildren().length; ++i) if (node.equals(children[i])) return i;
-        return -1;
+        return getChildren().indexOf(node);
     }
 
     public boolean getAllowsChildren() {
@@ -96,7 +85,6 @@ public class TimePointNode implements TreeNode, UIContainer {
     }
 
     public Enumeration children() {
-        return Collections.enumeration(Arrays.asList(getChildren()));
+        return Collections.enumeration(getChildren());
     }
-    
 }

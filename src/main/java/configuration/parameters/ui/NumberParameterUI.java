@@ -20,7 +20,7 @@ package configuration.parameters.ui;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.ParameterUtils;
-import configuration.userInterface.ConfigurationTreeModel;
+import boa.gui.configuration.ConfigurationTreeModel;
 import java.awt.Dimension;
 import java.math.BigDecimal;
 import javax.swing.JSlider;

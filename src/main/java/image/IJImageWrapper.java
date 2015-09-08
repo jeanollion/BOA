@@ -92,9 +92,11 @@ public class IJImageWrapper {
         }
         ImagePlus ip= new ImagePlus(image.getName(), st);
         Calibration cal = new Calibration();
-        cal.pixelWidth=image.getScaleXY();
-        cal.pixelHeight=image.getScaleXY();
-        cal.pixelDepth=image.getScaleZ();
+        if (image.getScaleXY()!=0) {
+            cal.pixelWidth=image.getScaleXY();
+            cal.pixelHeight=image.getScaleXY();
+        }
+        if (image.getScaleZ()!=0) cal.pixelDepth=image.getScaleZ();
         cal.xOrigin=image.getOffsetX();
         cal.yOrigin=image.getOffsetY();
         cal.zOrigin=image.getOffsetZ();

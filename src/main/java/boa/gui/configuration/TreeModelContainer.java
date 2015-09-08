@@ -1,6 +1,4 @@
 /*
- * Copyright (C) 2015 jollion
- *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
@@ -15,35 +13,15 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.containers;
+package boa.gui.configuration;
 
-import dataStructure.objects.Object3D;
-import dataStructure.objects.StructureObject;
-import image.BlankMask;
-import image.BoundingBox;
+import javax.swing.tree.DefaultTreeModel;
 
 /**
  *
  * @author jollion
  */
-
-public class ObjectContainerBlankMask extends ObjectContainer {
-    
-    public ObjectContainerBlankMask(StructureObject structureObject) {
-        super(structureObject);
-    }
-    
-    public BlankMask getImage() {
-        return bounds.getImageProperties("", getScaleXY(), getScaleZ());
-    }
-    
-    @Override
-    public Object3D getObject() {
-        return new Object3D(getImage(), structureObject.getIdx()+1);
-    }
-    
-    @Override
-    public void updateObject() {
-        bounds = structureObject.getObject().getBounds();
-    }
+public interface TreeModelContainer {
+    public ConfigurationTreeModel getModel();
+    public void setModel(ConfigurationTreeModel model);
 }

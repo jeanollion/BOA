@@ -20,7 +20,7 @@ package configuration.parameters;
 import configuration.parameters.ui.JNumericField;
 import configuration.parameters.ui.NumberParameterUI;
 import configuration.parameters.ui.ParameterUI;
-import configuration.userInterface.ConfigurationTreeModel;
+import boa.gui.configuration.ConfigurationTreeModel;
 import java.awt.Dimension;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;

@@ -15,12 +15,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.objects.userInterface;
+package boa.gui.objects;
+
+import image.Image;
 
 /**
  *
  * @author nasique
  */
-public interface UIContainer {
-    public Object[] getDisplayComponent();
+public interface ImageDisplayer {
+    public void showImage(Image image);
 }

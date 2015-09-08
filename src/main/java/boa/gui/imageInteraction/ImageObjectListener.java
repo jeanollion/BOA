@@ -15,14 +15,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.objects.userInterface;
+package boa.gui.imageInteraction;
 
-import image.Image;
+import dataStructure.objects.StructureObject;
 
 /**
  *
  * @author nasique
  */
-public interface ImageDisplayer {
-    public void showImage(Image image);
+public interface ImageObjectListener {
+    public void fireObjectSelected(StructureObject selectedObject, ImageObjectInterface source);
 }

@@ -13,11 +13,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.objects.userInterface;
+package boa.gui.objects;
 
-import configuration.userInterface.*;
+import boa.gui.GUI;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
+import dataStructure.objects.ObjectDAO;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
 import java.awt.BorderLayout;
@@ -27,51 +28,59 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import plugins.PluginFactory;
+import utils.MorphiumUtils;
 
 /**
  *
  * @author jollion
  */
-public class TreeTest extends JPanel {
+public class TrackTreeTest extends JPanel {
     
-    public TreeTest() {
+    public TrackTreeTest() {
         super(new BorderLayout());
+        TrackTreeGenerator generator = createTreeGenerator();
         
+        add(new JScrollPane(generator.getTree()), BorderLayout.CENTER);
+    }
+    
+    public static TrackTreeGenerator createTreeGenerator() {
+
         try {
             MorphiumConfig cfg = new MorphiumConfig();
-            cfg.setDatabase("testdb");
+            cfg.setDatabase("testTrack");
             cfg.addHost("localhost", 27017);
             Morphium m=new Morphium(cfg);
-            ExperimentDAO dao = new ExperimentDAO(m);
-            Experiment xp = dao.getExperiment();
             
+            ExperimentDAO xpDAO = new ExperimentDAO(m);
+            ObjectDAO objectDAO = new ObjectDAO(m, xpDAO);
+            Experiment xp = xpDAO.getExperiment();
+            MorphiumUtils.addDereferencingListeners(m, objectDAO, xpDAO);
             if (xp==null) {
                 xp = new Experiment("xp test UI");
-                m.store(xp);
-                m=new Morphium(cfg);
-                dao = new ExperimentDAO(m);
-                xp = dao.getExperiment();
+                xpDAO.store(xp);
+                xpDAO.clearCache();
             }
-            StructureObjectTreeGenerator generator = new StructureObjectTreeGenerator(xp, m);
-            //tree.setPreferredSize(new Dimension(300, 150));
-            add(generator.scroll, BorderLayout.CENTER);
+            TrackTreeGenerator generator = new TrackTreeGenerator(objectDAO, xpDAO, null);
+            generator.setRootParentTrack(true, 0);
+            generator.tree.setPreferredSize(new Dimension(400, 400));
+            return generator;
         
         } catch (UnknownHostException ex) {
-            Logger.getLogger(ConfigurationTree.class.getName()).log(Level.SEVERE, null, ex);
+            GUI.logger.error("connexion error:", ex);
         }
-        
+        return null;
         
         
     }
     
     private static void createAndShowGUI() {
-        //Create and set up the window.
-        JFrame frame = new JFrame("StructureObjectTreeTest");
+        JFrame frame = new JFrame("Track Tree Test");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         //Create and set up the content pane.
-        TreeTest newContentPane = new TreeTest();
+        TrackTreeTest newContentPane = new TrackTreeTest();
         newContentPane.setOpaque(true); //content panes must be opaque
         frame.setContentPane(newContentPane);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 jollion
+ * Copyright (C) 2015 nasique
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -15,35 +15,18 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.containers;
+package boa.gui.imageInteraction;
 
-import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
-import image.BlankMask;
-import image.BoundingBox;
+import image.ImageInteger;
+import java.util.ArrayList;
 
 /**
  *
- * @author jollion
+ * @author nasique
  */
-
-public class ObjectContainerBlankMask extends ObjectContainer {
-    
-    public ObjectContainerBlankMask(StructureObject structureObject) {
-        super(structureObject);
-    }
-    
-    public BlankMask getImage() {
-        return bounds.getImageProperties("", getScaleXY(), getScaleZ());
-    }
-    
-    @Override
-    public Object3D getObject() {
-        return new Object3D(getImage(), structureObject.getIdx()+1);
-    }
-    
-    @Override
-    public void updateObject() {
-        bounds = structureObject.getObject().getBounds();
-    }
+public interface ImageObjectInterface {
+    public StructureObject getClickedObject(int x, int y, int z);
+    public ArrayList<ImageInteger> getSelectObjectMasksWithOffset(StructureObject... selectedObjects);
+    public ImageInteger generateImage();
 }

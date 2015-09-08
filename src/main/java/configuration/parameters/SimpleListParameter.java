@@ -154,7 +154,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     public String[] getChildrenString() {
         String[] res = new String[children.size()];
         int i=0;
-        for (Parameter s : children) res[i++] = s.toString();
+        for (Parameter s : children) res[i++] = s.getName();
         return res;
     }
     

@@ -85,9 +85,11 @@ public class ObjectFactory {
         if (bounds==null) bounds = getBounds(labelImage);
         Object3D[] res = new Object3D[bounds.size()];
         int i = 0;
+        
         for (Entry<Integer, BoundingBox> e : bounds.entrySet()) {
             ImageByte label = labelImage.cropLabel(e.getKey(), e.getValue());
-            res[i] = new Object3D(label, ensureContinuousLabels?(i + 1):e.getKey());
+            if (labelImage.getSizeZ()>1) res[i] = new Object3D<Voxel3D>(label, ensureContinuousLabels?(i + 1):e.getKey(), Voxel3D.class);
+            else res[i] = new Object3D(label, ensureContinuousLabels?(i + 1):e.getKey());
             ++i;
         }
         return res;

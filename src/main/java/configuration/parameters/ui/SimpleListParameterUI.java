@@ -21,7 +21,7 @@ import configuration.parameters.Parameter;
 import configuration.parameters.ParameterUtils;
 import configuration.parameters.SimpleParameter;
 import configuration.parameters.ui.ListParameterUI;
-import configuration.userInterface.ConfigurationTreeModel;
+import boa.gui.configuration.ConfigurationTreeModel;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;

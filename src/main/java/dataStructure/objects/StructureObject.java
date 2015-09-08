@@ -3,6 +3,7 @@ package dataStructure.objects;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.containers.ObjectContainer;
+import de.caluga.morphium.MorphiumAccessVetoException;
 import de.caluga.morphium.annotations.Entity;
 import de.caluga.morphium.annotations.Id;
 import de.caluga.morphium.annotations.Index;
@@ -32,12 +33,11 @@ import static processing.PluginSequenceRunner.preFilterImage;
 import static processing.PluginSequenceRunner.segmentImage;
 import utils.SmallArray;
 
-@Cache
 @Lifecycle //-> bug a cause de la structure circulaire
 @Entity(collectionName = "Objects")
-@Index(value={"field_name, time_point, structure_idx", "parent,structure_idx,idx", "new_track_branch, time_point"}, options={"", "", ""})
+@Index(value={"field_name, time_point, structure_idx", "parent,structure_idx,idx", "track_head_id, time_point", "is_track_head, parent_track_head_id, structure_idx, time_point, idx"})
 public class StructureObject implements StructureObjectPostProcessing, Track {
-    private final static Logger logger = LoggerFactory.getLogger(StructureObject.class);
+    public final static Logger logger = LoggerFactory.getLogger(StructureObject.class);
     //structure-related attributes
     @Id protected ObjectId id;
     @Reference(lazyLoading=true, automaticStore=false) protected StructureObject parent;
@@ -49,8 +49,9 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     
     // track-related attributes
     protected int timePoint;
-    @Reference(lazyLoading=true, automaticStore=false) protected StructureObject previous, next;
-    protected boolean newTrackBranch=true;
+    @Reference(lazyLoading=true, automaticStore=false) public StructureObject previous, next;
+    protected ObjectId parentTrackHeadId, trackHeadId;
+    protected boolean isTrackHead=true;
     
     // object- and images-related attributes
     @Transient private Object3D object;
@@ -64,6 +65,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         this.fieldName=fieldName;
         this.timePoint = timePoint;
         this.object=object;
+        if (object!=null) this.object.label=idx+1;
         this.structureIdx = structureIdx;
         this.idx = idx;
         this.parent=parent;
@@ -80,7 +82,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     public StructureObject(String fieldName, int timePoint, BlankMask mask, Experiment xp) {
         this.fieldName=fieldName;
         this.timePoint=timePoint;
-        this.object=new Object3D(mask, 1);
+        if (mask!=null) this.object=new Object3D(mask, 1);
         this.structureIdx = -1;
         this.idx = 0;
         this.xp=xp;
@@ -94,12 +96,17 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     public int getIdx() {return idx;}
     public Experiment getExperiment() {
         if (xp==null) return null;
-        xp.callLazyLoading();
+        try {xp.callLazyLoading();}
+        catch (MorphiumAccessVetoException e) {}
         return xp;
+    }
+    public MicroscopyField getMicroscopyField() {
+        return getExperiment().getMicroscopyField(fieldName);
     }
     public StructureObject getParent() {
         if (parent==null) return null;
-        parent.callLazyLoading();
+        try {parent.callLazyLoading();}
+        catch (MorphiumAccessVetoException e) {}
         return parent;
     }
     public void setParent(StructureObject parent) {this.parent=parent;}
@@ -132,38 +139,70 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     public StructureObject[] getChildObjects(int structureIdx) {return this.childrenSM.get(structureIdx);}
     public void setChildObjects(StructureObject[] children, int structureIdx) {
         this.childrenSM.set(children, structureIdx);
+        for (StructureObject o : children) o.setParent(this);
     }
     // track-related methods
     /**
      * 
      * @param previous the previous object in the track
-     * @param isNewBranch if true, sets this instance as the next of {@param previous} 
+     * @param isTrackHead if true, sets this instance as the next of {@param previous} 
      */
-    public void setPreviousInTrack(StructureObjectPreProcessing previous, boolean isNewBranch) {
+    @Override public void setPreviousInTrack(StructureObjectPreProcessing previous, boolean isTrackHead) {
+        if (((StructureObject)previous).getTimePoint()!=this.getTimePoint()-1) throw new RuntimeException("setPrevious in track should be of time: "+(timePoint-1) +"but is: "+((StructureObject)previous).getTimePoint());
         this.previous=(StructureObject)previous;
-        if (!isNewBranch) {
-            ((StructureObject)previous).next=this;
-            newTrackBranch=false;
-        } else this.newTrackBranch=true;
+        if (!isTrackHead) {
+            this.previous.next=this;
+            this.isTrackHead=false;
+            this.trackHeadId= this.previous.getTrackHeadId();
+        } else {
+            this.isTrackHead=true;
+            this.trackHeadId=this.id;
+        }
+    }
+    
+    public void setParentTrackHeadId(ObjectId parentTrackHeadId) {
+        this.parentTrackHeadId=parentTrackHeadId;
     }
     
     public StructureObject getPrevious() {
         if (previous==null) return null;
-        previous.callLazyLoading();
+        try {previous.callLazyLoading();}
+        catch (MorphiumAccessVetoException e) {}
         return previous;
     }
     
     public StructureObject getNext() {
         if (next==null) return null;
-        next.callLazyLoading();
+        try {next.callLazyLoading();}
+        catch (MorphiumAccessVetoException e) {}
         return next;
     }
     
+    public ObjectId getTrackHeadId() {
+        /*if (trackHead==null) {
+            if (isTrackHead) return this;
+            else return null;
+        }
+        trackHead.callLazyLoading();
+        return trackHead;*/
+        if (trackHeadId==null && isTrackHead) trackHeadId = id;
+        return trackHeadId;
+    }
+    
+    public ObjectId getParentTrackHeadId() {
+        /*if (trackHead==null) {
+            if (isTrackHead) return this;
+            else return null;
+        }
+        trackHead.callLazyLoading();
+        return trackHead;*/
+        return parentTrackHeadId;
+    }
+    
     // object- and image-related methods
-    protected Object3D getObject() {
+    public Object3D getObject() {
         if (object==null) {
-            MicroscopyField f = xp.getMicroscopyField(fieldName);
-            objectContainer.setScale(f.getScaleXY(), f.getScaleZ());
+            objectContainer.setStructureObject(this);
             object=objectContainer.getObject();
         }
         return object;
@@ -176,7 +215,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         // TODO: only if changes -> transient variable to record changes..
         if (objectContainer==null) createObjectContainer();
         logger.debug("updating object container: {} of object: {}", objectContainer.getClass(), this );
-        objectContainer.updateObject(object);
+        objectContainer.updateObject();
     }
     public Image getRawImage(int structureIdx) {
         int channelIdx = xp.getChannelImageIdx(structureIdx);
@@ -213,17 +252,19 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         else return parent.getFirstParentWithOpenedRawImage(structureIdx);
     }
     
-    public BoundingBox getRelativeBoundingBox(StructureObject stop) {
+    public BoundingBox getRelativeBoundingBox(StructureObject stop) throws RuntimeException {
         if (stop==null) stop=getRoot();
         StructureObject nextParent=this;
-        BoundingBox res = object.bounds.duplicate();
+        BoundingBox res = getObject().getBounds().duplicate();
         logger.debug("relative bounding box: from: {} to {}", this, stop);
         logger.debug("init bounds: {}", res);
         do {
             nextParent=nextParent.getParent();
-            res.addOffset(nextParent.object.bounds);
+            if (nextParent==null) throw new RuntimeException("GetRelativeBoundingBoxError: stop structure object is not in parent tree");
+            res.addOffset(nextParent.getObject().getBounds());
             logger.debug("bounds + offset {} from {}", res, nextParent);
-        } while(nextParent!=stop);
+            if (!stop.equals(nextParent) && nextParent.getId().equals(stop.getId())) logger.error("stop condition cannot be reached: stop ({}) and parent ({}) not equals but same object", stop, nextParent);
+        } while(!stop.equals(nextParent));
         
         return res;
     }
@@ -261,11 +302,11 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         
     }
     
-    @Override
+    /*@Override
     public String toString() {
         if (isRoot()) return "Root Object: fieldName: "+fieldName + " timePoint: "+timePoint;
-        else return "Object: fieldName: "+fieldName+ " timePoint: "+timePoint+ " structureIdx: "+structureIdx+ " parentId: "+parent.id+ " idx: "+idx;
-    }
+        else return "Object: fieldName: "+fieldName+ " timePoint: "+timePoint+ " structureIdx: "+structureIdx+ " parentId: "+getParent().id+ " idx: "+idx;
+    }*/
     
     // morphium-related methods
     /*@PreStore public void preStore() {
@@ -273,7 +314,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         //createObjectContainer();
     }*/
     
-    public void callLazyLoading(){} // for lazy-loading listener
+    public void callLazyLoading() throws MorphiumAccessVetoException{} // for lazy-loading listener
     
     public StructureObject(){}
 }

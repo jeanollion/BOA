@@ -15,10 +15,13 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.objects.userInterface;
+package boa.gui.objects;
 
-import static configuration.userInterface.ConfigurationTree.addToMenu;
+import static boa.gui.configuration.ConfigurationTree.addToMenu;
+import static boa.gui.GUI.logger;
+import boa.gui.configuration.TransparentTreeCellRenderer;
 import dataStructure.configuration.Experiment;
+import dataStructure.configuration.ExperimentDAO;
 import dataStructure.objects.ObjectDAO;
 import de.caluga.morphium.Morphium;
 import java.awt.Rectangle;
@@ -40,28 +43,28 @@ import org.slf4j.LoggerFactory;
  * @author nasique
  */
 public class StructureObjectTreeGenerator {
-    public final static Logger logger = LoggerFactory.getLogger(StructureObjectTreeGenerator.class);
-    Experiment xp;
+    ExperimentDAO xpDAO;
     ObjectDAO objectDAO;
-    
     protected StructureObjectTreeModel treeModel;
-    JTree tree;
-    protected JScrollPane scroll;
+    protected JTree tree;
     protected ExperimentNode experimentNode;
     
-    public StructureObjectTreeGenerator(Experiment xp, Morphium m) {
-        this.objectDAO=new ObjectDAO(m);
-        this.xp=xp;
+    public StructureObjectTreeGenerator(ObjectDAO dao, ExperimentDAO xpDAO) {
+        this.objectDAO=dao;
+        this.xpDAO=xpDAO;
         this.experimentNode=new ExperimentNode(this);
+        
+    }
+    
+    private void generateTree() {
         treeModel = new StructureObjectTreeModel(experimentNode);
         tree=new JTree(treeModel);
-        scroll = new JScrollPane(tree);
-        tree.getSelectionModel().setSelectionMode(TreeSelectionModel.CONTIGUOUS_TREE_SELECTION);
-        DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
-        Icon personIcon = null;
-        renderer.setLeafIcon(personIcon);
-        renderer.setClosedIcon(personIcon);
-        renderer.setOpenIcon(personIcon);
+        tree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
+        DefaultTreeCellRenderer renderer = new TransparentTreeCellRenderer();
+        Icon icon = null;
+        renderer.setLeafIcon(icon);
+        renderer.setClosedIcon(icon);
+        renderer.setOpenIcon(icon);
         tree.setCellRenderer(renderer);
         tree.addMouseListener(new MouseAdapter() {
             @Override
@@ -73,13 +76,22 @@ public class StructureObjectTreeGenerator {
                     if (pathBounds != null && pathBounds.contains(e.getX(), e.getY())) {
                         JPopupMenu menu = new JPopupMenu();
                         Object lastO = path.getLastPathComponent();
+                        logger.debug("right-click on element: {}", lastO);
                         if (lastO instanceof UIContainer) {
                             UIContainer UIC=(UIContainer)lastO;
                             addToMenu(UIC.getDisplayComponent(), menu);
                         }
+                        menu.show(tree, pathBounds.x, pathBounds.y + pathBounds.height);
                     }
                 }
             }
         });
+    }
+    
+    public Experiment getExperiment() {return xpDAO.getExperiment();}
+    
+    public JTree getTree() {
+        if (tree==null) generateTree();
+        return tree;
     }
 }
