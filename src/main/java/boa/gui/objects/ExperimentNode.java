@@ -47,6 +47,11 @@ public class ExperimentNode implements TreeNode, UIContainer {
         return children;
     }
     
+    public FieldNode getFieldNode(String fieldName) {
+        for (FieldNode f : getChildren()) if (f.fieldName.equals(fieldName)) return f;
+        return null;
+    }
+    
     // UIContainer implementation
     @Override public Object[] getDisplayComponent() {
         return new Object[0];

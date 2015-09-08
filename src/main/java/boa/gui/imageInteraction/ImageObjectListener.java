@@ -21,7 +21,7 @@ import dataStructure.objects.StructureObject;
 
 /**
  *
- * @author nasique
+ * @author jollion
  */
 public interface ImageObjectListener {
     public void fireObjectSelected(StructureObject selectedObject, ImageObjectInterface source);

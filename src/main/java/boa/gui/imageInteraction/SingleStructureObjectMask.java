@@ -18,31 +18,33 @@
 package boa.gui.imageInteraction;
 
 import dataStructure.objects.StructureObject;
+import image.BoundingBox;
 import image.ImageInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 /**
  *
  * @author nasique
  */
-public class SingleStructureObjectMask implements ImageObjectInterface {
-    StructureObject object;
+public class SingleStructureObjectMask extends ImageObjectInterface {
 
     public SingleStructureObjectMask(StructureObject object) {
-        this.object = object;
+        super(object, object.getStructureIdx());
     }
     
     @Override public StructureObject getClickedObject(int x, int y, int z) {
-        if (object.getMask().insideMask(x, y, z)) return object;
+        if (parent.getMask().insideMask(x, y, z)) return parent;
         else return null;
     }
 
-    @Override public ArrayList<ImageInteger> getSelectObjectMasksWithOffset(StructureObject... selectedObjects) {
+    @Override public HashMap<BoundingBox, ImageInteger> getSelectObjectMasksWithOffset(StructureObject... selectedObjects) {
         if (selectedObjects!=null && selectedObjects.length>0) {
-            if (Arrays.asList(selectedObjects).contains(object)) {
-                ArrayList<ImageInteger> masks = new ArrayList<ImageInteger>(1);
-                masks.add(object.getMask());
+            if (Arrays.asList(selectedObjects).contains(parent)) {
+                HashMap<BoundingBox, ImageInteger> masks = new HashMap<BoundingBox, ImageInteger>(1);
+                BoundingBox b = parent.getMask().getBoundingBox();
+                masks.put(parent.getMask().getBoundingBox().translate(-b.getxMin(), -b.getyMin(), -b.getzMin()), parent.getMask());
                 return masks;
             }
         } 
@@ -50,7 +52,12 @@ public class SingleStructureObjectMask implements ImageObjectInterface {
     }
 
     public ImageInteger generateImage() {
-        return object.getMask();
+        return (ImageInteger)parent.getMask().setName("mask of object: time: "+parent.getTimePoint()+ " structure: "+parent.getStructureIdx()+ " idx: "+parent.getIdx());
+    }
+
+    @Override
+    public boolean isTimeImage() {
+        return false;
     }
 
 }

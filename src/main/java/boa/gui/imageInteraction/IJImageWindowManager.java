@@ -24,9 +24,12 @@ import ij.gui.ImageCanvas;
 import ij.gui.ImageWindow;
 import ij.gui.Overlay;
 import ij.gui.Roi;
+import ij.plugin.OverlayLabels;
 import ij.plugin.filter.ThresholdToSelection;
 import ij.process.ImageProcessor;
+import image.BoundingBox;
 import image.IJImageWrapper;
+import image.Image;
 import image.ImageInteger;
 import java.awt.Canvas;
 import java.awt.Component;
@@ -49,16 +52,22 @@ import java.util.Map.Entry;
 public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
 
     public IJImageWindowManager(ImageObjectListener listener) {
-        super(listener);
+        super(listener, new IJImageDisplayer());
     }
     
     @Override
-    public void addClickListener(final ImagePlus image) {
+    protected ImagePlus getImage(Image image) {
+        return IJImageWrapper.getImagePlus(image);
+    }
+    
+    @Override
+    public void addMouseListener(final ImagePlus image) {
         final ImageCanvas canvas = image.getWindow().getCanvas();
+        
         canvas.addMouseListener(new MouseListener() {
 
             public void mouseClicked(MouseEvent e) {
-                logger.trace("mouseclicked");
+                //logger.trace("mouseclicked");
             }
 
             public void mousePressed(MouseEvent e) {
@@ -67,23 +76,25 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
 		int offscreenX = canvas.offScreenX(x);
 		int offscreenY = canvas.offScreenY(y);
                 logger.trace("mousepressed: x={}, y={}", offscreenX, offscreenY);
-                ImageObjectInterface i = imageObjectInterfaceMap.get(image);
+                ImageObjectInterface i = get(image);
                 if (i!=null) {
                     StructureObject o = i.getClickedObject(offscreenX, offscreenY, image.getSlice()-1);
+                    selectObjects(image, o);
+                    logger.trace("selected object: "+o);
                     listener.fireObjectSelected(o, i);
                 } else logger.trace("no image interface found");
             }
 
             public void mouseReleased(MouseEvent e) {
-                logger.trace("mousereleased");
+                //logger.trace("mousereleased");
             }
 
             public void mouseEntered(MouseEvent e) {
-                logger.trace("mouseentered");
+                //logger.trace("mouseentered");
             }
 
             public void mouseExited(MouseEvent e) {
-                logger.trace("mousexited");
+                //logger.trace("mousexited");
             }
         });
     }
@@ -96,62 +107,46 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
 
     @Override
     public void selectObjects(ImagePlus image, StructureObject... selectedObjects) {
-        ImageObjectInterface i = this.imageObjectInterfaceMap.get(image);
+        ImageObjectInterface i = get(image);
         if (i!=null) {
-            ArrayList<ImageInteger> masks = i.getSelectObjectMasksWithOffset(selectedObjects);
-            HashMap<Integer, ArrayList<Roi>> rois = new HashMap<Integer, ArrayList<Roi>>();
+            HashMap<BoundingBox, ImageInteger> masks = i.getSelectObjectMasksWithOffset(selectedObjects);
+            //HashMap<Integer, ArrayList<Roi>> rois = new HashMap<Integer, ArrayList<Roi>>();
             if (masks!=null) {
-                for (ImageInteger mask : masks) {
-                    for (Entry<Integer, Roi> e: getRoi(mask).entrySet()) {
-                        ArrayList<Roi> roiSlice = rois.get(e.getKey());
-                        if (roiSlice==null) {
-                            roiSlice = new ArrayList<Roi>(selectedObjects.length);
-                            rois.put(e.getKey(), roiSlice);
-                        }
-                        roiSlice.add(e.getValue());
+                Overlay overlay = new Overlay();
+                for (Entry<BoundingBox, ImageInteger> e : masks.entrySet()) {
+                    for (Roi r : getRoi(e.getValue(), e.getKey()).values()) {
+                        overlay.add(r);
+                        logger.trace("add roi: "+r+ " of bounds : "+r.getBounds()+" to overlay");
                     }
                 }
+                image.setOverlay(overlay);
+                logger.trace("set overlay");
             }
-            //HashMap<Integer, Overlay> imOverlays = new HashMap<Integer, Overlay>(rois.size());
-            for (Entry<Integer, ArrayList<Roi>> e : rois.entrySet()) {
-                Overlay overlay = new Overlay();
-                //imOverlays.put(e.getKey(), overlay);
-                for (Roi r : e.getValue()) overlay.add(r);
-                if (image.getStack()!=null) {
-                    image.getStack().getProcessor(e.getKey()+1).setOverlay(overlay);
-                } else {
-                    image.setOverlay(overlay);
-                    if (rois.size()>1) logger.error("cannot display 3D overlay on single-sliced image");
-                } 
-            }
-            //addScrollListener(image, imOverlays);
+            
         }
     }
 
     @Override
     public void unselectObjects(ImagePlus image) {
         //removeScrollListeners(image);
-        if (image.getStack()!=null) {
-            for (int z = 1; z<=image.getNSlices(); ++z) image.getStack().getProcessor(z).setOverlay(null);
-        } else {
-            image.setOverlay(null);
-        }
+        image.setOverlay(null);
     }
     
-    private HashMap<Integer, Roi> getRoi(ImageInteger mask) {
+    private HashMap<Integer, Roi> getRoi(ImageInteger mask, BoundingBox offset) {
         HashMap<Integer, Roi> res = new HashMap<Integer, Roi>(mask.getSizeZ());
         ThresholdToSelection tts = new ThresholdToSelection();
         ImagePlus maskPlus = IJImageWrapper.getImagePlus(mask);
         tts.setup("", maskPlus);
         int maxLevel = ImageInteger.getMaxValue(mask, true);
-        for (int z = 0; z<=mask.getSizeZ(); ++z) {
+        for (int z = 0; z<mask.getSizeZ(); ++z) {
             ImageProcessor ip = maskPlus.getStack().getProcessor(z+1);
             ip.setThreshold(1, maxLevel, ImageProcessor.NO_LUT_UPDATE);
             tts.run(ip);
             Roi roi = maskPlus.getRoi();
             if (roi!=null) {
                 //roi.setPosition(z+1+mask.getOffsetZ());
-                roi.setLocation(mask.getOffsetX(), mask.getOffsetZ());
+                roi.setLocation(offset.getxMin(), offset.getyMin());
+                roi.setPosition(0, z+1+offset.getzMin(), 0);
                 res.put(z+mask.getOffsetZ(), roi);
             }
         }
@@ -198,6 +193,8 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
     
     private static void removeAdjustmentListener(Scrollbar s) {for (AdjustmentListener l : s.getAdjustmentListeners()) s.removeAdjustmentListener(l);}
     private static void removeMouseWheelListener(ImageWindow w) {for (MouseWheelListener l : w.getMouseWheelListeners()) w.removeMouseWheelListener(l);}
+
+    
     
     
 }

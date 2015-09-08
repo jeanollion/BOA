@@ -15,22 +15,15 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package boa.gui.objects;
+package boa.gui.imageInteraction;
 
-import static boa.gui.objects.ImageDisplayerFactory.ImageDisplayerType.IJ;
+import image.Image;
 
 /**
  *
- * @author nasique
+ * @author jollion
  */
-public class ImageDisplayerFactory {
-    private static ImageDisplayer currentImageDisplayer;
-    public static enum ImageDisplayerType {IJ};
-    private static ImageDisplayerType currentImageDisplayerType = IJ;
-    public static ImageDisplayer getImageDisplayer() {
-        if (currentImageDisplayer==null) {
-            if (currentImageDisplayerType.equals(IJ)) currentImageDisplayer = new IJImageDisplayer();
-        }
-        return currentImageDisplayer;
-    }
+public interface ImageDisplayer<T> {
+    public void showImage(Image image);
+    public void showImage(T image);
 }

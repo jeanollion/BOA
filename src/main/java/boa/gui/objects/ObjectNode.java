@@ -17,11 +17,23 @@
  */
 package boa.gui.objects;
 
-import dataStructure.objects.StructureObject;
 import static boa.gui.GUI.logger;
+import boa.gui.imageInteraction.ImageObjectInterface;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectUtils;
+import image.IJImageWrapper;
+import image.Image;
+import image.ImageInteger;
+import java.awt.event.ActionEvent;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import javax.swing.AbstractAction;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.tree.TreeNode;
 
 /**
@@ -64,9 +76,14 @@ public class ObjectNode implements TreeNode, UIContainer {
         return -1;
     }
     
+    public StructureNode getStructureNode(int structureIdx) {
+        for (StructureNode s : children) if (s.idx==structureIdx) return s;
+        return null;
+    }
+    
     // UIContainer implementation
     @Override public Object[] getDisplayComponent() {
-        return new Object[0];
+        return (new ObjectNodeUI(this)).getDisplayComponent();
     }
     
     // TreeNode implementation
@@ -102,6 +119,53 @@ public class ObjectNode implements TreeNode, UIContainer {
 
     public Enumeration children() {
         return Collections.enumeration(Arrays.asList(children));
+    }
+    
+    class ObjectNodeUI {
+        ObjectNode objectNode;
+        JMenuItem[] actions;
+        JMenuItem[] openRaw;
+        JMenuItem[] openSeg;
+        public ObjectNodeUI(ObjectNode on) {
+            this.objectNode=on;
+            this.actions = new JMenuItem[3];
+            actions[0] = new JMenuItem("Open Segmentation Mask");
+            actions[0].setAction(
+                new AbstractAction("Open Segmentation Mask") {
+                    @Override
+                    public void actionPerformed(ActionEvent ae) {
+                        logger.debug("opening object mask for object {} of structure: {}", idx, parent.idx);
+                        ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(data, data.getStructureIdx(), false);
+                        ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true);
+                    }
+                }
+            );
+            String[] structureNames = objectNode.data.getExperiment().getStructuresAsString();
+            
+            JMenu rawSubMenu = new JMenu("Open Raw Input Image");
+            actions[1] = rawSubMenu;
+            openRaw=new JMenuItem[structureNames.length];
+            for (int i = 0; i < openRaw.length; i++) {
+                openRaw[i] = new JMenuItem(structureNames[i]);
+                openRaw[i].setAction(
+                    new AbstractAction(structureNames[i]) {
+                        @Override
+                        public void actionPerformed(ActionEvent ae) {
+                            if (logger.isDebugEnabled()) logger.debug("opening input image for structure: {} of idx: {}", ae.getActionCommand(), getStructureIdx(ae.getActionCommand(), openRaw));
+                            Image image = objectNode.data.getRawImage(getStructureIdx(ae.getActionCommand(), openRaw)).setName("Channel Image of structure: "+ae.getActionCommand());
+                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(data, data.getStructureIdx(), false);
+                            ImageWindowManagerFactory.getImageManager().addImage(image, i, true);
+                        }
+                    }
+                );
+                rawSubMenu.add(openRaw[i]);
+            }
+        }
+        public Object[] getDisplayComponent() {return actions;}
+        private int getStructureIdx(String name, JMenuItem[] actions) {
+            for (int i = 0; i<actions.length; ++i) if (actions[i].getActionCommand().equals(name)) return i;
+            return -1;
+        }
     }
     
 }

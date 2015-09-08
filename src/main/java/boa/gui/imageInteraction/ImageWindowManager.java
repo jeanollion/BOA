@@ -19,32 +19,70 @@ package boa.gui.imageInteraction;
 
 import static boa.gui.GUI.logger;
 import dataStructure.objects.StructureObject;
+import image.Image;
 import image.ImageInteger;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 /**
  *
- * @author nasique
+ * @author jollion
  */
 public abstract class ImageWindowManager<T> {
-    final HashMap<T, ImageObjectInterface> imageObjectInterfaceMap;
+    private final HashMap<ImageObjectInterfaceKey, ImageObjectInterface> imageObjectInterfaces;
+    private final HashMap<T, ImageObjectInterface> imageObjectInterfaceMap;
     final ImageObjectListener listener;
-    public ImageWindowManager(ImageObjectListener listener) {
+    final ImageDisplayer<T> displayer;
+    
+    public ImageWindowManager(ImageObjectListener listener, ImageDisplayer displayer) {
         this.listener=listener;
+        this.displayer=displayer;
         imageObjectInterfaceMap = new HashMap<T, ImageObjectInterface>();
+        imageObjectInterfaces = new HashMap<ImageObjectInterfaceKey, ImageObjectInterface>();
     }
     
-    public void addImage(T image, ImageObjectInterface imageObjectInterface) {
-        imageObjectInterfaceMap.put(image, imageObjectInterface);
-        addClickListener(image);
+    public ImageDisplayer getDisplayer() {return displayer;}
+    
+    protected abstract T getImage(Image image);
+    
+    public void addImage(Image image, ImageObjectInterface i, boolean displayImage) {
+        //ImageObjectInterface i = getImageObjectInterface(parent, childStructureIdx, timeImage);
+        if (!imageObjectInterfaces.containsValue(i)) throw new RuntimeException("image object interface should be created through the manager");
+        T im = getImage(image);
+        imageObjectInterfaceMap.put(im, i);
+        if (displayImage) {
+            displayer.showImage(im);
+            addMouseListener(im);
+        }
     }
+    
+    public ImageObjectInterface getImageObjectInterface(StructureObject parent, int childStructureIdx, boolean timeImage) {
+        ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parent, childStructureIdx, timeImage));
+        if (i==null) {
+            i = createImageObjectInterface(parent, childStructureIdx, timeImage);
+            imageObjectInterfaces.put(new ImageObjectInterfaceKey(parent, childStructureIdx, timeImage), i);
+        } 
+        return i;
+    }
+    
+    private ImageObjectInterface createImageObjectInterface(StructureObject parent, int childStructureIdx, boolean timeImage) {
+        if (timeImage) {
+            return null; // TODO implement... 
+        } else {
+            if (parent.getStructureIdx()==childStructureIdx) return new SingleStructureObjectMask(parent);
+            else return new MultipleStructureObjectMask(parent, childStructureIdx);
+        }
+    }
+    
+    protected ImageObjectInterface get(T image) {return imageObjectInterfaceMap.get(image);}
     
     public void removeImage(T image) {
         imageObjectInterfaceMap.remove(image);
         removeClickListener(image);
     }
     
-    public abstract void addClickListener(T image);
+    public abstract void addMouseListener(T image);
     
     public abstract void removeClickListener(T image);
     

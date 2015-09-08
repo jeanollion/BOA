@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 nasique
+ * Copyright (C) 2015 jollion
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -18,40 +18,50 @@
 package boa.gui.imageInteraction;
 
 import dataStructure.objects.StructureObject;
-import image.BoundingBox;
-import image.ImageInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
 
 /**
  *
  * @author jollion
  */
-public abstract class ImageObjectInterface {
+public class ImageObjectInterfaceKey {
+    final boolean timeImage;
     final protected StructureObject parent;
     final protected int childStructureIdx;
 
-    public ImageObjectInterface(StructureObject parent, int childStructureIdx) {
+    public ImageObjectInterfaceKey(StructureObject parent, int childStructureIdx, boolean timeImage) {
+        this.timeImage = timeImage;
         this.parent = parent;
         this.childStructureIdx = childStructureIdx;
-    }
-    
-    public abstract StructureObject getClickedObject(int x, int y, int z);
-    public abstract HashMap<BoundingBox, ImageInteger> getSelectObjectMasksWithOffset(StructureObject... selectedObjects);
-    public abstract ImageInteger generateImage();
-    public abstract boolean isTimeImage();
-    
-    @Override
-    public boolean equals(Object o) {
-        if (o instanceof ImageObjectInterface) return ((ImageObjectInterface)o).parent.equals(parent) && ((ImageObjectInterface)o).childStructureIdx==childStructureIdx;
-        else return false;
     }
 
     @Override
     public int hashCode() {
-        int hash = 3;
-        hash = 73 * hash + (this.parent != null ? this.parent.hashCode() : 0);
-        hash = 73 * hash + this.childStructureIdx;
+        int hash = 7;
+        hash = 71 * hash + (this.timeImage ? 1 : 0);
+        hash = 71 * hash + (this.parent != null ? this.parent.hashCode() : 0);
+        hash = 71 * hash + this.childStructureIdx;
         return hash;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final ImageObjectInterfaceKey other = (ImageObjectInterfaceKey) obj;
+        if (this.timeImage != other.timeImage) {
+            return false;
+        }
+        if (this.parent != other.parent && (this.parent == null || !this.parent.equals(other.parent))) {
+            return false;
+        }
+        if (this.childStructureIdx != other.childStructureIdx) {
+            return false;
+        }
+        return true;
+    }
+    
 }

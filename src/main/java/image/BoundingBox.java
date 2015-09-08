@@ -79,6 +79,10 @@ public class BoundingBox {
         zMax=zMin+image.getSizeZ()-1;
     }
     
+    public boolean contains(int x, int y, int z) {
+        return xMin<=x && xMax>=x && yMin<=y && yMax>=y && zMin<=z && zMax>=z;
+    }
+    
     /**
      * Modify the bounds so that is contains the {@param x} coordinate
      * @param x coordinate in the X-Axis

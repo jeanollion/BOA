@@ -60,6 +60,14 @@ public class TimePointNode implements TreeNode, UIContainer {
         return children;
     }
     
+    public StructureNode getStructureNode(int structureIdx) {
+        for (StructureNode s : getChildren()) {
+            logger.trace("getStructureNode: current structureIdx: {} asked: {}", s.idx, structureIdx);
+            if (s.idx==structureIdx) return s;
+        }
+        return null;
+    }
+    
     public void loadAllChildObjects(int[] pathToChildStructureIdx) {
         int childIdx = getChildStructureIdx(pathToChildStructureIdx[0]);
         if (childIdx>=0) for (ObjectNode o : children[childIdx].getChildren()) o.loadAllChildObjects(pathToChildStructureIdx, 1);

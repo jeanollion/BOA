@@ -15,14 +15,23 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package boa.gui.objects;
+package boa.gui.imageInteraction;
 
-import image.Image;
+import boa.gui.GUI;
+import static boa.gui.imageInteraction.ImageWindowManagerFactory.ImageEnvironnement.IJ;
 
 /**
  *
- * @author nasique
+ * @author jollion
  */
-public interface ImageDisplayer {
-    public void showImage(Image image);
+public class ImageWindowManagerFactory {
+    private static ImageWindowManager currentImageManager;
+    public static enum ImageEnvironnement {IJ};
+    private final static ImageEnvironnement currentImageDisplayerType = IJ;
+    public static ImageWindowManager getImageManager() {
+        if (currentImageManager==null) {
+            if (currentImageDisplayerType.equals(IJ)) currentImageManager = new IJImageWindowManager(GUI.getInstance());
+        }
+        return currentImageManager;
+    }
 }

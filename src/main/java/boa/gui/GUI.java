@@ -17,6 +17,8 @@
  */
 package boa.gui;
 
+import boa.gui.imageInteraction.ImageObjectInterface;
+import boa.gui.imageInteraction.ImageObjectListener;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.objects.ObjectDAO;
@@ -24,6 +26,7 @@ import boa.gui.objects.StructureObjectTreeGenerator;
 import boa.gui.objects.TrackNode;
 import boa.gui.objects.TrackTreeController;
 import boa.gui.objects.TrackTreeGenerator;
+import dataStructure.objects.StructureObject;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
 import java.awt.Dimension;
@@ -46,9 +49,9 @@ import static utils.Utils.addHorizontalScrollBar;
  *
  * @author nasique
  */
-public class GUI extends javax.swing.JFrame {
+public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     public static final Logger logger = LoggerFactory.getLogger(GUI.class);
-    private final GUI instance;
+    private static GUI instance;
     
     // db-related attributes
     ExperimentDAO xpDAO;
@@ -79,7 +82,23 @@ public class GUI extends javax.swing.JFrame {
         
         trackTreeController = new TrackTreeController(objectDAO, xpDAO);
         setTrackTreeStructures(xpDAO.getExperiment().getStructuresAsString());
-        
+    }
+    
+    public static GUI getInstance() {
+        if (instance==null) new GUI();
+        return instance;
+    }
+    
+    // ImageObjectListener implementation
+    public void fireObjectSelected(StructureObject selectedObject, ImageObjectInterface source) {
+        if (source.isTimeImage()) {
+            // selection de la track
+        } else {
+            
+        }
+        // selection de l'objet dans l'arbre d'objets
+        structureObjectTreeGenerator.selectObject(selectedObject);
+        logger.trace("fire object selected");
     }
     
     private void setTrackTreeStructures(String[] structureNames) {
@@ -346,4 +365,6 @@ public class GUI extends javax.swing.JFrame {
     private javax.swing.JComboBox trackStructureJCB;
     private javax.swing.JPanel trackSubPanel;
     // End of variables declaration//GEN-END:variables
+
+    
 }

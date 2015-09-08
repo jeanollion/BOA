@@ -23,20 +23,24 @@ import boa.gui.configuration.TransparentTreeCellRenderer;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.objects.ObjectDAO;
+import dataStructure.objects.StructureObject;
 import de.caluga.morphium.Morphium;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import javax.swing.Icon;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
 import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.Utils;
 
 /**
  *
@@ -93,5 +97,35 @@ public class StructureObjectTreeGenerator {
     public JTree getTree() {
         if (tree==null) generateTree();
         return tree;
+    }
+    
+    public void selectObject(StructureObject object) {
+        ArrayList<TreeNode> path = new ArrayList<TreeNode>(); 
+        path.add(experimentNode);
+        FieldNode f = experimentNode.getFieldNode(object.getFieldName());
+        path.add(f);
+        TimePointNode t = f.getChildren()[object.getTimePoint()];
+        path.add(t);
+        ArrayList<StructureObject> objectPath = getObjectPath(object);
+        TreeNode lastStructureContainer = t;
+        for (StructureObject o : objectPath) {
+            StructureNode s = lastStructureContainer instanceof TimePointNode? ((TimePointNode)lastStructureContainer).getStructureNode(o.getStructureIdx()) : ((ObjectNode)lastStructureContainer).getStructureNode(o.getStructureIdx());
+            path.add(s);
+            logger.trace("get treepath: current structureObjectIdx: {} current structureNode: {}", o.getStructureIdx(), s);
+            ObjectNode on = s.getChildren()[o.getIdx()];
+            path.add(on);
+            lastStructureContainer=on;
+        }
+        tree.setSelectionPath(new TreePath(path.toArray(new TreeNode[path.size()])));
+    }
+    
+    private ArrayList<StructureObject> getObjectPath(StructureObject object) {
+        ArrayList<StructureObject> res = new ArrayList<StructureObject>();
+        res.add(object);
+        while(!object.getParent().isRoot()) {
+            res.add(object.getParent());
+            object=object.getParent();
+        }
+        return Utils.reverseOrder(res);
     }
 }

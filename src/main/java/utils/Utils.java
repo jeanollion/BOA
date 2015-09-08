@@ -78,13 +78,11 @@ public class Utils {
         } else for (int i = 0; i<res.length; ++i) res[i] = arrayList.get(i);
         return res;
     }
-    public static<T> T[] toArrayGeneric(ArrayList<T> arrayList, boolean reverseOrder) {
-        Object[] res=new Object[arrayList.size()];
-        if (reverseOrder) {
-            int idx = res.length-1;
-            for (Object o : arrayList) res[idx--] = o;
-        } else for (int i = 0; i<res.length; ++i) res[i] = arrayList.get(i);
-        return (T[])res;
+    
+    public static<T> ArrayList<T> reverseOrder(ArrayList<T> arrayList) {
+        ArrayList<T> res = new ArrayList<T>(arrayList.size());
+        for (int i = arrayList.size()-1; i>=0; --i) res.add(arrayList.get(i));
+        return res;
     }
     
     public static void addHorizontalScrollBar(JComboBox box) {

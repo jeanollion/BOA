@@ -95,12 +95,12 @@ public class IJImageWrapper {
         if (image.getScaleXY()!=0) {
             cal.pixelWidth=image.getScaleXY();
             cal.pixelHeight=image.getScaleXY();
+            if (image.getScaleZ()!=0) cal.pixelDepth=image.getScaleZ();
+            cal.setUnit("um");
         }
-        if (image.getScaleZ()!=0) cal.pixelDepth=image.getScaleZ();
-        cal.xOrigin=image.getOffsetX();
-        cal.yOrigin=image.getOffsetY();
-        cal.zOrigin=image.getOffsetZ();
-        cal.setUnit("um");
+        //cal.xOrigin=image.getOffsetX();
+        //cal.yOrigin=image.getOffsetY();
+        //cal.zOrigin=image.getOffsetZ();
         ip.setCalibration(cal);
         return ip;
     }

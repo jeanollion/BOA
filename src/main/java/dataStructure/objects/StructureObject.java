@@ -33,7 +33,7 @@ import static processing.PluginSequenceRunner.preFilterImage;
 import static processing.PluginSequenceRunner.segmentImage;
 import utils.SmallArray;
 
-@Lifecycle //-> bug a cause de la structure circulaire
+@Lifecycle
 @Entity(collectionName = "Objects")
 @Index(value={"field_name, time_point, structure_idx", "parent,structure_idx,idx", "track_head_id, time_point", "is_track_head, parent_track_head_id, structure_idx, time_point, idx"})
 public class StructureObject implements StructureObjectPostProcessing, Track {
@@ -148,7 +148,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
      * @param isTrackHead if true, sets this instance as the next of {@param previous} 
      */
     @Override public void setPreviousInTrack(StructureObjectPreProcessing previous, boolean isTrackHead) {
-        if (((StructureObject)previous).getTimePoint()!=this.getTimePoint()-1) throw new RuntimeException("setPrevious in track should be of time: "+(timePoint-1) +"but is: "+((StructureObject)previous).getTimePoint());
+        if (((StructureObject)previous).getTimePoint()!=this.getTimePoint()-1) throw new RuntimeException("setPrevious in track should be of time: "+(timePoint-1) +" but is: "+((StructureObject)previous).getTimePoint());
         this.previous=(StructureObject)previous;
         if (!isTrackHead) {
             this.previous.next=this;
@@ -258,6 +258,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         BoundingBox res = getObject().getBounds().duplicate();
         logger.debug("relative bounding box: from: {} to {}", this, stop);
         logger.debug("init bounds: {}", res);
+        if (this.equals(stop)) return res;
         do {
             nextParent=nextParent.getParent();
             if (nextParent==null) throw new RuntimeException("GetRelativeBoundingBoxError: stop structure object is not in parent tree");
@@ -299,14 +300,13 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
             for (StructureObject s : child) objects.add(s.getObject());
             return new ObjectPopulation(objects, this.getMaskProperties());
         }
-        
     }
     
-    /*@Override
+    @Override
     public String toString() {
         if (isRoot()) return "Root Object: fieldName: "+fieldName + " timePoint: "+timePoint;
         else return "Object: fieldName: "+fieldName+ " timePoint: "+timePoint+ " structureIdx: "+structureIdx+ " parentId: "+getParent().id+ " idx: "+idx;
-    }*/
+    }
     
     // morphium-related methods
     /*@PreStore public void preStore() {
