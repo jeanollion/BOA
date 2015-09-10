@@ -70,6 +70,7 @@ public class StructureObjectTreeGenerator {
         renderer.setClosedIcon(icon);
         renderer.setOpenIcon(icon);
         tree.setCellRenderer(renderer);
+        tree.setScrollsOnExpand(true);
         tree.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
@@ -100,6 +101,10 @@ public class StructureObjectTreeGenerator {
     }
     
     public void selectObject(StructureObject object) {
+        if (object==null) {
+            tree.setSelectionRow(-1);
+            return;
+        }
         ArrayList<TreeNode> path = new ArrayList<TreeNode>(); 
         path.add(experimentNode);
         FieldNode f = experimentNode.getFieldNode(object.getFieldName());
@@ -111,7 +116,7 @@ public class StructureObjectTreeGenerator {
         for (StructureObject o : objectPath) {
             StructureNode s = lastStructureContainer instanceof TimePointNode? ((TimePointNode)lastStructureContainer).getStructureNode(o.getStructureIdx()) : ((ObjectNode)lastStructureContainer).getStructureNode(o.getStructureIdx());
             path.add(s);
-            logger.trace("get treepath: current structureObjectIdx: {} current structureNode: {}", o.getStructureIdx(), s);
+            //logger.trace("get treepath: current structureObjectIdx: {} current structureNode: {}", o.getStructureIdx(), s);
             ObjectNode on = s.getChildren()[o.getIdx()];
             path.add(on);
             lastStructureContainer=on;

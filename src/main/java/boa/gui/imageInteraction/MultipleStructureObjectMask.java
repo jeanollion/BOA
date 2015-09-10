@@ -39,7 +39,15 @@ public class MultipleStructureObjectMask extends ImageObjectInterface {
         int[] path = parent.getExperiment().getPathToStructure(parent.getStructureIdx(), childStructureIdx);
         ArrayList<StructureObject> list = StructureObjectUtils.getAllObjects(parent, path);
         objects = HashBiMap.create(list.size());
-        for (StructureObject o : list) objects.put(o.getParent().getRelativeBoundingBox(parent), o);
+        for (StructureObject o : list) objects.put(o.getRelativeBoundingBox(parent), o);
+    }
+    
+    public MultipleStructureObjectMask(StructureObject parent, int childStructureIdx, BoundingBox offset) {
+        super(parent, childStructureIdx);
+        int[] path = parent.getExperiment().getPathToStructure(parent.getStructureIdx(), childStructureIdx);
+        ArrayList<StructureObject> list = StructureObjectUtils.getAllObjects(parent, path);
+        objects = HashBiMap.create(list.size());
+        for (StructureObject o : list) objects.put(o.getRelativeBoundingBox(parent).translate(offset.getxMin(), offset.getyMin(), offset.getzMin()), o);
     }
 
     @Override
