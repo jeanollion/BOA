@@ -19,6 +19,7 @@ package boa.gui.imageInteraction;
 
 import dataStructure.objects.StructureObject;
 import image.BoundingBox;
+import image.Image;
 import image.ImageInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,8 +38,9 @@ public abstract class ImageObjectInterface {
     }
     
     public abstract StructureObject getClickedObject(int x, int y, int z);
-    public abstract HashMap<BoundingBox, ImageInteger> getSelectObjectMasksWithOffset(StructureObject... selectedObjects);
+    public abstract BoundingBox getObjectOffset(StructureObject object);
     public abstract ImageInteger generateImage();
+    public abstract Image generateRawImage(int structureIdx);
     public abstract boolean isTimeImage();
     
     @Override

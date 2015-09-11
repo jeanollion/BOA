@@ -35,6 +35,7 @@ import java.awt.Canvas;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Scrollbar;
+import java.awt.event.ActionEvent;
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
 import java.awt.event.MouseEvent;
@@ -75,13 +76,14 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
 		int y = e.getY();
 		int offscreenX = canvas.offScreenX(x);
 		int offscreenY = canvas.offScreenY(y);
-                logger.trace("mousepressed: x={}, y={}", offscreenX, offscreenY);
+                boolean ctrl = (e.getModifiers() & ActionEvent.CTRL_MASK) == ActionEvent.CTRL_MASK;
+                logger.trace("mousepressed: x={}, y={} ctrl: {}", offscreenX, offscreenY, ctrl);
                 ImageObjectInterface i = get(image);
                 if (i!=null) {
                     StructureObject o = i.getClickedObject(offscreenX, offscreenY, image.getSlice()-1);
-                    selectObjects(image, o);
+                    selectObjects(image, ctrl, o);
                     logger.trace("selected object: "+o);
-                    listener.fireObjectSelected(o, i);
+                    listener.fireObjectSelected(o, i.isTimeImage());
                 } else logger.trace("no image interface found");
             }
 
@@ -106,23 +108,22 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
     }
 
     @Override
-    public void selectObjects(ImagePlus image, StructureObject... selectedObjects) {
+    public void selectObjects(ImagePlus image, boolean addToCurrentSelection, StructureObject... selectedObjects) {
+        if (selectedObjects==null || selectedObjects.length==0 || (selectedObjects.length==1 && selectedObjects[0]==null)) {
+            if (!addToCurrentSelection) image.setOverlay(null);
+            return;
+        }
         ImageObjectInterface i = get(image);
         if (i!=null) {
-            HashMap<BoundingBox, ImageInteger> masks = i.getSelectObjectMasksWithOffset(selectedObjects);
-            //HashMap<Integer, ArrayList<Roi>> rois = new HashMap<Integer, ArrayList<Roi>>();
-            if (masks!=null) {
-                Overlay overlay = new Overlay();
-                for (Entry<BoundingBox, ImageInteger> e : masks.entrySet()) {
-                    for (Roi r : getRoi(e.getValue(), e.getKey()).values()) {
-                        overlay.add(r);
-                        logger.trace("add roi: "+r+ " of bounds : "+r.getBounds()+" to overlay");
-                    }
+            Overlay overlay = addToCurrentSelection && image.getOverlay()!=null ? image.getOverlay() : new Overlay();
+            for (StructureObject o : selectedObjects) {
+                if (o==null) continue;
+                for (Roi r : getRoi(o.getMask(), i.getObjectOffset(o)).values()) {
+                    overlay.add(r);
+                    logger.trace("add roi: "+r+ " of bounds : "+r.getBounds()+" to overlay");
                 }
-                image.setOverlay(overlay);
-                logger.trace("set overlay");
             }
-            
+            image.setOverlay(overlay);
         }
     }
 

@@ -107,6 +107,11 @@ public class RootTrackNode implements TreeNode {
         return children;
     }
     
+    public TrackNode getChild(StructureObject trackHead) {
+        for (TrackNode t : getChildren()) if (t.trackHead==trackHead) return t;
+        return null;
+    }
+    
     // TreeNode implementation
     @Override public String toString() {return (fieldName!=null?fieldName+"::": "")+generator.xpDAO.getExperiment().getStructure(structureIdx).getName();}
     

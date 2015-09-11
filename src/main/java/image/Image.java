@@ -17,7 +17,6 @@ public abstract class Image implements ImageProperties {
     protected int offsetZ;
     protected float scaleXY;
     protected float scaleZ;
-    protected ImageWrapper wrapper;
     protected LUT lut=LUT.Grays;
     
     protected Image(String name, int sizeX, int sizeY, int sizeZ, int offsetX, int offsetY, int offsetZ, float scaleXY, float scaleZ) {
@@ -47,6 +46,14 @@ public abstract class Image implements ImageProperties {
         return this;
     }
     
+    public static Image createEmptyImage(String name, Image imageType, ImageProperties properties) {
+        if (imageType instanceof ImageByte) return new ImageByte(name, properties);
+        else if (imageType instanceof ImageShort) return new ImageShort(name, properties);
+        else if (imageType instanceof ImageInt) return new ImageInt(name, properties);
+        else if (imageType instanceof ImageFloat) return new ImageFloat(name, properties);
+        else return new BlankMask(name, properties);
+    }
+    
     public abstract Image getZPlane(int idxZ);
     
     @Override
@@ -64,6 +71,21 @@ public abstract class Image implements ImageProperties {
     public abstract Image duplicate(String name);
     public abstract Image newImage(String name, ImageProperties properties);
     public abstract Image crop(BoundingBox bounds);
+    public void pasteImage(Image source, BoundingBox offset) {
+        if (source.getClass()!=this.getClass()) throw new IllegalArgumentException("Paste Image: source and destination should be of the same type (source: "+source.getClass().getSimpleName()+ " destination: "+this.getClass().getSimpleName()+")");
+        if (source.getSizeX()+offset.xMin>sizeX || source.getSizeY()+offset.yMin>sizeY || source.getSizeZ()+offset.zMin>sizeZ) throw new IllegalArgumentException("Paste Image: source does not fit in destination");
+        Object[] sourceP = source.getPixelArray();
+        Object[] destP = getPixelArray();
+        int off=sizeX*offset.yMin+offset.xMin;
+        int offSource = 0;
+        for (int z = 0; z<source.sizeZ; ++z) {
+            for (int y = 0 ; y<source.sizeY; ++y) {
+                System.arraycopy(sourceP[z], offSource, destP[z+offset.zMin], off, source.sizeX);
+                off+=sizeX;
+                offSource+=source.sizeX;
+            }
+        }
+    }
     
     @Override
     public boolean contains(int x, int y, int z) {
@@ -232,18 +254,6 @@ public abstract class Image implements ImageProperties {
 
     public float getScaleZ() {
         return scaleZ;
-    }
-
-    public ImageWrapper getWrapper() {
-        return wrapper;
-    }
-
-    public void show() {
-        wrapper.show();
-    }
-
-    public void show(String name) {
-        wrapper.show(name);
     }
     
     public String getName() {

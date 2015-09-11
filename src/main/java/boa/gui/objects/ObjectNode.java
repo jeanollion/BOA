@@ -135,7 +135,7 @@ public class ObjectNode implements TreeNode, UIContainer {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
                         logger.debug("opening object mask for object {} of structure: {}", idx, parent.idx);
-                        ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(data, data.getStructureIdx(), false);
+                        ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(data, data.getStructureIdx());
                         ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true);
                     }
                 }
@@ -152,9 +152,8 @@ public class ObjectNode implements TreeNode, UIContainer {
                         @Override
                         public void actionPerformed(ActionEvent ae) {
                             if (logger.isDebugEnabled()) logger.debug("opening input image for structure: {} of idx: {}", ae.getActionCommand(), getStructureIdx(ae.getActionCommand(), openRaw));
-                            Image image = objectNode.data.getRawImage(getStructureIdx(ae.getActionCommand(), openRaw)).setName("Channel Image of structure: "+ae.getActionCommand());
-                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(data, data.getStructureIdx(), false);
-                            ImageWindowManagerFactory.getImageManager().addImage(image, i, true);
+                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(data, data.getStructureIdx());
+                            ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(getStructureIdx(ae.getActionCommand(), openRaw)), i, true);
                         }
                     }
                 );

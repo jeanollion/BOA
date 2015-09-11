@@ -57,22 +57,23 @@ public abstract class ImageWindowManager<T> {
         }
     }
     
-    public ImageObjectInterface getImageObjectInterface(StructureObject parent, int childStructureIdx, boolean timeImage) {
-        ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parent, childStructureIdx, timeImage));
+    public ImageObjectInterface getImageObjectInterface(StructureObject parent, int childStructureIdx) {
+        ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parent, childStructureIdx, false));
         if (i==null) {
-            i = createImageObjectInterface(parent, childStructureIdx, timeImage);
-            imageObjectInterfaces.put(new ImageObjectInterfaceKey(parent, childStructureIdx, timeImage), i);
+            if (parent.getStructureIdx()==childStructureIdx) i= new SingleStructureObjectMask(parent);
+            else i= new MultipleStructureObjectMask(parent, childStructureIdx);
+            imageObjectInterfaces.put(new ImageObjectInterfaceKey(parent, childStructureIdx, false), i);
         } 
         return i;
     }
     
-    private ImageObjectInterface createImageObjectInterface(StructureObject parent, int childStructureIdx, boolean timeImage) {
-        if (timeImage) {
-            return null; // TODO implement... 
-        } else {
-            if (parent.getStructureIdx()==childStructureIdx) return new SingleStructureObjectMask(parent);
-            else return new MultipleStructureObjectMask(parent, childStructureIdx);
-        }
+    public ImageObjectInterface getImageTrackObjectInterface(StructureObject[] parentTrack, int childStructureIdx) {
+        ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parentTrack[0], childStructureIdx, true));
+        if (i==null) {
+            i = new TrackMask(parentTrack, childStructureIdx);
+            imageObjectInterfaces.put(new ImageObjectInterfaceKey(parentTrack[0], childStructureIdx, true), i);
+        } 
+        return i;
     }
     
     protected ImageObjectInterface get(T image) {return imageObjectInterfaceMap.get(image);}
@@ -94,6 +95,6 @@ public abstract class ImageWindowManager<T> {
         return null;
     }
     
-    public abstract void selectObjects(T image, StructureObject... selectedObjects);
+    public abstract void selectObjects(T image, boolean addToCurrentSelection, StructureObject... selectedObjects);
     public abstract void unselectObjects(T image);
 }

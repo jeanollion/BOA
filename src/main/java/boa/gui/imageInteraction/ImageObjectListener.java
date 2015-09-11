@@ -24,5 +24,5 @@ import dataStructure.objects.StructureObject;
  * @author jollion
  */
 public interface ImageObjectListener {
-    public void fireObjectSelected(StructureObject selectedObject, ImageObjectInterface source);
+    public void fireObjectSelected(StructureObject selectedObject, boolean track);
 }

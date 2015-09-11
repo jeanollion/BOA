@@ -108,4 +108,6 @@ public class BlankMask extends ImageInteger implements ImageMask {
     @Override
     public void setPixelWithOffset(int x, int y, int z, Number value) {
     }
+
+    @Override public void pasteImage(Image source, BoundingBox offset) {}
 }

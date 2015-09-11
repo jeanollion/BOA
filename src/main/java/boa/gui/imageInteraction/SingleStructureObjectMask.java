@@ -19,6 +19,7 @@ package boa.gui.imageInteraction;
 
 import dataStructure.objects.StructureObject;
 import image.BoundingBox;
+import image.Image;
 import image.ImageInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,20 +40,20 @@ public class SingleStructureObjectMask extends ImageObjectInterface {
         else return null;
     }
 
-    @Override public HashMap<BoundingBox, ImageInteger> getSelectObjectMasksWithOffset(StructureObject... selectedObjects) {
-        if (selectedObjects!=null && selectedObjects.length>0) {
-            if (Arrays.asList(selectedObjects).contains(parent)) {
-                HashMap<BoundingBox, ImageInteger> masks = new HashMap<BoundingBox, ImageInteger>(1);
-                BoundingBox b = parent.getMask().getBoundingBox();
-                masks.put(parent.getMask().getBoundingBox().translate(-b.getxMin(), -b.getyMin(), -b.getzMin()), parent.getMask());
-                return masks;
-            }
-        } 
-        return null;
+    @Override public BoundingBox getObjectOffset(StructureObject object) {
+        if (object==null) return null;
+        if (object==parent) {
+            BoundingBox b = parent.getMask().getBoundingBox().duplicate();
+            return b.translate(-b.getxMin(), -b.getyMin(), -b.getzMin());
+        } else return null;
     }
 
-    public ImageInteger generateImage() {
+    @Override public ImageInteger generateImage() {
         return (ImageInteger)parent.getMask().setName("mask of object: time: "+parent.getTimePoint()+ " structure: "+parent.getStructureIdx()+ " idx: "+parent.getIdx());
+    }
+    
+    @Override public Image generateRawImage(int structureIdx) {
+        return parent.getRawImage(structureIdx);
     }
 
     @Override

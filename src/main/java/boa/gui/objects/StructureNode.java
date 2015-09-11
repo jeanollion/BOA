@@ -145,10 +145,8 @@ public class StructureNode implements TreeNode, UIContainer {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
                         logger.debug("opening object mask for structure: {}", idx);
-                        ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(structureNode.getParentObject(), idx, false);
+                        ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(structureNode.getParentObject(), idx);
                         ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true);
-                        //ObjectPopulation pop = structureNode.getParentObject().getObjectPopulation(idx);
-                        //ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pop.getLabelImage().setName("Object Mask of structure: "+structureNode.toString()));
                     }
                 }
             );
@@ -167,14 +165,7 @@ public class StructureNode implements TreeNode, UIContainer {
                             int[] path = structureNode.getParentObject().getExperiment().getPathToStructure(structureNode.getParentObject().getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
                             if (parent instanceof TimePointNode) ((TimePointNode)parent).loadAllChildObjects(path);
                             else ((ObjectNode)parent).loadAllChildObjects(path, 0);
-                            /*ArrayList<StructureObject> objects = StructureObjectUtils.getAllObjects(structureNode.getParentObject(), path);
-                            int maxLabel = 0; 
-                            for (StructureObject o : objects) if (o.getObject().getLabel()>maxLabel) maxLabel = o.getObject().getLabel();
-                            if (logger.isDebugEnabled()) logger.debug("child objects found: {} max label: {}", objects.size(), maxLabel);
-                            ImageInteger displayImage = ImageInteger.createEmptyLabelImage("Segmented Image of structure: "+ae.getActionCommand(), maxLabel, structureNode.getParentObject().getMaskProperties());
-                            for (StructureObject o : objects) o.getObject().draw(displayImage, o.getObject().getLabel(), o.getParent().getRelativeBoundingBox(structureNode.getParentObject()));
-                            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(displayImage);*/
-                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(structureNode.getParentObject(), getStructureIdx(ae.getActionCommand(), openRaw), false);
+                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(structureNode.getParentObject(), getStructureIdx(ae.getActionCommand(), openRaw));
                             ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true);
                         }
                     }
@@ -192,8 +183,11 @@ public class StructureNode implements TreeNode, UIContainer {
                         @Override
                         public void actionPerformed(ActionEvent ae) {
                             if (logger.isDebugEnabled()) logger.debug("opening input image for structure: {} of idx: {}", ae.getActionCommand(), getStructureIdx(ae.getActionCommand(), openRaw));
-                            Image image = structureNode.getParentObject().getRawImage(getStructureIdx(ae.getActionCommand(), openRaw));
-                            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(image.setName("Channel Image of structure: "+ae.getActionCommand()));
+                            int[] path = structureNode.getParentObject().getExperiment().getPathToStructure(structureNode.getParentObject().getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
+                            if (parent instanceof TimePointNode) ((TimePointNode)parent).loadAllChildObjects(path);
+                            else ((ObjectNode)parent).loadAllChildObjects(path, 0);
+                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(structureNode.getParentObject(), getStructureIdx(ae.getActionCommand(), openRaw));
+                            ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(getStructureIdx(ae.getActionCommand(), openRaw)), i, true);
                         }
                     }
                 );

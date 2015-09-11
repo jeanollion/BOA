@@ -39,6 +39,7 @@ import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import static boa.gui.GUI.logger;
 import boa.gui.configuration.TransparentTreeCellRenderer;
+import java.util.ArrayList;
 import javax.swing.tree.DefaultTreeModel;
 /**
  *
@@ -103,6 +104,7 @@ public class TrackTreeGenerator {
         renderer.setClosedIcon(personIcon);
         renderer.setOpenIcon(personIcon);
         tree.setCellRenderer(renderer);
+        tree.setScrollsOnExpand(true);
         tree.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
@@ -123,5 +125,34 @@ public class TrackTreeGenerator {
                 }
             }
         });
+    }
+    
+    public void selectObject(StructureObject object) {
+        if (object==null) {
+            tree.setSelectionRow(-1);
+            return;
+        }
+        ArrayList<TreeNode> path = new ArrayList<TreeNode>(); 
+        RootTrackNode root = (RootTrackNode)treeModel.getRoot();
+        path.add(root);
+        ArrayList<StructureObject> objectPath = getObjectPath(object);
+        TrackNode t = root.getChild(objectPath.get(objectPath.size()-1));
+        path.add(t);
+        for (int i = objectPath.size()-2; i>=0; --i) {
+            t=t.getChild(objectPath.get(i));
+            path.add(t);
+        }
+        tree.setSelectionPath(new TreePath(path.toArray(new TreeNode[path.size()])));
+    }
+    
+    private ArrayList<StructureObject> getObjectPath(StructureObject o) {
+        ArrayList<StructureObject> res = new ArrayList<StructureObject>();
+        o = objectDAO.getObject(o.getTrackHeadId());
+        res.add(o);
+        while(o.getTimePoint()>0) {
+            o = objectDAO.getObject(o.getPrevious().getTrackHeadId());
+            res.add(o);
+        }
+        return res;
     }
 }

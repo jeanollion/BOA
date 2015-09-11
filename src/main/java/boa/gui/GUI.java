@@ -90,10 +90,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }
     
     // ImageObjectListener implementation
-    public void fireObjectSelected(StructureObject selectedObject, ImageObjectInterface source) {
-        if (source.isTimeImage()) {
+    public void fireObjectSelected(StructureObject selectedObject, boolean track) {
+        if (track) {
             // selection de la track
-        } else {
             
         }
         // selection de l'objet dans l'arbre d'objets

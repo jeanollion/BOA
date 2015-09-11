@@ -22,7 +22,9 @@ import com.google.common.collect.HashBiMap;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import ij.plugin.filter.MaximumFinder;
+import image.BlankMask;
 import image.BoundingBox;
+import image.Image;
 import image.ImageInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,26 +32,29 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import javax.swing.SwingUtilities;
 
 /**
  *
  * @author jollion
  */
 public class TrackMask extends ImageObjectInterface {
-    BoundingBox[] trackOffset;
-    MultipleStructureObjectMask[] trackObjects;
-    int maxParentY, maxParentZ;
+    final BoundingBox[] trackOffset;
+    final MultipleStructureObjectMask[] trackObjects;
+    final int maxParentY, maxParentZ;
     static final int intervalX=5;
     
     public TrackMask(StructureObject[] parentTrack, int childStructureIdx) {
         super(parentTrack[0], childStructureIdx);
         trackOffset = new BoundingBox[parentTrack.length];
         trackObjects = new MultipleStructureObjectMask[parentTrack.length];
-        
+        int maxY=0, maxZ=0;
         for (int i = 0; i<parentTrack.length; ++i) { // compute global Y and Z max to center parent masks
-            if (maxParentY<parentTrack[i].getObject().getBounds().getSizeY()) maxParentY=parentTrack[i].getObject().getBounds().getSizeY();
-            if (maxParentZ<parentTrack[i].getObject().getBounds().getSizeZ()) maxParentZ=parentTrack[i].getObject().getBounds().getSizeZ();
+            if (maxY<parentTrack[i].getObject().getBounds().getSizeY()) maxY=parentTrack[i].getObject().getBounds().getSizeY();
+            if (maxZ<parentTrack[i].getObject().getBounds().getSizeZ()) maxZ=parentTrack[i].getObject().getBounds().getSizeZ();
         }
+        maxParentY=maxY;
+        maxParentZ=maxZ;
         
         int currentOffsetX=0;
         for (int i = 0; i<parentTrack.length; ++i) {
@@ -70,24 +75,9 @@ public class TrackMask extends ImageObjectInterface {
     }
 
     @Override
-    public HashMap<BoundingBox, ImageInteger> getSelectObjectMasksWithOffset(StructureObject... selectedObjects) {
-        if (selectedObjects==null) return new HashMap<BoundingBox, ImageInteger>(0);
-        if (selectedObjects.length==1) return trackObjects[getTrackIndex(getParent(selectedObjects[0]))].getSelectObjectMasksWithOffset(selectedObjects); //cas frequent traité a part
-        // regrouper les objets selectionner par parent:
-        HashMap<StructureObject, ArrayList<StructureObject>> parentMapSelectedObjects = new HashMap<StructureObject, ArrayList<StructureObject>>();
-        for (StructureObject o : selectedObjects) {
-            StructureObject p = getParent(o);
-            ArrayList<StructureObject> list = parentMapSelectedObjects.get(p);
-            if (list==null) {
-                list = new ArrayList<StructureObject>();
-                parentMapSelectedObjects.put(p, list);
-            }
-            list.add(o);
-        }
-        // dans chaque parent -> chercher les objets correspondants
-        HashMap<BoundingBox, ImageInteger> res = new HashMap<BoundingBox, ImageInteger>(selectedObjects.length);
-        for (Entry<StructureObject, ArrayList<StructureObject>> e : parentMapSelectedObjects.entrySet()) res.putAll(trackObjects[getTrackIndex(e.getKey())].getSelectObjectMasksWithOffset(e.getValue().toArray(new StructureObject[e.getValue().size()])));
-        return res;
+    public BoundingBox getObjectOffset(StructureObject object) {
+        if (object==null) return null;
+        return trackObjects[getTrackIndex(getParent(object))].getObjectOffset(object); //cas frequent traité a part
     }
     
     private StructureObject getParent(StructureObject object) { // le parent n'est pas forcément direct
@@ -103,9 +93,34 @@ public class TrackMask extends ImageObjectInterface {
     @Override
     public ImageInteger generateImage() {
         int maxLabel = 0; 
-        for (StructureObject o : objects.values()) if (o.getObject().getLabel()>maxLabel) maxLabel = o.getObject().getLabel();
-        ImageInteger displayImage = ImageInteger.createEmptyLabelImage("Segmented Image of structure: "+childStructureIdx, maxLabel, parent.getMaskProperties());
-        for (Entry<BoundingBox, StructureObject> e : objects.entrySet()) e.getValue().getObject().draw(displayImage, e.getValue().getObject().getLabel(), e.getKey());
+        for (MultipleStructureObjectMask o : trackObjects) {
+            int label = o.getMaxLabel();
+            if (label>maxLabel) maxLabel = label;
+        }
+        final ImageInteger displayImage = ImageInteger.createEmptyLabelImage("TimeLapse Image of structure: "+childStructureIdx, maxLabel, new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, this.maxParentZ).setCalibration(parent.getMaskProperties().getScaleXY(), parent.getMaskProperties().getScaleZ()));
+        // draw image in another thread..
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i<trackObjects.length; ++i) trackObjects[i].draw(displayImage);
+            }
+        });
+        SwingUtilities.invokeLater(t);
+        return displayImage;
+    }
+    
+    @Override public Image generateRawImage(final int structureIdx) {
+        final Image displayImage =  Image.createEmptyImage("TimeLapse Image of structure: "+structureIdx, trackObjects[0].generateRawImage(structureIdx), new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, this.maxParentZ).setCalibration(parent.getMaskProperties().getScaleXY(), parent.getMaskProperties().getScaleZ()));
+        // draw image in another thread..
+        Thread t = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 0; i<trackObjects.length; ++i) {
+                    displayImage.pasteImage(trackObjects[i].generateRawImage(structureIdx), trackOffset[i]);
+                }
+            }
+        });
+        SwingUtilities.invokeLater(t);
         return displayImage;
     }
 

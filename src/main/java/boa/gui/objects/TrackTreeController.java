@@ -21,8 +21,10 @@ import boa.gui.GUI;
 import static boa.gui.GUI.logger;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.objects.ObjectDAO;
+import dataStructure.objects.StructureObject;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map.Entry;
 import javax.swing.JTree;
 
 /**
@@ -104,5 +106,10 @@ public class TrackTreeController {
     
     public HashMap<Integer, TrackTreeGenerator> getGeneratorS() {
         return generatorS;
+    }
+    
+    public void selectTrack(StructureObject object) {
+        for (Entry<Integer, TrackTreeGenerator> e : generatorS.entrySet()) if (e.getKey()!=object.getStructureIdx()) e.getValue().selectObject(null);
+        if (generatorS.containsKey(object.getStructureIdx())) generatorS.get(object.getStructureIdx()).selectObject(object);
     }
 }
