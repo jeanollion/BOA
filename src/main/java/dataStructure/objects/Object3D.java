@@ -154,9 +154,9 @@ public class Object3D<T extends Voxel> {
     public void draw(ImageInteger image, int label, BoundingBox offset) {
         if (voxels !=null) {
             logger.trace("drawing from VOXELS of object: {} with label: {} on image: {} ", this, label, image);
-            int offX = -mask.getOffsetX()+offset.getxMin();
-            int offY = -mask.getOffsetY()+offset.getyMin();
-            int offZ = -mask.getOffsetZ()+offset.getzMin();
+            int offX = -getBounds().getxMin()+offset.getxMin();
+            int offY = -getBounds().getyMin()+offset.getyMin();
+            int offZ = -getBounds().getzMin()+offset.getzMin();
             for (T v : getVoxels()) image.setPixel(v.x+offX, v.y+offY, v.getZ()+offZ, label);
         }
         else {
@@ -196,9 +196,9 @@ public class Object3D<T extends Voxel> {
     }
     
     public boolean is3D() {
-        if (mask!=null) return mask.getSizeZ()>1;
+        if (!voxels.isEmpty()) return (voxels.get(0) instanceof Voxel3D);
+        else if (mask!=null) return mask.getSizeZ()>1;
         else if (bounds!=null) return bounds.getSizeZ()>1;
-        else if (!voxels.isEmpty()) return (voxels.get(0) instanceof Voxel3D);
         else return false;
     }
     

@@ -66,11 +66,11 @@ public class ProcessingChain extends SimpleContainerParameter {
     }
     
     public void addPreFilters(PreFilter... preFilter) {
-        for (PreFilter p : preFilter) this.preFilters.insert(new PluginParameter<PreFilter>("Pre-Filter", false, PreFilter.class, p));
+        for (PreFilter p : preFilter) this.preFilters.insert(new PluginParameter<PreFilter>("Pre-Filter", PreFilter.class, p, false));
     }
     
     public void addPostFilters(PostFilter... postFilter) {
-        for (PostFilter p : postFilter) this.postFilters.insert(new PluginParameter<PostFilter>("Post-Filter", false, PostFilter.class, p));
+        for (PostFilter p : postFilter) this.postFilters.insert(new PluginParameter<PostFilter>("Post-Filter", PostFilter.class, p, false));
     }
     
     @Override

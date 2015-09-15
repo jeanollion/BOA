@@ -67,28 +67,32 @@ public class RootTrackNode implements TreeNode {
     public TreeMap<Integer, ArrayList<StructureObject>> getRemainingTrackHeads() {
         if (remainingTrackHeadsTM==null) {
             StructureObject[] trackHeads = generator.objectDAO.getTrackHeads(getParentTrackHead(), structureIdx);
-            
-            HashMap<Integer, ArrayList<StructureObject>> map  = new HashMap<Integer, ArrayList<StructureObject>> (trackHeads[trackHeads.length-1].getTimePoint()-trackHeads[0].getTimePoint()+1);
-            int currentTimePoint = trackHeads[0].getTimePoint();
-            int lastIdx = 0;
-            int currentIdx = 1;
-            while (currentIdx<trackHeads.length) {
-                if (trackHeads[currentIdx].getTimePoint()>currentTimePoint) {
-                    ArrayList<StructureObject> currentHeads = new ArrayList<StructureObject>(currentIdx-lastIdx);
-                    for (int i = lastIdx; i<currentIdx; ++i) currentHeads.add(trackHeads[i]);
-                    map.put(currentTimePoint, currentHeads);
-                    lastIdx=currentIdx;
-                    currentTimePoint = trackHeads[currentIdx].getTimePoint();
+            remainingTrackHeadsTM = new TreeMap<Integer, ArrayList<StructureObject>>();
+            if (trackHeads.length==0) {
+                logger.trace("structure: {} no trackHeads found", structureIdx);
+            } else {
+                HashMap<Integer, ArrayList<StructureObject>> map  = new HashMap<Integer, ArrayList<StructureObject>> (trackHeads[trackHeads.length-1].getTimePoint()-trackHeads[0].getTimePoint()+1);
+                int currentTimePoint = trackHeads[0].getTimePoint();
+                int lastIdx = 0;
+                int currentIdx = 1;
+                while (currentIdx<trackHeads.length) {
+                    if (trackHeads[currentIdx].getTimePoint()>currentTimePoint) {
+                        ArrayList<StructureObject> currentHeads = new ArrayList<StructureObject>(currentIdx-lastIdx);
+                        for (int i = lastIdx; i<currentIdx; ++i) currentHeads.add(trackHeads[i]);
+                        map.put(currentTimePoint, currentHeads);
+                        lastIdx=currentIdx;
+                        currentTimePoint = trackHeads[currentIdx].getTimePoint();
+                    }
+                    currentIdx++;
                 }
-                currentIdx++;
+                // put last portion in map:
+                ArrayList<StructureObject> currentHeads = new ArrayList<StructureObject>(currentIdx-lastIdx);
+                for (int i = lastIdx; i<currentIdx; ++i) currentHeads.add(trackHeads[i]);
+                map.put(currentTimePoint, currentHeads);
+
+                if (logger.isTraceEnabled()) logger.trace("number of trackHeads found: {} number of distinct timePoints: {}", trackHeads.length, map.size());
+                remainingTrackHeadsTM = new TreeMap<Integer, ArrayList<StructureObject>>(map);
             }
-            // put last portion in map:
-            ArrayList<StructureObject> currentHeads = new ArrayList<StructureObject>(currentIdx-lastIdx);
-            for (int i = lastIdx; i<currentIdx; ++i) currentHeads.add(trackHeads[i]);
-            map.put(currentTimePoint, currentHeads);
-            
-            if (logger.isTraceEnabled()) logger.trace("number of trackHeads found: {} number of distinct timePoints: {}", trackHeads.length, map.size());
-            remainingTrackHeadsTM = new TreeMap<Integer, ArrayList<StructureObject>>(map);
         }
         return remainingTrackHeadsTM;
     }

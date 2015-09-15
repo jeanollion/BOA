@@ -17,20 +17,21 @@
  */
 package plugins.plugins.thresholders;
 
+import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
-import configuration.parameters.PluginParameter;
 import dataStructure.objects.StructureObjectProcessing;
 import image.Image;
-import plugins.PreFilter;
 import plugins.Thresholder;
 
 /**
  *
  * @author jollion
  */
-public class DummyThresholder1 implements Thresholder {
+public class ConstantValue implements Thresholder {
+    NumberParameter value = new NumberParameter("Value:", 2, 1);
+    
     public Parameter[] getParameters() {
-        return new Parameter[]{new PluginParameter("PreProcessing", PreFilter.class, false)};
+        return new Parameter[]{value};
     }
 
     public boolean does3D() {
@@ -38,6 +39,7 @@ public class DummyThresholder1 implements Thresholder {
     }
 
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
-        return 0;
+        return value.getValue().doubleValue();
     }
+    
 }

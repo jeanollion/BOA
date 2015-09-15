@@ -198,6 +198,10 @@ public class BoundingBox {
         return this;
     }
     
+    public BoundingBox translateToOrigin() {
+        return translate(-xMin, -yMin, -zMin);
+    }
+    
     public int getxMin() {
         return xMin;
     }
@@ -236,6 +240,28 @@ public class BoundingBox {
     
     public int getSizeZ() {
         return zMax-zMin+1;
+    }
+    
+    public double getXMean() {
+        return xMin+getSizeX()/2.0;
+    }
+    
+    public double getYMean() {
+        return yMin+getSizeY()/2.0;
+    }
+    
+    public double getZMean() {
+        return zMin+getSizeZ()/2.0;
+    }
+    
+    public boolean intersect(BoundingBox other) {
+        if (getSizeZ()==0 && other.getSizeZ()==0) return Math.max(xMin, other.xMin)<Math.min(xMax, other.xMax) && Math.max(yMin, other.yMin)<Math.min(yMax, other.yMax);
+        else return Math.max(xMin, other.xMin)<Math.min(xMax, other.xMax) && Math.max(yMin, other.yMin)<Math.min(yMax, other.yMax) && Math.max(zMin, other.zMin)<Math.min(zMax, other.zMax);
+    }
+    
+    public BoundingBox getIntersection(BoundingBox other) {
+        if (!intersect(other)) return new BoundingBox();
+        else return new BoundingBox(Math.max(xMin, other.xMin), Math.min(xMax, other.xMax), Math.max(yMin, other.yMin), Math.min(yMax, other.yMax) , Math.max(zMin, other.zMin), Math.min(zMax, other.zMax));
     }
     
     @Override

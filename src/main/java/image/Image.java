@@ -80,10 +80,13 @@ public abstract class Image implements ImageProperties {
         int offSource = 0;
         for (int z = 0; z<source.sizeZ; ++z) {
             for (int y = 0 ; y<source.sizeY; ++y) {
+                //logger.trace("paste imate: z source: {}, z dest: {}, y source: {} y dest: {} off source: {} off dest: {} size source: {} size dest: {}", z, z+offset.zMin, y, y+offset.yMin, offSource, off, ((byte[])sourceP[z]).length, ((byte[])destP[z+offset.zMin]).length);
                 System.arraycopy(sourceP[z], offSource, destP[z+offset.zMin], off, source.sizeX);
                 off+=sizeX;
                 offSource+=source.sizeX;
             }
+            off=sizeX*offset.yMin+offset.xMin;
+            offSource=0;
         }
     }
     

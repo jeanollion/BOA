@@ -40,7 +40,7 @@ import javax.swing.tree.TreeNode;
  *
  * @author nasique
  */
-public class ObjectNode implements TreeNode, UIContainer {
+public class ObjectNode implements TreeNode, UIContainer, StructureNodeContainer {
     StructureObject data;
     StructureNode parent;
     StructureNode[] children;
@@ -57,6 +57,8 @@ public class ObjectNode implements TreeNode, UIContainer {
     public StructureObjectTreeGenerator getGenerator() {
         return parent.getGenerator();
     }
+    
+    public StructureObject getData() {return data;}
     
     public void loadAllChildObjects(int[] pathToChildStructureIdx, int currentIdxInPath) {
         /*int pathIdx; // start from index of current structure in the path, if present

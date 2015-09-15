@@ -34,29 +34,43 @@ import java.util.Map.Entry;
  *
  * @author jollion
  */
-public class MultipleStructureObjectMask extends ImageObjectInterface {
+public class StructureObjectMask extends ImageObjectInterface {
     BoundingBox[] offsets;
     ArrayList<StructureObject> objects;
     
-    public MultipleStructureObjectMask(StructureObject parent, int childStructureIdx) {
+    public StructureObjectMask(StructureObject parent, int childStructureIdx) {
         super(parent, childStructureIdx);
-        int[] path = parent.getExperiment().getPathToStructure(parent.getStructureIdx(), childStructureIdx);
-        objects = StructureObjectUtils.getAllObjects(parent, path);
-        offsets=new BoundingBox[objects.size()];
-        for (int i = 0; i<offsets.length; ++i) offsets[i]=objects.get(i).getRelativeBoundingBox(parent);
+        if (childStructureIdx==parent.getStructureIdx()) {
+            objects=new ArrayList<StructureObject>(1);
+            objects.add(parent);
+            offsets=new BoundingBox[1];
+            offsets[0]=parent.getRelativeBoundingBox(parent);
+        } else {
+            int[] path = parent.getExperiment().getPathToStructure(parent.getStructureIdx(), childStructureIdx);
+            objects = StructureObjectUtils.getAllObjects(parent, path);
+            offsets=new BoundingBox[objects.size()];
+            for (int i = 0; i<offsets.length; ++i) offsets[i]=objects.get(i).getRelativeBoundingBox(parent);
+        }
     }
     
-    public MultipleStructureObjectMask(StructureObject parent, int childStructureIdx, BoundingBox offset) {
+    public StructureObjectMask(StructureObject parent, int childStructureIdx, BoundingBox offset) {
         super(parent, childStructureIdx);
-        int[] path = parent.getExperiment().getPathToStructure(parent.getStructureIdx(), childStructureIdx);
-        objects = StructureObjectUtils.getAllObjects(parent, path);
-        offsets=new BoundingBox[objects.size()];
-        for (int i = 0; i<offsets.length; ++i) offsets[i]=objects.get(i).getRelativeBoundingBox(parent).translate(offset.getxMin(), offset.getyMin(), offset.getzMin());
+        if (childStructureIdx==parent.getStructureIdx()) {
+            objects=new ArrayList<StructureObject>(1);
+            objects.add(parent);
+            offsets=new BoundingBox[1];
+            offsets[0]=parent.getRelativeBoundingBox(parent).translate(offset.getxMin(), offset.getyMin(), offset.getzMin());
+        } else {
+            int[] path = parent.getExperiment().getPathToStructure(parent.getStructureIdx(), childStructureIdx);
+            objects = StructureObjectUtils.getAllObjects(parent, path);
+            offsets=new BoundingBox[objects.size()];
+            for (int i = 0; i<offsets.length; ++i) offsets[i]=objects.get(i).getRelativeBoundingBox(parent).translate(offset.getxMin(), offset.getyMin(), offset.getzMin());
+        }
     }
 
     @Override
     public StructureObject getClickedObject(int x, int y, int z) {
-        for (int i = 0; i<offsets.length; ++i) if (offsets[i].contains(x, y, z)) if (objects.get(i).getMask().insideMask(x, y, z)) return objects.get(i);
+        for (int i = 0; i<offsets.length; ++i) if (offsets[i].contains(x, y, z)) if (objects.get(i).getMask().insideMask(x-offsets[i].getxMin(), y-offsets[i].getyMin(), z-offsets[i].getzMin())) return objects.get(i);
         return null;
     }
 

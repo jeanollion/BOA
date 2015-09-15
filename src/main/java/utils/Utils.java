@@ -18,6 +18,7 @@
 package utils;
 
 import de.caluga.morphium.Morphium;
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -102,5 +103,17 @@ public class Utils {
             }
             i++;
         }
+    }
+    
+    public static Color[] generatePalette(int colorNb) {
+        Color[] res = new Color[colorNb];
+        double goldenRatioConjugate = 0.618033988749895;
+        double h = 0.1;
+        for(int i = 0; i <colorNb; ++i) {
+            res[i] = Color.getHSBColor((float)h, 0.99f, 0.99f);
+            h+=goldenRatioConjugate;
+            h%=1;
+        }
+        return res;
     }
 }

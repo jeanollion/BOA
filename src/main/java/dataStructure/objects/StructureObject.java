@@ -255,19 +255,18 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     
     public BoundingBox getRelativeBoundingBox(StructureObject stop) throws RuntimeException {
         if (stop==null) stop=getRoot();
-        StructureObject nextParent=this;
         BoundingBox res = getObject().getBounds().duplicate();
         logger.debug("relative bounding box: from: {} to {}", this, stop);
         logger.debug("init bounds: {}", res);
-        if (this.equals(stop)) return res;
-        do {
-            nextParent=nextParent.getParent();
-            if (nextParent==null) throw new RuntimeException("GetRelativeBoundingBoxError: stop structure object is not in parent tree");
+        if (this.equals(stop)) return res.translateToOrigin();
+        StructureObject nextParent=this.getParent();
+        while(!stop.equals(nextParent)) {
             res.addOffset(nextParent.getObject().getBounds());
             logger.debug("bounds + offset {} from {}", res, nextParent);
-            if (!stop.equals(nextParent) && nextParent.getId().equals(stop.getId())) logger.error("stop condition cannot be reached: stop ({}) and parent ({}) not equals but same object", stop, nextParent);
-        } while(!stop.equals(nextParent));
-        
+            nextParent=nextParent.getParent();
+            if (nextParent==null) throw new RuntimeException("GetRelativeBoundingBoxError: stop structure object is not in parent tree");
+            //if (!stop.equals(nextParent) && nextParent.getId().equals(stop.getId())) logger.error("stop condition cannot be reached: stop ({}) and parent ({}) not equals but same object", stop, nextParent);
+        }
         return res;
     }
     

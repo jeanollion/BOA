@@ -133,6 +133,14 @@ public class TrackNode implements TreeNode, UIContainer {
         return Collections.enumeration(getChildren());
     }
     
+    public void loadAllObjects(StructureObject object, int [] pathToChildStructureIdx) {
+        root.generator.controller.objectGenerator.getObjectNode(object).loadAllChildObjects(pathToChildStructureIdx, 0);
+    }
+    
+    public void loadAllTrackObjects(int[] pathToChildStructureIdx) {
+        for (StructureObject o : track) loadAllObjects(o, pathToChildStructureIdx);
+    }
+    
     class TrackNodeUI {
         TrackNode trackNode;
         JMenuItem[] actions;
@@ -145,7 +153,7 @@ public class TrackNode implements TreeNode, UIContainer {
             actions[0].setAction(new AbstractAction("Open Track Mask") {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
-                        logger.debug("opening track mask for structure: {}", trackHead.getStructureIdx());
+                        logger.debug("opening track mask");
                         ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, trackHead.getStructureIdx());
                         ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true);
                     }
@@ -162,6 +170,8 @@ public class TrackNode implements TreeNode, UIContainer {
                         @Override
                         public void actionPerformed(ActionEvent ae) {
                             if (logger.isDebugEnabled()) logger.debug("opening track mask for structure: {} of idx: {} from structure idx: {}", ae.getActionCommand(), getStructureIdx(ae.getActionCommand(), openRaw), trackNode.trackHead.getStructureIdx());
+                            int[] path = trackNode.trackHead.getExperiment().getPathToStructure(trackNode.trackHead.getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
+                            trackNode.loadAllTrackObjects(path);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, getStructureIdx(ae.getActionCommand(), openRaw));
                             ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true);
                         }
@@ -179,6 +189,8 @@ public class TrackNode implements TreeNode, UIContainer {
                         @Override
                         public void actionPerformed(ActionEvent ae) {
                             if (logger.isDebugEnabled()) logger.debug("opening track raw image for structure: {} of idx: {}", ae.getActionCommand(), getStructureIdx(ae.getActionCommand(), openRaw));
+                            int[] path = trackNode.trackHead.getExperiment().getPathToStructure(trackNode.trackHead.getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
+                            trackNode.loadAllTrackObjects(path);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, getStructureIdx(ae.getActionCommand(), openRaw));
                             ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(getStructureIdx(ae.getActionCommand(), openRaw)), i, true);
                         }

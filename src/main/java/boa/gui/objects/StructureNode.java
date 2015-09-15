@@ -40,7 +40,7 @@ import javax.swing.tree.TreeNode;
  * @author nasique
  */
 public class StructureNode implements TreeNode, UIContainer {
-    TreeNode parent; // can be either TimePointNode or ObjectNode
+    StructureNodeContainer parent; // can be either TimePointNode or ObjectNode
     ObjectNode[] children;
     int idx;
     
@@ -74,7 +74,7 @@ public class StructureNode implements TreeNode, UIContainer {
     }
     
     public StructureObject getParentObject() {
-        return (parent instanceof TimePointNode) ? ((TimePointNode)parent).getData() : ((ObjectNode)parent).data;
+        return parent.getData();
     }
     
     public TimePointNode getTimePointNode() {
@@ -87,7 +87,7 @@ public class StructureNode implements TreeNode, UIContainer {
     }
     
     public StructureObjectTreeGenerator getGenerator() {
-        return (parent instanceof TimePointNode) ? ((TimePointNode)parent).getGenerator() : ((ObjectNode)parent).getGenerator();
+        return parent.getGenerator();
     }
     
     
@@ -110,7 +110,7 @@ public class StructureNode implements TreeNode, UIContainer {
         return getChildren().length;
     }
 
-    public TreeNode getParent() {
+    public StructureNodeContainer getParent() {
         return parent;
     }
 
@@ -163,8 +163,7 @@ public class StructureNode implements TreeNode, UIContainer {
                         public void actionPerformed(ActionEvent ae) {
                             if (logger.isDebugEnabled()) logger.debug("opening segmented image for structure: {} of idx: {} from structure idx: {}", ae.getActionCommand(), getStructureIdx(ae.getActionCommand(), openRaw), structureNode.getParentObject().getStructureIdx());
                             int[] path = structureNode.getParentObject().getExperiment().getPathToStructure(structureNode.getParentObject().getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
-                            if (parent instanceof TimePointNode) ((TimePointNode)parent).loadAllChildObjects(path);
-                            else ((ObjectNode)parent).loadAllChildObjects(path, 0);
+                            parent.loadAllChildObjects(path, 0);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(structureNode.getParentObject(), getStructureIdx(ae.getActionCommand(), openRaw));
                             ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true);
                         }
@@ -184,8 +183,7 @@ public class StructureNode implements TreeNode, UIContainer {
                         public void actionPerformed(ActionEvent ae) {
                             if (logger.isDebugEnabled()) logger.debug("opening input image for structure: {} of idx: {}", ae.getActionCommand(), getStructureIdx(ae.getActionCommand(), openRaw));
                             int[] path = structureNode.getParentObject().getExperiment().getPathToStructure(structureNode.getParentObject().getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
-                            if (parent instanceof TimePointNode) ((TimePointNode)parent).loadAllChildObjects(path);
-                            else ((ObjectNode)parent).loadAllChildObjects(path, 0);
+                            parent.loadAllChildObjects(path, 0);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(structureNode.getParentObject(), getStructureIdx(ae.getActionCommand(), openRaw));
                             ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(getStructureIdx(ae.getActionCommand(), openRaw)), i, true);
                         }

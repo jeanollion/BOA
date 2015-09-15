@@ -59,12 +59,12 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         super.initChildren();
     }
     
-    public PluginParameter(String name, Class<T> pluginType, boolean allowNoSelection, String defautlMethod) {
+    public PluginParameter(String name, Class<T> pluginType, String defautlMethod, boolean allowNoSelection) {
         this(name, pluginType, allowNoSelection);
         this.pluginName=defautlMethod; // do not call setPlugin Method because plugins are no initiated at startup
     }
     
-    public PluginParameter(String name, boolean allowNoSelection, Class<T> pluginType, T pluginInstance) {
+    public PluginParameter(String name, Class<T> pluginType, T pluginInstance, boolean allowNoSelection) {
         this(name, pluginType, allowNoSelection);
         setPlugin(pluginInstance);
     }

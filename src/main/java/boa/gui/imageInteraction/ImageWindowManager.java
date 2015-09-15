@@ -19,8 +19,10 @@ package boa.gui.imageInteraction;
 
 import static boa.gui.GUI.logger;
 import dataStructure.objects.StructureObject;
+import ij.ImagePlus;
 import image.Image;
 import image.ImageInteger;
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -60,8 +62,7 @@ public abstract class ImageWindowManager<T> {
     public ImageObjectInterface getImageObjectInterface(StructureObject parent, int childStructureIdx) {
         ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parent, childStructureIdx, false));
         if (i==null) {
-            if (parent.getStructureIdx()==childStructureIdx) i= new SingleStructureObjectMask(parent);
-            else i= new MultipleStructureObjectMask(parent, childStructureIdx);
+            i= new StructureObjectMask(parent, childStructureIdx);
             imageObjectInterfaces.put(new ImageObjectInterfaceKey(parent, childStructureIdx, false), i);
         } 
         return i;
@@ -97,4 +98,5 @@ public abstract class ImageWindowManager<T> {
     
     public abstract void selectObjects(T image, boolean addToCurrentSelection, StructureObject... selectedObjects);
     public abstract void unselectObjects(T image);
+    public abstract void displayTrack(ImagePlus image, boolean addToCurrentSelectedTracks, StructureObject[] track, Color color);
 }

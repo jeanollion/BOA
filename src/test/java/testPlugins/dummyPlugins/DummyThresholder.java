@@ -19,6 +19,8 @@ package testPlugins.dummyPlugins;
 
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
+import dataStructure.objects.StructureObjectProcessing;
+import image.Image;
 import plugins.Thresholder;
 
 /**
@@ -34,5 +36,7 @@ public class DummyThresholder implements Thresholder {
     public boolean does3D() {
         return true;
     }
-    
+    public double runThresholder(Image input, StructureObjectProcessing structureObject) {
+        return 0;
+    }
 }

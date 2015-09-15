@@ -223,11 +223,13 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     public int[] getPathToStructure(int startStructureIdx, int stopStructureIdx) {
         ArrayList<Integer> pathToStructure = new ArrayList<Integer>(this.getStructureNB());
         pathToStructure.add(stopStructureIdx);
-        int p = getStructure(stopStructureIdx).getParentStructure();
-        while(p!=startStructureIdx) {
-            if (p<0) return new int[0]; // no path found between structures
-            pathToStructure.add(p);
-            p=getStructure(p).getParentStructure();
+        if (startStructureIdx!=stopStructureIdx) {
+            int p = getStructure(stopStructureIdx).getParentStructure();
+            while(p!=startStructureIdx) {
+                if (p<0) return new int[0]; // no path found between structures
+                pathToStructure.add(p);
+                p=getStructure(p).getParentStructure();
+            }
         }
         return toArray(pathToStructure, true);
     }

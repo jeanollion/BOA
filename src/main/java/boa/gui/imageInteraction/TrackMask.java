@@ -17,6 +17,7 @@
  */
 package boa.gui.imageInteraction;
 
+import static boa.gui.GUI.logger;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import dataStructure.objects.StructureObject;
@@ -40,14 +41,14 @@ import javax.swing.SwingUtilities;
  */
 public class TrackMask extends ImageObjectInterface {
     final BoundingBox[] trackOffset;
-    final MultipleStructureObjectMask[] trackObjects;
+    final StructureObjectMask[] trackObjects;
     final int maxParentY, maxParentZ;
     static final int intervalX=5;
     
     public TrackMask(StructureObject[] parentTrack, int childStructureIdx) {
         super(parentTrack[0], childStructureIdx);
         trackOffset = new BoundingBox[parentTrack.length];
-        trackObjects = new MultipleStructureObjectMask[parentTrack.length];
+        trackObjects = new StructureObjectMask[parentTrack.length];
         int maxY=0, maxZ=0;
         for (int i = 0; i<parentTrack.length; ++i) { // compute global Y and Z max to center parent masks
             if (maxY<parentTrack[i].getObject().getBounds().getSizeY()) maxY=parentTrack[i].getObject().getBounds().getSizeY();
@@ -55,13 +56,14 @@ public class TrackMask extends ImageObjectInterface {
         }
         maxParentY=maxY;
         maxParentZ=maxZ;
-        
+        logger.trace("track mask image object: max parent Y-size: {} z-size: {}", maxParentY, maxParentZ);
         int currentOffsetX=0;
         for (int i = 0; i<parentTrack.length; ++i) {
-            trackOffset[i] = parentTrack[i].getBounds().duplicate();
+            trackOffset[i] = parentTrack[i].getBounds().duplicate().translateToOrigin();
             trackOffset[i].translate(currentOffsetX, (int)(maxParentY/2.0-trackOffset[i].getSizeY()/2.0), (int)(maxParentZ/2.0-trackOffset[i].getSizeZ()/2.0));
-            trackObjects[i] = new MultipleStructureObjectMask(parentTrack[i], childStructureIdx, trackOffset[i]);
-            currentOffsetX+=intervalX+parentTrack[i].getObject().getBounds().getSizeX();
+            trackObjects[i] = new StructureObjectMask(parentTrack[i], childStructureIdx, trackOffset[i]);
+            currentOffsetX+=intervalX+trackOffset[i].getSizeX();
+            logger.trace("current index: {}, current bounds: {} current offsetX: {}", i, trackOffset[i], currentOffsetX);
         }
     }
     
@@ -81,7 +83,7 @@ public class TrackMask extends ImageObjectInterface {
     }
     
     private StructureObject getParent(StructureObject object) { // le parent n'est pas forcément direct
-        StructureObject p=object.getParent();
+        StructureObject p=object;
         while(p.getStructureIdx()!=parent.getStructureIdx()) p=p.getParent();
         return p;
     }
@@ -93,35 +95,43 @@ public class TrackMask extends ImageObjectInterface {
     @Override
     public ImageInteger generateImage() {
         int maxLabel = 0; 
-        for (MultipleStructureObjectMask o : trackObjects) {
+        for (StructureObjectMask o : trackObjects) {
             int label = o.getMaxLabel();
             if (label>maxLabel) maxLabel = label;
         }
         final ImageInteger displayImage = ImageInteger.createEmptyLabelImage("TimeLapse Image of structure: "+childStructureIdx, maxLabel, new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, this.maxParentZ).setCalibration(parent.getMaskProperties().getScaleXY(), parent.getMaskProperties().getScaleZ()));
+        trackObjects[0].draw(displayImage);
         // draw image in another thread..
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
-                for (int i = 0; i<trackObjects.length; ++i) trackObjects[i].draw(displayImage);
+                for (int i = 1; i<trackObjects.length; ++i) trackObjects[i].draw(displayImage);
             }
         });
         SwingUtilities.invokeLater(t);
         return displayImage;
     }
     
+    
     @Override public Image generateRawImage(final int structureIdx) {
         final Image displayImage =  Image.createEmptyImage("TimeLapse Image of structure: "+structureIdx, trackObjects[0].generateRawImage(structureIdx), new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, this.maxParentZ).setCalibration(parent.getMaskProperties().getScaleXY(), parent.getMaskProperties().getScaleZ()));
+        displayImage.pasteImage(trackObjects[0].generateRawImage(structureIdx), trackOffset[0]);
         // draw image in another thread..
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
-                for (int i = 0; i<trackObjects.length; ++i) {
+                for (int i = 1; i<trackObjects.length; ++i) {
                     displayImage.pasteImage(trackObjects[i].generateRawImage(structureIdx), trackOffset[i]);
                 }
             }
         });
         SwingUtilities.invokeLater(t);
         return displayImage;
+    }
+    
+    public boolean containsTrack(StructureObject trackHead) {
+        if (childStructureIdx==parent.getStructureIdx()) return trackHead.getStructureIdx()==this.childStructureIdx && trackHead.getTrackHeadId().equals(this.parent.getId());
+        else return trackHead.getStructureIdx()==this.childStructureIdx && trackHead.getParentTrackHeadId().equals(this.parent.getId());
     }
 
     @Override

@@ -15,29 +15,18 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugins.plugins.thresholders;
+package boa.gui.objects;
 
-import configuration.parameters.Parameter;
-import configuration.parameters.PluginParameter;
-import dataStructure.objects.StructureObjectProcessing;
-import image.Image;
-import plugins.PreFilter;
-import plugins.Thresholder;
+import dataStructure.objects.StructureObject;
+import javax.swing.tree.TreeNode;
 
 /**
  *
  * @author jollion
  */
-public class DummyThresholder1 implements Thresholder {
-    public Parameter[] getParameters() {
-        return new Parameter[]{new PluginParameter("PreProcessing", PreFilter.class, false)};
-    }
-
-    public boolean does3D() {
-        return true;
-    }
-
-    public double runThresholder(Image input, StructureObjectProcessing structureObject) {
-        return 0;
-    }
+public interface StructureNodeContainer extends TreeNode {
+    public void loadAllChildObjects(int[] pathToChildStructureIdx, int currentIdxInPath);
+    public StructureObject getData();
+    public StructureObjectTreeGenerator getGenerator();
+    public StructureNode getStructureNode(int structureIdx);
 }

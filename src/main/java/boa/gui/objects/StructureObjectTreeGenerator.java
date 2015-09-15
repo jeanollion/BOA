@@ -101,10 +101,11 @@ public class StructureObjectTreeGenerator {
     }
     
     public void selectObject(StructureObject object) {
-        if (object==null) {
-            tree.setSelectionRow(-1);
-            return;
-        }
+        if (object==null) tree.setSelectionRow(-1);
+        else tree.setSelectionPath(getObjectTreePath(object));
+    }
+    
+    public TreePath getObjectTreePath(StructureObject object) {
         ArrayList<TreeNode> path = new ArrayList<TreeNode>(); 
         path.add(experimentNode);
         FieldNode f = experimentNode.getFieldNode(object.getFieldName());
@@ -112,16 +113,28 @@ public class StructureObjectTreeGenerator {
         TimePointNode t = f.getChildren()[object.getTimePoint()];
         path.add(t);
         ArrayList<StructureObject> objectPath = getObjectPath(object);
-        TreeNode lastStructureContainer = t;
+        StructureNodeContainer lastStructureContainer = t;
         for (StructureObject o : objectPath) {
-            StructureNode s = lastStructureContainer instanceof TimePointNode? ((TimePointNode)lastStructureContainer).getStructureNode(o.getStructureIdx()) : ((ObjectNode)lastStructureContainer).getStructureNode(o.getStructureIdx());
+            StructureNode s = lastStructureContainer.getStructureNode(o.getStructureIdx());
             path.add(s);
-            //logger.trace("get treepath: current structureObjectIdx: {} current structureNode: {}", o.getStructureIdx(), s);
             ObjectNode on = s.getChildren()[o.getIdx()];
             path.add(on);
             lastStructureContainer=on;
         }
-        tree.setSelectionPath(new TreePath(path.toArray(new TreeNode[path.size()])));
+        return new TreePath(path.toArray(new TreeNode[path.size()]));
+    }
+    
+    public ObjectNode getObjectNode(StructureObject object) {
+        FieldNode f = experimentNode.getFieldNode(object.getFieldName());
+        TimePointNode t = f.getChildren()[object.getTimePoint()];
+        ArrayList<StructureObject> objectPath = getObjectPath(object);
+        StructureNodeContainer lastStructureContainer = t;
+        for (StructureObject o : objectPath) {
+            StructureNode s = lastStructureContainer.getStructureNode(o.getStructureIdx());
+            ObjectNode on = s.getChildren()[o.getIdx()];
+            lastStructureContainer=on;
+        }
+        return (ObjectNode)lastStructureContainer;
     }
     
     private ArrayList<StructureObject> getObjectPath(StructureObject object) {

@@ -28,7 +28,7 @@ import javax.swing.tree.TreeNode;
  *
  * @author nasique
  */
-public class TimePointNode implements TreeNode, UIContainer {
+public class TimePointNode implements TreeNode, UIContainer, StructureNodeContainer {
     FieldNode parent;
     int timePoint;
     private StructureNode[] children;
@@ -68,7 +68,8 @@ public class TimePointNode implements TreeNode, UIContainer {
         return null;
     }
     
-    public void loadAllChildObjects(int[] pathToChildStructureIdx) {
+    public void loadAllChildObjects(int[] pathToChildStructureIdx, int currentIdxInPath) {
+        if (pathToChildStructureIdx.length<=1) return;
         int childIdx = getChildStructureIdx(pathToChildStructureIdx[0]);
         if (childIdx>=0) for (ObjectNode o : children[childIdx].getChildren()) o.loadAllChildObjects(pathToChildStructureIdx, 1);
         else logger.warn("could not loadAllChildObjects: structure {} not in children [ pathToChildStructureIdx: {} from root object ] ", pathToChildStructureIdx[0], pathToChildStructureIdx);

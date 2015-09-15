@@ -36,10 +36,12 @@ public class TrackTreeController {
     ExperimentDAO xpDAO;
     HashMap<Integer, TrackTreeGenerator> generatorS;
     int[] structurePathToRoot;
+    StructureObjectTreeGenerator objectGenerator;
     
-    public TrackTreeController(ObjectDAO objectDAO, ExperimentDAO xpDAO) {
+    public TrackTreeController(ObjectDAO objectDAO, ExperimentDAO xpDAO, StructureObjectTreeGenerator objectGenerator) {
         this.objectDAO = objectDAO;
         this.xpDAO = xpDAO;   
+        this.objectGenerator=objectGenerator;
     }
     
     public void setStructure(int structureIdx) {

@@ -38,8 +38,8 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         super(name, pluginType, allowNoSelection);
     }
     
-    public TransformationPluginParameter(String name, Class<T> pluginType, boolean allowNoSelection, String defaultMethod) {
-        super(name, pluginType, allowNoSelection, defaultMethod);
+    public TransformationPluginParameter(String name, Class<T> pluginType, String defaultMethod, boolean allowNoSelection) {
+        super(name, pluginType, defaultMethod, allowNoSelection);
     }
     
     // constructeur désactivé car la methode setPlugin a besoin de l'experience

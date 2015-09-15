@@ -26,10 +26,19 @@ import boa.gui.objects.StructureObjectTreeGenerator;
 import boa.gui.objects.TrackNode;
 import boa.gui.objects.TrackTreeController;
 import boa.gui.objects.TrackTreeGenerator;
+import configuration.parameters.NumberParameter;
+import core.Processor;
+import dataStructure.configuration.ChannelImage;
+import dataStructure.configuration.Structure;
 import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectUtils;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
+import image.ImageByte;
+import image.ImageFormat;
+import image.ImageWriter;
 import java.awt.Dimension;
+import java.io.File;
 import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -42,6 +51,10 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import plugins.PluginFactory;
+import plugins.plugins.trackers.TrackerObjectIdx;
+import plugins.plugins.segmenters.SimpleThresholder;
+import plugins.plugins.thresholders.ConstantValue;
 import utils.MorphiumUtils;
 import static utils.Utils.addHorizontalScrollBar;
 
@@ -73,14 +86,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         initComponents();
         addHorizontalScrollBar(trackStructureJCB);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        initDB();
-        
+        //initDB();
+        this.initDBImages();
         structureObjectTreeGenerator = new StructureObjectTreeGenerator(objectDAO, xpDAO);
         structureJSP.setViewportView(structureObjectTreeGenerator.getTree());
         structureJSP.getViewport().setOpaque(false);
         structureJSP.setOpaque(false);
         
-        trackTreeController = new TrackTreeController(objectDAO, xpDAO);
+        trackTreeController = new TrackTreeController(objectDAO, xpDAO, structureObjectTreeGenerator);
         setTrackTreeStructures(xpDAO.getExperiment().getStructuresAsString());
     }
     
@@ -161,7 +174,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             cfg.setDatabase("testdb");
             cfg.addHost("localhost", 27017);
             m=new Morphium(cfg);
-            
             xpDAO = new ExperimentDAO(m);
             objectDAO = new ObjectDAO(m, xpDAO);
             Experiment xp = xpDAO.getExperiment();
@@ -176,6 +188,63 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         } catch (UnknownHostException ex) {
             logger.error("db connection error", ex);
         }
+    }
+    
+    private void initDBImages() {
+        try {
+            MorphiumConfig cfg = new MorphiumConfig();
+            cfg.setDatabase("testGUI");
+            cfg.addHost("localhost", 27017);
+            m=new Morphium(cfg);
+            m.clearCollection(Experiment.class);
+            m.clearCollection(StructureObject.class);
+            xpDAO = new ExperimentDAO(m);
+            objectDAO = new ObjectDAO(m, xpDAO);
+            MorphiumUtils.addDereferencingListeners(m, objectDAO, xpDAO);
+            
+            // generate XP
+            Experiment xp = new Experiment("test");
+            ChannelImage cMic = new ChannelImage("ChannelImageMicroChannel");
+            xp.getChannelImages().insert(cMic);
+            ChannelImage cBact = new ChannelImage("ChannelImageBact");
+            xp.getChannelImages().insert(cBact);
+            xp.getStructures().removeAllElements();
+            Structure microChannel = new Structure("MicroChannel", -1, 0);
+            Structure bacteries = new Structure("Bacteries", 0, 1);
+            xp.getStructures().insert(microChannel, bacteries);
+            bacteries.setParentStructure(0);
+            
+            // processing chains
+            PluginFactory.findPlugins("plugins.plugins");
+            microChannel.getProcessingChain().setSegmenter(new SimpleThresholder(new ConstantValue()));
+            bacteries.getProcessingChain().setSegmenter(new SimpleThresholder(new ConstantValue()));
+            
+            // set-up traking
+            microChannel.setTracker(new TrackerObjectIdx());
+            bacteries.setTracker(new TrackerObjectIdx());
+            
+            // set up fields
+            Processor.importFiles(new String[]{"/data/Images/Test/syntheticData.ome.tiff"}, xp);
+            xp.setOutputImageDirectory("/data/Images/Test/Output");
+            
+            // save to morphium
+            xpDAO.store(xp);
+            
+            // process
+            Processor.preProcessImages(xp);
+            StructureObject[] root = xp.getMicroscopyField(0).createRootObjects();
+            objectDAO.store(root); 
+            Processor.trackRoot(xp, root, objectDAO);
+            for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
+                for (int t = 0; t<root.length; ++t) Processor.processStructure(s, root[t], objectDAO); // process
+                for (StructureObject o : StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s))) Processor.track(xp, xp.getStructure(s).getTracker(), o, s, objectDAO); // structure
+            }
+            
+        } catch (UnknownHostException ex) {
+            logger.error("db connection error", ex);
+        }
+        
+        
         
     }
 

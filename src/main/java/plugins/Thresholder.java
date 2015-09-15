@@ -17,10 +17,13 @@
  */
 package plugins;
 
+import dataStructure.objects.StructureObjectProcessing;
+import image.Image;
+
 /**
  *
  * @author jollion
  */
 public interface Thresholder extends Plugin {
-    
+    public double runThresholder(Image input, StructureObjectProcessing structureObject);
 }
