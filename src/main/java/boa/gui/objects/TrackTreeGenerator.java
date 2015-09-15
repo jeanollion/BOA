@@ -17,7 +17,7 @@
  */
 package boa.gui.objects;
 
-import static boa.gui.configuration.ConfigurationTree.addToMenu;
+import static boa.gui.configuration.ConfigurationTreeGenerator.addToMenu;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.objects.ObjectDAO;

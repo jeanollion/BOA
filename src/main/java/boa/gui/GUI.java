@@ -17,6 +17,7 @@
  */
 package boa.gui;
 
+import boa.gui.configuration.ConfigurationTreeGenerator;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageObjectListener;
 import dataStructure.configuration.Experiment;
@@ -71,6 +72,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     ObjectDAO objectDAO;
     Morphium m;
     
+    // xp tree-related attributes
+    ConfigurationTreeGenerator configurationTreeGenerator;
+    
     // track-related attributes
     TrackTreeController trackTreeController;
     private HashMap<Integer, JTree> currentTrees;
@@ -88,10 +92,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         //initDB();
         this.initDBImages();
+        
+        configurationTreeGenerator = new ConfigurationTreeGenerator(xpDAO);
+        configurationJSP.setViewportView(configurationTreeGenerator.getTree());
+        
         structureObjectTreeGenerator = new StructureObjectTreeGenerator(objectDAO, xpDAO);
         structureJSP.setViewportView(structureObjectTreeGenerator.getTree());
-        structureJSP.getViewport().setOpaque(false);
-        structureJSP.setOpaque(false);
         
         trackTreeController = new TrackTreeController(objectDAO, xpDAO, structureObjectTreeGenerator);
         setTrackTreeStructures(xpDAO.getExperiment().getStructuresAsString());
@@ -263,6 +269,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
         jTabbedPane1 = new javax.swing.JTabbedPane();
         ConfigurationPanel = new javax.swing.JPanel();
+        configurationJSP = new javax.swing.JScrollPane();
         DataPanel = new javax.swing.JPanel();
         ControlPanel = new javax.swing.JPanel();
         trackStructureJCB = new javax.swing.JComboBox();
@@ -279,11 +286,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         ConfigurationPanel.setLayout(ConfigurationPanelLayout);
         ConfigurationPanelLayout.setHorizontalGroup(
             ConfigurationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 641, Short.MAX_VALUE)
+            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 641, Short.MAX_VALUE)
         );
         ConfigurationPanelLayout.setVerticalGroup(
             ConfigurationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 448, Short.MAX_VALUE)
+            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 449, Short.MAX_VALUE)
         );
 
         jTabbedPane1.addTab("Configuration", ConfigurationPanel);
@@ -428,6 +435,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JPanel StructurePanel;
     private javax.swing.JScrollPane TimeJSP;
     private javax.swing.JPanel TimePanel;
+    private javax.swing.JScrollPane configurationJSP;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JScrollPane structureJSP;
     private javax.swing.JComboBox trackStructureJCB;

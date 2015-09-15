@@ -17,7 +17,7 @@
  */
 package boa.gui.objects;
 
-import static boa.gui.configuration.ConfigurationTree.addToMenu;
+import static boa.gui.configuration.ConfigurationTreeGenerator.addToMenu;
 import static boa.gui.GUI.logger;
 import boa.gui.configuration.TransparentTreeCellRenderer;
 import dataStructure.configuration.Experiment;

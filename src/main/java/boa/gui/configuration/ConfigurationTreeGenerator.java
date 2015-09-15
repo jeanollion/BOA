@@ -58,21 +58,29 @@ import javax.swing.tree.TreeSelectionModel;
  *
  * @author jollion
  */
-public class ConfigurationTree {
+public class ConfigurationTreeGenerator {
     protected Experiment rootParameter;
     protected ConfigurationTreeModel treeModel;
     protected JTree tree;
-    protected JScrollPane scroll;
     private static final boolean soutParent=false;
+    protected ExperimentDAO xpDAO;
     
-    public ConfigurationTree() {
-        rootParameter = new Experiment("Test Experiment");
-        //rootParameter = getExperiment(); // for test morphia
+    public ConfigurationTreeGenerator(ExperimentDAO xpDAO) {
+        this.xpDAO=xpDAO;
+        rootParameter = xpDAO.getExperiment();
+    }
+    
+    public JTree getTree() {
+        if (tree==null) generateTree();
+        return tree;
+    }
+    
+    private void generateTree() {
         treeModel = new ConfigurationTreeModel(rootParameter);
         tree = new JTree(treeModel);
         treeModel.setJTree(tree);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-        DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
+        DefaultTreeCellRenderer renderer = new TransparentTreeCellRenderer();
         Icon personIcon = null;
         renderer.setLeafIcon(personIcon);
         renderer.setClosedIcon(personIcon);
@@ -126,35 +134,6 @@ public class ConfigurationTree {
                 }
             }
         });
-        
-        scroll = new JScrollPane(tree);
-    }
-    
-    public Experiment getExperiment() {
-        try {
-            MorphiumConfig cfg = new MorphiumConfig();
-            cfg.setDatabase("testdb");
-            cfg.addHost("localhost", 27017);
-            Morphium m=new Morphium(cfg);
-            ExperimentDAO dao = new ExperimentDAO(m);
-            Experiment xp = dao.getExperiment();
-            
-            if (xp==null) {
-                xp = new Experiment("xp test UI");
-                m.store(xp);
-                m=new Morphium(cfg);
-                dao = new ExperimentDAO(m);
-                xp = dao.getExperiment();
-            }
-            return xp;
-        } catch (UnknownHostException ex) {
-            Logger.getLogger(ConfigurationTree.class.getName()).log(Level.SEVERE, null, ex);
-            return new Experiment("warning no db connection");
-        }
-    }
-    
-    public JScrollPane getUI() {
-        return scroll;
     }
     
     public static void addToMenu(Object[] UIElements, JPopupMenu menu) {

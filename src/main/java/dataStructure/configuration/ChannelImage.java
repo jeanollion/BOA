@@ -35,7 +35,7 @@ public class ChannelImage extends SimpleContainerParameter {
     
     @Override
     protected void initChildList() {
-        
+        super.initChildren();
     }
     
     @Override

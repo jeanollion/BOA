@@ -15,7 +15,7 @@
  */
 package boa.gui.objects;
 
-import boa.gui.configuration.ConfigurationTree;
+import boa.gui.configuration.ConfigurationTreeGenerator;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.objects.ObjectDAO;
@@ -68,7 +68,7 @@ public class ObjectTreeTest extends JPanel {
             return generator;
         
         } catch (UnknownHostException ex) {
-            Logger.getLogger(ConfigurationTree.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ConfigurationTreeGenerator.class.getName()).log(Level.SEVERE, null, ex);
         }
         return null;
         
