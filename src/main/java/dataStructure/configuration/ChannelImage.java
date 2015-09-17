@@ -19,23 +19,28 @@ package dataStructure.configuration;
 
 import configuration.parameters.Parameter;
 import configuration.parameters.SimpleContainerParameter;
+import configuration.parameters.TextParameter;
 import configuration.parameters.ui.NameEditorUI;
 import configuration.parameters.ui.ParameterUI;
+import de.caluga.morphium.annotations.Transient;
 
 /**
  *
  * @author jollion
  */
 public class ChannelImage extends SimpleContainerParameter {
-    NameEditorUI ui;
+    @Transient NameEditorUI ui;
+    TextParameter importKeyWord = new TextParameter("import file channel keyword", "", true);
     
     public ChannelImage(String name) {
         super(name);
     }
     
+    public String getImportImageChannelKeyword() {return importKeyWord.getValue();}
+    
     @Override
     protected void initChildList() {
-        super.initChildren();
+        super.initChildren(importKeyWord);
     }
     
     @Override

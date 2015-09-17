@@ -54,8 +54,8 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     SimpleListParameter<Structure> structures= new SimpleListParameter<Structure>("Structures", -1 , Structure.class);
     SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter<ChannelImage>("Channel Images", 0 , ChannelImage.class);
     SimpleListParameter<MicroscopyField> fields= new SimpleListParameter<MicroscopyField>("Fields", 0 , MicroscopyField.class);
-    ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.BIOFORMATS.getMethod(), false);
-    public enum ImageDAOTypes {LocalFileSystem}; //Simulation
+    ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.SINGLE_FILE.getMethod(), false);
+    public enum ImageDAOTypes {LocalFileSystem};
     ImageDAOTypes imageDAOType=ImageDAOTypes.LocalFileSystem;
     
     @Transient ConfigurationTreeModel model;
@@ -278,7 +278,8 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
 
     public enum ImportImageMethod {
-        BIOFORMATS("Bio-Formats");
+        SINGLE_FILE("Single-file"),
+        ONE_FILE_PER_CHANNEL("One file per channel");
         private final String name;
         ImportImageMethod(String name) {
             this.name=name;

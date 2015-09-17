@@ -22,6 +22,7 @@ import dataStructure.configuration.Experiment;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.PreProcessingChain;
 import dataStructure.containers.InputImagesImpl;
+import dataStructure.containers.MultipleImageContainer;
 import dataStructure.containers.MultipleImageContainerSingleFile;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
@@ -41,8 +42,8 @@ public class Processor {
     public static final Logger logger = LoggerFactory.getLogger(Processor.class);
     
     public static void importFiles(String[] selectedFiles, Experiment xp) {
-        ArrayList<MultipleImageContainerSingleFile> images = ImageFieldFactory.importImages(selectedFiles, xp);
-        for (MultipleImageContainerSingleFile c : images) {
+        ArrayList<MultipleImageContainer> images = ImageFieldFactory.importImages(selectedFiles, xp);
+        for (MultipleImageContainer c : images) {
             if (!xp.getMicroscopyFields().containsElement(c.getName())) {
                 MicroscopyField f = (MicroscopyField)xp.getMicroscopyFields().createChildInstance(c.getName());
                 xp.getMicroscopyFields().insert(f);

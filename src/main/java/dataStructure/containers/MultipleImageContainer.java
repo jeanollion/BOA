@@ -18,7 +18,6 @@
 package dataStructure.containers;
 
 import de.caluga.morphium.annotations.Embedded;
-import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
 
@@ -34,13 +33,7 @@ public abstract class MultipleImageContainer {
     public abstract Image getImage(int timePoint, int channel);
     public abstract Image getImage(int timePoint, int channel, BoundingBox bounds);
     public abstract void close();
-    
-    public float getScaleXY() {
-        return scaleXY;
-    }
-
-    public float getScaleZ() {
-        return scaleZ;
-    }
-    
+    public abstract String getName();
+    public float getScaleXY() {return scaleXY;}
+    public float getScaleZ() {return scaleZ;}
 }

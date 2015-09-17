@@ -24,6 +24,7 @@ import configuration.parameters.ParentStructureParameter;
 import configuration.parameters.PluginParameter;
 import configuration.parameters.ui.NameEditorUI;
 import configuration.parameters.ui.ParameterUI;
+import de.caluga.morphium.annotations.Transient;
 import javax.swing.tree.MutableTreeNode;
 import plugins.Tracker;
 
@@ -38,7 +39,7 @@ public class Structure extends SimpleContainerParameter {
     ProcessingChain processingChain = new ProcessingChain("Processing Chain");
     PluginParameter<Tracker> tracker = new PluginParameter<Tracker>("Tracker", Tracker.class, true);
     
-    NameEditorUI ui;
+    @Transient NameEditorUI ui;
     public Structure(String name) {
         this(name, -1, -1);
     }
