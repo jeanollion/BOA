@@ -1,5 +1,6 @@
 package processing;
 
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import ij.IJ;
 import ij.ImageStack;
 import ij.process.FloatProcessor;
@@ -73,7 +74,7 @@ public class EDT {
         int w = mask.getSizeX();
         int h = mask.getSizeY();
         int d = mask.getSizeZ();
-        float scale=scaleZ/scaleXY;
+        float scale=mask.getSizeZ()>1?scaleZ/scaleXY:1;
         int nThreads = nbCPUs;
         ImageFloat res = new ImageFloat("EDT of: "+mask.getName(), mask);
         float[][] s = res.getPixelArray();
@@ -81,7 +82,7 @@ public class EDT {
         //Transformation 1.  Use s to store g.
         Step1Thread[] s1t = new Step1Thread[nThreads];
         for (int thread = 0; thread < nThreads; thread++) {
-            s1t[thread] = new Step1Thread(thread, nThreads, w, h, d, s, mask, insideMask, scale);
+            s1t[thread] = new Step1Thread(thread, nThreads, w, h, d, s, mask, insideMask);
             s1t[thread].start();
         }
         try {
@@ -104,18 +105,20 @@ public class EDT {
         } catch (InterruptedException ie) {
             IJ.error("A thread was interrupted in step 2 .");
         }
-        //Transformation 3. h (in s) -> s
-        Step3Thread[] s3t = new Step3Thread[nThreads];
-        for (int thread = 0; thread < nThreads; thread++) {
-            s3t[thread] = new Step3Thread(thread, nThreads, w, h, d, s, mask, insideMask, scale);
-            s3t[thread].start();
-        }
-        try {
+        if (mask.getSizeZ()>1) { //3D case
+            //Transformation 3. h (in s) -> s
+            Step3Thread[] s3t = new Step3Thread[nThreads];
             for (int thread = 0; thread < nThreads; thread++) {
-                s3t[thread].join();
+                s3t[thread] = new Step3Thread(thread, nThreads, w, h, d, s, mask, insideMask, scale);
+                s3t[thread].start();
             }
-        } catch (InterruptedException ie) {
-            IJ.error("A thread was interrupted in step 3 .");
+            try {
+                for (int thread = 0; thread < nThreads; thread++) {
+                    s3t[thread].join();
+                }
+            } catch (InterruptedException ie) {
+                IJ.error("A thread was interrupted in step 3 .");
+            }
         }
         //Find the largest distance for scaling
         //Also fill in the background values.
@@ -125,7 +128,7 @@ public class EDT {
         for (int k = 0; k < d; k++) {
             sk = s[k];
             for (int ind = 0; ind < wh; ind++) {
-                if (!mask.insideMask(ind, k)^insideMask) {
+                if (mask.insideMask(ind, k)!=insideMask) { //xor
                     sk[ind] = 0;
                 } else {
                     dist = (float) Math.sqrt(sk[ind]) * scaleXY;
@@ -142,10 +145,9 @@ public class EDT {
         int thread, nThreads, w, h, d;
         float[][] s;
         ImageMask mask;
-        float scaleZ;
         boolean insideMask;
         
-        public Step1Thread(int thread, int nThreads, int w, int h, int d, float[][] s, ImageMask mask, boolean insideMask, float scaleZ) {
+        public Step1Thread(int thread, int nThreads, int w, int h, int d, float[][] s, ImageMask mask, boolean insideMask) {
             this.thread = thread;
             this.nThreads = nThreads;
             this.w = w;
@@ -154,7 +156,6 @@ public class EDT {
             this.mask = mask;
             this.insideMask=insideMask;
             this.s = s;
-            this.scaleZ = scaleZ * scaleZ;
         }
 
         public void run() {
@@ -164,8 +165,7 @@ public class EDT {
             if (d > n) n = d;
             
             int noResult = 3 * (n + 1) * (n + 1);
-            boolean[] background = new boolean[n];
-            boolean nonempty;
+            boolean[] background = new boolean[w];
             float test, min;
             for (int k = thread; k < d; k += nThreads) {
                 sk = s[k];
@@ -224,8 +224,8 @@ public class EDT {
             if (h > n) n = h;
             if (d > n) n = d;
             int noResult = 3 * (n + 1) * (n + 1);
-            float[] tempInt = new float[n];
-            float[] tempS = new float[n];
+            float[] tempInt = new float[h];
+            float[] tempS = new float[h];
             boolean nonempty;
             float test, min;
             int delta;
@@ -290,8 +290,8 @@ public class EDT {
                 n = d;
             }
             int noResult = 3 * (n + 1) * (n + 1);
-            float[] tempInt = new float[n];
-            float[] tempS = new float[n];
+            float[] tempInt = new float[d];
+            float[] tempS = new float[d];
             boolean nonempty;
             float test, min;
             int delta;
@@ -322,8 +322,8 @@ public class EDT {
 
                         for (int k = 0; k < d; k++) {
                             //Limit to the non-background to save time,
-                            if (insideMask^mask.insideMask(i+w*j, k)) {
-                                if (insideMask && d>1) {min=Math.min(k+1, k-d); min *= min * scaleZ;} //&& d>1
+                            if (insideMask==mask.insideMask(i+w*j, k)) { //!xor
+                                if (insideMask) {min=Math.min(k+1, k-d); min *= min * scaleZ;} //&& d>1
                                 else min = noResult;
                                 zBegin = zStart;
                                 zEnd = zStop;
