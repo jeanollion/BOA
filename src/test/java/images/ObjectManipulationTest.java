@@ -87,8 +87,8 @@ public class ObjectManipulationTest {
     public void testGetObjectsImages() {
         Object3D[] obs = ObjectFactory.getObjectsImage(im, null, false);
         assertEquals("object number", 2, obs.length);
-        Utils.assertImageByte((ImageByte)obs[0].getMask(), (ImageByte)o1.getMask());
-        Utils.assertImageByte((ImageByte)obs[1].getMask(), (ImageByte)o3.getMask());
+        Utils.assertImage((ImageByte)obs[0].getMask(), (ImageByte)o1.getMask(), 0);
+        Utils.assertImage((ImageByte)obs[1].getMask(), (ImageByte)o3.getMask(), 0);
     }
     
     @Test 
@@ -100,7 +100,7 @@ public class ObjectManipulationTest {
         ImageByte imtest2 = new ImageByte("", im);
         label = 1;
         for (Object3D o : obs) imtest2.appendBinaryMasks(label++, o.getMask());
-        Utils.assertImageByte(imtest, imtest2);
+        Utils.assertImage(imtest, imtest2, 0);
     }
     
     @Test 
@@ -115,25 +115,25 @@ public class ObjectManipulationTest {
         ImageByte imtest2 = new ImageByte("", im);
         label = 1;
         for (Object3D o : obs) imtest2.appendBinaryMasks(label++, o.getMask());
-        Utils.assertImageByte(imtest, imtest2);
+        Utils.assertImage(imtest, imtest2, 0);
     }
     
     @Test
     public void testRelabelImage() {
         ImageByte im2 = im.duplicate("");
         ObjectFactory.relabelImage(im2, null);
-        Utils.assertImageByte(imRelabel, im2);
+        Utils.assertImage(imRelabel, im2, 0);
     }
     
     @Test 
     public void testObjectPopulation() {
         ObjectPopulation popObj = new ObjectPopulation(new ArrayList<Object3D>(Arrays.asList(new Object3D[]{o1, o3})), im);
-        Utils.assertImageByte(im, (ImageByte)popObj.getLabelImage());
+        Utils.assertImage(im, (ImageByte)popObj.getLabelImage(), 0);
         popObj.relabel();
-        Utils.assertImageByte(imRelabel, (ImageByte)popObj.getLabelImage());
+        Utils.assertImage(imRelabel, (ImageByte)popObj.getLabelImage(), 0);
         popObj = new ObjectPopulation(new ArrayList<Object3D>(Arrays.asList(new Object3D[]{o1, o3})), im);
         popObj.relabel();
-        Utils.assertImageByte(imRelabel, (ImageByte)popObj.getLabelImage());
+        Utils.assertImage(imRelabel, (ImageByte)popObj.getLabelImage(), 0);
         
         ObjectPopulation popIm = new ObjectPopulation(im);
         assertEquals("number of objects", 2, popIm.getObjects().size());

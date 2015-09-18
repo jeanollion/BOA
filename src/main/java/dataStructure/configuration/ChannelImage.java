@@ -36,7 +36,13 @@ public class ChannelImage extends SimpleContainerParameter {
         super(name);
     }
     
+    public ChannelImage(String name, String keyword) {
+        super(name);
+        setImportImageChannelKeyword(keyword);
+    }
+    
     public String getImportImageChannelKeyword() {return importKeyWord.getValue();}
+    public void setImportImageChannelKeyword(String keyword) {importKeyWord.setValue(keyword);}
     
     @Override
     protected void initChildList() {

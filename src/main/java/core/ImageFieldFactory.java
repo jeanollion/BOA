@@ -21,9 +21,12 @@ import static core.Processor.logger;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.containers.MultipleImageContainer;
+import dataStructure.containers.MultipleImageContainerChannelSerie;
 import dataStructure.containers.MultipleImageContainerSingleFile;
 import image.ImageReader;
 import java.io.File;
+import java.io.FileFilter;
+import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -39,7 +42,7 @@ public class ImageFieldFactory {
     public static ArrayList<MultipleImageContainer> importImages(String[] path, Experiment xp) {
         ArrayList<MultipleImageContainer> res = new ArrayList<MultipleImageContainer>();
         if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.SINGLE_FILE)) for (String p : path) ImageFieldFactory.importImagesSingleFile(new File(p), xp, res);
-        else if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL)) {
+        else if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD)) {
             // get keywords
             int nb = xp.getChannelImages().getChildCount();
             String[] keyWords = new String[nb];
@@ -77,50 +80,66 @@ public class ImageFieldFactory {
                 if (stc.length>1) end = seriesSeparator+Utils.formatInteger(digits, s);
                 if (tc[1]==xp.getChannelImageNB()) {
                     containersTC.add(new MultipleImageContainerSingleFile(removeExtension(image.getName())+end, image.getAbsolutePath(),s, tc[0], tc[1]));
-                    modify logger
-                    Logger.getLogger(ImageFieldFactory.class.getName()).log(Level.INFO, "Imported Image: {0}", image.getAbsolutePath());
+                    logger.info("image {} imported successfully", image.getAbsolutePath());
                 } else {
-                    modify logger
-                    Logger.getLogger(ImageFieldFactory.class.getName()).log(Level.WARNING, "Invalid Image: {0} has: {1} channels instead of: {2}", new Object[]{image.getAbsolutePath(), tc[1], xp.getChannelImageNB()});
+                    logger.warn("Invalid Image: {} has: {} channels instead of: {}", image.getAbsolutePath(), tc[1], xp.getChannelImageNB());
                 }
                 ++s;
             }
         }
     }
     
-    protected static void importImagesChannel(File f, Experiment xp, String[] keyWords, ArrayList<MultipleImageContainer> containersTC) {
-        // test xp.getChannelImageNB()
+    protected static void importImagesChannel(File input, Experiment xp, String[] keyWords, ArrayList<MultipleImageContainer> containersTC) {
+        if (!input.isDirectory()) return;
+        File[] subDirs = input.listFiles(getDirectoryFilter()); // recursivity
+        for (File dir : subDirs) importImagesChannel(dir, xp, keyWords, containersTC);
+        File[] file0 = input.listFiles(getFileFilterKeyword(keyWords[0]));
+        for (File f : file0) {
+            String[] allChannels = new String[keyWords.length];
+            allChannels[0] = f.getAbsolutePath();
+            boolean allFiles = true;
+            for (int c = 1; c < keyWords.length; ++c) {
+                String name = input + File.separator + f.getName().replace(keyWords[0], keyWords[c]);
+                File channel = new File(name);
+                if (!channel.exists()) {
+                    logger.warn("missing file: {}", name);
+                    allFiles=false;
+                    break;
+                } else allChannels[c] = name;
+            }
+            if (allFiles) {
+                String name = removeExtension(f.getName().replace(keyWords[0], ""));
+                addContainerChannel(allChannels, name, xp, containersTC);
+            }
+            
+        }
     }
     
-    protected static void addContainerChannel(File[] imageC, String fieldName, Experiment xp, ArrayList<MultipleImageContainer> containersTC) {
-        //checks timepoint number for all channels
-        int timePointNumber;
+    protected static void addContainerChannel(String[] imageC, String fieldName, Experiment xp, ArrayList<MultipleImageContainer> containersTC) {
+        //checks timepoint number is equal for all channels
+        int timePointNumber=0;
         for (int c = 0; c< imageC.length; ++c) {
             ImageReader reader = null;
             try {
-                reader = new ImageReader(imageC[0].getAbsolutePath());
+                reader = new ImageReader(imageC[c]);
             } catch (Exception e) {
-                Logger.getLogger(ImageFieldFactory.class.getName()).log(Level.WARNING, "Image could not be read: {0}", imageC[0].getAbsolutePath());
+                logger.warn("Image {} could not be read: ", imageC[c], e);
             }
             if (reader != null) {
                 int[][] stc = reader.getSTCXYZNumbers();
                 if (stc.length>1) logger.warn("Import method selected = one file per channel and per microscopy field, but file: {} contains multiple series", imageC[c]);
-                for (int[] tc : stc) { only for the first one
-                    if (stc.length > 1) {
-                        end = seriesSeparator + Utils.formatInteger(digits, s);
-                    }
-                    if (tc[1] == xp.getChannelImageNB()) {
-                        containersTC.add(new MultipleImageContainerSingleFile(removeExtension(image.getName()) + end, image.getAbsolutePath(), s, tc[0], tc[1]));
-                        Logger.getLogger(ImageFieldFactory.class.getName()).log(Level.INFO, "Imported Image: {0}", image.getAbsolutePath());
-                    } else {
-                        Logger.getLogger(ImageFieldFactory.class.getName()).log(Level.WARNING, "Invalid Image: {0} has: {1} channels instead of: {2}", new Object[]{image.getAbsolutePath(), tc[1], xp.getChannelImageNB()});
-                    }
-                    ++s;
+                if (c==0) timePointNumber=stc[0][0];
+                else if (stc[0][0]!=timePointNumber) {
+                    logger.warn("Warning: invalid file: {}. Contains {} time points whereas file: {} contains: {} time points", imageC[c], stc[0][0], imageC[0], timePointNumber);
+                    return;
                 }
             }
         }
+        if (timePointNumber>0) {
+            MultipleImageContainerChannelSerie c = new MultipleImageContainerChannelSerie(fieldName, imageC, timePointNumber);
+            containersTC.add(c);
+        }
         
-        MultipleImageContainerChannel c = new MultipleImageContainerChannel(fieldName, imageC, );
         
     }
     
@@ -128,5 +147,29 @@ public class ImageFieldFactory {
     private static String removeExtension(String s) {
         if (s.indexOf(".")>0) return s.substring(0, s.indexOf("."));
         else return s;
+    }
+    
+    private static FileFilter getDirectoryFilter() {
+        return new FileFilter() {
+            public boolean accept(File file) {
+                return file.isDirectory();
+            }
+        };
+    }
+    
+    private static FileFilter getFileFilter() {
+        return new FileFilter() {
+            public boolean accept(File file) {
+                return !file.isDirectory();
+            }
+        };
+    }
+    
+    private static FilenameFilter getFileFilterKeyword(final String keyword) {
+        return new FilenameFilter() {
+            public boolean accept(File dir, String name) {
+                return name.contains(keyword);
+            }
+        };
     }
 }

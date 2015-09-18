@@ -82,7 +82,12 @@ public class PreProcessingChain extends SimpleContainerParameter {
             tpp.setPlugin(transfo);
         }
     }
-    
+    /**
+     * 
+     * @param inputChannel channel on which compute transformation parameters
+     * @param outputChannel channel on which apply transformation (null = all channels)
+     * @param transformation 
+     */
     public void addTransformation(int inputChannel, int[] outputChannel, TransformationTimeIndependent transformation) {
         TransformationPluginParameter<TransformationTimeIndependent> tpp= new TransformationPluginParameter<TransformationTimeIndependent>("Transformation", TransformationTimeIndependent.class, false);
         constantTransformations.insert(tpp);

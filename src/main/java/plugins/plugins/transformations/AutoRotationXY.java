@@ -26,6 +26,7 @@ import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
 import plugins.TransformationTimeIndependent;
 import processing.ImageTransformation;
+import processing.ImageTransformation.InterpolationScheme;
 import processing.RadonProjection;
 
 /**
@@ -37,10 +38,20 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     NumberParameter maxAngle = new NumberParameter("Maximal Angle for search", 2, 10);
     NumberParameter precision1 = new NumberParameter("Angular Precision of first seach", 2, 1);
     NumberParameter precision2 = new NumberParameter("Angular Precision", 0, 0.1);
-    ChoiceParameter interpolation = new ChoiceParameter("Interpolation", ImageTransformation.InterpolationScheme.getValues(), ImageTransformation.InterpolationScheme.LINEAR.toString(), false);
+    ChoiceParameter interpolation = new ChoiceParameter("Interpolation", InterpolationScheme.getValues(), ImageTransformation.InterpolationScheme.LINEAR.toString(), false);
     Parameter[] parameters = new Parameter[]{minAngle, maxAngle, precision1, precision2, interpolation};
     Float[] internalParams;
 
+    public AutoRotationXY(double minAngle, double maxAngle, double precision1, double precision2, InterpolationScheme interpolation) {
+        this.minAngle.setValue(minAngle);
+        this.maxAngle.setValue(maxAngle);
+        this.precision1.setValue(precision1);
+        this.precision2.setValue(precision2);
+        this.interpolation.setSelectedItem(interpolation.toString());
+    }
+    
+    public AutoRotationXY() {}
+    
     public boolean isTimeDependent() {
         return false;
     }

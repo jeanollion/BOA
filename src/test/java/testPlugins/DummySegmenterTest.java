@@ -47,7 +47,7 @@ public class DummySegmenterTest {
         
         // reconstruction de l'image
         ImageInteger res2 = ImageInteger.mergeBinary(in, obs[0].getMask(), obs[1].getMask());
-        Utils.assertImageByte((ImageByte)res2, (ImageByte)image);
+        Utils.assertImage((ImageByte)res2, (ImageByte)image, 0);
         
     }
 }

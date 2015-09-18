@@ -1,5 +1,7 @@
 package image;
 
+import processing.neighborhood.Neighborhood;
+
 public class ImageShort extends ImageInteger {
 
     private short[][] pixels;

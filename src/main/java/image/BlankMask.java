@@ -1,5 +1,7 @@
 package image;
 
+import processing.neighborhood.Neighborhood;
+
 public class BlankMask extends ImageInteger implements ImageMask {
 
     public BlankMask(String name, int sizeX, int sizeY, int sizeZ, int offsetX, int offsetY, int offsetZ, float scaleXY, float scaleZ) {
@@ -46,7 +48,7 @@ public class BlankMask extends ImageInteger implements ImageMask {
     public float getPixel(int x, int y, int z) {
         return 1;
     }
-
+    
     @Override
     public float getPixel(int xz, int z) {
         return 1;

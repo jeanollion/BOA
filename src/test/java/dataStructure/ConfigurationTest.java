@@ -164,4 +164,6 @@ public class ConfigurationTest {
             Utils.logger.error("couldnot connect to db", ex);
         }
     }
+    
+    
 }

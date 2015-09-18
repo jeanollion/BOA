@@ -102,7 +102,43 @@ public class ProcessingTest {
         Processor.importFiles(files, xp);
         assertEquals("number of fields detected", 6-1-1, xp.getMicroscopyFields().getChildCount()); // 6 - 1 (unique title) - 1 (channel number)
         MultipleImageContainer c = xp.getMicroscopyField(title).getImages();
-        Utils.assertImageByte(images[0][0], (ImageByte)c.getImage(0, 0));
+        Utils.assertImage(images[0][0], (ImageByte)c.getImage(0, 0), 0);
+    }
+    
+    @Test
+    public void testImportFieldKeyWord() {
+        // creation de l'image de test
+        String title = "imageTestMultiple";
+        ImageFormat format = ImageFormat.OMETIF;
+        File folder = testFolder.newFolder("TestImages");
+        int timePoint = 3;
+        ImageByte[][] images = createDummyImagesTC(6, 5 ,4,  timePoint, 1);
+        ImageByte[][] images2 = createDummyImagesTC(6, 5 ,4,  timePoint+1, 1);
+        
+        ImageWriter.writeToFile(folder.getAbsolutePath(), title+"_c1", format, images);
+        ImageWriter.writeToFile(folder.getAbsolutePath(), title+"_c2", format, images);
+        ImageWriter.writeToFile(folder.getAbsolutePath(), title+"1_c1", format, images);
+        ImageWriter.writeToFile(folder.getAbsolutePath(), title+"1_c2", format, images);
+        ImageWriter.writeToFile(folder.getAbsolutePath(), title+"2_c1", format, images);
+        ImageWriter.writeToFile(folder.getAbsolutePath(), title+"3_c1", format, images);
+        ImageWriter.writeToFile(folder.getAbsolutePath(), title+"3_c2", format, images2);
+        
+        File folder2 = new File(folder.getAbsolutePath()+File.separator+"subFolder");
+        folder2.mkdir();
+        ImageWriter.writeToFile(folder2.getAbsolutePath(), title+"_c1", format, images);
+        ImageWriter.writeToFile(folder2.getAbsolutePath(), title+"_c2", format, images);
+        ImageWriter.writeToFile(folder2.getAbsolutePath(), title+"4_c1", format, images);
+        ImageWriter.writeToFile(folder2.getAbsolutePath(), title+"4_c2", format, images);
+        
+        Experiment xp = new Experiment("testXP", new Structure("structure"));
+        xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
+        xp.getChannelImages().insert(new ChannelImage("channel1", "_c1"), new ChannelImage("channel2", "_c2"));
+        
+        String[] files = new String[]{folder.getAbsolutePath()};
+        Processor.importFiles(files, xp);
+        assertEquals("number of fields detected", 6-1-1-1, xp.getMicroscopyFields().getChildCount()); // 6 - 1 (unique title) - 1 (channel number)-1(timepoint number)
+        MultipleImageContainer c = xp.getMicroscopyField(title).getImages();
+        Utils.assertImage(images[0][0], (ImageByte)c.getImage(0, 0), 0);
     }
     
     @Test
@@ -156,7 +192,7 @@ public class ProcessingTest {
         assertTrue("Image saved in DAO", image!=null);
         SimpleTranslation tInv = new SimpleTranslation(-1, -1, 0);
         Image imageInv = tInv.applyTransformation(0, 0, image);
-        Utils.assertImageByte(images[0][0], (ImageByte)imageInv);
+        Utils.assertImage(images[0][0], (ImageByte)imageInv, 0);
     }
     
     private static ImageByte getMask(StructureObject root, int[] pathToRoot) {

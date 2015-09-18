@@ -453,7 +453,7 @@ public class ImageIOTest {
         
         for (int t = 0; t<timePoint; t++) {
             for (int c = 0; c<channel;c++) {
-                Utils.assertImageByte(images[t][c], (ImageByte)reader.openImage(new ImageIOCoordinates(0, c, t)));
+                Utils.assertImage(images[t][c], (ImageByte)reader.openImage(new ImageIOCoordinates(0, c, t)), 0);
             }
         }
     }

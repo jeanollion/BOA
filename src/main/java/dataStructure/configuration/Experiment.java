@@ -72,6 +72,8 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         initChildList();
     }
     
+    public void setImportImageMethod(ImportImageMethod method) {this.importMethod.setValue(method.getMethod());}
+    
     public void setImageDAOType(ImageDAOTypes type) {
         this.imageDAOType=type;
     }
@@ -279,7 +281,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
 
     public enum ImportImageMethod {
         SINGLE_FILE("Single-file"),
-        ONE_FILE_PER_CHANNEL("One file per channel");
+        ONE_FILE_PER_CHANNEL_AND_FIELD("One File Per Channel And Microscopy Field");
         private final String name;
         ImportImageMethod(String name) {
             this.name=name;

@@ -24,7 +24,7 @@ public abstract class ImageInteger extends Image implements ImageMask {
     
     public static int getMaxValue(ImageInteger image, boolean limitToShort) {
         if (image instanceof ImageByte) return 255;
-        else if (image instanceof ImageShort || limitToShort) return 65635;
+        else if (image instanceof ImageShort || limitToShort) return 65535;
         else return Integer.MAX_VALUE;
     }
     

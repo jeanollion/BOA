@@ -1,5 +1,7 @@
 package image;
 
+import processing.neighborhood.Neighborhood;
+
 public class ImageFloat extends Image {
 
     final private float[][] pixels;
@@ -49,7 +51,7 @@ public class ImageFloat extends Image {
     public float getPixel(int xy, int z) {
         return pixels[z][xy];
     }
-
+    
     @Override
     public void setPixel(int x, int y, int z, Number value) {
         pixels[z][x+y*sizeX]=value.floatValue();

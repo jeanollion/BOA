@@ -2,6 +2,7 @@ package image;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import processing.neighborhood.Neighborhood;
 
 
 public abstract class Image implements ImageProperties {
@@ -46,12 +47,12 @@ public abstract class Image implements ImageProperties {
         return this;
     }
     
-    public static Image createEmptyImage(String name, Image imageType, ImageProperties properties) {
-        if (imageType instanceof ImageByte) return new ImageByte(name, properties);
-        else if (imageType instanceof ImageShort) return new ImageShort(name, properties);
-        else if (imageType instanceof ImageInt) return new ImageInt(name, properties);
-        else if (imageType instanceof ImageFloat) return new ImageFloat(name, properties);
-        else return new BlankMask(name, properties);
+    public static <T> T createEmptyImage(String name, T imageType, ImageProperties properties) {
+        if (imageType instanceof ImageByte) return (T)new ImageByte(name, properties);
+        else if (imageType instanceof ImageShort) return (T)new ImageShort(name, properties);
+        else if (imageType instanceof ImageInt) return (T)new ImageInt(name, properties);
+        else if (imageType instanceof ImageFloat) return (T)new ImageFloat(name, properties);
+        else return (T)new BlankMask(name, properties);
     }
     
     public abstract Image getZPlane(int idxZ);

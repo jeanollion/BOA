@@ -1,5 +1,7 @@
 package image;
 
+import processing.neighborhood.Neighborhood;
+
 public class ImageInt extends ImageInteger {
 
     private int[][] pixels;

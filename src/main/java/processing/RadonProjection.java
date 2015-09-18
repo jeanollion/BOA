@@ -17,7 +17,10 @@
  */
 package processing;
 
+import static core.Processor.logger;
+import ij.gui.Plot;
 import image.Image;
+import image.ImageFloat;
 
 /**
  *
@@ -39,9 +42,9 @@ public class RadonProjection {
         // Project each pixel in the image
         int Xcenter = image.getSizeX() / 2;
         int Ycenter = image.getSizeY() / 2;
+        
         //if no. scans is greater than the image width, then scale will be <1
-
-        double scale = image.getSizeX() * 1.42 / proj.length; // ??? que es eso?
+        double scale = image.getSizeX() * 1.42 / proj.length; 
 
         int N = 0;
         val = 0;
@@ -60,7 +63,7 @@ public class RadonProjection {
                         //just use nearest neighbour interpolation
                         y = (int) Math.round(a * x + b);
                         if (y >= -Xcenter && y < Xcenter) {
-                            val += image.getPixel(+Xcenter, y + Ycenter, z);
+                            val += image.getPixel(x+Xcenter, y + Ycenter, z);
                         }
                     } else {
                         //linear interpolation
@@ -68,8 +71,8 @@ public class RadonProjection {
                         weight = Math.abs((a * x + b) - Math.ceil(a * x + b));
 
                         if (y >= -Xcenter && y + 1 < Xcenter) {
-                            val += (1 - weight) * image.getPixel(+Xcenter, y + Ycenter, z)
-                                    + weight * image.getPixel(+Xcenter, y + Ycenter + 1, z);
+                            val += (1 - weight) * image.getPixel(x+Xcenter, y + Ycenter, z)
+                                    + weight * image.getPixel(x+Xcenter, y + Ycenter + 1, z);
                         }
 
                     }
@@ -89,15 +92,15 @@ public class RadonProjection {
                     if (fast == true) {
                         x = (int) Math.round(aa * y + bb);
                         if (x >= -Xcenter && x < Xcenter) {
-                            val += image.getPixel(+Xcenter, y + Ycenter, z);
+                            val += image.getPixel(x+Xcenter, y + Ycenter, z);
                         }
                     } else {
                         x = (int) Math.round(aa * y + bb);
                         weight = Math.abs((aa * y + bb) - Math.ceil(aa * y + bb));
 
                         if (x >= -Xcenter && x + 1 < Xcenter) {
-                            val += (1 - weight) * image.getPixel(+Xcenter, y + Ycenter, z)
-                                    + weight * image.getPixel(+Xcenter + 1, y + Ycenter, z);
+                            val += (1 - weight) * image.getPixel(x+Xcenter, y + Ycenter, z)
+                                    + weight * image.getPixel(x+Xcenter + 1, y + Ycenter, z);
                         }
 
                     }
@@ -108,6 +111,17 @@ public class RadonProjection {
             }
 
         }
+    }
+    
+    public static ImageFloat getSinogram(Image image, double angleMin, double angleMax, double stepSize, int projSize) {
+        double[] angles = getAngleArray(angleMin, angleMax, stepSize);
+        ImageFloat res = new ImageFloat("sinogram", angles.length, projSize, 1);
+        double[] proj = new double[projSize];
+        for (int i = 0; i<angles.length; ++i) {
+            radonProject(image, 0, angles[i], proj);
+            for (int j = 0; j<projSize; ++j) res.setPixel(i, j, 0, proj[j]);
+        }
+        return res;
     }
     
     private static double max(double[] array) {
@@ -121,7 +135,7 @@ public class RadonProjection {
     private static double[] getAngleArray(double ang1, double ang2, double stepsize) {
         double[] angles = new double [(int)(Math.abs(ang2-ang1) / stepsize + 0.5d)]; 
         angles[0]=ang1;
-        for (int i=1; i<angles.length; ++i) angles[i]=angles[i-1]+stepsize;
+        for (int i=1; i<angles.length; ++i) angles[i]=(angles[i-1]+stepsize)%360;
         return angles;
     }
     
@@ -154,6 +168,8 @@ public class RadonProjection {
         double[] angles = getAngleArray(ang1, ang2, stepsize);
         
         double[] proj = new double[(int)Math.sqrt(image.getSizeX()*image.getSizeX() + image.getSizeY()*image.getSizeY())];
+        double[] x = new double[proj.length];
+        for (int i = 0; i<x.length; ++i) x[i]=(double)i;
         radonProject(image, z, angles[0], proj);
         double max = max(proj);
         double angleMax=angles[0];
@@ -164,10 +180,13 @@ public class RadonProjection {
                 max = tempMax;
                 angleMax = angles[angleIdx];
             }
+            //new Plot("angle: "+angles[angleIdx], "x", "proj", x, proj).show();
         }
+        logger.debug("radon projection: computeRotationAngleXY: first angle: {}", angleMax);
+        
         // refined search
         if (precision<stepsize) {
-            angles = angles = getAngleArray(angleMax-stepsize+precision, angleMax+stepsize-precision, precision);
+            angles = getAngleArray(angleMax-stepsize+precision, angleMax+stepsize-precision, precision);
             for (int angleIdx = 0; angleIdx<angles.length; ++angleIdx) {
                 radonProject(image, z, angles[angleIdx], proj);
                 double tempMax = max(proj);
@@ -179,4 +198,5 @@ public class RadonProjection {
         }
         return -angleMax;
     }
+    methode pour les image de fluorescence: 1 subtract background 2: proj 3: tophat 4: somme proj
 }
