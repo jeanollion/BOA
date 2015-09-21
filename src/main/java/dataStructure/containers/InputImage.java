@@ -17,6 +17,7 @@
  */
 package dataStructure.containers;
 
+import static core.Processor.logger;
 import image.Image;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -34,7 +35,7 @@ public class InputImage {
     int channelIdx, timePoint;
     String microscopyFieldName;
     Image image;
-    boolean imageSavedInDAO=false, saveToDAO=true;
+    boolean saveToDAO=true;
     ArrayList<Transformation> transformationsToApply;
     
     public InputImage(int channelIdx, int timePoint, String microscopyFieldName, MultipleImageContainer imageSources, ImageDAO dao, boolean saveToDAO) {
@@ -51,16 +52,12 @@ public class InputImage {
     }
     
     public Image getImage() {
-        if (image!=null) {
-            applyTransformations();
-            return image;
+        if (image == null) {
+            image = dao.openPreProcessedImage(channelIdx, timePoint, microscopyFieldName); //try to open from DAO
+            if (image==null) image = imageSources.getImage(timePoint, channelIdx);
         }
-        else {
-            if (imageSavedInDAO) image = dao.openPreProcessedImage(channelIdx, timePoint, microscopyFieldName);
-            else image = imageSources.getImage(timePoint, channelIdx);
-            applyTransformations();
-            return image;
-        }
+        applyTransformations();
+        return image;
     }
     
     private void applyTransformations() {
@@ -73,7 +70,6 @@ public class InputImage {
     
     public void closeImage() {
         if (saveToDAO) {
-            imageSavedInDAO=true;
             dao.writePreProcessedImage(image, channelIdx, timePoint, microscopyFieldName);
         }
         image=null;

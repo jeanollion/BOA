@@ -77,7 +77,7 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
     }
 
     public void setContentFrom(Parameter other) {
-        if (other!=null) Parameter.logger.trace("Parameter {} set content from {}", this.getClass(), other.getClass());
+        //if (other!=null) Parameter.logger.trace("Parameter {} set content from {}", this.getClass(), other.getClass());
         if (other instanceof ChoiceParameter) {
             ChoiceParameter otherC = (ChoiceParameter)other;
             this.listChoice=otherC.listChoice;

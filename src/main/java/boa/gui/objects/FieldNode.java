@@ -41,7 +41,7 @@ public class FieldNode implements TreeNode, UIContainer {
         if (children==null) {
             int timePointNb;
             MicroscopyField f = getGenerator().getExperiment().getMicroscopyField(fieldName);
-            if (f!=null && f.getImages()!=null) timePointNb = f.getImages().getTimePointNumber();
+            if (f!=null) timePointNb = f.getTimePointNumber();
             else timePointNb=0;
             children = new TimePointNode[timePointNb];
             for (int i = 0; i<timePointNb; ++i) children[i]=new TimePointNode(this, i);

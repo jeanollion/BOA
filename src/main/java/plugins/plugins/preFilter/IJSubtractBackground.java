@@ -21,18 +21,20 @@ import configuration.parameters.BooleanParameter;
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
+import dataStructure.containers.InputImages;
 import dataStructure.objects.StructureObjectPreProcessing;
 import ij.ImagePlus;
 import ij.ImageStack;
 import image.IJImageWrapper;
 import image.Image;
 import plugins.PreFilter;
+import plugins.TransformationTimeIndependent;
 
 /**
  *
  * @author jollion
  */
-public class IJSubtractBackground implements PreFilter {
+public class IJSubtractBackground implements PreFilter, TransformationTimeIndependent {
     BooleanParameter method = new BooleanParameter("Method", "Rolling Ball", "Sliding Paraboloid", true);
     BooleanParameter imageType = new BooleanParameter("Image Background", "Dark", "Light", true);
     BooleanParameter smooth = new BooleanParameter("Perform Smoothing", true);
@@ -51,9 +53,13 @@ public class IJSubtractBackground implements PreFilter {
     public IJSubtractBackground(){}
     
     public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
-        ImageStack ip = IJImageWrapper.getImagePlus(input).getImageStack();
-        for (int z = 0; z<input.getSizeZ(); ++z) new ij.plugin.filter.BackgroundSubtracter().rollingBallBackground(ip.getProcessor(z+1), radius.getValue().doubleValue(), false, !imageType.getSelected(), !method.getSelected(), smooth.getSelected(), corners.getSelected());
+        filter(input, radius.getValue().doubleValue(), !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), corners.getSelected());
         return input;
+    }
+    
+    public static void filter(Image input, double radius, boolean doSlidingParaboloid, boolean lightBackground, boolean smooth, boolean corners) {
+        ImageStack ip = IJImageWrapper.getImagePlus(input).getImageStack();
+        for (int z = 0; z<input.getSizeZ(); ++z) new ij.plugin.filter.BackgroundSubtracter().rollingBallBackground(ip.getProcessor(z+1), radius, false, lightBackground, doSlidingParaboloid, smooth, corners);
     }
 
     public Parameter[] getParameters() {
@@ -62,6 +68,21 @@ public class IJSubtractBackground implements PreFilter {
 
     public boolean does3D() {
         return true;
+    }
+
+    public SelectionMode getOutputChannelSelectionMode() {
+        return SelectionMode.SAME;
+    }
+
+    public void computeConfigurationData(int channelIdx, InputImages inputImages) {}
+
+    public Image applyTransformation(int channelIdx, int timePoint, Image image) {
+        filter(image, radius.getValue().doubleValue(), !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), corners.getSelected());
+        return image;
+    }
+
+    public Object[] getConfigurationData() {
+        return new Object[0];
     }
     
 }

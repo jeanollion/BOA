@@ -41,6 +41,8 @@ public class MicroscopyField extends SimpleContainerParameter {
     
     MultipleImageContainer images;
     PreProcessingChain preProcessingChain=new PreProcessingChain("Pre-Processing chain");
+    @Transient InputImagesImpl inputImages;
+    @Transient public static final int defaultTimePoint = 50;
     //ui: bouton droit = selectionner un champ?
     
     public MicroscopyField(String name) {
@@ -62,14 +64,17 @@ public class MicroscopyField extends SimpleContainerParameter {
     }
     
     public InputImagesImpl getInputImages() {
-        ImageDAO dao = getExperiment().getImageDAO();
-        InputImage[][] res = new InputImage[images.getTimePointNumber()][images.getChannelNumber()];
-        for (int t = 0; t<res.length; ++t) {
-           for (int c = 0; c<res[0].length; ++c) {
-               res[t][c] = new InputImage(c, t, name, images, dao, true);
-            } 
+        if (inputImages==null) {
+            ImageDAO dao = getExperiment().getImageDAO();
+            InputImage[][] res = new InputImage[images.getTimePointNumber()][images.getChannelNumber()];
+            for (int t = 0; t<res.length; ++t) {
+               for (int c = 0; c<res[0].length; ++c) {
+                   res[t][c] = new InputImage(c, t, name, images, dao, true);
+                } 
+            }
+            inputImages = new InputImagesImpl(res, Math.min(defaultTimePoint, images.getTimePointNumber()-1));
         }
-        return new InputImagesImpl(res, Math.min(50, images.getTimePointNumber()-1));
+        return inputImages;
     }
     
     public BlankMask getMask() {
@@ -100,13 +105,16 @@ public class MicroscopyField extends SimpleContainerParameter {
         else return 1;
     }
     
-    
+    public int getTimePointNumber() {
+        if (images!=null) return images.getTimePointNumber();
+        else return 0;
+    }
     
     public void setImages(MultipleImageContainer images) {
         this.images=images;
     }
     
-    public MultipleImageContainer getImages() {
+    protected MultipleImageContainer getImages() {
         return images;
     }
     

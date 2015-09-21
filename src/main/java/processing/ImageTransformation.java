@@ -59,13 +59,13 @@ public class ImageTransformation {
         }
     }
     
-    public static Image rotateXY(Image image, float angle, InterpolationScheme interpolation) {
+    public static Image rotateXY(Image image, double angle, InterpolationScheme interpolation) {
         if (angle%90==0) {
             return turn(image, (int)angle/90, 0, 0);
         } else return rotate(image, angle, 0, 0, interpolation, true, true);
     }
     
-    public static Image rotate(Image image, float zAngle, float yAngle, float xAngle, InterpolationScheme scheme, boolean fit, boolean antialiasing) {
+    public static Image rotate(Image image, double zAngle, double yAngle, double xAngle, InterpolationScheme scheme, boolean fit, boolean antialiasing) {
         return ImagescienceWrapper.wrap((new  Rotate()).run(ImagescienceWrapper.getImagescience(image), zAngle, yAngle, xAngle, scheme.getValue(), fit, antialiasing));
     }
     

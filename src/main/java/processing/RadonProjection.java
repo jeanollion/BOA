@@ -17,10 +17,9 @@
  */
 package processing;
 
-import static core.Processor.logger;
-import ij.gui.Plot;
 import image.Image;
 import image.ImageFloat;
+import processing.neighborhood.EllipsoidalNeighborhood;
 
 /**
  *
@@ -28,7 +27,7 @@ import image.ImageFloat;
  */
 public class RadonProjection {
 
-    public static void radonProject(Image image, int z, double angle, double[] proj) {
+    public static void radonProject(Image image, int z, double angle, float[] proj) {
 
         boolean fast = false;
 
@@ -77,7 +76,7 @@ public class RadonProjection {
 
                     }
                 }
-                proj[projIdx] = val / Math.abs(sintab);
+                proj[projIdx] = (float) (val / Math.abs(sintab));
                 val = 0;
 
             }
@@ -105,7 +104,7 @@ public class RadonProjection {
 
                     }
                 }
-                proj[projIdx] = val / Math.abs(costab);
+                proj[projIdx] = (float) (val / Math.abs(costab));
                 val = 0;
 
             }
@@ -116,7 +115,7 @@ public class RadonProjection {
     public static ImageFloat getSinogram(Image image, double angleMin, double angleMax, double stepSize, int projSize) {
         double[] angles = getAngleArray(angleMin, angleMax, stepSize);
         ImageFloat res = new ImageFloat("sinogram", angles.length, projSize, 1);
-        double[] proj = new double[projSize];
+        float[] proj = new float[projSize];
         for (int i = 0; i<angles.length; ++i) {
             radonProject(image, 0, angles[i], proj);
             for (int j = 0; j<projSize; ++j) res.setPixel(i, j, 0, proj[j]);
@@ -124,15 +123,10 @@ public class RadonProjection {
         return res;
     }
     
-    private static double max(double[] array) {
-        double max = array[0];
-        for (int i = 1; i<array.length; ++i) {
-            if (array[i]>max) max = array[i];
-        }
-        return max;
-    }
     
-    private static double[] getAngleArray(double ang1, double ang2, double stepsize) {
+    
+    public static double[] getAngleArray(double ang1, double ang2, double stepsize) {
+        if (ang1>ang2) {double temp = ang1; ang1=ang2; ang2=temp;}
         double[] angles = new double [(int)(Math.abs(ang2-ang1) / stepsize + 0.5d)]; 
         angles[0]=ang1;
         for (int i=1; i<angles.length; ++i) angles[i]=(angles[i-1]+stepsize)%360;
@@ -140,63 +134,21 @@ public class RadonProjection {
     }
     
     
-    public static double computeRotationAngleXY(Image image, int z, double ang1, double ang2, double stepsize, double precision) {
-        /*
-        angle_max=10; % maximum angle to be corrected. Keep it small to minimize computing time.
-        delta_angle=0.1; % angular resolution
-
-        % rotate image (to work with angles around 0).
-        im=imrotate(im,90);
-
-        % find rotation angle
-        angles=[-angle_max:delta_angle:angle_max];
-        proj=radon(im,angles);
-        maxproj=max(proj,[],1);
-        [m,w]=max(maxproj);
-        angle=angles(w);
-        im2=imrotate(im,-angle,'bicubic');
-
-        % crop to eliminate imcomplete columns after rotation
-        dx=fix(abs(sin(angle*pi/180)*size(im2,2)))+1;
-        im2=im2(dx:(size(im2,1)-dx),dx:(size(im2,2)-dx));
-
-        % rotate the image back
-        imrot=imrotate(im2,-90);
-        */
-        
-        // initial search
-        double[] angles = getAngleArray(ang1, ang2, stepsize);
-        
-        double[] proj = new double[(int)Math.sqrt(image.getSizeX()*image.getSizeX() + image.getSizeY()*image.getSizeY())];
-        double[] x = new double[proj.length];
-        for (int i = 0; i<x.length; ++i) x[i]=(double)i;
-        radonProject(image, z, angles[0], proj);
-        double max = max(proj);
-        double angleMax=angles[0];
-        for (int angleIdx = 1; angleIdx<angles.length; ++angleIdx) { // first search
-            radonProject(image, z, angles[angleIdx], proj);
-            double tempMax = max(proj);
-            if (tempMax > max) {
-                max = tempMax;
-                angleMax = angles[angleIdx];
-            }
-            //new Plot("angle: "+angles[angleIdx], "x", "proj", x, proj).show();
-        }
-        logger.debug("radon projection: computeRotationAngleXY: first angle: {}", angleMax);
-        
-        // refined search
-        if (precision<stepsize) {
-            angles = getAngleArray(angleMax-stepsize+precision, angleMax+stepsize-precision, precision);
-            for (int angleIdx = 0; angleIdx<angles.length; ++angleIdx) {
-                radonProject(image, z, angles[angleIdx], proj);
-                double tempMax = max(proj);
-                if (tempMax > max) {
-                    max = tempMax;
-                    angleMax = angles[angleIdx];
-                }
-            }
-        }
-        return -angleMax;
+    
+    
+    
+    private static void paste(float[] source, ImageFloat dest, int x) {
+        float[] pixDest = dest.getPixelArray()[0];
+        for (int i = 0; i<source.length; ++i) pixDest[x + i*dest.getSizeX()] = source[i];
     }
-    methode pour les image de fluorescence: 1 subtract background 2: proj 3: tophat 4: somme proj
+    
+    private static void filter(double scale, float[] data) {
+        ImageFloat im = new ImageFloat("", data.length, new float[][]{data});
+        im = Filters.median(im, im, new EllipsoidalNeighborhood(3, false));
+        im = Filters.tophat(im, im, new EllipsoidalNeighborhood(scale, false));
+        float[] data2 = im.getPixelArray()[0];
+        for (int i = 0; i<data.length; ++i) data[i] = data2[i];
+    }
+    
+    
 }

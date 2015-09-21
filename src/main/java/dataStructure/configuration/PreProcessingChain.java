@@ -41,6 +41,7 @@ import javax.swing.MenuElement;
 import javax.swing.MenuSelectionManager;
 import javax.swing.plaf.basic.BasicMenuItemUI;
 import plugins.Registration;
+import plugins.Transformation;
 import plugins.TransformationTimeIndependent;
 import utils.Utils;
 
@@ -50,8 +51,7 @@ import utils.Utils;
  */
 public class PreProcessingChain extends SimpleContainerParameter {
     
-    SimpleListParameter<TransformationPluginParameter<TransformationTimeIndependent>> constantTransformations= new SimpleListParameter<TransformationPluginParameter<TransformationTimeIndependent>>("Constant transformations", new TransformationPluginParameter<TransformationTimeIndependent>("Transformation", TransformationTimeIndependent.class, false));
-    TransformationPluginParameter<Registration> registration = new TransformationPluginParameter<Registration>("Registration", Registration.class, true);
+    SimpleListParameter<TransformationPluginParameter<Transformation>> constantTransformations= new SimpleListParameter<TransformationPluginParameter<Transformation>>("Transformations", new TransformationPluginParameter<Transformation>("Transformation", Transformation.class, false));
     
     public PreProcessingChain(String name) {
         super(name);
@@ -60,36 +60,21 @@ public class PreProcessingChain extends SimpleContainerParameter {
     
     @Override
     protected void initChildList() {
-        super.initChildren(constantTransformations, registration);
+        super.initChildren(constantTransformations);
     }
     
-    public ArrayList<TransformationPluginParameter<TransformationTimeIndependent>> getTransformationsTimeIndependent() {
+    public ArrayList<TransformationPluginParameter<Transformation>> getTransformations() {
         return constantTransformations.getChildren();
     }
     
-    public TransformationPluginParameter<Registration> getRegistration() {
-        return registration;
-    }
-    
-    public void setRegistration(Registration r) {
-        this.registration.setPlugin(r);
-    }
-    
-    public void addTransformations(TransformationTimeIndependent... transformations) {
-        for (TransformationTimeIndependent transfo : transformations) {
-            TransformationPluginParameter<TransformationTimeIndependent> tpp= new TransformationPluginParameter<TransformationTimeIndependent>("Transformation", TransformationTimeIndependent.class, false);
-            constantTransformations.insert(tpp);
-            tpp.setPlugin(transfo);
-        }
-    }
     /**
      * 
      * @param inputChannel channel on which compute transformation parameters
-     * @param outputChannel channel on which apply transformation (null = all channels)
+     * @param outputChannel channel(s) on which apply transformation (null = all channels or same channel, depending {@link TransformationTimeIndependent#getOutputChannelSelectionMode() })
      * @param transformation 
      */
-    public void addTransformation(int inputChannel, int[] outputChannel, TransformationTimeIndependent transformation) {
-        TransformationPluginParameter<TransformationTimeIndependent> tpp= new TransformationPluginParameter<TransformationTimeIndependent>("Transformation", TransformationTimeIndependent.class, false);
+    public void addTransformation(int inputChannel, int[] outputChannel, Transformation transformation) {
+        TransformationPluginParameter<Transformation> tpp= new TransformationPluginParameter<Transformation>("Transformation", Transformation.class, false);
         constantTransformations.insert(tpp);
         tpp.setPlugin(transformation);
         tpp.setInputChannel(inputChannel);

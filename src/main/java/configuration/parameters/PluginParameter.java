@@ -114,13 +114,14 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     public T getPlugin() {
         if (!isOnePluginSet()) return null;
         T instance = PluginFactory.getPlugin(pluginType, pluginName);
-        if (Parameter.logger.isTraceEnabled()) Parameter.logger.trace("instanciating plugin: type {}, name {} instance==null? {} current parameters {}", pluginType, pluginName, instance==null, pluginParameters.size());
+        //if (Parameter.logger.isTraceEnabled()) Parameter.logger.trace("instanciating plugin: type {}, name {} instance==null? {} current parameters {}", pluginType, pluginName, instance==null, pluginParameters.size());
         if (instance==null) return null;
         Parameter[] params = instance.getParameters();
         if (params.length==this.pluginParameters.size()) {
             for (int i = 0; i<params.length; i++) {
                 params[i].setContentFrom(pluginParameters.get(i));
-                if (Parameter.logger.isTraceEnabled()) Parameter.logger.trace("set content from: reference: {} target: {}", pluginParameters.get(i), params[i]);
+                params[i].setParent(this);
+                //if (Parameter.logger.isTraceEnabled()) Parameter.logger.trace("set content from: reference: {} target: {}", pluginParameters.get(i), params[i]);
             }
         } else {
             Parameter.logger.error("Couldn't parametrize plugin: {}", pluginName);

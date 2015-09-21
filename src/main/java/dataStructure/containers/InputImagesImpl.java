@@ -25,7 +25,7 @@ import plugins.TransformationTimeIndependent;
  *
  * @author jollion
  */
-public class InputImagesImpl implements InputImages{
+public class InputImagesImpl implements InputImages {
     InputImage[][] imageTC;
     int defaultTimePoint;
     
@@ -38,9 +38,12 @@ public class InputImagesImpl implements InputImages{
     public int getChannelNumber() {return imageTC[0].length;}
     public int getDefaultTimePoint() {return defaultTimePoint;}
     
-    public void addTransformation(int[] channelIndicies, Transformation transfo) {
+    public void addTransformation(int inputChannel, int[] channelIndicies, Transformation transfo) {
         if (channelIndicies!=null) for (int c : channelIndicies) addTransformation(c, transfo);
-        else for (int c = 0; c<imageTC[0].length; ++c) addTransformation(c, transfo);
+        else {
+            if (transfo instanceof TransformationTimeIndependent &&  ((TransformationTimeIndependent)transfo).getOutputChannelSelectionMode()==Transformation.SelectionMode.SAME) addTransformation(inputChannel, transfo);
+            else for (int c = 0; c<imageTC[0].length; ++c) addTransformation(c, transfo);
+        }
     }
     
     public void addTransformation(int channelIdx, Transformation transfo) {

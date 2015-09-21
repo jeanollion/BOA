@@ -75,8 +75,7 @@ public class ParameterUtils {
     public static int getTimePointNumber(Parameter p) {
         MicroscopyField f = getMicroscopyFiedl(p);
         if (f!=null) {
-            if (f.getImages()!=null) return f.getImages().getTimePointNumber();
-            else return 0;
+            return f.getTimePointNumber();
         } else {
             Experiment xp = getExperiment(p);
             return xp.getTimePointNumber();

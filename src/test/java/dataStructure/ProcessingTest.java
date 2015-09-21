@@ -101,8 +101,7 @@ public class ProcessingTest {
         String[] files = new String[]{folder.getAbsolutePath()};
         Processor.importFiles(files, xp);
         assertEquals("number of fields detected", 6-1-1, xp.getMicroscopyFields().getChildCount()); // 6 - 1 (unique title) - 1 (channel number)
-        MultipleImageContainer c = xp.getMicroscopyField(title).getImages();
-        Utils.assertImage(images[0][0], (ImageByte)c.getImage(0, 0), 0);
+        Utils.assertImage(images[0][0], xp.getMicroscopyField(title).getInputImages().getImage(0, 0), 0);
     }
     
     @Test
@@ -137,8 +136,7 @@ public class ProcessingTest {
         String[] files = new String[]{folder.getAbsolutePath()};
         Processor.importFiles(files, xp);
         assertEquals("number of fields detected", 6-1-1-1, xp.getMicroscopyFields().getChildCount()); // 6 - 1 (unique title) - 1 (channel number)-1(timepoint number)
-        MultipleImageContainer c = xp.getMicroscopyField(title).getImages();
-        Utils.assertImage(images[0][0], (ImageByte)c.getImage(0, 0), 0);
+        Utils.assertImage(images[0][0], xp.getMicroscopyField(title).getInputImages().getImage(0, 0), 0);
     }
     
     @Test

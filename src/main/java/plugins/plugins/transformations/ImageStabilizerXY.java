@@ -50,27 +50,60 @@ public class ImageStabilizerXY implements Registration {
     Parameter[] parameters = new Parameter[]{ref, transformationType, pyramidLevel, alpha, maxIter, tol};
     double[][] translationTXY;
     
+    public ImageStabilizerXY(){}
+    
+    public ImageStabilizerXY(int referenceTimePoint, int transformationType, int pyramidLevel, double templateUpdateCoeff, int maxIterations, double tolerance) {
+        this.ref.setSelectedIndex(referenceTimePoint);
+        this.transformationType.setSelectedIndex(transformationType);
+        this.pyramidLevel.setSelectedIndex(pyramidLevel);
+        this.alpha.setValue(templateUpdateCoeff);
+        this.tol.setValue(tolerance);
+        this.maxIter.setValue(maxIterations);
+    }
+    
+    public ImageStabilizerXY setReferenceTimePoint(int timePoint) {
+        this.ref.setSelectedIndex(timePoint);
+        return this;
+    }
+    
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
         Image imageRef = inputImages.getImage(channelIdx, ref.getSelectedIndex());
         ImageProcessor[][] pyramids = ImageStabilizerCore.initWorkspace(imageRef.getSizeX(), imageRef.getSizeY(), pyramidLevel.getSelectedIndex());
-        FloatProcessor ipFloatRef = getFloatProcessor(imageRef, true);
-        FloatProcessor trans=null;
-        if (alpha.getValue().doubleValue()<1) trans  = new FloatProcessor(imageRef.getSizeX(), imageRef.getSizeY());
         translationTXY = new double[inputImages.getTimePointNumber()][];
         double a = alpha.getValue().doubleValue();
-        for (int t = 0; t<inputImages.getTimePointNumber(); ++t) {
-            if (t==ref.getSelectedIndex()) {
-                translationTXY[t] = new double[2];
-            } else {
-                FloatProcessor currentTime = getFloatProcessor(inputImages.getImage(channelIdx, t), false);
-                double[][] wp = ImageStabilizerCore.estimateTranslation(currentTime, ipFloatRef, pyramids[0], pyramids[1], maxIter.getValue().intValue(), tol.getValue().doubleValue());
-                translationTXY[t] = new double[]{wp[0][0], wp[1][0]};
-                //update template 
-                if (a<1) {
-                    ImageStabilizerCore.warpTranslation(trans, currentTime, wp);
-                    ImageStabilizerCore.combine(ipFloatRef, trans, a);
+        if (false) { 
+            FloatProcessor ipFloatRef = getFloatProcessor(imageRef, true);
+            FloatProcessor trans=null;
+            if (alpha.getValue().doubleValue()<1) trans  = new FloatProcessor(imageRef.getSizeX(), imageRef.getSizeY());
+            for (int t = 0; t<inputImages.getTimePointNumber(); ++t) {
+                if (t==ref.getSelectedIndex()) {
+                    translationTXY[t] = new double[2];
+                } else {
+                    FloatProcessor currentTime = getFloatProcessor(inputImages.getImage(channelIdx, t), false);
+                    double[][] wp = ImageStabilizerCore.estimateTranslation(currentTime, ipFloatRef, pyramids[0], pyramids[1], maxIter.getValue().intValue(), tol.getValue().doubleValue());
+                    translationTXY[t] = new double[]{wp[0][0], wp[1][0]};
+                    logger.trace("ImageStabilizerXY: timepoint: {} dX: {} dY: {}", t, translationTXY[t][0], translationTXY[t][1]);
+                    //update template 
+                    if (a<1) {
+                        ImageStabilizerCore.warpTranslation(trans, currentTime, wp);
+                        if (a!=0)ImageStabilizerCore.combine(ipFloatRef, trans, a);
+                        else ipFloatRef=trans;
+                    }
                 }
             }
+        } else { // calcul d'une slide à l'autre puis par rapport au ref
+            FloatProcessor currentTime, previousTime=getFloatProcessor(inputImages.getImage(channelIdx, 0), false);
+            double[][] translationTXYtemp = new double[inputImages.getTimePointNumber()][];
+            for (int t = 1; t<inputImages.getTimePointNumber(); ++t) {
+                currentTime = getFloatProcessor(inputImages.getImage(channelIdx, t), false);
+                double[][] wp = ImageStabilizerCore.estimateTranslation(currentTime, previousTime, pyramids[0], pyramids[1], maxIter.getValue().intValue(), tol.getValue().doubleValue());
+                translationTXYtemp[t] = new double[]{wp[0][0], wp[1][0]};
+                logger.trace("ImageStabilizerXY: timepoint: {} rel dX: {} rel dY: {}", t, translationTXYtemp[t][0], translationTXYtemp[t][1]);
+                previousTime=currentTime;
+            }
+            translationTXY = new double[inputImages.getTimePointNumber()][];
+            for (int t=ref.getSelectedIndex()-1; t>=0; --t) translationTXY[t]=new double[]{-translationTXYtemp[t+1][0]+translationTXY[t+1][0], -translationTXYtemp[t+1][1]+translationTXY[t+1][1]};
+            for (int t=ref.getSelectedIndex()+1; t<inputImages.getTimePointNumber(); ++t) translationTXY[t]=new double[]{translationTXYtemp[t][0]+translationTXY[t-1][0], translationTXYtemp[t][1]+translationTXY[t-1][1]};
         }
     }
     
@@ -91,9 +124,9 @@ public class ImageStabilizerXY implements Registration {
         FloatProcessor temp = new FloatProcessor(image.getSizeX(), image.getSizeY());
         double[][] wp = new double[][]{{translationTXY[timePoint][0]}, {translationTXY[timePoint][1]}};
         for (int z = 0; z<image.getSizeZ(); ++z) {
-            ImageStabilizerCore.warpTranslation(temp, is.getProcessor(z), wp);
+            ImageStabilizerCore.warpTranslation(temp, is.getProcessor(z+1), wp);
             outPixels[z]=(float[])temp.getPixels();
-            temp = (FloatProcessor)is.getProcessor(z);
+            temp = (FloatProcessor)is.getProcessor(z+1);
         }
         return new ImageFloat(image.getName(), image.getSizeX(), outPixels);
     }

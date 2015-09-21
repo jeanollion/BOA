@@ -92,6 +92,7 @@ public class ImageWriter {
             String fullPath = folderPath+File.separator+fileName+extension;
             IFormatWriter writer = new loci.formats.ImageWriter();
             writer.setMetadataRetrieve(generateMetadata(imageTC));
+            new File(folderPath).mkdirs();
             writer.setId(fullPath);
             /*Logger.getLogger(ImageWriter.class.getName()).info("writing file:"+fullPath);
             Logger.getLogger(ImageWriter.class.getName()).info("image count: "+writer.getMetadataRetrieve().getImageCount());

@@ -64,7 +64,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     }
     
     public void setOutputChannel(int... channelIdx) { // null -> all selected
-        outputChannel.setSelectedIndicies(channelIdx);
+        if (outputChannel!=null) outputChannel.setSelectedIndicies(channelIdx);
     }
     
     public void setInputChannel(int channelIdx) {

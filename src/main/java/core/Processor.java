@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plugins.Registration;
 import plugins.Tracker;
+import plugins.Transformation;
 import plugins.TransformationTimeIndependent;
 
 /**
@@ -67,17 +68,11 @@ public class Processor {
     public static void preProcessImages(MicroscopyField field) {
         InputImagesImpl images = field.getInputImages();
         PreProcessingChain ppc = field.getPreProcessingChain();
-        for (TransformationPluginParameter<TransformationTimeIndependent> tpp : ppc.getTransformationsTimeIndependent()) {
-            TransformationTimeIndependent transfo = tpp.getPlugin();
+        for (TransformationPluginParameter<Transformation> tpp : ppc.getTransformations()) {
+            Transformation transfo = tpp.getPlugin();
             transfo.computeConfigurationData(tpp.getInputChannel(), images);
             tpp.setConfigurationData(transfo.getConfigurationData());
-            images.addTransformation(tpp.getOutputChannels(), transfo);
-        }
-        TransformationPluginParameter<Registration> tpp = ppc.getRegistration();
-        Registration r = tpp.getPlugin();
-        if (r != null) {
-            r.computeConfigurationData(tpp.getInputChannel(), images);
-            images.addTransformation(null, r);
+            images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
         }
         images.applyTranformationsSaveAndClose();
     }

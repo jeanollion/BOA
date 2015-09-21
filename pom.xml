@@ -96,9 +96,9 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
-            <groupId>net.imagej</groupId>
+            <groupId>sc.fiji</groupId>
             <artifactId>Image_5D</artifactId>
-            <version>1.2.5</version>
+            <version>1.2.7-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>sc.fiji</groupId>
@@ -145,6 +145,7 @@
             <version>1.2.1</version>
             <scope>test</scope>
         </dependency>
+        
     </dependencies>
 
     <repositories>
