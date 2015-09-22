@@ -146,7 +146,19 @@ public class ImageByte extends ImageInteger {
             }
         }
     }
+    
+    @Override 
+    public int[] getHisto256(ImageMask mask) {
+        if (mask==null) mask=new BlankMask("", this);
+        int[] histo = new int[256];
+        for (int z = 0; z < sizeZ; z++) {
+            for (int xy = 0; xy < sizeXY; xy++) {
+                if (mask.insideMask(xy, z)) {
+                    histo[pixels[z][xy] & 0xff]++;
+                }
+            }
+        }
+        return histo;
+    }
 
-    
-    
 }

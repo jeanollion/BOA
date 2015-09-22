@@ -31,13 +31,13 @@ import processing.ImageTransformation.Axis;
  *
  * @author jollion
  */
-public class Filp implements TransformationTimeIndependent {
+public class Flip implements TransformationTimeIndependent {
     
     ChoiceParameter direction = new ChoiceParameter("Flip Axis Direction", new String[]{Axis.X.toString(), Axis.Y.toString(), Axis.Z.toString()}, Axis.Y.toString(), false);
     Parameter[] p = new Parameter[]{direction};
-    public Filp() {}
+    public Flip() {}
     
-    public Filp(Axis axis) {
+    public Flip(Axis axis) {
         direction.setSelectedItem(axis.toString());
     }
 

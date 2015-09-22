@@ -61,7 +61,7 @@ public class RadonProjection {
                     if (fast) {
                         //just use nearest neighbour interpolation
                         y = (int) Math.round(a * x + b);
-                        if (y >= -Xcenter && y < Xcenter) {
+                        if (y >= -Ycenter && y < Ycenter) {
                             val += image.getPixel(x+Xcenter, y + Ycenter, z);
                         }
                     } else {
@@ -69,7 +69,7 @@ public class RadonProjection {
                         y = (int) Math.round(a * x + b);
                         weight = Math.abs((a * x + b) - Math.ceil(a * x + b));
 
-                        if (y >= -Xcenter && y + 1 < Xcenter) {
+                        if (y >= -Ycenter && y + 1 < Ycenter) {
                             val += (1 - weight) * image.getPixel(x+Xcenter, y + Ycenter, z)
                                     + weight * image.getPixel(x+Xcenter, y + Ycenter + 1, z);
                         }
@@ -142,13 +142,7 @@ public class RadonProjection {
         for (int i = 0; i<source.length; ++i) pixDest[x + i*dest.getSizeX()] = source[i];
     }
     
-    private static void filter(double scale, float[] data) {
-        ImageFloat im = new ImageFloat("", data.length, new float[][]{data});
-        im = Filters.median(im, im, new EllipsoidalNeighborhood(3, false));
-        im = Filters.tophat(im, im, new EllipsoidalNeighborhood(scale, false));
-        float[] data2 = im.getPixelArray()[0];
-        for (int i = 0; i<data.length; ++i) data[i] = data2[i];
-    }
+    
     
     
 }

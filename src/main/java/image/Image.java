@@ -90,6 +90,50 @@ public abstract class Image implements ImageProperties {
             offSource=0;
         }
     }
+    public ImageInteger threshold(double threshold, boolean overThreshold, boolean strict) {
+        return threshold(threshold, overThreshold, strict, false, null);
+    }
+    public ImageInteger threshold(double threshold, boolean overThreshold, boolean strict, boolean setBackground, ImageInteger dest) {
+        if (dest==null) dest=new ImageByte("", this);
+        if (overThreshold) {
+            if (strict) {
+                for (int z = 0; z < sizeZ; z++) {
+                    for (int xy = 0; xy < sizeXY; xy++) {
+                        if (getPixel(xy, z)>threshold) {
+                            dest.setPixel(xy, z, 1);
+                        } else if (setBackground) dest.setPixel(xy, z, 0);
+                    }
+                }
+            } else {
+                for (int z = 0; z < sizeZ; z++) {
+                    for (int xy = 0; xy < sizeXY; xy++) {
+                        if (getPixel(xy, z)>=threshold) {
+                            dest.setPixel(xy, z, 1);
+                        } else if (setBackground) dest.setPixel(xy, z, 0);
+                    }
+                }
+            }
+        } else {
+            if (strict) {
+                for (int z = 0; z < sizeZ; z++) {
+                    for (int xy = 0; xy < sizeXY; xy++) {
+                        if (getPixel(xy, z)<threshold) {
+                            dest.setPixel(xy, z, 1);
+                        } else if (setBackground) dest.setPixel(xy, z, 0);
+                    }
+                }
+            } else {
+                for (int z = 0; z < sizeZ; z++) {
+                    for (int xy = 0; xy < sizeXY; xy++) {
+                        if (getPixel(xy, z)<=threshold) {
+                            dest.setPixel(xy, z, 1);
+                        } else if (setBackground) dest.setPixel(xy, z, 0);
+                    }
+                }
+            }
+        }
+        return dest;
+    }
     
     @Override
     public boolean contains(int x, int y, int z) {
@@ -168,6 +212,8 @@ public abstract class Image implements ImageProperties {
         }
         return new float[]{min, max};
     }
+    
+    public abstract int[] getHisto256(ImageMask mask);
 
     protected Image cropI(BoundingBox bounds) {
         //bounds.trimToImage(this);

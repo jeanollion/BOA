@@ -28,6 +28,10 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import utils.Utils;
@@ -39,6 +43,7 @@ import utils.Utils;
 
 public class ImageFieldFactory {
     private final static String seriesSeparator = "_xy";
+    private final static List<String> ignoredExtensions = Arrays.asList(new String[]{".log"});
     public static ArrayList<MultipleImageContainer> importImages(String[] path, Experiment xp) {
         ArrayList<MultipleImageContainer> res = new ArrayList<MultipleImageContainer>();
         if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.SINGLE_FILE)) for (String p : path) ImageFieldFactory.importImagesSingleFile(new File(p), xp, res);
@@ -48,8 +53,14 @@ public class ImageFieldFactory {
             String[] keyWords = new String[nb];
             int idx = 0;
             for (ChannelImage i : xp.getChannelImages().getChildren()) keyWords[idx++] = i.getImportImageChannelKeyword();
+            logger.debug("import image channel: keywords: {}", (Object)keyWords);
             for (String p : path) ImageFieldFactory.importImagesChannel(new File(p), xp, keyWords, res);
         }
+        Collections.sort(res, new Comparator<MultipleImageContainer>() {
+            @Override public int compare(MultipleImageContainer arg0, MultipleImageContainer arg1) {
+                return arg0.getName().compareToIgnoreCase(arg1.getName());
+            }
+        });
         return res;
     }
     
@@ -59,7 +70,7 @@ public class ImageFieldFactory {
             for (File ff : f.listFiles()) {
                 ImageFieldFactory.importImagesSingleFile(ff, xp, containersTC);
             }
-        } else {
+        } else if (!isIgnoredExtension(f.getName())) {
             addContainerSingleFile(f, xp, containersTC);
         }
     }
@@ -92,8 +103,10 @@ public class ImageFieldFactory {
     protected static void importImagesChannel(File input, Experiment xp, String[] keyWords, ArrayList<MultipleImageContainer> containersTC) {
         if (!input.isDirectory()) return;
         File[] subDirs = input.listFiles(getDirectoryFilter()); // recursivity
-        for (File dir : subDirs) importImagesChannel(dir, xp, keyWords, containersTC);
+        for (File dir : subDirs) importImagesChannel(dir, xp, keyWords, containersTC);// recursivity
+        
         File[] file0 = input.listFiles(getFileFilterKeyword(keyWords[0]));
+        logger.debug("import images in dir: {} number of candidates: {}", input.getAbsolutePath(), file0.length);
         for (File f : file0) {
             String[] allChannels = new String[keyWords.length];
             allChannels[0] = f.getAbsolutePath();
@@ -149,6 +162,16 @@ public class ImageFieldFactory {
         else return s;
     }
     
+    private static boolean isIgnoredExtension(String s) {
+        for (int i =s.length()-1; i>=0; --i) {
+            if (s.charAt(i)=='.') {
+                String ext = s.substring(i, s.length());
+                return ignoredExtensions.contains(ext);
+            }
+        }
+        return false;
+    }
+    
     private static FileFilter getDirectoryFilter() {
         return new FileFilter() {
             public boolean accept(File file) {
@@ -168,8 +191,10 @@ public class ImageFieldFactory {
     private static FilenameFilter getFileFilterKeyword(final String keyword) {
         return new FilenameFilter() {
             public boolean accept(File dir, String name) {
-                return name.contains(keyword);
+                return name.contains(keyword) && !isIgnoredExtension(name);
             }
         };
     }
+    
+    
 }

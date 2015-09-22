@@ -44,15 +44,18 @@ public class Processor {
     
     public static void importFiles(String[] selectedFiles, Experiment xp) {
         ArrayList<MultipleImageContainer> images = ImageFieldFactory.importImages(selectedFiles, xp);
+        int count=0;
         for (MultipleImageContainer c : images) {
             if (!xp.getMicroscopyFields().containsElement(c.getName())) {
                 MicroscopyField f = (MicroscopyField)xp.getMicroscopyFields().createChildInstance(c.getName());
                 xp.getMicroscopyFields().insert(f);
                 f.setImages(c);
+                count++;
             } else {
                 logger.warn("Image: {} already present in fields was no added", c.getName());
             }
         }
+        logger.info("{} fields found int files: {}", count, selectedFiles);
     }
     
     /*public static StructureObjectRoot initRoot(Experiment xp) {
@@ -66,6 +69,12 @@ public class Processor {
     }
     
     public static void preProcessImages(MicroscopyField field) {
+        setTransformationsAndComputeConfigurationData(field);
+        InputImagesImpl images = field.getInputImages();
+        images.applyTranformationsSaveAndClose();
+    }
+    
+    public static void setTransformationsAndComputeConfigurationData(MicroscopyField field) {
         InputImagesImpl images = field.getInputImages();
         PreProcessingChain ppc = field.getPreProcessingChain();
         for (TransformationPluginParameter<Transformation> tpp : ppc.getTransformations()) {
@@ -74,7 +83,6 @@ public class Processor {
             tpp.setConfigurationData(transfo.getConfigurationData());
             images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
         }
-        images.applyTranformationsSaveAndClose();
     }
     
     public static void processStructure(int structureIdx, StructureObject root, ObjectDAO dao) {

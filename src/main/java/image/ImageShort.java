@@ -1,5 +1,6 @@
 package image;
 
+import ij.process.StackStatistics;
 import processing.neighborhood.Neighborhood;
 
 public class ImageShort extends ImageInteger {
@@ -144,6 +145,25 @@ public class ImageShort extends ImageInteger {
                 }
             }
         }
+    }
+    
+    @Override 
+    public int[] getHisto256(ImageMask mask) {
+        if (mask==null) mask=new BlankMask("", this);
+        float[] minAndMax = getMinAndMax(mask);
+        double min = minAndMax[0];
+        double coeff = 256d / (minAndMax[1] - min);
+        int[] histo = new int[256];
+        int idx;
+        for (int z = 0; z < sizeZ; z++) {
+            for (int xy = 0; xy < sizeXY; xy++) {
+                if (mask.insideMask(xy, z)) {
+                    idx = (int) (((pixels[z][xy] & 0xFFFF) - min) * coeff);
+                    histo[idx>=256?255:idx]++;
+                }
+            }
+        }
+        return histo;
     }
     
 }

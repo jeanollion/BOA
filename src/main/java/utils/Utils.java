@@ -18,7 +18,10 @@
 package utils;
 
 import de.caluga.morphium.Morphium;
+import ij.gui.Plot;
+import image.Image;
 import java.awt.Color;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -80,6 +83,12 @@ public class Utils {
         return res;
     }
     
+    public static String[] toStringArray(Enum[] array) {
+        String[] res = new String[array.length];
+        for (int i = 0;i<res.length;++i) res[i]=array[i].toString();
+        return res;
+    }
+    
     public static<T> ArrayList<T> reverseOrder(ArrayList<T> arrayList) {
         ArrayList<T> res = new ArrayList<T>(arrayList.size());
         for (int i = arrayList.size()-1; i>=0; --i) res.add(arrayList.get(i));
@@ -116,4 +125,33 @@ public class Utils {
         }
         return res;
     }
+    
+    public static void plotProfile(Image image, int z, int coord, boolean alongX) {
+        double[] x;
+        double[] y;
+        if (alongX) {
+            x=new double[image.getSizeX()];
+            y=new double[image.getSizeX()];
+            for (int i = 0; i<x.length; ++i) {
+                x[i]=i;
+                y[i]=image.getPixel(i, coord, z);
+            }
+        } else {
+            x=new double[image.getSizeY()];
+            y=new double[image.getSizeY()];
+            for (int i = 0; i<x.length; ++i) {
+                x[i]=i;
+                y[i]=image.getPixel(coord, i, z);
+            }
+        }
+        new Plot(image.getName(), "coord", "value", x, y).show();
+    }
+    
+    public static void deleteDirectory(File dir) { //recursive delete, because java's native function wants the dir to be empty to delete it
+        if (dir.isFile()) dir.delete();
+        else {
+            for (File f : dir.listFiles()) deleteDirectory(f);
+            dir.delete();
+        }
+    } 
 }

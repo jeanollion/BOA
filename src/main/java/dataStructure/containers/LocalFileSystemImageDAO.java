@@ -49,8 +49,7 @@ public class LocalFileSystemImageDAO implements ImageDAO {
             logger.debug("Opening pre-processed image:  channel: {} timePoint: {} fieldName: {}", channelImageIdx, timePoint, microscopyFieldName);
             return ImageReader.openImage(path);
         } else {
-            logger.error("pre-processed image: {} not found", path);
-            //System.out.println("Try to open pre-processed image but file not found:  channel: "+channelImageIdx+ " timePoint: "+timePoint+ " fieldName: "+microscopyFieldName);
+            logger.debug("pre-processed image: {} not found", path);
             return null;
         }
     }

@@ -112,4 +112,9 @@ public class BlankMask extends ImageInteger implements ImageMask {
     }
 
     @Override public void pasteImage(Image source, BoundingBox offset) {}
+    
+    @Override
+    public int[] getHisto256(ImageMask mask) {
+        return new int[256];
+    }
 }
