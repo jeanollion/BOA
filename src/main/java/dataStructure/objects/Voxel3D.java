@@ -1,7 +1,7 @@
 package dataStructure.objects;
 
 
-public class Voxel3D extends Voxel implements Comparable<Voxel3D>{
+public class Voxel3D extends Voxel {
 
     public int z;
 
@@ -17,13 +17,6 @@ public class Voxel3D extends Voxel implements Comparable<Voxel3D>{
     }
     
     public int getZ() {return z;}
-
-    @Override
-    public int compareTo(Voxel3D other) {
-        if (other.value<value) return -1;
-        else if (other.value>value) return 1;
-        else return 0;
-    }
     
     @Override
     public boolean equals(Object other) {

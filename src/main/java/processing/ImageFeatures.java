@@ -61,22 +61,38 @@ public class ImageFeatures {
         return res;
     }
     
-    public static ImageFloat[] getGradient(Image image, double scale) {
+    public static ImageFloat getDerivative(Image image, double scale, int xOrder, int yOrder, int zOrder, boolean overrideIfFloat) {
+        if (image.getSizeZ()==1) zOrder=0;
+        if (image.getSizeY()==1) yOrder=0;
+        if (image.getSizeX()==1) xOrder=0;
+        final imagescience.image.Image is = ImagescienceWrapper.getImagescience(image);
+        boolean duplicate = !((image instanceof ImageFloat) && overrideIfFloat);
+        scale *= (double) image.getScaleXY(); // FIXME scaleZ?
+        final Differentiator differentiator = new Differentiator();
+        ImageFloat res = (ImageFloat)ImagescienceWrapper.wrap(differentiator.run(duplicate?is.duplicate():is, scale, xOrder, yOrder, zOrder));
+        res.setCalibration(image);
+        res.resetOffset().addOffset(image);
+        return res;
+    }
+    
+    public static ImageFloat[] getGradient(Image image, double scale, boolean overrideIfFloat) {
         final int dims = image.getSizeZ()==1?2:3;
         final ImageFloat[] res = new ImageFloat[dims];
+        boolean duplicate = !((image instanceof ImageFloat) && overrideIfFloat);
         final imagescience.image.Image is = ImagescienceWrapper.getImagescience(image);
         scale *= (double) image.getScaleXY(); // FIXME scaleZ?
         final Differentiator differentiator = new Differentiator();
         for (int i =0;i<dims; i++) {
-            res[i] = (ImageFloat)ImagescienceWrapper.wrap(differentiator.run(is.duplicate(), scale, i==0?1:0, i==1?1:0, i==2?1:0));
+            boolean dup= i==dims-1?duplicate : image instanceof ImageFloat;
+            res[i] = (ImageFloat)ImagescienceWrapper.wrap(differentiator.run(dup?is.duplicate():is, scale, i==0?1:0, i==1?1:0, i==2?1:0));
             res[i].setCalibration(image);
             res[i].resetOffset().addOffset(image);
         }
         return res;
     }
     
-    public static ImageFloat getGradientMagnitude(Image image, double scale) {
-        ImageFloat[] grad = getGradient(image, scale);
+    public static ImageFloat getGradientMagnitude(Image image, double scale, boolean overrideIfFloat) {
+        ImageFloat[] grad = getGradient(image, scale, overrideIfFloat);
         ImageFloat res = new ImageFloat(image.getName() + ":gradientMagnitude", image);
         final float[][] pixels = res.getPixelArray();
         if (grad.length == 3) {
@@ -173,12 +189,17 @@ public class ImageFeatures {
         return res;
     }
     
-    public static ImageFloat gaussianSmooth(Image image, float scaleXY, float scaleZ) {
+    public static ImageFloat gaussianSmooth(Image image, double scaleXY, double scaleZ, boolean overrideIfFloat) {
+        if (image.getSizeZ()>1 && scaleZ<=0) throw new IllegalArgumentException("Scale Z should be >0 ");
+        else if (scaleZ<=0) scaleZ=1;
+        if (scaleXY<=0) throw new IllegalArgumentException("Scale XY should be >0 ");
         float old_scaleXY = image.getScaleXY();
         float old_scaleZ = image.getScaleZ();
         image.setCalibration(1, (float)(scaleXY / scaleZ));
+        boolean duplicate = !((image instanceof ImageFloat) && overrideIfFloat);
+        final imagescience.image.Image is = ImagescienceWrapper.getImagescience(image);
         Differentiator differentiator = new Differentiator();
-        ImageFloat res = (ImageFloat)ImagescienceWrapper.wrap(differentiator.run(ImagescienceWrapper.getImagescience(image), scaleXY, 0, 0, 0));
+        ImageFloat res = (ImageFloat)ImagescienceWrapper.wrap(differentiator.run(duplicate?is.duplicate():is, scaleXY, 0, 0, 0));
         image.setCalibration(old_scaleXY, old_scaleZ);
         res.setCalibration(old_scaleXY, old_scaleZ);
         res.resetOffset().addOffset(image);

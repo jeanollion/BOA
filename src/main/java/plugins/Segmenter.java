@@ -26,5 +26,5 @@ import image.Image;
  * @author jollion
  */
 public interface Segmenter extends ImageProcessingPlugin {
-    public ObjectPopulation runSegmenter(Image input, StructureObjectProcessing structureObject);
+    public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent);
 }

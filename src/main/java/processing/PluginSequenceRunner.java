@@ -49,10 +49,10 @@ public class PluginSequenceRunner {
         }
     }
     
-    public static ObjectPopulation segmentImage(Image input, StructureObjectProcessing structureObject, Segmenter segmenter) {
+    public static ObjectPopulation segmentImage(Image input, int structureIdx, StructureObjectProcessing structureObject, Segmenter segmenter) {
         Plugin.logger.debug("segmenting: {} segmenter class: {} segmenter {}", structureObject, (segmenter==null?"null":segmenter.getClass()), segmenter);
         if (segmenter==null) return new ObjectPopulation(new ArrayList<Object3D>(0), new BlankMask("", input));
-        else return segmenter.runSegmenter(input, structureObject).setProperties(input, true);
+        else return segmenter.runSegmenter(input, structureIdx, structureObject).setProperties(input, true);
     }
     
     public static ObjectPopulation postFilterImage(ObjectPopulation objectPopulation, StructureObjectProcessing structureObject, ArrayList<PostFilter> postFilters) {

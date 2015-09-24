@@ -39,7 +39,7 @@ public class ImageLabeller {
     int[][] labels;
     int sizeX;
     HashMap<Integer, Spot> spots;
-    ImageInteger mask;
+    ImageMask mask;
     protected static final int[][] neigh3D = new int[][]{
             {1, 1, -1}, {0, 1, -1}, {-1, 1, -1}, {1, 0, -1}, {0, 0, -1}, {-1, 0, -1}, {1, -1, -1}, {0, 1, -1}, {-1, -1, -1},
             {1, -1, 0}, {0, -1, 0}, {-1, -1, 0}, {-1, 0, 0}
@@ -49,7 +49,7 @@ public class ImageLabeller {
         };
     int[][] neigh;
     
-    protected ImageLabeller(ImageInteger mask) {
+    protected ImageLabeller(ImageMask mask) {
         this.mask=mask;
         ImageInt imLabels = new ImageInt("labels", mask);
         labels = imLabels.getPixelArray();
@@ -57,8 +57,8 @@ public class ImageLabeller {
         spots = new HashMap<Integer, Spot>();
     }
     
-    public static Object3D[] labelImage(ImageInteger mask) {
-        if (mask instanceof BlankMask) return new Object3D[]{new Object3D(mask, 1)};
+    public static Object3D[] labelImage(ImageMask mask) {
+        if (mask instanceof BlankMask) return new Object3D[]{new Object3D((BlankMask)mask, 1)};
         else {
             ImageLabeller il = new ImageLabeller(mask);
             if (mask.getSizeZ()>1) il.neigh=ImageLabeller.neigh3D;
@@ -74,7 +74,7 @@ public class ImageLabeller {
         for (Spot s : spots.values()) {
             ArrayList<Voxel3D> voxels = s.voxels;
             voxels = new ArrayList(new HashSet(voxels)); // revmove duplicate voxels because of neighbourhood overlap
-            res[label++]= new Object3D(voxels, label, mask.getScaleXY(), mask.getScaleZ());
+            res[label++]= new Object3D(voxels, label);
         }
         return res;
     }

@@ -12,6 +12,10 @@ public class BlankMask extends ImageInteger implements ImageMask {
         this(name, sizeX, sizeY, sizeZ, 0, 0, 0, 1, 1);
     }
     
+    public BlankMask(ImageProperties properties) {
+        this("", properties);
+    }
+    
     public BlankMask(String name, ImageProperties properties) {
         this(name, properties.getSizeX(), properties.getSizeY(), properties.getSizeZ(), properties.getOffsetX(), properties.getOffsetY(), properties.getOffsetZ(), properties.getScaleXY(), properties.getScaleZ());
     }

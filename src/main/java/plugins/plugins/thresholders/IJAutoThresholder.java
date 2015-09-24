@@ -22,6 +22,7 @@ import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObjectProcessing;
 import ij.process.AutoThresholder;
 import ij.process.AutoThresholder.Method;
+import image.BlankMask;
 import image.Image;
 import image.ImageByte;
 import image.ImageInteger;
@@ -42,6 +43,7 @@ public class IJAutoThresholder implements Thresholder {
     }
     
     public static double runThresholder(Image input, ImageMask mask, Method method) {
+        if (mask==null) mask=new BlankMask("", input);
         float[] mm = input.getMinAndMax(mask);
         int[] histo = input.getHisto256(mask);
         double binSize=(input instanceof ImageByte)?1:(mm[1]-mm[0])/256d;

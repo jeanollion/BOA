@@ -26,21 +26,30 @@ import static core.Processor.preProcessImages;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.Structure;
+import dataStructure.objects.Object3D;
+import dataStructure.objects.ObjectPopulation;
+import ij.process.AutoThresholder;
 import image.Image;
 import image.ImageFormat;
+import image.ImageMask;
 import image.ImageWriter;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import plugins.PluginFactory;
 import plugins.plugins.preFilter.IJSubtractBackground;
+import plugins.plugins.segmenters.BacteriesFluo2D;
+import plugins.plugins.segmenters.MicroChannelFluo2D;
+import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.transformations.AutoRotationXY;
 import plugins.plugins.transformations.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
 import plugins.plugins.transformations.ImageStabilizerXY;
 import processing.ImageTransformation.InterpolationScheme;
+import testPlugins.dummyPlugins.DummySegmenter;
 import static utils.Utils.deleteDirectory;
 
 /**
@@ -52,19 +61,17 @@ public class TestProcessFluo {
     
     public static void main(String[] args) {
         //new TestProcessFluo().testRotation();
-        
-        new TestProcessFluo().testStabilizer();
-        
+        new TestProcessFluo().testSegBacteries();
     }
-    @Test
-    public void testImport() {
+    //@Test
+    public void testImport(String inputDir) {
         PluginFactory.findPlugins("plugins.plugins");
         xp = new Experiment("testXP", new Structure("structure"));
         xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
         xp.getChannelImages().insert(new ChannelImage("trans", "_REF"), new ChannelImage("fluo", ""));
         xp.setOutputImageDirectory("/data/Images/Fluo/OutputTest");
         File f =  new File("/data/Images/Fluo/OutputTest");f.mkdirs();deleteDirectory(f);
-        String[] files = new String[]{"/data/Images/Fluo/test"}; //       /data/Images/Fluo/me121r-1-9-15-lbiptg100x
+        String[] files = new String[]{inputDir}; //       /data/Images/Fluo/me121r-1-9-15-lbiptg100x /data/Images/Fluo/test
         Processor.importFiles(files, xp);
         //assertEquals("number of fields detected", 1, xp.getMicroscopyFields().getChildCount());
         logger.info("imported field: name: {} image: timepoint: {} scale xy: {} scale z: {}", xp.getMicroscopyField(0).getName(), xp.getMicroscopyField(0).getTimePointNumber(), xp.getMicroscopyField(0).getScaleXY(), xp.getMicroscopyField(0).getScaleZ());
@@ -72,8 +79,8 @@ public class TestProcessFluo {
         //ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(xp.getMicroscopyField(0).getImages().getImage(0, 1));
     }
     
-    private void subsetTimePoints(int tnb) {
-        if (xp==null)testImport();
+    private void subsetTimePoints(int tnb, String inputDir) {
+        if (xp==null)testImport(inputDir);
         Image[][] imageTC = new Image[tnb][1];
         for (int i = 0; i<tnb; ++i) imageTC[i][0] = xp.getMicroscopyField(0).getInputImages().getImage(0, i);
         ImageWriter.writeToFile("/data/Images/Fluo/testsub/", "imagesTest_REF", ImageFormat.OMETIF, imageTC);
@@ -81,8 +88,8 @@ public class TestProcessFluo {
         ImageWriter.writeToFile("/data/Images/Fluo/testsub/", "imagesTest", ImageFormat.OMETIF, imageTC);
     }
     
-    public void testRotation() {
-        testImport();
+    public void testRotation(String inputDir) {
+        testImport("/data/Images/Fluo/testsub");
         ImageDisplayer disp = new IJImageDisplayer();
         for (int i =0; i<xp.getMicrocopyFieldNB(); ++i) {
             xp.getMicroscopyField(i).getPreProcessingChain().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
@@ -96,7 +103,7 @@ public class TestProcessFluo {
     
     //@Test 
     public void testStabilizer() {
-        testImport();
+        testImport("/data/Images/Fluo/test");
         xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
         xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
         xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
@@ -114,8 +121,8 @@ public class TestProcessFluo {
         disp.showImage5D("output", imageOutputTC);
     }
     
-    public void testCrop() {
-        testImport();
+    public void testCrop(String inputDir) {
+        testImport(inputDir);
         //List<Integer> flip = Arrays.asList(new Integer[]{0});
         for (int i =0; i<xp.getMicrocopyFieldNB(); ++i) testCrop(i, true); //flip.contains(new Integer(i))
     }
@@ -127,9 +134,38 @@ public class TestProcessFluo {
         xp.getMicroscopyField(fieldIdx).getPreProcessingChain().addTransformation(0, null, new CropMicroChannels2D());
         //Image[][] imageInputTC = new Image[xp.getMicroscopyField(0).getInputImages().getTimePointNumber()][1];
         //for (int t = 0; t<imageInputTC.length; ++t) imageInputTC[t][0] = xp.getMicroscopyField(0).getInputImages().getImage(0, t);
-        ImageDisplayer disp = new IJImageDisplayer();
-        disp.showImage(xp.getMicroscopyField(fieldIdx).getInputImages().getImage(0, 0).duplicate("input:"+fieldIdx));
+        
+        //ImageDisplayer disp = new IJImageDisplayer();
+        //disp.showImage(xp.getMicroscopyField(fieldIdx).getInputImages().getImage(0, 0).duplicate("input:"+fieldIdx));
         Processor.setTransformationsAndComputeConfigurationData(xp.getMicroscopyField(fieldIdx));
-        disp.showImage(xp.getMicroscopyField(fieldIdx).getInputImages().getImage(0, 0).duplicate("output:"+fieldIdx));
+        //disp.showImage(xp.getMicroscopyField(fieldIdx).getInputImages().getImage(0, 0).duplicate("output:"+fieldIdx));
+    }
+    
+    public void testSegMicroChannels() {
+        testCrop("/data/Images/Fluo/testsub");
+        Image image = xp.getMicroscopyField(0).getInputImages().getImage(0, 0);
+        ArrayList<Object3D> objects = MicroChannelFluo2D.getObjects(image, 300, 22, 2);
+        ObjectPopulation pop = new ObjectPopulation(objects, image);
+        Image labels = pop.getLabelImage();
+        ImageDisplayer disp = new IJImageDisplayer();
+        disp.showImage(labels);
+        /*Structure microChannel = new Structure("MicroChannel", -1, 0);
+        xp.getStructures().insert(microChannel);
+        microChannel.getProcessingChain().setSegmenter(new DummySegmenter(true, 2));
+                */
+    }
+    
+    public void testSegBacteries() {
+        testCrop("/data/Images/Fluo/testsub");
+        Image image = xp.getMicroscopyField(0).getInputImages().getImage(0, 0);
+        ArrayList<Object3D> objects = MicroChannelFluo2D.getObjects(image, 300, 35, 8);
+        ImageMask parentMask = objects.get(0).getMask();
+        Image input = image.crop(objects.get(0).getBounds());
+        ImageDisplayer disp = new IJImageDisplayer();
+        //disp.showImage(input);
+        double thld = IJAutoThresholder.runThresholder(input, null, AutoThresholder.Method.Triangle);
+        logger.debug("thld: {}", thld);
+        ObjectPopulation pop = BacteriesFluo2D.run(input, parentMask, 15, thld);
+        disp.showImage(pop.getLabelImage());
     }
 }

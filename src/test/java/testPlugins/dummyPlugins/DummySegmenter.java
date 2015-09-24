@@ -45,7 +45,7 @@ public class DummySegmenter implements Segmenter {
         this.objectNb.setValue(objectNb);
     }
     
-    public ObjectPopulation runSegmenter(Image input, StructureObjectProcessing structureObject) {
+    public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing structureObject) {
         ImageMask mask;
         if (structureObject==null) mask = new BlankMask("", input);
         else mask = structureObject.getMask();

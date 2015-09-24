@@ -30,7 +30,11 @@ import image.ImageInteger;
 import image.ImageLabeller;
 import plugins.TransformationTimeIndependent;
 import plugins.plugins.thresholders.IJAutoThresholder;
+import processing.Filters;
+import processing.ImageFeatures;
 import processing.RadonProjection;
+import processing.neighborhood.EllipsoidalNeighborhood;
+import utils.ArrayUtil;
 import static utils.Utils.plotProfile;
 
 /**
@@ -46,9 +50,8 @@ public class CropMicroChannels2D implements TransformationTimeIndependent {
     NumberParameter yStop = new BoundedNumberParameter("Y stop (0 for image heigth)", 0, 0, 0, null);
     NumberParameter margin = new BoundedNumberParameter("Margin", 0, 15, 0, null);
     NumberParameter channelHeight = new BoundedNumberParameter("Channel Height", 0, 350, 0, null);
-    NumberParameter channelWidth = new BoundedNumberParameter("Channel Width", 0, 10, 0, null);
-    Parameter[] parameters = new Parameter[]{channelHeight, channelWidth, margin, xStart, xStop, yStart, yStop};
-    private static final int cropMargin=20;
+    NumberParameter cropMargin = new BoundedNumberParameter("Crop Margin", 0, 15, 0, null);
+    Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, xStart, xStop, yStart, yStop};
     
     public SelectionMode getOutputChannelSelectionMode() {
         return SelectionMode.ALL;
@@ -71,16 +74,15 @@ public class CropMicroChannels2D implements TransformationTimeIndependent {
         }
         
         if (channelHeight.getValue().intValue()>image.getSizeY()) throw new IllegalArgumentException("channel height > image height");
-        if (channelWidth.getValue().intValue()>image.getSizeX()) throw new IllegalArgumentException("channel width > image width");
         
         int z = image.getSizeZ()/2;
-        BoundingBox b = getBoundingBox(image, z, margin.getValue().intValue(), channelHeight.getValue().intValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue());
+        BoundingBox b = getBoundingBox(image, z, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue());
         // si b==null -> faire sur d'autres temps? 
         logger.debug("Crop Microp Channel: image: {} timepoint: {} boundingBox: {}", image.getName(), inputImages.getDefaultTimePoint(), b);
         configurationData = new Integer[]{b.getxMin(), b.getxMax(), b.getyMin(), b.getyMax()};
     }
     
-    public static BoundingBox getBoundingBox(Image image, int z, int margin, int channelHeight, int xStart, int xStop, int yStart, int yStop) {
+    public static BoundingBox getBoundingBox(Image image, int z, int cropMargin, int margin, int channelHeight, int xStart, int xStop, int yStart, int yStop) {
         //get projections along X and Y axis
         ImageFloat imProjX = new ImageFloat("proj(X)", image.getSizeX(), 1, 1);
         for (int x = 0; x<image.getSizeX(); ++x) {
@@ -106,40 +108,56 @@ public class CropMicroChannels2D implements TransformationTimeIndependent {
         } else { // get object with maximum height
             int idxMax = 0;
             for (int i = 1; i<objHeight.length;++i) if (objHeight[i].getBounds().getSizeX()>=objHeight[idxMax].getBounds().getSizeX()) idxMax=i;
-            yStart = Math.max(objHeight[idxMax].getBounds().getxMin()-cropMargin, 0);
+            yStart = objHeight[idxMax].getBounds().getxMin();
             //logger.trace("crop microchannels: yStart: {} idx of margin object: {}", yStart, idxMax);
         }
-        yStop = Math.min(yStop, yStart+channelHeight + cropMargin*2);
+        // look for derivative maximum around new yStart:
+        ImageFloat median = Filters.median(imProjY, new ImageFloat("", 0, 0, 0), new EllipsoidalNeighborhood(3, true));
+        ImageFloat projDer = ImageFeatures.getDerivative(median, 1, 1, 0, 0, true);
+        //plotProfile(projDer, 0, 0, true);
+        yStart = ArrayUtil.max(projDer.getPixelArray()[0], yStart-cropMargin, yStart+cropMargin);
+        yStop = Math.min(yStop, yStart+channelHeight);
+        yStart = Math.max(yStart-cropMargin, 0);
+        
         // get X coords
         ImageInteger widthMask = imProjX.threshold(IJAutoThresholder.runThresholder(imProjX, null, AutoThresholder.Method.Otsu), true, false);
         //plotProfile(widthMask, 0, 0, true);
         Object3D[] objWidth = ImageLabeller.labelImage(widthMask);
+        median = Filters.median(imProjX, new ImageFloat("", 0, 0, 0), new EllipsoidalNeighborhood(3, true));
+        projDer = ImageFeatures.getDerivative(median, 1, 1, 0, 0, true);
+        //plotProfile(projDer, 0, 0, true);
         if (objWidth.length==0) return null;
         else { 
             // get first object after xStart & margin
-            int i;
+            int startObject;
             int xStartTemp=xStart;
-            for (i = 0; i<objWidth.length;++i) {
-                int curX = objWidth[i].getBounds().getxMin();
+            for (startObject = 0; startObject<objWidth.length;++startObject) {
+                int curX = objWidth[startObject].getBounds().getxMin();
                 if (curX>=margin && curX>=xStart) {
                     xStartTemp=curX;
                     break;
                 }
             }
+            // get first object border: first max of derivative before max of object:
+            int maxStart = ArrayUtil.max(imProjX.getPixelArray()[0], objWidth[startObject].getBounds().getxMin(), objWidth[startObject].getBounds().getxMax());
+            int maxDerStart = ArrayUtil.max(projDer.getPixelArray()[0], xStartTemp-cropMargin, maxStart);
             // get last object before xStop & margin
-            int j;
+            int stopObject;
             int xStopTemp=xStop;
-            for (j = objWidth.length-1; j>=i;--j) {
-                int curX = objWidth[j].getBounds().getxMax();
+            for (stopObject = objWidth.length-1; stopObject>=startObject;--stopObject) {
+                int curX = objWidth[stopObject].getBounds().getxMax();
                 if (curX<=(image.getSizeX()-margin) && curX<=xStop) {
                     xStopTemp=curX;
                     break;
                 }
             }
-            xStart=Math.max(0, xStartTemp-cropMargin);
-            xStop=Math.min(xStop, xStopTemp+cropMargin);
-            //logger.trace("crop microchannels: xStart: {} idx of margin object: {}", xStart, i);
-            //logger.trace("crop microchannels: xStop: {} idx of margin object: {}", xStop, j);
+            int maxStop = ArrayUtil.max(imProjX.getPixelArray()[0], objWidth[stopObject].getBounds().getxMin(), objWidth[stopObject].getBounds().getxMax());
+            int maxDerStop = ArrayUtil.min(projDer.getPixelArray()[0], maxStop, xStopTemp+cropMargin); // pente descendente
+            
+            xStart=Math.max(0, maxDerStart-cropMargin);
+            xStop=Math.min(xStop, maxDerStop+cropMargin);
+            logger.trace("crop microchannels: xStart: {} idx of margin object: {}, maxStart: {}, maxDerStart: {}", xStart, startObject, maxStart, maxDerStart);
+            logger.trace("crop microchannels: xStop: {} idx of margin object: {}, maxStop: {}, maxDerStop: {}", xStop, stopObject, maxStop, maxDerStop);
         }
         return new BoundingBox(xStart, xStop, yStart, yStop, 0, image.getSizeZ()-1);
     }

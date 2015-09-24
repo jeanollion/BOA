@@ -17,12 +17,44 @@
  */
 package dataStructure.objects;
 
+import java.util.Comparator;
+
 /**
  *
  * @author nasique
  */
-public abstract class Voxel {
+public abstract class Voxel implements Comparable<Voxel>{
     public int x, y;
     public float value;
     public abstract int getZ();
+    
+    @Override
+    public int compareTo(Voxel other) {
+        if (other.value<value) return 1;
+        else if (other.value>value) return -1;
+        else return 0;
+    }
+    
+    @Override
+    public boolean equals(Object other) {
+        if (other instanceof Voxel) {
+            Voxel otherV = (Voxel)other;
+            return x==otherV.x && y==otherV.y && getZ()==otherV.getZ();
+        } else return false;
+    }
+    
+    public static Comparator<Voxel> getInvertedComparator() {
+        return new Comparator<Voxel>() {
+            @Override
+            public int compare(Voxel voxel, Voxel other) {
+                if (voxel.value < other.value) {
+                    return 1;
+                } else if (voxel.value > other.value) {
+                    return -1;
+                } else {
+                    return 0;
+                }
+            }
+        };
+    }
 }

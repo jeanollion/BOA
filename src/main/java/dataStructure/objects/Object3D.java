@@ -42,12 +42,12 @@ public class Object3D<T extends Voxel> {
         this.type=type;
     }
     
-    public Object3D(ArrayList<T> voxels, int label, float scaleXY, float scaleZ) {
+    public Object3D(ArrayList<T> voxels, int label) {
         this.voxels=voxels;
         this.label=label;
     }
     
-    public Object3D(ArrayList<T> voxels, int label, float scaleXY, float scaleZ, BoundingBox bounds) {
+    public Object3D(ArrayList<T> voxels, int label, BoundingBox bounds) {
         this.voxels=voxels;
         this.label=label;
         this.bounds=bounds;
@@ -134,11 +134,11 @@ public class Object3D<T extends Voxel> {
     
     public void draw(ImageInteger image, int label) {
         if (voxels !=null) {
-            logger.trace("drawing from VOXELS of object: {} with label: {} on image: {} ", this, label, image);
+            //logger.trace("drawing from VOXELS of object: {} with label: {} on image: {} ", this, label, image);
             for (T v : getVoxels()) image.setPixel(v.x, v.y, v.getZ(), label);
         }
         else {
-            logger.trace("drawing from IMAGE of object: {} with label: {} on image: {} mask offsetX: {} mask offsetY: {} mask offsetZ: {}", this, label, mask, mask.getOffsetX(), mask.getOffsetY(), mask.getOffsetZ());
+            //logger.trace("drawing from IMAGE of object: {} with label: {} on image: {} mask offsetX: {} mask offsetY: {} mask offsetZ: {}", this, label, mask, mask.getOffsetX(), mask.getOffsetY(), mask.getOffsetZ());
             for (int z = 0; z < mask.getSizeZ(); ++z) {
                 for (int y = 0; y < mask.getSizeY(); ++y) {
                     for (int x = 0; x < mask.getSizeX(); ++x) {
@@ -153,7 +153,7 @@ public class Object3D<T extends Voxel> {
     
     public void draw(ImageInteger image, int label, BoundingBox offset) {
         if (voxels !=null) {
-            logger.trace("drawing from VOXELS of object: {} with label: {} on image: {} ", this, label, image);
+            //logger.trace("drawing from VOXELS of object: {} with label: {} on image: {} ", this, label, image);
             int offX = -getBounds().getxMin()+offset.getxMin();
             int offY = -getBounds().getyMin()+offset.getyMin();
             int offZ = -getBounds().getzMin()+offset.getzMin();
@@ -163,7 +163,7 @@ public class Object3D<T extends Voxel> {
             int offX = offset.getxMin();
             int offY = offset.getyMin();
             int offZ = offset.getzMin();
-            logger.trace("drawing from IMAGE of object: {} with label: {} on image: {} mask offsetX: {} mask offsetY: {} mask offsetZ: {}", this, label, mask, offX, offY, offZ);
+            //logger.trace("drawing from IMAGE of object: {} with label: {} on image: {} mask offsetX: {} mask offsetY: {} mask offsetZ: {}", this, label, mask, offX, offY, offZ);
             for (int z = 0; z < mask.getSizeZ(); ++z) {
                 for (int y = 0; y < mask.getSizeY(); ++y) {
                     for (int x = 0; x < mask.getSizeX(); ++x) {

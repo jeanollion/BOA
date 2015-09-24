@@ -45,7 +45,7 @@ public class SimpleThresholder implements Segmenter {
         this.threshold= new PluginParameter<Thresholder>("Threshold", Thresholder.class, thresholder, false);
     }
     
-    public ObjectPopulation runSegmenter(Image input, StructureObjectProcessing structureObject) {
+    public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing structureObject) {
         ImageByte mask = new ImageByte("mask", input);
         Thresholder t =  threshold.getPlugin();
         double thresh = t.runThresholder(input, structureObject);

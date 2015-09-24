@@ -1,7 +1,7 @@
 package dataStructure.objects;
 
 
-public class Voxel2D extends Voxel implements Comparable<Voxel2D>{
+public class Voxel2D extends Voxel {
     public Voxel2D(int x, int y) {
         this.x = x;
         this.y = y;
@@ -14,12 +14,6 @@ public class Voxel2D extends Voxel implements Comparable<Voxel2D>{
     
     public int getZ() {return 0;}
 
-    @Override
-    public int compareTo(Voxel2D other) {
-        if (other.value<value) return -1;
-        else if (other.value>value) return 1;
-        else return 0;
-    }
     
     @Override
     public boolean equals(Object other) {

@@ -281,7 +281,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     
     public void segmentChildren(int structureIdx) {
         if (getFilteredImage(structureIdx)==null) createPreFilterImage(structureIdx);
-        ObjectPopulation seg = segmentImage(getFilteredImage(structureIdx), this, xp.getStructure(structureIdx).getProcessingChain().getSegmenter());
+        ObjectPopulation seg = segmentImage(getFilteredImage(structureIdx), structureIdx, this, xp.getStructure(structureIdx).getProcessingChain().getSegmenter());
         if (seg.getObjects().isEmpty()) childrenSM.set(new StructureObject[0], structureIdx);
         else {
             seg = postFilterImage(seg, this, xp.getStructure(structureIdx).getProcessingChain().getPostfilters());

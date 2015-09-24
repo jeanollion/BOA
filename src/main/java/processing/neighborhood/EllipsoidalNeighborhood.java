@@ -27,7 +27,7 @@ public class EllipsoidalNeighborhood implements Neighborhood {
     double radius;
     double radiusZ;
     boolean is3D;        
-    int[] dx, dy, dz;
+    public final int[] dx, dy, dz;
     float[] values;
     
     int valueNumber;
@@ -108,6 +108,7 @@ public class EllipsoidalNeighborhood implements Neighborhood {
         }
         dx= new int[count];
         dy= new int[count];
+        dz= new int[count];
         values=new float[count];
         System.arraycopy(temp[0], 0, dx, 0, count);
         System.arraycopy(temp[1], 0, dy, 0, count);

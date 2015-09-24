@@ -249,8 +249,9 @@ public class ProcessingTest {
             xp.getStructures().removeAllElements();
             Structure microChannel = new Structure("MicroChannel", -1, 0);
             Structure bacteries = new Structure("Bacteries", 0, 0);
-            xp.getStructures().insert(microChannel, bacteries);
             bacteries.setParentStructure(0);
+            xp.getStructures().insert(microChannel, bacteries);
+            
             
             // set-up processing chain
             PluginFactory.findPlugins("testPlugins.dummyPlugins");

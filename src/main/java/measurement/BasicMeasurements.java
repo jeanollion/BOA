@@ -15,16 +15,21 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.objects;
+package measurement;
+
+import dataStructure.objects.Object3D;
+import dataStructure.objects.Voxel;
+import image.Image;
 
 /**
  *
  * @author jollion
  */
-public interface Track {
-    public int getTimePoint();
-    public StructureObjectPreProcessing getParent();
-    public StructureObjectPreProcessing getPrevious();
-    public StructureObjectPreProcessing getNext();
-    public void setPreviousInTrack(StructureObjectPreProcessing parent, boolean isChildOfParent);
+public class BasicMeasurements {
+    public static double getMeanValue(Object3D<? extends Voxel> object, Image image) {
+        double value=0;
+        for (Voxel v : object.getVoxels()) value+=image.getPixel(v.x, v.y, v.getZ());
+        if (!object.getVoxels().isEmpty()) return value/object.getVoxels().size();
+        else return 0;
+    }
 }
