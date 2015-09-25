@@ -59,12 +59,12 @@ public class BlankMask extends ImageInteger implements ImageMask {
     }
 
     @Override
-    public void setPixel(int x, int y, int z, Number value) {
+    public void setPixel(int x, int y, int z, double value) {
         
     }
 
     @Override
-    public void setPixel(int xy, int z, Number value) {
+    public void setPixel(int xy, int z, double value) {
         
     }
 
@@ -112,10 +112,8 @@ public class BlankMask extends ImageInteger implements ImageMask {
     }
 
     @Override
-    public void setPixelWithOffset(int x, int y, int z, Number value) {
+    public void setPixelWithOffset(int x, int y, int z, double value) {
     }
-
-    @Override public void pasteImage(Image source, BoundingBox offset) {}
     
     @Override
     public int[] getHisto256(ImageMask mask) {

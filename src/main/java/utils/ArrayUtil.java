@@ -17,6 +17,11 @@
  */
 package utils;
 
+import static core.Processor.logger;
+import image.ImageFloat;
+import java.util.ArrayList;
+import processing.ImageFeatures;
+
 /**
  *
  * @author jollion
@@ -35,7 +40,7 @@ public class ArrayUtil {
     public static int max(float[] array, int start, int stop) {
         if (start<0) start=0;
         if (stop>array.length) stop=array.length;
-        if (stop<=start) throw new IllegalArgumentException("max search: idx start >= idx stop");
+        if (stop<start) {int temp = start; start=stop; stop=temp;}
         int idxMax = start;
         for (int i = start+1; i<stop; ++i) if (array[i]>array[idxMax]) idxMax=i;
         return idxMax;
@@ -46,9 +51,53 @@ public class ArrayUtil {
     public static int min(float[] array, int start, int stop) {
         if (start<0) start=0;
         if (stop>array.length) stop=array.length;
-        if (stop<=start) throw new IllegalArgumentException("max search: idx start >= idx stop");
+        if (stop<start) {int temp = start; start=stop; stop=temp;}
         int idxMin = start;
         for (int i = start+1; i<stop; ++i) if (array[i]<array[idxMin]) idxMin=i;
         return idxMin;
+    }
+    
+    public static int[] getRegionalExtrema(float[] array, int scale, boolean max) {
+        ArrayList<Integer> localExtrema = new ArrayList<Integer>();
+        // get local extrema
+        if (max) for (int i = 0; i<array.length; ++i) {if (isLocalMax(array, scale, i)) localExtrema.add(i);}
+        else for (int i = 0; i<array.length; ++i) {if (isLocalMin(array, scale, i)) localExtrema.add(i);}
+        if (localExtrema.size()<=1) return Utils.toArray(localExtrema, false);
+        
+        // suppress plateau
+        ArrayList<Integer> regionalExtrema = new ArrayList<Integer>(localExtrema.size());
+        for (int i = 1; i<localExtrema.size(); ++i) {
+            if (localExtrema.get(i)==localExtrema.get(i-1)+1) {
+                int j = i+1;
+                while (j<localExtrema.size() && localExtrema.get(j)==localExtrema.get(j-1)+1){j++;}
+                logger.debug("i: {}, j:{}, loc i-1: {}, loc j-1: {}",i, j, localExtrema.get(i-1), localExtrema.get(j-1));
+                regionalExtrema.add((localExtrema.get(i-1)+localExtrema.get(j-1))/2); //mid-value of plateau (i-1 = borne inf, j-1 = borne sup)
+                i=j;
+            } else regionalExtrema.add(localExtrema.get(i-1));
+        }
+        // add last element if not plateau:
+        if (localExtrema.get(localExtrema.size()-1)!=localExtrema.get(localExtrema.size()-2)+1) regionalExtrema.add(localExtrema.get(localExtrema.size()-1));
+        return Utils.toArray(regionalExtrema, false);
+    }
+    
+    protected static boolean isLocalMax(float[] array, int scale, int idx) {
+        for (int i = 1; i<=scale; ++i) {
+            if (idx-i>=0 && array[idx-i]>array[idx]) return false;
+            if (idx+i<array.length && array[idx+i]>array[idx]) return false; 
+        }
+        return true;
+    }
+    protected static boolean isLocalMin(float[] array, int scale, int idx) {
+        for (int i = 1; i<=scale; ++i) {
+            if (idx-i>=0 && array[idx-i]<array[idx]) return false;
+            if (idx+i<array.length && array[idx+i]<array[idx]) return false; 
+        }
+        return true;
+    }
+    
+    public static float[] getDerivative(float[] array, double scale, int order, boolean override) {
+        ImageFloat in = new ImageFloat("", array.length, new float[][]{array});
+        ImageFloat out = ImageFeatures.getDerivative(in, scale, order, 0, 0, override);
+        return out.getPixelArray()[0];
     }
 }

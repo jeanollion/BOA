@@ -31,6 +31,8 @@ import image.Image;
 import image.ImageFloat;
 import image.ImageInteger;
 import image.ImageLabeller;
+import image.ImageOperations;
+import static image.ImageOperations.threshold;
 import java.util.ArrayList;
 import plugins.Segmenter;
 import plugins.plugins.thresholders.IJAutoThresholder;
@@ -77,15 +79,10 @@ public class MicroChannelFluo2D implements Segmenter {
     }
     
     public static ArrayList<Object3D> getObjects(Image image, int channelHeight, int channelWidth, int yMargin) {
-        int z = image.getSizeZ()/2;
         // get yStart
-        ImageFloat imProjY = new ImageFloat("proj(Y)", image.getSizeY(), 1, 1);
-        for (int y = 0; y<image.getSizeY(); ++y) {
-            double sumY=0;
-            for (int x = 0; x<image.getSizeX(); ++x) sumY+=image.getPixel(x, y, z);
-            imProjY.setPixel(y, 0, 0, sumY/image.getSizeX());
-        }
-        ImageInteger heightMask = imProjY.threshold(IJAutoThresholder.runThresholder(imProjY, null, AutoThresholder.Method.Triangle), true, false);
+        float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null);
+        ImageFloat imProjY = new ImageFloat("proj(Y)", image.getSizeY(), new float[][]{yProj});
+        ImageInteger heightMask = threshold(imProjY, IJAutoThresholder.runThresholder(imProjY, null, AutoThresholder.Method.Triangle), true, false);
         Object3D[] objHeight = ImageLabeller.labelImage(heightMask);
         int yStart;
         if (objHeight.length==0) yStart=0;
@@ -110,13 +107,9 @@ public class MicroChannelFluo2D implements Segmenter {
         yStart = Math.max(0, yStart-yMargin);
         
         // get all XCenters
-        ImageFloat imProjX = new ImageFloat("proj(X)", image.getSizeX(), 1, 1);
-        for (int x = 0; x<image.getSizeX(); ++x) {
-            double sumX=0;
-            for (int y = 0; y<image.getSizeY(); ++y) sumX+=image.getPixel(x, y, z);
-            imProjX.setPixel(x, 0, 0, sumX/image.getSizeY());
-        }
-        ImageInteger widthMask = imProjX.threshold(IJAutoThresholder.runThresholder(imProjX, null, AutoThresholder.Method.Otsu), true, false);
+        float[] xProj = ImageOperations.meanProjection(image, ImageOperations.Axis.X, null);
+        ImageFloat imProjX = new ImageFloat("proj(X)", image.getSizeX(), new float[][]{xProj});
+        ImageInteger widthMask = threshold(imProjX, IJAutoThresholder.runThresholder(imProjX, null, AutoThresholder.Method.Otsu), true, false);
         Object3D[] objWidth = ImageLabeller.labelImage(widthMask);
         
         ArrayList<Object3D> res = new ArrayList<Object3D>(objWidth.length);

@@ -147,6 +147,12 @@ public class Utils {
         new Plot(image.getName(), "coord", "value", x, y).show();
     }
     
+    public static void plotProfile(String title, float[] values) {
+        float[] x=new float[values.length];
+        for (int i = 0; i<x.length; ++i) x[i]=i;
+        new Plot(title, "coord", "value", x, values).show();
+    }
+    
     public static void deleteDirectory(File dir) { //recursive delete, because java's native function wants the dir to be empty to delete it
         if (dir.isFile()) dir.delete();
         else {

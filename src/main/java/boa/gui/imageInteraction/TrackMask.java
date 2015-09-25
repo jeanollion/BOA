@@ -27,6 +27,7 @@ import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
 import image.ImageInteger;
+import static image.ImageOperations.pasteImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -115,13 +116,13 @@ public class TrackMask extends ImageObjectInterface {
     
     @Override public Image generateRawImage(final int structureIdx) {
         final Image displayImage =  Image.createEmptyImage("TimeLapse Image of structure: "+structureIdx, trackObjects[0].generateRawImage(structureIdx), new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, this.maxParentZ).setCalibration(parent.getMaskProperties().getScaleXY(), parent.getMaskProperties().getScaleZ()));
-        displayImage.pasteImage(trackObjects[0].generateRawImage(structureIdx), trackOffset[0]);
+        pasteImage(trackObjects[0].generateRawImage(structureIdx), displayImage, trackOffset[0]);
         // draw image in another thread..
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
                 for (int i = 1; i<trackObjects.length; ++i) {
-                    displayImage.pasteImage(trackObjects[i].generateRawImage(structureIdx), trackOffset[i]);
+                    pasteImage(trackObjects[i].generateRawImage(structureIdx), displayImage, trackOffset[i]);
                 }
             }
         });

@@ -21,6 +21,7 @@ import ij.ImagePlus;
 import ij.measure.Calibration;
 import image.Image;
 import image.ImageFloat;
+import image.ImageOperations;
 import image.ImagescienceWrapper;
 import imagescience.feature.Differentiator;
 import imagescience.feature.Hessian;
@@ -204,5 +205,13 @@ public class ImageFeatures {
         res.setCalibration(old_scaleXY, old_scaleZ);
         res.resetOffset().addOffset(image);
         return res;
+    }
+    
+    public static ImageFloat differenceOfGaussians(Image image, double scaleXYMin, double scaleXYMax, double ratioScaleZ, boolean trimNegativeValues, boolean overideIfFloat) {
+        Image bcg = gaussianSmooth(image, scaleXYMax, scaleXYMax*ratioScaleZ, false);
+        ImageFloat fore = gaussianSmooth(image, scaleXYMin, scaleXYMin*ratioScaleZ, overideIfFloat);
+        fore = (ImageFloat)ImageOperations.addImage(fore, bcg, fore, -1);
+        if (trimNegativeValues) ImageOperations.trim(fore, 0, true, true);
+        return fore;
     }
 }

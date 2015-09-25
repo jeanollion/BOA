@@ -28,6 +28,8 @@ import image.Image;
 import image.ImageFloat;
 import image.ImageInteger;
 import image.ImageLabeller;
+import image.ImageOperations;
+import static image.ImageOperations.threshold;
 import plugins.TransformationTimeIndependent;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import processing.Filters;
@@ -84,22 +86,14 @@ public class CropMicroChannels2D implements TransformationTimeIndependent {
     
     public static BoundingBox getBoundingBox(Image image, int z, int cropMargin, int margin, int channelHeight, int xStart, int xStop, int yStart, int yStop) {
         //get projections along X and Y axis
-        ImageFloat imProjX = new ImageFloat("proj(X)", image.getSizeX(), 1, 1);
-        for (int x = 0; x<image.getSizeX(); ++x) {
-            double sumX=0;
-            for (int y = 0; y<image.getSizeY(); ++y) sumX+=image.getPixel(x, y, z);
-            imProjX.setPixel(x, 0, 0, sumX/image.getSizeY());
-        }
-        ImageFloat imProjY = new ImageFloat("proj(Y)", image.getSizeY(), 1, 1);
-        for (int y = 0; y<image.getSizeY(); ++y) {
-            double sumY=0;
-            for (int x = 0; x<image.getSizeX(); ++x) sumY+=image.getPixel(x, y, z);
-            imProjY.setPixel(y, 0, 0, sumY/image.getSizeX());
-        }
+        float[] xProj = ImageOperations.meanProjection(image, ImageOperations.Axis.X, null);
+        ImageFloat imProjX = new ImageFloat("proj(X)", image.getSizeX(), new float[][]{xProj});
+        float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null);
+        ImageFloat imProjY = new ImageFloat("proj(Y)", image.getSizeY(), new float[][]{yProj});
         //plotProfile(imProjX, 0, 0, true);
         //plotProfile(imProjY, 0, 0, true);
         // get Y coords
-        ImageInteger heightMask = imProjY.threshold(IJAutoThresholder.runThresholder(imProjY, null, AutoThresholder.Method.Triangle), true, false);
+        ImageInteger heightMask = threshold(imProjY, IJAutoThresholder.runThresholder(imProjY, null, AutoThresholder.Method.Triangle), true, false);
         //plotProfile(heightMask, 0, 0, true);
         Object3D[] objHeight = ImageLabeller.labelImage(heightMask);
         if (objHeight.length==0) return null;
@@ -120,7 +114,7 @@ public class CropMicroChannels2D implements TransformationTimeIndependent {
         yStart = Math.max(yStart-cropMargin, 0);
         
         // get X coords
-        ImageInteger widthMask = imProjX.threshold(IJAutoThresholder.runThresholder(imProjX, null, AutoThresholder.Method.Otsu), true, false);
+        ImageInteger widthMask = threshold(imProjX, IJAutoThresholder.runThresholder(imProjX, null, AutoThresholder.Method.Otsu), true, false);
         //plotProfile(widthMask, 0, 0, true);
         Object3D[] objWidth = ImageLabeller.labelImage(widthMask);
         median = Filters.median(imProjX, new ImageFloat("", 0, 0, 0), new EllipsoidalNeighborhood(3, true));

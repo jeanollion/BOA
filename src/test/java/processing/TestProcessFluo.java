@@ -158,7 +158,7 @@ public class TestProcessFluo {
     public void testSegBacteries() {
         testCrop("/data/Images/Fluo/testsub");
         Image image = xp.getMicroscopyField(0).getInputImages().getImage(0, 0);
-        ArrayList<Object3D> objects = MicroChannelFluo2D.getObjects(image, 300, 35, 8);
+        ArrayList<Object3D> objects = MicroChannelFluo2D.getObjects(image, 350, 45, 15);
         ImageMask parentMask = objects.get(0).getMask();
         Image input = image.crop(objects.get(0).getBounds());
         ImageDisplayer disp = new IJImageDisplayer();

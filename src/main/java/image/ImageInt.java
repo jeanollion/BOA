@@ -78,18 +78,18 @@ public class ImageInt extends ImageInteger {
     }
 
     @Override
-    public void setPixel(int x, int y, int z, Number value) {
-        pixels[z][x + y * sizeX] = value.intValue();
+    public void setPixel(int x, int y, int z, double value) {
+        pixels[z][x + y * sizeX] = (int)value;
     }
     
     @Override
-    public void setPixelWithOffset(int x, int y, int z, Number value) {
-        pixels[z-offsetZ][x-offsetX + (y-offsetY) * sizeX] = value.intValue();
+    public void setPixelWithOffset(int x, int y, int z, double value) {
+        pixels[z-offsetZ][x-offsetX + (y-offsetY) * sizeX] = (int)value;
     }
 
     @Override
-    public void setPixel(int xy, int z, Number value) {
-        pixels[z][xy] = value.intValue();
+    public void setPixel(int xy, int z, double value) {
+        pixels[z][xy] = (int)value;
     }
 
     @Override

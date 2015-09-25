@@ -42,9 +42,9 @@ public abstract class Image implements ImageProperties {
         this(name, properties.getSizeX(), properties.getSizeY(), properties.getSizeZ(), properties.getOffsetX(), properties.getOffsetY(), properties.getOffsetZ(), properties.getScaleXY(), properties.getScaleZ());
     }
     
-    public Image setName(String name) {
+    public <T extends Image> T setName(String name) {
         this.name=name;
-        return this;
+        return (T)this;
     }
     
     public static <T> T createEmptyImage(String name, T imageType, ImageProperties properties) {
@@ -65,75 +65,14 @@ public abstract class Image implements ImageProperties {
     //public abstract float getPixel(float x, float y, float z); // interpolation
     public abstract float getPixel(int x, int y, int z);
     public abstract float getPixel(int xz, int z);
-    public abstract void setPixel(int x, int y, int z, Number value);
-    public abstract void setPixelWithOffset(int x, int y, int z, Number value);
-    public abstract void setPixel(int xy, int z, Number value);
+    public abstract void setPixel(int x, int y, int z, double value);
+    public abstract void setPixelWithOffset(int x, int y, int z, double value);
+    public abstract void setPixel(int xy, int z, double value);
     public abstract Object[] getPixelArray();
     public abstract Image duplicate(String name);
     public abstract Image newImage(String name, ImageProperties properties);
     public abstract Image crop(BoundingBox bounds);
-    public void pasteImage(Image source, BoundingBox offset) {
-        if (source.getClass()!=this.getClass()) throw new IllegalArgumentException("Paste Image: source and destination should be of the same type (source: "+source.getClass().getSimpleName()+ " destination: "+this.getClass().getSimpleName()+")");
-        if (source.getSizeX()+offset.xMin>sizeX || source.getSizeY()+offset.yMin>sizeY || source.getSizeZ()+offset.zMin>sizeZ) throw new IllegalArgumentException("Paste Image: source does not fit in destination");
-        Object[] sourceP = source.getPixelArray();
-        Object[] destP = getPixelArray();
-        int off=sizeX*offset.yMin+offset.xMin;
-        int offSource = 0;
-        for (int z = 0; z<source.sizeZ; ++z) {
-            for (int y = 0 ; y<source.sizeY; ++y) {
-                //logger.trace("paste imate: z source: {}, z dest: {}, y source: {} y dest: {} off source: {} off dest: {} size source: {} size dest: {}", z, z+offset.zMin, y, y+offset.yMin, offSource, off, ((byte[])sourceP[z]).length, ((byte[])destP[z+offset.zMin]).length);
-                System.arraycopy(sourceP[z], offSource, destP[z+offset.zMin], off, source.sizeX);
-                off+=sizeX;
-                offSource+=source.sizeX;
-            }
-            off=sizeX*offset.yMin+offset.xMin;
-            offSource=0;
-        }
-    }
-    public ImageInteger threshold(double threshold, boolean overThreshold, boolean strict) {
-        return threshold(threshold, overThreshold, strict, false, null);
-    }
-    public ImageInteger threshold(double threshold, boolean overThreshold, boolean strict, boolean setBackground, ImageInteger dest) {
-        if (dest==null) dest=new ImageByte("", this);
-        if (overThreshold) {
-            if (strict) {
-                for (int z = 0; z < sizeZ; z++) {
-                    for (int xy = 0; xy < sizeXY; xy++) {
-                        if (getPixel(xy, z)>threshold) {
-                            dest.setPixel(xy, z, 1);
-                        } else if (setBackground) dest.setPixel(xy, z, 0);
-                    }
-                }
-            } else {
-                for (int z = 0; z < sizeZ; z++) {
-                    for (int xy = 0; xy < sizeXY; xy++) {
-                        if (getPixel(xy, z)>=threshold) {
-                            dest.setPixel(xy, z, 1);
-                        } else if (setBackground) dest.setPixel(xy, z, 0);
-                    }
-                }
-            }
-        } else {
-            if (strict) {
-                for (int z = 0; z < sizeZ; z++) {
-                    for (int xy = 0; xy < sizeXY; xy++) {
-                        if (getPixel(xy, z)<threshold) {
-                            dest.setPixel(xy, z, 1);
-                        } else if (setBackground) dest.setPixel(xy, z, 0);
-                    }
-                }
-            } else {
-                for (int z = 0; z < sizeZ; z++) {
-                    for (int xy = 0; xy < sizeXY; xy++) {
-                        if (getPixel(xy, z)<=threshold) {
-                            dest.setPixel(xy, z, 1);
-                        } else if (setBackground) dest.setPixel(xy, z, 0);
-                    }
-                }
-            }
-        }
-        return dest;
-    }
+    
     
     @Override
     public boolean contains(int x, int y, int z) {
@@ -146,42 +85,42 @@ public abstract class Image implements ImageProperties {
         return (x >= 0 && x < sizeX && y >= 0 && y-offsetY < sizeY && z >= 0 && z < sizeZ);
     }
     
-    public Image resetOffset() {
+    public <T extends Image> T resetOffset() {
         offsetX=offsetY=offsetZ=0;
-        return this;
+        return (T)this;
     }
     
-    public Image addOffset(ImageProperties properties) {
+    public <T extends Image> T addOffset(ImageProperties properties) {
         this.offsetX+=properties.getOffsetX();
         this.offsetY+=properties.getOffsetY();
         this.offsetZ+=properties.getOffsetZ();
-        return this;
+        return (T)this;
     }
     
-    public Image addOffset(int offsetX, int offsetY, int offsetZ) {
+    public <T extends Image> T addOffset(int offsetX, int offsetY, int offsetZ) {
         this.offsetX+=offsetX;
         this.offsetY+=offsetY;
         this.offsetZ+=offsetZ;
-        return this;
+        return (T)this;
     }
     
-    public Image addOffset(BoundingBox bounds) {
+    public <T extends Image> T addOffset(BoundingBox bounds) {
         this.offsetX=bounds.xMin;
         this.offsetY=bounds.yMin;
         this.offsetZ=bounds.zMin;
-        return this;
+        return (T)this;
     }
 
-    public Image setCalibration(ImageProperties properties) {
+    public <T extends Image> T setCalibration(ImageProperties properties) {
         this.scaleXY=properties.getScaleXY();
         this.scaleZ=properties.getScaleZ();
-        return this;
+        return (T)this;
     }
     
-    public Image setCalibration(float scaleXY, float scaleZ) {
+    public <T extends Image> T setCalibration(float scaleXY, float scaleZ) {
         this.scaleXY=scaleXY;
         this.scaleZ=scaleZ;
-        return this;
+        return (T)this;
     }
     
     public BoundingBox getBoundingBox() {
