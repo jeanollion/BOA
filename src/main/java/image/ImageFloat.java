@@ -105,8 +105,11 @@ public class ImageFloat extends Image {
     public int[] getHisto256(ImageMask mask) {
         if (mask == null) mask = new BlankMask("", this);
         float[] minAndMax = getMinAndMax(mask);
-        double min = minAndMax[0];
-        double coeff = 256f / (minAndMax[1] - min);
+        return getHisto256(minAndMax[0], minAndMax[1], mask);
+    }
+    @Override int[] getHisto256(double min, double max, ImageMask mask) {
+        if (mask == null) mask = new BlankMask("", this);
+        double coeff = 256d / (max - min);
         int idx;
         int[] histo = new int[256];
         for (int z = 0; z < sizeZ; z++) {

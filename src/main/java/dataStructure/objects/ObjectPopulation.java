@@ -116,4 +116,8 @@ public class ObjectPopulation {
             }
         }
     }
+    
+    public void addOffset(int offsetX, int offsetY, int offsetZ) {
+        for (Object3D o : objects) o.addOffset(offsetX, offsetY, offsetZ);
+    }
 }

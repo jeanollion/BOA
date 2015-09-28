@@ -53,7 +53,8 @@ public class WatershedTransform {
     public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, Object3D[] regionalExtrema, boolean invertWatershedMapValues) {
         WatershedTransform wt = new WatershedTransform(watershedMap, mask, regionalExtrema, invertWatershedMapValues);
         wt.run();
-        new IJImageDisplayer().showImage(wt.segmentedMap);
+        //new IJImageDisplayer().showImage(wt.segmentedMap);
+        
         int nb = 0;
         for (Spot s : wt.spots) if (s!=null) nb++;
         ArrayList<Object3D> res = new ArrayList<Object3D>(nb);

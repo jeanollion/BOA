@@ -100,7 +100,7 @@ public class ProcessingTest {
         
         String[] files = new String[]{folder.getAbsolutePath()};
         Processor.importFiles(files, xp);
-        assertEquals("number of fields detected", 6-1-1, xp.getMicroscopyFields().getChildCount()); // 6 - 1 (unique title) - 1 (channel number)
+        assertEquals("number of fields detected", 6-1-1, xp.getMicrocopyFieldNB()); // 6 - 1 (unique title) - 1 (channel number)
         Utils.assertImage(images[0][0], xp.getMicroscopyField(title).getInputImages().getImage(0, 0), 0);
     }
     
@@ -135,7 +135,7 @@ public class ProcessingTest {
         
         String[] files = new String[]{folder.getAbsolutePath()};
         Processor.importFiles(files, xp);
-        assertEquals("number of fields detected", 6-1-1-1, xp.getMicroscopyFields().getChildCount()); // 6 - 1 (unique title) - 1 (channel number)-1(timepoint number)
+        assertEquals("number of fields detected", 6-1-1-1, xp.getMicrocopyFieldNB()); // 6 - 1 (unique title) - 1 (channel number)-1(timepoint number)
         Utils.assertImage(images[0][0], xp.getMicroscopyField(title).getInputImages().getImage(0, 0), 0);
     }
     
@@ -158,7 +158,7 @@ public class ProcessingTest {
         ImageWriter.writeToFile(folder.getAbsolutePath(), "field1", ImageFormat.OMETIF, images);
         Processor.importFiles(new String[]{folder.getAbsolutePath()}, xp);
         MicroscopyField f = xp.getMicroscopyField(0);
-        assertEquals("number of fields detected", 1, xp.getMicroscopyFields().getChildCount());
+        assertEquals("number of fields detected", 1, xp.getMicrocopyFieldNB());
         
         //set-up pre-processing chains
         PluginFactory.findPlugins("plugins.plugins.transformations");

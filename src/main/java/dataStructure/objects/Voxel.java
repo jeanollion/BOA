@@ -21,7 +21,7 @@ import java.util.Comparator;
 
 /**
  *
- * @author nasique
+ * @author jollion
  */
 public abstract class Voxel implements Comparable<Voxel>{
     public int x, y;
@@ -57,4 +57,7 @@ public abstract class Voxel implements Comparable<Voxel>{
             }
         };
     }
+    
+    public abstract <T extends Voxel> T copy();
+    public abstract <T extends Voxel> T translate(int dX, int dY, int dZ);
 }

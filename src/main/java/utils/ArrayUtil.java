@@ -57,6 +57,33 @@ public class ArrayUtil {
         return idxMin;
     }
     
+    public static int getFirstOccurence(float[] array, int start, int stop, float value, boolean inferior, boolean strict) {
+        if (start<0) start=0;
+        if (stop>array.length) stop=array.length;
+        int i = start;
+        if (array[start]<value) { // increasing values
+            if (start<=stop) { // increasing indicies
+                while(i<stop-1 && array[i]<value) i++;
+                if (inferior && (strict?array[i]>=value:array[i]>value) && i>start) return i-1;
+                else return i;
+            } else { // decreasing indicies
+                while(i>stop && array[i]<value) i--;
+                if (inferior && (strict?array[i]>=value:array[i]>value) && i<start) return i+1;
+                else return i;
+            }
+        } else { // decreasing values
+            if (start<=stop) { // increasing indicies
+                while(i<stop-1 && array[i]>value) i++;
+                if (!inferior && (strict?array[i]<=value:array[i]<value) && i>start) return i-1;
+                else return i;
+            } else { // decreasing indicies
+                while(i>stop && array[i]>value) i--;
+                if (!inferior && (strict?array[i]<=value:array[i]<value) && i<start) return i+1;
+                else return i;
+            }
+        }
+    }
+    
     public static int[] getRegionalExtrema(float[] array, int scale, boolean max) {
         ArrayList<Integer> localExtrema = new ArrayList<Integer>();
         // get local extrema

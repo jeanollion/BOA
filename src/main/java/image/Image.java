@@ -69,9 +69,9 @@ public abstract class Image implements ImageProperties {
     public abstract void setPixelWithOffset(int x, int y, int z, double value);
     public abstract void setPixel(int xy, int z, double value);
     public abstract Object[] getPixelArray();
-    public abstract Image duplicate(String name);
+    public abstract <T extends Image> T duplicate(String name);
     public abstract Image newImage(String name, ImageProperties properties);
-    public abstract Image crop(BoundingBox bounds);
+    public abstract <T extends Image> T crop(BoundingBox bounds);
     
     
     @Override
@@ -153,7 +153,8 @@ public abstract class Image implements ImageProperties {
     }
     
     public abstract int[] getHisto256(ImageMask mask);
-
+    abstract int[] getHisto256(double min, double max, ImageMask mask);
+    
     protected Image cropI(BoundingBox bounds) {
         //bounds.trimToImage(this);
         Image res = newImage(name, bounds.getImageProperties("", scaleXY, scaleZ));

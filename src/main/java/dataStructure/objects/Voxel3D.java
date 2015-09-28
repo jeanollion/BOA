@@ -40,4 +40,17 @@ public class Voxel3D extends Voxel {
         return "Voxel3D{" + "x=" + x + ", y=" + y + ", z=" + z + ", value=" + value + '}';
     }
     
+    @Override
+    public Voxel3D copy() {
+        return new Voxel3D(x, y, z);
+    }
+
+    @Override
+    public Voxel3D translate(int dX, int dY, int dZ) {
+        x+=dX;
+        y+=dY;
+        z+=dZ;
+        return this;
+    }
+    
 }

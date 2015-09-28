@@ -160,5 +160,5 @@ public class ImageByte extends ImageInteger {
         }
         return histo;
     }
-
+    @Override int[] getHisto256(double min, double max, ImageMask mask) {return getHisto256(mask);}
 }

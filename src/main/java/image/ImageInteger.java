@@ -28,7 +28,7 @@ public abstract class ImageInteger extends Image implements ImageMask {
         else return Integer.MAX_VALUE;
     }
     
-    @Override public abstract ImageInteger duplicate(String name);
+    @Override public abstract <T extends Image> T duplicate(String name);
     public abstract int getPixelInt(int x, int y, int z);
     public abstract int getPixelInt(int xy, int z);
     public abstract void setPixel(int x, int y, int z, int value);
@@ -39,7 +39,6 @@ public abstract class ImageInteger extends Image implements ImageMask {
     @Override public ImageInteger addOffset(BoundingBox bounds) {return (ImageInteger)super.addOffset(bounds);}
     @Override public ImageInteger addOffset(ImageProperties properties) {return (ImageInteger)super.addOffset(properties);}
     @Override public ImageInteger addOffset(int offsetX, int offsetY, int offsetZ) {return (ImageInteger)super.addOffset(offsetX, offsetY, offsetZ);}
-    
     /**
      * 
      * @param addBorder

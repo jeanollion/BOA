@@ -61,8 +61,7 @@ public class TestTrackStructure {
             Structure bacteries = new Structure("Bacteries", 0, 0);
             xp.getStructures().insert(microChannel, bacteries);
             bacteries.setParentStructure(0);
-            MicroscopyField f = (MicroscopyField)xp.getMicroscopyFields().createChildInstance("field1");
-            xp.getMicroscopyFields().insert(f);
+            xp.createMicroscopyField("field1");
             xpDAO.store(xp);
             
             StructureObject[] rootT = new StructureObject[5];

@@ -248,5 +248,22 @@ public class ImageOperations {
         }
         return output;
     }
-    
+    public static double getPercentile(Image image, double percent, ImageInt mask) {
+        float[] mm = image.getMinAndMax(mask);
+        int[] histo = image.getHisto256(mm[0], mm[1], mask);
+        double binSize = (image instanceof ImageByte) ? 1: (mm[1]-mm[0]) / 256d;
+        int count = 0;
+        for (int i : histo) count += i;
+        double limit = count * percent;
+        if (limit >= count) return mm[0];
+        count = histo[255];
+        int idx = 255;
+        while (count < limit && idx > 0) {
+            idx--;
+            count += histo[idx];
+        }
+        double idxInc = (histo[idx] != 0) ? (count - limit) / (histo[idx]) : 0; //lin approx
+        //ij.IJ.log("percentile: bin:"+idx+ " inc:"+ idxInc+ " min:"+min+ " max:"+max);
+        return (double) (idx + idxInc) * binSize + mm[0];
+    }
 }

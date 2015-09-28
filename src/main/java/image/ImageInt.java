@@ -146,14 +146,17 @@ public class ImageInt extends ImageInteger {
         }
     }
     
-    @Override
+    @Override 
     public int[] getHisto256(ImageMask mask) {
-        if (mask == null) mask = new BlankMask("", this);
+        if (mask==null) mask=new BlankMask("", this);
         float[] minAndMax = getMinAndMax(mask);
-        double min = minAndMax[0];
-        double coeff = 256f / (minAndMax[1] - min);
-        int idx;
+        return getHisto256(minAndMax[0], minAndMax[1], mask);
+    }
+    @Override int[] getHisto256(double min, double max, ImageMask mask) {
+        if (mask == null) mask = new BlankMask("", this);
+        double coeff = 256d / (max - min);
         int[] histo = new int[256];
+        int idx;
         for (int z = 0; z < sizeZ; z++) {
             for (int xy = 0; xy < sizeXY; xy++) {
                 if (mask.insideMask(xy, z)) {
@@ -164,4 +167,5 @@ public class ImageInt extends ImageInteger {
         }
         return histo;
     }
+    
 }

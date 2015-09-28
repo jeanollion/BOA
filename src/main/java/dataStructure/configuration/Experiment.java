@@ -54,6 +54,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     SimpleListParameter<Structure> structures= new SimpleListParameter<Structure>("Structures", -1 , Structure.class);
     SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter<ChannelImage>("Channel Images", 0 , ChannelImage.class);
     SimpleListParameter<MicroscopyField> fields= new SimpleListParameter<MicroscopyField>("Fields", 0 , MicroscopyField.class);
+    PreProcessingChain template = new PreProcessingChain("Pre-Processing chain template");
     ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.SINGLE_FILE.getMethod(), false);
     public enum ImageDAOTypes {LocalFileSystem};
     ImageDAOTypes imageDAOType=ImageDAOTypes.LocalFileSystem;
@@ -84,9 +85,17 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     protected void initChildList() {
         super.initChildren(importMethod, fields, channelImages, structures, imagePath);
     }
-    
-    public SimpleListParameter<MicroscopyField> getMicroscopyFields() {
-        return fields;
+    /**
+     * 
+     * @param fieldName name of the MicroscopyField
+     * @return a new MicroscopyField if no MicroscopyField named {@param fieldName} are already existing, null if not. 
+     */
+    public MicroscopyField createMicroscopyField(String fieldName) {
+        if (getMicroscopyField(fieldName)!=null) return null;
+        MicroscopyField res =fields.createChildInstance(fieldName);
+        fields.insert(res);
+        res.setPreProcessingChains(template);
+        return res;
     }
     
     public MicroscopyField getMicroscopyField(String fieldName) {

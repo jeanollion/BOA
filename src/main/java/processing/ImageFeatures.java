@@ -42,16 +42,16 @@ public class ImageFeatures {
         thres.hysteresis(is, lowval, highval);
     }
     
-    public static ImageFloat[] structureTransform(Image image, double smoothScale, double integrationScale) {
+    public static ImageFloat[] structureTransform(Image image, double smoothScale, double integrationScale, boolean overrideIfFloat) {
         ImageFloat[] res = new ImageFloat[image.getScaleZ()==1?2:3];
-        
+        boolean duplicate = !((image instanceof ImageFloat) && overrideIfFloat);
         imagescience.image.Image is = ImagescienceWrapper.getImagescience(image);
         double sscale = smoothScale;
         double iscale = integrationScale;
         sscale *= image.getScaleXY();
         iscale *= image.getScaleXY();
         
-        Vector vector = (new Structure()).run(is, sscale, iscale);
+        Vector vector = (new Structure()).run(duplicate?is.duplicate():is, sscale, iscale);
         for (int i=0;i<res.length;i++) res[i] = (ImageFloat)ImagescienceWrapper.wrap((imagescience.image.Image)vector.get(i));
         
         for (int i = 0; i < res.length; i++) {

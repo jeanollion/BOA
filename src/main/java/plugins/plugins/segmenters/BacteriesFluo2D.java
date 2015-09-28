@@ -28,20 +28,15 @@ import dataStructure.objects.StructureObjectProcessing;
 import ij.process.AutoThresholder;
 import image.BoundingBox;
 import image.Image;
-import image.ImageByte;
 import image.ImageFloat;
+import image.ImageInteger;
+import image.ImageLabeller;
 import image.ImageMask;
 import image.ImageOperations;
-import image.ImageShort;
 import java.util.ArrayList;
-import java.util.Iterator;
-import measurement.BasicMeasurements;
 import plugins.Segmenter;
 import plugins.plugins.thresholders.IJAutoThresholder;
-import processing.Filters;
 import processing.ImageFeatures;
-import processing.WatershedTransform;
-import processing.neighborhood.EllipsoidalNeighborhood;
 import utils.ArrayUtil;
 import utils.Utils;
 
@@ -51,6 +46,7 @@ import utils.Utils;
  */
 public class BacteriesFluo2D implements Segmenter {
     NumberParameter size = new BoundedNumberParameter("Minimal Object Dimension", 0, 15, 1, null);
+    Parameter[] parameters = new Parameter[]{size};
     final static double gradientScale = 1;
     final static double medianScale = 2; // a mettre dans les prefilters
     
@@ -61,14 +57,11 @@ public class BacteriesFluo2D implements Segmenter {
     }
     
     public static ObjectPopulation run(Image input, ImageMask mask, double minObjectDimension, double splitThld) {
-        splitThld = 0.03;
+        splitThld = 0.3;
+        int derScale = 2;
         ImageDisplayer disp = new IJImageDisplayer();
         //Image filtered = Filters.median(input, new ImageFloat("", 0, 0, 0), Filters.getNeighborhood(2, 2, input));
         ImageFloat filtered = ImageFeatures.differenceOfGaussians(input, 2, 15, 1, true, false).setName("filtered");
-        ImageOperations.normalize(filtered, mask, filtered);
-        Image diff = ImageFeatures.getDerivative(filtered, 2, 0, 1, 0, false).setName("diff");
-        disp.showImage(filtered);
-        disp.showImage(diff);
         
         // get precise X bounds to get Y-projection values reproductibles
         float[] projX = ImageOperations.meanProjection(filtered, ImageOperations.Axis.X, null);
@@ -82,6 +75,21 @@ public class BacteriesFluo2D implements Segmenter {
         while (xRight<projX.length-1 && projX[xRight+1]>=thld){++xRight;}
         logger.debug("find xbounds: xMax: {}, right: {}, left: {}", xMax, xLeft, xRight);
         BoundingBox projBounds = new BoundingBox(xLeft, xRight, 0, input.getSizeY()-1, 0, input.getSizeZ()-1);
+        
+        // robustesse du paramètre de segmentation: normalisation
+        // idée 1: normalisation des valeurs avant dérivation
+        //normalisation par l'écart-type
+        //ImageOperations.normalize(filtered, mask, filtered); // normalisation par la valeur moyenne
+        //idée 2: normalisation par la valeur maximale (ou % de pixels brillant) de la derivée en X (car en Y on n'est pas sur d'avoir un max) 
+        Image diffX = ImageFeatures.getDerivative(filtered, derScale, 1, 0, 0, false).setName("diffX").crop(projBounds); 
+        double norm = ImageOperations.getPercentile(diffX, 0.01d, null);
+        logger.debug("diffX max: {}, percentile: {}", diffX.getMinAndMax(null)[1], norm);
+        ImageFloat diff = ImageFeatures.getDerivative(filtered, derScale, 0, 1, 0, false).setName("diff2"); 
+        ImageOperations.multiply(diff, diff, 1d/norm);
+        disp.showImage(filtered);
+        disp.showImage(diff);
+        disp.showImage(diffX);
+        
         
         float[] projValues = ImageOperations.meanProjection(filtered, ImageOperations.Axis.Y, projBounds);
         float[] projDiff = ImageOperations.meanProjection(diff, ImageOperations.Axis.Y, projBounds);
@@ -101,14 +109,21 @@ public class BacteriesFluo2D implements Segmenter {
         //int lastMinIdx = min.length-1;
         //while (lastMinIdx>0 && !(projDiff[min[lastMinIdx]]<0 && projDiff[regMax[lastMinIdx]]>0 && projValues[regMax[lastMinIdx]]>0)) lastMinIdx--;
         //logger.debug("firstMax idx: {}, last min idx: {}", firstMaxIdx, lastMinIdx);
-        ArrayList<int[]> xBounds = new ArrayList<int[]>(min.length);
+        ArrayList<int[]> yBounds = new ArrayList<int[]>(min.length);
         int lastMaxIdx = firstMaxIdx;
         for (int i = firstMaxIdx; i<min.length; ++i) {
             if (projDiff[min[i]]*projDiff[regMax[i+1]]<0 // changement de signe
                     && (projDiff[regMax[i+1]]-projDiff[min[i]])>=splitThld // critère de séparation
                     ) {
-                xBounds.add(new int[]{regMax[lastMaxIdx], min[i]});
-                logger.debug("add separation: min: {}, max: {}", regMax[lastMaxIdx], min[i]);
+                int lower;
+                if (yBounds.isEmpty()) lower = ArrayUtil.getFirstOccurence(projDiff, regMax[lastMaxIdx], lastMaxIdx>0?min[lastMaxIdx-1]:0, 0, false, true);
+                //else lower = min[lastMaxIdx-1];
+                else lower = ArrayUtil.min(projValues, min[lastMaxIdx-1], regMax[lastMaxIdx]);
+                //int higher = regMax[i+1];
+                int higher = ArrayUtil.min(projValues, min[i], regMax[i+1]);
+                //int higher = ArrayUtil.getFirstOccurence(projDiff, min[i], regMax[i+1], 0, true, true);
+                yBounds.add(new int[]{lower, higher});
+                logger.debug("add separation: min: {}, max: {}", lower, higher);
                 lastMaxIdx=i+1;
             }
         }
@@ -118,36 +133,47 @@ public class BacteriesFluo2D implements Segmenter {
             int lastLocalMax=lastMaxIdx;
             while(lastLocalMax<regMax.length-1 && regMax[lastLocalMax+1]<end) lastLocalMax++;
             if ((projDiff[regMax[lastLocalMax]]-projDiff[end])>splitThld) {
-                xBounds.add(new int[]{regMax[lastLocalMax], end});
-                logger.debug("add last bactery: min: {}, max: {}", regMax[lastLocalMax], end);
+                //int lower = min[lastMaxIdx-1];
+                int lower = ArrayUtil.min(projValues, min[lastMaxIdx-1], regMax[lastMaxIdx]);
+                int higher = ArrayUtil.getFirstOccurence(projDiff, end, projDiff.length, 0, true, true);
+                yBounds.add(new int[]{lower, higher});
+                logger.debug("add last bactery: min: {}, max: {}", lower, higher);
             }
         }
-        a faire: dans chaque sous masque: fit aux donnée (depuis le max des intensités dans le masque)
-        
-        
-        return null;
-        /*Image[] structure = ImageFeatures.structureTransform(sub, medianScale, gradientScale);
-        Image gradient = structure[0];
-        //Image gradient = ImageFeatures.getGradientMagnitude(filtered, gradientScale, false);
-        ImageByte seeds = Filters.localExtrema(gradient, null, false, Filters.getNeighborhood(minObjectDimension/2.0, 1, input));
-        //ImageByte seeds = Filters.localExtrema(filtered, null, false, Filters.getNeighborhood(minObjectDimension/2.0, 1, input));
-        
-        disp.showImage(filtered.setName("filtered"));
-        disp.showImage(structure[0].setName("structure 0"));
-        disp.showImage(seeds.setName("seeds"));
-        ObjectPopulation pop = WatershedTransform.watershed(gradient, mask, seeds, false);
-        Iterator<Object3D> it = pop.getObjects().iterator();
-        while(it.hasNext()) {
-            Object3D o = it.next();
-            if (BasicMeasurements.getMeanValue(o, input)<thld) it.remove();
+        //a faire: dans chaque sous masque: fit aux donnée (depuis le max des intensités dans le masque)
+        Image structure = ImageFeatures.structureTransform(input, 2, 1, false)[0];
+        ArrayList<Object3D> objects = new ArrayList<Object3D>(yBounds.size());
+        boolean display = false;
+        int count=1;
+        for (int[] yb : yBounds) {
+            BoundingBox b = new BoundingBox(0, input.getSizeX()-1, yb[0], yb[1], 0, input.getSizeZ()-1);
+            Image subImage = filtered.crop(b);
+            Image subImageFit = structure.crop(b);
+            if (display) {
+                logger.debug("crop bounds : {}", b);
+                disp.showImage(subImage.setName("sub image"));
+                disp.showImage(subImageFit.setName("fit image"));
+                display=false;
+            }
+            ImageInteger bin = ImageOperations.threshold(subImage, IJAutoThresholder.runThresholder(subImage, null, AutoThresholder.Method.Otsu), true, false);
+            Object3D[] obs =  ImageLabeller.labelImage(bin);
+            if (obs.length>0) {
+                int idx = 0;
+                if (obs.length>1) { //get object of maximal size  
+                    for (int i = 1; i<obs.length; ++i) if (obs[i].getVoxels().size()>obs[idx].getVoxels().size()) idx=i;
+                    logger.warn("Bacteries Fluo Adjust Segmentation: {} objects found in {}th position", obs.length, count-1);
+                }
+                objects.add(obs[idx].setLabel(count++).addOffset(b));
+            } else logger.warn("Bacteries Fluo Adjust Segmentation: no object found in {}th position", count-1);
+            //objects.add(FitEdges.run(subImage, subImageFit, null, IJAutoThresholder.runThresholder(subImage, null, AutoThresholder.Method.Otsu)).addOffset(b));
         }
-        pop.relabel();
-        return pop;*/
-        
+        ObjectPopulation pop = new ObjectPopulation(objects, input);
+        //disp.showImage(pop.getLabelImage().setName("labels"));        
+        return pop;        
     }
 
     public Parameter[] getParameters() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return parameters;
     }
 
     public boolean does3D() {

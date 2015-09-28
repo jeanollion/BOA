@@ -60,17 +60,21 @@ public class TestProcessFluo {
     Experiment xp;
     
     public static void main(String[] args) {
+        
         //new TestProcessFluo().testRotation();
-        new TestProcessFluo().testSegBacteries();
+        //new TestProcessFluo().testSegBacteries();
     }
-    //@Test
-    public void testImport(String inputDir) {
+    public void setUpXp() {
         PluginFactory.findPlugins("plugins.plugins");
         xp = new Experiment("testXP", new Structure("structure"));
         xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
         xp.getChannelImages().insert(new ChannelImage("trans", "_REF"), new ChannelImage("fluo", ""));
         xp.setOutputImageDirectory("/data/Images/Fluo/OutputTest");
-        File f =  new File("/data/Images/Fluo/OutputTest");f.mkdirs();deleteDirectory(f);
+        File f =  new File("/data/Images/Fluo/OutputTest"); f.mkdirs(); deleteDirectory(f);
+    }
+    //@Test
+    public void testImport(String inputDir) {
+        setUpXp();
         String[] files = new String[]{inputDir}; //       /data/Images/Fluo/me121r-1-9-15-lbiptg100x /data/Images/Fluo/test
         Processor.importFiles(files, xp);
         //assertEquals("number of fields detected", 1, xp.getMicroscopyFields().getChildCount());
@@ -159,8 +163,9 @@ public class TestProcessFluo {
         testCrop("/data/Images/Fluo/testsub");
         Image image = xp.getMicroscopyField(0).getInputImages().getImage(0, 0);
         ArrayList<Object3D> objects = MicroChannelFluo2D.getObjects(image, 350, 45, 15);
-        ImageMask parentMask = objects.get(0).getMask();
-        Image input = image.crop(objects.get(0).getBounds());
+        Object3D o = objects.get(1);
+        ImageMask parentMask = o.getMask();
+        Image input = image.crop(o.getBounds());
         ImageDisplayer disp = new IJImageDisplayer();
         //disp.showImage(input);
         double thld = IJAutoThresholder.runThresholder(input, null, AutoThresholder.Method.Triangle);

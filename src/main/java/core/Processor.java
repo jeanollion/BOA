@@ -46,9 +46,8 @@ public class Processor {
         ArrayList<MultipleImageContainer> images = ImageFieldFactory.importImages(selectedFiles, xp);
         int count=0;
         for (MultipleImageContainer c : images) {
-            if (!xp.getMicroscopyFields().containsElement(c.getName())) {
-                MicroscopyField f = (MicroscopyField)xp.getMicroscopyFields().createChildInstance(c.getName());
-                xp.getMicroscopyFields().insert(f);
+            MicroscopyField f = xp.createMicroscopyField(c.getName());
+            if (f!=null) {
                 f.setImages(c);
                 count++;
             } else {

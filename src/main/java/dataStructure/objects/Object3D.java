@@ -202,4 +202,17 @@ public class Object3D<T extends Voxel> {
         else return false;
     }
     
+    public Object3D<T> addOffset(int offsetX, int offsetY, int offsetZ) {
+        if (mask!=null) mask.addOffset(offsetX, offsetY, offsetZ);
+        if (bounds!=null) bounds.translate(offsetX, offsetY, offsetZ);
+        if (voxels!=null) for (Voxel v : voxels) v.translate(offsetX, offsetY, offsetZ);
+        return this;
+    }
+    public Object3D<T> addOffset(BoundingBox bounds) {
+        return addOffset(bounds.getxMin(), bounds.getyMin(), bounds.getzMin()); 
+    }
+    public Object3D<T> setLabel(int label) {
+        this.label=label;
+        return this;
+    }
 }

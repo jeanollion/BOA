@@ -279,6 +279,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         TimePanel = new javax.swing.JPanel();
         TimeJSP = new javax.swing.JScrollPane();
         trackSubPanel = new javax.swing.JPanel();
+        ActionPanl = new javax.swing.JPanel();
+        segmentButton = new javax.swing.JButton();
+        importImageButton = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -341,7 +344,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         TimePanel.setLayout(TimePanelLayout);
         TimePanelLayout.setHorizontalGroup(
             TimePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 319, Short.MAX_VALUE)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 325, Short.MAX_VALUE)
         );
         TimePanelLayout.setVerticalGroup(
             TimePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -372,6 +375,43 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
         jTabbedPane1.addTab("Data Browsing", DataPanel);
 
+        segmentButton.setText("Segment");
+        segmentButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                segmentButtonActionPerformed(evt);
+            }
+        });
+
+        importImageButton.setText("Import Images");
+        importImageButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                importImageButtonActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout ActionPanlLayout = new javax.swing.GroupLayout(ActionPanl);
+        ActionPanl.setLayout(ActionPanlLayout);
+        ActionPanlLayout.setHorizontalGroup(
+            ActionPanlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(ActionPanlLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(ActionPanlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(segmentButton)
+                    .addComponent(importImageButton))
+                .addContainerGap(534, Short.MAX_VALUE))
+        );
+        ActionPanlLayout.setVerticalGroup(
+            ActionPanlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(ActionPanlLayout.createSequentialGroup()
+                .addGap(6, 6, 6)
+                .addComponent(importImageButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(segmentButton)
+                .addContainerGap(375, Short.MAX_VALUE))
+        );
+
+        jTabbedPane1.addTab("Actions", ActionPanl);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -391,6 +431,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         logger.debug("trackStructureJCBActionPerformed: selected index: {} action event: {}", trackStructureJCB.getSelectedIndex(), evt);
         this.setStructure(this.trackStructureJCB.getSelectedIndex());
     }//GEN-LAST:event_trackStructureJCBActionPerformed
+
+    private void segmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_segmentButtonActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_segmentButtonActionPerformed
+
+    private void importImageButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importImageButtonActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_importImageButtonActionPerformed
 
     /**
      * @param args the command line arguments
@@ -428,6 +476,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JPanel ActionPanl;
     private javax.swing.JPanel ConfigurationPanel;
     private javax.swing.JPanel ControlPanel;
     private javax.swing.JPanel DataPanel;
@@ -436,7 +485,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JScrollPane TimeJSP;
     private javax.swing.JPanel TimePanel;
     private javax.swing.JScrollPane configurationJSP;
+    private javax.swing.JButton importImageButton;
     private javax.swing.JTabbedPane jTabbedPane1;
+    private javax.swing.JButton segmentButton;
     private javax.swing.JScrollPane structureJSP;
     private javax.swing.JComboBox trackStructureJCB;
     private javax.swing.JPanel trackSubPanel;

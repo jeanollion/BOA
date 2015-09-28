@@ -40,11 +40,11 @@ public class ImageLabeller {
     int sizeX;
     HashMap<Integer, Spot> spots;
     ImageMask mask;
-    protected static final int[][] neigh3D = new int[][]{
+    public static final int[][] neigh3D = new int[][]{
             {1, 1, -1}, {0, 1, -1}, {-1, 1, -1}, {1, 0, -1}, {0, 0, -1}, {-1, 0, -1}, {1, -1, -1}, {0, 1, -1}, {-1, -1, -1},
             {1, -1, 0}, {0, -1, 0}, {-1, -1, 0}, {-1, 0, 0}
         };
-    protected static final int[][] neigh2D = new int[][]{
+    public static final int[][] neigh2D = new int[][]{
             {1, -1, 0}, {0, -1, 0}, {-1, -1, 0}, {-1, 0, 0}
         };
     int[][] neigh;

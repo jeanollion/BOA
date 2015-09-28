@@ -35,5 +35,17 @@ public class Voxel2D extends Voxel {
     public String toString() {
         return "Voxel2D{" + "x=" + x + ", y=" + y + ", value=" + value + '}';
     }
+
+    @Override
+    public Voxel2D copy() {
+        return new Voxel2D(x, y);
+    }
+    
+    @Override
+    public Voxel2D translate(int dX, int dY, int dZ) {
+        x+=dX;
+        y+=dY;
+        return this;
+    }
     
 }
