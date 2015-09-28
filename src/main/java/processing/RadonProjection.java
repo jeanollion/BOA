@@ -42,8 +42,8 @@ public class RadonProjection {
         int Xcenter = image.getSizeX() / 2;
         int Ycenter = image.getSizeY() / 2;
         
-        //if no. scans is greater than the image width, then scale will be <1
-        double scale = image.getSizeX() * 1.42 / proj.length; 
+        //if no. scans is greater than the image minimal dimension, then scale will be <1
+        double scale = Math.min(image.getSizeX(), image.getSizeY()) / (double)proj.length;
 
         int N = 0;
         val = 0;

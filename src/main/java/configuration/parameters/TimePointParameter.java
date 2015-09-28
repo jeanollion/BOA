@@ -22,10 +22,13 @@ import de.caluga.morphium.annotations.Transient;
 
 /**
  *
- * @author nasique
+ * @author jollion
  */
 public class TimePointParameter extends IndexChoiceParameter {
     @Transient private int timePointNumber=-1;
+    
+    public TimePointParameter() {super("");}
+    
     public TimePointParameter(String name) {
         super(name);
     }

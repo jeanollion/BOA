@@ -93,6 +93,32 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         //initDB();
         this.initDBImages();
         
+    }
+    
+    public void setDBConnection(String dbName, String hostname) {
+        try {
+            MorphiumConfig cfg = new MorphiumConfig();
+            cfg.setDatabase(dbName);
+            cfg.addHost("localhost", 27017);
+            Morphium m=new Morphium(cfg);
+            setDBConnection(m);
+        } catch (UnknownHostException ex) {
+            logger.error("db connection error", ex);
+        }
+    }
+    
+    public void setDBConnection(Morphium m) {
+        this.m=m;
+        xpDAO = new ExperimentDAO(m);
+        objectDAO = new ObjectDAO(m, xpDAO);
+        Experiment xp = xpDAO.getExperiment();
+        MorphiumUtils.addDereferencingListeners(m, objectDAO, xpDAO);
+        if (xp==null) {
+            xp = new Experiment("xp test UI");
+            xpDAO.store(xp);
+            xpDAO.clearCache();
+        }
+        
         configurationTreeGenerator = new ConfigurationTreeGenerator(xpDAO);
         configurationJSP.setViewportView(configurationTreeGenerator.getTree());
         
@@ -101,6 +127,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         
         trackTreeController = new TrackTreeController(objectDAO, xpDAO, structureObjectTreeGenerator);
         setTrackTreeStructures(xpDAO.getExperiment().getStructuresAsString());
+        
     }
     
     public static GUI getInstance() {
@@ -174,27 +201,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         trackSubPanel.repaint();
     }
     
-    private void initDB() {
-        try {
-            MorphiumConfig cfg = new MorphiumConfig();
-            cfg.setDatabase("testdb");
-            cfg.addHost("localhost", 27017);
-            m=new Morphium(cfg);
-            xpDAO = new ExperimentDAO(m);
-            objectDAO = new ObjectDAO(m, xpDAO);
-            Experiment xp = xpDAO.getExperiment();
-            MorphiumUtils.addDereferencingListeners(m, objectDAO, xpDAO);
-            if (xp==null) {
-                xp = new Experiment("xp test UI");
-                xpDAO.store(xp);
-                xpDAO.clearCache();
-            }
-            
-            //.setPreferredSize(new Dimension(400, 400));
-        } catch (UnknownHostException ex) {
-            logger.error("db connection error", ex);
-        }
-    }
     
     private void initDBImages() {
         try {
@@ -282,6 +288,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         ActionPanl = new javax.swing.JPanel();
         segmentButton = new javax.swing.JButton();
         importImageButton = new javax.swing.JButton();
+        connectButton = new javax.swing.JButton();
+        hostName = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -389,6 +397,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
+        connectButton.setText("Connect");
+        connectButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                connectButtonActionPerformed(evt);
+            }
+        });
+
+        hostName.setText("localhost");
+
         javax.swing.GroupLayout ActionPanlLayout = new javax.swing.GroupLayout(ActionPanl);
         ActionPanl.setLayout(ActionPanlLayout);
         ActionPanlLayout.setHorizontalGroup(
@@ -397,17 +414,25 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addContainerGap()
                 .addGroup(ActionPanlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(segmentButton)
-                    .addComponent(importImageButton))
-                .addContainerGap(534, Short.MAX_VALUE))
+                    .addComponent(importImageButton)
+                    .addGroup(ActionPanlLayout.createSequentialGroup()
+                        .addComponent(connectButton)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(hostName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(505, Short.MAX_VALUE))
         );
         ActionPanlLayout.setVerticalGroup(
             ActionPanlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(ActionPanlLayout.createSequentialGroup()
-                .addGap(6, 6, 6)
+                .addGap(11, 11, 11)
+                .addGroup(ActionPanlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(connectButton)
+                    .addComponent(hostName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(importImageButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(segmentButton)
-                .addContainerGap(375, Short.MAX_VALUE))
+                .addContainerGap(333, Short.MAX_VALUE))
         );
 
         jTabbedPane1.addTab("Actions", ActionPanl);
@@ -433,12 +458,19 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }//GEN-LAST:event_trackStructureJCBActionPerformed
 
     private void segmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_segmentButtonActionPerformed
-        // TODO add your handling code here:
+        TODO add your handling code here:
     }//GEN-LAST:event_segmentButtonActionPerformed
 
     private void importImageButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importImageButtonActionPerformed
-        // TODO add your handling code here:
+        
+        Processor.importFiles(selectedFiles, this.xpDAO.getExperiment());
     }//GEN-LAST:event_importImageButtonActionPerformed
+
+    private void connectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectButtonActionPerformed
+        String host = this.hostName.getText();
+        if (host==null || host.length()==0) host = "localhost";
+        this.setDBConnection("testGUI2", host);
+    }//GEN-LAST:event_connectButtonActionPerformed
 
     /**
      * @param args the command line arguments
@@ -485,6 +517,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JScrollPane TimeJSP;
     private javax.swing.JPanel TimePanel;
     private javax.swing.JScrollPane configurationJSP;
+    private javax.swing.JButton connectButton;
+    private javax.swing.JTextField hostName;
     private javax.swing.JButton importImageButton;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JButton segmentButton;

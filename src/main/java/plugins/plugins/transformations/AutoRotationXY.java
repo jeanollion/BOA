@@ -29,6 +29,7 @@ import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
 import image.ImageFloat;
 import plugins.TransformationTimeIndependent;
+import plugins.plugins.preFilter.IJSubtractBackground;
 import processing.Filters;
 import processing.ImageTransformation;
 import processing.ImageTransformation.InterpolationScheme;
@@ -42,6 +43,7 @@ import processing.neighborhood.EllipsoidalNeighborhood;
  * @author jollion
  */
 public class AutoRotationXY implements TransformationTimeIndependent {
+    NumberParameter backgroundSubtractionRadius = new BoundedNumberParameter("Background Subtraction Radius", 0, 20, 0, null);
     NumberParameter minAngle = new BoundedNumberParameter("Minimal Angle for search", 2, -10, -90, 90);
     NumberParameter maxAngle = new BoundedNumberParameter("Maximal Angle for search", 2, 10, -90, 90);
     NumberParameter precision1 = new BoundedNumberParameter("Angular Precision of first seach", 2, 1, 0, null);
@@ -50,16 +52,17 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     ChoiceParameter interpolation = new ChoiceParameter("Interpolation", InterpolationScheme.getValues(), ImageTransformation.InterpolationScheme.BSPLINE5.toString(), false);
     ChoiceParameter searchMethod = new ChoiceParameter("Search method", SearchMethod.getValues(), SearchMethod.MAXVAR.getName(), false);
     
-    Parameter[] parameters = new Parameter[]{minAngle, maxAngle, precision1, precision2, interpolation};
+    Parameter[] parameters = new Parameter[]{minAngle, maxAngle, precision1, precision2, interpolation, backgroundSubtractionRadius};
     Double[] internalParams;
 
-    public AutoRotationXY(double minAngle, double maxAngle, double precision1, double precision2, InterpolationScheme interpolation, SearchMethod method) {
+    public AutoRotationXY(double minAngle, double maxAngle, double precision1, double precision2, InterpolationScheme interpolation, SearchMethod method, int backgroundSubtractionRadius) {
         this.minAngle.setValue(minAngle);
         this.maxAngle.setValue(maxAngle);
         this.precision1.setValue(precision1);
         this.precision2.setValue(precision2);
         if (interpolation!=null) this.interpolation.setSelectedItem(interpolation.toString());
         this.searchMethod.setSelectedItem(method.getName());
+        this.backgroundSubtractionRadius.setValue(backgroundSubtractionRadius);
     }
     
     public AutoRotationXY() {}
@@ -88,13 +91,13 @@ public class AutoRotationXY implements TransformationTimeIndependent {
         Image image = inputImages.getImage(channelIdx, inputImages.getDefaultTimePoint());
         double angle=0;
         if (this.searchMethod.getSelectedItem().equals(SearchMethod.MAXVAR.getName())) { 
-            angle = computeRotationAngleXY(image, image.getSizeZ()/2, minAngle.getValue().doubleValue(), maxAngle.getValue().doubleValue(), precision1.getValue().doubleValue(), precision2.getValue().doubleValue(), true, false, 0);
+            angle = computeRotationAngleXY(image, image.getSizeZ()/2, this.backgroundSubtractionRadius.getValue().intValue(), minAngle.getValue().doubleValue(), maxAngle.getValue().doubleValue(), precision1.getValue().doubleValue(), precision2.getValue().doubleValue(), true, false, 0);
         } else if (this.searchMethod.getSelectedItem().equals(SearchMethod.MAXARTEFACT.getName())) {
-            angle = computeRotationAngleXY(image, image.getSizeZ()/2, minAngle.getValue().doubleValue(), maxAngle.getValue().doubleValue(), precision1.getValue().doubleValue(), precision2.getValue().doubleValue(), false, true, 0);
+            angle = computeRotationAngleXY(image, image.getSizeZ()/2, this.backgroundSubtractionRadius.getValue().intValue(), minAngle.getValue().doubleValue(), maxAngle.getValue().doubleValue(), precision1.getValue().doubleValue(), precision2.getValue().doubleValue(), false, true, 0);
         }
         
-        //ImageFloat sin = RadonProjection.getSinogram(image, minAngle.getValue().doubleValue()+90, maxAngle.getValue().doubleValue()+90, precision1.getValue().doubleValue(), (int)Math.sqrt(image.getSizeX()*image.getSizeX() + image.getSizeY()*image.getSizeY()));
-        //new IJImageDisplayer().showImage(sin);
+        ImageFloat sin = RadonProjection.getSinogram(image, minAngle.getValue().doubleValue()+90, maxAngle.getValue().doubleValue()+90, precision1.getValue().doubleValue(), Math.min(image.getSizeX(), image.getSizeY())); //(int)Math.sqrt(image.getSizeX()*image.getSizeX() + image.getSizeY()*image.getSizeY())
+        new IJImageDisplayer().showImage(sin);
         internalParams = new Double[]{angle};
     }
 
@@ -102,7 +105,12 @@ public class AutoRotationXY implements TransformationTimeIndependent {
         return ImageTransformation.rotateXY(image, internalParams[0], ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()));
     }
     
-    public static double computeRotationAngleXY(Image image, int z, double ang1, double ang2, double stepsize, float[] proj, boolean var, double filterScale) {
+    public static double computeRotationAngleXY(Image image, int z, int backgroundSubtractionRadius, double ang1, double ang2, double stepsize, float[] proj, boolean var, double filterScale) {
+        // subtract background
+        if (backgroundSubtractionRadius>0) {
+            image = image.duplicate(image.getName());
+            IJSubtractBackground.filter(image, backgroundSubtractionRadius, true, false, true, false);
+        }
         // initial search
         double[] angles = getAngleArray(ang1, ang2, stepsize);
         double angleMax=angles[0];
@@ -123,12 +131,13 @@ public class AutoRotationXY implements TransformationTimeIndependent {
         return -angleMax;
     }
     
-    public static double computeRotationAngleXY(Image image, int z , double ang1, double ang2, double stepsize1, double stepsize2, boolean var, boolean rotate90, double filterScale) {
+    public static double computeRotationAngleXY(Image image, int z, int backgroundSubtractionRadius , double ang1, double ang2, double stepsize1, double stepsize2, boolean var, boolean rotate90, double filterScale) {
         // first search:
-        float[] proj = new float[(int)Math.sqrt(image.getSizeX()*image.getSizeX() + image.getSizeY()*image.getSizeY())];
+        //float[] proj = new float[(int)Math.sqrt(image.getSizeX()*image.getSizeX() + image.getSizeY()*image.getSizeY())];
+        float[] proj = new float[Math.min(image.getSizeX(),image.getSizeY())];
         double inc = rotate90?90:0;
-        double firstSearch = -computeRotationAngleXY(image, z, ang1+inc, ang2+inc, stepsize1, proj, var, filterScale);
-        double secondSearch = computeRotationAngleXY(image, z, firstSearch-stepsize1+stepsize2, firstSearch+stepsize1-stepsize2, stepsize2, proj, var, filterScale);
+        double firstSearch = -computeRotationAngleXY(image, z, backgroundSubtractionRadius, ang1+inc, ang2+inc, stepsize1, proj, var, filterScale);
+        double secondSearch = computeRotationAngleXY(image, z,backgroundSubtractionRadius, firstSearch-stepsize1+stepsize2, firstSearch+stepsize1-stepsize2, stepsize2, proj, var, filterScale);
         logger.debug("radon rotation search: first: {} second: {}", -firstSearch, secondSearch);
         return secondSearch+inc;
     }

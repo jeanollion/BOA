@@ -62,9 +62,9 @@ public abstract class SimpleParameter implements Parameter {
             p.setContentFrom(this);
             return p;
         } catch (InstantiationException ex) {
-            Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, null, ex);
+            logger.error("duplicate Simple Parameter", ex);
         } catch (IllegalAccessException ex) {
-            Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, null, ex);
+            logger.error("duplicate Simple Parameter", ex);
         } return null;
     }
     

@@ -83,8 +83,13 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     protected void initChildList() {
-        super.initChildren(importMethod, fields, channelImages, structures, imagePath);
+        super.initChildren(importMethod, template, fields, channelImages, structures, imagePath);
     }
+    
+    public PreProcessingChain getPreProcessingTemplate() {
+        return template;
+    }
+    
     /**
      * 
      * @param fieldName name of the MicroscopyField

@@ -21,6 +21,8 @@ import static TestUtils.Utils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import configuration.parameters.Parameter;
+import configuration.parameters.TimePointParameter;
 import core.Processor;
 import static core.Processor.preProcessImages;
 import dataStructure.configuration.ChannelImage;
@@ -60,21 +62,34 @@ public class TestProcessFluo {
     Experiment xp;
     
     public static void main(String[] args) {
-        
         //new TestProcessFluo().testRotation();
         //new TestProcessFluo().testSegBacteries();
+        TestProcessFluo t = new TestProcessFluo();
+        t.setUpXp(true);
+        
     }
-    public void setUpXp() {
+    
+    
+    
+    public void setUpXp(boolean preProcessing) {
         PluginFactory.findPlugins("plugins.plugins");
         xp = new Experiment("testXP", new Structure("structure"));
         xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
         xp.getChannelImages().insert(new ChannelImage("trans", "_REF"), new ChannelImage("fluo", ""));
         xp.setOutputImageDirectory("/data/Images/Fluo/OutputTest");
         File f =  new File("/data/Images/Fluo/OutputTest"); f.mkdirs(); deleteDirectory(f);
+        
+        if (preProcessing) {// preProcessing 
+            xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
+            xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
+            xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
+            xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannels2D());
+            xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY().setReferenceTimePoint(0));
+        }
     }
     //@Test
     public void testImport(String inputDir) {
-        setUpXp();
+        setUpXp(false);
         String[] files = new String[]{inputDir}; //       /data/Images/Fluo/me121r-1-9-15-lbiptg100x /data/Images/Fluo/test
         Processor.importFiles(files, xp);
         //assertEquals("number of fields detected", 1, xp.getMicroscopyFields().getChildCount());
@@ -92,12 +107,12 @@ public class TestProcessFluo {
         ImageWriter.writeToFile("/data/Images/Fluo/testsub/", "imagesTest", ImageFormat.OMETIF, imageTC);
     }
     
-    public void testRotation(String inputDir) {
+    public void testRotation() {
         testImport("/data/Images/Fluo/testsub");
         ImageDisplayer disp = new IJImageDisplayer();
         for (int i =0; i<xp.getMicrocopyFieldNB(); ++i) {
             xp.getMicroscopyField(i).getPreProcessingChain().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
-            xp.getMicroscopyField(i).getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
+            xp.getMicroscopyField(i).getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
 
             disp.showImage(xp.getMicroscopyField(i).getInputImages().getImage(0, 0).duplicate("input:"+xp.getMicroscopyField(i).getName()));
             Processor.setTransformationsAndComputeConfigurationData(xp.getMicroscopyField(i));
@@ -109,7 +124,7 @@ public class TestProcessFluo {
     public void testStabilizer() {
         testImport("/data/Images/Fluo/test");
         xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
-        xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
+        xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
         xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
         xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new CropMicroChannels2D());
         xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new ImageStabilizerXY().setReferenceTimePoint(0));
@@ -133,7 +148,7 @@ public class TestProcessFluo {
     
     public void testCrop(int fieldIdx, boolean flip) {
         xp.getMicroscopyField(fieldIdx).getPreProcessingChain().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
-        xp.getMicroscopyField(fieldIdx).getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
+        xp.getMicroscopyField(fieldIdx).getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
         if (flip) xp.getMicroscopyField(fieldIdx).getPreProcessingChain().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
         xp.getMicroscopyField(fieldIdx).getPreProcessingChain().addTransformation(0, null, new CropMicroChannels2D());
         //Image[][] imageInputTC = new Image[xp.getMicroscopyField(0).getInputImages().getTimePointNumber()][1];
