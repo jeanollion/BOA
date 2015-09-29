@@ -50,8 +50,10 @@ public class ParameterUtils {
             return (Experiment) p;
         }
         Parameter root = p;
+        //logger.trace("getExperiment: {}", p.getName());
         while (root.getParent() != null) {
             root = (Parameter) root.getParent();
+            //logger.trace("getExperiment: {}", root.getName());
             if (root instanceof Experiment) {
                 return (Experiment) root;
             }

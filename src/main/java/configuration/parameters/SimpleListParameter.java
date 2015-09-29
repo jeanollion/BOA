@@ -44,6 +44,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     protected ArrayList<T> children;
     protected int unMutableIndex;
     @Transient protected Class<T> childClass;
+    @Transient private boolean postLoaded=false;
     protected String childClassName;
     protected T childInstance;
     
@@ -93,11 +94,19 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     }
     
     public boolean containsElement(String name) {
-        for (Parameter p : children) if (p.getName().equals(name)) return true;
+        for (Parameter p : getChildren()) if (p.getName().equals(name)) return true;
         return false;
     }
 
-    public Class<T> getChildClass() {
+    @Override public Class<T> getChildClass() {
+        if (childClass==null) {
+            if (this.childInstance!=null) this.childClass=(Class<T>)childInstance.getClass();
+            else try {
+                childClass = (Class<T>) Class.forName(childClassName);
+            } catch (ClassNotFoundException ex) {
+                logger.error("childClass search error", ex);
+            }
+        }
         return childClass;
     }
     
@@ -109,17 +118,17 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
                 instance = childClass.getDeclaredConstructor(String.class).newInstance("new " + childClass.getSimpleName());
                 return instance;
             } catch (NoSuchMethodException ex) {
-                Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+                logger.error("duplicate error", ex);
             } catch (SecurityException ex) {
-                Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+                logger.error("duplicate error", ex);
             } catch (InstantiationException ex) {
-                Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+                logger.error("duplicate error", ex);
             } catch (IllegalAccessException ex) {
-                Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+                logger.error("duplicate error", ex);
             } catch (IllegalArgumentException ex) {
-                Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+                logger.error("duplicate error", ex);
             } catch (InvocationTargetException ex) {
-                Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+                logger.error("duplicate error", ex);
             }
         } else if (childInstance != null) {
             return (T)childInstance.duplicate();
@@ -129,13 +138,13 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     
     @Override
     public boolean isDeactivatable() {
-        return Deactivatable.class.isAssignableFrom(this.childClass);
+        return Deactivatable.class.isAssignableFrom(this.getChildClass());
     }
     
     @Override
     public void setActivatedAll(boolean activated) {
         if (isDeactivatable()) {
-            for (Parameter p: children) ((Deactivatable)p).setActivated(activated);
+            for (Parameter p: getChildren()) ((Deactivatable)p).setActivated(activated);
         }
     }
     
@@ -146,19 +155,20 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     }
 
     public SimpleListParameter<T> duplicate() {
-        SimpleListParameter<T> res = new SimpleListParameter<T>(name, unMutableIndex, childClass);
+        SimpleListParameter<T> res = new SimpleListParameter<T>(name, unMutableIndex, getChildClass());
         res.setContentFrom(this);
         return res;
     }
     
     public String[] getChildrenString() {
-        String[] res = new String[children.size()];
+        String[] res = new String[getChildren().size()];
         int i=0;
         for (Parameter s : children) res[i++] = s.getName();
         return res;
     }
     
     public ArrayList<T> getChildren() {
+        postLoad();
         return children;
     }
     
@@ -220,7 +230,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     
     @Override
     public void insert(MutableTreeNode child, int index) {
-        if (index>=children.size()) children.add((T)child);
+        if (index>=getChildren().size()) children.add((T)child);
         else children.add(index, (T)child);
         child.setParent(this);
     }
@@ -228,21 +238,20 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     @Override
     public void insert(T... child) {
         for (T c : child) {
-            children.add(c);
+            getChildren().add(c);
             c.setParent(this);
         }
     }
 
     @Override
     public void remove(int index) {
-        children.remove(index);
+        getChildren().remove(index);
     }
 
     @Override
     public void remove(MutableTreeNode node) {
-        System.out.println("removing node:"+((Parameter)node).toString() +" total number: "+children.size());
-        children.remove((T)node);
-        System.out.println("removed node:"+((Parameter)node).toString() +" total number: "+children.size());
+        //System.out.println("removing node:"+((Parameter)node).toString() +" total number: "+children.size());
+        getChildren().remove((T)node);
     }
 
     @Override
@@ -258,7 +267,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     @Override 
     public void removeAllElements() {
         if (this.unMutableIndex<0) children=new ArrayList<T>(children.size());
-        else for (int i = children.size()-1;i>unMutableIndex;--i) children.remove(i);
+        else for (int i = getChildren().size()-1;i>unMutableIndex;--i) children.remove(i);
     }
 
     @Override
@@ -268,18 +277,18 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     
     @Override
     public T getChildByName(String name) { // returns the first occurence..
-        for (T child : children) if (name.equals(child.getName())) return child;
+        for (T child : getChildren()) if (name.equals(child.getName())) return child;
         return null;
     }
 
     @Override
     public T getChildAt(int childIndex) {
-        return children.get(childIndex);
+        return getChildren().get(childIndex);
     }
 
     @Override
     public int getChildCount() {
-        return children.size();
+        return getChildren().size();
     }
 
     @Override
@@ -299,12 +308,12 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
 
     @Override
     public boolean isLeaf() {
-        return children.isEmpty();
+        return getChildren().isEmpty();
     }
 
     @Override
     public Enumeration children() {
-        return Collections.enumeration(children);
+        return Collections.enumeration(getChildren());
     }
     
     @Override
@@ -316,13 +325,9 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     // morphium
 
     @PostLoad public void postLoad() {
+        if (postLoaded) return;
         for (Parameter p : children) p.setParent(this);
-        if (this.childInstance!=null) this.childClass=(Class<T>)childInstance.getClass();
-        else try {
-            childClass = (Class<T>) Class.forName(childClassName);
-        } catch (ClassNotFoundException ex) {
-            Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        postLoaded=true;
     }
 
 }

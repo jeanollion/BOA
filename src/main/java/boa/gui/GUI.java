@@ -287,6 +287,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void initComponents() {
 
         jTabbedPane1 = new javax.swing.JTabbedPane();
+        ActionPanl = new javax.swing.JPanel();
+        segmentButton = new javax.swing.JButton();
+        importImageButton = new javax.swing.JButton();
+        connectButton = new javax.swing.JButton();
+        hostName = new javax.swing.JTextField();
+        preProcessButton = new javax.swing.JButton();
         ConfigurationPanel = new javax.swing.JPanel();
         configurationJSP = new javax.swing.JScrollPane();
         DataPanel = new javax.swing.JPanel();
@@ -298,14 +304,72 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         TimePanel = new javax.swing.JPanel();
         TimeJSP = new javax.swing.JScrollPane();
         trackSubPanel = new javax.swing.JPanel();
-        ActionPanl = new javax.swing.JPanel();
-        segmentButton = new javax.swing.JButton();
-        importImageButton = new javax.swing.JButton();
-        connectButton = new javax.swing.JButton();
-        hostName = new javax.swing.JTextField();
-        preProcessButton = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+
+        segmentButton.setText("Segment");
+        segmentButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                segmentButtonActionPerformed(evt);
+            }
+        });
+
+        importImageButton.setText("Import Images");
+        importImageButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                importImageButtonActionPerformed(evt);
+            }
+        });
+
+        connectButton.setText("Connect");
+        connectButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                connectButtonActionPerformed(evt);
+            }
+        });
+
+        hostName.setText("localhost");
+
+        preProcessButton.setText("PreProcess");
+        preProcessButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                preProcessButtonActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout ActionPanlLayout = new javax.swing.GroupLayout(ActionPanl);
+        ActionPanl.setLayout(ActionPanlLayout);
+        ActionPanlLayout.setHorizontalGroup(
+            ActionPanlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(ActionPanlLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(ActionPanlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(preProcessButton)
+                    .addComponent(importImageButton)
+                    .addGroup(ActionPanlLayout.createSequentialGroup()
+                        .addComponent(connectButton)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(hostName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(segmentButton))
+                .addContainerGap(505, Short.MAX_VALUE))
+        );
+        ActionPanlLayout.setVerticalGroup(
+            ActionPanlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(ActionPanlLayout.createSequentialGroup()
+                .addGap(11, 11, 11)
+                .addGroup(ActionPanlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(connectButton)
+                    .addComponent(hostName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(importImageButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(preProcessButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(segmentButton)
+                .addContainerGap(296, Short.MAX_VALUE))
+        );
+
+        jTabbedPane1.addTab("Actions", ActionPanl);
 
         javax.swing.GroupLayout ConfigurationPanelLayout = new javax.swing.GroupLayout(ConfigurationPanel);
         ConfigurationPanel.setLayout(ConfigurationPanelLayout);
@@ -396,70 +460,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
 
         jTabbedPane1.addTab("Data Browsing", DataPanel);
-
-        segmentButton.setText("Segment");
-        segmentButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                segmentButtonActionPerformed(evt);
-            }
-        });
-
-        importImageButton.setText("Import Images");
-        importImageButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                importImageButtonActionPerformed(evt);
-            }
-        });
-
-        connectButton.setText("Connect");
-        connectButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                connectButtonActionPerformed(evt);
-            }
-        });
-
-        hostName.setText("localhost");
-
-        preProcessButton.setText("PreProcess");
-        preProcessButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                preProcessButtonActionPerformed(evt);
-            }
-        });
-
-        javax.swing.GroupLayout ActionPanlLayout = new javax.swing.GroupLayout(ActionPanl);
-        ActionPanl.setLayout(ActionPanlLayout);
-        ActionPanlLayout.setHorizontalGroup(
-            ActionPanlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(ActionPanlLayout.createSequentialGroup()
-                .addContainerGap()
-                .addGroup(ActionPanlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(preProcessButton)
-                    .addComponent(importImageButton)
-                    .addGroup(ActionPanlLayout.createSequentialGroup()
-                        .addComponent(connectButton)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(hostName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(segmentButton))
-                .addContainerGap(505, Short.MAX_VALUE))
-        );
-        ActionPanlLayout.setVerticalGroup(
-            ActionPanlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(ActionPanlLayout.createSequentialGroup()
-                .addGap(11, 11, 11)
-                .addGroup(ActionPanlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(connectButton)
-                    .addComponent(hostName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(importImageButton)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(preProcessButton)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(segmentButton)
-                .addContainerGap(296, Short.MAX_VALUE))
-        );
-
-        jTabbedPane1.addTab("Actions", ActionPanl);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
