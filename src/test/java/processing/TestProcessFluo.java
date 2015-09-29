@@ -20,25 +20,29 @@ package processing;
 import static TestUtils.Utils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
-import boa.gui.imageInteraction.ImageWindowManagerFactory;
-import configuration.parameters.Parameter;
-import configuration.parameters.TimePointParameter;
 import core.Processor;
-import static core.Processor.preProcessImages;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
+import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.Object3D;
+import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.StructureObject;
+import de.caluga.morphium.Morphium;
+import de.caluga.morphium.MorphiumConfig;
 import ij.process.AutoThresholder;
 import image.Image;
 import image.ImageFormat;
 import image.ImageMask;
 import image.ImageWriter;
 import java.io.File;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import plugins.PluginFactory;
@@ -52,6 +56,7 @@ import plugins.plugins.transformations.Flip;
 import plugins.plugins.transformations.ImageStabilizerXY;
 import processing.ImageTransformation.InterpolationScheme;
 import testPlugins.dummyPlugins.DummySegmenter;
+import utils.MorphiumUtils;
 import static utils.Utils.deleteDirectory;
 
 /**
@@ -66,7 +71,7 @@ public class TestProcessFluo {
         //new TestProcessFluo().testSegBacteries();
         TestProcessFluo t = new TestProcessFluo();
         t.setUpXp(true);
-        
+        t.saveXP("testFluo");
     }
     
     
@@ -87,6 +92,23 @@ public class TestProcessFluo {
             xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY().setReferenceTimePoint(0));
         }
     }
+    
+    public void saveXP(String dbName) {
+        try {
+            MorphiumConfig cfg = new MorphiumConfig();
+            cfg.setDatabase(dbName);
+            cfg.addHost("localhost", 27017);
+            Morphium m=new Morphium(cfg);
+            m.clearCollection(Experiment.class);
+            m.clearCollection(StructureObject.class);
+            ExperimentDAO xpDAO = new ExperimentDAO(m);
+            xpDAO.store(xp);
+            logger.info("Experiment: {} stored in db: {}", xp.getName(), dbName);
+        } catch (UnknownHostException ex) {
+            logger.error("storx xp error: ", ex);
+        }
+    }
+    
     //@Test
     public void testImport(String inputDir) {
         setUpXp(false);

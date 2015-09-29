@@ -29,6 +29,7 @@ import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
+import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import java.util.Arrays;
 import java.util.logging.Logger;
@@ -45,7 +46,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     @Transient private static HashMap<Class<? extends Plugin>, ArrayList<String>> pluginNames=new HashMap<Class<? extends Plugin>, ArrayList<String>>();
     protected ArrayList<Parameter> pluginParameters;
     protected String pluginName=NO_SELECTION;
-    @Transient protected Class<T> pluginType;
+    @Transient private Class<T> pluginType;
     protected String pluginTypeName;
     protected boolean allowNoSelection;
     protected boolean activated=true;
@@ -79,6 +80,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     @Override
     protected void initChildList() {
         if (pluginParameters!=null) super.initChildren(pluginParameters);
+        else super.initChildren();
     }
     
     
@@ -100,7 +102,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
             this.pluginSet=false;
             super.initChildren();
         } else if (!pluginSet || !pluginName.equals(this.pluginName)) {
-            T instance = PluginFactory.getPlugin(pluginType, pluginName);
+            T instance = PluginFactory.getPlugin(getPluginType(), pluginName);
             if (instance==null) {
                 Parameter.logger.error("Couldn't find plugin: {}", pluginName);
                 this.pluginName=NO_SELECTION;
@@ -113,7 +115,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     
     public T getPlugin() {
         if (!isOnePluginSet()) return null;
-        T instance = PluginFactory.getPlugin(pluginType, pluginName);
+        T instance = PluginFactory.getPlugin(getPluginType(), pluginName);
         //if (Parameter.logger.isTraceEnabled()) Parameter.logger.trace("instanciating plugin: type {}, name {} instance==null? {} current parameters {}", pluginType, pluginName, instance==null, pluginParameters.size());
         if (instance==null) return null;
         Parameter[] params = instance.getParameters();
@@ -132,7 +134,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     
     @Override
     public void setContentFrom(Parameter other) {
-        if (other instanceof PluginParameter && ((PluginParameter)other).pluginType.equals(pluginType)) {
+        if (other instanceof PluginParameter && ((PluginParameter)other).getPluginType().equals(getPluginType())) {
             PluginParameter otherPP = (PluginParameter) other;
             this.activated=otherPP.activated;
             this.allowNoSelection=otherPP.allowNoSelection;
@@ -155,7 +157,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
 
     @Override
     public PluginParameter<T> duplicate() {
-        PluginParameter res = new PluginParameter(name, pluginType, allowNoSelection);
+        PluginParameter res = new PluginParameter(name, getPluginType(), allowNoSelection);
         res.setContentFrom(this);
         return res;
     }
@@ -197,12 +199,12 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     }
     
     public ArrayList<String> getPluginNames() {
-        return getPluginNames(pluginType);
+        return getPluginNames(getPluginType());
     }
 
     @Override
     public String[] getChoiceList() {
-        ArrayList<String> res = getPluginNames(pluginType);
+        ArrayList<String> res = getPluginNames(getPluginType());
         return res.toArray(new String[res.size()]);
     }
 
@@ -218,13 +220,15 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         return allowNoSelection;
     }
     
-    @Override
-    @PostLoad public void postLoad() {
-        super.postLoad();
-        try {
-            pluginType = (Class<T>) Class.forName(pluginTypeName);
-        } catch (ClassNotFoundException ex) {
-            Logger.getLogger(PluginParameter.class.getName()).log(Level.SEVERE, null, ex);
+    protected Class<T> getPluginType() {
+        if (pluginType==null) {
+            try {
+                pluginType = (Class<T>) Class.forName(pluginTypeName);
+            } catch (ClassNotFoundException ex) {
+                logger.error("error init pluginparameter: {}, plugin: {} not found", name, pluginTypeName);
+            }
         }
+        return pluginType;
     }
+    
 }

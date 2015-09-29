@@ -17,16 +17,19 @@
  */
 package utils;
 
+import configuration.parameters.FileChooser;
 import de.caluga.morphium.Morphium;
 import ij.gui.Plot;
 import image.Image;
 import java.awt.Color;
+import java.awt.Component;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
@@ -159,5 +162,30 @@ public class Utils {
             for (File f : dir.listFiles()) deleteDirectory(f);
             dir.delete();
         }
-    } 
+    }
+    
+    public static File[] chooseFile(String dialogTitle, String directory, FileChooser.FileChooserOption option, Component parent) {
+        final JFileChooser fc = new JFileChooser();
+        fc.setFileSelectionMode(option.getOption());
+        //fc.setFileHidingEnabled(false);
+        fc.setMultiSelectionEnabled(option.getMultipleSelectionEnabled());
+        if (directory != null) fc.setCurrentDirectory(new File(directory));
+        if (dialogTitle!=null) fc.setDialogTitle(dialogTitle);
+        else fc.setDialogTitle("Choose Files");
+        int returnval = fc.showOpenDialog(parent);
+        System.out.println("return val"+returnval);
+        if (returnval == JFileChooser.APPROVE_OPTION) {
+            File[] res;
+            if (option.getMultipleSelectionEnabled()) res = fc.getSelectedFiles();
+            else res = new File[]{fc.getSelectedFile()};
+            return res;
+        } else return null;
+    }
+    
+    public static String[] convertFilesToString(File[] files) {
+        if (files ==null) return null;
+        String[] res = new String[files.length];
+        for (int i = 0; i<files.length; ++i) res[i] = files[i].getAbsolutePath();
+        return res;
+    }
 }

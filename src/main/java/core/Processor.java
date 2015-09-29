@@ -34,6 +34,7 @@ import plugins.Registration;
 import plugins.Tracker;
 import plugins.Transformation;
 import plugins.TransformationTimeIndependent;
+import utils.MorphiumUtils;
 
 /**
  *
@@ -84,6 +85,22 @@ public class Processor {
         }
     }
     
+    public static void processStructures(Experiment xp, ObjectDAO dao) {
+        for (int i = 0; i<xp.getMicrocopyFieldNB(); ++i) {
+            processStructures(xp, xp.getMicroscopyField(i), dao);
+        }
+    }
+    
+    public static void processStructures(Experiment xp, MicroscopyField field, ObjectDAO dao) {
+        StructureObject[] root = field.createRootObjects();
+        if (dao!=null) dao.store(root);
+        Processor.trackRoot(root, dao);
+        for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
+            for (int t = 0; t<root.length; ++t) Processor.processStructure(s, root[t], dao); // process
+            for (StructureObject o : StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, dao); // structure
+        }
+    }
+    
     public static void processStructure(int structureIdx, StructureObject root, ObjectDAO dao) {
         if (!root.isRoot()) throw new IllegalArgumentException("this method only applies to root objects");
         
@@ -98,13 +115,13 @@ public class Processor {
         }
     }
     
-    public static void trackRoot(Experiment xp, StructureObject[] rootsT, ObjectDAO dao) {
+    public static void trackRoot(StructureObject[] rootsT, ObjectDAO dao) {
         logger.debug("tracking root objects. dao==null? {}", dao==null);
         for (int i = 1; i<rootsT.length; ++i) rootsT[i].setPreviousInTrack(rootsT[i-1], false);
         if (dao!=null) dao.updateTrackAttributes(rootsT);
     }
     
-    public static void track(Experiment xp, Tracker tracker, StructureObject parentTrack, int structureIdx, ObjectDAO dao) {
+    public static void track(Tracker tracker, StructureObject parentTrack, int structureIdx, ObjectDAO dao) {
         if (logger.isDebugEnabled()) logger.debug("tracking objects from structure: {} parentTrack: {} / Tracker: {} / dao==null? {}", structureIdx, parentTrack, tracker==null?"NULL":tracker.getClass(), dao==null);
         if (tracker==null) return;
         // TODO gestion de la memoire vive -> si trop ouvert, fermer les images & masques des temps précédents.

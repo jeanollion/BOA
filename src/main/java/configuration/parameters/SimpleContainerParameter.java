@@ -36,7 +36,6 @@ import javax.swing.tree.TreeNode;
  * @author jollion
  */
 @Embedded(polymorph = true)
-@Lifecycle
 public abstract class SimpleContainerParameter implements ContainerParameter {
     protected String name;
     @Transient protected ContainerParameter parent;
@@ -82,7 +81,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     public void setContentFrom(Parameter other) {
         if (other instanceof SimpleContainerParameter) {
             SimpleContainerParameter otherP = (SimpleContainerParameter) other;
-            for (int i = 0; i<children.size(); i++) children.get(i).setContentFrom((Parameter)otherP.getChildAt(i));
+            for (int i = 0; i<getChildren().size(); i++) children.get(i).setContentFrom((Parameter)otherP.getChildAt(i));
         } else {
             throw new IllegalArgumentException("wrong parameter type");
         }
@@ -95,17 +94,17 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
             p.setContentFrom(this);
             return p;
         } catch (NoSuchMethodException ex) {
-            Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error("duplicate error:", ex);
         } catch (SecurityException ex) {
-            Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error("duplicate error:", ex);
         } catch (InstantiationException ex) {
-            Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error("duplicate error:", ex);
         } catch (IllegalAccessException ex) {
-            Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error("duplicate error:", ex);
         } catch (IllegalArgumentException ex) {
-            Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error("duplicate error:", ex);
         } catch (InvocationTargetException ex) {
-            Logger.getLogger(SimpleListParameter.class.getName()).log(Level.SEVERE, null, ex);
+            logger.error("duplicate error:", ex);
         }
         return null;
     }
@@ -184,25 +183,29 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
 
     @Override
     public Parameter getChildAt(int childIndex) {
-        return children.get(childIndex);
+        return getChildren().get(childIndex);
     }
 
     @Override
     public int getChildCount() {
-        return children.size();
+        return getChildren().size();
     }
 
     @Override
     public int getIndex(TreeNode node) {
-        return children.indexOf((Parameter)node);
+        return getChildren().indexOf((Parameter)node);
     }
 
     @Override
     public Enumeration children() {
-        return Collections.enumeration(children);
+        return Collections.enumeration(getChildren());
+    }
+    
+    protected ArrayList<Parameter> getChildren() {
+        if (children==null) this.initChildList();
+        return children;
     }
     
     // morphium
-    @PostLoad public void postLoad() {initChildList();}
     protected SimpleContainerParameter() {}
 }

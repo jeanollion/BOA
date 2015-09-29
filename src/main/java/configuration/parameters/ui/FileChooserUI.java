@@ -22,12 +22,12 @@ import configuration.parameters.ParameterUtils;
 import boa.gui.configuration.ConfigurationTreeModel;
 import java.io.File;
 import javax.swing.JFileChooser;
-
+import static configuration.parameters.Parameter.logger;
 /**
  *
  * @author jollion
  */
-public class FileChooserUI implements ParameterUI{
+public class FileChooserUI implements ParameterUI {
     FileChooser fcParam;
     String curDir;
     ConfigurationTreeModel model;
@@ -36,7 +36,7 @@ public class FileChooserUI implements ParameterUI{
         this.model= ParameterUtils.getModel(fc);
     }
     @Override
-    public Object[] getDisplayComponent() {
+    public Object[] getDisplayComponent() { // ouvre directement la fenêtre pour choisir des dossers
         final JFileChooser fc = new JFileChooser();
         fc.setFileSelectionMode(fcParam.getOption().getOption());
         //fc.setFileHidingEnabled(false);
@@ -46,7 +46,7 @@ public class FileChooserUI implements ParameterUI{
         }
         fc.setDialogTitle(fcParam.getName());
         int returnval = fc.showOpenDialog(model.getTree());
-        System.out.println("return val"+returnval);
+        logger.debug("file chooser: {}: returned value? {}", fcParam.getName(), returnval == JFileChooser.APPROVE_OPTION);
         if (returnval == JFileChooser.APPROVE_OPTION) {
             if (fcParam.getOption().getMultipleSelectionEnabled()) fcParam.setSelectedFiles(fc.getSelectedFiles());
             else fcParam.setSelectedFiles(fc.getSelectedFile());
@@ -55,6 +55,8 @@ public class FileChooserUI implements ParameterUI{
         return new Object[]{};
         
     }
+    
+    
     
     
     

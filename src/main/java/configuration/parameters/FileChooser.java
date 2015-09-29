@@ -29,7 +29,7 @@ import utils.Utils;
  *
  * @author jollion
  */
-public class FileChooser extends SimpleParameter{
+public class FileChooser extends SimpleParameter {
     protected String[] selectedFiles=new String[0];
     protected FileChooserOption option = FileChooserOption.DIRECTORIES_ONLY;
     @Transient FileChooserUI ui;

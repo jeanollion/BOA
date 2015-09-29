@@ -240,13 +240,14 @@
                   <Group type="102" attributes="0">
                       <EmptySpace max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="segmentButton" min="-2" max="-2" attributes="0"/>
+                          <Component id="preProcessButton" min="-2" max="-2" attributes="0"/>
                           <Component id="importImageButton" alignment="0" min="-2" max="-2" attributes="0"/>
                           <Group type="102" alignment="0" attributes="0">
                               <Component id="connectButton" min="-2" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="hostName" min="-2" max="-2" attributes="0"/>
                           </Group>
+                          <Component id="segmentButton" alignment="0" min="-2" max="-2" attributes="0"/>
                       </Group>
                       <EmptySpace pref="505" max="32767" attributes="0"/>
                   </Group>
@@ -263,8 +264,10 @@
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="importImageButton" min="-2" max="-2" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
+                      <Component id="preProcessButton" min="-2" max="-2" attributes="0"/>
+                      <EmptySpace max="-2" attributes="0"/>
                       <Component id="segmentButton" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace pref="333" max="32767" attributes="0"/>
+                      <EmptySpace pref="296" max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -298,6 +301,14 @@
               <Properties>
                 <Property name="text" type="java.lang.String" value="localhost"/>
               </Properties>
+            </Component>
+            <Component class="javax.swing.JButton" name="preProcessButton">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="PreProcess"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="preProcessButtonActionPerformed"/>
+              </Events>
             </Component>
           </SubComponents>
         </Container>

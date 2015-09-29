@@ -20,6 +20,7 @@ package configuration.parameters;
 import dataStructure.configuration.Experiment;
 import boa.gui.configuration.ConfigurationTreeModel;
 import boa.gui.configuration.TreeModelContainer;
+import static configuration.parameters.Parameter.logger;
 import dataStructure.configuration.MicroscopyField;
 import java.util.ArrayList;
 import utils.Utils;
@@ -78,7 +79,11 @@ public class ParameterUtils {
             return f.getTimePointNumber();
         } else {
             Experiment xp = getExperiment(p);
-            return xp.getTimePointNumber();
+            if (xp==null) {
+                logger.warn("parameter: {}, no experient found in tree to get timePoint number", p.getName());
+                return 0;
+            }
+            else return xp.getTimePointNumber();
         }
     }
 

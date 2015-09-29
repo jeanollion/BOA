@@ -67,12 +67,12 @@ public class TestTrackStructure {
             StructureObject[] rootT = new StructureObject[5];
             for (int i = 0; i<rootT.length; ++i) rootT[i] = new StructureObject("field1", i, new BlankMask("", 1, 1, 1), xp);
             dao.store(rootT);
-            Processor.trackRoot(xp, rootT, dao);
+            Processor.trackRoot(rootT, dao);
             
             StructureObject[] mcT = new StructureObject[5];
             for (int i = 0; i<mcT.length; ++i) mcT[i] = new StructureObject("field1", i, 0, 0, new Object3D(new BlankMask("", 1, 1, 1), 1), rootT[i], xp);
             dao.store(mcT);
-            Processor.trackRoot(xp, mcT, dao);
+            Processor.trackRoot(mcT, dao);
             
             StructureObject[][] bTM = new StructureObject[5][3];
             for (int i = 0; i<bTM.length; ++i) {

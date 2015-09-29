@@ -18,6 +18,7 @@
 package configuration.parameters;
 
 import dataStructure.configuration.Experiment;
+import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import plugins.Transformation;
@@ -110,7 +111,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     @Override
     public void setContentFrom(Parameter other) {
         super.setContentFrom(other);
-        if (other instanceof TransformationPluginParameter && ((TransformationPluginParameter)other).pluginType.equals(pluginType)) {
+        if (other instanceof TransformationPluginParameter && ((TransformationPluginParameter)other).getPluginType().equals(getPluginType())) {
             TransformationPluginParameter otherPP = (TransformationPluginParameter) other;
             this.configurationData=ParameterUtils.duplicateConfigurationDataArray(otherPP.configurationData);
         } else throw new IllegalArgumentException("wrong parameter type");
@@ -118,7 +119,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     
     @Override
     public TransformationPluginParameter<T> duplicate() {
-        TransformationPluginParameter res = new TransformationPluginParameter(name, pluginType, allowNoSelection);
+        TransformationPluginParameter res = new TransformationPluginParameter(name, getPluginType(), allowNoSelection);
         res.setContentFrom(this);
         return res;
     }

@@ -96,8 +96,8 @@ public class AutoRotationXY implements TransformationTimeIndependent {
             angle = computeRotationAngleXY(image, image.getSizeZ()/2, this.backgroundSubtractionRadius.getValue().intValue(), minAngle.getValue().doubleValue(), maxAngle.getValue().doubleValue(), precision1.getValue().doubleValue(), precision2.getValue().doubleValue(), false, true, 0);
         }
         
-        ImageFloat sin = RadonProjection.getSinogram(image, minAngle.getValue().doubleValue()+90, maxAngle.getValue().doubleValue()+90, precision1.getValue().doubleValue(), Math.min(image.getSizeX(), image.getSizeY())); //(int)Math.sqrt(image.getSizeX()*image.getSizeX() + image.getSizeY()*image.getSizeY())
-        new IJImageDisplayer().showImage(sin);
+        //ImageFloat sin = RadonProjection.getSinogram(image, minAngle.getValue().doubleValue()+90, maxAngle.getValue().doubleValue()+90, precision1.getValue().doubleValue(), Math.min(image.getSizeX(), image.getSizeY())); //(int)Math.sqrt(image.getSizeX()*image.getSizeX() + image.getSizeY()*image.getSizeY())
+        //new IJImageDisplayer().showImage(sin);
         internalParams = new Double[]{angle};
     }
 
