@@ -57,9 +57,12 @@ public class RootTrackNode implements TreeNode {
     
     public StructureObject getParentTrackHead() {
         if (parentTrackHead==null) {
-            if (fieldName==null) throw new RuntimeException("No track head or fieldName defined for RootTrackNode instance");
+            if (fieldName==null) {
+                logger.warn("No track head or fieldName defined for RootTrackNode instance");
+                return null;
+            }
             parentTrackHead = parent.generator.objectDAO.getRoot(fieldName, 0);
-            logger.trace("parentTrackHead id:"+parentTrackHead.getId());
+            if (parentTrackHead!=null) logger.trace("parentTrackHead id:"+parentTrackHead.getId());
         }
         return parentTrackHead;
     }
@@ -117,7 +120,7 @@ public class RootTrackNode implements TreeNode {
     }
     
     // TreeNode implementation
-    @Override public String toString() {return (fieldName!=null?fieldName+"::": "")+generator.xpDAO.getExperiment().getStructure(structureIdx).getName();}
+    @Override public String toString() {return (fieldName!=null?fieldName+"::": "")+(structureIdx>=0?generator.xpDAO.getExperiment().getStructure(structureIdx).getName():"Root");}
     
     public TrackNode getChildAt(int childIndex) {
         return getChildren().get(childIndex);

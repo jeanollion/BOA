@@ -45,21 +45,21 @@ import utils.Utils;
  * @author jollion
  */
 public class BacteriesFluo2D implements Segmenter {
+    NumberParameter split = new BoundedNumberParameter("Split Threshold", 2, 0.3, 0, 0);
     NumberParameter size = new BoundedNumberParameter("Minimal Object Dimension", 0, 15, 1, null);
-    Parameter[] parameters = new Parameter[]{size};
+    Parameter[] parameters = new Parameter[]{split};
     final static double gradientScale = 1;
     final static double medianScale = 2; // a mettre dans les prefilters
     
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        double thld = IJAutoThresholder.runThresholder(parent.getParent().getRawImage(structureIdx), parent.getParent().getMask(), AutoThresholder.Method.Otsu);
         
-        return run(input, parent.getMask(), size.getValue().doubleValue(), thld);
+        return run(input, parent.getMask(), size.getValue().doubleValue(), split.getValue().doubleValue());
     }
     
     public static ObjectPopulation run(Image input, ImageMask mask, double minObjectDimension, double splitThld) {
         splitThld = 0.3;
         int derScale = 2;
-        ImageDisplayer disp = new IJImageDisplayer();
+        //ImageDisplayer disp = new IJImageDisplayer();
         //Image filtered = Filters.median(input, new ImageFloat("", 0, 0, 0), Filters.getNeighborhood(2, 2, input));
         ImageFloat filtered = ImageFeatures.differenceOfGaussians(input, 2, 15, 1, true, false).setName("filtered");
         
@@ -86,15 +86,15 @@ public class BacteriesFluo2D implements Segmenter {
         logger.debug("diffX max: {}, percentile: {}", diffX.getMinAndMax(null)[1], norm);
         ImageFloat diff = ImageFeatures.getDerivative(filtered, derScale, 0, 1, 0, false).setName("diff2"); 
         ImageOperations.multiply(diff, diff, 1d/norm);
-        disp.showImage(filtered);
-        disp.showImage(diff);
-        disp.showImage(diffX);
+        //disp.showImage(filtered);
+        //disp.showImage(diff);
+        //disp.showImage(diffX);
         
         
         float[] projValues = ImageOperations.meanProjection(filtered, ImageOperations.Axis.Y, projBounds);
         float[] projDiff = ImageOperations.meanProjection(diff, ImageOperations.Axis.Y, projBounds);
-        Utils.plotProfile("values", projValues);
-        Utils.plotProfile("diff", projDiff);
+        //Utils.plotProfile("values", projValues);
+        //Utils.plotProfile("diff", projDiff);
         int[] regMax = ArrayUtil.getRegionalExtrema(projDiff, 3, true);
         logger.debug("reg max diff2: {}", regMax);
         int[] min = new int[regMax.length-1];
@@ -141,21 +141,20 @@ public class BacteriesFluo2D implements Segmenter {
             }
         }
         //a faire: dans chaque sous masque: fit aux donnée (depuis le max des intensités dans le masque)
-        Image structure = ImageFeatures.structureTransform(input, 2, 1, false)[0];
+        //Image structure = ImageFeatures.structureTransform(input, 2, 1, false)[0];
         ArrayList<Object3D> objects = new ArrayList<Object3D>(yBounds.size());
         boolean display = false;
         int count=1;
         for (int[] yb : yBounds) {
             BoundingBox b = new BoundingBox(0, input.getSizeX()-1, yb[0], yb[1], 0, input.getSizeZ()-1);
             Image subImage = filtered.crop(b);
-            Image subImageFit = structure.crop(b);
             if (display) {
                 logger.debug("crop bounds : {}", b);
-                disp.showImage(subImage.setName("sub image"));
-                disp.showImage(subImageFit.setName("fit image"));
+                //disp.showImage(subImage.setName("sub image"));
+                //disp.showImage(subImageFit.setName("fit image"));
                 display=false;
             }
-            ImageInteger bin = ImageOperations.threshold(subImage, IJAutoThresholder.runThresholder(subImage, null, AutoThresholder.Method.Otsu), true, false);
+            ImageInteger bin = ImageOperations.threshold(subImage, IJAutoThresholder.runThresholder(subImage, null, AutoThresholder.Method.Otsu, 1), true, false);
             Object3D[] obs =  ImageLabeller.labelImage(bin);
             if (obs.length>0) {
                 int idx = 0;
@@ -177,7 +176,7 @@ public class BacteriesFluo2D implements Segmenter {
     }
 
     public boolean does3D() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return true;
     }
     
 }

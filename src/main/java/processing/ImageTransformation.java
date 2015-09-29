@@ -52,11 +52,6 @@ public class ImageTransformation {
             this.value = value;
         }
         public int getValue(){return value;};
-        public static String[] getValues() {
-            String[] values = new String[InterpolationScheme.values().length]; int idx = 0;
-            for (InterpolationScheme s : InterpolationScheme.values()) values[idx++]=s.toString();
-            return values;
-        }
     }
     
     public static Image rotateXY(Image image, double angle, InterpolationScheme interpolation) {
@@ -74,7 +69,7 @@ public class ImageTransformation {
     }
     
     public static Image translate(Image image, double xTrans, double yTrans, double zTrans, InterpolationScheme scheme) {
-        return ImagescienceWrapper.wrap((new  Translate()).run(ImagescienceWrapper.getImagescience(image), xTrans, yTrans, zTrans, scheme.getValue()));
+        return ImagescienceWrapper.wrap((new  Translate()).run(ImagescienceWrapper.getImagescience(image), xTrans*image.getScaleXY(), yTrans*image.getScaleXY(), zTrans*image.getScaleZ(), scheme.getValue()));
     }
     
     public static Image resize(Image image, ImageProperties newImage, int posX, int posY, int posZ) {

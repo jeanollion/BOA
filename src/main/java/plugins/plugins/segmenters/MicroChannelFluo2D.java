@@ -50,20 +50,29 @@ public class MicroChannelFluo2D implements Segmenter {
     NumberParameter channelHeight = new BoundedNumberParameter("MicroChannel Height (pixels)", 0, 350, 5, null);
     NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Width (pixels)", 0, 22, 5, null);
     NumberParameter yMargin = new BoundedNumberParameter("y-margin", 0, 5, 0, null);
-    Parameter[] parameters = new Parameter[]{channelHeight, channelWidth};
+    Parameter[] parameters = new Parameter[]{channelHeight, channelWidth, yMargin};
+    
+    public MicroChannelFluo2D(){}
+    
+    public MicroChannelFluo2D(int channelHeight, int channelWidth, int yMargin){
+        this.channelHeight.setValue(channelHeight);
+        this.channelWidth.setValue(channelWidth);
+        this.yMargin.setValue(yMargin);
+    }
     
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         // TODO: sum sur tous les temps ou un subset des temps pour une meilleure precision?
-        // faire le calcul que pour le premier temps et copier les objets pour les temps suivants? 
+        
+        // faire le calcul que pour le premier temps et copier les objets pour les temps suivants 
         int refTimePoint = 0;
         ArrayList<Object3D> objects;
         if (parent.getTimePoint()==refTimePoint) {
-            objects= getObjects(input, channelHeight.getValue().intValue(), channelHeight.getValue().intValue(), yMargin.getValue().intValue());
-            logger.debug("MicroChannelFluo2D: current timepoint: {} segmented objects: {}", parent.getTimePoint(), objects.size());
+            objects= getObjects(input, channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), yMargin.getValue().intValue());
+            logger.debug("MicroChannelFluo2D: current timepoint: {} segmented objects: {}, channelHeight: {}, channel width: {}, yMargin: {}", parent.getTimePoint(), objects.size(), channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), yMargin.getValue().intValue());
         }
         else {
             StructureObjectProcessing ref = parent;
-            while(ref.getTimePoint()>0 && ref.getTimePoint()!=refTimePoint) ref=(StructureObjectProcessing)parent.getPrevious();
+            while(ref.getTimePoint()>0 && ref.getTimePoint()!=refTimePoint) ref=(StructureObjectProcessing)ref.getPrevious();
             if (ref.getTimePoint()!=refTimePoint) {
                 objects = new ArrayList<Object3D>(0);
                 logger.debug("MicroChannelFluo2D: current timepoint: {}, reference timepoint: {} no objects found", parent.getTimePoint(), refTimePoint);

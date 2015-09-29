@@ -255,7 +255,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             objectDAO.store(root); 
             Processor.trackRoot(root, objectDAO);
             for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
-                for (int t = 0; t<root.length; ++t) Processor.processStructure(s, root[t], objectDAO); // process
+                for (int t = 0; t<root.length; ++t) Processor.processStructure(s, root[t], objectDAO, false); // process
                 for (StructureObject o : StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, objectDAO); // structure
             }
             
@@ -294,6 +294,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         connectButton = new javax.swing.JButton();
         hostName = new javax.swing.JTextField();
         preProcessButton = new javax.swing.JButton();
+        saveExperiment = new javax.swing.JButton();
         ConfigurationPanel = new javax.swing.JPanel();
         configurationJSP = new javax.swing.JScrollPane();
         DataPanel = new javax.swing.JPanel();
@@ -338,6 +339,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
+        saveExperiment.setText("Save Configuration Changes");
+        saveExperiment.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                saveExperimentActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout ActionPanlLayout = new javax.swing.GroupLayout(ActionPanl);
         ActionPanl.setLayout(ActionPanlLayout);
         ActionPanlLayout.setHorizontalGroup(
@@ -351,8 +359,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                         .addComponent(connectButton)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(hostName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addComponent(segmentButton))
-                .addContainerGap(505, Short.MAX_VALUE))
+                    .addComponent(segmentButton)
+                    .addComponent(saveExperiment))
+                .addContainerGap(459, Short.MAX_VALUE))
         );
         ActionPanlLayout.setVerticalGroup(
             ActionPanlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -367,7 +376,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addComponent(preProcessButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(segmentButton)
-                .addContainerGap(296, Short.MAX_VALUE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(saveExperiment)
+                .addContainerGap(259, Short.MAX_VALUE))
         );
 
         jTabbedPane1.addTab("Actions", ActionPanl);
@@ -466,7 +477,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jTabbedPane1)
+            .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 653, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -505,6 +516,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         Processor.preProcessImages(this.xpDAO.getExperiment());
         xpDAO.store(xpDAO.getExperiment()); //stores preProcessing configurations
     }//GEN-LAST:event_preProcessButtonActionPerformed
+
+    private void saveExperimentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveExperimentActionPerformed
+        if (!checkConnection()) return;
+        xpDAO.store(xpDAO.getExperiment());
+    }//GEN-LAST:event_saveExperimentActionPerformed
 
     /**
      * @param args the command line arguments
@@ -556,6 +572,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JButton importImageButton;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JButton preProcessButton;
+    private javax.swing.JButton saveExperiment;
     private javax.swing.JButton segmentButton;
     private javax.swing.JScrollPane structureJSP;
     private javax.swing.JComboBox trackStructureJCB;

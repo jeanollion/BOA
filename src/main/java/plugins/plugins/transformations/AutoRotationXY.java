@@ -37,6 +37,7 @@ import processing.RadonProjection;
 import static processing.RadonProjection.getAngleArray;
 import static processing.RadonProjection.radonProject;
 import processing.neighborhood.EllipsoidalNeighborhood;
+import utils.Utils;
 
 /**
  *
@@ -49,7 +50,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     NumberParameter precision1 = new BoundedNumberParameter("Angular Precision of first seach", 2, 1, 0, null);
     NumberParameter precision2 = new BoundedNumberParameter("Angular Precision", 2, 0.1, 0, 1);
     //NumberParameter filterScale = new BoundedNumberParameter("Object Scale", 0, 15, 2, null); //TODO: conditional parameter
-    ChoiceParameter interpolation = new ChoiceParameter("Interpolation", InterpolationScheme.getValues(), ImageTransformation.InterpolationScheme.BSPLINE5.toString(), false);
+    ChoiceParameter interpolation = new ChoiceParameter("Interpolation", Utils.toStringArray(ImageTransformation.InterpolationScheme.values()), ImageTransformation.InterpolationScheme.BSPLINE5.toString(), false);
     ChoiceParameter searchMethod = new ChoiceParameter("Search method", SearchMethod.getValues(), SearchMethod.MAXVAR.getName(), false);
     
     Parameter[] parameters = new Parameter[]{minAngle, maxAngle, precision1, precision2, interpolation, backgroundSubtractionRadius};

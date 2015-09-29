@@ -37,4 +37,14 @@ public class TestClass {
         logger.info("(byte)0: {}" , ((byte)0)& 0xff);
         logger.info("7+8/2: {}" , (7+8)/2);
     }
+    @Test
+    public void testInstance() {
+        double[][] matrix = new double[2][2];
+        logger.info("[] instanceof []: {}", (Object)matrix[0] instanceof double[]);
+        logger.info("[][] instanceof [][]: {}", (Object)matrix instanceof double[][]);
+        logger.info("[][] instanceof []: {}", (Object)matrix instanceof double[]);
+        logger.info("[] is array: {}", matrix[0].getClass().isArray());
+        
+        logger.info("[][] is array: {}", matrix.getClass().isArray());
+    }
 }

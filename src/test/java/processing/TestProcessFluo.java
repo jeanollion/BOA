@@ -50,6 +50,7 @@ import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.segmenters.BacteriesFluo2D;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.thresholders.IJAutoThresholder;
+import plugins.plugins.trackers.TrackerObjectIdx;
 import plugins.plugins.transformations.AutoRotationXY;
 import plugins.plugins.transformations.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
@@ -78,11 +79,18 @@ public class TestProcessFluo {
     
     public void setUpXp(boolean preProcessing) {
         PluginFactory.findPlugins("plugins.plugins");
-        xp = new Experiment("testXP", new Structure("structure"));
+        xp = new Experiment("testXP");
         xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
         xp.getChannelImages().insert(new ChannelImage("trans", "_REF"), new ChannelImage("fluo", ""));
         xp.setOutputImageDirectory("/data/Images/Fluo/OutputTest");
         File f =  new File("/data/Images/Fluo/OutputTest"); f.mkdirs(); deleteDirectory(f);
+        Structure mc = new Structure("MicroChannel", -1, 0);
+        Structure bacteria = new Structure("Bacteria", 0, 0);
+        Structure mutation = new Structure("Mutation", 1, 1);
+        xp.getStructures().insert(mc, bacteria, mutation);
+        mc.getProcessingChain().setSegmenter(new MicroChannelFluo2D());
+        bacteria.getProcessingChain().setSegmenter(new BacteriesFluo2D());
+        mc.setTracker(new TrackerObjectIdx());
         
         if (preProcessing) {// preProcessing 
             xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));

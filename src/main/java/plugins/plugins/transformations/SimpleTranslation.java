@@ -25,6 +25,7 @@ import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
 import plugins.TransformationTimeIndependent;
 import processing.ImageTransformation;
+import utils.Utils;
 
 /**
  *
@@ -34,7 +35,7 @@ public class SimpleTranslation implements TransformationTimeIndependent {
     NumberParameter X = new NumberParameter("X", 3, 0);
     NumberParameter Y = new NumberParameter("Y", 3, 0);
     NumberParameter Z = new NumberParameter("Z", 3, 0);
-    ChoiceParameter interpolation = new ChoiceParameter("Interpolation", ImageTransformation.InterpolationScheme.getValues(), ImageTransformation.InterpolationScheme.LINEAR.toString(), false);
+    ChoiceParameter interpolation = new ChoiceParameter("Interpolation", Utils.toStringArray(ImageTransformation.InterpolationScheme.values()), ImageTransformation.InterpolationScheme.LINEAR.toString(), false);
     Parameter[] parameters = new Parameter[]{X, Y, Z, interpolation};
 
     public SimpleTranslation() {}

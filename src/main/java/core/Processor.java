@@ -86,29 +86,30 @@ public class Processor {
     }
     
     public static void processStructures(Experiment xp, ObjectDAO dao) {
+        if (dao!=null) dao.deleteAllObjects();
         for (int i = 0; i<xp.getMicrocopyFieldNB(); ++i) {
-            processStructures(xp, xp.getMicroscopyField(i), dao);
+            processStructures(xp, xp.getMicroscopyField(i), dao, false);
         }
     }
     
-    public static void processStructures(Experiment xp, MicroscopyField field, ObjectDAO dao) {
+    public static void processStructures(Experiment xp, MicroscopyField field, ObjectDAO dao, boolean deleteObjects) {
+        if (dao!=null && deleteObjects) dao.deleteObjectsFromField(field.getName());
         StructureObject[] root = field.createRootObjects();
         if (dao!=null) dao.store(root);
         Processor.trackRoot(root, dao);
         for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
-            for (int t = 0; t<root.length; ++t) Processor.processStructure(s, root[t], dao); // process
+            for (int t = 0; t<root.length; ++t) Processor.processStructure(s, root[t], dao, false); // process
             for (StructureObject o : StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, dao); // structure
         }
     }
     
-    public static void processStructure(int structureIdx, StructureObject root, ObjectDAO dao) {
+    public static void processStructure(int structureIdx, StructureObject root, ObjectDAO dao, boolean deleteObjects) {
         if (!root.isRoot()) throw new IllegalArgumentException("this method only applies to root objects");
-        
-        //Logger.getLogger(Processor.class.getName()).log(Level.INFO, "Segmenting structure: "+structureIdx+ " timePoint: "+root.getTimePoint());
         // get all parent objects of the structure
         ArrayList<StructureObject> allParents = StructureObjectUtils.getAllParentObjects(root, root.getExperiment().getPathToRoot(structureIdx));
         if (logger.isDebugEnabled()) logger.debug("Segmenting structure: {} timePoint: {} number of parents: {}", structureIdx, root.getTimePoint(), allParents.size());
         for (StructureObject parent : allParents) {
+            if (dao!=null && deleteObjects) dao.deleteChildren(parent.getId(), structureIdx);
             parent.segmentChildren(structureIdx);
             if (dao!=null) dao.store(parent.getChildObjects(structureIdx));
             if (logger.isDebugEnabled()) logger.debug("Segmenting structure: {} from parent: {} number of objects: {}", structureIdx, parent, parent.getChildObjects(structureIdx).length);

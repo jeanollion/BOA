@@ -291,7 +291,7 @@ public class ProcessingTest {
             Processor.trackRoot(root, dao);
             
             for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
-                for (int t = 0; t<root.length; ++t) Processor.processStructure(s, root[t], dao); // process
+                for (int t = 0; t<root.length; ++t) Processor.processStructure(s, root[t], dao, false); // process
                 for (StructureObject o : StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, dao); // structure
             }
             MorphiumUtils.waitForWrites(m);

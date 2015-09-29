@@ -58,6 +58,7 @@ public class StructureNode implements TreeNode, UIContainer {
         if (idx>=0) {
             if (children==null) {
                 StructureObject parentObject = getParentObject();
+                if (parentObject==null) return null;
                 StructureObject[] data = parentObject.getChildObjects(idx);
                 if (data==null) {
                     data = getGenerator().objectDAO.getObjects(parentObject.getId(), idx);
@@ -94,7 +95,7 @@ public class StructureNode implements TreeNode, UIContainer {
     
     // UIContainer implementation
     @Override public Object[] getDisplayComponent() {
-        return (new StructureNodeUI(this)).getDisplayComponent();
+        return getParentObject()==null? new Object[0]:(new StructureNodeUI(this)).getDisplayComponent();
     }
     
     // TreeNode implementation
@@ -107,7 +108,7 @@ public class StructureNode implements TreeNode, UIContainer {
     }
 
     public int getChildCount() {
-        return getChildren().length;
+        return getChildren()==null?0:children.length;
     }
 
     public StructureNodeContainer getParent() {
@@ -150,8 +151,8 @@ public class StructureNode implements TreeNode, UIContainer {
                     }
                 }
             );
-            String[] structureNames = structureNode.getParentObject().getExperiment().getStructuresAsString();
-            int[] childStructures = structureNode.getParentObject().getExperiment().getAllChildStructures(idx);
+            String[] structureNames = getGenerator().getExperiment().getStructuresAsString();
+            int[] childStructures = getGenerator().getExperiment().getAllChildStructures(idx);
             JMenu segSubMenu = new JMenu("Open Child Segmented Image");
             actions[1] = segSubMenu;
             openSeg=new JMenuItem[childStructures.length];
@@ -162,7 +163,7 @@ public class StructureNode implements TreeNode, UIContainer {
                         @Override
                         public void actionPerformed(ActionEvent ae) {
                             if (logger.isDebugEnabled()) logger.debug("opening segmented image for structure: {} of idx: {} from structure idx: {}", ae.getActionCommand(), getStructureIdx(ae.getActionCommand(), openRaw), structureNode.getParentObject().getStructureIdx());
-                            int[] path = structureNode.getParentObject().getExperiment().getPathToStructure(structureNode.getParentObject().getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
+                            int[] path = getGenerator().getExperiment().getPathToStructure(structureNode.getParentObject().getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
                             parent.loadAllChildObjects(path, 0);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(structureNode.getParentObject(), getStructureIdx(ae.getActionCommand(), openRaw));
                             ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true);
@@ -182,7 +183,7 @@ public class StructureNode implements TreeNode, UIContainer {
                         @Override
                         public void actionPerformed(ActionEvent ae) {
                             if (logger.isDebugEnabled()) logger.debug("opening input image for structure: {} of idx: {}", ae.getActionCommand(), getStructureIdx(ae.getActionCommand(), openRaw));
-                            int[] path = structureNode.getParentObject().getExperiment().getPathToStructure(structureNode.getParentObject().getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
+                            int[] path = getGenerator().getExperiment().getPathToStructure(structureNode.getParentObject().getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
                             parent.loadAllChildObjects(path, 0);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(structureNode.getParentObject(), getStructureIdx(ae.getActionCommand(), openRaw));
                             ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(getStructureIdx(ae.getActionCommand(), openRaw)), i, true);

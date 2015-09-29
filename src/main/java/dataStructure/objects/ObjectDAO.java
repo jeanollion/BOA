@@ -101,6 +101,48 @@ public class ObjectDAO extends DAO<StructureObject>{
         while(it.hasNext()) if (it.next().getValue().getParent().getId().equals(parentId)) it.remove();
     }
     
+    public void deleteObjectsFromField(String fieldName) {
+        morphium.delete(super.getQuery().f("field_name").eq(fieldName));
+        // also delete in cache: 
+        Iterator<Entry<ObjectId, StructureObject>> it = idCache.entrySet().iterator();
+        while(it.hasNext()) if (it.next().getValue().fieldName.equals(fieldName)) it.remove();
+    }
+    
+    public void deleteObjectsFromFieldTP(String fieldName, int timePoint) {
+        morphium.delete(super.getQuery().f("field_name").eq(fieldName).f("time_point").eq(timePoint));
+        // also delete in cache: 
+        Iterator<Entry<ObjectId, StructureObject>> it = idCache.entrySet().iterator();
+        while(it.hasNext()) {
+            StructureObject o = it.next().getValue();
+            if (o.fieldName.equals(fieldName) && o.getTimePoint()==timePoint) it.remove();
+        }
+    }
+    
+    public void deleteObjectsFromFieldS(String fieldName, int structureIdx) {
+        morphium.delete(super.getQuery().f("field_name").eq(fieldName).f("structure_idx").eq(structureIdx));
+        // also delete in cache: 
+        Iterator<Entry<ObjectId, StructureObject>> it = idCache.entrySet().iterator();
+        while(it.hasNext()) {
+            StructureObject o = it.next().getValue();
+            if (o.fieldName.equals(fieldName) && o.getStructureIdx()==structureIdx) it.remove();
+        }
+    }
+    
+    public void deleteObjectsFromField(String fieldName, int timePoint, int structureIdx) {
+        morphium.delete(super.getQuery().f("field_name").eq(fieldName).f("time_point").eq(timePoint).f("structure_idx").eq(structureIdx));
+        // also delete in cache: 
+        Iterator<Entry<ObjectId, StructureObject>> it = idCache.entrySet().iterator();
+        while(it.hasNext()) {
+            StructureObject o = it.next().getValue();
+            if (o.fieldName.equals(fieldName) && o.getTimePoint()==timePoint && o.getStructureIdx()==structureIdx) it.remove();
+        }
+    }
+    
+    public void deleteAllObjects() {
+        morphium.clearCollection(StructureObject.class);
+        idCache.clear();
+    }
+    
     public void delete(StructureObject o) {
         morphium.delete(o);
         idCache.remove(o.getId());
@@ -132,6 +174,7 @@ public class ObjectDAO extends DAO<StructureObject>{
     }
     
     public StructureObject[] getTrackHeads(StructureObject parentTrack, int structureIdx) {
+        if (parentTrack==null) return new StructureObject[0];
         List<StructureObject> list =  super.getQuery().f("is_track_head").eq(true).f("parent_track_head_id").eq(parentTrack.getTrackHeadId()).f("structure_idx").eq(structureIdx).sort("time_point", "idx").asList();
         logger.trace("track head query: parentTrack: {} structure: {} result length: {}", parentTrack.getTrackHeadId(), structureIdx, list.size());
         return this.checkAgainstCache(list);

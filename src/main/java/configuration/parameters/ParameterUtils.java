@@ -132,6 +132,7 @@ public class ParameterUtils {
     }
 
     public static Object duplicateConfigurationData(Object in) {
+        logger.debug("duplicating config data: {}", in);
         if (in != null) {
             if (in instanceof Number) {
                 if (in instanceof Double || in instanceof Float) {
@@ -143,24 +144,27 @@ public class ParameterUtils {
                 }
             } else if (in instanceof String) {
                 return (String) in;
-            } else if (in.getClass().isArray()) {
+            } else if (in instanceof int[]) return copyArray((int[])in);
+            else if (in instanceof double[]) return copyArray((double[])in);
+            else if (in.getClass().isArray()) {
                 if (in instanceof Object[]) {
                     return duplicateConfigurationDataArray((Object[]) in);
                 }
-            } else if (in instanceof int[]) {
-                int length = ((int[]) in).length;
-                int[] res = new int[length];
-                System.arraycopy(in, 0, res, 0, length);
-                return res;
-            } else if (in instanceof double[]) {
-                int length = ((double[]) in).length;
-                double[] res = new double[length];
-                System.arraycopy(in, 0, res, 0, length);
-                return res;
             }
         }
         return null;
     }
+
+    private static int[] copyArray(int[] source) {
+        int[] res = new int[source.length];
+        System.arraycopy(source, 0, res, 0, source.length);
+        return res;
+    }
+    private static double[] copyArray(double[] source) {
+        double[] res = new double[source.length];
+        System.arraycopy(source, 0, res, 0, source.length);
+        return res;
+    } 
 
     public static Object[] duplicateConfigurationDataArray(Object[] in) {
         if (in != null) {

@@ -25,6 +25,7 @@ import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
 import plugins.TransformationTimeIndependent;
 import processing.ImageTransformation;
+import utils.Utils;
 
 /**
  *
@@ -32,7 +33,7 @@ import processing.ImageTransformation;
  */
 public class SimpleRotationXY implements TransformationTimeIndependent {
     NumberParameter angle = new NumberParameter("Angle (degree)", 4, 0);
-    ChoiceParameter interpolation = new ChoiceParameter("Interpolation", ImageTransformation.InterpolationScheme.getValues(), ImageTransformation.InterpolationScheme.LINEAR.toString(), false);
+    ChoiceParameter interpolation = new ChoiceParameter("Interpolation", Utils.toStringArray(ImageTransformation.InterpolationScheme.values()), ImageTransformation.InterpolationScheme.LINEAR.toString(), false);
     Parameter[] parameters = new Parameter[]{angle, interpolation};
     
     public void computeParameters(int structureIdx, StructureObjectPreProcessing structureObject) {
