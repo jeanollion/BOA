@@ -44,4 +44,10 @@ public class ChannelImageParameter extends StructureParameter {
         }
     }
     
+    @Override public void setContentFrom(Parameter other){
+        logger.debug("{} set content from: before: {}", getName(), this.selectedIndicies);
+        super.setContentFrom(other);
+        logger.debug("{} set content from: after: {}", getName(), this.selectedIndicies);
+    }
+    
 }

@@ -55,12 +55,12 @@ public abstract class SimpleParameter implements Parameter {
     }
     
     @Override
-    public Parameter duplicate() {
+    public <T extends Parameter> T duplicate() {
         try {
-            Parameter p = (Parameter)this.getClass().newInstance();
+            SimpleParameter p = (SimpleParameter)this.getClass().newInstance();
             p.setName(name);
             p.setContentFrom(this);
-            return p;
+            return (T)p;
         } catch (InstantiationException ex) {
             logger.error("duplicate Simple Parameter", ex);
         } catch (IllegalAccessException ex) {

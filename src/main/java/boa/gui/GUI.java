@@ -92,6 +92,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         initComponents();
         addHorizontalScrollBar(trackStructureJCB);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        PluginFactory.findPlugins("plugins.plugins");
         //initDB();
         //this.initDBImages();
         
@@ -488,8 +489,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void importImageButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importImageButtonActionPerformed
         if (!checkConnection()) return;
-        File[] selectedFiles = Utils.chooseFile("Choose images/directories to import", null, FileChooser.FileChooserOption.FILES_ONLY, this);
+        File[] selectedFiles = Utils.chooseFile("Choose images/directories to import", null, FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, this);
         if (selectedFiles!=null) Processor.importFiles(Utils.convertFilesToString(selectedFiles), this.xpDAO.getExperiment());
+        xpDAO.store(xpDAO.getExperiment()); //stores imported fields
     }//GEN-LAST:event_importImageButtonActionPerformed
 
     private void connectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectButtonActionPerformed
@@ -501,6 +503,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void preProcessButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_preProcessButtonActionPerformed
         if (!checkConnection()) return;
         Processor.preProcessImages(this.xpDAO.getExperiment());
+        xpDAO.store(xpDAO.getExperiment()); //stores preProcessing configurations
     }//GEN-LAST:event_preProcessButtonActionPerformed
 
     /**

@@ -53,11 +53,13 @@ public class IJSubtractBackground implements PreFilter, TransformationTimeIndepe
     public IJSubtractBackground(){}
     
     public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
+        
         filter(input, radius.getValue().doubleValue(), !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), corners.getSelected());
         return input;
     }
     
     public static void filter(Image input, double radius, boolean doSlidingParaboloid, boolean lightBackground, boolean smooth, boolean corners) {
+        logger.debug("ij subtract background: lightbackground? {}", lightBackground);
         ImageStack ip = IJImageWrapper.getImagePlus(input).getImageStack();
         for (int z = 0; z<input.getSizeZ(); ++z) new ij.plugin.filter.BackgroundSubtracter().rollingBallBackground(ip.getProcessor(z+1), radius, false, lightBackground, doSlidingParaboloid, smooth, corners);
     }

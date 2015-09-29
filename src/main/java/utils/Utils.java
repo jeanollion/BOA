@@ -188,4 +188,10 @@ public class Utils {
         for (int i = 0; i<files.length; ++i) res[i] = files[i].getAbsolutePath();
         return res;
     }
+    
+    public static int[] copyArray(int[] source) {
+        int[] res = new int[source.length];
+        System.arraycopy(source, 0, res, 0, source.length);
+        return res;
+    } 
 }

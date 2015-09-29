@@ -30,7 +30,7 @@ public class BooleanParameter extends ChoiceParameter {
     }
     
     public BooleanParameter(String name, boolean defaultValue) {
-        super(name, new String[]{"false", "true"}, defaultValue?"true":"false", false);
+        super(name, new String[]{"true", "false"}, defaultValue?"true":"false", false);
     }
     
     public BooleanParameter(String name, String choice1, String choice2, boolean defaultValue) {
@@ -39,12 +39,12 @@ public class BooleanParameter extends ChoiceParameter {
     }
     
     public boolean getSelected() {
-        return this.getSelectedIndex()==1;
+        return this.getSelectedIndex()==0;
     }
     
     public void setSelected(boolean selected){
-        if (selected) super.setSelectedIndex(1);
-        else super.setSelectedIndex(0);
+        if (selected) super.setSelectedIndex(0);
+        else super.setSelectedIndex(1);
     }
     
     @Override

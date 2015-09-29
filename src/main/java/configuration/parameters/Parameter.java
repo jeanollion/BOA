@@ -32,7 +32,7 @@ public interface Parameter extends MutableTreeNode {
     public ParameterUI getUI();
     public boolean sameContent(Parameter other);
     public void setContentFrom(Parameter other);
-    public Parameter duplicate();
+    public <T extends Parameter> T duplicate();
     public String getName();
     public void setName(String name);
 }

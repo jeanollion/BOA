@@ -17,6 +17,7 @@
  */
 package dataStructure.containers;
 
+import boa.gui.imageInteraction.IJImageDisplayer;
 import static core.Processor.logger;
 import image.Image;
 import java.util.ArrayList;
@@ -62,9 +63,11 @@ public class InputImage {
     
     private void applyTransformations() {
         Iterator<Transformation> it = transformationsToApply.iterator();
+        //new IJImageDisplayer().showImage(image);
         while(it.hasNext()) {
             image = it.next().applyTransformation(channelIdx, timePoint, image);
             it.remove();
+            //new IJImageDisplayer().showImage(image);
         }
     }
     

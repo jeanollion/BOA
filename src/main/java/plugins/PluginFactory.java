@@ -45,8 +45,8 @@ public class PluginFactory {
                 //Class<?> clazz = Class.forName(c);
                 if (Plugin.class.isAssignableFrom(c)) { // ne check pas l'heritage indirect!!
                     plugins.put(c.getSimpleName(), c);
-                    System.out.println("plugin found: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());
-                } else System.out.println("class is no plugin: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());
+                    logger.debug("plugin found: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());
+                } else logger.debug("class is no plugin: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());
             }
         } catch (ClassNotFoundException ex) {
             logger.warn("find plugins", ex);
@@ -146,7 +146,6 @@ public class PluginFactory {
                 return ((Plugin) res);
             }
         } catch (InstantiationException ex) {
-            System.out.println("instnc execpion:"+ex.getMessage());
             logger.warn("getPlugin", ex);
         } catch (IllegalAccessException ex) {
             logger.warn("test class IJ", ex);
@@ -155,11 +154,9 @@ public class PluginFactory {
     }
 
     public static <T extends Plugin> T getPlugin(Class<T> clazz, String className) {
-        //System.out.println("get plugin: class type"+clazz.getCanonicalName()+ " class name: "+className);
         try {
             Class plugClass = plugins.get(className);
             if (plugClass==null) {
-                //System.out.println("get not found.. ");
                 logger.error("plugin :{} of class: {} not found", className, clazz);
                 return null;
             }
