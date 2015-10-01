@@ -103,7 +103,7 @@ public class Object3D<T extends Voxel> {
     protected void createBoundsFromVoxels() {
         bounds = new BoundingBox();
         for (T v : voxels) bounds.expand(v);
-        logger.debug("create bounds from voxels: {}", bounds);
+        //logger.trace("create bounds from voxels: {}", bounds);
     }
 
     public BoundingBox getBounds() {

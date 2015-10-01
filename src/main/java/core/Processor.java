@@ -62,16 +62,18 @@ public class Processor {
         
     }*/
     
-    public static void preProcessImages(Experiment xp) {
+    public static void preProcessImages(Experiment xp, ObjectDAO dao) {
         for (int i = 0; i<xp.getMicrocopyFieldNB(); ++i) {
-            preProcessImages(xp.getMicroscopyField(i));
+            preProcessImages(xp.getMicroscopyField(i), dao, false);
         }
+        if (dao!=null) dao.deleteAllObjects();
     }
     
-    public static void preProcessImages(MicroscopyField field) {
+    public static void preProcessImages(MicroscopyField field, ObjectDAO dao, boolean deleteObjects) {
         setTransformationsAndComputeConfigurationData(field);
         InputImagesImpl images = field.getInputImages();
         images.applyTranformationsSaveAndClose();
+        if (deleteObjects) if (dao!=null && deleteObjects) dao.deleteObjectsFromField(field.getName());
     }
     
     public static void setTransformationsAndComputeConfigurationData(MicroscopyField field) {

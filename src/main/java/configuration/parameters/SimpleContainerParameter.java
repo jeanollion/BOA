@@ -49,8 +49,8 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
         if (parameters==null) {
             children = new ArrayList<Parameter>(0);
         } else {
-            children = new ArrayList<Parameter>(parameters.size());
-            children.addAll(parameters);
+            //children = new ArrayList<Parameter>(parameters.size());
+            children=parameters;
             int idx = 0;
             for (Parameter p : parameters) {
                 if (p==null) System.out.println("param null:"+idx);

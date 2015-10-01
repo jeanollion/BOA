@@ -50,7 +50,6 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     protected String pluginTypeName;
     protected boolean allowNoSelection;
     protected boolean activated=true;
-    @Transient protected boolean pluginSet=false;
     
     public PluginParameter(String name, Class<T> pluginType, boolean allowNoSelection) {
         super(name);
@@ -74,7 +73,6 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         this.pluginParameters=new ArrayList<Parameter>(Arrays.asList(pluginInstance.getParameters()));
         initChildList();
         this.pluginName=pluginInstance.getClass().getSimpleName();
-        this.pluginSet=true;
     }
     
     @Override
@@ -89,8 +87,8 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     }
     
     public boolean isOnePluginSet() {
-        if (!pluginSet && !NO_SELECTION.equals(pluginName)) setPlugin(pluginName); // case of constructor with default plugin 
-        return pluginSet;
+        if (pluginParameters==null && !NO_SELECTION.equals(pluginName)) setPlugin(pluginName); // case of constructor with default method  
+        return true;
         //return (pluginName!=null && !NOPLUGIN.equals(pluginName));
     }
     
@@ -99,9 +97,8 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         if (NO_SELECTION.equals(pluginName)) {
             this.pluginParameters=null;
             this.pluginName=NO_SELECTION;
-            this.pluginSet=false;
             super.initChildren();
-        } else if (!pluginSet || !pluginName.equals(this.pluginName)) {
+        } else if (pluginParameters==null || !pluginName.equals(this.pluginName)) {
             T instance = PluginFactory.getPlugin(getPluginType(), pluginName);
             if (instance==null) {
                 Parameter.logger.error("Couldn't find plugin: {}", pluginName);
@@ -120,10 +117,12 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         if (instance==null) return null;
         Parameter[] params = instance.getParameters();
         if (params.length==this.pluginParameters.size()) {
+            Parameter.logger.debug("Parametrizing plugin: {}", pluginName);
             for (int i = 0; i<params.length; i++) {
+                if (Parameter.logger.isTraceEnabled()) Parameter.logger.trace("before set content from: reference: {} target: {}, children: {}", pluginParameters.get(i), params[i], children.get(i));
                 params[i].setContentFrom(pluginParameters.get(i));
                 params[i].setParent(this);
-                //if (Parameter.logger.isTraceEnabled()) Parameter.logger.trace("set content from: reference: {} target: {}", pluginParameters.get(i), params[i]);
+                if (Parameter.logger.isTraceEnabled()) Parameter.logger.trace("set content from: reference: {} target: {}, children: {}", pluginParameters.get(i), params[i], children.get(i));
             }
         } else {
             Parameter.logger.error("Couldn't parametrize plugin: {}", pluginName);

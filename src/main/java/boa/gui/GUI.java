@@ -49,6 +49,8 @@ import javax.swing.ComboBoxModel;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import org.slf4j.Logger;
@@ -77,10 +79,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     // xp tree-related attributes
     ConfigurationTreeGenerator configurationTreeGenerator;
     
+    //Object Tree related attributes
+    boolean reloadTree=false;
     // track-related attributes
     TrackTreeController trackTreeController;
     private HashMap<Integer, JTree> currentTrees;
-    
     // structure-related attributes
     StructureObjectTreeGenerator structureObjectTreeGenerator;
     
@@ -93,9 +96,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         addHorizontalScrollBar(trackStructureJCB);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         PluginFactory.findPlugins("plugins.plugins");
-        //initDB();
-        //this.initDBImages();
-        
+        jTabbedPane1.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                if (reloadTree && jTabbedPane1.getSelectedComponent()==DataPanel) {
+                    reloadTree=false;
+                    loadObjectTrees();
+                }
+            }
+        });
     }
     
     public void setDBConnection(String dbName, String hostname) {
@@ -129,12 +137,17 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         configurationTreeGenerator = new ConfigurationTreeGenerator(xpDAO);
         configurationJSP.setViewportView(configurationTreeGenerator.getTree());
         
+        loadObjectTrees();
+    }
+    
+    protected void loadObjectTrees() {
+        //TODO remember treepath if existing and set them in the new trees
+        
         structureObjectTreeGenerator = new StructureObjectTreeGenerator(objectDAO, xpDAO);
         structureJSP.setViewportView(structureObjectTreeGenerator.getTree());
         
         trackTreeController = new TrackTreeController(objectDAO, xpDAO, structureObjectTreeGenerator);
         setTrackTreeStructures(xpDAO.getExperiment().getStructuresAsString());
-        
     }
     
     public static GUI getInstance() {
@@ -250,7 +263,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             xpDAO.store(xp);
             
             // process
-            Processor.preProcessImages(xp);
+            Processor.preProcessImages(xp, objectDAO);
             StructureObject[] root = xp.getMicroscopyField(0).createRootObjects();
             objectDAO.store(root); 
             Processor.trackRoot(root, objectDAO);
@@ -496,6 +509,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void segmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_segmentButtonActionPerformed
         if (!checkConnection()) return;
         Processor.processStructures(xpDAO.getExperiment(), objectDAO);
+        reloadTree=true;
     }//GEN-LAST:event_segmentButtonActionPerformed
 
     private void importImageButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importImageButtonActionPerformed
@@ -513,7 +527,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void preProcessButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_preProcessButtonActionPerformed
         if (!checkConnection()) return;
-        Processor.preProcessImages(this.xpDAO.getExperiment());
+        Processor.preProcessImages(this.xpDAO.getExperiment(), objectDAO);
+        reloadTree=true;
         xpDAO.store(xpDAO.getExperiment()); //stores preProcessing configurations
     }//GEN-LAST:event_preProcessButtonActionPerformed
 

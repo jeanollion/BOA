@@ -168,7 +168,7 @@ public class ProcessingTest {
         f.getPreProcessingChain().addTransformation(0, null, t2);
         
         //pre-process
-        Processor.preProcessImages(xp);
+        Processor.preProcessImages(xp, null);
         
         // passage through morphium
         MorphiumConfig cfg = new MorphiumConfig();
@@ -285,7 +285,7 @@ public class ProcessingTest {
             xpDAO.store(xp);
             ObjectDAO dao = new ObjectDAO(m, xpDAO);
             
-            Processor.preProcessImages(xp);
+            Processor.preProcessImages(xp, dao);
             StructureObject[] root = xp.getMicroscopyField(0).createRootObjects();
             dao.store(root); 
             Processor.trackRoot(root, dao);
