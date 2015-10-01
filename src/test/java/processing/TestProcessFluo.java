@@ -140,7 +140,7 @@ public class TestProcessFluo {
     public void testRotation() {
         testImport("/data/Images/Fluo/testsub");
         ImageDisplayer disp = new IJImageDisplayer();
-        for (int i =0; i<xp.getMicrocopyFieldNB(); ++i) {
+        for (int i =0; i<xp.getMicrocopyFieldCount(); ++i) {
             xp.getMicroscopyField(i).getPreProcessingChain().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
             xp.getMicroscopyField(i).getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
 
@@ -173,7 +173,7 @@ public class TestProcessFluo {
     public void testCrop(String inputDir) {
         testImport(inputDir);
         //List<Integer> flip = Arrays.asList(new Integer[]{0});
-        for (int i =0; i<xp.getMicrocopyFieldNB(); ++i) testCrop(i, true); //flip.contains(new Integer(i))
+        for (int i =0; i<xp.getMicrocopyFieldCount(); ++i) testCrop(i, true); //flip.contains(new Integer(i))
     }
     
     public void testCrop(int fieldIdx, boolean flip) {

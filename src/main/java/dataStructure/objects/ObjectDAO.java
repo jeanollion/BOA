@@ -59,9 +59,9 @@ public class ObjectDAO extends DAO<StructureObject>{
             res= super.getQuery().getById(id);
             if (res!=null) {
                 setToCache(res);
-                logger.trace("structure object {} of Id {} was NOT in cache", res, id);
+                //logger.trace("structure object {} of Id {} was NOT in cache", res, id);
             }
-        } else logger.trace("structure object {} of Id {} was already in cache", res, id);
+        } //else logger.trace("structure object {} of Id {} was already in cache", res, id);
         return res;
     }
     
@@ -98,7 +98,10 @@ public class ObjectDAO extends DAO<StructureObject>{
         morphium.delete(getQuery(parentId, structureIdx));
         // also delete in cache: 
         Iterator<Entry<ObjectId, StructureObject>> it = idCache.entrySet().iterator();
-        while(it.hasNext()) if (it.next().getValue().getParent().getId().equals(parentId)) it.remove();
+        while(it.hasNext()) {
+            StructureObject cur = it.next().getValue();
+            if (cur.getParent()!=null && cur.getParent().getId().equals(parentId)) it.remove();
+        }
         // delete in ImageDAO
         this.xpDAO.getExperiment().getImageDAO().deleteChildren(getObject(parentId), structureIdx);
     }
@@ -146,6 +149,8 @@ public class ObjectDAO extends DAO<StructureObject>{
     public void deleteAllObjects() {
         morphium.clearCollection(StructureObject.class);
         idCache.clear();
+        // delete in ImageDAO
+        for (String fieldName : xpDAO.getExperiment().getFieldsAsString()) this.xpDAO.getExperiment().getImageDAO().deleteFieldMasks(xpDAO.getExperiment(), fieldName);
     }
     
     public void delete(StructureObject o) {

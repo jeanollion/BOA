@@ -143,10 +143,10 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         return imageDirectory+File.separator+microscopyFieldName+File.separator+"pre_processed"+File.separator+"t"+Utils.formatInteger(5, timePoint)+"_c"+Utils.formatInteger(2, channelImageIdx)+".tif";
     }
     private static String getFieldDirectory(Experiment xp, String fieldName) {
-        return xp.getOutputImageDirectory()+File.separator+fieldName;
+        return xp.getOutputImageDirectory()+File.separator+fieldName+File.separator+"processed";
     }
     private static String getProcessedImageDirectoryRoot(StructureObject root) {
-        return getFieldDirectory(root.getExperiment(), root.getFieldName())+File.separator+"processed"+File.separator+"t"+Utils.formatInteger(5, root.getTimePoint());
+        return getFieldDirectory(root.getExperiment(), root.getFieldName())+File.separator+"t"+Utils.formatInteger(5, root.getTimePoint());
     }
     private static String getImageFileName(StructureObject object) {
         return "s"+Utils.formatInteger(2, object.getStructureIdx())+"_idx"+Utils.formatInteger(5, object.getIdx());

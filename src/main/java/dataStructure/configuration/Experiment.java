@@ -159,7 +159,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         return channelImages.getChildCount();
     }
     
-    public int getMicrocopyFieldNB() {
+    public int getMicrocopyFieldCount() {
         return fields.getChildCount();
     }
     

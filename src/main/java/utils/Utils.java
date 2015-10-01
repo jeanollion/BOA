@@ -157,6 +157,7 @@ public class Utils {
     }
     
     public static void deleteDirectory(File dir) { //recursive delete, because java's native function wants the dir to be empty to delete it
+        if (dir==null || !dir.exists()) return;
         if (dir.isFile()) dir.delete();
         else {
             for (File f : dir.listFiles()) deleteDirectory(f);

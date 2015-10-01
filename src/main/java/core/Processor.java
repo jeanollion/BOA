@@ -63,7 +63,7 @@ public class Processor {
     }*/
     
     public static void preProcessImages(Experiment xp, ObjectDAO dao) {
-        for (int i = 0; i<xp.getMicrocopyFieldNB(); ++i) {
+        for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
             preProcessImages(xp.getMicroscopyField(i), dao, false);
         }
         if (dao!=null) dao.deleteAllObjects();
@@ -89,7 +89,7 @@ public class Processor {
     
     public static void processStructures(Experiment xp, ObjectDAO dao) {
         if (dao!=null) dao.deleteAllObjects();
-        for (int i = 0; i<xp.getMicrocopyFieldNB(); ++i) {
+        for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
             processStructures(xp, xp.getMicroscopyField(i), dao, false);
         }
     }

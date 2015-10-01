@@ -30,6 +30,11 @@ import plugins.Thresholder;
 public class ConstantValue implements Thresholder {
     NumberParameter value = new NumberParameter("Value:", 2, 1);
     
+    public ConstantValue() {}
+    public ConstantValue(double value) {
+        this.value.setValue(value);
+    }
+    
     public Parameter[] getParameters() {
         return new Parameter[]{value};
     }

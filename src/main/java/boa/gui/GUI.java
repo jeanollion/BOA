@@ -275,9 +275,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         } catch (UnknownHostException ex) {
             logger.error("db connection error", ex);
         }
-        
-        
-        
     }
 
     private static void removeTreeSelectionListeners(JTree tree) {
