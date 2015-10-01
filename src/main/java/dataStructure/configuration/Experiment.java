@@ -151,11 +151,11 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         return structures.getChildAt(structureIdx);
     }
     
-    public int getStructureNB() {
+    public int getStructureCount() {
         return structures.getChildCount();
     }
     
-    public int getChannelImageNB() {
+    public int getChannelImageCount() {
         return channelImages.getChildCount();
     }
     
@@ -237,7 +237,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
      * @return 
      */
     public int[] getPathToStructure(int startStructureIdx, int stopStructureIdx) {
-        ArrayList<Integer> pathToStructure = new ArrayList<Integer>(this.getStructureNB());
+        ArrayList<Integer> pathToStructure = new ArrayList<Integer>(this.getStructureCount());
         pathToStructure.add(stopStructureIdx);
         if (startStructureIdx!=stopStructureIdx) {
             int p = getStructure(stopStructureIdx).getParentStructure();
@@ -255,7 +255,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
      * @return a matrix of structure indexes. the fisrt dimension represent the hierarchical orders, the second dimension the structures at the given hierarchical order, sorted by the index of the structure
      */
     public int[][] getStructuresInHierarchicalOrder() {
-        int[] orders = new int[getStructureNB()];
+        int[] orders = new int[getStructureCount()];
         int maxOrder=0;
         for (int i = 0; i<orders.length;++i) {
             orders[i]=getHierachicalOrder(i);
@@ -275,7 +275,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     public int[] getStructuresInHierarchicalOrderAsArray() {
         int[][] so=getStructuresInHierarchicalOrder();
-        int[] res = new int[this.getStructureNB()];
+        int[] res = new int[this.getStructureCount()];
         int idx=0;
         for (int[] o : so) for (int s:o) res[idx++]=s;
         return res;

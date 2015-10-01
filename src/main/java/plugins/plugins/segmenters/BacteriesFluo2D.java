@@ -28,6 +28,7 @@ import dataStructure.objects.StructureObjectProcessing;
 import ij.process.AutoThresholder;
 import image.BoundingBox;
 import image.Image;
+import image.ImageByte;
 import image.ImageFloat;
 import image.ImageInteger;
 import image.ImageLabeller;
@@ -36,7 +37,9 @@ import image.ImageOperations;
 import java.util.ArrayList;
 import plugins.Segmenter;
 import plugins.plugins.thresholders.IJAutoThresholder;
+import processing.Filters;
 import processing.ImageFeatures;
+import processing.WatershedTransform;
 import utils.ArrayUtil;
 import utils.Utils;
 
@@ -57,12 +60,11 @@ public class BacteriesFluo2D implements Segmenter {
     }
     
     public static ObjectPopulation run(Image input, ImageMask mask, double minObjectDimension, double splitThld) {
-        splitThld = 0.3;
+        //splitThld = 0.3;
         int derScale = 2;
-        //ImageDisplayer disp = new IJImageDisplayer();
-        //Image filtered = Filters.median(input, new ImageFloat("", 0, 0, 0), Filters.getNeighborhood(2, 2, input));
-        ImageFloat filtered = ImageFeatures.differenceOfGaussians(input, 2, 15, 1, true, false).setName("filtered");
-        
+        ImageDisplayer disp = new IJImageDisplayer();
+        //ImageFloat filtered = ImageFeatures.differenceOfGaussians(input, 2, 4, 1, false, false).setName("filtered");
+        ImageFloat filtered = ImageFeatures.LoG(input, 4, 4);
         // get precise X bounds to get Y-projection values reproductibles
         float[] projX = ImageOperations.meanProjection(filtered, ImageOperations.Axis.X, null);
         int xMax = ArrayUtil.max(projX);
@@ -86,15 +88,15 @@ public class BacteriesFluo2D implements Segmenter {
         logger.debug("diffX max: {}, percentile: {}", diffX.getMinAndMax(null)[1], norm);
         ImageFloat diff = ImageFeatures.getDerivative(filtered, derScale, 0, 1, 0, false).setName("diff2"); 
         ImageOperations.multiply(diff, diff, 1d/norm);
-        //disp.showImage(filtered);
+        disp.showImage(filtered);
         //disp.showImage(diff);
         //disp.showImage(diffX);
         
         
         float[] projValues = ImageOperations.meanProjection(filtered, ImageOperations.Axis.Y, projBounds);
         float[] projDiff = ImageOperations.meanProjection(diff, ImageOperations.Axis.Y, projBounds);
-        //Utils.plotProfile("values", projValues);
-        //Utils.plotProfile("diff", projDiff);
+        Utils.plotProfile("values", projValues);
+        Utils.plotProfile("diff", projDiff);
         int[] regMax = ArrayUtil.getRegionalExtrema(projDiff, 3, true);
         logger.debug("reg max diff2: {}", regMax);
         int[] min = new int[regMax.length-1];
@@ -171,6 +173,14 @@ public class BacteriesFluo2D implements Segmenter {
         return pop;        
     }
 
+    public static ObjectPopulation run(Image input, ImageMask mask, double logScale, int minSize) {
+        ImageFloat log = ImageFeatures.LoG(input, logScale, logScale);
+        ImageByte seeds = Filters.localExtrema(log, null, true, Filters.getNeighborhood(minSize, minSize, input));
+        ObjectPopulation pop = WatershedTransform.watershed(log, mask, seeds, true);
+        return pop;
+    }
+    
+    
     public Parameter[] getParameters() {
         return parameters;
     }

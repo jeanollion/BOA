@@ -19,6 +19,7 @@ package boa.gui.objects;
 
 import dataStructure.objects.StructureObject;
 import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 
 /**
  *
@@ -27,6 +28,8 @@ import javax.swing.tree.TreeNode;
 public interface StructureNodeContainer extends TreeNode {
     public void loadAllChildObjects(int[] pathToChildStructureIdx, int currentIdxInPath);
     public StructureObject getData();
+    public void resetData();
     public StructureObjectTreeGenerator getGenerator();
     public StructureNode getStructureNode(int structureIdx);
+    public TreePath getTreePath();
 }

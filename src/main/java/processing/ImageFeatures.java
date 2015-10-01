@@ -19,6 +19,7 @@ package processing;
 
 import ij.ImagePlus;
 import ij.measure.Calibration;
+import image.IJImageWrapper;
 import image.Image;
 import image.ImageFloat;
 import image.ImageOperations;
@@ -28,6 +29,8 @@ import imagescience.feature.Hessian;
 import imagescience.feature.Structure;
 import imagescience.image.FloatImage;
 import imagescience.segment.Thresholder;
+import imageware.Builder;
+import imageware.ImageWare;
 import java.util.Vector;
 import utils.ThreadRunner;
 
@@ -214,4 +217,18 @@ public class ImageFeatures {
         if (trimNegativeValues) ImageOperations.trim(fore, 0, true, true);
         return fore;
     }
+    
+    public static ImageFloat LoG(Image image, double radX, double radZ) {
+        ImageWare in = Builder.create(IJImageWrapper.getImagePlus(image), 3);
+            LoG LoG = new LoG(false);
+            ImageWare res;
+            if (image.getSizeZ() > 1) {
+                res = LoG.doLoG(in, radX, radX, radZ);
+            } else {
+                res = LoG.doLoG(in, radX, radX);
+            }
+            res.invert();
+        return (ImageFloat)IJImageWrapper.wrap(new ImagePlus("LoG of "+image.getName(), res.buildImageStack()));
+    }
+    
 }

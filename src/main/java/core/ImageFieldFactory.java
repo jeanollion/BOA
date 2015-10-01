@@ -89,11 +89,11 @@ public class ImageFieldFactory {
             int digits=(int)(Math.log10(stc.length)+0.5);
             for (int[] tc:stc) {
                 if (stc.length>1) end = seriesSeparator+Utils.formatInteger(digits, s);
-                if (tc[1]==xp.getChannelImageNB()) {
+                if (tc[1]==xp.getChannelImageCount()) {
                     containersTC.add(new MultipleImageContainerSingleFile(removeExtension(image.getName())+end, image.getAbsolutePath(),s, tc[0], tc[1]));
                     logger.info("image {} imported successfully", image.getAbsolutePath());
                 } else {
-                    logger.warn("Invalid Image: {} has: {} channels instead of: {}", image.getAbsolutePath(), tc[1], xp.getChannelImageNB());
+                    logger.warn("Invalid Image: {} has: {} channels instead of: {}", image.getAbsolutePath(), tc[1], xp.getChannelImageCount());
                 }
                 ++s;
             }

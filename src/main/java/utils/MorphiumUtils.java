@@ -44,12 +44,12 @@ public class MorphiumUtils {
 
             @Override
             public void wouldDereference(StructureObject entityIncludingReference, String fieldInEntity, ObjectId id, Class typeReferenced, boolean lazy) throws MorphiumAccessVetoException {
-                if (logger.isTraceEnabled()) logger.trace("would dereference: {} refrence: {} lazy: {} field: {}", entityIncludingReference.getFieldName(), typeReferenced.getSimpleName(), lazy, fieldInEntity);
+                //if (logger.isTraceEnabled()) logger.trace("would dereference: {} refrence: {} lazy: {} field: {}", entityIncludingReference.getFieldName(), typeReferenced.getSimpleName(), lazy, fieldInEntity);
                 Object o = null;
                 if (StructureObject.class.equals(typeReferenced)) o = objectDAO.getObject(id);
                 else if (Experiment.class.equals(typeReferenced)) o = xpDAO.getExperiment();
                 if (o != null) {
-                    logger.trace("would dereference: object found");
+                    //logger.trace("would dereference: object found");
                     try {
                         Field f = r.getField(entityIncludingReference.getClass(), fieldInEntity);
                         f.set(entityIncludingReference, o);
@@ -65,8 +65,7 @@ public class MorphiumUtils {
 
             @Override
             public Object didDereference(StructureObject entitiyIncludingReference, String fieldInEntity, Object referencedObject, boolean lazy) {
-                // todo solve problem with didDereference..
-                logger.trace("did dereference: {} previous field: {}", referencedObject, entitiyIncludingReference.previous);
+                //logger.trace("did dereference: {} previous field: {}", referencedObject, entitiyIncludingReference.previous);
                 
                 if (referencedObject!=null && logger.isTraceEnabled()) logger.trace("did dereference: {} refrence: {} lazy: {} field: {}", entitiyIncludingReference.getFieldName(), referencedObject.getClass().getSimpleName(), lazy, fieldInEntity);
                 //else if (logger.isTraceEnabled()) logger.trace("did dereference: {} null refrence lazy: {} field: {}", entitiyIncludingReference.getFieldName(), lazy, fieldInEntity);
@@ -82,7 +81,7 @@ public class MorphiumUtils {
                 } catch (IllegalAccessException ex) {
                     logger.error("referencing error", ex);
                 }
-                logger.trace("did dereference: after cache check: {} previous field: {}", referencedObject, entitiyIncludingReference.previous);
+                //logger.trace("did dereference: after cache check: {} previous field: {}", referencedObject, entitiyIncludingReference.previous);
                 return referencedObject;
                 //return null;
             }

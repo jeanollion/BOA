@@ -106,7 +106,7 @@ public class ConfigurationTest {
             m.clearCollection(Experiment.class);
             
             Experiment xp = new Experiment("test xp");
-            int idx = xp.getStructureNB();
+            int idx = xp.getStructureCount();
             xp.getStructures().insert(xp.getStructures().createChildInstance("structureTest"));
             m.store(xp);
             
@@ -114,7 +114,7 @@ public class ConfigurationTest {
             ExperimentDAO dao = new ExperimentDAO(m);
             xp = dao.getExperiment();
             
-            assertEquals("structure nb", idx+1, xp.getStructureNB());
+            assertEquals("structure nb", idx+1, xp.getStructureCount());
             assertEquals("structure name", "structureTest", xp.getStructure(idx).getName());
             assertTrue("xp init postLoad", xp.getChildCount()>0);
             
@@ -140,7 +140,7 @@ public class ConfigurationTest {
             Structure bacteries = xp.getStructures().createChildInstance("Bacteries");
             xp.getStructures().insert(microChannel);
             bacteries.setParentStructure(0);
-            int idx = xp.getStructureNB();
+            int idx = xp.getStructureCount();
             
             // set-up processing chain
             PluginFactory.findPlugins("plugin.dummyPlugins");
@@ -157,7 +157,7 @@ public class ConfigurationTest {
             ExperimentDAO dao = new ExperimentDAO(m);
             xp = dao.getExperiment();
             
-            assertEquals("structure nb", idx, xp.getStructureNB());
+            assertEquals("structure nb", idx, xp.getStructureCount());
             assertTrue("xp init postLoad", xp.getChildCount()>0);
             
         } catch (UnknownHostException ex) {

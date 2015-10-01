@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 
 /**
  *
@@ -50,6 +51,8 @@ public class TimePointNode implements TreeNode, UIContainer, StructureNodeContai
         }
         return data;
     }
+    
+    public void resetData() {data=null;}
     
     public StructureNode[] getChildren() {
         if (children==null) {
@@ -120,4 +123,11 @@ public class TimePointNode implements TreeNode, UIContainer, StructureNodeContai
         return Collections.enumeration(Arrays.asList(getChildren()));
     }
     
+    public TreePath getTreePath() {
+        TreeNode[] path = new TreeNode[3];
+        path[path.length-1]=this;
+        path[path.length-2]=parent;
+        path[path.length-3]=parent.parent;
+        return new TreePath(path);
+    }
 }

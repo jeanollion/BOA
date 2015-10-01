@@ -124,6 +124,7 @@ public class StructureObjectTreeGenerator {
         return new TreePath(path.toArray(new TreeNode[path.size()]));
     }
     
+    
     public ObjectNode getObjectNode(StructureObject object) {
         FieldNode f = experimentNode.getFieldNode(object.getFieldName());
         TimePointNode t = f.getChildren()[object.getTimePoint()];
@@ -146,4 +147,14 @@ public class StructureObjectTreeGenerator {
         }
         return Utils.reverseOrder(res);
     }
+    
+    /*public void setCollapsedNode(TreePath path, boolean collapsed) {
+        if (collapsed) tree.collapsePath(path);
+        else tree.expandPath(path);
+    }*/
+    
+    public StructureObjectTreeModel getModel() {
+        return this.treeModel;
+    }
+    
 }

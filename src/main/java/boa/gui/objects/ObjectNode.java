@@ -35,6 +35,7 @@ import javax.swing.AbstractAction;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 
 /**
  *
@@ -59,6 +60,8 @@ public class ObjectNode implements TreeNode, UIContainer, StructureNodeContainer
     }
     
     public StructureObject getData() {return data;}
+    
+    public void resetData() {data=null;}
     
     public void loadAllChildObjects(int[] pathToChildStructureIdx, int currentIdxInPath) {
         /*int pathIdx; // start from index of current structure in the path, if present
@@ -121,6 +124,10 @@ public class ObjectNode implements TreeNode, UIContainer, StructureNodeContainer
 
     public Enumeration children() {
         return Collections.enumeration(Arrays.asList(children));
+    }
+    
+    public TreePath getTreePath() {
+        return parent.getTreePath().pathByAddingChild(this);
     }
     
     class ObjectNodeUI {

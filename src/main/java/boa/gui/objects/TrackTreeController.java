@@ -46,7 +46,7 @@ public class TrackTreeController {
     
     public void setStructure(int structureIdx) {
         structurePathToRoot = xpDAO.getExperiment().getPathToRoot(structureIdx);
-        HashMap<Integer, TrackTreeGenerator> newGeneratorS = new HashMap<Integer, TrackTreeGenerator>(xpDAO.getExperiment().getStructureNB());
+        HashMap<Integer, TrackTreeGenerator> newGeneratorS = new HashMap<Integer, TrackTreeGenerator>(xpDAO.getExperiment().getStructureCount());
         for (int s: structurePathToRoot) {
             if (generatorS!=null && generatorS.containsKey(s)) newGeneratorS.put(s, generatorS.get(s));
             else newGeneratorS.put(s, new TrackTreeGenerator(objectDAO, xpDAO, this));

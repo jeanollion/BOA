@@ -118,7 +118,7 @@ public class LocalFileSystemImageDAO implements ImageDAO {
     public void deleteMask(StructureObject object) {
         String path = getProcessedImageFile(object);
         File f = new File(path);
-        f.delete();
+        if (f.exists()) f.delete();
     }
     @Override
     public void deleteFieldMasks(Experiment xp, String fieldName) {
@@ -136,7 +136,7 @@ public class LocalFileSystemImageDAO implements ImageDAO {
             }
         };
         File dir = new File(path);
-        for (File f : dir.listFiles(filter)) Utils.deleteDirectory(f);
+        if (dir.exists()) for (File f : dir.listFiles(filter)) Utils.deleteDirectory(f);
     }
     
     protected static String getPreProcessedImagePath(int channelImageIdx, int timePoint, String microscopyFieldName, String imageDirectory) {
@@ -152,7 +152,7 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         return "s"+Utils.formatInteger(2, object.getStructureIdx())+"_idx"+Utils.formatInteger(5, object.getIdx());
     }
     protected static String getProcessedImageDirectory(StructureObject object) {
-        if (object.isRoot()) throw new IllegalArgumentException("root objects are not Segmented");
+        if (object.isRoot()) return getProcessedImageDirectoryRoot(object);
         if (object.getParent().isRoot()) return getProcessedImageDirectoryRoot(object.getParent())+File.separator+getImageFileName(object);
         else return getProcessedImageDirectory((StructureObject)object.getParent())+File.separator+getImageFileName(object);
     }

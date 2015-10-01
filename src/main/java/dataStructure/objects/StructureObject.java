@@ -96,8 +96,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     public int getIdx() {return idx;}
     public Experiment getExperiment() {
         if (xp==null) return null;
-        try {xp.callLazyLoading();}
-        catch (MorphiumAccessVetoException e) {}
+        xp.callLazyLoading();
         return xp;
     }
     public MicroscopyField getMicroscopyField() {
@@ -214,16 +213,16 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     public void updateObjectContainer(){
         // TODO: only if changes -> transient variable to record changes..
         if (objectContainer==null) createObjectContainer();
-        logger.debug("updating object container: {} of object: {}", objectContainer.getClass(), this );
+        //logger.debug("updating object container: {} of object: {}", objectContainer.getClass(), this );
         objectContainer.updateObject();
     }
     public void deleteMask(){if (objectContainer!=null) objectContainer.deleteObject();};
     
     public Image getRawImage(int structureIdx) {
-        int channelIdx = xp.getChannelImageIdx(structureIdx);
+        int channelIdx = getExperiment().getChannelImageIdx(structureIdx);
         if (rawImagesC.get(channelIdx)==null) { // chercher l'image chez le parent avec les bounds
             if (isRoot()) {
-                if (rawImagesC.getAndExtend(channelIdx)==null) rawImagesC.set(xp.getImageDAO().openPreProcessedImage(channelIdx, timePoint, fieldName), channelIdx);
+                if (rawImagesC.getAndExtend(channelIdx)==null) rawImagesC.set(getExperiment().getImageDAO().openPreProcessedImage(channelIdx, timePoint, fieldName), channelIdx);
             } else {
                 StructureObject parentWithImage=getFirstParentWithOpenedRawImage(structureIdx);
                 if (parentWithImage!=null) {
@@ -240,17 +239,17 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     }
     
     public Image openRawImage(int structureIdx, BoundingBox bounds) {
-        int channelIdx = xp.getChannelImageIdx(structureIdx);
-        if (rawImagesC.get(channelIdx)==null) return xp.getImageDAO().openPreProcessedImage(channelIdx, timePoint, fieldName, bounds);
+        int channelIdx = getExperiment().getChannelImageIdx(structureIdx);
+        if (rawImagesC.get(channelIdx)==null) return getExperiment().getImageDAO().openPreProcessedImage(channelIdx, timePoint, fieldName, bounds);
         else return rawImagesC.get(channelIdx).crop(bounds);
     }
     
     public StructureObject getFirstParentWithOpenedRawImage(int structureIdx) {
         if (isRoot()) {
-            if (rawImagesC.get(xp.getChannelImageIdx(structureIdx))!=null) return this;
+            if (rawImagesC.get(getExperiment().getChannelImageIdx(structureIdx))!=null) return this;
             else return null;
         }
-        if (getParent().rawImagesC.get(xp.getChannelImageIdx(structureIdx))!=null) return parent;
+        if (getParent().rawImagesC.get(getExperiment().getChannelImageIdx(structureIdx))!=null) return parent;
         else return parent.getFirstParentWithOpenedRawImage(structureIdx);
     }
     
@@ -277,19 +276,19 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     
     public void createPreFilterImage(int structureIdx) {
         Image raw = getRawImage(structureIdx);
-        if (raw!=null) preProcessedImageS.set(preFilterImage(getRawImage(structureIdx), this, xp.getStructure(structureIdx).getProcessingChain().getPrefilters()), structureIdx);
+        if (raw!=null) preProcessedImageS.set(preFilterImage(getRawImage(structureIdx), this, getExperiment().getStructure(structureIdx).getProcessingChain().getPrefilters()), structureIdx);
     }
     
     public void segmentChildren(int structureIdx) {
         if (getFilteredImage(structureIdx)==null) createPreFilterImage(structureIdx);
-        ObjectPopulation seg = segmentImage(getFilteredImage(structureIdx), structureIdx, this, xp.getStructure(structureIdx).getProcessingChain().getSegmenter());
+        ObjectPopulation seg = segmentImage(getFilteredImage(structureIdx), structureIdx, this, getExperiment().getStructure(structureIdx).getProcessingChain().getSegmenter());
         if (seg.getObjects().isEmpty()) childrenSM.set(new StructureObject[0], structureIdx);
         else {
-            seg = postFilterImage(seg, this, xp.getStructure(structureIdx).getProcessingChain().getPostfilters());
+            seg = postFilterImage(seg, this, getExperiment().getStructure(structureIdx).getProcessingChain().getPostfilters());
             seg.relabel();
             StructureObject[] res = new StructureObject[seg.getObjects().size()];
             childrenSM.set(res, structureIdx);
-            for (int i = 0; i<res.length; ++i) res[i]=new StructureObject(fieldName, timePoint, structureIdx, i, seg.getObjects().get(i), this, xp);
+            for (int i = 0; i<res.length; ++i) res[i]=new StructureObject(fieldName, timePoint, structureIdx, i, seg.getObjects().get(i), this, getExperiment());
         }
     }
     
@@ -303,11 +302,11 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         }
     }
     
-    @Override
+    /*@Override
     public String toString() {
         if (isRoot()) return "Root Object: fieldName: "+fieldName + " timePoint: "+timePoint;
         else return "Object: fieldName: "+fieldName+ " timePoint: "+timePoint+ " structureIdx: "+structureIdx+ " parentId: "+getParent().id+ " idx: "+idx;
-    }
+    }*/
     
     // morphium-related methods
     /*@PreStore public void preStore() {

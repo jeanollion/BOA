@@ -59,6 +59,10 @@ public abstract class ImageWindowManager<T> {
         }
     }
     
+    public void resetImageObjectInterface(StructureObject parent, int childStructureIdx) {
+        imageObjectInterfaces.remove(new ImageObjectInterfaceKey(parent, childStructureIdx, false));
+    }
+    
     public ImageObjectInterface getImageObjectInterface(StructureObject parent, int childStructureIdx) {
         ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parent, childStructureIdx, false));
         if (i==null) {

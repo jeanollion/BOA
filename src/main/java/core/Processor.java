@@ -105,16 +105,16 @@ public class Processor {
         }
     }
     
-    public static void processStructure(int structureIdx, StructureObject root, ObjectDAO dao, boolean deleteObjects) {
-        if (!root.isRoot()) throw new IllegalArgumentException("this method only applies to root objects");
+    public static void processStructure(int structureIdx, StructureObject parent, ObjectDAO dao, boolean deleteObjects) {
+        //if (!parent.isRoot()) throw new IllegalArgumentException("this method only applies to root objects");
         // get all parent objects of the structure
-        ArrayList<StructureObject> allParents = StructureObjectUtils.getAllParentObjects(root, root.getExperiment().getPathToRoot(structureIdx));
-        if (logger.isDebugEnabled()) logger.debug("Segmenting structure: {} timePoint: {} number of parents: {}", structureIdx, root.getTimePoint(), allParents.size());
-        for (StructureObject parent : allParents) {
-            if (dao!=null && deleteObjects) dao.deleteChildren(parent.getId(), structureIdx);
-            parent.segmentChildren(structureIdx);
-            if (dao!=null) dao.store(parent.getChildObjects(structureIdx));
-            if (logger.isDebugEnabled()) logger.debug("Segmenting structure: {} from parent: {} number of objects: {}", structureIdx, parent, parent.getChildObjects(structureIdx).length);
+        ArrayList<StructureObject> allParents = StructureObjectUtils.getAllParentObjects(parent, parent.getExperiment().getPathToStructure(parent.getStructureIdx(), structureIdx));
+        if (logger.isDebugEnabled()) logger.debug("Segmenting structure: {} timePoint: {} number of parents: {}", structureIdx, parent.getTimePoint(), allParents.size());
+        for (StructureObject localParent : allParents) {
+            if (dao!=null && deleteObjects) dao.deleteChildren(localParent.getId(), structureIdx);
+            localParent.segmentChildren(structureIdx);
+            if (dao!=null) dao.store(localParent.getChildObjects(structureIdx));
+            if (logger.isDebugEnabled()) logger.debug("Segmenting structure: {} from parent: {} number of objects: {}", structureIdx, localParent, localParent.getChildObjects(structureIdx).length);
         }
     }
     
