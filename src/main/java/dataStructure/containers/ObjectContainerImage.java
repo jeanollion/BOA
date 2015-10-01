@@ -49,5 +49,10 @@ public class ObjectContainerImage extends ObjectContainer {
         ImageInteger mask = getImage();
         return new Object3D(mask, structureObject.getIdx()+1);
     }
+
+    @Override
+    public void deleteObject() {
+        structureObject.getExperiment().getImageDAO().deleteMask(structureObject);
+    }
     
 }

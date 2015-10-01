@@ -217,6 +217,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         logger.debug("updating object container: {} of object: {}", objectContainer.getClass(), this );
         objectContainer.updateObject();
     }
+    public void deleteMask(){if (objectContainer!=null) objectContainer.deleteObject();};
     
     public Image getRawImage(int structureIdx) {
         int channelIdx = xp.getChannelImageIdx(structureIdx);

@@ -46,5 +46,5 @@ public abstract class ObjectContainer {
     protected float getScaleZ() {return structureObject.getMicroscopyField().getScaleZ();}
     public abstract Object3D getObject();
     public abstract void updateObject();
-    
+    public abstract void deleteObject();
 }

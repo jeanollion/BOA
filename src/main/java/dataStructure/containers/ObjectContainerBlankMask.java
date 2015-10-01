@@ -46,4 +46,6 @@ public class ObjectContainerBlankMask extends ObjectContainer {
     public void updateObject() {
         bounds = structureObject.getObject().getBounds();
     }
+    
+    @Override public void deleteObject(){bounds=null;}
 }

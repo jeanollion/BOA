@@ -18,6 +18,7 @@
 package dataStructure.containers;
 
 import core.Processor;
+import dataStructure.configuration.Experiment;
 import dataStructure.objects.StructureObject;
 import image.BlankMask;
 import image.BoundingBox;
@@ -29,6 +30,7 @@ import image.ImageInteger;
 import image.ImageReader;
 import image.ImageWriter;
 import java.io.File;
+import java.io.FilenameFilter;
 import utils.Utils;
 
 /**
@@ -112,25 +114,53 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         ImageWriter.writeToFile(mask, path, ImageFormat.PNG);
     }
     
+    @Override
+    public void deleteMask(StructureObject object) {
+        String path = getProcessedImageFile(object);
+        File f = new File(path);
+        f.delete();
+    }
+    @Override
+    public void deleteFieldMasks(Experiment xp, String fieldName) {
+        String path = getFieldDirectory(xp, fieldName);
+        File f = new File(path);
+        Utils.deleteDirectory(f);
+    }
+    @Override 
+    public void deleteChildren(StructureObject parent, final int structureIdx) {
+        String path = getProcessedImageDirectory(parent);
+        FilenameFilter filter = new FilenameFilter() {
+            @Override
+            public boolean accept(File arg0, String arg1) {
+                return Integer.parseInt(arg1.substring(1, 3))==structureIdx;
+            }
+        };
+        File dir = new File(path);
+        for (File f : dir.listFiles(filter)) Utils.deleteDirectory(f);
+    }
+    
     protected static String getPreProcessedImagePath(int channelImageIdx, int timePoint, String microscopyFieldName, String imageDirectory) {
         return imageDirectory+File.separator+microscopyFieldName+File.separator+"pre_processed"+File.separator+"t"+Utils.formatInteger(5, timePoint)+"_c"+Utils.formatInteger(2, channelImageIdx)+".tif";
     }
-    
+    private static String getFieldDirectory(Experiment xp, String fieldName) {
+        return xp.getOutputImageDirectory()+File.separator+fieldName;
+    }
     private static String getProcessedImageDirectoryRoot(StructureObject root) {
-        return root.getExperiment().getOutputImageDirectory()+File.separator+root.getFieldName()+File.separator+"processed"+File.separator+"t"+Utils.formatInteger(5, root.getTimePoint());
+        return getFieldDirectory(root.getExperiment(), root.getFieldName())+File.separator+"processed"+File.separator+"t"+Utils.formatInteger(5, root.getTimePoint());
     }
     private static String getImageFileName(StructureObject object) {
         return "s"+Utils.formatInteger(2, object.getStructureIdx())+"_idx"+Utils.formatInteger(5, object.getIdx());
     }
     protected static String getProcessedImageDirectory(StructureObject object) {
-        if (object.isRoot()) throw new IllegalArgumentException("root objects are not pre-Processed");
+        if (object.isRoot()) throw new IllegalArgumentException("root objects are not Segmented");
         if (object.getParent().isRoot()) return getProcessedImageDirectoryRoot(object.getParent())+File.separator+getImageFileName(object);
         else return getProcessedImageDirectory((StructureObject)object.getParent())+File.separator+getImageFileName(object);
     }
     protected static String getProcessedImageFile(StructureObject object) {
         return getProcessedImageDirectory(object)+".png";
     }
-
+    
+    
     
     
     

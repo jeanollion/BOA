@@ -17,6 +17,7 @@
  */
 package dataStructure.containers;
 
+import dataStructure.configuration.Experiment;
 import dataStructure.objects.StructureObject;
 import image.BlankMask;
 import image.BoundingBox;
@@ -37,4 +38,7 @@ public interface ImageDAO {
     
     public ImageInteger openMask(StructureObject object);
     public void writeMask(ImageInteger mask, StructureObject object);
+    public void deleteMask(StructureObject object);
+    public void deleteFieldMasks(Experiment xp, String fieldName);
+    public void deleteChildren(StructureObject parent, final int structureIdx);
 }
