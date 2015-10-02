@@ -88,7 +88,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     
     public boolean isOnePluginSet() {
         if (pluginParameters==null && !NO_SELECTION.equals(pluginName)) setPlugin(pluginName); // case of constructor with default method  
-        return true;
+        return NO_SELECTION.equals(pluginName) || pluginParameters!=null;
         //return (pluginName!=null && !NOPLUGIN.equals(pluginName));
     }
     

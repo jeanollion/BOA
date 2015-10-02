@@ -17,7 +17,7 @@
  */
 package processing;
 
-import dataStructure.objects.Voxel3D;
+import dataStructure.objects.Voxel;
 import image.Image;
 import image.ImageByte;
 import image.ImageFloat;

@@ -144,7 +144,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     /**
      * 
      * @param previous the previous object in the track
-     * @param isTrackHead if true, sets this instance as the next of {@param previous} 
+     * @param isTrackHead if false, sets this instance as the next of {@param previous} 
      */
     @Override public void setPreviousInTrack(StructureObjectPreProcessing previous, boolean isTrackHead) {
         if (((StructureObject)previous).getTimePoint()!=this.getTimePoint()-1) throw new RuntimeException("setPrevious in track should be of time: "+(timePoint-1) +" but is: "+((StructureObject)previous).getTimePoint());

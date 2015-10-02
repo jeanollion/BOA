@@ -70,19 +70,24 @@ public class Processor {
     }
     
     public static void preProcessImages(MicroscopyField field, ObjectDAO dao, boolean deleteObjects) {
-        setTransformationsAndComputeConfigurationData(field);
+        setTransformations(field, true);
         InputImagesImpl images = field.getInputImages();
         images.applyTranformationsSaveAndClose();
         if (deleteObjects) if (dao!=null && deleteObjects) dao.deleteObjectsFromField(field.getName());
     }
     
-    public static void setTransformationsAndComputeConfigurationData(MicroscopyField field) {
+    public static void setTransformations(MicroscopyField field, boolean computeConfigurationData) {
         InputImagesImpl images = field.getInputImages();
+        // delete images if existing in imageDAO
+        images.deleteFromDAO();
         PreProcessingChain ppc = field.getPreProcessingChain();
         for (TransformationPluginParameter<Transformation> tpp : ppc.getTransformations()) {
             Transformation transfo = tpp.getPlugin();
-            transfo.computeConfigurationData(tpp.getInputChannel(), images);
-            tpp.setConfigurationData(transfo.getConfigurationData());
+            logger.trace("adding transformation: {} of class: {} to field: {}", transfo, transfo.getClass(), field.getName());
+            if (computeConfigurationData) {
+                transfo.computeConfigurationData(tpp.getInputChannel(), images);
+                tpp.setConfigurationData(transfo.getConfigurationData());
+            }
             images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
         }
     }
@@ -100,8 +105,10 @@ public class Processor {
         if (dao!=null) dao.store(root);
         Processor.trackRoot(root, dao);
         for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
-            for (int t = 0; t<root.length; ++t) Processor.processStructure(s, root[t], dao, false); // process
-            for (StructureObject o : StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, dao); // structure
+            if (xp.getStructure(s).hasSegmenter()) {
+                for (int t = 0; t<root.length; ++t) Processor.processStructure(s, root[t], dao, false); // process
+                if (xp.getStructure(s).hasTracker()) for (StructureObject o : StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, dao); // structure
+            }
         }
     }
     

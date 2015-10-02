@@ -2,8 +2,6 @@ package processing.mergeRegions;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import dataStructure.objects.Voxel;
-import dataStructure.objects.Voxel2D;
-import dataStructure.objects.Voxel3D;
 import ij.IJ;
 import image.Image;
 import image.ImageFloat;
@@ -55,10 +53,6 @@ public class InterfaceCollection {
         
     }
     
-    private static Voxel createVoxel(Voxel vox, int dx, int dy, int dz) {
-        if (vox instanceof Voxel3D) return new Voxel3D(vox.x+dx, vox.y+dy, vox.getZ()+dz);
-        else return new Voxel2D(vox.x+dx, vox.y+dy);
-    }
     
     protected void getInterfaces() {
         HashMap<RegionPair, Interface> interfaceMap = new HashMap<RegionPair, Interface>();
@@ -70,17 +64,17 @@ public class InterfaceCollection {
             for (Voxel vox : r.voxels) {
                 vox = vox.copy(); // to avoid having the same instance of voxel as in the region.
                 for (int i = 0; i<neigh.length; ++i) {
-                    n = createVoxel(vox, neigh[i][0], neigh[i][1], neigh[i][2]);// en avant pour les interactions avec d'autre spots / 0
-                    if (inputLabels.contains(n.x, n.y, n.getZ())) { 
-                        otherLabel = inputLabels.getPixelInt(n.x, n.y, n.getZ());   
+                    n = new Voxel(vox.x+neigh[i][0], vox.y+neigh[i][1], vox.z+neigh[i][2]); // en avant pour les interactions avec d'autre spots / 0
+                    if (inputLabels.contains(n.x, n.y, n.z)) { 
+                        otherLabel = inputLabels.getPixelInt(n.x, n.y, n.z);   
                         if (otherLabel!=r.label) {
                             if (otherLabel!=0) addPair(interfaceMap, r.label, vox, otherLabel, n);
                             else addPairBackground(r, vox, n);
                         }
                     }
-                    n = createVoxel(vox, -neigh[i][0], -neigh[i][1], -neigh[i][2]);// eventuellement aussi en arriere juste pour interaction avec 0
-                    if (inputLabels.contains(n.x, n.y, n.getZ())) {
-                        otherLabel = inputLabels.getPixelInt(n.x, n.y, n.getZ());  
+                    n = new Voxel(vox.x-neigh[i][0], vox.y-neigh[i][1], vox.z-neigh[i][2]);// eventuellement aussi en arriere juste pour interaction avec 0
+                    if (inputLabels.contains(n.x, n.y, n.z)) {
+                        otherLabel = inputLabels.getPixelInt(n.x, n.y, n.z);  
                         if (otherLabel==0) addPairBackground(r, vox, n);
                     }
                 }
@@ -102,9 +96,9 @@ public class InterfaceCollection {
             for (Voxel vox : r.voxels) {
                     vox=vox.copy();
                     for (int i = 0; i<neigh.length; ++i) {
-                        n = createVoxel(vox, neigh[i][0], neigh[i][1], neigh[i][2]);
-                        if (inputLabels.contains(n.x, n.y, n.getZ())) { 
-                            otherLabel = inputLabels.getPixelInt(n.x, n.y, n.getZ());   
+                        n = new Voxel(vox.x+neigh[i][0], vox.y+neigh[i][1], vox.z+neigh[i][2]);
+                        if (inputLabels.contains(n.x, n.y, n.z)) { 
+                            otherLabel = inputLabels.getPixelInt(n.x, n.y, n.z);   
                             if (otherLabel>0 && otherLabel!=r.label && !interfaceMap.containsKey(new RegionPair(r.label, otherLabel))) {
                                 addPair(interfaceMap, r.label, vox, otherLabel, n);
                             }
@@ -129,9 +123,9 @@ public class InterfaceCollection {
                     if (label==0) continue;
                     Region currentRegion = regions.get(label);
                     for (int i = 0; i<neigh.length; ++i) {
-                        n = new Voxel3D(x+neigh[i][0], y+neigh[i][1], z+neigh[i][2]);
-                        if (inputLabels.contains(n.x, n.y, n.getZ())) { 
-                            otherLabel = inputLabels.getPixelInt(n.x, n.y, n.getZ());   
+                        n = new Voxel(x+neigh[i][0], y+neigh[i][1], z+neigh[i][2]);
+                        if (inputLabels.contains(n.x, n.y, n.z)) { 
+                            otherLabel = inputLabels.getPixelInt(n.x, n.y, n.z);   
                             if (otherLabel>0 && otherLabel!=label) {
                                 Region otherRegion = regions.get(otherLabel);
                                 regions.fusion(currentRegion, otherRegion, 0);
@@ -211,8 +205,8 @@ public class InterfaceCollection {
         if (intensityMap==null) return;
         for (Interface i : interfaces) {
             InterfaceVoxSet ivs = (InterfaceVoxSet)i;
-            for (Voxel v : ivs.r1Voxels) v.value=intensityMap.getPixel(v.x, v.y, v.getZ());
-            for (Voxel v : ivs.r2Voxels) v.value=intensityMap.getPixel(v.x, v.y, v.getZ());
+            for (Voxel v : ivs.r1Voxels) v.value=intensityMap.getPixel(v.x, v.y, v.z);
+            for (Voxel v : ivs.r2Voxels) v.value=intensityMap.getPixel(v.x, v.y, v.z);
         }
     }
     
@@ -220,10 +214,10 @@ public class InterfaceCollection {
         ImageShort im = new ImageShort("Iterfaces", intensityMap.getSizeX(), intensityMap.getSizeY(), intensityMap.getSizeZ());
         for (Interface i : interfaces) {
             for (Voxel v : ((InterfaceVoxSet)i).r1Voxels) {
-                im.setPixel(v.x, v.y, v.getZ(), i.r2.label);
+                im.setPixel(v.x, v.y, v.z, i.r2.label);
             }
             for (Voxel v : ((InterfaceVoxSet)i).r2Voxels) {
-                im.setPixel(v.x, v.y, v.getZ(), i.r1.label);
+                im.setPixel(v.x, v.y, v.z, i.r1.label);
             }
         }
         new IJImageDisplayer().showImage(im);
@@ -234,10 +228,10 @@ public class InterfaceCollection {
         for (Interface i : interfaces) {
             if (i.r1.label==0) continue;
             for (Voxel v : ((InterfaceVoxSet)i).r1Voxels) {
-                im.setPixel(v.x, v.y, v.getZ(), (float)i.strength);
+                im.setPixel(v.x, v.y, v.z, (float)i.strength);
             }
             for (Voxel v : ((InterfaceVoxSet)i).r2Voxels) {
-                im.setPixel(v.x, v.y, v.getZ(), (float)i.strength);
+                im.setPixel(v.x, v.y, v.z, (float)i.strength);
             }
         }
         new IJImageDisplayer().showImage(im);
@@ -321,8 +315,8 @@ public class InterfaceCollection {
             int currentLabel = 1; 
             for (HashSet<Interface> c : clusters) {
                 for (Interface i : c) {
-                    for (Voxel v : i.r1.voxels) im.setPixel(v.x, v.y, v.getZ(), currentLabel);
-                    for (Voxel v : i.r2.voxels) im.setPixel(v.x, v.y, v.getZ(), currentLabel);
+                    for (Voxel v : i.r1.voxels) im.setPixel(v.x, v.y, v.z, currentLabel);
+                    for (Voxel v : i.r2.voxels) im.setPixel(v.x, v.y, v.z, currentLabel);
                 }
                 ++currentLabel;
             }

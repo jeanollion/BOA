@@ -61,7 +61,7 @@ public class Region {
         }
         
         public void setVoxelLabel(int l) {
-            for (Voxel v : voxels) col.labelMap.setPixel(v.x, v.y, v.getZ(), l);
+            for (Voxel v : voxels) col.labelMap.setPixel(v.x, v.y, v.z, l);
         }
 
         public Region fusion(Region region, double newCriterion) {
@@ -215,7 +215,7 @@ public class Region {
             for (Voxel vox : it) {
                 xx = vox.x - xm;
                 yy = vox.y - ym;
-                zz = vox.getZ() - zm;
+                zz = vox.z - zm;
                 if (miniLabelImage.contains(xx, yy, zz)) {
                     miniLabelImage.setPixel(xx, yy, zz, val);
                 }

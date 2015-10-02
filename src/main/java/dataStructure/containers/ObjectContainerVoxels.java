@@ -20,8 +20,6 @@ package dataStructure.containers;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
-import dataStructure.objects.Voxel2D;
-import dataStructure.objects.Voxel3D;
 import de.caluga.morphium.annotations.Embedded;
 import java.util.ArrayList;
 
@@ -46,38 +44,38 @@ public class ObjectContainerVoxels extends ObjectContainer {
     
     private void createCoordsArrays(Object3D object) {
         if (object.is3D()) {
-            ArrayList<Voxel3D> voxels = object.getVoxels();
+            ArrayList<Voxel> voxels = object.getVoxels();
             x = new int[voxels.size()];
             y = new int[voxels.size()];
             z = new int[voxels.size()];
             int idx = 0;
-            for (Voxel3D v : voxels) {
+            for (Voxel v : voxels) {
                 x[idx]=v.x;
                 y[idx]=v.y;
                 z[idx++]=v.z;
             }
         } else {
-            ArrayList<Voxel2D> voxels = object.getVoxels();
+            ArrayList<Voxel> voxels = object.getVoxels();
             x = new int[voxels.size()];
             y = new int[voxels.size()];
             z = null;
             int idx = 0;
-            for (Voxel2D v : voxels) {
+            for (Voxel v : voxels) {
                 x[idx]=v.x;
                 y[idx++]=v.y;
             }
         }
     }
     
-    private ArrayList<? extends Voxel> getVoxels() {
+    private ArrayList<Voxel> getVoxels() {
         if (x==null || y==null) return new ArrayList(0);
         if (z!=null) {
-            ArrayList<Voxel3D> voxels = new ArrayList<Voxel3D>(x.length);
-            for (int i  = 0; i<x.length; ++i) voxels.add(new Voxel3D(x[i], y[i], z[i]));
+            ArrayList<Voxel> voxels = new ArrayList<Voxel>(x.length);
+            for (int i  = 0; i<x.length; ++i) voxels.add(new Voxel(x[i], y[i], z[i]));
             return voxels;
         } else {
-            ArrayList<Voxel2D> voxels = new ArrayList<Voxel2D>(x.length);
-            for (int i  = 0; i<x.length; ++i) voxels.add(new Voxel2D(x[i], y[i]));
+            ArrayList<Voxel> voxels = new ArrayList<Voxel>(x.length);
+            for (int i  = 0; i<x.length; ++i) voxels.add(new Voxel(x[i], y[i], 0));
             return voxels;
         }
     }

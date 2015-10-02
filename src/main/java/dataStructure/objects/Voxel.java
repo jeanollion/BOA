@@ -1,46 +1,55 @@
-/*
- * Copyright (C) 2015 nasique
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- */
 package dataStructure.objects;
 
 import java.util.Comparator;
 
-/**
- *
- * @author jollion
- */
-public abstract class Voxel implements Comparable<Voxel>{
+
+public class Voxel implements Comparable<Voxel> {
     public int x, y;
     public float value;
-    public abstract int getZ();
-    
-    @Override
-    public int compareTo(Voxel other) {
-        if (other.value<value) return 1;
-        else if (other.value>value) return -1;
-        else return 0;
+    public int z;
+
+    public Voxel(int x, int y, int z) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+
+    public Voxel(int x, int y, int z, float value) {
+        this(x, y, z);
+        this.value = value;
     }
     
     @Override
     public boolean equals(Object other) {
         if (other instanceof Voxel) {
             Voxel otherV = (Voxel)other;
-            return x==otherV.x && y==otherV.y && getZ()==otherV.getZ();
+            return x==otherV.x && y==otherV.y && z==otherV.z;
         } else return false;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 97 * hash + this.x;
+        hash = 97 * hash + this.y;
+        hash = 97 * hash + this.z;
+        return hash;
+    }
+
+    @Override
+    public String toString() {
+        return "Voxel3D{" + "x=" + x + ", y=" + y + ", z=" + z + ", value=" + value + '}';
+    }
+
+    public Voxel copy() {
+        return new Voxel(x, y, z);
+    }
+
+    public Voxel translate(int dX, int dY, int dZ) {
+        x+=dX;
+        y+=dY;
+        z+=dZ;
+        return this;
     }
     
     public static Comparator<Voxel> getInvertedComparator() {
@@ -57,7 +66,15 @@ public abstract class Voxel implements Comparable<Voxel>{
             }
         };
     }
+
+    public int compareTo(Voxel other) {
+        if (value < other.value) {
+            return -1;
+        } else if (value > other.value) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
     
-    public abstract <T extends Voxel> T copy();
-    public abstract <T extends Voxel> T translate(int dX, int dY, int dZ);
 }

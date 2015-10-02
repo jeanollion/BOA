@@ -68,6 +68,12 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         }
     }
     
+    public void deletePreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName) {
+        String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName, directory);
+        File f = new File(path);
+        if (f.exists()) f.delete();
+    }
+    
     public BlankMask getPreProcessedImageProperties(String microscopyFieldName) {
         String path = getPreProcessedImagePath(0, 0, microscopyFieldName, directory);
         File f = new File(path);

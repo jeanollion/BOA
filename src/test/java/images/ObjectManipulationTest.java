@@ -20,7 +20,7 @@ package images;
 import TestUtils.Utils;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
-import dataStructure.objects.Voxel3D;
+import dataStructure.objects.Voxel;
 import image.BoundingBox;
 import image.ImageByte;
 import image.ObjectFactory;
@@ -57,7 +57,7 @@ public class ObjectManipulationTest {
         
         bound1=new BoundingBox(0, 1, 0, 0,0,0);
         bound3 = new BoundingBox(2, 3, 1,1,1,1);
-        o1 = new Object3D<Voxel3D>(im.cropLabel(1, bound1), 1, Voxel3D.class);
+        o1 = new Object3D(im.cropLabel(1, bound1), 1);
         o3 = new Object3D(im.cropLabel(3, bound3), 3);
         
     }
@@ -66,11 +66,11 @@ public class ObjectManipulationTest {
         Object3D[] obs = ObjectFactory.getObjectsVoxels(im, false);
         assertEquals("object number", 2, obs.length);
         assertEquals("object1 vox number:", 2, obs[0].getVoxels().size());
-        assertTrue("object1 vox1:", new Voxel3D(0, 0, 0).equals(obs[0].getVoxels().get(0)));
-        assertTrue("object1 vox2:", new Voxel3D(1, 0, 0).equals(obs[0].getVoxels().get(1)));
+        assertTrue("object1 vox1:", new Voxel(0, 0, 0).equals(obs[0].getVoxels().get(0)));
+        assertTrue("object1 vox2:", new Voxel(1, 0, 0).equals(obs[0].getVoxels().get(1)));
         assertEquals("object3 vox number:", 2, obs[1].getVoxels().size());
-        assertTrue("object3 vox1:", new Voxel3D(2, 1, 1).equals(obs[1].getVoxels().get(0)));
-        assertTrue("object3 vox2:", new Voxel3D(3, 1, 1).equals(obs[1].getVoxels().get(1)));
+        assertTrue("object3 vox1:", new Voxel(2, 1, 1).equals(obs[1].getVoxels().get(0)));
+        assertTrue("object3 vox2:", new Voxel(3, 1, 1).equals(obs[1].getVoxels().get(1)));
         assertObject3DVoxels(o1, obs[0]);
         assertObject3DVoxels(o3, obs[1]);
     }

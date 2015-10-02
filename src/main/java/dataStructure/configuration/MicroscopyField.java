@@ -79,6 +79,7 @@ public class MicroscopyField extends SimpleContainerParameter {
     
     public BlankMask getMask() {
         BlankMask mask = getExperiment().getImageDAO().getPreProcessedImageProperties(name);
+        // TODO: recreate image if configuration data has been already computed
         mask.setCalibration(images.getScaleXY(), images.getScaleZ());
         return mask;
     }

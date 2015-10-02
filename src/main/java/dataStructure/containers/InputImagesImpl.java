@@ -65,4 +65,12 @@ public class InputImagesImpl implements InputImages {
             }
         }
     }
+    
+    public void deleteFromDAO() {
+        for (int t = 0; t<getTimePointNumber(); ++t) {
+            for (int c = 0; c<getChannelNumber(); ++c) {
+                imageTC[t][c].deleteFromDAO();
+            }
+        }
+    }
 }

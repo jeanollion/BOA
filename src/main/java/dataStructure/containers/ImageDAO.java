@@ -35,6 +35,7 @@ public interface ImageDAO {
     public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName, BoundingBox bounds);
     public BlankMask getPreProcessedImageProperties(String microscopyFieldName);
     public void writePreProcessedImage(Image image, int channelImageIdx, int timePoint, String microscopyFieldName);
+    public void deletePreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName);
     
     public ImageInteger openMask(StructureObject object);
     public void writeMask(ImageInteger mask, StructureObject object);

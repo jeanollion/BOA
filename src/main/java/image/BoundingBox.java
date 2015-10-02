@@ -18,7 +18,7 @@
 package image;
 
 import dataStructure.objects.Voxel;
-import dataStructure.objects.Voxel3D;
+import dataStructure.objects.Voxel;
 import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
 
@@ -129,7 +129,7 @@ public class BoundingBox {
     public void expand(Voxel v) {
         expandX(v.x);
         expandY(v.y);
-        if (v instanceof Voxel3D) expandZ(v.getZ());
+        if (v instanceof Voxel) expandZ(v.z);
     }
     
     public void expand(BoundingBox other) {

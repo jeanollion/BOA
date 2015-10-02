@@ -65,8 +65,13 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
     }
     
     protected ImageReader getReader(int channelIdx) {
-        if (reader[channelIdx]==null) reader[channelIdx] = new ImageReader(filePathC[channelIdx]);
+        if (getImageReaders()[channelIdx]==null) reader[channelIdx] = new ImageReader(filePathC[channelIdx]);
         return reader[channelIdx];
+    }
+    
+    protected ImageReader[] getImageReaders() {
+        if (reader==null) reader=new ImageReader[filePathC.length];
+        return reader;
     }
     
     @Override
@@ -101,7 +106,7 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
     @Override
     public void close() {
         for (int i = 0; i<this.getChannelNumber(); ++i) {
-            if (reader[i]!=null) reader[i].closeReader();
+            if (getImageReaders()[i]!=null) reader[i].closeReader();
             reader [i] = null;
         }
     }

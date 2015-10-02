@@ -56,6 +56,7 @@ public class ProcessingChain extends SimpleContainerParameter {
         return res;
     }
     
+    
     public Segmenter getSegmenter() {
         if (segmenter.isActivated()) return segmenter.getPlugin();
         else return null;

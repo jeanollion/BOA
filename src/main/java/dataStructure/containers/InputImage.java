@@ -54,12 +54,15 @@ public class InputImage {
     
     public Image getImage() {
         if (image == null) {
-            image = dao.openPreProcessedImage(channelIdx, timePoint, microscopyFieldName); //try to open from DAO
+            //image = dao.openPreProcessedImage(channelIdx, timePoint, microscopyFieldName); //try to open from DAO
             if (image==null) image = imageSources.getImage(timePoint, channelIdx);
         }
         applyTransformations();
         return image;
     }
+    
+    void deleteFromDAO() {dao.deletePreProcessedImage(channelIdx, timePoint, microscopyFieldName);}
+    
     
     private void applyTransformations() {
         Iterator<Transformation> it = transformationsToApply.iterator();

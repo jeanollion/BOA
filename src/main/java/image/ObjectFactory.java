@@ -18,7 +18,7 @@
 package image;
 
 import dataStructure.objects.Object3D;
-import dataStructure.objects.Voxel3D;
+import dataStructure.objects.Voxel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -30,26 +30,26 @@ import java.util.TreeMap;
  */
 public class ObjectFactory {
     public static Object3D[] getObjectsVoxels(ImageInteger labelImage, boolean ensureContinuousLabels) {
-        HashMap<Integer, ArrayList<Voxel3D>> objects = new HashMap<Integer, ArrayList<Voxel3D>>();
+        HashMap<Integer, ArrayList<Voxel>> objects = new HashMap<Integer, ArrayList<Voxel>>();
         int label;
         int sizeX = labelImage.getSizeX();
         for (int z = 0; z < labelImage.getSizeZ(); ++z) {
             for (int xy = 0; xy < labelImage.getSizeXY(); ++xy) {
                 label = labelImage.getPixelInt(xy, z);
                 if (label != 0) {
-                    ArrayList<Voxel3D> al = objects.get(label);
+                    ArrayList<Voxel> al = objects.get(label);
                     if (al == null) {
-                        al = new ArrayList<Voxel3D>();
+                        al = new ArrayList<Voxel>();
                         objects.put(label, al);
                     }
-                    al.add(new Voxel3D(xy % sizeX, xy / sizeX, z));
+                    al.add(new Voxel(xy % sizeX, xy / sizeX, z));
                 }
             }
         }
-        TreeMap<Integer, ArrayList<Voxel3D>> tm = new TreeMap(objects);
+        TreeMap<Integer, ArrayList<Voxel>> tm = new TreeMap(objects);
         Object3D[] res = new Object3D[tm.size()];
         int i = 0;
-        for (Entry<Integer, ArrayList<Voxel3D>> e : tm.entrySet()) {
+        for (Entry<Integer, ArrayList<Voxel>> e : tm.entrySet()) {
             res[i] = new Object3D(e.getValue(), ensureContinuousLabels?(i + 1):e.getKey());
             ++i;
         }
@@ -88,8 +88,7 @@ public class ObjectFactory {
         
         for (Entry<Integer, BoundingBox> e : bounds.entrySet()) {
             ImageByte label = labelImage.cropLabel(e.getKey(), e.getValue());
-            if (labelImage.getSizeZ()>1) res[i] = new Object3D<Voxel3D>(label, ensureContinuousLabels?(i + 1):e.getKey(), Voxel3D.class);
-            else res[i] = new Object3D(label, ensureContinuousLabels?(i + 1):e.getKey());
+            res[i] = new Object3D(label, ensureContinuousLabels?(i + 1):e.getKey());
             ++i;
         }
         return res;

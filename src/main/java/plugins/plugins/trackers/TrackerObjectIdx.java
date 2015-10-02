@@ -53,7 +53,7 @@ public class TrackerObjectIdx implements Tracker {
         Arrays.sort(previousCopy, getComparator(IndexingOrder.valueOf(order.getSelectedItem())));
         Arrays.sort(nextCopy, getComparator(IndexingOrder.valueOf(order.getSelectedItem())));
         for (int i = 0; i<Math.min(previous.length, next.length); ++i) {
-            nextCopy[i].setPreviousInTrack(previousCopy[i], true);
+            nextCopy[i].setPreviousInTrack(previousCopy[i], false);
             Plugin.logger.trace("assign previous {} to next {}", previousCopy[i], nextCopy[i]);
         }
     }

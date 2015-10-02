@@ -19,8 +19,8 @@ package image;
 
 import dataStructure.objects.Object3D;
 import dataStructure.objects.Object3D;
-import dataStructure.objects.Voxel3D;
-import dataStructure.objects.Voxel3D;
+import dataStructure.objects.Voxel;
+import dataStructure.objects.Voxel;
 import image.BlankMask;
 import image.ImageInt;
 import image.ImageInteger;
@@ -72,7 +72,7 @@ public class ImageLabeller {
         Object3D[] res = new Object3D[spots.size()];
         int label = 0;
         for (Spot s : spots.values()) {
-            ArrayList<Voxel3D> voxels = s.voxels;
+            ArrayList<Voxel> voxels = s.voxels;
             voxels = new ArrayList(new HashSet(voxels)); // revmove duplicate voxels because of neighbourhood overlap
             res[label++]= new Object3D(voxels, label);
         }
@@ -82,7 +82,7 @@ public class ImageLabeller {
     private void labelSpots() {
         int currentLabel = 1;
         Spot currentSpot;
-        Voxel3D v;
+        Voxel v;
         int nextLabel;
         int xy;
         for (int z = 0; z < mask.getSizeZ(); ++z) {
@@ -91,7 +91,7 @@ public class ImageLabeller {
                     xy = x + y * sizeX;
                     if (mask.insideMask(xy, z)) {
                         currentSpot = null;
-                        v = new Voxel3D(x, y, z);
+                        v = new Voxel(x, y, z);
                         for (int[] t : neigh) {
                             if (mask.contains(x + t[0], y + t[1], z + t[2])) {
                                 nextLabel = labels[z + t[2]][xy + t[0] + t[1] * sizeX];
@@ -117,24 +117,24 @@ public class ImageLabeller {
     
     private class Spot {
 
-        ArrayList<Voxel3D> voxels;
+        ArrayList<Voxel> voxels;
         int label;
 
-        public Spot(int label, Voxel3D v) {
+        public Spot(int label, Voxel v) {
             this.label = label;
-            this.voxels = new ArrayList<Voxel3D>();
+            this.voxels = new ArrayList<Voxel>();
             voxels.add(v);
             labels[v.z][v.x+v.y*sizeX] = label;
         }
 
-        public void addVox(Voxel3D v) {
+        public void addVox(Voxel v) {
             voxels.add(v);
             labels[v.z][v.x+v.y*sizeX] = label;
         }
 
         public void setLabel(int label) {
             this.label = label;
-            for (Voxel3D v : voxels) {
+            for (Voxel v : voxels) {
                 labels[v.z][v.x+v.y*sizeX] = label;
             }
         }

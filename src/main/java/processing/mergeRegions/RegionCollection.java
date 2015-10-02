@@ -2,8 +2,7 @@ package processing.mergeRegions;
 
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
-import dataStructure.objects.Voxel2D;
-import dataStructure.objects.Voxel3D;
+import dataStructure.objects.Voxel;
 import image.BoundingBox;
 import image.Image;
 import image.ImageFloat;
@@ -154,8 +153,8 @@ public class RegionCollection {
                         int label = labelMap.getPixelInt(x,y, z);
                         if (label!=0) {
                             Region r = regions.get(label);
-                            if (r==null) regions.put(label, new Region(label, new Voxel3D(x, y, z), this));
-                            else r.voxels.add(new Voxel3D(x, y, z));
+                            if (r==null) regions.put(label, new Region(label, new Voxel(x, y, z), this));
+                            else r.voxels.add(new Voxel(x, y, z));
                         }
                     }
                 }
@@ -167,8 +166,8 @@ public class RegionCollection {
                     int label = labelMap.getPixelInt(x,y, 0);
                     if (label!=0) {
                         Region r = regions.get(label);
-                        if (r==null) regions.put(label, new Region(label, new Voxel2D(x, y), this));
-                        else r.voxels.add(new Voxel2D(x, y));
+                        if (r==null) regions.put(label, new Region(label, new Voxel(x, y, 0), this));
+                        else r.voxels.add(new Voxel(x, y, 0));
                     }
                 }
             }

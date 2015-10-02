@@ -26,5 +26,5 @@ public interface Track {
     public StructureObjectPreProcessing getParent();
     public StructureObjectPreProcessing getPrevious();
     public StructureObjectPreProcessing getNext();
-    public void setPreviousInTrack(StructureObjectPreProcessing parent, boolean isChildOfParent);
+    public void setPreviousInTrack(StructureObjectPreProcessing previous, boolean isTrackHead);
 }

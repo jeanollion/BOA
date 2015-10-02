@@ -60,6 +60,14 @@ public class Structure extends SimpleContainerParameter {
         return processingChain;
     }
     
+    public boolean hasSegmenter() {
+        return processingChain.segmenter.isOnePluginSet() && processingChain.segmenter.isActivated();
+    }
+    
+    public boolean hasTracker() {
+        return tracker.isOnePluginSet();
+    }
+    
     public Tracker getTracker() {
         return this.tracker.getPlugin();
     }

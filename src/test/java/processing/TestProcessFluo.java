@@ -69,21 +69,18 @@ public class TestProcessFluo {
     
     public static void main(String[] args) {
         //new TestProcessFluo().testRotation();
-        //new TestProcessFluo().testSegBacteries();
-        TestProcessFluo t = new TestProcessFluo();
-        t.setUpXp(true);
-        t.saveXP("testFluo");
+        new TestProcessFluo().testSegBacteries();
     }
     
     
     
-    public void setUpXp(boolean preProcessing) {
+    public void setUpXp(boolean preProcessing, String outputDir) {
         PluginFactory.findPlugins("plugins.plugins");
         xp = new Experiment("testXP");
         xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
         xp.getChannelImages().insert(new ChannelImage("trans", "_REF"), new ChannelImage("fluo", ""));
-        xp.setOutputImageDirectory("/data/Images/Fluo/OutputTest");
-        File f =  new File("/data/Images/Fluo/OutputTest"); f.mkdirs(); deleteDirectory(f);
+        xp.setOutputImageDirectory(outputDir);
+        File f =  new File(outputDir); f.mkdirs(); //deleteDirectory(f);
         Structure mc = new Structure("MicroChannel", -1, 0);
         Structure bacteria = new Structure("Bacteria", 0, 0);
         Structure mutation = new Structure("Mutation", 1, 1);
@@ -119,7 +116,7 @@ public class TestProcessFluo {
     
     //@Test
     public void testImport(String inputDir) {
-        setUpXp(false);
+        setUpXp(false, "/data/Images/Fluo/OutputTest");
         String[] files = new String[]{inputDir}; //       /data/Images/Fluo/me121r-1-9-15-lbiptg100x /data/Images/Fluo/test
         Processor.importFiles(files, xp);
         //assertEquals("number of fields detected", 1, xp.getMicroscopyFields().getChildCount());
@@ -145,7 +142,7 @@ public class TestProcessFluo {
             xp.getMicroscopyField(i).getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
 
             disp.showImage(xp.getMicroscopyField(i).getInputImages().getImage(0, 0).duplicate("input:"+xp.getMicroscopyField(i).getName()));
-            Processor.setTransformationsAndComputeConfigurationData(xp.getMicroscopyField(i));
+            Processor.setTransformations(xp.getMicroscopyField(i), true);
             disp.showImage(xp.getMicroscopyField(i).getInputImages().getImage(0, 0).duplicate("output:"+xp.getMicroscopyField(i).getName()));
         }
     }
@@ -186,7 +183,7 @@ public class TestProcessFluo {
         
         //ImageDisplayer disp = new IJImageDisplayer();
         //disp.showImage(xp.getMicroscopyField(fieldIdx).getInputImages().getImage(0, 0).duplicate("input:"+fieldIdx));
-        Processor.setTransformationsAndComputeConfigurationData(xp.getMicroscopyField(fieldIdx));
+        Processor.setTransformations(xp.getMicroscopyField(fieldIdx), true);
         //disp.showImage(xp.getMicroscopyField(fieldIdx).getInputImages().getImage(0, 0).duplicate("output:"+fieldIdx));
     }
     
@@ -206,8 +203,8 @@ public class TestProcessFluo {
     
     public void testSegBacteries() {
         testCrop("/data/Images/Fluo/testsub");
-        Image image = xp.getMicroscopyField(0).getInputImages().getImage(0, 0);
-        ArrayList<Object3D> objects = MicroChannelFluo2D.getObjects(image, 350, 30, 15);
+        Image image = xp.getMicroscopyField(0).getInputImages().getImage(0, 3);
+        ArrayList<Object3D> objects = MicroChannelFluo2D.getObjects(image, 350, 30, 5);
         Object3D o = objects.get(2);
         ImageMask parentMask = o.getMask();
         Image input = image.crop(o.getBounds());
@@ -215,8 +212,8 @@ public class TestProcessFluo {
         disp.showImage(input);
         //double thld = IJAutoThresholder.runThresholder(input, null, AutoThresholder.Method.Triangle);
         //logger.debug("thld: {}", thld);
-        ObjectPopulation pop = BacteriesFluo2D.run(input, parentMask, 15, 0.3);
-        //ObjectPopulation pop = BacteriesFluo2D.run(input, parentMask, 4, 12);
+        BacteriesFluo2D.debug=true;
+        ObjectPopulation pop = BacteriesFluo2D.run(input, parentMask, 15, 0.3, 0.0001);
         disp.showImage(pop.getLabelImage());
     }
 }

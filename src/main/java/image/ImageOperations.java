@@ -17,7 +17,7 @@
  */
 package image;
 
-import dataStructure.objects.Voxel3D;
+import dataStructure.objects.Voxel;
 import static image.ImageOperations.Axis.*;
 
 /**
@@ -161,9 +161,10 @@ public class ImageOperations {
     public static Image multiply(Image source1, Image output, double coeff) {
         if (output==null) output = Image.createEmptyImage(source1.getName()+" x "+coeff, source1, source1);
         else if (!output.sameSize(source1)) output = Image.createEmptyImage(source1.getName()+" x "+coeff, output, source1);
+        double round = output instanceof ImageInteger?0.5:0;
         for (int z = 0; z<output.sizeZ; ++z) {
             for (int xy=0; xy<output.sizeXY; ++xy) {
-                output.setPixel(xy, z, source1.getPixel(xy, z)*coeff);
+                output.setPixel(xy, z, source1.getPixel(xy, z)*coeff+round);
             }
         } 
         return output;
@@ -304,7 +305,7 @@ public class ImageOperations {
         return (double) (idx + idxInc) * binSize + mm[0];
     }
     
-    public static Voxel3D getGlobalExtremum(Image image, BoundingBox area, boolean max) {
+    public static Voxel getGlobalExtremum(Image image, BoundingBox area, boolean max) {
         float extrema = image.getPixel(area.getxMin(), area.getyMin(), area.getzMin());
         int xEx=area.getxMin(), yEx=area.getyMin(), zEx=area.getzMin();
         if (max) {
@@ -330,7 +331,7 @@ public class ImageOperations {
                 }
             }
         }
-        return new Voxel3D(xEx, yEx, zEx, extrema);  
+        return new Voxel(xEx, yEx, zEx, extrema);  
             
     }
     

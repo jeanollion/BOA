@@ -15,21 +15,16 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package measurement;
-
-import dataStructure.objects.Object3D;
-import dataStructure.objects.Voxel;
-import image.Image;
+package processing;
 
 /**
  *
  * @author jollion
  */
-public class BasicMeasurements {
-    public static double getMeanValue(Object3D object, Image image) {
-        double value=0;
-        for (Voxel v : object.getVoxels()) value+=image.getPixel(v.x, v.y, v.z);
-        if (!object.getVoxels().isEmpty()) return value/object.getVoxels().size();
-        else return 0;
+public class GenerateTestXP {
+    public static void main(String[] args) {
+        TestProcessFluo t = new TestProcessFluo();
+        t.setUpXp(true, "/data/Images/Fluo/OutputTestGUI");
+        t.saveXP("testFluo");
     }
 }

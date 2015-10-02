@@ -22,8 +22,6 @@ import static core.Processor.logger;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.Voxel;
-import dataStructure.objects.Voxel2D;
-import dataStructure.objects.Voxel3D;
 import image.BlankMask;
 import image.Image;
 import image.ImageInteger;
@@ -87,19 +85,19 @@ public class WatershedTransform {
         }
         while (!heap.isEmpty()) {
             Voxel v = heap.pollFirst();
-            Spot currentSpot = spots[segmentedMap.getPixelInt(v.x, v.y, v.getZ())];
+            Spot currentSpot = spots[segmentedMap.getPixelInt(v.x, v.y, v.z)];
             EllipsoidalNeighborhood neigh = watershedMap.getSizeZ()>1?new EllipsoidalNeighborhood(1.5, 1.5, true) : new EllipsoidalNeighborhood(1.5, true);
             Voxel next;
             for (int i = 0; i<neigh.getSize(); ++i) {
-                next = is3D?new Voxel3D(v.x+neigh.dx[i], v.y+neigh.dy[i], v.getZ()+neigh.dz[i]):new Voxel2D(v.x+neigh.dx[i], v.y+neigh.dy[i]);
+                next = new Voxel(v.x+neigh.dx[i], v.y+neigh.dy[i], v.z+neigh.dz[i]);
                 //logger.trace("voxel: {} next: {}, mask contains: {}, insideMask: {}",v, next, mask.contains(next.x, next.y, next.getZ()) , mask.insideMask(next.x, next.y, next.getZ()));
-                if (mask.contains(next.x, next.y, next.getZ()) && mask.insideMask(next.x, next.y, next.getZ())) propagate(currentSpot,v, next);
+                if (mask.contains(next.x, next.y, next.z) && mask.insideMask(next.x, next.y, next.z)) propagate(currentSpot,v, next);
             }
         }
     }
     
     protected Spot propagate(Spot currentSpot, Voxel currentVoxel, Voxel nextVox) { /// nextVox.value = 0 at this step
-        int label = segmentedMap.getPixelInt(nextVox.x, nextVox.y, nextVox.getZ());
+        int label = segmentedMap.getPixelInt(nextVox.x, nextVox.y, nextVox.z);
         if (label!=0) {
             if (label!=currentSpot.label) {
                 Spot s2 = spots[label];
@@ -107,7 +105,7 @@ public class WatershedTransform {
                 else heap.remove(nextVox); // FIXME ??et dans les autres directions?
             }
         } else if (continuePropagation(currentVoxel, nextVox)) {
-            nextVox.value=watershedMap.getPixel(nextVox.x, nextVox.y, nextVox.getZ());
+            nextVox.value=watershedMap.getPixel(nextVox.x, nextVox.y, nextVox.z);
             currentSpot.addVox(nextVox);
             heap.add(nextVox);
         }
@@ -139,9 +137,9 @@ public class WatershedTransform {
             this.label=label;
             this.voxels=voxels;
             for (Voxel v :voxels) {
-                v.value=watershedMap.getPixel(v.x, v.y, v.getZ());
+                v.value=watershedMap.getPixel(v.x, v.y, v.z);
                 heap.add(v);
-                segmentedMap.setPixel(v.x, v.y, v.getZ(), label);
+                segmentedMap.setPixel(v.x, v.y, v.z, label);
             }
             //this.seed=seeds.get(0);
             //logger.debug("spot: {} seed size: {} seed {}",label, seeds.size(), seed);
@@ -150,7 +148,7 @@ public class WatershedTransform {
         
         public void setLabel(int label) {
             this.label=label;
-            for (Voxel v : voxels) segmentedMap.setPixel(v.x, v.y, v.getZ(), label);
+            for (Voxel v : voxels) segmentedMap.setPixel(v.x, v.y, v.z, label);
         }
 
         public Spot fusion(Spot spot) {
@@ -165,7 +163,7 @@ public class WatershedTransform {
         public void addVox(Voxel v) {
             if (!voxels.contains(v)) {
                 voxels.add(v);
-                segmentedMap.setPixel(v.x, v.y, v.getZ(), label);
+                segmentedMap.setPixel(v.x, v.y, v.z, label);
             }
         }
         
