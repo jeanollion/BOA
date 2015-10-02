@@ -17,6 +17,8 @@
  */
 package processing;
 
+import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.imageInteraction.ImageDisplayer;
 import ij.ImagePlus;
 import ij.measure.Calibration;
 import image.IJImageWrapper;
@@ -228,7 +230,7 @@ public class ImageFeatures {
                 res = LoG.doLoG(in, radX, radX);
             }
             res.invert();
-        return (ImageFloat)IJImageWrapper.wrap(new ImagePlus("LoG of "+image.getName(), res.buildImageStack()));
+        return (ImageFloat)IJImageWrapper.wrap(new ImagePlus("LoG of "+image.getName(), res.buildImageStack())).setCalibration(image).resetOffset().addOffset(image);
     }
     
 }

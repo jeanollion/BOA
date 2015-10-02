@@ -69,10 +69,10 @@ public class TestProcessFluo {
     
     public static void main(String[] args) {
         //new TestProcessFluo().testRotation();
-        new TestProcessFluo().testSegBacteries();
-        /*TestProcessFluo t = new TestProcessFluo();
+        //new TestProcessFluo().testSegBacteries();
+        TestProcessFluo t = new TestProcessFluo();
         t.setUpXp(true);
-        t.saveXP("testFluo");*/
+        t.saveXP("testFluo");
     }
     
     
@@ -207,7 +207,7 @@ public class TestProcessFluo {
     public void testSegBacteries() {
         testCrop("/data/Images/Fluo/testsub");
         Image image = xp.getMicroscopyField(0).getInputImages().getImage(0, 0);
-        ArrayList<Object3D> objects = MicroChannelFluo2D.getObjects(image, 350, 45, 15);
+        ArrayList<Object3D> objects = MicroChannelFluo2D.getObjects(image, 350, 30, 15);
         Object3D o = objects.get(2);
         ImageMask parentMask = o.getMask();
         Image input = image.crop(o.getBounds());
@@ -215,8 +215,8 @@ public class TestProcessFluo {
         disp.showImage(input);
         //double thld = IJAutoThresholder.runThresholder(input, null, AutoThresholder.Method.Triangle);
         //logger.debug("thld: {}", thld);
-        //ObjectPopulation pop = BacteriesFluo2D.run(input, parentMask, 15, 0.3);
-        ObjectPopulation pop = BacteriesFluo2D.run(input, parentMask, 4, 12);
+        ObjectPopulation pop = BacteriesFluo2D.run(input, parentMask, 15, 0.3);
+        //ObjectPopulation pop = BacteriesFluo2D.run(input, parentMask, 4, 12);
         disp.showImage(pop.getLabelImage());
     }
 }

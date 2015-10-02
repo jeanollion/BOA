@@ -132,7 +132,7 @@ public class ParameterUtils {
     }
 
     public static Object duplicateConfigurationData(Object in) {
-        logger.debug("duplicating config data: {}", in);
+        //logger.debug("duplicating config data: {}", in);
         if (in != null) {
             if (in instanceof Number) {
                 if (in instanceof Double || in instanceof Float) {

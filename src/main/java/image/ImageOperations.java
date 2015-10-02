@@ -17,6 +17,7 @@
  */
 package image;
 
+import dataStructure.objects.Voxel3D;
 import static image.ImageOperations.Axis.*;
 
 /**
@@ -234,6 +235,42 @@ public class ImageOperations {
         return res;
     }
     
+    /**
+     * 
+     * @param image
+     * @param axis along which project values
+     * @param limit projection within the boundingbox
+     * @return 
+     */
+    public static float[] maxProjection(Image image, Axis axis, BoundingBox limit) {
+        float[] res;
+        float value;
+        if (limit==null) limit = new BoundingBox(image, false);
+        if (axis.equals(X)) {
+            res = new float[limit.getSizeX()];
+            for (int x = limit.getxMin(); x<=limit.getxMax(); ++x) {
+                float max=image.getPixel(x, limit.getyMin(), limit.getzMin());
+                for (int z=limit.getzMin(); z<=limit.getzMax(); ++z) for (int y=limit.getyMin(); y<=limit.getyMax(); ++y) {value=image.getPixel(x, y, z); if (value>max) max=value;}
+                res[x-limit.getxMin()]=max;
+            }
+        } else if (axis.equals(Y)) {
+            res = new float[limit.getSizeY()];
+            for (int y = limit.getyMin(); y<=limit.getyMax(); ++y) {
+                float max=image.getPixel(limit.getxMin(), y, limit.getzMin());
+                for (int z=limit.getzMin(); z<=limit.getzMax(); ++z) for (int x=limit.getxMin(); x<=limit.getxMax(); ++x) {value=image.getPixel(x, y, z); if (value>max) max=value;}
+                res[y-limit.getyMin()]=max;
+            }
+        } else {
+            res = new float[limit.getSizeZ()];
+            for (int z = limit.getzMin(); z<=limit.getzMax(); ++z) {
+                float max=image.getPixel(limit.getxMin(), limit.getyMin(), z);
+                for (int x=limit.getxMin(); x<=limit.getxMax(); ++x) for (int y=limit.getyMin(); y<=limit.getyMax(); ++y) {value=image.getPixel(x, y, z); if (value>max) max=value;}
+                res[z-limit.getzMin()]=max;
+            }
+        }
+        return res;
+    }
+    
     public static ImageFloat normalize(Image input, ImageMask mask, ImageFloat output) {
         float[] mm = input.getMinAndMax(mask);
         if (output==null || !output.sameSize(input)) output = new ImageFloat(input.getName()+" normalized", input);
@@ -248,7 +285,7 @@ public class ImageOperations {
         }
         return output;
     }
-    public static double getPercentile(Image image, double percent, ImageInt mask) {
+    public static double getPercentile(Image image, double percent, ImageMask mask) {
         float[] mm = image.getMinAndMax(mask);
         int[] histo = image.getHisto256(mm[0], mm[1], mask);
         double binSize = (image instanceof ImageByte) ? 1: (mm[1]-mm[0]) / 256d;
@@ -265,5 +302,46 @@ public class ImageOperations {
         double idxInc = (histo[idx] != 0) ? (count - limit) / (histo[idx]) : 0; //lin approx
         //ij.IJ.log("percentile: bin:"+idx+ " inc:"+ idxInc+ " min:"+min+ " max:"+max);
         return (double) (idx + idxInc) * binSize + mm[0];
+    }
+    
+    public static Voxel3D getGlobalExtremum(Image image, BoundingBox area, boolean max) {
+        float extrema = image.getPixel(area.getxMin(), area.getyMin(), area.getzMin());
+        int xEx=area.getxMin(), yEx=area.getyMin(), zEx=area.getzMin();
+        if (max) {
+            for (int z= area.getzMin();z<=area.getzMax();++z) {
+                for (int y = area.getyMin(); y<=area.getyMax(); y++) {
+                    for (int x=area.getxMin(); x<=area.getxMax(); ++x) {
+                        if (image.getPixel(x, y, z)>extrema) {
+                            extrema = image.getPixel(x, y, z); 
+                            yEx=y; xEx=x; zEx=z;
+                        }
+                    }
+                }
+            }
+        } else {
+            for (int z= area.getzMin();z<=area.getzMax();++z) {
+                for (int y = area.getyMin(); y<=area.getyMax(); y++) {
+                    for (int x=area.getxMin(); x<=area.getxMax(); ++x) {
+                        if (image.getPixel(x, y, z)<extrema) {
+                            extrema = image.getPixel(x, y, z); 
+                            yEx=y; xEx=x; zEx=z;
+                        }
+                    }
+                }
+            }
+        }
+        return new Voxel3D(xEx, yEx, zEx, extrema);  
+            
+    }
+    
+    public static void fill(Image image, double value, BoundingBox area) {
+        if (area==null) area=image.getBoundingBox().translateToOrigin();
+        for (int z= area.getzMin();z<=area.getzMax();++z) {
+            for (int y = area.getyMin(); y<=area.getyMax(); y++) {
+                for (int x=area.getxMin(); x<=area.getxMax(); ++x) {
+                    image.setPixel(x, y, z, value);
+                }
+            }
+        }
     }
 }

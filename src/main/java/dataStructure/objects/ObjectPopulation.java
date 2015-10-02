@@ -23,6 +23,7 @@ import image.BoundingBox;
 import image.ImageByte;
 import image.ImageInt;
 import image.ImageInteger;
+import image.ImageOperations;
 import image.ImageProperties;
 import image.ImageShort;
 import image.ObjectFactory;
@@ -106,6 +107,7 @@ public class ObjectPopulation {
     public void relabel() {
         int idx = 1;
         if (hasImage()) {
+            ImageOperations.fill(labelImage, 0, null);
             for (Object3D o : getObjects()) {
                 o.label = idx++;
                 o.draw(labelImage, o.label);
