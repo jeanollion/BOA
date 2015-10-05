@@ -35,27 +35,52 @@ import image.ImageShort;
 import image.TypeConverter;
 import java.awt.Color;
 import java.awt.image.ColorModel;
+import java.util.HashMap;
 
 /**
  *
  * @author jollion
  */
 public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
-    public void showImage(Image image) {
+    protected HashMap<Image, ImagePlus> displayedImages=new HashMap<Image, ImagePlus>();
+    protected HashMap<ImagePlus, Image> displayedImagesInv=new HashMap<ImagePlus, Image>();
+    @Override public void showImage(Image image) {
         if (IJ.getInstance()==null) new ImageJ();
-        ImagePlus ip = IJImageWrapper.getImagePlus(image);
+        ImagePlus ip = getImage(image);
         float[] minAndMax = image.getMinAndMax(null);
         ip.setDisplayRange(minAndMax[0], minAndMax[1]);
         ip.show();
     }
+    
+    @Override public ImagePlus getImage(Image image) {
+        if (image==null) return null;
+        ImagePlus ip = displayedImages.get(image);
+        if (ip==null) {
+            ip= IJImageWrapper.getImagePlus(image);
+            displayedImages.put(image, ip);
+            displayedImagesInv.put(ip, image);
+        }
+        return ip;
+    }
+    
+    @Override public Image getImage(ImagePlus image) {
+        if (image==null) return null;
+        Image im = displayedImagesInv.get(image);
+        if (im==null) {
+            im= IJImageWrapper.wrap(image);
+            displayedImagesInv.put(image, im);
+            displayedImages.put(im, image);
+        }
+        return im;
+    }
 
-    public void showImage(ImagePlus image) {
+    /*public void showImage(ImagePlus image) {
         if (IJ.getInstance()==null) new ImageJ();
         StackStatistics s = new StackStatistics(image);
         logger.trace("display range: min: {} max: {}", s.min, s.max);
         image.setDisplayRange(s.min, s.max);
         image.show();
-    }
+    }*/
     
     public void showImage5D(String title, Image[][] imageTC) {
         if (IJ.getInstance()==null) new ImageJ();
@@ -106,7 +131,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
             for (int i = 0; i < images.length; i++) {
                 for (int j = 0; j<images[i].length; j++) {
                     if (images[i][j] instanceof ImageByte || images[i][j] instanceof ImageShort) {
-                        images[i][j] = TypeConverter.toFloat(images[i][j]);
+                        images[i][j] = TypeConverter.toFloat(images[i][j], null);
                     }
                 }
             }
@@ -114,10 +139,15 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
             for (int i = 0; i < images.length; i++) {
                 for (int j = 0; j<images[i].length; j++) {
                     if (images[i][j] instanceof ImageByte) {
-                        images[i][j] = TypeConverter.toShort(images[i][j]);
+                        images[i][j] = TypeConverter.toShort(images[i][j], null);
                     }
                 }
             }
         }
     }
+
+    @Override public void updateImageDisplay(Image image) {
+        if (this.displayedImages.containsKey(image)) displayedImages.get(image).updateAndDraw();
+    }
+
 }

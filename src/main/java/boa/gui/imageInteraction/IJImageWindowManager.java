@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 nasique
+ * Copyright (C) 2015 jollion
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -55,19 +55,21 @@ import java.util.Map.Entry;
  * @author nasique
  */
 public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
-
+    
     public IJImageWindowManager(ImageObjectListener listener) {
         super(listener, new IJImageDisplayer());
     }
     
-    @Override
+    /*@Override
     protected ImagePlus getImage(Image image) {
         return IJImageWrapper.getImagePlus(image);
-    }
+    }*/
     
     @Override
-    public void addMouseListener(final ImagePlus image) {
-        final ImageCanvas canvas = image.getWindow().getCanvas();
+    public void addMouseListener(final Image image) {
+        final ImagePlus ip = displayer.getImage(image);
+        if (ip.getWindow()==null) displayer.showImage(image);
+        final ImageCanvas canvas = ip.getWindow().getCanvas();
         
         canvas.addMouseListener(new MouseListener() {
 
@@ -82,9 +84,9 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
 		int offscreenY = canvas.offScreenY(y);
                 boolean ctrl = (e.getModifiers() & ActionEvent.CTRL_MASK) == ActionEvent.CTRL_MASK;
                 //logger.trace("mousepressed: x={}, y={} ctrl: {}", offscreenX, offscreenY, ctrl);
-                ImageObjectInterface i = get(image);
+                ImageObjectInterface i = getImageObjectInterface(image);
                 if (i!=null) {
-                    StructureObject o = i.getClickedObject(offscreenX, offscreenY, image.getSlice()-1);
+                    StructureObject o = i.getClickedObject(offscreenX, offscreenY, ip.getSlice()-1);
                     selectObjects(image, ctrl, o);
                     logger.trace("selected object: "+o);
                     listener.fireObjectSelected(o, i.isTimeImage());
@@ -105,30 +107,32 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
         });
     }
 
-    @Override
-    public void removeClickListener(ImagePlus image) {
+    /*@Override
+    public void removeClickListener(Image image) {
         ImageCanvas canvas = image.getWindow().getCanvas();
         for (MouseListener l : canvas.getMouseListeners()) canvas.removeMouseListener(l);
-    }
+    }*/
 
     @Override
-    public void selectObjects(ImagePlus image, boolean addToCurrentSelection, StructureObject... selectedObjects) {
-        if (image==null) image = getCurrentImage();
-        if (image==null) return;
+    public void selectObjects(Image image, boolean addToCurrentSelection, StructureObject... selectedObjects) {
+        ImagePlus ip;
+        if (image==null) ip = getCurrentImage();
+        else ip = displayer.getImage(image);
+        if (ip==null) return;
         if (selectedObjects==null || selectedObjects.length==0 || (selectedObjects.length==1 && selectedObjects[0]==null)) {
             if (!addToCurrentSelection) {
-                if (image.getOverlay()!=null) {
-                    removeAllRois(image.getOverlay(), false);
-                    image.updateAndDraw();
+                if (ip.getOverlay()!=null) {
+                    removeAllRois(ip.getOverlay(), false);
+                    ip.updateAndDraw();
                 }
             }
             return;
         }
-        ImageObjectInterface i = get(image);
+        ImageObjectInterface i = getImageObjectInterface(image);
         if (i!=null) {
             Overlay overlay;
-            if (image.getOverlay()!=null) {
-                overlay=image.getOverlay();
+            if (ip.getOverlay()!=null) {
+                overlay=ip.getOverlay();
                 if (!addToCurrentSelection) removeAllRois(overlay, false);
             } else overlay=new Overlay();
             for (StructureObject o : selectedObjects) {
@@ -138,41 +142,51 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                     logger.trace("add roi: "+r+ " of bounds : "+r.getBounds()+" to overlay");
                 }
             }
-            image.setOverlay(overlay);
+            ip.setOverlay(overlay);
         }
     }
     
     @Override
-    public void displayTrack(ImagePlus image, boolean addToCurrentSelectedTracks, StructureObject[] track, Color color) {
-        logger.trace("display selected track: image: {}, addToCurrentTracks: {}, track length: {} color: {}", image,addToCurrentSelectedTracks, track==null?0:track.length, color);
-        if (image==null) image = getCurrentImage();
-        if (image==null) return;
+    public void displayTrack(Image image, boolean addToCurrentSelectedTracks, StructureObject[] track, Color color) {
+        logger.trace("display selected track: image: {}, addToCurrentTracks: {}, track length: {} color: {}", image,addToCurrentSelectedTracks, track==null?"null":track.length, color);
+        ImagePlus ip;
+        if (image==null) {
+            ip = getCurrentImage();
+            image = displayer.getImage(ip);
+        } else ip = displayer.getImage(image);
+        if (ip==null || image==null) {
+            logger.warn("no displayed track image found");
+            return;
+        }
         if (track==null) {
             if (!addToCurrentSelectedTracks) {
-                if (image.getOverlay()!=null) {
-                    removeAllRois(image.getOverlay(), true);
-                    image.updateAndDraw();
+                if (ip.getOverlay()!=null) {
+                    removeAllRois(ip.getOverlay(), true);
+                    ip.updateAndDraw();
                 }
             }
             return;
         }
-        ImageObjectInterface i = get(image);
+        ImageObjectInterface i = getImageObjectInterface(image);
         if (i instanceof TrackMask && ((TrackMask)i).containsTrack(track[0])) {
             TrackMask tm = (TrackMask)i;
             Overlay overlay;
-            if (image.getOverlay()!=null) {
-                overlay=image.getOverlay();
+            if (ip.getOverlay()!=null) {
+                overlay=ip.getOverlay();
                 if (!addToCurrentSelectedTracks) removeAllRois(overlay, true);
             } else overlay=new Overlay();
-            for (int idx = 0; idx<track.length-1; ++idx) {
-                BoundingBox b1 = tm.getObjectOffset(track[idx]);
-                BoundingBox b2 = tm.getObjectOffset(track[idx+1]);
+            for (int idx = 0; idx<track.length; ++idx) {
+                StructureObject o1 = idx==0?track[0].getPrevious() : track[idx-1];
+                if (o1==null) continue;
+                StructureObject o2 = track[idx];
+                BoundingBox b1 = tm.getObjectOffset(o1);
+                BoundingBox b2 = tm.getObjectOffset(o2);
                 
                 Arrow arrow = new Arrow(b1.getXMean(), b1.getYMean(), b2.getXMean(), b2.getYMean());
-                arrow.setStrokeColor(color);
-                arrow.setStrokeWidth(1);
-                arrow.setHeadSize(2);
-                if (track[idx].getNext()==track[idx+1]) arrow.setDoubleHeaded(true);
+                arrow.setStrokeColor(o2.hasTrackLinkError()?Color.red : color);
+                arrow.setStrokeWidth(trackArrowStrokeWidth);
+                arrow.setHeadSize(trackArrowStrokeWidth*1.5);
+                if (o1.getNext()==o2) arrow.setDoubleHeaded(true);
                 
                 int zMin = Math.max(b1.getzMin(), b2.getzMin());
                 int zMax = Math.min(b1.getzMax(), b2.getzMax());
@@ -183,7 +197,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                 } else {
                     if (zMin>zMax) {
                         int tmp = zMax;
-                        zMax=zMin<(image.getNSlices()-1)?zMin+1:zMin;
+                        zMax=zMin<(ip.getNSlices()-1)?zMin+1:zMin;
                         zMin=tmp>0?tmp-1:tmp;
                     }
                     for (int z = zMin; z <= zMax; ++z) {
@@ -194,8 +208,9 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                     }
                 }
             }
-            image.setOverlay(overlay);
-        }
+            ip.setOverlay(overlay);
+            ip.updateAndDraw();
+        } else logger.warn("image cannot display selected track: ImageObjectInterface null? {}, is Track? {}", i==null, i instanceof TrackMask);
     } 
     
     private static void removeAllRois(Overlay overlay, boolean arrows) {
@@ -215,9 +230,10 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
     }
 
     @Override
-    public void unselectObjects(ImagePlus image) {
+    public void unselectObjects(Image image) {
         //removeScrollListeners(image);
-        image.setOverlay(null);
+        ImagePlus ip = displayer.getImage(image);
+        if (ip!=null) ip.setOverlay(null);
     }
     
     private HashMap<Integer, Roi> getRoi(ImageInteger mask, BoundingBox offset) {

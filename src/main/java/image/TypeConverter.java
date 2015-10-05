@@ -26,49 +26,68 @@ public class TypeConverter {
     /**
      * 
      * @param image input image to be converted
+     * @param output image to cast values to. if null, a new image will be created
      * @return a new ImageFloat values casted as float
      */
-    public static ImageFloat toFloat(Image image) {
-        ImageFloat res = new ImageFloat(image.getName(), image);
-        float[][] newPixels = res.getPixelArray();
+    public static ImageFloat toFloat(Image image, ImageFloat output) {
+        if (output==null || !output.sameSize(image)) output = new ImageFloat(image.getName(), image);
+        float[][] newPixels = output.getPixelArray();
         for (int z = 0; z<image.getSizeZ(); ++z) {
             for (int xy = 0; xy<image.getSizeXY(); ++xy) {
                 newPixels[z][xy]=image.getPixel(xy, z);
             }
         }
-        return res;
+        return output;
     }
     
     /**
      * 
      * @param image input image to be converted
+     * @param output image to cast values to. if null, a new image will be created
      * @return a new ImageShort values casted as short (if values exceed 65535 they will be equal to 65535) 
      */
-    public static ImageShort toShort(Image image) {
-        ImageShort res = new ImageShort(image.getName(), image);
-        short[][] newPixels = res.getPixelArray();
+    public static ImageShort toShort(Image image, ImageShort output) {
+        if (output==null || !output.sameSize(image)) output = new ImageShort(image.getName(), image);
         for (int z = 0; z<image.getSizeZ(); ++z) {
             for (int xy = 0; xy<image.getSizeXY(); ++xy) {
-                newPixels[z][xy]=(short)image.getPixel(xy, z);
+                output.setPixel(xy, z, image.getPixel(xy, z)+0.5);
             }
         }
-        return res;
+        return output;
     }
     
     /**
      * 
      * @param image input image to be converted
+     * @param output image to cast values to. if null, a new image will be created
+     * @return a new ImageShort values casted as short (if values exceed 65535 they will be equal to 65535) 
+     */
+    public static ImageByte toByte(Image image, ImageByte output) {
+        if (output==null || !output.sameSize(image)) output = new ImageByte(image.getName(), image);
+        for (int z = 0; z<image.getSizeZ(); ++z) {
+            for (int xy = 0; xy<image.getSizeXY(); ++xy) {
+                output.setPixel(xy, z, image.getPixel(xy, z)+0.5);
+            }
+        }
+        return output;
+    }
+    
+    
+    /**
+     * 
+     * @param image input image to be converted
+     * @param output image to cast values to. if null, a new image will be created
      * @return a mask represented as an ImageByte, each non-zero voxel of {@param image} has a value of 1
      */
-    public static ImageByte toByteMask(ImageMask image) {
-        ImageByte res = new ImageByte(image.getName(), image);
-        byte[][] newPixels = res.getPixelArray();
+    public static ImageByte toByteMask(ImageMask image, ImageByte output) {
+        if (output==null || !output.sameSize(image)) output = new ImageByte(image.getName(), image);
+        byte[][] newPixels = output.getPixelArray();
         for (int z = 0; z<image.getSizeZ(); ++z) {
             for (int xy = 0; xy<image.getSizeXY(); ++xy) {
                 if (image.insideMask(xy, z)) newPixels[z][xy] = 1;
             }
         }
-        return res;
+        return output;
     }
     /**
      * 
@@ -79,10 +98,23 @@ public class TypeConverter {
         if (image instanceof ImageByte || image instanceof ImageShort || image instanceof ImageFloat) return image;
         else if (image instanceof ImageInt) {
             float[] mm = image.getMinAndMax(null);
-            if (mm[1]>(65535)) return toFloat(image);
-            else return toShort(image);
+            if (mm[1]>(65535)) return toFloat(image, null);
+            else return toShort(image, null);
         }
-        else if (image instanceof ImageMask) return toByteMask((ImageMask)image);
-        else return toFloat(image);
+        else if (image instanceof ImageMask) return toByteMask((ImageMask)image, null);
+        else return toFloat(image, null);
+    }
+    
+    public static <T extends Image> T cast(Image source, T output) {
+        if (output instanceof ImageByte) {
+            if (source instanceof ImageByte) return (T)source;
+            return (T)toByte(source, (ImageByte)output);
+        } else if (output instanceof ImageShort) {
+            if (source instanceof ImageShort) return (T)source;
+            return (T)toShort(source, (ImageShort)output);
+        } else if (output instanceof ImageFloat) {
+            if (source instanceof ImageFloat) return (T)source;
+            return (T)toFloat(source, (ImageFloat)output);
+        } else throw new IllegalArgumentException("Output should be of type byte, short, or float, but is: {}"+ output.getClass().getSimpleName());
     }
 }

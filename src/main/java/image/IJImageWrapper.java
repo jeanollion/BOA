@@ -86,9 +86,9 @@ public class IJImageWrapper {
                 st.setPixels(pixels[z], z + 1);
             }
         } else if (image instanceof ImageInt) {
-            return getImagePlus(TypeConverter.toFloat(image));
+            return getImagePlus(TypeConverter.toFloat(image, null));
         } else if (image instanceof ImageMask) {
-            return getImagePlus(TypeConverter.toByteMask((ImageMask)image));
+            return getImagePlus(TypeConverter.toByteMask((ImageMask)image, null));
         }
         ImagePlus ip= new ImagePlus(image.getName(), st);
         Calibration cal = new Calibration();

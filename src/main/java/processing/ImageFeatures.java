@@ -227,7 +227,7 @@ public class ImageFeatures {
     
     public static ImageFloat differenceOfGaussians(Image image, double scaleXYMin, double scaleXYMax, double ratioScaleZ, boolean trimNegativeValues, boolean overideIfFloat) {
         Image bcg = gaussianSmooth(image, scaleXYMax, scaleXYMax*ratioScaleZ, false);
-        ImageFloat fore = scaleXYMin>0?gaussianSmooth(image, scaleXYMin, scaleXYMin*ratioScaleZ, overideIfFloat):TypeConverter.toFloat(image);
+        ImageFloat fore = scaleXYMin>0?gaussianSmooth(image, scaleXYMin, scaleXYMin*ratioScaleZ, overideIfFloat):TypeConverter.toFloat(image, null);
         fore = (ImageFloat)ImageOperations.addImage(fore, bcg, fore, -1);
         if (trimNegativeValues) ImageOperations.trim(fore, 0, true, true);
         return fore;

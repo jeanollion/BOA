@@ -44,6 +44,7 @@ public class TrackMask extends ImageObjectInterface {
     final BoundingBox[] trackOffset;
     final StructureObjectMask[] trackObjects;
     final int maxParentY, maxParentZ;
+    final int updateImageFrequency=10;
     static final int intervalX=5;
     
     public TrackMask(StructureObject[] parentTrack, int childStructureIdx) {
@@ -106,7 +107,16 @@ public class TrackMask extends ImageObjectInterface {
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
-                for (int i = 1; i<trackObjects.length; ++i) trackObjects[i].draw(displayImage);
+                int count = 0;
+                for (int i = 1; i<trackObjects.length; ++i) {
+                    trackObjects[i].draw(displayImage);
+                    if (count>=updateImageFrequency) {
+                        ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage);
+                        count=0;
+                    } else count++;
+                    ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage);
+                }
+                
             }
         });
         SwingUtilities.invokeLater(t);
@@ -119,12 +129,19 @@ public class TrackMask extends ImageObjectInterface {
         final Image displayImage =  Image.createEmptyImage("TimeLapse Image of structure: "+structureIdx, trackObjects[0].generateRawImage(structureIdx), new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, this.maxParentZ).setCalibration(parent.getMaskProperties().getScaleXY(), parent.getMaskProperties().getScaleZ()));
         pasteImage(trackObjects[0].generateRawImage(structureIdx), displayImage, trackOffset[0]);
         // draw image in another thread..
+        // update display every X paste...
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
+                int count = 0;
                 for (int i = 1; i<trackObjects.length; ++i) {
                     pasteImage(trackObjects[i].generateRawImage(structureIdx), displayImage, trackOffset[i]);
+                    if (count>=updateImageFrequency) {
+                        ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage);
+                        count=0;
+                    } else count++;
                 }
+                ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage);
             }
         });
         SwingUtilities.invokeLater(t);

@@ -21,6 +21,7 @@ import configuration.parameters.ChoiceParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObjectPreProcessing;
 import dataStructure.objects.StructureObjectProcessing;
+import dataStructure.objects.StructureObjectTracker;
 import dataStructure.objects.Track;
 import image.ImageMask;
 import java.util.Arrays;
@@ -33,7 +34,7 @@ import utils.Utils;
  *
  * @author jollion
  */
-public class TrackerObjectIdx implements Tracker {
+public class ObjectIdxTracker implements Tracker {
     public static enum IndexingOrder {XYZ(0, 1, 2), YXZ(1, 0, 2), XZY(0, 2, 1), ZXY(2, 0, 1), ZYX(2, 1, 0);
         int i1, i2, i3;
         IndexingOrder(int i1, int i2, int i3) {
@@ -44,16 +45,16 @@ public class TrackerObjectIdx implements Tracker {
     };
     ChoiceParameter order = new ChoiceParameter("Indexing order", Utils.toStringArray(IndexingOrder.values()), IndexingOrder.XYZ.toString(), false);
     
-    public void assignPrevious(StructureObjectPreProcessing[] previous, StructureObjectPreProcessing[] next) {
-        StructureObjectPreProcessing[] previousCopy = new StructureObjectPreProcessing[previous.length];
+    public void assignPrevious(StructureObjectTracker[] previous, StructureObjectTracker[] next) {
+        StructureObjectTracker[] previousCopy = new StructureObjectTracker[previous.length];
         System.arraycopy(previous, 0, previousCopy, 0, previous.length);
-        StructureObjectPreProcessing[] nextCopy = new StructureObjectPreProcessing[next.length];
+        StructureObjectTracker[] nextCopy = new StructureObjectTracker[next.length];
         System.arraycopy(next, 0, nextCopy, 0, next.length);
         
         Arrays.sort(previousCopy, getComparator(IndexingOrder.valueOf(order.getSelectedItem())));
         Arrays.sort(nextCopy, getComparator(IndexingOrder.valueOf(order.getSelectedItem())));
         for (int i = 0; i<Math.min(previous.length, next.length); ++i) {
-            nextCopy[i].setPreviousInTrack(previousCopy[i], false);
+            nextCopy[i].setPreviousInTrack(previousCopy[i], false, false);
             Plugin.logger.trace("assign previous {} to next {}", previousCopy[i], nextCopy[i]);
         }
     }

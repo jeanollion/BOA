@@ -23,6 +23,7 @@ import configuration.parameters.Parameter;
 import dataStructure.containers.InputImages;
 import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
+import image.TypeConverter;
 import plugins.TransformationTimeIndependent;
 import processing.ImageTransformation;
 import utils.Utils;
@@ -47,7 +48,8 @@ public class SimpleTranslation implements TransformationTimeIndependent {
     }
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        return ImageTransformation.translate(image, X.getValue().intValue(), Y.getValue().intValue(), Z.getValue().intValue(), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()));
+        if (!X.hasIntegerValue() || !Y.hasIntegerValue() || !Z.hasIntegerValue()) image = TypeConverter.toFloat(image, null);
+        return ImageTransformation.translate(image, X.getValue().doubleValue(), Y.getValue().doubleValue(), Z.getValue().doubleValue(), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()));
     }
 
     public boolean isTimeDependent() {

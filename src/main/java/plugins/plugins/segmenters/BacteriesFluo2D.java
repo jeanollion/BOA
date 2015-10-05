@@ -87,14 +87,16 @@ public class BacteriesFluo2D implements Segmenter {
         ArrayList<Object3D> objects = new ArrayList<Object3D>();
         for (Object3D o : pop1.getObjects()) {
             o.draw(labelMap, 1);
-            objects.addAll(split(log3, labelMap, o.getBounds(), splitThreshold, seedMap)); // ajouter filtrage de taille?
+            objects.addAll(split(log3, labelMap, o, splitThreshold, seedMap)); // ajouter filtrage de taille?
             o.draw(labelMap, 0);
         }
         return new ObjectPopulation(objects, input);
     }
     
-    public static ArrayList<Object3D> split(Image input, ImageMask mask, BoundingBox bounds, double splitThreshold, ImageByte seedMap) {
+    public static ArrayList<Object3D> split(Image input, ImageMask mask, final Object3D object, double splitThreshold, ImageByte seedMap) {
+        BoundingBox bounds = object.getBounds();
         ArrayList<int[]> yBounds = analyseYDiffProfile(input, 2, null,  bounds, splitThreshold);
+        if (yBounds.isEmpty()) return new ArrayList<Object3D>(){{add(object);}};
         yBounds.add(new int[]{yBounds.get(yBounds.size()-1)[1], bounds.getyMax()}); // add last element
         ArrayList<Voxel> seedList = new ArrayList<Voxel>(yBounds.size());
         getSeeds(input, true, yBounds, bounds, seedList, seedMap);

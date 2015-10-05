@@ -53,7 +53,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plugins.PluginFactory;
 import plugins.Segmenter;
-import plugins.plugins.trackers.TrackerObjectIdx;
+import plugins.plugins.trackers.ObjectIdxTracker;
 import plugins.plugins.transformations.SimpleTranslation;
 import utils.MorphiumUtils;
 
@@ -220,8 +220,8 @@ public class ProcessingTest {
         StructureObject r3 = new StructureObject("test", 2, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), xp);
         ObjectDAO dao = new ObjectDAO(m, xpDAO);
         dao.store(r, r2, r3);
-        r2.setPreviousInTrack(r, true);
-        r3.setPreviousInTrack(r2, true);
+        r2.setPreviousInTrack(r, true, false);
+        r3.setPreviousInTrack(r2, true, false);
         dao.updateTrackAttributes(r, r2, r3);
         MorphiumUtils.waitForWrites(m);
         MorphiumUtils.addDereferencingListeners(m, dao, xpDAO);
@@ -262,8 +262,8 @@ public class ProcessingTest {
             assertEquals("segmenter set (2)", 2, ((NumberParameter)microChannel.getProcessingChain().getSegmenter().getParameters()[0]).getValue().intValue());
             // set-up traking
             PluginFactory.findPlugins("plugins.plugins.trackers");
-            microChannel.setTracker(new TrackerObjectIdx());
-            bacteries.setTracker(new TrackerObjectIdx());
+            microChannel.setTracker(new ObjectIdxTracker());
+            bacteries.setTracker(new ObjectIdxTracker());
             
             // set up fields
             ImageByte[][] images = createDummyImagesTC(50, 50, 1, 3, 1);

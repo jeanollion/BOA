@@ -92,7 +92,7 @@ public class ImageStabilizerXY implements Registration {
     
     private FloatProcessor getFloatProcessor(Image image, boolean duplicate) {
         if (image.getSizeZ()>1) image = image.getZPlane((int)(image.getSizeZ()/2.0+0.5)); //select middle slice only
-        if (!(image instanceof ImageFloat)) image = TypeConverter.toFloat(image);
+        if (!(image instanceof ImageFloat)) image = TypeConverter.toFloat(image, null);
         else if (duplicate) image = image.duplicate("");
         ImagePlus impRef = IJImageWrapper.getImagePlus(image);
         return (FloatProcessor)impRef.getProcessor();
@@ -101,8 +101,8 @@ public class ImageStabilizerXY implements Registration {
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         logger.debug("stabilization time: {}, channel: {}, X:{}, Y:{}", timePoint, channelIdx, translationTXY[0][timePoint][0], translationTXY[0][timePoint][1]);
         if (translationTXY[0][timePoint][0]==0 && translationTXY[0][timePoint][1]==0) return image;
-        if (!(image instanceof ImageFloat)) image = TypeConverter.toFloat(image);
-        ImagePlus impRef = IJImageWrapper.getImagePlus(image);
+        if (!(image instanceof ImageFloat)) image = TypeConverter.toFloat(image, null);
+        /*ImagePlus impRef = IJImageWrapper.getImagePlus(image);
         ImageStack is = impRef.getImageStack();
         float[][] outPixels = new float[image.getSizeZ()][];
         FloatProcessor temp = new FloatProcessor(image.getSizeX(), image.getSizeY());
@@ -112,7 +112,8 @@ public class ImageStabilizerXY implements Registration {
             outPixels[z]=(float[])temp.getPixels();
             temp = (FloatProcessor)is.getProcessor(z+1);
         }
-        return new ImageFloat(image.getName(), image.getSizeX(), outPixels);
+        return new ImageFloat(image.getName(), image.getSizeX(), outPixels);*/
+        return ImageTransformation.translate(image, translationTXY[0][timePoint][0], translationTXY[0][timePoint][1], 0, ImageTransformation.InterpolationScheme.BSPLINE5);
     }
 
     public Object[] getConfigurationData() {

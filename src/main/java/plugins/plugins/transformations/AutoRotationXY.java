@@ -28,6 +28,7 @@ import dataStructure.containers.InputImages;
 import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
 import image.ImageFloat;
+import image.TypeConverter;
 import plugins.TransformationTimeIndependent;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import processing.Filters;
@@ -103,7 +104,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     }
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        return ImageTransformation.rotateXY(image, internalParams[0], ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()));
+        return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), internalParams[0], ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()));
     }
     
     public static double computeRotationAngleXY(Image image, int z, int backgroundSubtractionRadius, double ang1, double ang2, double stepsize, float[] proj, boolean var, double filterScale) {

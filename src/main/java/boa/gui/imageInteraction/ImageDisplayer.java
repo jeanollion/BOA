@@ -25,6 +25,8 @@ import image.Image;
  */
 public interface ImageDisplayer<T> {
     public void showImage(Image image);
-    public void showImage(T image);
+    public T getImage(Image image);
+    public Image getImage(T image);
+    public void updateImageDisplay(Image image);
     public void showImage5D(String title, Image[][] imageTC);
 }

@@ -56,7 +56,7 @@ import javax.swing.event.TreeSelectionListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plugins.PluginFactory;
-import plugins.plugins.trackers.TrackerObjectIdx;
+import plugins.plugins.trackers.ObjectIdxTracker;
 import plugins.plugins.segmenters.SimpleThresholder;
 import plugins.plugins.thresholders.ConstantValue;
 import utils.MorphiumUtils;
@@ -252,8 +252,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             bacteries.getProcessingChain().setSegmenter(new SimpleThresholder(new ConstantValue()));
             
             // set-up traking
-            microChannel.setTracker(new TrackerObjectIdx());
-            bacteries.setTracker(new TrackerObjectIdx());
+            microChannel.setTracker(new ObjectIdxTracker());
+            bacteries.setTracker(new ObjectIdxTracker());
             
             // set up fields
             Processor.importFiles(new String[]{"/data/Images/Test/syntheticData.ome.tiff"}, xp);

@@ -19,7 +19,9 @@ package dataStructure.containers;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import static core.Processor.logger;
+import image.BlankMask;
 import image.Image;
+import image.TypeConverter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import plugins.Transformation;
@@ -35,6 +37,7 @@ public class InputImage {
     ImageDAO dao;
     int channelIdx, timePoint;
     String microscopyFieldName;
+    Image originalImageType;
     Image image;
     boolean saveToDAO=true;
     ArrayList<Transformation> transformationsToApply;
@@ -55,7 +58,10 @@ public class InputImage {
     public Image getImage() {
         if (image == null) {
             //image = dao.openPreProcessedImage(channelIdx, timePoint, microscopyFieldName); //try to open from DAO
-            if (image==null) image = imageSources.getImage(timePoint, channelIdx);
+            if (image==null) {
+                image = imageSources.getImage(timePoint, channelIdx);
+                originalImageType = Image.createEmptyImage("source Type", image, new BlankMask("", 0, 0, 0));
+            }
         }
         applyTransformations();
         return image;
@@ -76,6 +82,8 @@ public class InputImage {
     
     public void closeImage() {
         if (saveToDAO) {
+            // cast to initial type
+            if (originalImageType!=null) image = TypeConverter.cast(image, originalImageType);
             dao.writePreProcessedImage(image, channelIdx, timePoint, microscopyFieldName);
         }
         image=null;

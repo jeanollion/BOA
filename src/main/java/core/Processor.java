@@ -42,7 +42,9 @@ import utils.MorphiumUtils;
  */
 public class Processor {
     public static final Logger logger = LoggerFactory.getLogger(Processor.class);
-    
+    /*public static int getRemainingMemory() {
+        
+    }*/
     public static void importFiles(String[] selectedFiles, Experiment xp) {
         ArrayList<MultipleImageContainer> images = ImageFieldFactory.importImages(selectedFiles, xp);
         int count=0;
@@ -127,7 +129,7 @@ public class Processor {
     
     public static void trackRoot(StructureObject[] rootsT, ObjectDAO dao) {
         logger.debug("tracking root objects. dao==null? {}", dao==null);
-        for (int i = 1; i<rootsT.length; ++i) rootsT[i].setPreviousInTrack(rootsT[i-1], false);
+        for (int i = 1; i<rootsT.length; ++i) rootsT[i].setPreviousInTrack(rootsT[i-1], false, false);
         if (dao!=null) dao.updateTrackAttributes(rootsT);
     }
     

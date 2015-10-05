@@ -32,7 +32,7 @@ import org.junit.Before;
 import org.junit.Test;
 import testPlugins.dummyPlugins.DummySegmenter;
 import plugins.PluginFactory;
-import plugins.plugins.trackers.TrackerObjectIdx;
+import plugins.plugins.trackers.ObjectIdxTracker;
 
 /**
  *
@@ -149,8 +149,8 @@ public class ConfigurationTest {
             
             // set-up traking
             PluginFactory.findPlugins("plugins.plugins.trackers");
-            microChannel.setTracker(new TrackerObjectIdx());
-            bacteries.setTracker(new TrackerObjectIdx());
+            microChannel.setTracker(new ObjectIdxTracker());
+            bacteries.setTracker(new ObjectIdxTracker());
             
             m.store(xp);
             m=new Morphium(cfg);

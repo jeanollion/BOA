@@ -23,6 +23,7 @@ import configuration.parameters.Parameter;
 import dataStructure.containers.InputImages;
 import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
+import image.TypeConverter;
 import plugins.TransformationTimeIndependent;
 import processing.ImageTransformation;
 import utils.Utils;
@@ -41,7 +42,7 @@ public class SimpleRotationXY implements TransformationTimeIndependent {
     }
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        return ImageTransformation.rotateXY(image, angle.getValue().floatValue(), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()));
+        return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), angle.getValue().floatValue(), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()));
     }
 
     public boolean isTimeDependent() {

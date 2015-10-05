@@ -66,6 +66,8 @@ public class NumberParameter extends SimpleParameter {
         return name+": "+value;
     }
     
+    public boolean hasIntegerValue() {return (getValue().doubleValue()-getValue().intValue())!=0;}
+    
     public boolean sameContent(Parameter other) {
         if (other instanceof NumberParameter) return ((NumberParameter)other).getValue()==getValue();
         else return false;

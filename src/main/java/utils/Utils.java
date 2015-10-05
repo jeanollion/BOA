@@ -117,17 +117,21 @@ public class Utils {
         }
     }
     
-    public static Color[] generatePalette(int colorNb) {
+    public static Color[] generatePalette(int colorNb, boolean excludeReds) {
         Color[] res = new Color[colorNb];
         double goldenRatioConjugate = 0.618033988749895;
-        double h = 0.1;
+        double h = 0.33;
         for(int i = 0; i <colorNb; ++i) {
             res[i] = Color.getHSBColor((float)h, 0.99f, 0.99f);
-            h+=goldenRatioConjugate;
-            h%=1;
+            if (excludeReds) {  // pure red = 0;
+                while(h<0.05) h=incrementColor(h, goldenRatioConjugate);
+            } else h=incrementColor(h, goldenRatioConjugate);
+            
         }
         return res;
     }
+    
+    private static double incrementColor(double h, double goldenRatioConjugate) {return (h+goldenRatioConjugate)%1;}
     
     public static void plotProfile(Image image, int z, int coord, boolean alongX) {
         double[] x;

@@ -39,7 +39,7 @@ import org.junit.rules.TemporaryFolder;
 import plugins.PluginFactory;
 import plugins.plugins.segmenters.SimpleThresholder;
 import plugins.plugins.thresholders.ConstantValue;
-import plugins.plugins.trackers.TrackerObjectIdx;
+import plugins.plugins.trackers.ObjectIdxTracker;
 import utils.MorphiumUtils;
 
 /**
@@ -86,8 +86,8 @@ public class ImageDAOTest {
             bacteries.getProcessingChain().setSegmenter(new SimpleThresholder(new ConstantValue(1)));
             
             // set-up traking
-            microChannel.setTracker(new TrackerObjectIdx());
-            bacteries.setTracker(new TrackerObjectIdx());
+            microChannel.setTracker(new ObjectIdxTracker());
+            bacteries.setTracker(new ObjectIdxTracker());
             
             // set up I/O directory & create fields
             File inputImage = testFolder.newFolder();

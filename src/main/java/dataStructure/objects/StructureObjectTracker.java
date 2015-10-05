@@ -15,19 +15,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugins;
-
-import dataStructure.objects.StructureObjectTracker;
+package dataStructure.objects;
 
 /**
  *
  * @author jollion
  */
-public interface Tracker extends Plugin {
-    /**
-     * assign {@param previous} to {@param next} using the method {@link StructureObjectAbstract#setParentTrack(dataStructure.objects.Track, boolean) }
-     * @param previous objects that share a given parent object
-     * @param next objects that share a given parent object that is the next object of the parent of the {@param previous} objects
-     */
-    public void assignPrevious(StructureObjectTracker[] previous, StructureObjectTracker[] next);
+public interface StructureObjectTracker extends StructureObjectPreProcessing {
+    public void setPreviousInTrack(StructureObjectTracker previous, boolean isTrackHead, boolean signalError);
 }

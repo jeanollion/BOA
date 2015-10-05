@@ -32,30 +32,31 @@ import java.util.HashSet;
  * @author jollion
  */
 public abstract class ImageWindowManager<T> {
+    final static int trackArrowStrokeWidth = 3;
     private final HashMap<ImageObjectInterfaceKey, ImageObjectInterface> imageObjectInterfaces;
-    private final HashMap<T, ImageObjectInterface> imageObjectInterfaceMap;
+    private final HashMap<Image, ImageObjectInterface> imageObjectInterfaceMap;
     final ImageObjectListener listener;
     final ImageDisplayer<T> displayer;
     
     public ImageWindowManager(ImageObjectListener listener, ImageDisplayer displayer) {
         this.listener=listener;
         this.displayer=displayer;
-        imageObjectInterfaceMap = new HashMap<T, ImageObjectInterface>();
+        imageObjectInterfaceMap = new HashMap<Image, ImageObjectInterface>();
         imageObjectInterfaces = new HashMap<ImageObjectInterfaceKey, ImageObjectInterface>();
     }
     
     public ImageDisplayer getDisplayer() {return displayer;}
     
-    protected abstract T getImage(Image image);
+    //protected abstract T getImage(Image image);
     
     public void addImage(Image image, ImageObjectInterface i, boolean displayImage) {
         //ImageObjectInterface i = getImageObjectInterface(parent, childStructureIdx, timeImage);
         if (!imageObjectInterfaces.containsValue(i)) throw new RuntimeException("image object interface should be created through the manager");
-        T im = getImage(image);
-        imageObjectInterfaceMap.put(im, i);
+        //T im = getImage(image);
+        imageObjectInterfaceMap.put(image, i);
         if (displayImage) {
-            displayer.showImage(im);
-            addMouseListener(im);
+            displayer.showImage(image);
+            addMouseListener(image);
         }
     }
     
@@ -73,6 +74,10 @@ public abstract class ImageWindowManager<T> {
     }
     
     public ImageObjectInterface getImageTrackObjectInterface(StructureObject[] parentTrack, int childStructureIdx) {
+        if (parentTrack.length==0) {
+            logger.warn("cannot open track image of length == 0" );
+            return null;
+        }
         ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parentTrack[0], childStructureIdx, true));
         if (i==null) {
             i = new TrackMask(parentTrack, childStructureIdx);
@@ -81,18 +86,18 @@ public abstract class ImageWindowManager<T> {
         return i;
     }
     
-    protected ImageObjectInterface get(T image) {return imageObjectInterfaceMap.get(image);}
+    protected ImageObjectInterface getImageObjectInterface(Image image) {return imageObjectInterfaceMap.get(image);}
     
-    public void removeImage(T image) {
+    public void removeImage(Image image) {
         imageObjectInterfaceMap.remove(image);
-        removeClickListener(image);
+        //removeClickListener(image);
     }
     
-    public abstract void addMouseListener(T image);
+    public abstract void addMouseListener(Image image);
     
-    public abstract void removeClickListener(T image);
+    //public abstract void removeClickListener(Image image);
     
-    public StructureObject getClickedObject(T image, int x, int y, int z) {
+    public StructureObject getClickedObject(Image image, int x, int y, int z) {
         ImageObjectInterface i = imageObjectInterfaceMap.get(image);
         if (i!=null) {
             return i.getClickedObject(x, y, z);
@@ -100,7 +105,7 @@ public abstract class ImageWindowManager<T> {
         return null;
     }
     
-    public abstract void selectObjects(T image, boolean addToCurrentSelection, StructureObject... selectedObjects);
-    public abstract void unselectObjects(T image);
-    public abstract void displayTrack(ImagePlus image, boolean addToCurrentSelectedTracks, StructureObject[] track, Color color);
+    public abstract void selectObjects(Image image, boolean addToCurrentSelection, StructureObject... selectedObjects);
+    public abstract void unselectObjects(Image image);
+    public abstract void displayTrack(Image image, boolean addToCurrentSelectedTracks, StructureObject[] track, Color color);
 }

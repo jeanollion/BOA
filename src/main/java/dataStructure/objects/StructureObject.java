@@ -36,7 +36,7 @@ import utils.SmallArray;
 @Lifecycle
 @Entity(collectionName = "Objects")
 @Index(value={"field_name, time_point, structure_idx", "parent,structure_idx,idx", "track_head_id, time_point", "is_track_head, parent_track_head_id, structure_idx, time_point, idx"})
-public class StructureObject implements StructureObjectPostProcessing, Track {
+public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker {
     public final static Logger logger = LoggerFactory.getLogger(StructureObject.class);
     //structure-related attributes
     @Id protected ObjectId id;
@@ -52,6 +52,7 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     @Reference(lazyLoading=true, automaticStore=false) public StructureObject previous, next;
     protected ObjectId parentTrackHeadId, trackHeadId;
     protected boolean isTrackHead=true;
+    protected boolean trackLinkError=false;
     
     // object- and images-related attributes
     @Transient private Object3D object;
@@ -147,9 +148,10 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
      * @param previous the previous object in the track
      * @param isTrackHead if false, sets this instance as the next of {@param previous} 
      */
-    @Override public void setPreviousInTrack(StructureObjectPreProcessing previous, boolean isTrackHead) {
+    @Override public void setPreviousInTrack(StructureObjectTracker previous, boolean isTrackHead, boolean signalError) {
         if (((StructureObject)previous).getTimePoint()!=this.getTimePoint()-1) throw new RuntimeException("setPrevious in track should be of time: "+(timePoint-1) +" but is: "+((StructureObject)previous).getTimePoint());
         this.previous=(StructureObject)previous;
+        this.trackLinkError=signalError;
         if (!isTrackHead) {
             this.previous.next=this;
             this.isTrackHead=false;
@@ -198,6 +200,12 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         return trackHead;*/
         return parentTrackHeadId;
     }
+
+    public boolean hasTrackLinkError() {
+        return trackLinkError;
+    }
+    
+    
     
     // object- and image-related methods
     public Object3D getObject() {
@@ -257,13 +265,10 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     public BoundingBox getRelativeBoundingBox(StructureObject stop) throws RuntimeException {
         if (stop==null) stop=getRoot();
         BoundingBox res = getObject().getBounds().duplicate();
-        logger.debug("relative bounding box: from: {} to {}", this, stop);
-        logger.debug("init bounds: {}", res);
         if (this.equals(stop)) return res.translateToOrigin();
         StructureObject nextParent=this.getParent();
         while(!stop.equals(nextParent)) {
             res.addOffset(nextParent.getObject().getBounds());
-            logger.debug("bounds + offset {} from {}", res, nextParent);
             nextParent=nextParent.getParent();
             if (nextParent==null) throw new RuntimeException("GetRelativeBoundingBoxError: stop structure object is not in parent tree");
             //if (!stop.equals(nextParent) && nextParent.getId().equals(stop.getId())) logger.error("stop condition cannot be reached: stop ({}) and parent ({}) not equals but same object", stop, nextParent);
@@ -303,11 +308,11 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
         }
     }
     
-    /*@Override
+    @Override
     public String toString() {
         if (isRoot()) return "Root Object: fieldName: "+fieldName + " timePoint: "+timePoint;
         else return "Object: fieldName: "+fieldName+ " timePoint: "+timePoint+ " structureIdx: "+structureIdx+ " parentId: "+getParent().id+ " idx: "+idx;
-    }*/
+    }
     
     // morphium-related methods
     /*@PreStore public void preStore() {

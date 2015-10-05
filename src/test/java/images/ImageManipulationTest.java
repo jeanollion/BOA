@@ -67,14 +67,14 @@ public class ImageManipulationTest {
         ImageInt imInt = new ImageInt("im test int", 2, 2, 2);
         imInt.setPixel(0, 1, 1, Integer.MAX_VALUE);
         imInt.setPixel(0, 0, 1, 2);
-        ImageByte imByte = TypeConverter.toByteMask(imInt);
+        ImageByte imByte = TypeConverter.toByteMask(imInt, null);
         assertEquals("Read voxel value: mask", imByte.getPixelInt(0, 1, 1), 1);
         
-        ImageFloat imFloat = TypeConverter.toFloat(imInt);
+        ImageFloat imFloat = TypeConverter.toFloat(imInt, null);
         assertEquals("Read voxel value: int cast to float", imFloat.getPixel(0, 0, 1), 2f);
         assertEquals("Read voxel value: int max value cast to float", Integer.MAX_VALUE, imFloat.getPixel(0, 1, 1), 0.01f);
         
-        ImageShort imShort = TypeConverter.toShort(imInt);
+        ImageShort imShort = TypeConverter.toShort(imInt, null);
         assertEquals("Read voxel value: max value int cast to short", 65535, imShort.getPixelInt(0, 1, 1));
     }
     

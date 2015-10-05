@@ -148,40 +148,32 @@ public class TrackNode implements TreeNode, UIContainer {
         JMenuItem[] openSeg;
         public TrackNodeUI(TrackNode tn) {
             this.trackNode=tn;
-            this.actions = new JMenuItem[3];
-            actions[0] = new JMenuItem("Open Track Mask");
-            actions[0].setAction(new AbstractAction("Open Track Mask") {
-                    @Override
-                    public void actionPerformed(ActionEvent ae) {
-                        logger.debug("opening track mask");
-                        ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, trackHead.getStructureIdx());
-                        ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true);
-                    }
-                }
-            );
+            this.actions = new JMenuItem[2];
+            JMenu segSubMenu = new JMenu("Open Segmented Track Image");
+            actions[0] = segSubMenu;
+            JMenu rawSubMenu = new JMenu("Open Raw Track Image");
+            actions[1] = rawSubMenu;
             String[] structureNames = trackNode.trackHead.getExperiment().getStructuresAsString();
-            int[] childStructures = trackNode.trackHead.getExperiment().getAllChildStructures(trackHead.getStructureIdx());
-            JMenu segSubMenu = new JMenu("Open Child Structure Track Mask");
-            actions[1] = segSubMenu;
-            openSeg=new JMenuItem[childStructures.length];
+            openSeg=new JMenuItem[structureNames.length];
             for (int i = 0; i < openSeg.length; i++) {
-                openSeg[i] = new JMenuItem(structureNames[childStructures[i]]);
-                openSeg[i].setAction(new AbstractAction(structureNames[childStructures[i]]) {
+                openSeg[i] = new JMenuItem(structureNames[i]);
+                openSeg[i].setAction(new AbstractAction(structureNames[i]) {
                         @Override
                         public void actionPerformed(ActionEvent ae) {
                             if (logger.isDebugEnabled()) logger.debug("opening track mask for structure: {} of idx: {} from structure idx: {}", ae.getActionCommand(), getStructureIdx(ae.getActionCommand(), openRaw), trackNode.trackHead.getStructureIdx());
                             int[] path = trackNode.trackHead.getExperiment().getPathToStructure(trackNode.trackHead.getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
                             trackNode.loadAllTrackObjects(path);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, getStructureIdx(ae.getActionCommand(), openRaw));
+                            if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true);
+                            /* for the 1st
+                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, trackHead.getStructureIdx());
                             ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true);
+                            */
                         }
                     }
                 );
                 segSubMenu.add(openSeg[i]);
             }
-            
-            JMenu rawSubMenu = new JMenu("Open Raw Input Image");
-            actions[2] = rawSubMenu;
             openRaw=new JMenuItem[structureNames.length];
             for (int i = 0; i < openRaw.length; i++) {
                 openRaw[i] = new JMenuItem(structureNames[i]);
@@ -192,7 +184,7 @@ public class TrackNode implements TreeNode, UIContainer {
                             int[] path = trackNode.trackHead.getExperiment().getPathToStructure(trackNode.trackHead.getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
                             trackNode.loadAllTrackObjects(path);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, getStructureIdx(ae.getActionCommand(), openRaw));
-                            ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(getStructureIdx(ae.getActionCommand(), openRaw)), i, true);
+                            if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(getStructureIdx(ae.getActionCommand(), openRaw)), i, true);
                         }
                     }
                 );
