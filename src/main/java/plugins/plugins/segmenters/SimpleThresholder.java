@@ -19,12 +19,16 @@ package plugins.plugins.segmenters;
 
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
+import dataStructure.objects.BlankStructureObject;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObjectProcessing;
 import image.Image;
 import image.ImageByte;
+import image.ImageInteger;
 import image.ImageLabeller;
+import image.ImageMask;
+import image.ImageOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
 import plugins.Segmenter;
@@ -57,6 +61,22 @@ public class SimpleThresholder implements Segmenter {
         }
         Object3D[] objects = ImageLabeller.labelImage(mask);
         logger.trace("simple thresholder: image: {} number of objects: {}", input.getName(), objects.length);
+        return new ObjectPopulation(new ArrayList<Object3D>(Arrays.asList(objects)), input);
+    }
+    
+    public static ObjectPopulation run(Image input, Thresholder thresholder, StructureObjectProcessing structureObject) {
+        double thresh = thresholder.runThresholder(input, structureObject);
+        return run(input, thresh); 
+    }
+    
+    public static ObjectPopulation run(Image input, ImageMask mask, Thresholder thresholder) {
+        double thresh = thresholder.runThresholder(input, new BlankStructureObject(mask));
+        return run(input, thresh); 
+    }
+    
+    public static ObjectPopulation run(Image input, double threhsold) {
+        ImageInteger mask = ImageOperations.threshold(input, threhsold, true, false, false, null);
+        Object3D[] objects = ImageLabeller.labelImage(mask);
         return new ObjectPopulation(new ArrayList<Object3D>(Arrays.asList(objects)), input);
     }
 

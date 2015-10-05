@@ -50,7 +50,7 @@ public class ObjectFactory {
         Object3D[] res = new Object3D[tm.size()];
         int i = 0;
         for (Entry<Integer, ArrayList<Voxel>> e : tm.entrySet()) {
-            res[i] = new Object3D(e.getValue(), ensureContinuousLabels?(i + 1):e.getKey());
+            res[i] = new Object3D(e.getValue(), ensureContinuousLabels?(i + 1):e.getKey(), labelImage.getScaleXY(), labelImage.getScaleZ());
             ++i;
         }
         return res;

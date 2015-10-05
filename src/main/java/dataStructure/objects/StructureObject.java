@@ -94,14 +94,15 @@ public class StructureObject implements StructureObjectPostProcessing, Track {
     public int getStructureIdx() {return structureIdx;}
     public int getTimePoint() {return timePoint;}
     public int getIdx() {return idx;}
+    
     public Experiment getExperiment() {
         if (xp==null) return null;
         xp.callLazyLoading();
         return xp;
     }
-    public MicroscopyField getMicroscopyField() {
-        return getExperiment().getMicroscopyField(fieldName);
-    }
+    public MicroscopyField getMicroscopyField() {return getExperiment().getMicroscopyField(fieldName);}
+    public float getScaleXY() {return getMicroscopyField().getScaleXY();}
+    public float getScaleZ() {return getMicroscopyField().getScaleZ();}
     public StructureObject getParent() {
         if (parent==null) return null;
         try {parent.callLazyLoading();}

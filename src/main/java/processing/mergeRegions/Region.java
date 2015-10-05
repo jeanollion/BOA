@@ -107,7 +107,7 @@ public class Region {
         
         public Object3D toObject3D() {
             ArrayList<Voxel> al = new ArrayList<Voxel>(voxels.size());
-            return new Object3D(al, label);
+            return new Object3D(al, label, col.inputGray.getScaleXY(), col.inputGray.getScaleZ());
         }
         
         @Override 
@@ -184,7 +184,7 @@ public class Region {
     protected static BoundingBox getBoundingBox(ArrayList<Voxel>[] voxIt) {
         BoundingBox b= new BoundingBox();
         for (ArrayList<Voxel> al : voxIt) {
-            Object3D o = new Object3D(al, 1);
+            Object3D o = new Object3D(al, 1, 1, 1);
             b.expand(o.getBounds());
         }
         return b;

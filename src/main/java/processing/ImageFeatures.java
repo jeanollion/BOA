@@ -26,8 +26,10 @@ import image.Image;
 import image.ImageFloat;
 import image.ImageOperations;
 import image.ImagescienceWrapper;
+import image.TypeConverter;
 import imagescience.feature.Differentiator;
 import imagescience.feature.Hessian;
+import imagescience.feature.Laplacian;
 import imagescience.feature.Structure;
 import imagescience.image.FloatImage;
 import imagescience.segment.Thresholder;
@@ -181,11 +183,22 @@ public class ImageFeatures {
         return res;
     }
     
-    public static ImageFloat[] getHessian(Image image, double scale) {
+    public static ImageFloat getLaplacian(Image image, double scale, boolean invert, boolean overrideIfFloat) {
+        scale *= image.getScaleXY();
+        final imagescience.image.Image is = ImagescienceWrapper.getImagescience(image);
+        boolean duplicate = !((image instanceof ImageFloat) && overrideIfFloat);
+        ImageFloat res = (ImageFloat)ImagescienceWrapper.wrap(new Laplacian().run(duplicate?is.duplicate():is, scale));
+        if (invert) ImageOperations.multiply(res, res, -1);
+        res.setCalibration(image).resetOffset().addOffset(image).setName(image.getName() + ":laplacian");
+        return res;
+    }
+    
+    public static ImageFloat[] getHessian(Image image, double scale, boolean overrideIfFloat) {
         ImageFloat[] res = new ImageFloat[image.getSizeZ()==1?2:3];
         final imagescience.image.Image is = ImagescienceWrapper.getImagescience(image);
         scale *= image.getScaleXY();
-        Vector vector = new Hessian().run(new FloatImage(is), scale, false);
+        boolean duplicate = !((image instanceof ImageFloat) && overrideIfFloat);
+        Vector vector = new Hessian().run(duplicate?is.duplicate():is, scale, false);
         for (int i=0;i<res.length;i++) {
             res[i] = (ImageFloat)ImagescienceWrapper.wrap((imagescience.image.Image) vector.get(i));
             res[i].setCalibration(image);
@@ -214,7 +227,7 @@ public class ImageFeatures {
     
     public static ImageFloat differenceOfGaussians(Image image, double scaleXYMin, double scaleXYMax, double ratioScaleZ, boolean trimNegativeValues, boolean overideIfFloat) {
         Image bcg = gaussianSmooth(image, scaleXYMax, scaleXYMax*ratioScaleZ, false);
-        ImageFloat fore = gaussianSmooth(image, scaleXYMin, scaleXYMin*ratioScaleZ, overideIfFloat);
+        ImageFloat fore = scaleXYMin>0?gaussianSmooth(image, scaleXYMin, scaleXYMin*ratioScaleZ, overideIfFloat):TypeConverter.toFloat(image);
         fore = (ImageFloat)ImageOperations.addImage(fore, bcg, fore, -1);
         if (trimNegativeValues) ImageOperations.trim(fore, 0, true, true);
         return fore;

@@ -17,11 +17,19 @@
  */
 package measurement;
 
+import dataStructure.objects.Object3D;
+import dataStructure.objects.Voxel;
+
 /**
  *
  * @author jollion
  */
 public class GeometricalMeasurements {
     
-    public float distanceCenter;
+    public static double getVolume(Object3D o) {
+        int count = o.getVoxels().size();
+        return count * o.getScaleXY() * o.getScaleXY() * o.getScaleZ();
+    }
+    
+    
 }

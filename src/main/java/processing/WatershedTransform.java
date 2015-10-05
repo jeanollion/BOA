@@ -168,7 +168,7 @@ public class WatershedTransform {
         }
         
         public Object3D toObject3D(int label) {
-            return new Object3D(voxels, label);
+            return new Object3D(voxels, label, watershedMap.getScaleXY(), watershedMap.getScaleZ());
         }
         
     }

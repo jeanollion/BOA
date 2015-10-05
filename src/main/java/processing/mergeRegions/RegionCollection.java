@@ -124,7 +124,7 @@ public class RegionCollection {
         float scaleZ = labelMap.getScaleZ();
         float scaleXY = labelMap.getScaleXY();
         if (!useScale) inputGray.setCalibration(scaleXY, scaleXY);
-        ImageFloat hess=ImageFeatures.getHessian(this.inputGray, hessianRadius)[0];
+        ImageFloat hess=ImageFeatures.getHessian(this.inputGray, hessianRadius, false)[0];
         if (!useScale) {
             hess.setCalibration(scaleXY, scaleZ);
             inputGray.setCalibration(scaleXY, scaleZ);

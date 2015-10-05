@@ -26,7 +26,7 @@ public class Object3D {
     protected BoundingBox bounds;
     protected int label;
     protected ArrayList<Voxel> voxels; //lazy -> use getter // coordonnées des voxel -> par rapport au parent
-
+    protected float scaleXY=1, scaleZ=1;
     /**
      * Voxel
      * @param mask : image containing only the object, and whose bounding box is the same as the one of the object
@@ -35,14 +35,16 @@ public class Object3D {
         this.mask=mask;
         this.bounds=mask.getBoundingBox();
         this.label=label;
+        this.scaleXY=mask.getScaleXY();
+        this.scaleZ=mask.getScaleZ();
     }
     
-    public Object3D(ArrayList<Voxel> voxels, int label) {
+    public Object3D(ArrayList<Voxel> voxels, int label, float scaleXY, float scaleZ) {
         this.voxels=voxels;
         this.label=label;
     }
     
-    public Object3D(ArrayList<Voxel> voxels, int label, BoundingBox bounds) {
+    public Object3D(ArrayList<Voxel> voxels, int label, BoundingBox bounds, float scaleXY, float scaleZ) {
         this.voxels=voxels;
         this.label=label;
         this.bounds=bounds;
@@ -51,9 +53,17 @@ public class Object3D {
     public int getLabel() {
         return label;
     }
+
+    public float getScaleXY() {
+        return scaleXY;
+    }
+
+    public float getScaleZ() {
+        return scaleZ;
+    }
     
     protected void createMask() {
-        mask = new ImageByte("", getBounds().getImageProperties("", 1, 1));
+        mask = new ImageByte("", getBounds().getImageProperties("", scaleXY, scaleZ));
         for (Voxel v : voxels) mask.setPixelWithOffset(v.x, v.y, v.z, 1);
     }
 
@@ -72,7 +82,7 @@ public class Object3D {
     
     public ImageProperties getImageProperties() {
         if (mask!=null) return mask;
-        else return getBounds().getImageProperties("", 1, 1);
+        else return getBounds().getImageProperties("", scaleXY, scaleZ);
     }
     
     public ImageInteger getMask() {

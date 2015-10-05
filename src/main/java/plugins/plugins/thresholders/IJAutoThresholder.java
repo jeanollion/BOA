@@ -39,7 +39,8 @@ public class IJAutoThresholder implements Thresholder {
     
     
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
-        return runThresholder(input, structureObject.getMask(), Method.valueOf(method.getSelectedItem()));
+        ImageMask mask = structureObject!=null?structureObject.getMask():new BlankMask(input);
+        return runThresholder(input, mask, Method.valueOf(method.getSelectedItem()));
     }
     
     public static double runThresholder(Image input, ImageMask mask, Method method) {

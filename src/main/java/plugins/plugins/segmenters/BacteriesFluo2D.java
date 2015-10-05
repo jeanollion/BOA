@@ -50,8 +50,7 @@ import utils.Utils;
  * @author jollion
  */
 public class BacteriesFluo2D implements Segmenter {
-    NumberParameter split = new BoundedNumberParameter("Split Threshold", 2, 0.3, 0, 1);
-    NumberParameter bcg = new BoundedNumberParameter("Background Threshold", 4, 0.0001, 0.00005, 0.005);
+    NumberParameter split = new BoundedNumberParameter("Split Threshold", 2, 0.5, 0, 1);
     NumberParameter size = new BoundedNumberParameter("Minimal Object Dimension", 0, 15, 1, null);
     Parameter[] parameters = new Parameter[]{split};
     final static double gradientScale = 1;
@@ -59,44 +58,98 @@ public class BacteriesFluo2D implements Segmenter {
     public static boolean debug=false;
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         
-        return run(input, parent.getMask(), size.getValue().doubleValue(), split.getValue().doubleValue(), bcg.getValue().doubleValue());
+        return run(input, parent.getMask(), split.getValue().doubleValue());
     }
     
-    public static ObjectPopulation run(Image input, ImageMask mask, double minObjectDimension, double splitThld, double backgroundThld) {
+    public static ObjectPopulation run(Image input, ImageMask mask, double splitThreshold) {
+        int smoothScale = 2;
+        int objectScale = 15;
+        int logScale = 3;
+        // filtrage: 
+        ImageFloat smoothed = ImageFeatures.gaussianSmooth(input, smoothScale, smoothScale, false).setName("smoothed");
+        ImageFloat dog = ImageFeatures.differenceOfGaussians(smoothed, 0, objectScale, 1, false, false).setName("DoG");
+        ImageFloat log3 = ImageFeatures.getLaplacian(smoothed, logScale, true, false).setName("log3");
+        if (debug) {
+            ImageDisplayer disp = new IJImageDisplayer();
+            disp.showImage(smoothed);
+            disp.showImage(dog);
+            disp.showImage(log3);
+        }
+        double t0 = IJAutoThresholder.runThresholder(dog, mask, AutoThresholder.Method.Otsu, 0);
+        double t1 = IJAutoThresholder.runThresholder(dog, mask, AutoThresholder.Method.Otsu, 1);
+        double t2 = IJAutoThresholder.runThresholder(dog, mask, AutoThresholder.Method.Otsu, 2);
+        logger.debug("threshold 0: {}, 1: {}, 2: {}", t0, t1, t2);
+        ObjectPopulation pop1 = SimpleThresholder.run(dog, t0); //ajouter filtrage de taille
+        
+        // split each object
+        ImageByte seedMap = new ImageByte("seeds", input);
+        ImageByte labelMap = new ImageByte("masks", input);
+        ArrayList<Object3D> objects = new ArrayList<Object3D>();
+        for (Object3D o : pop1.getObjects()) {
+            o.draw(labelMap, 1);
+            objects.addAll(split(log3, labelMap, o.getBounds(), splitThreshold, seedMap)); // ajouter filtrage de taille?
+            o.draw(labelMap, 0);
+        }
+        return new ObjectPopulation(objects, input);
+    }
+    
+    public static ArrayList<Object3D> split(Image input, ImageMask mask, BoundingBox bounds, double splitThreshold, ImageByte seedMap) {
+        ArrayList<int[]> yBounds = analyseYDiffProfile(input, 2, null,  bounds, splitThreshold);
+        yBounds.add(new int[]{yBounds.get(yBounds.size()-1)[1], bounds.getyMax()}); // add last element
+        ArrayList<Voxel> seedList = new ArrayList<Voxel>(yBounds.size());
+        getSeeds(input, true, yBounds, bounds, seedList, seedMap);
+        ObjectPopulation pop = WatershedTransform.watershed(input, mask, seedMap, true);
+        return pop.getObjects();
+    }
+    
+    public static void getSeeds(Image image, boolean maximum, ArrayList<int[]> yBounds, BoundingBox globalBounds, ArrayList<Voxel> seedsList, ImageByte seedMap) {
+        for (int[] yb : yBounds) {
+            // get global intensity maximum within the area
+            Voxel seedMax = ImageOperations.getGlobalExtremum(image, new BoundingBox(globalBounds.getxMin(), globalBounds.getxMax(), yb[0]+1, yb[1], globalBounds.getzMin(), globalBounds.getzMax()), maximum);
+            if (seedMap!=null) seedMap.setPixel(seedMax.x, seedMax.y, seedMax.z, 1);
+            if (seedsList!=null) seedsList.add(seedMax);
+        }
+    }
+    
+    public static ObjectPopulation runLegacy(Image input, ImageMask mask, double minObjectDimension, double splitThld, double backgroundThld) {
         int derScale = 2;
         int logScale = 4;
         
-        //ImageFloat filtered = ImageFeatures.differenceOfGaussians(input, 2, 4, 1, false, false).setName("filtered");
-        ImageFloat filtered = ImageFeatures.LoG(input, logScale, logScale*input.getScaleXY()/input.getScaleZ());
-        Image wsMap1 = ImageFeatures.getGradientMagnitude(filtered, 1, false);
+        ImageFloat smoothed = ImageFeatures.gaussianSmooth(input, 2, 2, false).setName("smoothed");
+        
+        ImageFloat dogEdge = ImageFeatures.differenceOfGaussians(smoothed, 0, 5, 1, false, false).setName("DoGEdge");
+        ImageFloat dog = ImageFeatures.differenceOfGaussians(smoothed, 0, 15, 1, false, false).setName("DoG");
+        ImageFloat log3 = ImageFeatures.getLaplacian(smoothed, 3, true, false).setName("log3");
+        ImageFloat log4 = ImageFeatures.getLaplacian(smoothed, 4, true, false).setName("log4");
+        //ImageFloat log = ImageFeatures.LoG(input, logScale, logScale*input.getScaleXY()/input.getScaleZ());
+        
+        
+        Image wsMap1 = ImageFeatures.getGradientMagnitude(dog, 1, false);
         
         // get precise X bounds to get Y-projection values reproductibles
-        BoundingBox projBounds = getBounds(input, filtered, wsMap1, logScale+1);
-        ArrayList<int[]> yBounds = analyseYDiffProfile(filtered, derScale, wsMap1, projBounds, splitThld, backgroundThld);
+        BoundingBox projBounds = getBounds(input, dog, wsMap1, logScale+1);
+        ArrayList<int[]> yBounds = analyseYDiffProfile(dogEdge, derScale, null, projBounds, splitThld);
         
         // Get foreground & background seeds
         ImageByte seeds = new ImageByte("seeds", input);
         ArrayList<Voxel> seedList = new ArrayList<Voxel>(yBounds.size());
+        getSeeds(dog, true, yBounds, projBounds, seedList, seeds);
         ArrayList<Voxel> bcgSeedList = new ArrayList<Voxel>(yBounds.size()*2);
-        for (int[] yb : yBounds) {
-            // get global intensity maximum within the area
-            Voxel seedMax = ImageOperations.getGlobalExtremum(filtered, new BoundingBox(0, input.getSizeX()-1, yb[0]+1, yb[1], 0, input.getSizeZ()-1), true);
-            seeds.setPixel(seedMax.x, seedMax.y, seedMax.z, 1);
-            seedList.add(seedMax);
-            
-            // get background seeds on each side of the area (min of wsMap)
-            Voxel seedBg1 = ImageOperations.getGlobalExtremum(wsMap1, new BoundingBox(0, projBounds.getxMin(), yb[0]+1, yb[1], 0, input.getSizeZ()-1), false);
-            bcgSeedList.add(seedBg1);
-            seeds.setPixel(seedBg1.x, seedBg1.y, seedBg1.z, 1);
-            Voxel seedBg2 = ImageOperations.getGlobalExtremum(wsMap1, new BoundingBox(projBounds.getxMax(), input.getSizeX()-1, yb[0]+1, yb[1], 0, input.getSizeZ()-1), false);
-            seeds.setPixel(seedBg2.x, seedBg2.y, seedBg2.z, 1); 
-            bcgSeedList.add(seedBg2);
-        }
+        BoundingBox leftBound = new BoundingBox(0, projBounds.getxMin(), projBounds.getyMin(), projBounds.getyMax(), projBounds.getzMin(), projBounds.getzMax());
+        BoundingBox rightBound = new BoundingBox(projBounds.getxMax(), input.getSizeX()-1, projBounds.getyMin(), projBounds.getyMax(), projBounds.getzMin(), projBounds.getzMax());
+        getSeeds(wsMap1, false, yBounds, leftBound, bcgSeedList, seeds);
+        getSeeds(wsMap1, false, yBounds, rightBound, bcgSeedList, seeds);
         
         if (debug) {
             ImageDisplayer disp = new IJImageDisplayer();
+            
+            disp.showImage(smoothed);
+            disp.showImage(dogEdge);
+            disp.showImage(dog);
+            disp.showImage(log3);
+            disp.showImage(log4);
+            disp.showImage(log3);
             disp.showImage(wsMap1);
-            disp.showImage(filtered);
             disp.showImage(seeds.duplicate("seeds"));
         }
         
@@ -120,7 +173,7 @@ public class BacteriesFluo2D implements Segmenter {
         
         // re-run watershed with intensities, within the previous watershed mask, only with foreground seeds
         for (Voxel v : bcgSeedList) seeds.setPixel(v.x, v.y, v.z, 0);
-        Image wsMap2 = filtered;
+        Image wsMap2 = smoothed;
         pop = WatershedTransform.watershed(wsMap2, pop.getLabelImage(), seeds, true);
         return pop;
            
@@ -159,17 +212,17 @@ public class BacteriesFluo2D implements Segmenter {
         return new BoundingBox(xLeft, xRight, yStart, yStop, 0, filtered.getSizeZ()-1);
     }
     
-    protected static ArrayList<int[]> analyseYDiffProfile(Image intensities, double derScale, Image grad, BoundingBox projBounds, double splitThld, double backgroundThld) {
+    protected static ArrayList<int[]> analyseYDiffProfile(Image intensities, double derScale, Image grad, BoundingBox projBounds, double splitThld) {
         int yOffset = projBounds.getyMin();
-        
-        //Image grad = ImageFeatures.getGradientMagnitude(intensities, derScale, false); // utiliser le gradient calculé précédement?
+        ImageFloat diffY = ImageFeatures.getDerivative(intensities, derScale, 0, 1, 0, false).setName("diffY"); 
+        if (grad==null) grad = ImageFeatures.getGradientMagnitude(intensities, derScale, false); // utiliser le gradient calculé précédement?
         ImageFloat norm=new ImageFloat("grad max", projBounds.getSizeY(), ImageOperations.maxProjection(grad, ImageOperations.Axis.Y, projBounds));
         norm=ImageFeatures.gaussianSmooth(norm, projBounds.getSizeX()/2, projBounds.getSizeX()/2, true);
         
         float[] projValues = ImageOperations.meanProjection(intensities, ImageOperations.Axis.Y, projBounds);
         float maxValue = ArrayUtil.max(projValues);
         
-        ImageFloat diffY = ImageFeatures.getDerivative(intensities, derScale, 0, 1, 0, false).setName("diffY"); 
+        
         float[] projDiff = ImageOperations.meanProjection(diffY, ImageOperations.Axis.Y, projBounds);
         
         float[] projDiffNorm=new float[projDiff.length];   
@@ -196,7 +249,7 @@ public class BacteriesFluo2D implements Segmenter {
         int lastMaxIdx = firstMaxIdx;
         for (int i = firstMaxIdx; i<min.length; ++i) {
             if (projDiff[min[i]]*projDiff[regMax[i+1]]<0 // changement de signe
-                    && (projDiff[regMax[i+1]]-projDiff[min[i]])>=backgroundThld*maxValue // critère d'élimination du bruit
+                    //&& (projDiff[regMax[i+1]]-projDiff[min[i]])>=backgroundThld*maxValue // critère d'élimination du bruit
                     && (projDiffNorm[regMax[i+1]]-projDiffNorm[min[i]])>=splitThld // critère de séparation
                     ) {
                 int lower;
@@ -207,10 +260,11 @@ public class BacteriesFluo2D implements Segmenter {
                 int higher = ArrayUtil.min(projValues, min[i], regMax[i+1]);
                 //int higher = ArrayUtil.getFirstOccurence(projDiff, min[i], regMax[i+1], 0, true, true);
                 yBounds.add(new int[]{lower+yOffset, higher+yOffset});
-                logger.trace("add separation: min: {}, max: {}", lower+yOffset, higher+yOffset);
+                logger.trace("add separation: min: {}, max: {}, min+offset: {}, max+offset:{}",lower, higher, lower+yOffset, higher+yOffset);
                 lastMaxIdx=i+1;
             }
         }
+        
         /*
         // no need to add the end of last bacteria -> LoG creates local max at the end of last bacteria 
         int end = ArrayUtil.min(projDiff, regMax[lastMaxIdx]+1, projDiff.length);
@@ -219,7 +273,7 @@ public class BacteriesFluo2D implements Segmenter {
             int lastLocalMax=lastMaxIdx;
             while(lastLocalMax<regMax.length-1 && regMax[lastLocalMax+1]<end) lastLocalMax++;
             if ((projDiffNorm[regMax[lastLocalMax]]-projDiffNorm[end])>splitThld // critère de séparation
-                    && (projDiff[regMax[lastLocalMax]]-projDiff[end])>=backgroundThld*maxValue // critère d'élimination du bruit
+                    //&& (projDiff[regMax[lastLocalMax]]-projDiff[end])>=backgroundThld*maxValue // critère d'élimination du bruit
                     ) {
                 //int lower = min[lastMaxIdx-1];
                 int lower = ArrayUtil.min(projValues, min[lastMaxIdx-1], regMax[lastMaxIdx]);

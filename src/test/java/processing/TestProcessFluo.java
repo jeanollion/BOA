@@ -205,7 +205,7 @@ public class TestProcessFluo {
         testCrop("/data/Images/Fluo/testsub");
         Image image = xp.getMicroscopyField(0).getInputImages().getImage(0, 3);
         ArrayList<Object3D> objects = MicroChannelFluo2D.getObjects(image, 350, 30, 5);
-        Object3D o = objects.get(2);
+        Object3D o = objects.get(1);
         ImageMask parentMask = o.getMask();
         Image input = image.crop(o.getBounds());
         ImageDisplayer disp = new IJImageDisplayer();
@@ -213,7 +213,7 @@ public class TestProcessFluo {
         //double thld = IJAutoThresholder.runThresholder(input, null, AutoThresholder.Method.Triangle);
         //logger.debug("thld: {}", thld);
         BacteriesFluo2D.debug=true;
-        ObjectPopulation pop = BacteriesFluo2D.run(input, parentMask, 15, 0.3, 0.0001);
+        ObjectPopulation pop = BacteriesFluo2D.run(input, parentMask, 0.5);
         disp.showImage(pop.getLabelImage());
     }
 }

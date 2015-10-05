@@ -74,7 +74,7 @@ public class ImageLabeller {
         for (Spot s : spots.values()) {
             ArrayList<Voxel> voxels = s.voxels;
             voxels = new ArrayList(new HashSet(voxels)); // revmove duplicate voxels because of neighbourhood overlap
-            res[label++]= new Object3D(voxels, label);
+            res[label++]= new Object3D(voxels, label, mask.getScaleXY(), mask.getScaleZ());
         }
         return res;
     }
