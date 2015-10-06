@@ -30,7 +30,7 @@ import plugins.TransformationTimeIndependent;
  * @author jollion
  */
 public class TransformationPluginParameter<T extends Transformation> extends PluginParameter<T> {
-    Object[] configurationData;
+    ArrayList configurationData;
     ChannelImageParameter inputChannel = new ChannelImageParameter("Configuration Channel", -1);
     ChannelImageParameter outputChannel=null;
     //Parameter inputTimePoints;
@@ -57,11 +57,11 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
             else outputChannel=null;
         }
         super.setPlugin(pluginInstance);
-        configurationData = ParameterUtils.duplicateConfigurationDataArray(pluginInstance.getConfigurationData());
+        configurationData = ParameterUtils.duplicateConfigurationDataArrayList(pluginInstance.getConfigurationData());
     }
     
-    public void setConfigurationData(Object[] configurationData) {
-        this.configurationData = ParameterUtils.duplicateConfigurationDataArray(configurationData);
+    public void setConfigurationData(ArrayList configurationData) {
+        this.configurationData = ParameterUtils.duplicateConfigurationDataArrayList(configurationData);
     }
     
     public void setOutputChannel(int... channelIdx) { // null -> all selected or same channel selected
@@ -102,8 +102,9 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     public T getPlugin() {
         T instance = super.getPlugin();
         if (instance!=null) {
-            Object[] target = instance.getConfigurationData();
-            if (target!=null && configurationData!=null) for (int i = 0; i<target.length; ++i) target[i] = ParameterUtils.duplicateConfigurationData(configurationData[i]);
+            ArrayList target = instance.getConfigurationData();
+            if (target!=null && configurationData!=null) for (Object o : configurationData) target.add(ParameterUtils.duplicateConfigurationData(o));
+            //logger.debug("copied configuration data to transformation: {}: config:{}", instance.getClass().getSimpleName(), instance.getConfigurationData());
         }
         return instance;
     }
@@ -113,7 +114,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         super.setContentFrom(other);
         if (other instanceof TransformationPluginParameter && ((TransformationPluginParameter)other).getPluginType().equals(getPluginType())) {
             TransformationPluginParameter otherPP = (TransformationPluginParameter) other;
-            this.configurationData=ParameterUtils.duplicateConfigurationDataArray(otherPP.configurationData);
+            this.configurationData=ParameterUtils.duplicateConfigurationDataArrayList(otherPP.configurationData);
             if (otherPP.outputChannel==null) this.outputChannel=null;
             else this.outputChannel=otherPP.outputChannel.duplicate();
             inputChannel.setContentFrom(otherPP.inputChannel);

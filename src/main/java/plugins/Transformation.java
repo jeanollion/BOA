@@ -19,6 +19,7 @@ package plugins;
 
 import dataStructure.containers.InputImages;
 import image.Image;
+import java.util.ArrayList;
 
 /**
  *
@@ -37,5 +38,5 @@ public interface Transformation extends ImageProcessingPlugin {
      * 
      * @return an array of objects that store parameters computed after the {@link Transformation#computeConfigurationData(dataStructure.containers.InputImages) } method and that will be used for the {@link Transformation#applyTransformation(image.Image) } method. The objects contained in the array can be modified by the program in order to retrieve de configuration data. The content of these objects should be of type: Number, primitive types, Strings or arrays of Number, primitive types or strings 
      */
-    public Object[] getConfigurationData();
+    public ArrayList getConfigurationData();
 }

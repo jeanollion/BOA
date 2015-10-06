@@ -31,6 +31,8 @@ import image.IJImageWrapper;
 import image.Image;
 import image.ImageFloat;
 import image.TypeConverter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import plugins.Registration;
 import static plugins.plugins.transformations.ImageStabilizerCore.combine;
 import processing.ImageTransformation;
@@ -48,7 +50,8 @@ public class ImageStabilizerXY implements Registration {
     BoundedNumberParameter maxIter = new BoundedNumberParameter("Maximum Iterations", 0, 200, 1, null);
     NumberParameter tol = new BoundedNumberParameter("Error Tolerance", 7, 1e-7, 0, null);
     Parameter[] parameters = new Parameter[]{ref, alpha, maxIter, tol}; //transformationType, pyramidLevel
-    double[][][] translationTXY;
+    ArrayList<ArrayList<Double>> translationTXY = new ArrayList<ArrayList<Double>>();
+    
     public ImageStabilizerXY(){}
     
     public ImageStabilizerXY(int referenceTimePoint, int transformationType, int pyramidLevel, double templateUpdateCoeff, int maxIterations, double tolerance) {
@@ -65,29 +68,60 @@ public class ImageStabilizerXY implements Registration {
         return this;
     }
     
+    /*public void computeConfigurationData2(int channelIdx, InputImages inputImages) {
+        Image imageRef = inputImages.getImage(channelIdx, 0);
+        ImageProcessor[][] pyramids = ImageStabilizerCore.initWorkspace(imageRef.getSizeX(), imageRef.getSizeY(), pyramidLevel.getSelectedIndex());
+        translationTXY = new ArrayList<Double[]>(inputImages.getTimePointNumber());
+        FloatProcessor ipRef = getFloatProcessor(imageRef, false);
+        FloatProcessor currentIp;
+        translationTXY.add(new Double[2]);
+        for (int t = 1; t<inputImages.getTimePointNumber(); ++t) {
+            currentIp = getFloatProcessor(inputImages.getImage(channelIdx, t), false);
+            translationTXY[0][t] = performCorrection2(ipRef, currentIp, pyramids);
+            ipRef = currentIp;
+            logger.debug("ImageStabilizerXY: timepoint: {} dX: {} dY: {}", t, translationTXY[0][t][0], translationTXY[0][t][1]);
+        }
+        for (int t = 2; t<inputImages.getTimePointNumber(); ++t) {
+            translationTXY[0][t][0]+=translationTXY[0][t-1][0];
+            translationTXY[0][t][1]+=translationTXY[0][t-1][1];
+        }
+    }*/
+    
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
         Image imageRef = inputImages.getImage(channelIdx, ref.getSelectedIndex());
         ImageProcessor[][] pyramids = ImageStabilizerCore.initWorkspace(imageRef.getSizeX(), imageRef.getSizeY(), pyramidLevel.getSelectedIndex());
-        translationTXY = new double[1][inputImages.getTimePointNumber()][];
+        
+        Double[][] translationTXYArray = new Double[inputImages.getTimePointNumber()][];
         FloatProcessor ipFloatRef = getFloatProcessor(imageRef, true);
         FloatProcessor trans=null;
         if (alpha.getValue().doubleValue()<1) trans  = new FloatProcessor(imageRef.getSizeX(), imageRef.getSizeY());
-        translationTXY[0][ref.getSelectedIndex()] = new double[2];
-        for (int t = ref.getSelectedIndex()-1; t>=0; --t) performCorrection(channelIdx, inputImages, t, ipFloatRef, pyramids, trans);
+        translationTXYArray[ref.getSelectedIndex()] = new Double[]{0d, 0d};
+        
+        for (int t = ref.getSelectedIndex()-1; t>=0; --t) translationTXYArray[t] = performCorrection(channelIdx, inputImages, t, ipFloatRef, pyramids, trans);
         if (alpha.getValue().doubleValue()<1 && ref.getSelectedIndex()>0) ipFloatRef = getFloatProcessor(imageRef, true); // reset template
-        for (int t = ref.getSelectedIndex()+1; t<inputImages.getTimePointNumber(); ++t) performCorrection(channelIdx, inputImages, t, ipFloatRef, pyramids, trans);
+        for (int t = ref.getSelectedIndex()+1; t<inputImages.getTimePointNumber(); ++t) translationTXYArray[t] = performCorrection(channelIdx, inputImages, t, ipFloatRef, pyramids, trans);
+        //translationTXY = new ArrayList<Double[]>(Arrays.asList(translationTXYArray));
+        translationTXY = new ArrayList<ArrayList<Double>>(translationTXYArray.length);
+        for (Double[] d : translationTXYArray) translationTXY.add(new ArrayList<Double>(Arrays.asList(d)));
     }
     
-    private void performCorrection(int channelIdx, InputImages inputImages, int t, FloatProcessor ipFloatRef, ImageProcessor[][] pyramids,  FloatProcessor trans) {
+    private Double[] performCorrection2(FloatProcessor ipFloatRef, FloatProcessor ipFloat, ImageProcessor[][] pyramids) {
+        double[][] wp = ImageStabilizerCore.estimateTranslation(ipFloat, ipFloatRef, pyramids[0], pyramids[1], maxIter.getValue().intValue(), tol.getValue().doubleValue());
+        return new Double[]{wp[0][0], wp[1][0]};
+        
+    }
+    
+    private Double[] performCorrection(int channelIdx, InputImages inputImages, int t, FloatProcessor ipFloatRef, ImageProcessor[][] pyramids,  FloatProcessor trans) {
         FloatProcessor currentTime = getFloatProcessor(inputImages.getImage(channelIdx, t), false);
         double[][] wp = ImageStabilizerCore.estimateTranslation(currentTime, ipFloatRef, pyramids[0], pyramids[1], maxIter.getValue().intValue(), tol.getValue().doubleValue());
-        translationTXY[0][t] = new double[]{wp[0][0], wp[1][0]};
-        logger.trace("ImageStabilizerXY: timepoint: {} dX: {} dY: {}", t, translationTXY[0][t][0], translationTXY[0][t][1]);
+        Double[] res =  new Double[]{wp[0][0], wp[1][0]};
+        logger.trace("ImageStabilizerXY: timepoint: {} dX: {} dY: {}", t, res[0], res[1]);
         //update template 
         if (alpha.getValue().doubleValue()<1) {
             ImageStabilizerCore.warpTranslation(trans, currentTime, wp);
             ImageStabilizerCore.combine(ipFloatRef, trans, alpha.getValue().doubleValue());
         }
+        return res;
     }
     
     private FloatProcessor getFloatProcessor(Image image, boolean duplicate) {
@@ -99,8 +133,9 @@ public class ImageStabilizerXY implements Registration {
     }
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        logger.debug("stabilization time: {}, channel: {}, X:{}, Y:{}", timePoint, channelIdx, translationTXY[0][timePoint][0], translationTXY[0][timePoint][1]);
-        if (translationTXY[0][timePoint][0]==0 && translationTXY[0][timePoint][1]==0) return image;
+        ArrayList<Double> trans = translationTXY.get(timePoint);
+        logger.debug("stabilization time: {}, channel: {}, X:{}, Y:{}", timePoint, channelIdx, trans.get(0), trans.get(1));
+        if (trans.get(0)==0 && trans.get(1)==0) return image;
         if (!(image instanceof ImageFloat)) image = TypeConverter.toFloat(image, null);
         /*ImagePlus impRef = IJImageWrapper.getImagePlus(image);
         ImageStack is = impRef.getImageStack();
@@ -113,10 +148,10 @@ public class ImageStabilizerXY implements Registration {
             temp = (FloatProcessor)is.getProcessor(z+1);
         }
         return new ImageFloat(image.getName(), image.getSizeX(), outPixels);*/
-        return ImageTransformation.translate(image, translationTXY[0][timePoint][0], translationTXY[0][timePoint][1], 0, ImageTransformation.InterpolationScheme.BSPLINE5);
+        return ImageTransformation.translate(image, -trans.get(0), -trans.get(1), 0, ImageTransformation.InterpolationScheme.BSPLINE5);
     }
 
-    public Object[] getConfigurationData() {
+    public ArrayList getConfigurationData() {
         return this.translationTXY;
     }
 

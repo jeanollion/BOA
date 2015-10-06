@@ -66,7 +66,7 @@ public class MicroChannelFluo2D implements Segmenter {
         // faire le calcul que pour le premier temps et copier les objets pour les temps suivants 
         int refTimePoint = 0;
         ArrayList<Object3D> objects;
-        if (parent.getTimePoint()==refTimePoint) {
+        if (parent.getTimePoint()==refTimePoint) { // pour le moment  true || 
             objects= getObjects(input, channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), yMargin.getValue().intValue());
             logger.debug("MicroChannelFluo2D: current timepoint: {} segmented objects: {}, channelHeight: {}, channel width: {}, yMargin: {}", parent.getTimePoint(), objects.size(), channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), yMargin.getValue().intValue());
         }

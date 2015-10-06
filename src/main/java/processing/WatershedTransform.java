@@ -73,7 +73,7 @@ public class WatershedTransform {
         spots = new Spot[regionalExtrema.length+1];
         segmentedMap = ImageInteger.createEmptyLabelImage("segmentationMap", spots.length, watershedMap);
         for (int i = 0; i<regionalExtrema.length; ++i) spots[i+1] = new Spot(i+1, regionalExtrema[i].getVoxels());
-        logger.debug("watershed transform: number of seeds: {} segmented map type: {}", regionalExtrema.length, segmentedMap.getClass().getSimpleName());
+        logger.trace("watershed transform: number of seeds: {} segmented map type: {}", regionalExtrema.length, segmentedMap.getClass().getSimpleName());
         is3D=watershedMap.getSizeZ()>1;    
     }
     

@@ -20,6 +20,7 @@ package measurement;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.Voxel;
 import image.Image;
+import java.util.Collections;
 
 /**
  *
@@ -31,5 +32,26 @@ public class BasicMeasurements {
         for (Voxel v : object.getVoxels()) value+=image.getPixel(v.x, v.y, v.z);
         if (!object.getVoxels().isEmpty()) return value/object.getVoxels().size();
         else return 0;
+    }
+    public static double getMaxValue(Object3D object, Image image) {
+        double max=-Double.MAX_VALUE;
+        for (Voxel v : object.getVoxels()) if (image.getPixel(v.x, v.y, v.z)>max) max = image.getPixel(v.x, v.y, v.z);
+        return max;
+    }
+    public static double getMinValue(Object3D object, Image image) {
+        double min=Double.MAX_VALUE;
+        for (Voxel v : object.getVoxels()) if (image.getPixel(v.x, v.y, v.z)<min) min = image.getPixel(v.x, v.y, v.z);
+        return min;
+    }
+    public static double getPercentileValue(Object3D object, double percentile, Image image) {
+        if (object.getVoxels().isEmpty()) return Double.NaN;
+        if (percentile<=0) return getMinValue(object, image);
+        if (percentile>=1) return getMaxValue(object, image);
+        for (Voxel v : object.getVoxels()) v.value=image.getPixel(v.x, v.y, v.z);
+        Collections.sort(object.getVoxels());
+        double idxD = percentile * object.getVoxels().size();
+        int idx = (int) idxD;
+        double delta = idxD - idx;
+        return object.getVoxels().get(idx).value * (1 - delta) + (delta) * object.getVoxels().get(idx+1).value;
     }
 }

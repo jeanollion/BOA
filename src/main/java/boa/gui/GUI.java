@@ -263,7 +263,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             xpDAO.store(xp);
             
             // process
-            Processor.preProcessImages(xp, objectDAO);
+            Processor.preProcessImages(xp, objectDAO, true);
             StructureObject[] root = xp.getMicroscopyField(0).createRootObjects();
             objectDAO.store(root); 
             Processor.trackRoot(root, objectDAO);
@@ -305,6 +305,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         hostName = new javax.swing.JTextField();
         preProcessButton = new javax.swing.JButton();
         saveExperiment = new javax.swing.JButton();
+        reProcess = new javax.swing.JButton();
         ConfigurationPanel = new javax.swing.JPanel();
         configurationJSP = new javax.swing.JScrollPane();
         DataPanel = new javax.swing.JPanel();
@@ -356,6 +357,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
+        reProcess.setText("ReProcess");
+        reProcess.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                reProcessActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout ActionPanlLayout = new javax.swing.GroupLayout(ActionPanl);
         ActionPanl.setLayout(ActionPanlLayout);
         ActionPanlLayout.setHorizontalGroup(
@@ -363,7 +371,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             .addGroup(ActionPanlLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(ActionPanlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(preProcessButton)
+                    .addGroup(ActionPanlLayout.createSequentialGroup()
+                        .addComponent(preProcessButton)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(reProcess))
                     .addComponent(importImageButton)
                     .addGroup(ActionPanlLayout.createSequentialGroup()
                         .addComponent(connectButton)
@@ -383,7 +394,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(importImageButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(preProcessButton)
+                .addGroup(ActionPanlLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(preProcessButton)
+                    .addComponent(reProcess))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(segmentButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -487,7 +500,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 653, Short.MAX_VALUE)
+            .addComponent(jTabbedPane1)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -524,7 +537,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void preProcessButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_preProcessButtonActionPerformed
         if (!checkConnection()) return;
-        Processor.preProcessImages(this.xpDAO.getExperiment(), objectDAO);
+        Processor.preProcessImages(this.xpDAO.getExperiment(), objectDAO, true);
         reloadTree=true;
         xpDAO.store(xpDAO.getExperiment()); //stores preProcessing configurations
     }//GEN-LAST:event_preProcessButtonActionPerformed
@@ -533,6 +546,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (!checkConnection()) return;
         xpDAO.store(xpDAO.getExperiment());
     }//GEN-LAST:event_saveExperimentActionPerformed
+
+    private void reProcessActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_reProcessActionPerformed
+        if (!checkConnection()) return;
+        Processor.preProcessImages(this.xpDAO.getExperiment(), objectDAO, false);
+        reloadTree=true;
+    }//GEN-LAST:event_reProcessActionPerformed
 
     /**
      * @param args the command line arguments
@@ -584,6 +603,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JButton importImageButton;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JButton preProcessButton;
+    private javax.swing.JButton reProcess;
     private javax.swing.JButton saveExperiment;
     private javax.swing.JButton segmentButton;
     private javax.swing.JScrollPane structureJSP;

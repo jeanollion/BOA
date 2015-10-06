@@ -29,6 +29,7 @@ import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
 import image.ImageFloat;
 import image.TypeConverter;
+import java.util.ArrayList;
 import plugins.TransformationTimeIndependent;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import processing.Filters;
@@ -55,7 +56,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     ChoiceParameter searchMethod = new ChoiceParameter("Search method", SearchMethod.getValues(), SearchMethod.MAXVAR.getName(), false);
     
     Parameter[] parameters = new Parameter[]{minAngle, maxAngle, precision1, precision2, interpolation, backgroundSubtractionRadius};
-    Double[] internalParams;
+    ArrayList<Double> internalParams=new ArrayList<Double>(1);
 
     public AutoRotationXY(double minAngle, double maxAngle, double precision1, double precision2, InterpolationScheme interpolation, SearchMethod method, int backgroundSubtractionRadius) {
         this.minAngle.setValue(minAngle);
@@ -73,7 +74,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
         return false;
     }
 
-    public Object[] getConfigurationData() {
+    public ArrayList<Double> getConfigurationData() {
         return internalParams;
     }
 
@@ -100,11 +101,12 @@ public class AutoRotationXY implements TransformationTimeIndependent {
         
         //ImageFloat sin = RadonProjection.getSinogram(image, minAngle.getValue().doubleValue()+90, maxAngle.getValue().doubleValue()+90, precision1.getValue().doubleValue(), Math.min(image.getSizeX(), image.getSizeY())); //(int)Math.sqrt(image.getSizeX()*image.getSizeX() + image.getSizeY()*image.getSizeY())
         //new IJImageDisplayer().showImage(sin);
-        internalParams = new Double[]{angle};
+        internalParams = new ArrayList<Double>(1);
+        internalParams.add(angle);
     }
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), internalParams[0], ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()));
+        return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), internalParams.get(0), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()));
     }
     
     public static double computeRotationAngleXY(Image image, int z, int backgroundSubtractionRadius, double ang1, double ang2, double stepsize, float[] proj, boolean var, double filterScale) {
@@ -122,7 +124,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
             radonProject(image, z, angles[angleIdx]+90, proj);
             //paste(proj, sinogram, angleIdx);
             //if (filterScale>0) filter(filterScale, proj);
-            double tempMax = var?var(proj):max(proj);
+            double tempMax = var?RadonProjection.var(proj):RadonProjection.max(proj);
             if (tempMax > max) {
                 max = tempMax;
                 angleMax = angles[angleIdx];
@@ -144,22 +146,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
         return secondSearch+inc;
     }
     
-    private static float max(float[] array) {
-        float max = array[0];
-        for (int i = 1; i<array.length; ++i) {
-            if (array[i]>max) max = array[i];
-        }
-        return max;
-    }
     
-    private static double var(float[] array) {
-        if (array.length==0) return 0;
-        double sum = 0, sum2=0;
-        for (float f : array){sum+=f; sum2+=f*f;}
-        sum/=(float)array.length;
-        sum2/=(float)array.length;
-        return sum2-sum*sum;
-    }
     
     private static void filter(double scale, float[] data) {
         ImageFloat im = new ImageFloat("", data.length, new float[][]{data});

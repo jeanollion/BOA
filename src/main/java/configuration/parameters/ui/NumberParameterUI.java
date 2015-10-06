@@ -17,6 +17,7 @@
  */
 package configuration.parameters.ui;
 
+import static boa.gui.GUI.logger;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.ParameterUtils;
@@ -58,10 +59,13 @@ public class NumberParameterUI implements ParameterUI {
                 slider.addChangeListener(new ChangeListener() {
                     @Override
                     public void stateChanged(ChangeEvent e) {
+                        if (slider.getValueIsAdjusting()) return;
                         if (editing) return;
                         double d = (slider.getValue()+0.0)/sliderCoeff;
                         number.setNumber(d);
+                        
                         parameter.setValue(d);
+                        updateNode();
                     }
                 });
             }
@@ -106,12 +110,16 @@ public class NumberParameterUI implements ParameterUI {
             if (slider!=null) slider.setValue(getSliderValue(n));
             parameter.setValue(n);
         }
-        number.setPreferredSize(new Dimension(Math.max(componentMinWith, number.getText().length() * 9), number.getPreferredSize().height));
-        if (model != null) {
-            model.nodeChanged(parameter);
-        }
+        number.setPreferredSize(new Dimension(Math.max(componentMinWith, number.getText().length() * 9), number.getPreferredSize().height)); 
+        updateNode();
         editing = false;
     }
+    
+    private void updateNode() {
+        if (model != null) model.nodeChanged(parameter);
+        
+    }
+    
     private int getSliderValue(Number a) {
         if (a instanceof Integer || a instanceof Short || a instanceof Byte) return (int)(a.intValue()*sliderCoeff);
         else return (int)(a.doubleValue()*sliderCoeff+0.5);

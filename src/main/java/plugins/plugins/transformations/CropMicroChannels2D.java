@@ -30,6 +30,7 @@ import image.ImageInteger;
 import image.ImageLabeller;
 import image.ImageOperations;
 import static image.ImageOperations.threshold;
+import java.util.ArrayList;
 import plugins.TransformationTimeIndependent;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import processing.Filters;
@@ -45,14 +46,14 @@ import static utils.Utils.plotProfile;
  */
 public class CropMicroChannels2D implements TransformationTimeIndependent {
     
-    Integer[] configurationData; // xMin/xMax/yMin/yMax
+    ArrayList<Integer> configurationData=new ArrayList<Integer>(4); // xMin/xMax/yMin/yMax
     NumberParameter xStart = new NumberParameter("X start", 0, 0);
     NumberParameter xStop = new BoundedNumberParameter("X stop (0 for image width)", 0, 0, 0, null);
     NumberParameter yStart = new BoundedNumberParameter("Y start", 0, 0, 0, null);
     NumberParameter yStop = new BoundedNumberParameter("Y stop (0 for image heigth)", 0, 0, 0, null);
-    NumberParameter margin = new BoundedNumberParameter("Margin", 0, 15, 0, null);
+    NumberParameter margin = new BoundedNumberParameter("Margin", 0, 30, 0, null);
     NumberParameter channelHeight = new BoundedNumberParameter("Channel Height", 0, 350, 0, null);
-    NumberParameter cropMargin = new BoundedNumberParameter("Crop Margin", 0, 15, 0, null);
+    NumberParameter cropMargin = new BoundedNumberParameter("Crop Margin", 0, 30, 0, null);
     Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, xStart, xStop, yStart, yStop};
     
     public SelectionMode getOutputChannelSelectionMode() {
@@ -81,7 +82,11 @@ public class CropMicroChannels2D implements TransformationTimeIndependent {
         BoundingBox b = getBoundingBox(image, z, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue());
         // si b==null -> faire sur d'autres temps? 
         logger.debug("Crop Microp Channel: image: {} timepoint: {} boundingBox: {}", image.getName(), inputImages.getDefaultTimePoint(), b);
-        configurationData = new Integer[]{b.getxMin(), b.getxMax(), b.getyMin(), b.getyMax()};
+        configurationData=new ArrayList<Integer>(4);
+        configurationData.add(b.getxMin());
+        configurationData.add(b.getxMax());
+        configurationData.add(b.getyMin());
+        configurationData.add(b.getyMax());
     }
     
     public static BoundingBox getBoundingBox(Image image, int z, int cropMargin, int margin, int channelHeight, int xStart, int xStop, int yStart, int yStop) {
@@ -158,11 +163,11 @@ public class CropMicroChannels2D implements TransformationTimeIndependent {
     
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        BoundingBox bounds = new BoundingBox(configurationData[0], configurationData[1], configurationData[2], configurationData[3], 0, image.getSizeZ()-1);
+        BoundingBox bounds = new BoundingBox(configurationData.get(0), configurationData.get(1), configurationData.get(2), configurationData.get(3), 0, image.getSizeZ()-1);
         return image.crop(bounds);
     }
 
-    public Object[] getConfigurationData() {
+    public ArrayList getConfigurationData() {
         return configurationData;
     }
 

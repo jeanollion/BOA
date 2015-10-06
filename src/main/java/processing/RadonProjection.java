@@ -28,9 +28,6 @@ import processing.neighborhood.EllipsoidalNeighborhood;
 public class RadonProjection {
 
     public static void radonProject(Image image, int z, double angle, float[] proj) {
-
-        boolean fast = false;
-
         double val;
         int x, y;
         double sintab = Math.sin((double) angle * Math.PI / 180 - Math.PI / 2);
@@ -49,7 +46,7 @@ public class RadonProjection {
         val = 0;
         double weight = 0;
         double sang = Math.sqrt(2) / 2;
-
+        boolean noValue;
         double a = -costab / sintab;
         double aa = 1 / a;
         if (Math.abs(sintab) > sang) {
@@ -57,26 +54,23 @@ public class RadonProjection {
                 N = projIdx - proj.length / 2; //System.out.print("N="+N+" ");
                 double b = (N - costab - sintab) / sintab;
                 b *= scale;
+                noValue=true;
                 for (x = -Xcenter; x < Xcenter; x++) {
-                    if (fast) {
-                        //just use nearest neighbour interpolation
-                        y = (int) Math.round(a * x + b);
-                        if (y >= -Ycenter && y < Ycenter) {
-                            val += image.getPixel(x+Xcenter, y + Ycenter, z);
-                        }
-                    } else {
-                        //linear interpolation
-                        y = (int) Math.round(a * x + b);
-                        weight = Math.abs((a * x + b) - Math.ceil(a * x + b));
+                    
+                    //linear interpolation
+                    y = (int) Math.round(a * x + b);
+                    weight = Math.abs((a * x + b) - Math.ceil(a * x + b));
 
-                        if (y >= -Ycenter && y + 1 < Ycenter) {
-                            val += (1 - weight) * image.getPixel(x+Xcenter, y + Ycenter, z)
-                                    + weight * image.getPixel(x+Xcenter, y + Ycenter + 1, z);
-                        }
-
+                    if (y >= -Ycenter && y + 1 < Ycenter) {
+                        val += (1 - weight) * image.getPixel(x+Xcenter, y + Ycenter, z)
+                                + weight * image.getPixel(x+Xcenter, y + Ycenter + 1, z);
+                        noValue=false;
                     }
+
+                    
                 }
-                proj[projIdx] = (float) (val / Math.abs(sintab));
+                if (!noValue) proj[projIdx] = (float) (val / Math.abs(sintab));
+                else proj[projIdx] = Float.NaN;
                 val = 0;
 
             }
@@ -87,24 +81,19 @@ public class RadonProjection {
                 double bb = (N - costab - sintab) / costab;
                 bb = bb * scale;
                 //IJ.write("bb="+bb+" ");
+                noValue=true;
                 for (y = -Ycenter; y < Ycenter; y++) {
-                    if (fast == true) {
-                        x = (int) Math.round(aa * y + bb);
-                        if (x >= -Xcenter && x < Xcenter) {
-                            val += image.getPixel(x+Xcenter, y + Ycenter, z);
-                        }
-                    } else {
-                        x = (int) Math.round(aa * y + bb);
-                        weight = Math.abs((aa * y + bb) - Math.ceil(aa * y + bb));
+                    x = (int) Math.round(aa * y + bb);
+                    weight = Math.abs((aa * y + bb) - Math.ceil(aa * y + bb));
 
-                        if (x >= -Xcenter && x + 1 < Xcenter) {
-                            val += (1 - weight) * image.getPixel(x+Xcenter, y + Ycenter, z)
-                                    + weight * image.getPixel(x+Xcenter + 1, y + Ycenter, z);
-                        }
-
+                    if (x >= -Xcenter && x + 1 < Xcenter) {
+                        val += (1 - weight) * image.getPixel(x+Xcenter, y + Ycenter, z)
+                                + weight * image.getPixel(x+Xcenter + 1, y + Ycenter, z);
+                        noValue=false;
                     }
                 }
-                proj[projIdx] = (float) (val / Math.abs(costab));
+                if (!noValue) proj[projIdx] = (float) (val / Math.abs(costab));
+                else proj[projIdx] = Float.NaN;
                 val = 0;
 
             }
@@ -118,7 +107,7 @@ public class RadonProjection {
         float[] proj = new float[projSize];
         for (int i = 0; i<angles.length; ++i) {
             radonProject(image, 0, angles[i], proj);
-            for (int j = 0; j<projSize; ++j) res.setPixel(i, j, 0, proj[j]);
+            for (int j = 0; j<projSize; ++j) if (proj[j]!=Float.NaN) res.setPixel(i, j, 0, proj[j]);
         }
         return res;
     }
@@ -140,6 +129,38 @@ public class RadonProjection {
     private static void paste(float[] source, ImageFloat dest, int x) {
         float[] pixDest = dest.getPixelArray()[0];
         for (int i = 0; i<source.length; ++i) pixDest[x + i*dest.getSizeX()] = source[i];
+    }
+
+    public static float max(float[] array) {
+        if (array.length == 0) return 0;
+        int idx = 0;
+        while(idx<array.length && array[idx]==Float.NaN) idx++;
+        if (idx==array.length) return 0;
+        float max = array[idx];
+        for (int i = idx+1; i < array.length; ++i) {
+            if (array[i]!=Float.NaN && array[i] > max) {
+                max = array[i];
+            }
+        }
+        return max;
+    }
+
+    public static double var(float[] array) {
+        if (array.length == 0) return 0;
+        double sum = 0;
+        double sum2 = 0;
+        int count=0;
+        for (int i = 0; i < array.length; ++i) {
+            if (array[i]!=Float.NaN) {
+                sum += array[i];
+                sum2 += array[i] * array[i];
+                ++count;
+            }
+        }
+        if (count==0) return 0;
+        sum /= (double) count;
+        sum2 /= (double) count;
+        return sum2 - sum * sum;
     }
     
     

@@ -64,15 +64,15 @@ public class Processor {
         
     }*/
     
-    public static void preProcessImages(Experiment xp, ObjectDAO dao) {
+    public static void preProcessImages(Experiment xp, ObjectDAO dao, boolean computeConfigurationData) {
         for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
-            preProcessImages(xp.getMicroscopyField(i), dao, false);
+            preProcessImages(xp.getMicroscopyField(i), dao, false, computeConfigurationData);
         }
         if (dao!=null) dao.deleteAllObjects();
     }
     
-    public static void preProcessImages(MicroscopyField field, ObjectDAO dao, boolean deleteObjects) {
-        setTransformations(field, true);
+    public static void preProcessImages(MicroscopyField field, ObjectDAO dao, boolean deleteObjects, boolean computeConfigurationData) {
+        setTransformations(field, computeConfigurationData);
         InputImagesImpl images = field.getInputImages();
         images.applyTranformationsSaveAndClose();
         if (deleteObjects) if (dao!=null && deleteObjects) dao.deleteObjectsFromField(field.getName());
@@ -80,8 +80,7 @@ public class Processor {
     
     public static void setTransformations(MicroscopyField field, boolean computeConfigurationData) {
         InputImagesImpl images = field.getInputImages();
-        // delete images if existing in imageDAO
-        images.deleteFromDAO();
+        images.deleteFromDAO(); // delete images if existing in imageDAO
         PreProcessingChain ppc = field.getPreProcessingChain();
         for (TransformationPluginParameter<Transformation> tpp : ppc.getTransformations()) {
             Transformation transfo = tpp.getPlugin();

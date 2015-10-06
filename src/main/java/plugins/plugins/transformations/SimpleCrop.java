@@ -23,6 +23,7 @@ import dataStructure.containers.InputImages;
 import dataStructure.objects.StructureObjectPreProcessing;
 import image.BoundingBox;
 import image.Image;
+import java.util.ArrayList;
 import plugins.Cropper;
 
 /**
@@ -70,7 +71,7 @@ public class SimpleCrop implements Cropper {
         return parameters;
     }
     
-    public Parameter[] getConfigurationData() {
+    public ArrayList getConfigurationData() {
         return null;
     }
 

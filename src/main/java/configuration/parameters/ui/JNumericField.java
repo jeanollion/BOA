@@ -17,9 +17,11 @@
  */
 package configuration.parameters.ui;
 
+import static boa.gui.GUI.logger;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import javax.swing.JTextField;
 import javax.swing.text.*;
 
@@ -47,7 +49,7 @@ public class JNumericField extends JTextField {
     private String allowedChars = null;
     private boolean allowNegative = false;
     private int precision = 0;
-    private DecimalFormat df = new DecimalFormat("#0");
+    private DecimalFormat df;
     protected PlainDocument numberFieldFilter;
     
     public JNumericField(int precision) {
@@ -55,13 +57,16 @@ public class JNumericField extends JTextField {
     }
 
     private JNumericField(int iMaxLen, int precision, int iFormat) {
+        DecimalFormatSymbols otherSymbols = new DecimalFormatSymbols();
+        otherSymbols.setDecimalSeparator('.');
+        df = new DecimalFormat("#0", otherSymbols);
         setAllowNegative(true);
         setMaxLength(iMaxLen);
         setFormat(iFormat);
         setPrecision(precision);
         numberFieldFilter = new JNumberFieldFilter();
         super.setDocument(numberFieldFilter);
-        super.setPreferredSize(new Dimension(100, 19));
+        super.setPreferredSize(new Dimension(100, 25));
     }
     
 
@@ -129,6 +134,8 @@ public class JNumericField extends JTextField {
     public void setNumber(Number value) {
         setText(df.format(value));
         //setText(String.valueOf(value));
+        //logger.trace("ser text: value: {}, format: {}, getText():{}", value, df.format(value), getText());
+        
     }
 
     public int getInt() {

@@ -24,6 +24,7 @@ import dataStructure.containers.InputImages;
 import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
 import image.TypeConverter;
+import java.util.ArrayList;
 import plugins.TransformationTimeIndependent;
 import processing.ImageTransformation;
 import utils.Utils;
@@ -60,7 +61,7 @@ public class SimpleTranslation implements TransformationTimeIndependent {
         return parameters;
     }
     
-    public Parameter[] getConfigurationData() {
+    public ArrayList getConfigurationData() {
         return null;
     }
 

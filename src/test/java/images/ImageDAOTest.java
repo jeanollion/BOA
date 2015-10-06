@@ -105,7 +105,7 @@ public class ImageDAOTest {
             
             // process
             assertEquals("number of files before preProcess", 0, countFiles(new File(xp.getOutputImageDirectory())));
-            Processor.preProcessImages(xp, objectDAO);
+            Processor.preProcessImages(xp, objectDAO, true);
             assertEquals("number of files after preProcess", 6, countFiles(new File(xp.getOutputImageDirectory())));
             Processor.processStructures(xp, objectDAO);
             assertEquals("number of files after preProcess", 12, countFiles(new File(xp.getOutputImageDirectory())));

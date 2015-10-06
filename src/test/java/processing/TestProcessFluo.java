@@ -24,6 +24,7 @@ import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
+import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectDAO;
@@ -59,6 +60,7 @@ import plugins.plugins.transformations.ImageStabilizerXY;
 import processing.ImageTransformation.InterpolationScheme;
 import testPlugins.dummyPlugins.DummySegmenter;
 import utils.MorphiumUtils;
+import utils.Utils;
 import static utils.Utils.deleteDirectory;
 
 /**
@@ -70,7 +72,9 @@ public class TestProcessFluo {
     
     public static void main(String[] args) {
         //new TestProcessFluo().testRotation();
-        new TestProcessFluo().testSegBacteries();
+        //new TestProcessFluo().testSegBacteries();
+        //new TestProcessFluo().testSegBacteriesFromXP();
+        new TestProcessFluo().testSegBactAllTimes();
     }
     
     
@@ -160,7 +164,7 @@ public class TestProcessFluo {
         //Image[][] imageInputTC = new Image[xp.getMicroscopyField(0).getInputImages().getTimePointNumber()][1];
         //for (int t = 0; t<imageInputTC.length; ++t) imageInputTC[t][0] = xp.getMicroscopyField(0).getInputImages().getImage(0, t);
         
-        Processor.preProcessImages(xp, null);
+        Processor.preProcessImages(xp, null, true);
         ImageDisplayer disp = new IJImageDisplayer();
         Image[][] imageOutputTC = new Image[xp.getMicroscopyField(0).getInputImages().getTimePointNumber()][1];
         for (int t = 0; t<imageOutputTC.length; ++t) imageOutputTC[t][0] = xp.getMicroscopyField(0).getInputImages().getImage(0, t);
@@ -204,17 +208,105 @@ public class TestProcessFluo {
     
     public void testSegBacteries() {
         testCrop("/data/Images/Fluo/testsub");
+        
         Image image = xp.getMicroscopyField(0).getInputImages().getImage(0, 3);
         ArrayList<Object3D> objects = MicroChannelFluo2D.getObjects(image, 350, 30, 5);
         Object3D o = objects.get(1);
         ImageMask parentMask = o.getMask();
         Image input = image.crop(o.getBounds());
+        testSegBacteria(input, parentMask);
+    }
+    
+    public void testSegBacteriesFromXP() {
+        String dbName = "testFluo";
+        try {
+            MorphiumConfig cfg = new MorphiumConfig();
+            cfg.setDatabase(dbName);
+            cfg.addHost("localhost", 27017);
+            Morphium m=new Morphium(cfg);
+            ExperimentDAO xpDAO = new ExperimentDAO(m);
+            xp=xpDAO.getExperiment();
+            logger.info("Experiment: {} retrieved from db: {}", xp.getName(), dbName);
+            
+            
+            ObjectDAO dao = new ObjectDAO(m, xpDAO);
+            StructureObject root = dao.getRoot(xp.getMicroscopyField(1).getName(), 16);
+            logger.debug("field name: {}, root==null? {}", xp.getMicroscopyField(1).getName(), root==null);
+            StructureObject mc = root.getChildObjects(0, dao)[1];
+            Image input = mc.getRawImage(1);
+            ImageMask parentMask = mc.getMask();
+            testSegBacteria(input, parentMask);
+        } catch (UnknownHostException ex) {
+            logger.error("storx xp error: ", ex);
+        }
+    }
+    
+    public static void testSegBacteria(Image input, ImageMask parentMask) {
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
-        //double thld = IJAutoThresholder.runThresholder(input, null, AutoThresholder.Method.Triangle);
-        //logger.debug("thld: {}", thld);
         BacteriesFluo2D.debug=true;
-        ObjectPopulation pop = BacteriesFluo2D.run(input, parentMask, 0.5);
+        ObjectPopulation pop = BacteriesFluo2D.run(input, parentMask, 0.1, null);
         disp.showImage(pop.getLabelImage());
+    }
+    
+    public void testSegBactAllTimes() {
+        String dbName = "testFluo";
+        try {
+            MorphiumConfig cfg = new MorphiumConfig();
+            cfg.setDatabase(dbName);
+            cfg.addHost("localhost", 27017);
+            Morphium m=new Morphium(cfg);
+            ExperimentDAO xpDAO = new ExperimentDAO(m);
+            xp=xpDAO.getExperiment();
+            logger.info("Experiment: {} retrieved from db: {}", xp.getName(), dbName);
+            
+            
+            ObjectDAO dao = new ObjectDAO(m, xpDAO);
+            
+            MicroscopyField f = xp.getMicroscopyField(0);
+            ArrayList<Double[]> debugValues = new ArrayList<Double[]>(f.getTimePointNumber());
+            for (int t = 0; t<f.getTimePointNumber(); ++t) {
+                
+                if (false) {
+                Image image = f.getInputImages().getImage(0, t);
+                ArrayList<Object3D> objects = MicroChannelFluo2D.getObjects(image, 350, 30, 5);
+                
+                int count = 0;
+                Object3D o = objects.get(0);
+                //for (Object3D o : objects) {
+                    logger.debug("timePoint: {}, microchannel: {}", t, count++);
+                    ImageMask parentMask = o.getMask();
+                    Image input = image.crop(o.getBounds());
+                    ObjectPopulation pop = BacteriesFluo2D.run(input, parentMask, 0.1, debugValues);
+                //}
+                } else {
+                    StructureObject root = dao.getRoot(f.getName(), t);
+                    //logger.debug("field name: {}, root==null? {}", xp.getMicroscopyField(1).getName(), root==null);
+                    StructureObject[] mc = root.getChildObjects(0, dao);
+                    StructureObject o = mc[0];
+                    //for (StructureObject o : mc) {
+                        logger.debug("timePoint: {}, channel: {}", t, o.getIdx());
+                        Image input = o.getRawImage(1);
+                        ImageMask parentMask = o.getMask();
+                        ObjectPopulation pop = BacteriesFluo2D.run(input, parentMask, 0.1, debugValues);
+                    //}
+                }
+            }
+            
+            // analyse values 
+            float[][] values = new float[6][debugValues.size()];
+            for (int i = 0; i<debugValues.size(); ++i) {
+                for (int j = 0; j<6; ++j) values[j][i] = (float)(double)debugValues.get(i)[j];
+            }
+            Utils.plotProfile("foreground peaks amplitude", values[0]);
+            Utils.plotProfile("background peaks amplitude", values[1]);
+            Utils.plotProfile("otsu threshold", values[2]);
+            Utils.plotProfile("median (dog)", values[3]);
+            Utils.plotProfile("median (log)", values[4]);
+            Utils.plotProfile("median (smoothed)", values[5]);
+            
+        } catch (UnknownHostException ex) {
+            logger.error("storx xp error: ", ex);
+        }
     }
 }

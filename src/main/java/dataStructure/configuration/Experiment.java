@@ -86,6 +86,10 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         super.initChildren(importMethod, template, fields, channelImages, structures, imagePath);
     }
     
+    protected void checkInit() {
+        if (children==null) initChildList();
+    }
+    
     public PreProcessingChain getPreProcessingTemplate() {
         return template;
     }
@@ -96,6 +100,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
      * @return a new MicroscopyField if no MicroscopyField named {@param fieldName} are already existing, null if not. 
      */
     public MicroscopyField createMicroscopyField(String fieldName) {
+        checkInit();
         if (getMicroscopyField(fieldName)!=null) return null;
         MicroscopyField res =fields.createChildInstance(fieldName);
         fields.insert(res);
@@ -104,14 +109,17 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     public MicroscopyField getMicroscopyField(String fieldName) {
+        checkInit();
         return fields.getChildByName(fieldName);
     }
     
     public MicroscopyField getMicroscopyField(int fieldIdx) {
+        checkInit();
         return fields.getChildAt(fieldIdx);
     }
     
     public int getTimePointNumber() {
+        checkInit();
         if (fields.getChildCount()==0) return 0;
         MicroscopyField f= fields.getChildAt(0);
         if (f!=null && f.images!=null) {
@@ -122,6 +130,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     public ObjectId getId() {return id;}
     
     public SimpleListParameter<ChannelImage> getChannelImages() {
+        checkInit();
         return channelImages;
     }
     
@@ -143,11 +152,12 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         return res;
     }
     
-    public int getChannelImageIdx(int structureIdx) {return getStructure(structureIdx).getChannelImage();}
+    public int getChannelImageIdx(int structureIdx) {checkInit(); return getStructure(structureIdx).getChannelImage();}
     
-    public SimpleListParameter<Structure> getStructures() {return structures;}
+    public SimpleListParameter<Structure> getStructures() {checkInit(); return structures;}
     
     public Structure getStructure(int structureIdx) {
+        checkInit();
         return structures.getChildAt(structureIdx);
     }
     
@@ -170,6 +180,8 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     public String[] getChannelImagesAsString() {return channelImages.getChildrenString();}
     
     public String[] getFieldsAsString() {return fields.getChildrenString();}
+    
+    
     
     /**
      * 

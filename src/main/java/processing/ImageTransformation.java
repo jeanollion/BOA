@@ -78,7 +78,7 @@ public class ImageTransformation {
         return ImagescienceWrapper.wrap((new Embed()).run(ImagescienceWrapper.getImagescience(image), dim, pos, 0));
     }
     
-    public static void filp(Image image, Axis axis) {
+    public static void flip(Image image, Axis axis) {
         new Mirror().run(ImagescienceWrapper.getImagescience(image), Axis.getAxes(axis));
     }
 }

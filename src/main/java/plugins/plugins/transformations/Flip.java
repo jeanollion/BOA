@@ -17,12 +17,14 @@
  */
 package plugins.plugins.transformations;
 
+import boa.gui.imageInteraction.IJImageDisplayer;
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.containers.InputImages;
 import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
+import java.util.ArrayList;
 import plugins.TransformationTimeIndependent;
 import processing.ImageTransformation;
 import processing.ImageTransformation.Axis;
@@ -42,20 +44,9 @@ public class Flip implements TransformationTimeIndependent {
     }
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        Axis axis;
-        switch (direction.getSelectedIndex()) {
-            case 0:
-                axis=Axis.X;
-                break;
-            case 1: 
-            default: 
-                axis=Axis.Y;
-                break;
-            case 2: 
-                axis = Axis.Z;
-                break;
-        }
-        ImageTransformation.filp(image, axis);
+        Axis axis = Axis.valueOf(direction.getSelectedItem());
+        //logger.debug("performing flip: axis: {}, channel: {}, timePoint: {}", axis, channelIdx, timePoint);
+        ImageTransformation.flip(image, axis);
         return image;
     }
 
@@ -67,7 +58,7 @@ public class Flip implements TransformationTimeIndependent {
         return p;
     }
     
-    public Parameter[] getConfigurationData() {
+    public ArrayList getConfigurationData() {
         return null;
     }
 

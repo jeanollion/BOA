@@ -35,15 +35,15 @@ public class TransformationTest {
         test.setPixel(0, 0, 0, 1);
         test.setPixel(1, 1, 1, 1);
         ImageByte test2=test.duplicate("");
-        ImageTransformation.filp(test2, ImageTransformation.Axis.X);
+        ImageTransformation.flip(test2, ImageTransformation.Axis.X);
         assertEquals("filp-X", 1, test2.getPixelInt(test.getSizeX()-1, 0, 0));
-        ImageTransformation.filp(test2, ImageTransformation.Axis.X);
+        ImageTransformation.flip(test2, ImageTransformation.Axis.X);
         Utils.assertImage(test, test2, 0);
         
-        ImageTransformation.filp(test2, ImageTransformation.Axis.Y);
+        ImageTransformation.flip(test2, ImageTransformation.Axis.Y);
         assertEquals("filp-Y", 1, test2.getPixelInt(0, test.getSizeY()-1, 0));
-        ImageTransformation.filp(test2, ImageTransformation.Axis.Y);
-        ImageTransformation.filp(test2, ImageTransformation.Axis.Z);
+        ImageTransformation.flip(test2, ImageTransformation.Axis.Y);
+        ImageTransformation.flip(test2, ImageTransformation.Axis.Z);
         assertEquals("filp-Z", 1, test2.getPixelInt(0, 0, test.getSizeZ()-1));
     }
 }

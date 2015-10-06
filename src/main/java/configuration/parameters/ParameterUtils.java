@@ -132,7 +132,7 @@ public class ParameterUtils {
     }
 
     public static Object duplicateConfigurationData(Object in) {
-        //logger.debug("duplicating config data: {}", in);
+        //logger.debug("duplicating config data of class: {}, {} ", in.getClass(), in);
         if (in != null) {
             if (in instanceof Number) {
                 if (in instanceof Double || in instanceof Float) {
@@ -150,6 +150,8 @@ public class ParameterUtils {
                 if (in instanceof Object[]) {
                     return duplicateConfigurationDataArray((Object[]) in);
                 }
+            } else if (in.getClass()==ArrayList.class) {
+                return duplicateConfigurationDataArrayList((ArrayList)in);
             }
         }
         return null;
@@ -171,6 +173,17 @@ public class ParameterUtils {
             Object[] res = new Object[in.length];
             for (int i = 0; i < res.length; ++i) {
                 res[i] = duplicateConfigurationData(in[i]);
+            }
+            return res;
+        } else {
+            return null;
+        }
+    }
+    public static ArrayList duplicateConfigurationDataArrayList(ArrayList in) {
+        if (in != null) {
+            ArrayList res = new ArrayList(in.size());
+            for (Object o : in) {
+                res.add(duplicateConfigurationData(o));
             }
             return res;
         } else {

@@ -27,6 +27,7 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import image.IJImageWrapper;
 import image.Image;
+import java.util.ArrayList;
 import plugins.PreFilter;
 import plugins.TransformationTimeIndependent;
 
@@ -82,8 +83,8 @@ public class IJSubtractBackground implements PreFilter, TransformationTimeIndepe
         return image;
     }
 
-    public Object[] getConfigurationData() {
-        return new Object[0];
+    public ArrayList getConfigurationData() {
+        return null;
     }
     
 }

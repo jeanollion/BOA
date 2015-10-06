@@ -57,7 +57,7 @@ public class InputImage {
     
     public Image getImage() {
         if (image == null) {
-            //image = dao.openPreProcessedImage(channelIdx, timePoint, microscopyFieldName); //try to open from DAO
+            image = dao.openPreProcessedImage(channelIdx, timePoint, microscopyFieldName); //try to open from DAO
             if (image==null) {
                 image = imageSources.getImage(timePoint, channelIdx);
                 originalImageType = Image.createEmptyImage("source Type", image, new BlankMask("", 0, 0, 0));

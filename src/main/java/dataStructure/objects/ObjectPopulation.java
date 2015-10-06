@@ -29,7 +29,10 @@ import image.ImageShort;
 import image.ObjectFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -96,7 +99,7 @@ public class ObjectPopulation {
             if (labelImage != null) {
                 properties = new BlankMask("", labelImage);
             } else if (!objects.isEmpty()) { //unscaled, no offset for label image..
-                BoundingBox box = new BoundingBox(0,0,0,0,0,0);
+                BoundingBox box = new BoundingBox();
                 for (Object3D o : objects) box.expand(o.getBounds());
                 properties = box.getImageProperties(); 
             }
@@ -121,5 +124,70 @@ public class ObjectPopulation {
     
     public void addOffset(int offsetX, int offsetY, int offsetZ) {
         for (Object3D o : objects) o.addOffset(offsetX, offsetY, offsetZ);
+    }
+    
+    public void filter(ArrayList<Object3D> removedObjects, Filter filter) {
+        //int objectNumber = objects.size();
+        Iterator<Object3D> it = objects.iterator();
+        while(it.hasNext()) {
+            Object3D o = it.next();
+            if (!filter.keepObject(o)) {
+                it.remove();
+                if (removedObjects!=null) removedObjects.add(o);
+            }
+        }
+        //logger.debug("filter: {}, total object number: {}, remaning objects: {}", filter.getClass().getSimpleName(), objectNumber, objects.size());
+    }
+    
+    public void keepOnlyLargestObject() {
+        if (objects.isEmpty()) return;
+        int maxIdx = 0;
+        int maxSize = objects.get(0).getVoxels().size();
+        for (int i = 1; i<objects.size(); ++i) if (objects.get(i).getVoxels().size()>maxSize) {
+            maxSize = objects.get(i).getVoxels().size();
+            maxIdx = i;
+        }
+        ArrayList<Object3D> objectsTemp = new ArrayList<Object3D>(1);
+        objectsTemp.add(objects.get(maxIdx));
+        objects = objectsTemp;
+    }
+    
+    public static interface Filter {
+        public boolean keepObject(Object3D object);
+    }
+    public static class Thickness implements Filter {
+        int tX=-1, tY=-1, tZ=-1;
+        public Thickness setX(int minX){
+            this.tX=minX;
+            return this;
+        }
+        public Thickness setY(int minY){
+            this.tY=minY;
+            return this;
+        }
+        public Thickness setZ(int minZ){
+            this.tZ=minZ;
+            return this;
+        }
+
+        @Override public boolean keepObject(Object3D object) {
+            return (tX<0 || object.getBounds().getSizeX()>tX) && (tY<0 || object.getBounds().getSizeY()>tY) && (tZ<0 || object.getBounds().getSizeZ()>tZ);
+        }
+    }
+    public static class Size implements Filter {
+        int min=-1, max=-1;
+        public Size setMin(int min) {
+            this.min=min;
+            return this;
+        }
+        public Size setMax(int max) {
+            this.max=max;
+            return this;
+        }
+
+        @Override public boolean keepObject(Object3D object) {
+            int size = object.getVoxels().size();
+            return (min<0 || size>=min) && (max<0 || size<max);
+        }
     }
 }
