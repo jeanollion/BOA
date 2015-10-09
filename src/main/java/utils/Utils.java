@@ -124,6 +124,7 @@ public class Utils {
         for(int i = 0; i <colorNb; ++i) {
             res[i] = Color.getHSBColor((float)h, 0.99f, 0.99f);
             if (excludeReds) {  // pure red = 0;
+                h=incrementColor(h, goldenRatioConjugate);
                 while(h<0.05) h=incrementColor(h, goldenRatioConjugate);
             } else h=incrementColor(h, goldenRatioConjugate);
             

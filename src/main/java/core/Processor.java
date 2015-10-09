@@ -96,6 +96,7 @@ public class Processor {
     public static void processStructures(Experiment xp, ObjectDAO dao) {
         if (dao!=null) dao.deleteAllObjects();
         for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
+            logger.info("processing structures of Field: {}, total number of timePoint: {}...", xp.getMicroscopyField(i).getName(), xp.getMicroscopyField(i).getTimePointNumber());
             processStructures(xp, xp.getMicroscopyField(i), dao, false);
         }
     }
@@ -107,8 +108,40 @@ public class Processor {
         Processor.trackRoot(root, dao);
         for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
             if (xp.getStructure(s).hasSegmenter()) {
-                for (int t = 0; t<root.length; ++t) Processor.processStructure(s, root[t], dao, false); // process
-                if (xp.getStructure(s).hasTracker()) for (StructureObject o : StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, dao); // structure
+                logger.info("processing structure: {}...", s);
+                for (int t = 0; t<root.length; ++t) { // process
+                    Processor.processStructure(s, root[t], dao, false);
+                } 
+                if (xp.getStructure(s).hasTracker()) { // structure
+                    logger.info("tracking structure: {}...", s);
+                    for (StructureObject o : StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, dao);
+                } 
+            }
+        }
+    }
+    
+    public static void processStructure(int structureIdx, Experiment xp, MicroscopyField field, ObjectDAO dao, boolean deleteObjects) {
+        StructureObject[] roots=null;
+        if (dao!=null) roots=dao.getRoots(field.getName());
+        if (roots==null || roots.length==0) {
+            if (xp.getStructure(structureIdx).getParentStructure()!=-1) throw new RuntimeException("No root objects detected, in order to segment structure: "+structureIdx+"one need to segment all its parent structures");
+            else {
+                roots = field.createRootObjects();
+                if (dao!=null) dao.store(roots);
+                Processor.trackRoot(roots, dao);
+            }
+        }
+        // get all parent objects of the structure
+        //StructureObject parent = roots[0]; // for testing
+
+        for (StructureObject parent : roots) {
+            ArrayList<StructureObject> allParents = StructureObjectUtils.getAllParentObjects(parent, parent.getExperiment().getPathToStructure(parent.getStructureIdx(), structureIdx), dao);
+            logger.info("Segmenting structure: {} timePoint: {} number of parents: {}", structureIdx, parent.getTimePoint(), allParents.size());
+            for (StructureObject localParent : allParents) {
+                if (dao!=null && deleteObjects) dao.deleteChildren(localParent.getId(), structureIdx);
+                localParent.segmentChildren(structureIdx);
+                if (dao!=null) dao.store(localParent.getChildObjects(structureIdx));
+                if (logger.isDebugEnabled()) logger.debug("Segmenting structure: {} from parent: {} number of objects: {}", structureIdx, localParent, localParent.getChildObjects(structureIdx).length);
             }
         }
     }
@@ -117,7 +150,7 @@ public class Processor {
         //if (!parent.isRoot()) throw new IllegalArgumentException("this method only applies to root objects");
         // get all parent objects of the structure
         ArrayList<StructureObject> allParents = StructureObjectUtils.getAllParentObjects(parent, parent.getExperiment().getPathToStructure(parent.getStructureIdx(), structureIdx));
-        if (logger.isDebugEnabled()) logger.debug("Segmenting structure: {} timePoint: {} number of parents: {}", structureIdx, parent.getTimePoint(), allParents.size());
+        logger.info("Segmenting structure: {}, timePoint: {}, number of parents: {}", structureIdx, parent.getTimePoint(), allParents.size());
         for (StructureObject localParent : allParents) {
             if (dao!=null && deleteObjects) dao.deleteChildren(localParent.getId(), structureIdx);
             localParent.segmentChildren(structureIdx);

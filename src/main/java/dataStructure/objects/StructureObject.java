@@ -138,8 +138,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     public boolean isRoot() {return structureIdx==-1;}
     public StructureObject[] getChildObjects(int structureIdx) {return this.childrenSM.get(structureIdx);}
-    public StructureObject[] getChildObjects(int structureIdx, ObjectDAO dao) {
-        setChildObjects(dao.getObjects(id, structureIdx), structureIdx);
+    public StructureObject[] getChildObjects(int structureIdx, ObjectDAO dao, boolean overrideIfExist) {
+        if (overrideIfExist || getChildObjects(structureIdx)==null) setChildObjects(dao.getObjects(id, structureIdx), structureIdx);
         return getChildObjects(structureIdx);
     }
     public void setChildObjects(StructureObject[] children, int structureIdx) {

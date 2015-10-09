@@ -15,25 +15,24 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.containers;
+package processing;
 
-import de.caluga.morphium.annotations.Embedded;
-import image.BoundingBox;
+import ij.ImagePlus;
+import ij.process.ImageProcessor;
+import image.IJImageWrapper;
 import image.Image;
+import image.ImageFloat;
 
 /**
  *
  * @author jollion
  */
-@Embedded(polymorph=true)
-public abstract class MultipleImageContainer {
-    double scaleXY, scaleZ;
-    public abstract int getTimePointNumber();
-    public abstract int getChannelNumber();
-    public abstract Image getImage(int timePoint, int channel);
-    public abstract Image getImage(int timePoint, int channel, BoundingBox bounds);
-    public abstract void close();
-    public abstract String getName();
-    public float getScaleXY() {return (float)scaleXY;}
-    public float getScaleZ() {return (float)scaleZ;}
+public class IJFFTBandPass {
+    public static Image bandPass(Image input, double min, double max) {
+        ImagePlus ip = IJImageWrapper.getImagePlus(input);
+        FftBandPassFilter fftBandPassFilter = new FftBandPassFilter(min, max, ip);
+        
+        ImageProcessor imp=fftBandPassFilter.run(ip.getProcessor());
+        return IJImageWrapper.wrap(new ImagePlus("FFT of "+input.getName(), imp));
+    }
 }

@@ -66,6 +66,20 @@ public class Voxel implements Comparable<Voxel> {
             }
         };
     }
+    public static Comparator<Voxel> getComparator() {
+        return new Comparator<Voxel>() {
+            @Override
+            public int compare(Voxel voxel, Voxel other) {
+                if (voxel.value < other.value) {
+                    return -1;
+                } else if (voxel.value > other.value) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+        };
+    }
 
     public int compareTo(Voxel other) {
         if (value < other.value) {

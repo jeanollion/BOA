@@ -100,6 +100,7 @@ public class ConfigurationTest {
     public void testStroreSimpleXPMorphium() {
         try {
             MorphiumConfig cfg = new MorphiumConfig();
+            cfg.setGlobalLogLevel(3);
             cfg.setDatabase("testdb");
             cfg.addHost("localhost", 27017);
             Morphium m=new Morphium(cfg);
@@ -127,6 +128,7 @@ public class ConfigurationTest {
     public void testStroreCompleteXPMorphium() {
         try {
             MorphiumConfig cfg = new MorphiumConfig();
+            cfg.setGlobalLogLevel(3);
             cfg.setDatabase("testdb");
             cfg.addHost("localhost", 27017);
             Morphium m=new Morphium(cfg);

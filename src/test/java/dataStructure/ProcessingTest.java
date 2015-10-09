@@ -172,6 +172,7 @@ public class ProcessingTest {
         
         // passage through morphium
         MorphiumConfig cfg = new MorphiumConfig();
+        cfg.setGlobalLogLevel(3);
         cfg.setDatabase("testdb");
         try {
             cfg.addHost("localhost", 27017);
@@ -203,6 +204,7 @@ public class ProcessingTest {
     @Test
     public void StructureObjectTestStore() {
         MorphiumConfig cfg = new MorphiumConfig();
+        cfg.setGlobalLogLevel(3);
         cfg.setDatabase("testdb");
         try {
             cfg.addHost("localhost", 27017);
@@ -276,6 +278,7 @@ public class ProcessingTest {
             xp.setOutputImageDirectory("/tmp");
             //save to morphium
             MorphiumConfig cfg = new MorphiumConfig();
+            cfg.setGlobalLogLevel(3);
             cfg.setDatabase("testdb");
             cfg.addHost("localhost", 27017);
             Morphium m=new Morphium(cfg);

@@ -80,7 +80,7 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
         ImageIOCoordinates ioCoordinates = getImageIOCoordinates(timePoint);
         if (bounds!=null) ioCoordinates.setBounds(bounds);
         Image image = getReader(channel).openImage(ioCoordinates);
-        if (scaleXY!=0 && scaleZ!=0) image.setCalibration(scaleXY, scaleZ);
+        if (scaleXY!=0 && scaleZ!=0) image.setCalibration((float)scaleXY, (float)scaleZ);
         else {
             scaleXY = image.getScaleXY();
             scaleZ = image.getScaleZ();
@@ -95,7 +95,7 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
         ImageIOCoordinates ioCoords = ioCoordinates.duplicate();
         ioCoords.setBounds(bounds);
         Image image = getReader(channel).openImage(ioCoordinates);
-        if (scaleXY!=0 && scaleZ!=0) image.setCalibration(scaleXY, scaleZ);
+        if (scaleXY!=0 && scaleZ!=0) image.setCalibration((float)scaleXY, (float)scaleZ);
         else {
             scaleXY = image.getScaleXY();
             scaleZ = image.getScaleZ();

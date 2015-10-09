@@ -45,16 +45,41 @@ public class TrackNode implements TreeNode, UIContainer {
     TreeNode parent;
     RootTrackNode root;
     ArrayList<TrackNode> children;
+    Boolean containsErrors;
     public TrackNode(TreeNode parent, RootTrackNode root, StructureObject trackHead) {
         this.parent=parent;
         this.trackHead=trackHead;
         this.root=root;
-        
+    }
+    public TrackNode(TreeNode parent, RootTrackNode root, StructureObject trackHead, boolean containsErrors) {
+        this(parent, root, trackHead);
+        this.containsErrors = containsErrors;
     }
 
     public StructureObject[] getTrack() {
         if (track==null) track=root.generator.objectDAO.getTrack(trackHead);
         return track;
+    }
+    
+    public boolean containsError() {
+        if (containsErrors==null) {
+            for (StructureObject t: getTrack()) { //look for error within track
+                if (t.hasTrackLinkError()) {
+                    containsErrors=true;
+                    break;
+                }
+            }
+            if (containsErrors==null) return false;
+            if (!containsErrors) { //look in children
+                for (TrackNode t : children) {
+                    if (t.containsError()) {
+                        containsErrors=true;
+                        break;
+                    }
+                }
+            }
+        }
+        return containsErrors;
     }
     
     public ArrayList<TrackNode> getChildren() {
@@ -69,10 +94,14 @@ public class TrackNode implements TreeNode, UIContainer {
                     Iterator<StructureObject> subIt = e.iterator();
                     while (subIt.hasNext()) {
                         StructureObject o = subIt.next();
-                        if (trackContainscontainsId(o.getPrevious())) {
+                        if (o.getPrevious()==null) {
+                            children.add(new TrackNode(this, root, o, true));
+                            subIt.remove();
+                        } else if (trackContainscontainsId(o.getPrevious())) {
                             children.add(new TrackNode(this, root, o));
                             subIt.remove();
                         }
+                        
                         //if (logger.isTraceEnabled()) logger.trace("looking for structureObject: {} in track of node: {} found? {}", o, toString(), trackContainscontainsId(o.getPrevious()));
                     }
                     if (e.isEmpty()) it.remove();
@@ -84,7 +113,7 @@ public class TrackNode implements TreeNode, UIContainer {
     }
     private boolean trackContainscontainsId(StructureObject object) {
         for (StructureObject o : getTrack()) if (o.getId().equals(object.getId())) {
-            if (!o.equals(object)) logger.error("unique instanciation failed for {} and {} ", o, object);
+            //if (!o.equals(object)) logger.error("unique instanciation failed for {} and {} ", o, object);
             return true;
         }
         return false;

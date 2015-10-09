@@ -53,7 +53,7 @@ public class ObjectTreeTest extends JPanel {
             //cfg.setDatabase("testTrack");
             cfg.addHost("localhost", 27017);
             Morphium m=new Morphium(cfg);
-            
+            cfg.setGlobalLogLevel(3);
             ExperimentDAO xpDAO = new ExperimentDAO(m);
             ObjectDAO objectDAO = new ObjectDAO(m, xpDAO);
             Experiment xp = xpDAO.getExperiment();

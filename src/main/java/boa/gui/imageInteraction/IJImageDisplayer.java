@@ -147,7 +147,12 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
     }
 
     @Override public void updateImageDisplay(Image image) {
-        if (this.displayedImages.containsKey(image)) displayedImages.get(image).updateAndDraw();
+        if (this.displayedImages.containsKey(image)) {
+            float[] mm = image.getMinAndMax(null);
+            ImagePlus ip = displayedImages.get(image);
+            ip.setDisplayRange(mm[0], mm[1]);
+            ip.updateAndDraw();
+        }
     }
 
 }

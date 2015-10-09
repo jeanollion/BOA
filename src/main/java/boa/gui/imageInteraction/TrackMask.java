@@ -44,7 +44,7 @@ public class TrackMask extends ImageObjectInterface {
     final BoundingBox[] trackOffset;
     final StructureObjectMask[] trackObjects;
     final int maxParentY, maxParentZ;
-    final int updateImageFrequency=10;
+    final int updateImageFrequency=100;
     static final int intervalX=5;
     
     public TrackMask(StructureObject[] parentTrack, int childStructureIdx) {

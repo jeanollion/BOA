@@ -33,6 +33,21 @@ public class BasicMeasurements {
         if (!object.getVoxels().isEmpty()) return value/object.getVoxels().size();
         else return 0;
     }
+    public static double getSdValue(Object3D object, Image image) {
+        double value=0;
+        double value2=0;
+        double tmp;
+        for (Voxel v : object.getVoxels()) {
+            tmp=image.getPixel(v.x, v.y, v.z);
+            value+=tmp;
+            value2+=tmp*tmp;
+        }
+        if (!object.getVoxels().isEmpty()) {
+            value/=(double)object.getVoxels().size();
+            value2/=(double)object.getVoxels().size();
+            return value2-value*value;
+        } else return 0;
+    }
     public static double getMaxValue(Object3D object, Image image) {
         double max=-Double.MAX_VALUE;
         for (Voxel v : object.getVoxels()) if (image.getPixel(v.x, v.y, v.z)>max) max = image.getPixel(v.x, v.y, v.z);

@@ -107,16 +107,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }
     
     public void setDBConnection(String dbName, String hostname) {
-        try {
-            MorphiumConfig cfg = new MorphiumConfig();
-            cfg.setDatabase(dbName);
-            cfg.addHost("localhost", 27017);
-            Morphium m=new Morphium(cfg);
-            logger.info("Connection established with db: {} @ host: {}", dbName, hostName);
-            setDBConnection(m);
-        } catch (UnknownHostException ex) {
-            logger.error("db connection error", ex);
-        }
+        Morphium m=MorphiumUtils.createMorphium(hostname, 27017, dbName);
+        if (m==null) return;
+        logger.info("Connection established with db: {} @ host: {}", dbName, hostName);
+        setDBConnection(m);
     }
     
     public void setDBConnection(Morphium m) {
@@ -223,11 +217,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     
     
     private void initDBImages() {
-        try {
-            MorphiumConfig cfg = new MorphiumConfig();
-            cfg.setDatabase("testGUI");
-            cfg.addHost("localhost", 27017);
-            m=new Morphium(cfg);
+            m=MorphiumUtils.createMorphium("testGUI");
             m.clearCollection(Experiment.class);
             m.clearCollection(StructureObject.class);
             xpDAO = new ExperimentDAO(m);
@@ -271,10 +261,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 for (int t = 0; t<root.length; ++t) Processor.processStructure(s, root[t], objectDAO, false); // process
                 for (StructureObject o : StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, objectDAO); // structure
             }
-            
-        } catch (UnknownHostException ex) {
-            logger.error("db connection error", ex);
-        }
     }
 
     private static void removeTreeSelectionListeners(JTree tree) {

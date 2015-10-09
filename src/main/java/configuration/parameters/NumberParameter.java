@@ -77,7 +77,7 @@ public class NumberParameter extends SimpleParameter {
         //if (other!=null) Parameter.logger.trace("Parameter {} set content from {}", this.getClass(), other.getClass());
         if (other instanceof NumberParameter) {
             this.value=((NumberParameter)other).getValue();
-            this.decimalPlaces = ((NumberParameter)other).decimalPlaces;
+            //this.decimalPlaces = ((NumberParameter)other).decimalPlaces;
         }
     }
     

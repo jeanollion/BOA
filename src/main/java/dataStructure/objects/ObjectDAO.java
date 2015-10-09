@@ -201,10 +201,21 @@ public class ObjectDAO extends DAO<StructureObject>{
         return res;
     }
     
+    public StructureObject[] getTrackErrors(StructureObject parentTrack, int structureIdx) {
+        List<StructureObject> list =  super.getQuery().f("parent_track_head_id").eq(parentTrack.getTrackHeadId()).f("structure_idx").eq(structureIdx).f("track_link_error").eq(true).asList();
+        return this.checkAgainstCache(list);
+    }
+    
+    public StructureObject[] getTrackErrors(String fieldName, int structureIdx) {
+        List<StructureObject> list =  super.getQuery().f("field_name").eq(fieldName).f("structure_idx").eq(structureIdx).f("track_link_error").eq(true).asList();
+        return this.checkAgainstCache(list);
+    }
+    
     // root-specific methods
     
     private Query<StructureObject> getRootQuery(String fieldName, int timePoint) {
-        return super.getQuery().f("field_name").eq(fieldName).f("time_point").eq(timePoint).f("structure_idx").eq(-1);
+        if (timePoint<0) return super.getQuery().f("field_name").eq(fieldName).f("structure_idx").eq(-1).sort("time_point");
+        else return super.getQuery().f("field_name").eq(fieldName).f("time_point").eq(timePoint).f("structure_idx").eq(-1);
     }
     /*private ObjectId getRootId(String fieldName, int timePoint) {
         Query<StructureObject> q = getRootQuery(fieldName, timePoint);
@@ -213,6 +224,10 @@ public class ObjectDAO extends DAO<StructureObject>{
     }*/
     
     public StructureObject getRoot(String fieldName, int timePoint) {
-        return ObjectDAO.this.checkAgainstCache(getRootQuery(fieldName, timePoint).get());
+        return this.checkAgainstCache(getRootQuery(fieldName, timePoint).get());
+    }
+    
+    public StructureObject[] getRoots(String fieldName) {
+        return this.checkAgainstCache(getRootQuery(fieldName, -1).asList());
     }
 }

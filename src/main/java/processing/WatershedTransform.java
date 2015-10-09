@@ -47,9 +47,11 @@ public class WatershedTransform {
     final protected ImageInteger segmentedMap;
     final protected ImageMask mask;
     final boolean is3D;
-    
-    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, Object3D[] regionalExtrema, boolean invertWatershedMapValues) {
-        WatershedTransform wt = new WatershedTransform(watershedMap, mask, regionalExtrema, invertWatershedMapValues);
+    final boolean invertedWatershedMapValues;
+    final PropagationCriterion propagationCriterion;
+    final FusionCriterion fusionCriterion;
+    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, Object3D[] regionalExtrema, boolean invertWatershedMapValues, PropagationCriterion propagationCriterion) {
+        WatershedTransform wt = new WatershedTransform(watershedMap, mask, regionalExtrema, invertWatershedMapValues, propagationCriterion);
         wt.run();
         //new IJImageDisplayer().showImage(wt.segmentedMap);
         
@@ -62,11 +64,15 @@ public class WatershedTransform {
     }
     
     public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean invertWatershedMapValues) {
-        return watershed(watershedMap, mask, ImageLabeller.labelImage(seeds), invertWatershedMapValues);
+        return watershed(watershedMap, mask, ImageLabeller.labelImage(seeds), invertWatershedMapValues, null);
+    }
+    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean invertWatershedMapValues, PropagationCriterion propagationCriterion) {
+        return watershed(watershedMap, mask, ImageLabeller.labelImage(seeds), invertWatershedMapValues, propagationCriterion);
     }
     
-    protected WatershedTransform(Image watershedMap, ImageMask mask, Object3D[] regionalExtrema, boolean invertWatershedMapValues) {
+    protected WatershedTransform(Image watershedMap, ImageMask mask, Object3D[] regionalExtrema, boolean invertWatershedMapValues, PropagationCriterion propagationCriterion) {
         if (mask==null) mask=new BlankMask("", watershedMap);
+        this.invertedWatershedMapValues = invertWatershedMapValues;
         heap = invertWatershedMapValues ? new TreeSet<Voxel>(Voxel.getInvertedComparator()) : new TreeSet<Voxel>();
         this.mask=mask;
         this.watershedMap=watershedMap;
@@ -74,7 +80,10 @@ public class WatershedTransform {
         segmentedMap = ImageInteger.createEmptyLabelImage("segmentationMap", spots.length, watershedMap);
         for (int i = 0; i<regionalExtrema.length; ++i) spots[i+1] = new Spot(i+1, regionalExtrema[i].getVoxels());
         logger.trace("watershed transform: number of seeds: {} segmented map type: {}", regionalExtrema.length, segmentedMap.getClass().getSimpleName());
-        is3D=watershedMap.getSizeZ()>1;    
+        is3D=watershedMap.getSizeZ()>1;   
+        if (propagationCriterion==null) this.propagationCriterion=new DefaultPropagationCriterion();
+        else this.propagationCriterion=propagationCriterion;
+        this.fusionCriterion=new DefaultFusionCriterion();
     }
     
     
@@ -101,23 +110,15 @@ public class WatershedTransform {
         if (label!=0) {
             if (label!=currentSpot.label) {
                 Spot s2 = spots[label];
-                if (checkFusionCriteria(currentSpot, s2, currentVoxel)) return currentSpot.fusion(s2);
+                if (fusionCriterion.checkFusionCriteria(currentSpot, s2, currentVoxel)) return currentSpot.fusion(s2);
                 else heap.remove(nextVox); // FIXME ??et dans les autres directions?
             }
-        } else if (continuePropagation(currentVoxel, nextVox)) {
+        } else if (propagationCriterion.continuePropagation(currentVoxel, nextVox)) {
             nextVox.value=watershedMap.getPixel(nextVox.x, nextVox.y, nextVox.z);
             currentSpot.addVox(nextVox);
             heap.add(nextVox);
         }
         return currentSpot;
-    }
-    
-    public boolean checkFusionCriteria(Spot s1, Spot s2, Voxel currentVoxel) {
-        return false;
-    }
-    
-    protected boolean continuePropagation(Voxel currentVox, Voxel nextVox) {
-        return true;
     }
     
     protected class Spot {
@@ -171,5 +172,30 @@ public class WatershedTransform {
             return new Object3D(voxels, label, watershedMap.getScaleXY(), watershedMap.getScaleZ());
         }
         
+    }
+    public interface PropagationCriterion {
+        public boolean continuePropagation(Voxel currentVox, Voxel nextVox);
+    }
+    public static class DefaultPropagationCriterion implements PropagationCriterion {
+        public boolean continuePropagation(Voxel currentVox, Voxel nextVox) {
+            return true;
+        }
+    }
+    public class MonotonalPropagation implements PropagationCriterion {
+        public boolean continuePropagation(Voxel currentVox, Voxel nextVox) {
+            if (invertedWatershedMapValues) return (nextVox.value<=currentVox.value);
+            else return (nextVox.value>=currentVox.value);
+        }
+    }
+    
+    
+    public interface FusionCriterion {
+        public boolean checkFusionCriteria(Spot s1, Spot s2, Voxel currentVoxel);
+    }
+    public static class DefaultFusionCriterion implements FusionCriterion {
+        public boolean checkFusionCriteria(Spot s1, Spot s2, Voxel currentVoxel) {
+            return false;
+        }
+    
     }
 }

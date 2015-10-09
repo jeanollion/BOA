@@ -45,6 +45,7 @@ public class TestTrackStructure {
     public void testTrackStructure() {
         try {
             MorphiumConfig cfg = new MorphiumConfig();
+            cfg.setGlobalLogLevel(3);
             cfg.setDatabase("testTrack");
             cfg.addHost("localhost", 27017);
             Morphium m=new Morphium(cfg);

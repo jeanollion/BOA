@@ -25,7 +25,10 @@ import de.caluga.morphium.AnnotationAndReflectionHelper;
 import de.caluga.morphium.DereferencingListener;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumAccessVetoException;
+import de.caluga.morphium.MorphiumConfig;
 import java.lang.reflect.Field;
+import java.net.UnknownHostException;
+import java.util.logging.Level;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -126,5 +129,21 @@ public class MorphiumUtils {
             Thread.sleep(500);
         } catch (InterruptedException e) {
         }
+    }
+    public static Morphium createMorphium(String hostName, int portNumber, String dbName) {
+        try {
+            MorphiumConfig cfg = new MorphiumConfig();
+            cfg.setGlobalLogLevel(3);
+            cfg.setDatabase(dbName);
+            cfg.addHost(hostName, portNumber);
+            Morphium m=new Morphium(cfg);
+            return m;
+        } catch (UnknownHostException ex) {
+            logger.error("Couldnot instanciate morphim", ex);
+            return null;
+        }
+    }
+    public static Morphium createMorphium(String dbName) {
+        return createMorphium("localhost", 27017, dbName);
     }
 }

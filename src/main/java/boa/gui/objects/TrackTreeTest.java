@@ -51,6 +51,7 @@ public class TrackTreeTest extends JPanel {
             MorphiumConfig cfg = new MorphiumConfig();
             cfg.setDatabase("testTrack");
             cfg.addHost("localhost", 27017);
+            cfg.setGlobalLogLevel(3);
             Morphium m=new Morphium(cfg);
             
             ExperimentDAO xpDAO = new ExperimentDAO(m);

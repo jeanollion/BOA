@@ -38,6 +38,7 @@ import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import static boa.gui.GUI.logger;
+import boa.gui.configuration.TrackTreeCellRenderer;
 import boa.gui.configuration.TransparentTreeCellRenderer;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import java.awt.Color;
@@ -102,7 +103,7 @@ public class TrackTreeGenerator {
         //tree.setRootVisible(false);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
         tree.setOpaque(false);
-        DefaultTreeCellRenderer renderer = new TransparentTreeCellRenderer();
+        DefaultTreeCellRenderer renderer = new TrackTreeCellRenderer();
         Icon personIcon = null;
         renderer.setLeafIcon(personIcon);
         renderer.setClosedIcon(personIcon);

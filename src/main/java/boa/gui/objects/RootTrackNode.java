@@ -40,7 +40,7 @@ public class RootTrackNode implements TreeNode {
     int structureIdx;
     TrackExperimentNode parent;
     String fieldName;
-    
+    Boolean containsErrors;
     public RootTrackNode(TrackTreeGenerator generator, StructureObject parentTrackHead, int structureIdx) {
         this.generator = generator;
         this.parentTrackHead=parentTrackHead;
@@ -53,6 +53,19 @@ public class RootTrackNode implements TreeNode {
         this.fieldName=fieldName;
         this.structureIdx=structureIdx;
         logger.trace("creating root track node for field: {} structure: {}", fieldName, structureIdx);
+    }
+    
+    public boolean containsError() {
+        if (containsErrors==null) {
+            for (TrackNode t : children) {
+                if (t.containsError()) {
+                    containsErrors=true;
+                    break;
+                }
+            }
+        }
+        if (containsErrors==null) return false;
+        return containsErrors;
     }
     
     public StructureObject getParentTrackHead() {

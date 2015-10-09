@@ -182,11 +182,11 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                 BoundingBox b1 = tm.getObjectOffset(o1);
                 BoundingBox b2 = tm.getObjectOffset(o2);
                 
-                Arrow arrow = new Arrow(b1.getXMean(), b1.getYMean(), b2.getXMean(), b2.getYMean());
+                Arrow arrow = new Arrow(b1.getXMean(), b1.getYMean(), b2.getXMean()-1, b2.getYMean());
                 arrow.setStrokeColor(o2.hasTrackLinkError()?Color.red : color);
                 arrow.setStrokeWidth(trackArrowStrokeWidth);
                 arrow.setHeadSize(trackArrowStrokeWidth*1.5);
-                if (o1.getNext()==o2) arrow.setDoubleHeaded(true);
+                //if (o1.getNext()==o2) arrow.setDoubleHeaded(true);
                 
                 int zMin = Math.max(b1.getzMin(), b2.getzMin());
                 int zMax = Math.min(b1.getzMax(), b2.getzMax());

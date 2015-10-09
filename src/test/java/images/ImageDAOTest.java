@@ -60,6 +60,7 @@ public class ImageDAOTest {
         
         try {
             MorphiumConfig cfg = new MorphiumConfig();
+            cfg.setGlobalLogLevel(3);
             cfg.setDatabase("testImageDAO");
             cfg.addHost("localhost", 27017);
             m=new Morphium(cfg);

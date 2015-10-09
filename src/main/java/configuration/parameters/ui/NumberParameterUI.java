@@ -59,7 +59,7 @@ public class NumberParameterUI implements ParameterUI {
                 slider.addChangeListener(new ChangeListener() {
                     @Override
                     public void stateChanged(ChangeEvent e) {
-                        if (slider.getValueIsAdjusting()) return;
+                        //if (slider.getValueIsAdjusting()) return;
                         if (editing) return;
                         double d = (slider.getValue()+0.0)/sliderCoeff;
                         number.setNumber(d);
