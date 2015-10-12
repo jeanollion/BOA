@@ -36,7 +36,7 @@ import utils.Utils;
  */
 public class ObjectIdxTracker implements Tracker {
     public static enum IndexingOrder {XYZ(0, 1, 2), YXZ(1, 0, 2), XZY(0, 2, 1), ZXY(2, 0, 1), ZYX(2, 1, 0);
-        int i1, i2, i3;
+        public final int i1, i2, i3;
         IndexingOrder(int i1, int i2, int i3) {
             this.i1=i1;
             this.i2=i2;
@@ -46,16 +46,16 @@ public class ObjectIdxTracker implements Tracker {
     ChoiceParameter order = new ChoiceParameter("Indexing order", Utils.toStringArray(IndexingOrder.values()), IndexingOrder.XYZ.toString(), false);
     
     public void assignPrevious(StructureObjectTracker[] previous, StructureObjectTracker[] next) {
-        StructureObjectTracker[] previousCopy = new StructureObjectTracker[previous.length];
+        /*StructureObjectTracker[] previousCopy = new StructureObjectTracker[previous.length];
         System.arraycopy(previous, 0, previousCopy, 0, previous.length);
         StructureObjectTracker[] nextCopy = new StructureObjectTracker[next.length];
         System.arraycopy(next, 0, nextCopy, 0, next.length);
-        
-        Arrays.sort(previousCopy, getComparator(IndexingOrder.valueOf(order.getSelectedItem())));
-        Arrays.sort(nextCopy, getComparator(IndexingOrder.valueOf(order.getSelectedItem())));
+        */
+        Arrays.sort(previous, getComparator(IndexingOrder.valueOf(order.getSelectedItem())));
+        Arrays.sort(next, getComparator(IndexingOrder.valueOf(order.getSelectedItem())));
         for (int i = 0; i<Math.min(previous.length, next.length); ++i) {
-            nextCopy[i].setPreviousInTrack(previousCopy[i], false, false);
-            Plugin.logger.trace("assign previous {} to next {}", previousCopy[i], nextCopy[i]);
+            next[i].setPreviousInTrack(previous[i], false, false);
+            Plugin.logger.trace("assign previous {} to next {}", previous[i], next[i]);
         }
     }
     

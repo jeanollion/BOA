@@ -100,6 +100,10 @@ public class StructureObjectTreeGenerator {
         return tree;
     }
     
+    public void collapseAll() {
+        if (treeModel!=null) treeModel.reload();
+    }
+    
     public void selectObject(StructureObject object) {
         if (object==null) tree.setSelectionRow(-1);
         else tree.setSelectionPath(getObjectTreePath(object));

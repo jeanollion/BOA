@@ -25,6 +25,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,6 +34,9 @@ import javax.swing.JFileChooser;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
+import javax.swing.JTree;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 
 /**
  *
@@ -199,5 +203,29 @@ public class Utils {
         int[] res = new int[source.length];
         System.arraycopy(source, 0, res, 0, source.length);
         return res;
+    }
+    
+    public static void expandTree(JTree tree) {
+        for (int row = 0; row < tree.getRowCount(); row++) tree.expandRow(row);
+    }
+    
+    public static void expandAll(JTree tree) {
+        TreeNode root = (TreeNode) tree.getModel().getRoot();
+        expandAll(tree, new TreePath(root), null);
+      }
+    
+    public static void expandAll(JTree tree, TreePath parent, ArrayList<TreePath> expandedPath) {
+        TreeNode node = (TreeNode) parent.getLastPathComponent();
+        if (expandedPath!=null && (tree.isCollapsed(parent) || node.getChildCount()==0)) expandedPath.add(parent);
+        
+        if (node.getChildCount() >= 0) {
+          for (Enumeration e = node.children(); e.hasMoreElements();) {
+            TreeNode n = (TreeNode) e.nextElement();
+            TreePath path = parent.pathByAddingChild(n);
+            expandAll(tree, path, expandedPath);
+          }
+        }
+        tree.expandPath(parent);
+        // tree.collapsePath(parent);
     }
 }

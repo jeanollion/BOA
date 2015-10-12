@@ -129,6 +129,10 @@ public class TrackTreeGenerator {
                         menu.show(tree, pathBounds.x, pathBounds.y + pathBounds.height);
                     }
                 }
+                // expand & select all children
+                ArrayList<TreePath> pathToSelect = new ArrayList<TreePath>();
+                Utils.expandAll(tree, path, pathToSelect);
+                tree.setSelectionPaths(pathToSelect.toArray(new TreePath[pathToSelect.size()]));
                 displaySelectedTracks();
             }
         });

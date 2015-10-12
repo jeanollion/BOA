@@ -35,6 +35,8 @@ import plugins.Tracker;
 import plugins.Transformation;
 import plugins.TransformationTimeIndependent;
 import utils.MorphiumUtils;
+import utils.ThreadRunner;
+import utils.ThreadRunner.ThreadAction;
 
 /**
  *
@@ -101,7 +103,7 @@ public class Processor {
         }
     }
     
-    public static void processStructures(Experiment xp, MicroscopyField field, ObjectDAO dao, boolean deleteObjects) {
+    public static void processStructures(final Experiment xp, MicroscopyField field, final ObjectDAO dao, boolean deleteObjects) {
         if (dao!=null && deleteObjects) dao.deleteObjectsFromField(field.getName());
         StructureObject[] root = field.createRootObjects();
         if (dao!=null) dao.store(root);
@@ -115,12 +117,27 @@ public class Processor {
                 if (xp.getStructure(s).hasTracker()) { // structure
                     logger.info("tracking structure: {}...", s);
                     for (StructureObject o : StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, dao);
+                    /*final int sIdx = s;
+                    ThreadRunner.execute(StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s)), new ThreadAction<StructureObject>() {
+                        @Override
+                        public void run(StructureObject object) {
+                            Processor.track(xp.getStructure(sIdx).getTracker(), object, sIdx, dao);
+                        }
+                    });*/
                 } 
             }
         }
     }
     
-    public static void processStructure(int structureIdx, Experiment xp, MicroscopyField field, ObjectDAO dao, boolean deleteObjects) {
+    public static void trackStructure(int structureIdx, Experiment xp, MicroscopyField field, ObjectDAO dao) {
+        if (xp.getStructure(structureIdx).hasTracker()) { // structure
+            logger.info("tracking structure: {}...", structureIdx);
+            StructureObject root0 = dao.getRoot(field.getName(), 0);
+            for (StructureObject o : StructureObjectUtils.getAllParentObjects(root0, xp.getPathToRoot(structureIdx), dao)) Processor.track(xp.getStructure(structureIdx).getTracker(), o, structureIdx, dao);
+        } else logger.warn("no tracker for structure: {}", structureIdx);
+    }
+    
+    public static void processStructure(int structureIdx, Experiment xp, MicroscopyField field, int startTime, int stopTime, ObjectDAO dao) {
         StructureObject[] roots=null;
         if (dao!=null) roots=dao.getRoots(field.getName());
         if (roots==null || roots.length==0) {
@@ -131,14 +148,18 @@ public class Processor {
                 Processor.trackRoot(roots, dao);
             }
         }
+        if (startTime<0) startTime=0;
+        if (stopTime<0) stopTime = roots.length;
+        if (startTime>stopTime || startTime>=field.getTimePointNumber() || stopTime>field.getTimePointNumber()) throw new IllegalArgumentException(" start time "+startTime+", and stop time: "+stopTime+" invalids (timepoint number: "+field.getTimePointNumber()+")");
         // get all parent objects of the structure
         //StructureObject parent = roots[0]; // for testing
 
-        for (StructureObject parent : roots) {
+        for (int t = startTime; t<stopTime; ++t) {
+            StructureObject parent = roots[t];
             ArrayList<StructureObject> allParents = StructureObjectUtils.getAllParentObjects(parent, parent.getExperiment().getPathToStructure(parent.getStructureIdx(), structureIdx), dao);
             logger.info("Segmenting structure: {} timePoint: {} number of parents: {}", structureIdx, parent.getTimePoint(), allParents.size());
             for (StructureObject localParent : allParents) {
-                if (dao!=null && deleteObjects) dao.deleteChildren(localParent.getId(), structureIdx);
+                if (dao!=null) dao.deleteChildren(localParent.getId(), structureIdx);
                 localParent.segmentChildren(structureIdx);
                 if (dao!=null) dao.store(localParent.getChildObjects(structureIdx));
                 if (logger.isDebugEnabled()) logger.debug("Segmenting structure: {} from parent: {} number of objects: {}", structureIdx, localParent, localParent.getChildObjects(structureIdx).length);
@@ -150,12 +171,12 @@ public class Processor {
         //if (!parent.isRoot()) throw new IllegalArgumentException("this method only applies to root objects");
         // get all parent objects of the structure
         ArrayList<StructureObject> allParents = StructureObjectUtils.getAllParentObjects(parent, parent.getExperiment().getPathToStructure(parent.getStructureIdx(), structureIdx));
-        logger.info("Segmenting structure: {}, timePoint: {}, number of parents: {}", structureIdx, parent.getTimePoint(), allParents.size());
+        logger.info("Segmenting structure: {}, timePoint: {}, number of parents: {}...", structureIdx, parent.getTimePoint(), allParents.size());
         for (StructureObject localParent : allParents) {
             if (dao!=null && deleteObjects) dao.deleteChildren(localParent.getId(), structureIdx);
             localParent.segmentChildren(structureIdx);
             if (dao!=null) dao.store(localParent.getChildObjects(structureIdx));
-            if (logger.isDebugEnabled()) logger.debug("Segmenting structure: {} from parent: {} number of objects: {}", structureIdx, localParent, localParent.getChildObjects(structureIdx).length);
+            if (logger.isDebugEnabled()) logger.debug("Segmented structure: {} from parent: {} number of objects: {}", structureIdx, localParent, localParent.getChildObjects(structureIdx).length);
         }
     }
     
@@ -169,9 +190,9 @@ public class Processor {
         if (logger.isDebugEnabled()) logger.debug("tracking objects from structure: {} parentTrack: {} / Tracker: {} / dao==null? {}", structureIdx, parentTrack, tracker==null?"NULL":tracker.getClass(), dao==null);
         if (tracker==null) return;
         // TODO gestion de la memoire vive -> si trop ouvert, fermer les images & masques des temps précédents.
-        for (StructureObject o : parentTrack.getChildObjects(structureIdx)) o.setParentTrackHeadId(parentTrack.getTrackHeadId());
+        for (StructureObject o : parentTrack.getChildObjects(structureIdx, dao, false)) o.setParentTrackHeadId(parentTrack.getTrackHeadId());
         while(parentTrack.getNext()!=null) {
-            tracker.assignPrevious(parentTrack.getChildObjects(structureIdx), parentTrack.getNext().getChildObjects(structureIdx));
+            tracker.assignPrevious(parentTrack.getChildObjects(structureIdx, dao, false), parentTrack.getNext().getChildObjects(structureIdx, dao, false));
             if (dao!=null) dao.updateTrackAttributes(parentTrack.getChildObjects(structureIdx));
             parentTrack = parentTrack.getNext();
         }

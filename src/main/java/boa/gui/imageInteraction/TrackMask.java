@@ -81,7 +81,7 @@ public class TrackMask extends ImageObjectInterface {
     @Override
     public BoundingBox getObjectOffset(StructureObject object) {
         if (object==null) return null;
-        return trackObjects[getTrackIndex(getParent(object))].getObjectOffset(object); //cas frequent traité a part
+        return trackObjects[getTrackIndex(getParent(object))].getObjectOffset(object);
     }
     
     private StructureObject getParent(StructureObject object) { // le parent n'est pas forcément direct

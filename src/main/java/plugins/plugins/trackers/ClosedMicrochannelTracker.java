@@ -21,8 +21,10 @@ import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObjectPreProcessing;
 import dataStructure.objects.StructureObjectTracker;
+import java.util.Arrays;
 import measurement.GeometricalMeasurements;
 import plugins.Tracker;
+import static plugins.plugins.trackers.ObjectIdxTracker.getComparator;
 
 /**
  *
@@ -41,6 +43,9 @@ public class ClosedMicrochannelTracker implements Tracker {
     } 
     
     public void assignPrevious(StructureObjectTracker[] previous, StructureObjectTracker[] next) {        
+        // sort by y order
+        Arrays.sort(previous, getComparator(ObjectIdxTracker.IndexingOrder.YXZ));
+        Arrays.sort(next, getComparator(ObjectIdxTracker.IndexingOrder.YXZ));
         double divCriterion = this.divCriterion.getValue().doubleValue();
         double maxGrowthRate = this.maxGrowthRate.getValue().doubleValue();
         logger.trace("closed microchanel tracker: assingPrevious: timepoint: {}, previous count: {}, next count: {}, divCriterion: {}, maxGrowthRate: {}", next[0].getTimePoint(), previous.length, next.length, divCriterion, maxGrowthRate);

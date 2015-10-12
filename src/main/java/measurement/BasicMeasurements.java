@@ -45,7 +45,7 @@ public class BasicMeasurements {
         if (!object.getVoxels().isEmpty()) {
             value/=(double)object.getVoxels().size();
             value2/=(double)object.getVoxels().size();
-            return value2-value*value;
+            return Math.sqrt(value2-value*value);
         } else return 0;
     }
     public static double getMaxValue(Object3D object, Image image) {

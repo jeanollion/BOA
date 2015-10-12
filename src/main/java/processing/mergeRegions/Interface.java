@@ -64,8 +64,8 @@ public class Interface implements java.lang.Comparable<Interface> {
         else return r1;
     }
     
-    public Double checkFusionCriteria() {
-        return 0d;
+    public double[] checkFusionCriteria() {
+        return null;
     }
     
     public void mergeInterface(Interface other) {

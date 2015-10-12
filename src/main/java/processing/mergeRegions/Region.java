@@ -1,5 +1,6 @@
 package processing.mergeRegions;
 
+import static core.Processor.logger;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.Voxel;
 import image.BoundingBox;
@@ -44,12 +45,18 @@ public class Region {
         Interface interfaceBackground;
         int label;
         RegionCollection col;
-        double mergeCriterionValue;
+        double[] mergeCriterionValue;
         
         public Region(int label, Voxel vox, RegionCollection col) {
             this.label=label;
             this.voxels=new ArrayList<Voxel>();
             if (vox!=null) voxels.add(vox);
+            this.col=col;
+        }
+        
+        public Region(Object3D o , RegionCollection col) {
+            this.label=o.getLabel();
+            this.voxels=o.getVoxels();
             this.col=col;
         }
         
@@ -61,10 +68,21 @@ public class Region {
         }
         
         public void setVoxelLabel(int l) {
-            for (Voxel v : voxels) col.labelMap.setPixel(v.x, v.y, v.z, l);
+            if (voxels!=null) for (Voxel v : voxels) col.labelMap.setPixel(v.x, v.y, v.z, l);
+        }
+        
+        public void setVoxelValues(Image image) {
+            
+            if (voxels!=null) {
+                for (Voxel v : voxels) {
+                    if (v==null) logger.debug("voxel nul");
+                    if (image ==null) logger.debug("image null");
+                    v.value=image.getPixel(v.x, v.y, v.z);
+                }
+            }
         }
 
-        public Region fusion(Region region, double newCriterion) {
+        public Region fusion(Region region, double[] newCriterion) {
             if (region.label<label) return region.fusion(this, newCriterion);
             if (col.verbose) ij.IJ.log("fusion:"+label+ "+"+region.label);
             region.setVoxelLabel(label);
@@ -106,8 +124,7 @@ public class Region {
         }
         
         public Object3D toObject3D() {
-            ArrayList<Voxel> al = new ArrayList<Voxel>(voxels.size());
-            return new Object3D(al, label, col.inputGray.getScaleXY(), col.inputGray.getScaleZ());
+            return new Object3D(voxels, label, col.labelMap.getScaleXY(), col.labelMap.getScaleZ());
         }
         
         @Override 
@@ -140,7 +157,7 @@ public class Region {
         int size = 0; for (HashSet<Vox3D> h : voxIt) size+=h.size();
         float[] distances = new float[size];
         float[] values = new float[distances.length];
-        int idx=0;
+        int idx=0;hessian
         for (HashSet<Vox3D> h : voxIt) {
             for (Vox3D v : h) {
                 distances[idx] = dm.getPixel(v.x-bb[0], v.y-bb[1], v.z-bb[2]);
@@ -150,7 +167,7 @@ public class Region {
         return SpearmanPairWiseCorrelationTest.computeRho(distances, values);*/
     }
     
-    public static double getHessianMeanValue(ArrayList<Voxel>[] voxIt, ImageFloat hessian, double erode, int nbCPUs) {
+    public static double getHessianMeanValue(ArrayList<Voxel>[] voxIt, Image hessian, double erode, int nbCPUs) {
         return 1;
         /*int[] bb= getBoundingBox(voxIt);
         if (bb==null) return 0;
@@ -179,6 +196,20 @@ public class Region {
         if (idx<size) mean/=(double)(size-idx);
         //IJ.log("getHessMeanVal Sort: 0:"+al.get(0).value+" "+(size-1)+":"+al.get(size-1).value + "idx: "+idx+ " : "+al.get(idx).value + " mean value: "+mean);
         return mean;*/
+    }
+    
+    public double[] getSums() {
+        double sum = 0;
+        double count = 0;
+        double sum2=0;
+        for (Voxel v : voxels) {
+            if (v.value!=Float.NaN) {
+                sum+=v.value;
+                sum2+=v.value*v.value;
+                count++;
+            }
+        }
+        return new double[]{sum, sum2, count};
     }
         
     protected static BoundingBox getBoundingBox(ArrayList<Voxel>[] voxIt) {

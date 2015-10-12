@@ -29,10 +29,13 @@ import image.ImageShort;
 import image.ObjectFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import plugins.plugins.trackers.ObjectIdxTracker.IndexingOrder;
 
 /**
  *
@@ -67,11 +70,13 @@ public class ObjectPopulation {
     }
     
     private void constructLabelImage() {
-        if (objects==null || objects.isEmpty()) return;
-        labelImage = ImageInteger.createEmptyLabelImage("labelImage", objects.size(), getImageProperties());
-        logger.debug("creating image: properties: {} imagetype: {} number of objects: {}", properties, labelImage.getClass(), objects.size());
-        for (Object3D o : objects) {
-            o.draw(labelImage, o.getLabel());
+        if (objects==null || objects.isEmpty()) labelImage = ImageInteger.createEmptyLabelImage("labelImage", 0, getImageProperties());
+        else {
+            labelImage = ImageInteger.createEmptyLabelImage("labelImage", objects.size(), getImageProperties());
+            logger.debug("creating image: properties: {} imagetype: {} number of objects: {}", properties, labelImage.getClass(), objects.size());
+            for (Object3D o : objects) {
+                o.draw(labelImage, o.getLabel());
+            }
         }
     }
     
@@ -116,9 +121,7 @@ public class ObjectPopulation {
                 o.draw(labelImage, o.label);
             }
         } else {
-            for (Object3D o : getObjects()) {
-                o.label = idx++;
-            }
+            for (Object3D o : getObjects()) o.label = idx++;
         }
     }
     
@@ -150,6 +153,27 @@ public class ObjectPopulation {
         ArrayList<Object3D> objectsTemp = new ArrayList<Object3D>(1);
         objectsTemp.add(objects.get(maxIdx));
         objects = objectsTemp;
+    }
+    
+    public void sortBySpatialOrder(final IndexingOrder order) {
+        Comparator<Object3D> comp = new Comparator<Object3D>() {
+            @Override
+            public int compare(Object3D arg0, Object3D arg1) {
+                return compareCenters(getCenterArray(arg0.getBounds()), getCenterArray(arg1.getBounds()), order);
+            }
+        };
+        Collections.sort(objects, comp);
+        relabel();
+    }
+    
+    private static double[] getCenterArray(BoundingBox b) {
+        return new double[]{b.getXMean(), b.getYMean(), b.getZMean()};
+    }
+    
+    private static int compareCenters(double[] o1, double[] o2, IndexingOrder order) {
+        if (o1[order.i1]!=o2[order.i1]) return Double.compare(o1[order.i1], o2[order.i1]);
+        else if (o1[order.i2]!=o2[order.i2]) return Double.compare(o1[order.i2], o2[order.i2]);
+        else return Double.compare(o1[order.i3], o2[order.i3]);
     }
     
     public static interface Filter {

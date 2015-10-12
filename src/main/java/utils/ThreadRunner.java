@@ -3,6 +3,7 @@
  * and open the template in the editor.
  */
 package utils;
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 /**
 Copyright (C) Jean Ollion
@@ -90,4 +91,39 @@ public class ThreadRunner {
         return Math.max(1, Math.min(Runtime.getRuntime().availableProcessors(), end-start));
     }
 
+    public static <T> void execute(final T[] array, final ThreadAction<T> action) {
+        final ThreadRunner tr = new ThreadRunner(0, array.length, 0);
+        for (int i = 0; i<tr.threads.length; i++) {
+            //final ThreadAction<T> localAction = action
+            tr.threads[i] = new Thread(
+                new Runnable() {
+                    public void run() { 
+                        for (int idx = tr.ai.getAndIncrement(); idx<tr.end; idx = tr.ai.getAndIncrement()) {
+                            action.run(array[idx]);
+                        }
+                    }
+                }
+            );
+        }
+    }
+    public static <T> void execute(final ArrayList<T> array, final ThreadAction<T> action) {
+        final ThreadRunner tr = new ThreadRunner(0, array.size(), 0);
+        for (int i = 0; i<tr.threads.length; i++) {
+            //final ThreadAction<T> localAction = action
+            tr.threads[i] = new Thread(
+                new Runnable() {
+                    public void run() { 
+                        for (int idx = tr.ai.getAndIncrement(); idx<tr.end; idx = tr.ai.getAndIncrement()) {
+                            action.run(array.get(idx));
+                        }
+                    }
+                }
+            );
+        }
+    }
+    
+    public static interface ThreadAction<T> {
+        public void run(T object);
+    }
+    
 }

@@ -195,6 +195,9 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                     overlay.add(arrow);
                     logger.trace("add arrow: {}", arrow);
                 } else {
+                    // TODO debug
+                    logger.error("Display Track error. objects: {} & {} bounds: {} & {}, image bounds: {} & {}", o1, o2, o1.getBounds(), o2.getBounds(), b1, b2);
+                    if (true) return;
                     if (zMin>zMax) {
                         int tmp = zMax;
                         zMax=zMin<(ip.getNSlices()-1)?zMin+1:zMin;
@@ -204,7 +207,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                         Arrow dup = (Arrow)arrow.clone();
                         dup.setPosition(z+1);
                         overlay.add(dup);
-                        logger.trace("add arrow (z): {}", arrow);
+                        logger.debug("add arrow (z): {}", arrow);
                     }
                 }
             }

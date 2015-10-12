@@ -297,6 +297,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         DataPanel = new javax.swing.JPanel();
         ControlPanel = new javax.swing.JPanel();
         trackStructureJCB = new javax.swing.JComboBox();
+        selectAllTracksButton = new javax.swing.JButton();
+        collapseAllObjectButton = new javax.swing.JButton();
+        nextTrackErrorButton = new javax.swing.JButton();
+        selectContainingTrackToggleButton = new javax.swing.JToggleButton();
         ObjectTreeJSP = new javax.swing.JSplitPane();
         StructurePanel = new javax.swing.JPanel();
         structureJSP = new javax.swing.JScrollPane();
@@ -413,16 +417,56 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
+        selectAllTracksButton.setText("Select All Tracks");
+        selectAllTracksButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                selectAllTracksButtonActionPerformed(evt);
+            }
+        });
+
+        collapseAllObjectButton.setText("Collapse All Objects");
+        collapseAllObjectButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                collapseAllObjectButtonActionPerformed(evt);
+            }
+        });
+
+        nextTrackErrorButton.setText("Go to next track error");
+        nextTrackErrorButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                nextTrackErrorButtonActionPerformed(evt);
+            }
+        });
+
+        selectContainingTrackToggleButton.setText("Select Containing Track");
+        selectContainingTrackToggleButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                selectContainingTrackToggleButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout ControlPanelLayout = new javax.swing.GroupLayout(ControlPanel);
         ControlPanel.setLayout(ControlPanelLayout);
         ControlPanelLayout.setHorizontalGroup(
             ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(trackStructureJCB, 0, 162, Short.MAX_VALUE)
+            .addComponent(collapseAllObjectButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(selectAllTracksButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(nextTrackErrorButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(selectContainingTrackToggleButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         ControlPanelLayout.setVerticalGroup(
             ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(ControlPanelLayout.createSequentialGroup()
                 .addComponent(trackStructureJCB, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(collapseAllObjectButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(selectAllTracksButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(nextTrackErrorButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(selectContainingTrackToggleButton)
                 .addGap(0, 0, Short.MAX_VALUE))
         );
 
@@ -539,6 +583,35 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         reloadTree=true;
     }//GEN-LAST:event_reProcessActionPerformed
 
+    private void collapseAllObjectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_collapseAllObjectButtonActionPerformed
+        this.structureObjectTreeGenerator.collapseAll();
+    }//GEN-LAST:event_collapseAllObjectButtonActionPerformed
+
+    private void selectAllTracksButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllTracksButtonActionPerformed
+        TrackTreeGenerator t = trackTreeController.getLastTreeGenerator();
+        if (t==null) {
+            logger.warn("No displayed tree");
+            return;
+        } else {
+            Utils.expandTree(t.getTree());
+            t.getTree().setSelectionInterval(0, t.getTree().getRowCount());
+            t.displaySelectedTracks();
+        }
+        
+    }//GEN-LAST:event_selectAllTracksButtonActionPerformed
+
+    private void nextTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextTrackErrorButtonActionPerformed
+        // TODO add your handling code here:
+        // 1) determiner le X max visible de l'image courante
+        // 2) aller chercher la prochaine erreur
+        // 3) scroll l'image courante jusqu'a la prochaine erreur
+        logger.info("not implemented yet!");
+    }//GEN-LAST:event_nextTrackErrorButtonActionPerformed
+
+    private void selectContainingTrackToggleButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectContainingTrackToggleButtonActionPerformed
+        logger.info("not implemented yet!");
+    }//GEN-LAST:event_selectContainingTrackToggleButtonActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -583,15 +656,19 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JPanel StructurePanel;
     private javax.swing.JScrollPane TimeJSP;
     private javax.swing.JPanel TimePanel;
+    private javax.swing.JButton collapseAllObjectButton;
     private javax.swing.JScrollPane configurationJSP;
     private javax.swing.JButton connectButton;
     private javax.swing.JTextField hostName;
     private javax.swing.JButton importImageButton;
     private javax.swing.JTabbedPane jTabbedPane1;
+    private javax.swing.JButton nextTrackErrorButton;
     private javax.swing.JButton preProcessButton;
     private javax.swing.JButton reProcess;
     private javax.swing.JButton saveExperiment;
     private javax.swing.JButton segmentButton;
+    private javax.swing.JButton selectAllTracksButton;
+    private javax.swing.JToggleButton selectContainingTrackToggleButton;
     private javax.swing.JScrollPane structureJSP;
     private javax.swing.JComboBox trackStructureJCB;
     private javax.swing.JPanel trackSubPanel;

@@ -50,8 +50,8 @@ public class WatershedTransform {
     final boolean invertedWatershedMapValues;
     final PropagationCriterion propagationCriterion;
     final FusionCriterion fusionCriterion;
-    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, Object3D[] regionalExtrema, boolean invertWatershedMapValues, PropagationCriterion propagationCriterion) {
-        WatershedTransform wt = new WatershedTransform(watershedMap, mask, regionalExtrema, invertWatershedMapValues, propagationCriterion);
+    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, Object3D[] regionalExtrema, boolean invertWatershedMapValues, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
+        WatershedTransform wt = new WatershedTransform(watershedMap, mask, regionalExtrema, invertWatershedMapValues, propagationCriterion, fusionCriterion);
         wt.run();
         //new IJImageDisplayer().showImage(wt.segmentedMap);
         
@@ -64,13 +64,13 @@ public class WatershedTransform {
     }
     
     public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean invertWatershedMapValues) {
-        return watershed(watershedMap, mask, ImageLabeller.labelImage(seeds), invertWatershedMapValues, null);
+        return watershed(watershedMap, mask, ImageLabeller.labelImage(seeds), invertWatershedMapValues, null, null);
     }
-    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean invertWatershedMapValues, PropagationCriterion propagationCriterion) {
-        return watershed(watershedMap, mask, ImageLabeller.labelImage(seeds), invertWatershedMapValues, propagationCriterion);
+    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean invertWatershedMapValues, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
+        return watershed(watershedMap, mask, ImageLabeller.labelImage(seeds), invertWatershedMapValues, propagationCriterion, fusionCriterion);
     }
     
-    protected WatershedTransform(Image watershedMap, ImageMask mask, Object3D[] regionalExtrema, boolean invertWatershedMapValues, PropagationCriterion propagationCriterion) {
+    protected WatershedTransform(Image watershedMap, ImageMask mask, Object3D[] regionalExtrema, boolean invertWatershedMapValues, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
         if (mask==null) mask=new BlankMask("", watershedMap);
         this.invertedWatershedMapValues = invertWatershedMapValues;
         heap = invertWatershedMapValues ? new TreeSet<Voxel>(Voxel.getInvertedComparator()) : new TreeSet<Voxel>();
@@ -83,7 +83,8 @@ public class WatershedTransform {
         is3D=watershedMap.getSizeZ()>1;   
         if (propagationCriterion==null) this.propagationCriterion=new DefaultPropagationCriterion();
         else this.propagationCriterion=propagationCriterion;
-        this.fusionCriterion=new DefaultFusionCriterion();
+        if (fusionCriterion==null) this.fusionCriterion=new DefaultFusionCriterion();
+        else this.fusionCriterion=fusionCriterion;
     }
     
     
@@ -100,7 +101,7 @@ public class WatershedTransform {
             for (int i = 0; i<neigh.getSize(); ++i) {
                 next = new Voxel(v.x+neigh.dx[i], v.y+neigh.dy[i], v.z+neigh.dz[i]);
                 //logger.trace("voxel: {} next: {}, mask contains: {}, insideMask: {}",v, next, mask.contains(next.x, next.y, next.getZ()) , mask.insideMask(next.x, next.y, next.getZ()));
-                if (mask.contains(next.x, next.y, next.z) && mask.insideMask(next.x, next.y, next.z)) propagate(currentSpot,v, next);
+                if (mask.contains(next.x, next.y, next.z) && mask.insideMask(next.x, next.y, next.z)) currentSpot=propagate(currentSpot,v, next);
             }
         }
     }
@@ -196,6 +197,15 @@ public class WatershedTransform {
         public boolean checkFusionCriteria(Spot s1, Spot s2, Voxel currentVoxel) {
             return false;
         }
-    
+    }
+    public static class SizeFusionCriterion implements FusionCriterion {
+        int minimumSize;
+        public SizeFusionCriterion(int minimumSize) {
+            this.minimumSize=minimumSize;
+        }
+        
+        public boolean checkFusionCriteria(Spot s1, Spot s2, Voxel currentVoxel) {
+            return s1.voxels.size()<minimumSize || s2.voxels.size()<minimumSize;
+        }
     }
 }

@@ -38,8 +38,10 @@ public class ObjectContainerVoxels extends ObjectContainer {
     
     @Override
     public void updateObject() {
-        createCoordsArrays(structureObject.getObject());
-        bounds=structureObject.getObject().getBounds();
+        if (structureObject.getObject().getVoxels()!=null && structureObject.getObject().getVoxels().isEmpty()) {
+            createCoordsArrays(structureObject.getObject());
+            bounds=structureObject.getObject().getBounds();
+        }
     }
     
     private void createCoordsArrays(Object3D object) {

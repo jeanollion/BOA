@@ -1,5 +1,6 @@
 package processing.mergeRegions;
 
+import static core.Processor.logger;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.Voxel;
@@ -21,7 +22,7 @@ import processing.ImageFeatures;
  *
  *
  *
- * This file is part of tango
+ * This file is part of 
  *
  * tango is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -44,7 +45,6 @@ public class RegionCollection {
     ImageInteger labelMap;
     Image inputGray;
     InterfaceCollection interfaces;
-    boolean setInterfaces;
     boolean verbose;
     int nCPUs;
     public RegionCollection(ImageInteger labelMap, Image intensityMap, boolean verbose, int nCPUs) {
@@ -52,8 +52,19 @@ public class RegionCollection {
         this.nCPUs=nCPUs;
         this.labelMap=labelMap;
         this.inputGray=intensityMap;
-        if (inputGray==null) this.setInterfaces=false;
         createRegions();
+    }
+    
+    public RegionCollection(ObjectPopulation pop, Image intensityMap, boolean verbose, int nCPUs) {
+        this.verbose=verbose;
+        this.nCPUs=nCPUs;
+        this.labelMap=pop.getLabelImage();
+        this.inputGray=intensityMap;
+        regions=new HashMap<Integer, Region>();
+        regions.put(0, new Region(0, null, this)); // background
+        for (Object3D o : pop.getObjects()) {
+            regions.put(o.getLabel(), new Region(o, this));
+        }
     }
     
     public void shiftIndicies(boolean updateRegionMap) {
@@ -74,18 +85,13 @@ public class RegionCollection {
         if (updateRegionMap) regions=newRegions;
     }
     
-    public void initInterfaces() {
+    public void initInterfaces(Image intensityMap) {
         interfaces = new InterfaceCollection(this, verbose);
-        interfaces.getInterfaces();
+        interfaces.getInterfaces(intensityMap);
         interfaces.initializeRegionInterfaces();
         if (verbose) interfaces.drawInterfaces();
     }
     
-    public void initInterfacesLight() {
-        interfaces = new InterfaceCollection(this, verbose);
-        interfaces.getInterfacesLight();
-        interfaces.initializeRegionInterfaces();
-    }
     
     public static ObjectPopulation mergeAllConnected(ImageInteger labelMap) {
         RegionCollection r = new RegionCollection(labelMap, null, false, 1);
@@ -112,15 +118,27 @@ public class RegionCollection {
         }
     }
     
+    public static ObjectPopulation mergeHessianBacteria(ObjectPopulation pop, Image intensities, Image hessian, double fusionThreshold) {
+        RegionCollection r = new RegionCollection(pop, intensities, false, 1);
+        //r.verbose = logger.isDebugEnabled();
+        r.initInterfaces(hessian);
+        r.mergeSortHessianCondBacteria(hessian, fusionThreshold);
+        return r.getObjectPopulation();
+    }
+    
     public ObjectPopulation getObjectPopulation() {
         
         ArrayList<Object3D> al = new ArrayList<Object3D>(regions.size());
-        for (Region r : regions.values()) al.add(r.toObject3D());
-        return new ObjectPopulation(al, labelMap);
+        for (Region r : regions.values()) {
+            if (r.label!=0) al.add(r.toObject3D()); // do not add background object!
+        }
+        ObjectPopulation res=  new ObjectPopulation(al, labelMap);
+        res.relabel();
+        return res;
     }
     
-    public void mergeSortHessianCond(double hessianRadius, boolean useScale, double erode) {
-        if (interfaces==null) initInterfaces();
+    public void mergeSortHessianCondSpots(double hessianRadius, boolean useScale, double erode) {
+        if (interfaces==null) initInterfaces(inputGray);
         float scaleZ = labelMap.getScaleZ();
         float scaleXY = labelMap.getScaleXY();
         if (!useScale) inputGray.setCalibration(scaleXY, scaleXY);
@@ -129,13 +147,29 @@ public class RegionCollection {
             hess.setCalibration(scaleXY, scaleZ);
             inputGray.setCalibration(scaleXY, scaleZ);
         }
-        for (Region r : regions.values()) if (!r.interfaces.isEmpty()) r.mergeCriterionValue=Region.getHessianMeanValue(new ArrayList[]{r.voxels}, hess, erode, nCPUs);
-        interfaces.mergeSortHessian(hess, erode);
+        for (Region r : regions.values()) if (!r.interfaces.isEmpty()) r.mergeCriterionValue=new double[]{Region.getHessianMeanValue(new ArrayList[]{r.voxels}, hess, erode, nCPUs)};
+        interfaces.mergeSortHessianSpots(hess, erode);
+    }
+    
+    public void mergeSortHessianCondBacteria(Image hessian, double fustionThreshold) {
+        if (interfaces==null) initInterfaces(hessian);
+        for (Region r : regions.values()) {
+            /*r.setVoxelValues(hessian);
+            // voxel interface with background -> value set to NaN
+            if (r.interfaceBackground!=null) {
+                for (Voxel v : ((InterfaceVoxels)r.interfaceBackground).r2Voxels) {
+                    int i = r.voxels.indexOf(v);
+                    if (i>=0) r.voxels.get(i).value=Float.NaN;
+                }
+            }
+            r.mergeCriterionValue=r.getSums();*/
+        }
+        interfaces.mergeSortHessianBacteria(hessian, fustionThreshold);
     }
     
     public void mergeSortCorrelation() {
-        if (interfaces==null) initInterfaces();
-        for (Region r : regions.values()) if (!r.interfaces.isEmpty()) r.mergeCriterionValue = Region.getRho(new ArrayList[]{r.voxels}, inputGray, nCPUs);
+        if (interfaces==null) initInterfaces(inputGray);
+        for (Region r : regions.values()) if (!r.interfaces.isEmpty()) r.mergeCriterionValue = new double[]{Region.getRho(new ArrayList[]{r.voxels}, inputGray, nCPUs)};
         interfaces.mergeSortCorrelation();
     }
     
@@ -146,28 +180,14 @@ public class RegionCollection {
     protected void createRegions() {
         regions=new HashMap<Integer, Region>();
         regions.put(0, new Region(0, null, this)); // background
-        if (labelMap.getSizeZ()>1) {
-            for (int z = 0; z<labelMap.getSizeZ(); z++) {
-                for (int y = 0; y<labelMap.getSizeY(); y++) {
-                    for (int x = 0; x<labelMap.getSizeX(); x++) {
-                        int label = labelMap.getPixelInt(x,y, z);
-                        if (label!=0) {
-                            Region r = regions.get(label);
-                            if (r==null) regions.put(label, new Region(label, new Voxel(x, y, z), this));
-                            else r.voxels.add(new Voxel(x, y, z));
-                        }
-                    }
-                }
-            }
-        } else {
-            // 2D case 
+        for (int z = 0; z<labelMap.getSizeZ(); z++) {
             for (int y = 0; y<labelMap.getSizeY(); y++) {
                 for (int x = 0; x<labelMap.getSizeX(); x++) {
-                    int label = labelMap.getPixelInt(x,y, 0);
+                    int label = labelMap.getPixelInt(x,y, z);
                     if (label!=0) {
                         Region r = regions.get(label);
-                        if (r==null) regions.put(label, new Region(label, new Voxel(x, y, 0), this));
-                        else r.voxels.add(new Voxel(x, y, 0));
+                        if (r==null) regions.put(label, new Region(label, new Voxel(x, y, z), this));
+                        else r.voxels.add(new Voxel(x, y, z));
                     }
                 }
             }
@@ -175,7 +195,7 @@ public class RegionCollection {
         if (verbose) ij.IJ.log("Region collection: nb of spots:"+regions.size());
     }
     
-    public void fusion(Region r1, Region r2, double newCriterion) {
+    public void fusion(Region r1, Region r2, double[] newCriterion) {
         regions.remove(r1.fusion(r2, newCriterion).label);
     }
 }

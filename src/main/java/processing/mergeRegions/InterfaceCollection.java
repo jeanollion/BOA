@@ -1,12 +1,14 @@
 package processing.mergeRegions;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
+import static core.Processor.logger;
 import dataStructure.objects.Voxel;
 import ij.IJ;
 import image.Image;
 import image.ImageFloat;
 import image.ImageInteger;
 import image.ImageLabeller;
+import image.ImageProperties;
 import image.ImageShort;
 import java.util.*;
 
@@ -40,21 +42,22 @@ public class InterfaceCollection {
     int fusionMethod, sortMethod;
     RegionCollection regions;
     Set<Interface> interfaces;
-    Image intensityMap;
+    ImageProperties imageProperties;
     double erode;
     boolean verbose;
-    ImageFloat hessian;
+    Image hessian;
+    double fusionThreshold;
     
     public InterfaceCollection(RegionCollection regions, boolean verbose) {
         this.regions = regions;
         this.verbose=verbose;
-        intensityMap = regions.inputGray;
+        imageProperties = regions.labelMap;
         
         
     }
     
     
-    protected void getInterfaces() {
+    protected void getInterfaces(Image intensityMap) {
         HashMap<RegionPair, Interface> interfaceMap = new HashMap<RegionPair, Interface>();
         ImageInteger inputLabels = regions.labelMap;
         Voxel n;
@@ -81,32 +84,7 @@ public class InterfaceCollection {
             }
             
             interfaces = new HashSet<Interface>(interfaceMap.values());
-            setVoxelIntensity();
-        }
-        if (verbose) ij.IJ.log("Interface collection: nb of interfaces:"+interfaces.size());
-    }
-    
-    protected void getInterfacesLight() {
-        HashMap<RegionPair, Interface> interfaceMap = new HashMap<RegionPair, Interface>();
-        ImageInteger inputLabels = regions.labelMap;
-        int otherLabel;
-        int[][] neigh = inputLabels.getSizeZ()>1 ? ImageLabeller.neigh3D : ImageLabeller.neigh2D;
-        Voxel n;
-        for (Region r : regions.regions.values()) {
-            for (Voxel vox : r.voxels) {
-                    vox=vox.copy();
-                    for (int i = 0; i<neigh.length; ++i) {
-                        n = new Voxel(vox.x+neigh[i][0], vox.y+neigh[i][1], vox.z+neigh[i][2]);
-                        if (inputLabels.contains(n.x, n.y, n.z)) { 
-                            otherLabel = inputLabels.getPixelInt(n.x, n.y, n.z);   
-                            if (otherLabel>0 && otherLabel!=r.label && !interfaceMap.containsKey(new RegionPair(r.label, otherLabel))) {
-                                addPair(interfaceMap, r.label, vox, otherLabel, n);
-                            }
-                        }
-                    }
-            }
-            interfaces = new HashSet<Interface>(interfaceMap.values());
-            setVoxelIntensity();
+            if (intensityMap!=null) setVoxelIntensity(intensityMap);
         }
         if (verbose) ij.IJ.log("Interface collection: nb of interfaces:"+interfaces.size());
     }
@@ -128,7 +106,7 @@ public class InterfaceCollection {
                             otherLabel = inputLabels.getPixelInt(n.x, n.y, n.z);   
                             if (otherLabel>0 && otherLabel!=label) {
                                 Region otherRegion = regions.get(otherLabel);
-                                regions.fusion(currentRegion, otherRegion, 0);
+                                regions.fusion(currentRegion, otherRegion, null);
                                 if (label>otherLabel) {
                                     currentRegion=otherRegion;
                                     label=otherLabel;
@@ -188,35 +166,36 @@ public class InterfaceCollection {
         RegionPair pair = new RegionPair(label1, label2);
         Interface inter = interfaces.get(pair);
         if (inter==null) {
-            inter = new InterfaceVoxSet(regions.get(pair.r1), regions.get(pair.r2), this); // enfonction de la methode...
+            inter = new InterfaceVoxels(regions.get(pair.r1), regions.get(pair.r2), this); // enfonction de la methode...
             interfaces.put(pair, inter);
         }
-        ((InterfaceVoxSet)inter).addPair(vox1, vox2);
+        ((InterfaceVoxels)inter).addPair(vox1, vox2);
     }
     
     protected void addPairBackground(Region r, Voxel vox1, Voxel vox2) {
         if (r.interfaceBackground==null) {
-            r.interfaceBackground = new InterfaceVoxSet(regions.get(0), r, this); // enfonction de la methode...
+            r.interfaceBackground = new InterfaceVoxels(regions.get(0), r, this); // enfonction de la methode...
         }
-        ((InterfaceVoxSet)r.interfaceBackground).addPair(vox1, vox2);
+        ((InterfaceVoxels)r.interfaceBackground).addPair(vox1, vox2);
     }
     
-    protected void setVoxelIntensity() {
-        if (intensityMap==null) return;
-        for (Interface i : interfaces) {
-            InterfaceVoxSet ivs = (InterfaceVoxSet)i;
-            for (Voxel v : ivs.r1Voxels) v.value=intensityMap.getPixel(v.x, v.y, v.z);
-            for (Voxel v : ivs.r2Voxels) v.value=intensityMap.getPixel(v.x, v.y, v.z);
+    protected void setVoxelIntensity(Image image) {
+        if (image!=null) {
+            for (Interface i : interfaces) {
+                InterfaceVoxels ivs = (InterfaceVoxels)i;
+                for (Voxel v : ivs.r1Voxels) v.value=image.getPixel(v.x, v.y, v.z);
+                for (Voxel v : ivs.r2Voxels) v.value=image.getPixel(v.x, v.y, v.z);
+            }
         }
     }
     
     protected void drawInterfaces() {
-        ImageShort im = new ImageShort("Iterfaces", intensityMap.getSizeX(), intensityMap.getSizeY(), intensityMap.getSizeZ());
+        ImageShort im = new ImageShort("Iterfaces", imageProperties.getSizeX(), imageProperties.getSizeY(), imageProperties.getSizeZ());
         for (Interface i : interfaces) {
-            for (Voxel v : ((InterfaceVoxSet)i).r1Voxels) {
+            for (Voxel v : ((InterfaceVoxels)i).r1Voxels) {
                 im.setPixel(v.x, v.y, v.z, i.r2.label);
             }
-            for (Voxel v : ((InterfaceVoxSet)i).r2Voxels) {
+            for (Voxel v : ((InterfaceVoxels)i).r2Voxels) {
                 im.setPixel(v.x, v.y, v.z, i.r1.label);
             }
         }
@@ -224,20 +203,20 @@ public class InterfaceCollection {
     }
     
     protected void drawInterfacesStrength() {
-        ImageFloat im = new ImageFloat("Iterface Strength", intensityMap.getSizeX(), intensityMap.getSizeY(), intensityMap.getSizeZ());
+        ImageFloat im = new ImageFloat("Iterface Strength", imageProperties.getSizeX(), imageProperties.getSizeY(), imageProperties.getSizeZ());
         for (Interface i : interfaces) {
             if (i.r1.label==0) continue;
-            for (Voxel v : ((InterfaceVoxSet)i).r1Voxels) {
+            for (Voxel v : ((InterfaceVoxels)i).r1Voxels) {
                 im.setPixel(v.x, v.y, v.z, (float)i.strength);
             }
-            for (Voxel v : ((InterfaceVoxSet)i).r2Voxels) {
+            for (Voxel v : ((InterfaceVoxels)i).r2Voxels) {
                 im.setPixel(v.x, v.y, v.z, (float)i.strength);
             }
         }
         new IJImageDisplayer().showImage(im);
     }
     
-    public boolean fusion(Interface i, boolean remove, double newCriterion) {
+    public boolean fusion(Interface i, boolean remove, double[] newCriterion) {
         if (remove) interfaces.remove(i);
         if (i.r1.interfaces!=null) i.r1.interfaces.remove(i);
         boolean change = false;
@@ -265,7 +244,7 @@ public class InterfaceCollection {
         return change;
     }
     
-    protected void mergeSortHessian(ImageFloat hess, double erode) {
+    protected void mergeSortHessianSpots(ImageFloat hess, double erode) {
         this.sortMethod=0;
         this.fusionMethod=1;
         this.erode = erode;
@@ -276,6 +255,14 @@ public class InterfaceCollection {
     protected void mergeSortCorrelation() {
         this.sortMethod=0;
         this.fusionMethod=0;
+        mergeSortCluster();
+    }
+    
+    protected void mergeSortHessianBacteria(Image hess, double fusionThreshold) {
+        this.sortMethod=4; //mean of hessian value @ interface / ascending order
+        this.fusionMethod=2; // comparison of values inside region with value @ interface
+        this.hessian=hess;
+        this.fusionThreshold=fusionThreshold;
         mergeSortCluster();
     }
     
@@ -311,7 +298,7 @@ public class InterfaceCollection {
             }
         } 
         if (verbose) { // draw clusters
-            ImageShort im = new ImageShort("Clusters", intensityMap.getSizeX(), intensityMap.getSizeZ(), intensityMap.getSizeZ());
+            ImageShort im = new ImageShort("Clusters", imageProperties.getSizeX(), imageProperties.getSizeY(), imageProperties.getSizeZ());
             int currentLabel = 1; 
             for (HashSet<Interface> c : clusters) {
                 for (Interface i : c) {
@@ -338,11 +325,11 @@ public class InterfaceCollection {
         for (Interface i : interfaces) i.computeStrength();
         if (verbose) drawInterfacesStrength();
         interfaces = new TreeSet<Interface>(interfaces);
-        Iterator<Interface> it = interfaces.iterator(); // descending??
-        Double mergedCriteria;
+        Iterator<Interface> it = interfaces.iterator(); // descending
+        double[] mergedCriteria;
         while (it.hasNext()) {
             Interface i = it.next();
-            if (verbose) System.out.println("Interface:"+i);
+            if (verbose) logger.debug("Interface:"+i);
             mergedCriteria = i.checkFusionCriteria();
             if (mergedCriteria!=null) {
                 it.remove();

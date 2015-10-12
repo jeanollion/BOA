@@ -100,6 +100,13 @@ public class TrackTreeController {
         return 0;
     }
     
+    public TrackTreeGenerator getLastTreeGenerator() {
+        if (generatorS.isEmpty()) return null;
+        int max = Integer.MIN_VALUE;
+        for (int i : this.generatorS.keySet()) if (i>max) max=i;
+        return generatorS.get(max);
+    }
+    
     /*public ArrayList<JTree> getTrees() {
         ArrayList<JTree> res = new ArrayList<JTree>(structurePathToRoot.length);
         for (TrackTreeGenerator generator : generatorS.values()) if (generator.getTree()!=null) res.add(generator.getTree());
