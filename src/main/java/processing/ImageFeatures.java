@@ -207,6 +207,24 @@ public class ImageFeatures {
         }
         return res;
     }
+    public static ImageFloat getHessianDeterminant(Image image, double scale, boolean overrideIfFloat) {
+        ImageFloat[] hess=getHessian(image, scale, overrideIfFloat);
+        ImageFloat output = hess[0];
+        if (hess.length==2) {
+            for (int z = 0; z<hess[0].getSizeZ(); ++z) {
+                for (int xy = 0; xy<hess[0].getSizeXY(); ++xy) {
+                    output.setPixel(xy, z, hess[0].getPixel(xy, z)*hess[1].getPixel(xy, z));
+                }
+            }
+        } if (hess.length==3) {
+            for (int z = 0; z<hess[0].getSizeZ(); ++z) {
+                for (int xy = 0; xy<hess[0].getSizeXY(); ++xy) {
+                    output.setPixel(xy, z, hess[0].getPixel(xy, z)*hess[1].getPixel(xy, z)*hess[2].getPixel(xy, z));
+                }
+            }
+        } else return hess[0];
+        return output;
+    }
     
     public static ImageFloat gaussianSmooth(Image image, double scaleXY, double scaleZ, boolean overrideIfFloat) {
         if (image.getSizeZ()>1 && scaleZ<=0) throw new IllegalArgumentException("Scale Z should be >0 ");

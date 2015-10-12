@@ -78,17 +78,19 @@ public class BacteriesFluo2D implements Segmenter {
         // 
         //Image filtered = IJFFTBandPass.bandPass(input, 3, 20).setName("fft");
         ImageFloat smoothed = ImageFeatures.gaussianSmooth(input, smoothScale, smoothScale, false).setName("smoothed");
-        Image filtered = smoothed;
+        //Image filtered = smoothed;
         ImageFloat dog = ImageFeatures.differenceOfGaussians(smoothed, 0, dogScale, 1, false, false).setName("DoG");
         //Image dog = fft;
         ImageFloat log = ImageFeatures.getLaplacian(dog, logScale, true, false).setName("LoG");
+        Image hess = ImageFeatures.getHessian(dog, logScale, false)[0].setName("hess");
+        //Image hessDet = ImageFeatures.getHessianDeterminant(dog, logScale, false).setName("hessDet");
         if (debug) {
             ImageDisplayer disp = new IJImageDisplayer();
             //disp.showImage(smoothed);
-            //disp.showImage(dog);
-            //disp.showImage(log);
+            disp.showImage(dog);
+            disp.showImage(log);
+            disp.showImage(hess);
             disp.showImage(input);
-            disp.showImage(filtered);
         }
         double t0 = IJAutoThresholder.runThresholder(dog, mask, AutoThresholder.Method.Otsu, 0);
         logger.trace("threshold 0: {}", t0);
@@ -102,18 +104,13 @@ public class BacteriesFluo2D implements Segmenter {
         ArrayList<Object3D> objects = new ArrayList<Object3D>();
         //pop1.keepOnlyLargestObject(); // for testing purpose
         for (Object3D o : pop1.getObjects()) {
-            double normValue = BasicMeasurements.getPercentileValue(o, 0.5, filtered);
-            if (optimizationParameters!=null) optimizationParameters[2] = BasicMeasurements.getPercentileValue(o, 0.25, filtered);
-            if (optimizationParameters!=null) optimizationParameters[3]=BasicMeasurements.getPercentileValue(o, 0.5, filtered);
-            if (optimizationParameters!=null) optimizationParameters[4] = BasicMeasurements.getPercentileValue(o, 0.75, filtered);
-            if (optimizationParameters!=null) optimizationParameters[5] = BasicMeasurements.getMeanValue(o, filtered);
-            if (optimizationParameters!=null) optimizationParameters[6] = BasicMeasurements.getSdValue(o, filtered);
+            double normValue = BasicMeasurements.getPercentileValue(o, 0.5, smoothed);
             //if (optimizationParameters!=null) optimizationParameters[10] = BasicMeasurements.getPercentileValue(o, 0.25, smoothed);
             //if (optimizationParameters!=null) optimizationParameters[11] = BasicMeasurements.getPercentileValue(o, 0.5, smoothed);
             //if (optimizationParameters!=null) optimizationParameters[12] = BasicMeasurements.getPercentileValue(o, 0.75, smoothed);
             
             o.draw(labelMap, 1);
-            objects.addAll(split(log, labelMap, null, o, splitThreshold, seedMap, normValue)); // ajouter filtrage de longueur?
+            objects.addAll(split(dog, labelMap, null, o, splitThreshold, seedMap, normValue)); // ajouter filtrage de longueur?
             o.draw(labelMap, 0);
         }
         return new ObjectPopulation(objects, input);
@@ -121,9 +118,10 @@ public class BacteriesFluo2D implements Segmenter {
     
     public static ArrayList<Object3D> split(Image input, ImageMask mask, Image normMap, final Object3D object, double splitThreshold, ImageByte seedMap, double normFactor) {
         BoundingBox bounds = object.getBounds();
-        ArrayList<int[]> yBounds = analyseYDiffProfile(input, 2, normMap,  bounds, splitThreshold, normFactor);
+        //ArrayList<int[]> yBounds = analyseYDiffProfile(input, 1, normMap,  bounds, splitThreshold, normFactor);
+        ArrayList<int[]> yBounds = analyseYProfile(input, bounds, splitThreshold, normFactor);
         if (yBounds.isEmpty()) return new ArrayList<Object3D>(){{add(object);}};
-        yBounds.add(new int[]{yBounds.get(yBounds.size()-1)[1], bounds.getyMax()}); // add last element
+        if (yBounds.get(yBounds.size()-1)[1]<bounds.getyMax()-1) yBounds.add(new int[]{yBounds.get(yBounds.size()-1)[1], bounds.getyMax()}); // add last element
         ArrayList<Voxel> seedList = new ArrayList<Voxel>(yBounds.size());
         getSeeds(input, true, yBounds, bounds, seedList, seedMap);
         ObjectPopulation pop = WatershedTransform.watershed(input, mask, seedMap, true);
@@ -185,9 +183,7 @@ public class BacteriesFluo2D implements Segmenter {
         
         
         float[] projValues = ImageOperations.meanProjection(intensities, ImageOperations.Axis.Y, projBounds);
-        float maxValue = ArrayUtil.max(projValues);
-        
-        
+
         float[] projDiff = ImageOperations.meanProjection(diffY, ImageOperations.Axis.Y, projBounds);
         float[] projDiff2 = ImageOperations.meanProjection(diffY2, ImageOperations.Axis.Y, projBounds);
         
@@ -264,6 +260,44 @@ public class BacteriesFluo2D implements Segmenter {
         //logger.debug("amplitudes normalisée par {}: {}", normFactor, amplitudes);
         //logger.debug("amplitudes: {}", amplitudesNonNorm);
         
+        
+        return yBounds;
+    }
+    
+    protected static ArrayList<int[]> analyseYProfile(Image intensities, BoundingBox projBounds, double splitThld, double normFactor) {
+        int minLenght = 20; // a mettre en parametre: longueure minimale
+        //int peakSize= 8; // limit peak extension..
+        int yOffset = projBounds.getyMin();
+        
+        float[] projValues = ImageOperations.meanProjection(intensities, ImageOperations.Axis.Y, projBounds);
+        //for (int y = 0; y<projDiff.length; ++y) if (norm.getPixel(y, 0, 0)>0) projDiffNorm[y]=projDiff[y]/norm.getPixel(y, 0, 0);
+        if (debug) {
+            Utils.plotProfile("values", projValues);
+        }
+        int[] regMax = ArrayUtil.getRegionalExtrema(projValues, 1, true);
+        logger.trace("reg max diff2: {}, offset: {}", regMax, yOffset);
+        int[] regMin = ArrayUtil.getRegionalExtrema(projValues, minLenght/2, false); 
+        float[] amplitude=null;
+        if (debug) amplitude = new float[projValues.length];
+        ArrayList<int[]> yBounds = new ArrayList<int[]>(regMin.length);
+        int lastMaxIdx = 0;
+        for (int i = regMin[0]==0?1:0; i<regMin.length; ++i) {
+            
+            // recherche du max local le plus proche
+            while(lastMaxIdx<regMax.length && regMax[lastMaxIdx]<regMin[i]) ++lastMaxIdx;
+            float amp = 0;
+            if (lastMaxIdx<regMax.length) amp = projValues[regMax[lastMaxIdx]] - projValues[regMin[i]];
+            if (lastMaxIdx>0) amp += projValues[regMax[lastMaxIdx-1]] - projValues[regMin[i]];
+            if (amp>splitThld * normFactor) {
+                int lower = yBounds.isEmpty() ? 0 : yBounds.get(yBounds.size()-1)[1];
+                yBounds.add(new int[]{lower+yOffset, regMin[i]+yOffset});
+                logger.trace("add separation: min: {}, max: {}, min+offset: {}, max+offset:{}, amplitude: {}",lower, regMin[i], lower+yOffset, regMin[i]+yOffset, amplitude[i]);
+            }
+            if (amplitude!=null) amplitude[regMin[i]]=(float)(amp/normFactor);
+        }
+        if (debug) {
+            Utils.plotProfile("amplitude", amplitude);
+        }
         
         return yBounds;
     }

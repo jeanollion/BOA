@@ -210,7 +210,7 @@ public class TestProcessFluo {
     public void testSegBacteries() {
         testCrop("/data/Images/Fluo/testsub");
         
-        Image image = xp.getMicroscopyField(0).getInputImages().getImage(0, 3);
+        Image image = xp.getMicroscopyField(0).getInputImages().getImage(0, 0);
         ArrayList<Object3D> objects = MicroChannelFluo2D.getObjects(image, 350, 30, 5);
         Object3D o = objects.get(1);
         ImageMask parentMask = o.getMask();
@@ -219,7 +219,7 @@ public class TestProcessFluo {
     }
     
     public void testSegBacteriesFromXP() {
-        int time = 16;
+        int time = 0;
         int channel = 0;
         int field = 0;
         String dbName = "testFluo";
@@ -251,7 +251,7 @@ public class TestProcessFluo {
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
         BacteriesFluo2D.debug=true;
-        ObjectPopulation pop = BacteriesFluo2D.run(input, parentMask, 0.030, 2, 15, 3);
+        ObjectPopulation pop = BacteriesFluo2D.run(input, parentMask, 0.3, 2, 15,3);
         disp.showImage(pop.getLabelImage());
     }
     

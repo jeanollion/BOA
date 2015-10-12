@@ -24,7 +24,8 @@ package processing;
 public class GenerateTestXP {
     public static void main(String[] args) {
         TestProcessFluo t = new TestProcessFluo();
-        t.setUpXp(true, "/data/Images/Fluo/OutputTestGUI");
+        //t.setUpXp(true, "/data/Images/Fluo/OutputTestGUI");
+        t.setUpXp(true, "/home/jollion/Documents/LJP/DataLJP/TestOutputGUI");
         t.saveXP("testFluo");
     }
 }
