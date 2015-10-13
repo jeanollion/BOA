@@ -15,14 +15,21 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.objects;
+package plugins;
 
-import dataStructure.objects.StructureObject.TrackFlag;
+import dataStructure.objects.StructureObjectTrackCorrection;
+import java.util.ArrayList;
 
 /**
  *
  * @author jollion
  */
-public interface StructureObjectTracker extends StructureObjectPreProcessing {
-    public void setPreviousInTrack(StructureObjectTracker previous, boolean isTrackHead, boolean signalError);
+public interface TrackCorrector extends Plugin {
+    /**
+     * 
+     * @param track
+     * @param splitter
+     * @return a list of all modified objects (merged, splitted, or with modification on track attributes )
+     */
+    public ArrayList<StructureObjectTrackCorrection> correctTrack(StructureObjectTrackCorrection track, ObjectSplitter splitter);
 }

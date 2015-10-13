@@ -15,14 +15,16 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.objects;
+package plugins;
 
-import dataStructure.objects.StructureObject.TrackFlag;
+import dataStructure.objects.Object3D;
+import dataStructure.objects.ObjectPopulation;
+import image.Image;
 
 /**
  *
  * @author jollion
  */
-public interface StructureObjectTracker extends StructureObjectPreProcessing {
-    public void setPreviousInTrack(StructureObjectTracker previous, boolean isTrackHead, boolean signalError);
+public interface ObjectSplitter extends ImageProcessingPlugin {
+    public ObjectPopulation splitObject(Image input, Object3D object);
 }

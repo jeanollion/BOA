@@ -26,7 +26,10 @@ import configuration.parameters.ui.NameEditorUI;
 import configuration.parameters.ui.ParameterUI;
 import de.caluga.morphium.annotations.Transient;
 import javax.swing.tree.MutableTreeNode;
+import plugins.ObjectSplitter;
+import plugins.TrackCorrector;
 import plugins.Tracker;
+import plugins.plugins.ObjectSplitter.DefaultObjectSplitter;
 
 /**
  *
@@ -38,7 +41,8 @@ public class Structure extends SimpleContainerParameter {
     ChannelImageParameter channelImage = new ChannelImageParameter("Channel Image", 0);
     ProcessingChain processingChain = new ProcessingChain("Processing Chain");
     PluginParameter<Tracker> tracker = new PluginParameter<Tracker>("Tracker", Tracker.class, true);
-    
+    PluginParameter<TrackCorrector> trackCorrector = new PluginParameter<TrackCorrector>("Track corrector", TrackCorrector.class, true);
+    PluginParameter<ObjectSplitter> objectSplitter = new PluginParameter<ObjectSplitter>("Object Splitter", ObjectSplitter.class, new DefaultObjectSplitter(), false);
     @Transient NameEditorUI ui;
     public Structure(String name) {
         this(name, -1, -1);
@@ -74,6 +78,26 @@ public class Structure extends SimpleContainerParameter {
     
     public void setTracker(Tracker tracker) {
         this.tracker.setPlugin(tracker);
+    }
+    
+    public boolean hasTrackCorrector() {
+        return trackCorrector.isOnePluginSet();
+    }
+    
+    public TrackCorrector getTrackCorrector() {
+        return this.trackCorrector.getPlugin();
+    }
+    
+    public void setTrackCorrector(TrackCorrector trackCorrector) {
+        this.trackCorrector.setPlugin(trackCorrector);
+    }
+    
+    public ObjectSplitter getObjectSplitter() {
+        return this.objectSplitter.getPlugin();
+    }
+    
+    public void setObjectSplitter(ObjectSplitter objectSplitter) {
+        this.objectSplitter.setPlugin(objectSplitter);
     }
     
     public int getParentStructure() {

@@ -114,9 +114,9 @@ public class TrackTreeGenerator {
             @Override
             public void mousePressed(MouseEvent e) {
                 TreePath path = tree.getPathForLocation(e.getX(), e.getY());
+                if (path==null) return;
                 if (SwingUtilities.isRightMouseButton(e)) {
                     tree.setSelectionPath(path);
-                    // display arrows?
                     Rectangle pathBounds = tree.getUI().getPathBounds(tree, path);
                     if (pathBounds != null && pathBounds.contains(e.getX(), e.getY())) {
                         JPopupMenu menu = new JPopupMenu();
@@ -128,11 +128,13 @@ public class TrackTreeGenerator {
                         }
                         menu.show(tree, pathBounds.x, pathBounds.y + pathBounds.height);
                     }
+                } else if (SwingUtilities.isLeftMouseButton(e)) { 
+                    if (tree.isCollapsed(path)) { // expand & select all children
+                        ArrayList<TreePath> pathToSelect = new ArrayList<TreePath>();
+                        Utils.expandAll(tree, path, pathToSelect);
+                        tree.setSelectionPaths(pathToSelect.toArray(new TreePath[pathToSelect.size()]));
+                    } else tree.setSelectionPath(path);
                 }
-                // expand & select all children
-                ArrayList<TreePath> pathToSelect = new ArrayList<TreePath>();
-                Utils.expandAll(tree, path, pathToSelect);
-                tree.setSelectionPaths(pathToSelect.toArray(new TreePath[pathToSelect.size()]));
                 displaySelectedTracks();
             }
         });

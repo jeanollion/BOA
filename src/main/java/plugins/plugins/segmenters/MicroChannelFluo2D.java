@@ -78,8 +78,8 @@ public class MicroChannelFluo2D implements Segmenter {
                 logger.debug("MicroChannelFluo2D: current timepoint: {}, reference timepoint: {} no objects found", parent.getTimePoint(), refTimePoint);
             }
             else {
-                StructureObject[] oos = ((StructureObject)ref).getChildObjects(structureIdx);
-                objects = new ArrayList<Object3D>(oos.length);
+                ArrayList<? extends StructureObject> oos = ((StructureObject)ref).getChildObjects(structureIdx);
+                objects = new ArrayList<Object3D>(oos.size());
                 for (StructureObject o : oos) objects.add(o.getObject());
                 logger.debug("MicroChannelFluo2D: current timepoint: {}, reference timepoint: {} copied objects: {}", parent.getTimePoint(), refTimePoint, objects.size());
             }

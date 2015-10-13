@@ -24,13 +24,18 @@ import dataStructure.objects.StructureObject;
 import static dataStructure.objects.StructureObject.logger;
 import de.caluga.morphium.DAO;
 import de.caluga.morphium.Morphium;
+import de.caluga.morphium.async.AsyncOperationCallback;
+import de.caluga.morphium.async.AsyncOperationType;
 import de.caluga.morphium.query.Query;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import javax.swing.SwingUtilities;
 import org.bson.types.ObjectId;
+import utils.MorphiumUtils;
 
 /**
  *
@@ -46,6 +51,9 @@ public class ObjectDAO extends DAO<StructureObject>{
         this.morphium=morphium;
         this.xpDAO=xpDAO;
         idCache = new HashMap<ObjectId, StructureObject>();
+        logger.debug("object DAO creation: xpDAO null? {}, experiment null? {}, DAO already set? {}", xpDAO==null, xpDAO==null?"true":xpDAO.getExperiment()==null, xpDAO==null?"false":xpDAO.getExperiment()==null?"false":xpDAO.getExperiment().getObjectDAO()==null);
+        if (xpDAO!=null && xpDAO.getExperiment()!=null && xpDAO.getExperiment().getObjectDAO()==null) xpDAO.getExperiment().setObjectDAO(this);
+        
     }
     
     private Query<StructureObject> getQuery(ObjectId parentId, int structureIdx) {
@@ -82,14 +90,13 @@ public class ObjectDAO extends DAO<StructureObject>{
     
     
     
-    private StructureObject[] checkAgainstCache(List<StructureObject> list) {
-        StructureObject[] res= new StructureObject[list.size()];
-        int idx=0;
-        for (StructureObject o : list) res[idx++] = checkAgainstCache(o);
+    private ArrayList<StructureObject> checkAgainstCache(List<StructureObject> list) {
+        ArrayList<StructureObject> res= new ArrayList<StructureObject>(list.size());
+        for (StructureObject o : list) res.add(checkAgainstCache(o));
         return res;
     }
     
-    public StructureObject[] getObjects(ObjectId parentId, int structureIdx) {
+    public ArrayList<StructureObject> getObjects(ObjectId parentId, int structureIdx) {
         List<StructureObject> list = this.getQuery(parentId, structureIdx).sort("idx").asList();
         return checkAgainstCache(list);
     }
@@ -159,18 +166,59 @@ public class ObjectDAO extends DAO<StructureObject>{
         o.deleteMask();
     }
     
-    public void store(StructureObject...objects) {
+    public void store(StructureObject object) {
+        object.updateObjectContainer();
+        morphium.store(object);
+        idCache.put(object.getId(), object);
+    }
+    
+    public void store(StructureObject... object) {
+        if (object==null) return;
+        if (object.length==0) return;
+        if (object.length==1) store(object[0]);
+        else store(Arrays.asList(object));
+    }
+    
+    public void store(final List<StructureObject> objects) {
         if (objects==null) return;
-        for (StructureObject o : objects) {
-            o.updateObjectContainer();
-            morphium.store(o);
-            idCache.put(o.getId(), o);
-        }
+        for (StructureObject o : objects) o.updateObjectContainer();
+        morphium.store(objects, new AsyncOperationCallback<StructureObject>() {
+            public void onOperationSucceeded(AsyncOperationType type, Query<StructureObject> q, long duration, List<StructureObject> result, StructureObject entity, Object... param) {
+                logger.trace("store succeded: duration: {} nb objects: {}", duration, objects.size());
+                for (StructureObject o : objects) idCache.put(o.getId(), o);
+            }
+            public void onOperationError(AsyncOperationType type, Query<StructureObject> q, long duration, String error, Throwable t, StructureObject entity, Object... param) {
+                logger.error("store error!");
+            }
+        });
+        //if (waitForWrites) MorphiumUtils.waitForWrites(morphium);
+        MorphiumUtils.waitForWrites(morphium);
     }
     // track-specific methods
     
-    public void updateTrackAttributes(StructureObject... objects) {
+    public void updateParent(final List<StructureObject> objects) {
+        // TODO update only parent field
+        morphium.store(objects, new AsyncOperationCallback<StructureObject>() {
+            public void onOperationSucceeded(AsyncOperationType type, Query<StructureObject> q, long duration, List<StructureObject> result, StructureObject entity, Object... param) {
+                logger.trace("update parent succeded: duration: {} nb objects: {}", duration, objects.size());
+            }
+            public void onOperationError(AsyncOperationType type, Query<StructureObject> q, long duration, String error, Throwable t, StructureObject entity, Object... param) {
+                logger.error("update parent error!");
+            }
+        });
+        //if (waitForWrites) MorphiumUtils.waitForWrites(morphium);
+        MorphiumUtils.waitForWrites(morphium);
+    }
+    
+    public void updateTrackAttributes(StructureObject... object) {
+        if (object==null) return;
+        else if (object.length==0) return;
+        else updateTrackAttributes(Arrays.asList(object));
+    }
+    
+    public void updateTrackAttributes(final List<StructureObject> objects) {
         if (objects==null) return;
+        //MorphiumUtils.waitForWrites(morphium);
         for (StructureObject o : objects) { //TODO utiliser updateUsingFields quand bug resolu
             if (o.getParent()!=null) o.setParentTrackHeadId(o.getParent().getTrackHeadId());
             if (o.getTrackHeadId()==null) {
@@ -180,33 +228,52 @@ public class ObjectDAO extends DAO<StructureObject>{
             //morphium.updateUsingFields(o, "parent_track_head_id", "track_head_id");
             //morphium.updateUsingFields(object, "next", "previous");
             //System.out.println("update track attribute:"+ o.timePoint+ " next null?"+(o.next==null)+ "previous null?"+(o.previous==null));
-            morphium.store(o);
         }
+        //Thread t = new Thread(new Runnable() {
+            //public void run() {
+                
+                morphium.store(objects, new AsyncOperationCallback<StructureObject>() {
+                    public void onOperationSucceeded(AsyncOperationType type, Query<StructureObject> q, long duration, List<StructureObject> result, StructureObject entity, Object... param) {
+                        logger.trace("update succeded: duration: {} nb objects: {}", duration, objects.size());
+                        for (StructureObject o : objects) idCache.put(o.getId(), o);
+                    }
+                    public void onOperationError(AsyncOperationType type, Query<StructureObject> q, long duration, String error, Throwable t, StructureObject entity, Object... param) {
+                        logger.error("update error!");
+                    }
+                });
+            //}
+        //});
+        //SwingUtilities.invokeLater(t);
+        MorphiumUtils.waitForWrites(morphium);
     }
     
-    public StructureObject[] getTrackHeads(StructureObject parentTrack, int structureIdx) {
-        if (parentTrack==null) return new StructureObject[0];
+    public ArrayList<StructureObject> getTrackHeads(StructureObject parentTrack, int structureIdx) {
+        if (parentTrack==null) return new ArrayList<StructureObject>(0);
         List<StructureObject> list =  super.getQuery().f("is_track_head").eq(true).f("parent_track_head_id").eq(parentTrack.getTrackHeadId()).f("structure_idx").eq(structureIdx).sort("time_point", "idx").asList();
         logger.trace("track head query: parentTrack: {} structure: {} result length: {}", parentTrack.getTrackHeadId(), structureIdx, list.size());
         return this.checkAgainstCache(list);
     }
     
-    public StructureObject[] getTrack(StructureObject track) {
+    public ArrayList<StructureObject> getTrack(StructureObject track) {
         List<StructureObject> list =  super.getQuery().f("track_head_id").eq(track.getTrackHeadId()).sort("time_point").asList();
-        StructureObject[] res  = checkAgainstCache(list);
-        for (int i = 1; i<res.length; ++i) {
-            res[i].previous=res[i-1];
-            res[i-1].next=res[i];
+        ArrayList<StructureObject> res  = checkAgainstCache(list);
+        StructureObject prev = null;
+        for (StructureObject o : res) {
+            if (prev!=null) {
+                o.previous=prev;
+                prev.next=o;
+            }
+            prev = o;
         }
         return res;
     }
     
-    public StructureObject[] getTrackErrors(StructureObject parentTrack, int structureIdx) {
+    public ArrayList<StructureObject> getTrackErrors(StructureObject parentTrack, int structureIdx) {
         List<StructureObject> list =  super.getQuery().f("parent_track_head_id").eq(parentTrack.getTrackHeadId()).f("structure_idx").eq(structureIdx).f("track_link_error").eq(true).asList();
         return this.checkAgainstCache(list);
     }
     
-    public StructureObject[] getTrackErrors(String fieldName, int structureIdx) {
+    public ArrayList<StructureObject> getTrackErrors(String fieldName, int structureIdx) {
         List<StructureObject> list =  super.getQuery().f("field_name").eq(fieldName).f("structure_idx").eq(structureIdx).f("track_link_error").eq(true).asList();
         return this.checkAgainstCache(list);
     }
@@ -227,7 +294,7 @@ public class ObjectDAO extends DAO<StructureObject>{
         return this.checkAgainstCache(getRootQuery(fieldName, timePoint).get());
     }
     
-    public StructureObject[] getRoots(String fieldName) {
+    public ArrayList<StructureObject> getRoots(String fieldName) {
         return this.checkAgainstCache(getRootQuery(fieldName, -1).asList());
     }
 }

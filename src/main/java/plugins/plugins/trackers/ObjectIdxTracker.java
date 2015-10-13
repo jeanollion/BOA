@@ -24,7 +24,9 @@ import dataStructure.objects.StructureObjectProcessing;
 import dataStructure.objects.StructureObjectTracker;
 import dataStructure.objects.Track;
 import image.ImageMask;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import plugins.Plugin;
 import plugins.Tracker;
@@ -45,21 +47,22 @@ public class ObjectIdxTracker implements Tracker {
     };
     ChoiceParameter order = new ChoiceParameter("Indexing order", Utils.toStringArray(IndexingOrder.values()), IndexingOrder.XYZ.toString(), false);
     
-    public void assignPrevious(StructureObjectTracker[] previous, StructureObjectTracker[] next) {
+    public void assignPrevious(ArrayList<? extends StructureObjectTracker> previous, ArrayList<? extends StructureObjectTracker> next) {
         /*StructureObjectTracker[] previousCopy = new StructureObjectTracker[previous.length];
         System.arraycopy(previous, 0, previousCopy, 0, previous.length);
         StructureObjectTracker[] nextCopy = new StructureObjectTracker[next.length];
         System.arraycopy(next, 0, nextCopy, 0, next.length);
         */
-        Arrays.sort(previous, getComparator(IndexingOrder.valueOf(order.getSelectedItem())));
-        Arrays.sort(next, getComparator(IndexingOrder.valueOf(order.getSelectedItem())));
-        for (int i = 0; i<Math.min(previous.length, next.length); ++i) {
-            next[i].setPreviousInTrack(previous[i], false, false);
-            Plugin.logger.trace("assign previous {} to next {}", previous[i], next[i]);
+        
+        Collections.sort(previous, getComparator(IndexingOrder.valueOf(order.getSelectedItem())));
+        Collections.sort(next, getComparator(IndexingOrder.valueOf(order.getSelectedItem())));
+        for (int i = 0; i<Math.min(previous.size(), next.size()); ++i) {
+            next.get(i).setPreviousInTrack(previous.get(i), false, false);
+            Plugin.logger.trace("assign previous {} to next {}", previous.get(i), next.get(i));
         }
     }
     
-    public static Comparator<StructureObjectPreProcessing> getComparator(final IndexingOrder order) {
+    public static Comparator<? super StructureObjectPreProcessing> getComparator(final IndexingOrder order) {
         return new Comparator<StructureObjectPreProcessing>() {
             @Override
             public int compare(StructureObjectPreProcessing arg0, StructureObjectPreProcessing arg1) {

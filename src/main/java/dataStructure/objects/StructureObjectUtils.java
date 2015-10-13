@@ -47,9 +47,9 @@ public class StructureObjectUtils {
         //logger.debug("getAllObjects: path to structure: length: {}, elements: {}", pathToStructure.length, pathToStructure);
         if (pathToStructure.length==0) return new ArrayList<StructureObject>(0);
         ArrayList<StructureObject> currentChildren;
-        if (dao==null) currentChildren = new ArrayList<StructureObject>(referenceStructureObject.getChildObjects(pathToStructure[0]).length);
-        else currentChildren = new ArrayList<StructureObject>(referenceStructureObject.getChildObjects(pathToStructure[0], dao, false).length); // will load the objects
-        Collections.addAll(currentChildren, referenceStructureObject.getChildObjects(pathToStructure[0]));
+        if (dao==null) currentChildren = new ArrayList<StructureObject>(referenceStructureObject.getChildObjects(pathToStructure[0]).size());
+        else currentChildren = new ArrayList<StructureObject>(referenceStructureObject.getChildObjects(pathToStructure[0], dao, false).size()); // will load the objects
+        currentChildren.addAll(referenceStructureObject.getChildObjects(pathToStructure[0]));
         //logger.debug("getAllObjects: current structure {} current number of objects: {}", pathToStructure[0], currentChildren.size());
         for (int i = 1; i<pathToStructure.length; ++i) {
             currentChildren = getAllChildren(currentChildren, pathToStructure[i], dao);
@@ -62,8 +62,8 @@ public class StructureObjectUtils {
         ArrayList<StructureObject> res = new ArrayList<StructureObject>();
         for (StructureObject parent : parents) {
             //logger.debug("getAllChildren: current object {} childrenStructureIdx : {} number of objects: {}", parent,childrenStructureIdx, parent.getChildObjects(childrenStructureIdx)==null?"null": parent.getChildObjects(childrenStructureIdx).length);
-            if (dao==null) Collections.addAll(res, parent.getChildObjects(childrenStructureIdx));
-            else Collections.addAll(res, parent.getChildObjects(childrenStructureIdx, dao, false));
+            if (dao==null) res.addAll(parent.getChildObjects(childrenStructureIdx));
+            else res.addAll(parent.getChildObjects(childrenStructureIdx, dao, false));
         }
         return res;
     } 

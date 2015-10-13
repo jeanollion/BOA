@@ -63,7 +63,7 @@ public class Object3D {
     }
     
     protected void createMask() {
-        mask = new ImageByte("", getBounds().getImageProperties("", scaleXY, scaleZ));
+        mask = new ImageByte("", getBounds().getImageProperties("mask", scaleXY, scaleZ));
         for (Voxel v : voxels) mask.setPixelWithOffset(v.x, v.y, v.z, 1);
     }
 
@@ -84,10 +84,23 @@ public class Object3D {
         if (mask!=null) return mask;
         else return getBounds().getImageProperties("", scaleXY, scaleZ);
     }
-    
+    /**
+     * 
+     * @return an image conatining only the object: its bounds are the one of the object and pixel values >0 where the objects has a voxel. The offset of the image is this offset of the object. 
+     */
     public ImageInteger getMask() {
         if (mask==null && voxels!=null) createMask();
         return mask;
+    }
+    /**
+     * 
+     * @param properties 
+     * @return a mask image of the object, with same dimensions as {@param properties}, and the object located within the image according to its offset
+     */
+    public ImageByte getMask(ImageProperties properties) {
+        ImageByte res = new ImageByte("mask", properties);
+        draw(res, label);
+        return res;
     }
     
     public ArrayList<Voxel> getVoxels() {
@@ -104,9 +117,15 @@ public class Object3D {
     public BoundingBox getBounds() {
         if (bounds==null) {
             if (mask!=null) bounds=mask.getBoundingBox();
-            else if (voxels!=null) createBoundsFromVoxels(); // pas d'offset
+            else if (voxels!=null) createBoundsFromVoxels();
         }
         return bounds;
+    }
+    
+    public void merge(Object3D other) {
+        this.getVoxels().addAll(other.getVoxels()); // TODO check for duplicates?
+        this.mask=null; // reset mask
+        this.bounds=null; // reset bounds
     }
     
     public ObjectContainer getObjectContainer(StructureObject structureObject) {

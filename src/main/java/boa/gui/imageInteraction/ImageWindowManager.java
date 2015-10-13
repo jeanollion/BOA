@@ -73,15 +73,15 @@ public abstract class ImageWindowManager<T> {
         return i;
     }
     
-    public ImageObjectInterface getImageTrackObjectInterface(StructureObject[] parentTrack, int childStructureIdx) {
-        if (parentTrack.length==0) {
+    public ImageObjectInterface getImageTrackObjectInterface(ArrayList<StructureObject> parentTrack, int childStructureIdx) {
+        if (parentTrack.isEmpty()) {
             logger.warn("cannot open track image of length == 0" );
             return null;
         }
-        ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parentTrack[0], childStructureIdx, true));
+        ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parentTrack.get(0), childStructureIdx, true));
         if (i==null) {
             i = new TrackMask(parentTrack, childStructureIdx);
-            imageObjectInterfaces.put(new ImageObjectInterfaceKey(parentTrack[0], childStructureIdx, true), i);
+            imageObjectInterfaces.put(new ImageObjectInterfaceKey(parentTrack.get(0), childStructureIdx, true), i);
         } 
         return i;
     }
@@ -107,5 +107,5 @@ public abstract class ImageWindowManager<T> {
     
     public abstract void selectObjects(Image image, boolean addToCurrentSelection, StructureObject... selectedObjects);
     public abstract void unselectObjects(Image image);
-    public abstract void displayTrack(Image image, boolean addToCurrentSelectedTracks, StructureObject[] track, Color color);
+    public abstract void displayTrack(Image image, boolean addToCurrentSelectedTracks, ArrayList<StructureObject> track, Color color);
 }

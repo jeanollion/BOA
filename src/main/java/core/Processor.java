@@ -28,15 +28,12 @@ import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plugins.Registration;
 import plugins.Tracker;
 import plugins.Transformation;
-import plugins.TransformationTimeIndependent;
-import utils.MorphiumUtils;
-import utils.ThreadRunner;
-import utils.ThreadRunner.ThreadAction;
 
 /**
  *
@@ -105,18 +102,18 @@ public class Processor {
     
     public static void processStructures(final Experiment xp, MicroscopyField field, final ObjectDAO dao, boolean deleteObjects) {
         if (dao!=null && deleteObjects) dao.deleteObjectsFromField(field.getName());
-        StructureObject[] root = field.createRootObjects();
+        ArrayList<StructureObject> root = field.createRootObjects();
         if (dao!=null) dao.store(root);
         Processor.trackRoot(root, dao);
         for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
             if (xp.getStructure(s).hasSegmenter()) {
                 logger.info("processing structure: {}...", s);
-                for (int t = 0; t<root.length; ++t) { // process
-                    Processor.processStructure(s, root[t], dao, false);
+                for (int t = 0; t<root.size(); ++t) { // process
+                    Processor.processStructure(s, root.get(t), dao, false);
                 } 
                 if (xp.getStructure(s).hasTracker()) { // structure
                     logger.info("tracking structure: {}...", s);
-                    for (StructureObject o : StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, dao);
+                    for (StructureObject o : StructureObjectUtils.getAllParentObjects(root.get(0), xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, dao);
                     /*final int sIdx = s;
                     ThreadRunner.execute(StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s)), new ThreadAction<StructureObject>() {
                         @Override
@@ -138,9 +135,9 @@ public class Processor {
     }
     
     public static void processStructure(int structureIdx, Experiment xp, MicroscopyField field, int startTime, int stopTime, ObjectDAO dao) {
-        StructureObject[] roots=null;
+        ArrayList<StructureObject> roots=null;
         if (dao!=null) roots=dao.getRoots(field.getName());
-        if (roots==null || roots.length==0) {
+        if (roots==null || roots.isEmpty()) {
             if (xp.getStructure(structureIdx).getParentStructure()!=-1) throw new RuntimeException("No root objects detected, in order to segment structure: "+structureIdx+"one need to segment all its parent structures");
             else {
                 roots = field.createRootObjects();
@@ -149,20 +146,20 @@ public class Processor {
             }
         }
         if (startTime<0) startTime=0;
-        if (stopTime<0) stopTime = roots.length;
+        if (stopTime<0) stopTime = roots.size();
         if (startTime>stopTime || startTime>=field.getTimePointNumber() || stopTime>field.getTimePointNumber()) throw new IllegalArgumentException(" start time "+startTime+", and stop time: "+stopTime+" invalids (timepoint number: "+field.getTimePointNumber()+")");
         // get all parent objects of the structure
         //StructureObject parent = roots[0]; // for testing
 
         for (int t = startTime; t<stopTime; ++t) {
-            StructureObject parent = roots[t];
+            StructureObject parent = roots.get(t);
             ArrayList<StructureObject> allParents = StructureObjectUtils.getAllParentObjects(parent, parent.getExperiment().getPathToStructure(parent.getStructureIdx(), structureIdx), dao);
             logger.info("Segmenting structure: {} timePoint: {} number of parents: {}", structureIdx, parent.getTimePoint(), allParents.size());
             for (StructureObject localParent : allParents) {
                 if (dao!=null) dao.deleteChildren(localParent.getId(), structureIdx);
                 localParent.segmentChildren(structureIdx);
-                if (dao!=null) dao.store(localParent.getChildObjects(structureIdx));
-                if (logger.isDebugEnabled()) logger.debug("Segmenting structure: {} from parent: {} number of objects: {}", structureIdx, localParent, localParent.getChildObjects(structureIdx).length);
+                if (dao!=null) dao.store(localParent.getChildren(structureIdx));
+                if (logger.isDebugEnabled()) logger.debug("Segmenting structure: {} from parent: {} number of objects: {}", structureIdx, localParent, localParent.getChildObjects(structureIdx).size());
             }
         }
     }
@@ -175,14 +172,14 @@ public class Processor {
         for (StructureObject localParent : allParents) {
             if (dao!=null && deleteObjects) dao.deleteChildren(localParent.getId(), structureIdx);
             localParent.segmentChildren(structureIdx);
-            if (dao!=null) dao.store(localParent.getChildObjects(structureIdx));
-            if (logger.isDebugEnabled()) logger.debug("Segmented structure: {} from parent: {} number of objects: {}", structureIdx, localParent, localParent.getChildObjects(structureIdx).length);
+            if (dao!=null) dao.store(localParent.getChildren(structureIdx));
+            if (logger.isDebugEnabled()) logger.debug("Segmented structure: {} from parent: {} number of objects: {}", structureIdx, localParent, localParent.getChildObjects(structureIdx).size());
         }
     }
     
-    public static void trackRoot(StructureObject[] rootsT, ObjectDAO dao) {
+    public static void trackRoot(List<StructureObject> rootsT, ObjectDAO dao) {
         logger.debug("tracking root objects. dao==null? {}", dao==null);
-        for (int i = 1; i<rootsT.length; ++i) rootsT[i].setPreviousInTrack(rootsT[i-1], false, false);
+        for (int i = 1; i<rootsT.size(); ++i) rootsT.get(i).setPreviousInTrack(rootsT.get(i-1), false, false);
         if (dao!=null) dao.updateTrackAttributes(rootsT);
     }
     
@@ -193,9 +190,9 @@ public class Processor {
         for (StructureObject o : parentTrack.getChildObjects(structureIdx, dao, false)) o.setParentTrackHeadId(parentTrack.getTrackHeadId());
         while(parentTrack.getNext()!=null) {
             tracker.assignPrevious(parentTrack.getChildObjects(structureIdx, dao, false), parentTrack.getNext().getChildObjects(structureIdx, dao, false));
-            if (dao!=null) dao.updateTrackAttributes(parentTrack.getChildObjects(structureIdx));
+            if (dao!=null) dao.updateTrackAttributes(parentTrack.getChildren(structureIdx));
             parentTrack = parentTrack.getNext();
         }
-        if (dao!=null) dao.updateTrackAttributes(parentTrack.getChildObjects(structureIdx)); // update the last one
+        if (dao!=null) dao.updateTrackAttributes(parentTrack.getChildren(structureIdx)); // update the last one
     }
 }

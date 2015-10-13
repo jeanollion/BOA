@@ -121,7 +121,7 @@ public class StructureObjectTreeGenerator {
         for (StructureObject o : objectPath) {
             StructureNode s = lastStructureContainer.getStructureNode(o.getStructureIdx());
             path.add(s);
-            ObjectNode on = s.getChildren()[o.getIdx()];
+            ObjectNode on = s.getChildren().get(o.getIdx());
             path.add(on);
             lastStructureContainer=on;
         }
@@ -136,7 +136,7 @@ public class StructureObjectTreeGenerator {
         StructureNodeContainer lastStructureContainer = t;
         for (StructureObject o : objectPath) {
             StructureNode s = lastStructureContainer.getStructureNode(o.getStructureIdx());
-            ObjectNode on = s.getChildren()[o.getIdx()];
+            ObjectNode on = s.getChildren().get(o.getIdx());
             lastStructureContainer=on;
         }
         return (ObjectNode)lastStructureContainer;

@@ -216,7 +216,7 @@ public class Utils {
     
     public static void expandAll(JTree tree, TreePath parent, ArrayList<TreePath> expandedPath) {
         TreeNode node = (TreeNode) parent.getLastPathComponent();
-        if (expandedPath!=null && (tree.isCollapsed(parent) || node.getChildCount()==0)) expandedPath.add(parent);
+        if (expandedPath!=null) expandedPath.add(parent);
         
         if (node.getChildCount() >= 0) {
           for (Enumeration e = node.children(); e.hasMoreElements();) {

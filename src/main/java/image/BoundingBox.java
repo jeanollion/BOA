@@ -254,6 +254,10 @@ public class BoundingBox {
         return zMin+getSizeZ()/2.0;
     }
     
+    public double getDistance(BoundingBox other) {
+        return Math.sqrt(Math.pow(this.getXMean()-other.getXMean(), 2) + Math.pow(this.getYMean()-other.getYMean(), 2) + Math.pow(this.getZMean()-other.getZMean(), 2));
+    }
+    
     public boolean intersect(BoundingBox other) {
         if (getSizeZ()==0 && other.getSizeZ()==0) return Math.max(xMin, other.xMin)<Math.min(xMax, other.xMax) && Math.max(yMin, other.yMin)<Math.min(yMax, other.yMax);
         else return Math.max(xMin, other.xMin)<Math.min(xMax, other.xMax) && Math.max(yMin, other.yMin)<Math.min(yMax, other.yMax) && Math.max(zMin, other.zMin)<Math.min(zMax, other.zMax);

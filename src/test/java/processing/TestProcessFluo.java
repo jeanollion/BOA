@@ -35,6 +35,7 @@ import de.caluga.morphium.MorphiumConfig;
 import ij.process.AutoThresholder;
 import image.Image;
 import image.ImageFormat;
+import image.ImageInteger;
 import image.ImageMask;
 import image.ImageWriter;
 import java.io.File;
@@ -47,11 +48,13 @@ import java.util.logging.Logger;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import plugins.PluginFactory;
+import plugins.plugins.ObjectSplitter.DefaultObjectSplitter;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.BacteriesFluo2D;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.thresholders.IJAutoThresholder;
+import plugins.plugins.trackCorrector.MicroChannelBacteriaTrackCorrector;
 import plugins.plugins.trackers.ClosedMicrochannelTracker;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import plugins.plugins.transformations.AutoRotationXY;
@@ -75,7 +78,7 @@ public class TestProcessFluo {
         PluginFactory.findPlugins("plugins.plugins");
         //new TestProcessFluo().testRotation();
         //new TestProcessFluo().testSegBacteries();
-        //new TestProcessFluo().testSegBacteriesFromXP();
+        new TestProcessFluo().testSegBacteriesFromXP();
         //new TestProcessFluo().testSegBactAllTimes();
         //new TestProcessFluo().runSegmentationBacteriaOnSubsetofDBXP(569, 630);
         //new TestProcessFluo().process(0, false);
@@ -99,6 +102,7 @@ public class TestProcessFluo {
         bacteria.getProcessingChain().setSegmenter(new BacteriesFluo2D());
         mc.setTracker(new ObjectIdxTracker());
         bacteria.setTracker(new ClosedMicrochannelTracker());
+        bacteria.setTrackCorrector(new MicroChannelBacteriaTrackCorrector());
         if (preProcessing) {// preProcessing 
             xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
             xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
@@ -224,37 +228,38 @@ public class TestProcessFluo {
     }
     
     public void testSegBacteriesFromXP() {
-        int time = 1;
+        int time = 11;
         int channel =0;
-        int field = 1;
+        int field = 0;
         String dbName = "testFluo";
-        try {
-            MorphiumConfig cfg = new MorphiumConfig();
-            cfg.setGlobalLogLevel(3);
-            cfg.setDatabase(dbName);
-            cfg.addHost("localhost", 27017);
-            Morphium m=new Morphium(cfg);
-            ExperimentDAO xpDAO = new ExperimentDAO(m);
-            xp=xpDAO.getExperiment();
-            logger.info("Experiment: {} retrieved from db: {}", xp.getName(), dbName);
-            
-            
-            ObjectDAO dao = new ObjectDAO(m, xpDAO);
-            MicroscopyField f = xp.getMicroscopyField(field);
-            StructureObject root = dao.getRoot(f.getName(), time);
-            logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
-            StructureObject mc = root.getChildObjects(0, dao, false)[channel];
-            Image input = mc.getRawImage(1);
-            ImageMask parentMask = mc.getMask();
-            BacteriaFluo.debug=true;
-            ObjectPopulation pop = BacteriaFluo.run(input, parentMask, 0.015);
-            ImageDisplayer disp = new IJImageDisplayer();
-            disp.showImage(input);
-            disp.showImage(pop.getLabelImage());
-            //testSegBacteria(input, parentMask);
-        } catch (UnknownHostException ex) {
-            logger.error("storx xp error: ", ex);
-        }
+        Morphium m=MorphiumUtils.createMorphium(dbName);
+        ExperimentDAO xpDAO = new ExperimentDAO(m);
+        xp=xpDAO.getExperiment();
+        logger.info("Experiment: {} retrieved from db: {}", xp.getName(), dbName);
+
+
+        ObjectDAO dao = new ObjectDAO(m, xpDAO);
+        MicroscopyField f = xp.getMicroscopyField(field);
+        StructureObject root = dao.getRoot(f.getName(), time);
+        logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
+        StructureObject mc = root.getChildObjects(0, dao, false).get(channel);
+        Image input = mc.getRawImage(1);
+        ImageMask parentMask = mc.getMask();
+        BacteriaFluo.debug=true;
+        ObjectPopulation pop = BacteriaFluo.run(input, parentMask, 0.015);
+        ImageDisplayer disp = new IJImageDisplayer();
+        disp.showImage(input);
+        disp.showImage(pop.getLabelImage());
+        
+        // test split
+        //ObjectPopulation popSplit = testObjectSplitter(input, pop.getObjects().get(0));
+        //disp.showImage(popSplit.getLabelImage());
+    } 
+    
+    public static ObjectPopulation testObjectSplitter(Image input, Object3D objectToSplit) {
+        Image splitImage = input.crop(objectToSplit.getBounds());
+        ImageInteger splitMask = objectToSplit.getMask();
+        return DefaultObjectSplitter.split(splitImage, splitMask);
     }
     
     public void runSegmentationBacteriaOnSubsetofDBXP(int startTime, int stopTime) {
@@ -282,7 +287,7 @@ public class TestProcessFluo {
     
     public int getTrackErrorNumber(MicroscopyField f, ObjectDAO dao) {
         Processor.processStructure(1, xp, f,  -1, -1,dao);
-        return dao.getTrackErrors(f.getName(), 1).length;
+        return dao.getTrackErrors(f.getName(), 1).size();
     }
     
     public void process(int field, boolean preProcess) {
@@ -357,7 +362,7 @@ public class TestProcessFluo {
                 } else {
                     StructureObject root = dao.getRoot(f.getName(), t);
                     //logger.debug("field name: {}, root==null? {}", xp.getMicroscopyField(1).getName(), root==null);
-                    StructureObject[] mc = root.getChildObjects(0, dao, false);
+                    ArrayList<StructureObject> mc = root.getChildObjects(0, dao, false);
                     int mcIdx = 0;
                     for (StructureObject o : mc) {
                         //logger.debug("timePoint: {}, channel: {}", t, o.getIdx());

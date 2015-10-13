@@ -43,7 +43,7 @@ import javax.swing.tree.TreePath;
  */
 public class StructureNode implements TreeNode, UIContainer {
     StructureNodeContainer parent; // can be either TimePointNode or ObjectNode
-    ObjectNode[] children;
+    ArrayList<ObjectNode> children;
     int idx;
     
     public StructureNode(int structureIdx, ObjectNode parent) {
@@ -56,20 +56,20 @@ public class StructureNode implements TreeNode, UIContainer {
         this.idx=structureIdx;
     }
     
-    public ObjectNode[] getChildren() {
+    public ArrayList<ObjectNode> getChildren() {
         if (idx>=0) {
             if (children==null) {
                 StructureObject parentObject = getParentObject();
                 if (parentObject==null) return null;
-                StructureObject[] data = parentObject.getChildObjects(idx);
+                ArrayList<StructureObject> data = parentObject.getChildren(idx);
                 if (data==null) {
                     data = getGenerator().objectDAO.getObjects(parentObject.getId(), idx);
                     parentObject.setChildObjects(data, idx);
-                    if (logger.isDebugEnabled()) logger.debug("retrieving object from db: fieldName: {} timePoint: {} structure: {}, nb objects: {}", getTimePointNode().parent.fieldName, getTimePointNode().timePoint, idx, data==null?"null":data.length);
+                    if (logger.isDebugEnabled()) logger.debug("retrieving object from db: fieldName: {} timePoint: {} structure: {}, nb objects: {}", getTimePointNode().parent.fieldName, getTimePointNode().timePoint, idx, data==null?"null":data.size());
                 }
                 if (data!=null) {
-                    children = new ObjectNode[data.length];
-                    for (int i = 0; i<children.length; ++i) children[i] = new ObjectNode(this, i, data[i]);
+                    children = new ArrayList<ObjectNode>(data.size());
+                    for (int i = 0; i<data.size(); ++i) children.add(new ObjectNode(this, i, data.get(i)));
                 }
             }
         }
@@ -106,11 +106,11 @@ public class StructureNode implements TreeNode, UIContainer {
     }
     
     public ObjectNode getChildAt(int childIndex) {
-        return getChildren()[childIndex];
+        return getChildren().get(childIndex);
     }
 
     public int getChildCount() {
-        return getChildren()==null?0:children.length;
+        return getChildren()==null?0:children.size();
     }
 
     public StructureNodeContainer getParent() {

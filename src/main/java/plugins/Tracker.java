@@ -18,6 +18,7 @@
 package plugins;
 
 import dataStructure.objects.StructureObjectTracker;
+import java.util.ArrayList;
 
 /**
  *
@@ -29,5 +30,5 @@ public interface Tracker extends Plugin {
      * @param previous objects that share a given parent object
      * @param next objects that share a given parent object that is the next object of the parent of the {@param previous} objects
      */
-    public void assignPrevious(StructureObjectTracker[] previous, StructureObjectTracker[] next);
+    public void assignPrevious(ArrayList<? extends StructureObjectTracker> previous, ArrayList<? extends StructureObjectTracker> next);
 }

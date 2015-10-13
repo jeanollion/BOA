@@ -47,23 +47,23 @@ public class TrackMask extends ImageObjectInterface {
     final int updateImageFrequency=100;
     static final int intervalX=5;
     
-    public TrackMask(StructureObject[] parentTrack, int childStructureIdx) {
-        super(parentTrack[0], childStructureIdx);
-        trackOffset = new BoundingBox[parentTrack.length];
-        trackObjects = new StructureObjectMask[parentTrack.length];
+    public TrackMask(ArrayList<StructureObject> parentTrack, int childStructureIdx) {
+        super(parentTrack.get(0), childStructureIdx);
+        trackOffset = new BoundingBox[parentTrack.size()];
+        trackObjects = new StructureObjectMask[parentTrack.size()];
         int maxY=0, maxZ=0;
-        for (int i = 0; i<parentTrack.length; ++i) { // compute global Y and Z max to center parent masks
-            if (maxY<parentTrack[i].getObject().getBounds().getSizeY()) maxY=parentTrack[i].getObject().getBounds().getSizeY();
-            if (maxZ<parentTrack[i].getObject().getBounds().getSizeZ()) maxZ=parentTrack[i].getObject().getBounds().getSizeZ();
+        for (int i = 0; i<parentTrack.size(); ++i) { // compute global Y and Z max to center parent masks
+            if (maxY<parentTrack.get(i).getObject().getBounds().getSizeY()) maxY=parentTrack.get(i).getObject().getBounds().getSizeY();
+            if (maxZ<parentTrack.get(i).getObject().getBounds().getSizeZ()) maxZ=parentTrack.get(i).getObject().getBounds().getSizeZ();
         }
         maxParentY=maxY;
         maxParentZ=maxZ;
         logger.trace("track mask image object: max parent Y-size: {} z-size: {}", maxParentY, maxParentZ);
         int currentOffsetX=0;
-        for (int i = 0; i<parentTrack.length; ++i) {
-            trackOffset[i] = parentTrack[i].getBounds().duplicate().translateToOrigin();
+        for (int i = 0; i<parentTrack.size(); ++i) {
+            trackOffset[i] = parentTrack.get(i).getBounds().duplicate().translateToOrigin();
             trackOffset[i].translate(currentOffsetX, (int)(maxParentY/2.0-trackOffset[i].getSizeY()/2.0), (int)(maxParentZ/2.0-trackOffset[i].getSizeZ()/2.0));
-            trackObjects[i] = new StructureObjectMask(parentTrack[i], childStructureIdx, trackOffset[i]);
+            trackObjects[i] = new StructureObjectMask(parentTrack.get(i), childStructureIdx, trackOffset[i]);
             currentOffsetX+=intervalX+trackOffset[i].getSizeX();
             logger.trace("current index: {}, current bounds: {} current offsetX: {}", i, trackOffset[i], currentOffsetX);
         }

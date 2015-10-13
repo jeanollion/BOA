@@ -147,8 +147,8 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
     }
     
     @Override
-    public void displayTrack(Image image, boolean addToCurrentSelectedTracks, StructureObject[] track, Color color) {
-        logger.trace("display selected track: image: {}, addToCurrentTracks: {}, track length: {} color: {}", image,addToCurrentSelectedTracks, track==null?"null":track.length, color);
+    public void displayTrack(Image image, boolean addToCurrentSelectedTracks, ArrayList<StructureObject> track, Color color) {
+        logger.trace("display selected track: image: {}, addToCurrentTracks: {}, track length: {} color: {}", image,addToCurrentSelectedTracks, track==null?"null":track.size(), color);
         ImagePlus ip;
         if (image==null) {
             ip = getCurrentImage();
@@ -168,17 +168,18 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
             return;
         }
         ImageObjectInterface i = getImageObjectInterface(image);
-        if (i instanceof TrackMask && ((TrackMask)i).containsTrack(track[0])) {
+        if (i instanceof TrackMask && ((TrackMask)i).containsTrack(track.get(0))) {
             TrackMask tm = (TrackMask)i;
             Overlay overlay;
             if (ip.getOverlay()!=null) {
                 overlay=ip.getOverlay();
                 if (!addToCurrentSelectedTracks) removeAllRois(overlay, true);
             } else overlay=new Overlay();
-            for (int idx = 0; idx<track.length; ++idx) {
-                StructureObject o1 = idx==0?track[0].getPrevious() : track[idx-1];
+            for (int idx = 0; idx<=track.size(); ++idx) {
+                StructureObject o1 = idx==0?track.get(0).getPrevious() : track.get(idx-1);
                 if (o1==null) continue;
-                StructureObject o2 = track[idx];
+                StructureObject o2 = idx<track.size() ? track.get(idx) : o1.getNext();
+                if (o2==null) continue;
                 BoundingBox b1 = tm.getObjectOffset(o1);
                 BoundingBox b2 = tm.getObjectOffset(o2);
                 
@@ -196,8 +197,8 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                     logger.trace("add arrow: {}", arrow);
                 } else {
                     // TODO debug
-                    logger.error("Display Track error. objects: {} & {} bounds: {} & {}, image bounds: {} & {}", o1, o2, o1.getBounds(), o2.getBounds(), b1, b2);
-                    if (true) return;
+                    //logger.error("Display Track error. objects: {} & {} bounds: {} & {}, image bounds: {} & {}", o1, o2, o1.getBounds(), o2.getBounds(), b1, b2);
+                    //if (true) return;
                     if (zMin>zMax) {
                         int tmp = zMax;
                         zMax=zMin<(ip.getNSlices()-1)?zMin+1:zMin;

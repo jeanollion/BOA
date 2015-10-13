@@ -112,7 +112,7 @@ public class ImageDAOTest {
             assertEquals("number of files after preProcess", 12, countFiles(new File(xp.getOutputImageDirectory())));
             
             StructureObject root = objectDAO.getRoot("field1", 0);
-            StructureObject mc = objectDAO.getObjects(root.getId(), 0)[0];
+            StructureObject mc = objectDAO.getObjects(root.getId(), 0).get(0);
             objectDAO.deleteChildren(mc.getId(), 1);
             
             assertEquals("number of files after delete children", 11, countFiles(new File(xp.getOutputImageDirectory())));

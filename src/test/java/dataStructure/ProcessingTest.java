@@ -39,10 +39,12 @@ import image.Image;
 import image.ImageByte;
 import image.ImageFormat;
 import image.ImageWriter;
+import image.TypeConverter;
 import images.ImageIOTest;
 import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -191,7 +193,7 @@ public class ProcessingTest {
         assertTrue("Image saved in DAO", image!=null);
         SimpleTranslation tInv = new SimpleTranslation(-1, -1, 0);
         Image imageInv = tInv.applyTransformation(0, 0, image);
-        Utils.assertImage(images[0][0], (ImageByte)imageInv, 0);
+        Utils.assertImage(images[0][0], TypeConverter.toByte(imageInv, null), 0);
     }
     
     private static ImageByte getMask(StructureObject root, int[] pathToRoot) {
@@ -243,113 +245,107 @@ public class ProcessingTest {
     
     @Test
     public void StructureObjectTest() {
-        try {
-            // set-up experiment structure
-            Experiment xp = new Experiment("test");
-            ChannelImage image = new ChannelImage("ChannelImage");
-            xp.getChannelImages().insert(image);
-            xp.getStructures().removeAllElements();
-            Structure microChannel = new Structure("MicroChannel", -1, 0);
-            Structure bacteries = new Structure("Bacteries", 0, 0);
-            bacteries.setParentStructure(0);
-            xp.getStructures().insert(microChannel, bacteries);
-            
-            
-            // set-up processing chain
-            PluginFactory.findPlugins("testPlugins.dummyPlugins");
-            
-            microChannel.getProcessingChain().setSegmenter(new DummySegmenter(true, 2));
-            bacteries.getProcessingChain().setSegmenter(new DummySegmenter(false, 3));
-            assertTrue("segmenter set", microChannel.getProcessingChain().getSegmenter() instanceof DummySegmenter);
-            assertEquals("segmenter set (2)", 2, ((NumberParameter)microChannel.getProcessingChain().getSegmenter().getParameters()[0]).getValue().intValue());
-            // set-up traking
-            PluginFactory.findPlugins("plugins.plugins.trackers");
-            microChannel.setTracker(new ObjectIdxTracker());
-            bacteries.setTracker(new ObjectIdxTracker());
-            
-            // set up fields
-            ImageByte[][] images = createDummyImagesTC(50, 50, 1, 3, 1);
-            images[0][0].setPixel(12, 12, 0, 2);
-            File folder = testFolder.newFolder("TestInputImagesStructureObject");
-            ImageWriter.writeToFile(folder.getAbsolutePath(), "field1", ImageFormat.OMETIF, images);
-            Processor.importFiles(new String[]{folder.getAbsolutePath()}, xp);
-            File outputFolder = testFolder.newFolder("TestOutputImagesStructureObject");
-            xp.setOutputImageDirectory(outputFolder.getAbsolutePath());
-            xp.setOutputImageDirectory("/tmp");
-            //save to morphium
-            MorphiumConfig cfg = new MorphiumConfig();
-            cfg.setGlobalLogLevel(3);
-            cfg.setDatabase("testdb");
-            cfg.addHost("localhost", 27017);
-            Morphium m=new Morphium(cfg);
-            m.clearCollection(Experiment.class);
-            m.clearCollection(StructureObject.class);
-            ExperimentDAO xpDAO= new ExperimentDAO(m);
-            xpDAO.store(xp);
-            ObjectDAO dao = new ObjectDAO(m, xpDAO);
-            
-            Processor.preProcessImages(xp, dao, true);
-            StructureObject[] root = xp.getMicroscopyField(0).createRootObjects();
-            dao.store(root); 
-            Processor.trackRoot(root, dao);
-            
+
+        // set-up experiment structure
+        Experiment xp = new Experiment("test");
+        ChannelImage image = new ChannelImage("ChannelImage");
+        xp.getChannelImages().insert(image);
+        xp.getStructures().removeAllElements();
+        Structure microChannel = new Structure("MicroChannel", -1, 0);
+        Structure bacteries = new Structure("Bacteries", 0, 0);
+        bacteries.setParentStructure(0);
+        xp.getStructures().insert(microChannel, bacteries);
+
+
+        // set-up processing chain
+        PluginFactory.findPlugins("testPlugins.dummyPlugins");
+
+        microChannel.getProcessingChain().setSegmenter(new DummySegmenter(true, 2));
+        bacteries.getProcessingChain().setSegmenter(new DummySegmenter(false, 3));
+        assertTrue("segmenter set", microChannel.getProcessingChain().getSegmenter() instanceof DummySegmenter);
+        assertEquals("segmenter set (2)", 2, ((NumberParameter)microChannel.getProcessingChain().getSegmenter().getParameters()[0]).getValue().intValue());
+        // set-up traking
+        PluginFactory.findPlugins("plugins.plugins.trackers");
+        microChannel.setTracker(new ObjectIdxTracker());
+        bacteries.setTracker(new ObjectIdxTracker());
+
+        // set up fields
+        ImageByte[][] images = createDummyImagesTC(50, 50, 1, 3, 1);
+        images[0][0].setPixel(12, 12, 0, 2);
+        File folder = testFolder.newFolder("TestInputImagesStructureObject");
+        ImageWriter.writeToFile(folder.getAbsolutePath(), "field1", ImageFormat.OMETIF, images);
+        Processor.importFiles(new String[]{folder.getAbsolutePath()}, xp);
+        File outputFolder = testFolder.newFolder("TestOutputImagesStructureObject");
+        xp.setOutputImageDirectory(outputFolder.getAbsolutePath());
+        xp.setOutputImageDirectory("/tmp");
+        //save to morphium
+        Morphium m=MorphiumUtils.createMorphium("testdb");
+        m.clearCollection(Experiment.class);
+        m.clearCollection(StructureObject.class);
+        ExperimentDAO xpDAO= new ExperimentDAO(m);
+        xpDAO.store(xp);
+        ObjectDAO dao = new ObjectDAO(m, xpDAO);
+
+        Processor.preProcessImages(xp, dao, true);
+        ArrayList<StructureObject> root = xp.getMicroscopyField(0).createRootObjects();
+        assertEquals("root object creation: number of objects", 3, root.size());
+        dao.store(root); 
+        Processor.trackRoot(root, dao);
+
+        for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
+            for (int t = 0; t<root.size(); ++t) Processor.processStructure(s, root.get(t), dao, false); // process
+            if (!root.isEmpty()) for (StructureObject o : StructureObjectUtils.getAllParentObjects(root.get(0), xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, dao); // structure
+        }
+        MorphiumUtils.waitForWrites(m);
+
+        StructureObject rootFetch = dao.getObject(root.get(0).getId());
+        assertEquals("root fetch @t=0", root.get(0).getId(), rootFetch.getId());
+        // retrieve
+        dao.clearCache();
+
+        rootFetch = dao.getObject(root.get(0).getId());
+        assertEquals("root fetch @t=0 (2)", root.get(0).getId(), rootFetch.getId());
+
+        root = dao.getTrack(dao.getObject(root.get(0).getId()));
+        for (int t = 0; t<root.size(); ++t) {
+            //root[t]=dao.getObject(root.get(t).getId());
             for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
-                for (int t = 0; t<root.length; ++t) Processor.processStructure(s, root[t], dao, false); // process
-                for (StructureObject o : StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, dao); // structure
+                for (StructureObject parent : StructureObjectUtils.getAllParentObjects(root.get(t), xp.getPathToRoot(s))) parent.setChildObjects(dao.getObjects(parent.getId(), s), s);
             }
-            MorphiumUtils.waitForWrites(m);
-            
-            StructureObject rootFetch = dao.getObject(root[0].getId());
-            assertEquals("root fetch @t=0", root[0].getId(), rootFetch.getId());
-            // retrieve
-            dao.clearCache();
-            
-            rootFetch = dao.getObject(root[0].getId());
-            assertEquals("root fetch @t=0 (2)", root[0].getId(), rootFetch.getId());
-            
-            root = dao.getTrack(dao.getObject(root[0].getId()));
-            for (int t = 0; t<root.length; ++t) {
-                root[t]=dao.getObject(root[t].getId());
-                for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
-                    for (StructureObject parent : StructureObjectUtils.getAllParentObjects(root[t], xp.getPathToRoot(s))) parent.setChildObjects(dao.getObjects(parent.getId(), s), s);
+        }
+
+        for (int t = 1; t<root.size(); ++t) {
+            Utils.logger.trace("root track: {}->{} / expected: {} / actual: {}", t-1, t, root.get(t), root.get(t-1).getNext());
+            assertEquals("root track:"+(t-1)+"->"+t, root.get(t), root.get(t-1).getNext());
+            assertEquals("root track:"+(t)+"->"+(t-1), root.get(t-1), root.get(t).getPrevious());
+        }
+        StructureObject[][] microChannels = new StructureObject[root.size()][];
+        assertEquals("number of track heads for microchannels", 2, dao.getTrackHeads(root.get(0), 0).size());
+        for (int t = 0; t<root.size(); ++t) microChannels[t] = root.get(t).getChildObjects(0).toArray(new StructureObject[0]);
+        for (int t = 0; t<root.size(); ++t) assertEquals("number of microchannels @t:"+t, 2, microChannels[t].length);
+        for (int i = 0; i<microChannels[0].length; ++i) {
+            for (int t = 1; t<root.size(); ++t) {
+                assertEquals("mc:"+i+" trackHead:"+t, microChannels[0][i].getId(),  microChannels[t][i].getTrackHeadId());
+                assertEquals("mc:"+i+" parenttrackHead:"+t, root.get(0).getId(),  microChannels[t][i].getParentTrackHeadId());
+            }
+        }
+        for (int i = 0; i<microChannels[0].length; ++i) {
+            assertEquals("number of track heads for bacteries @ mc:"+i, 3, dao.getTrackHeads(microChannels[0][i], 1).size());
+            StructureObject[][] bactos = new StructureObject[root.size()][];
+            for (int t = 0; t<root.size(); ++t) bactos[t] = microChannels[t][i].getChildObjects(1).toArray(new StructureObject[0]);
+            for (int t = 0; t<root.size(); ++t) assertEquals("number of bacteries @t:"+t+" @mc:"+i, 3, bactos[t].length);
+            for (int b = 0; b<bactos[0].length; ++b) {
+                for (int t = 1; t<root.size(); ++t) {
+                    assertEquals("mc:"+i+ " bact:"+b+" trackHead:"+t, bactos[0][i].getId(),  bactos[t][i].getTrackHeadId());
+                    assertEquals("mc:"+i+ " bact:"+b+" parenttrackHead:"+t, microChannels[0][i].getId(),  bactos[t][i].getParentTrackHeadId());
                 }
             }
-            
-            for (int t = 1; t<root.length; ++t) {
-                Utils.logger.trace("root track: {}->{} / expected: {} / actual: {}", t-1, t, root[t], root[t-1].getNext());
-                assertEquals("root track:"+(t-1)+"->"+t, root[t], root[t-1].getNext());
-                assertEquals("root track:"+(t)+"->"+(t-1), root[t-1], root[t].getPrevious());
-            }
-            StructureObject[][] microChannels = new StructureObject[root.length][];
-            assertEquals("number of track heads for microchannels", 2, dao.getTrackHeads(root[0], 0).length);
-            for (int t = 0; t<root.length; ++t) microChannels[t] = root[t].getChildObjects(0);
-            for (int t = 0; t<root.length; ++t) assertEquals("number of microchannels @t:"+t, 2, microChannels[t].length);
-            for (int i = 0; i<microChannels[0].length; ++i) {
-                for (int t = 1; t<root.length; ++t) {
-                    assertEquals("mc:"+i+" trackHead:"+t, microChannels[0][i].getId(),  microChannels[t][i].getTrackHeadId());
-                    assertEquals("mc:"+i+" parenttrackHead:"+t, root[0].getId(),  microChannels[t][i].getParentTrackHeadId());
-                }
-            }
-            for (int i = 0; i<microChannels[0].length; ++i) {
-                assertEquals("number of track heads for bacteries @ mc:"+i, 3, dao.getTrackHeads(microChannels[0][i], 1).length);
-                StructureObject[][] bactos = new StructureObject[root.length][];
-                for (int t = 0; t<root.length; ++t) bactos[t] = microChannels[t][i].getChildObjects(1);
-                for (int t = 0; t<root.length; ++t) assertEquals("number of bacteries @t:"+t+" @mc:"+i, 3, bactos[t].length);
-                for (int b = 0; b<bactos[0].length; ++b) {
-                    for (int t = 1; t<root.length; ++t) {
-                        assertEquals("mc:"+i+ " bact:"+b+" trackHead:"+t, bactos[0][i].getId(),  bactos[t][i].getTrackHeadId());
-                        assertEquals("mc:"+i+ " bact:"+b+" parenttrackHead:"+t, microChannels[0][i].getId(),  bactos[t][i].getParentTrackHeadId());
-                    }
-                }
-            }
-            // creation des images @t0: 
-            //ImageByte maskMC = getMask(root[0], xp.getPathToRoot(0));
-            //ImageByte maskBactos = getMask(root[0], xp.getPathToRoot(1));
-            //return new ImageByte[]{maskMC, maskBactos};
-            
-        } catch (UnknownHostException ex) {
-            Utils.logger.error("create morphium", ex);
-        } //return null;
+        }
+        // creation des images @t0: 
+        //ImageByte maskMC = getMask(root[0], xp.getPathToRoot(0));
+        //ImageByte maskBactos = getMask(root[0], xp.getPathToRoot(1));
+        //return new ImageByte[]{maskMC, maskBactos};
+
     }
     /*public static void main(String[] args) throws IOException {
         ProcessingTest t = new ProcessingTest();

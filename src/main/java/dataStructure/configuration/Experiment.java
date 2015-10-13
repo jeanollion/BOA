@@ -29,6 +29,7 @@ import boa.gui.configuration.ConfigurationTreeModel;
 import boa.gui.configuration.TreeModelContainer;
 import dataStructure.containers.ImageDAO;
 import dataStructure.containers.ImageDAOFactory;
+import dataStructure.objects.ObjectDAO;
 import de.caluga.morphium.annotations.Entity;
 import de.caluga.morphium.annotations.Id;
 import de.caluga.morphium.annotations.Index;
@@ -60,6 +61,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     ImageDAOTypes imageDAOType=ImageDAOTypes.LocalFileSystem;
     
     @Transient ConfigurationTreeModel model;
+    @Transient protected ObjectDAO objectDAO;
     
     public Experiment(String name) {
         super(name);
@@ -71,6 +73,14 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         for (Structure s : defaultStructures) structures.insert(s);
         structures.setUnmutableIndex(defaultStructures.length-1);
         initChildList();
+    }
+    
+    public ObjectDAO getObjectDAO() {
+        return objectDAO;
+    }
+
+    public void setObjectDAO(ObjectDAO objectDAO) {
+        this.objectDAO = objectDAO;
     }
     
     public void setImportImageMethod(ImportImageMethod method) {this.importMethod.setValue(method.getMethod());}

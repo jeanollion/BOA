@@ -118,16 +118,12 @@ public class MorphiumUtils {
         int count = 0;
         while (m.getWriteBufferCount() > 0) {
             count++;
-            if (count % 100 == 0) {
+            if (count % 200 == 0) {
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(10);
                 } catch (InterruptedException ex) {
                 }
             }
-        }
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
         }
     }
     public static Morphium createMorphium(String hostName, int portNumber, String dbName) {

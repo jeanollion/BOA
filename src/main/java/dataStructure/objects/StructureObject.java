@@ -28,6 +28,7 @@ import java.util.TreeMap;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import plugins.ObjectSplitter;
 import static processing.PluginSequenceRunner.postFilterImage;
 import static processing.PluginSequenceRunner.preFilterImage;
 import static processing.PluginSequenceRunner.segmentImage;
@@ -36,7 +37,8 @@ import utils.SmallArray;
 @Lifecycle
 @Entity(collectionName = "Objects")
 @Index(value={"field_name, time_point, structure_idx", "parent,structure_idx,idx", "track_head_id, time_point", "is_track_head, parent_track_head_id, structure_idx, time_point, idx"})
-public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker {
+public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker, StructureObjectTrackCorrection {
+    public enum TrackFlag{trackError, correctionMerge, correctionSplit, correctionSplitNew};
     public final static Logger logger = LoggerFactory.getLogger(StructureObject.class);
     //structure-related attributes
     @Id protected ObjectId id;
@@ -45,22 +47,22 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected int structureIdx;
     protected int idx;
     @Reference(lazyLoading=true, automaticStore=false) protected Experiment xp;
-    @Transient protected SmallArray<StructureObject[]> childrenSM=new SmallArray<StructureObject[]>();
+    @Transient protected SmallArray<ArrayList<StructureObject>> childrenSM=new SmallArray<ArrayList<StructureObject>>();
     
     // track-related attributes
     protected int timePoint;
     @Reference(lazyLoading=true, automaticStore=false) public StructureObject previous, next;
     protected ObjectId parentTrackHeadId, trackHeadId;
     protected boolean isTrackHead=true;
-    protected boolean trackLinkError=false;
+    protected TrackFlag flag=null;
     
     // object- and images-related attributes
     @Transient private Object3D object;
+    @Transient private boolean objectModified=false;
     protected ObjectContainer objectContainer;
     @Transient protected SmallArray<Image> rawImagesC=new SmallArray<Image>();
     @Transient protected SmallArray<Image> preProcessedImageS=new SmallArray<Image>();
     
-    //Registrator -> registration locale
     
     public StructureObject(String fieldName, int timePoint, int structureIdx, int idx, Object3D object, StructureObject parent, Experiment xp) {
         this.fieldName=fieldName;
@@ -137,25 +139,28 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return res;
     }
     public boolean isRoot() {return structureIdx==-1;}
-    public StructureObject[] getChildObjects(int structureIdx) {return this.childrenSM.get(structureIdx);}
-    public StructureObject[] getChildObjects(int structureIdx, ObjectDAO dao, boolean overrideIfExist) {
+    public ArrayList<? extends StructureObject> getChildObjects(int structureIdx) {return getChildren(structureIdx);} // for overriding purpose
+    public ArrayList<StructureObject> getChildren(int structureIdx) {return this.childrenSM.get(structureIdx);}
+    public ArrayList<StructureObject> getChildObjects(int structureIdx, ObjectDAO dao, boolean overrideIfExist) {
         if (overrideIfExist || getChildObjects(structureIdx)==null) setChildObjects(dao.getObjects(id, structureIdx), structureIdx);
-        return getChildObjects(structureIdx);
+        return getChildren(structureIdx);
     }
-    public void setChildObjects(StructureObject[] children, int structureIdx) {
+    public void setChildObjects(ArrayList<StructureObject> children, int structureIdx) {
         this.childrenSM.set(children, structureIdx);
         for (StructureObject o : children) o.setParent(this);
     }
+    protected ArrayList<? extends StructureObject> getSiblings() {return this.getParent().getChildObjects(structureIdx, getExperiment().getObjectDAO(), false);}
     // track-related methods
     /**
      * 
      * @param previous the previous object in the track
-     * @param isTrackHead if false, sets this instance as the next of {@param previous} 
+     * @param isTrackHead if false, sets this instance as the next of { 
+     * @param flag flag, can be null
      */
     @Override public void setPreviousInTrack(StructureObjectTracker previous, boolean isTrackHead, boolean signalError) {
         if (((StructureObject)previous).getTimePoint()!=this.getTimePoint()-1) throw new RuntimeException("setPrevious in track should be of time: "+(timePoint-1) +" but is: "+((StructureObject)previous).getTimePoint());
         this.previous=(StructureObject)previous;
-        this.trackLinkError=signalError;
+        if (signalError) this.flag=TrackFlag.trackError;
         if (!isTrackHead) {
             this.previous.next=this;
             this.isTrackHead=false;
@@ -165,6 +170,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             this.trackHeadId=this.id;
         }
     }
+    public void setTrackFlag(TrackFlag flag) {this.flag=flag;}
+    public TrackFlag getTrackFlag() {return this.flag;}
     
     public void setParentTrackHeadId(ObjectId parentTrackHeadId) {
         this.parentTrackHeadId=parentTrackHeadId;
@@ -206,10 +213,129 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
 
     public boolean hasTrackLinkError() {
-        return trackLinkError;
+        return flag.equals(TrackFlag.trackError);
     }
     
+    // track correction-related methods 
+    /**
+     * 
+     * @return the next element of the track that contains a track link error, as defined by the tracker; null is there are no next track error;
+     */
+    public StructureObjectTrackCorrection getNextTrackError() {
+        if (this.hasTrackLinkError()) return this;
+        StructureObject error = this;
+        while(error!=null && !error.hasTrackLinkError()) error=error.getNext();
+        return error;
+    }
+    /**
+     * 
+     * @return a list containing the sibling (structureObjects that have the same previous object) at the next division, null if there are no siblings. If there are siblings, the first object of the list is contained in the track.
+     */
+    public ArrayList<StructureObjectTrackCorrection> getNextDivisionSiblings() {
+        ArrayList<StructureObjectTrackCorrection> res= getDivisionSiblings();
+        StructureObject nextDiv = this;
+        while(nextDiv!=null && res==null) {
+            nextDiv = nextDiv.getNext();
+            res = getDivisionSiblings();
+        }
+        if (res!=null) res.add(0, nextDiv);
+        return res;
+    }
     
+    /**
+     * 
+     * @return a list containing the sibling (structureObjects that have the same previous object) at the previous division, null if there are no siblings. If there are siblings, the first object of the list is contained in the track.
+     */
+    public ArrayList<StructureObjectTrackCorrection> getPreviousDivisionSiblings() {
+        ArrayList<StructureObjectTrackCorrection> res= getDivisionSiblings();
+        StructureObject prevDiv = this;
+        while(prevDiv!=null && res==null) {
+            prevDiv = prevDiv.getPrevious();
+            res = getDivisionSiblings();
+        }
+        if (res!=null) res.add(0, prevDiv);
+        return res;
+    }
+    
+    private ArrayList<StructureObjectTrackCorrection> getDivisionSiblings() {
+        ArrayList<StructureObjectTrackCorrection> res=null;
+        ArrayList<? extends StructureObject> siblings = getSiblings();
+        if (this.getPrevious()!=null) {
+            for (StructureObject o : siblings) {
+                if (o!=this) {
+                    if (o.getPrevious()==this.getPrevious()) {
+                        if (res==null) res = new ArrayList<StructureObjectTrackCorrection>(siblings.size());
+                        res.add(o);
+                    }
+                } 
+            }
+        } else { // get spatially closest sibling
+            double distance = Double.MAX_VALUE;
+            StructureObject min = null;
+            for (StructureObject o : siblings) {
+                if (o!=this) {
+                    double d = o.getBounds().getDistance(this.getBounds());
+                    if (d<distance) {
+                        min=o;
+                        distance=d;
+                    }
+                }
+            }
+            if (min!=null) {
+                res = new ArrayList<StructureObjectTrackCorrection>(2);
+                res.add(this);
+            }
+        }
+        
+        return res;
+    }
+    
+    @Override
+    public void merge(StructureObjectTrackCorrection other) {
+        StructureObject otherO = (StructureObject)other;
+        // update object
+        getObject().merge(otherO.getObject()); 
+        objectModified = true;
+        // update links
+        StructureObject prev = otherO.getPrevious();
+        if (prev !=null && prev.getNext()!=null && prev.next==otherO) prev.next=this;
+        // update children
+        int[] chilIndicies = getExperiment().getChildStructures(structureIdx);
+        for (int cIdx : chilIndicies) {
+            ArrayList<StructureObject> otherChildren = otherO.getChildObjects(cIdx, xp.getObjectDAO(), false);
+            if (otherChildren!=null) {
+                for (StructureObject o : otherChildren) o.setParent(this);
+                //xp.getObjectDAO().updateParent(otherChildren);
+                ArrayList<StructureObject> ch = this.getChildren(cIdx);
+                if (ch!=null) ch.addAll(otherChildren);
+            }
+        }
+        setTrackFlag(TrackFlag.correctionMerge);
+        otherO.setTrackFlag(TrackFlag.correctionMerge);
+        otherO.parent=null; //to notify it should be erased
+    }
+    
+    public StructureObject split(ObjectSplitter splitter) {
+        // get cropped image
+        ObjectPopulation pop = splitter.splitObject(getFilteredImage(structureIdx),  getObject());
+        // first object returned by splitter is updated to current structureObject
+        objectModified=true;
+        this.object=pop.getObjects().get(0);
+        if (pop.getObjects().size()>2) { // TODO merge other objects
+            logger.warn("split structureObject: {} yield in {} objects, but only two will be considered", this, pop.getObjects().size());
+        } 
+        
+        StructureObject res = new StructureObject(fieldName, timePoint, structureIdx, getParent().getSiblings().size(), pop.getObjects().get(1), getParent(), getExperiment());
+        /*ArrayList<StructureObject> res = new ArrayList<StructureObject>(pop.getObjects().size()-1);
+        for (int i = 1; i<pop.getObjects().size(); ++i) {
+            res.add(new StructureObject(fieldName, timePoint, structureIdx, currentIdx++, pop.getObjects().get(i), getParent(), getExperiment()));
+        }*/
+        //if (res.size()>1) xp.getObjectDAO().store(res);
+        //else xp.getObjectDAO().store(res.get(0));
+        setTrackFlag(TrackFlag.correctionSplit);
+        res.setTrackFlag(TrackFlag.correctionSplitNew);
+        return res;
+    }
     
     // object- and image-related methods
     public Object3D getObject() {
@@ -224,10 +350,16 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public BoundingBox getBounds() {return getObject().getBounds();}
     protected void createObjectContainer() {this.objectContainer=object.getObjectContainer(this);}
     public void updateObjectContainer(){
-        // TODO: only if changes -> transient variable to record changes..
-        if (objectContainer==null) createObjectContainer();
+        if (objectContainer==null) {
+            createObjectContainer();
+            objectContainer.updateObject();
+            objectModified=false;
+        } else if (objectModified) {
+            objectContainer.updateObject();
+            objectModified=false;
+        }
         //logger.debug("updating object container: {} of object: {}", objectContainer.getClass(), this );
-        objectContainer.updateObject();
+        
     }
     public void deleteMask(){if (objectContainer!=null) objectContainer.deleteObject();};
     
@@ -292,21 +424,21 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public void segmentChildren(int structureIdx) {
         if (getFilteredImage(structureIdx)==null) createPreFilterImage(structureIdx);
         ObjectPopulation seg = segmentImage(getFilteredImage(structureIdx), structureIdx, this, getExperiment().getStructure(structureIdx).getProcessingChain().getSegmenter());
-        if (seg.getObjects().isEmpty()) childrenSM.set(new StructureObject[0], structureIdx);
+        if (seg.getObjects().isEmpty()) childrenSM.set(new ArrayList<StructureObject>(0), structureIdx);
         else {
             seg = postFilterImage(seg, this, getExperiment().getStructure(structureIdx).getProcessingChain().getPostfilters());
             seg.relabel();
-            StructureObject[] res = new StructureObject[seg.getObjects().size()];
+            ArrayList<StructureObject> res = new ArrayList<StructureObject>(seg.getObjects().size());
             childrenSM.set(res, structureIdx);
-            for (int i = 0; i<res.length; ++i) res[i]=new StructureObject(fieldName, timePoint, structureIdx, i, seg.getObjects().get(i), this, getExperiment());
+            for (int i = 0; i<seg.getObjects().size(); ++i) res.add(new StructureObject(fieldName, timePoint, structureIdx, i, seg.getObjects().get(i), this, getExperiment()));
         }
     }
     
     public ObjectPopulation getObjectPopulation(int structureIdx) {
-        StructureObject[] child = this.childrenSM.get(structureIdx);
-        if (child==null || child.length==0) return new ObjectPopulation(new ArrayList<Object3D>(0), this.getMaskProperties());
+        ArrayList<StructureObject> child = this.childrenSM.get(structureIdx);
+        if (child==null || child.size()==0) return new ObjectPopulation(new ArrayList<Object3D>(0), this.getMaskProperties());
         else {
-            ArrayList<Object3D> objects = new ArrayList<Object3D>(child.length);
+            ArrayList<Object3D> objects = new ArrayList<Object3D>(child.size());
             for (StructureObject s : child) objects.add(s.getObject());
             return new ObjectPopulation(objects, this.getMaskProperties());
         }
@@ -327,4 +459,5 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public void callLazyLoading() throws MorphiumAccessVetoException{} // for lazy-loading listener
     
     public StructureObject(){}
+
 }

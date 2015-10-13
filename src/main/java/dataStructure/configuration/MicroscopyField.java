@@ -31,6 +31,7 @@ import dataStructure.containers.MultipleImageContainerSingleFile;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.annotations.Transient;
 import image.BlankMask;
+import java.util.ArrayList;
 import plugins.PreFilter;
 
 /**
@@ -84,10 +85,10 @@ public class MicroscopyField extends SimpleContainerParameter {
         return mask;
     }
     
-    public StructureObject[] createRootObjects() {
-        StructureObject[] res = new StructureObject[getImages().getTimePointNumber()];
-        for (int t = 0; t<res.length; ++t) {
-            res[t] = new StructureObject(this.name, t, getMask(), getExperiment());
+    public ArrayList<StructureObject> createRootObjects() {
+        ArrayList<StructureObject> res = new ArrayList<StructureObject>(getImages().getTimePointNumber());
+        for (int t = 0; t<getImages().getTimePointNumber(); ++t) {
+            res.add(new StructureObject(this.name, t, getMask(), getExperiment()));
         }
         return res;
     }

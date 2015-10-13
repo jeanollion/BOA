@@ -42,6 +42,7 @@ import image.ImageWriter;
 import java.awt.Dimension;
 import java.io.File;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.logging.Level;
@@ -254,12 +255,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             
             // process
             Processor.preProcessImages(xp, objectDAO, true);
-            StructureObject[] root = xp.getMicroscopyField(0).createRootObjects();
+            ArrayList<StructureObject> root = xp.getMicroscopyField(0).createRootObjects();
             objectDAO.store(root); 
             Processor.trackRoot(root, objectDAO);
             for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
-                for (int t = 0; t<root.length; ++t) Processor.processStructure(s, root[t], objectDAO, false); // process
-                for (StructureObject o : StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, objectDAO); // structure
+                for (int t = 0; t<root.size(); ++t) Processor.processStructure(s, root.get(t), objectDAO, false); // process
+                for (StructureObject o : StructureObjectUtils.getAllParentObjects(root.get(0), xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, objectDAO); // structure
             }
     }
 

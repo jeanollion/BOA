@@ -41,7 +41,7 @@ import org.bson.types.ObjectId;
  */
 public class TrackNode implements TreeNode, UIContainer {
     StructureObject trackHead;
-    StructureObject[] track;
+    ArrayList<StructureObject> track;
     TreeNode parent;
     RootTrackNode root;
     ArrayList<TrackNode> children;
@@ -56,7 +56,7 @@ public class TrackNode implements TreeNode, UIContainer {
         this.containsErrors = containsErrors;
     }
 
-    public StructureObject[] getTrack() {
+    public ArrayList<StructureObject> getTrack() {
         if (track==null) track=root.generator.objectDAO.getTrack(trackHead);
         return track;
     }
@@ -84,13 +84,13 @@ public class TrackNode implements TreeNode, UIContainer {
     
     public ArrayList<TrackNode> getChildren() {
         if (children==null) {
-            if (getTrack().length<=1) children=new ArrayList<TrackNode>(0);
+            if (getTrack().size()<=1) children=new ArrayList<TrackNode>(0);
             else {
                 children=new ArrayList<TrackNode>();
-                Iterator<Entry<Integer, ArrayList<StructureObject>>> it = root.getRemainingTrackHeads().subMap(track[1].getTimePoint(), true, track[track.length-1].getTimePoint(), true).entrySet().iterator();
+                Iterator<Entry<Integer, List<StructureObject>>> it = root.getRemainingTrackHeads().subMap(track.get(1).getTimePoint(), true, track.get(track.size()-1).getTimePoint(), true).entrySet().iterator();
                 //if (logger.isTraceEnabled()) logger.trace("looking for children for node: {} timePoint left: {} timePoint right:{} head submap: {}", toString(), track[1].getTimePoint(), track[track.length-1].getTimePoint(), root.getRemainingTrackHeads().subMap(track[1].getTimePoint(), true, track[track.length-1].getTimePoint(), true).size());
                 while (it.hasNext()) {
-                    ArrayList<StructureObject> e = it.next().getValue();
+                    List<StructureObject> e = it.next().getValue();
                     Iterator<StructureObject> subIt = e.iterator();
                     while (subIt.hasNext()) {
                         StructureObject o = subIt.next();
@@ -131,7 +131,7 @@ public class TrackNode implements TreeNode, UIContainer {
     
     // TreeNode implementation
     @Override public String toString() {
-        return "Track: Head idx="+trackHead.getIdx()+ " t="+trackHead.getTimePoint()+" length: "+getTrack().length; //TODO lazy loading track length if necessary
+        return "Track: Head idx="+trackHead.getIdx()+ " t="+trackHead.getTimePoint()+" length: "+getTrack().size(); //TODO lazy loading track length if necessary
     }
     
     public TrackNode getChildAt(int childIndex) {
