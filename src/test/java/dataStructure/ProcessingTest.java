@@ -223,10 +223,9 @@ public class ProcessingTest {
         StructureObject r2 = new StructureObject("test", 1, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), xp);
         StructureObject r3 = new StructureObject("test", 2, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), xp);
         ObjectDAO dao = new ObjectDAO(m, xpDAO);
-        dao.store(r, r2, r3);
         r2.setPreviousInTrack(r, true, false);
         r3.setPreviousInTrack(r2, true, false);
-        dao.updateTrackAttributes(r, r2, r3);
+        dao.store(true, r, r2, r3);
         MorphiumUtils.waitForWrites(m);
         MorphiumUtils.addDereferencingListeners(m, dao, xpDAO);
         r2 = dao.getObject(r2.getId());
@@ -289,14 +288,15 @@ public class ProcessingTest {
         Processor.preProcessImages(xp, dao, true);
         ArrayList<StructureObject> root = xp.getMicroscopyField(0).createRootObjects();
         assertEquals("root object creation: number of objects", 3, root.size());
-        dao.store(root); 
-        Processor.trackRoot(root, dao);
-
+        Processor.trackRoot(root);
+        ArrayList<StructureObject> segO = new ArrayList<StructureObject>();
+        segO.addAll(root);
         for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
-            for (int t = 0; t<root.size(); ++t) Processor.processStructure(s, root.get(t), dao, false); // process
-            if (!root.isEmpty()) for (StructureObject o : StructureObjectUtils.getAllParentObjects(root.get(0), xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, dao); // structure
+            for (int t = 0; t<root.size(); ++t) Processor.processStructure(s, root.get(t), dao, false, segO); // process
+            if (!root.isEmpty()) for (StructureObject o : StructureObjectUtils.getAllParentObjects(root.get(0), xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, dao, null); // structure
         }
-        MorphiumUtils.waitForWrites(m);
+        dao.store(segO, true);
+        //MorphiumUtils.waitForWrites(m);
 
         StructureObject rootFetch = dao.getObject(root.get(0).getId());
         assertEquals("root fetch @t=0", root.get(0).getId(), rootFetch.getId());
@@ -304,6 +304,7 @@ public class ProcessingTest {
         dao.clearCache();
 
         rootFetch = dao.getObject(root.get(0).getId());
+        assertTrue("root fetch @t=0 not null", rootFetch!=null);
         assertEquals("root fetch @t=0 (2)", root.get(0).getId(), rootFetch.getId());
 
         root = dao.getTrack(dao.getObject(root.get(0).getId()));

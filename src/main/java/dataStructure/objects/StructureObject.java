@@ -46,12 +46,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected String fieldName;
     protected int structureIdx;
     protected int idx;
-    @Reference(lazyLoading=true, automaticStore=false) protected Experiment xp;
+    @Transient protected Experiment xp;
     @Transient protected SmallArray<ArrayList<StructureObject>> childrenSM=new SmallArray<ArrayList<StructureObject>>();
     
     // track-related attributes
     protected int timePoint;
-    @Reference(lazyLoading=true, automaticStore=false) public StructureObject previous, next;
+    @Reference(lazyLoading=true, automaticStore=false) protected StructureObject previous;
+    @Transient protected StructureObject next; // only available when whole track is retrieved
     protected ObjectId parentTrackHeadId, trackHeadId;
     protected boolean isTrackHead=true;
     protected TrackFlag flag=null;
@@ -179,15 +180,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public StructureObject getPrevious() {
         if (previous==null) return null;
-        try {previous.callLazyLoading();}
-        catch (MorphiumAccessVetoException e) {}
+        previous.callLazyLoading();
         return previous;
     }
     
     public StructureObject getNext() {
-        if (next==null) return null;
-        try {next.callLazyLoading();}
-        catch (MorphiumAccessVetoException e) {}
+        //if (next==null) return null;
+        //next.callLazyLoading();
         return next;
     }
     

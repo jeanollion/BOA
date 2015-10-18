@@ -207,7 +207,8 @@ public class StructureNode implements TreeNode, UIContainer {
                                 parent.loadAllChildObjects(path, 0);
                             }
                             
-                            Processor.processStructure(getStructureIdx(ae.getActionCommand(), openRaw), getParentObject(), getGenerator().objectDAO, true);
+                            Processor.processStructure(getStructureIdx(ae.getActionCommand(), openRaw), getParentObject(), getGenerator().objectDAO, true, null);
+                            
                             //TODO: process child structures...
                             
                             // actualiser l'arbre a partir du noeud

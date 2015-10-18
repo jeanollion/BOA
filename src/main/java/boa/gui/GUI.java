@@ -217,7 +217,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }
     
     
-    private void initDBImages() {
+    /*private void initDBImages() {
             m=MorphiumUtils.createMorphium("testGUI");
             m.clearCollection(Experiment.class);
             m.clearCollection(StructureObject.class);
@@ -262,7 +262,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 for (int t = 0; t<root.size(); ++t) Processor.processStructure(s, root.get(t), objectDAO, false); // process
                 for (StructureObject o : StructureObjectUtils.getAllParentObjects(root.get(0), xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, objectDAO); // structure
             }
-    }
+    }*/
 
     private static void removeTreeSelectionListeners(JTree tree) {
         for (TreeSelectionListener t : tree.getTreeSelectionListeners()) tree.removeTreeSelectionListener(t);

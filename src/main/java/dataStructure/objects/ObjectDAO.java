@@ -75,7 +75,10 @@ public class ObjectDAO extends DAO<StructureObject>{
     
     public StructureObject getFromCache(ObjectId id) {return idCache.get(id);}
     
-    public void setToCache(StructureObject o) {idCache.put(o.getId(), o);}
+    public void setToCache(StructureObject o) {
+        if (xpDAO!=null) o.xp=xpDAO.getExperiment();
+        idCache.put(o.getId(), o);
+    }
     
     public StructureObject checkAgainstCache(StructureObject o) {
         if (o==null) return null;
@@ -172,31 +175,43 @@ public class ObjectDAO extends DAO<StructureObject>{
         idCache.put(object.getId(), object);
     }
     
-    public void store(StructureObject... object) {
+    public void store(boolean updateTrackAttributes, StructureObject... object) {
         if (object==null) return;
         if (object.length==0) return;
         if (object.length==1) store(object[0]);
-        else store(Arrays.asList(object));
+        else store(Arrays.asList(object), updateTrackAttributes);
     }
     
-    public void store(final List<StructureObject> objects) {
+    public void store(final List<StructureObject> objects, final boolean updateTrackAttributes) {
         if (objects==null) return;
+        logger.debug("calling store metohd: nb of objects: {} updateTrack: {}", objects.size(), updateTrackAttributes);
         for (StructureObject o : objects) o.updateObjectContainer();
-        morphium.store(objects, new AsyncOperationCallback<StructureObject>() {
+        for (StructureObject o : objects) {
+            morphium.store(o);
+            logger.debug("store in cache object: {} id: {}", o, o.getId());
+            idCache.put(o.getId(), o);
+        }
+        if (updateTrackAttributes) updateTrackAttributes(objects);
+        /*morphium.store(objects, new AsyncOperationCallback<StructureObject>() {
             public void onOperationSucceeded(AsyncOperationType type, Query<StructureObject> q, long duration, List<StructureObject> result, StructureObject entity, Object... param) {
-                logger.trace("store succeded: duration: {} nb objects: {}", duration, objects.size());
-                for (StructureObject o : objects) idCache.put(o.getId(), o);
+                logger.debug("store succeded: duration: {} nb objects: {}, type: {}, query: {}, entity: {}, param: {}", duration, objects.size(), type, q, entity, param);
+                for (StructureObject o : objects) {
+                    logger.debug("store in cache object: {} id: {}", o, o.getId());
+                    idCache.put(o.getId(), o);
+                }
+                if (updateTrackAttributes) updateTrackAttributes(objects);
             }
             public void onOperationError(AsyncOperationType type, Query<StructureObject> q, long duration, String error, Throwable t, StructureObject entity, Object... param) {
                 logger.error("store error!");
             }
-        });
+        });*/
         //if (waitForWrites) MorphiumUtils.waitForWrites(morphium);
-        MorphiumUtils.waitForWrites(morphium);
+        //MorphiumUtils.waitForWrites(morphium);
+        
     }
     // track-specific methods
     
-    public void updateParent(final List<StructureObject> objects) {
+    /*public void updateParent(final List<StructureObject> objects) {
         // TODO update only parent field
         morphium.store(objects, new AsyncOperationCallback<StructureObject>() {
             public void onOperationSucceeded(AsyncOperationType type, Query<StructureObject> q, long duration, List<StructureObject> result, StructureObject entity, Object... param) {
@@ -208,31 +223,42 @@ public class ObjectDAO extends DAO<StructureObject>{
         });
         //if (waitForWrites) MorphiumUtils.waitForWrites(morphium);
         MorphiumUtils.waitForWrites(morphium);
+    }*/
+    /**
+     * {@link ObjectDAO#updateTrackAttributes(java.util.List) }
+     * @param track 
+     */
+    public void updateTrackAttributes(StructureObject... track) {
+        if (track==null) return;
+        else if (track.length==0) return;
+        else updateTrackAttributes(Arrays.asList(track));
     }
-    
-    public void updateTrackAttributes(StructureObject... object) {
-        if (object==null) return;
-        else if (object.length==0) return;
-        else updateTrackAttributes(Arrays.asList(object));
-    }
-    
-    public void updateTrackAttributes(final List<StructureObject> objects) {
-        if (objects==null) return;
+    /**
+     * Set and store trackHeadId & parentTrackHeadId attributes; next and previous are not concerned by this method
+     * @param track list of objects. All objects of a given track should be present, sorted by incresing timepoint. objects from several tracks can be present;
+     */
+    public void updateTrackAttributes(final List<StructureObject> track) {
+        if (track==null) return;
         //MorphiumUtils.waitForWrites(morphium);
-        for (StructureObject o : objects) { //TODO utiliser updateUsingFields quand bug resolu
+        for (StructureObject o : track) { 
             if (o.getParent()!=null) o.setParentTrackHeadId(o.getParent().getTrackHeadId());
-            if (o.getTrackHeadId()==null) {
-                if (o.isTrackHead) o.trackHeadId=o.getId();
-                else if (o.getPrevious()!=null) o.trackHeadId=o.previous.getTrackHeadId();
+            if (o.getTrackHeadId()==null) {                
+                if (!o.isTrackHead && o.getPrevious()!=null) { //for trackHeads -> automoatically set by getTrackHeadId Method
+                    o.trackHeadId=o.previous.getTrackHeadId();
+                    logger.debug("set track head of {} from previous: {}, trackHeadId: {}", o, o.getPrevious(), o.getTrackHeadId());
+                }
             }
-            //morphium.updateUsingFields(o, "parent_track_head_id", "track_head_id");
+            if (o.getParent()!=null && o.getTrackHeadId()!=null) morphium.updateUsingFields(o, "parent_track_head_id", "track_head_id");
+            else if (o.getParent()!=null) morphium.updateUsingFields(o, "parent_track_head_id");
+            else if (o.getTrackHeadId()!=null) morphium.updateUsingFields(o, "track_head_id");
             //morphium.updateUsingFields(object, "next", "previous");
             //System.out.println("update track attribute:"+ o.timePoint+ " next null?"+(o.next==null)+ "previous null?"+(o.previous==null));
         }
-        //Thread t = new Thread(new Runnable() {
+        
+        //Thread t = new Thread(new Runnable() { //TODO utiliser updateUsingFields quand bug resolu
             //public void run() {
                 
-                morphium.store(objects, new AsyncOperationCallback<StructureObject>() {
+                /*morphium.store(objects, new AsyncOperationCallback<StructureObject>() {
                     public void onOperationSucceeded(AsyncOperationType type, Query<StructureObject> q, long duration, List<StructureObject> result, StructureObject entity, Object... param) {
                         logger.trace("update succeded: duration: {} nb objects: {}", duration, objects.size());
                         for (StructureObject o : objects) idCache.put(o.getId(), o);
@@ -240,11 +266,11 @@ public class ObjectDAO extends DAO<StructureObject>{
                     public void onOperationError(AsyncOperationType type, Query<StructureObject> q, long duration, String error, Throwable t, StructureObject entity, Object... param) {
                         logger.error("update error!");
                     }
-                });
+                });*/
             //}
         //});
         //SwingUtilities.invokeLater(t);
-        MorphiumUtils.waitForWrites(morphium);
+        //MorphiumUtils.waitForWrites(morphium);
     }
     
     public ArrayList<StructureObject> getTrackHeads(StructureObject parentTrack, int structureIdx) {

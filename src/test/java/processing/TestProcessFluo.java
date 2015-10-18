@@ -272,8 +272,10 @@ public class TestProcessFluo {
         logger.info("Experiment: {} retrieved from db: {}", xp.getName(), dbName);
         ObjectDAO dao = new ObjectDAO(m, xpDAO);
         MicroscopyField f = xp.getMicroscopyField(field);
-        Processor.processStructure(1, xp, f, startTime, stopTime, dao);
-        Processor.trackStructure(1, xp, f, dao);
+        ArrayList<StructureObject> segO = new ArrayList<StructureObject> ();
+        Processor.processStructure(1, xp, f, startTime, stopTime, dao, segO);
+        Processor.trackStructure(1, xp, f, dao, false);
+        dao.store(segO, true);
         
     }
     
@@ -286,7 +288,10 @@ public class TestProcessFluo {
     }
     
     public int getTrackErrorNumber(MicroscopyField f, ObjectDAO dao) {
-        Processor.processStructure(1, xp, f,  -1, -1,dao);
+        ArrayList<StructureObject> segO = new ArrayList<StructureObject> ();
+        Processor.processStructure(1, xp, f,  -1, -1,dao, segO);
+        Processor.trackStructure(1, xp, f, dao, false);
+        dao.store(segO, true);
         return dao.getTrackErrors(f.getName(), 1).size();
     }
     
@@ -299,7 +304,7 @@ public class TestProcessFluo {
         ObjectDAO dao = new ObjectDAO(m, xpDAO);
         MicroscopyField f = xp.getMicroscopyField(field);
         if (preProcess) Processor.preProcessImages(f, dao, true, true);
-        Processor.processStructures(xp, f, dao, true);
+        Processor.processAndTrackStructures(xp, f, dao, true);
     }
     
     public void testSegBactTrackErrors() {

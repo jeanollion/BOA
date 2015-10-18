@@ -21,6 +21,7 @@ import ij.ImagePlus;
 import ij.io.FileInfo;
 import ij.io.FileSaver;
 import ij.io.TiffEncoder;
+import static image.Image.logger;
 import static image.ImageFormat.*;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
@@ -87,8 +88,8 @@ public class ImageWriter {
     public static void writeToFile(String folderPath, String fileName, ImageFormat extension, Image[][]... imageTC) {
         if (!extension.getSupportMultipleTimeAndChannel()) throw new IllegalArgumentException("the format does not support multiple time points and channels");
         try {
-            System.out.println("series:"+imageTC.length);
-            for (int s = 0; s<imageTC.length; ++s) System.out.println("serie #:"+s+ " time points: "+imageTC[s].length+ " channels: "+imageTC[s][0].length);
+            //System.out.println("series:"+imageTC.length);
+            for (int s = 0; s<imageTC.length; ++s) logger.trace("ImageWriter: serie #:"+s+ " time points: "+imageTC[s].length+ " channels: "+imageTC[s][0].length);
             String fullPath = folderPath+File.separator+fileName+extension;
             IFormatWriter writer = new loci.formats.ImageWriter();
             writer.setMetadataRetrieve(generateMetadata(imageTC));
@@ -104,7 +105,7 @@ public class ImageWriter {
                 int i = 0;
                 for (int t = 0; t<imageTC[series].length; t++){
                     for (int c = 0; c<imageTC[series][0].length; c++) {
-                        System.out.println("save image: time: "+t+" channel: "+c);
+                        logger.trace("save image: time: {} channel: {}", t, c);
                         Image curIm = imageTC[series][t][c];
                         for (int z = 0; z<curIm.sizeZ; z++) {
                             writer.saveBytes(i++, getBytePlane(curIm, z, littleEndian));

@@ -49,8 +49,8 @@ public class TestTrackStructure {
         Morphium m=MorphiumUtils.createMorphium("testTrack");
         m.clearCollection(Experiment.class);
         m.clearCollection(StructureObject.class);
-        ExperimentDAO xpDAO = new ExperimentDAO(m);
-        ObjectDAO dao = new ObjectDAO(m, xpDAO);
+        
+        
 
         Experiment xp = new Experiment("test");
         ChannelImage image = new ChannelImage("ChannelImage");
@@ -61,22 +61,22 @@ public class TestTrackStructure {
         xp.getStructures().insert(microChannel, bacteries);
         bacteries.setParentStructure(0);
         xp.createMicroscopyField("field1");
+        ExperimentDAO xpDAO = new ExperimentDAO(m);
         xpDAO.store(xp);
-
+        ObjectDAO dao = new ObjectDAO(m, xpDAO);
+        
         StructureObject[] rootT = new StructureObject[5];
         for (int i = 0; i<rootT.length; ++i) rootT[i] = new StructureObject("field1", i, new BlankMask("", 1, 1, 1), xp);
-        dao.store(rootT);
-        Processor.trackRoot(Arrays.asList(rootT), dao);
-
+        Processor.trackRoot(Arrays.asList(rootT));
+        dao.store(true, rootT);
         StructureObject[] mcT = new StructureObject[5];
         for (int i = 0; i<mcT.length; ++i) mcT[i] = new StructureObject("field1", i, 0, 0, new Object3D(new BlankMask("", 1, 1, 1), 1), rootT[i], xp);
-        dao.store(mcT);
-        Processor.trackRoot(Arrays.asList(mcT), dao);
-
+        Processor.trackRoot(Arrays.asList(mcT));
+        dao.store(true, mcT);
         StructureObject[][] bTM = new StructureObject[5][3];
-        for (int i = 0; i<bTM.length; ++i) {
-            for (int j = 0; j<3; ++j) bTM[i][j] = new StructureObject("field1", i, 1, j, new Object3D(new BlankMask("", 1, 1, 1), j+1), mcT[i], xp);
-            dao.store(bTM[i]);
+        for (int t = 0; t<bTM.length; ++t) {
+            for (int j = 0; j<3; ++j) bTM[t][j] = new StructureObject("field1", t, 1, j, new Object3D(new BlankMask("", 1, 1, 1), j+1), mcT[t], xp);
+            //dao.store(bTM[i]);
         }
         for (int i= 1; i<mcT.length; ++i) bTM[i][0].setPreviousInTrack(bTM[i-1][0], false, false);
         bTM[1][1].setPreviousInTrack(bTM[0][0], true, false);
@@ -90,8 +90,9 @@ public class TestTrackStructure {
         1.0->2
         2.0
         */
-        for (int i = 0; i<bTM.length; ++i) dao.updateTrackAttributes(Arrays.asList(bTM[i]));
-
+        ArrayList<StructureObject> toStore = new ArrayList<StructureObject>();
+        for (int i = 0; i<bTM.length; ++i) toStore.addAll(Arrays.asList(bTM[i]));
+        dao.store(toStore, true);
         m.clearCachefor(StructureObject.class);
 
         // retrive tracks head for microChannels
