@@ -17,6 +17,7 @@
  */
 package plugins;
 
+import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectTrackCorrection;
 import java.util.ArrayList;
 
@@ -29,7 +30,7 @@ public interface TrackCorrector extends Plugin {
      * 
      * @param track
      * @param splitter
-     * @return a list of all modified objects (merged, splitted, or with modification on track attributes )
+     * @param correctedObjects a list of following modified objects merged (but not the merged to be erased), splitted, or with modification on track attributes. It can be null.
      */
-    public ArrayList<StructureObjectTrackCorrection> correctTrack(StructureObjectTrackCorrection track, ObjectSplitter splitter);
+    public void correctTrack(StructureObjectTrackCorrection track, ObjectSplitter splitter, ArrayList<StructureObjectTrackCorrection> correctedObjects);
 }

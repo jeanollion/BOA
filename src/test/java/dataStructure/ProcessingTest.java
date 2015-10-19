@@ -292,7 +292,7 @@ public class ProcessingTest {
         ArrayList<StructureObject> segO = new ArrayList<StructureObject>();
         segO.addAll(root);
         for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
-            for (int t = 0; t<root.size(); ++t) Processor.processStructure(s, root.get(t), dao, false, segO); // process
+            for (int t = 0; t<root.size(); ++t) Processor.process(s, root.get(t), dao, false, segO); // process
             if (!root.isEmpty()) for (StructureObject o : StructureObjectUtils.getAllParentObjects(root.get(0), xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, dao, null); // structure
         }
         dao.store(segO, true);

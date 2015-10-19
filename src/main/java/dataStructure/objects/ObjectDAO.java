@@ -185,6 +185,7 @@ public class ObjectDAO extends DAO<StructureObject>{
     public void store(final List<StructureObject> objects, final boolean updateTrackAttributes) {
         if (objects==null) return;
         logger.debug("calling store metohd: nb of objects: {} updateTrack: {}", objects.size(), updateTrackAttributes);
+        
         for (StructureObject o : objects) o.updateObjectContainer();
         for (StructureObject o : objects) {
             morphium.store(o);
@@ -233,11 +234,12 @@ public class ObjectDAO extends DAO<StructureObject>{
         else if (track.length==0) return;
         else updateTrackAttributes(Arrays.asList(track));
     }
+    
     /**
-     * Set and store trackHeadId & parentTrackHeadId attributes; next and previous are not concerned by this method
+     * Set trackHeadId & parentTrackHeadId attributes; next and previous are not concerned by this method
      * @param track list of objects. All objects of a given track should be present, sorted by incresing timepoint. objects from several tracks can be present;
      */
-    public void updateTrackAttributes(final List<StructureObject> track) {
+    public void setTrackAttributes(final List<? extends StructureObject> track) {
         if (track==null) return;
         //MorphiumUtils.waitForWrites(morphium);
         for (StructureObject o : track) { 
@@ -248,6 +250,18 @@ public class ObjectDAO extends DAO<StructureObject>{
                     logger.debug("set track head of {} from previous: {}, trackHeadId: {}", o, o.getPrevious(), o.getTrackHeadId());
                 }
             }
+        }
+    }
+    
+    /**
+     * Set and store trackHeadId & parentTrackHeadId attributes; next and previous are not concerned by this method
+     * @param track list of objects. All objects of a given track should be present, sorted by incresing timepoint. objects from several tracks can be present;
+     */
+    public void updateTrackAttributes(final List<? extends StructureObject> track) {
+        if (track==null) return;
+        //MorphiumUtils.waitForWrites(morphium);
+        setTrackAttributes(track);
+        for (StructureObject o : track) {
             if (o.getParent()!=null && o.getTrackHeadId()!=null) morphium.updateUsingFields(o, "parent_track_head_id", "track_head_id");
             else if (o.getParent()!=null) morphium.updateUsingFields(o, "parent_track_head_id");
             else if (o.getTrackHeadId()!=null) morphium.updateUsingFields(o, "track_head_id");

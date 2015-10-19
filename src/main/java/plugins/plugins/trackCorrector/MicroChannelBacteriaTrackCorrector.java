@@ -32,8 +32,7 @@ import plugins.TrackCorrector;
  */
 public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
     public BooleanParameter defaultAction = new BooleanParameter("Default Correction", "Over-segmentation", "Under-segmentation", true);
-    public ArrayList<StructureObjectTrackCorrection> correctTrack(StructureObjectTrackCorrection track, ObjectSplitter splitter) { // faire le tri a posteriori
-        ArrayList<StructureObjectTrackCorrection> modifiedObjects = new ArrayList<StructureObjectTrackCorrection>();
+    public void correctTrack(StructureObjectTrackCorrection track, ObjectSplitter splitter, ArrayList<StructureObjectTrackCorrection> modifiedObjects) { // faire le tri a posteriori
         ArrayList<StructureObjectTrackCorrection> toCorrectAfterwards=new ArrayList<StructureObjectTrackCorrection>();
         track = track.getNextTrackError();
         while(track != null) {
@@ -43,7 +42,6 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
         }
         // perform for uncorrectedObject
         for (StructureObjectTrackCorrection o : toCorrectAfterwards) performCorrection(o, splitter, true, defaultAction.getSelected(), modifiedObjects);
-        return modifiedObjects;
     }
     public MicroChannelBacteriaTrackCorrector setDefaultCorrection(boolean correctAsOverSegmentation) {
         defaultAction.setSelected(correctAsOverSegmentation);
@@ -75,7 +73,7 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
                 StructureObjectTrackCorrection lastSplitObject= splitTrack(error, splitPrevious, splitter, tDivNext, modifiedObjects);
                 if (nextSiblings!=null) { // assign as previous of nextDiv
                     nextSiblings.get(1).setPreviousInTrack(lastSplitObject, false, false);
-                    modifiedObjects.add(nextSiblings.get(1));
+                    if (modifiedObjects!=null) modifiedObjects.add(nextSiblings.get(1));
                 }
                 return null;
             } else return error;
@@ -85,8 +83,7 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
         if (track1.getTimePoint()!=track2.getTimePoint()) throw new IllegalArgumentException("merge tracks error: tracks should be at the same time point");
         while(track1.getTimePoint()<timePointLimit) {
             track1.merge(track2);
-            modifiedObjects.add(track1);
-            modifiedObjects.add(track2);
+            if (modifiedObjects!=null) modifiedObjects.add(track1); // only the object to be kept
             track1 = track1.getNext();
             track2 = track2.getNext();
         }
@@ -97,8 +94,10 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
         while(track.getTimePoint()<timePointLimit) {
             StructureObjectTrackCorrection newObject = track.split(splitter);
             newObject.setPreviousInTrack(splitPrevious, false, false);
-            modifiedObjects.add(newObject);
-            modifiedObjects.add(track);
+            if (modifiedObjects!=null) {
+                modifiedObjects.add(newObject);
+                modifiedObjects.add(track);
+            }
             track = track.getNext();
             splitPrevious = newObject;
         }
