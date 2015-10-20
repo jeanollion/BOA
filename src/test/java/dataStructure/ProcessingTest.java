@@ -100,8 +100,7 @@ public class ProcessingTest {
         Experiment xp = new Experiment("testXP", new Structure("structure"));
         xp.getChannelImages().insert(new ChannelImage("channel1"), new ChannelImage("channel2"));
         
-        String[] files = new String[]{folder.getAbsolutePath()};
-        Processor.importFiles(files, xp);
+        Processor.importFiles(xp, folder.getAbsolutePath());
         assertEquals("number of fields detected", 6-1-1, xp.getMicrocopyFieldCount()); // 6 - 1 (unique title) - 1 (channel number)
         Utils.assertImage(images[0][0], xp.getMicroscopyField(title).getInputImages().getImage(0, 0), 0);
     }
@@ -135,8 +134,7 @@ public class ProcessingTest {
         xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
         xp.getChannelImages().insert(new ChannelImage("channel1", "_c1"), new ChannelImage("channel2", "_c2"));
         
-        String[] files = new String[]{folder.getAbsolutePath()};
-        Processor.importFiles(files, xp);
+        Processor.importFiles(xp, folder.getAbsolutePath());
         assertEquals("number of fields detected", 6-1-1-1, xp.getMicrocopyFieldCount()); // 6 - 1 (unique title) - 1 (channel number)-1(timepoint number)
         Utils.assertImage(images[0][0], xp.getMicroscopyField(title).getInputImages().getImage(0, 0), 0);
     }
@@ -158,7 +156,7 @@ public class ProcessingTest {
         images[0][0].setPixel(0, 0, 0, 1);
         File folder = testFolder.newFolder("TestImagesPreProcessing");
         ImageWriter.writeToFile(folder.getAbsolutePath(), "field1", ImageFormat.OMETIF, images);
-        Processor.importFiles(new String[]{folder.getAbsolutePath()}, xp);
+        Processor.importFiles(xp, folder.getAbsolutePath());
         MicroscopyField f = xp.getMicroscopyField(0);
         assertEquals("number of fields detected", 1, xp.getMicrocopyFieldCount());
         
@@ -273,7 +271,7 @@ public class ProcessingTest {
         images[0][0].setPixel(12, 12, 0, 2);
         File folder = testFolder.newFolder("TestInputImagesStructureObject");
         ImageWriter.writeToFile(folder.getAbsolutePath(), "field1", ImageFormat.OMETIF, images);
-        Processor.importFiles(new String[]{folder.getAbsolutePath()}, xp);
+        Processor.importFiles(xp, folder.getAbsolutePath());
         File outputFolder = testFolder.newFolder("TestOutputImagesStructureObject");
         xp.setOutputImageDirectory(outputFolder.getAbsolutePath());
         xp.setOutputImageDirectory("/tmp");

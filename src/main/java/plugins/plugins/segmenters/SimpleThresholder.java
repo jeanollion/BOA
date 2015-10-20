@@ -61,7 +61,8 @@ public class SimpleThresholder implements Segmenter {
         }
         Object3D[] objects = ImageLabeller.labelImage(mask);
         logger.trace("simple thresholder: image: {} number of objects: {}", input.getName(), objects.length);
-        return new ObjectPopulation(new ArrayList<Object3D>(Arrays.asList(objects)), input);
+        return  new ObjectPopulation(new ArrayList<Object3D>(Arrays.asList(objects)), input);
+        
     }
     
     public static ObjectPopulation run(Image input, Thresholder thresholder, StructureObjectProcessing structureObject) {

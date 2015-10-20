@@ -243,13 +243,14 @@ public class ObjectDAO extends DAO<StructureObject>{
         if (track==null) return;
         //MorphiumUtils.waitForWrites(morphium);
         for (StructureObject o : track) { 
-            if (o.getParent()!=null) o.setParentTrackHeadId(o.getParent().getTrackHeadId());
-            if (o.getTrackHeadId()==null) {                
+            o.getParentTrackHeadId(); //sets parentTrackHeadId
+            o.getTrackHeadId(); //sets trackHeadId
+            /*if (o.getTrackHeadId()==null) {                
                 if (!o.isTrackHead && o.getPrevious()!=null) { //for trackHeads -> automoatically set by getTrackHeadId Method
                     o.trackHeadId=o.previous.getTrackHeadId();
                     logger.debug("set track head of {} from previous: {}, trackHeadId: {}", o, o.getPrevious(), o.getTrackHeadId());
                 }
-            }
+            }*/
         }
     }
     
@@ -262,9 +263,10 @@ public class ObjectDAO extends DAO<StructureObject>{
         //MorphiumUtils.waitForWrites(morphium);
         setTrackAttributes(track);
         for (StructureObject o : track) {
-            if (o.getParent()!=null && o.getTrackHeadId()!=null) morphium.updateUsingFields(o, "parent_track_head_id", "track_head_id");
-            else if (o.getParent()!=null) morphium.updateUsingFields(o, "parent_track_head_id");
-            else if (o.getTrackHeadId()!=null) morphium.updateUsingFields(o, "track_head_id");
+            morphium.store(o);
+            /*if (o.getParentTrackHeadId()!=null && o.getTrackHeadId()!=null) morphium.updateUsingFields(o, "parent_track_head_id", "track_head_id");
+            else if (o.getParentTrackHeadId()!=null) morphium.updateUsingFields(o, "parent_track_head_id");
+            else if (o.getTrackHeadId()!=null) morphium.updateUsingFields(o, "track_head_id");*/
             //morphium.updateUsingFields(object, "next", "previous");
             //System.out.println("update track attribute:"+ o.timePoint+ " next null?"+(o.next==null)+ "previous null?"+(o.previous==null));
         }
@@ -296,9 +298,12 @@ public class ObjectDAO extends DAO<StructureObject>{
     
     public ArrayList<StructureObject> getTrack(StructureObject track) {
         List<StructureObject> list =  super.getQuery().f("track_head_id").eq(track.getTrackHeadId()).sort("time_point").asList();
+        if (list.isEmpty()) return null;
         ArrayList<StructureObject> res  = checkAgainstCache(list);
         StructureObject prev = null;
+        StructureObject trackHead = res.get(0).getTrackHead();
         for (StructureObject o : res) {
+            o.trackHead=trackHead;
             if (prev!=null) {
                 o.previous=prev;
                 prev.next=o;

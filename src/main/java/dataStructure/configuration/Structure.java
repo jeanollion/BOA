@@ -29,7 +29,7 @@ import javax.swing.tree.MutableTreeNode;
 import plugins.ObjectSplitter;
 import plugins.TrackCorrector;
 import plugins.Tracker;
-import plugins.plugins.ObjectSplitter.DefaultObjectSplitter;
+import plugins.plugins.ObjectSplitter.WatershedObjectSplitter;
 
 /**
  *
@@ -42,7 +42,7 @@ public class Structure extends SimpleContainerParameter {
     ProcessingChain processingChain = new ProcessingChain("Processing Chain");
     PluginParameter<Tracker> tracker = new PluginParameter<Tracker>("Tracker", Tracker.class, true);
     PluginParameter<TrackCorrector> trackCorrector = new PluginParameter<TrackCorrector>("Track corrector", TrackCorrector.class, true);
-    PluginParameter<ObjectSplitter> objectSplitter = new PluginParameter<ObjectSplitter>("Object Splitter", ObjectSplitter.class, new DefaultObjectSplitter(), false);
+    PluginParameter<ObjectSplitter> objectSplitter = new PluginParameter<ObjectSplitter>("Object Splitter", ObjectSplitter.class, new WatershedObjectSplitter(), false);
     @Transient NameEditorUI ui;
     public Structure(String name) {
         this(name, -1, -1);

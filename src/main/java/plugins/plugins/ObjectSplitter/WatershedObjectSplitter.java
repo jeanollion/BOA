@@ -34,7 +34,7 @@ import processing.WatershedTransform;
  *
  * @author jollion
  */
-public class DefaultObjectSplitter implements ObjectSplitter {
+public class WatershedObjectSplitter implements ObjectSplitter {
     //BoundedNumberParameter numberOfObjects = new BoundedNumberParameter("Maximum growth rate", 2, 1.5, 1, 2);
     public ObjectPopulation splitObject(Image input, Object3D object) {
         return split(input, object.getMask());

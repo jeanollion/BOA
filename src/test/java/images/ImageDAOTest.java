@@ -89,7 +89,7 @@ public class ImageDAOTest {
         generateImages("field1", inputImage.getAbsolutePath(), 1, 2);
         generateImages("field2", inputImage.getAbsolutePath(), 1, 2);
         generateImages("field3", inputImage.getAbsolutePath(), 1, 2);
-        Processor.importFiles(new String[]{inputImage.getAbsolutePath()}, xp);
+        Processor.importFiles(xp, inputImage.getAbsolutePath());
         assertEquals("number fields", 3, xp.getMicrocopyFieldCount());
         xp.setOutputImageDirectory(testFolder.newFolder().getAbsolutePath());
         //xp.setOutputImageDirectory("/tmp/test"); new File(xp.getOutputImageDirectory()).mkdirs();

@@ -556,7 +556,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void importImageButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importImageButtonActionPerformed
         if (!checkConnection()) return;
         File[] selectedFiles = Utils.chooseFile("Choose images/directories to import", null, FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, this);
-        if (selectedFiles!=null) Processor.importFiles(Utils.convertFilesToString(selectedFiles), this.xpDAO.getExperiment());
+        if (selectedFiles!=null) Processor.importFiles(this.xpDAO.getExperiment(), Utils.convertFilesToString(selectedFiles));
         xpDAO.store(xpDAO.getExperiment()); //stores imported fields
     }//GEN-LAST:event_importImageButtonActionPerformed
 

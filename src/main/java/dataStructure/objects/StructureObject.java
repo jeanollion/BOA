@@ -54,6 +54,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     @Reference(lazyLoading=true, automaticStore=false) protected StructureObject previous;
     @Transient protected StructureObject next; // only available when whole track is retrieved
     protected ObjectId parentTrackHeadId, trackHeadId;
+    @Transient protected StructureObject trackHead;
     protected boolean isTrackHead=true;
     protected TrackFlag flag=null;
     
@@ -165,18 +166,14 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (!isTrackHead) {
             this.previous.next=this;
             this.isTrackHead=false;
-            this.trackHeadId= this.previous.getTrackHeadId();
+            this.trackHead= this.previous.getTrackHead();
         } else {
             this.isTrackHead=true;
-            this.trackHeadId=this.id;
+            this.trackHead=this;
         }
     }
     public void setTrackFlag(TrackFlag flag) {this.flag=flag;}
     public TrackFlag getTrackFlag() {return this.flag;}
-    
-    public void setParentTrackHeadId(ObjectId parentTrackHeadId) {
-        this.parentTrackHeadId=parentTrackHeadId;
-    }
     
     public StructureObject getPrevious() {
         if (previous==null) return null;
@@ -190,24 +187,34 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return next;
     }
     
-    public ObjectId getTrackHeadId() {
-        /*if (trackHead==null) {
-            if (isTrackHead) return this;
-            else return null;
+    public StructureObject getTrackHead() {
+        if (trackHead==null) {
+            if (isTrackHead) {
+                this.trackHead=this;
+                this.trackHeadId=this.id;
+            } else if (getPrevious()!=null) {
+                this.trackHead=previous.getTrackHead();
+                if (this.trackHead!=null) this.trackHeadId=trackHead.id;
+            }
         }
-        trackHead.callLazyLoading();
-        return trackHead;*/
-        if (trackHeadId==null && isTrackHead) trackHeadId = id;
+        return trackHead;
+    }
+    
+    public ObjectId getTrackHeadId() {
+        if (trackHeadId==null) {
+            getTrackHead();
+            if (trackHead!=null) trackHeadId = trackHead.id;
+        }
         return trackHeadId;
     }
     
     public ObjectId getParentTrackHeadId() {
-        /*if (trackHead==null) {
-            if (isTrackHead) return this;
-            else return null;
+        if (parentTrackHeadId==null) {
+            if (getParent()!=null) {
+                parentTrackHeadId = parent.getTrackHeadId();
+            }
         }
-        trackHead.callLazyLoading();
-        return trackHead;*/
+        
         return parentTrackHeadId;
     }
 
@@ -227,8 +234,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
      * @return the next element of the track that contains a track link error, as defined by the tracker; null is there are no next track error;
      */
     public StructureObjectTrackCorrection getNextTrackError() {
-        if (this.hasTrackLinkError()) return this;
-        StructureObject error = this;
+        StructureObject error = this.getNext();
         while(error!=null && !error.hasTrackLinkError()) error=error.getNext();
         return error;
     }
@@ -237,11 +243,11 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
      * @return a list containing the sibling (structureObjects that have the same previous object) at the next division, null if there are no siblings. If there are siblings, the first object of the list is contained in the track.
      */
     public ArrayList<StructureObjectTrackCorrection> getNextDivisionSiblings() {
-        ArrayList<StructureObjectTrackCorrection> res= getDivisionSiblings();
+        ArrayList<StructureObjectTrackCorrection> res= null;
         StructureObject nextDiv = this;
-        while(nextDiv!=null && res==null) {
+        while(nextDiv.getNext()!=null && res==null) {
             nextDiv = nextDiv.getNext();
-            res = getDivisionSiblings();
+            res = nextDiv.getDivisionSiblings();
         }
         if (res!=null) res.add(0, nextDiv);
         return res;
@@ -252,11 +258,11 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
      * @return a list containing the sibling (structureObjects that have the same previous object) at the previous division, null if there are no siblings. If there are siblings, the first object of the list is contained in the track.
      */
     public ArrayList<StructureObjectTrackCorrection> getPreviousDivisionSiblings() {
-        ArrayList<StructureObjectTrackCorrection> res= getDivisionSiblings();
+        ArrayList<StructureObjectTrackCorrection> res= null;
         StructureObject prevDiv = this;
-        while(prevDiv!=null && res==null) {
+        while(prevDiv.getPrevious()!=null && res==null) {
             prevDiv = prevDiv.getPrevious();
-            res = getDivisionSiblings();
+            res = prevDiv.getDivisionSiblings();
         }
         if (res!=null) res.add(0, prevDiv);
         return res;
@@ -265,6 +271,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     private ArrayList<StructureObjectTrackCorrection> getDivisionSiblings() {
         ArrayList<StructureObjectTrackCorrection> res=null;
         ArrayList<? extends StructureObject> siblings = getSiblings();
+        logger.debug("get div siblings: timePoint: {}, number of siblings: {}", this.getTimePoint(), siblings.size());
         if (this.getPrevious()!=null) {
             for (StructureObject o : siblings) {
                 if (o!=this) {
@@ -274,6 +281,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                     }
                 } 
             }
+            logger.debug("get div siblings: previous non null, divSiblings: {}", res==null?"null":res.size());
         } else { // get thespatially closest sibling
             double distance = Double.MAX_VALUE;
             StructureObject min = null;
@@ -290,6 +298,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 res = new ArrayList<StructureObjectTrackCorrection>(2);
                 res.add(min);
             }
+            logger.debug("get div siblings: previous null, get spatially closest, divSiblings: {}", res==null?"null":res.size());
         }
         
         return res;
@@ -304,6 +313,11 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         // update links
         StructureObject prev = otherO.getPrevious();
         if (prev !=null && prev.getNext()!=null && prev.next==otherO) prev.next=this;
+        //this.getParent().getChildObjects(structureIdx).remove(otherO); // concurent modification..
+        // set flags
+        setTrackFlag(TrackFlag.correctionMerge);
+        otherO.setTrackFlag(TrackFlag.correctionMergeToErase);
+        otherO.isTrackHead=false; // so that it won't be detected in the correction
         // update children
         int[] chilIndicies = getExperiment().getChildStructures(structureIdx);
         for (int cIdx : chilIndicies) {
@@ -315,12 +329,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 if (ch!=null) ch.addAll(otherChildren);
             }
         }
-        setTrackFlag(TrackFlag.correctionMerge);
-        otherO.setTrackFlag(TrackFlag.correctionMergeToErase);
-        otherO.isTrackHead=false;
     }
     
-    public StructureObject split(ObjectSplitter splitter) {
+    public StructureObject split(ObjectSplitter splitter) { // in 2 objects
         // get cropped image
         ObjectPopulation pop = splitter.splitObject(getFilteredImage(structureIdx),  getObject());
         // first object returned by splitter is updated to current structureObject
@@ -330,13 +341,14 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             logger.warn("split structureObject: {} yield in {} objects, but only two will be considered", this, pop.getObjects().size());
         } 
         
-        StructureObject res = new StructureObject(fieldName, timePoint, structureIdx, getParent().getSiblings().size(), pop.getObjects().get(1), getParent(), getExperiment());
+        StructureObject res = new StructureObject(fieldName, timePoint, structureIdx, getSiblings().size(), pop.getObjects().get(1), getParent(), getExperiment());
         /*ArrayList<StructureObject> res = new ArrayList<StructureObject>(pop.getObjects().size()-1);
         for (int i = 1; i<pop.getObjects().size(); ++i) {
             res.add(new StructureObject(fieldName, timePoint, structureIdx, currentIdx++, pop.getObjects().get(i), getParent(), getExperiment()));
         }*/
         //if (res.size()>1) xp.getObjectDAO().store(res);
         //else xp.getObjectDAO().store(res.get(0));
+        //this.getParent().getChildren(structureIdx).add(res);
         setTrackFlag(TrackFlag.correctionSplit);
         res.setTrackFlag(TrackFlag.correctionSplitNew);
         return res;
@@ -429,13 +441,17 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public void segmentChildren(int structureIdx) {
         if (getFilteredImage(structureIdx)==null) createPreFilterImage(structureIdx);
         ObjectPopulation seg = segmentImage(getFilteredImage(structureIdx), structureIdx, this, getExperiment().getStructure(structureIdx).getProcessingChain().getSegmenter());
-        if (seg.getObjects().isEmpty()) childrenSM.set(new ArrayList<StructureObject>(0), structureIdx);
+        if (seg.getObjects().isEmpty()) {
+            childrenSM.set(new ArrayList<StructureObject>(0), structureIdx);
+            logger.debug("no objects found for structure {}, in parent: {}", structureIdx, this);
+        }
         else {
             seg = postFilterImage(seg, this, getExperiment().getStructure(structureIdx).getProcessingChain().getPostfilters());
             seg.relabel();
             ArrayList<StructureObject> res = new ArrayList<StructureObject>(seg.getObjects().size());
             childrenSM.set(res, structureIdx);
             for (int i = 0; i<seg.getObjects().size(); ++i) res.add(new StructureObject(fieldName, timePoint, structureIdx, i, seg.getObjects().get(i), this, getExperiment()));
+            logger.debug("setting object {} of structure {}, to parent: {}", res.size(), structureIdx, this);
         }
     }
     

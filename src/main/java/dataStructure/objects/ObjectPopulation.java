@@ -55,8 +55,9 @@ public class ObjectPopulation {
     }*/
     
     public ObjectPopulation(ArrayList<Object3D> objects, ImageProperties properties) {
-        if (objects!=null) this.objects = objects;
-        this.objects = new ArrayList<Object3D>();
+        if (objects!=null) {
+            this.objects = objects;
+        } else this.objects = new ArrayList<Object3D>();
         this.properties=properties;
     }
     

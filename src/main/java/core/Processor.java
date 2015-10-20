@@ -49,7 +49,7 @@ public class Processor {
     /*public static int getRemainingMemory() {
         
     }*/
-    public static void importFiles(String[] selectedFiles, Experiment xp) {
+    public static void importFiles(Experiment xp, String... selectedFiles) {
         ArrayList<MultipleImageContainer> images = ImageFieldFactory.importImages(selectedFiles, xp);
         int count=0;
         for (MultipleImageContainer c : images) {
@@ -63,6 +63,7 @@ public class Processor {
         }
         logger.info("{} fields found int files: {}", count, selectedFiles);
     }
+    
     
     /*public static StructureObjectRoot initRoot(Experiment xp) {
         
@@ -112,7 +113,7 @@ public class Processor {
      * @param deleteObjects
      * @param structures in hierarchical order
      */
-    public static void processAndTrackStructures(final Experiment xp, MicroscopyField field, final ObjectDAO dao, boolean deleteObjects, int... structures) {
+    public static ArrayList<StructureObject> processAndTrackStructures(final Experiment xp, MicroscopyField field, final ObjectDAO dao, boolean deleteObjects, int... structures) {
         if (dao!=null && deleteObjects) dao.deleteObjectsFromField(field.getName());
         ArrayList<StructureObject> root = field.createRootObjects();
         Processor.trackRoot(root);
@@ -125,13 +126,17 @@ public class Processor {
                 ArrayList<StructureObject> segmentedObjects = new ArrayList<StructureObject> ();
                 for (int t = 0; t<root.size(); ++t) { // segment
                     Processor.process(s, root.get(t), dao, false, segmentedObjects);
-                } 
+                }
+                ArrayList<StructureObjectTrackCorrection> correctedObjects=null;
                 if (structure.hasTracker()) { // track
                     logger.info("tracking structure: {}...", s);
                     ArrayList<StructureObject> parents= StructureObjectUtils.getAllParentObjects(root.get(0), xp.getPathToRoot(s));
                     for (StructureObject o : parents) {
                         Processor.track(structure.getTracker(), o, s, dao, null);
-                        if (structure.hasTrackCorrector()) Processor.correctTrack(structure.getTrackCorrector(), structure.getObjectSplitter(), o, s, dao, false, null);
+                        if (structure.hasTrackCorrector()) {
+                            correctedObjects = new ArrayList<StructureObjectTrackCorrection>();
+                            Processor.correctTrack(structure.getTrackCorrector(), structure.getObjectSplitter(), o, s, dao, false, correctedObjects);
+                        }
                     }
                     /*final int sIdx = s;
                     ThreadRunner.execute(StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s)), new ThreadAction<StructureObject>() {
@@ -146,10 +151,14 @@ public class Processor {
                         Iterator<StructureObject> it = segmentedObjects.iterator();
                         while(it.hasNext()) if (StructureObject.TrackFlag.correctionMergeToErase.equals(it.next().getTrackFlag())) it.remove();
                     }
+                    if (correctedObjects!=null) { // add split objects
+                        for (StructureObjectTrackCorrection o : correctedObjects) if (StructureObject.TrackFlag.correctionSplitNew.equals(((StructureObject)o).getTrackFlag())) segmentedObjects.add((StructureObject)o);
+                    }
                     dao.store(segmentedObjects, xp.getStructure(s).hasTracker());
                 }
             }
         }
+        return root;
     }
     
     public static void trackStructure(int structureIdx, Experiment xp, MicroscopyField field, ObjectDAO dao, boolean updateTrackAttributes) { // objects are already stored -> have an ID
@@ -269,7 +278,7 @@ public class Processor {
         if (logger.isDebugEnabled()) logger.debug("tracking objects from structure: {} parentTrack: {} / Tracker: {} / dao==null? {}", structureIdx, parentTrack, tracker==null?"NULL":tracker.getClass(), dao==null);
         if (tracker==null) return;
         // TODO gestion de la memoire vive -> si trop ouvert, fermer les images & masques des temps précédents.
-        for (StructureObject o : parentTrack.getChildObjects(structureIdx, dao, false)) o.setParentTrackHeadId(parentTrack.getTrackHeadId());
+        for (StructureObject o : parentTrack.getChildObjects(structureIdx, dao, false)) o.getParentTrackHeadId();
         while(parentTrack.getNext()!=null) {
             tracker.assignPrevious(parentTrack.getChildObjects(structureIdx, dao, false), parentTrack.getNext().getChildObjects(structureIdx, dao, false));
             //if (dao!=null) dao.updateTrackAttributes(parentTrack.getChildren(structureIdx));
@@ -284,7 +293,8 @@ public class Processor {
         if (logger.isDebugEnabled()) logger.debug("tracking objects from structure: {} parentTrack: {} / Tracker: {} / dao==null? {}", structureIdx, parentTrack, trackCorrector==null?"NULL":trackCorrector.getClass(), dao==null);
         if (trackCorrector==null) return;
         // TODO gestion de la memoire vive -> si trop ouvert, fermer les images & masques des temps précédents.
-        for (StructureObject o : parentTrack.getChildObjects(structureIdx, dao, false)) o.setParentTrackHeadId(parentTrack.getTrackHeadId());
+        if (modifiedObjects==null) modifiedObjects = new ArrayList<StructureObjectTrackCorrection>();
+        for (StructureObject o : parentTrack.getChildObjects(structureIdx, dao, false)) o.getParentTrackHeadId(); //sets parentTrackHeadId
         while(parentTrack.getNext()!=null) {
             ArrayList<StructureObject> children = parentTrack.getChildObjects(structureIdx, dao, false);
             for (StructureObject child : children) if (child.isTrackHead()) trackCorrector.correctTrack(child, splitter, modifiedObjects);
@@ -299,5 +309,7 @@ public class Processor {
             }
             parentTrack = parentTrack.getNext();
         }
+        // add split objects to parents
+        for (StructureObjectTrackCorrection o : modifiedObjects) if (StructureObject.TrackFlag.correctionSplitNew.equals(((StructureObject)o).getTrackFlag())) ((StructureObject)o).getParent().getChildren(structureIdx).add((StructureObject)o);
     }
 }

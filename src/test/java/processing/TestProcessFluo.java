@@ -48,7 +48,7 @@ import java.util.logging.Logger;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import plugins.PluginFactory;
-import plugins.plugins.ObjectSplitter.DefaultObjectSplitter;
+import plugins.plugins.ObjectSplitter.WatershedObjectSplitter;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.BacteriesFluo2D;
@@ -126,8 +126,7 @@ public class TestProcessFluo {
     
     //@Test
     public void testImport(String inputDir) {
-        String[] files = new String[]{inputDir}; //       /data/Images/Fluo/me121r-1-9-15-lbiptg100x /data/Images/Fluo/test
-        Processor.importFiles(files, xp);
+        Processor.importFiles(xp, inputDir); //       /data/Images/Fluo/me121r-1-9-15-lbiptg100x /data/Images/Fluo/test
         //assertEquals("number of fields detected", 1, xp.getMicroscopyFields().getChildCount());
         logger.info("imported field: name: {} image: timepoint: {} scale xy: {} scale z: {}", xp.getMicroscopyField(0).getName(), xp.getMicroscopyField(0).getTimePointNumber(), xp.getMicroscopyField(0).getScaleXY(), xp.getMicroscopyField(0).getScaleZ());
         //ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(xp.getMicroscopyField(0).getImages().getImage(0, 0));
@@ -256,7 +255,7 @@ public class TestProcessFluo {
     public static ObjectPopulation testObjectSplitter(Image input, Object3D objectToSplit) {
         Image splitImage = input.crop(objectToSplit.getBounds());
         ImageInteger splitMask = objectToSplit.getMask();
-        return DefaultObjectSplitter.split(splitImage, splitMask);
+        return WatershedObjectSplitter.split(splitImage, splitMask);
     }
     
     public void runSegmentationBacteriaOnSubsetofDBXP(int startTime, int stopTime) {

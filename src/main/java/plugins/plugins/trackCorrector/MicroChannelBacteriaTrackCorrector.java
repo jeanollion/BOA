@@ -34,7 +34,7 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
     public BooleanParameter defaultAction = new BooleanParameter("Default Correction", "Over-segmentation", "Under-segmentation", true);
     public void correctTrack(StructureObjectTrackCorrection track, ObjectSplitter splitter, ArrayList<StructureObjectTrackCorrection> modifiedObjects) { // faire le tri a posteriori
         ArrayList<StructureObjectTrackCorrection> toCorrectAfterwards=new ArrayList<StructureObjectTrackCorrection>();
-        track = track.getNextTrackError();
+        if (!track.hasTrackLinkError()) track = track.getNextTrackError();
         while(track != null) {
             StructureObjectTrackCorrection uncorrected = performCorrection(track, splitter, false, defaultAction.getSelected(), modifiedObjects);
             if (uncorrected !=null) toCorrectAfterwards.add(uncorrected);
@@ -52,22 +52,22 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
         ArrayList<StructureObjectTrackCorrection> prevSiblings = error.getPreviousDivisionSiblings();
             ArrayList<StructureObjectTrackCorrection> nextSiblings = error.getNextDivisionSiblings();
             int tDivPrev = prevSiblings!=null? prevSiblings.get(0).getTimePoint() : 0;
-            int tDivNext = nextSiblings!=null?nextSiblings.get(0).getTimePoint() : Integer.MAX_VALUE;
+            int tDivNext = nextSiblings!=null?nextSiblings.get(0).getTimePoint() : getMaxTimePoint(error)+1;
             int tError = error.getTimePoint();
             if (prevSiblings!=null && prevSiblings.size()>2) logger.warn("More than 2 division sibling at time point {}, for object: {}", prevSiblings.get(0).getTimePoint(), prevSiblings.get(0).getPrevious());
             if (nextSiblings!=null && nextSiblings.size()>2) logger.warn("More than 2 division sibling at time point {}, for object: {}", nextSiblings.get(0).getTimePoint(), nextSiblings.get(0).getPrevious());
-            
+            logger.debug("track correction: tDivPrev: {} tError: {}, tDivNext:{}, prevSiblings: {}, nextSiblings: {}", tDivPrev, tError, tDivNext, prevSiblings!=null?prevSiblings.size():0, nextSiblings!=null?nextSiblings.size():0);
             if ((tDivNext-tError)>(tError-tDivPrev) || (correctAmbiguousCases && overSegmentationInAmbiguousCases)) { // overSegmentation: merge siblings between tDivPrev & tError
                 if (prevSiblings==null) {
                     logger.error("Oversegmentation detected but no siblings found");
                 } else {
-                    logger.debug("Over-Segmentation detected between timepoint {} and {}, number of divided cells before: {}, merged cells after error: {}", tError, tDivNext, tError-tDivPrev, tDivNext-tError);
+                    logger.debug("Over-Segmentation detected between timepoint {} and {}, number of divided cells before: {}, merged cells after error: {}", tDivPrev, tError, tError-tDivPrev, tDivNext-tError);
                     mergeTracks(prevSiblings.get(0), prevSiblings.get(1), tError, modifiedObjects);
                 }
                 return null;
             } else if ((tDivNext-tError)<(tError-tDivPrev)  || (correctAmbiguousCases && !overSegmentationInAmbiguousCases)) { // underSegmentation: split object between tError & tDivNext
                 logger.debug("Under-Segmentation detected between timepoint {} and {}, number of divided cells before: {}, merged cells after error: {}", tError, tDivNext, tError-tDivPrev, tDivNext-tError);
-                // get previous object for the future splited object:
+                // get previous object for the future splitted object:
                 StructureObjectTrackCorrection splitPrevious = prevSiblings.get(1);
                 while(splitPrevious.getTimePoint()<tError-1) splitPrevious=splitPrevious.getNext();
                 StructureObjectTrackCorrection lastSplitObject= splitTrack(error, splitPrevious, splitter, tDivNext, modifiedObjects);
@@ -77,6 +77,11 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
                 }
                 return null;
             } else return error;
+    }
+    
+    private static int getMaxTimePoint(StructureObjectTrackCorrection track) {
+        while(track.getNext()!=null) track=track.getNext();
+        return track.getTimePoint();
     }
     
     public static void mergeTracks(StructureObjectTrackCorrection track1, StructureObjectTrackCorrection track2, int timePointLimit, ArrayList<StructureObjectTrackCorrection> modifiedObjects) {
@@ -90,8 +95,8 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
     }
     
     public static StructureObjectTrackCorrection splitTrack(StructureObjectTrackCorrection track, StructureObjectTrackCorrection splitPrevious, ObjectSplitter splitter, int timePointLimit, ArrayList<StructureObjectTrackCorrection> modifiedObjects) {
-        if (track.getTimePoint()!=splitPrevious.getTimePoint()-1) throw new IllegalArgumentException("split tracks error: split previous time point should be: "+(track.getTimePoint()-1)+" but is "+splitPrevious.getTimePoint());
-        while(track.getTimePoint()<timePointLimit) {
+        if (track.getTimePoint()-1!=splitPrevious.getTimePoint()) throw new IllegalArgumentException("split tracks error: split previous time point should be: "+(track.getTimePoint()-1)+" but is "+splitPrevious.getTimePoint());
+        while(track!=null && track.getTimePoint()<timePointLimit) {
             StructureObjectTrackCorrection newObject = track.split(splitter);
             newObject.setPreviousInTrack(splitPrevious, false, false);
             if (modifiedObjects!=null) {

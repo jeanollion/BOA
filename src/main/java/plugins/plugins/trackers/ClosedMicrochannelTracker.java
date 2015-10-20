@@ -50,7 +50,7 @@ public class ClosedMicrochannelTracker implements Tracker {
         Collections.sort(next, getComparator(ObjectIdxTracker.IndexingOrder.YXZ));
         double divCriterion = this.divCriterion.getValue().doubleValue();
         double maxGrowthRate = this.maxGrowthRate.getValue().doubleValue();
-        logger.trace("closed microchanel tracker: assingPrevious: timepoint: {}, previous count: {}, next count: {}, divCriterion: {}, maxGrowthRate: {}", next.get(0).getTimePoint(), previous.size(), next.size(), divCriterion, maxGrowthRate);
+        logger.trace("closed microchanel tracker: assingPrevious: timepoint: {}, previous count: {}, next count: {}, divCriterion: {}, maxGrowthRate: {}", next.isEmpty()?"no element":next.get(0).getTimePoint(), previous.size(), next.size(), divCriterion, maxGrowthRate);
         int previousCounter=0;
         int nextCounter=0;
         double[] previousSize = new double[previous.size()];
