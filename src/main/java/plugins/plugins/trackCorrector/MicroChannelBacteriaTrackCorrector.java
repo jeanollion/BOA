@@ -32,7 +32,7 @@ import plugins.TrackCorrector;
  */
 public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
     public BooleanParameter defaultAction = new BooleanParameter("Default Correction", "Over-segmentation", "Under-segmentation", true);
-    public void correctTrack(StructureObjectTrackCorrection track, ObjectSplitter splitter, ArrayList<StructureObjectTrackCorrection> modifiedObjects) { // faire le tri a posteriori
+    public void correctTrack(StructureObjectTrackCorrection track, ObjectSplitter splitter, ArrayList<StructureObjectTrackCorrection> modifiedObjects) { 
         ArrayList<StructureObjectTrackCorrection> toCorrectAfterwards=new ArrayList<StructureObjectTrackCorrection>();
         if (!track.hasTrackLinkError()) track = track.getNextTrackError();
         while(track != null) {
@@ -61,12 +61,12 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
                 if (prevSiblings==null) {
                     logger.error("Oversegmentation detected but no siblings found");
                 } else {
-                    logger.debug("Over-Segmentation detected between timepoint {} and {}, number of divided cells before: {}, merged cells after error: {}", tDivPrev, tError, tError-tDivPrev, tDivNext-tError);
+                    logger.debug("Over-Segmentation detected between timepoint {} and {}, number of divided cells before: {}, undivided cells after error: {}", tDivPrev, tError, tError-tDivPrev, tDivNext-tError);
                     mergeTracks(prevSiblings.get(0), prevSiblings.get(1), tError, modifiedObjects);
                 }
                 return null;
             } else if ((tDivNext-tError)<(tError-tDivPrev)  || (correctAmbiguousCases && !overSegmentationInAmbiguousCases)) { // underSegmentation: split object between tError & tDivNext
-                logger.debug("Under-Segmentation detected between timepoint {} and {}, number of divided cells before: {}, merged cells after error: {}", tError, tDivNext, tError-tDivPrev, tDivNext-tError);
+                logger.debug("Under-Segmentation detected between timepoint {} and {}, number of divided cells before: {}, undivided cells after error: {}", tError, tDivNext, tError-tDivPrev, tDivNext-tError);
                 // get previous object for the future splitted object:
                 StructureObjectTrackCorrection splitPrevious = prevSiblings.get(1);
                 while(splitPrevious.getTimePoint()<tError-1) splitPrevious=splitPrevious.getNext();
@@ -88,7 +88,10 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
         if (track1.getTimePoint()!=track2.getTimePoint()) throw new IllegalArgumentException("merge tracks error: tracks should be at the same time point");
         while(track1.getTimePoint()<timePointLimit) {
             track1.merge(track2);
-            if (modifiedObjects!=null) modifiedObjects.add(track1); // only the object to be kept
+            if (modifiedObjects!=null) {
+                modifiedObjects.add(track1);
+                modifiedObjects.add(track2);
+            }
             track1 = track1.getNext();
             track2 = track2.getNext();
         }
@@ -98,13 +101,15 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
         if (track.getTimePoint()-1!=splitPrevious.getTimePoint()) throw new IllegalArgumentException("split tracks error: split previous time point should be: "+(track.getTimePoint()-1)+" but is "+splitPrevious.getTimePoint());
         while(track!=null && track.getTimePoint()<timePointLimit) {
             StructureObjectTrackCorrection newObject = track.split(splitter);
-            newObject.setPreviousInTrack(splitPrevious, false, false);
-            if (modifiedObjects!=null) {
-                modifiedObjects.add(newObject);
-                modifiedObjects.add(track);
+            if (newObject!=null) {
+                newObject.setPreviousInTrack(splitPrevious, false, false);
+                if (modifiedObjects!=null) modifiedObjects.add(newObject); 
+                splitPrevious = newObject;
+            } else {
+                splitPrevious = track;
             }
+            if (modifiedObjects!=null) modifiedObjects.add(track);
             track = track.getNext();
-            splitPrevious = newObject;
         }
         return splitPrevious;
     }

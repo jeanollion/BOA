@@ -80,7 +80,7 @@ public class ObjectPopulation {
         if (objects==null || objects.isEmpty()) labelImage = ImageInteger.createEmptyLabelImage("labelImage", 0, getImageProperties());
         else {
             labelImage = ImageInteger.createEmptyLabelImage("labelImage", objects.size(), getImageProperties());
-            logger.debug("creating image: properties: {} imagetype: {} number of objects: {}", properties, labelImage.getClass(), objects.size());
+            //logger.debug("creating image: properties: {} imagetype: {} number of objects: {}", properties, labelImage.getClass(), objects.size());
             for (Object3D o : objects) {
                 o.draw(labelImage, o.getLabel());
             }

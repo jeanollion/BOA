@@ -17,6 +17,7 @@
  */
 package plugins.plugins.ObjectSplitter;
 
+import boa.gui.imageInteraction.IJImageDisplayer;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.Object3D;
@@ -48,6 +49,8 @@ public class WatershedObjectSplitter implements ObjectSplitter {
         Object3D[] seeds = ImageLabeller.labelImage(localMax);
         if (seeds.length<2) {
             logger.warn("Object splitter : less than 2 seeds found");
+            //new IJImageDisplayer().showImage(smoothed.setName("smoothed"));
+            //new IJImageDisplayer().showImage(localMax.setName("localMax"));
             return null;
         }
         else {

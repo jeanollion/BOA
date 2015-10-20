@@ -30,6 +30,7 @@ import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectTrackCorrection;
 import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import org.slf4j.Logger;
@@ -39,6 +40,7 @@ import plugins.Registration;
 import plugins.TrackCorrector;
 import plugins.Tracker;
 import plugins.Transformation;
+import utils.Utils;
 
 /**
  *
@@ -151,8 +153,15 @@ public class Processor {
                         Iterator<StructureObject> it = segmentedObjects.iterator();
                         while(it.hasNext()) if (StructureObject.TrackFlag.correctionMergeToErase.equals(it.next().getTrackFlag())) it.remove();
                     }
-                    if (correctedObjects!=null) { // add split objects
-                        for (StructureObjectTrackCorrection o : correctedObjects) if (StructureObject.TrackFlag.correctionSplitNew.equals(((StructureObject)o).getTrackFlag())) segmentedObjects.add((StructureObject)o);
+                    if (correctedObjects!=null) { // add split objects, remove mergedObjects, and sort the list afterwards
+                        for (StructureObjectTrackCorrection o : correctedObjects) {
+                            if (StructureObject.TrackFlag.correctionSplitNew.equals(((StructureObject)o).getTrackFlag())) {
+                                segmentedObjects.add((StructureObject)o);
+                            } else if (StructureObject.TrackFlag.correctionMergeToErase.equals(((StructureObject)o).getTrackFlag())) {
+                                segmentedObjects.remove((StructureObject)o);
+                            }
+                        }
+                        Collections.sort(segmentedObjects, Utils.getStructureObjectComparator());
                     }
                     dao.store(segmentedObjects, xp.getStructure(s).hasTracker());
                 }
@@ -210,9 +219,10 @@ public class Processor {
                         if (StructureObject.TrackFlag.correctionSplitNew.equals(o.getTrackFlag())) newObjects.add(o);
                     }
                 }
-                dao.store(newObjects, false);
-                dao.setTrackAttributes(modifiedObjectsS);
-                dao.store(modifiedObjectsS, false); //TODO bug morphium update references... for "previous".
+                //dao.store(newObjects, false);
+                //dao.setTrackAttributes(modifiedObjectsS);
+                Collections.sort(modifiedObjectsS, Utils.getStructureObjectComparator());
+                dao.store(modifiedObjectsS, true); //TODO bug morphium update references... for "previous".
             }
         } else logger.warn("no trackCorrector for structure: {}", structureIdx);
     }
@@ -290,7 +300,7 @@ public class Processor {
     }
     
     public static void correctTrack(TrackCorrector trackCorrector, ObjectSplitter splitter, StructureObject parentTrack, int structureIdx, ObjectDAO dao, boolean removeMergedObjectFromDAO, ArrayList<StructureObjectTrackCorrection> modifiedObjects) {
-        if (logger.isDebugEnabled()) logger.debug("tracking objects from structure: {} parentTrack: {} / Tracker: {} / dao==null? {}", structureIdx, parentTrack, trackCorrector==null?"NULL":trackCorrector.getClass(), dao==null);
+        if (logger.isDebugEnabled()) logger.debug("correcting tracks from structure: {} parentTrack: {} / Tracker: {} / dao==null? {}", structureIdx, parentTrack, trackCorrector==null?"NULL":trackCorrector.getClass(), dao==null);
         if (trackCorrector==null) return;
         // TODO gestion de la memoire vive -> si trop ouvert, fermer les images & masques des temps précédents.
         if (modifiedObjects==null) modifiedObjects = new ArrayList<StructureObjectTrackCorrection>();

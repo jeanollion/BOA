@@ -18,6 +18,7 @@
 package utils;
 
 import configuration.parameters.FileChooser;
+import dataStructure.objects.StructureObject;
 import de.caluga.morphium.Morphium;
 import ij.gui.Plot;
 import image.Image;
@@ -25,6 +26,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -230,5 +232,18 @@ public class Utils {
         }
         tree.expandPath(parent);
         // tree.collapsePath(parent);
+    }
+    
+    public static Comparator<StructureObject> getStructureObjectComparator() {
+        return new Comparator<StructureObject>() {
+            public int compare(StructureObject arg0, StructureObject arg1) { // timePoint, structureIdx, idx
+                int comp = Integer.compare(arg0.getTimePoint(), arg1.getTimePoint());
+                if (comp==0) {
+                    comp = Integer.compare(arg0.getStructureIdx(), arg1.getStructureIdx());
+                    if (comp==0) return Integer.compare(arg0.getIdx(), arg1.getIdx());
+                    else return comp;
+                } else return comp;
+            }
+        };
     }
 }

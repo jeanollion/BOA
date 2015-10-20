@@ -85,7 +85,7 @@ public class BacteriaFluo implements Segmenter {
             disp.showImage(hessian);
         }
         double[] meanAndSigma = getMeanAndSigma(hessian, pop1.getLabelImage(), 0);
-        logger.debug("hessian mean: {}, sigma: {}, hessian thld: {}", meanAndSigma[0],meanAndSigma[1], sigmaCoeff * meanAndSigma[1]);
+        //logger.debug("hessian mean: {}, sigma: {}, hessian thld: {}", meanAndSigma[0],meanAndSigma[1], sigmaCoeff * meanAndSigma[1]);
         ImageInteger seedMap = ImageOperations.threshold(hessian, sigmaCoeff * meanAndSigma[1], false, false, false, null);
         seedMap = ImageOperations.and(pop1.getLabelImage(), seedMap, seedMap).setName("seeds");
         //disp.showImage(seedMap);

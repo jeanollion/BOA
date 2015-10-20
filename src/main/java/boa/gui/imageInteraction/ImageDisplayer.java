@@ -17,6 +17,7 @@
  */
 package boa.gui.imageInteraction;
 
+import image.BoundingBox;
 import image.Image;
 
 /**
@@ -29,4 +30,6 @@ public interface ImageDisplayer<T> {
     public Image getImage(T image);
     public void updateImageDisplay(Image image);
     public void showImage5D(String title, Image[][] imageTC);
+    //public BoundingBox getImageDisplay(Image image);
+    //public void setImageDisplay
 }

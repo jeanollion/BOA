@@ -123,7 +123,9 @@ public class Object3D {
     }
     
     public void merge(Object3D other) {
+        //int nb = getVoxels().size();
         this.getVoxels().addAll(other.getVoxels()); // TODO check for duplicates?
+        //logger.debug("merge:  {} + {}, nb voxel avant: {}, nb voxels après: {}", this.getLabel(), other.getLabel(), nb,getVoxels().size() );
         this.mask=null; // reset mask
         this.bounds=null; // reset bounds
     }

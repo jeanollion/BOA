@@ -29,6 +29,8 @@ import i5d.Image5D;
 import i5d.cal.ChannelDisplayProperties;
 import i5d.gui.ChannelControl;
 import ij.ImageStack;
+import ij.WindowManager;
+import image.BoundingBox;
 import image.ImageByte;
 import image.ImageFloat;
 import image.ImageShort;
@@ -153,6 +155,19 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
             ip.setDisplayRange(mm[0], mm[1]);
             ip.updateAndDraw();
         }
+    }
+
+    /*public BoundingBox getImageDisplay(Image image) {
+        ImagePlus im = image!=null ? this.getImage(image) : WindowManager.getCurrentImage();
+        if (im==null) {
+            logger.warn("no opened image");
+            return null;
+        }
+        im.getCanvas().get
+    }*/
+
+    public void setImageDisplay() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
 }

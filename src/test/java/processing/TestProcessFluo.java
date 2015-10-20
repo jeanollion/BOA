@@ -77,7 +77,9 @@ public class TestProcessFluo {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         TestProcessFluo t = new TestProcessFluo();
-        t.process("testFluo60", 0, true);
+        //t.correctTracks("testFluo60", 0, 1);
+        t.process("testFluo60", 0, false);
+        
         //t.subsetTimePoints(60, "/data/Images/Fluo/test", "/data/Images/Fluo/testsub60");
         //t.testRotation();
         //t.testSegBacteries();
@@ -300,6 +302,15 @@ public class TestProcessFluo {
         MicroscopyField f = xp.getMicroscopyField(field);
         if (preProcess) Processor.preProcessImages(f, dao, true, true);
         Processor.processAndTrackStructures(xp, f, dao, true);
+    }
+    
+    public void correctTracks(String dbName, int field, int structureIdx) {
+        Morphium m = MorphiumUtils.createMorphium(dbName);
+        ExperimentDAO xpDAO = new ExperimentDAO(m);
+        xp=xpDAO.getExperiment();
+        ObjectDAO dao = new ObjectDAO(m, xpDAO);
+        MicroscopyField f = xp.getMicroscopyField(field);
+        Processor.correctTrackStructure(structureIdx, xp, f, dao, true);
     }
     
     public void testSegBactTrackErrors() {

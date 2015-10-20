@@ -38,7 +38,7 @@ import utils.SmallArray;
 @Entity(collectionName = "Objects")
 @Index(value={"field_name, time_point, structure_idx", "parent,structure_idx,idx", "track_head_id, time_point", "is_track_head, parent_track_head_id, structure_idx, time_point, idx"})
 public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker, StructureObjectTrackCorrection {
-    public enum TrackFlag{trackError, correctionMerge, correctionMergeToErase, correctionSplit, correctionSplitNew};
+    public enum TrackFlag{trackError, correctionMerge, correctionMergeToErase, correctionSplit, correctionSplitNew, correctionSplitError};
     public final static Logger logger = LoggerFactory.getLogger(StructureObject.class);
     //structure-related attributes
     @Id protected ObjectId id;
@@ -313,6 +313,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         // update links
         StructureObject prev = otherO.getPrevious();
         if (prev !=null && prev.getNext()!=null && prev.next==otherO) prev.next=this;
+        StructureObject next = otherO.getNext();
+        if (next !=null && otherO==next.getPrevious()) next.previous=this;
         //this.getParent().getChildObjects(structureIdx).remove(otherO); // concurent modification..
         // set flags
         setTrackFlag(TrackFlag.correctionMerge);
@@ -334,6 +336,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public StructureObject split(ObjectSplitter splitter) { // in 2 objects
         // get cropped image
         ObjectPopulation pop = splitter.splitObject(getFilteredImage(structureIdx),  getObject());
+        if (pop==null) {
+            this.flag=TrackFlag.correctionSplitError;
+            return null;
+        }
         // first object returned by splitter is updated to current structureObject
         objectModified=true;
         this.object=pop.getObjects().get(0);
@@ -349,6 +355,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         //if (res.size()>1) xp.getObjectDAO().store(res);
         //else xp.getObjectDAO().store(res.get(0));
         //this.getParent().getChildren(structureIdx).add(res);
+        //res.previous=getPrevious();
         setTrackFlag(TrackFlag.correctionSplit);
         res.setTrackFlag(TrackFlag.correctionSplitNew);
         return res;
@@ -367,6 +374,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public BoundingBox getBounds() {return getObject().getBounds();}
     protected void createObjectContainer() {this.objectContainer=object.getObjectContainer(this);}
     public void updateObjectContainer(){
+        logger.debug("updating object for: {} was modified? {} flag: {}", this, objectModified, flag);
         if (objectContainer==null) {
             createObjectContainer();
             objectContainer.updateObject();
@@ -430,6 +438,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     public Image getFilteredImage(int structureIdx) {
+        if (preProcessedImageS.get(structureIdx)==null) createPreFilterImage(structureIdx);
         return preProcessedImageS.get(structureIdx);
     }
     
@@ -439,11 +448,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     public void segmentChildren(int structureIdx) {
-        if (getFilteredImage(structureIdx)==null) createPreFilterImage(structureIdx);
+        
         ObjectPopulation seg = segmentImage(getFilteredImage(structureIdx), structureIdx, this, getExperiment().getStructure(structureIdx).getProcessingChain().getSegmenter());
         if (seg.getObjects().isEmpty()) {
             childrenSM.set(new ArrayList<StructureObject>(0), structureIdx);
-            logger.debug("no objects found for structure {}, in parent: {}", structureIdx, this);
         }
         else {
             seg = postFilterImage(seg, this, getExperiment().getStructure(structureIdx).getProcessingChain().getPostfilters());
@@ -451,7 +459,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             ArrayList<StructureObject> res = new ArrayList<StructureObject>(seg.getObjects().size());
             childrenSM.set(res, structureIdx);
             for (int i = 0; i<seg.getObjects().size(); ++i) res.add(new StructureObject(fieldName, timePoint, structureIdx, i, seg.getObjects().get(i), this, getExperiment()));
-            logger.debug("setting object {} of structure {}, to parent: {}", res.size(), structureIdx, this);
         }
     }
     

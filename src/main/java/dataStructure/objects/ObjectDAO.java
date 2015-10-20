@@ -188,8 +188,10 @@ public class ObjectDAO extends DAO<StructureObject>{
         
         for (StructureObject o : objects) o.updateObjectContainer();
         for (StructureObject o : objects) {
+            if ((!o.isTrackHead && o.getPrevious()!=null && o.getPrevious().getId()==null) || 
+                   (o.getParent()!=null && o.getParent().getId()==null)) logger.error("Object: {}, previous {}, previous id: {}, track Flag: {}", objects.indexOf(o), objects.indexOf(o.getPrevious()), o.getPrevious().getTrackFlag(), ((StructureObject)o).getTrackFlag());
             morphium.store(o);
-            logger.debug("store in cache object: {} id: {}", o, o.getId());
+            //logger.debug("store in cache object: {} id: {}", o, o.getId());
             idCache.put(o.getId(), o);
         }
         if (updateTrackAttributes) updateTrackAttributes(objects);
@@ -263,10 +265,22 @@ public class ObjectDAO extends DAO<StructureObject>{
         //MorphiumUtils.waitForWrites(morphium);
         setTrackAttributes(track);
         for (StructureObject o : track) {
-            morphium.store(o);
-            /*if (o.getParentTrackHeadId()!=null && o.getTrackHeadId()!=null) morphium.updateUsingFields(o, "parent_track_head_id", "track_head_id");
+            if (o.getParentTrackHeadId()!=null && o.getTrackHeadId()!=null) morphium.updateUsingFields(o, "parent_track_head_id", "track_head_id");
             else if (o.getParentTrackHeadId()!=null) morphium.updateUsingFields(o, "parent_track_head_id");
-            else if (o.getTrackHeadId()!=null) morphium.updateUsingFields(o, "track_head_id");*/
+            else if (o.getTrackHeadId()!=null) morphium.updateUsingFields(o, "track_head_id");
+            //morphium.store(o);
+            /*if (o.getTrackFlag()==null) {
+                if (o.getParentTrackHeadId()!=null && o.getTrackHeadId()!=null) morphium.updateUsingFields(o, "parent_track_head_id", "track_head_id");
+                else if (o.getParentTrackHeadId()!=null) morphium.updateUsingFields(o, "parent_track_head_id");
+                else if (o.getTrackHeadId()!=null) morphium.updateUsingFields(o, "track_head_id");
+            } else {
+                if (o.getParentTrackHeadId()!=null && o.getTrackHeadId()!=null) morphium.updateUsingFields(o, "parent_track_head_id", "track_head_id", "flag");
+                else if (o.getParentTrackHeadId()!=null) morphium.updateUsingFields(o, "parent_track_head_id", "flag");
+                else if (o.getTrackHeadId()!=null) morphium.updateUsingFields(o, "track_head_id", "flag");
+            }
+            */
+            
+            
             //morphium.updateUsingFields(object, "next", "previous");
             //System.out.println("update track attribute:"+ o.timePoint+ " next null?"+(o.next==null)+ "previous null?"+(o.previous==null));
         }
