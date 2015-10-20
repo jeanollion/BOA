@@ -32,6 +32,9 @@ import java.util.HashSet;
  * @author jollion
  */
 public abstract class ImageWindowManager<T> {
+    public final static Color[] palette = new Color[]{new Color(166, 206, 227), new Color(31,120,180), new Color(178,223,138), new Color(51,160,44), new Color(251,154,153), new Color(253,191,111), new Color(255,127,0), new Color(255,255,153), new Color(177,89,40)};
+    protected final static Color trackErrorColor = new Color(255, 0, 0);
+    protected final static Color trackCorrectionColor = new Color(0, 0, 255);
     final static int trackArrowStrokeWidth = 3;
     private final HashMap<ImageObjectInterfaceKey, ImageObjectInterface> imageObjectInterfaces;
     private final HashMap<Image, ImageObjectInterface> imageObjectInterfaceMap;

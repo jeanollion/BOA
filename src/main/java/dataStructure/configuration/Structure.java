@@ -57,7 +57,7 @@ public class Structure extends SimpleContainerParameter {
     
     @Override
     protected void initChildList() {
-        initChildren(parentStructure, channelImage, processingChain);
+        initChildren(parentStructure, channelImage, processingChain, tracker, trackCorrector, objectSplitter);
     }
     
     public ProcessingChain getProcessingChain() {

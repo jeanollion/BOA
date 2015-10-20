@@ -87,11 +87,16 @@ public class TrackNode implements TreeNode, UIContainer {
             if (getTrack().size()<=1) children=new ArrayList<TrackNode>(0);
             else {
                 children=new ArrayList<TrackNode>();
-                Iterator<Entry<Integer, List<StructureObject>>> it = root.getRemainingTrackHeads().subMap(track.get(1).getTimePoint(), true, track.get(track.size()-1).getTimePoint(), true).entrySet().iterator();
-                //if (logger.isTraceEnabled()) logger.trace("looking for children for node: {} timePoint left: {} timePoint right:{} head submap: {}", toString(), track[1].getTimePoint(), track[track.length-1].getTimePoint(), root.getRemainingTrackHeads().subMap(track[1].getTimePoint(), true, track[track.length-1].getTimePoint(), true).size());
+                //Iterator<Entry<Integer, List<StructureObject>>> it = root.getRemainingTrackHeads().subMap(track.get(1).getTimePoint(), true, track.get(track.size()-1).getTimePoint(), true).entrySet().iterator();
+                Iterator<Entry<Integer, List<StructureObject>>> it = root.getRemainingTrackHeads().entrySet().iterator();
+                //logger.trace("looking for children for node: {} timePoint left: {} timePoint right:{}", toString(), track.get(1).getTimePoint(), track.get(track.size()-1).getTimePoint());
+                int leftLimit = track.get(1).getTimePoint();
+                int rightLimit = track.get(track.size()-1).getTimePoint();
                 while (it.hasNext()) {
-                    List<StructureObject> e = it.next().getValue();
-                    Iterator<StructureObject> subIt = e.iterator();
+                    Entry<Integer, List<StructureObject>> entry = it.next();
+                    if (entry.getKey()<leftLimit) continue;
+                    if (entry.getKey()>=rightLimit) break;
+                    Iterator<StructureObject> subIt = entry.getValue().iterator();
                     while (subIt.hasNext()) {
                         StructureObject o = subIt.next();
                         if (o.getPrevious()==null) {
@@ -102,9 +107,11 @@ public class TrackNode implements TreeNode, UIContainer {
                             subIt.remove();
                         }
                         
-                        //if (logger.isTraceEnabled()) logger.trace("looking for structureObject: {} in track of node: {} found? {}", o, toString(), trackContainscontainsId(o.getPrevious()));
+                        //logger.trace("looking for structureObject: {} in track of node: {} found? {}", o, toString(), trackContainscontainsId(o.getPrevious()));
                     }
-                    if (e.isEmpty()) it.remove();
+                    if (entry.getValue().isEmpty()) {
+                        it.remove();
+                    }
                 }
             }
             //logger.trace("get children: {} number of children: {} remaining distinct timePoint in root: {}", toString(),  children.size(), root.getRemainingTrackHeads().size());

@@ -212,7 +212,11 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
 
     public boolean hasTrackLinkError() {
-        return flag.equals(TrackFlag.trackError);
+        return TrackFlag.trackError.equals(flag);
+    }
+    
+    public boolean hasTrackLinkCorrection() {
+        return TrackFlag.correctionMerge.equals(flag) || TrackFlag.correctionSplit.equals(flag) || TrackFlag.correctionSplitNew.equals(flag);
     }
     
     public boolean isTrackHead() {return this.isTrackHead;}
@@ -270,7 +274,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                     }
                 } 
             }
-        } else { // get spatially closest sibling
+        } else { // get thespatially closest sibling
             double distance = Double.MAX_VALUE;
             StructureObject min = null;
             for (StructureObject o : siblings) {
@@ -284,7 +288,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             }
             if (min!=null) {
                 res = new ArrayList<StructureObjectTrackCorrection>(2);
-                res.add(this);
+                res.add(min);
             }
         }
         

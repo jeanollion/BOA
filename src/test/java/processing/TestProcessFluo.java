@@ -76,12 +76,15 @@ public class TestProcessFluo {
     
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        //new TestProcessFluo().testRotation();
-        //new TestProcessFluo().testSegBacteries();
-        new TestProcessFluo().testSegBacteriesFromXP();
-        //new TestProcessFluo().testSegBactAllTimes();
-        //new TestProcessFluo().runSegmentationBacteriaOnSubsetofDBXP(569, 630);
-        //new TestProcessFluo().process(0, false);
+        TestProcessFluo t = new TestProcessFluo();
+        t.process("testFluo60", 0, true);
+        //t.subsetTimePoints(60, "/data/Images/Fluo/test", "/data/Images/Fluo/testsub60");
+        //t.testRotation();
+        //t.testSegBacteries();
+        //t.testSegBacteriesFromXP();
+        //t.testSegBactAllTimes();
+        //t.runSegmentationBacteriaOnSubsetofDBXP(569, 630);
+        //t.process(0, false);
     }
     
     
@@ -97,9 +100,9 @@ public class TestProcessFluo {
         Structure bacteria = new Structure("Bacteria", 0, 0);
         Structure mutation = new Structure("Mutation", 1, 1);
         xp.getStructures().insert(mc, bacteria, mutation);
-        //mc.getProcessingChain().setSegmenter(new MicroChannelFluo2D());
-        mc.getProcessingChain().setSegmenter(new BacteriaFluo());
-        bacteria.getProcessingChain().setSegmenter(new BacteriesFluo2D());
+        mc.getProcessingChain().setSegmenter(new MicroChannelFluo2D());
+        bacteria.getProcessingChain().setSegmenter(new BacteriaFluo());
+        //bacteria.getProcessingChain().setSegmenter(new BacteriesFluo2D());
         mc.setTracker(new ObjectIdxTracker());
         bacteria.setTracker(new ClosedMicrochannelTracker());
         bacteria.setTrackCorrector(new MicroChannelBacteriaTrackCorrector());
@@ -113,25 +116,16 @@ public class TestProcessFluo {
     }
     
     public void saveXP(String dbName) {
-        try {
-            MorphiumConfig cfg = new MorphiumConfig();
-            cfg.setGlobalLogLevel(3);
-            cfg.setDatabase(dbName);
-            cfg.addHost("localhost", 27017);
-            Morphium m=new Morphium(cfg);
-            m.clearCollection(Experiment.class);
-            m.clearCollection(StructureObject.class);
-            ExperimentDAO xpDAO = new ExperimentDAO(m);
-            xpDAO.store(xp);
-            logger.info("Experiment: {} stored in db: {}", xp.getName(), dbName);
-        } catch (UnknownHostException ex) {
-            logger.error("storx xp error: ", ex);
-        }
+        Morphium m=MorphiumUtils.createMorphium(dbName);
+        m.clearCollection(Experiment.class);
+        m.clearCollection(StructureObject.class);
+        ExperimentDAO xpDAO = new ExperimentDAO(m);
+        xpDAO.store(xp);
+        logger.info("Experiment: {} stored in db: {}", xp.getName(), dbName);
     }
     
     //@Test
     public void testImport(String inputDir) {
-        setUpXp(false, "/data/Images/Fluo/OutputTest");
         String[] files = new String[]{inputDir}; //       /data/Images/Fluo/me121r-1-9-15-lbiptg100x /data/Images/Fluo/test
         Processor.importFiles(files, xp);
         //assertEquals("number of fields detected", 1, xp.getMicroscopyFields().getChildCount());
@@ -140,16 +134,17 @@ public class TestProcessFluo {
         //ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(xp.getMicroscopyField(0).getImages().getImage(0, 1));
     }
     
-    private void subsetTimePoints(int tnb, String inputDir) {
-        if (xp==null)testImport(inputDir);
+    private void subsetTimePoints(int tnb, String inputDir, String outputDir) {
+        if (xp==null) testImport(inputDir);
         Image[][] imageTC = new Image[tnb][1];
         for (int i = 0; i<tnb; ++i) imageTC[i][0] = xp.getMicroscopyField(0).getInputImages().getImage(0, i);
-        ImageWriter.writeToFile("/data/Images/Fluo/testsub/", "imagesTest_REF", ImageFormat.OMETIF, imageTC);
+        ImageWriter.writeToFile(outputDir, "imagesTest_REF", ImageFormat.OMETIF, imageTC);
         for (int i = 0; i<tnb; ++i) imageTC[i][0] = xp.getMicroscopyField(0).getInputImages().getImage(1, i);
-        ImageWriter.writeToFile("/data/Images/Fluo/testsub/", "imagesTest", ImageFormat.OMETIF, imageTC);
+        ImageWriter.writeToFile(outputDir, "imagesTest", ImageFormat.OMETIF, imageTC);
     }
     
     public void testRotation() {
+        setUpXp(false, "/data/Images/Fluo/OutputTest");
         testImport("/data/Images/Fluo/testsub");
         ImageDisplayer disp = new IJImageDisplayer();
         for (int i =0; i<xp.getMicrocopyFieldCount(); ++i) {
@@ -164,6 +159,7 @@ public class TestProcessFluo {
     
     //@Test 
     public void testStabilizer() {
+        setUpXp(false, "/data/Images/Fluo/OutputTest");
         testImport("/data/Images/Fluo/test");
         xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
         xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
@@ -183,6 +179,7 @@ public class TestProcessFluo {
     }
     
     public void testCrop(String inputDir) {
+        setUpXp(false, "/data/Images/Fluo/OutputTest");
         testImport(inputDir);
         //List<Integer> flip = Arrays.asList(new Integer[]{0});
         for (int i =0; i<xp.getMicrocopyFieldCount(); ++i) testCrop(i, true); //flip.contains(new Integer(i))
@@ -295,8 +292,7 @@ public class TestProcessFluo {
         return dao.getTrackErrors(f.getName(), 1).size();
     }
     
-    public void process(int field, boolean preProcess) {
-        String dbName = "testFluo";
+    public void process(String dbName, int field, boolean preProcess) {
         Morphium m = MorphiumUtils.createMorphium(dbName);
         ExperimentDAO xpDAO = new ExperimentDAO(m);
         xp=xpDAO.getExperiment();

@@ -55,8 +55,14 @@ public class ObjectPopulation {
     }*/
     
     public ObjectPopulation(ArrayList<Object3D> objects, ImageProperties properties) {
-        this.objects = objects;
+        if (objects!=null) this.objects = objects;
+        this.objects = new ArrayList<Object3D>();
         this.properties=properties;
+    }
+    
+    public ObjectPopulation addObjects(Object3D... objects) {
+        this.objects.addAll(Arrays.asList(objects));
+        return this;
     }
     
     public ImageInteger getLabelImage() {

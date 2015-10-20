@@ -95,8 +95,8 @@ public class RootTrackNode implements TreeNode {
                 while (currentIdx<trackHeads.size()) {
                     if (trackHeads.get(currentIdx).getTimePoint()>currentTimePoint) {
                         //ArrayList<StructureObject> currentHeads = new ArrayList<StructureObject>(currentIdx-lastIdx);
-                        //for (int i = lastIdx; i<currentIdx; ++i) currentHeads.add(trackHeads[i]);
-                        map.put(currentTimePoint, trackHeads.subList(lastIdx, currentIdx));
+                        //for (int i = lastIdx; i<currentIdx; ++i) currentHeads.add(trackHeads.get(i));
+                        map.put(currentTimePoint, new ArrayList<StructureObject>(trackHeads.subList(lastIdx, currentIdx)));
                         lastIdx=currentIdx;
                         currentTimePoint = trackHeads.get(currentIdx).getTimePoint();
                     }
@@ -105,8 +105,12 @@ public class RootTrackNode implements TreeNode {
                 // put last portion in map:
                 map.put(currentTimePoint, trackHeads.subList(lastIdx, currentIdx));
 
-                if (logger.isTraceEnabled()) logger.trace("number of trackHeads found: {} number of distinct timePoints: {}", trackHeads.size(), map.size());
                 remainingTrackHeadsTM = new TreeMap<Integer, List<StructureObject>>(map);
+                /*if (logger.isTraceEnabled()) {
+                    logger.trace("number of trackHeads found: {} number of distinct timePoints: {}", trackHeads.size(), map.size());
+                    for (Entry<Integer, List<StructureObject>> e : remainingTrackHeadsTM.entrySet()) logger.trace("time point: {}, number of trackHeads {}, first: {}, last: {}", e.getKey(), e.getValue().size(), e.getValue().get(0).getTimePoint(), e.getValue().get(e.getValue().size()-1).getTimePoint());
+                }*/
+                
             }
         }
         return remainingTrackHeadsTM;

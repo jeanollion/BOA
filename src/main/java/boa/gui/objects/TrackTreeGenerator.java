@@ -40,6 +40,7 @@ import javax.swing.tree.TreeSelectionModel;
 import static boa.gui.GUI.logger;
 import boa.gui.configuration.TrackTreeCellRenderer;
 import boa.gui.configuration.TransparentTreeCellRenderer;
+import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import java.awt.Color;
 import java.util.ArrayList;
@@ -144,12 +145,12 @@ public class TrackTreeGenerator {
         if (logger.isTraceEnabled()) logger.trace("display: {} selected tracks", tree.getSelectionCount());
         ImageWindowManagerFactory.getImageManager().displayTrack(null, false, null, null); // unselect tracks
         if (tree.getSelectionCount()==0) return;
-        Color[] palette = Utils.generatePalette(tree.getSelectionCount(), true);
+        //Color[] palette = Utils.generatePalette(tree.getSelectionCount(), true);
         int idx=0;
         for (TreePath p : tree.getSelectionPaths()) {
             Object lastO = p.getLastPathComponent();
             if (lastO instanceof TrackNode) {
-                ImageWindowManagerFactory.getImageManager().displayTrack(null, true, ((TrackNode)lastO).track, palette[idx++]);
+                ImageWindowManagerFactory.getImageManager().displayTrack(null, true, ((TrackNode)lastO).track, ImageWindowManager.palette[idx++%ImageWindowManager.palette.length]);
             }
         }
     }

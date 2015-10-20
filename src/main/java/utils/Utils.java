@@ -43,6 +43,7 @@ import javax.swing.tree.TreePath;
  * @author jollion
  */
 public class Utils {
+    
     private final static Pattern p = Pattern.compile("[^a-z0-9_-]", Pattern.CASE_INSENSITIVE);
     public static String getStringArrayAsString(String... stringArray) {
         if (stringArray==null) return "[]";
@@ -135,6 +136,8 @@ public class Utils {
         }
         return res;
     }
+    
+    
     
     private static double incrementColor(double h, double goldenRatioConjugate) {return (h+goldenRatioConjugate)%1;}
     
