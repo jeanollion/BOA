@@ -117,7 +117,7 @@ public class Processor {
         ArrayList<StructureObject> root = field.createRootObjects();
         Processor.trackRoot(root);
         if (dao!=null) dao.store(root, true);
-        if (structures==null) structures=xp.getStructuresInHierarchicalOrderAsArray();
+        if (structures==null || structures.length==0) structures=xp.getStructuresInHierarchicalOrderAsArray();
         for (int s : structures) {
             Structure structure = xp.getStructure(s);
             if (structure.hasSegmenter()) {

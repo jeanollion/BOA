@@ -57,75 +57,63 @@ public class ImageDAOTest {
     
     @Test
     public void testImageDAO() throws IOException {
-        
-        try {
-            MorphiumConfig cfg = new MorphiumConfig();
-            cfg.setGlobalLogLevel(3);
-            cfg.setDatabase("testImageDAO");
-            cfg.addHost("localhost", 27017);
-            m=new Morphium(cfg);
-            m.clearCollection(Experiment.class);
-            m.clearCollection(StructureObject.class);
-            xpDAO = new ExperimentDAO(m);
-            objectDAO = new ObjectDAO(m, xpDAO);
-            MorphiumUtils.addDereferencingListeners(m, objectDAO, xpDAO);
-            
-            // generate XP
-            xp = new Experiment("test");
-            ChannelImage cMic = new ChannelImage("ChannelImageMicroChannel");
-            xp.getChannelImages().insert(cMic);
-            ChannelImage cBact = new ChannelImage("ChannelImageBact");
-            xp.getChannelImages().insert(cBact);
-            xp.getStructures().removeAllElements();
-            Structure microChannel = new Structure("MicroChannel", -1, 0);
-            Structure bacteries = new Structure("Bacteries", 0, 1);
-            xp.getStructures().insert(microChannel, bacteries);
-            
-            // processing chains
-            PluginFactory.findPlugins("plugins.plugins");
-            microChannel.getProcessingChain().setSegmenter(new SimpleThresholder(new ConstantValue(1)));
-            bacteries.getProcessingChain().setSegmenter(new SimpleThresholder(new ConstantValue(1)));
-            
-            // set-up traking
-            microChannel.setTracker(new ObjectIdxTracker());
-            bacteries.setTracker(new ObjectIdxTracker());
-            
-            // set up I/O directory & create fields
-            File inputImage = testFolder.newFolder();
-            generateImages("field1", inputImage.getAbsolutePath(), 1, 2);
-            generateImages("field2", inputImage.getAbsolutePath(), 1, 2);
-            generateImages("field3", inputImage.getAbsolutePath(), 1, 2);
-            Processor.importFiles(new String[]{inputImage.getAbsolutePath()}, xp);
-            assertEquals("number fields", 3, xp.getMicrocopyFieldCount());
-            File output = testFolder.newFolder();
-            xp.setOutputImageDirectory(output.getAbsolutePath());
-            //xp.setOutputImageDirectory("/tmp/test/");
-            
-            // save to morphium
-            xpDAO.store(xp);
-            
-            // process
-            assertEquals("number of files before preProcess", 0, countFiles(new File(xp.getOutputImageDirectory())));
-            Processor.preProcessImages(xp, objectDAO, true);
-            assertEquals("number of files after preProcess", 6, countFiles(new File(xp.getOutputImageDirectory())));
-            Processor.processStructures(xp, objectDAO);
-            assertEquals("number of files after preProcess", 12, countFiles(new File(xp.getOutputImageDirectory())));
-            
-            StructureObject root = objectDAO.getRoot("field1", 0);
-            StructureObject mc = objectDAO.getObjects(root.getId(), 0).get(0);
-            objectDAO.deleteChildren(mc.getId(), 1);
-            
-            assertEquals("number of files after delete children", 11, countFiles(new File(xp.getOutputImageDirectory())));
-            objectDAO.delete(mc);
-            assertEquals("number of files after delete object", 10, countFiles(new File(xp.getOutputImageDirectory())));
-            objectDAO.deleteObjectsFromField("field2");
-            assertEquals("number of files after delete field", 8, countFiles(new File(xp.getOutputImageDirectory())));
-            objectDAO.deleteAllObjects();
-            assertEquals("number of files after delete all", 6, countFiles(new File(xp.getOutputImageDirectory())));
-            
-        } catch (UnknownHostException ex) {
-            logger.error("db connection error", ex);
-        }
+        m=MorphiumUtils.createMorphium("testImageDAO");
+        m.clearCollection(Experiment.class);
+        m.clearCollection(StructureObject.class);
+        xpDAO = new ExperimentDAO(m);
+        objectDAO = new ObjectDAO(m, xpDAO);
+        MorphiumUtils.addDereferencingListeners(m, objectDAO, xpDAO);
+
+        // generate XP
+        xp = new Experiment("test");
+        ChannelImage cMic = new ChannelImage("ChannelImageMicroChannel");
+        xp.getChannelImages().insert(cMic);
+        ChannelImage cBact = new ChannelImage("ChannelImageBact");
+        xp.getChannelImages().insert(cBact);
+        xp.getStructures().removeAllElements();
+        Structure microChannel = new Structure("MicroChannel", -1, 0);
+        Structure bacteries = new Structure("Bacteries", 0, 1);
+        xp.getStructures().insert(microChannel, bacteries);
+
+        // processing chains
+        PluginFactory.findPlugins("plugins.plugins");
+        microChannel.getProcessingChain().setSegmenter(new SimpleThresholder(new ConstantValue(1)));
+        bacteries.getProcessingChain().setSegmenter(new SimpleThresholder(new ConstantValue(1)));
+
+        // set-up traking
+        microChannel.setTracker(new ObjectIdxTracker());
+        bacteries.setTracker(new ObjectIdxTracker());
+
+        // set up I/O directory & create fields
+        File inputImage = testFolder.newFolder();
+        generateImages("field1", inputImage.getAbsolutePath(), 1, 2);
+        generateImages("field2", inputImage.getAbsolutePath(), 1, 2);
+        generateImages("field3", inputImage.getAbsolutePath(), 1, 2);
+        Processor.importFiles(new String[]{inputImage.getAbsolutePath()}, xp);
+        assertEquals("number fields", 3, xp.getMicrocopyFieldCount());
+        xp.setOutputImageDirectory(testFolder.newFolder().getAbsolutePath());
+        //xp.setOutputImageDirectory("/tmp/test"); new File(xp.getOutputImageDirectory()).mkdirs();
+        // save to morphium
+        xpDAO.store(xp);
+
+        // process
+        assertEquals("number of files before preProcess", 0, countFiles(new File(xp.getOutputImageDirectory())));
+        Processor.preProcessImages(xp, objectDAO, true);
+        assertEquals("number of files after preProcess", 6, countFiles(new File(xp.getOutputImageDirectory())));
+        Processor.processStructures(xp, objectDAO);
+        assertEquals("number of files after process", 12, countFiles(new File(xp.getOutputImageDirectory())));
+
+        StructureObject root = objectDAO.getRoot("field1", 0);
+        StructureObject mc = objectDAO.getObjects(root.getId(), 0).get(0);
+        objectDAO.deleteChildren(mc.getId(), 1);
+
+        assertEquals("number of files after delete children", 11, countFiles(new File(xp.getOutputImageDirectory())));
+        objectDAO.delete(mc);
+        assertEquals("number of files after delete object", 10, countFiles(new File(xp.getOutputImageDirectory())));
+        objectDAO.deleteObjectsFromField("field2");
+        assertEquals("number of files after delete field", 8, countFiles(new File(xp.getOutputImageDirectory())));
+        objectDAO.deleteAllObjects();
+        assertEquals("number of files after delete all", 6, countFiles(new File(xp.getOutputImageDirectory())));
     }
     
 
