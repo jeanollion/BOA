@@ -56,13 +56,16 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
             int tError = error.getTimePoint();
             if (prevSiblings!=null && prevSiblings.size()>2) logger.warn("More than 2 division sibling at time point {}, for object: {}", prevSiblings.get(0).getTimePoint(), prevSiblings.get(0).getPrevious());
             if (nextSiblings!=null && nextSiblings.size()>2) logger.warn("More than 2 division sibling at time point {}, for object: {}", nextSiblings.get(0).getTimePoint(), nextSiblings.get(0).getPrevious());
-            logger.debug("track correction: tDivPrev: {} tError: {}, tDivNext:{}, prevSiblings: {}, nextSiblings: {}", tDivPrev, tError, tDivNext, prevSiblings!=null?prevSiblings.size():0, nextSiblings!=null?nextSiblings.size():0);
+            logger.trace("track correction: tDivPrev: {} tError: {}, tDivNext:{}, prevSiblings: {}, nextSiblings: {}", tDivPrev, tError, tDivNext, prevSiblings!=null?prevSiblings.size():0, nextSiblings!=null?nextSiblings.size():0);
             if ((tDivNext-tError)>(tError-tDivPrev) || (correctAmbiguousCases && overSegmentationInAmbiguousCases)) { // overSegmentation: merge siblings between tDivPrev & tError
                 if (prevSiblings==null) {
                     logger.error("Oversegmentation detected but no siblings found");
                 } else {
                     logger.trace("Over-Segmentation detected between timepoint {} and {}, number of divided cells before: {}, undivided cells after error: {}", tDivPrev, tError, tError-tDivPrev, tDivNext-tError);
                     mergeTracks(prevSiblings.get(0), prevSiblings.get(1), tError, modifiedObjects);
+                    // remove error tag @tError
+                    error.setTrackFlag(TrackFlag.correctionMerge);
+                    if (modifiedObjects!=null) modifiedObjects.add(error);
                 }
                 return null;
             } else if ((tDivNext-tError)<(tError-tDivPrev)  || (correctAmbiguousCases && !overSegmentationInAmbiguousCases)) { // underSegmentation: split object between tError & tDivNext
@@ -78,9 +81,9 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
                     // update trackHead of the whole track after nextSiblings1
                     next.resetTrackHead();
                     if (modifiedObjects!=null) {
-                        while(next.getNext()!=null) {
+                        while(next.getNext()!=null && next.getNext().getPrevious()==next) {
                             next=next.getNext();
-                            modifiedObjects.add(next);
+                            if (next!=null) modifiedObjects.add(next);
                         }
                     }
                     

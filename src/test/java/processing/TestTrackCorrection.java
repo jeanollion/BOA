@@ -111,6 +111,13 @@ public class TestTrackCorrection {
         test(actual, expected);
     }
     
+    @Test
+    public void testTwoUnderSegmentation() {
+        int[] actual = new int[]{1, 2, 2, 2, 1, 2, 1, 2, 2};
+        int[] expected = new int[]{1, 2, 2, 2, 2, 2, 2, 2, 2};
+        test(actual, expected);
+    }
+    
     
     private void test(int[] actual, int[] expected) {
         logger.info("testing without DB...");
@@ -181,12 +188,12 @@ public class TestTrackCorrection {
             }
         }
         StructureObject parentTrackHead = root.get(0);
-        StructureObject trackHead1, trackHead2;
+        StructureObject trackHead0, trackHead1;
         if (expected[0]==1) {
-            trackHead1 = trackHead2 = root.get(0).getChildren(0).get(0);
+            trackHead0 = trackHead1 = root.get(0).getChildren(0).get(0);
         } else {
-            trackHead1 = root.get(0).getChildren(0).get(0);
-            trackHead2 = root.get(0).getChildren(0).get(1);
+            trackHead0 = root.get(0).getChildren(0).get(0);
+            trackHead1 = root.get(0).getChildren(0).get(1);
         }
         for (int i = 0; i<expected.length; ++i) {
             if (i>0) {
@@ -196,7 +203,8 @@ public class TestTrackCorrection {
                         StructureObject oNext = root.get(i).getChildren(0).get(track);
                         assertEquals("time: "+(i-1)+"&"+i+" track: "+track+", next", oNext, oPrev.getNext());
                         assertEquals("time: "+(i-1)+"&"+i+" track: "+track+", prev", oPrev, oNext.getPrevious());
-                        StructureObject trackHead = track==0? trackHead1: trackHead2;
+                        StructureObject trackHead = track==0? trackHead0: trackHead1;
+                        //logger.debug("{}: trackHead expected: {} actual: {}", track, trackHead, oNext.getTrackHead());
                         assertEquals("time: "+i+" track: "+track+", trackHead", trackHead, oNext.getTrackHead());
                         assertEquals("time: "+i+" track: "+track+", parent trackHead", parentTrackHead, oNext.getParent().getTrackHead());
                     }
@@ -204,13 +212,15 @@ public class TestTrackCorrection {
                     StructureObject oPrev = root.get(i-1).getChildren(0).get(0);
                     StructureObject oNext0 = root.get(i).getChildren(0).get(0);
                     StructureObject oNext1 = root.get(i).getChildren(0).get(1);
-                    trackHead2 = oNext1;
+                    trackHead1 = oNext1;
                     assertEquals("time: "+(i-1)+"&"+i+" track: 0 (div), next", oNext0, oPrev.getNext());
                     assertEquals("time: "+(i-1)+"&"+i+" track: 0 (div), prev", oPrev, oNext0.getPrevious());
                     
                     assertEquals("time: "+(i-1)+"&"+i+" track: 1 (div), prev", oPrev, oNext1.getPrevious());
-                    assertEquals("time: "+i+" track: 0, trackHead", trackHead1, oNext0.getTrackHead());
-                    assertEquals("time: "+i+" track: 1, trackHead", trackHead2, oNext1.getTrackHead());
+                    //logger.debug("0: trackHead expected: {} actual: {}", trackHead0, oNext0.getTrackHead());
+                    //logger.debug("1: trackHead expected: {} actual: {}", trackHead1, oNext1.getTrackHead());
+                    assertEquals("time: "+i+" track: 0, trackHead", trackHead0, oNext0.getTrackHead());
+                    assertEquals("time: "+i+" track: 1, trackHead", trackHead1, oNext1.getTrackHead());
                     assertEquals("time: "+i+" track: 0, parent trackHead", parentTrackHead, oNext0.getParent().getTrackHead());
                     assertEquals("time: "+i+" track: 0, parent trackHead", parentTrackHead, oNext1.getParent().getTrackHead());
                 }

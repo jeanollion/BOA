@@ -29,6 +29,7 @@ import de.caluga.morphium.async.AsyncOperationType;
 import de.caluga.morphium.query.Query;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -36,6 +37,7 @@ import java.util.Map.Entry;
 import javax.swing.SwingUtilities;
 import org.bson.types.ObjectId;
 import utils.MorphiumUtils;
+import utils.Utils;
 
 /**
  *
@@ -189,13 +191,16 @@ public class ObjectDAO extends DAO<StructureObject>{
     public void store(final List<StructureObject> objects, final boolean updateTrackAttributes) {
         if (objects==null) return;
         logger.debug("calling store metohd: nb of objects: {} updateTrack: {}", objects.size(), updateTrackAttributes);
-        
         boolean updateTrackHead = false;
         for (StructureObject o : objects) {
             o.updateObjectContainer();
             if (updateTrackAttributes) {
                 updateTrackHead = o.getTrackHeadId()==null && o.isTrackHead; // getTrackHeadId method should always be called
                 o.getParentTrackHeadId();
+            }
+            if (o.getPrevious()!=null && o.getPrevious().id==null) {
+                logger.error("previous unstored: object: idx: {} {}, flag: {} previous: {}, flag: {} ",objects.indexOf(o.getPrevious()), o, o.getTrackFlag(), o.getPrevious(), o.getPrevious().getTrackFlag());
+                store(o.getPrevious());
             }
             morphium.store(o);
             idCache.put(o.getId(), o);

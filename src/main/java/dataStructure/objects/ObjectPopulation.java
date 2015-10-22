@@ -136,6 +136,10 @@ public class ObjectPopulation {
         for (Object3D o : objects) o.addOffset(offsetX, offsetY, offsetZ);
     }
     
+    public void addOffset(BoundingBox bounds) {
+        for (Object3D o : objects) o.addOffset(bounds);
+    }
+    
     public void filter(ArrayList<Object3D> removedObjects, Filter filter) {
         //int objectNumber = objects.size();
         Iterator<Object3D> it = objects.iterator();

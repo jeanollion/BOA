@@ -232,12 +232,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public void resetTrackHead() {
         trackHeadId=null;
+        trackHead=null;
         getTrackHead();
-        StructureObject n = getNext();
-        while (n!=null) {
+        StructureObject n = this;
+        while (n.getNext()!=null && n.getNext().getPrevious()==n) { // only on main track
+            n=n.getNext();
             n.trackHeadId=null;
             n.trackHead=trackHead;
-            n=n.getNext();
         }
     }
     
@@ -354,10 +355,11 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             return null;
         }
         // first object returned by splitter is updated to current structureObject
+        pop.addOffset(this.getBounds());
         objectModified=true;
         this.object=pop.getObjects().get(0);
         if (pop.getObjects().size()>2) { // TODO merge other objects
-            logger.warn("split structureObject: {} yield in {} objects, but only two will be considered", this, pop.getObjects().size());
+            logger.warn("split structureObject: {} yielded in {} objects, but only two will be considered", this, pop.getObjects().size());
         } 
         
         StructureObject res = new StructureObject(fieldName, timePoint, structureIdx, getSiblings().size(), pop.getObjects().get(1), getParent(), getExperiment());

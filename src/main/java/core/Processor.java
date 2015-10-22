@@ -133,10 +133,10 @@ public class Processor {
                 if (structure.hasTracker()) { // track
                     logger.info("tracking structure: {}...", s);
                     ArrayList<StructureObject> parents= StructureObjectUtils.getAllParentObjects(root.get(0), xp.getPathToRoot(s));
+                    if (structure.hasTrackCorrector()) correctedObjects = new ArrayList<StructureObjectTrackCorrection>();
                     for (StructureObject o : parents) {
                         Processor.trackChildren(structure.getTracker(), o, s, dao, null);
                         if (structure.hasTrackCorrector()) {
-                            correctedObjects = new ArrayList<StructureObjectTrackCorrection>();
                             Processor.correctTrackChildren(structure.getTrackCorrector(), structure.getObjectSplitter(), o, s, dao, false, correctedObjects);
                         }
                     }
