@@ -152,6 +152,24 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         for (StructureObject o : children) o.setParent(this);
     }
     protected ArrayList<? extends StructureObject> getSiblings() {return this.getParent().getChildObjects(structureIdx, getExperiment().getObjectDAO(), false);}
+    
+    public void relabelChildren(int structureIdx, ArrayList<StructureObject> modifiedObjects) {
+        int newIdx = 0;
+        for (StructureObject o : getChildren(structureIdx)) {
+            if (o.idx!=newIdx+1) {
+                if (modifiedObjects!=null) modifiedObjects.add(o);
+                o.setIdx(newIdx+1);
+            }
+            ++newIdx;
+        }
+    }
+    protected void setIdx(int idx) {
+        if (objectContainer!=null) objectContainer.relabelObject(idx);
+        if (this.object!=null) object.setLabel(idx+1);
+        this.idx=idx;
+    }
+
+
     // track-related methods
     /**
      * 
@@ -362,7 +380,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             logger.warn("split structureObject: {} yielded in {} objects, but only two will be considered", this, pop.getObjects().size());
         } 
         
-        StructureObject res = new StructureObject(fieldName, timePoint, structureIdx, getSiblings().size(), pop.getObjects().get(1), getParent(), getExperiment());
+        StructureObject res = new StructureObject(fieldName, timePoint, structureIdx, idx+1, pop.getObjects().get(1), getParent(), getExperiment());
         /*ArrayList<StructureObject> res = new ArrayList<StructureObject>(pop.getObjects().size()-1);
         for (int i = 1; i<pop.getObjects().size(); ++i) {
             res.add(new StructureObject(fieldName, timePoint, structureIdx, currentIdx++, pop.getObjects().get(i), getParent(), getExperiment()));

@@ -47,4 +47,5 @@ public abstract class ObjectContainer {
     public abstract Object3D getObject();
     public abstract void updateObject();
     public abstract void deleteObject();
+    public abstract void relabelObject(int newIdx);
 }

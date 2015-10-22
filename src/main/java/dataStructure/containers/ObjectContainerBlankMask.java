@@ -48,4 +48,9 @@ public class ObjectContainerBlankMask extends ObjectContainer {
     }
     
     @Override public void deleteObject(){bounds=null;}
+
+    @Override
+    public void relabelObject(int newIdx) {
+        
+    }
 }

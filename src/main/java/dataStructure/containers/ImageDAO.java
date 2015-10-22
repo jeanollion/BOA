@@ -39,6 +39,7 @@ public interface ImageDAO {
     
     public ImageInteger openMask(StructureObject object);
     public void writeMask(ImageInteger mask, StructureObject object);
+    public void renameMask(StructureObject object, int newIdx);
     public void deleteMask(StructureObject object);
     public void deleteFieldMasks(Experiment xp, String fieldName);
     public void deleteChildren(StructureObject parent, final int structureIdx);

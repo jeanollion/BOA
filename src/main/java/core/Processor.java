@@ -31,6 +31,7 @@ import dataStructure.objects.StructureObjectTrackCorrection;
 import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import org.slf4j.Logger;
@@ -332,7 +333,31 @@ public class Processor {
             }
             parentTrack = parentTrack.getNext();
         }
-        // add split objects to parents
-        for (StructureObjectTrackCorrection o : modifiedObjects) if (StructureObject.TrackFlag.correctionSplitNew.equals(((StructureObject)o).getTrackFlag())) ((StructureObject)o).getParent().getChildren(structureIdx).add((StructureObject)o);
+        HashSet<StructureObject> parentsToRelabel=new HashSet<StructureObject>();
+        // add split objects to parents just after the other splitted object;
+        for (StructureObjectTrackCorrection o : modifiedObjects) {
+            if (StructureObject.TrackFlag.correctionSplitNew.equals(((StructureObject)o).getTrackFlag())) {
+                StructureObject object = (StructureObject)o;
+                ArrayList<StructureObject> siblings = object.getParent().getChildren(structureIdx);
+                int idx = 0;
+                for (idx = 0; idx<siblings.size(); ++idx) {
+                    if (siblings.get(idx).getIdx()==object.getIdx()-1) {
+                        object.getParent().getChildren(structureIdx).add(idx+1, object);
+                    }
+                }
+                if (idx==siblings.size()) {
+                    object.getParent().getChildren(structureIdx).add(object);
+                    logger.error("split object detected: {} but no other split object.. ", object);
+                    for (StructureObject sib : siblings) logger.error("split object detected: sibling: {}", sib);
+                }
+                
+                parentsToRelabel.add(object.getParent());
+            } else if (StructureObject.TrackFlag.correctionMerge.equals(((StructureObject)o).getTrackFlag())) parentsToRelabel.add((StructureObject)o.getParent());
+        }
+        
+        // relabel objects
+        ArrayList<StructureObject> relabeledObjects = new ArrayList<StructureObject>();
+        for (StructureObject parent : parentsToRelabel) parent.relabelChildren(structureIdx, relabeledObjects);
+        modifiedObjects.addAll(relabeledObjects);
     }
 }

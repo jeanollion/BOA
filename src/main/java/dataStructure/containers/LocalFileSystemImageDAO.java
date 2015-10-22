@@ -39,7 +39,7 @@ import utils.Utils;
  */
 public class LocalFileSystemImageDAO implements ImageDAO {
     String directory;
-    
+    static final int idxZeros = 5;
     public LocalFileSystemImageDAO(String localDirectory) {
         this.directory=localDirectory;
     }
@@ -144,7 +144,15 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         File dir = new File(path);
         if (dir.exists()) for (File f : dir.listFiles(filter)) Utils.deleteDirectory(f);
     }
-    
+    @Override 
+    public void renameMask(StructureObject object, int newIdx) {
+        String fileName = getProcessedImageFile(object);
+        File f = new File (fileName);
+        if (f.exists()) {
+            fileName = fileName.replace("_idx"+Utils.formatInteger(idxZeros, object.getIdx()), "_idx"+Utils.formatInteger(idxZeros, newIdx));
+            f.renameTo(new File(fileName));
+        }
+    }
     protected static String getPreProcessedImagePath(int channelImageIdx, int timePoint, String microscopyFieldName, String imageDirectory) {
         return imageDirectory+File.separator+microscopyFieldName+File.separator+"pre_processed"+File.separator+"t"+Utils.formatInteger(5, timePoint)+"_c"+Utils.formatInteger(2, channelImageIdx)+".tif";
     }
@@ -154,13 +162,13 @@ public class LocalFileSystemImageDAO implements ImageDAO {
     private static String getProcessedImageDirectoryRoot(StructureObject root) {
         return getFieldDirectory(root.getExperiment(), root.getFieldName())+File.separator+"t"+Utils.formatInteger(5, root.getTimePoint());
     }
-    private static String getImageFileName(StructureObject object) {
-        return "s"+Utils.formatInteger(2, object.getStructureIdx())+"_idx"+Utils.formatInteger(5, object.getIdx());
+    private static String getImageFileName(StructureObject object, int idx) {
+        return "s"+Utils.formatInteger(2, object.getStructureIdx())+"_idx"+Utils.formatInteger(idxZeros, idx);
     }
     protected static String getProcessedImageDirectory(StructureObject object) {
         if (object.isRoot()) return getProcessedImageDirectoryRoot(object);
-        if (object.getParent().isRoot()) return getProcessedImageDirectoryRoot(object.getParent())+File.separator+getImageFileName(object);
-        else return getProcessedImageDirectory((StructureObject)object.getParent())+File.separator+getImageFileName(object);
+        if (object.getParent().isRoot()) return getProcessedImageDirectoryRoot(object.getParent())+File.separator+getImageFileName(object, object.getIdx());
+        else return getProcessedImageDirectory((StructureObject)object.getParent())+File.separator+getImageFileName(object, object.getIdx());
     }
     protected static String getProcessedImageFile(StructureObject object) {
         return getProcessedImageDirectory(object)+".png";

@@ -88,4 +88,6 @@ public class ObjectContainerVoxels extends ObjectContainer {
     
     public Object3D getObject() {return new Object3D(getVoxels(), structureObject.getIdx()+1, bounds, structureObject.getScaleXY(), structureObject.getScaleZ());}
     @Override public void deleteObject(){bounds=null;x=null;y=null;z=null;}
+    @Override
+    public void relabelObject(int newIdx) {}
 }

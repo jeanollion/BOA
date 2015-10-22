@@ -55,4 +55,8 @@ public class ObjectContainerImage extends ObjectContainer {
         structureObject.getExperiment().getImageDAO().deleteMask(structureObject);
     }
     
+    @Override
+    public void relabelObject(int newIdx) {
+        structureObject.getExperiment().getImageDAO().renameMask(structureObject, newIdx);
+    }
 }
