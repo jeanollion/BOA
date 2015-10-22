@@ -284,57 +284,44 @@ public class ProcessingTest {
         ObjectDAO dao = new ObjectDAO(m, xpDAO);
 
         Processor.preProcessImages(xp, dao, true);
-        ArrayList<StructureObject> root = xp.getMicroscopyField(0).createRootObjects();
-        assertEquals("root object creation: number of objects", 3, root.size());
-        Processor.trackRoot(root);
-        ArrayList<StructureObject> segO = new ArrayList<StructureObject>();
-        segO.addAll(root);
-        for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
-            for (int t = 0; t<root.size(); ++t) Processor.process(s, root.get(t), dao, false, segO); // process
-            if (!root.isEmpty()) for (StructureObject o : StructureObjectUtils.getAllParentObjects(root.get(0), xp.getPathToRoot(s))) Processor.track(xp.getStructure(s).getTracker(), o, s, dao, null); // structure
-        }
-        dao.store(segO, true);
-        //MorphiumUtils.waitForWrites(m);
+        ArrayList<StructureObject> rootTrack = xp.getMicroscopyField(0).createRootObjects();
+        assertEquals("root object creation: number of objects", 3, rootTrack.size());
+        Processor.processAndTrackStructures(xp, dao);
 
-        StructureObject rootFetch = dao.getObject(root.get(0).getId());
-        assertEquals("root fetch @t=0", root.get(0).getId(), rootFetch.getId());
-        // retrieve
         dao.clearCache();
 
-        rootFetch = dao.getObject(root.get(0).getId());
-        assertTrue("root fetch @t=0 not null", rootFetch!=null);
-        assertEquals("root fetch @t=0 (2)", root.get(0).getId(), rootFetch.getId());
+        StructureObject rootFetch = dao.getRoot(xp.getMicroscopyField(0).getName(), 0);
 
-        root = dao.getTrack(dao.getObject(root.get(0).getId()));
-        for (int t = 0; t<root.size(); ++t) {
+        rootTrack = dao.getTrack(rootFetch);
+        for (int t = 0; t<rootTrack.size(); ++t) {
             //root[t]=dao.getObject(root.get(t).getId());
             for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
-                for (StructureObject parent : StructureObjectUtils.getAllParentObjects(root.get(t), xp.getPathToRoot(s))) parent.setChildObjects(dao.getObjects(parent.getId(), s), s);
+                for (StructureObject parent : StructureObjectUtils.getAllParentObjects(rootTrack.get(t), xp.getPathToRoot(s))) parent.setChildObjects(dao.getObjects(parent.getId(), s), s);
             }
         }
 
-        for (int t = 1; t<root.size(); ++t) {
-            Utils.logger.trace("root track: {}->{} / expected: {} / actual: {}", t-1, t, root.get(t), root.get(t-1).getNext());
-            assertEquals("root track:"+(t-1)+"->"+t, root.get(t), root.get(t-1).getNext());
-            assertEquals("root track:"+(t)+"->"+(t-1), root.get(t-1), root.get(t).getPrevious());
+        for (int t = 1; t<rootTrack.size(); ++t) {
+            Utils.logger.trace("root track: {}->{} / expected: {} / actual: {}", t-1, t, rootTrack.get(t), rootTrack.get(t-1).getNext());
+            assertEquals("root track:"+(t-1)+"->"+t, rootTrack.get(t), rootTrack.get(t-1).getNext());
+            assertEquals("root track:"+(t)+"->"+(t-1), rootTrack.get(t-1), rootTrack.get(t).getPrevious());
         }
-        StructureObject[][] microChannels = new StructureObject[root.size()][];
-        assertEquals("number of track heads for microchannels", 2, dao.getTrackHeads(root.get(0), 0).size());
-        for (int t = 0; t<root.size(); ++t) microChannels[t] = root.get(t).getChildObjects(0).toArray(new StructureObject[0]);
-        for (int t = 0; t<root.size(); ++t) assertEquals("number of microchannels @t:"+t, 2, microChannels[t].length);
+        StructureObject[][] microChannels = new StructureObject[rootTrack.size()][];
+        assertEquals("number of track heads for microchannels", 2, dao.getTrackHeads(rootTrack.get(0), 0).size());
+        for (int t = 0; t<rootTrack.size(); ++t) microChannels[t] = rootTrack.get(t).getChildObjects(0).toArray(new StructureObject[0]);
+        for (int t = 0; t<rootTrack.size(); ++t) assertEquals("number of microchannels @t:"+t, 2, microChannels[t].length);
         for (int i = 0; i<microChannels[0].length; ++i) {
-            for (int t = 1; t<root.size(); ++t) {
+            for (int t = 1; t<rootTrack.size(); ++t) {
                 assertEquals("mc:"+i+" trackHead:"+t, microChannels[0][i].getId(),  microChannels[t][i].getTrackHeadId());
-                assertEquals("mc:"+i+" parenttrackHead:"+t, root.get(0).getId(),  microChannels[t][i].getParentTrackHeadId());
+                assertEquals("mc:"+i+" parenttrackHead:"+t, rootTrack.get(0).getId(),  microChannels[t][i].getParentTrackHeadId());
             }
         }
         for (int i = 0; i<microChannels[0].length; ++i) {
             assertEquals("number of track heads for bacteries @ mc:"+i, 3, dao.getTrackHeads(microChannels[0][i], 1).size());
-            StructureObject[][] bactos = new StructureObject[root.size()][];
-            for (int t = 0; t<root.size(); ++t) bactos[t] = microChannels[t][i].getChildObjects(1).toArray(new StructureObject[0]);
-            for (int t = 0; t<root.size(); ++t) assertEquals("number of bacteries @t:"+t+" @mc:"+i, 3, bactos[t].length);
+            StructureObject[][] bactos = new StructureObject[rootTrack.size()][];
+            for (int t = 0; t<rootTrack.size(); ++t) bactos[t] = microChannels[t][i].getChildObjects(1).toArray(new StructureObject[0]);
+            for (int t = 0; t<rootTrack.size(); ++t) assertEquals("number of bacteries @t:"+t+" @mc:"+i, 3, bactos[t].length);
             for (int b = 0; b<bactos[0].length; ++b) {
-                for (int t = 1; t<root.size(); ++t) {
+                for (int t = 1; t<rootTrack.size(); ++t) {
                     assertEquals("mc:"+i+ " bact:"+b+" trackHead:"+t, bactos[0][i].getId(),  bactos[t][i].getTrackHeadId());
                     assertEquals("mc:"+i+ " bact:"+b+" parenttrackHead:"+t, microChannels[0][i].getId(),  bactos[t][i].getParentTrackHeadId());
                 }

@@ -549,7 +549,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void segmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_segmentButtonActionPerformed
         if (!checkConnection()) return;
-        Processor.processStructures(xpDAO.getExperiment(), objectDAO);
+        Processor.processAndTrackStructures(xpDAO.getExperiment(), objectDAO);
         reloadTree=true;
     }//GEN-LAST:event_segmentButtonActionPerformed
 

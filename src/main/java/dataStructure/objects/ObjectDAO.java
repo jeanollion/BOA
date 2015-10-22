@@ -169,6 +169,10 @@ public class ObjectDAO extends DAO<StructureObject>{
         o.deleteMask();
     }
     
+    public void delete(ArrayList<StructureObject> list) {
+        for (StructureObject o : list ) delete(o); // TODO see if morphium has optimized batched operation, or do on another thread;
+    }
+    
     public void store(StructureObject object) {
         object.updateObjectContainer();
         morphium.store(object);
@@ -186,15 +190,22 @@ public class ObjectDAO extends DAO<StructureObject>{
         if (objects==null) return;
         logger.debug("calling store metohd: nb of objects: {} updateTrack: {}", objects.size(), updateTrackAttributes);
         
-        for (StructureObject o : objects) o.updateObjectContainer();
+        boolean updateTrackHead = false;
         for (StructureObject o : objects) {
-            if ((!o.isTrackHead && o.getPrevious()!=null && o.getPrevious().getId()==null) || 
-                   (o.getParent()!=null && o.getParent().getId()==null)) logger.error("Object: {}, previous {}, previous id: {}, track Flag: {}", objects.indexOf(o), objects.indexOf(o.getPrevious()), o.getPrevious().getTrackFlag(), ((StructureObject)o).getTrackFlag());
+            o.updateObjectContainer();
+            if (updateTrackAttributes) {
+                updateTrackHead = o.getTrackHeadId()==null && o.isTrackHead; // getTrackHeadId method should always be called
+                o.getParentTrackHeadId();
+            }
             morphium.store(o);
-            //logger.debug("store in cache object: {} id: {}", o, o.getId());
             idCache.put(o.getId(), o);
+            if (updateTrackHead && o.getTrackHeadId()!=null) {
+                morphium.updateUsingFields(o, "track_head_id");
+                updateTrackHead=false;
+            }
         }
-        if (updateTrackAttributes) updateTrackAttributes(objects);
+        //TODO: only update for trackHeads
+        
         /*morphium.store(objects, new AsyncOperationCallback<StructureObject>() {
             public void onOperationSucceeded(AsyncOperationType type, Query<StructureObject> q, long duration, List<StructureObject> result, StructureObject entity, Object... param) {
                 logger.debug("store succeded: duration: {} nb objects: {}, type: {}, query: {}, entity: {}, param: {}", duration, objects.size(), type, q, entity, param);
@@ -228,20 +239,20 @@ public class ObjectDAO extends DAO<StructureObject>{
         MorphiumUtils.waitForWrites(morphium);
     }*/
     /**
-     * {@link ObjectDAO#updateTrackAttributes(java.util.List) }
+     * {@link ObjectDAO#updateTrackHeadFields(java.util.List) }
      * @param track 
      */
-    public void updateTrackAttributes(StructureObject... track) {
+    public void setTrackHeadIds(StructureObject... track) {
         if (track==null) return;
         else if (track.length==0) return;
-        else updateTrackAttributes(Arrays.asList(track));
+        else updateTrackHeadFields(Arrays.asList(track));
     }
     
     /**
      * Set trackHeadId & parentTrackHeadId attributes; next and previous are not concerned by this method
      * @param track list of objects. All objects of a given track should be present, sorted by incresing timepoint. objects from several tracks can be present;
      */
-    public void setTrackAttributes(final List<? extends StructureObject> track) {
+    public void setTrackHeadIds(final List<? extends StructureObject> track) {
         if (track==null) return;
         //MorphiumUtils.waitForWrites(morphium);
         for (StructureObject o : track) { 
@@ -260,10 +271,10 @@ public class ObjectDAO extends DAO<StructureObject>{
      * Set and store trackHeadId & parentTrackHeadId attributes; next and previous are not concerned by this method
      * @param track list of objects. All objects of a given track should be present, sorted by incresing timepoint. objects from several tracks can be present;
      */
-    public void updateTrackAttributes(final List<? extends StructureObject> track) {
+    public void updateTrackHeadFields(final List<? extends StructureObject> track) {
         if (track==null) return;
         //MorphiumUtils.waitForWrites(morphium);
-        setTrackAttributes(track);
+        ObjectDAO.this.setTrackHeadIds(track);
         for (StructureObject o : track) {
             if (o.getParentTrackHeadId()!=null && o.getTrackHeadId()!=null) morphium.updateUsingFields(o, "parent_track_head_id", "track_head_id");
             else if (o.getParentTrackHeadId()!=null) morphium.updateUsingFields(o, "parent_track_head_id");
@@ -310,13 +321,25 @@ public class ObjectDAO extends DAO<StructureObject>{
         return this.checkAgainstCache(list);
     }
     
+    public ArrayList<ArrayList<StructureObject>> getAllTracks(StructureObject parentTrack, int structureIdx) {
+        ArrayList<StructureObject> trackHeads = getTrackHeads(parentTrack, structureIdx);
+        ArrayList<ArrayList<StructureObject>> res = new ArrayList<ArrayList<StructureObject>>(trackHeads.size());
+        for (StructureObject head : trackHeads) res.add(getTrack(head));
+        return res;
+    }
+    
     public ArrayList<StructureObject> getTrack(StructureObject track) {
         List<StructureObject> list =  super.getQuery().f("track_head_id").eq(track.getTrackHeadId()).sort("time_point").asList();
         if (list.isEmpty()) return null;
         ArrayList<StructureObject> res  = checkAgainstCache(list);
+        setTrackLinks(res);
+        return res;
+    }
+    
+    protected static void setTrackLinks(ArrayList<StructureObject> track) {
+        StructureObject trackHead = track.get(0).getTrackHead();
         StructureObject prev = null;
-        StructureObject trackHead = res.get(0).getTrackHead();
-        for (StructureObject o : res) {
+        for (StructureObject o : track) {
             o.trackHead=trackHead;
             if (prev!=null) {
                 o.previous=prev;
@@ -324,7 +347,6 @@ public class ObjectDAO extends DAO<StructureObject>{
             }
             prev = o;
         }
-        return res;
     }
     
     public ArrayList<StructureObject> getTrackErrors(StructureObject parentTrack, int structureIdx) {
@@ -354,6 +376,8 @@ public class ObjectDAO extends DAO<StructureObject>{
     }
     
     public ArrayList<StructureObject> getRoots(String fieldName) {
-        return this.checkAgainstCache(getRootQuery(fieldName, -1).asList());
+        ArrayList<StructureObject> res = this.checkAgainstCache(getRootQuery(fieldName, -1).asList());
+        setTrackLinks(res);
+        return res;
     }
 }

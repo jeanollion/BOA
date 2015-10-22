@@ -167,9 +167,11 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             this.previous.next=this;
             this.isTrackHead=false;
             this.trackHead= this.previous.getTrackHead();
+            this.trackHeadId=null;
         } else {
             this.isTrackHead=true;
             this.trackHead=this;
+            this.trackHeadId=null;
         }
     }
     public void setTrackFlag(TrackFlag flag) {this.flag=flag;}
@@ -228,6 +230,17 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public boolean isTrackHead() {return this.isTrackHead;}
     
+    public void resetTrackHead() {
+        trackHeadId=null;
+        getTrackHead();
+        StructureObject n = getNext();
+        while (n!=null) {
+            n.trackHeadId=null;
+            n.trackHead=trackHead;
+            n=n.getNext();
+        }
+    }
+    
     // track correction-related methods 
     /**
      * 
@@ -271,7 +284,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     private ArrayList<StructureObjectTrackCorrection> getDivisionSiblings() {
         ArrayList<StructureObjectTrackCorrection> res=null;
         ArrayList<? extends StructureObject> siblings = getSiblings();
-        logger.debug("get div siblings: timePoint: {}, number of siblings: {}", this.getTimePoint(), siblings.size());
+        //logger.trace("get div siblings: timePoint: {}, number of siblings: {}", this.getTimePoint(), siblings.size());
         if (this.getPrevious()!=null) {
             for (StructureObject o : siblings) {
                 if (o!=this) {
@@ -281,7 +294,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                     }
                 } 
             }
-            logger.debug("get div siblings: previous non null, divSiblings: {}", res==null?"null":res.size());
+            //logger.trace("get div siblings: previous non null, divSiblings: {}", res==null?"null":res.size());
         } else { // get thespatially closest sibling
             double distance = Double.MAX_VALUE;
             StructureObject min = null;
@@ -298,7 +311,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 res = new ArrayList<StructureObjectTrackCorrection>(2);
                 res.add(min);
             }
-            logger.debug("get div siblings: previous null, get spatially closest, divSiblings: {}", res==null?"null":res.size());
+            //logger.trace("get div siblings: previous null, get spatially closest, divSiblings: {}", res==null?"null":res.size());
         }
         
         return res;
@@ -374,7 +387,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public BoundingBox getBounds() {return getObject().getBounds();}
     protected void createObjectContainer() {this.objectContainer=object.getObjectContainer(this);}
     public void updateObjectContainer(){
-        logger.debug("updating object for: {} was modified? {} flag: {}", this, objectModified, flag);
+        //logger.trace("updating object for: {} was modified? {} flag: {}", this, objectModified, flag);
         if (objectContainer==null) {
             createObjectContainer();
             objectContainer.updateObject();

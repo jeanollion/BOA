@@ -38,7 +38,7 @@ public class SimpleEntityTest {
     static int massInsertCount = 0;
     static boolean objectIdNull = false;
     static boolean listInsertFail=false;
-    //@Test
+    @Test
     public void updateRefTest() {
         Morphium m = MorphiumUtils.createMorphium("testUpdateRef");
         m.clearCollection(SimpleEntity.class);
@@ -47,13 +47,15 @@ public class SimpleEntityTest {
         m.store(e1);
         m.store(e2);
         e1.setRef(e2);
+        logger.debug("ref: {}", e1.getRef().value);
         m.updateUsingFields(e1, "ref");
         e1.ref=null;
         SimpleEntity e1Fetched = m.createQueryFor(SimpleEntity.class).getById(e1.id);
-        assertEquals("updated ref: ", e2.id, e1Fetched.getRef());
+        assertEquals("fetch e1: ", e1.id, e1Fetched.getRef().id);
+        assertEquals("updated ref: ", e2.id, e1Fetched.getRef().id);
     }
     
-    @Test
+    //@Test
     public void massInsertTest() {
         Morphium m = MorphiumUtils.createMorphium("testUpdateRef");
         m.clearCollection(SimpleEntity.class);

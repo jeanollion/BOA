@@ -17,7 +17,9 @@
  */
 package processing;
 
+import static TestUtils.Utils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.objects.DBConfiguration;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
@@ -29,7 +31,6 @@ import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectTrackCorrection;
 import de.caluga.morphium.Morphium;
 import image.Image;
-import static image.Image.logger;
 import image.ImageByte;
 import image.ImageFormat;
 import image.ImageWriter;
@@ -39,6 +40,7 @@ import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static org.junit.Assert.assertEquals;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -57,106 +59,227 @@ import utils.MorphiumUtils;
  * @author jollion
  */
 public class TestTrackCorrection {
+    DBConfiguration db;
+    
     @Rule
     public TemporaryFolder testFolder = new TemporaryFolder();
 
-    
-    @Test
-    public void testOverSegmentation() {
-        Morphium m = MorphiumUtils.createMorphium("testTrackCorrection");
-        m.clearCollection(Experiment.class);
-        m.clearCollection(StructureObject.class);
-        ExperimentDAO xpDAO = new ExperimentDAO(m);
-        ObjectDAO dao = new ObjectDAO(m, xpDAO);
-        ArrayList<StructureObject> root = generateData(xpDAO, dao, 1, 2, 2, 1, 1, 1, 2);
-        int[] expected = new int[]{1, 1, 1, 1, 1, 1, 2};
-        ArrayList<StructureObjectTrackCorrection> correctedObjects = new ArrayList<StructureObjectTrackCorrection>();
-        xpDAO.getExperiment().getStructure(0).setObjectSplitter(new DummySplitter());
-        xpDAO.getExperiment().getStructure(0).setTrackCorrector(new MicroChannelBacteriaTrackCorrector());
-        Processor.correctTrackStructure(0, xpDAO.getExperiment(), xpDAO.getExperiment().getMicroscopyField(0), dao, true);
-        //Processor.correctTrackStructure(new MicroChannelBacteriaTrackCorrector(), new DummySplitter(), root.get(0), 0, dao, true, correctedObjects);
-        for (int i = 0; i<expected.length; ++i) assertEquals("OverSegmentation correction @t="+i, expected[i], root.get(i).getChildren(0).size());
-        
-        // test track structure
-        assertEquals("number of tracks", 2, dao.getTrackHeads(root.get(0), 0).size());
+    @Before
+    public void setUp() {
+        PluginFactory.findPlugins("plugins.plugins");
+        PluginFactory.findPlugins("testPlugins.dummyPlugins");
     }
     
-    /*@Test
+    public void setUpDB() {
+        if (db==null) db = new DBConfiguration(MorphiumUtils.createMorphium("testTrackCorrection"));
+        db.clearObjectsInDB();
+        db.generateDAOs();
+    }
+
+    @Test
+    public void testOverSegmentation() {
+        int[] actual = new int[]{1, 2, 2, 1, 1, 1, 2};
+        int[] expected = new int[]{1, 1, 1, 1, 1, 1, 2};
+        test(actual, expected);
+    }
+    
+    @Test
     public void testUnderSegmentation() {
-        ArrayList<StructureObject> root = generateData(1, 2, 2, 1, 2, 2);
+        int[] actual = new int[]{1, 2, 2, 1, 2, 2};
         int[] expected = new int[]{1, 2, 2, 2, 2, 2};
-        ArrayList<StructureObjectTrackCorrection> correctedObjects = new ArrayList<StructureObjectTrackCorrection>();
-        Processor.correctTrack(new MicroChannelBacteriaTrackCorrector(), new DummySplitter(), root.get(0), 0, null, false, correctedObjects);
-        for (int i = 0; i<expected.length; ++i) assertEquals("UnderSegmentation correction @t="+i, expected[i], root.get(i).getChildren(0).size());
+        test(actual, expected);
     }
     
     @Test
     public void testOverSegmentationNoDivPrev() {
-        ArrayList<StructureObject> root = generateData(2, 2, 1, 1, 1);
+        int[] actual = new int[]{2, 2, 1, 1, 1};
         int[] expected = new int[]{1, 1, 1, 1, 1};
-        ArrayList<StructureObjectTrackCorrection> correctedObjects = new ArrayList<StructureObjectTrackCorrection>();
-        Processor.correctTrack(new MicroChannelBacteriaTrackCorrector(), new DummySplitter(), root.get(0), 0, null, false, correctedObjects);
-        for (int i = 0; i<expected.length; ++i) assertEquals("OverSegmentation No Div Prev Correction @t="+i, expected[i], root.get(i).getChildren(0).size());
+        test(actual, expected);
     }
     
     @Test
     public void testUnderSegmentationNoDivNext() {
-        ArrayList<StructureObject> root = generateData(1, 1, 1, 2, 2, 1);
+        int[] actual = new int[]{1, 1, 1, 2, 2, 1};
         int[] expected = new int[]{1, 1, 1, 2, 2, 2};
-        ArrayList<StructureObjectTrackCorrection> correctedObjects = new ArrayList<StructureObjectTrackCorrection>();
-        Processor.correctTrack(new MicroChannelBacteriaTrackCorrector(), new DummySplitter(), root.get(0), 0, null, false, correctedObjects);
-        for (int i = 0; i<expected.length; ++i) assertEquals("UnderSegmentation No Div Next Correction @t="+i, expected[i], root.get(i).getChildren(0).size());
+        test(actual, expected);
     }
     
     @Test
     public void testUnderSegmentationAmbiguous() {
-        ArrayList<StructureObject> root = generateData(1, 2, 2, 1, 1, 2);
+        int[] actual = new int[]{1, 2, 2, 1, 1, 2};
         int[] expected = new int[]{1, 1, 1, 1, 1, 2};
-        ArrayList<StructureObjectTrackCorrection> correctedObjects = new ArrayList<StructureObjectTrackCorrection>();
-        Processor.correctTrack(new MicroChannelBacteriaTrackCorrector().setDefaultCorrection(true), new DummySplitter(), root.get(0), 0, null, false, correctedObjects);
-        for (int i = 0; i<expected.length; ++i) assertEquals("UnderSegmentation No Div Next Correction @t="+i, expected[i], root.get(i).getChildren(0).size());
+        test(actual, expected);
     }
-    */
     
     
-    private ArrayList<StructureObject> generateData(ExperimentDAO xpDAO, ObjectDAO dao, int... numberOfObjectsT) {
+    private void test(int[] actual, int[] expected) {
+        logger.info("testing without DB...");
+        testWithoutDB(actual, expected);
+        logger.info("testing with DB, whole process...");
+        testWholeProcessDB(actual, expected);
+        logger.info("testing with DB, process then track & correct...");
+        testProcessThenTrackAndCorrectDB(actual, expected);
+        logger.info("testing with DB, process & track, then correct...");
+        testProcessAndTrackThenCorrectDB(actual, expected);
+    }
+    
+    private void testWithoutDB(int[] actual, int[] expected) {
+        db=null;
+        ArrayList<StructureObject> root = generateData(true, true, actual);
+        testTrackCorrection(root, actual, expected);
+    }
+    
+    // whole process at once
+    private void testWholeProcessDB(int[] actual, int[] expected) {
+        setUpDB();
+        generateData(true, true, actual);
+        db.getDao().clearCache();
+        testTrackCorrection(db.getDao().getRoots(db.getExperiment().getMicroscopyField(0).getName()), actual, expected);
+    }
+    
+    // first process second track and correct
+    private void testProcessThenTrackAndCorrectDB(int[] actual, int[] expected) {
+        setUpDB();
+        generateData(false, false, actual);
+        addTracker(db.getExperiment());
+        addTrackCorrector(db.getExperiment());
+        Processor.trackStructure(0, db.getXpDAO().getExperiment(), db.getExperiment().getMicroscopyField(0), db.getDao(), true);
+        db.getDao().clearCache();
+        testTrackCorrection(db.getDao().getRoots(db.getXpDAO().getExperiment().getMicroscopyField(0).getName()), actual, expected);
+    }
+    
+    // first process and track second correct
+    private void testProcessAndTrackThenCorrectDB(int[] actual, int[] expected) {
+        setUpDB();
+        generateData(true, false, actual);
+        addTrackCorrector(db.getXpDAO().getExperiment());
+        Processor.correctTrackStructure(0, db.getExperiment(), db.getXpDAO().getExperiment().getMicroscopyField(0), db.getDao(), true);
+        db.getDao().clearCache();
+        testTrackCorrection(db.getDao().getRoots(db.getXpDAO().getExperiment().getMicroscopyField(0).getName()), actual, expected);
+    }
+    
+    private void testTrackCorrection(ArrayList<StructureObject> root, int[] actual, int[] expected) {
+        if (db!=null) { // retrieve objects as track to set trackLinks
+            db.getDao().getAllTracks(root.get(0), 0);
+            for (StructureObject parent : root) parent.getChildObjects(0, db.getDao(), false);
+        } 
+        for (int i = 0; i<expected.length; ++i) {
+            assertEquals("correction @t="+i, expected[i], root.get(i).getChildren(0).size()); // object number
+            if (expected[i]==1) {
+                assertEquals ("object sizeY (single) @t="+i, objectSize+1, root.get(i).getChildren(0).get(0).getObject().getBounds().getSizeY());
+                if (actual[i]==2) assertEquals ("object size (merged) @t="+i, objectSize, root.get(i).getChildren(0).get(0).getObject().getVoxels().size());
+            }
+            else if (expected[i]==2 ) {
+                if (actual[i]==2) {
+                    assertEquals ("object sizeY (double, 1) @t="+i, objectSize/2, root.get(i).getChildren(0).get(0).getObject().getBounds().getSizeY());
+                    assertEquals ("object sizeY (double, 2) @t="+i, objectSize/2, root.get(i).getChildren(0).get(1).getObject().getBounds().getSizeY());
+                } else { // split
+                    assertEquals ("object sizeY (split, 1) @t="+i, objectSize/2, root.get(i).getChildren(0).get(0).getObject().getBounds().getSizeY());
+                    assertEquals ("object sizeY (split, 2) @t="+i, objectSize/2+1, root.get(i).getChildren(0).get(1).getObject().getBounds().getSizeY());
+                }
+                
+            }
+        }
+        StructureObject parentTrackHead = root.get(0);
+        StructureObject trackHead1, trackHead2;
+        if (expected[0]==1) {
+            trackHead1 = trackHead2 = root.get(0).getChildren(0).get(0);
+        } else {
+            trackHead1 = root.get(0).getChildren(0).get(0);
+            trackHead2 = root.get(0).getChildren(0).get(1);
+        }
+        for (int i = 0; i<expected.length; ++i) {
+            if (i>0) {
+                if (expected[i]==expected[i-1]) { // pas de division
+                    for (int track = 0; track<expected[i]; ++track) {
+                        StructureObject oPrev = root.get(i-1).getChildren(0).get(track);
+                        StructureObject oNext = root.get(i).getChildren(0).get(track);
+                        assertEquals("time: "+(i-1)+"&"+i+" track: "+track+", next", oNext, oPrev.getNext());
+                        assertEquals("time: "+(i-1)+"&"+i+" track: "+track+", prev", oPrev, oNext.getPrevious());
+                        StructureObject trackHead = track==0? trackHead1: trackHead2;
+                        assertEquals("time: "+i+" track: "+track+", trackHead", trackHead, oNext.getTrackHead());
+                        assertEquals("time: "+i+" track: "+track+", parent trackHead", parentTrackHead, oNext.getParent().getTrackHead());
+                    }
+                } else { // division
+                    StructureObject oPrev = root.get(i-1).getChildren(0).get(0);
+                    StructureObject oNext0 = root.get(i).getChildren(0).get(0);
+                    StructureObject oNext1 = root.get(i).getChildren(0).get(1);
+                    trackHead2 = oNext1;
+                    assertEquals("time: "+(i-1)+"&"+i+" track: 0 (div), next", oNext0, oPrev.getNext());
+                    assertEquals("time: "+(i-1)+"&"+i+" track: 0 (div), prev", oPrev, oNext0.getPrevious());
+                    
+                    assertEquals("time: "+(i-1)+"&"+i+" track: 1 (div), prev", oPrev, oNext1.getPrevious());
+                    assertEquals("time: "+i+" track: 0, trackHead", trackHead1, oNext0.getTrackHead());
+                    assertEquals("time: "+i+" track: 1, trackHead", trackHead2, oNext1.getTrackHead());
+                    assertEquals("time: "+i+" track: 0, parent trackHead", parentTrackHead, oNext0.getParent().getTrackHead());
+                    assertEquals("time: "+i+" track: 0, parent trackHead", parentTrackHead, oNext1.getParent().getTrackHead());
+                }
+            }
+            // test des flags
+            if (expected[i]>actual[i]) { // split
+                StructureObject o1 = root.get(i).getChildren(0).get(0);
+                assertEquals("time: "+i+" track: 0 flag split", StructureObject.TrackFlag.correctionSplit, o1.getTrackFlag());
+                StructureObject o2 = root.get(i).getChildren(0).get(1);
+                assertEquals("time: "+i+" track: 1 flag split new", StructureObject.TrackFlag.correctionSplitNew, o2.getTrackFlag());
+            } else if (expected[i]<actual[i]) { // merge
+                StructureObject o1 = root.get(i).getChildren(0).get(0);
+                assertEquals("time: "+i+" track: 0 flag split", StructureObject.TrackFlag.correctionMerge, o1.getTrackFlag());
+            }
+        }
+    
+    }
+    
+    private ArrayList<StructureObject> generateData(boolean track, boolean correctTrack, int... numberOfObjectsT) {
         try {
             Image[][] testImage = generateImageTC(numberOfObjectsT);
             File input = testFolder.newFolder();
             ImageWriter.writeToFile(input.getAbsolutePath(), "field1", ImageFormat.OMETIF, testImage);
-            Experiment xp = generateXP(testFolder.newFolder().getAbsolutePath());
+            Experiment xp = generateXP(testFolder.newFolder().getAbsolutePath(), track, correctTrack);
             Processor.importFiles(xp, input.getAbsolutePath());
             Processor.preProcessImages(xp, null, true);
             MicroscopyField f= xp.getMicroscopyField(0);
-            if (xpDAO!=null) xpDAO.store(xp);
-            return Processor.processAndTrackStructures(xp, f, dao, true, 0);
+            if (db!=null) db.getXpDAO().store(xp);
+            return Processor.processAndTrackStructures(xp, f, db!=null?db.getDao():null, true, 0);
+            
         } catch (IOException ex) {
             logger.error("Test Track Correction Error: ", ex);
             return null;
         }
     }
     
-    private static Experiment generateXP(String outputDir) throws IOException {
-        PluginFactory.findPlugins("plugins.plugins");
-        PluginFactory.findPlugins("testPlugins.dummyPlugins");
+    private static Experiment generateXP(String outputDir, boolean tracker, boolean trackCorrection) throws IOException {
+        
         Experiment xp = new Experiment();
         xp.getChannelImages().insert(new ChannelImage("channel"));
         xp.setOutputImageDirectory(outputDir);
         Structure s = new Structure("Structure", -1, 0);
         xp.getStructures().insert(s);
         s.getProcessingChain().setSegmenter(new SimpleThresholder(new ConstantValue(1)));
-        s.setTracker(new ClosedMicrochannelTracker());
+        if (tracker) {
+            addTracker(xp);
+            if (trackCorrection) addTrackCorrector(xp);
+        }
         return xp;
+    }
+    
+    private static void addTracker(Experiment xp) {
+        xp.getStructure(0).setTracker(new ClosedMicrochannelTracker());
+    }
+    
+    private static void addTrackCorrector(Experiment xp) {
+        xp.getStructure(0).setObjectSplitter(new DummySplitter());
+        xp.getStructure(0).setTrackCorrector(new MicroChannelBacteriaTrackCorrector());
     }
     
     private static Image[][] generateImageTC(int... numberOfObjectsT) {
         Image[][] res = new Image[numberOfObjectsT.length][1];
         for (int t = 0; t<numberOfObjectsT.length; ++t) {
-            res[t][0] = new ImageByte("", 3, 12, 1);
+            res[t][0] = new ImageByte("", 3, objectSize+2, 1);
             if (numberOfObjectsT[t]==0) numberOfObjectsT[t]=1;
             int size = res[t][0].getSizeY()/numberOfObjectsT[t];
             for (int y = 1; y<res[t][0].getSizeY(); ++y) if (y%size!=0) res[t][0].setPixel(1, y, 0, 1);
         }
         return res;
     } 
+    private final static int objectSize = 10;
 }

@@ -61,19 +61,29 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
                 if (prevSiblings==null) {
                     logger.error("Oversegmentation detected but no siblings found");
                 } else {
-                    logger.debug("Over-Segmentation detected between timepoint {} and {}, number of divided cells before: {}, undivided cells after error: {}", tDivPrev, tError, tError-tDivPrev, tDivNext-tError);
+                    logger.trace("Over-Segmentation detected between timepoint {} and {}, number of divided cells before: {}, undivided cells after error: {}", tDivPrev, tError, tError-tDivPrev, tDivNext-tError);
                     mergeTracks(prevSiblings.get(0), prevSiblings.get(1), tError, modifiedObjects);
                 }
                 return null;
             } else if ((tDivNext-tError)<(tError-tDivPrev)  || (correctAmbiguousCases && !overSegmentationInAmbiguousCases)) { // underSegmentation: split object between tError & tDivNext
-                logger.debug("Under-Segmentation detected between timepoint {} and {}, number of divided cells before: {}, undivided cells after error: {}", tError, tDivNext, tError-tDivPrev, tDivNext-tError);
+                logger.trace("Under-Segmentation detected between timepoint {} and {}, number of divided cells before: {}, undivided cells after error: {}", tError, tDivNext, tError-tDivPrev, tDivNext-tError);
                 // get previous object for the future splitted object:
                 StructureObjectTrackCorrection splitPrevious = prevSiblings.get(1);
                 while(splitPrevious.getTimePoint()<tError-1) splitPrevious=splitPrevious.getNext();
                 StructureObjectTrackCorrection lastSplitObject= splitTrack(error, splitPrevious, splitter, tDivNext, modifiedObjects);
                 if (nextSiblings!=null) { // assign as previous of nextDiv
-                    nextSiblings.get(1).setPreviousInTrack(lastSplitObject, false, false);
-                    if (modifiedObjects!=null) modifiedObjects.add(nextSiblings.get(1));
+                    StructureObject next = (StructureObject)nextSiblings.get(1);
+                    next.setPreviousInTrack(lastSplitObject, false, false);
+                    if (modifiedObjects!=null) modifiedObjects.add(next);
+                    // update trackHead of the whole track after nextSiblings1
+                    next.resetTrackHead();
+                    if (modifiedObjects!=null) {
+                        while(next.getNext()!=null) {
+                            next=next.getNext();
+                            modifiedObjects.add(next);
+                        }
+                    }
+                    
                 }
                 return null;
             } else return error;

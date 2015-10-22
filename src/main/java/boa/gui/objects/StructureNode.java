@@ -207,7 +207,7 @@ public class StructureNode implements TreeNode, UIContainer {
                                 parent.loadAllChildObjects(path, 0);
                             }
                             
-                            Processor.process(getStructureIdx(ae.getActionCommand(), openRaw), getParentObject(), getGenerator().objectDAO, true, null);
+                            Processor.processChildren(getStructureIdx(ae.getActionCommand(), openRaw), getParentObject(), getGenerator().objectDAO, true, null);
                             
                             //TODO: process child structures...
                             

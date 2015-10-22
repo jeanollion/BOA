@@ -271,7 +271,7 @@ public class TestProcessFluo {
         ObjectDAO dao = new ObjectDAO(m, xpDAO);
         MicroscopyField f = xp.getMicroscopyField(field);
         ArrayList<StructureObject> segO = new ArrayList<StructureObject> ();
-        Processor.processStructure(1, xp, f, startTime, stopTime, dao, segO);
+        Processor.processStructure(1, xp, f, dao, segO, startTime, stopTime);
         Processor.trackStructure(1, xp, f, dao, false);
         dao.store(segO, true);
         
@@ -287,7 +287,7 @@ public class TestProcessFluo {
     
     public int getTrackErrorNumber(MicroscopyField f, ObjectDAO dao) {
         ArrayList<StructureObject> segO = new ArrayList<StructureObject> ();
-        Processor.processStructure(1, xp, f,  -1, -1,dao, segO);
+        Processor.processStructure(1, xp, f, dao, segO);
         Processor.trackStructure(1, xp, f, dao, false);
         dao.store(segO, true);
         return dao.getTrackErrors(f.getName(), 1).size();

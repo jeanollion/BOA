@@ -48,10 +48,10 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName, directory);
         File f = new File(path);
         if (f.exists()) {
-            logger.debug("Opening pre-processed image:  channel: {} timePoint: {} fieldName: {}", channelImageIdx, timePoint, microscopyFieldName);
+            logger.trace("Opening pre-processed image:  channel: {} timePoint: {} fieldName: {}", channelImageIdx, timePoint, microscopyFieldName);
             return ImageReader.openImage(path);
         } else {
-            logger.debug("pre-processed image: {} not found", path);
+            logger.trace("pre-processed image: {} not found", path);
             return null;
         }
     }
@@ -60,7 +60,7 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName, directory);
         File f = new File(path);
         if (f.exists()) {
-            logger.debug("Opening pre-processed image:  channel: {} timePoint: {} fieldName: {} bounds: {}", channelImageIdx, timePoint, microscopyFieldName, bounds);
+            logger.trace("Opening pre-processed image:  channel: {} timePoint: {} fieldName: {} bounds: {}", channelImageIdx, timePoint, microscopyFieldName, bounds);
             return ImageReader.openImage(path, new ImageIOCoordinates(bounds));
         } else {
             logger.error("pre-processed image: {} not found", path);
@@ -94,7 +94,7 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName, directory);
         File f = new File(path);
         f.mkdirs();
-        logger.debug("writing preprocessed image to path: {}", path);
+        logger.trace("writing preprocessed image to path: {}", path);
         //if (f.exists()) f.delete();
         ImageWriter.writeToFile(image, path, ImageFormat.TIF);
     }
@@ -103,7 +103,7 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         String path = getProcessedImageFile(object);
         File f = new File(path);
         if (f.exists()) {
-            logger.debug("opening mask of object: {}", object);
+            logger.trace("opening mask of object: {}", object);
             return (ImageInteger)ImageReader.openImage(path);
         } else {
             logger.error("mask {} not found", path);

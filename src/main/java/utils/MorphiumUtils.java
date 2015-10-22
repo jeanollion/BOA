@@ -39,8 +39,8 @@ import org.slf4j.LoggerFactory;
  */
 public class MorphiumUtils {
     public final static Logger logger = LoggerFactory.getLogger(MorphiumUtils.class);
-    public static void addDereferencingListeners(Morphium m, final ObjectDAO objectDao_, final ExperimentDAO xpDao_) {
-        m.addDereferencingListener(new DereferencingListener<Object, StructureObject, ObjectId>() {
+    public static DereferencingListener addDereferencingListeners(Morphium m, final ObjectDAO objectDao_, final ExperimentDAO xpDao_) {
+        DereferencingListener res =new DereferencingListener<Object, StructureObject, ObjectId>() {
             ObjectDAO objectDAO=objectDao_;
             ExperimentDAO xpDAO = xpDao_;
             AnnotationAndReflectionHelper r = new AnnotationAndReflectionHelper(true);
@@ -88,30 +88,9 @@ public class MorphiumUtils {
                 return referencedObject;
                 //return null;
             }
-        });
-        /*m.addDereferencingListener(new DereferencingListener<Experiment, StructureObject, ObjectId>() {
-            AnnotationAndReflectionHelper r = new AnnotationAndReflectionHelper(true);
-
-            @Override
-            public void wouldDereference(StructureObject entityIncludingReference, String fieldInEntity, ObjectId id, Class typeReferenced, boolean lazy) throws MorphiumAccessVetoException {
-            }
-
-            @Override
-            public Experiment didDereference(StructureObject entitiyIncludingReference, String fieldInEntity, Experiment referencedObject, boolean lazy) {
-                //if (referencedObject!=null) System.out.println("did dereference: "+entitiyIncludingReference.value+ " refrence: "+referencedObject.value+ " lazy:"+lazy+ " field:"+fieldInEntity);
-                if (lazy) {
-                    try {
-                        Field f = r.getField(entitiyIncludingReference.getClass(), fieldInEntity);
-                        f.set(entitiyIncludingReference, referencedObject);
-                    } catch (IllegalArgumentException ex) {
-                        Logger.getLogger(MorphuimUtils.class.getName()).log(Level.SEVERE, null, ex);
-                    } catch (IllegalAccessException ex) {
-                        Logger.getLogger(MorphuimUtils.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-                return referencedObject;
-            }
-        });*/
+        };
+        m.addDereferencingListener(res);
+        return res;
     }
 
     public static void waitForWrites(Morphium m) {

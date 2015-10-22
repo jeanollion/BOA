@@ -44,6 +44,7 @@ public interface StructureObjectTrackCorrection extends StructureObjectTracker {
     public ArrayList<StructureObjectTrackCorrection> getPreviousDivisionSiblings();
     public void merge(StructureObjectTrackCorrection other);
     public StructureObjectTrackCorrection split(ObjectSplitter splitter);
+    public void resetTrackHead();
     //public void setTrackFlag(TrackFlag flag);
     @Override public StructureObjectTrackCorrection getPrevious();
     @Override public StructureObjectTrackCorrection getNext();
