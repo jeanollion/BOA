@@ -146,11 +146,22 @@ public class LocalFileSystemImageDAO implements ImageDAO {
     }
     @Override 
     public void renameMask(StructureObject object, int newIdx) {
-        String fileName = getProcessedImageFile(object);
-        File f = new File (fileName);
-        if (f.exists()) {
-            fileName = fileName.replace("_idx"+Utils.formatInteger(idxZeros, object.getIdx()), "_idx"+Utils.formatInteger(idxZeros, newIdx));
-            f.renameTo(new File(fileName));
+        String fileName1 = getProcessedImageFile(object);
+        File file1 = new File (fileName1);
+        String fileName2 = getProcessedImageDirectory(object);
+        File file2 = new File (fileName2);
+        String oldS=null, newS=null;
+        if (file1.exists()) {
+            oldS = "_idx"+Utils.formatInteger(idxZeros, object.getIdx());
+            newS = "_idx"+Utils.formatInteger(idxZeros, newIdx);
+            file1.renameTo(new File(fileName1.replace(oldS, newS)));
+        }
+        if (file2.exists()) {
+            if (oldS==null) {
+                oldS = "_idx"+Utils.formatInteger(idxZeros, object.getIdx());
+                newS = "_idx"+Utils.formatInteger(idxZeros, newIdx);
+            }
+            file2.renameTo(new File(fileName2.replace(oldS, newS)));
         }
     }
     protected static String getPreProcessedImagePath(int channelImageIdx, int timePoint, String microscopyFieldName, String imageDirectory) {

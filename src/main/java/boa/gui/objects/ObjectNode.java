@@ -104,7 +104,7 @@ public class ObjectNode implements TreeNode, UIContainer, StructureNodeContainer
         return children.length;
     }
 
-    public TreeNode getParent() {
+    public StructureNode getParent() {
         return parent;
     }
 

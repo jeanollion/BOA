@@ -26,8 +26,12 @@ import java.awt.Color;
 import java.awt.Component;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -232,6 +236,22 @@ public class Utils {
         }
         tree.expandPath(parent);
         // tree.collapsePath(parent);
+    }
+    
+    public static TreePath getTreePath(TreeNode node) {
+        ArrayList<TreeNode> path = new ArrayList<TreeNode>();
+        while(node!=null) {
+            path.add(node);
+            node = node.getParent();
+        }
+        path = Utils.reverseOrder(path);
+        return new TreePath(path.toArray(new TreePath[path.size()]));
+    }
+    
+    public static <T> void removeDuplicates(List<T> list, boolean keepOrder) {
+        Collection<T> set = keepOrder? new LinkedHashSet<T>(list) : new HashSet<T>(list);
+        list.clear();
+        list.addAll(set);
     }
     
     public static Comparator<StructureObject> getStructureObjectComparator() {

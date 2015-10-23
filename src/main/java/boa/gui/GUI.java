@@ -20,6 +20,7 @@ package boa.gui;
 import boa.gui.configuration.ConfigurationTreeGenerator;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageObjectListener;
+import boa.gui.objects.ObjectNode;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.objects.ObjectDAO;
@@ -56,6 +57,7 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import plugins.ObjectSplitter;
 import plugins.PluginFactory;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import plugins.plugins.segmenters.SimpleThresholder;
@@ -86,7 +88,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     TrackTreeController trackTreeController;
     private HashMap<Integer, JTree> currentTrees;
     // structure-related attributes
-    StructureObjectTreeGenerator structureObjectTreeGenerator;
+    StructureObjectTreeGenerator objectTreeGenerator;
     
     /**
      * Creates new form GUI
@@ -138,10 +140,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     protected void loadObjectTrees() {
         //TODO remember treepath if existing and set them in the new trees
         
-        structureObjectTreeGenerator = new StructureObjectTreeGenerator(objectDAO, xpDAO);
-        structureJSP.setViewportView(structureObjectTreeGenerator.getTree());
+        objectTreeGenerator = new StructureObjectTreeGenerator(objectDAO, xpDAO);
+        structureJSP.setViewportView(objectTreeGenerator.getTree());
         
-        trackTreeController = new TrackTreeController(objectDAO, xpDAO, structureObjectTreeGenerator);
+        trackTreeController = new TrackTreeController(objectDAO, xpDAO, objectTreeGenerator);
         setTrackTreeStructures(xpDAO.getExperiment().getStructuresAsString());
     }
     
@@ -157,7 +159,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             
         }
         // selection de l'objet dans l'arbre d'objets
-        structureObjectTreeGenerator.selectObject(selectedObject);
+        objectTreeGenerator.selectObject(selectedObject);
         logger.trace("fire object selected");
     }
     
@@ -302,6 +304,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         collapseAllObjectButton = new javax.swing.JButton();
         nextTrackErrorButton = new javax.swing.JButton();
         selectContainingTrackToggleButton = new javax.swing.JToggleButton();
+        splitObjectButton = new javax.swing.JButton();
+        mergeObjectsButton = new javax.swing.JButton();
         ObjectTreeJSP = new javax.swing.JSplitPane();
         StructurePanel = new javax.swing.JPanel();
         structureJSP = new javax.swing.JScrollPane();
@@ -446,6 +450,20 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
+        splitObjectButton.setText("Split Object");
+        splitObjectButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                splitObjectButtonActionPerformed(evt);
+            }
+        });
+
+        mergeObjectsButton.setText("Merge Objects");
+        mergeObjectsButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mergeObjectsButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout ControlPanelLayout = new javax.swing.GroupLayout(ControlPanel);
         ControlPanel.setLayout(ControlPanelLayout);
         ControlPanelLayout.setHorizontalGroup(
@@ -455,6 +473,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             .addComponent(selectAllTracksButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(nextTrackErrorButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(selectContainingTrackToggleButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(splitObjectButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(mergeObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         ControlPanelLayout.setVerticalGroup(
             ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -468,6 +488,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addComponent(nextTrackErrorButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(selectContainingTrackToggleButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(splitObjectButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(mergeObjectsButton)
                 .addGap(0, 0, Short.MAX_VALUE))
         );
 
@@ -585,7 +609,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }//GEN-LAST:event_reProcessActionPerformed
 
     private void collapseAllObjectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_collapseAllObjectButtonActionPerformed
-        this.structureObjectTreeGenerator.collapseAll();
+        this.objectTreeGenerator.collapseAll();
     }//GEN-LAST:event_collapseAllObjectButtonActionPerformed
 
     private void selectAllTracksButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllTracksButtonActionPerformed
@@ -612,6 +636,59 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void selectContainingTrackToggleButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectContainingTrackToggleButtonActionPerformed
         logger.info("not implemented yet!");
     }//GEN-LAST:event_selectContainingTrackToggleButtonActionPerformed
+
+    private void splitObjectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_splitObjectButtonActionPerformed
+        if (!checkConnection()) return;
+        StructureObject sel = objectTreeGenerator.getFisrtSelectedObject();
+        if (sel==null) logger.warn("Select an object to Split first!");
+        else {
+            ObjectSplitter splitter = this.xpDAO.getExperiment().getStructure(sel.getStructureIdx()).getObjectSplitter();
+            if (splitter==null) logger.warn("No ObjectSplitter defined for structure: "+xpDAO.getExperiment().getStructure(sel.getStructureIdx()).getName());
+            else {
+                StructureObject newObject = sel.split(splitter);
+                if (newObject==null) logger.warn("Object could not be splitted!");
+                else {
+                    ArrayList<StructureObject> siblings = sel.getParent().getChildren(sel.getStructureIdx());
+                    int idx = siblings.indexOf(sel);
+                    siblings.add(idx+1, newObject);
+                    ArrayList<StructureObject> modified = new ArrayList<StructureObject>(siblings.size());
+                    modified.add(newObject);
+                    modified.add(sel);
+                    sel.getParent().relabelChildren(sel.getStructureIdx(), modified);
+                    objectDAO.store(modified, false);
+                    //reload node
+                    ObjectNode node = objectTreeGenerator.getObjectNode(sel);
+                    node.getParent().createChildren();
+                    objectTreeGenerator.reload(node.getParent());
+                    //TODO: modify all opened images & objectImageInteraction !!!
+                }
+            }
+        }
+    }//GEN-LAST:event_splitObjectButtonActionPerformed
+
+    private void mergeObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mergeObjectsButtonActionPerformed
+        if (!checkConnection()) return;
+        ArrayList<StructureObject> sel = objectTreeGenerator.getSelectedObjectsFromSameParent();
+        if (sel.isEmpty()) logger.warn("Merge Objects: select several objects from same parent first!");
+        else {
+            StructureObject res = sel.get(0);
+            ArrayList<StructureObject> siblings = res.getParent().getChildren(res.getStructureIdx());
+            for (int i = 1; i<sel.size(); ++i) {
+                res.merge(sel.get(i));
+                siblings.remove(sel.get(i));
+            }
+            sel.remove(0);
+            objectDAO.delete(sel);
+            ArrayList<StructureObject> modified = new ArrayList<StructureObject>(siblings.size());
+            modified.add(res);
+            res.getParent().relabelChildren(res.getStructureIdx(), modified);
+            objectDAO.store(modified, false);
+            //reload node
+            ObjectNode node = objectTreeGenerator.getObjectNode(res);
+            node.getParent().createChildren();
+            objectTreeGenerator.reload(node.getParent());
+        }
+    }//GEN-LAST:event_mergeObjectsButtonActionPerformed
 
     /**
      * @param args the command line arguments
@@ -663,6 +740,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JTextField hostName;
     private javax.swing.JButton importImageButton;
     private javax.swing.JTabbedPane jTabbedPane1;
+    private javax.swing.JButton mergeObjectsButton;
     private javax.swing.JButton nextTrackErrorButton;
     private javax.swing.JButton preProcessButton;
     private javax.swing.JButton reProcess;
@@ -670,6 +748,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JButton segmentButton;
     private javax.swing.JButton selectAllTracksButton;
     private javax.swing.JToggleButton selectContainingTrackToggleButton;
+    private javax.swing.JButton splitObjectButton;
     private javax.swing.JScrollPane structureJSP;
     private javax.swing.JComboBox trackStructureJCB;
     private javax.swing.JPanel trackSubPanel;

@@ -154,11 +154,12 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected ArrayList<? extends StructureObject> getSiblings() {return this.getParent().getChildObjects(structureIdx, getExperiment().getObjectDAO(), false);}
     
     public void relabelChildren(int structureIdx, ArrayList<StructureObject> modifiedObjects) {
+        logger.debug("relabeling: {} number of children: {}", this, getChildren(structureIdx).size());
         int newIdx = 0;
         for (StructureObject o : getChildren(structureIdx)) {
-            if (o.idx!=newIdx+1) {
+            if (o.idx!=newIdx) {
                 if (modifiedObjects!=null) modifiedObjects.add(o);
-                o.setIdx(newIdx+1);
+                o.setIdx(newIdx);
             }
             ++newIdx;
         }
@@ -507,8 +508,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     @Override
     public String toString() {
-        if (isRoot()) return "Root Object: fieldName: "+fieldName + " timePoint: "+timePoint;
-        else return "Object: fieldName: "+fieldName+ " timePoint: "+timePoint+ " structureIdx: "+structureIdx+ " parentId: "+getParent().id+ " idx: "+idx;
+        if (isRoot()) return "Root: F:"+fieldName + " T:"+timePoint;
+        else return "F:"+fieldName+ " T:"+timePoint+ " S:"+structureIdx+ " Idx: "+idx+ " P:["+getParent().toStringShort()+"]" ;
+    }
+    
+    protected String toStringShort() {
+        if (isRoot()) return "Root";
+        else return " S:"+structureIdx+ " Idx: "+idx+ " P:["+getParent().toStringShort()+"]" ;
     }
     
     // morphium-related methods

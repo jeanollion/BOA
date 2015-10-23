@@ -63,8 +63,7 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
                 } else {
                     logger.trace("Over-Segmentation detected between timepoint {} and {}, number of divided cells before: {}, undivided cells after error: {}", tDivPrev, tError, tError-tDivPrev, tDivNext-tError);
                     mergeTracks(prevSiblings.get(0), prevSiblings.get(1), tError, modifiedObjects);
-                    // remove error tag @tError
-                    error.setTrackFlag(TrackFlag.correctionMerge);
+                    error.setTrackFlag(null); // remove error tag @tError
                     if (modifiedObjects!=null) modifiedObjects.add(error);
                 }
                 return null;
@@ -116,7 +115,7 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
             StructureObjectTrackCorrection newObject = track.split(splitter);
             if (newObject!=null) {
                 newObject.setPreviousInTrack(splitPrevious, false, false);
-                if (modifiedObjects!=null) modifiedObjects.add(newObject); 
+                if (modifiedObjects!=null) modifiedObjects.add(newObject);
                 splitPrevious = newObject;
             } else {
                 splitPrevious = track;

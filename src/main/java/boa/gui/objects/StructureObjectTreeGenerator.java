@@ -104,6 +104,13 @@ public class StructureObjectTreeGenerator {
         if (treeModel!=null) treeModel.reload();
     }
     
+    public void reload(TreeNode node) {
+        if (treeModel!=null) {
+            treeModel.reload(node);
+            tree.expandPath(Utils.getTreePath(node));
+        }
+    }
+    
     public void selectObject(StructureObject object) {
         if (object==null) tree.setSelectionRow(-1);
         else tree.setSelectionPath(getObjectTreePath(object));
@@ -161,4 +168,40 @@ public class StructureObjectTreeGenerator {
         return this.treeModel;
     }
     
+    public ArrayList<StructureObject> getSelectedObjects() {
+        ArrayList<StructureObject> res = new ArrayList<StructureObject>(tree.getSelectionCount());
+        for (TreePath p : tree.getSelectionPaths()) {
+            if (p.getLastPathComponent() instanceof ObjectNode) {
+                res.add(((ObjectNode)p.getLastPathComponent()).data);
+            }
+        }
+        return res;
+    }
+    /**
+     * 
+     * @return a list of selected structureObject that have the same parent as the first selected object of the tree
+     */
+    public ArrayList<StructureObject> getSelectedObjectsFromSameParent() {
+        ArrayList<StructureObject> res = new ArrayList<StructureObject>(tree.getSelectionCount());
+        StructureNode parent = null;
+        for (TreePath p : tree.getSelectionPaths()) {
+            if (p.getLastPathComponent() instanceof ObjectNode) {
+                if (parent==null) {
+                    parent = (StructureNode) p.getPathComponent(p.getPathCount()-2);
+                    res.add(((ObjectNode)p.getLastPathComponent()).data);
+                } else if (p.getPathComponent(p.getPathCount()-2).equals(parent)) {
+                    res.add(((ObjectNode)p.getLastPathComponent()).data);
+                }
+            }
+        }
+        return res;
+    }
+    public StructureObject getFisrtSelectedObject() {
+        for (TreePath p : tree.getSelectionPaths()) {
+            if (p.getLastPathComponent() instanceof ObjectNode) {
+                return ((ObjectNode)p.getLastPathComponent()).data;
+            }
+        }
+        return null;
+    }
 }

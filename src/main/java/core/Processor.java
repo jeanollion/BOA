@@ -130,15 +130,15 @@ public class Processor {
                 for (int t = 0; t<root.size(); ++t) { // segment
                     Processor.processChildren(s, root.get(t), dao, false, segmentedObjects);
                 }
-                ArrayList<StructureObjectTrackCorrection> correctedObjects=null;
+                ArrayList<StructureObject> allCorrectedObjects=null;
                 if (structure.hasTracker()) { // track
                     logger.info("tracking structure: {}...", s);
                     ArrayList<StructureObject> parents= StructureObjectUtils.getAllParentObjects(root.get(0), xp.getPathToRoot(s));
-                    if (structure.hasTrackCorrector()) correctedObjects = new ArrayList<StructureObjectTrackCorrection>();
+                    if (structure.hasTrackCorrector()) allCorrectedObjects = new ArrayList<StructureObject>();
                     for (StructureObject o : parents) {
                         Processor.trackChildren(structure.getTracker(), o, s, dao, null);
                         if (structure.hasTrackCorrector()) {
-                            Processor.correctTrackChildren(structure.getTrackCorrector(), structure.getObjectSplitter(), o, s, dao, false, correctedObjects);
+                            Processor.correctTrackChildren(structure.getTrackCorrector(), structure.getObjectSplitter(), o, s, dao, false, allCorrectedObjects);
                         }
                     }
                     /*final int sIdx = s;
@@ -150,17 +150,20 @@ public class Processor {
                     });*/
                 }
                 if (dao!=null) {
-                    if (structure.hasTrackCorrector()) { // remove merged objects
+                    if (allCorrectedObjects!=null) { // add split objects, and sort the list afterwards
+                        segmentedObjects.ensureCapacity(segmentedObjects.size()+allCorrectedObjects.size());
+                        for (StructureObjectTrackCorrection o : allCorrectedObjects) {
+                            /*if (StructureObject.TrackFlag.correctionSplitNew.equals(((StructureObject)o).getTrackFlag())) {
+                                segmentedObjects.add((StructureObject)o);
+                            }*/
+                            segmentedObjects.add((StructureObject)o);
+                        }
+                        Utils.removeDuplicates(segmentedObjects, false);
+                        Collections.sort(segmentedObjects, Utils.getStructureObjectComparator());
+                    }
+                    if (structure.hasTrackCorrector()) { // remove merged objects from list ob objects to be stored
                         Iterator<StructureObject> it = segmentedObjects.iterator();
                         while(it.hasNext()) if (StructureObject.TrackFlag.correctionMergeToErase.equals(it.next().getTrackFlag())) it.remove();
-                    }
-                    if (correctedObjects!=null) { // add split objects, and sort the list afterwards
-                        for (StructureObjectTrackCorrection o : correctedObjects) {
-                            if (StructureObject.TrackFlag.correctionSplitNew.equals(((StructureObject)o).getTrackFlag())) {
-                                segmentedObjects.add((StructureObject)o);
-                            }
-                        }
-                        Collections.sort(segmentedObjects, Utils.getStructureObjectComparator());
                     }
                     dao.store(segmentedObjects, xp.getStructure(s).hasTracker());
                 }
@@ -175,25 +178,27 @@ public class Processor {
             StructureObject root0 = dao.getRoot(field.getName(), 0);
             Structure structure = xp.getStructure(structureIdx);
             ArrayList<StructureObject> modifiedObjectsFromTracking = updateTrackAttributes?new ArrayList<StructureObject>() : null;
-            ArrayList<StructureObjectTrackCorrection> modifiedObjectsCorrection = updateTrackAttributes&&structure.hasTrackCorrector()?new ArrayList<StructureObjectTrackCorrection>() : null;
+            ArrayList<StructureObject> modifiedObjectsCorrection = updateTrackAttributes&&structure.hasTrackCorrector()?new ArrayList<StructureObject>() : null;
             
             for (StructureObject o : StructureObjectUtils.getAllParentObjects(root0, xp.getPathToRoot(structureIdx), dao)) {
                 Processor.trackChildren(structure.getTracker(), o, structureIdx, dao, modifiedObjectsFromTracking);
-                if (structure.hasTrackCorrector()) Processor.correctTrackChildren(structure.getTrackCorrector(), structure.getObjectSplitter(), o, structureIdx, dao, dao!=null&&updateTrackAttributes, modifiedObjectsCorrection);
+                if (structure.hasTrackCorrector()) {
+                    Processor.correctTrackChildren(structure.getTrackCorrector(), structure.getObjectSplitter(), o, structureIdx, dao, dao!=null&&updateTrackAttributes, modifiedObjectsCorrection);
+                }
             }
             if (updateTrackAttributes && dao!=null) {
                 if (structure.hasTrackCorrector()) {
                     //ArrayList<StructureObject> newObjects = new ArrayList<StructureObject>();
                     ArrayList<StructureObject> objectsToErase = new ArrayList<StructureObject>();
-                    Iterator it = modifiedObjectsCorrection.iterator();
+                    modifiedObjectsFromTracking.addAll(modifiedObjectsCorrection);
+                    Iterator<StructureObject> it = modifiedObjectsFromTracking.iterator();
                     while(it.hasNext()) {
-                        StructureObject o = (StructureObject)it.next();
-                        if (StructureObject.TrackFlag.correctionSplitNew.equals(o.getTrackFlag())) modifiedObjectsFromTracking.add(o);
-                        else if (StructureObject.TrackFlag.correctionMergeToErase.equals(o.getTrackFlag())) objectsToErase.add(o);
-                        //else if (StructureObject.TrackFlag.correctionMerge.equals(o.getTrackFlag())) modifiedObjectsFromTracking.add(o); //object container to update
+                        StructureObject o = it.next();
+                        if (StructureObject.TrackFlag.correctionMergeToErase.equals(o.getTrackFlag())) {
+                            objectsToErase.add(o);
+                            it.remove();
+                        }
                     }
-                    Iterator<StructureObject> it2 = modifiedObjectsFromTracking.iterator();
-                    while(it2.hasNext()) if (StructureObject.TrackFlag.correctionMergeToErase.equals(it2.next().getTrackFlag())) it2.remove();
                     //dao.store(newObjects, false);
                     dao.delete(objectsToErase);
                     Collections.sort(modifiedObjectsFromTracking, Utils.getStructureObjectComparator()); // new objects need to be at the right timePoint
@@ -209,29 +214,28 @@ public class Processor {
         if (xp.getStructure(structureIdx).hasTrackCorrector()) { // structure
             logger.info("correcting track for structure: {}...", structureIdx);
             StructureObject root0 = dao.getRoot(field.getName(), 0);
-            ArrayList<StructureObjectTrackCorrection> modifiedObjects = updateTrackAttributes?new ArrayList<StructureObjectTrackCorrection>() : null;
+            ArrayList<StructureObject> modifiedObjects = updateTrackAttributes?new ArrayList<StructureObject>() : null;
             Structure structure = xp.getStructure(structureIdx);
             for (StructureObject o : StructureObjectUtils.getAllParentObjects(root0, xp.getPathToRoot(structureIdx), dao)) {
                 Processor.correctTrackChildren(structure.getTrackCorrector(), structure.getObjectSplitter(), o, structureIdx, dao, dao!=null&&updateTrackAttributes, modifiedObjects);
             }
             if (updateTrackAttributes && dao!=null) {
-                ArrayList<StructureObject> modifiedObjectsS = new ArrayList<StructureObject>(modifiedObjects.size());
-                ArrayList<StructureObject> newObjects = new ArrayList<StructureObject>();
+                //ArrayList<StructureObject> newObjects = new ArrayList<StructureObject>();
                 ArrayList<StructureObject> objectsToErase = new ArrayList<StructureObject>();
-                Iterator it = modifiedObjects.iterator();
+                Iterator<StructureObject> it = modifiedObjects.iterator();
                 while(it.hasNext()) {
-                    StructureObject o = (StructureObject)it.next();
-                    if (StructureObject.TrackFlag.correctionMergeToErase.equals(o.getTrackFlag())) objectsToErase.add(o);
-                    else {
-                        modifiedObjectsS.add(o);
-                        if (StructureObject.TrackFlag.correctionSplitNew.equals(o.getTrackFlag())) newObjects.add(o);
+                    StructureObject o = it.next();
+                    if (StructureObject.TrackFlag.correctionMergeToErase.equals(o.getTrackFlag())) {
+                        objectsToErase.add(o);
+                        it.remove();
                     }
+                    //else if (StructureObject.TrackFlag.correctionSplitNew.equals(o.getTrackFlag())) newObjects.add(o);
                 }
                 dao.delete(objectsToErase);
                 //dao.store(newObjects, false);
                 //dao.setTrackAttributes(modifiedObjectsS);
-                Collections.sort(modifiedObjectsS, Utils.getStructureObjectComparator());
-                dao.store(modifiedObjectsS, true); //TODO bug morphium update references... for "previous".
+                Collections.sort(modifiedObjects, Utils.getStructureObjectComparator());
+                dao.store(modifiedObjects, true); //TODO bug morphium update references... for "previous".
             }
         } else logger.warn("no trackCorrector for structure: {}", structureIdx);
     }
@@ -313,15 +317,16 @@ public class Processor {
         //if (dao!=null) dao.updateTrackAttributes(parentTrack.getChildren(structureIdx)); // update the last one
     }
     
-    protected static void correctTrackChildren(TrackCorrector trackCorrector, ObjectSplitter splitter, StructureObject parentTrack, int structureIdx, ObjectDAO dao, boolean removeMergedObjectFromDAO, ArrayList<StructureObjectTrackCorrection> modifiedObjects) {
+    protected static void correctTrackChildren(TrackCorrector trackCorrector, ObjectSplitter splitter, StructureObject parentTrack, int structureIdx, ObjectDAO dao, boolean removeMergedObjectFromDAO, ArrayList<StructureObject> modifiedObjects) {
         if (logger.isDebugEnabled()) logger.debug("correcting tracks from structure: {} parentTrack: {} / Tracker: {} / dao==null? {}", structureIdx, parentTrack, trackCorrector==null?"NULL":trackCorrector.getClass(), dao==null);
         if (trackCorrector==null) return;
         // TODO gestion de la memoire vive -> si trop ouvert, fermer les images & masques des temps précédents.
-        if (modifiedObjects==null) modifiedObjects = new ArrayList<StructureObjectTrackCorrection>();
+        HashSet<StructureObject> parentsToRelabel=new HashSet<StructureObject>();
+        ArrayList<StructureObjectTrackCorrection> localModifiedObjects = new ArrayList<StructureObjectTrackCorrection>();
         for (StructureObject o : parentTrack.getChildObjects(structureIdx, dao, false)) o.getParentTrackHeadId(); //sets parentTrackHeadId
         while(parentTrack.getNext()!=null) {
             ArrayList<StructureObject> children = parentTrack.getChildObjects(structureIdx, dao, false);
-            for (StructureObject child : children) if (child.isTrackHead()) trackCorrector.correctTrack(child, splitter, modifiedObjects);
+            for (StructureObject child : children) if (child.isTrackHead()) trackCorrector.correctTrack(child, splitter, localModifiedObjects);
             // remove merged objects
             Iterator<StructureObject> it = children.iterator();
             while(it.hasNext()) {
@@ -329,35 +334,41 @@ public class Processor {
                 if (StructureObject.TrackFlag.correctionMergeToErase.equals(child.getTrackFlag())) {
                     it.remove();
                     if (dao!=null && removeMergedObjectFromDAO) dao.delete(child);
+                    if (it.hasNext()) parentsToRelabel.add(parentTrack); // need to relabel only if the child object is not the last element
                 }
             }
             parentTrack = parentTrack.getNext();
         }
-        HashSet<StructureObject> parentsToRelabel=new HashSet<StructureObject>();
-        // add split objects to parents just after the other splitted object;
-        for (StructureObjectTrackCorrection o : modifiedObjects) {
+        //int sizeBefore = modifiedObjects.size();
+        Utils.removeDuplicates(localModifiedObjects, false);
+        //logger.debug("number of duplicates: {}", sizeBefore-modifiedObjects.size());
+        for (StructureObjectTrackCorrection o : localModifiedObjects) { // add split objects to parents just after the other splitted object;
             if (StructureObject.TrackFlag.correctionSplitNew.equals(((StructureObject)o).getTrackFlag())) {
                 StructureObject object = (StructureObject)o;
                 ArrayList<StructureObject> siblings = object.getParent().getChildren(structureIdx);
                 int idx = 0;
+                int limit = siblings.size()-1;
                 for (idx = 0; idx<siblings.size(); ++idx) {
-                    if (siblings.get(idx).getIdx()==object.getIdx()-1) {
-                        object.getParent().getChildren(structureIdx).add(idx+1, object);
+                    if (siblings.get(idx).getIdx()>=object.getIdx()) { // insert = first idx >=@element to be inserted
+                        object.getParent().getChildren(structureIdx).add(idx, object);
+                        parentsToRelabel.add(object.getParent());
+                        break;
+                    } else if (idx==limit) { // no need to relabel
+                        object.getParent().getChildren(structureIdx).add(idx, object);
                     }
                 }
-                if (idx==siblings.size()) {
-                    object.getParent().getChildren(structureIdx).add(object);
-                    logger.error("split object detected: {} but no other split object.. ", object);
-                    for (StructureObject sib : siblings) logger.error("split object detected: sibling: {}", sib);
-                }
-                
-                parentsToRelabel.add(object.getParent());
-            } else if (StructureObject.TrackFlag.correctionMerge.equals(((StructureObject)o).getTrackFlag())) parentsToRelabel.add((StructureObject)o.getParent());
+            } 
         }
         
         // relabel objects
         ArrayList<StructureObject> relabeledObjects = new ArrayList<StructureObject>();
         for (StructureObject parent : parentsToRelabel) parent.relabelChildren(structureIdx, relabeledObjects);
-        modifiedObjects.addAll(relabeledObjects);
+        
+        if (modifiedObjects!=null) {
+            localModifiedObjects.addAll(relabeledObjects);
+            Utils.removeDuplicates(localModifiedObjects, false);
+            modifiedObjects.ensureCapacity(modifiedObjects.size()+localModifiedObjects.size());
+            for (StructureObjectTrackCorrection o : localModifiedObjects) modifiedObjects.add((StructureObject)o);
+        }
     }
 }

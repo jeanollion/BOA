@@ -233,6 +233,8 @@
                       <Component id="selectAllTracksButton" alignment="0" max="32767" attributes="0"/>
                       <Component id="nextTrackErrorButton" max="32767" attributes="0"/>
                       <Component id="selectContainingTrackToggleButton" alignment="0" max="32767" attributes="0"/>
+                      <Component id="splitObjectButton" max="32767" attributes="0"/>
+                      <Component id="mergeObjectsButton" alignment="0" max="32767" attributes="0"/>
                   </Group>
                 </DimensionLayout>
                 <DimensionLayout dim="1">
@@ -247,6 +249,10 @@
                           <Component id="nextTrackErrorButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="selectContainingTrackToggleButton" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace max="-2" attributes="0"/>
+                          <Component id="splitObjectButton" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace max="-2" attributes="0"/>
+                          <Component id="mergeObjectsButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                       </Group>
                   </Group>
@@ -293,6 +299,22 @@
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="selectContainingTrackToggleButtonActionPerformed"/>
+                  </Events>
+                </Component>
+                <Component class="javax.swing.JButton" name="splitObjectButton">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" value="Split Object"/>
+                  </Properties>
+                  <Events>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="splitObjectButtonActionPerformed"/>
+                  </Events>
+                </Component>
+                <Component class="javax.swing.JButton" name="mergeObjectsButton">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" value="Merge Objects"/>
+                  </Properties>
+                  <Events>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="mergeObjectsButtonActionPerformed"/>
                   </Events>
                 </Component>
               </SubComponents>
