@@ -37,24 +37,20 @@ import java.util.Map.Entry;
 public class StructureObjectMask extends ImageObjectInterface {
     BoundingBox[] offsets;
     ArrayList<StructureObject> objects;
-    
+    BoundingBox offset;
     public StructureObjectMask(StructureObject parent, int childStructureIdx) {
         super(parent, childStructureIdx);
-        if (childStructureIdx==parent.getStructureIdx()) {
-            objects=new ArrayList<StructureObject>(1);
-            objects.add(parent);
-            offsets=new BoundingBox[1];
-            offsets[0]=parent.getRelativeBoundingBox(parent);
-        } else {
-            int[] path = parent.getExperiment().getPathToStructure(parent.getStructureIdx(), childStructureIdx);
-            objects = StructureObjectUtils.getAllObjects(parent, path);
-            offsets=new BoundingBox[objects.size()];
-            for (int i = 0; i<offsets.length; ++i) offsets[i]=objects.get(i).getRelativeBoundingBox(parent);
-        }
+        this.offset=new BoundingBox(0, 0, 0);
+        reloadObjects();
     }
     
     public StructureObjectMask(StructureObject parent, int childStructureIdx, BoundingBox offset) {
         super(parent, childStructureIdx);
+        this.offset=offset;
+        reloadObjects();
+    }
+    
+    public void reloadObjects() {
         if (childStructureIdx==parent.getStructureIdx()) {
             objects=new ArrayList<StructureObject>(1);
             objects.add(parent);
@@ -93,6 +89,7 @@ public class StructureObjectMask extends ImageObjectInterface {
         return parent.getRawImage(structureIdx);
     }
     
+    @Override
     public void draw(ImageInteger image) {
         for (int i = 0; i<offsets.length; ++i) objects.get(i).getObject().draw(image, objects.get(i).getObject().getLabel(), offsets[i]);
     }

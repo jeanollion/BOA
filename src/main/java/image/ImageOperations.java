@@ -182,7 +182,7 @@ public class ImageOperations {
     }
     
     public static ImageInteger and(ImageMask source1, ImageMask source2, ImageInteger output) {
-        if (output==null) output = new ImageByte("or", source1);
+        if (output==null) output = new ImageByte("and", source1);
         for (int z = 0; z<source1.getSizeZ(); ++z) {
             for (int xy=0; xy<source1.getSizeXY(); ++xy) {
                 if (source1.insideMask(xy, z) && source2.insideMask(xy, z)) output.setPixel(xy, z, 1);

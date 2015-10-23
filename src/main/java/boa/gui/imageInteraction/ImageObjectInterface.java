@@ -37,9 +37,11 @@ public abstract class ImageObjectInterface {
         this.childStructureIdx = childStructureIdx;
     }
     
+    public abstract void reloadObjects();
     public abstract StructureObject getClickedObject(int x, int y, int z);
     public abstract BoundingBox getObjectOffset(StructureObject object);
     public abstract ImageInteger generateImage();
+    public abstract void draw(ImageInteger image);
     public abstract Image generateRawImage(int structureIdx);
     public abstract boolean isTimeImage();
     

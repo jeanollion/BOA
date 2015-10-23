@@ -20,6 +20,7 @@ package boa.gui;
 import boa.gui.configuration.ConfigurationTreeGenerator;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageObjectListener;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.gui.objects.ObjectNode;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
@@ -656,11 +657,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                     modified.add(sel);
                     sel.getParent().relabelChildren(sel.getStructureIdx(), modified);
                     objectDAO.store(modified, false);
-                    //reload node
+                    //Update tree
                     ObjectNode node = objectTreeGenerator.getObjectNode(sel);
                     node.getParent().createChildren();
                     objectTreeGenerator.reload(node.getParent());
-                    //TODO: modify all opened images & objectImageInteraction !!!
+                    //Update all opened images & objectImageInteraction
+                    ImageWindowManagerFactory.getImageManager().reloadObjects(sel.getParent(), sel.getStructureIdx());
                 }
             }
         }
@@ -671,22 +673,23 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         ArrayList<StructureObject> sel = objectTreeGenerator.getSelectedObjectsFromSameParent();
         if (sel.isEmpty()) logger.warn("Merge Objects: select several objects from same parent first!");
         else {
-            StructureObject res = sel.get(0);
+            StructureObject res = sel.remove(0);
             ArrayList<StructureObject> siblings = res.getParent().getChildren(res.getStructureIdx());
-            for (int i = 1; i<sel.size(); ++i) {
-                res.merge(sel.get(i));
-                siblings.remove(sel.get(i));
+            for (StructureObject toMerge : sel) {
+                res.merge(toMerge);
+                siblings.remove(toMerge);
             }
-            sel.remove(0);
             objectDAO.delete(sel);
             ArrayList<StructureObject> modified = new ArrayList<StructureObject>(siblings.size());
             modified.add(res);
             res.getParent().relabelChildren(res.getStructureIdx(), modified);
             objectDAO.store(modified, false);
-            //reload node
+            //Update object tree
             ObjectNode node = objectTreeGenerator.getObjectNode(res);
             node.getParent().createChildren();
             objectTreeGenerator.reload(node.getParent());
+            //Update all opened images & objectImageInteraction
+            ImageWindowManagerFactory.getImageManager().reloadObjects(res.getParent(), res.getStructureIdx());
         }
     }//GEN-LAST:event_mergeObjectsButtonActionPerformed
 

@@ -26,6 +26,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map.Entry;
 
 /**
  *
@@ -88,6 +89,23 @@ public abstract class ImageWindowManager<T> {
         } 
         return i;
     }
+    
+    protected void reloadObjects(StructureObject parent, int childStructureIdx, boolean track) {
+        if (track) parent=parent.getTrackHead();
+        ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parent, childStructureIdx, track));
+        if (i!=null) {
+            i.reloadObjects();
+            for (Entry<Image, ImageObjectInterface> e : imageObjectInterfaceMap.entrySet()) if (e.getValue().equals(i)) {
+                i.draw((ImageInteger)e.getKey());
+                if (!track) getDisplayer().updateImageDisplay(e.getKey());
+            }
+        }
+    }
+    
+    public void reloadObjects(StructureObject parent, int childStructureIdx) {
+        reloadObjects(parent, childStructureIdx, true);
+        reloadObjects(parent, childStructureIdx, false);
+    } 
     
     protected ImageObjectInterface getImageObjectInterface(Image image) {return imageObjectInterfaceMap.get(image);}
     

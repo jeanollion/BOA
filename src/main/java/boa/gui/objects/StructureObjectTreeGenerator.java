@@ -81,7 +81,7 @@ public class StructureObjectTreeGenerator {
                     if (pathBounds != null && pathBounds.contains(e.getX(), e.getY())) {
                         JPopupMenu menu = new JPopupMenu();
                         Object lastO = path.getLastPathComponent();
-                        logger.debug("right-click on element: {}", lastO);
+                        //logger.debug("right-click on element: {}", lastO);
                         if (lastO instanceof UIContainer) {
                             UIContainer UIC=(UIContainer)lastO;
                             addToMenu(UIC.getDisplayComponent(), menu);

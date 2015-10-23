@@ -159,8 +159,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         for (StructureObject o : getChildren(structureIdx)) {
             if (o.idx!=newIdx) {
                 if (modifiedObjects!=null) modifiedObjects.add(o);
+                //logger.debug("relabeling: {}, newIdx: {}, objectLabel: {}", o, newIdx, o.getObject().getLabel());
                 o.setIdx(newIdx);
-            }
+            } //else logger.debug("no need to relabel: {}, newIdx: {}, objectLabel: {}", o, newIdx, o.getObject().getLabel());
             ++newIdx;
         }
     }
@@ -342,6 +343,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         StructureObject otherO = (StructureObject)other;
         // update object
         getObject().merge(otherO.getObject()); 
+        flushImages();
         objectModified = true;
         // update links
         StructureObject prev = otherO.getPrevious();
@@ -376,7 +378,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         // first object returned by splitter is updated to current structureObject
         pop.addOffset(this.getBounds());
         objectModified=true;
-        this.object=pop.getObjects().get(0);
+        this.object=pop.getObjects().get(0).setLabel(idx+1);
+        flushImages();
         if (pop.getObjects().size()>2) { // TODO merge other objects
             logger.warn("split structureObject: {} yielded in {} objects, but only two will be considered", this, pop.getObjects().size());
         } 
@@ -479,6 +482,11 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public void createPreFilterImage(int structureIdx) {
         Image raw = getRawImage(structureIdx);
         if (raw!=null) preProcessedImageS.set(preFilterImage(getRawImage(structureIdx), this, getExperiment().getStructure(structureIdx).getProcessingChain().getPrefilters()), structureIdx);
+    }
+    
+    public void flushImages() {
+        for (int i = 0; i<preProcessedImageS.getBucketSize(); ++i) preProcessedImageS.setQuick(null, i);
+        for (int i = 0; i<rawImagesC.getBucketSize(); ++i) rawImagesC.setQuick(null, i);
     }
     
     public void segmentChildren(int structureIdx) {

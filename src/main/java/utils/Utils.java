@@ -245,7 +245,7 @@ public class Utils {
             node = node.getParent();
         }
         path = Utils.reverseOrder(path);
-        return new TreePath(path.toArray(new TreePath[path.size()]));
+        return new TreePath(path.toArray(new TreeNode[path.size()]));
     }
     
     public static <T> void removeDuplicates(List<T> list, boolean keepOrder) {

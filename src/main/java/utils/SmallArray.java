@@ -61,7 +61,7 @@ public class SmallArray<T> {
         if (array==null) return 0;
         else return array.length;
     }
-    public int getSize() {
+    public int getCount() {
         if (array==null) return 0;
         else {
             int count = 0;
@@ -72,7 +72,7 @@ public class SmallArray<T> {
     
     public ArrayList<T> getObjects() {
         if (array==null) return new ArrayList<T>(0);
-        ArrayList<T> res = new ArrayList<T>(getSize());
+        ArrayList<T> res = new ArrayList<T>(getCount());
         for (int i = 0; i<array.length; ++i) if (array[i]!=null) res.add((T)array[i]);
         return res;
     }

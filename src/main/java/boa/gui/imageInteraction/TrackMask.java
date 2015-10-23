@@ -41,14 +41,15 @@ import javax.swing.SwingUtilities;
  * @author jollion
  */
 public class TrackMask extends ImageObjectInterface {
-    final BoundingBox[] trackOffset;
-    final StructureObjectMask[] trackObjects;
-    final int maxParentY, maxParentZ;
-    final int updateImageFrequency=100;
+    BoundingBox[] trackOffset;
+    StructureObjectMask[] trackObjects;
+    int maxParentY, maxParentZ;
+    static final int updateImageFrequency=100;
     static final int intervalX=5;
-    
+    ArrayList<StructureObject> parentTrack;
     public TrackMask(ArrayList<StructureObject> parentTrack, int childStructureIdx) {
         super(parentTrack.get(0), childStructureIdx);
+        this.parentTrack=parentTrack;
         trackOffset = new BoundingBox[parentTrack.size()];
         trackObjects = new StructureObjectMask[parentTrack.size()];
         int maxY=0, maxZ=0;
@@ -67,6 +68,11 @@ public class TrackMask extends ImageObjectInterface {
             currentOffsetX+=intervalX+trackOffset[i].getSizeX();
             logger.trace("current index: {}, current bounds: {} current offsetX: {}", i, trackOffset[i], currentOffsetX);
         }
+    }
+    
+    @Override
+    public void reloadObjects() {
+        for (StructureObjectMask m : trackObjects) m.reloadObjects();
     }
     
     @Override
@@ -102,27 +108,30 @@ public class TrackMask extends ImageObjectInterface {
             if (label>maxLabel) maxLabel = label;
         }
         final ImageInteger displayImage = ImageInteger.createEmptyLabelImage("TimeLapse Image of structure: "+childStructureIdx, maxLabel, new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, this.maxParentZ).setCalibration(parent.getMaskProperties().getScaleXY(), parent.getMaskProperties().getScaleZ()));
-        trackObjects[0].draw(displayImage);
+        draw(displayImage);
+        return displayImage;
+    }
+    
+    @Override public void draw(final ImageInteger image) {
+        trackObjects[0].draw(image);
         // draw image in another thread..
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
                 int count = 0;
                 for (int i = 1; i<trackObjects.length; ++i) {
-                    trackObjects[i].draw(displayImage);
+                    trackObjects[i].draw(image);
                     if (count>=updateImageFrequency) {
-                        ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage);
+                        ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(image);
                         count=0;
                     } else count++;
-                    ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage);
+                    ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(image);
                 }
                 
             }
         });
         SwingUtilities.invokeLater(t);
-        return displayImage;
     }
-    
     
     @Override public Image generateRawImage(final int structureIdx) {
         

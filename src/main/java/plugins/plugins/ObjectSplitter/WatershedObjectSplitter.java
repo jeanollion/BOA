@@ -26,6 +26,7 @@ import image.Image;
 import image.ImageByte;
 import image.ImageLabeller;
 import image.ImageMask;
+import image.ImageOperations;
 import plugins.ObjectSplitter;
 import processing.Filters;
 import processing.ImageFeatures;
@@ -36,6 +37,7 @@ import processing.WatershedTransform;
  * @author jollion
  */
 public class WatershedObjectSplitter implements ObjectSplitter {
+    static final boolean debug = false;
     //BoundedNumberParameter numberOfObjects = new BoundedNumberParameter("Maximum growth rate", 2, 1.5, 1, 2);
     public ObjectPopulation splitObject(Image input, Object3D object) {
         return split(input, object.getMask());
@@ -46,6 +48,7 @@ public class WatershedObjectSplitter implements ObjectSplitter {
         Image smoothed = ImageFeatures.gaussianSmooth(input, 2, 2, false);
         
         ImageByte localMax = Filters.localExtrema(smoothed, null, true, Filters.getNeighborhood(1, 1, input));
+        ImageOperations.and(localMax, mask, localMax); // limit @ seeds within mask
         Object3D[] seeds = ImageLabeller.labelImage(localMax);
         if (seeds.length<2) {
             logger.warn("Object splitter : less than 2 seeds found");
@@ -58,7 +61,9 @@ public class WatershedObjectSplitter implements ObjectSplitter {
             WatershedTransform.NumberFusionCriterion fusionCriterion = wt.new NumberFusionCriterion(2);
             wt.setFusionCriterion(fusionCriterion);
             wt.run();
-            return wt.getObjectPopulation();
+            ObjectPopulation pop =  wt.getObjectPopulation();
+            if (debug) new IJImageDisplayer().showImage(pop.getLabelImage());
+            return pop;
         }
     }
 
