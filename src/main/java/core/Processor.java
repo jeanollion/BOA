@@ -120,6 +120,7 @@ public class Processor {
     public static ArrayList<StructureObject> processAndTrackStructures(final Experiment xp, MicroscopyField field, final ObjectDAO dao, boolean deleteObjects, int... structures) {
         if (dao!=null && deleteObjects) dao.deleteObjectsFromField(field.getName());
         ArrayList<StructureObject> root = field.createRootObjects();
+        if (root==null) return null;
         Processor.trackRoot(root);
         if (dao!=null) dao.store(root, true);
         if (structures==null || structures.length==0) structures=xp.getStructuresInHierarchicalOrderAsArray();

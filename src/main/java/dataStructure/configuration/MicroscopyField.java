@@ -80,6 +80,7 @@ public class MicroscopyField extends SimpleContainerParameter {
     
     public BlankMask getMask() {
         BlankMask mask = getExperiment().getImageDAO().getPreProcessedImageProperties(name);
+        if (mask==null) return null;
         // TODO: recreate image if configuration data has been already computed
         mask.setCalibration(images.getScaleXY(), images.getScaleZ());
         return mask;
@@ -87,6 +88,10 @@ public class MicroscopyField extends SimpleContainerParameter {
     
     public ArrayList<StructureObject> createRootObjects() {
         ArrayList<StructureObject> res = new ArrayList<StructureObject>(getImages().getTimePointNumber());
+        if (getMask()==null) {
+            logger.warn("Couldnot initiate root objects, perform preProcessing first");
+            return null;
+        }
         for (int t = 0; t<getImages().getTimePointNumber(); ++t) {
             res.add(new StructureObject(this.name, t, getMask(), getExperiment()));
         }

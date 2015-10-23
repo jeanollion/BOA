@@ -155,15 +155,46 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public void relabelChildren(int structureIdx, ArrayList<StructureObject> modifiedObjects) {
         logger.debug("relabeling: {} number of children: {}", this, getChildren(structureIdx).size());
-        int newIdx = 0;
-        for (StructureObject o : getChildren(structureIdx)) {
-            if (o.idx!=newIdx) {
-                if (modifiedObjects!=null) modifiedObjects.add(o);
-                //logger.debug("relabeling: {}, newIdx: {}, objectLabel: {}", o, newIdx, o.getObject().getLabel());
-                o.setIdx(newIdx);
-            } //else logger.debug("no need to relabel: {}, newIdx: {}, objectLabel: {}", o, newIdx, o.getObject().getLabel());
-            ++newIdx;
+        ArrayList<StructureObject> c = getChildren(structureIdx);
+        StructureObject current;
+        for (int i = 0; i<c.size(); ++i) {
+            current = c.get(i);
+            if (current.idx!=i) {
+                if (current.idx>i) { // need to decrease index
+                    if (i==0 || c.get(i-1).idx!=i)  {
+                        logger.debug("relabeling: {}, newIdx: {}", current, i);
+                        current.setIdx(i);
+                        if (modifiedObjects!=null) modifiedObjects.add(current);
+                    }
+                } else { //need to increase idx
+                    if (i==c.size()-1 || c.get(i+1).idx!=i)  {
+                        logger.debug("relabeling: {}, newIdx: {}", current, i);
+                        current.setIdx(i);
+                        if (modifiedObjects!=null) modifiedObjects.add(current);
+                    }
+                }
+            } 
         }
+        for (int i = c.size()-1; i>=0; --i) {
+            current = c.get(i);
+            if (current.idx!=i) {
+                if (current.idx>i) { // need to decrease index
+                    if (i==0 || c.get(i-1).idx!=i)  {
+                        logger.debug("relabeling: {}, newIdx: {}", current, i);
+                        current.setIdx(i);
+                        if (modifiedObjects!=null) modifiedObjects.add(current);
+                    }
+                } else { //need to increase idx
+                    if (i==c.size()-1 || c.get(i+1).idx!=i)  {
+                        logger.debug("relabeling: {}, newIdx: {}", current, i);
+                        current.setIdx(i);
+                        if (modifiedObjects!=null) modifiedObjects.add(current);
+                    }
+                }
+            } 
+        }
+        
+        
     }
     protected void setIdx(int idx) {
         if (objectContainer!=null) objectContainer.relabelObject(idx);
