@@ -154,7 +154,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected ArrayList<? extends StructureObject> getSiblings() {return this.getParent().getChildObjects(structureIdx, getExperiment().getObjectDAO(), false);}
     
     public void relabelChildren(int structureIdx, ArrayList<StructureObject> modifiedObjects) {
-        logger.debug("relabeling: {} number of children: {}", this, getChildren(structureIdx).size());
+        //logger.debug("relabeling: {} number of children: {}", this, getChildren(structureIdx).size());
         ArrayList<StructureObject> c = getChildren(structureIdx);
         StructureObject current;
         for (int i = 0; i<c.size(); ++i) {
@@ -162,13 +162,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             if (current.idx!=i) {
                 if (current.idx>i) { // need to decrease index
                     if (i==0 || c.get(i-1).idx!=i)  {
-                        logger.debug("relabeling: {}, newIdx: {}", current, i);
+                        //logger.debug("relabeling: {}, newIdx: {}", current, i);
                         current.setIdx(i);
                         if (modifiedObjects!=null) modifiedObjects.add(current);
                     }
                 } else { //need to increase idx
                     if (i==c.size()-1 || c.get(i+1).idx!=i)  {
-                        logger.debug("relabeling: {}, newIdx: {}", current, i);
+                        //logger.debug("relabeling: {}, newIdx: {}", current, i);
                         current.setIdx(i);
                         if (modifiedObjects!=null) modifiedObjects.add(current);
                     }

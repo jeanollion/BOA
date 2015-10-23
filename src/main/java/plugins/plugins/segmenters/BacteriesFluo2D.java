@@ -95,8 +95,8 @@ public class BacteriesFluo2D implements Segmenter {
         double t0 = IJAutoThresholder.runThresholder(dog, mask, AutoThresholder.Method.Otsu, 0);
         logger.trace("threshold 0: {}", t0);
         ObjectPopulation pop1 = SimpleThresholder.run(dog, t0);
-        pop1.filter(null, new ObjectPopulation.Thickness().setX(2).setY(2));
-        pop1.filter(null, new ObjectPopulation.Size().setMin(50));
+        pop1.filter(new ObjectPopulation.Thickness().setX(2).setY(2));
+        pop1.filter(new ObjectPopulation.Size().setMin(50));
         
         // split each object
         ImageByte seedMap = new ImageByte("seeds", input);

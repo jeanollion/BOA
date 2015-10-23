@@ -106,6 +106,13 @@ public class Utils {
         return res;
     }
     
+    public static <T> String toStringArray(T[] array) {
+        String res = "[";
+        for (int i = 0; i<array.length-1; ++i) res+=array[i].toString()+"; ";
+        res+=array[array.length-1]+"]";
+        return res;
+    }
+    
     public static<T> ArrayList<T> reverseOrder(ArrayList<T> arrayList) {
         ArrayList<T> res = new ArrayList<T>(arrayList.size());
         for (int i = arrayList.size()-1; i>=0; --i) res.add(arrayList.get(i));

@@ -249,7 +249,7 @@ public class TestTrackCorrection {
             Processor.preProcessImages(xp, null, true);
             MicroscopyField f= xp.getMicroscopyField(0);
             if (db!=null) db.getXpDAO().store(xp);
-            return Processor.processAndTrackStructures(xp, f, db!=null?db.getDao():null, true, 0);
+            return Processor.processAndTrackStructures(xp, f, db!=null?db.getDao():null, true, true, 0);
             
         } catch (IOException ex) {
             logger.error("Test Track Correction Error: ", ex);

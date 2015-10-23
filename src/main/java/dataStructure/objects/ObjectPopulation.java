@@ -66,6 +66,11 @@ public class ObjectPopulation {
         return this;
     }
     
+    public ObjectPopulation addObjects(ArrayList<Object3D> objects) {
+        this.objects.addAll(objects);
+        return this;
+    }
+    
     public ImageInteger getLabelImage() {
         if (labelImage==null) constructLabelImage();
         return labelImage;
@@ -140,7 +145,11 @@ public class ObjectPopulation {
         for (Object3D o : objects) o.addOffset(bounds);
     }
     
-    public void filter(ArrayList<Object3D> removedObjects, Filter filter) {
+    public void filter(Filter filter) {
+        filter(filter, null);
+    }
+    
+    public void filter(Filter filter, ArrayList<Object3D> removedObjects) {
         //int objectNumber = objects.size();
         Iterator<Object3D> it = objects.iterator();
         while(it.hasNext()) {

@@ -48,7 +48,7 @@ public class StructureObjectUtils {
         if (pathToStructure.length==0) return new ArrayList<StructureObject>(0);
         ArrayList<StructureObject> currentChildren;
         if (dao==null) currentChildren = new ArrayList<StructureObject>(referenceStructureObject.getChildObjects(pathToStructure[0]).size());
-        else currentChildren = new ArrayList<StructureObject>(referenceStructureObject.getChildObjects(pathToStructure[0], dao, false).size()); // will load the objects
+        else currentChildren = new ArrayList<StructureObject>(referenceStructureObject.getChildObjects(pathToStructure[0], dao, false).size()); // will load the objects if necessary
         currentChildren.addAll(referenceStructureObject.getChildObjects(pathToStructure[0]));
         //logger.debug("getAllObjects: current structure {} current number of objects: {}", pathToStructure[0], currentChildren.size());
         for (int i = 1; i<pathToStructure.length; ++i) {

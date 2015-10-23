@@ -41,6 +41,7 @@ import plugins.plugins.trackers.ObjectIdxTracker;
 import processing.ImageFeatures;
 import processing.WatershedTransform;
 import processing.mergeRegions.RegionCollection;
+import utils.Utils;
 
 /**
  *
@@ -49,14 +50,48 @@ import processing.mergeRegions.RegionCollection;
 public class BacteriaFluo implements Segmenter {
     public static boolean debug = false;
     NumberParameter splitThreshold = new BoundedNumberParameter("Split Threshold", 4, 0.15, 0, 1);
-    public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        double fusionThreshold = splitThreshold.getValue().doubleValue()/10d;
-        return run(input, parent.getMask(), fusionThreshold);
-    }
+    NumberParameter minSize = new BoundedNumberParameter("Minimum size", 0, 50, 25, null);
+    NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 3, 1, 5);
+    NumberParameter dogScale = new BoundedNumberParameter("DoG scale", 0, 10, 5, null);
+    NumberParameter hessianScale = new BoundedNumberParameter("Hessian scale", 1, 3, 1, 6);
+    NumberParameter hessianThresholdFactor = new BoundedNumberParameter("Hessian threshold factor", 1, 1, 0, 5);
+    Parameter[] parameters = new Parameter[]{splitThreshold, minSize, smoothScale, dogScale, hessianScale, hessianThresholdFactor};
+    
     public BacteriaFluo setSplitThreshold(double splitThreshold) {
         this.splitThreshold.setValue(splitThreshold);
         return this;
     }
+    public BacteriaFluo setMinSize(int minSize) {
+        this.minSize.setValue(minSize);
+        return this;
+    }
+    public BacteriaFluo setSmoothScale(double smoothScale) {
+        this.smoothScale.setValue(smoothScale);
+        return this;
+    }
+    public BacteriaFluo setDogScale(int dogScale) {
+        this.dogScale.setValue(dogScale);
+        return this;
+    }
+    public BacteriaFluo setHessianScale(double hessianScale) {
+        this.hessianScale.setValue(hessianScale);
+        return this;
+    }
+    public BacteriaFluo setHessianThresholdFactor(double hessianThresholdFactor) {
+        this.hessianThresholdFactor.setValue(hessianThresholdFactor);
+        return this;
+    }
+    
+    public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
+        double fusionThreshold = splitThreshold.getValue().doubleValue()/10d;
+        return run(input, parent.getMask(), fusionThreshold);
+    }
+    
+    
+    @Override
+    public String toString() {
+        return "Bacteria Fluo: " + Utils.toStringArray(parameters);
+    }   
     
     public static ObjectPopulation run(Image input, ImageMask mask, double fusionThreshold) {
         double smoothScale = 3;
@@ -71,28 +106,40 @@ public class BacteriaFluo implements Segmenter {
         
         double t0 = IJAutoThresholder.runThresholder(dog, mask, AutoThresholder.Method.Otsu, 0);
         ObjectPopulation pop1 = SimpleThresholder.run(dog, t0);
-        pop1.filter(null, new ObjectPopulation.Thickness().setX(2).setY(2));
-        pop1.filter(null, new ObjectPopulation.Size().setMin(minSize));
+        pop1.filter(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
+        pop1.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
         
-        pop1.keepOnlyLargestObject(); // for testing purpose -> TODO = loop
+        
         ImageOperations.trim(dog, 0, true, false);
         ImageOperations.normalize(dog, pop1.getLabelImage(), dog);
         //Image dogNorm = ImageOperations.multiply(dog, null, 100/BasicMeasurements.getPercentileValue(pop1.getObjects().get(0), 0.5, smoothed));
-        
         Image hessian = ImageFeatures.getHessian(dog, hessianScale, false)[0].setName("hessian norm");
-        ImageDisplayer disp = new IJImageDisplayer();
+        ImageDisplayer disp=null;
         if (debug) {
+            disp = new IJImageDisplayer();
             disp.showImage(hessian);
         }
-        double[] meanAndSigma = getMeanAndSigma(hessian, pop1.getLabelImage(), 0);
-        //logger.debug("hessian mean: {}, sigma: {}, hessian thld: {}", meanAndSigma[0],meanAndSigma[1], sigmaCoeff * meanAndSigma[1]);
-        ImageInteger seedMap = ImageOperations.threshold(hessian, sigmaCoeff * meanAndSigma[1], false, false, false, null);
-        seedMap = ImageOperations.and(pop1.getLabelImage(), seedMap, seedMap).setName("seeds");
-        //disp.showImage(seedMap);
-        ObjectPopulation popWS = WatershedTransform.watershed(hessian, pop1.getLabelImage(), seedMap, false, null, new WatershedTransform.SizeFusionCriterion(minSize));
-        popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
-        if (debug) disp.showImage(popWS.getLabelImage().duplicate("before merging"));
-        return RegionCollection.mergeHessianBacteria(popWS, dog, hessian, fusionThreshold);
+        //pop1.keepOnlyLargestObject(); // for testing purpose -> TODO = loop
+        ObjectPopulation res=null;
+        ImageByte watershedMask = new ImageByte("", input);
+        for (Object3D maskObject : pop1.getObjects()) {
+            maskObject.draw(watershedMask, 1);
+            double[] meanAndSigma = getMeanAndSigma(hessian, watershedMask, 0);
+            //logger.debug("hessian mean: {}, sigma: {}, hessian thld: {}", meanAndSigma[0],meanAndSigma[1], sigmaCoeff * meanAndSigma[1]);
+            ImageInteger seedMap = ImageOperations.threshold(hessian, sigmaCoeff * meanAndSigma[1], false, false, false, null);
+            seedMap = ImageOperations.and(watershedMask, seedMap, seedMap).setName("seeds");
+            //disp.showImage(seedMap);
+            ObjectPopulation popWS = WatershedTransform.watershed(hessian, watershedMask, seedMap, false, null, new WatershedTransform.SizeFusionCriterion(minSize));
+            popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
+            if (debug) disp.showImage(popWS.getLabelImage().duplicate("before merging"));
+            
+            ObjectPopulation localPop= RegionCollection.mergeHessianBacteria(popWS, dog, hessian, fusionThreshold);
+            if (res==null) res= localPop;
+            else res.addObjects(localPop.getObjects());
+            maskObject.draw(watershedMask, 0);
+        }
+        res.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
+        return res;
         
     }
     
@@ -121,7 +168,7 @@ public class BacteriaFluo implements Segmenter {
     }
 
     public Parameter[] getParameters() {
-        return new Parameter[]{splitThreshold};
+        return parameters;
     }
 
     public boolean does3D() {

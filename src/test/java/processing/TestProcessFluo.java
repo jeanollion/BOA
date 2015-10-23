@@ -20,6 +20,7 @@ package processing;
 import static TestUtils.Utils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
+import boa.gui.objects.DBConfiguration;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
@@ -30,6 +31,7 @@ import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectUtils;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
 import ij.process.AutoThresholder;
@@ -48,6 +50,7 @@ import java.util.logging.Logger;
 import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import plugins.PluginFactory;
+import plugins.Segmenter;
 import plugins.plugins.ObjectSplitter.WatershedObjectSplitter;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.segmenters.BacteriaFluo;
@@ -78,8 +81,8 @@ public class TestProcessFluo {
         PluginFactory.findPlugins("plugins.plugins");
         TestProcessFluo t = new TestProcessFluo();
         //t.correctTracks("testFluo60", 0, 1);
-        t.process("testFluo60", 0, false);
-        
+        //t.process("testFluo60", 0, false);
+        t.testSegBactTrackErrors();
         //t.subsetTimePoints(60, "/data/Images/Fluo/test", "/data/Images/Fluo/testsub60");
         //t.testRotation();
         //t.testSegBacteries();
@@ -301,7 +304,7 @@ public class TestProcessFluo {
         ObjectDAO dao = new ObjectDAO(m, xpDAO);
         MicroscopyField f = xp.getMicroscopyField(field);
         if (preProcess) Processor.preProcessImages(f, dao, true, true);
-        Processor.processAndTrackStructures(xp, f, dao, true);
+        Processor.processAndTrackStructures(xp, f, dao, true, true);
     }
     
     public void correctTracks(String dbName, int field, int structureIdx) {
@@ -314,26 +317,26 @@ public class TestProcessFluo {
     }
     
     public void testSegBactTrackErrors() {
-        String dbName = "testFluo";
-        try {
-            MorphiumConfig cfg = new MorphiumConfig();
-            cfg.setGlobalLogLevel(3);
-            cfg.setDatabase(dbName);
-            cfg.addHost("localhost", 27017);
-            Morphium m=new Morphium(cfg);
-            ExperimentDAO xpDAO = new ExperimentDAO(m);
-            xp=xpDAO.getExperiment();
-            logger.info("Experiment: {} retrieved from db: {}", xp.getName(), dbName);
-            
-            
-            ObjectDAO dao = new ObjectDAO(m, xpDAO);
-            MicroscopyField f = xp.getMicroscopyField(0);
-            
-            
-        } catch (UnknownHostException ex) {
-            logger.error("store xp error: ", ex);
+        String dbName = "testFluo60";
+        DBConfiguration db = new DBConfiguration(MorphiumUtils.createMorphium(dbName));
+        ArrayList<Segmenter> segmenters = new ArrayList<Segmenter>();
+        segmenters.add(new BacteriaFluo().setSplitThreshold(0.1));
+        ArrayList<Integer> errors = new ArrayList<Integer>();
+        for (Segmenter s : segmenters) {
+            db.getExperiment().getStructure(1).getProcessingChain().setSegmenter(s);
+            db.getExperiment().getStructure(1).setTrackCorrector(null);
+            MicroscopyField f = db.getExperiment().getMicroscopyField(0);
+            ArrayList<StructureObject> rootTrack = Processor.processAndTrackStructures(db.getExperiment(), f, db.getDao(), false, false, 0, 1);
+            int[] pathToStructure = db.getExperiment().getPathToRoot(1);
+            int count = 0;
+            for (StructureObject root : rootTrack) {
+                for (StructureObject o : StructureObjectUtils.getAllObjects(root, pathToStructure)) if (StructureObject.TrackFlag.trackError.equals(o.getTrackFlag())) ++count;
+            }
+            errors.add(count);
         }
+        for (int idx = 0; idx<errors.size(); ++idx) logger.info("{}, Errors: {}", segmenters.get(idx), errors.get(idx));
     }
+    
     
     public void testSegBactAllTimes() {
         String dbName = "testFluo";

@@ -106,7 +106,7 @@ public class Processor {
         if (dao!=null) dao.deleteAllObjects();
         for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
             logger.info("processing structures of Field: {}, total number of timePoint: {}...", xp.getMicroscopyField(i).getName(), xp.getMicroscopyField(i).getTimePointNumber());
-            Processor.processAndTrackStructures(xp, xp.getMicroscopyField(i), dao, false);
+            Processor.processAndTrackStructures(xp, xp.getMicroscopyField(i), dao, false, true);
         }
     }
     /**
@@ -117,21 +117,20 @@ public class Processor {
      * @param deleteObjects
      * @param structures in hierarchical order
      */
-    public static ArrayList<StructureObject> processAndTrackStructures(final Experiment xp, MicroscopyField field, final ObjectDAO dao, boolean deleteObjects, int... structures) {
+    public static ArrayList<StructureObject> processAndTrackStructures(final Experiment xp, MicroscopyField field, final ObjectDAO dao, boolean deleteObjects, boolean storeObjects, int... structures) {
         if (dao!=null && deleteObjects) dao.deleteObjectsFromField(field.getName());
         ArrayList<StructureObject> root = field.createRootObjects();
         if (root==null) return null;
         Processor.trackRoot(root);
-        if (dao!=null) dao.store(root, true);
-        if (structures==null || structures.length==0) structures=xp.getStructuresInHierarchicalOrderAsArray();
+        if (dao!=null && storeObjects) dao.store(root, true);
+        if (structures.length==0) structures=xp.getStructuresInHierarchicalOrderAsArray();
         for (int s : structures) {
             Structure structure = xp.getStructure(s);
             if (structure.hasSegmenter()) {
                 logger.info("processing structure: {}...", s);
                 ArrayList<StructureObject> segmentedObjects = new ArrayList<StructureObject> ();
-                for (int t = 0; t<root.size(); ++t) { // segment
-                    Processor.processChildren(s, root.get(t), dao, false, segmentedObjects);
-                }
+                for (int t = 0; t<root.size(); ++t) Processor.processChildren(s, root.get(t), dao, false, segmentedObjects); // segment
+                
                 ArrayList<StructureObject> allCorrectedObjects=null;
                 HashSet<StructureObject> parentsToRelabel = null;
                 if (structure.hasTracker()) { // track
@@ -154,7 +153,7 @@ public class Processor {
                     });*/
                 }
                 if (parentsToRelabel!=null) relabelParents(parentsToRelabel, s); // relabel, no need to add to general list, all objects are already included
-                if (dao!=null) {
+                if (dao!=null && storeObjects) {
                     // no need to delete mergeToErase from dao, because they were never stored
                     
                     if (allCorrectedObjects!=null) { // add split objects, and sort the list afterwards
@@ -304,7 +303,7 @@ public class Processor {
     public static void processChildren(int structureIdx, StructureObject parent, ObjectDAO dao, boolean deleteObjects, ArrayList<StructureObject> segmentedObjects) {
         //if (!parent.isRoot()) throw new IllegalArgumentException("this method only applies to root objects");
         // get all parent objects of the structure
-        ArrayList<StructureObject> allParents = StructureObjectUtils.getAllParentObjects(parent, parent.getExperiment().getPathToStructure(parent.getStructureIdx(), structureIdx));
+        ArrayList<StructureObject> allParents = StructureObjectUtils.getAllParentObjects(parent, parent.getExperiment().getPathToStructure(parent.getStructureIdx(), structureIdx), dao);
         logger.info("Segmenting structure: {}, timePoint: {}, number of parents: {}...", structureIdx, parent.getTimePoint(), allParents.size());
         for (StructureObject localParent : allParents) {
             if (dao!=null && deleteObjects) dao.deleteChildren(localParent.getId(), structureIdx);
