@@ -20,6 +20,8 @@ package boa.gui.objects;
 import static boa.gui.GUI.logger;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import core.Processor;
+import dataStructure.configuration.Experiment;
 import dataStructure.objects.StructureObject;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
@@ -182,14 +184,20 @@ public class TrackNode implements TreeNode, UIContainer {
         JMenuItem[] actions;
         JMenuItem[] openRaw;
         JMenuItem[] openSeg;
+        JMenuItem[] runTracking;
         public TrackNodeUI(TrackNode tn) {
             this.trackNode=tn;
-            this.actions = new JMenuItem[2];
+            this.actions = new JMenuItem[3];
             JMenu segSubMenu = new JMenu("Open Segmented Track Image");
             actions[0] = segSubMenu;
             JMenu rawSubMenu = new JMenu("Open Raw Track Image");
             actions[1] = rawSubMenu;
             String[] structureNames = trackNode.trackHead.getExperiment().getStructuresAsString();
+            JMenu runTrackingSubMenu = new JMenu("Run tracking");
+            actions[2] = runTrackingSubMenu;
+            String[] childStructureNames = trackNode.trackHead.getExperiment().getChildStructuresAsString(trackNode.trackHead.getStructureIdx());
+            
+            
             openSeg=new JMenuItem[structureNames.length];
             for (int i = 0; i < openSeg.length; i++) {
                 openSeg[i] = new JMenuItem(structureNames[i]);
@@ -225,6 +233,23 @@ public class TrackNode implements TreeNode, UIContainer {
                     }
                 );
                 rawSubMenu.add(openRaw[i]);
+            }
+            runTracking = new JMenuItem[childStructureNames.length];
+            for (int i = 0; i < runTracking.length; i++) {
+                runTracking[i] = new JMenuItem(childStructureNames[i]);
+                runTracking[i].setAction(new AbstractAction(childStructureNames[i]) {
+                        @Override
+                        public void actionPerformed(ActionEvent ae) {
+                            int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
+                            logger.debug("running tracking for structure: {} of idx: {}, within track: {}", ae.getActionCommand(), structureIdx, trackHead);
+                            Experiment xp = root.generator.xpDAO.getExperiment();
+                            Processor.trackStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.objectDAO, true, root.generator.getSelectedTrackHeads());
+                            // reload tree
+                            root.generator.controller.updateParentTracks(root.generator.controller.getTreeIdx(trackHead.getStructureIdx()));
+                        }
+                    }
+                );
+                runTrackingSubMenu.add(runTracking[i]);
             }
         }
         public Object[] getDisplayComponent() {return actions;}

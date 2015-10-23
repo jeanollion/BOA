@@ -154,13 +154,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }
     
     // ImageObjectListener implementation
-    public void fireObjectSelected(StructureObject selectedObject, boolean track) {
+    public void fireObjectSelected(StructureObject selectedObject, boolean addToSelection, boolean track) {
         if (track) {
             // selection de la track
             
         }
         // selection de l'objet dans l'arbre d'objets
-        objectTreeGenerator.selectObject(selectedObject);
+        objectTreeGenerator.selectObject(selectedObject, addToSelection);
         logger.trace("fire object selected");
     }
     

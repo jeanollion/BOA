@@ -89,7 +89,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                     StructureObject o = i.getClickedObject(offscreenX, offscreenY, ip.getSlice()-1);
                     selectObjects(image, ctrl, o);
                     logger.trace("selected object: "+o);
-                    listener.fireObjectSelected(o, i.isTimeImage());
+                    listener.fireObjectSelected(o, ctrl, i.isTimeImage());
                 } else logger.trace("no image interface found");
             }
 
@@ -182,7 +182,9 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                 if (o2==null) continue;
                 BoundingBox b1 = tm.getObjectOffset(o1);
                 BoundingBox b2 = tm.getObjectOffset(o2);
-                
+                if (b1 ==null) logger.error("object not found: {}", o1);
+                if (b2 ==null) logger.error("object not found: {}", o2);
+                if (b1==null || b2==null) continue;
                 Arrow arrow = new Arrow(b1.getXMean(), b1.getYMean(), b2.getXMean()-1, b2.getYMean());
                 arrow.setStrokeColor(o2.hasTrackLinkError()?ImageWindowManager.trackErrorColor: o2.hasTrackLinkCorrection() ?ImageWindowManager.trackCorrectionColor : color);
                 arrow.setStrokeWidth(trackArrowStrokeWidth);

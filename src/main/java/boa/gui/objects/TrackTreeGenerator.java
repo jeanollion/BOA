@@ -43,7 +43,9 @@ import boa.gui.configuration.TransparentTreeCellRenderer;
 import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import java.awt.Color;
+import java.awt.event.InputEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
 import javax.swing.tree.DefaultTreeModel;
 import utils.Utils;
 /**
@@ -104,12 +106,7 @@ public class TrackTreeGenerator {
         //tree.setRootVisible(false);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
         tree.setOpaque(false);
-        DefaultTreeCellRenderer renderer = new TrackTreeCellRenderer();
-        Icon personIcon = null;
-        renderer.setLeafIcon(personIcon);
-        renderer.setClosedIcon(personIcon);
-        renderer.setOpenIcon(personIcon);
-        tree.setCellRenderer(renderer);
+        tree.setCellRenderer(new TrackTreeCellRenderer());
         tree.setScrollsOnExpand(true);
         tree.addMouseListener(new MouseAdapter() {
             @Override
@@ -122,24 +119,26 @@ public class TrackTreeGenerator {
                     if (pathBounds != null && pathBounds.contains(e.getX(), e.getY())) {
                         JPopupMenu menu = new JPopupMenu();
                         Object lastO = path.getLastPathComponent();
-                        logger.debug("right-click on element: {}", lastO);
+                        //logger.debug("right-click on element: {}", lastO);
                         if (lastO instanceof UIContainer) {
                             UIContainer UIC=(UIContainer)lastO;
                             addToMenu(UIC.getDisplayComponent(), menu);
                         }
                         menu.show(tree, pathBounds.x, pathBounds.y + pathBounds.height);
                     }
-                } else if (SwingUtilities.isLeftMouseButton(e)) { 
+                } else if (SwingUtilities.isLeftMouseButton(e) && !Utils.isCtrlOrShiftDown(e)) { 
                     if (tree.isCollapsed(path)) { // expand & select all children
                         ArrayList<TreePath> pathToSelect = new ArrayList<TreePath>();
                         Utils.expandAll(tree, path, pathToSelect);
-                        tree.setSelectionPaths(pathToSelect.toArray(new TreePath[pathToSelect.size()]));
-                    } else tree.setSelectionPath(path);
+                        Utils.addToSelectionPaths(tree, pathToSelect);
+                    } else Utils.addToSelectionPaths(tree, path);
                 }
                 displaySelectedTracks();
             }
         });
     }
+    
+    
     
     public void displaySelectedTracks() {
         if (logger.isTraceEnabled()) logger.trace("display: {} selected tracks", tree.getSelectionCount());
@@ -180,6 +179,16 @@ public class TrackTreeGenerator {
         while(o.getTimePoint()>0) {
             o = objectDAO.getObject(o.getPrevious().getTrackHeadId());
             res.add(o);
+        }
+        return res;
+    }
+    
+    public ArrayList<StructureObject> getSelectedTrackHeads() {
+        ArrayList<StructureObject> res = new ArrayList<StructureObject>(tree.getSelectionCount());
+        for (TreePath p : tree.getSelectionPaths()) {
+            if (p.getLastPathComponent() instanceof TrackNode) {
+                res.add(((TrackNode)p.getLastPathComponent()).trackHead);
+            }
         }
         return res;
     }

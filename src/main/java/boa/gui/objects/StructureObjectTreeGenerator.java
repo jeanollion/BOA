@@ -64,12 +64,8 @@ public class StructureObjectTreeGenerator {
         treeModel = new StructureObjectTreeModel(experimentNode);
         tree=new JTree(treeModel);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
-        DefaultTreeCellRenderer renderer = new TransparentTreeCellRenderer();
-        Icon icon = null;
-        renderer.setLeafIcon(icon);
-        renderer.setClosedIcon(icon);
-        renderer.setOpenIcon(icon);
-        tree.setCellRenderer(renderer);
+        tree.setOpaque(false);
+        tree.setCellRenderer(new TransparentTreeCellRenderer());
         tree.setScrollsOnExpand(true);
         tree.addMouseListener(new MouseAdapter() {
             @Override
@@ -111,9 +107,12 @@ public class StructureObjectTreeGenerator {
         }
     }
     
-    public void selectObject(StructureObject object) {
-        if (object==null) tree.setSelectionRow(-1);
-        else tree.setSelectionPath(getObjectTreePath(object));
+    public void selectObject(StructureObject object, boolean addToSelection) {
+        if (object==null && !addToSelection) tree.setSelectionRow(-1);
+        else {
+            if (addToSelection) Utils.addToSelectionPaths(tree, getObjectTreePath(object));
+            else tree.setSelectionPath(getObjectTreePath(object));
+        }
     }
     
     public TreePath getObjectTreePath(StructureObject object) {

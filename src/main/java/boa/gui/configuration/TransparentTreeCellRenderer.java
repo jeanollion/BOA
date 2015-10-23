@@ -28,7 +28,11 @@ import javax.swing.tree.DefaultTreeCellRenderer;
  * @author nasique
  */
 public class TransparentTreeCellRenderer extends DefaultTreeCellRenderer {
-
+    public TransparentTreeCellRenderer() {
+        setLeafIcon(null);
+        setClosedIcon(null);
+        setOpenIcon(null);
+    }
     @Override
     public Color getBackgroundNonSelectionColor() {
         return (null);

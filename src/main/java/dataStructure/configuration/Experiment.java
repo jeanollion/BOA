@@ -191,7 +191,12 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     public String[] getFieldsAsString() {return fields.getChildrenString();}
     
-    
+    public String[] getChildStructuresAsString(int structureIdx) {
+        int[] childIdx = getAllChildStructures(structureIdx);
+        String[] res = new String[childIdx.length];
+        for (int i = 0; i<res.length; ++i) res[i] = this.getStructure(childIdx[i]).getName();
+        return res;
+    }
     
     /**
      * 

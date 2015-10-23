@@ -31,7 +31,11 @@ import javax.swing.tree.TreeNode;
  * @author nasique
  */
 public class TrackTreeCellRenderer extends DefaultTreeCellRenderer {
-
+    public TrackTreeCellRenderer() {
+        setLeafIcon(null);
+        setClosedIcon(null);
+        setOpenIcon(null);
+    }
     @Override
     public Color getBackgroundNonSelectionColor() {
         return (null);

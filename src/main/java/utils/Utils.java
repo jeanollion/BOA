@@ -24,8 +24,11 @@ import ij.gui.Plot;
 import image.Image;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Enumeration;
@@ -143,7 +146,26 @@ public class Utils {
         return res;
     }
     
+    public static boolean isCtrlOrShiftDown(MouseEvent e) {
+        return (e.getModifiers()&InputEvent.CTRL_DOWN_MASK)!=0 || (e.getModifiers()&InputEvent.ALT_DOWN_MASK)!=0 ;
+    }
     
+    public static void addToSelectionPaths(JTree tree, TreePath... pathToSelect) {
+        TreePath[] sel = tree.getSelectionPaths();
+        if (sel==null) tree.setSelectionPaths(pathToSelect);
+        else {
+            ArrayList<TreePath> list = new ArrayList<TreePath>(pathToSelect.length+sel.length);
+            list.addAll(Arrays.asList(sel));
+            list.addAll(Arrays.asList(pathToSelect));
+            tree.setSelectionPaths(list.toArray(new TreePath[list.size()]));
+        }
+    }
+    
+    public static void addToSelectionPaths(JTree tree, ArrayList<TreePath> pathToSelect) {
+        TreePath[] sel = tree.getSelectionPaths();
+        if (sel!=null) pathToSelect.addAll(Arrays.asList(sel));
+        tree.setSelectionPaths(pathToSelect.toArray(new TreePath[pathToSelect.size()]));
+    }
     
     private static double incrementColor(double h, double goldenRatioConjugate) {return (h+goldenRatioConjugate)%1;}
     
