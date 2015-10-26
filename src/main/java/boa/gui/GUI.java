@@ -627,11 +627,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }//GEN-LAST:event_selectAllTracksButtonActionPerformed
 
     private void nextTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextTrackErrorButtonActionPerformed
-        // TODO add your handling code here:
-        // 1) determiner le X max visible de l'image courante
-        // 2) aller chercher la prochaine erreur
-        // 3) scroll l'image courante jusqu'a la prochaine erreur
-        logger.info("not implemented yet!");
+        if (!checkConnection()) return;
+        ImageWindowManagerFactory.getImageManager().goToNextTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads());
     }//GEN-LAST:event_nextTrackErrorButtonActionPerformed
 
     private void selectContainingTrackToggleButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectContainingTrackToggleButtonActionPerformed

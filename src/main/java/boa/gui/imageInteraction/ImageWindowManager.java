@@ -20,6 +20,7 @@ package boa.gui.imageInteraction;
 import static boa.gui.GUI.logger;
 import dataStructure.objects.StructureObject;
 import ij.ImagePlus;
+import image.BoundingBox;
 import image.Image;
 import image.ImageInteger;
 import java.awt.Color;
@@ -31,6 +32,7 @@ import java.util.Map.Entry;
 /**
  *
  * @author jollion
+ * @param <T> image class
  */
 public abstract class ImageWindowManager<T> {
     public final static Color[] palette = new Color[]{new Color(166, 206, 227), new Color(31,120,180), new Color(178,223,138), new Color(51,160,44), new Color(251,154,153), new Color(253,191,111), new Color(255,127,0), new Color(255,255,153), new Color(177,89,40)};
@@ -129,4 +131,56 @@ public abstract class ImageWindowManager<T> {
     public abstract void selectObjects(Image image, boolean addToCurrentSelection, StructureObject... selectedObjects);
     public abstract void unselectObjects(Image image);
     public abstract void displayTrack(Image image, boolean addToCurrentSelectedTracks, ArrayList<StructureObject> track, Color color);
+    public void goToNextTrackError(Image trackImage, ArrayList<StructureObject> tracks) {
+        //ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(tracks.get(0).getParent().getTrackHead(), tracks.get(0).getStructureIdx(), true));
+        if (tracks==null || tracks.isEmpty()) return;
+        if (trackImage==null) {
+            T selectedImage = displayer.getCurrentImage();
+            trackImage = displayer.getImage(selectedImage);
+        }
+        ImageObjectInterface i = this.getImageObjectInterface(trackImage);
+        if (!i.isTimeImage()) {
+            logger.warn("selected image is not a track image");
+            return;
+        }
+        TrackMask tm = (TrackMask)i;
+        BoundingBox currentDisplayRange = this.displayer.getDisplayRange(trackImage);
+        //int minTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMin());
+        int maxTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMax())-1;
+        logger.debug("Current Display range: {}, maxTimePoint: {}, number of selected tracks: {}", currentDisplayRange, maxTimePoint, tracks.size());
+        StructureObject nextError = getNextError(maxTimePoint, tracks);
+        if (nextError==null) logger.info("No errors detected after timepoint: {}", maxTimePoint);
+        else {
+            
+            BoundingBox off = tm.getObjectOffset(nextError);
+            int mid = (int)off.getXMean();
+            BoundingBox nextDisplayRange = new BoundingBox(mid-currentDisplayRange.getSizeX()/2, mid+currentDisplayRange.getSizeX()/2, currentDisplayRange.getyMin(), currentDisplayRange.getyMax(), currentDisplayRange.getzMin(), currentDisplayRange.getzMax());
+            logger.info("Error detected @ timepoint: {}, xMid: {}, update display range: {}", nextError.getTimePoint(), mid,  nextDisplayRange);
+            displayer.setDisplayRange(nextDisplayRange, trackImage);
+        }
+    }
+    private static StructureObject getNextError(int maxTimePoint, ArrayList<StructureObject> tracks) {
+        StructureObject[] trackArray = tracks.toArray(new StructureObject[tracks.size()]);
+        boolean change = true;
+        boolean remainTrack = true;
+        int currentTimePoint = maxTimePoint;
+        while(remainTrack) {
+            change = false;
+            remainTrack= false;
+            for (int trackIdx = 0; trackIdx<trackArray.length; ++trackIdx) {
+                if (trackArray[trackIdx]!=null) {
+                    remainTrack=true;
+                    if (trackArray[trackIdx].getTimePoint()<currentTimePoint) {
+                        trackArray[trackIdx]=trackArray[trackIdx].getNext(); 
+                        change=true;
+                    }
+                    if (trackArray[trackIdx]!=null && trackArray[trackIdx].getTimePoint()==currentTimePoint && trackArray[trackIdx].getTrackFlag()!=null) return trackArray[trackIdx];
+                }
+            }
+            if (!change) ++currentTimePoint;
+        }
+        
+        return null;
+    }
+
 }

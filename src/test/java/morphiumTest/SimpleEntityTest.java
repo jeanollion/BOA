@@ -38,7 +38,7 @@ public class SimpleEntityTest {
     static int massInsertCount = 0;
     static boolean objectIdNull = false;
     static boolean listInsertFail=false;
-    @Test
+    //@Test
     public void updateRefTest() {
         Morphium m = MorphiumUtils.createMorphium("testUpdateRef");
         m.clearCollection(SimpleEntity.class);
@@ -94,6 +94,29 @@ public class SimpleEntityTest {
         assertEquals("number of operations", 1, massInsertCount);
         assertEquals("duration 0", false, duration0);
     }
+    
+    //@Test
+    public void listInsertTest() {
+        Morphium m = MorphiumUtils.createMorphium("testUpdateRef");
+        m.clearCollection(SimpleEntity.class);
+        ArrayList<SimpleEntity> list = new ArrayList<SimpleEntity>(1000);
+        
+        for (int i = 0; i<1000; ++i) list.add( new SimpleEntity(i));
+        long tInitLoop = System.currentTimeMillis();
+        for (SimpleEntity o : list) m.store(o);
+        long tEndLoop = System.currentTimeMillis();
+        m.clearCollection(SimpleEntity.class);
+        list.clear();
+        for (int i = 0; i<1000; ++i) list.add( new SimpleEntity(i));
+        long tInitMass = System.currentTimeMillis();
+        m.storeList(list);
+        long tEndMass= System.currentTimeMillis();
+        
+        
+        logger.info("list insert: {}, normal insert: {}", tEndMass-tInitMass, tEndLoop-tInitLoop);
+        
+    }
+    
     public synchronized static void incrementMassCounter() {
         massInsertCount++;
     }

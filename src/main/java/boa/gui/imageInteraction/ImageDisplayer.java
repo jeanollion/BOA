@@ -30,6 +30,7 @@ public interface ImageDisplayer<T> {
     public Image getImage(T image);
     public void updateImageDisplay(Image image);
     public void showImage5D(String title, Image[][] imageTC);
-    //public BoundingBox getImageDisplay(Image image);
-    //public void setImageDisplay
+    public BoundingBox getDisplayRange(Image image);
+    public void setDisplayRange(BoundingBox bounds, Image image);
+    public abstract T getCurrentImage();
 }

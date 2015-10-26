@@ -116,7 +116,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
     @Override
     public void selectObjects(Image image, boolean addToCurrentSelection, StructureObject... selectedObjects) {
         ImagePlus ip;
-        if (image==null) ip = getCurrentImage();
+        if (image==null) ip = displayer.getCurrentImage();
         else ip = displayer.getImage(image);
         if (ip==null) return;
         if (selectedObjects==null || selectedObjects.length==0 || (selectedObjects.length==1 && selectedObjects[0]==null)) {
@@ -151,7 +151,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
         logger.trace("display selected track: image: {}, addToCurrentTracks: {}, track length: {} color: {}", image,addToCurrentSelectedTracks, track==null?"null":track.size(), color);
         ImagePlus ip;
         if (image==null) {
-            ip = getCurrentImage();
+            ip = displayer.getCurrentImage();
             image = displayer.getImage(ip);
         } else ip = displayer.getImage(image);
         if (ip==null || image==null) {
@@ -228,11 +228,6 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
         else {
             for (Roi r : overlay.toArray()) if (!(r instanceof Arrow)) overlay.remove(r);
         }
-    }
-    
-    private static ImagePlus getCurrentImage() {
-        logger.trace("get current image: {}", WindowManager.getCurrentImage());
-        return WindowManager.getCurrentImage();
     }
 
     @Override

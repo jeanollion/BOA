@@ -83,6 +83,12 @@ public class TrackMask extends ImageObjectInterface {
         if (trackOffset[i].contains(x, y, z)) return trackObjects[i].getClickedObject(x, y, z);
         else return null;
     }
+    
+    public int getClosestTimePoint(int x) {
+        int i = Arrays.binarySearch(trackOffset, new BoundingBox(x, x, 0, 0, 0, 0), new bbComparatorX());
+        if (i<0) i=-i-2; // element inférieur à x puisqu'on compare les xmin des bounding box
+        return trackObjects[i].parent.getTimePoint();
+    }
 
     @Override
     public BoundingBox getObjectOffset(StructureObject object) {

@@ -36,6 +36,7 @@ import image.ImageFloat;
 import image.ImageShort;
 import image.TypeConverter;
 import java.awt.Color;
+import java.awt.Rectangle;
 import java.awt.image.ColorModel;
 import java.util.HashMap;
 
@@ -165,9 +166,36 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         }
         im.getCanvas().get
     }*/
-
-    public void setImageDisplay() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    
+    @Override
+    public BoundingBox getDisplayRange(Image image) {
+        ImagePlus ip = this.getImage(image);
+        if (ip!=null) {
+            Rectangle r = ip.getCanvas().getSrcRect();
+            int z = ip.getCurrentSlice()-1;
+            return new BoundingBox(r.x, r.x+r.width-1, r.y, r.y+r.height-1, z, z);
+        } else return null;
     }
-
+    
+    @Override
+    public void setDisplayRange(BoundingBox bounds, Image image) {
+        ImagePlus ip = this.getImage(image);
+        if (ip!=null) {
+            Rectangle r = ip.getCanvas().getSrcRect();
+            r.x=bounds.getxMin();
+            r.y=bounds.getyMin();
+            r.width=bounds.getSizeX();
+            r.height=bounds.getSizeY();
+            ip.setSlice(bounds.getzMin()+1);
+            ip.draw();
+            //ip.updateAndDraw();
+            //ip.updateAndRepaintWindow();
+            
+        } 
+    }
+    @Override
+    public ImagePlus getCurrentImage() {
+        //logger.trace("get current image: {}", WindowManager.getCurrentImage());
+        return WindowManager.getCurrentImage();
+    }
 }
