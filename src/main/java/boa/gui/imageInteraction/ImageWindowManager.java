@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
+import utils.Utils;
 
 /**
  *
@@ -128,9 +129,15 @@ public abstract class ImageWindowManager<T> {
         return null;
     }
     
+    
     public abstract void selectObjects(Image image, boolean addToCurrentSelection, StructureObject... selectedObjects);
     public abstract void unselectObjects(Image image);
     public abstract void displayTrack(Image image, boolean addToCurrentSelectedTracks, ArrayList<StructureObject> track, Color color);
+    public void displayTrackAllImages(ImageObjectInterface i, boolean addToCurrentSelectedTracks, ArrayList<StructureObject> track, Color color) {
+        if (i==null && track!=null && !track.isEmpty()) i = this.getImageObjectInterface(track.get(0).getTrackHead(), track.get(0).getStructureIdx());
+        ArrayList<Image> images= Utils.getKeys(this.imageObjectInterfaceMap, i);
+        for (Image image : images) displayTrack(image, addToCurrentSelectedTracks, track, color);
+    }
     public void goToNextTrackError(Image trackImage, ArrayList<StructureObject> tracks) {
         //ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(tracks.get(0).getParent().getTrackHead(), tracks.get(0).getStructureIdx(), true));
         if (tracks==null || tracks.isEmpty()) return;

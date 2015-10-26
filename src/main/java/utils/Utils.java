@@ -17,6 +17,7 @@
  */
 package utils;
 
+import boa.gui.imageInteraction.ImageObjectInterface;
 import configuration.parameters.FileChooser;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.Morphium;
@@ -36,6 +37,8 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.JComboBox;
@@ -116,6 +119,12 @@ public class Utils {
     public static<T> ArrayList<T> reverseOrder(ArrayList<T> arrayList) {
         ArrayList<T> res = new ArrayList<T>(arrayList.size());
         for (int i = arrayList.size()-1; i>=0; --i) res.add(arrayList.get(i));
+        return res;
+    }
+    
+    public static <K, V> ArrayList<K> getKeys(Map<K, V> map, V value) {
+        ArrayList<K> res = new ArrayList<K>();
+        for (Entry<K, V> e : map.entrySet()) if (e.getValue().equals(value)) res.add(e.getKey());
         return res;
     }
     

@@ -40,6 +40,7 @@ import javax.swing.tree.TreeSelectionModel;
 import static boa.gui.GUI.logger;
 import boa.gui.configuration.TrackTreeCellRenderer;
 import boa.gui.configuration.TransparentTreeCellRenderer;
+import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import java.awt.Color;
@@ -92,7 +93,7 @@ public class TrackTreeGenerator {
     }
     
     
-    private int getStructure() {
+    private int getStructureIdx() {
         if (isRootSet()) {
             Object root = treeModel.getRoot();
             if (root instanceof TrackExperimentNode) return ((TrackExperimentNode)root).structureIdx;
@@ -100,6 +101,13 @@ public class TrackTreeGenerator {
         }
         return -1;
     }
+    
+    private StructureObject getParentTrackHead() {
+        Object root = treeModel.getRoot();
+        if (root instanceof RootTrackNode) return ((RootTrackNode)root).getParentTrackHead();
+        else return null;
+    }
+    
     private void generateTree(TreeNode root) {
         treeModel = new StructureObjectTreeModel(root);
         tree=new JTree(treeModel);
@@ -138,18 +146,24 @@ public class TrackTreeGenerator {
         });
     }
     
-    
+    private ImageObjectInterface getImageObjectInterface() {
+        StructureObject parentTrackHead = getParentTrackHead();
+        if (parentTrackHead==null) return null;
+        return ImageWindowManagerFactory.getImageManager().getImageObjectInterface(parentTrackHead, getStructureIdx());
+    }
     
     public void displaySelectedTracks() {
         if (logger.isTraceEnabled()) logger.trace("display: {} selected tracks", tree.getSelectionCount());
-        ImageWindowManagerFactory.getImageManager().displayTrack(null, false, null, null); // unselect tracks
+        ImageObjectInterface i = getImageObjectInterface();
+        if (i!=null) ImageWindowManagerFactory.getImageManager().displayTrackAllImages(i, false, null, null); // unselect tracks
         if (tree.getSelectionCount()==0) return;
         //Color[] palette = Utils.generatePalette(tree.getSelectionCount(), true);
         int idx=0;
         for (TreePath p : tree.getSelectionPaths()) {
             Object lastO = p.getLastPathComponent();
             if (lastO instanceof TrackNode) {
-                ImageWindowManagerFactory.getImageManager().displayTrack(null, true, ((TrackNode)lastO).track, ImageWindowManager.palette[idx++%ImageWindowManager.palette.length]);
+                //ImageWindowManagerFactory.getImageManager().displayTrack(null, true, ((TrackNode)lastO).track, ImageWindowManager.palette[idx++%ImageWindowManager.palette.length]);
+                ImageWindowManagerFactory.getImageManager().displayTrackAllImages(i, true, ((TrackNode)lastO).track, ImageWindowManager.palette[idx++%ImageWindowManager.palette.length]);
             }
         }
     }
