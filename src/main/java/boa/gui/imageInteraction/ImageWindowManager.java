@@ -145,9 +145,11 @@ public abstract class ImageWindowManager<T> {
         }
         TrackMask tm = (TrackMask)i;
         BoundingBox currentDisplayRange = this.displayer.getDisplayRange(trackImage);
-        //int minTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMin());
-        int maxTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMax())-1;
-        logger.debug("Current Display range: {}, maxTimePoint: {}, number of selected tracks: {}", currentDisplayRange, maxTimePoint, tracks.size());
+        int minTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMin());
+        int maxTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMax());
+        if (maxTimePoint>minTimePoint+2) maxTimePoint-=2;
+        else maxTimePoint--;
+        //logger.debug("Current Display range: {}, maxTimePoint: {}, number of selected tracks: {}", currentDisplayRange, maxTimePoint, tracks.size());
         StructureObject nextError = getNextError(maxTimePoint, tracks);
         if (nextError==null) logger.info("No errors detected after timepoint: {}", maxTimePoint);
         else {
@@ -156,6 +158,35 @@ public abstract class ImageWindowManager<T> {
             int mid = (int)off.getXMean();
             BoundingBox nextDisplayRange = new BoundingBox(mid-currentDisplayRange.getSizeX()/2, mid+currentDisplayRange.getSizeX()/2, currentDisplayRange.getyMin(), currentDisplayRange.getyMax(), currentDisplayRange.getzMin(), currentDisplayRange.getzMax());
             logger.info("Error detected @ timepoint: {}, xMid: {}, update display range: {}", nextError.getTimePoint(), mid,  nextDisplayRange);
+            displayer.setDisplayRange(nextDisplayRange, trackImage);
+        }
+    }
+    public void goToPreviousTrackError(Image trackImage, ArrayList<StructureObject> tracks) {
+        //ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(tracks.get(0).getParent().getTrackHead(), tracks.get(0).getStructureIdx(), true));
+        if (tracks==null || tracks.isEmpty()) return;
+        if (trackImage==null) {
+            T selectedImage = displayer.getCurrentImage();
+            trackImage = displayer.getImage(selectedImage);
+        }
+        ImageObjectInterface i = this.getImageObjectInterface(trackImage);
+        if (!i.isTimeImage()) {
+            logger.warn("selected image is not a track image");
+            return;
+        }
+        TrackMask tm = (TrackMask)i;
+        BoundingBox currentDisplayRange = this.displayer.getDisplayRange(trackImage);
+        int minTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMin());
+        int maxTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMax());
+        if (maxTimePoint>minTimePoint+2) minTimePoint+=2;
+        else minTimePoint++;
+        logger.debug("Current Display range: {}, minTimePoint: {}, number of selected tracks: {}", currentDisplayRange, minTimePoint, tracks.size());
+        StructureObject prevError = getPreviousError(minTimePoint, tracks);
+        if (prevError==null) logger.info("No errors detected before timepoint: {}", minTimePoint);
+        else {
+            BoundingBox off = tm.getObjectOffset(prevError);
+            int mid = (int)off.getXMean();
+            BoundingBox nextDisplayRange = new BoundingBox(mid-currentDisplayRange.getSizeX()/2, mid+currentDisplayRange.getSizeX()/2, currentDisplayRange.getyMin(), currentDisplayRange.getyMax(), currentDisplayRange.getzMin(), currentDisplayRange.getzMax());
+            logger.info("Error detected @ timepoint: {}, xMid: {}, update display range: {}", prevError.getTimePoint(), mid,  nextDisplayRange);
             displayer.setDisplayRange(nextDisplayRange, trackImage);
         }
     }
@@ -178,6 +209,36 @@ public abstract class ImageWindowManager<T> {
                 }
             }
             if (!change) ++currentTimePoint;
+        }
+        
+        return null;
+    }
+    
+    private static StructureObject getPreviousError(int minTimePoint, ArrayList<StructureObject> tracks) {
+        StructureObject[] trackArray = tracks.toArray(new StructureObject[tracks.size()]);
+        // get all tracks to maximal value < errorTimePoint
+        for (int trackIdx = 0; trackIdx<trackArray.length; ++trackIdx) {
+            if (trackArray[trackIdx].getTimePoint()>=minTimePoint) trackArray[trackIdx] = null;
+            else while (trackArray[trackIdx].getNext()!=null && trackArray[trackIdx].getTimePoint()<minTimePoint-1) trackArray[trackIdx] = trackArray[trackIdx].getNext();
+        }
+        
+        boolean change = true;
+        boolean remainTrack = true;
+        int currentTimePoint = minTimePoint-1;
+        while(remainTrack) {
+            change = false;
+            remainTrack= false;
+            for (int trackIdx = 0; trackIdx<trackArray.length; ++trackIdx) {
+                if (trackArray[trackIdx]!=null) {
+                    remainTrack=true;
+                    if (trackArray[trackIdx].getTimePoint()>currentTimePoint) {
+                        trackArray[trackIdx]=trackArray[trackIdx].getPrevious();
+                        change=true;
+                    }
+                    if (trackArray[trackIdx]!=null && trackArray[trackIdx].getTimePoint()==currentTimePoint && trackArray[trackIdx].getTrackFlag()!=null) return trackArray[trackIdx];
+                }
+            }
+            if (!change) --currentTimePoint;
         }
         
         return null;

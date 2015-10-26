@@ -307,6 +307,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         selectContainingTrackToggleButton = new javax.swing.JToggleButton();
         splitObjectButton = new javax.swing.JButton();
         mergeObjectsButton = new javax.swing.JButton();
+        previousTrackErrorButton = new javax.swing.JButton();
         ObjectTreeJSP = new javax.swing.JSplitPane();
         StructurePanel = new javax.swing.JPanel();
         structureJSP = new javax.swing.JScrollPane();
@@ -465,6 +466,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
+        previousTrackErrorButton.setText("Go to previous track error");
+        previousTrackErrorButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                previousTrackErrorButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout ControlPanelLayout = new javax.swing.GroupLayout(ControlPanel);
         ControlPanel.setLayout(ControlPanelLayout);
         ControlPanelLayout.setHorizontalGroup(
@@ -476,6 +484,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             .addComponent(selectContainingTrackToggleButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(splitObjectButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(mergeObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(previousTrackErrorButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         ControlPanelLayout.setVerticalGroup(
             ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -488,11 +497,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(nextTrackErrorButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(selectContainingTrackToggleButton)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(previousTrackErrorButton)
+                .addGap(4, 4, 4)
                 .addComponent(splitObjectButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(mergeObjectsButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(selectContainingTrackToggleButton)
                 .addGap(0, 0, Short.MAX_VALUE))
         );
 
@@ -690,6 +701,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         }
     }//GEN-LAST:event_mergeObjectsButtonActionPerformed
 
+    private void previousTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_previousTrackErrorButtonActionPerformed
+        if (!checkConnection()) return;
+        ImageWindowManagerFactory.getImageManager().goToPreviousTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads());
+    }//GEN-LAST:event_previousTrackErrorButtonActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -743,6 +759,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JButton mergeObjectsButton;
     private javax.swing.JButton nextTrackErrorButton;
     private javax.swing.JButton preProcessButton;
+    private javax.swing.JButton previousTrackErrorButton;
     private javax.swing.JButton reProcess;
     private javax.swing.JButton saveExperiment;
     private javax.swing.JButton segmentButton;
