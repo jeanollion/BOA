@@ -403,9 +403,7 @@
                       <SubComponents>
                         <Container class="javax.swing.JPanel" name="trackSubPanel">
 
-                          <Layout class="org.netbeans.modules.form.compat2.layouts.DesignFlowLayout">
-                            <Property name="alignment" type="int" value="3"/>
-                          </Layout>
+                          <Layout class="org.netbeans.modules.form.compat2.layouts.DesignBoxLayout"/>
                         </Container>
                       </SubComponents>
                     </Container>

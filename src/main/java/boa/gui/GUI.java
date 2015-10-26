@@ -97,6 +97,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     public GUI() {
         this.instance=this;
         initComponents();
+        
         addHorizontalScrollBar(trackStructureJCB);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         PluginFactory.findPlugins("plugins.plugins");
@@ -209,6 +210,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 /*JScrollPane jsp = new JScrollPane(tree);
                 jsp.getViewport().setOpaque(false);
                 jsp.setOpaque(false);*/
+                tree.setAlignmentY(TOP_ALIGNMENT);
                 trackSubPanel.add(tree);
                 newCurrentTrees.put(e.getKey(), tree);
             }
@@ -525,7 +527,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
         TimePanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Tracks"));
 
-        trackSubPanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEADING));
+        trackSubPanel.setLayout(new javax.swing.BoxLayout(trackSubPanel, javax.swing.BoxLayout.LINE_AXIS));
         TimeJSP.setViewportView(trackSubPanel);
 
         javax.swing.GroupLayout TimePanelLayout = new javax.swing.GroupLayout(TimePanel);
