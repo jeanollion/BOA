@@ -221,8 +221,8 @@ public class ProcessingTest {
         StructureObject r2 = new StructureObject("test", 1, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), xp);
         StructureObject r3 = new StructureObject("test", 2, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), xp);
         ObjectDAO dao = new ObjectDAO(m, xpDAO);
-        r2.setPreviousInTrack(r, true, false);
-        r3.setPreviousInTrack(r2, true, false);
+        r2.setPreviousInTrack(r, true);
+        r3.setPreviousInTrack(r2, true);
         dao.store(true, r, r2, r3);
         MorphiumUtils.waitForWrites(m);
         MorphiumUtils.addDereferencingListeners(m, dao, xpDAO);

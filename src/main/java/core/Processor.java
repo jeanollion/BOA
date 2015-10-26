@@ -316,7 +316,7 @@ public class Processor {
     
     public static void trackRoot(List<StructureObject> rootsT) {
         //logger.debug("tracking root objects. dao==null? {}", dao==null);
-        for (int i = 1; i<rootsT.size(); ++i) rootsT.get(i).setPreviousInTrack(rootsT.get(i-1), false, false);
+        for (int i = 1; i<rootsT.size(); ++i) rootsT.get(i).setPreviousInTrack(rootsT.get(i-1), false);
         //if (dao!=null) dao.updateTrackAttributes(rootsT);
     }
     

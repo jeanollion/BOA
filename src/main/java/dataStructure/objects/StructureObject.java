@@ -202,18 +202,21 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.idx=idx;
     }
 
-
+    
     // track-related methods
+    @Override public void setPreviousInTrack(StructureObjectTracker previous, boolean isTrackHead) {
+        setPreviousInTrack(previous, isTrackHead, null);
+    }
     /**
      * 
      * @param previous the previous object in the track
      * @param isTrackHead if false, sets this instance as the next of { 
      * @param flag flag, can be null
      */
-    @Override public void setPreviousInTrack(StructureObjectTracker previous, boolean isTrackHead, boolean signalError) {
+    @Override public void setPreviousInTrack(StructureObjectTracker previous, boolean isTrackHead, TrackFlag flag) {
         if (((StructureObject)previous).getTimePoint()!=this.getTimePoint()-1) throw new RuntimeException("setPrevious in track should be of time: "+(timePoint-1) +" but is: "+((StructureObject)previous).getTimePoint());
         this.previous=(StructureObject)previous;
-        if (signalError) this.flag=TrackFlag.trackError;
+        this.flag=flag;
         if (!isTrackHead) {
             this.previous.next=this;
             this.isTrackHead=false;

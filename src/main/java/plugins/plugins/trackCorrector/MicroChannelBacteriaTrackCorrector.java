@@ -75,7 +75,7 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
                 StructureObjectTrackCorrection lastSplitObject= splitTrack(error, splitPrevious, splitter, tDivNext, modifiedObjects);
                 if (nextSiblings!=null) { // assign as previous of nextDiv
                     StructureObject next = (StructureObject)nextSiblings.get(1);
-                    next.setPreviousInTrack(lastSplitObject, false, false);
+                    next.setPreviousInTrack(lastSplitObject, false);
                     if (modifiedObjects!=null) modifiedObjects.add(next);
                     // update trackHead of the whole track after nextSiblings1
                     next.resetTrackHead();
@@ -114,7 +114,7 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
         while(track!=null && track.getTimePoint()<timePointLimit) {
             StructureObjectTrackCorrection newObject = track.split(splitter);
             if (newObject!=null) {
-                newObject.setPreviousInTrack(splitPrevious, false, false);
+                newObject.setPreviousInTrack(splitPrevious, false);
                 if (modifiedObjects!=null) modifiedObjects.add(newObject);
                 splitPrevious = newObject;
             } else {

@@ -57,7 +57,7 @@ public class ObjectIdxTracker implements Tracker {
         Collections.sort(previous, getComparator(IndexingOrder.valueOf(order.getSelectedItem())));
         Collections.sort(next, getComparator(IndexingOrder.valueOf(order.getSelectedItem())));
         for (int i = 0; i<Math.min(previous.size(), next.size()); ++i) {
-            next.get(i).setPreviousInTrack(previous.get(i), false, false);
+            next.get(i).setPreviousInTrack(previous.get(i), false);
             Plugin.logger.trace("assign previous {} to next {}", previous.get(i), next.get(i));
         }
     }

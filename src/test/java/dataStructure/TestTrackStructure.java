@@ -78,11 +78,11 @@ public class TestTrackStructure {
             for (int j = 0; j<3; ++j) bTM[t][j] = new StructureObject("field1", t, 1, j, new Object3D(new BlankMask("", 1, 1, 1), j+1), mcT[t], xp);
             //dao.store(bTM[i]);
         }
-        for (int i= 1; i<mcT.length; ++i) bTM[i][0].setPreviousInTrack(bTM[i-1][0], false, false);
-        bTM[1][1].setPreviousInTrack(bTM[0][0], true, false);
-        for (int i= 2; i<mcT.length; ++i) bTM[i][1].setPreviousInTrack(bTM[i-1][1], false, false);
-        bTM[3][2].setPreviousInTrack(bTM[2][1], true, false); bTM[4][2].setPreviousInTrack(bTM[3][2], false, false);
-        bTM[1][2].setPreviousInTrack(bTM[0][1], false, false); bTM[2][2].setPreviousInTrack(bTM[1][2], false, false);
+        for (int i= 1; i<mcT.length; ++i) bTM[i][0].setPreviousInTrack(bTM[i-1][0], false);
+        bTM[1][1].setPreviousInTrack(bTM[0][0], true);
+        for (int i= 2; i<mcT.length; ++i) bTM[i][1].setPreviousInTrack(bTM[i-1][1], false);
+        bTM[3][2].setPreviousInTrack(bTM[2][1], true); bTM[4][2].setPreviousInTrack(bTM[3][2], false);
+        bTM[1][2].setPreviousInTrack(bTM[0][1], false); bTM[2][2].setPreviousInTrack(bTM[1][2], false);
         /*
         0.0->4
         -1->4
