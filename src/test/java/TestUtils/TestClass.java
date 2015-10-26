@@ -47,4 +47,18 @@ public class TestClass {
         
         logger.info("[][] is array: {}", matrix.getClass().isArray());
     }
+    @Test
+    public void testFor() {
+        for (int i : getValues()) logger.debug("value: {}", i);
+        int[] array = getValues();
+        for (int i = 0; i<getSize(array); ++i) logger.debug("value: {}", array[i]);
+    }
+    private static int[] getValues() {
+        logger.debug("getValues!!");
+        return new int[]{1, 2, 3};
+    }
+    private static int getSize(int[] array) {
+        logger.debug("getSize!!");
+        return array.length;
+    }
 }

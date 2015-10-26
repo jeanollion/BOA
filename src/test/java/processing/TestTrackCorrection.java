@@ -201,6 +201,7 @@ public class TestTrackCorrection {
                     for (int track = 0; track<expected[i]; ++track) {
                         StructureObject oPrev = root.get(i-1).getChildren(0).get(track);
                         StructureObject oNext = root.get(i).getChildren(0).get(track);
+                        //logger.debug("track: {}, next expected: {} actual: {}", track, oNext, oPrev.getNext());
                         assertEquals("time: "+(i-1)+"&"+i+" track: "+track+", next", oNext, oPrev.getNext());
                         assertEquals("time: "+(i-1)+"&"+i+" track: "+track+", prev", oPrev, oNext.getPrevious());
                         StructureObject trackHead = track==0? trackHead0: trackHead1;

@@ -57,8 +57,10 @@ public class InputImagesImpl implements InputImages {
     }
     
     public void applyTranformationsSaveAndClose() {
-        for (int t = 0; t<getTimePointNumber(); ++t) {
-            for (int c = 0; c<getChannelNumber(); ++c) {
+        int tCount = getTimePointNumber();
+        int cCount = getChannelNumber();
+        for (int t = 0; t<tCount; ++t) {
+            for (int c = 0; c<cCount; ++c) {
                 imageTC[t][c].getImage();
                 imageTC[t][c].saveToDAO=true;
                 imageTC[t][c].closeImage();
@@ -67,8 +69,10 @@ public class InputImagesImpl implements InputImages {
     }
     
     public void deleteFromDAO() {
-        for (int t = 0; t<getTimePointNumber(); ++t) {
-            for (int c = 0; c<getChannelNumber(); ++c) {
+        int tCount = getTimePointNumber();
+        int cCount = getChannelNumber();
+        for (int t = 0; t<tCount; ++t) {
+            for (int c = 0; c<cCount; ++c) {
                 imageTC[t][c].deleteFromDAO();
             }
         }

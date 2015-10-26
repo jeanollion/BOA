@@ -216,7 +216,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     @Override public void setPreviousInTrack(StructureObjectTracker previous, boolean isTrackHead, TrackFlag flag) {
         if (((StructureObject)previous).getTimePoint()!=this.getTimePoint()-1) throw new RuntimeException("setPrevious in track should be of time: "+(timePoint-1) +" but is: "+((StructureObject)previous).getTimePoint());
         this.previous=(StructureObject)previous;
-        this.flag=flag;
+        if (flag!=null) this.flag=flag;
         if (!isTrackHead) {
             this.previous.next=this;
             this.isTrackHead=false;
@@ -425,10 +425,12 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }*/
         //if (res.size()>1) xp.getObjectDAO().store(res);
         //else xp.getObjectDAO().store(res.get(0));
-        //this.getParent().getChildren(structureIdx).add(res);
+        //this.getParent().getChildren(structureIdx).add(this.getParent().getChildren(structureIdx).indexOf(this)+1, res);
+        
         //res.previous=getPrevious();
         setTrackFlag(TrackFlag.correctionSplit);
         res.setTrackFlag(TrackFlag.correctionSplitNew);
+        //logger.debug("spit object: {}, new: {}, added @ idx: {}", this, res, this.getParent().getChildren(structureIdx).indexOf(this)+1);
         return res;
     }
     
@@ -551,7 +553,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     @Override
     public String toString() {
         if (isRoot()) return "Root: F:"+fieldName + " T:"+timePoint;
-        else return "F:"+fieldName+ " T:"+timePoint+ " S:"+structureIdx+ " Idx: "+idx+ " P:["+getParent().toStringShort()+"]" ;
+        else return "F:"+fieldName+ " T:"+timePoint+ " S:"+structureIdx+ " Idx: "+idx+ " P:["+getParent().toStringShort()+"]" + (flag==null?"":" "+flag) ;
     }
     
     protected String toStringShort() {

@@ -129,7 +129,7 @@ public class Processor {
             if (structure.hasSegmenter()) {
                 logger.info("processing structure: {}...", s);
                 ArrayList<StructureObject> segmentedObjects = new ArrayList<StructureObject> ();
-                for (int t = 0; t<root.size(); ++t) Processor.processChildren(s, root.get(t), dao, false, segmentedObjects); // segment
+                for (StructureObject r : root) Processor.processChildren(s, r, dao, false, segmentedObjects); // segment
                 
                 ArrayList<StructureObject> allCorrectedObjects=null;
                 HashSet<StructureObject> parentsToRelabel = null;
@@ -344,7 +344,7 @@ public class Processor {
         while(parentTrack.getNext()!=null) {
             ArrayList<StructureObject> children = parentTrack.getChildObjects(structureIdx, dao, false);
             for (StructureObject child : children) if (child.isTrackHead()) trackCorrector.correctTrack(child, splitter, localModifiedObjects);
-            // remove merged objects
+            // remove merged objects from parents
             Iterator<StructureObject> it = children.iterator();
             while(it.hasNext()) {
                 StructureObject child = it.next();
@@ -365,13 +365,15 @@ public class Processor {
                 ArrayList<StructureObject> siblings = object.getParent().getChildren(structureIdx);
                 int idx = 0;
                 int limit = siblings.size()-1;
-                for (idx = 0; idx<siblings.size(); ++idx) {
+                for (idx = 0; idx<=limit; ++idx) {
                     if (siblings.get(idx).getIdx()>=object.getIdx()) { // insert = first idx >=@element to be inserted
-                        object.getParent().getChildren(structureIdx).add(idx, object);
+                        siblings.add(idx, object);
+                        //logger.trace("inserting {} at idx {}, nuumber of children {}", object, idx, object.getParent().getChildren(structureIdx).size());
                         parentsToRelabel.add(object.getParent());
                         break;
                     } else if (idx==limit) { // no need to relabel
-                        object.getParent().getChildren(structureIdx).add(idx, object);
+                        siblings.add(object); // at the end
+                        //logger.trace("inserting {} at the end, nuumber of children {}", object, object.getParent().getChildren(structureIdx).size());
                     }
                 }
             } 
