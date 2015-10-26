@@ -17,12 +17,16 @@
  */
 package dataStructure.objects;
 
+import boa.gui.imageInteraction.IJImageDisplayer;
 import static dataStructure.objects.Object3D.logger;
 import image.BlankMask;
 import image.BoundingBox;
+import image.Image;
 import image.ImageByte;
 import image.ImageInt;
 import image.ImageInteger;
+import image.ImageLabeller;
+import image.ImageMask;
 import image.ImageOperations;
 import image.ImageProperties;
 import image.ImageShort;
@@ -36,6 +40,8 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import plugins.plugins.trackers.ObjectIdxTracker.IndexingOrder;
+import processing.Filters;
+import processing.WatershedTransform;
 
 /**
  *
@@ -143,6 +149,51 @@ public class ObjectPopulation {
     
     public void addOffset(BoundingBox bounds) {
         for (Object3D o : objects) o.addOffset(bounds);
+    }
+    
+    /*public void fitToEdges(Image edgeMap, ImageMask mask) {
+        // 1st pass: increase foreground
+        WatershedTransform wt = new WatershedTransform(edgeMap, mask, objects, false, null, null);
+        wt.setPropagationCriterion(wt.new MonotonalPropagation());
+        wt.run();
+        ObjectPopulation pop =  wt.getObjectPopulation();
+        this.objects=pop.getObjects();
+        //set labelImage
+        if (pop.hasImage()) this.labelImage=pop.getLabelImage();
+        else this.labelImage=null;
+        // 2nd pass: increase background
+        ImageInteger background = ImageOperations.xor(getLabelImage(), mask, null);
+        wt = new WatershedTransform(edgeMap, mask, ImageLabeller.labelImageList(background), false, null, null);
+        wt.setPropagationCriterion(wt.new MonotonalPropagation());
+        wt.run();
+        ImageInteger segmentedMap = wt.getLabelImage();
+        for (Object3D o : objects) {
+            Iterator<Voxel> it = o.getVoxels().iterator();
+            while(it.hasNext()) {
+                Voxel v = it.next();
+                if (segmentedMap.insideMask(v.x, v.y, v.z)) it.remove();
+            }
+        }
+        this.labelImage=null; //reset labelImage
+    }*/
+    public void fitToEdges(Image edgeMap, ImageMask mask) {
+        // get seeds outsit label image
+        ImageInteger seedMap = Filters.localExtrema(edgeMap, null, false, Filters.getNeighborhood(1, 1, edgeMap));
+        this.getLabelImage(); //creates the labelImage        
+        // merge background seeds && foreground seeds : background = 1, foreground = label+1
+        for (int z = 0; z<seedMap.getSizeZ(); z++) {
+            for (int xy = 0; xy<seedMap.getSizeXY(); xy++) {
+                if (seedMap.insideMask(xy, z)) {
+                    if (mask.insideMask(xy, z)) seedMap.setPixel(xy, z, labelImage.getPixelInt(xy, z)+1);
+                    else seedMap.setPixel(xy, z, 0);
+                }
+            }
+        }
+        ArrayList<Object3D> seeds = new ArrayList<Object3D>(Arrays.asList(ObjectFactory.getObjectsImage(seedMap, false))); 
+        ObjectPopulation pop = WatershedTransform.watershed(edgeMap, mask, seeds, false, null, null);
+        this.objects = pop.getObjects();
+        objects.remove(0); // remove background object
+        this.labelImage=null;
     }
     
     public void filter(Filter filter) {

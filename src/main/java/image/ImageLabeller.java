@@ -26,8 +26,10 @@ import image.ImageInt;
 import image.ImageInteger;
 import image.ImageMask;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -66,6 +68,10 @@ public class ImageLabeller {
             il.labelSpots();
             return il.getObjects();
         }
+    }
+    
+    public static List<Object3D> labelImageList(ImageMask mask) {
+        return Arrays.asList(labelImage(mask));
     }
     
     protected Object3D[] getObjects() {

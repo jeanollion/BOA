@@ -82,11 +82,11 @@ public class TestProcessFluo {
         TestProcessFluo t = new TestProcessFluo();
         //t.correctTracks("testFluo60", 0, 1);
         //t.process("testFluo60", 0, false);
-        t.testSegBactTrackErrors();
+        //t.testSegBactTrackErrors();
         //t.subsetTimePoints(60, "/data/Images/Fluo/test", "/data/Images/Fluo/testsub60");
         //t.testRotation();
         //t.testSegBacteries();
-        //t.testSegBacteriesFromXP();
+        t.testSegBacteriesFromXP();
         //t.testSegBactAllTimes();
         //t.runSegmentationBacteriaOnSubsetofDBXP(569, 630);
         //t.process(0, false);
@@ -229,10 +229,10 @@ public class TestProcessFluo {
     }
     
     public void testSegBacteriesFromXP() {
-        int time = 11;
-        int channel =0;
+        int time = 14;
+        int channel =7;
         int field = 0;
-        String dbName = "testFluo";
+        String dbName = "testFluo60";
         Morphium m=MorphiumUtils.createMorphium(dbName);
         ExperimentDAO xpDAO = new ExperimentDAO(m);
         xp=xpDAO.getExperiment();
@@ -247,7 +247,7 @@ public class TestProcessFluo {
         Image input = mc.getRawImage(1);
         ImageMask parentMask = mc.getMask();
         BacteriaFluo.debug=true;
-        ObjectPopulation pop = BacteriaFluo.run(input, parentMask, 0.015);
+        ObjectPopulation pop = BacteriaFluo.run(input, parentMask, 0.01, 50, 3, 15, 3, 1);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
         disp.showImage(pop.getLabelImage());

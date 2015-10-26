@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.TreeSet;
 import processing.neighborhood.EllipsoidalNeighborhood;
 import processing.neighborhood.Neighborhood;
@@ -48,33 +49,34 @@ public class WatershedTransform {
     final protected ImageInteger segmentedMap;
     final protected ImageMask mask;
     final boolean is3D;
-    final boolean invertedWatershedMapValues;
-    final PropagationCriterion propagationCriterion;
+    final boolean decreasingPropagation;
+    PropagationCriterion propagationCriterion;
     FusionCriterion fusionCriterion;
-    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, Object3D[] regionalExtrema, boolean invertWatershedMapValues, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
+    
+    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, List<Object3D> regionalExtrema, boolean invertWatershedMapValues, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
         WatershedTransform wt = new WatershedTransform(watershedMap, mask, regionalExtrema, invertWatershedMapValues, propagationCriterion, fusionCriterion);
         wt.run();
         return wt.getObjectPopulation();
     }
     
     public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean invertWatershedMapValues) {
-        return watershed(watershedMap, mask, ImageLabeller.labelImage(seeds), invertWatershedMapValues, null, null);
+        return watershed(watershedMap, mask, ImageLabeller.labelImageList(seeds), invertWatershedMapValues, null, null);
     }
     public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean invertWatershedMapValues, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
-        return watershed(watershedMap, mask, ImageLabeller.labelImage(seeds), invertWatershedMapValues, propagationCriterion, fusionCriterion);
+        return watershed(watershedMap, mask, ImageLabeller.labelImageList(seeds), invertWatershedMapValues, propagationCriterion, fusionCriterion);
     }
     
-    public WatershedTransform(Image watershedMap, ImageMask mask, Object3D[] regionalExtrema, boolean invertWatershedMapValues, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
+    public WatershedTransform(Image watershedMap, ImageMask mask, List<Object3D> regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
         if (mask==null) mask=new BlankMask("", watershedMap);
-        this.invertedWatershedMapValues = invertWatershedMapValues;
-        heap = invertWatershedMapValues ? new TreeSet<Voxel>(Voxel.getInvertedComparator()) : new TreeSet<Voxel>();
+        this.decreasingPropagation = decreasingPropagation;
+        heap = decreasingPropagation ? new TreeSet<Voxel>(Voxel.getInvertedComparator()) : new TreeSet<Voxel>();
         this.mask=mask;
         this.watershedMap=watershedMap;
-        spots = new Spot[regionalExtrema.length+1];
-        spotNumber=regionalExtrema.length;
+        spots = new Spot[regionalExtrema.size()+1];
+        spotNumber=regionalExtrema.size();
         segmentedMap = ImageInteger.createEmptyLabelImage("segmentationMap", spots.length, watershedMap);
-        for (int i = 0; i<regionalExtrema.length; ++i) spots[i+1] = new Spot(i+1, regionalExtrema[i].getVoxels());
-        logger.trace("watershed transform: number of seeds: {} segmented map type: {}", regionalExtrema.length, segmentedMap.getClass().getSimpleName());
+        for (int i = 0; i<regionalExtrema.size(); ++i) spots[i+1] = new Spot(i+1, regionalExtrema.get(i).getVoxels());
+        logger.trace("watershed transform: number of seeds: {} segmented map type: {}", regionalExtrema.size(), segmentedMap.getClass().getSimpleName());
         is3D=watershedMap.getSizeZ()>1;   
         if (propagationCriterion==null) this.propagationCriterion=new DefaultPropagationCriterion();
         else this.propagationCriterion=propagationCriterion;
@@ -84,6 +86,11 @@ public class WatershedTransform {
     
     public WatershedTransform setFusionCriterion(FusionCriterion fusionCriterion) {
         this.fusionCriterion=fusionCriterion;
+        return this;
+    }
+    
+    public WatershedTransform setPropagationCriterion(PropagationCriterion propagationCriterion) {
+        this.propagationCriterion=propagationCriterion;
         return this;
     }
     
@@ -104,6 +111,8 @@ public class WatershedTransform {
         }
     }
     
+    public ImageInteger getLabelImage() {return segmentedMap;}
+    
     public ObjectPopulation getObjectPopulation() {
         //int nb = 0;
         //for (Spot s : wt.spots) if (s!=null) nb++;
@@ -121,10 +130,12 @@ public class WatershedTransform {
                 if (fusionCriterion.checkFusionCriteria(currentSpot, s2, currentVoxel)) return currentSpot.fusion(s2);
                 else heap.remove(nextVox); // FIXME ??et dans les autres directions?
             }
-        } else if (propagationCriterion.continuePropagation(currentVoxel, nextVox)) {
+        } else {
             nextVox.value=watershedMap.getPixel(nextVox.x, nextVox.y, nextVox.z);
-            currentSpot.addVox(nextVox);
-            heap.add(nextVox);
+            if (propagationCriterion.continuePropagation(currentVoxel, nextVox)) {
+                currentSpot.addVox(nextVox);
+                heap.add(nextVox);
+            }
         }
         return currentSpot;
     }
@@ -192,7 +203,7 @@ public class WatershedTransform {
     }
     public class MonotonalPropagation implements PropagationCriterion {
         public boolean continuePropagation(Voxel currentVox, Voxel nextVox) {
-            if (invertedWatershedMapValues) return (nextVox.value<=currentVox.value);
+            if (decreasingPropagation) return (nextVox.value<=currentVox.value);
             else return (nextVox.value>=currentVox.value);
         }
     }

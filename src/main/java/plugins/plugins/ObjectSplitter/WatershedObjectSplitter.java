@@ -27,6 +27,7 @@ import image.ImageByte;
 import image.ImageLabeller;
 import image.ImageMask;
 import image.ImageOperations;
+import java.util.List;
 import plugins.ObjectSplitter;
 import processing.Filters;
 import processing.ImageFeatures;
@@ -49,8 +50,8 @@ public class WatershedObjectSplitter implements ObjectSplitter {
         
         ImageByte localMax = Filters.localExtrema(smoothed, null, true, Filters.getNeighborhood(1, 1, input));
         ImageOperations.and(localMax, mask, localMax); // limit @ seeds within mask
-        Object3D[] seeds = ImageLabeller.labelImage(localMax);
-        if (seeds.length<2) {
+        List<Object3D> seeds = ImageLabeller.labelImageList(localMax);
+        if (seeds.size()<2) {
             logger.warn("Object splitter : less than 2 seeds found");
             //new IJImageDisplayer().showImage(smoothed.setName("smoothed"));
             //new IJImageDisplayer().showImage(localMax.setName("localMax"));
