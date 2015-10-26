@@ -170,7 +170,7 @@ public class StructureNode implements TreeNode, UIContainer {
                             parent.loadAllChildObjects(path, 0);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(getParentObject(), structureIdx);
                             //logger.debug("IO-Interface: {}, parent: {}, number of children: {}", i, getParentObject(), getParentObject().getChildren(structureIdx).size());
-                            ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true);
+                            ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true, true);
                         }
                     }
                 );
@@ -188,7 +188,7 @@ public class StructureNode implements TreeNode, UIContainer {
                             int[] path = getGenerator().getExperiment().getPathToStructure(getParentObject().getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
                             parent.loadAllChildObjects(path, 0);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(getParentObject(), getStructureIdx(ae.getActionCommand(), openRaw));
-                            ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(getStructureIdx(ae.getActionCommand(), openRaw)), i, true);
+                            ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(getStructureIdx(ae.getActionCommand(), openRaw)), i, false, true);
                         }
                     }
                 );

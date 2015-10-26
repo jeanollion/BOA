@@ -208,7 +208,7 @@ public class TrackNode implements TreeNode, UIContainer {
                             int[] path = trackNode.trackHead.getExperiment().getPathToStructure(trackNode.trackHead.getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
                             trackNode.loadAllTrackObjects(path);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, getStructureIdx(ae.getActionCommand(), openRaw));
-                            if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true);
+                            if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true, true);
                             /* for the 1st
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, trackHead.getStructureIdx());
                             ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true);
@@ -228,7 +228,7 @@ public class TrackNode implements TreeNode, UIContainer {
                             int[] path = trackNode.trackHead.getExperiment().getPathToStructure(trackNode.trackHead.getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
                             trackNode.loadAllTrackObjects(path);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, getStructureIdx(ae.getActionCommand(), openRaw));
-                            if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(getStructureIdx(ae.getActionCommand(), openRaw)), i, true);
+                            if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(getStructureIdx(ae.getActionCommand(), openRaw)), i, false, true);
                         }
                     }
                 );

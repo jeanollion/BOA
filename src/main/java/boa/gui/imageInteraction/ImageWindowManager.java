@@ -42,6 +42,7 @@ public abstract class ImageWindowManager<T> {
     final static int trackArrowStrokeWidth = 3;
     private final HashMap<ImageObjectInterfaceKey, ImageObjectInterface> imageObjectInterfaces;
     private final HashMap<Image, ImageObjectInterface> imageObjectInterfaceMap;
+    private final HashMap<Image, Boolean> isLabelImage;
     final ImageObjectListener listener;
     final ImageDisplayer<T> displayer;
     
@@ -49,6 +50,7 @@ public abstract class ImageWindowManager<T> {
         this.listener=listener;
         this.displayer=displayer;
         imageObjectInterfaceMap = new HashMap<Image, ImageObjectInterface>();
+        isLabelImage = new HashMap<Image, Boolean>();
         imageObjectInterfaces = new HashMap<ImageObjectInterfaceKey, ImageObjectInterface>();
     }
     
@@ -56,11 +58,12 @@ public abstract class ImageWindowManager<T> {
     
     //protected abstract T getImage(Image image);
     
-    public void addImage(Image image, ImageObjectInterface i, boolean displayImage) {
+    public void addImage(Image image, ImageObjectInterface i, boolean labelImage, boolean displayImage) {
         //ImageObjectInterface i = getImageObjectInterface(parent, childStructureIdx, timeImage);
         if (!imageObjectInterfaces.containsValue(i)) throw new RuntimeException("image object interface should be created through the manager");
         //T im = getImage(image);
         imageObjectInterfaceMap.put(image, i);
+        isLabelImage.put(image, labelImage);
         if (displayImage) {
             displayer.showImage(image);
             addMouseListener(image);
@@ -99,7 +102,7 @@ public abstract class ImageWindowManager<T> {
         if (i!=null) {
             i.reloadObjects();
             for (Entry<Image, ImageObjectInterface> e : imageObjectInterfaceMap.entrySet()) if (e.getValue().equals(i)) {
-                i.draw((ImageInteger)e.getKey());
+                if (isLabelImage.get(e.getKey())) i.draw((ImageInteger)e.getKey());
                 if (!track) getDisplayer().updateImageDisplay(e.getKey());
             }
         }
