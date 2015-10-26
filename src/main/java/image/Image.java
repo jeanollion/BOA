@@ -128,32 +128,40 @@ public abstract class Image implements ImageProperties {
         res.translate(offsetX, offsetY, offsetZ);
         return res;
     }
-
+    public float[] getMinAndMax(ImageMask mask) {
+        return getMinAndMax(mask, null);
+    }
     /**
      * 
      * @param mask min and max are computed within the mask, or within the whole image if mask==null 
      * @return float[]{min, max}
      */
-    public float[] getMinAndMax(ImageMask mask) {
+    public float[] getMinAndMax(ImageMask mask, BoundingBox limits) {
         if (mask==null) mask = new BlankMask("", this);
+        if (limits==null) limits = mask.getBoundingBox().translateToOrigin();
         float min = Float.MAX_VALUE, max = -Float.MAX_VALUE;
-        for (int z = 0; z < sizeZ; ++z) {
-            for (int xy = 0; xy < sizeXY; ++xy) {
-                if (mask.insideMask(xy, z)) {
-                    if (getPixel(xy, z) > max) {
-                        max = getPixel(xy, z);
-                    }
-                    if (getPixel(xy, z) < min) {
-                        min = getPixel(xy, z);
+        for (int z = limits.zMin; z <= limits.zMax; z++) {
+            for (int y = limits.yMin; y<=limits.yMax; ++y) {
+                for (int x = limits.xMin; x <= limits.xMax; ++x) {
+                    if (mask.insideMask(x, y, z)) {
+                        if (getPixel(x, y, z) > max) {
+                            max = getPixel(x, y, z);
+                        }
+                        if (getPixel(x, y, z) < min) {
+                            min = getPixel(x, y, z);
+                        }
                     }
                 }
             }
         }
         return new float[]{min, max};
     }
+    public abstract int[] getHisto256(ImageMask mask, BoundingBox bounds);
+    public int[] getHisto256(ImageMask mask) {return getHisto256(mask, null);}
+    abstract int[] getHisto256(double min, double max, ImageMask mask, BoundingBox limit);
     
-    public abstract int[] getHisto256(ImageMask mask);
-    abstract int[] getHisto256(double min, double max, ImageMask mask);
+    
+    
     
     protected Image cropI(BoundingBox bounds) {
         //bounds.trimToImage(this);

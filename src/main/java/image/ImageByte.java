@@ -146,19 +146,21 @@ public class ImageByte extends ImageInteger {
             }
         }
     }
-    
-    @Override 
-    public int[] getHisto256(ImageMask mask) {
+    public int[] getHisto256(ImageMask mask, BoundingBox limits) {
         if (mask==null) mask=new BlankMask("", this);
+        if (limits==null) limits = mask.getBoundingBox().translateToOrigin();
         int[] histo = new int[256];
-        for (int z = 0; z < sizeZ; z++) {
-            for (int xy = 0; xy < sizeXY; xy++) {
-                if (mask.insideMask(xy, z)) {
-                    histo[pixels[z][xy] & 0xff]++;
+        for (int z = limits.zMin; z <= limits.zMax; z++) {
+            for (int y = limits.yMin; y<=limits.yMax; ++y) {
+                for (int x = limits.xMin; x <= limits.xMax; ++x) {
+                    if (mask.insideMask(x, y, z)) {
+                        histo[getPixelInt(x, y, z)]++;
+                    }
                 }
             }
         }
         return histo;
     }
-    @Override int[] getHisto256(double min, double max, ImageMask mask) {return getHisto256(mask);}
+    
+    @Override int[] getHisto256(double min, double max, ImageMask mask, BoundingBox limit) {return getHisto256(mask);}
 }

@@ -23,6 +23,7 @@ import dataStructure.objects.StructureObjectProcessing;
 import ij.process.AutoThresholder;
 import ij.process.AutoThresholder.Method;
 import image.BlankMask;
+import image.BoundingBox;
 import image.Image;
 import image.ImageByte;
 import image.ImageInteger;
@@ -44,13 +45,13 @@ public class IJAutoThresholder implements Thresholder {
     }
     
     public static double runThresholder(Image input, ImageMask mask, Method method) {
-        return runThresholder(input, mask, method, 0);
+        return runThresholder(input, mask, null, method, 0);
     }
     
-    public static double runThresholder(Image input, ImageMask mask, Method method, double percentageSuplementalBackground) {
+    public static double runThresholder(Image input, ImageMask mask, BoundingBox limits, Method method, double percentageSuplementalBackground) {
         if (mask==null) mask=new BlankMask("", input);
-        float[] mm = input.getMinAndMax(mask);
-        int[] histo = input.getHisto256(mask);
+        float[] mm = input.getMinAndMax(mask, limits);
+        int[] histo = input.getHisto256(mask, limits);
         histo[0]+=(int)(percentageSuplementalBackground * input.getSizeXYZ()+0.5);
         double binSize=(input instanceof ImageByte)?1:(mm[1]-mm[0])/256d;
         double min = (input instanceof ImageByte)?0:mm[0];

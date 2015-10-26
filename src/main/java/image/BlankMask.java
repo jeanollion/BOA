@@ -116,8 +116,8 @@ public class BlankMask extends ImageInteger implements ImageMask {
     }
     
     @Override
-    public int[] getHisto256(ImageMask mask) {
+    public int[] getHisto256(ImageMask mask, BoundingBox limits) {
         return new int[256];
     }
-    @Override int[] getHisto256(double min, double max, ImageMask mask) {return getHisto256(mask);}
+    @Override int[] getHisto256(double min, double max, ImageMask mask, BoundingBox limits) {return getHisto256(mask, limits);}
 }

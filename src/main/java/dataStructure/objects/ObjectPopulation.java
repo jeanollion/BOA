@@ -19,6 +19,7 @@ package dataStructure.objects;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import static dataStructure.objects.Object3D.logger;
+import static ij.process.AutoThresholder.Method.Otsu;
 import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
@@ -39,6 +40,9 @@ import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import static plugins.plugins.thresholders.IJAutoThresholder.runThresholder;
+import static plugins.plugins.thresholders.IJAutoThresholder.runThresholder;
+import static plugins.plugins.thresholders.IJAutoThresholder.runThresholder;
 import plugins.plugins.trackers.ObjectIdxTracker.IndexingOrder;
 import processing.Filters;
 import processing.WatershedTransform;
@@ -194,6 +198,33 @@ public class ObjectPopulation {
         this.objects = pop.getObjects();
         objects.remove(0); // remove background object
         this.labelImage=null;
+    }
+    
+    public void localThreshold(Image intensity, int marginX, int marginY, int marginZ) {
+        ImageInteger background = ImageOperations.xor(getLabelImage(), new BlankMask("", properties), null);
+        for (Object3D o : objects) {
+            o.draw(background, 1);
+            BoundingBox bounds = o.getBounds().duplicate();
+            bounds.expandX(bounds.getxMin()-marginX); bounds.expandX(bounds.getxMax()+marginX);
+            bounds.expandY(bounds.getyMin()-marginY); bounds.expandY(bounds.getyMax()+marginY);
+            bounds.expandZ(bounds.getzMin()-marginZ); bounds.expandZ(bounds.getzMax()+marginZ);
+            bounds = bounds.getIntersection(intensity.getBoundingBox().translateToOrigin());
+            double thld = runThresholder(intensity, background, bounds, Otsu, 1);
+            logger.debug("local threshold: object: {}, thld: {} with bounds: {}, thld with bcg bounds: {}, 2: {}", o.getLabel(), thld, bounds, runThresholder(intensity, background, bounds, Otsu, 1), runThresholder(intensity, background, bounds, Otsu, 2));
+            o.draw(background, 0);
+            localThreshold(o, intensity, thld);
+        }
+    }
+    
+    protected void localThreshold(Object3D o, Image intensity, double threshold) {
+        Iterator<Voxel> it = o.getVoxels().iterator();
+        while(it.hasNext()) {
+            Voxel v = it.next();
+            if (intensity.getPixel(v.x, v.y, v.z)<threshold) {
+                it.remove();
+                if (hasImage()) labelImage.setPixel(v.x, v.y, v.z, 0);
+            }
+        }
     }
     
     public void filter(Filter filter) {

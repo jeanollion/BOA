@@ -148,21 +148,24 @@ public class ImageShort extends ImageInteger {
     }
     
     @Override 
-    public int[] getHisto256(ImageMask mask) {
+    public int[] getHisto256(ImageMask mask, BoundingBox limits) {
         if (mask==null) mask=new BlankMask("", this);
         float[] minAndMax = getMinAndMax(mask);
-        return getHisto256(minAndMax[0], minAndMax[1], mask);
+        return getHisto256(minAndMax[0], minAndMax[1], mask, limits);
     }
-    @Override int[] getHisto256(double min, double max, ImageMask mask) {
+    @Override int[] getHisto256(double min, double max, ImageMask mask, BoundingBox limits) {
         if (mask == null) mask = new BlankMask("", this);
+        if (limits==null) limits = mask.getBoundingBox().translateToOrigin();
         double coeff = 256d / (max - min);
         int[] histo = new int[256];
         int idx;
-        for (int z = 0; z < sizeZ; z++) {
-            for (int xy = 0; xy < sizeXY; xy++) {
-                if (mask.insideMask(xy, z)) {
-                    idx = (int) (((pixels[z][xy] & 0xFFFF) - min) * coeff);
-                    histo[idx>=256?255:idx]++;
+        for (int z = limits.zMin; z <= limits.zMax; z++) {
+            for (int y = limits.yMin; y<=limits.yMax; ++y) {
+                for (int x = limits.xMin; x <= limits.xMax; ++x) {
+                    if (mask.insideMask(x, y, z)) {
+                        idx = (int) ((getPixel(x, y, z) - min) * coeff);
+                        histo[idx>=256?255:idx]++;
+                    }
                 }
             }
         }

@@ -30,6 +30,7 @@ import i5d.cal.ChannelDisplayProperties;
 import i5d.gui.ChannelControl;
 import ij.ImageStack;
 import ij.WindowManager;
+import ij.gui.ImageCanvas;
 import image.BoundingBox;
 import image.ImageByte;
 import image.ImageFloat;
@@ -53,6 +54,22 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         float[] minAndMax = image.getMinAndMax(null);
         ip.setDisplayRange(minAndMax[0], minAndMax[1]);
         ip.show();
+        zoom(ip, ImageDisplayer.zoomMagnitude);
+    }
+    
+    private static void zoom(ImagePlus image, double magnitude) {
+        ImageCanvas ic = image.getCanvas();
+        if (ic==null) return;
+       ic.zoom100Percent();
+        if (magnitude > 1) {
+            for (int i = 0; i < (int) (magnitude + 0.5); i++) {
+                ic.zoomIn(image.getWidth() / 2, image.getHeight() / 2);
+            }
+        } else if (magnitude > 0 && magnitude < 1) {
+            for (int i = 0; i < (int) (1 / magnitude + 0.5); i++) {
+                ic.zoomOut(image.getWidth() / 2, image.getHeight() / 2);
+            }
+        }
     }
     
     @Override public ImagePlus getImage(Image image) {

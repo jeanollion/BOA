@@ -319,9 +319,9 @@ public class ImageOperations {
         }
         return output;
     }
-    public static double getPercentile(Image image, double percent, ImageMask mask) {
+    public static double getPercentile(Image image, double percent, ImageMask mask, BoundingBox limits) {
         float[] mm = image.getMinAndMax(mask);
-        int[] histo = image.getHisto256(mm[0], mm[1], mask);
+        int[] histo = image.getHisto256(mm[0], mm[1], mask, limits);
         double binSize = (image instanceof ImageByte) ? 1: (mm[1]-mm[0]) / 256d;
         int count = 0;
         for (int i : histo) count += i;

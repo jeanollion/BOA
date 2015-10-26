@@ -92,7 +92,7 @@ public class BacteriesFluo2D implements Segmenter {
             disp.showImage(hess);
             disp.showImage(input);
         }
-        double t0 = IJAutoThresholder.runThresholder(dog, mask, AutoThresholder.Method.Otsu, 0);
+        double t0 = IJAutoThresholder.runThresholder(dog, mask, null, AutoThresholder.Method.Otsu, 0);
         logger.trace("threshold 0: {}", t0);
         ObjectPopulation pop1 = SimpleThresholder.run(dog, t0);
         pop1.filter(new ObjectPopulation.Thickness().setX(2).setY(2));

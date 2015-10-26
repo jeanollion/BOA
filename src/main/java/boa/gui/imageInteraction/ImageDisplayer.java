@@ -25,6 +25,7 @@ import image.Image;
  * @author jollion
  */
 public interface ImageDisplayer<T> {
+    public static double zoomMagnitude=1;
     public void showImage(Image image);
     public T getImage(Image image);
     public Image getImage(T image);

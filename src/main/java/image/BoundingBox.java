@@ -151,13 +151,16 @@ public class BoundingBox {
      * add {@param border} value in each direction and both ways
      * @param border value of the border
      */
-    public void addBorder(int border) {
+    public void addBorder(int border, boolean addInZDirection) {
         xMin-=border;
         xMax+=border;
         yMin-=border;
         yMax+=border;
-        zMin-=border;
-        zMax+=border;
+        if (addInZDirection) {
+            zMin-=border;
+            zMax+=border;
+        }
+        
     }
     /**
      * adds a border of 1 pixel in each directions and both ways
@@ -258,13 +261,13 @@ public class BoundingBox {
         return Math.sqrt(Math.pow(this.getXMean()-other.getXMean(), 2) + Math.pow(this.getYMean()-other.getYMean(), 2) + Math.pow(this.getZMean()-other.getZMean(), 2));
     }
     
-    public boolean intersect(BoundingBox other) {
-        if (getSizeZ()==0 && other.getSizeZ()==0) return Math.max(xMin, other.xMin)<Math.min(xMax, other.xMax) && Math.max(yMin, other.yMin)<Math.min(yMax, other.yMax);
+    public boolean hasIntersection(BoundingBox other) {
+        if (getSizeZ()==1 && other.getSizeZ()==1) return Math.max(xMin, other.xMin)<Math.min(xMax, other.xMax) && Math.max(yMin, other.yMin)<Math.min(yMax, other.yMax);
         else return Math.max(xMin, other.xMin)<Math.min(xMax, other.xMax) && Math.max(yMin, other.yMin)<Math.min(yMax, other.yMax) && Math.max(zMin, other.zMin)<Math.min(zMax, other.zMax);
     }
     
     public BoundingBox getIntersection(BoundingBox other) {
-        if (!intersect(other)) return new BoundingBox();
+        if (!hasIntersection(other)) return new BoundingBox();
         else return new BoundingBox(Math.max(xMin, other.xMin), Math.min(xMax, other.xMax), Math.max(yMin, other.yMin), Math.min(yMax, other.yMax) , Math.max(zMin, other.zMin), Math.min(zMax, other.zMax));
     }
     
