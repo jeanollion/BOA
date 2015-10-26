@@ -96,7 +96,7 @@ public abstract class ImageWindowManager<T> {
         return i;
     }
     
-    protected void reloadObjects(StructureObject parent, int childStructureIdx, boolean track) {
+    protected void reloadObjects_(StructureObject parent, int childStructureIdx, boolean track) {
         if (track) parent=parent.getTrackHead();
         ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parent, childStructureIdx, track));
         if (i!=null) {
@@ -108,9 +108,15 @@ public abstract class ImageWindowManager<T> {
         }
     }
     
-    public void reloadObjects(StructureObject parent, int childStructureIdx) {
-        reloadObjects(parent, childStructureIdx, true);
-        reloadObjects(parent, childStructureIdx, false);
+    public void reloadObjects(StructureObject parent, int childStructureIdx, boolean wholeTrack) {
+        reloadObjects_(parent, childStructureIdx, true);
+        if (wholeTrack) {
+            StructureObject parentTrack = parent.getTrackHead();
+            while (parentTrack!=null) {
+                reloadObjects_(parentTrack, childStructureIdx, false);
+                parentTrack=parentTrack.getNext();
+            }
+        } else reloadObjects_(parent, childStructureIdx, false);
     } 
     
     protected ImageObjectInterface getImageObjectInterface(Image image) {return imageObjectInterfaceMap.get(image);}

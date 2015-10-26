@@ -246,6 +246,8 @@ public class TrackNode implements TreeNode, UIContainer {
                             Processor.trackStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.objectDAO, true, root.generator.getSelectedTrackHeads());
                             // reload tree
                             root.generator.controller.updateParentTracks(root.generator.controller.getTreeIdx(trackHead.getStructureIdx()));
+                            // reload objects
+                            ImageWindowManagerFactory.getImageManager().reloadObjects(trackHead, structureIdx, true);
                         }
                     }
                 );

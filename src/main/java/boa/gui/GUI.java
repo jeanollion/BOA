@@ -672,7 +672,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                     node.getParent().createChildren();
                     objectTreeGenerator.reload(node.getParent());
                     //Update all opened images & objectImageInteraction
-                    ImageWindowManagerFactory.getImageManager().reloadObjects(sel.getParent(), sel.getStructureIdx());
+                    ImageWindowManagerFactory.getImageManager().reloadObjects(sel.getParent(), sel.getStructureIdx(), false);
                 }
             }
         }
@@ -699,7 +699,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             node.getParent().createChildren();
             objectTreeGenerator.reload(node.getParent());
             //Update all opened images & objectImageInteraction
-            ImageWindowManagerFactory.getImageManager().reloadObjects(res.getParent(), res.getStructureIdx());
+            ImageWindowManagerFactory.getImageManager().reloadObjects(res.getParent(), res.getStructureIdx(), false);
         }
     }//GEN-LAST:event_mergeObjectsButtonActionPerformed
 
