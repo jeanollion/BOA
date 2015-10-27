@@ -20,7 +20,6 @@ package plugins.plugins.trackCorrector;
 import configuration.parameters.BooleanParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObject;
-import dataStructure.objects.StructureObject.TrackFlag;
 import dataStructure.objects.StructureObjectTrackCorrection;
 import java.util.ArrayList;
 import plugins.ObjectSplitter;
@@ -62,32 +61,40 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
                     logger.error("Oversegmentation detected but no siblings found");
                 } else {
                     logger.trace("Over-Segmentation detected between timepoint {} and {}, number of divided cells before: {}, undivided cells after error: {}", tDivPrev, tError, tError-tDivPrev, tDivNext-tError);
-                    mergeTracks(prevSiblings.get(0), prevSiblings.get(1), tError, modifiedObjects);
-                    error.setTrackFlag(null); // remove error tag @tError
-                    if (modifiedObjects!=null) modifiedObjects.add(error);
+                    boolean mergeOk = mergeTracks(prevSiblings.get(0), prevSiblings.get(1), tError, modifiedObjects);
+                    if (mergeOk) { // remove error tag @tError
+                        error.setTrackFlag(null);
+                        if (modifiedObjects!=null) modifiedObjects.add(error);
+                    } 
+                    
                 }
                 return null;
             } else if ((tDivNext-tError)<(tError-tDivPrev)  || (correctAmbiguousCases && !overSegmentationInAmbiguousCases)) { // underSegmentation: split object between tError & tDivNext
                 logger.trace("Under-Segmentation detected between timepoint {} and {}, number of divided cells before: {}, undivided cells after error: {}", tError, tDivNext, tError-tDivPrev, tDivNext-tError);
                 // get previous object for the future splitted object:
                 StructureObjectTrackCorrection splitPrevious = prevSiblings.get(1);
-                while(splitPrevious.getTimePoint()<tError-1) splitPrevious=splitPrevious.getNext();
-                StructureObjectTrackCorrection lastSplitObject= splitTrack(error, splitPrevious, splitter, tDivNext, modifiedObjects);
-                if (nextSiblings!=null) { // assign as previous of nextDiv
-                    StructureObject next = (StructureObject)nextSiblings.get(1);
-                    next.setPreviousInTrack(lastSplitObject, false);
-                    if (modifiedObjects!=null) modifiedObjects.add(next);
-                    // update trackHead of the whole track after nextSiblings1
-                    next.resetTrackHead();
-                    if (modifiedObjects!=null) {
-                        while(next.getNext()!=null && next.getNext().getPrevious()==next) {
-                            next=next.getNext();
-                            if (next!=null) modifiedObjects.add(next);
+                while(splitPrevious!=null && splitPrevious.getTimePoint()<tError-1) splitPrevious=splitPrevious.getNext();
+                if (splitPrevious==null) {
+                    logger.warn("Under-Segmentation detected between timepoint {} and {}, BUT no previous for split could be found: track: {} is too short. number of divided cells before: {}, undivided cells after error: {}", tError, tDivNext, prevSiblings.get(1), tError-tDivPrev, tDivNext-tError);
+                    return error;
+                } else {
+                    StructureObjectTrackCorrection lastSplitObject= splitTrack(error, splitPrevious, splitter, tDivNext, modifiedObjects);
+                    if (nextSiblings!=null) { // assign as previous of nextDiv
+                        StructureObject next = (StructureObject)nextSiblings.get(1);
+                        next.setPreviousInTrack(lastSplitObject, false);
+                        if (modifiedObjects!=null) modifiedObjects.add(next);
+                        // update trackHead of the whole track after nextSiblings1
+                        next.resetTrackHead();
+                        if (modifiedObjects!=null) {
+                            while(next.getNext()!=null && next.getNext().getPrevious()==next) {
+                                next=next.getNext();
+                                if (next!=null) modifiedObjects.add(next);
+                            }
                         }
+
                     }
-                    
+                    return null;
                 }
-                return null;
             } else return error;
     }
     
@@ -96,17 +103,23 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
         return track.getTimePoint();
     }
     
-    public static void mergeTracks(StructureObjectTrackCorrection track1, StructureObjectTrackCorrection track2, int timePointLimit, ArrayList<StructureObjectTrackCorrection> modifiedObjects) {
+    public static boolean mergeTracks(StructureObjectTrackCorrection track1, StructureObjectTrackCorrection track2, int timePointLimit, ArrayList<StructureObjectTrackCorrection> modifiedObjects) {
         if (track1.getTimePoint()!=track2.getTimePoint()) throw new IllegalArgumentException("merge tracks error: tracks should be at the same time point");
         while(track1.getTimePoint()<timePointLimit) {
-            track1.merge(track2);
-            if (modifiedObjects!=null) {
-                modifiedObjects.add(track1);
-                modifiedObjects.add(track2);
+            if (track2!=null) {
+                track1.merge(track2);
+                if (modifiedObjects!=null) {
+                    modifiedObjects.add(track1);
+                    modifiedObjects.add(track2);
+                }
+                track1 = track1.getNext();
+                track2 = track2.getNext();
+            } else {
+                logger.warn("trackCorrection: merge error: {} does not have anyone to be merged with", track1);
+                return false;
             }
-            track1 = track1.getNext();
-            track2 = track2.getNext();
         }
+        return true;
     }
     
     public static StructureObjectTrackCorrection splitTrack(StructureObjectTrackCorrection track, StructureObjectTrackCorrection splitPrevious, ObjectSplitter splitter, int timePointLimit, ArrayList<StructureObjectTrackCorrection> modifiedObjects) {

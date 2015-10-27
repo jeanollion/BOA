@@ -142,6 +142,7 @@ public class Processor {
                         Processor.trackChildren(structure.getTracker(), o, s, dao, null);
                         if (structure.hasTrackCorrector()) {
                             Processor.correctTrackChildren(structure.getTrackCorrector(), structure.getObjectSplitter(), o, s, dao, false, allCorrectedObjects, parentsToRelabel);
+                            Processor.trackChildren(structure.getTracker(), o, s, dao, null);
                         }
                     }
                     /*final int sIdx = s;
@@ -158,15 +159,21 @@ public class Processor {
                     
                     if (allCorrectedObjects!=null) { // add split objects, and sort the list afterwards
                         segmentedObjects.addAll(allCorrectedObjects);
-                        
+                        long initRemoveDup = System.currentTimeMillis();
                         Utils.removeDuplicates(segmentedObjects, false);
+                        long initSort = System.currentTimeMillis();
                         Collections.sort(segmentedObjects, Utils.getStructureObjectComparator());
+                        long endSort = System.currentTimeMillis();
+                        logger.info("sorting {} object: elapsed time: {}, removing duplicates elapsed time: {}", segmentedObjects.size(), endSort-initSort, initSort-initRemoveDup);
                     }
                     if (structure.hasTrackCorrector()) { // remove merged objects from list ob objects to be stored
                         Iterator<StructureObject> it = segmentedObjects.iterator();
                         while(it.hasNext()) if (StructureObject.TrackFlag.correctionMergeToErase.equals(it.next().getTrackFlag())) it.remove();
                     }
+                    long initStore = System.currentTimeMillis();
                     dao.store(segmentedObjects, xp.getStructure(s).hasTracker());
+                    long endStore = System.currentTimeMillis();
+                    logger.info("storing {} object: elapsed time: {}", segmentedObjects.size(), endStore-initStore);
                 }
             }
         }
@@ -188,6 +195,7 @@ public class Processor {
                 Processor.trackChildren(structure.getTracker(), o, structureIdx, dao, modifiedObjectsFromTracking);
                 if (structure.hasTrackCorrector()) {
                     Processor.correctTrackChildren(structure.getTrackCorrector(), structure.getObjectSplitter(), o, structureIdx, dao, dao!=null&&updateTrackAttributes, modifiedObjectsCorrection, parentsToRelabel);
+                    Processor.trackChildren(structure.getTracker(), o, structureIdx, dao, modifiedObjectsFromTracking);
                 }
             }
             if (updateTrackAttributes && dao!=null) {
@@ -207,10 +215,16 @@ public class Processor {
                     dao.delete(objectsToErase);
                     modifiedObjectsFromTracking.addAll(relabelParents(parentsToRelabel, structureIdx)); // relabel after delete
                     Utils.removeDuplicates(modifiedObjectsFromTracking, false);
+                    long initSort = System.currentTimeMillis();
                     Collections.sort(modifiedObjectsFromTracking, Utils.getStructureObjectComparator()); // new objects need to be at the right timePoint
+                    long endSort = System.currentTimeMillis();
+                    logger.info("sorting {} object: elapsed time: {}", modifiedObjectsFromTracking.size(), endSort-initSort);
                 }
                 //dao.setTrackHeadIds(modifiedObjectsFromTracking);
+                long initStore = System.currentTimeMillis();
                 dao.store(modifiedObjectsFromTracking, true); 
+                long endStore = System.currentTimeMillis();
+                logger.info("storing {} object: elapsed time: {}", modifiedObjectsFromTracking.size(), endStore-initStore);
                 //TODO update links, separate each case, when morphium bugs solved
             }
         } else logger.warn("no tracker for structure: {}", structureIdx);
@@ -342,8 +356,10 @@ public class Processor {
         ArrayList<StructureObjectTrackCorrection> localModifiedObjects = new ArrayList<StructureObjectTrackCorrection>();
         for (StructureObject o : parentTrack.getChildObjects(structureIdx, dao, false)) o.getParentTrackHeadId(); //sets parentTrackHeadId
         while(parentTrack.getNext()!=null) {
-            ArrayList<StructureObject> children = parentTrack.getChildObjects(structureIdx, dao, false);
+            ArrayList<StructureObject> children = new ArrayList<StructureObject>(parentTrack.getChildObjects(structureIdx, dao, false)); // to avoid concurrent modifications exception
             for (StructureObject child : children) if (child.isTrackHead()) trackCorrector.correctTrack(child, splitter, localModifiedObjects);
+            
+            /*
             // remove merged objects from parents
             Iterator<StructureObject> it = children.iterator();
             while(it.hasNext()) {
@@ -353,12 +369,19 @@ public class Processor {
                     if (dao!=null && removeMergedObjectFromDAO) dao.delete(child);
                     if (it.hasNext()) parentsToRelabel.add(parentTrack); // need to relabel only if the child object is not the last element
                 }
-            }
+            }*/
             parentTrack = parentTrack.getNext();
         }
         //int sizeBefore = modifiedObjects.size();
         Utils.removeDuplicates(localModifiedObjects, false);
-        //logger.debug("number of duplicates: {}", sizeBefore-modifiedObjects.size());
+        for (StructureObjectTrackCorrection o : localModifiedObjects) {
+            if (StructureObject.TrackFlag.correctionSplitNew.equals(((StructureObject)o).getTrackFlag())) parentsToRelabel.add((StructureObject)o.getParent());
+            else if (StructureObject.TrackFlag.correctionMergeToErase.equals(((StructureObject)o).getTrackFlag())) {
+                parentsToRelabel.add((StructureObject)o.getParent());
+                if (dao!=null && removeMergedObjectFromDAO) dao.delete((StructureObject)o);
+            }
+        }
+        /*
         for (StructureObjectTrackCorrection o : localModifiedObjects) { // add split objects to parents just after the other splitted object;
             if (StructureObject.TrackFlag.correctionSplitNew.equals(((StructureObject)o).getTrackFlag())) {
                 StructureObject object = (StructureObject)o;
@@ -377,7 +400,7 @@ public class Processor {
                     }
                 }
             } 
-        }
+        }*/
         if (modifiedObjects!=null) {
             Utils.removeDuplicates(localModifiedObjects, false);
             modifiedObjects.ensureCapacity(modifiedObjects.size()+localModifiedObjects.size());

@@ -90,7 +90,7 @@ public class ImageFieldFactory {
             for (int[] tc:stc) {
                 if (stc.length>1) end = seriesSeparator+Utils.formatInteger(digits, s);
                 if (tc[1]==xp.getChannelImageCount()) {
-                    containersTC.add(new MultipleImageContainerSingleFile(removeExtension(image.getName())+end, image.getAbsolutePath(),s, tc[0], tc[1]));
+                    containersTC.add(new MultipleImageContainerSingleFile(removeExtension(image.getName())+end, image.getAbsolutePath(),s, tc[0], tc[1], tc[4]));
                     logger.info("image {} imported successfully", image.getAbsolutePath());
                 } else {
                     logger.warn("Invalid Image: {} has: {} channels instead of: {}", image.getAbsolutePath(), tc[1], xp.getChannelImageCount());
@@ -131,6 +131,7 @@ public class ImageFieldFactory {
     protected static void addContainerChannel(String[] imageC, String fieldName, Experiment xp, ArrayList<MultipleImageContainer> containersTC) {
         //checks timepoint number is equal for all channels
         int timePointNumber=0;
+        int[] sizeZC = new int[imageC.length];
         for (int c = 0; c< imageC.length; ++c) {
             ImageReader reader = null;
             try {
@@ -140,16 +141,18 @@ public class ImageFieldFactory {
             }
             if (reader != null) {
                 int[][] stc = reader.getSTCXYZNumbers();
-                if (stc.length>1) logger.warn("Import method selected = one file per channel and per microscopy field, but file: {} contains multiple series", imageC[c]);
+                if (stc.length>1) logger.warn("Import method selected = one file per channel and per microscopy field, but file: {} contains {} series", imageC[c], stc.length);
+                if (stc[0][1]>1) logger.warn("Import method selected = one file per channel and per microscopy field, but file: {} contains {} channels", imageC[c], stc[0][1]);
                 if (c==0) timePointNumber=stc[0][0];
                 else if (stc[0][0]!=timePointNumber) {
                     logger.warn("Warning: invalid file: {}. Contains {} time points whereas file: {} contains: {} time points", imageC[c], stc[0][0], imageC[0], timePointNumber);
                     return;
                 }
+                sizeZC[c] = stc[0][4];
             }
         }
         if (timePointNumber>0) {
-            MultipleImageContainerChannelSerie c = new MultipleImageContainerChannelSerie(fieldName, imageC, timePointNumber);
+            MultipleImageContainerChannelSerie c = new MultipleImageContainerChannelSerie(fieldName, imageC, timePointNumber, sizeZC);
             containersTC.add(c);
         }
         

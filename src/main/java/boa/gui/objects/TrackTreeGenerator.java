@@ -149,21 +149,22 @@ public class TrackTreeGenerator {
     private ImageObjectInterface getImageObjectInterface() {
         StructureObject parentTrackHead = getParentTrackHead();
         if (parentTrackHead==null) return null;
-        return ImageWindowManagerFactory.getImageManager().getImageObjectInterface(parentTrackHead, getStructureIdx());
+        return ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterfaceIfExisting(parentTrackHead, getStructureIdx());
     }
     
     public void displaySelectedTracks() {
-        if (logger.isTraceEnabled()) logger.trace("display: {} selected tracks", tree.getSelectionCount());
+        logger.debug("display: {} selected tracks", tree.getSelectionCount());
         ImageObjectInterface i = getImageObjectInterface();
         if (i!=null) ImageWindowManagerFactory.getImageManager().displayTrackAllImages(i, false, null, null); // unselect tracks
-        if (tree.getSelectionCount()==0) return;
-        //Color[] palette = Utils.generatePalette(tree.getSelectionCount(), true);
-        int idx=0;
-        for (TreePath p : tree.getSelectionPaths()) {
-            Object lastO = p.getLastPathComponent();
-            if (lastO instanceof TrackNode) {
-                //ImageWindowManagerFactory.getImageManager().displayTrack(null, true, ((TrackNode)lastO).track, ImageWindowManager.palette[idx++%ImageWindowManager.palette.length]);
-                ImageWindowManagerFactory.getImageManager().displayTrackAllImages(i, true, ((TrackNode)lastO).track, ImageWindowManager.palette[idx++%ImageWindowManager.palette.length]);
+        if (tree.getSelectionCount()>0 && i!=null) {
+            //Color[] palette = Utils.generatePalette(tree.getSelectionCount(), true);
+            int idx=0;
+            for (TreePath p : tree.getSelectionPaths()) {
+                Object lastO = p.getLastPathComponent();
+                if (lastO instanceof TrackNode) {
+                    //ImageWindowManagerFactory.getImageManager().displayTrack(null, true, ((TrackNode)lastO).track, ImageWindowManager.palette[idx++%ImageWindowManager.palette.length]);
+                    ImageWindowManagerFactory.getImageManager().displayTrackAllImages(i, true, ((TrackNode)lastO).track, ImageWindowManager.palette[idx++%ImageWindowManager.palette.length]);
+                }
             }
         }
     }

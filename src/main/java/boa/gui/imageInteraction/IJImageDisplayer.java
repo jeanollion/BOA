@@ -50,11 +50,20 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
     protected HashMap<ImagePlus, Image> displayedImagesInv=new HashMap<ImagePlus, Image>();
     @Override public void showImage(Image image) {
         if (IJ.getInstance()==null) new ImageJ();
+        if (imageExistButHasBeenClosed(image)) {
+            displayedImagesInv.remove(displayedImages.get(image));
+            displayedImages.remove(image);
+        }
         ImagePlus ip = getImage(image);
+        
         float[] minAndMax = image.getMinAndMax(null);
         ip.setDisplayRange(minAndMax[0], minAndMax[1]);
         ip.show();
         zoom(ip, ImageDisplayer.zoomMagnitude);
+    }
+    
+    private boolean imageExistButHasBeenClosed(Image image) {
+        return displayedImages.get(image)!=null && displayedImages.get(image).getCanvas()==null;
     }
     
     private static void zoom(ImagePlus image, double magnitude) {

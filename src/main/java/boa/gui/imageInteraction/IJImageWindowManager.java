@@ -68,9 +68,11 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
     @Override
     public void addMouseListener(final Image image) {
         final ImagePlus ip = displayer.getImage(image);
-        if (ip.getWindow()==null) displayer.showImage(image);
-        final ImageCanvas canvas = ip.getWindow().getCanvas();
-        
+        final ImageCanvas canvas = ip.getCanvas();
+        if (canvas==null) {
+            logger.warn("image: {} could not be set interactive", image.getName());
+            return;
+        }
         canvas.addMouseListener(new MouseListener() {
 
             public void mouseClicked(MouseEvent e) {

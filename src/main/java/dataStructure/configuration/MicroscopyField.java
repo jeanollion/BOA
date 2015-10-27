@@ -117,6 +117,11 @@ public class MicroscopyField extends SimpleContainerParameter {
         else return 0;
     }
     
+    public int getSizeZ(int channelIdx) {
+        if (images!=null) return images.getSizeZ(channelIdx);
+        else return -1;
+    }
+    
     public void setImages(MultipleImageContainer images) {
         this.images=images;
     }

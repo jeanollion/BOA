@@ -232,16 +232,15 @@ public class TestProcessFluo {
     }
     
     public void testSegBacteriesFromXP() {
-        int time = 10;
-        int channel =0;
+        int time = 578;
+        int channel =2;
         int field = 0;
-        String dbName = "testFluo595-630";
+        String dbName = "testFluo";
         //String dbName = "testFluo60";
         Morphium m=MorphiumUtils.createMorphium(dbName);
         ExperimentDAO xpDAO = new ExperimentDAO(m);
         xp=xpDAO.getExperiment();
         logger.info("Experiment: {} retrieved from db: {}", xp.getName(), dbName);
-
 
         ObjectDAO dao = new ObjectDAO(m, xpDAO);
         MicroscopyField f = xp.getMicroscopyField(field);
@@ -251,7 +250,7 @@ public class TestProcessFluo {
         Image input = mc.getRawImage(1);
         ImageMask parentMask = mc.getMask();
         BacteriaFluo.debug=true;
-        ObjectPopulation pop = BacteriaFluo.run(input, parentMask, 0.02, 100, 3, 20, 3, 1, 10);
+        ObjectPopulation pop = BacteriaFluo.run(input, parentMask, 0.02, 100, 10, 3, 40, 2, 1, 10);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
         disp.showImage(pop.getLabelImage());

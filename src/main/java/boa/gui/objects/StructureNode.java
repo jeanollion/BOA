@@ -168,7 +168,7 @@ public class StructureNode implements TreeNode, UIContainer {
                             
                             int[] path = getGenerator().getExperiment().getPathToStructure(getParentObject().getStructureIdx(), structureIdx);
                             parent.loadAllChildObjects(path, 0);
-                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(getParentObject(), structureIdx);
+                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(getParentObject(), structureIdx, true);
                             //logger.debug("IO-Interface: {}, parent: {}, number of children: {}", i, getParentObject(), getParentObject().getChildren(structureIdx).size());
                             ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true, true);
                         }
@@ -187,7 +187,7 @@ public class StructureNode implements TreeNode, UIContainer {
                             if (logger.isDebugEnabled()) logger.debug("opening input image for structure: {} of idx: {}", ae.getActionCommand(), getStructureIdx(ae.getActionCommand(), openRaw));
                             int[] path = getGenerator().getExperiment().getPathToStructure(getParentObject().getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
                             parent.loadAllChildObjects(path, 0);
-                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(getParentObject(), getStructureIdx(ae.getActionCommand(), openRaw));
+                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(getParentObject(), getStructureIdx(ae.getActionCommand(), openRaw), true);
                             ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(getStructureIdx(ae.getActionCommand(), openRaw)), i, false, true);
                         }
                     }

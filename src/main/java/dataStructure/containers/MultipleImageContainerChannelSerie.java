@@ -33,14 +33,16 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
     String[] filePathC;
     String name;
     int timePointNumber;
+    int[] sizeZC;
     BoundingBox bounds;
     @Transient private ImageReader reader[];
     
-    public MultipleImageContainerChannelSerie(String name, String[] imagePathC, int timePointNumber) {
+    public MultipleImageContainerChannelSerie(String name, String[] imagePathC, int timePointNumber, int[] sizeZC) {
         this.name = name;
         filePathC = imagePathC;
         this.timePointNumber = timePointNumber;
         this.reader=new ImageReader[imagePathC.length];
+        this.sizeZC= sizeZC;
     }
     
     public void setImagePath(String[] path) {
@@ -58,6 +60,13 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
 
     public int getChannelNumber() {
         return filePathC!=null?filePathC.length:0;
+    }
+    
+    @Override
+    public int getSizeZ(int channelNumber) {
+        if (sizeZC==null) sizeZC = new int[filePathC.length]; // temporary, for retrocompatibility
+        if (sizeZC[channelNumber]==0) sizeZC[channelNumber] = getReader(channelNumber).getSTCXYZNumbers()[0][4]; // temporary, for retrocompatibility
+        return sizeZC[channelNumber];
     }
     
     protected ImageIOCoordinates getImageIOCoordinates(int timePoint) {

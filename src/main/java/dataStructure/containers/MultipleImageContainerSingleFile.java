@@ -34,15 +34,17 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
     String name;
     int timePointNumber, channelNumber;
     int seriesIdx;
+    int sizeZ;
     BoundingBox bounds;
     @Transient private ImageReader reader;
     
-    public MultipleImageContainerSingleFile(String name, String imagePath, int series, int timePointNumber, int channelNumber) {
+    public MultipleImageContainerSingleFile(String name, String imagePath, int series, int timePointNumber, int channelNumber, int sizeZ) {
         this.name = name;
         this.seriesIdx=series;
         filePath = imagePath;
         this.timePointNumber = timePointNumber;
         this.channelNumber=channelNumber;
+        this.sizeZ=sizeZ;
     }
     
     public void setImagePath(String path) {
@@ -59,6 +61,15 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
 
     public int getChannelNumber() {
         return channelNumber;
+    }
+    /**
+     * 
+     * @param channelNumber ignored for this time of image container
+     * @return the number of z-slices for each image
+     */
+    @Override
+    public int getSizeZ(int channelNumber) {
+        return sizeZ;
     }
     
     protected ImageIOCoordinates getImageIOCoordinates(int timePoint, int channel) {

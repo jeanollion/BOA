@@ -140,9 +140,9 @@ public class TrackMask extends ImageObjectInterface {
     }
     
     @Override public Image generateRawImage(final int structureIdx) {
-        
-        final Image displayImage =  Image.createEmptyImage("TimeLapse Image of structure: "+structureIdx, trackObjects[0].generateRawImage(structureIdx), new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, this.maxParentZ).setCalibration(parent.getMaskProperties().getScaleXY(), parent.getMaskProperties().getScaleZ()));
-        pasteImage(trackObjects[0].generateRawImage(structureIdx), displayImage, trackOffset[0]);
+        Image image0 = trackObjects[0].generateRawImage(structureIdx);
+        final Image displayImage =  Image.createEmptyImage("TimeLapse Image of structure: "+structureIdx, image0, new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, Math.max(image0.getSizeZ(), this.maxParentZ)).setCalibration(parent.getMaskProperties().getScaleXY(), parent.getMaskProperties().getScaleZ()));
+        pasteImage(image0, displayImage, trackOffset[0]);
         // draw image in another thread..
         // update display every X paste...
         Thread t = new Thread(new Runnable() {

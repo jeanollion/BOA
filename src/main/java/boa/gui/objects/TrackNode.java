@@ -60,6 +60,7 @@ public class TrackNode implements TreeNode, UIContainer {
 
     public ArrayList<StructureObject> getTrack() {
         if (track==null) track=root.generator.objectDAO.getTrack(trackHead);
+        if (track==null) logger.error("Could not retrieve track from trackHead: {}", trackHead);
         return track;
     }
     

@@ -30,6 +30,7 @@ public abstract class MultipleImageContainer {
     double scaleXY, scaleZ;
     public abstract int getTimePointNumber();
     public abstract int getChannelNumber();
+    public abstract int getSizeZ(int channel);
     public abstract Image getImage(int timePoint, int channel);
     public abstract Image getImage(int timePoint, int channel, BoundingBox bounds);
     public abstract void close();

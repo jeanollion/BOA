@@ -151,10 +151,11 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.childrenSM.set(children, structureIdx);
         for (StructureObject o : children) o.setParent(this);
     }
-    protected ArrayList<? extends StructureObject> getSiblings() {return this.getParent().getChildObjects(structureIdx, getExperiment().getObjectDAO(), false);}
+    protected ArrayList<StructureObject> getSiblings() {return this.getParent().getChildObjects(structureIdx, getExperiment().getObjectDAO(), false);}
     
     public void relabelChildren(int structureIdx, ArrayList<StructureObject> modifiedObjects) {
         //logger.debug("relabeling: {} number of children: {}", this, getChildren(structureIdx).size());
+        // in order to avoid overriding some images, the algorithm is in two passes: ascending and descending indices
         ArrayList<StructureObject> c = getChildren(structureIdx);
         StructureObject current;
         for (int i = 0; i<c.size(); ++i) {
@@ -180,13 +181,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             if (current.idx!=i) {
                 if (current.idx>i) { // need to decrease index
                     if (i==0 || c.get(i-1).idx!=i)  {
-                        logger.debug("relabeling: {}, newIdx: {}", current, i);
+                        //logger.debug("relabeling: {}, newIdx: {}", current, i);
                         current.setIdx(i);
                         if (modifiedObjects!=null) modifiedObjects.add(current);
                     }
                 } else { //need to increase idx
                     if (i==c.size()-1 || c.get(i+1).idx!=i)  {
-                        logger.debug("relabeling: {}, newIdx: {}", current, i);
+                        //logger.debug("relabeling: {}, newIdx: {}", current, i);
                         current.setIdx(i);
                         if (modifiedObjects!=null) modifiedObjects.add(current);
                     }
@@ -227,6 +228,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             this.trackHead=this;
             this.trackHeadId=null;
         }
+    }
+    @Override
+    public void resetTrackLinks() {
+        this.previous=null;
+        this.next=null;
+        this.trackHead=null;
+        this.trackHeadId=null;
     }
     public void setTrackFlag(TrackFlag flag) {this.flag=flag;}
     public TrackFlag getTrackFlag() {return this.flag;}
@@ -376,15 +384,21 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public void merge(StructureObjectTrackCorrection other) {
         StructureObject otherO = (StructureObject)other;
         // update object
+        if (other==null) logger.debug("merge: {}, other==null", this);
+        if (getObject()==null) logger.debug("merge: {}+{}, object==null", this, other);
+        if (otherO.getObject()==null) logger.debug("merge: {}+{}, other object==null", this, other);
         getObject().merge(otherO.getObject()); 
         flushImages();
         objectModified = true;
         // update links
         StructureObject prev = otherO.getPrevious();
         if (prev !=null && prev.getNext()!=null && prev.next==otherO) prev.next=this;
-        StructureObject next = otherO.getNext();
-        if (next !=null && otherO==next.getPrevious()) next.previous=this;
-        //this.getParent().getChildObjects(structureIdx).remove(otherO); // concurent modification..
+        StructureObject next = otherO.getNext(); if (next==null) next = getNext();
+        if (next!=null) {
+            ArrayList<StructureObject> siblings = next.getSiblings();
+            for (StructureObject o : siblings) if (o.getPrevious()==otherO) o.previous=this;
+        }
+        this.getParent().getChildObjects(structureIdx).remove(otherO); // concurent modification..
         // set flags
         setTrackFlag(TrackFlag.correctionMerge);
         otherO.setTrackFlag(TrackFlag.correctionMergeToErase);
@@ -407,6 +421,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         ObjectPopulation pop = splitter.splitObject(getFilteredImage(structureIdx),  getObject());
         if (pop==null) {
             this.flag=TrackFlag.correctionSplitError;
+            logger.warn("split error: {}", this);
             return null;
         }
         // first object returned by splitter is updated to current structureObject
@@ -425,7 +440,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }*/
         //if (res.size()>1) xp.getObjectDAO().store(res);
         //else xp.getObjectDAO().store(res.get(0));
-        //this.getParent().getChildren(structureIdx).add(this.getParent().getChildren(structureIdx).indexOf(this)+1, res);
+        this.getParent().getChildren(structureIdx).add(this.getParent().getChildren(structureIdx).indexOf(this)+1, res);
         
         //res.previous=getPrevious();
         setTrackFlag(TrackFlag.correctionSplit);
@@ -470,20 +485,32 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 StructureObject parentWithImage=getFirstParentWithOpenedRawImage(structureIdx);
                 if (parentWithImage!=null) {
                     BoundingBox bb=getRelativeBoundingBox(parentWithImage);
+                    extendBoundsInZIfNecessary(channelIdx, bb);
                     rawImagesC.set(parentWithImage.getRawImage(structureIdx).crop(bb), channelIdx);
                 } else { // opens only the bb of the object from the root objects
                     StructureObject root = getRoot();
                     BoundingBox bb=getRelativeBoundingBox(root);
+                    extendBoundsInZIfNecessary(channelIdx, bb);
                     rawImagesC.set(root.openRawImage(structureIdx, bb), channelIdx);
                 }
             }
         }
         return rawImagesC.get(channelIdx);
     }
+    private void extendBoundsInZIfNecessary(int channelIdx, BoundingBox bounds) { //when the current structure is 2D but channel is 3D 
+        if (bounds.getSizeZ()==1 && getExperiment().getMicroscopyField(fieldName).getSizeZ(getExperiment().getChannelImageIdx(structureIdx))==1) { 
+            int sizeZ = getExperiment().getMicroscopyField(fieldName).getSizeZ(channelIdx);
+            if (sizeZ>1) {
+                bounds.expandZ(sizeZ-1);
+                logger.debug("sizeZ>1 ({}) for channel of structure: {}", sizeZ, getExperiment().getStructure(structureIdx).getName());
+            }
+        }
+    }
     
     public Image openRawImage(int structureIdx, BoundingBox bounds) {
         int channelIdx = getExperiment().getChannelImageIdx(structureIdx);
-        if (rawImagesC.get(channelIdx)==null) return getExperiment().getImageDAO().openPreProcessedImage(channelIdx, timePoint, fieldName, bounds);
+        
+        if (rawImagesC.get(channelIdx)==null) return getExperiment().getImageDAO().openPreProcessedImage(channelIdx, timePoint, fieldName, bounds); //opens only within bounds
         else return rawImagesC.get(channelIdx).crop(bounds);
     }
     
@@ -552,13 +579,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     @Override
     public String toString() {
-        if (isRoot()) return "Root: F:"+fieldName + " T:"+timePoint;
-        else return "F:"+fieldName+ " T:"+timePoint+ " S:"+structureIdx+ " Idx: "+idx+ " P:["+getParent().toStringShort()+"]" + (flag==null?"":" "+flag) ;
+        if (isRoot()) return "Root: F:"+fieldName + ",T:"+timePoint;
+        else return "F:"+fieldName+ ",T:"+timePoint+ ",S:"+structureIdx+ ",Idx:"+idx+ ",P:["+getParent().toStringShort()+"]" + (flag==null?"":"{"+flag+"}") ;
     }
     
     protected String toStringShort() {
         if (isRoot()) return "Root";
-        else return " S:"+structureIdx+ " Idx: "+idx+ " P:["+getParent().toStringShort()+"]" ;
+        else return "S:"+structureIdx+ ",Idx:"+idx+ ",P:["+getParent().toStringShort()+"]" ;
     }
     
     // morphium-related methods

@@ -1,5 +1,6 @@
 package image;
 
+import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import processing.neighborhood.Neighborhood;
@@ -55,7 +56,39 @@ public abstract class Image implements ImageProperties {
         else return (T)new BlankMask(name, properties);
     }
     
-    public abstract Image getZPlane(int idxZ);
+    public abstract <T extends Image> T getZPlane(int idxZ);
+    
+    public <T extends Image> ArrayList<T> splitZPlanes() {
+        ArrayList<T> res = new ArrayList<T>(getSizeZ());
+        for (int i = 0; i<sizeZ; ++i) res.add((T)getZPlane(i));
+        return res;
+    }
+    
+    public static <T extends Image> T mergeZPlanes(ArrayList<T> planes) {
+        if (planes==null || planes.isEmpty()) return null;
+        String title = "merged planes";
+        T plane0 = planes.get(0);
+        if (plane0 instanceof ImageByte) {
+            byte[][] pixels = new byte[planes.size()][];
+            for (int i = 0; i<pixels.length; ++i) pixels[i]=((byte[][])planes.get(i).getPixelArray())[0];
+            return (T)new ImageByte(title, plane0.getSizeX(), pixels).setCalibration(plane0).addOffset(plane0);
+        } else if (plane0 instanceof ImageShort) {
+            short[][] pixels = new short[planes.size()][];
+            for (int i = 0; i<pixels.length; ++i) pixels[i]=((short[][])planes.get(i).getPixelArray())[0];
+            return (T)new ImageShort(title, plane0.getSizeX(), pixels).setCalibration(plane0).addOffset(plane0);
+        } else if (plane0 instanceof ImageFloat) {
+            float[][] pixels = new float[planes.size()][];
+            for (int i = 0; i<pixels.length; ++i) pixels[i]=((float[][])planes.get(i).getPixelArray())[0];
+            return (T)new ImageFloat(title, plane0.getSizeX(), pixels).setCalibration(plane0).addOffset(plane0);
+        } else if (plane0 instanceof ImageInt) {
+            int[][] pixels = new int[planes.size()][];
+            for (int i = 0; i<pixels.length; ++i) pixels[i]=((int[][])planes.get(i).getPixelArray())[0];
+            return (T)new ImageInt(title, plane0.getSizeX(), pixels).setCalibration(plane0).addOffset(plane0);
+        } else {
+            logger.error("merge plane Z: unrecognized image type");
+            return null;
+        }
+    }
     
     @Override
     public boolean sameSize(ImageProperties other) {

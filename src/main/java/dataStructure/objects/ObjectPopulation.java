@@ -40,6 +40,7 @@ import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import measurement.BasicMeasurements;
 import static plugins.plugins.thresholders.IJAutoThresholder.runThresholder;
 import static plugins.plugins.thresholders.IJAutoThresholder.runThresholder;
 import static plugins.plugins.thresholders.IJAutoThresholder.runThresholder;
@@ -314,6 +315,44 @@ public class ObjectPopulation {
         @Override public boolean keepObject(Object3D object) {
             int size = object.getVoxels().size();
             return (min<0 || size>=min) && (max<0 || size<max);
+        }
+    }
+    public static class ContactBorder implements Filter {
+        public static enum Border{
+            X, Y, Z, XY, XYZ; 
+            public boolean hasX() {return (this.equals(X) || this.equals(XY) || this.equals(XYZ));}
+            public boolean hasY() {return (this.equals(Y) || this.equals(XY) || this.equals(XYZ));}
+            public boolean hasZ() {return (this.equals(Z) || this.equals(XYZ));}
+        };
+        int contactLimit;
+        ImageProperties mask;
+        Border border;
+        public ContactBorder(int contactLimit, ImageProperties mask, Border border) {
+            this.contactLimit=contactLimit;
+            this.mask=mask;
+            this.border=border;
+        }
+        @Override public boolean keepObject(Object3D object) {
+            if (contactLimit<=0) return true;
+            int count = 0;
+            for (Voxel v : object.getVoxels()) {
+                if ( (border.hasX() && (v.x==0 || v.x==mask.getSizeX()-1)) || 
+                    (border.hasY() && (v.y==0 || v.y==mask.getSizeY()-1)) ||
+                    (border.hasZ() && (v.z==0 || v.z==mask.getSizeZ()-1))) ++count;
+            }
+            return count<contactLimit;
+        }
+    }
+    public static class MeanIntensity implements Filter {
+        double threshold;
+        Image intensityMap;
+        public MeanIntensity(double threshold, Image intensityMap) {
+            this.threshold=threshold;
+            this.intensityMap=intensityMap;
+        }
+        @Override public boolean keepObject(Object3D object) {
+            double mean = BasicMeasurements.getMeanValue(object, intensityMap);
+            return mean>=threshold;
         }
     }
 }

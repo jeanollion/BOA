@@ -74,9 +74,9 @@ public abstract class ImageWindowManager<T> {
         imageObjectInterfaces.remove(new ImageObjectInterfaceKey(parent, childStructureIdx, false));
     }
     
-    public ImageObjectInterface getImageObjectInterface(StructureObject parent, int childStructureIdx) {
+    public ImageObjectInterface getImageObjectInterface(StructureObject parent, int childStructureIdx, boolean createIfNotExisting) {
         ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parent, childStructureIdx, false));
-        if (i==null) {
+        if (i==null && createIfNotExisting) {
             i= new StructureObjectMask(parent, childStructureIdx);
             imageObjectInterfaces.put(new ImageObjectInterfaceKey(parent, childStructureIdx, false), i);
         } 
@@ -94,6 +94,9 @@ public abstract class ImageWindowManager<T> {
             imageObjectInterfaces.put(new ImageObjectInterfaceKey(parentTrack.get(0), childStructureIdx, true), i);
         } 
         return i;
+    }
+    public ImageObjectInterface getImageTrackObjectInterfaceIfExisting(StructureObject parentTrackHead, int childStructureIdx) {
+        return imageObjectInterfaces.get(new ImageObjectInterfaceKey(parentTrackHead.getTrackHead(), childStructureIdx, true));
     }
     
     protected void reloadObjects_(StructureObject parent, int childStructureIdx, boolean track) {
@@ -143,7 +146,8 @@ public abstract class ImageWindowManager<T> {
     public abstract void unselectObjects(Image image);
     public abstract void displayTrack(Image image, boolean addToCurrentSelectedTracks, ArrayList<StructureObject> track, Color color);
     public void displayTrackAllImages(ImageObjectInterface i, boolean addToCurrentSelectedTracks, ArrayList<StructureObject> track, Color color) {
-        if (i==null && track!=null && !track.isEmpty()) i = this.getImageObjectInterface(track.get(0).getTrackHead(), track.get(0).getStructureIdx());
+        if (i==null && track!=null && !track.isEmpty()) i = this.getImageObjectInterface(track.get(0).getTrackHead(), track.get(0).getStructureIdx(), false);
+        if (i==null) return;
         ArrayList<Image> images= Utils.getKeys(this.imageObjectInterfaceMap, i);
         for (Image image : images) displayTrack(image, addToCurrentSelectedTracks, track, color);
     }

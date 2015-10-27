@@ -237,7 +237,7 @@ public class ImageOperations {
     /**
      * 
      * @param image
-     * @param axis along which project values
+     * @param axis remaining axis
      * @param limit projection within the boundingbox
      * @return 
      */
@@ -303,6 +303,19 @@ public class ImageOperations {
             }
         }
         return res;
+    }
+    
+    public static <T extends Image> T meanZProjection(Image input, T output) {
+        BlankMask properties =  new BlankMask("", input.getSizeX(), input.getSizeY(), 1, input.getOffsetX(), input.getOffsetY(), input.getOffsetZ(), input.getScaleXY(), input.getScaleZ());
+        if (output ==null) output = (T)new ImageFloat("mean Z projection", properties);
+        else if (output.sameSize(properties)) output = Image.createEmptyImage("mean Z projection", output, properties);
+        float size = input.getSizeZ();
+        for (int xy = 0; xy<input.getSizeXY(); ++xy) {
+            float sum = 0;
+            for (int z = 0; z<input.getSizeZ(); ++z) sum+=input.getPixel(z, z);
+            output.setPixel(xy, xy, sum/size);
+        }
+        return output;
     }
     
     public static ImageFloat normalize(Image input, ImageMask mask, ImageFloat output) {

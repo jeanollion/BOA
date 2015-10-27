@@ -199,8 +199,13 @@ public class ObjectDAO extends DAO<StructureObject>{
                 o.getParentTrackHeadId();
             }
             if (o.getPrevious()!=null && o.getPrevious().id==null) {
-                logger.error("previous unstored: object: idx: {} {}, flag: {} previous: {}, flag: {} ",objects.indexOf(o.getPrevious()), o, o.getTrackFlag(), o.getPrevious(), o.getPrevious().getTrackFlag());
-                store(o.getPrevious());
+                logger.error("previous unstored: object: idx: {} {} previous: {}, storing object with previous as null",objects.indexOf(o.getPrevious()), o, o.getPrevious());
+                o.previous=null;
+                /*o.isTrackHead=true;
+                o.trackHeadId=null;
+                o.trackHead=null;
+                o.getTrackHeadId();*/
+                //store(o.getPrevious());
             }
             morphium.store(o);
             idCache.put(o.getId(), o);

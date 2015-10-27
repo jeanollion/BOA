@@ -38,6 +38,7 @@ import measurement.BasicMeasurements;
 import plugins.Segmenter;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.trackers.ObjectIdxTracker;
+import processing.Filters;
 import processing.ImageFeatures;
 import processing.WatershedTransform;
 import processing.mergeRegions.RegionCollection;
@@ -50,12 +51,13 @@ import utils.Utils;
 public class BacteriaFluo implements Segmenter {
     public static boolean debug = false;
     NumberParameter splitThreshold = new BoundedNumberParameter("Split Threshold", 4, 0.10, 0, 1);
-    NumberParameter minSize = new BoundedNumberParameter("Minimum size", 0, 400, 25, null);
+    NumberParameter minSize = new BoundedNumberParameter("Minimum size", 0, 100, 50, null);
+    NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 5, 0, null);
     NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 3, 1, 5);
-    NumberParameter dogScale = new BoundedNumberParameter("DoG scale", 0, 15, 5, null);
-    NumberParameter hessianScale = new BoundedNumberParameter("Hessian scale", 1, 3, 1, 6);
+    NumberParameter dogScale = new BoundedNumberParameter("DoG scale", 0, 40, 5, null);
+    NumberParameter hessianScale = new BoundedNumberParameter("Hessian scale", 1, 2, 1, 6);
     NumberParameter hessianThresholdFactor = new BoundedNumberParameter("Hessian threshold factor", 1, 1, 0, 5);
-    Parameter[] parameters = new Parameter[]{splitThreshold, minSize, smoothScale, dogScale, hessianScale, hessianThresholdFactor};
+    Parameter[] parameters = new Parameter[]{splitThreshold, minSize, contactLimit, smoothScale, dogScale, hessianScale, hessianThresholdFactor};
     
     public BacteriaFluo setSplitThreshold(double splitThreshold) {
         this.splitThreshold.setValue(splitThreshold);
@@ -84,7 +86,7 @@ public class BacteriaFluo implements Segmenter {
     
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         double fusionThreshold = splitThreshold.getValue().doubleValue()/10d;
-        return run(input, parent.getMask(), fusionThreshold, minSize.getValue().intValue(), smoothScale.getValue().doubleValue(), dogScale.getValue().doubleValue(), hessianScale.getValue().doubleValue(), hessianThresholdFactor.getValue().doubleValue(), 5);
+        return run(input, parent.getMask(), fusionThreshold, minSize.getValue().intValue(), contactLimit.getValue().intValue(), smoothScale.getValue().doubleValue(), dogScale.getValue().doubleValue(), hessianScale.getValue().doubleValue(), hessianThresholdFactor.getValue().doubleValue(), 5);
     }
     
     
@@ -93,18 +95,23 @@ public class BacteriaFluo implements Segmenter {
         return "Bacteria Fluo: " + Utils.toStringArray(parameters);
     }   
     
-    public static ObjectPopulation run(Image input, ImageMask mask, double fusionThreshold, int minSize, double smoothScale, double dogScale, double hessianScale, double hessianThresholdFactor, int localThresholdMargin) {
+    public static ObjectPopulation run(Image input, ImageMask mask, double fusionThreshold, int minSize, int contactLimit, double smoothScale, double dogScale, double hessianScale, double hessianThresholdFactor, int localThresholdMargin) {
         ImageDisplayer disp=debug?new IJImageDisplayer():null;
         double hessianThresholdFacto = 1;
-        ImageFloat smoothed = ImageFeatures.gaussianSmooth(input, smoothScale, smoothScale, false).setName("smoothed");
+        //ImageFloat smoothed = ImageFeatures.gaussianSmooth(input, smoothScale, smoothScale, false).setName("smoothed");
+        Image smoothed = Filters.median(input, input, Filters.getNeighborhood(smoothScale, smoothScale, input));
         ImageFloat dog = ImageFeatures.differenceOfGaussians(smoothed, 0, dogScale, 1, false, false).setName("DoG");
         //Image hessian = ImageFeatures.getHessian(dog, hessianScale, false)[0].setName("hessian");
         if (debug) disp.showImage(dog.duplicate("DoG"));
-        double t0 = IJAutoThresholder.runThresholder(dog, mask, null, AutoThresholder.Method.Otsu, 0);
+        //double t0 = IJAutoThresholder.runThresholder(dog, mask, null, AutoThresholder.Method.Otsu, 0);
         ObjectPopulation pop1 = SimpleThresholder.run(dog, 0);
         
         pop1.filter(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
         pop1.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
+        
+        double threshold = IJAutoThresholder.runThresholder(dog, mask, null, AutoThresholder.Method.Otsu, 0);
+        if (debug) logger.debug("threhsold: {}", threshold);
+        pop1.filter(new ObjectPopulation.MeanIntensity(threshold, dog));
         if (debug) disp.showImage(pop1.getLabelImage().duplicate("first seg"));
         
         /*
@@ -119,13 +126,15 @@ public class BacteriaFluo implements Segmenter {
         }
         */
         //Image dogNoTrim = dog.duplicate("");
-        ImageOperations.trim(dog, 0, true, false);
-        ImageOperations.normalize(dog, pop1.getLabelImage(), dog);
+        //ImageOperations.trim(dog, 0, true, false);
+        //ImageOperations.normalize(dog, pop1.getLabelImage(), dog);
         //Image dogNorm = ImageOperations.multiply(dog, null, 100/BasicMeasurements.getPercentileValue(pop1.getObjects().get(0), 0.5, smoothed));
+        //Image log = ImageFeatures.getLaplacian(smoothed, 2, true, false);
         Image hessian = ImageFeatures.getHessian(dog, hessianScale, false)[0].setName("hessian norm");
         
         if (debug) {
             disp.showImage(dog);
+            //disp.showImage(log);
             disp.showImage(hessian);
             
         }
@@ -150,7 +159,10 @@ public class BacteriaFluo implements Segmenter {
             else res.addObjects(localPop.getObjects());
             maskObject.draw(watershedMask, 0);
         }
-        if (res!=null) res.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);        
+        if (res!=null) {
+            if (contactLimit>0) res.filter(new ObjectPopulation.ContactBorder(contactLimit, mask, ObjectPopulation.ContactBorder.Border.Y));
+            res.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
+        }        
         return res;
         
     }
