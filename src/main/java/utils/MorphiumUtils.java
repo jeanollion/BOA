@@ -111,7 +111,10 @@ public class MorphiumUtils {
             cfg.setGlobalLogLevel(3);
             cfg.setDatabase(dbName);
             cfg.addHost(hostName, portNumber);
+            
             Morphium m=new Morphium(cfg);
+            m.readMaximums();
+            logger.debug("max write batch size {}" , m.getMaxWriteBatchSize());
             return m;
         } catch (UnknownHostException ex) {
             logger.error("Couldnot instanciate morphim", ex);
