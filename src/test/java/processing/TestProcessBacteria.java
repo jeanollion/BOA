@@ -74,12 +74,12 @@ import static utils.Utils.deleteDirectory;
  *
  * @author jollion
  */
-public class TestProcessFluo {
+public class TestProcessBacteria {
     Experiment xp;
     
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        TestProcessFluo t = new TestProcessFluo();
+        TestProcessBacteria t = new TestProcessBacteria();
         //t.correctTracks("testFluo60", 0, 1);
         //t.process("testFluo60", 0, false);
         //t.testSegBactTrackErrors();

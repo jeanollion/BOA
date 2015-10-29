@@ -34,6 +34,9 @@ public interface Neighborhood {
     public void setPixels(int x, int y, int z, Image image);
     public int getSize();
     public float[] getPixelValues();
-    public int getValueNumber();
+    public float[] getDistancesToCenter();
+    public int getValueCount();
+    public double getRadiusXY();
+    public double getRadiusZ();
     // float[] getCoefficientValue();
 }

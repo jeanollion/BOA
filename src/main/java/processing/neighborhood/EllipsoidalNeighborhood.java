@@ -17,7 +17,10 @@
  */
 package processing.neighborhood;
 
+import static core.Processor.logger;
 import image.Image;
+import java.util.Arrays;
+import java.util.Comparator;
 
 /**
  *
@@ -29,13 +32,14 @@ public class EllipsoidalNeighborhood implements Neighborhood {
     boolean is3D;        
     public final int[] dx, dy, dz;
     float[] values;
-    
-    int valueNumber;
+    float[] distances;
+    int valueCount;
     /**
      * 3D Elipsoidal Neighbourhood around a voxel
      * @param radius in pixel in the XY-axis
      * @param radiusZ in pixel in the Z-axis
-     * an array of diplacement from the center
+     * @param excludeCenter if true, central point can excluded
+     * return an array of diplacement from the center
      */
     public EllipsoidalNeighborhood(double radius, double radiusZ, boolean excludeCenter) {
         this.radius=radius;
@@ -45,7 +49,7 @@ public class EllipsoidalNeighborhood implements Neighborhood {
         int rad = (int) (radius + 0.5f);
         int radZ = (int) (radiusZ + 0.5f);
         int[][] temp = new int[3][(2 * rad + 1) * (2 * rad + 1) * (2 * radZ + 1)];
-        //float[] tempDist = new float[temp[0].length];
+        final float[] tempDist = new float[temp[0].length];
         int count         = 0;
         double rad2 = radius * radius;
         for (int zz = -radZ; zz <= radZ; zz++) {
@@ -56,43 +60,46 @@ public class EllipsoidalNeighborhood implements Neighborhood {
                         temp[0][count] = xx;
                         temp[1][count] = yy;
                         temp[2][count] = zz;
-                        //tempDist[count] = (float) Math.sqrt(d2);
+                        tempDist[count] = (float) Math.sqrt(d2);
                         count++;
                     }
                 }
             }
         }
 
-        //distances = new float[count];
-        //System.arraycopy(tempDist, 0, distances, 0, count);
-
-        /*
-         * Integer[] order = new Integer[distances.length]; for (int i = 0; i <
-         * order.length; i++) order[i]=i; Arrays.sort(order, new
-         * ComparatorDistances()); Arrays.sort(distances); for (int i = 0;
-         * i<count; i++) { vois[0][i]=temp[0][order[i]];
-         * vois[1][i]=temp[1][order[i]]; vois[2][i]=temp[2][order[i]]; }
-         *
-         */
+        
+        Integer[] indicies = new Integer[count]; for (int i = 0; i <indicies.length; i++) indicies[i]=i;
+        Comparator<Integer> compDistance = new Comparator<Integer>() {
+            @Override public int compare(Integer arg0, Integer arg1) {
+                return Float.compare(tempDist[arg0], tempDist[arg1]);
+            }
+        };
+        Arrays.sort(indicies, compDistance);
+        distances = new float[count];
         dx= new int[count];
         dy= new int[count];
         dz= new int[count];
         values=new float[count];
-        System.arraycopy(temp[0], 0, dx, 0, count);
-        System.arraycopy(temp[1], 0, dy, 0, count);
-        System.arraycopy(temp[2], 0, dz, 0, count);
+        for (int i = 0; i<count; ++i) {
+            dx[i] = temp[0][indicies[i]];
+            dy[i] = temp[1][indicies[i]];
+            dz[i] = temp[2][indicies[i]];
+            distances[i] = tempDist[indicies[i]];
+        }
     }
     /**
      * 2D Circular Neighbourhood around a voxel
      * @param radius in pixel in the XY-axis
-     * an array of diplacement from the center. central point is excluded
+     * an array of diplacement from the center. 
+     * @param excludeCenter if true, central point can excluded
      */
-    public EllipsoidalNeighborhood(double radius, boolean excludeCenter) { //todo subclass to avoid the test...
+    public EllipsoidalNeighborhood(double radius, boolean excludeCenter) { 
         this.radius = radius;
+        this.radiusZ=radius;
         is3D=false;
         int rad = (int) (radius + 0.5f);
         int[][] temp = new int[2][(2 * rad + 1) * (2 * rad + 1)];
-        //float[] tempDist = new float[temp[0].length];, final float[] dest
+        final float[] tempDist = new float[temp[0].length];
         int count = 0;
         double rad2 = radius * radius;
         for (int yy = -rad; yy <= rad; yy++) {
@@ -101,21 +108,32 @@ public class EllipsoidalNeighborhood implements Neighborhood {
                 if (d2 <= rad2 && (!excludeCenter || d2 > 0)) {	//exclusion du point central
                     temp[0][count] = xx;
                     temp[1][count] = yy;
-                    //tempDist[count] = (float) Math.sqrt(d2);
+                    tempDist[count] = (float) Math.sqrt(d2);
                     count++;
                 }
             }
         }
+        Integer[] indicies = new Integer[count]; for (int i = 0; i <indicies.length; i++) indicies[i]=i;
+        Comparator<Integer> compDistance = new Comparator<Integer>() {
+            @Override public int compare(Integer arg0, Integer arg1) {
+                return Float.compare(tempDist[arg0], tempDist[arg1]);
+            }
+        };
+        Arrays.sort(indicies, compDistance);
+        distances = new float[count];
         dx= new int[count];
         dy= new int[count];
         dz= new int[count];
         values=new float[count];
-        System.arraycopy(temp[0], 0, dx, 0, count);
-        System.arraycopy(temp[1], 0, dy, 0, count);
+        for (int i = 0; i<count; ++i) {
+            dx[i] = temp[0][indicies[i]];
+            dy[i] = temp[1][indicies[i]];
+            distances[i] = tempDist[indicies[i]];
+        }
     }
     
     @Override public void setPixels(int x, int y, int z, Image image) {
-        valueNumber=0;
+        valueCount=0;
         int xx, yy;
         if (is3D) { 
             int zz;
@@ -123,13 +141,13 @@ public class EllipsoidalNeighborhood implements Neighborhood {
                 xx=x+dx[i];
                 yy=y+dy[i];
                 zz=z+dz[i];
-                if (image.contains(xx, yy, zz)) values[valueNumber++]=image.getPixel(xx, yy, zz);
+                if (image.contains(xx, yy, zz)) values[valueCount++]=image.getPixel(xx, yy, zz);
             }
         } else {
             for (int i = 0; i<dx.length; ++i) {
                 xx=x+dx[i];
                 yy=y+dy[i];
-                if (image.contains(xx, yy, 0)) values[valueNumber++]=image.getPixel(xx, yy, 0);
+                if (image.contains(xx, yy, 0)) values[valueCount++]=image.getPixel(xx, yy, 0);
             }
         }
     }
@@ -140,8 +158,19 @@ public class EllipsoidalNeighborhood implements Neighborhood {
         return values;
     }
 
-    @Override public int getValueNumber() {
-        return valueNumber;
+    @Override public int getValueCount() {
+        return valueCount;
+    }
+    @Override public float[] getDistancesToCenter() {
+        return distances;
+    }
+
+    @Override public double getRadiusXY() {
+        return radius;
+    }
+
+    @Override public double getRadiusZ() {
+        return radiusZ;
     }
     
 }

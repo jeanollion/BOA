@@ -58,11 +58,7 @@ public class WatershedObjectSplitter implements ObjectSplitter {
             return null;
         }
         else {
-            WatershedTransform wt = new WatershedTransform(smoothed, mask, seeds, true, null, null);
-            WatershedTransform.NumberFusionCriterion fusionCriterion = wt.new NumberFusionCriterion(2);
-            wt.setFusionCriterion(fusionCriterion);
-            wt.run();
-            ObjectPopulation pop =  wt.getObjectPopulation();
+            ObjectPopulation pop =  WatershedTransform.watershed(smoothed, mask, seeds, true, null, new WatershedTransform.NumberFusionCriterion(2));
             if (debug) new IJImageDisplayer().showImage(pop.getLabelImage());
             return pop;
         }

@@ -19,6 +19,7 @@ package processing;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
+import static core.Processor.logger;
 import ij.ImagePlus;
 import ij.measure.Calibration;
 import image.IJImageWrapper;
@@ -188,7 +189,7 @@ public class ImageFeatures {
         final imagescience.image.Image is = ImagescienceWrapper.getImagescience(image);
         boolean duplicate = !((image instanceof ImageFloat) && overrideIfFloat);
         ImageFloat res = (ImageFloat)ImagescienceWrapper.wrap(new Laplacian().run(duplicate?is.duplicate():is, scale));
-        if (invert) ImageOperations.multiply(res, res, -1);
+        if (invert) ImageOperations.affineOperation(res, res, -1, 0);
         res.setCalibration(image).resetOffset().addOffset(image).setName(image.getName() + ":laplacian");
         return res;
     }
@@ -207,23 +208,29 @@ public class ImageFeatures {
         }
         return res;
     }
-    public static ImageFloat getHessianDeterminant(Image image, double scale, boolean overrideIfFloat) {
+    public static ImageFloat[] getHessianMaxAndDeterminant(Image image, double scale, boolean overrideIfFloat) {
         ImageFloat[] hess=getHessian(image, scale, overrideIfFloat);
-        ImageFloat output = hess[0];
+        ImageFloat output = hess[hess.length-1];
         if (hess.length==2) {
+            for (int xy = 0; xy<hess[0].getSizeXY(); ++xy) {
+                
+                output.setPixel(xy, 0, sqrt(hess[0].getPixel(xy, 0)*hess[1].getPixel(xy, 0)));
+            }
+        } else if (hess.length==3) {
+            double pow = 1d/3d;
             for (int z = 0; z<hess[0].getSizeZ(); ++z) {
                 for (int xy = 0; xy<hess[0].getSizeXY(); ++xy) {
-                    output.setPixel(xy, z, hess[0].getPixel(xy, z)*hess[1].getPixel(xy, z));
+                    output.setPixel(xy, z, Math.pow(hess[0].getPixel(xy, z)*hess[1].getPixel(xy, z)*hess[2].getPixel(xy, z), pow));
                 }
             }
-        } if (hess.length==3) {
-            for (int z = 0; z<hess[0].getSizeZ(); ++z) {
-                for (int xy = 0; xy<hess[0].getSizeXY(); ++xy) {
-                    output.setPixel(xy, z, hess[0].getPixel(xy, z)*hess[1].getPixel(xy, z)*hess[2].getPixel(xy, z));
-                }
-            }
-        } else return hess[0];
-        return output;
+        } else {
+            logger.warn("wrong number of dimension {}, hessian determient cannot be computed", hess.length);
+            return null;
+        }
+        return new ImageFloat[]{hess[0], output};
+    }
+    private static double sqrt(double number) {
+        return number>=0?Math.sqrt(number):-Math.sqrt(-number);
     }
     
     public static ImageFloat gaussianSmooth(Image image, double scaleXY, double scaleZ, boolean overrideIfFloat) {

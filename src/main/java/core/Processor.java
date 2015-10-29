@@ -303,7 +303,7 @@ public class Processor {
             ArrayList<StructureObject> allParents = StructureObjectUtils.getAllParentObjects(parent, parent.getExperiment().getPathToStructure(parent.getStructureIdx(), structureIdx), dao);
             logger.info("Segmenting structure: {} timePoint: {} number of parents: {}", structureIdx, parent.getTimePoint(), allParents.size());
             for (StructureObject localParent : allParents) {
-                if (dao!=null) dao.deleteChildren(localParent.getId(), structureIdx);
+                if (dao!=null) dao.deleteChildren(localParent, structureIdx);
                 localParent.segmentChildren(structureIdx);
                 segmentedObjects.addAll(localParent.getChildren(structureIdx));
                 //if (dao!=null) dao.store(localParent.getChildren(structureIdx));
@@ -320,7 +320,7 @@ public class Processor {
         ArrayList<StructureObject> allParents = StructureObjectUtils.getAllParentObjects(parent, parent.getExperiment().getPathToStructure(parent.getStructureIdx(), structureIdx), dao);
         logger.info("Segmenting structure: {}, timePoint: {}, number of parents: {}...", structureIdx, parent.getTimePoint(), allParents.size());
         for (StructureObject localParent : allParents) {
-            if (dao!=null && deleteObjects) dao.deleteChildren(localParent.getId(), structureIdx);
+            if (dao!=null && deleteObjects) dao.deleteChildren(localParent, structureIdx);
             localParent.segmentChildren(structureIdx);
             //if (dao!=null) dao.store(localParent.getChildren(structureIdx));
             segmentedObjects.addAll(localParent.getChildren(structureIdx));

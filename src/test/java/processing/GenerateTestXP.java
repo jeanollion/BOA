@@ -23,7 +23,7 @@ package processing;
  */
 public class GenerateTestXP {
     public static void main(String[] args) {
-        TestProcessFluo t = new TestProcessFluo();
+        TestProcessBacteria t = new TestProcessBacteria();
         t.setUpXp(true, "/data/Images/Fluo/OutputTestGUI595-630");
         //t.setUpXp(true, "/home/jollion/Documents/LJP/DataLJP/TestOutput60");
         t.testImport("/data/Images/Fluo/testsub595-630");

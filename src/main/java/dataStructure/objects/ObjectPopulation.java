@@ -301,6 +301,15 @@ public class ObjectPopulation {
             return (tX<0 || object.getBounds().getSizeX()>tX) && (tY<0 || object.getBounds().getSizeY()>tY) && (tZ<0 || object.getBounds().getSizeZ()>tZ);
         }
     }
+    public static class RemoveFlatObjects extends Thickness {
+        public RemoveFlatObjects(Image image) {
+            this(image.getSizeZ()>1);
+        }
+        public RemoveFlatObjects(boolean is3D) {
+            super.setX(1).setY(1);
+            if (is3D) super.setZ(1);
+        }
+    }
     public static class Size implements Filter {
         int min=-1, max=-1;
         public Size setMin(int min) {

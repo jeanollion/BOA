@@ -22,6 +22,7 @@ import image.Image;
 import image.ImageByte;
 import image.ImageFloat;
 import java.util.Arrays;
+import java.util.Comparator;
 import processing.neighborhood.EllipsoidalNeighborhood;
 import processing.neighborhood.Neighborhood;
 
@@ -105,69 +106,156 @@ public class Filters {
         String name = maxLocal?"MaxLocal of: "+image.getName():"MinLocal of: "+image.getName();
         if (output==null || !output.sameSize(image) || output==image) res = new ImageByte(name, image);
         else res = (ImageByte)output.setName(name);
-        Filter filter = maxLocal?new Max():new Min();
-        for (int z = 0; z < image.getSizeZ(); ++z) {
-            for (int y = 0; y < image.getSizeY(); ++y) {
-                for (int x = 0; x < image.getSizeX(); ++x) {
-                    neighborhood.setPixels(x, y, z, image);
-                    float value = image.getPixel(x, y, z);
-                    res.setPixel(x, y, z, value==filter.applyFilter(neighborhood.getPixelValues(), neighborhood.getValueNumber(), neighborhood)?1:0); //+round
-                }
-            }
-        }
-        return res;
+        Filter filter = maxLocal?new LocalMax():new LocalMin();
+        return applyFilter(image, res, filter, neighborhood);
+    }
+        /**
+     * ATTENTION: bug en dimension 1 !!
+     * @param image input image
+     * @param output image to store the result in. if {@param output} is null or {@param output}=={@param image} or {@param output} does not have the same dimensions as {@param image}, a new image of the type of {@param output} will be created
+     * @param maxLocal if true the local maximum transform of the image is return, if false the local minimum of the image is returned
+     * @param threshold supplemental condition: to be a local extrema, the pixel value must be superior to {@param threshold} if {@param maxLocal}==true, otherwise inferior to {@param threshold}
+     * @param neighborhood 2D/3D neighborhood in which the local extrema is computed
+     * @return an image of same type as output (that can be output). Each pixel value is 0 if the current pixel is not an extrema, or has the value of the original image if it is an extrema
+     */
+    public static ImageByte localExtrema(Image image, ImageByte output, boolean maxLocal, double threshold, Neighborhood neighborhood) {
+        ImageByte res;
+        String name = maxLocal?"MaxLocal of: "+image.getName():"MinLocal of: "+image.getName();
+        if (output==null || !output.sameSize(image) || output==image) res = new ImageByte(name, image);
+        else res = (ImageByte)output.setName(name);
+        Filter filter = maxLocal?new LocalMaxThreshold(threshold):new LocalMinThreshold(threshold);
+        return applyFilter(image, res, filter, neighborhood);
     }
     
     protected static <T extends Image, F extends Filter> T applyFilter(Image image, T output, F filter, Neighborhood neighborhood) {
+        if (filter==null) throw new IllegalArgumentException("Apply Filter Error: Filter cannot be null");
+        if (neighborhood==null) throw new IllegalArgumentException("Apply Filter ("+filter.getClass().getSimpleName()+") Error: Neighborhood cannot be null");
         T res;
         String name = filter.getClass().getSimpleName()+" of: "+image.getName();
-        if (!output.sameSize(image) || output==image) res = Image.createEmptyImage(name, output, image);
+        if (output==null) res = (T)new ImageFloat(name, image);
+                else if (!output.sameSize(image) || output==image) res = Image.createEmptyImage(name, output, image);
         else res = (T)output.setName(name);
         float round=output instanceof ImageFloat ? 0: 0.5f;
+        filter.setUp(image, neighborhood);
         for (int z = 0; z < image.getSizeZ(); ++z) {
             for (int y = 0; y < image.getSizeY(); ++y) {
                 for (int x = 0; x < image.getSizeX(); ++x) {
                     neighborhood.setPixels(x, y, z, image);
-                    res.setPixel(x, y, z, filter.applyFilter(neighborhood.getPixelValues(), neighborhood.getValueNumber(), neighborhood)+round); //+round
+                    res.setPixel(x, y, z, filter.applyFilter(x, y, z)+round);
                 }
             }
         }
         return res;
     }
     
-    private static interface Filter {
-        public float applyFilter(float[] values, int valueNumber, Neighborhood neighborhood);
+    private static abstract class Filter {
+        Image image;
+        Neighborhood neighborhood;
+        public void setUp(Image image, Neighborhood neighborhood) {this.image=image; this.neighborhood=neighborhood;}
+        public abstract float applyFilter(int x, int y, int z);
     }
-    private static class Mean implements Filter {
-        @Override public float applyFilter(float[] values, int valueNumber, Neighborhood neighborhood) {
-            if (valueNumber==0) return 0;
+    private static class Mean extends Filter {
+        @Override public float applyFilter(int x, int y, int z) {
+            if (neighborhood.getValueCount()==0) return 0;
             double mean = 0;
-            for (int i = 0; i<valueNumber; ++i) mean+=values[i];
-            return (float)(mean/valueNumber);
+            for (int i = 0; i<neighborhood.getValueCount(); ++i) mean+=neighborhood.getPixelValues()[i];
+            return (float)(mean/neighborhood.getValueCount());
         }
     }
-    private static class Median implements Filter {
-        @Override public float applyFilter(float[] values, int valueNumber, Neighborhood neighborhood) {
-            if (valueNumber==0) return 0;
-            Arrays.sort(values, 0, valueNumber);
-            if (valueNumber%2==0) return (values[valueNumber/2-1]+values[valueNumber/2])/2;
-            else return values[valueNumber/2];
+    private static class Median extends Filter { // TODO: selection algorithm:  http://blog.teamleadnet.com/2012/07/quick-select-algorithm-find-kth-element.html
+        @Override public float applyFilter(int x, int y, int z) {
+            if (neighborhood.getValueCount()==0) return 0;
+            Arrays.sort(neighborhood.getPixelValues(), 0, neighborhood.getValueCount());
+            if (neighborhood.getValueCount()%2==0) return (neighborhood.getPixelValues()[neighborhood.getValueCount()/2-1]+neighborhood.getPixelValues()[neighborhood.getValueCount()/2])/2f;
+            else return neighborhood.getPixelValues()[neighborhood.getValueCount()/2];
         }
     }
-    private static class Max implements Filter {
-        @Override public float applyFilter(float[] values, int valueNumber, Neighborhood neighborhood) {
-            if (valueNumber==0) return 0;
-            float max = values[0];
-            for (int i = 1; i<valueNumber; ++i) if (values[i]>max) max=values[i];
+    /*private static class GaussianMedian extends Filter {
+        double[] gaussKernel;
+        double[] gaussedValues;
+        Integer[] indicies;
+        Comparator<Integer> comp = new Comparator<Integer>() {
+            @Override public int compare(Integer arg0, Integer arg1) {
+                return Double.compare(gaussedValues[arg0], gaussedValues[arg1]);
+            }
+        };
+        @Override public void setUp(Image image, Neighborhood neighborhood) {
+            super.setUp(image, neighborhood);
+            gaussKernel = new double[neighborhood.getSize()];
+            gaussedValues = new double[neighborhood.getSize()];
+            indicies = new Integer[gaussedValues.length];
+            float[] d = neighborhood.getDistancesToCenter();
+            double s = neighborhood.getRadiusXY();
+            double expCoeff = -1 / (2 * s* s);
+            for (int i = 0; i<gaussKernel.length; ++i) gaussKernel[i] = Math.exp(d[i]*d[i] * expCoeff);
+        }
+        public void resetOrders() {for (int i = 0; i < indicies.length; i++) indicies[i]=i;}
+        @Override public float applyFilter(int x, int y, int z) {
+            if (neighborhood.getValueCount()==0) return 0;
+            resetOrders();
+            float[] values = neighborhood.getPixelValues();
+            for (int i = 0; i<values.length; ++i) gaussedValues[i] = values[i]*gaussKernel[i];
+            Arrays.sort(indicies, 0, neighborhood.getValueCount(), comp);
+            if (neighborhood.getValueCount()%2==0) return (values[indicies[neighborhood.getValueCount()/2-1]]+values[indicies[neighborhood.getValueCount()/2]])/2f;
+            else return values[indicies[neighborhood.getValueCount()/2]];
+        }
+    }*/
+    private static class Max extends Filter {
+        @Override public float applyFilter(int x, int y, int z) {
+            if (neighborhood.getValueCount()==0) return 0;
+            float max = neighborhood.getPixelValues()[0];
+            for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]>max) max=neighborhood.getPixelValues()[i];
             return max;
         }
     }
-    private static class Min implements Filter {
-        @Override public float applyFilter(float[] values, int valueNumber, Neighborhood neighborhood) {
-            if (valueNumber==0) return 0;
-            float min = values[0];
-            for (int i = 1; i<valueNumber; ++i) if (values[i]<min) min=values[i];
-            return min;
+    private static class LocalMax extends Filter {
+        @Override public float applyFilter(int x, int y, int z) {
+            if (neighborhood.getValueCount()==0) return 0;
+            float max = neighborhood.getPixelValues()[0];
+            for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]>max) max=neighborhood.getPixelValues()[i];
+            return max==image.getPixel(x, y, z)?1:0;
+        }
+    }
+    private static class LocalMaxThreshold extends Filter {
+        double threshold;
+        public LocalMaxThreshold(double threshold) {
+            this.threshold=threshold;
+        }
+        @Override public float applyFilter(int x, int y, int z) {
+            if (neighborhood.getValueCount()==0) return 0;
+            float max = neighborhood.getPixelValues()[0];
+            if (max<threshold) return 0;
+            for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]>max) return 0;
+            return 1;
+        }
+    }
+    private static class LocalMin extends Filter {
+        @Override public float applyFilter(int x, int y, int z) {
+            if (neighborhood.getValueCount()==0) return 0;
+            float min = neighborhood.getPixelValues()[0];
+            for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]<min) return 0;
+            return 1;
+        }
+    }
+    private static class LocalMinThreshold extends Filter {
+        double threshold;
+        public LocalMinThreshold(double threshold) {
+            this.threshold=threshold;
+        }
+        @Override public float applyFilter(int x, int y, int z) {
+            if (neighborhood.getValueCount()==0) return 0;
+            float min = neighborhood.getPixelValues()[0];
+            if (min>threshold) return 0;
+            for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]<min) return 0;
+            return 1;
+        }
+    }
+    private static class Min extends Filter {
+        @Override public float applyFilter(int x, int y, int z) {
+            if (neighborhood.getValueCount()==0) return 0;
+            float min = neighborhood.getPixelValues()[0];
+            for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]<min) return 0;
+            return 1;
         }
     }
     //(low + high) >>> 1 <=> (low + high) / 2

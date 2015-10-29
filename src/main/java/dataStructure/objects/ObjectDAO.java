@@ -106,16 +106,16 @@ public class ObjectDAO extends DAO<StructureObject>{
         return checkAgainstCache(list);
     }
     
-    public void deleteChildren(ObjectId parentId, int structureIdx) {
-        morphium.delete(getQuery(parentId, structureIdx));
+    public void deleteChildren(StructureObject parent, int structureIdx) {
+        if (parent.getId()!=null) morphium.delete(getQuery(parent.getId(), structureIdx));
         // also delete in cache: 
         Iterator<Entry<ObjectId, StructureObject>> it = idCache.entrySet().iterator();
         while(it.hasNext()) {
             StructureObject cur = it.next().getValue();
-            if (cur.getParent()!=null && cur.getParent().getId().equals(parentId)) it.remove();
+            if (cur.getStructureIdx()==structureIdx && parent.equals(cur.getParent())) it.remove();
         }
         // delete in ImageDAO
-        this.xpDAO.getExperiment().getImageDAO().deleteChildren(getObject(parentId), structureIdx);
+        this.xpDAO.getExperiment().getImageDAO().deleteChildren(parent, structureIdx);
     }
     
     public void deleteObjectsFromField(String fieldName) {
