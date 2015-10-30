@@ -45,7 +45,7 @@ public class TrackMask extends ImageObjectInterface {
     BoundingBox[] trackOffset;
     StructureObjectMask[] trackObjects;
     int maxParentY, maxParentZ;
-    static final int updateImageFrequency=40;
+    static final int updateImageFrequency=10;
     static final int intervalX=5;
     ArrayList<StructureObject> parentTrack;
     public TrackMask(ArrayList<StructureObject> parentTrack, int childStructureIdx) {
@@ -69,7 +69,7 @@ public class TrackMask extends ImageObjectInterface {
             currentOffsetX+=intervalX+trackOffset[i].getSizeX();
             logger.trace("current index: {}, current bounds: {} current offsetX: {}", i, trackOffset[i], currentOffsetX);
         }
-        //load object in another thread 
+        //load objects in another thread 
         Thread t = new Thread(new Runnable() {
             @Override public void run() {
                 for (StructureObjectMask m : trackObjects) m.getObjects();

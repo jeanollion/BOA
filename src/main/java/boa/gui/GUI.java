@@ -731,6 +731,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     
     public static void setInteractiveStructureIdx(int structureIdx) {
         if (getInstance()==null) return;
+        logger.debug("set interactive structure: {}", structureIdx);
         getInstance().interactiveStructure.setSelectedIndex(structureIdx);
         getInstance().interactiveStructureActionPerformed(null);
     }
