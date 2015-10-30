@@ -158,13 +158,13 @@ public class ImageOperations {
         }
         return output;
     }
-    public static Image multiply(Image source1, Image output, double coeff) {
-        if (output==null) output = Image.createEmptyImage(source1.getName()+" x "+coeff, source1, source1);
-        else if (!output.sameSize(source1)) output = Image.createEmptyImage(source1.getName()+" x "+coeff, output, source1);
-        double round = output instanceof ImageInteger?0.5:0;
+    public static Image affineOperation(Image source1, Image output, double multiplicativeCoefficient, double additiveCoefficient) {
+        if (output==null) output = Image.createEmptyImage(source1.getName()+" x "+multiplicativeCoefficient, source1, source1);
+        else if (!output.sameSize(source1)) output = Image.createEmptyImage(source1.getName()+" x "+multiplicativeCoefficient, output, source1);
+        additiveCoefficient += output instanceof ImageInteger?0.5:0;
         for (int z = 0; z<output.sizeZ; ++z) {
             for (int xy=0; xy<output.sizeXY; ++xy) {
-                output.setPixel(xy, z, source1.getPixel(xy, z)*coeff+round);
+                output.setPixel(xy, z, source1.getPixel(xy, z)*multiplicativeCoefficient+additiveCoefficient);
             }
         } 
         return output;
@@ -304,7 +304,7 @@ public class ImageOperations {
         }
         return res;
     }
-    
+    public static ImageFloat meanZProjection(Image input) {return meanZProjection(input, null);}
     public static <T extends Image> T meanZProjection(Image input, T output) {
         BlankMask properties =  new BlankMask("", input.getSizeX(), input.getSizeY(), 1, input.getOffsetX(), input.getOffsetY(), input.getOffsetZ(), input.getScaleXY(), input.getScaleZ());
         if (output ==null) output = (T)new ImageFloat("mean Z projection", properties);
@@ -312,8 +312,8 @@ public class ImageOperations {
         float size = input.getSizeZ();
         for (int xy = 0; xy<input.getSizeXY(); ++xy) {
             float sum = 0;
-            for (int z = 0; z<input.getSizeZ(); ++z) sum+=input.getPixel(z, z);
-            output.setPixel(xy, xy, sum/size);
+            for (int z = 0; z<input.getSizeZ(); ++z) sum+=input.getPixel(xy, z);
+            output.setPixel(xy, 0, sum/size);
         }
         return output;
     }

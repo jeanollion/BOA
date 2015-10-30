@@ -74,12 +74,12 @@ import static utils.Utils.deleteDirectory;
  *
  * @author jollion
  */
-public class TestProcessFluo {
+public class TestProcessBacteria {
     Experiment xp;
     
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        TestProcessFluo t = new TestProcessFluo();
+        TestProcessBacteria t = new TestProcessBacteria();
         //t.correctTracks("testFluo60", 0, 1);
         //t.process("testFluo60", 0, false);
         //t.testSegBactTrackErrors();
@@ -279,7 +279,7 @@ public class TestProcessFluo {
         ArrayList<StructureObject> segO = new ArrayList<StructureObject> ();
         Processor.processStructure(1, xp, f, dao, segO, startTime, stopTime);
         Processor.trackStructure(1, xp, f, dao, false);
-        dao.store(segO, true, false);
+        dao.store(segO, true);
         
     }
     
@@ -295,7 +295,7 @@ public class TestProcessFluo {
         ArrayList<StructureObject> segO = new ArrayList<StructureObject> ();
         Processor.processStructure(1, xp, f, dao, segO);
         Processor.trackStructure(1, xp, f, dao, false);
-        dao.store(segO, true, false);
+        dao.store(segO, true);
         return dao.getTrackErrors(f.getName(), 1).size();
     }
     

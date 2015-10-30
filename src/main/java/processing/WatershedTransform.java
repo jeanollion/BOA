@@ -53,8 +53,8 @@ public class WatershedTransform {
     PropagationCriterion propagationCriterion;
     FusionCriterion fusionCriterion;
     
-    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, List<Object3D> regionalExtrema, boolean invertWatershedMapValues, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
-        WatershedTransform wt = new WatershedTransform(watershedMap, mask, regionalExtrema, invertWatershedMapValues, propagationCriterion, fusionCriterion);
+    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, List<Object3D> regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
+        WatershedTransform wt = new WatershedTransform(watershedMap, mask, regionalExtrema, decreasingPropagation, propagationCriterion, fusionCriterion);
         wt.run();
         return wt.getObjectPopulation();
     }
@@ -62,8 +62,8 @@ public class WatershedTransform {
     public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean invertWatershedMapValues) {
         return watershed(watershedMap, mask, ImageLabeller.labelImageList(seeds), invertWatershedMapValues, null, null);
     }
-    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean invertWatershedMapValues, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
-        return watershed(watershedMap, mask, ImageLabeller.labelImageList(seeds), invertWatershedMapValues, propagationCriterion, fusionCriterion);
+    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
+        return watershed(watershedMap, mask, ImageLabeller.labelImageList(seeds), decreasingPropagation, propagationCriterion, fusionCriterion);
     }
     
     public WatershedTransform(Image watershedMap, ImageMask mask, List<Object3D> regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
@@ -78,30 +78,49 @@ public class WatershedTransform {
         for (int i = 0; i<regionalExtrema.size(); ++i) spots[i+1] = new Spot(i+1, regionalExtrema.get(i).getVoxels());
         logger.trace("watershed transform: number of seeds: {} segmented map type: {}", regionalExtrema.size(), segmentedMap.getClass().getSimpleName());
         is3D=watershedMap.getSizeZ()>1;   
-        if (propagationCriterion==null) this.propagationCriterion=new DefaultPropagationCriterion();
-        else this.propagationCriterion=propagationCriterion;
-        if (fusionCriterion==null) this.fusionCriterion=new DefaultFusionCriterion();
-        else this.fusionCriterion=fusionCriterion;
+        if (propagationCriterion==null) setPropagationCriterion(new DefaultPropagationCriterion());
+        else setPropagationCriterion(propagationCriterion);
+        if (fusionCriterion==null) setFusionCriterion(new DefaultFusionCriterion());
+        else setFusionCriterion(fusionCriterion);
     }
     
     public WatershedTransform setFusionCriterion(FusionCriterion fusionCriterion) {
         this.fusionCriterion=fusionCriterion;
+        setUpFusionCriterion(fusionCriterion);
         return this;
     }
     
     public WatershedTransform setPropagationCriterion(PropagationCriterion propagationCriterion) {
         this.propagationCriterion=propagationCriterion;
+        setUpPropagationCriterion(propagationCriterion);
         return this;
+    }
+    /**
+     * sets up the non-static parameters (depending on this instance) of propagation criteria
+     * @param propagationCriterion 
+     */
+    protected void setUpPropagationCriterion(PropagationCriterion propagationCriterion) {
+        if (propagationCriterion instanceof MonotonalPropagation) ((MonotonalPropagation)propagationCriterion).setPropagationDirection(decreasingPropagation);
+        else if (propagationCriterion instanceof ThresholdPropagationOnWatershedMap) ((ThresholdPropagationOnWatershedMap)propagationCriterion).setStopWhenInferior(decreasingPropagation);
+        else if (propagationCriterion instanceof MultiplePropagationCriteria) for (PropagationCriterion c : ((MultiplePropagationCriteria)propagationCriterion).criteria) setUpPropagationCriterion(c);
+    }
+    /**
+     * sets up the non-static parameters (depending on this instance) of fusion criteria
+     * @param fusionCriterion 
+     */
+    protected void setUpFusionCriterion(FusionCriterion fusionCriterion) {
+        if (fusionCriterion instanceof NumberFusionCriterion) ((NumberFusionCriterion)fusionCriterion).setWatershedTransform(this);
+        else if (propagationCriterion instanceof MultipleFusionCriteria) for (FusionCriterion c : ((MultipleFusionCriteria)fusionCriterion).criteria) setUpFusionCriterion(c);
     }
     
     public void run() {
         for (Spot s : spots) {
             if (s!=null) for (Voxel v : s.voxels) heap.add(v);
         }
+        EllipsoidalNeighborhood neigh = watershedMap.getSizeZ()>1?new EllipsoidalNeighborhood(1.5, 1.5, true) : new EllipsoidalNeighborhood(1.5, true);
         while (!heap.isEmpty()) {
             Voxel v = heap.pollFirst();
             Spot currentSpot = spots[segmentedMap.getPixelInt(v.x, v.y, v.z)];
-            EllipsoidalNeighborhood neigh = watershedMap.getSizeZ()>1?new EllipsoidalNeighborhood(1.5, 1.5, true) : new EllipsoidalNeighborhood(1.5, true);
             Voxel next;
             for (int i = 0; i<neigh.getSize(); ++i) {
                 next = new Voxel(v.x+neigh.dx[i], v.y+neigh.dy[i], v.z+neigh.dz[i]);
@@ -197,23 +216,65 @@ public class WatershedTransform {
         public boolean continuePropagation(Voxel currentVox, Voxel nextVox);
     }
     public static class DefaultPropagationCriterion implements PropagationCriterion {
-        public boolean continuePropagation(Voxel currentVox, Voxel nextVox) {
+        @Override public boolean continuePropagation(Voxel currentVox, Voxel nextVox) {
             return true;
         }
     }
-    public class MonotonalPropagation implements PropagationCriterion {
-        public boolean continuePropagation(Voxel currentVox, Voxel nextVox) {
+    public static class MonotonalPropagation implements PropagationCriterion {
+        boolean decreasingPropagation;
+        public MonotonalPropagation setPropagationDirection(boolean decreasingPropagation) {
+            this.decreasingPropagation=decreasingPropagation;
+            return this;
+        }
+        @Override public boolean continuePropagation(Voxel currentVox, Voxel nextVox) {
             if (decreasingPropagation) return (nextVox.value<=currentVox.value);
             else return (nextVox.value>=currentVox.value);
         }
     }
-    
+    public static class ThresholdPropagation implements PropagationCriterion {
+        Image image;
+        double threshold;
+        boolean stopWhenInferior;
+        public ThresholdPropagation(Image image, double threshold, boolean stopWhenInferior) {
+            this.image=image;
+            this.threshold=threshold;
+            this.stopWhenInferior=stopWhenInferior;
+        }
+        @Override public boolean continuePropagation(Voxel currentVox, Voxel nextVox) {
+            return stopWhenInferior?image.getPixel(nextVox.x, nextVox.y, nextVox.z)>threshold:image.getPixel(nextVox.x, nextVox.y, nextVox.z)<threshold;
+        }
+    }
+    public static class ThresholdPropagationOnWatershedMap implements PropagationCriterion {
+        boolean stopWhenInferior;
+        double threshold;
+        public ThresholdPropagationOnWatershedMap setStopWhenInferior(boolean stopWhenInferior) {
+            this.stopWhenInferior=stopWhenInferior;
+            return this;
+        }
+        public ThresholdPropagationOnWatershedMap(double threshold) {
+            this.threshold=threshold;
+        }
+        public boolean continuePropagation(Voxel currentVox, Voxel nextVox) {
+            return stopWhenInferior?nextVox.value>threshold:nextVox.value<threshold;
+        }
+        
+    }
+    public static class MultiplePropagationCriteria implements PropagationCriterion {
+        PropagationCriterion[] criteria;
+        public MultiplePropagationCriteria(PropagationCriterion... criteria) {
+            this.criteria=criteria;
+        } 
+        public boolean continuePropagation(Voxel currentVox, Voxel nextVox) {
+            for (PropagationCriterion p : criteria) if (!p.continuePropagation(currentVox, nextVox)) return false;
+            return true;
+        }
+    }
     
     public interface FusionCriterion {
         public boolean checkFusionCriteria(Spot s1, Spot s2, Voxel currentVoxel);
     }
     public static class DefaultFusionCriterion implements FusionCriterion {
-        public boolean checkFusionCriteria(Spot s1, Spot s2, Voxel currentVoxel) {
+        @Override public boolean checkFusionCriteria(Spot s1, Spot s2, Voxel currentVoxel) {
             return false;
         }
     }
@@ -223,18 +284,33 @@ public class WatershedTransform {
             this.minimumSize=minimumSize;
         }
         
-        public boolean checkFusionCriteria(Spot s1, Spot s2, Voxel currentVoxel) {
+        @Override public boolean checkFusionCriteria(Spot s1, Spot s2, Voxel currentVoxel) {
             return s1.voxels.size()<minimumSize || s2.voxels.size()<minimumSize;
         }
     }
-    public class NumberFusionCriterion implements FusionCriterion {
+    public static class NumberFusionCriterion implements FusionCriterion {
         int numberOfSpots;
+        WatershedTransform instance;
         public NumberFusionCriterion(int minNumberOfSpots) {
             this.numberOfSpots=minNumberOfSpots;
         }
-        
-        public boolean checkFusionCriteria(Spot s1, Spot s2, Voxel currentVoxel) {
-            return spotNumber>numberOfSpots;
+        public NumberFusionCriterion setWatershedTransform(WatershedTransform instance) {
+            this.instance=instance;
+            return this;
+        }
+        @Override public boolean checkFusionCriteria(Spot s1, Spot s2, Voxel currentVoxel) {
+            return instance.spotNumber>numberOfSpots;
+        }
+    }
+    public static class MultipleFusionCriteria implements FusionCriterion {
+        FusionCriterion[] criteria;
+        public MultipleFusionCriteria(FusionCriterion... criteria) {
+            this.criteria=criteria;
+        } 
+        @Override public boolean checkFusionCriteria(Spot s1, Spot s2, Voxel currentVoxel) {
+            if (criteria.length==0) return false;
+            for (FusionCriterion c : criteria) if (!c.checkFusionCriteria(s1, s2, currentVoxel)) return false;
+            return true;
         }
     }
 }
