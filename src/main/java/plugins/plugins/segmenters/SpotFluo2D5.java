@@ -46,8 +46,8 @@ public class SpotFluo2D5 implements Segmenter {
     NumberParameter laplacianRadius = new BoundedNumberParameter("Laplacian Radius", 1, 2, 1, 5);
     NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxel)", 0, 5, 1, null);
     NumberParameter thresholdSigma = new BoundedNumberParameter("Sigma Threshold Factor for Seeds", 1, 6, 1, null);
-    NumberParameter thresholdSigmaLow = new BoundedNumberParameter("Sigma Threshold Factor for propagation", 1, 5, 1, null);
-    
+    NumberParameter thresholdSigmaLow = new BoundedNumberParameter("Sigma Threshold Factor for propagation", 1, 4.5, 1, null);
+    Parameter[] parameters = new Parameter[]{smoothRadius, laplacianRadius,minSpotSize, thresholdSigma, thresholdSigmaLow };
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         return run(input, parent.getMask(), smoothRadius.getValue().doubleValue(), laplacianRadius.getValue().doubleValue(), minSpotSize.getValue().intValue(), thresholdSigma.getValue().doubleValue(), thresholdSigmaLow.getValue().doubleValue());
     }
@@ -91,7 +91,7 @@ public class SpotFluo2D5 implements Segmenter {
     
 
     public Parameter[] getParameters() {
-        return new Parameter[0];
+        return parameters;
     }
 
     public boolean does3D() {

@@ -31,12 +31,13 @@ import java.util.HashMap;
 public abstract class ImageObjectInterface {
     final protected StructureObject parent;
     final protected int childStructureIdx;
-
+    final protected boolean is2D;
     public ImageObjectInterface(StructureObject parent, int childStructureIdx) {
         this.parent = parent;
         this.childStructureIdx = childStructureIdx;
+        is2D = this.parent.is2D();
     }
-    
+    public abstract ImageObjectInterfaceKey getKey();
     public abstract void reloadObjects();
     public abstract StructureObject getClickedObject(int x, int y, int z);
     public abstract BoundingBox getObjectOffset(StructureObject object);

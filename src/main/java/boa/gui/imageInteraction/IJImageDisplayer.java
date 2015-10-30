@@ -48,18 +48,28 @@ import java.util.HashMap;
 public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
     protected HashMap<Image, ImagePlus> displayedImages=new HashMap<Image, ImagePlus>();
     protected HashMap<ImagePlus, Image> displayedImagesInv=new HashMap<ImagePlus, Image>();
-    @Override public void showImage(Image image) {
+    @Override public void showImage(Image image, float... displayRange) {
         if (IJ.getInstance()==null) new ImageJ();
         if (imageExistButHasBeenClosed(image)) {
             displayedImagesInv.remove(displayedImages.get(image));
             displayedImages.remove(image);
         }
         ImagePlus ip = getImage(image);
-        
-        float[] minAndMax = image.getMinAndMax(null);
-        ip.setDisplayRange(minAndMax[0], minAndMax[1]);
+        if (displayRange.length==0) displayRange = image.getMinAndMax(null);
+        else if (displayRange.length==1) {
+            float[] minAndMax = image.getMinAndMax(null);
+            minAndMax[0]=displayRange[0];
+            displayRange=minAndMax;
+        } else if (displayRange.length>=2) {
+            if (displayRange[1]<=displayRange[0]) {
+                float[] minAndMax = image.getMinAndMax(null);
+                displayRange[1] = minAndMax[1];
+            }
+        }
+        ip.setDisplayRange(displayRange[0], displayRange[1]);
         ip.show();
-        zoom(ip, ImageDisplayer.zoomMagnitude);
+        if (displayRange.length>=3) zoom(ip, displayRange[2]);
+        else zoom(ip, ImageDisplayer.zoomMagnitude);
     }
     
     private boolean imageExistButHasBeenClosed(Image image) {
@@ -175,11 +185,22 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         }
     }
 
-    @Override public void updateImageDisplay(Image image) {
+    @Override public void updateImageDisplay(Image image, float... displayRange) {
         if (this.displayedImages.containsKey(image)) {
-            float[] mm = image.getMinAndMax(null);
+            if (displayRange.length == 0) {
+                displayRange = image.getMinAndMax(null);
+            } else if (displayRange.length == 1) {
+                float[] minAndMax = image.getMinAndMax(null);
+                minAndMax[0] = displayRange[0];
+                displayRange = minAndMax;
+            } else if (displayRange.length >= 2) {
+                if (displayRange[1] <= displayRange[0]) {
+                    float[] minAndMax = image.getMinAndMax(null);
+                    displayRange[1] = minAndMax[1];
+                }
+            }
             ImagePlus ip = displayedImages.get(image);
-            ip.setDisplayRange(mm[0], mm[1]);
+            ip.setDisplayRange(displayRange[0], displayRange[1]);
             ip.updateAndDraw();
         }
     }

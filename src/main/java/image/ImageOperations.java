@@ -391,4 +391,22 @@ public class ImageOperations {
             }
         }
     }
+    
+    public static float getMinOverThreshold(Image image, float threshold) {
+        float min = Float.MAX_VALUE;
+        BoundingBox limits = image.getBoundingBox();
+        for (int z = limits.zMin; z <= limits.zMax; z++) {
+            for (int y = limits.yMin; y<=limits.yMax; ++y) {
+                for (int x = limits.xMin; x <= limits.xMax; ++x) {
+                    //if (mask.insideMask(x, y, z)) {
+                    if (image.getPixel(x, y, z) < min && image.getPixel(x, y, z)>threshold) {
+                        min = image.getPixel(x, y, z);
+                    }
+                    //}
+                }
+            }
+        }
+        if (min==Float.MAX_VALUE) min = threshold;
+        return min;
+    }
 }

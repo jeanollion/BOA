@@ -26,10 +26,10 @@ import image.Image;
  */
 public interface ImageDisplayer<T> {
     public static double zoomMagnitude=1;
-    public void showImage(Image image);
+    public void showImage(Image image, float... displayRange);
     public T getImage(Image image);
     public Image getImage(T image);
-    public void updateImageDisplay(Image image);
+    public void updateImageDisplay(Image image, float... displayRange);
     public void showImage5D(String title, Image[][] imageTC);
     public BoundingBox getDisplayRange(Image image);
     public void setDisplayRange(BoundingBox bounds, Image image);

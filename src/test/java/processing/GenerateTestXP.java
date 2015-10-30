@@ -24,11 +24,11 @@ package processing;
 public class GenerateTestXP {
     public static void main(String[] args) {
         TestProcessBacteria t = new TestProcessBacteria();
-        t.setUpXp(true, "/data/Images/Fluo/OutputTestGUI595-630");
+        t.setUpXp(true, "/data/Images/Fluo/OutputTestGUI60");
         //t.setUpXp(true, "/home/jollion/Documents/LJP/DataLJP/TestOutput60");
-        t.testImport("/data/Images/Fluo/testsub595-630");
-        //t.testImport("/home/jollion/Documents/LJP/DataLJP/testsub60");
+        //t.testImport("/data/Images/Fluo/testsub595-630");
+        t.testImport("/home/jollion/Documents/LJP/DataLJP/testsub60");
         //t.testImport("/home/jollion/Documents/LJP/DataLJP/test");
-        t.saveXP("testFluo595-630");
+        t.saveXP("testFluo60");
     }
 }

@@ -48,6 +48,10 @@ public class DBConfiguration {
         dl=MorphiumUtils.addDereferencingListeners(m, dao, xpDAO);
     }
 
+    public void updateExperiment() {
+        getXpDAO().store(getExperiment());
+    }
+    
     public ExperimentDAO getXpDAO() {
         if (xpDAO==null) generateDAOs();
         return xpDAO;

@@ -499,13 +499,15 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return rawImagesC.get(channelIdx);
     }
     private void extendBoundsInZIfNecessary(int channelIdx, BoundingBox bounds) { //when the current structure is 2D but channel is 3D 
-        if (bounds.getSizeZ()==1 && getExperiment().getMicroscopyField(fieldName).getSizeZ(getExperiment().getChannelImageIdx(structureIdx))==1) { 
+        if (bounds.getSizeZ()==1 && is2D()) { 
             int sizeZ = getExperiment().getMicroscopyField(fieldName).getSizeZ(channelIdx);
             if (sizeZ>1) {
                 bounds.expandZ(sizeZ-1);
-                logger.debug("sizeZ>1 ({}) for channel of structure: {}", sizeZ, getExperiment().getStructure(structureIdx).getName());
             }
         }
+    }
+    public boolean is2D() {
+        return getExperiment().getMicroscopyField(fieldName).getSizeZ(getExperiment().getChannelImageIdx(structureIdx))==1;
     }
     
     public Image openRawImage(int structureIdx, BoundingBox bounds) {

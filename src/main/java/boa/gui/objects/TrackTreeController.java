@@ -32,24 +32,22 @@ import javax.swing.JTree;
  * @author nasique
  */
 public class TrackTreeController {
-    ObjectDAO objectDAO;
-    ExperimentDAO xpDAO;
+    DBConfiguration db;
     HashMap<Integer, TrackTreeGenerator> generatorS;
     int[] structurePathToRoot;
     StructureObjectTreeGenerator objectGenerator;
     
-    public TrackTreeController(ObjectDAO objectDAO, ExperimentDAO xpDAO, StructureObjectTreeGenerator objectGenerator) {
-        this.objectDAO = objectDAO;
-        this.xpDAO = xpDAO;   
+    public TrackTreeController(DBConfiguration db, StructureObjectTreeGenerator objectGenerator) {
+        this.db = db;
         this.objectGenerator=objectGenerator;
     }
     
     public void setStructure(int structureIdx) {
-        structurePathToRoot = xpDAO.getExperiment().getPathToRoot(structureIdx);
-        HashMap<Integer, TrackTreeGenerator> newGeneratorS = new HashMap<Integer, TrackTreeGenerator>(xpDAO.getExperiment().getStructureCount());
+        structurePathToRoot = db.getExperiment().getPathToRoot(structureIdx);
+        HashMap<Integer, TrackTreeGenerator> newGeneratorS = new HashMap<Integer, TrackTreeGenerator>(db.getExperiment().getStructureCount());
         for (int s: structurePathToRoot) {
             if (generatorS!=null && generatorS.containsKey(s)) newGeneratorS.put(s, generatorS.get(s));
-            else newGeneratorS.put(s, new TrackTreeGenerator(objectDAO, xpDAO, this));
+            else newGeneratorS.put(s, new TrackTreeGenerator(db, this));
         }
         generatorS=newGeneratorS;
         updateParentTracks();

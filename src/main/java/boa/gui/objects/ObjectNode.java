@@ -160,9 +160,10 @@ public class ObjectNode implements TreeNode, UIContainer, StructureNodeContainer
                     new AbstractAction(structureNames[i]) {
                         @Override
                         public void actionPerformed(ActionEvent ae) {
-                            if (logger.isDebugEnabled()) logger.debug("opening input image for structure: {} of idx: {}", ae.getActionCommand(), getStructureIdx(ae.getActionCommand(), openRaw));
+                            int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
+                            if (logger.isDebugEnabled()) logger.debug("opening input image for structure: {} of idx: {}", ae.getActionCommand(), structureIdx);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(data, data.getStructureIdx(), true);
-                            ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(getStructureIdx(ae.getActionCommand(), openRaw)), i, false, true);
+                            ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(structureIdx), i, false, true);
                         }
                     }
                 );

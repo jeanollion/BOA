@@ -17,6 +17,7 @@
  */
 package boa.gui.objects;
 
+import boa.gui.GUI;
 import static boa.gui.GUI.logger;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
@@ -39,7 +40,7 @@ import javax.swing.tree.TreePath;
 
 /**
  *
- * @author nasique
+ * @author jollion
  */
 public class StructureNode implements TreeNode, UIContainer {
     StructureNodeContainer parent; // can be either TimePointNode or ObjectNode
@@ -63,7 +64,7 @@ public class StructureNode implements TreeNode, UIContainer {
                 if (parentObject==null) return null;
                 ArrayList<StructureObject> data = parentObject.getChildren(idx);
                 if (data==null) {
-                    data = getGenerator().objectDAO.getObjects(parentObject.getId(), idx);
+                    data = getGenerator().getObjectDAO().getObjects(parentObject.getId(), idx);
                     parentObject.setChildObjects(data, idx);
                     if (logger.isDebugEnabled()) logger.debug("retrieving object from db: fieldName: {} timePoint: {} structure: {}, nb objects: {}", getTimePointNode().parent.fieldName, getTimePointNode().timePoint, idx, data==null?"null":data.size());
                 }
@@ -166,8 +167,8 @@ public class StructureNode implements TreeNode, UIContainer {
                             int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
                             if (logger.isDebugEnabled()) logger.debug("opening segmented image for structure: {} of idx: {} from structure idx: {}", ae.getActionCommand(), structureIdx, getParentObject().getStructureIdx());
                             
-                            int[] path = getGenerator().getExperiment().getPathToStructure(getParentObject().getStructureIdx(), structureIdx);
-                            parent.loadAllChildObjects(path, 0);
+                            //int[] path = getGenerator().getExperiment().getPathToStructure(getParentObject().getStructureIdx(), structureIdx);
+                            //parent.loadAllChildObjects(path, 0);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(getParentObject(), structureIdx, true);
                             //logger.debug("IO-Interface: {}, parent: {}, number of children: {}", i, getParentObject(), getParentObject().getChildren(structureIdx).size());
                             ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true, true);
@@ -184,11 +185,13 @@ public class StructureNode implements TreeNode, UIContainer {
                     new AbstractAction(structureNames[i]) {
                         @Override
                         public void actionPerformed(ActionEvent ae) {
-                            if (logger.isDebugEnabled()) logger.debug("opening input image for structure: {} of idx: {}", ae.getActionCommand(), getStructureIdx(ae.getActionCommand(), openRaw));
-                            int[] path = getGenerator().getExperiment().getPathToStructure(getParentObject().getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
+                            int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
+                            if (logger.isDebugEnabled()) logger.debug("opening input image for structure: {} of idx: {}", ae.getActionCommand(), structureIdx);
+                            int[] path = getGenerator().getExperiment().getPathToStructure(getParentObject().getStructureIdx(), structureIdx);
                             parent.loadAllChildObjects(path, 0);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(getParentObject(), getStructureIdx(ae.getActionCommand(), openRaw), true);
-                            ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(getStructureIdx(ae.getActionCommand(), openRaw)), i, false, true);
+                            ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(structureIdx), i, false, true);
+                            GUI.setInteractiveStructureIdx(structureIdx);
                         }
                     }
                 );
@@ -209,7 +212,7 @@ public class StructureNode implements TreeNode, UIContainer {
                                 parent.loadAllChildObjects(path, 0);
                             }
                             
-                            Processor.processChildren(getStructureIdx(ae.getActionCommand(), openRaw), getParentObject(), getGenerator().objectDAO, true, null);
+                            Processor.processChildren(getStructureIdx(ae.getActionCommand(), openRaw), getParentObject(), getGenerator().getObjectDAO(), true, null);
                             
                             //TODO: process child structures...
                             

@@ -54,16 +54,22 @@ import utils.Utils;
  * @author nasique
  */
 public class TrackTreeGenerator {
-    ExperimentDAO xpDAO;
-    ObjectDAO objectDAO;
+    DBConfiguration db;
     protected StructureObjectTreeModel treeModel;
     JTree tree;
     TrackTreeController controller;
     
-    public TrackTreeGenerator(ObjectDAO dao, ExperimentDAO xpDAO, TrackTreeController controller) {
-        this.objectDAO=dao;
-        this.xpDAO=xpDAO;
+    public TrackTreeGenerator(DBConfiguration db, TrackTreeController controller) {
+        this.db = db;
         this.controller=controller;
+    }
+    
+    public ObjectDAO getObjectDAO() {
+        return db.getDao();
+    }
+    
+    public Experiment getExperiment() {
+        return db.getExperiment();
     }
     
     public StructureObject getSelectedTrack() {
@@ -189,10 +195,10 @@ public class TrackTreeGenerator {
     
     private ArrayList<StructureObject> getObjectPath(StructureObject o) {
         ArrayList<StructureObject> res = new ArrayList<StructureObject>();
-        o = objectDAO.getObject(o.getTrackHeadId());
+        o = db.getDao().getObject(o.getTrackHeadId());
         res.add(o);
         while(o.getTimePoint()>0) {
-            o = objectDAO.getObject(o.getPrevious().getTrackHeadId());
+            o = db.getDao().getObject(o.getPrevious().getTrackHeadId());
             res.add(o);
         }
         return res;

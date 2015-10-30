@@ -59,7 +59,7 @@ public class TrackNode implements TreeNode, UIContainer {
     }
 
     public ArrayList<StructureObject> getTrack() {
-        if (track==null) track=root.generator.objectDAO.getTrack(trackHead);
+        if (track==null) track=root.generator.getObjectDAO().getTrack(trackHead);
         if (track==null) logger.error("Could not retrieve track from trackHead: {}", trackHead);
         return track;
     }
@@ -206,8 +206,8 @@ public class TrackNode implements TreeNode, UIContainer {
                         @Override
                         public void actionPerformed(ActionEvent ae) {
                             if (logger.isDebugEnabled()) logger.debug("opening track mask for structure: {} of idx: {} from structure idx: {}", ae.getActionCommand(), getStructureIdx(ae.getActionCommand(), openRaw), trackNode.trackHead.getStructureIdx());
-                            int[] path = trackNode.trackHead.getExperiment().getPathToStructure(trackNode.trackHead.getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
-                            trackNode.loadAllTrackObjects(path);
+                            //int[] path = trackNode.trackHead.getExperiment().getPathToStructure(trackNode.trackHead.getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
+                            //trackNode.loadAllTrackObjects(path);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, getStructureIdx(ae.getActionCommand(), openRaw));
                             if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true, true);
                             /* for the 1st
@@ -226,8 +226,8 @@ public class TrackNode implements TreeNode, UIContainer {
                         @Override
                         public void actionPerformed(ActionEvent ae) {
                             if (logger.isDebugEnabled()) logger.debug("opening track raw image for structure: {} of idx: {}", ae.getActionCommand(), getStructureIdx(ae.getActionCommand(), openRaw));
-                            int[] path = trackNode.trackHead.getExperiment().getPathToStructure(trackNode.trackHead.getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
-                            trackNode.loadAllTrackObjects(path);
+                            //int[] path = trackNode.trackHead.getExperiment().getPathToStructure(trackNode.trackHead.getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
+                            //trackNode.loadAllTrackObjects(path);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, getStructureIdx(ae.getActionCommand(), openRaw));
                             if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(getStructureIdx(ae.getActionCommand(), openRaw)), i, false, true);
                         }
@@ -243,8 +243,8 @@ public class TrackNode implements TreeNode, UIContainer {
                         public void actionPerformed(ActionEvent ae) {
                             int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
                             logger.debug("running tracking for structure: {} of idx: {}, within track: {}", ae.getActionCommand(), structureIdx, trackHead);
-                            Experiment xp = root.generator.xpDAO.getExperiment();
-                            Processor.trackStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.objectDAO, true, root.generator.getSelectedTrackHeads());
+                            Experiment xp = root.generator.getExperiment();
+                            Processor.trackStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.getObjectDAO(), true, root.generator.getSelectedTrackHeads());
                             // reload tree
                             root.generator.controller.updateParentTracks(root.generator.controller.getTreeIdx(trackHead.getStructureIdx()));
                             // reload objects

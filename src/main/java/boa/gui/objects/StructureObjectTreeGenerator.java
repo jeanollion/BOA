@@ -47,15 +47,13 @@ import utils.Utils;
  * @author nasique
  */
 public class StructureObjectTreeGenerator {
-    ExperimentDAO xpDAO;
-    ObjectDAO objectDAO;
+    DBConfiguration db;
     protected StructureObjectTreeModel treeModel;
     protected JTree tree;
     protected ExperimentNode experimentNode;
     
-    public StructureObjectTreeGenerator(ObjectDAO dao, ExperimentDAO xpDAO) {
-        this.objectDAO=dao;
-        this.xpDAO=xpDAO;
+    public StructureObjectTreeGenerator(DBConfiguration db) {
+        this.db = db;
         this.experimentNode=new ExperimentNode(this);
         
     }
@@ -89,7 +87,9 @@ public class StructureObjectTreeGenerator {
         });
     }
     
-    public Experiment getExperiment() {return xpDAO.getExperiment();}
+    public Experiment getExperiment() {return db.getExperiment();}
+    
+    public ObjectDAO getObjectDAO() {return db.getDao();}
     
     public JTree getTree() {
         if (tree==null) generateTree();

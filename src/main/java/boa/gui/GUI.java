@@ -21,6 +21,8 @@ import boa.gui.configuration.ConfigurationTreeGenerator;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageObjectListener;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import static boa.gui.imageInteraction.ImageWindowManagerFactory.getImageManager;
+import boa.gui.objects.DBConfiguration;
 import boa.gui.objects.ObjectNode;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
@@ -76,9 +78,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private static GUI instance;
     
     // db-related attributes
-    ExperimentDAO xpDAO;
-    ObjectDAO objectDAO;
-    Morphium m;
+    DBConfiguration db;
     
     // xp tree-related attributes
     ConfigurationTreeGenerator configurationTreeGenerator;
@@ -120,20 +120,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     
     public void setDBConnection(Morphium m) {
         if (m==null) return;
-        this.m=m;
-        xpDAO = new ExperimentDAO(m);
-        objectDAO = new ObjectDAO(m, xpDAO);
-        Experiment xp = xpDAO.getExperiment();
-        MorphiumUtils.addDereferencingListeners(m, objectDAO, xpDAO);
-        
-        if (xp==null) {
+        this.db = new DBConfiguration(m);
+        if (db.getExperiment()==null) {
             logger.warn("no experiment found in DB, using dummy experiment");
-            xp = new Experiment("xp test UI");
-            xpDAO.store(xp);
-            xpDAO.clearCache();
-        } else logger.info("Experiment found: {}", xp.getName());
+            Experiment xp = new Experiment("xp test UI");
+            db.getXpDAO().store(xp);
+            db.getXpDAO().clearCache();
+        } else logger.info("Experiment found: {}", db.getExperiment().getName());
         
-        configurationTreeGenerator = new ConfigurationTreeGenerator(xpDAO);
+        configurationTreeGenerator = new ConfigurationTreeGenerator(db.getXpDAO());
         configurationJSP.setViewportView(configurationTreeGenerator.getTree());
         
         loadObjectTrees();
@@ -142,11 +137,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     protected void loadObjectTrees() {
         //TODO remember treepath if existing and set them in the new trees
         
-        objectTreeGenerator = new StructureObjectTreeGenerator(objectDAO, xpDAO);
+        objectTreeGenerator = new StructureObjectTreeGenerator(db);
         structureJSP.setViewportView(objectTreeGenerator.getTree());
         
-        trackTreeController = new TrackTreeController(objectDAO, xpDAO, objectTreeGenerator);
-        setTrackTreeStructures(xpDAO.getExperiment().getStructuresAsString());
+        trackTreeController = new TrackTreeController(db, objectTreeGenerator);
+        setTrackTreeStructures(db.getExperiment().getStructuresAsString());
     }
     
     public static GUI getInstance() {
@@ -167,9 +162,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     
     private void setTrackTreeStructures(String[] structureNames) {
         this.trackStructureJCB.removeAllItems();
-        for (String s: structureNames) trackStructureJCB.addItem(s);
+        this.interactiveStructure.removeAllItems();
+        for (String s: structureNames) {
+            trackStructureJCB.addItem(s);
+            interactiveStructure.addItem(s);
+        }
         if (structureNames.length>0) {
             trackStructureJCB.setSelectedIndex(0);
+            interactiveStructure.setSelectedIndex(0);
             setStructure(0);
         }
     }
@@ -274,7 +274,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }
     
     private boolean checkConnection() {
-        if (this.xpDAO==null || xpDAO.getExperiment()==null) {
+        if (this.db==null) {
             logger.error("Connect to DB and create experiment first");
             return false;
         } else return true;
@@ -310,6 +310,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         splitObjectButton = new javax.swing.JButton();
         mergeObjectsButton = new javax.swing.JButton();
         previousTrackErrorButton = new javax.swing.JButton();
+        interactiveStructure = new javax.swing.JComboBox();
         ObjectTreeJSP = new javax.swing.JSplitPane();
         StructurePanel = new javax.swing.JPanel();
         structureJSP = new javax.swing.JScrollPane();
@@ -475,6 +476,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
+        interactiveStructure.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                interactiveStructureActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout ControlPanelLayout = new javax.swing.GroupLayout(ControlPanel);
         ControlPanel.setLayout(ControlPanelLayout);
         ControlPanelLayout.setHorizontalGroup(
@@ -487,14 +494,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             .addComponent(splitObjectButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(mergeObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(previousTrackErrorButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(interactiveStructure, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         ControlPanelLayout.setVerticalGroup(
             ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(ControlPanelLayout.createSequentialGroup()
                 .addComponent(trackStructureJCB, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(collapseAllObjectButton)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(interactiveStructure, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(10, 10, 10)
                 .addComponent(selectAllTracksButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(nextTrackErrorButton)
@@ -506,6 +514,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addComponent(mergeObjectsButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(selectContainingTrackToggleButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(collapseAllObjectButton)
                 .addGap(0, 0, Short.MAX_VALUE))
         );
 
@@ -587,15 +597,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void segmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_segmentButtonActionPerformed
         if (!checkConnection()) return;
-        Processor.processAndTrackStructures(xpDAO.getExperiment(), objectDAO);
+        Processor.processAndTrackStructures(db.getExperiment(), db.getDao());
         reloadTree=true;
     }//GEN-LAST:event_segmentButtonActionPerformed
 
     private void importImageButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importImageButtonActionPerformed
         if (!checkConnection()) return;
         File[] selectedFiles = Utils.chooseFile("Choose images/directories to import", null, FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, this);
-        if (selectedFiles!=null) Processor.importFiles(this.xpDAO.getExperiment(), Utils.convertFilesToString(selectedFiles));
-        xpDAO.store(xpDAO.getExperiment()); //stores imported fields
+        if (selectedFiles!=null) Processor.importFiles(this.db.getExperiment(), Utils.convertFilesToString(selectedFiles));
+        db.updateExperiment(); //stores imported fields
     }//GEN-LAST:event_importImageButtonActionPerformed
 
     private void connectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectButtonActionPerformed
@@ -607,19 +617,19 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void preProcessButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_preProcessButtonActionPerformed
         if (!checkConnection()) return;
-        Processor.preProcessImages(this.xpDAO.getExperiment(), objectDAO, true);
+        Processor.preProcessImages(this.db.getExperiment(), db.getDao(), true);
         reloadTree=true;
-        xpDAO.store(xpDAO.getExperiment()); //stores preProcessing configurations
+        db.updateExperiment(); //stores preProcessing configurations
     }//GEN-LAST:event_preProcessButtonActionPerformed
 
     private void saveExperimentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveExperimentActionPerformed
         if (!checkConnection()) return;
-        xpDAO.store(xpDAO.getExperiment());
+        db.updateExperiment();
     }//GEN-LAST:event_saveExperimentActionPerformed
 
     private void reProcessActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_reProcessActionPerformed
         if (!checkConnection()) return;
-        Processor.preProcessImages(this.xpDAO.getExperiment(), objectDAO, false);
+        Processor.preProcessImages(this.db.getExperiment(), db.getDao(), false);
         reloadTree=true;
     }//GEN-LAST:event_reProcessActionPerformed
 
@@ -654,8 +664,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         StructureObject sel = objectTreeGenerator.getFisrtSelectedObject();
         if (sel==null) logger.warn("Select an object to Split first!");
         else {
-            ObjectSplitter splitter = this.xpDAO.getExperiment().getStructure(sel.getStructureIdx()).getObjectSplitter();
-            if (splitter==null) logger.warn("No ObjectSplitter defined for structure: "+xpDAO.getExperiment().getStructure(sel.getStructureIdx()).getName());
+            ObjectSplitter splitter = this.db.getExperiment().getStructure(sel.getStructureIdx()).getObjectSplitter();
+            if (splitter==null) logger.warn("No ObjectSplitter defined for structure: "+db.getExperiment().getStructure(sel.getStructureIdx()).getName());
             else {
                 StructureObject newObject = sel.split(splitter);
                 if (newObject==null) logger.warn("Object could not be splitted!");
@@ -667,7 +677,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                     modified.add(newObject);
                     modified.add(sel);
                     sel.getParent().relabelChildren(sel.getStructureIdx(), modified);
-                    objectDAO.store(modified, false, false);
+                    db.getDao().store(modified, false, false);
                     //Update tree
                     ObjectNode node = objectTreeGenerator.getObjectNode(sel);
                     node.getParent().createChildren();
@@ -690,11 +700,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 res.merge(toMerge);
                 siblings.remove(toMerge);
             }
-            objectDAO.delete(sel);
+            db.getDao().delete(sel);
             ArrayList<StructureObject> modified = new ArrayList<StructureObject>(siblings.size());
             modified.add(res);
             res.getParent().relabelChildren(res.getStructureIdx(), modified);
-            objectDAO.store(modified, false, false);
+            db.getDao().store(modified, false, false);
             //Update object tree
             ObjectNode node = objectTreeGenerator.getObjectNode(res);
             node.getParent().createChildren();
@@ -706,9 +716,25 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void previousTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_previousTrackErrorButtonActionPerformed
         if (!checkConnection()) return;
-        ImageWindowManagerFactory.getImageManager().goToPreviousTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads());
+        getImageManager().goToPreviousTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads());
     }//GEN-LAST:event_previousTrackErrorButtonActionPerformed
 
+    private void interactiveStructureActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_interactiveStructureActionPerformed
+        if (!checkConnection()) return;
+        getImageManager().setInteractiveStructure(interactiveStructure.getSelectedIndex());
+    }//GEN-LAST:event_interactiveStructureActionPerformed
+
+    public static DBConfiguration getDBConnection() {
+        if (getInstance()==null) return null;
+        return getInstance().db;
+    }
+    
+    public static void setInteractiveStructureIdx(int structureIdx) {
+        if (getInstance()==null) return;
+        getInstance().interactiveStructure.setSelectedIndex(structureIdx);
+        getInstance().interactiveStructureActionPerformed(null);
+    }
+    
     /**
      * @param args the command line arguments
      */
@@ -758,6 +784,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JButton connectButton;
     private javax.swing.JTextField hostName;
     private javax.swing.JButton importImageButton;
+    private javax.swing.JComboBox interactiveStructure;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JButton mergeObjectsButton;
     private javax.swing.JButton nextTrackErrorButton;

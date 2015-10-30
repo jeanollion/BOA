@@ -18,6 +18,7 @@
 package boa.gui.imageInteraction;
 
 import static boa.gui.GUI.logger;
+import boa.gui.objects.DBConfiguration;
 import dataStructure.objects.StructureObject;
 import ij.IJ;
 import ij.ImagePlus;
@@ -139,7 +140,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
             } else overlay=new Overlay();
             for (StructureObject o : selectedObjects) {
                 if (o==null) continue;
-                for (Roi r : getRoi(o.getMask(), i.getObjectOffset(o)).values()) {
+                for (Roi r : getRoi(o.getMask(), i.getObjectOffset(o), !i.is2D).values()) {
                     overlay.add(r);
                     logger.trace("add roi: "+r+ " of bounds : "+r.getBounds()+" to overlay");
                 }
@@ -170,7 +171,8 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
             return;
         }
         ImageObjectInterface i = getImageObjectInterface(image);
-        if (i instanceof TrackMask && ((TrackMask)i).containsTrack(track.get(0))) {
+        if (i instanceof TrackMask && ((TrackMask)i).parent.getTrackHead().equals(track.get(0).getParent().getTrackHead())) {
+            if (i.getKey().childStructureIdx!=track.get(0).getStructureIdx()) i = super.imageObjectInterfaces.get(i.getKey().getKey(track.get(0).getStructureIdx()));
             TrackMask tm = (TrackMask)i;
             Overlay overlay;
             if (ip.getOverlay()!=null) {
@@ -196,7 +198,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                 int zMin = Math.max(b1.getzMin(), b2.getzMin());
                 int zMax = Math.min(b1.getzMax(), b2.getzMax());
                 if (zMin==zMax) {
-                    arrow.setPosition(zMin+1);
+                    if (!i.is2D) arrow.setPosition(zMin+1);
                     overlay.add(arrow);
                     logger.trace("add arrow: {}", arrow);
                 } else {
@@ -239,7 +241,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
         if (ip!=null) ip.setOverlay(null);
     }
     
-    private HashMap<Integer, Roi> getRoi(ImageInteger mask, BoundingBox offset) {
+    private HashMap<Integer, Roi> getRoi(ImageInteger mask, BoundingBox offset, boolean is3D) {
         HashMap<Integer, Roi> res = new HashMap<Integer, Roi>(mask.getSizeZ());
         ThresholdToSelection tts = new ThresholdToSelection();
         ImagePlus maskPlus = IJImageWrapper.getImagePlus(mask);
@@ -253,7 +255,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
             if (roi!=null) {
                 //roi.setPosition(z+1+mask.getOffsetZ());
                 roi.setLocation(offset.getxMin(), offset.getyMin());
-                roi.setPosition(z+1+offset.getzMin());
+                if (is3D) roi.setPosition(z+1+offset.getzMin());
                 //roi.setPosition(0, z+1+offset.getzMin(), 0);
                 res.put(z+mask.getOffsetZ(), roi);
             }

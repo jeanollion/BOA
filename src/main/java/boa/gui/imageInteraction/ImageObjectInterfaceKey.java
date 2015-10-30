@@ -33,6 +33,10 @@ public class ImageObjectInterfaceKey {
         this.parent = parent;
         this.childStructureIdx = childStructureIdx;
     }
+    
+    public ImageObjectInterfaceKey getKey(int childStructureIdx) {
+        return new ImageObjectInterfaceKey(parent, childStructureIdx, timeImage);
+    }
 
     @Override
     public int hashCode() {
@@ -58,10 +62,7 @@ public class ImageObjectInterfaceKey {
         if (this.parent != other.parent && (this.parent == null || !this.parent.equals(other.parent))) {
             return false;
         }
-        if (this.childStructureIdx != other.childStructureIdx) {
-            return false;
-        }
-        return true;
+        return (other.childStructureIdx<0 || childStructureIdx<0 || this.childStructureIdx == other.childStructureIdx); // key with structureIdx==-1 equals to all keys
     }
     
 }

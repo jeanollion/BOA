@@ -46,7 +46,7 @@ public class TimePointNode implements TreeNode, UIContainer, StructureNodeContai
     
     public StructureObject getData() {
         if (data==null) {
-            data = getGenerator().objectDAO.getRoot(parent.fieldName, timePoint);
+            data = getGenerator().getObjectDAO().getRoot(parent.fieldName, timePoint);
             logger.debug("Time Point: {} retrieving root object from db: {}", timePoint, data);
         }
         return data;

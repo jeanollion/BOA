@@ -17,6 +17,8 @@
  */
 package boa.gui.imageInteraction;
 
+import boa.gui.GUI;
+import static boa.gui.GUI.logger;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import dataStructure.objects.StructureObject;
@@ -35,68 +37,104 @@ import java.util.Map.Entry;
  * @author jollion
  */
 public class StructureObjectMask extends ImageObjectInterface {
+
     BoundingBox[] offsets;
     ArrayList<StructureObject> objects;
     BoundingBox offset;
+
     public StructureObjectMask(StructureObject parent, int childStructureIdx) {
         super(parent, childStructureIdx);
-        this.offset=new BoundingBox(0, 0, 0);
-        reloadObjects();
+        this.offset = new BoundingBox(0, 0, 0);
     }
-    
+
     public StructureObjectMask(StructureObject parent, int childStructureIdx, BoundingBox offset) {
         super(parent, childStructureIdx);
-        this.offset=offset;
-        reloadObjects();
+        this.offset = offset;
     }
-    
+
+    @Override
+    public ImageObjectInterfaceKey getKey() {
+        return new ImageObjectInterfaceKey(parent, childStructureIdx, false);
+    }
+
     public void reloadObjects() {
-        if (childStructureIdx==parent.getStructureIdx()) {
-            objects=new ArrayList<StructureObject>(1);
+        if (childStructureIdx == parent.getStructureIdx()) {
+            objects = new ArrayList<StructureObject>(1);
             objects.add(parent);
-            offsets=new BoundingBox[1];
-            offsets[0]=parent.getRelativeBoundingBox(parent).translate(offset.getxMin(), offset.getyMin(), offset.getzMin());
+            offsets = new BoundingBox[1];
+            offsets[0] = parent.getRelativeBoundingBox(parent).translate(offset.getxMin(), offset.getyMin(), offset.getzMin());
         } else {
             int[] path = parent.getExperiment().getPathToStructure(parent.getStructureIdx(), childStructureIdx);
-            objects = StructureObjectUtils.getAllObjects(parent, path);
-            offsets=new BoundingBox[objects.size()];
-            for (int i = 0; i<offsets.length; ++i) offsets[i]=objects.get(i).getRelativeBoundingBox(parent).translate(offset.getxMin(), offset.getyMin(), offset.getzMin());
+            objects = StructureObjectUtils.getAllObjects(parent, path, GUI.getDBConnection().getDao());
+            offsets = new BoundingBox[objects.size()];
+            for (int i = 0; i < offsets.length; ++i) {
+                offsets[i] = objects.get(i).getRelativeBoundingBox(parent).translate(offset.getxMin(), offset.getyMin(), offset.getzMin());
+            }
         }
+    }
+
+    protected ArrayList<StructureObject> getObjects() {
+        if (objects == null) {
+            reloadObjects();
+        }
+        return objects;
     }
 
     @Override
     public StructureObject getClickedObject(int x, int y, int z) {
-        for (int i = 0; i<offsets.length; ++i) if (offsets[i].contains(x, y, z)) if (objects.get(i).getMask().insideMask(x-offsets[i].getxMin(), y-offsets[i].getyMin(), z-offsets[i].getzMin())) return objects.get(i);
+        if (is2D) {
+            z = 0;
+        }
+        logger.debug("getClickedObject: number of objects: {}, is2D: {}, z: {}", getObjects().size(), is2D);
+        for (int i = 0; i < offsets.length; ++i) {
+            if (offsets[i].contains(x, y, z)) {
+                if (getObjects().get(i).getMask().insideMask(x - offsets[i].getxMin(), y - offsets[i].getyMin(), z - offsets[i].getzMin())) {
+                    return objects.get(i);
+                }
+            }
+        }
         return null;
     }
 
     @Override
     public BoundingBox getObjectOffset(StructureObject object) {
-        if (object==null) return null;
-        int i = objects.indexOf(object);
-        if (i>=0) return offsets[i];
-        else return null;
+        if (object == null) {
+            return null;
+        }
+        int i = getObjects().indexOf(object);
+        if (i >= 0) {
+            return offsets[i];
+        } else {
+            return null;
+        }
     }
 
     @Override
     public ImageInteger generateImage() {
-        ImageInteger displayImage = ImageInteger.createEmptyLabelImage("Segmented Image of structure: "+childStructureIdx, getMaxLabel(), parent.getMaskProperties());
+        ImageInteger displayImage = ImageInteger.createEmptyLabelImage("Segmented Image of structure: " + childStructureIdx, getMaxLabel(), parent.getMaskProperties());
         draw(displayImage);
         return displayImage;
     }
-    
-    @Override public Image generateRawImage(int structureIdx) {
+
+    @Override
+    public Image generateRawImage(int structureIdx) {
         return parent.getRawImage(structureIdx);
     }
-    
+
     @Override
     public void draw(ImageInteger image) {
-        for (int i = 0; i<offsets.length; ++i) objects.get(i).getObject().draw(image, objects.get(i).getObject().getLabel(), offsets[i]);
+        for (int i = 0; i < offsets.length; ++i) {
+            getObjects().get(i).getObject().draw(image, objects.get(i).getObject().getLabel(), offsets[i]);
+        }
     }
-    
+
     public int getMaxLabel() {
-        int maxLabel = 0; 
-        for (StructureObject o : objects) if (o.getObject().getLabel()>maxLabel) maxLabel = o.getObject().getLabel();
+        int maxLabel = 0;
+        for (StructureObject o : getObjects()) {
+            if (o.getObject().getLabel() > maxLabel) {
+                maxLabel = o.getObject().getLabel();
+            }
+        }
         return maxLabel;
     }
 
@@ -104,5 +142,5 @@ public class StructureObjectMask extends ImageObjectInterface {
     public boolean isTimeImage() {
         return false;
     }
-    
+
 }

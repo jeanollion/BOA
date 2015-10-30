@@ -43,7 +43,7 @@ public class TrackExperimentNode implements TreeNode, UIContainer {
     
     public ArrayList<RootTrackNode> getChildren() {
         if (children==null) {
-            String[] fieldNames = generator.xpDAO.getExperiment().getFieldsAsString();
+            String[] fieldNames = generator.getExperiment().getFieldsAsString();
             children= new ArrayList<RootTrackNode>(fieldNames.length);
             for (String fieldName : fieldNames) children.add(new RootTrackNode(this, fieldName, structureIdx));
         }
@@ -57,7 +57,7 @@ public class TrackExperimentNode implements TreeNode, UIContainer {
     
     // TreeNode implementation
     @Override public String toString() {
-        return generator.xpDAO.getExperiment().getName();
+        return generator.getExperiment().getName();
     }
     
     public RootTrackNode getChildAt(int childIndex) {

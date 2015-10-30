@@ -74,7 +74,7 @@ public class TextParameter extends SimpleParameter {
             this.p = p_;
             this.model = ParameterUtils.getModel(p);
             text = new JTextField();
-            text.setPreferredSize(new Dimension(100, 20));
+            text.setPreferredSize(new Dimension(100, 25));
             if (!allowSpecialCharacters) {
                 ((AbstractDocument) text.getDocument()).setDocumentFilter(new DocumentFilterIllegalCharacters());
             }

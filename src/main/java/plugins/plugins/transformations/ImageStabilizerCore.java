@@ -714,7 +714,7 @@ public class ImageStabilizerCore implements PlugInFilter {
 
         // We operate on the gradient magnitude of the image
         //   rather than on the original pixel intensity.
-        gradient(ipPyramid[0], ip);
+        gradient(ipPyramid[0], ip); 
         gradient(ipRefPyramid[0], ipRef);
         
         if (ipPyramid[4] != null && ipRefPyramid[4] != null) {
@@ -839,7 +839,7 @@ public class ImageStabilizerCore implements PlugInFilter {
     }
     
     
-    public static void gradient(ImageProcessor ipOut, ImageProcessor ip) {
+    public static void gradient(ImageProcessor ipOut, ImageProcessor ip) { // TODO multithread
         int width = ip.getWidth();
         int height = ip.getHeight();
         float[] pixels = (float[])ip.getPixels();

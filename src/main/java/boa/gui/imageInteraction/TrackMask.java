@@ -17,6 +17,7 @@
  */
 package boa.gui.imageInteraction;
 
+import boa.gui.GUI;
 import static boa.gui.GUI.logger;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
@@ -44,7 +45,7 @@ public class TrackMask extends ImageObjectInterface {
     BoundingBox[] trackOffset;
     StructureObjectMask[] trackObjects;
     int maxParentY, maxParentZ;
-    static final int updateImageFrequency=100;
+    static final int updateImageFrequency=40;
     static final int intervalX=5;
     ArrayList<StructureObject> parentTrack;
     public TrackMask(ArrayList<StructureObject> parentTrack, int childStructureIdx) {
@@ -68,6 +69,17 @@ public class TrackMask extends ImageObjectInterface {
             currentOffsetX+=intervalX+trackOffset[i].getSizeX();
             logger.trace("current index: {}, current bounds: {} current offsetX: {}", i, trackOffset[i], currentOffsetX);
         }
+        //load object in another thread 
+        Thread t = new Thread(new Runnable() {
+            @Override public void run() {
+                for (StructureObjectMask m : trackObjects) m.getObjects();
+            }
+        });
+        t.start();
+    }
+    
+    @Override public ImageObjectInterfaceKey getKey() {
+        return new ImageObjectInterfaceKey(parent, childStructureIdx, true);
     }
     
     @Override
@@ -77,6 +89,7 @@ public class TrackMask extends ImageObjectInterface {
     
     @Override
     public StructureObject getClickedObject(int x, int y, int z) {
+        if (is2D) z=0; //do not take in account z in 2D case.
         // recherche du parent: 
         int i = Arrays.binarySearch(trackOffset, new BoundingBox(x, x, 0, 0, 0, 0), new bbComparatorX());
         if (i<0) i=-i-2; // element inférieur à x puisqu'on compare les xmin des bounding box
@@ -113,13 +126,14 @@ public class TrackMask extends ImageObjectInterface {
             int label = o.getMaxLabel();
             if (label>maxLabel) maxLabel = label;
         }
-        final ImageInteger displayImage = ImageInteger.createEmptyLabelImage("TimeLapse Image of structure: "+childStructureIdx, maxLabel, new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, this.maxParentZ).setCalibration(parent.getMaskProperties().getScaleXY(), parent.getMaskProperties().getScaleZ()));
+        final ImageInteger displayImage = ImageInteger.createEmptyLabelImage("Track: Parent:"+parent+" Segmented Image of"+GUI.getDBConnection().getExperiment().getStructure(this.childStructureIdx).getName(), maxLabel, new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, this.maxParentZ).setCalibration(parent.getMaskProperties().getScaleXY(), parent.getMaskProperties().getScaleZ()));
         draw(displayImage);
         return displayImage;
     }
     
     @Override public void draw(final ImageInteger image) {
         trackObjects[0].draw(image);
+        
         // draw image in another thread..
         Thread t = new Thread(new Runnable() {
             @Override
@@ -136,13 +150,14 @@ public class TrackMask extends ImageObjectInterface {
                 
             }
         });
-        SwingUtilities.invokeLater(t);
+        t.start();
     }
     
     @Override public Image generateRawImage(final int structureIdx) {
         Image image0 = trackObjects[0].generateRawImage(structureIdx);
-        final Image displayImage =  Image.createEmptyImage("TimeLapse Image of structure: "+structureIdx, image0, new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, Math.max(image0.getSizeZ(), this.maxParentZ)).setCalibration(parent.getMaskProperties().getScaleXY(), parent.getMaskProperties().getScaleZ()));
+        final Image displayImage =  Image.createEmptyImage("Track: Parent:"+parent+" Raw Image of"+GUI.getDBConnection().getExperiment().getStructure(structureIdx).getName(), image0, new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, Math.max(image0.getSizeZ(), this.maxParentZ)).setCalibration(parent.getMaskProperties().getScaleXY(), parent.getMaskProperties().getScaleZ()));
         pasteImage(image0, displayImage, trackOffset[0]);
+        final float[] minAndMax = image0.getMinAndMax(null);
         // draw image in another thread..
         // update display every X paste...
         Thread t = new Thread(new Runnable() {
@@ -150,16 +165,20 @@ public class TrackMask extends ImageObjectInterface {
             public void run() {
                 int count = 0;
                 for (int i = 1; i<trackObjects.length; ++i) {
-                    pasteImage(trackObjects[i].generateRawImage(structureIdx), displayImage, trackOffset[i]);
+                    Image image = trackObjects[i].generateRawImage(structureIdx);
+                    float[] mm = image.getMinAndMax(null);
+                    if (mm[0]<minAndMax[0]) minAndMax[0]=mm[0];
+                    if (mm[1]>minAndMax[1]) minAndMax[1]=mm[1];
+                    pasteImage(image, displayImage, trackOffset[i]);
                     if (count>=updateImageFrequency) {
-                        ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage);
+                        ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage, minAndMax);
                         count=0;
                     } else count++;
                 }
-                ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage);
+                ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage, minAndMax);
             }
         });
-        SwingUtilities.invokeLater(t);
+        t.start();
         return displayImage;
     }
     
