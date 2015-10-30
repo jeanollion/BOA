@@ -78,7 +78,7 @@ public class StructureObjectTreeGenerator {
                         //logger.debug("right-click on element: {}", lastO);
                         if (lastO instanceof UIContainer) {
                             UIContainer UIC=(UIContainer)lastO;
-                            addToMenu(UIC.getDisplayComponent(), menu);
+                            addToMenu(UIC.getDisplayComponent(false), menu);
                         }
                         menu.show(tree, pathBounds.x, pathBounds.y + pathBounds.height);
                     }

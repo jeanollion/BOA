@@ -167,7 +167,6 @@ public class Processor {
         if (xp.getStructure(structureIdx).hasTracker()) { // structure
             logger.info("tracking structure: {}...", structureIdx);
             Structure structure = xp.getStructure(structureIdx);
-            
             //ArrayList<StructureObject> modifiedObjectsCorrection = updateTrackAttributes&&structure.hasTrackCorrector()?new ArrayList<StructureObject>() : null;
             if (parentObjects==null) {
                 StructureObject root0 = dao.getRoot(field.getName(), 0);
@@ -215,34 +214,28 @@ public class Processor {
         correctTrackStructure(structureIdx, xp, field, dao, updateTrackAttributes, parentObjects.length==0?null:Arrays.asList(parentObjects));
     }
     
-    public static void processStructure(int structureIdx, Experiment xp, MicroscopyField field, ObjectDAO dao, ArrayList<StructureObject> segmentedObjects, int... startAndStopTime) {
+    public static void processStructure(int structureIdx, Experiment xp, MicroscopyField field, ObjectDAO dao, List<StructureObject> parentObjects, ArrayList<StructureObject> segmentedObjects) {
+        if (!xp.getStructure(structureIdx).hasSegmenter()) {
+            logger.warn("no segmenter set for structure: {}", xp.getStructure(structureIdx).getName());
+            return;
+        }
         boolean automaticStore = false;
         if (segmentedObjects==null) {
             automaticStore= true;
             segmentedObjects = new ArrayList<StructureObject>();
         }
-        ArrayList<StructureObject> roots=null;
-        if (dao!=null) roots=dao.getRoots(field.getName());
-        if (roots==null || roots.isEmpty()) {
-            if (xp.getStructure(structureIdx).getParentStructure()!=-1) throw new RuntimeException("No root objects detected, in order to segment structure: "+structureIdx+"one need to segment all its parent structures");
-            else {
-                roots = field.createRootObjects();
-                Processor.trackRoot(roots);
-                if (dao!=null) dao.store(roots, true, false);
+        if (parentObjects==null) {
+            if (dao!=null) parentObjects=dao.getRoots(field.getName());
+            if (parentObjects==null || parentObjects.isEmpty()) {
+                if (xp.getStructure(structureIdx).getParentStructure()!=-1) throw new RuntimeException("No root objects detected, in order to segment structure: "+structureIdx+"one need to segment all its parent structures");
+                else {
+                    parentObjects = field.createRootObjects();
+                    Processor.trackRoot(parentObjects);
+                    if (dao!=null) dao.store(parentObjects, true, false);
+                }
             }
         }
-        int startTime=-1, stopTime=-1;
-        if (startAndStopTime.length==2) {
-            startTime=startAndStopTime[0];
-            stopTime=startAndStopTime[1];
-        }
-        if (startTime<0) startTime=0;
-        if (stopTime<0) stopTime = roots.size();
-        if (startTime>stopTime || startTime>=field.getTimePointNumber() || stopTime>field.getTimePointNumber()) throw new IllegalArgumentException(" start time "+startTime+", and stop time: "+stopTime+" invalids (timepoint number: "+field.getTimePointNumber()+")");
-        // get all parent objects of the structure
-        //StructureObject parent = roots[0]; // for testing
-        for (int t = startTime; t<stopTime; ++t) {
-            StructureObject parent = roots.get(t);
+        for (StructureObject parent : parentObjects) {
             ArrayList<StructureObject> allParents = StructureObjectUtils.getAllParentObjects(parent, parent.getExperiment().getPathToStructure(parent.getStructureIdx(), structureIdx), dao);
             logger.info("Segmenting structure: {} timePoint: {} number of parents: {}", structureIdx, parent.getTimePoint(), allParents.size());
             for (StructureObject localParent : allParents) {
@@ -251,7 +244,6 @@ public class Processor {
                 segmentedObjects.addAll(localParent.getChildren(structureIdx));
                 //if (dao!=null) dao.store(localParent.getChildren(structureIdx));
                 if (logger.isDebugEnabled()) logger.debug("Segmenting structure: {} from parent: {} number of objects: {}", structureIdx, localParent, localParent.getChildObjects(structureIdx).size());
-                
             }
         }
         if (automaticStore & dao !=null) dao.store(segmentedObjects, true, false);

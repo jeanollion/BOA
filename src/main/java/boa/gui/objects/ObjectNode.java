@@ -87,7 +87,7 @@ public class ObjectNode implements TreeNode, UIContainer, StructureNodeContainer
     }
     
     // UIContainer implementation
-    @Override public Object[] getDisplayComponent() {
+    @Override public Object[] getDisplayComponent(boolean multipleSelection) {
         return (new ObjectNodeUI(this)).getDisplayComponent();
     }
     

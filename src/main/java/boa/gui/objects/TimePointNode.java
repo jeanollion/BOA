@@ -84,7 +84,7 @@ public class TimePointNode implements TreeNode, UIContainer, StructureNodeContai
     }
     
     // UIContainer implementation
-    @Override public Object[] getDisplayComponent() {
+    @Override public Object[] getDisplayComponent(boolean multipleSelection) {
         return new Object[0];
     }
     

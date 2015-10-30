@@ -51,7 +51,7 @@ public class TrackExperimentNode implements TreeNode, UIContainer {
     }
     
     // UIContainer implementation
-    @Override public Object[] getDisplayComponent() {
+    @Override public Object[] getDisplayComponent(boolean multipleSelection) {
         return new Object[0];
     }
     

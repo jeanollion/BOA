@@ -135,8 +135,8 @@ public class TrackNode implements TreeNode, UIContainer {
     }
     
     // UIContainer implementation
-    @Override public Object[] getDisplayComponent() {
-        return (new TrackNodeUI(this)).getDisplayComponent();
+    @Override public Object[] getDisplayComponent(boolean multipleSelection) {
+        return (new TrackNodeUI(this)).getDisplayComponent(multipleSelection);
     }
     
     // TreeNode implementation
@@ -185,17 +185,20 @@ public class TrackNode implements TreeNode, UIContainer {
         JMenuItem[] actions;
         JMenuItem[] openRaw;
         JMenuItem[] openSeg;
+        JMenuItem[] runSegAndTracking;
         JMenuItem[] runTracking;
         public TrackNodeUI(TrackNode tn) {
             this.trackNode=tn;
-            this.actions = new JMenuItem[3];
+            this.actions = new JMenuItem[4];
             JMenu segSubMenu = new JMenu("Open Segmented Track Image");
             actions[0] = segSubMenu;
             JMenu rawSubMenu = new JMenu("Open Raw Track Image");
             actions[1] = rawSubMenu;
             String[] structureNames = trackNode.trackHead.getExperiment().getStructuresAsString();
+            JMenu runSegAndTrackingSubMenu = new JMenu("Run segmentation and tracking");
+            actions[2] = runSegAndTrackingSubMenu;
             JMenu runTrackingSubMenu = new JMenu("Run tracking");
-            actions[2] = runTrackingSubMenu;
+            actions[3] = runTrackingSubMenu;
             String[] childStructureNames = trackNode.trackHead.getExperiment().getChildStructuresAsString(trackNode.trackHead.getStructureIdx());
             
             
@@ -235,6 +238,29 @@ public class TrackNode implements TreeNode, UIContainer {
                 );
                 rawSubMenu.add(openRaw[i]);
             }
+            runSegAndTracking = new JMenuItem[childStructureNames.length];
+            for (int i = 0; i < runSegAndTracking.length; i++) {
+                runSegAndTracking[i] = new JMenuItem(childStructureNames[i]);
+                runSegAndTracking[i].setAction(new AbstractAction(childStructureNames[i]) {
+                        @Override
+                        public void actionPerformed(ActionEvent ae) {
+                            int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
+                            logger.debug("running segmentation and tracking for structure: {} of idx: {}, within track: {}", ae.getActionCommand(), structureIdx, trackHead);
+                            Experiment xp = root.generator.getExperiment();
+                            ArrayList<StructureObject> parents = new ArrayList<StructureObject>();
+                            for (TrackNode n : root.generator.getSelectedTrackNodes()) parents.addAll(n.track);
+                            Processor.processStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.getObjectDAO(), parents, null);
+                            Processor.trackStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.getObjectDAO(), true, root.generator.getSelectedTrackHeads());
+                            // reload tree
+                            root.generator.controller.updateParentTracks(root.generator.controller.getTreeIdx(trackHead.getStructureIdx()));
+                            // reload objects
+                            ImageWindowManagerFactory.getImageManager().reloadObjects(trackHead, structureIdx, true);
+                        }
+                    }
+                );
+                runSegAndTrackingSubMenu.add(runSegAndTracking[i]);
+            }
+            
             runTracking = new JMenuItem[childStructureNames.length];
             for (int i = 0; i < runTracking.length; i++) {
                 runTracking[i] = new JMenuItem(childStructureNames[i]);
@@ -255,7 +281,11 @@ public class TrackNode implements TreeNode, UIContainer {
                 runTrackingSubMenu.add(runTracking[i]);
             }
         }
-        public Object[] getDisplayComponent() {return actions;}
+        public Object[] getDisplayComponent(boolean multipleSelection) {
+            if (multipleSelection) {
+                return new JMenuItem[]{actions[2], actions[3]};
+            } else return actions;
+        }
         private int getStructureIdx(String name, JMenuItem[] actions) {
             for (int i = 0; i<actions.length; ++i) if (actions[i].getActionCommand().equals(name)) return i;
             return -1;

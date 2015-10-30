@@ -137,7 +137,6 @@ public class ConfigurationTreeGenerator {
     }
     
     public static void addToMenu(Object[] UIElements, JPopupMenu menu) {
-        //if (menu.getComponentCount()>0) menu.addSeparator();
         for (Object o : UIElements) {
             if (o instanceof Action) menu.add((Action)o);
             else if (o instanceof JMenuItem) menu.add((JMenuItem)o);

@@ -266,23 +266,6 @@ public class TestProcessBacteria {
         return WatershedObjectSplitter.split(splitImage, splitMask);
     }
     
-    public void runSegmentationBacteriaOnSubsetofDBXP(int startTime, int stopTime) {
-        String dbName = "testFluo";
-        int channel = 0;
-        int field = 0;
-        Morphium m = MorphiumUtils.createMorphium(dbName);
-        ExperimentDAO xpDAO = new ExperimentDAO(m);
-        xp=xpDAO.getExperiment();
-        logger.info("Experiment: {} retrieved from db: {}", xp.getName(), dbName);
-        ObjectDAO dao = new ObjectDAO(m, xpDAO);
-        MicroscopyField f = xp.getMicroscopyField(field);
-        ArrayList<StructureObject> segO = new ArrayList<StructureObject> ();
-        Processor.processStructure(1, xp, f, dao, segO, startTime, stopTime);
-        Processor.trackStructure(1, xp, f, dao, false);
-        dao.store(segO, true, false);
-        
-    }
-    
     public static void testSegBacteria(Image input, ImageMask parentMask) {
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
@@ -293,7 +276,7 @@ public class TestProcessBacteria {
     
     public int getTrackErrorNumber(MicroscopyField f, ObjectDAO dao) {
         ArrayList<StructureObject> segO = new ArrayList<StructureObject> ();
-        Processor.processStructure(1, xp, f, dao, segO);
+        Processor.processStructure(1, xp, f, dao, null, segO);
         Processor.trackStructure(1, xp, f, dao, false);
         dao.store(segO, true, false);
         return dao.getTrackErrors(f.getName(), 1).size();

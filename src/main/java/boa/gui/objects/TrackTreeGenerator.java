@@ -128,7 +128,7 @@ public class TrackTreeGenerator {
                 TreePath path = tree.getPathForLocation(e.getX(), e.getY());
                 if (path==null) return;
                 if (SwingUtilities.isRightMouseButton(e)) {
-                    tree.setSelectionPath(path);
+                    Utils.addToSelectionPaths(tree, path);
                     Rectangle pathBounds = tree.getUI().getPathBounds(tree, path);
                     if (pathBounds != null && pathBounds.contains(e.getX(), e.getY())) {
                         JPopupMenu menu = new JPopupMenu();
@@ -136,7 +136,7 @@ public class TrackTreeGenerator {
                         //logger.debug("right-click on element: {}", lastO);
                         if (lastO instanceof UIContainer) {
                             UIContainer UIC=(UIContainer)lastO;
-                            addToMenu(UIC.getDisplayComponent(), menu);
+                            addToMenu(UIC.getDisplayComponent(tree.getSelectionCount()>1), menu);
                         }
                         menu.show(tree, pathBounds.x, pathBounds.y + pathBounds.height);
                     }
@@ -211,6 +211,18 @@ public class TrackTreeGenerator {
                 res.add(((TrackNode)p.getLastPathComponent()).trackHead);
             }
         }
+        logger.debug("getSelectedTrackHead: count: {}", res.size());
+        return res;
+    }
+    
+    public ArrayList<TrackNode> getSelectedTrackNodes() {
+        ArrayList<TrackNode> res = new ArrayList<TrackNode>(tree.getSelectionCount());
+        for (TreePath p : tree.getSelectionPaths()) {
+            if (p.getLastPathComponent() instanceof TrackNode) {
+                res.add(((TrackNode)p.getLastPathComponent()));
+            }
+        }
+        logger.debug("getSelectedTrackNodes: count: {}", res.size());
         return res;
     }
 }

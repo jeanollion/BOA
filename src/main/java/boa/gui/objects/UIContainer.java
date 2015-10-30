@@ -22,5 +22,5 @@ package boa.gui.objects;
  * @author nasique
  */
 public interface UIContainer {
-    public Object[] getDisplayComponent();
+    public Object[] getDisplayComponent(boolean multipleSelection);
 }

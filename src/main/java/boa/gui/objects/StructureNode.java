@@ -97,7 +97,7 @@ public class StructureNode implements TreeNode, UIContainer {
     
     
     // UIContainer implementation
-    @Override public Object[] getDisplayComponent() {
+    @Override public Object[] getDisplayComponent(boolean multipleSelection) {
         return getParentObject()==null? new Object[0]:(new StructureNodeUI(this)).getDisplayComponent();
     }
     
