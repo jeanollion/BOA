@@ -76,7 +76,7 @@ public class TestTrackCorrection {
         db.generateDAOs();
     }
 
-    @Test
+    @Test 
     public void testOverSegmentation() {
         int[] actual = new int[]{1, 2, 2, 1, 1, 1, 2};
         int[] expected = new int[]{1, 1, 1, 1, 1, 1, 2};
@@ -90,7 +90,7 @@ public class TestTrackCorrection {
         test(actual, expected);
     }
     
-    @Test
+    @Test 
     public void testOverSegmentationNoDivPrev() {
         int[] actual = new int[]{2, 2, 1, 1, 1};
         int[] expected = new int[]{1, 1, 1, 1, 1};
@@ -104,7 +104,7 @@ public class TestTrackCorrection {
         test(actual, expected);
     }
     
-    @Test
+    @Test 
     public void testUnderSegmentationAmbiguous() {
         int[] actual = new int[]{1, 2, 2, 1, 1, 2};
         int[] expected = new int[]{1, 1, 1, 1, 1, 2};
@@ -140,6 +140,7 @@ public class TestTrackCorrection {
     private void testWholeProcessDB(int[] actual, int[] expected) {
         setUpDB();
         generateData(true, true, actual);
+        db.getDao().waiteForWrites();
         db.getDao().clearCache();
         testTrackCorrection(db.getDao().getRoots(db.getExperiment().getMicroscopyField(0).getName()), actual, expected);
     }
@@ -151,6 +152,7 @@ public class TestTrackCorrection {
         addTracker(db.getExperiment());
         addTrackCorrector(db.getExperiment());
         Processor.trackStructure(0, db.getXpDAO().getExperiment(), db.getExperiment().getMicroscopyField(0), db.getDao(), true);
+        db.getDao().waiteForWrites();
         db.getDao().clearCache();
         testTrackCorrection(db.getDao().getRoots(db.getXpDAO().getExperiment().getMicroscopyField(0).getName()), actual, expected);
     }
@@ -159,8 +161,10 @@ public class TestTrackCorrection {
     private void testProcessAndTrackThenCorrectDB(int[] actual, int[] expected) {
         setUpDB();
         generateData(true, false, actual);
+        db.getDao().waiteForWrites();
         addTrackCorrector(db.getXpDAO().getExperiment());
         Processor.correctTrackStructure(0, db.getExperiment(), db.getXpDAO().getExperiment().getMicroscopyField(0), db.getDao(), true);
+        db.getDao().waiteForWrites();
         db.getDao().clearCache();
         testTrackCorrection(db.getDao().getRoots(db.getXpDAO().getExperiment().getMicroscopyField(0).getName()), actual, expected);
     }
@@ -181,10 +185,10 @@ public class TestTrackCorrection {
                     assertEquals ("object sizeY (double, 1) @t="+i, objectSize/2, root.get(i).getChildren(0).get(0).getObject().getBounds().getSizeY());
                     assertEquals ("object sizeY (double, 2) @t="+i, objectSize/2, root.get(i).getChildren(0).get(1).getObject().getBounds().getSizeY());
                 } else { // split
-                    assertEquals ("object sizeY (split, 1) @t="+i, objectSize/2, root.get(i).getChildren(0).get(0).getObject().getBounds().getSizeY());
-                    assertEquals ("object sizeY (split, 2) @t="+i, objectSize/2+1, root.get(i).getChildren(0).get(1).getObject().getBounds().getSizeY());
-                }
-                
+                    //logger.debug("split: o1: {}, o2: {}", root.get(i).getChildren(0).get(0), root.get(i).getChildren(0).get(1));
+                    assertEquals ("object sizeY (split, 1) @t="+i, objectSize/2+1, root.get(i).getChildren(0).get(0).getObject().getBounds().getSizeY());
+                    assertEquals ("object sizeY (split, 2) @t="+i, objectSize/2, root.get(i).getChildren(0).get(1).getObject().getBounds().getSizeY());
+                }                
             }
         }
         StructureObject parentTrackHead = root.get(0);

@@ -151,7 +151,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.childrenSM.set(children, structureIdx);
         for (StructureObject o : children) o.setParent(this);
     }
-    protected ArrayList<StructureObject> getSiblings() {return this.getParent().getChildObjects(structureIdx, getExperiment().getObjectDAO(), false);}
+    public ArrayList<StructureObject> getSiblings() {return this.getParent().getChildObjects(structureIdx, getExperiment().getObjectDAO(), false);}
     
     public void relabelChildren(int structureIdx, ArrayList<StructureObject> modifiedObjects) {
         //logger.debug("relabeling: {} number of children: {}", this, getChildren(structureIdx).size());
@@ -433,14 +433,15 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             logger.warn("split structureObject: {} yielded in {} objects, but only two will be considered", this, pop.getObjects().size());
         } 
         
-        StructureObject res = new StructureObject(fieldName, timePoint, structureIdx, idx+1, pop.getObjects().get(1), getParent(), getExperiment());
+        StructureObject res = new StructureObject(fieldName, timePoint, structureIdx, idx+1, pop.getObjects().get(1).setLabel(idx+2), getParent(), getExperiment());
         /*ArrayList<StructureObject> res = new ArrayList<StructureObject>(pop.getObjects().size()-1);
         for (int i = 1; i<pop.getObjects().size(); ++i) {
             res.add(new StructureObject(fieldName, timePoint, structureIdx, currentIdx++, pop.getObjects().get(i), getParent(), getExperiment()));
         }*/
         //if (res.size()>1) xp.getObjectDAO().store(res);
         //else xp.getObjectDAO().store(res.get(0));
-        this.getParent().getChildren(structureIdx).add(this.getParent().getChildren(structureIdx).indexOf(this)+1, res);
+        //logger.debug("split: adding: {} at position: {}/{}", res, getParent().getChildren(structureIdx).indexOf(this)+1, getParent().getChildren(structureIdx).size());
+        this.getParent().getChildren(structureIdx).add(getParent().getChildren(structureIdx).indexOf(this)+1, res);
         
         //res.previous=getPrevious();
         setTrackFlag(TrackFlag.correctionSplit);

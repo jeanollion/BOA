@@ -47,6 +47,7 @@ public class ObjectDAO extends DAO<StructureObject>{
     Morphium morphium;
     ExperimentDAO xpDAO;
     HashMap<ObjectId, StructureObject> idCache;
+    final ObjectStoreAgent agent;
     public ObjectDAO(Morphium morphium, ExperimentDAO xpDAO) {
         super(morphium, StructureObject.class);
         morphium.ensureIndicesFor(StructureObject.class);
@@ -55,7 +56,7 @@ public class ObjectDAO extends DAO<StructureObject>{
         idCache = new HashMap<ObjectId, StructureObject>();
         logger.debug("object DAO creation: xpDAO null? {}, experiment null? {}, DAO already set? {}", xpDAO==null, xpDAO==null?"true":xpDAO.getExperiment()==null, xpDAO==null?"false":xpDAO.getExperiment()==null?"false":xpDAO.getExperiment().getObjectDAO()==null);
         if (xpDAO!=null && xpDAO.getExperiment()!=null && xpDAO.getExperiment().getObjectDAO()==null) xpDAO.getExperiment().setObjectDAO(this);
-        
+        agent = new ObjectStoreAgent(this);
     }
     
     private Query<StructureObject> getQuery(ObjectId parentId, int structureIdx) {
@@ -91,9 +92,9 @@ public class ObjectDAO extends DAO<StructureObject>{
         } else return res;
     }
     
-    public void clearCache() {this.idCache=new HashMap<ObjectId, StructureObject>();}
-    
-    
+    public void clearCache() {
+        this.idCache=new HashMap<ObjectId, StructureObject>();
+    }
     
     private ArrayList<StructureObject> checkAgainstCache(List<StructureObject> list) {
         ArrayList<StructureObject> res= new ArrayList<StructureObject>(list.size());
@@ -166,8 +167,10 @@ public class ObjectDAO extends DAO<StructureObject>{
     }
     
     public void delete(StructureObject o) {
-        morphium.delete(o);
-        idCache.remove(o.getId());
+        if (o.getId()!=null) {
+            morphium.delete(o);
+            idCache.remove(o.getId());
+        }
         o.deleteMask();
     }
     
@@ -185,12 +188,25 @@ public class ObjectDAO extends DAO<StructureObject>{
         if (object==null) return;
         if (object.length==0) return;
         if (object.length==1) store(object[0]);
-        else store(Arrays.asList(object), updateTrackAttributes);
+        else store(Arrays.asList(object), updateTrackAttributes, false);
     }
-    
-    public void store(final List<StructureObject> objects, final boolean updateTrackAttributes) {
+    public void waiteForWrites() {
+        logger.debug("wait for writes...");
+        agent.join();
+        logger.debug("wait for writes done.");
+    }
+    public void store(final List<StructureObject> objects, final boolean updateTrackAttributes, boolean removeDuplicatesAndSortIfNecessary) {
+        if (removeDuplicatesAndSortIfNecessary) {
+            Utils.removeDuplicates(objects, false);
+            if (updateTrackAttributes) Collections.sort(objects, Utils.getStructureObjectComparator());
+        }
+        agent.addJob(objects, updateTrackAttributes);
+    }
+    public void storeNow(final List<StructureObject> objects, final boolean updateTrackAttributes) {
         if (objects==null) return;
+        
         logger.debug("calling store metohd: nb of objects: {} updateTrack: {}", objects.size(), updateTrackAttributes);
+        
         boolean updateTrackHead = false;
         for (StructureObject o : objects) {
             o.updateObjectContainer();

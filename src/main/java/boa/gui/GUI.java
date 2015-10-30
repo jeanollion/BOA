@@ -667,7 +667,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                     modified.add(newObject);
                     modified.add(sel);
                     sel.getParent().relabelChildren(sel.getStructureIdx(), modified);
-                    objectDAO.store(modified, false);
+                    objectDAO.store(modified, false, false);
                     //Update tree
                     ObjectNode node = objectTreeGenerator.getObjectNode(sel);
                     node.getParent().createChildren();
@@ -694,7 +694,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             ArrayList<StructureObject> modified = new ArrayList<StructureObject>(siblings.size());
             modified.add(res);
             res.getParent().relabelChildren(res.getStructureIdx(), modified);
-            objectDAO.store(modified, false);
+            objectDAO.store(modified, false, false);
             //Update object tree
             ObjectNode node = objectTreeGenerator.getObjectNode(res);
             node.getParent().createChildren();

@@ -36,11 +36,12 @@ public class DummySplitter implements ObjectSplitter {
         ArrayList<Voxel> v1 = new ArrayList<Voxel>(object.getVoxels().size()/2+1);
         ArrayList<Voxel> v2 = new ArrayList<Voxel>(object.getVoxels().size()/2+1);
         for (Voxel v : object.getVoxels()) {
-            if (v.y>=yMid) v1.add(v);
+            if (v.y<yMid) v1.add(v);
             else v2.add(v);
         }
         Object3D o1  = new Object3D(v1, 1, object.getScaleXY(), object.getScaleZ());
         Object3D o2  = new Object3D(v2, 2, object.getScaleXY(), object.getScaleZ());
+        //logger.debug("dummy splitter: object1: {} object2: {}", v1.size(), v2.size());
         return new ObjectPopulation(null, input).addObjects(o1, o2);
     }
 

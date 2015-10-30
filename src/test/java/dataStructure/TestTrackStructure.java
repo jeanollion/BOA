@@ -92,7 +92,7 @@ public class TestTrackStructure {
         */
         ArrayList<StructureObject> toStore = new ArrayList<StructureObject>();
         for (int i = 0; i<bTM.length; ++i) toStore.addAll(Arrays.asList(bTM[i]));
-        dao.store(toStore, true);
+        dao.store(toStore, true, false);
         m.clearCachefor(StructureObject.class);
 
         // retrive tracks head for microChannels

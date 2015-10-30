@@ -279,7 +279,7 @@ public class TestProcessFluo {
         ArrayList<StructureObject> segO = new ArrayList<StructureObject> ();
         Processor.processStructure(1, xp, f, dao, segO, startTime, stopTime);
         Processor.trackStructure(1, xp, f, dao, false);
-        dao.store(segO, true);
+        dao.store(segO, true, false);
         
     }
     
@@ -295,7 +295,7 @@ public class TestProcessFluo {
         ArrayList<StructureObject> segO = new ArrayList<StructureObject> ();
         Processor.processStructure(1, xp, f, dao, segO);
         Processor.trackStructure(1, xp, f, dao, false);
-        dao.store(segO, true);
+        dao.store(segO, true, false);
         return dao.getTrackErrors(f.getName(), 1).size();
     }
     

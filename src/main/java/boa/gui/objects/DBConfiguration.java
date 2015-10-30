@@ -38,6 +38,9 @@ public class DBConfiguration {
         this.m=m;
         generateDAOs();
     }
+    public DBConfiguration(String dbName) {
+        this(MorphiumUtils.createMorphium(dbName));
+    }
     public void generateDAOs() {
         this.xpDAO=new ExperimentDAO(m);
         this.dao=new ObjectDAO(m, xpDAO);
