@@ -27,6 +27,41 @@ import processing.ImageFeatures;
  * @author jollion
  */
 public class ArrayUtil {
+    
+    public static float selectKth(float[] arr, int k) { // from : http://blog.teamleadnet.com/2012/07/quick-select-algorithm-find-kth-element.html
+        if (arr == null) throw new IllegalArgumentException("Select K: array null");
+        if ( arr.length <= k) throw new IllegalArgumentException("Select K: k>=length of array");
+        int from = 0, to = arr.length - 1;
+        // if from == to we reached the kth element
+        while (from < to) {
+            int r = from, w = to;
+            float mid = arr[(r + w) / 2];
+            // stop if the reader and writer meets
+            while (r < w) {
+                if (arr[r] >= mid) { // put the large values at the end
+                    float tmp = arr[w];
+                    arr[w] = arr[r];
+                    arr[r] = tmp;
+                    w--;
+                } else { // the value is smaller than the pivot, skip
+                    r++;
+                }
+            }
+            // if we stepped up (r++) we need to step one down
+            if (arr[r] > mid) {
+                r--;
+            }
+            // the r pointer is on the end of the first k elements
+            if (k <= r) {
+                to = r;
+            } else {
+                from = r + 1;
+            }
+        }
+        return arr[k];
+    }
+
+    
     public static int max(float[] array) {
         return max(array, 0, array.length);
     }

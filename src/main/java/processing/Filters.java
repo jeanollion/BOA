@@ -17,6 +17,7 @@
  */
 package processing;
 
+import boa.gui.imageInteraction.IJImageDisplayer;
 import dataStructure.objects.Voxel;
 import image.Image;
 import image.ImageByte;
@@ -25,6 +26,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import processing.neighborhood.EllipsoidalNeighborhood;
 import processing.neighborhood.Neighborhood;
+import utils.ArrayUtil;
 
 /**
  *
@@ -62,8 +64,11 @@ public class Filters {
     
     public static <T extends Image> T tophat(Image image, T output, Neighborhood neighborhood) {
         ImageFloat open =open(image, new ImageFloat("", 0, 0, 0), neighborhood);
-        T res = image.sameSize(output)?output:Image.createEmptyImage("Tophat of: "+image.getName(), output, image);
-        float round=output instanceof ImageFloat ? 0: 0.5f;
+        T res;
+        String name = "Tophat of: "+image.getName();
+        if (output==null) res = (T)new ImageFloat(name, image);
+        else res = image.sameSize(output)?output:Image.createEmptyImage(name, output, image);
+        float round=res instanceof ImageFloat ? 0: 0.5f;
         int sizeX=image.getSizeX();
         float[][] openPix = open.getPixelArray();
         //1-open
@@ -79,8 +84,11 @@ public class Filters {
     
     public static <T extends Image> T tophatInv(Image image, T output, Neighborhood neighborhood) {
         ImageFloat close =close(image, new ImageFloat("", 0, 0, 0), neighborhood);
-        T res = image.sameSize(output)?output:Image.createEmptyImage("Tophat of: "+image.getName(), output, image);
-        float round=output instanceof ImageFloat ? 0: 0.5f;
+        T res;
+        String name = "Tophat of: "+image.getName();
+        if (output==null) res = (T)new ImageFloat(name, image);
+        else res = image.sameSize(output)?output:Image.createEmptyImage(name, output, image);
+        float round=res instanceof ImageFloat ? 0: 0.5f;
         int sizeX=image.getSizeX();
         float[][] closePix = close.getPixelArray();
         //1-open
@@ -133,9 +141,9 @@ public class Filters {
         T res;
         String name = filter.getClass().getSimpleName()+" of: "+image.getName();
         if (output==null) res = (T)new ImageFloat(name, image);
-                else if (!output.sameSize(image) || output==image) res = Image.createEmptyImage(name, output, image);
+        else if (!output.sameSize(image) || output==image) res = Image.createEmptyImage(name, output, image);
         else res = (T)output.setName(name);
-        float round=output instanceof ImageFloat ? 0: 0.5f;
+        float round=res instanceof ImageFloat ? 0: 0.5f;
         filter.setUp(image, neighborhood);
         for (int z = 0; z < image.getSizeZ(); ++z) {
             for (int y = 0; y < image.getSizeY(); ++y) {
@@ -162,7 +170,7 @@ public class Filters {
             return (float)(mean/neighborhood.getValueCount());
         }
     }
-    private static class Median extends Filter { // TODO: selection algorithm:  http://blog.teamleadnet.com/2012/07/quick-select-algorithm-find-kth-element.html
+    private static class Median extends Filter {
         @Override public float applyFilter(int x, int y, int z) {
             if (neighborhood.getValueCount()==0) return 0;
             Arrays.sort(neighborhood.getPixelValues(), 0, neighborhood.getValueCount());
@@ -170,6 +178,16 @@ public class Filters {
             else return neighborhood.getPixelValues()[neighborhood.getValueCount()/2];
         }
     }
+    /*private static class MedianSelection extends Filter { // TODO: selection algorithm:  http://blog.teamleadnet.com/2012/07/quick-select-algorithm-find-kth-element.html
+        @Override public float applyFilter(int x, int y, int z) {
+            if (neighborhood.getValueCount()==0) return 0;
+            Arrays.sort(neighborhood.getPixelValues(), 0, neighborhood.getValueCount());
+            if (neighborhood.getValueCount()%2==0) {
+                return (ArrayUtil.selectKth(neighborhood.getPixelValues(), neighborhood.getValueCount()/2-1) + ArrayUtil.selectKth(neighborhood.getPixelValues(), neighborhood.getValueCount()/2))/2f;
+            }
+            else return ArrayUtil.selectKth(neighborhood.getPixelValues(), neighborhood.getValueCount()/2);
+        }
+    }*/
     /*private static class GaussianMedian extends Filter {
         double[] gaussKernel;
         double[] gaussedValues;
@@ -254,8 +272,8 @@ public class Filters {
         @Override public float applyFilter(int x, int y, int z) {
             if (neighborhood.getValueCount()==0) return 0;
             float min = neighborhood.getPixelValues()[0];
-            for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]<min) return 0;
-            return 1;
+            for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]<min) min=neighborhood.getPixelValues()[i];
+            return min;
         }
     }
     //(low + high) >>> 1 <=> (low + high) / 2

@@ -61,6 +61,12 @@ public class ImageInt extends ImageInteger {
     public float getPixel(int x, int y, int z) {
         return (float) (pixels[z][x + y * sizeX]);
     }
+    
+    
+    @Override
+    public float getPixelLinInterX(int x, int y, int z, float dx) {
+        return (float) ((pixels[z][x + y * sizeX]) * (1-dx) + dx * (pixels[z][x + 1 + y * sizeX]));
+    }
 
     @Override
     public void setPixel(int x, int y, int z, int value) {

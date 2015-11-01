@@ -170,6 +170,18 @@ public class ImageOperations {
         return output;
     }
     
+    public static <T extends Image> T multiply(Image source1, Image source2, T output) {
+        if (!source1.sameSize(source2)) throw new IllegalArgumentException("cannot multiply images of different sizes");
+        if (output==null) output = (T)new ImageFloat(source1.getName()+" x "+source2.getName(), source1);
+        else if (!output.sameSize(source1)) output = Image.createEmptyImage(source1.getName()+" x "+source2.getName(), output, source1);
+        for (int z = 0; z<output.sizeZ; ++z) {
+            for (int xy=0; xy<output.sizeXY; ++xy) {
+                output.setPixel(xy, z, source1.getPixel(xy, z)*source2.getPixel(xy, z));
+            }
+        }
+        return output;
+    }
+    
     public static ImageInteger or(ImageMask source1, ImageMask source2, ImageInteger output) {
         if (output==null) output = new ImageByte("or", source1);
         for (int z = 0; z<source1.getSizeZ(); ++z) {

@@ -85,7 +85,6 @@ public class StructureObjectMask extends ImageObjectInterface {
         if (is2D) {
             z = 0;
         }
-        logger.debug("getClickedObject: number of objects: {}, is2D: {}, z: {}", getObjects().size(), is2D);
         for (int i = 0; i < offsets.length; ++i) {
             if (offsets[i].contains(x, y, z)) {
                 if (getObjects().get(i).getMask().insideMask(x - offsets[i].getxMin(), y - offsets[i].getyMin(), z - offsets[i].getzMin())) {

@@ -97,6 +97,13 @@ public abstract class Image implements ImageProperties {
     
     //public abstract float getPixel(float x, float y, float z); // interpolation
     public abstract float getPixel(int x, int y, int z);
+    public abstract float getPixelLinInterX(int x, int y, int z, float dx);
+    public float getPixelLinInterXY(int x, int y, int z, float dx, float dy) {
+        return getPixelLinInterX(x, y, z, dx) * (1 - dy) + dy * getPixelLinInterX(x, y+1, z, dx);
+    }
+    public float getPixelLinInter(int x, int y, int z, float dx, float dy, float dz) {
+        return getPixelLinInterXY(x, y, z, dx, dy) * (1 - dz) + dz * getPixelLinInterXY(x, y, z+1, dx, dy);
+    }
     public abstract float getPixel(int xz, int z);
     public abstract void setPixel(int x, int y, int z, double value);
     public abstract void setPixelWithOffset(int x, int y, int z, double value);

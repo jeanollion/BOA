@@ -61,6 +61,11 @@ public class ImageByte extends ImageInteger {
     public float getPixel(int x, int y, int z) {
         return (float) (pixels[z][x + y * sizeX] & 0xff);
     }
+    
+    @Override
+    public float getPixelLinInterX(int x, int y, int z, float dx) {
+        return (float) ((pixels[z][x + y * sizeX] & 0xff) * (1-dx) + dx * (pixels[z][x + 1 + y * sizeX] & 0xff));
+    }
 
     @Override
     public void setPixel(int x, int y, int z, int value) {
@@ -163,4 +168,6 @@ public class ImageByte extends ImageInteger {
     }
     
     @Override int[] getHisto256(double min, double max, ImageMask mask, BoundingBox limit) {return getHisto256(mask);}
+
+    
 }
