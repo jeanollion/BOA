@@ -36,6 +36,7 @@ import image.ImageMask;
 import image.ImageOperations;
 import static image.ImageOperations.pasteImage;
 import java.util.ArrayList;
+import java.util.HashSet;
 import plugins.PluginFactory;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.SpotFluo2D5;
@@ -51,7 +52,7 @@ public class TestProcessMutations {
         PluginFactory.findPlugins("plugins.plugins");
         TestProcessMutations t = new TestProcessMutations();
         t.init();
-        t.testSegMutationsFromXP(0, 60);
+        t.testSegMutationsFromXP(true, 0, 60);
     }
     public void init() {
         String dbName = "testFluo60";
@@ -59,36 +60,46 @@ public class TestProcessMutations {
         logger.info("Experiment: {} retrieved from db: {}", db.getExperiment().getName(), dbName);
     }
     public void testSegMutationsFromXP(int time) {
-        testSegMutationsFromXP(time, null, null, null, null);
+        testSegMutationsFromXP(true, time, null, null, null, null, null);
     }
-    public void testSegMutationsFromXP(int time, ArrayList<ImageMask> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
+    public void testSegMutationsFromXP(boolean parentMC, int time, ArrayList<ImageMask> mcMask_, ArrayList<ImageMask> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
         int field = 0;
         int channel = 0;
-        int bacteria = 1;
         //String dbName = "testFluo";
         
         MicroscopyField f = db.getExperiment().getMicroscopyField(field);
         StructureObject root = db.getDao().getRoot(f.getName(), time);
         //logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildObjects(0, db.getDao(), false).get(channel);
-        StructureObject bact = mc.getChildObjects(1, db.getDao(), false).get(bacteria);
-        Image input = mc.getRawImage(2);
-        ImageMask parentMask = mc.getMask();
-        SpotFluo2D5.debug=true;
-        SpotFluo2D5.displayImages=parentMask_==null;
-        ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
-        ObjectPopulation pop = SpotFluo2D5.run(input, parentMask, 2, 2, 5, 1.5, 4, intermediateImages);
-        /*ImageDisplayer disp = new IJImageDisplayer();
-        disp.showImage(input);
-        disp.showImage(pop.getLabelImage());:*/
-        if (parentMask!=null) parentMask_.add(parentMask);
-        if (input_!=null) input_.add(input);
-        if (outputLabel!=null) outputLabel.add(pop.getLabelImage());
-        if (intermediateImages_!=null) intermediateImages_.add(intermediateImages);
+        mcMask_.add(mc.getMask());
+        if (parentMC) {
+            testSegMutation(mc, parentMask_, input_, outputLabel, intermediateImages_);
+        } else {
+            for (StructureObject bact : mc.getChildObjects(1, db.getDao(), false)) {
+                testSegMutation(bact, parentMask_, input_, outputLabel, intermediateImages_);
+            }
+        }
+    }
+    
+    public void testSegMutation(StructureObject parent, ArrayList<ImageMask> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
+            Image input = parent.getRawImage(2);
+            ImageMask parentMask = parent.getMask();
+            SpotFluo2D5.debug=true;
+            SpotFluo2D5.displayImages=parentMask_==null;
+            ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
+            ObjectPopulation pop = SpotFluo2D5.run(input, parentMask, 1.5, 2, 5, 1.5, 4, intermediateImages);
+            /*ImageDisplayer disp = new IJImageDisplayer();
+            disp.showImage(input);
+            disp.showImage(pop.getLabelImage());:*/
+            if (parentMask!=null) parentMask_.add(parentMask);
+            if (input_!=null) input_.add(input);
+            if (outputLabel!=null) outputLabel.add(pop.getLabelImage());
+            if (intermediateImages_!=null) intermediateImages_.add(intermediateImages);
     }
     
     static int intervalX = 5;
-    public void testSegMutationsFromXP(int tStart, int tEnd) {
+    public void testSegMutationsFromXP(boolean parentMC, int tStart, int tEnd) {
+        ArrayList<ImageMask> mcMask = new ArrayList<ImageMask>();
         ArrayList<ImageMask> parentMask = new ArrayList<ImageMask>();
         ArrayList<Image> input = new ArrayList<Image>();
         ArrayList<ImageInteger> outputLabel = new ArrayList<ImageInteger>(); 
@@ -96,12 +107,15 @@ public class TestProcessMutations {
         
         for (int t = tStart; t<tEnd; ++t) {
             logger.debug("SEG MUT: time: {}", t);
-            testSegMutationsFromXP(t, parentMask, input, outputLabel, intermediateImages);
+            testSegMutationsFromXP(parentMC, t, mcMask, parentMask, input, outputLabel, intermediateImages);
         }
         
         int xSize = 0;
         int ySize = 0;
-        for (ImageMask m : parentMask) {
+        HashSet<ImageMask> mcMaskUnique = new HashSet<ImageMask>();
+        mcMaskUnique.addAll(mcMask);
+        logger.debug("number of bacteries: {}, number of distinct microchannels: {}", parentMask.size(), mcMaskUnique.size());
+        for (ImageMask m : mcMaskUnique) {
             if (ySize<m.getSizeY()) ySize = m.getSizeY();
             xSize+=intervalX+m.getSizeX();
         }
@@ -111,11 +125,16 @@ public class TestProcessMutations {
         ArrayList<Image> intermediateImagesList = new ArrayList<Image>();
         for (int i = 0; i<intermediateImages.get(0).size(); ++i) intermediateImagesList.add(Image.createEmptyImage(intermediateImages.get(0).get(i).getName(), intermediateImages.get(0).get(i), new BlankMask("", xSize, ySize, intermediateImages.get(0).get(i).getSizeZ(), 0, 0, 0, 1, 1)));
         BoundingBox offset = new BoundingBox(0, 0, 0);
+        ImageMask lastMask = mcMask.get(0);
         for (int i = 0; i<parentMask.size(); ++i) {
-            pasteImage(input.get(i), inputPaste, offset);
-            pasteImage(outputLabel.get(i), outputLabelPaste, offset);
-            for (int interIdx = 0; interIdx<intermediateImages.get(i).size(); ++interIdx) pasteImage(intermediateImages.get(i).get(interIdx), intermediateImagesList.get(interIdx), offset);
-            offset.translate(parentMask.get(i).getSizeX()+intervalX ,0 , 0);
+            if (!mcMask.get(i).equals(lastMask)) offset.translate(mcMask.get(i).getSizeX()+intervalX , 0, 0);
+            BoundingBox localOffset= parentMC? offset : parentMask.get(i).getBoundingBox().translate(offset.getxMin(), 0, 0);
+            pasteImage(input.get(i), inputPaste, localOffset);
+            pasteImage(outputLabel.get(i), outputLabelPaste, localOffset);
+            for (int interIdx = 0; interIdx<intermediateImages.get(i).size(); ++interIdx) pasteImage(intermediateImages.get(i).get(interIdx), intermediateImagesList.get(interIdx), localOffset);
+            
+            lastMask = mcMask.get(i);
+            
         }
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(inputPaste);

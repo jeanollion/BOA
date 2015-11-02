@@ -86,7 +86,9 @@ public class TestProcessBacteria {
         //t.subsetTimePoints(595, 630, "/data/Images/Fluo/test", "/data/Images/Fluo/testsub595-630");
         //t.testRotation();
         //t.testSegBacteries();
-        t.testSegBacteriesFromXP();
+        //t.testSegBacteriesFromXP();
+        t.subsetTimePoints(0, 15, "/home/jollion/Documents/LJP/DataLJP/testsub60", "/home/jollion/Documents/LJP/DataLJP/testsub15");
+
         //t.testSegBactAllTimes();
         //t.runSegmentationBacteriaOnSubsetofDBXP(569, 630);
         //t.process(0, false);
@@ -145,9 +147,9 @@ public class TestProcessBacteria {
         }
         Image[][] imageTC = new Image[tEnd-tStart][1];
         for (int i = tStart; i<tEnd; ++i) imageTC[i-tStart][0] = xp.getMicroscopyField(0).getInputImages().getImage(0, i);
-        ImageWriter.writeToFile(outputDir, "imagesTest_REF", ImageFormat.OMETIF, imageTC);
+        ImageWriter.writeToFile(outputDir, "subset_REF", ImageFormat.TIF, imageTC);
         for (int i = tStart; i<tEnd; ++i) imageTC[i-tStart][0] = xp.getMicroscopyField(0).getInputImages().getImage(1, i);
-        ImageWriter.writeToFile(outputDir, "imagesTest", ImageFormat.OMETIF, imageTC);
+        ImageWriter.writeToFile(outputDir, "subset", ImageFormat.TIF, imageTC);
     }
     
     public void testRotation() {

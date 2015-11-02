@@ -79,7 +79,7 @@ public class BacteriesFluo2D implements Segmenter {
         //Image filtered = IJFFTBandPass.bandPass(input, 3, 20).setName("fft");
         ImageFloat smoothed = ImageFeatures.gaussianSmooth(input, smoothScale, smoothScale, false).setName("smoothed");
         //Image filtered = smoothed;
-        ImageFloat dog = ImageFeatures.differenceOfGaussians(smoothed, 0, dogScale, 1, false, false).setName("DoG");
+        ImageFloat dog = ImageFeatures.differenceOfGaussians(smoothed, 0, dogScale, 1, false).setName("DoG");
         //Image dog = fft;
         ImageFloat log = ImageFeatures.getLaplacian(dog, logScale, true, false).setName("LoG");
         Image hess = ImageFeatures.getHessian(dog, logScale, false)[0].setName("hess");

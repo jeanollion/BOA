@@ -133,26 +133,27 @@ public class ImageOperations {
         }
     }
 
-    public static Image addImage(Image source1, Image source2, Image output, double coeff) {
+    public static <T extends Image> T addImage(Image source1, Image source2, T output, double coeff) {
         if (!source1.sameSize(source2)) throw new IllegalArgumentException("sources images have different sizes");
-        if (output==null) output = Image.createEmptyImage(source1.getName()+" + "+coeff+" x "+source2.getName(), source1, source1);
+        if (output==null) output = (T)Image.createEmptyImage(source1.getName()+" + "+coeff+" x "+source2.getName(), source1, source1);
         else if (!output.sameSize(source1)) output = Image.createEmptyImage(source1.getName()+" + "+coeff+" x "+source2.getName(), output, source1);
+        float round = output instanceof ImageInteger?0.5f:0;
         if (coeff==1) {
             for (int z = 0; z<output.sizeZ; ++z) {
                 for (int xy=0; xy<output.sizeXY; ++xy) {
-                    output.setPixel(xy, z, source1.getPixel(xy, z)+source2.getPixel(xy, z)*coeff);
+                    output.setPixel(xy, z, source1.getPixel(xy, z)+source2.getPixel(xy, z)+round);
                 }
             }
         } else if (coeff==-1) {
             for (int z = 0; z<output.sizeZ; ++z) {
                 for (int xy=0; xy<output.sizeXY; ++xy) {
-                    output.setPixel(xy, z, source1.getPixel(xy, z)-source2.getPixel(xy, z));
+                    output.setPixel(xy, z, source1.getPixel(xy, z)-source2.getPixel(xy, z)+round);
                 }
             }
         } else {
             for (int z = 0; z<output.sizeZ; ++z) {
                 for (int xy=0; xy<output.sizeXY; ++xy) {
-                    output.setPixel(xy, z, source1.getPixel(xy, z)+source2.getPixel(xy, z)*coeff);
+                    output.setPixel(xy, z, source1.getPixel(xy, z)+source2.getPixel(xy, z)*coeff+round);
                 }
             }
         }

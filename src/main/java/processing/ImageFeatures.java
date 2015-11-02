@@ -250,12 +250,12 @@ public class ImageFeatures {
         return res;
     }
     
-    public static ImageFloat differenceOfGaussians(Image image, double scaleXYMin, double scaleXYMax, double ratioScaleZ, boolean trimNegativeValues, boolean overideIfFloat) {
+    public static ImageFloat differenceOfGaussians(Image image, double scaleXYMin, double scaleXYMax, double ratioScaleZ, boolean trimNegativeValues) {
         Image bcg = gaussianSmooth(image, scaleXYMax, scaleXYMax*ratioScaleZ, false);
-        ImageFloat fore = scaleXYMin>0?gaussianSmooth(image, scaleXYMin, scaleXYMin*ratioScaleZ, overideIfFloat):TypeConverter.toFloat(image, null);
-        fore = (ImageFloat)ImageOperations.addImage(fore, bcg, fore, -1);
-        if (trimNegativeValues) ImageOperations.trim(fore, 0, true, true);
-        return fore;
+        Image fore = scaleXYMin>0?gaussianSmooth(image, scaleXYMin, scaleXYMin*ratioScaleZ, false):image;
+        ImageFloat res  = (ImageFloat)ImageOperations.addImage(fore, bcg, bcg, -1);
+        if (trimNegativeValues) ImageOperations.trim(res, 0, true, true);
+        return res;
     }
     
     public static ImageFloat LoG(Image image, double radX, double radZ) {

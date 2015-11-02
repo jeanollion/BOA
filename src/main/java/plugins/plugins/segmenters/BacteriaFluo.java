@@ -100,7 +100,11 @@ public class BacteriaFluo implements Segmenter {
         double hessianThresholdFacto = 1;
         //ImageFloat smoothed = ImageFeatures.gaussianSmooth(input, smoothScale, smoothScale, false).setName("smoothed");
         Image smoothed = Filters.median(input, input, Filters.getNeighborhood(smoothScale, smoothScale, input));
-        ImageFloat dog = ImageFeatures.differenceOfGaussians(smoothed, 0, dogScale, 1, false, false).setName("DoG");
+        ImageFloat dog = ImageFeatures.differenceOfGaussians(smoothed, 0, dogScale, 1, false).setName("DoG");
+        //ImageFloat bckg = ImageFeatures.gaussianSmooth(input, dogScale, dogScale, false);
+        //ImageFloat dog = ImageOperations.addImage(smoothed, bckg, bckg, -1);
+        // TODO : voir si influence du fait que l'on soustrait la gaussienne de l'image déjà debruitée
+
         //Image hessian = ImageFeatures.getHessian(dog, hessianScale, false)[0].setName("hessian");
         if (debug) disp.showImage(dog.duplicate("DoG"));
         //double t0 = IJAutoThresholder.runThresholder(dog, mask, null, AutoThresholder.Method.Otsu, 0);

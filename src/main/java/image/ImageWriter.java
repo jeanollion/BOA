@@ -86,7 +86,7 @@ public class ImageWriter {
      * @param extension the extension of the file that must be compatible with multiple slices, timepoints and channels images. 
      */
     public static void writeToFile(String folderPath, String fileName, ImageFormat extension, Image[][]... imageTC) {
-        if (!extension.getSupportMultipleTimeAndChannel()) throw new IllegalArgumentException("the format does not support multiple time points and channels");
+        //if (!extension.getSupportMultipleTimeAndChannel() && imageTC.length>1 || imageTC[0].length>1) throw new IllegalArgumentException("the format does not support multiple time points and channels");
         try {
             //System.out.println("series:"+imageTC.length);
             for (int s = 0; s<imageTC.length; ++s) logger.trace("ImageWriter: serie #:"+s+ " time points: "+imageTC[s].length+ " channels: "+imageTC[s][0].length);
