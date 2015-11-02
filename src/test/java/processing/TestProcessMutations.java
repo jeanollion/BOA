@@ -51,7 +51,7 @@ public class TestProcessMutations {
         PluginFactory.findPlugins("plugins.plugins");
         TestProcessMutations t = new TestProcessMutations();
         t.init();
-        t.testSegMutationsFromXP(0, 10);
+        t.testSegMutationsFromXP(0, 60);
     }
     public void init() {
         String dbName = "testFluo60";
@@ -77,7 +77,7 @@ public class TestProcessMutations {
         SpotFluo2D5.debug=true;
         SpotFluo2D5.displayImages=parentMask_==null;
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
-        ObjectPopulation pop = SpotFluo2D5.run(input, parentMask, 2, 1, 5, 1.5, 5, intermediateImages);
+        ObjectPopulation pop = SpotFluo2D5.run(input, parentMask, 2, 2, 5, 1.5, 4, intermediateImages);
         /*ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
         disp.showImage(pop.getLabelImage());:*/

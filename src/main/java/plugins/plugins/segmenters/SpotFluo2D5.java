@@ -31,6 +31,7 @@ import image.ImageOperations;
 import image.ImageShort;
 import java.util.ArrayList;
 import plugins.Segmenter;
+import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.thresholders.KappaSigma;
 import processing.Filters;
 import processing.ImageFeatures;
@@ -66,41 +67,50 @@ public class SpotFluo2D5 implements Segmenter {
             ObjectPopulation obj = runPlane(plane, mask);
         }
         */
+        // autre stratégies: plan par plan puis choix entre les spots qui se recouvrent
+        // smooth puis projection maximale
         Image avg = ImageOperations.meanZProjection(input);
         return runPlane(avg, mask, smoothRadius, laplacianRadius, minSpotSize, thresholdHigh, thresholdLow, intermediateImages);
     }
     
     public static ObjectPopulation runPlane(Image input, ImageMask mask, double smoothRadius, double laplacianRadius, int minSpotSize, double thresholdSeeds, double thresholdLow, ArrayList<Image> intermediateImages) {
         IJImageDisplayer disp = debug?new IJImageDisplayer():null;
-        double hessianRadius = 2;
+        double hessianRadius = 1;
+        // problem des pixels aveugles: appliquer un median 1 (ou 2) avant translation & rotation ? 
+        //IJSubtractBackground.filter(input, 5, false, false, false, false);
         Image smoothed = Filters.median(input, null, Filters.getNeighborhood(smoothRadius, smoothRadius, input));
-        //Image lom = ImageFeatures.getLaplacian(smoothed, laplacianRadius, true, false);
-        Image topHat = Filters.tophat(smoothed, null, Filters.getNeighborhood(4, 4, input));
+        //Image smoothed = ImageFeatures.gaussianSmooth(input, smoothRadius, smoothRadius, false);
+        //Image contrasted = ImageFeatures.getLaplacian(smoothed, laplacianRadius, true, false);
+        Image contrasted = Filters.tophat(smoothed, null, Filters.getNeighborhood(4, 3, input));
+        //contrasted = ImageFeatures.getLaplacian(contrasted, laplacianRadius, true, true);
         // scale lom according to background noise
         double[] meanSigma = new double[2];
-        //KappaSigma.kappaSigmaThreshold(lom, mask, 3, 2, meanSigma);
-        //ImageOperations.affineOperation(lom, lom, 1d/meanSigma[1], -meanSigma[0]);
-        //logger.debug("kappaSigma lom: mean: {}, sigma: {}", meanSigma[0], meanSigma[1]);
-        KappaSigma.kappaSigmaThreshold(topHat, mask, 3, 2, meanSigma);
-        ImageOperations.affineOperation(topHat, topHat, 1d/meanSigma[1], -meanSigma[0]);
+        KappaSigma.kappaSigmaThreshold(contrasted, mask, 3, 2, meanSigma);
+        ImageOperations.affineOperation(contrasted, contrasted, 1d/meanSigma[1], -meanSigma[0]);
         logger.debug("kappaSigma topHat: mean: {}, sigma: {}", meanSigma[0], meanSigma[1]);
-        Image[] hessMaxDet = ImageFeatures.getHessianMaxAndDeterminant(topHat, hessianRadius, false);
-        Image detPerIntensity = ImageOperations.multiply(topHat, hessMaxDet[1], null).setName("det x int");
+        Image[] hessMaxDet = ImageFeatures.getHessianMaxAndDeterminant(contrasted, hessianRadius, false); hessMaxDet[0].setName("hessian"); hessMaxDet[1].setName("hessianDet");
+        Image detPerIntensity = ImageOperations.multiply(contrasted, hessMaxDet[1], null).setName("det x int");
         //Image grad = ImageFeatures.getGradientMagnitude(lom, hessianRadius, false);
         if (displayImages) {
             disp.showImage(input.setName("input"));
-            disp.showImage(smoothed.setName("smoothed"));
-            disp.showImage(topHat.setName("topHat"));
+            //disp.showImage(smoothed.setName("smoothed"));
+            disp.showImage(contrasted.setName("topHat"));
             //disp.showImage(lom.setName("laplacian"));
-            disp.showImage(hessMaxDet[0].setName("hessian"));
-            disp.showImage(hessMaxDet[1].setName("hessianDet"));
+            disp.showImage(hessMaxDet[0]);
+            disp.showImage(hessMaxDet[1]);
             disp.showImage(detPerIntensity);
             //disp.showImage(grad);
         }
-        
+        if (intermediateImages!=null) {
+            intermediateImages.add(input.setName("input"));
+            intermediateImages.add(contrasted);
+            intermediateImages.add(hessMaxDet[0]);
+            intermediateImages.add(hessMaxDet[1]);
+            intermediateImages.add(detPerIntensity);
+        }
         ImageByte seeds = Filters.localExtrema(detPerIntensity, null, true, thresholdSeeds, Filters.getNeighborhood(1, 1, input));
         
-        ObjectPopulation pop =  watershed(hessMaxDet[0], mask, seeds, false, new MultiplePropagationCriteria(new ThresholdPropagationOnWatershedMap(0), new ThresholdPropagation(topHat, thresholdLow, true)), new SizeFusionCriterion(minSpotSize));
+        ObjectPopulation pop =  watershed(hessMaxDet[0], mask, seeds, false, new MultiplePropagationCriteria(new ThresholdPropagationOnWatershedMap(0), new ThresholdPropagation(contrasted, thresholdLow, true)), new SizeFusionCriterion(minSpotSize));
         //ObjectPopulation pop =  WatershedTransform.watershed(grad, mask, seeds, false, new WatershedTransform.MonotonalPropagation(), new WatershedTransform.SizeFusionCriterion(minSpotSize));
         
         pop.filter(new ObjectPopulation.RemoveFlatObjects(input));
