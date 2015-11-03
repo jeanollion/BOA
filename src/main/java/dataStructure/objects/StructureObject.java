@@ -463,7 +463,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public BoundingBox getBounds() {return getObject().getBounds();}
     protected void createObjectContainer() {this.objectContainer=object.getObjectContainer(this);}
     public void updateObjectContainer(){
-        //logger.trace("updating object for: {} was modified? {} flag: {}", this, objectModified, flag);
+        logger.debug("updating object for: {}, container null? {}, was modified? {}, flag: {}", this,objectContainer==null, objectModified, flag);
         if (objectContainer==null) {
             createObjectContainer();
             objectContainer.updateObject();

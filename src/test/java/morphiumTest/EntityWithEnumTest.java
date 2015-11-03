@@ -28,7 +28,7 @@ import utils.MorphiumUtils;
  * @author jollion
  */
 public class EntityWithEnumTest {
-    @Test
+    //@Test
     public void updateEnumTest() {
         Morphium m = MorphiumUtils.createMorphium("testUpdateEnum");
         m.clearCollection(EntityWithEnum.class);

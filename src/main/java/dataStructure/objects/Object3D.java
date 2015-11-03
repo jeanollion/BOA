@@ -88,7 +88,7 @@ public class Object3D {
      * 
      * @return an image conatining only the object: its bounds are the one of the object and pixel values >0 where the objects has a voxel. The offset of the image is this offset of the object. 
      */
-    public ImageInteger getMask() {
+    public synchronized ImageInteger getMask() {
         if (mask==null && voxels!=null) createMask();
         return mask;
     }
@@ -103,7 +103,7 @@ public class Object3D {
         return res;
     }
     
-    public ArrayList<Voxel> getVoxels() {
+    public synchronized ArrayList<Voxel> getVoxels() {
         if (voxels==null) createVoxels();
         return voxels;
     }
@@ -111,10 +111,9 @@ public class Object3D {
     protected void createBoundsFromVoxels() {
         bounds = new BoundingBox();
         for (Voxel v : voxels) bounds.expand(v);
-        //logger.trace("create bounds from voxels: {}", bounds);
     }
 
-    public BoundingBox getBounds() {
+    public synchronized BoundingBox getBounds() {
         if (bounds==null) {
             if (mask!=null) bounds=mask.getBoundingBox();
             else if (voxels!=null) createBoundsFromVoxels();

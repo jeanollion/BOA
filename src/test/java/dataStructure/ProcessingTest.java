@@ -224,7 +224,7 @@ public class ProcessingTest {
         r2.setPreviousInTrack(r, true);
         r3.setPreviousInTrack(r2, true);
         dao.store(true, r, r2, r3);
-        MorphiumUtils.waitForWrites(m);
+        dao.waiteForWrites();
         MorphiumUtils.addDereferencingListeners(m, dao, xpDAO);
         r2 = dao.getObject(r2.getId());
         r = dao.getObject(r.getId());
@@ -287,7 +287,7 @@ public class ProcessingTest {
         ArrayList<StructureObject> rootTrack = xp.getMicroscopyField(0).createRootObjects();
         assertEquals("root object creation: number of objects", 3, rootTrack.size());
         Processor.processAndTrackStructures(xp, dao);
-
+        dao.waiteForWrites();
         dao.clearCache();
 
         StructureObject rootFetch = dao.getRoot(xp.getMicroscopyField(0).getName(), 0);

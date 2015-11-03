@@ -128,7 +128,7 @@ public class SimpleEntityTest {
     public synchronized static void incrementMassCounter() {
         massInsertCount++;
     }
-    @Test
+    //@Test
     public void morphiumMassInsertTest() {
         if (!MorphiumSingleton.isConfigured()) configure();
         Morphium morphium = MorphiumSingleton.get();

@@ -93,6 +93,7 @@ public class ObjectDAO extends DAO<StructureObject>{
     }
     
     public void clearCache() {
+        this.waiteForWrites();
         this.idCache=new HashMap<ObjectId, StructureObject>();
     }
     
@@ -201,6 +202,7 @@ public class ObjectDAO extends DAO<StructureObject>{
             if (updateTrackAttributes) Collections.sort(objects, Utils.getStructureObjectComparator());
         }
         agent.addJob(objects, updateTrackAttributes);
+        //storeNow(objects, updateTrackAttributes);
     }
     public void storeNow(final List<StructureObject> objects, final boolean updateTrackAttributes) {
         if (objects==null) return;
@@ -215,8 +217,19 @@ public class ObjectDAO extends DAO<StructureObject>{
                 o.getParentTrackHeadId();
             }
             if (o.getPrevious()!=null && o.getPrevious().id==null) {
-                logger.error("previous unstored: object: idx: {} {} previous: {}, storing object with previous as null",objects.indexOf(o.getPrevious()), o, o.getPrevious());
-                o.previous=null;
+                logger.error("previous unstored: object: idx: {} {} previous: {}",objects.indexOf(o.getPrevious()), o, o.getPrevious());
+                throw new Error("Previous unstored object");
+                //o.previous=null;
+                /*o.isTrackHead=true;
+                o.trackHeadId=null;
+                o.trackHead=null;
+                o.getTrackHeadId();*/
+                //store(o.getPrevious());
+            }
+            if (o.getParent()!=null && o.getParent().id==null) {
+                logger.error("parent unstored: object: idx: {} {} parent: {}",objects.indexOf(o.getParent()), o, o.getParent());
+                throw new Error("Parent unstored object");                
+                //o.parent=null;
                 /*o.isTrackHead=true;
                 o.trackHeadId=null;
                 o.trackHead=null;

@@ -93,8 +93,8 @@ public class TestTrackStructure {
         ArrayList<StructureObject> toStore = new ArrayList<StructureObject>();
         for (int i = 0; i<bTM.length; ++i) toStore.addAll(Arrays.asList(bTM[i]));
         dao.store(toStore, true, false);
-        m.clearCachefor(StructureObject.class);
-
+        dao.waiteForWrites();
+        dao.clearCache();
         // retrive tracks head for microChannels
         ArrayList<StructureObject> mcHeads = dao.getTrackHeads(rootT[0], 0);
         assertEquals("number of heads for microChannels", 1, mcHeads.size());
