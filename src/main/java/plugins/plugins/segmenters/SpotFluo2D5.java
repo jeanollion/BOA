@@ -21,11 +21,15 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
+import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.ObjectPopulation.Overlap;
 import dataStructure.objects.StructureObjectProcessing;
 import image.Image;
 import image.ImageByte;
 import image.ImageFloat;
+import image.ImageInteger;
+import image.ImageLabeller;
 import image.ImageMask;
 import image.ImageOperations;
 import image.ImageShort;
@@ -34,6 +38,7 @@ import plugins.Segmenter;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.thresholders.KappaSigma;
 import processing.Filters;
+import processing.IJFFTBandPass;
 import processing.ImageFeatures;
 import processing.WatershedTransform;
 import processing.WatershedTransform.MultiplePropagationCriteria;
@@ -62,15 +67,22 @@ public class SpotFluo2D5 implements Segmenter {
     
     public static ObjectPopulation run(Image input, ImageMask mask, double smoothRadius, double laplacianRadius, int minSpotSize, double thresholdHigh, double thresholdLow, ArrayList<Image> intermediateImages) {
         // tester sur average, max, ou plan par plan
-        /*ArrayList<Image> planes = input.splitZPlanes();
+        ArrayList<Image> planes = input.splitZPlanes();
+        ArrayList<ImageInteger> labelImages = new ArrayList<ImageInteger>(planes.size());
         for (Image plane : planes) {
-            ObjectPopulation obj = runPlane(plane, mask);
+            ObjectPopulation obj = runPlane(plane, mask, smoothRadius, laplacianRadius, minSpotSize, thresholdHigh, thresholdLow, intermediateImages);
+            if (true) return obj;
+            if (obj!=null && !obj.getObjects().isEmpty()) labelImages.add(obj.getLabelImage());
         }
-        */
+        // combine: 
+        ImageInteger im = labelImages.remove(labelImages.size()-1);
+        for (ImageInteger imToCombine : labelImages) ImageOperations.and(im, imToCombine, im);
+        return new ObjectPopulation(new ArrayList<Object3D>(ImageLabeller.labelImageList(im)), im);
+        
         // autre stratégies: plan par plan puis choix entre les spots qui se recouvrent
         // smooth puis projection maximale
-        Image avg = ImageOperations.meanZProjection(input);
-        return runPlane(avg, mask, smoothRadius, laplacianRadius, minSpotSize, thresholdHigh, thresholdLow, intermediateImages);
+        /*Image avg = ImageOperations.meanZProjection(input);
+        return runPlane(avg, mask, smoothRadius, laplacianRadius, minSpotSize, thresholdHigh, thresholdLow, intermediateImages);*/
     }
     
     public static ObjectPopulation runPlane(Image input, ImageMask mask, double smoothRadius, double laplacianRadius, int minSpotSize, double thresholdSeeds, double thresholdLow, ArrayList<Image> intermediateImages) {
@@ -78,18 +90,21 @@ public class SpotFluo2D5 implements Segmenter {
         double hessianRadius = 2;
         // problem des pixels aveugles: appliquer un median 1 (ou 2) avant translation & rotation ? 
         //IJSubtractBackground.filter(input, 5, false, false, false, false);
-        Image smoothed = Filters.median(input, null, Filters.getNeighborhood(smoothRadius, smoothRadius, input));
-        //Image smoothed = ImageFeatures.gaussianSmooth(input, smoothRadius, smoothRadius, false);
-        ImageFloat bckg = ImageFeatures.gaussianSmooth(input, 10, 10, false);
-        smoothed = ImageOperations.addImage(smoothed, bckg, bckg, -1).setName("smoothed");
+        //Image smoothed = Filters.median(input, null, Filters.getNeighborhood(smoothRadius, smoothRadius, input));
+        //Image smoothed = IJFFTBandPass.bandPass(input, 3, 10).setName("bandPass filter");
+        Image smoothed = ImageFeatures.gaussianSmooth(input, smoothRadius, smoothRadius, false).setName("smoothed");
+        //ImageFloat bckg = ImageFeatures.gaussianSmooth(input, 5, 5, false);
+        //smoothed = ImageOperations.addImage(smoothed, bckg, bckg, -1).setName("smoothed");
         
-        //Image contrasted = ImageFeatures.getLaplacian(smoothed, laplacianRadius, true, false);
-        bckg = ImageFeatures.gaussianSmooth(smoothed, 4, 1, false);
-        Image contrasted = ImageOperations.addImage(smoothed, bckg, bckg, -1).setName("DoG");
+        Image contrasted = ImageFeatures.getLaplacian(smoothed, laplacianRadius, true, false);
+        //bckg = ImageFeatures.gaussianSmooth(smoothed, 4, 1, false);
+        //Image contrasted = ImageOperations.addImage(smoothed, bckg, bckg, -1).setName("DoG");
         Image topHat = Filters.tophat(smoothed, null, Filters.getNeighborhood(4, 3, input));
         //contrasted = ImageFeatures.getLaplacian(contrasted, laplacianRadius, true, true);
         // scale lom according to background noise
         double[] meanSigma = new double[2];
+        KappaSigma.kappaSigmaThreshold(smoothed, mask, 2, 3, meanSigma);
+        ImageOperations.affineOperation(smoothed, smoothed, 1d/meanSigma[1], -meanSigma[0]);
         KappaSigma.kappaSigmaThreshold(contrasted, mask, 2, 3, meanSigma);
         ImageOperations.affineOperation(contrasted, contrasted, 1d/meanSigma[1], -meanSigma[0]);
         KappaSigma.kappaSigmaThreshold(smoothed, mask, 2, 3, meanSigma);
@@ -116,12 +131,13 @@ public class SpotFluo2D5 implements Segmenter {
             intermediateImages.add(contrasted);
             intermediateImages.add(topHat);
             intermediateImages.add(hessMaxDet[0]);
-            intermediateImages.add(hessMaxDet[1]);
             
             //intermediateImages.add(detPerIntensity);
         }
-        ImageByte seeds = Filters.localExtrema(detPerIntensity, null, true, thresholdSeeds, Filters.getNeighborhood(1, 1, input));
-        
+        ImageByte seeds = Filters.localExtrema(contrasted, null, true, thresholdSeeds, Filters.getNeighborhood(1, 1, input));
+        //ImageByte seedsHess = Filters.localExtrema(hessMaxDet[0], null, false, thresholdSeeds, Filters.getNeighborhood(1, 1, input));
+        //ImageByte seedsTH = Filters.localExtrema(topHat, null, true, thresholdSeeds, Filters.getNeighborhood(1, 1, input));
+        //ObjectPopulation seedPop = new ObjectPopulation(new ArrayList<Object3D>(ImageLabeller.labelImageList(seedsLap)), seedsLap).filter(new Overlap(seedsTH, thresholdSeeds));
         ObjectPopulation pop =  watershed(hessMaxDet[0], mask, seeds, false, new MultiplePropagationCriteria(new ThresholdPropagationOnWatershedMap(0), new ThresholdPropagation(contrasted, thresholdLow, true)), new SizeFusionCriterion(minSpotSize));
         //ObjectPopulation pop =  WatershedTransform.watershed(grad, mask, seeds, false, new WatershedTransform.MonotonalPropagation(), new WatershedTransform.SizeFusionCriterion(minSpotSize));
         

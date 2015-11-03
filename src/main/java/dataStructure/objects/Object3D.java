@@ -1,5 +1,6 @@
 package dataStructure.objects;
 
+import com.google.common.collect.Sets;
 import dataStructure.containers.ImageDAO;
 import dataStructure.containers.ObjectContainerImage;
 import dataStructure.containers.ObjectContainer;
@@ -13,6 +14,9 @@ import image.ImageByte;
 import image.ImageInteger;
 import image.ImageProperties;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -88,8 +92,14 @@ public class Object3D {
      * 
      * @return an image conatining only the object: its bounds are the one of the object and pixel values >0 where the objects has a voxel. The offset of the image is this offset of the object. 
      */
-    public synchronized ImageInteger getMask() {
-        if (mask==null && voxels!=null) createMask();
+    public ImageInteger getMask() {
+        if (mask==null && voxels!=null) {
+            synchronized(this) { // "Double-Checked Locking"
+                if (mask==null && voxels!=null) {
+                    createMask();
+                }
+            }
+        }
         return mask;
     }
     /**
@@ -103,8 +113,14 @@ public class Object3D {
         return res;
     }
     
-    public synchronized ArrayList<Voxel> getVoxels() {
-        if (voxels==null) createVoxels();
+    public ArrayList<Voxel> getVoxels() {
+        if (voxels==null) {
+            synchronized(this) { // "Double-Checked Locking"
+                if (voxels==null) {
+                    createVoxels();
+                }
+            }
+        }
         return voxels;
     }
     
@@ -113,12 +129,21 @@ public class Object3D {
         for (Voxel v : voxels) bounds.expand(v);
     }
 
-    public synchronized BoundingBox getBounds() {
+    public BoundingBox getBounds() {
         if (bounds==null) {
-            if (mask!=null) bounds=mask.getBoundingBox();
-            else if (voxels!=null) createBoundsFromVoxels();
+            synchronized(this) { // "Double-Checked Locking"
+                if (bounds==null) {
+                    if (mask!=null) bounds=mask.getBoundingBox();
+                    else if (voxels!=null) createBoundsFromVoxels();
+                }
+            }
         }
         return bounds;
+    }
+    
+    public Set<Voxel> getIntersection(Object3D other) {
+        if (!this.getBounds().hasIntersection(other.getBounds())) return Collections.emptySet();
+        else return Sets.intersection(Sets.newHashSet(getVoxels()), Sets.newHashSet(other.getVoxels()));
     }
     
     public void merge(Object3D other) {

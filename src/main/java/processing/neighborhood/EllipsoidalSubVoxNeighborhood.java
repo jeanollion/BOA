@@ -26,7 +26,7 @@ import java.util.Comparator;
  *
  * @author jollion
  */
-public class EllipsoidalSubVoxNeighborhood implements Neighborhood {
+public class EllipsoidalSubVoxNeighborhood {
     Coordinate[] coords;
     double radius, radiusZ;
     boolean is3D;
@@ -117,7 +117,8 @@ public class EllipsoidalSubVoxNeighborhood implements Neighborhood {
         for (int i = 0; i<count; ++i) distances[i] = (float)coords[i].distance;
     }
     
-    @Override public void setPixels(int x, int y, int z, Image image) {
+    //@Override 
+    public void setPixels(int x, int y, int z, Image image) {
         valueCount=0;
         int xx, yy;
         if (is3D) { 
@@ -147,24 +148,30 @@ public class EllipsoidalSubVoxNeighborhood implements Neighborhood {
         }
     }
     
-    @Override public int getSize() {return coords.length;}
+    //@Override 
+    public int getSize() {return coords.length;}
 
-    @Override public float[] getPixelValues() {
+    //@Override 
+    public float[] getPixelValues() {
         return values;
     }
 
-    @Override public int getValueCount() {
+    //@Override 
+    public int getValueCount() {
         return valueCount;
     }
-    @Override public float[] getDistancesToCenter() {
+    //@Override 
+    public float[] getDistancesToCenter() {
         return distances;
     }
 
-    @Override public double getRadiusXY() {
+    //@Override 
+    public double getRadiusXY() {
         return radius;
     }
 
-    @Override public double getRadiusZ() {
+    //@Override 
+    public double getRadiusZ() {
         return radiusZ;
     }
     

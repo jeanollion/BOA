@@ -62,12 +62,14 @@ public class ParameterUtils {
     }
     
     public static MicroscopyField getMicroscopyFiedl(Parameter p) {
+        logger.debug("get microscopy field from tree... {}", p.getName());
         if (p instanceof MicroscopyField) {
             return (MicroscopyField) p;
         }
         Parameter parent = p;
         while (parent.getParent() != null) {
             parent = (Parameter) parent.getParent();
+            logger.debug("get microscopy field from tree... {}", parent.getName());
             if (parent instanceof MicroscopyField) {
                 return (MicroscopyField) parent;
             }
@@ -80,9 +82,10 @@ public class ParameterUtils {
         if (f!=null) {
             return f.getTimePointNumber();
         } else {
+            logger.warn("parameter: {}, no microscopy Field found in tree to get timePoint number", p.getName());
             Experiment xp = getExperiment(p);
             if (xp==null) {
-                logger.warn("parameter: {}, no experient found in tree to get timePoint number", p.getName());
+                logger.warn("parameter: {}, no experiment found in tree to get timePoint number", p.getName());
                 return 0;
             }
             else return xp.getTimePointNumber();

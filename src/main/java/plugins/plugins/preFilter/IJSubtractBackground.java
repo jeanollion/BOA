@@ -18,6 +18,7 @@
 package plugins.plugins.preFilter;
 
 import configuration.parameters.BooleanParameter;
+import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
@@ -40,7 +41,7 @@ public class IJSubtractBackground implements PreFilter, TransformationTimeIndepe
     BooleanParameter imageType = new BooleanParameter("Image Background", "Dark", "Light", true);
     BooleanParameter smooth = new BooleanParameter("Perform Smoothing", true);
     BooleanParameter corners = new BooleanParameter("Correct corners", true);
-    NumberParameter radius = new NumberParameter("Radius", 2, 20);
+    NumberParameter radius = new BoundedNumberParameter("Radius", 1, 20, 1, null);
     Parameter[] parameters = new Parameter[]{radius, method, imageType, smooth, corners};
     
     public IJSubtractBackground(double radius, boolean doSlidingParaboloid, boolean lightBackground, boolean smooth, boolean corners) {

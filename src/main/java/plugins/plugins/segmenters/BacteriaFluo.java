@@ -26,6 +26,7 @@ import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObjectProcessing;
 import ij.process.AutoThresholder;
+import image.BlankMask;
 import image.Image;
 import image.ImageByte;
 import image.ImageFloat;
@@ -50,7 +51,7 @@ import utils.Utils;
  */
 public class BacteriaFluo implements Segmenter {
     public static boolean debug = false;
-    NumberParameter splitThreshold = new BoundedNumberParameter("Split Threshold", 4, 0.10, 0, 1);
+    NumberParameter splitThreshold = new BoundedNumberParameter("Split Threshold", 4, 0.20, 0, 1);
     NumberParameter minSize = new BoundedNumberParameter("Minimum size", 0, 100, 50, null);
     NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 5, 0, null);
     NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 3, 1, 5);
@@ -171,28 +172,30 @@ public class BacteriaFluo implements Segmenter {
         
     }
     
-    public static double[] getMeanAndSigma(Image hessian, ImageMask mask, double thld) {
+    public static double[] getMeanAndSigma(Image image, ImageMask mask, double thld) {
         double mean = 0;
         double count = 0;
-        double values2=0;
+        double values2 = 0;
         double value;
-        for (int z = 0; z<hessian.getSizeZ(); ++z) {
-            for (int xy=0; xy<hessian.getSizeXY(); ++xy) {
+        for (int z = 0; z < image.getSizeZ(); ++z) {
+            for (int xy = 0; xy < image.getSizeXY(); ++xy) {
                 if (mask.insideMask(xy, z)) {
-                    value = hessian.getPixel(xy, z);
-                    if (value<=thld) {
-                        mean+=value;
+                    value = image.getPixel(xy, z);
+                    if (value <= thld) {
+                        mean += value;
                         count++;
-                        values2+=value*value;
+                        values2 += value * value;
                     }
                 }
             }
         }
-        if (count!=0) {
-            mean/=count;
-            values2/=count;
-            return new double[]{mean, Math.sqrt(values2-mean*mean)};
-        } else return new double[]{0, 0};
+        if (count != 0) {
+            mean /= count;
+            values2 /= count;
+            return new double[]{mean, Math.sqrt(values2 - mean * mean)};
+        } else {
+            return new double[]{0, 0};
+        }
     }
 
     public Parameter[] getParameters() {

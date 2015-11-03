@@ -18,6 +18,7 @@
 package processing.neighborhood;
 
 import static core.Processor.logger;
+import dataStructure.objects.Voxel;
 import image.Image;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -44,8 +45,8 @@ public class EllipsoidalNeighborhood implements Neighborhood {
     public EllipsoidalNeighborhood(double radius, double radiusZ, boolean excludeCenter) {
         this.radius=radius;
         this.radiusZ=radiusZ;
-        is3D=true;
-        double r = (double) radius / radiusZ;
+        is3D=radiusZ>0;
+        double r = radiusZ>0 ? (double) radius / radiusZ : 0;
         int rad = (int) (radius + 0.5f);
         int radZ = (int) (radiusZ + 0.5f);
         int[][] temp = new int[3][(2 * rad + 1) * (2 * rad + 1) * (2 * radZ + 1)];
@@ -131,6 +132,7 @@ public class EllipsoidalNeighborhood implements Neighborhood {
             distances[i] = tempDist[indicies[i]];
         }
     }
+    @Override public void setPixels(Voxel v, Image image) {setPixels(v.x, v.z, v.z, image);}
     
     @Override public void setPixels(int x, int y, int z, Image image) {
         valueCount=0;

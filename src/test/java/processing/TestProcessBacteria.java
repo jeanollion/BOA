@@ -24,6 +24,7 @@ import boa.gui.objects.DBConfiguration;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
+import dataStructure.configuration.Experiment.ImportImageMethod;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
@@ -53,6 +54,7 @@ import plugins.PluginFactory;
 import plugins.Segmenter;
 import plugins.plugins.ObjectSplitter.WatershedObjectSplitter;
 import plugins.plugins.preFilter.IJSubtractBackground;
+import plugins.plugins.preFilter.Median;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.BacteriesFluo2D;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
@@ -64,6 +66,7 @@ import plugins.plugins.transformations.AutoRotationXY;
 import plugins.plugins.transformations.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
 import plugins.plugins.transformations.ImageStabilizerXY;
+import plugins.plugins.transformations.SelectBestFocusPlane;
 import processing.ImageTransformation.InterpolationScheme;
 import testPlugins.dummyPlugins.DummySegmenter;
 import utils.MorphiumUtils;
@@ -87,7 +90,7 @@ public class TestProcessBacteria {
         //t.testRotation();
         //t.testSegBacteries();
         //t.testSegBacteriesFromXP();
-        t.subsetTimePoints(0, 15, "/home/jollion/Documents/LJP/DataLJP/testsub60", "/home/jollion/Documents/LJP/DataLJP/testsub15");
+        t.subsetTimePoints(0, 60, "/data/Images/Fluo/films1510/63me120r-14102015-LR62R1-lbiptg100x_1", "/data/Images/Fluo/films1510/63me120r-14102015-LR62R1-lbiptg100x_1_sub60", "champ1");
 
         //t.testSegBactAllTimes();
         //t.runSegmentationBacteriaOnSubsetofDBXP(569, 630);
@@ -99,7 +102,8 @@ public class TestProcessBacteria {
     public void setUpXp(boolean preProcessing, String outputDir) {
         PluginFactory.findPlugins("plugins.plugins");
         xp = new Experiment("testXP");
-        xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
+        //xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
+        xp.setImportImageMethod(Experiment.ImportImageMethod.SINGLE_FILE);
         xp.getChannelImages().insert(new ChannelImage("trans", "_REF"), new ChannelImage("fluo", ""));
         xp.setOutputImageDirectory(outputDir);
         File f =  new File(outputDir); f.mkdirs(); //deleteDirectory(f);
@@ -109,14 +113,15 @@ public class TestProcessBacteria {
         xp.getStructures().insert(mc, bacteria, mutation);
         mc.getProcessingChain().setSegmenter(new MicroChannelFluo2D());
         bacteria.getProcessingChain().setSegmenter(new BacteriaFluo());
-        //bacteria.getProcessingChain().setSegmenter(new BacteriesFluo2D());
         mc.setTracker(new ObjectIdxTracker());
         bacteria.setTracker(new ClosedMicrochannelTracker());
         bacteria.setTrackCorrector(new MicroChannelBacteriaTrackCorrector());
         if (preProcessing) {// preProcessing 
+            xp.getPreProcessingTemplate().addTransformation(0, null, new SelectBestFocusPlane(3));
+            xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1.5, 0));
             xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
             xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
-            xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
+            //xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
             xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannels2D());
             xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY().setReferenceTimePoint(0));
         }
@@ -135,21 +140,30 @@ public class TestProcessBacteria {
     public void testImport(String inputDir) {
         Processor.importFiles(xp, inputDir); //       /data/Images/Fluo/me121r-1-9-15-lbiptg100x /data/Images/Fluo/test
         //assertEquals("number of fields detected", 1, xp.getMicroscopyFields().getChildCount());
-        logger.info("imported field: name: {} image: timepoint: {} scale xy: {} scale z: {}", xp.getMicroscopyField(0).getName(), xp.getMicroscopyField(0).getTimePointNumber(), xp.getMicroscopyField(0).getScaleXY(), xp.getMicroscopyField(0).getScaleZ());
+        logger.info("total microscopy field count: {}", xp.getMicrocopyFieldCount());
+        //logger.info("imported field: name: {} image: timepoint: {} scale xy: {} scale z: {}", xp.getMicroscopyField(0).getName(), xp.getMicroscopyField(0).getTimePointNumber(), xp.getMicroscopyField(0).getScaleXY(), xp.getMicroscopyField(0).getScaleZ());
         //ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(xp.getMicroscopyField(0).getImages().getImage(0, 0));
         //ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(xp.getMicroscopyField(0).getImages().getImage(0, 1));
     }
     
-    private void subsetTimePoints(int tStart, int tEnd, String inputDir, String outputDir) {
+    private void subsetTimePoints(int tStart, int tEnd, String inputDir, String outputDir, String name) {
         if (xp==null) {
             setUpXp(false, outputDir);
             testImport(inputDir);
         }
-        Image[][] imageTC = new Image[tEnd-tStart][1];
-        for (int i = tStart; i<tEnd; ++i) imageTC[i-tStart][0] = xp.getMicroscopyField(0).getInputImages().getImage(0, i);
-        ImageWriter.writeToFile(outputDir, "subset_REF", ImageFormat.TIF, imageTC);
-        for (int i = tStart; i<tEnd; ++i) imageTC[i-tStart][0] = xp.getMicroscopyField(0).getInputImages().getImage(1, i);
-        ImageWriter.writeToFile(outputDir, "subset", ImageFormat.TIF, imageTC);
+        if (xp.getImportImageMethod().equals(ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD)) {
+            Image[][] imageTC = new Image[tEnd-tStart][1];
+            for (int i = tStart; i<tEnd; ++i) imageTC[i-tStart][0] = xp.getMicroscopyField(0).getInputImages().getImage(0, i);
+            ImageWriter.writeToFile(outputDir, name+"_REF", ImageFormat.OMETIF, imageTC);
+            for (int i = tStart; i<tEnd; ++i) imageTC[i-tStart][0] = xp.getMicroscopyField(0).getInputImages().getImage(1, i);
+            ImageWriter.writeToFile(outputDir, name, ImageFormat.OMETIF, imageTC);
+        } else { // single file
+            Image[][] imageTC = new Image[tEnd-tStart][2];
+            for (int t = tStart; t<tEnd; ++t) {
+                for (int c = 0; c<2; ++c) imageTC[t-tStart][c] = xp.getMicroscopyField(0).getInputImages().getImage(c, t);
+            }
+            ImageWriter.writeToFile(outputDir, name, ImageFormat.OMETIF, imageTC);
+        }
     }
     
     public void testRotation() {

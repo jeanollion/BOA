@@ -612,7 +612,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         String host = this.hostName.getText();
         if (host==null || host.length()==0) host = "localhost";
         //setDBConnection("testFluo595-630", host);
-        setDBConnection("testFluo", host);
+        //setDBConnection("testFluo", host);
+        setDBConnection("fluo1510_sub60", host);
     }//GEN-LAST:event_connectButtonActionPerformed
 
     private void preProcessButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_preProcessButtonActionPerformed

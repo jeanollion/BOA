@@ -17,6 +17,7 @@
  */
 package processing.neighborhood;
 
+import dataStructure.objects.Voxel;
 import image.Image;
 
 /**
@@ -32,6 +33,7 @@ public interface Neighborhood {
      * @param image image to copy pixels values from
      */
     public void setPixels(int x, int y, int z, Image image);
+    public void setPixels(Voxel v, Image image);
     public int getSize();
     public float[] getPixelValues();
     public float[] getDistancesToCenter();

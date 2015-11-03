@@ -47,6 +47,8 @@ import static plugins.plugins.thresholders.IJAutoThresholder.runThresholder;
 import plugins.plugins.trackers.ObjectIdxTracker.IndexingOrder;
 import processing.Filters;
 import processing.WatershedTransform;
+import processing.neighborhood.EllipsoidalNeighborhood;
+import processing.neighborhood.Neighborhood;
 
 /**
  *
@@ -228,11 +230,11 @@ public class ObjectPopulation {
         }
     }
     
-    public void filter(Filter filter) {
-        filter(filter, null);
+    public ObjectPopulation filter(Filter filter) {
+        return filter(filter, null);
     }
     
-    public void filter(Filter filter, ArrayList<Object3D> removedObjects) {
+    public ObjectPopulation filter(Filter filter, ArrayList<Object3D> removedObjects) {
         //int objectNumber = objects.size();
         Iterator<Object3D> it = objects.iterator();
         while(it.hasNext()) {
@@ -243,6 +245,7 @@ public class ObjectPopulation {
             }
         }
         //logger.debug("filter: {}, total object number: {}, remaning objects: {}", filter.getClass().getSimpleName(), objectNumber, objects.size());
+        return this;
     }
     
     public void keepOnlyLargestObject() {
@@ -362,6 +365,57 @@ public class ObjectPopulation {
         @Override public boolean keepObject(Object3D object) {
             double mean = BasicMeasurements.getMeanValue(object, intensityMap);
             return mean>=threshold;
+        }
+    }
+    public static class Overlap implements Filter {
+        ImageInteger labelMap;
+        Neighborhood n;
+        public Overlap(ImageInteger labelMap, double... radius) {
+            this.labelMap=labelMap;
+            double rad, radZ;
+            if (radius.length==0) rad=radZ=1;
+            else {
+                rad=radius[0];
+                if (radius.length>=2) radZ=radius[1];
+                else radZ=rad;
+            } 
+            n= labelMap.getSizeZ()>1 ? new EllipsoidalNeighborhood(rad, radZ, false): new EllipsoidalNeighborhood(rad, false);
+        }
+        @Override public boolean keepObject(Object3D object) {
+            for (Voxel v : object.getVoxels()) {
+                n.setPixels(v, labelMap);
+                for (float f : n.getPixelValues()) if (f>0) return true;
+            }
+            return false;
+        }
+    }
+    private static class CombinePopulationFromZPlane implements Filter { // suppress objects that are already in other and combine the voxels
+        ObjectPopulation other;
+        boolean distanceTolerance;
+        public CombinePopulationFromZPlane(ObjectPopulation other, boolean distanceTolerance) {
+            this.other=other;
+            this.distanceTolerance=distanceTolerance;
+            
+        }
+        @Override public boolean keepObject(Object3D object) {
+            BoundingBox b = object.getBounds();
+            Object3D maxInterO=null;
+            int maxInter=0;
+            for (Object3D o : other.getObjects()) {
+                int inter = o.getIntersection(object).size();
+                if (inter>maxInter) {
+                    maxInter=inter;
+                    maxInterO=o;
+                }
+            }
+            if (maxInterO==null && distanceTolerance) {
+                //TODO cherche l'objet le plus proche modulo une distance de 1 de distance et assigner les voxels
+            }
+            if (maxInterO!=null) {
+                maxInterO.getVoxels().addAll(object.getVoxels());
+                return false;
+            } 
+            return true;
         }
     }
 }

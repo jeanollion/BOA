@@ -25,6 +25,8 @@ import static image.ImageOperations.Axis.*;
  * @author jollion
  */
 public class ImageOperations {
+
+    
     public static enum Axis {X, Y, Z;}
     
     public static ImageInteger threshold(Image image, double threshold, boolean overThreshold, boolean strict) {
@@ -421,5 +423,32 @@ public class ImageOperations {
         }
         if (min==Float.MAX_VALUE) min = threshold;
         return min;
+    }
+    
+    public static double[] getMeanAndSigma(Image image, ImageMask mask) {
+        if (mask==null) mask = new BlankMask(image);
+        double mean = 0;
+        double count = 0;
+        double values2 = 0;
+        double value;
+        for (int z = 0; z < image.getSizeZ(); ++z) {
+            for (int xy = 0; xy < image.getSizeXY(); ++xy) {
+                if (mask.insideMask(xy, z)) {
+                    value = image.getPixel(xy, z);
+                    //if (value <= thld) {
+                        mean += value;
+                        count++;
+                        values2 += value * value;
+                    //}
+                }
+            }
+        }
+        if (count != 0) {
+            mean /= count;
+            values2 /= count;
+            return new double[]{mean, Math.sqrt(values2 - mean * mean)};
+        } else {
+            return new double[]{0, 0};
+        }
     }
 }
