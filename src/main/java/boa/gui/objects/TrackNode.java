@@ -87,7 +87,7 @@ public class TrackNode implements TreeNode, UIContainer {
     
     public ArrayList<TrackNode> getChildren() {
         if (children==null) {
-            if (getTrack().size()<=1) children=new ArrayList<TrackNode>(0);
+            if (getTrack()==null || getTrack().size()<=1) children=new ArrayList<TrackNode>(0);
             else {
                 children=new ArrayList<TrackNode>();
                 //Iterator<Entry<Integer, List<StructureObject>>> it = root.getRemainingTrackHeads().subMap(track.get(1).getTimePoint(), true, track.get(track.size()-1).getTimePoint(), true).entrySet().iterator();

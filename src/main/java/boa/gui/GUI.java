@@ -311,6 +311,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         mergeObjectsButton = new javax.swing.JButton();
         previousTrackErrorButton = new javax.swing.JButton();
         interactiveStructure = new javax.swing.JComboBox();
+        selectAllObjects = new javax.swing.JButton();
         ObjectTreeJSP = new javax.swing.JSplitPane();
         StructurePanel = new javax.swing.JPanel();
         structureJSP = new javax.swing.JScrollPane();
@@ -482,6 +483,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
+        selectAllObjects.setText("Select All Objects");
+        selectAllObjects.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                selectAllObjectsActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout ControlPanelLayout = new javax.swing.GroupLayout(ControlPanel);
         ControlPanel.setLayout(ControlPanelLayout);
         ControlPanelLayout.setHorizontalGroup(
@@ -495,6 +503,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             .addComponent(mergeObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(previousTrackErrorButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(interactiveStructure, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(selectAllObjects, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         ControlPanelLayout.setVerticalGroup(
             ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -502,13 +511,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addComponent(trackStructureJCB, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(interactiveStructure, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(10, 10, 10)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(selectAllObjects)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(selectAllTracksButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(nextTrackErrorButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(previousTrackErrorButton)
-                .addGap(4, 4, 4)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(splitObjectButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(mergeObjectsButton)
@@ -516,7 +527,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addComponent(selectContainingTrackToggleButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(collapseAllObjectButton)
-                .addGap(0, 0, Short.MAX_VALUE))
+                .addContainerGap())
         );
 
         StructurePanel.setBorder(javax.swing.BorderFactory.createTitledBorder("SegmentedObjects"));
@@ -725,6 +736,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         getImageManager().setInteractiveStructure(interactiveStructure.getSelectedIndex());
     }//GEN-LAST:event_interactiveStructureActionPerformed
 
+    private void selectAllObjectsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllObjectsActionPerformed
+        if (!checkConnection()) return;
+        getImageManager().displayAllObjectsOnCurrentImage();
+        
+    }//GEN-LAST:event_selectAllObjectsActionPerformed
+
     public static DBConfiguration getDBConnection() {
         if (getInstance()==null) return null;
         return getInstance().db;
@@ -795,6 +812,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JButton reProcess;
     private javax.swing.JButton saveExperiment;
     private javax.swing.JButton segmentButton;
+    private javax.swing.JButton selectAllObjects;
     private javax.swing.JButton selectAllTracksButton;
     private javax.swing.JToggleButton selectContainingTrackToggleButton;
     private javax.swing.JButton splitObjectButton;

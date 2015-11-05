@@ -311,6 +311,7 @@ public class Processor {
             else if (StructureObject.TrackFlag.correctionMergeToErase.equals((o).getTrackFlag())) {
                 if (o.getSiblings().indexOf(o)<o.getSiblings().size()-1) parentsToRelabel.add((StructureObject)o.getParent());
                 if (dao!=null && removeMergedObjectFromDAO) { // delete merged objects before relabel to avoid collapse in case of objects stored in images...
+                    if (o.getId()==null) dao.waiteForWrites();
                     logger.debug("removing object: {}, id: {}", o, o.getId());
                     dao.delete(o);
                     it.remove();

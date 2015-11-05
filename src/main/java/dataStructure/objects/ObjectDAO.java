@@ -109,6 +109,7 @@ public class ObjectDAO extends DAO<StructureObject>{
     }
     
     public void deleteChildren(StructureObject parent, int structureIdx) {
+        this.waiteForWrites();
         if (parent.getId()!=null) morphium.delete(getQuery(parent.getId(), structureIdx));
         // also delete in cache: 
         Iterator<Entry<ObjectId, StructureObject>> it = idCache.entrySet().iterator();
@@ -121,6 +122,7 @@ public class ObjectDAO extends DAO<StructureObject>{
     }
     
     public void deleteObjectsFromField(String fieldName) {
+        this.waiteForWrites();
         morphium.delete(super.getQuery().f("field_name").eq(fieldName));
         // delete in cache: 
         Iterator<Entry<ObjectId, StructureObject>> it = idCache.entrySet().iterator();
@@ -161,6 +163,7 @@ public class ObjectDAO extends DAO<StructureObject>{
     }*/
     
     public void deleteAllObjects() {
+        this.waiteForWrites(); //TODO interrupt
         morphium.clearCollection(StructureObject.class);
         idCache.clear();
         // delete in ImageDAO
@@ -168,6 +171,7 @@ public class ObjectDAO extends DAO<StructureObject>{
     }
     
     public void delete(StructureObject o) {
+        if (o.getId()==null) this.waiteForWrites(); 
         if (o.getId()!=null) {
             morphium.delete(o);
             idCache.remove(o.getId());

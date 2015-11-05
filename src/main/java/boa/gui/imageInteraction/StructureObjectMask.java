@@ -78,7 +78,7 @@ public class StructureObjectMask extends ImageObjectInterface {
         }
     }
 
-    protected ArrayList<StructureObject> getObjects() {
+    @Override public ArrayList<StructureObject> getObjects() {
         if (objects == null) {
             reloadObjects();
         }
@@ -147,5 +147,7 @@ public class StructureObjectMask extends ImageObjectInterface {
     public boolean isTimeImage() {
         return false;
     }
+
+
 
 }

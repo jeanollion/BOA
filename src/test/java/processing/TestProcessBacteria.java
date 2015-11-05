@@ -255,10 +255,10 @@ public class TestProcessBacteria {
     }
     
     public void testSegBacteriesFromXP() {
-        int time = 46;
+        int time = 78;
         int microChannel =0;
         int field = 0;
-        String dbName = "fluo1510_sub60";
+        String dbName = "fluo1510";
         //String dbName = "testFluo60";
         Morphium m=MorphiumUtils.createMorphium(dbName);
         ExperimentDAO xpDAO = new ExperimentDAO(m);
@@ -273,7 +273,7 @@ public class TestProcessBacteria {
         Image input = mc.getRawImage(1);
         ImageMask parentMask = mc.getMask();
         BacteriaFluo.debug=true;
-        ObjectPopulation pop = BacteriaFluo.run(input, parentMask, 0.03, 100, 10, 3, 40, 2, 1, 10);
+        ObjectPopulation pop = BacteriaFluo.run(input, parentMask, 0.03, 100, 10, 3, 40, 2, 1, 2);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
         disp.showImage(pop.getLabelImage());

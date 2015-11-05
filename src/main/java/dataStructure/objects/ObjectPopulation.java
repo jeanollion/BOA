@@ -62,6 +62,15 @@ public class ObjectPopulation {
     private ImageProperties properties;
 
     /**
+     * Creates an empty ObjectPopulation instance
+     * @param properties 
+     */
+    public ObjectPopulation(ImageProperties properties) {
+        this.properties = new BlankMask("", properties);
+        this.objects=new ArrayList<Object3D>();
+    }
+    
+    /**
      *
      * @param image image with values >0 within segmented objects
      * @param isLabeledImage if true, the image is considered as a labeled
@@ -437,8 +446,19 @@ public class ObjectPopulation {
 
         public static enum Border {
 
-            X, Y, Z, XY, XYZ;            
-
+            X, Y, YDown, YUp, Z, XY, XYZ;            
+            ImageProperties mask;
+            public void setMask(ImageProperties mask) {
+                this.mask=mask;
+            }
+            public boolean contact(Voxel v) {
+                if (hasX() && (v.x == 0 || v.x == mask.getSizeX() - 1)) return true;
+                if (hasY() && (v.y == 0 || v.y == mask.getSizeY() - 1)) return true;
+                if (hasZ() && (v.z == 0 || v.z == mask.getSizeZ() - 1)) return true;
+                if (this.equals(YDown) && v.y==mask.getSizeY() - 1) return true;
+                else if (this.equals(YUp) && v.y==0) return true;
+                return false;
+            }
             public boolean hasX() {
                 return (this.equals(X) || this.equals(XY) || this.equals(XYZ));
             }
@@ -459,6 +479,7 @@ public class ObjectPopulation {
             this.contactLimit = contactLimit;
             this.mask = mask;
             this.border = border;
+            border.setMask(mask);
         }
 
         @Override
@@ -468,11 +489,7 @@ public class ObjectPopulation {
             }
             int count = 0;
             for (Voxel v : object.getVoxels()) {
-                if ((border.hasX() && (v.x == 0 || v.x == mask.getSizeX() - 1))
-                        || (border.hasY() && (v.y == 0 || v.y == mask.getSizeY() - 1))
-                        || (border.hasZ() && (v.z == 0 || v.z == mask.getSizeZ() - 1))) {
-                    ++count;
-                }
+                if (border.contact(v)) ++count;
             }
             return count < contactLimit;
         }
