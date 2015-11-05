@@ -131,7 +131,7 @@ public class InterfaceVoxels extends Interface {
         } else if (col.fusionMethod==2) { // compare mean value to treshold
             double meanIntensity = getMean(col.regions.inputGray);
             double stat = -this.strength/(meanIntensity); // meanintensity sur les 2 spots?
-            logger.debug("Interface: {}, stat: {} threshold: {}, fusion: {}", this, stat, col.fusionThreshold, stat<=col.fusionThreshold);
+            //logger.debug("Interface: {}, stat: {} threshold: {}, fusion: {}", this, stat, col.fusionThreshold, stat<=col.fusionThreshold);
             if (stat<=col.fusionThreshold) return new double[0]; //strenght = -mean(hessian@interface)
             else return null;
             /*double[] musigma = getMeanAndSigma();

@@ -162,6 +162,7 @@ public class BacteriaFluo implements Segmenter {
             ObjectPopulation localPop= RegionCollection.mergeHessianBacteria(popWS, dog, hessian, fusionThreshold);
             if (res==null) res= localPop;
             else res.addObjects(localPop.getObjects());
+            //if (debug) disp.showImage(localPop.getLabelImage().setName("after merging"));
             maskObject.draw(watershedMask, 0);
         }
         if (res!=null) {

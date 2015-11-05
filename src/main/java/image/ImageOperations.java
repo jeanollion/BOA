@@ -18,6 +18,7 @@
 package image;
 
 import dataStructure.objects.Voxel;
+import static image.Image.logger;
 import static image.ImageOperations.Axis.*;
 
 /**
@@ -121,16 +122,17 @@ public class ImageOperations {
         if (source.getSizeX()+offset.xMin>dest.sizeX || source.getSizeY()+offset.yMin>dest.sizeY || source.getSizeZ()+offset.zMin>dest.sizeZ) throw new IllegalArgumentException("Paste Image: source does not fit in destination");
         Object[] sourceP = source.getPixelArray();
         Object[] destP = dest.getPixelArray();
-        int off=dest.sizeX*offset.yMin+offset.xMin;
+        final int offFinal = dest.sizeX*offset.yMin+offset.xMin;
+        int off=offFinal;
         int offSource = 0;
         for (int z = 0; z<source.sizeZ; ++z) {
             for (int y = 0 ; y<source.sizeY; ++y) {
-                //logger.trace("paste imate: z source: {}, z dest: {}, y source: {} y dest: {} off source: {} off dest: {} size source: {} size dest: {}", z, z+offset.zMin, y, y+offset.yMin, offSource, off, ((byte[])sourceP[z]).length, ((byte[])destP[z+offset.zMin]).length);
+                //logger.debug("paste imate: z source: {}, z dest: {}, y source: {} y dest: {} off source: {} off dest: {} size source: {} size dest: {}", z, z+offset.zMin, y, y+offset.yMin, offSource, off, ((byte[])sourceP[z]).length, ((byte[])destP[z+offset.zMin]).length);
                 System.arraycopy(sourceP[z], offSource, destP[z+offset.zMin], off, source.sizeX);
                 off+=dest.sizeX;
                 offSource+=source.sizeX;
             }
-            off=dest.sizeX*offset.yMin+offset.xMin;
+            off=offFinal;
             offSource=0;
         }
     }

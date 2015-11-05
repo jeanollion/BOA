@@ -58,6 +58,7 @@ import plugins.plugins.preFilter.Median;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.BacteriesFluo2D;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
+import plugins.plugins.segmenters.SpotFluo2D5;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.trackCorrector.MicroChannelBacteriaTrackCorrector;
 import plugins.plugins.trackers.ClosedMicrochannelTracker;
@@ -89,9 +90,9 @@ public class TestProcessBacteria {
         //t.subsetTimePoints(595, 630, "/data/Images/Fluo/test", "/data/Images/Fluo/testsub595-630");
         //t.testRotation();
         //t.testSegBacteries();
-        //t.testSegBacteriesFromXP();
+        t.testSegBacteriesFromXP();
         //t.subsetTimePoints(0, 60, "/data/Images/Fluo/films1510/63me120r-14102015-LR62R1-lbiptg100x_1", "/data/Images/Fluo/films1510/63me120r-14102015-LR62R1-lbiptg100x_1_sub60", "champ1");
-        t.testSegMicroChannels();
+        //t.testSegMicroChannels();
         //t.testSegBactAllTimes();
         //t.runSegmentationBacteriaOnSubsetofDBXP(569, 630);
         //t.process(0, false);
@@ -113,6 +114,7 @@ public class TestProcessBacteria {
         xp.getStructures().insert(mc, bacteria, mutation);
         mc.getProcessingChain().setSegmenter(new MicroChannelFluo2D());
         bacteria.getProcessingChain().setSegmenter(new BacteriaFluo());
+        mutation.getProcessingChain().setSegmenter(new SpotFluo2D5());
         mc.setTracker(new ObjectIdxTracker());
         bacteria.setTracker(new ClosedMicrochannelTracker());
         bacteria.setTrackCorrector(new MicroChannelBacteriaTrackCorrector());
@@ -253,10 +255,10 @@ public class TestProcessBacteria {
     }
     
     public void testSegBacteriesFromXP() {
-        int time = 578;
-        int channel =2;
+        int time = 46;
+        int microChannel =0;
         int field = 0;
-        String dbName = "testFluo";
+        String dbName = "fluo1510_sub60";
         //String dbName = "testFluo60";
         Morphium m=MorphiumUtils.createMorphium(dbName);
         ExperimentDAO xpDAO = new ExperimentDAO(m);
@@ -267,11 +269,11 @@ public class TestProcessBacteria {
         MicroscopyField f = xp.getMicroscopyField(field);
         StructureObject root = dao.getRoot(f.getName(), time);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
-        StructureObject mc = root.getChildObjects(0, dao, false).get(channel);
+        StructureObject mc = root.getChildObjects(0, dao, false).get(microChannel);
         Image input = mc.getRawImage(1);
         ImageMask parentMask = mc.getMask();
         BacteriaFluo.debug=true;
-        ObjectPopulation pop = BacteriaFluo.run(input, parentMask, 0.02, 100, 10, 3, 40, 2, 1, 10);
+        ObjectPopulation pop = BacteriaFluo.run(input, parentMask, 0.03, 100, 10, 3, 40, 2, 1, 10);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
         disp.showImage(pop.getLabelImage());
@@ -303,15 +305,24 @@ public class TestProcessBacteria {
         return dao.getTrackErrors(f.getName(), 1).size();
     }
     
-    public void process(String dbName, int field, boolean preProcess) {
-        Morphium m = MorphiumUtils.createMorphium(dbName);
-        ExperimentDAO xpDAO = new ExperimentDAO(m);
-        xp=xpDAO.getExperiment();
+    public void process(String dbName, boolean preProcess, int... fields) {
+        DBConfiguration db = new DBConfiguration(dbName);
+        xp=db.getExperiment();
         logger.info("Experiment: {} retrieved from db: {}", xp.getName(), dbName);
-        ObjectDAO dao = new ObjectDAO(m, xpDAO);
-        MicroscopyField f = xp.getMicroscopyField(field);
-        if (preProcess) Processor.preProcessImages(f, dao, true, true);
-        Processor.processAndTrackStructures(xp, f, dao, true, true);
+        ObjectDAO dao = db.getDao();
+        if (fields.length==0) {
+            if (preProcess) Processor.preProcessImages(xp, dao, true);
+            Processor.processAndTrackStructures(xp, dao);
+        } else {
+            for (int field : fields) {
+                MicroscopyField f = xp.getMicroscopyField(field);
+                if (preProcess) Processor.preProcessImages(f, dao, true, true);
+                Processor.processAndTrackStructures(xp, f, dao, true, true);
+                dao.clearCache();
+            }
+            
+        }
+        
     }
     
     public void correctTracks(String dbName, int field, int structureIdx) {

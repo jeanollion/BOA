@@ -7,14 +7,9 @@ import imageware.ImageWare;
 
 public class LoG
 {
-  private boolean showKernel = false;
+  private static boolean showKernel = false;
 
-  public LoG(boolean paramBoolean)
-  {
-    this.showKernel = paramBoolean;
-  }
-
-  public ImageWare doLoG(ImageWare paramImageWare, double paramDouble1, double paramDouble2)
+  public static ImageWare doLoG(ImageWare paramImageWare, double paramDouble1, double paramDouble2)
   {
     if (paramImageWare == null)
       return null;
@@ -22,7 +17,7 @@ public class LoG
     return localImageWare;
   }
 
-  public ImageWare doLoG(ImageWare paramImageWare, double paramDouble1, double paramDouble2, double paramDouble3)
+  public static ImageWare doLoG(ImageWare paramImageWare, double paramDouble1, double paramDouble2, double paramDouble3)
   {
     if (paramImageWare == null)
       return null;
@@ -97,7 +92,7 @@ public class LoG
     return localImageWare1;
   }
 
-  public ImageWare doLoG_Separable(ImageWare paramImageWare, double paramDouble1, double paramDouble2)
+  public static ImageWare doLoG_Separable(ImageWare paramImageWare, double paramDouble1, double paramDouble2)
   {
     if (paramImageWare == null)
       return null;
@@ -152,7 +147,7 @@ public class LoG
       }
     }
     localImageWare1.add(localImageWare2);
-    if (this.showKernel)
+    if (showKernel)
     {
       localObject = new double[arrayOfDouble2.length][arrayOfDouble3.length];
       int i1 = arrayOfDouble1.length;
@@ -166,7 +161,7 @@ public class LoG
     return (ImageWare)localImageWare1;
   }
 
-  public ImageWare doLoG_Separable(ImageWare paramImageWare, double paramDouble1, double paramDouble2, double paramDouble3)
+  public static ImageWare doLoG_Separable(ImageWare paramImageWare, double paramDouble1, double paramDouble2, double paramDouble3)
   {
     if (paramImageWare == null)
       return null;
@@ -253,7 +248,7 @@ public class LoG
     }
     localImageWare1.add(localImageWare2);
     localImageWare1.add(localImageWare3);
-    if (this.showKernel)
+    if (showKernel)
     {
       localObject = new double[arrayOfDouble2.length][arrayOfDouble3.length][arrayOfDouble5.length];
       int n = arrayOfDouble1.length;
@@ -269,7 +264,7 @@ public class LoG
     return (ImageWare)localImageWare1;
   }
 
-  public double[] createKernelLoG_Fact(double paramDouble1, double paramDouble2)
+  public static double[] createKernelLoG_Fact(double paramDouble1, double paramDouble2)
   {
     if (paramDouble1 <= 0.0D)
     {
@@ -291,7 +286,7 @@ public class LoG
     return arrayOfDouble2;
   }
 
-  public double[] createKernelLoG_Base(double paramDouble)
+  public static double[] createKernelLoG_Base(double paramDouble)
   {
     if (paramDouble <= 0.0D)
     {
@@ -312,7 +307,7 @@ public class LoG
     return arrayOfDouble2;
   }
 
-  private double[][] createKernelLoG_NonSeparable(double paramDouble)
+  private static double[][] createKernelLoG_NonSeparable(double paramDouble)
   {
     double d1 = -(1.0D / (3.141592653589793D * Math.pow(paramDouble, 4.0D)));
     double d2 = 2.0D * Math.pow(paramDouble, 2.0D);
@@ -329,7 +324,7 @@ public class LoG
     return arrayOfDouble;
   }
 
-  private double[][][] createKernelLoG_NonSeparable3(double paramDouble)
+  private static double[][][] createKernelLoG_NonSeparable3(double paramDouble)
   {
     double d1 = -(1.0D / (3.141592653589793D * Math.pow(paramDouble, 4.0D)));
     double d2 = 2.0D * Math.pow(paramDouble, 2.0D);
@@ -348,7 +343,7 @@ public class LoG
     return arrayOfDouble;
   }
 
-  private double[] convolve(double[] paramArrayOfDouble1, double[] paramArrayOfDouble2)
+  private static double[] convolve(double[] paramArrayOfDouble1, double[] paramArrayOfDouble2)
   {
     int i = paramArrayOfDouble1.length;
     int j = paramArrayOfDouble2.length;

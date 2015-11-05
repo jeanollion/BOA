@@ -243,7 +243,7 @@ public class InterfaceCollection {
             }
         }
         regions.fusion(i.r1, i.r2, newCriterion);
-        if (change) logger.debug("fusioned region: {}", i.r1);
+        //if (change) logger.debug("fusioned region: {}", i.r1);
         return change;
     }
     

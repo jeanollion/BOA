@@ -110,6 +110,7 @@ public class Processor {
         for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
             logger.info("processing structures of Field: {}, total number of timePoint: {}...", xp.getMicroscopyField(i).getName(), xp.getMicroscopyField(i).getTimePointNumber());
             Processor.processAndTrackStructures(xp, xp.getMicroscopyField(i), dao, false, true);
+            if (dao!=null) dao.clearCache();
         }
     }
     /**
