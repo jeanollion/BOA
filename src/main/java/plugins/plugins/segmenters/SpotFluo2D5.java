@@ -76,8 +76,8 @@ public class SpotFluo2D5 implements Segmenter {
         }
         // combine: 
         ImageInteger im = labelImages.remove(labelImages.size()-1);
-        for (ImageInteger imToCombine : labelImages) ImageOperations.and(im, imToCombine, im);
-        return new ObjectPopulation(new ArrayList<Object3D>(ImageLabeller.labelImageList(im)), im);
+        for (ImageInteger imToCombine : labelImages) ImageOperations.and(im, imToCombine, im); 
+        return new ObjectPopulation(im, false);  //TODO ce mode d'association d'image va fusionner les objets distincts mais en contact. Faire un combinaison qui prend en compte les labels avec fusion seulement si recouvrement dans un autre plan
         
         // autre stratégies: plan par plan puis choix entre les spots qui se recouvrent
         // smooth puis projection maximale
@@ -99,7 +99,7 @@ public class SpotFluo2D5 implements Segmenter {
         Image contrasted = ImageFeatures.getLaplacian(smoothed, laplacianRadius, true, false);
         //bckg = ImageFeatures.gaussianSmooth(smoothed, 4, 1, false);
         //Image contrasted = ImageOperations.addImage(smoothed, bckg, bckg, -1).setName("DoG");
-        Image topHat = Filters.tophat(smoothed, null, Filters.getNeighborhood(4, 3, input));
+        Image topHat = Filters.tophat(input, null, Filters.getNeighborhood(4, 3, input));
         //contrasted = ImageFeatures.getLaplacian(contrasted, laplacianRadius, true, true);
         // scale lom according to background noise
         double[] meanSigma = new double[2];

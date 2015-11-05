@@ -47,84 +47,104 @@ import static utils.Utils.plotProfile;
  * @author jollion
  */
 public class MicroChannelFluo2D implements Segmenter {
+
     NumberParameter channelHeight = new BoundedNumberParameter("MicroChannel Height (pixels)", 0, 350, 5, null);
     NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Width (pixels)", 0, 30, 5, null);
     NumberParameter yMargin = new BoundedNumberParameter("y-margin", 0, 5, 0, null);
     Parameter[] parameters = new Parameter[]{channelHeight, channelWidth, yMargin};
-    
-    public MicroChannelFluo2D(){}
-    
-    public MicroChannelFluo2D(int channelHeight, int channelWidth, int yMargin){
+    public static boolean debug = false;
+
+    public MicroChannelFluo2D() {
+    }
+
+    public MicroChannelFluo2D(int channelHeight, int channelWidth, int yMargin) {
         this.channelHeight.setValue(channelHeight);
         this.channelWidth.setValue(channelWidth);
         this.yMargin.setValue(yMargin);
     }
-    
+
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         // TODO: sum sur tous les temps ou un subset des temps pour une meilleure precision?
-        
+
         // faire le calcul que pour le premier temps et copier les objets pour les temps suivants 
         int refTimePoint = 0;
         ArrayList<Object3D> objects;
-        if (parent.getTimePoint()==refTimePoint) { // pour le moment  true || 
-            objects= getObjects(input, channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), yMargin.getValue().intValue());
+        if (parent.getTimePoint() == refTimePoint) {
+            objects = run(input, channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), yMargin.getValue().intValue());
             logger.debug("MicroChannelFluo2D: current timepoint: {} segmented objects: {}, channelHeight: {}, channel width: {}, yMargin: {}", parent.getTimePoint(), objects.size(), channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), yMargin.getValue().intValue());
-        }
-        else {
+        } else {
             StructureObjectProcessing ref = parent;
-            while(ref.getTimePoint()>0 && ref.getTimePoint()!=refTimePoint) ref=(StructureObjectProcessing)ref.getPrevious();
-            if (ref.getTimePoint()!=refTimePoint) {
+            while (ref.getTimePoint() > 0 && ref.getTimePoint() != refTimePoint) {
+                ref = (StructureObjectProcessing) ref.getPrevious();
+            }
+            if (ref.getTimePoint() != refTimePoint) {
                 objects = new ArrayList<Object3D>(0);
                 logger.debug("MicroChannelFluo2D: current timepoint: {}, reference timepoint: {} no objects found", parent.getTimePoint(), refTimePoint);
-            }
-            else {
-                ArrayList<? extends StructureObject> oos = ((StructureObject)ref).getChildObjects(structureIdx);
+            } else {
+                ArrayList<? extends StructureObject> oos = ((StructureObject) ref).getChildObjects(structureIdx);
                 objects = new ArrayList<Object3D>(oos.size());
-                for (StructureObject o : oos) objects.add(o.getObject());
+                for (StructureObject o : oos) {
+                    objects.add(o.getObject());
+                }
                 logger.debug("MicroChannelFluo2D: current timepoint: {}, reference timepoint: {} copied objects: {}", parent.getTimePoint(), refTimePoint, objects.size());
             }
         }
         return new ObjectPopulation(objects, input);
     }
-    
-    public static ArrayList<Object3D> getObjects(Image image, int channelHeight, int channelWidth, int yMargin) {
+
+    public static ArrayList<Object3D> run(Image image, int channelHeight, int channelWidth, int yMargin) {
+
         // get yStart
         float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null);
         ImageFloat imProjY = new ImageFloat("proj(Y)", image.getSizeY(), new float[][]{yProj});
-        ImageInteger heightMask = threshold(imProjY, IJAutoThresholder.runThresholder(imProjY, null, AutoThresholder.Method.Triangle), true, false);
+        ImageInteger heightMask = threshold(imProjY, IJAutoThresholder.runThresholder(imProjY, null, AutoThresholder.Method.Otsu), true, false);
         Object3D[] objHeight = ImageLabeller.labelImage(heightMask);
         int yStart;
-        if (objHeight.length==0) yStart=0;
-        else if (objHeight.length==1) {
+        if (objHeight.length == 0) {
+            yStart = 0;
+        } else if (objHeight.length == 1) {
             yStart = objHeight[0].getBounds().getxMin();
-        } else { // get object with maximum height
+        } else { // get object with maximum height tq sizeY-yStart < channelHeight
             int idxMax = 0;
-            for (int i = 1; i<objHeight.length;++i) if (objHeight[i].getBounds().getSizeX()>=objHeight[idxMax].getBounds().getSizeX()) idxMax=i;
+            for (int i = 1; i < objHeight.length; ++i) {
+                if (objHeight[i].getBounds().getSizeX() >= objHeight[idxMax].getBounds().getSizeX()) {
+                    if (yProj.length - objHeight[i].getBounds().getxMin() < channelHeight) {
+                        idxMax = i-1; 
+                        break;
+                    } else idxMax = i;
+                }
+            }
+            
             yStart = objHeight[idxMax].getBounds().getxMin();
-            //logger.trace("crop microchannels: yStart: {} idx of margin object: {}", yStart, idxMax);
+            logger.trace("crop microchannels: yStart: {} idx of margin object: {}", yStart, idxMax);
         }
         // refine by searching max of derivative near yStart
         ImageFloat median = Filters.median(imProjY, new ImageFloat("", 0, 0, 0), new EllipsoidalNeighborhood(3, true));
-        ImageFloat projDer = ImageFeatures.getDerivative(median, 1, 1, 0, 0, false); 
-        yStart = ArrayUtil.max(projDer.getPixelArray()[0], yStart-10, yStart+10);
+        ImageFloat projDer = ImageFeatures.getDerivative(median, 1, 1, 0, 0, false);
+        yStart = ArrayUtil.max(projDer.getPixelArray()[0], yStart - 10, yStart + 10);
         logger.trace("MicroChannelFluo: Y search: max of 1st derivate:{}", yStart);
         //refine by searching 2nd derivate maximum
-        projDer = ImageFeatures.getDerivative(median, 2, 2, 0, 0, true); 
+        projDer = ImageFeatures.getDerivative(median, 2, 2, 0, 0, true);
         //plotProfile(projDer, 0, 0, true);
-        yStart = ArrayUtil.max(projDer.getPixelArray()[0], yStart-10, yStart);
+        yStart = ArrayUtil.max(projDer.getPixelArray()[0], yStart - 10, yStart);
         logger.trace("MicroChannelFluo: Y search: max of 2st derivate:{}", yStart);
-        yStart = Math.max(0, yStart-yMargin);
-        
+        yStart = Math.max(0, yStart - yMargin);
+
         // get all XCenters
         float[] xProj = ImageOperations.meanProjection(image, ImageOperations.Axis.X, null);
         ImageFloat imProjX = new ImageFloat("proj(X)", image.getSizeX(), new float[][]{xProj});
         ImageInteger widthMask = threshold(imProjX, IJAutoThresholder.runThresholder(imProjX, null, AutoThresholder.Method.Otsu), true, false);
         Object3D[] objWidth = ImageLabeller.labelImage(widthMask);
-        
+
         ArrayList<Object3D> res = new ArrayList<Object3D>(objWidth.length);
-        for (int i = 0; i<objWidth.length; ++i) {
-            int xMin = Math.max((int)(objWidth[i].getBounds().getXMean()-channelWidth/2.0), 0);
-            res.add(new Object3D(new BlankMask("mask of microchannel:"+(i+1), channelWidth, channelHeight, image.getSizeZ(), xMin, yStart, 0, image.getScaleXY(), image.getScaleZ()), i+1));
+        for (int i = 0; i < objWidth.length; ++i) {
+            int xMin = Math.max((int) (objWidth[i].getBounds().getXMean() - channelWidth / 2.0), 0);
+            res.add(new Object3D(new BlankMask("mask of microchannel:" + (i + 1), channelWidth, Math.min(channelHeight, image.getSizeY()-yStart), image.getSizeZ(), xMin, yStart, 0, image.getScaleXY(), image.getScaleZ()), i + 1));
+        }
+        if (debug) {
+            IJImageDisplayer disp = new IJImageDisplayer();
+            disp.showImage(imProjY.setName("imm proj Y"));
+            disp.showImage(imProjX.setName("imm proj X"));
         }
         return res;
     }
@@ -136,5 +156,5 @@ public class MicroChannelFluo2D implements Segmenter {
     public boolean does3D() {
         return true;
     }
-    
+
 }

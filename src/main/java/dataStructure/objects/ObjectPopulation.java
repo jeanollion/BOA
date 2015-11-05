@@ -59,8 +59,19 @@ public class ObjectPopulation {
     private ArrayList<Object3D> objects;
     private ImageProperties properties;
     
-    public ObjectPopulation(ImageInteger labelImage) {
-        this.labelImage=labelImage;
+    /**
+     * 
+     * @param image image with values >0 within segmented objects
+     * @param isLabeledImage if true, the image is considered as a labeled image, one value per object, if false, the image will be labeled (and thus modified) by Connected Components Labeling
+     */
+    public ObjectPopulation(ImageInteger image, boolean isLabeledImage) {
+        if (isLabeledImage) this.labelImage=image;
+        else {
+            objects = new ArrayList<Object3D>(ImageLabeller.labelImageList(image));
+            labelImage = image;
+            relabel(); // in order to have consistent labels between image & object list
+        }
+        this.properties=labelImage.getProperties();
     }
 
     /*public ObjectPopulation(ArrayList<Object3D> objects) {
@@ -71,7 +82,7 @@ public class ObjectPopulation {
         if (objects!=null) {
             this.objects = objects;
         } else this.objects = new ArrayList<Object3D>();
-        this.properties=properties;
+        this.properties=new BlankMask("", properties);
     }
     
     public ObjectPopulation addObjects(Object3D... objects) {

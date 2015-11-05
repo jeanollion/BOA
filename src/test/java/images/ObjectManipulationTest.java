@@ -135,7 +135,7 @@ public class ObjectManipulationTest {
         popObj.relabel();
         Utils.assertImage(imRelabel, (ImageByte)popObj.getLabelImage(), 0);
         
-        ObjectPopulation popIm = new ObjectPopulation(im);
+        ObjectPopulation popIm = new ObjectPopulation(im, true);
         assertEquals("number of objects", 2, popIm.getObjects().size());
         assertObject3DVoxels(o1, popIm.getObjects().get(0));
         assertObject3DVoxels(o3, popIm.getObjects().get(1));

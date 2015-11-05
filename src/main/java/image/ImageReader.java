@@ -160,6 +160,7 @@ public class ImageReader {
         } else {
             zMin=0; zMax=sizeZ-1;
         }
+        //logger.debug("open image: {}, sizeX: {}, sizeY: {}, sizeZ: {}, zMin: {}, zMax: {}", this.fullPath, sizeX, sizeY, sizeZ, zMin, zMax);
         ImageStack stack = new ImageStack(sizeX, sizeY);
         for (int z = zMin; z <= zMax; z++) {
             int locZ = invertTZ?coords.getTimePoint():z;

@@ -64,7 +64,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         this.configurationData = ParameterUtils.duplicateConfigurationDataArrayList(configurationData);
     }
     
-    public void setOutputChannel(int... channelIdx) { // null -> all selected or same channel selected
+    public void setOutputChannel(int... channelIdx) { // null -> all selected OR same channel selected
         if (outputChannel!=null) outputChannel.setSelectedIndicies(channelIdx);
     }
     
@@ -72,7 +72,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         this.inputChannel.setSelectedIndex(channelIdx);
     }
     
-    public int[] getOutputChannels() { // if null -> all selected
+    public int[] getOutputChannels() { // if null -> all selected or same as input...
         if (outputChannel==null) return null;
         else return outputChannel.getSelectedItems();
     }

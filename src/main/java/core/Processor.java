@@ -93,13 +93,15 @@ public class Processor {
         images.deleteFromDAO(); // delete images if existing in imageDAO
         PreProcessingChain ppc = field.getPreProcessingChain();
         for (TransformationPluginParameter<Transformation> tpp : ppc.getTransformations()) {
-            Transformation transfo = tpp.getPlugin();
-            logger.trace("adding transformation: {} of class: {} to field: {}", transfo, transfo.getClass(), field.getName());
-            if (computeConfigurationData) {
-                transfo.computeConfigurationData(tpp.getInputChannel(), images);
-                tpp.setConfigurationData(transfo.getConfigurationData());
+            if (tpp.isActivated()) {
+                Transformation transfo = tpp.getPlugin();
+                logger.debug("adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}", transfo, transfo.getClass(), field.getName(), tpp.getInputChannel(), tpp.getOutputChannels());
+                if (computeConfigurationData) {
+                    transfo.computeConfigurationData(tpp.getInputChannel(), images);
+                    tpp.setConfigurationData(transfo.getConfigurationData());
+                }
+                images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
             }
-            images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
         }
     }
     

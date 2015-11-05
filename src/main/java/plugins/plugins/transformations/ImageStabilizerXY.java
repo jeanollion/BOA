@@ -166,5 +166,9 @@ public class ImageStabilizerXY implements Registration {
     public boolean does3D() {
         return true;
     }
+
+    public SelectionMode getOutputChannelSelectionMode() {
+        return SelectionMode.ALL;
+    }
     
 }

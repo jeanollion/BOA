@@ -72,7 +72,7 @@
         <dependency>
             <groupId>ome</groupId>
             <artifactId>formats-gpl</artifactId>
-            <version>5.1.3-SNAPSHOT</version>
+            <version>5.1.4-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

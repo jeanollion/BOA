@@ -70,6 +70,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
             for (Parameter p : parameters) {
                 if (p==null) System.out.println("param null:"+idx);
                 p.setParent(this);
+                if (p instanceof SimpleContainerParameter) ((SimpleContainerParameter)p).initChildList();
                 idx++;
             }
         }

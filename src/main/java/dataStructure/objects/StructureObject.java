@@ -499,15 +499,17 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return rawImagesC.get(channelIdx);
     }
     private void extendBoundsInZIfNecessary(int channelIdx, BoundingBox bounds) { //when the current structure is 2D but channel is 3D 
-        if (bounds.getSizeZ()==1 && is2D()) { 
-            int sizeZ = getExperiment().getMicroscopyField(fieldName).getSizeZ(channelIdx);
+        logger.debug("extends bounds if necessary: is2D: {}, bounds 2D: {}, sizeZ of image to open: {}", is2D(), bounds.getSizeZ(), getExperiment().getMicroscopyField(fieldName).getSizeZ(channelIdx));
+        if (bounds.getSizeZ()==1 && is2D() && channelIdx!=this.getExperiment().getChannelImageIdx(structureIdx)) { 
+            int sizeZ = getExperiment().getMicroscopyField(fieldName).getSizeZ(channelIdx); //TODO no reliable if a transformation removes planes -> need to record the dimensions of the preProcessed Images
             if (sizeZ>1) {
                 bounds.expandZ(sizeZ-1);
             }
         }
     }
     public boolean is2D() {
-        return getExperiment().getMicroscopyField(fieldName).getSizeZ(getExperiment().getChannelImageIdx(structureIdx))==1;
+        //return getExperiment().getMicroscopyField(fieldName).getSizeZ(getExperiment().getChannelImageIdx(structureIdx))==1; //TODO no reliable if a transformation removes planes
+        return this.getMask().getSizeZ()==1;
     }
     
     public Image openRawImage(int structureIdx, BoundingBox bounds) {
