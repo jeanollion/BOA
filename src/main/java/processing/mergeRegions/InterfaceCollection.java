@@ -127,9 +127,7 @@ public class InterfaceCollection {
         }
         if (verbose) {
             for (Region r : regions.regions.values()) {
-                String in = "Region:"+r.label+" Interfaces: ";
-                for (int i = 0; i<r.interfaces.size(); i++) in+=r.interfaces.get(i).getOther(r).label+", ";
-                System.out.println(in);
+                logger.debug("region: {}" , r);
             }
         }
     }
@@ -163,7 +161,10 @@ public class InterfaceCollection {
     */
     
     protected void addPair(HashMap<RegionPair, Interface> interfaces, int label1, Voxel vox1, int label2, Voxel vox2) {
+        if (label1==label2) throw new IllegalArgumentException("Cannot add interface of Region with itself: "+label1);
         RegionPair pair = new RegionPair(label1, label2);
+        //if (regions.get(pair.r1).label != pair.r1) logger.debug("1region label not consistent: label: {} region: {}", pair.r1, regions.get(pair.r1));
+        //if (regions.get(pair.r2).label != pair.r2) logger.debug("2region label not consistent: label: {} region: {}", pair.r2, regions.get(pair.r2));
         Interface inter = interfaces.get(pair);
         if (inter==null) {
             inter = new InterfaceVoxels(regions.get(pair.r1), regions.get(pair.r2), this); // enfonction de la methode...
@@ -227,12 +228,13 @@ public class InterfaceCollection {
                     interfaces.remove(otherInterface);
                     Region otherRegion = otherInterface.getOther(i.r2);
                     int idx = i.r1.interfaces.indexOf(new RegionPair(i.r1, otherRegion));
-                    if (idx>=0) {
+                    if (idx>=0) { // if interface is already present, simply add the new voxels to the interface
                         Interface existingInterface = i.r1.interfaces.get(idx);
                         interfaces.remove(existingInterface);
                         existingInterface.mergeInterface(otherInterface);
                         interfaces.add(existingInterface);
-                    } else {
+                        otherRegion.interfaces.remove(otherInterface);
+                    } else { // if not add a new interface
                         otherInterface.switchRegion(i.r2, i.r1);
                         i.r1.interfaces.add(otherInterface);
                         interfaces.add(otherInterface);
@@ -241,6 +243,7 @@ public class InterfaceCollection {
             }
         }
         regions.fusion(i.r1, i.r2, newCriterion);
+        if (change) logger.debug("fusioned region: {}", i.r1);
         return change;
     }
     

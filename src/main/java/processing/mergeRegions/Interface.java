@@ -1,5 +1,6 @@
 package processing.mergeRegions;
 
+import static core.Processor.logger;
 import java.util.HashSet;
 
 

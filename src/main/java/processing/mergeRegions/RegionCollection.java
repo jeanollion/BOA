@@ -120,7 +120,7 @@ public class RegionCollection {
     
     public static ObjectPopulation mergeHessianBacteria(ObjectPopulation pop, Image intensities, Image hessian, double fusionThreshold) {
         RegionCollection r = new RegionCollection(pop, intensities, false, 1);
-        //r.verbose = logger.isDebugEnabled();
+        r.verbose = logger.isDebugEnabled();
         r.initInterfaces(hessian);
         r.mergeSortHessianCondBacteria(hessian, fusionThreshold);
         return r.getObjectPopulation();
