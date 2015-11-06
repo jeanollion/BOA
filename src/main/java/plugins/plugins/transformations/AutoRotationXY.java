@@ -106,6 +106,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     }
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
+        if (internalParams==null || internalParams.isEmpty()) throw new Error("Autorotation not configured");
         return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), internalParams.get(0), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()));
     }
     
