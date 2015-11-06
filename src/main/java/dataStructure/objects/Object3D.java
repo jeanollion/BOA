@@ -66,22 +66,33 @@ public class Object3D {
         return scaleZ;
     }
     
+    public synchronized void addVoxels(List<Voxel> voxelsToAdd) {
+        this.voxels.addAll(voxelsToAdd);
+        this.bounds=null;
+        this.mask=null;
+    }
+    
     protected void createMask() {
-        mask = new ImageByte("", getBounds().getImageProperties("mask", scaleXY, scaleZ));
-        for (Voxel v : voxels) mask.setPixelWithOffset(v.x, v.y, v.z, 1);
+        ImageByte mask_ = new ImageByte("", getBounds().getImageProperties(scaleXY, scaleZ));
+        for (Voxel v : voxels) {
+            //if (!mask_.containsWithOffset(v.x, v.y, v.z)) logger.error("voxel out of bounds: {}", v); // can happen if bounds were not updated before the object was saved
+            mask_.setPixelWithOffset(v.x, v.y, v.z, 1);
+        }
+        this.mask=mask_;
     }
 
     protected void createVoxels() {
-        voxels=new ArrayList<Voxel>();
+        ArrayList<Voxel> voxels_=new ArrayList<Voxel>();
         for (int z = 0; z < mask.getSizeZ(); ++z) {
             for (int y = 0; y < mask.getSizeY(); ++y) {
                 for (int x = 0; x < mask.getSizeX(); ++x) {
                     if (mask.insideMask(x, y, z)) {
-                        voxels.add( new Voxel(x + mask.getOffsetX(), y + mask.getOffsetY(), z + mask.getOffsetZ()));
+                        voxels_.add( new Voxel(x + mask.getOffsetX(), y + mask.getOffsetY(), z + mask.getOffsetZ()));
                     }
                 }
             }
         }
+        voxels=voxels_;
     }
     
     public ImageProperties getImageProperties() {
@@ -125,8 +136,9 @@ public class Object3D {
     }
     
     protected void createBoundsFromVoxels() {
-        bounds = new BoundingBox();
-        for (Voxel v : voxels) bounds.expand(v);
+        BoundingBox bounds_  = new BoundingBox();
+        for (Voxel v : voxels) bounds_.expand(v);
+        bounds= bounds_;
     }
 
     public BoundingBox getBounds() {

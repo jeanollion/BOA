@@ -573,7 +573,7 @@ public class ObjectPopulation {
                 //TODO cherche l'objet le plus proche modulo une distance de 1 de distance et assigner les voxels
             }*/
             if (maxInterO != null) {
-                maxInterO.getVoxels().addAll(object.getVoxels());
+                maxInterO.addVoxels(object.getVoxels());
                 return false;
             }            
             return true;

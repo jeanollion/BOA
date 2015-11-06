@@ -125,6 +125,7 @@ public abstract class ImageWindowManager<T> {
         if (i!=null) {
             i.reloadObjects();
             for (Entry<Image, ImageObjectInterfaceKey> e : imageObjectInterfaceMap.entrySet()) if (e.getValue().equals(key)) {
+                logger.debug("updating image: {}", e.getKey().getName());
                 if (isLabelImage.get(e.getKey())) i.draw((ImageInteger)e.getKey());
                 if (!track) getDisplayer().updateImageDisplay(e.getKey());
             }
@@ -132,8 +133,8 @@ public abstract class ImageWindowManager<T> {
     }
     
     public void reloadObjects(StructureObject parent, int childStructureIdx, boolean wholeTrack) {
-        reloadObjects_(parent, childStructureIdx, true);
-        if (wholeTrack) {
+        reloadObjects_(parent, childStructureIdx, true); // reload track images
+        if (wholeTrack) { // reload other images
             StructureObject parentTrack = parent.getTrackHead();
             while (parentTrack!=null) {
                 reloadObjects_(parentTrack, childStructureIdx, false);

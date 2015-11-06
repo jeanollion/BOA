@@ -35,6 +35,11 @@ import plugins.Transformation;
  */
 public class SuppressCentralHorizontalLine implements Transformation {
     NumberParameter pixelNumber = new BoundedNumberParameter("Number of pixel to erase", 0, 8, 1, null);
+    
+    public SuppressCentralHorizontalLine(){};
+    
+    public SuppressCentralHorizontalLine(int pixelNumber){this.pixelNumber.setValue(pixelNumber);};
+    
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {}
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {

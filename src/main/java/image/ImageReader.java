@@ -191,7 +191,7 @@ public class ImageReader {
                         if (lz==null) {
                             lz=lxy;
                             if (res.getSizeZ()>1) {
-                                logger.warn("No calibration in Z dimension found for image: {}, while image haz more than one Z plane", reader.getCurrentFile());
+                                //logger.warn("No calibration in Z dimension found for image: {}, while image haz more than one Z plane", reader.getCurrentFile());
                             }
                         }
                         if (scaleXY==0) scaleXY=lxy.value().floatValue();

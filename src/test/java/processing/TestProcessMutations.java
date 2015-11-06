@@ -52,11 +52,11 @@ public class TestProcessMutations {
         PluginFactory.findPlugins("plugins.plugins");
         TestProcessMutations t = new TestProcessMutations();
         t.init();
-        t.testSegMutationsFromXP(true, 0, 60);
+        t.testSegMutationsFromXP(true, 14, 16);
     }
     public void init() {
-        String dbName = "testFluo60";
-        //String dbName = "fluo1510_sub60";
+        //String dbName = "testFluo6";
+        String dbName = "fluo1510_sub60";
         db = new DBConfiguration(dbName);
         logger.info("Experiment: {} retrieved from db: {}", db.getExperiment().getName(), dbName);
     }
@@ -65,7 +65,7 @@ public class TestProcessMutations {
     }
     public void testSegMutationsFromXP(boolean parentMC, int time, ArrayList<ImageInteger> mcMask_, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
         int field = 0;
-        int channel = 0;
+        int channel = 3;
         //String dbName = "testFluo";
         
         MicroscopyField f = db.getExperiment().getMicroscopyField(field);
@@ -88,7 +88,7 @@ public class TestProcessMutations {
             SpotFluo2D5.debug=true;
             SpotFluo2D5.displayImages=parentMask_==null;
             ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
-            ObjectPopulation pop = SpotFluo2D5.run(input, parentMask, 1.5, 1.5, 5, 5, -0.18, 4, intermediateImages);
+            ObjectPopulation pop = SpotFluo2D5.run(input, parentMask, 1.5, 1.5, 5, 7, -0.18, 4, intermediateImages);
             
             /*ImageDisplayer disp = new IJImageDisplayer();
             disp.showImage(input);
@@ -150,4 +150,5 @@ public class TestProcessMutations {
         //disp.showImage(maskPaste);
         
     }
+    
 }

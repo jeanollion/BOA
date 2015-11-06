@@ -141,6 +141,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
             } else overlay=new Overlay();
             for (StructureObject o : selectedObjects) {
                 if (o==null) continue;
+                //logger.debug("getting mask of object: {}", o);
                 for (Roi r : getRoi(o.getMask(), i.getObjectOffset(o), !i.is2D).values()) {
                     overlay.add(r);
                     logger.trace("add roi: "+r+ " of bounds : "+r.getBounds()+" to overlay");

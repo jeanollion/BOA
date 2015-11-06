@@ -68,6 +68,7 @@ import plugins.plugins.transformations.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
 import plugins.plugins.transformations.ImageStabilizerXY;
 import plugins.plugins.transformations.SelectBestFocusPlane;
+import plugins.plugins.transformations.SuppressCentralHorizontalLine;
 import processing.ImageTransformation.InterpolationScheme;
 import testPlugins.dummyPlugins.DummySegmenter;
 import utils.MorphiumUtils;
@@ -110,7 +111,7 @@ public class TestProcessBacteria {
         File f =  new File(outputDir); f.mkdirs(); //deleteDirectory(f);
         Structure mc = new Structure("MicroChannel", -1, 0);
         Structure bacteria = new Structure("Bacteria", 0, 0);
-        Structure mutation = new Structure("Mutation", 1, 1);
+        Structure mutation = new Structure("Mutation", 0, 1); // parent structure 1 segParentStructure 0
         xp.getStructures().insert(mc, bacteria, mutation);
         mc.getProcessingChain().setSegmenter(new MicroChannelFluo2D());
         bacteria.getProcessingChain().setSegmenter(new BacteriaFluo());
@@ -119,7 +120,7 @@ public class TestProcessBacteria {
         bacteria.setTracker(new ClosedMicrochannelTracker());
         bacteria.setTrackCorrector(new MicroChannelBacteriaTrackCorrector());
         if (preProcessing) {// preProcessing 
-            
+            xp.getPreProcessingTemplate().addTransformation(0, null, new SuppressCentralHorizontalLine(6));
             xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1, 0)).setActivated(false);
             xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
             xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));

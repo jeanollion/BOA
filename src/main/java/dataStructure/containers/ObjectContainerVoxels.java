@@ -27,27 +27,28 @@ import java.util.ArrayList;
  *
  * @author jollion
  */
-@Embedded(polymorph=true)
+@Embedded(polymorph = true)
 public class ObjectContainerVoxels extends ObjectContainer {
+
     int[] x, y, z;
 
     public ObjectContainerVoxels(StructureObject structureObject) {
         super(structureObject);
         createCoordsArrays(structureObject.getObject());
     }
-    
+
     @Override
     public void updateObject() {
-        if (structureObject.getObject().getVoxels()!=null) {
+        if (structureObject.getObject().getVoxels() != null) {
             createCoordsArrays(structureObject.getObject());
-            bounds=structureObject.getObject().getBounds();
+            bounds = structureObject.getObject().getBounds();
         } else {
-            x=null;
-            y=null;
-            z=null;
+            x = null;
+            y = null;
+            z = null;
         }
     }
-    
+
     private void createCoordsArrays(Object3D object) {
         if (object.is3D()) {
             ArrayList<Voxel> voxels = object.getVoxels();
@@ -56,9 +57,9 @@ public class ObjectContainerVoxels extends ObjectContainer {
             z = new int[voxels.size()];
             int idx = 0;
             for (Voxel v : voxels) {
-                x[idx]=v.x;
-                y[idx]=v.y;
-                z[idx++]=v.z;
+                x[idx] = v.x;
+                y[idx] = v.y;
+                z[idx++] = v.z;
             }
         } else {
             ArrayList<Voxel> voxels = object.getVoxels();
@@ -67,27 +68,44 @@ public class ObjectContainerVoxels extends ObjectContainer {
             z = null;
             int idx = 0;
             for (Voxel v : voxels) {
-                x[idx]=v.x;
-                y[idx++]=v.y;
+                x[idx] = v.x;
+                y[idx++] = v.y;
             }
         }
     }
-    
+
     private ArrayList<Voxel> getVoxels() {
-        if (x==null || y==null) return new ArrayList(0);
-        if (z!=null) {
+        if (x == null || y == null) {
+            return new ArrayList(0);
+        }
+        if (z != null) {
             ArrayList<Voxel> voxels = new ArrayList<Voxel>(x.length);
-            for (int i  = 0; i<x.length; ++i) voxels.add(new Voxel(x[i], y[i], z[i]));
+            for (int i = 0; i < x.length; ++i) {
+                voxels.add(new Voxel(x[i], y[i], z[i]));
+            }
             return voxels;
         } else {
             ArrayList<Voxel> voxels = new ArrayList<Voxel>(x.length);
-            for (int i  = 0; i<x.length; ++i) voxels.add(new Voxel(x[i], y[i], 0));
+            for (int i = 0; i < x.length; ++i) {
+                voxels.add(new Voxel(x[i], y[i], 0));
+            }
             return voxels;
         }
     }
-    
-    public Object3D getObject() {return new Object3D(getVoxels(), structureObject.getIdx()+1, bounds, structureObject.getScaleXY(), structureObject.getScaleZ());}
-    @Override public void deleteObject(){bounds=null;x=null;y=null;z=null;}
+
+    public Object3D getObject() {
+        return new Object3D(getVoxels(), structureObject.getIdx() + 1, bounds, structureObject.getScaleXY(), structureObject.getScaleZ());
+    }
+
     @Override
-    public void relabelObject(int newIdx) {}
+    public void deleteObject() {
+        bounds = null;
+        x = null;
+        y = null;
+        z = null;
+    }
+
+    @Override
+    public void relabelObject(int newIdx) {
+    }
 }

@@ -59,10 +59,10 @@ public class SpotFluo2D5 implements Segmenter {
     public static boolean displayImages = false;
     NumberParameter smoothRadius = new BoundedNumberParameter("Smooth Radius", 1, 1.5, 0, 10);
     NumberParameter laplacianRadius = new BoundedNumberParameter("Laplacian Radius", 1, 1.5, 1, 5);
-    NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxel)", 0, 5, 1, null);
+    NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxel)", 0, 8, 1, null);
     NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 1, 7, 1, null);
-    NumberParameter thresholdSeedsHess = new BoundedNumberParameter("Threshold for Seeds (hessian", 2, -0.23, -3, 0);
-    NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 1, 4.5, 1, null);
+    NumberParameter thresholdSeedsHess = new BoundedNumberParameter("Threshold for Seeds (hessian", 2, -0.2, -3, 0);
+    NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 1, 5, 1, null);
     Parameter[] parameters = new Parameter[]{smoothRadius, laplacianRadius,minSpotSize, thresholdHigh, thresholdSeedsHess, thresholdLow };
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         return run(input, parent.getMask(), smoothRadius.getValue().doubleValue(), laplacianRadius.getValue().doubleValue(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdSeedsHess.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), null);
