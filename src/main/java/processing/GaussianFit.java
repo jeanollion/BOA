@@ -18,6 +18,7 @@
 package processing;
 
 import static core.Processor.logger;
+import dataStructure.objects.Object3D;
 import dataStructure.objects.Voxel;
 import image.Image;
 import image.ImgLib2ImageWrapper;
@@ -44,11 +45,11 @@ import net.imglib2.type.numeric.integer.UnsignedByteType;
  * @author jollion
  */
 public class GaussianFit {
-    public static Map<Voxel, double[]> run(Image image, List<Voxel> peaks, double typicalSigma) {
+    public static Map<Object3D, double[]> run(Image image, List<Object3D> peaks, double typicalSigma) {
         return run(image, peaks, typicalSigma, 300, 1e-3d, 1e-1d);
     }
     
-    public static Map<Voxel, double[]> run(Image image, List<Voxel> peaks, double typicalSigma, int maxIter, double lambda, double termEpsilon ) {
+    public static Map<Object3D, double[]> run(Image image, List<Object3D> peaks, double typicalSigma, int maxIter, double lambda, double termEpsilon ) {
         double[] sigmas = new double[image.getSizeZ()>1 ? 3 :2];
         for (int i = 0; i<sigmas.length; ++i) sigmas[i]=typicalSigma;
         return run(image, peaks, sigmas, maxIter, lambda, termEpsilon);
@@ -63,12 +64,19 @@ public class GaussianFit {
      * @param termEpsilon
      * @return for each peak array of fitted parameters: coordinates, intensity@peak, 1/sigma2 in each dimension, error
      */
-    public static Map<Voxel, double[]> run(Image image, List<Voxel> peaks, double[] typicalSigmas, int maxIter, double lambda, double termEpsilon ) {
+    public static Map<Object3D, double[]> run(Image image, List<Object3D> peaks, double[] typicalSigmas, int maxIter, double lambda, double termEpsilon ) {
         boolean is3D = image.getSizeZ()>1;
         Img img = ImgLib2ImageWrapper.getImage(image);
         MLEllipticGaussianEstimator estimator = new MLEllipticGaussianEstimator(typicalSigmas);
         EllipticGaussianOrtho fitFunction = new EllipticGaussianOrtho();
-        PeakFitter<UnsignedByteType> fitter = new PeakFitter<UnsignedByteType>(img, getPeaksLocalizables(peaks, is3D), 
+        Map<Localizable, Object3D> locObj = new HashMap<Localizable, Object3D>(peaks.size());
+        List<Localizable> peaksLoc = new ArrayList<Localizable>(peaks.size());
+        for (Object3D o : peaks) {
+            Localizable l = getLocalizable(o.getCenter(), is3D);
+            peaksLoc.add(l);
+            locObj.put(l, o);
+        }
+        PeakFitter<UnsignedByteType> fitter = new PeakFitter<UnsignedByteType>(img, peaksLoc, 
 				new LevenbergMarquardtSolver(maxIter, lambda, termEpsilon), fitFunction, estimator);
         if ( !fitter.checkInput() || !fitter.process()) {
             logger.error("Problem with peak fitting: {}", fitter.getErrorMessage());
@@ -77,27 +85,18 @@ public class GaussianFit {
         logger.debug("Peak fitting of {} peaks, using {} threads, done in {} ms.", peaks.size(), fitter.getNumThreads(), fitter.getProcessingTime());
         
         Map<Localizable, double[]> results = fitter.getResult();
-        Map<Voxel, double[]> results2 = new HashMap<Voxel, double[]>(results.size());
+        Map<Object3D, double[]> results2 = new HashMap<Object3D, double[]>(results.size());
         for (Entry<Localizable, double[]> e : results.entrySet()) {
             Observation data = LocalizationUtils.gatherObservationData(img, e.getKey(), estimator.getDomainSpan());
             double[] params = new double[e.getValue().length+1];
             System.arraycopy(e.getValue(), 0, params, 0, e.getValue().length);
             params[params.length-1] = LevenbergMarquardtSolver.chiSquared(data.X, e.getValue(), data.I, fitFunction); // error
-            results2.put(convertLocalizable(e.getKey(), is3D), params);
+            results2.put(locObj.get(e.getKey()), params);
         }
         return results2;
     }
-    private static Localizable convertVoxel(Voxel v, boolean is3D) {
-        if (is3D) return new Point((long)v.x, (long)v.y, (long)v.z);
-        else return new Point((long)v.x, (long)v.y);
-    }
-    private static Voxel convertLocalizable(Localizable l, boolean is3D) {
-        if (is3D) return new Voxel(l.getIntPosition(0), l.getIntPosition(1), l.getIntPosition(2));
-        else return new Voxel(l.getIntPosition(0), l.getIntPosition(1), 0);
-    }
-    private static List<Localizable> getPeaksLocalizables(List<Voxel> peaks, boolean is3D) {
-        ArrayList<Localizable> res = new ArrayList<Localizable>(peaks.size());
-        for (Voxel v : peaks) res.add(convertVoxel(v, is3D));
-        return res;
+    private static Localizable getLocalizable(double[] v, boolean is3D) {
+        if (is3D) return new Point((long)(v[0]+0.5d), (long)(v[1]+0.5d), (long)(v[2]+0.5d));
+        else return new Point((long)(v[0]+0.5d), (long)(v[1]+0.5d));
     }
 }
