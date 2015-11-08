@@ -24,5 +24,5 @@ package plugins;
  */
 public interface TransformationTimeIndependent extends Transformation {
     //public SelectionMode getConfigurationTimePointSelectionMode();
-    public SelectionMode getOutputChannelSelectionMode();
+    
 }

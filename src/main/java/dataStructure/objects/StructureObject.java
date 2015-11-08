@@ -47,7 +47,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected int structureIdx;
     protected int idx;
     @Transient protected Experiment xp;
-    @Transient protected SmallArray<ArrayList<StructureObject>> childrenSM=new SmallArray<ArrayList<StructureObject>>();
+    @Transient protected SmallArray<ArrayList<StructureObject>> childrenSM=new SmallArray<ArrayList<StructureObject>>(); //TODO: switch to ArrayList !!
     
     // track-related attributes
     protected int timePoint;
@@ -144,7 +144,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public ArrayList<? extends StructureObject> getChildObjects(int structureIdx) {return getChildren(structureIdx);} // for overriding purpose
     public ArrayList<StructureObject> getChildren(int structureIdx) {return this.childrenSM.get(structureIdx);}
     public ArrayList<StructureObject> getChildObjects(int structureIdx, ObjectDAO dao, boolean overrideIfExist) {
-        if (overrideIfExist || getChildObjects(structureIdx)==null) setChildObjects(dao.getObjects(id, structureIdx), structureIdx);
+        if (overrideIfExist || getChildren(structureIdx)==null) setChildObjects(dao.getObjects(id, structureIdx), structureIdx);
         return getChildren(structureIdx);
     }
     public void setChildObjects(ArrayList<StructureObject> children, int structureIdx) {
@@ -499,15 +499,17 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return rawImagesC.get(channelIdx);
     }
     private void extendBoundsInZIfNecessary(int channelIdx, BoundingBox bounds) { //when the current structure is 2D but channel is 3D 
-        if (bounds.getSizeZ()==1 && is2D()) { 
-            int sizeZ = getExperiment().getMicroscopyField(fieldName).getSizeZ(channelIdx);
+        //logger.debug("extends bounds if necessary: is2D: {}, bounds 2D: {}, sizeZ of image to open: {}", is2D(), bounds.getSizeZ(), getExperiment().getMicroscopyField(fieldName).getSizeZ(channelIdx));
+        if (bounds.getSizeZ()==1 && is2D() && channelIdx!=this.getExperiment().getChannelImageIdx(structureIdx)) { 
+            int sizeZ = getExperiment().getMicroscopyField(fieldName).getSizeZ(channelIdx); //TODO no reliable if a transformation removes planes -> need to record the dimensions of the preProcessed Images
             if (sizeZ>1) {
                 bounds.expandZ(sizeZ-1);
             }
         }
     }
     public boolean is2D() {
-        return getExperiment().getMicroscopyField(fieldName).getSizeZ(getExperiment().getChannelImageIdx(structureIdx))==1;
+        //return getExperiment().getMicroscopyField(fieldName).getSizeZ(getExperiment().getChannelImageIdx(structureIdx))==1; //TODO no reliable if a transformation removes planes
+        return this.getMask().getSizeZ()==1;
     }
     
     public Image openRawImage(int structureIdx, BoundingBox bounds) {

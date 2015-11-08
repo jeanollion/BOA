@@ -58,6 +58,7 @@ import plugins.plugins.preFilter.Median;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.BacteriesFluo2D;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
+import plugins.plugins.segmenters.SpotFluo2D5;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.trackCorrector.MicroChannelBacteriaTrackCorrector;
 import plugins.plugins.trackers.ClosedMicrochannelTracker;
@@ -67,6 +68,7 @@ import plugins.plugins.transformations.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
 import plugins.plugins.transformations.ImageStabilizerXY;
 import plugins.plugins.transformations.SelectBestFocusPlane;
+import plugins.plugins.transformations.SuppressCentralHorizontalLine;
 import processing.ImageTransformation.InterpolationScheme;
 import testPlugins.dummyPlugins.DummySegmenter;
 import utils.MorphiumUtils;
@@ -89,9 +91,9 @@ public class TestProcessBacteria {
         //t.subsetTimePoints(595, 630, "/data/Images/Fluo/test", "/data/Images/Fluo/testsub595-630");
         //t.testRotation();
         //t.testSegBacteries();
-        //t.testSegBacteriesFromXP();
-        t.subsetTimePoints(0, 60, "/data/Images/Fluo/films1510/63me120r-14102015-LR62R1-lbiptg100x_1", "/data/Images/Fluo/films1510/63me120r-14102015-LR62R1-lbiptg100x_1_sub60", "champ1");
-
+        t.testSegBacteriesFromXP();
+        //t.subsetTimePoints(0, 60, "/data/Images/Fluo/films1510/63me120r-14102015-LR62R1-lbiptg100x_1", "/data/Images/Fluo/films1510/63me120r-14102015-LR62R1-lbiptg100x_1_sub60", "champ1");
+        //t.testSegMicroChannels();
         //t.testSegBactAllTimes();
         //t.runSegmentationBacteriaOnSubsetofDBXP(569, 630);
         //t.process(0, false);
@@ -109,20 +111,22 @@ public class TestProcessBacteria {
         File f =  new File(outputDir); f.mkdirs(); //deleteDirectory(f);
         Structure mc = new Structure("MicroChannel", -1, 0);
         Structure bacteria = new Structure("Bacteria", 0, 0);
-        Structure mutation = new Structure("Mutation", 1, 1);
+        Structure mutation = new Structure("Mutation", 0, 1); // parent structure 1 segParentStructure 0
         xp.getStructures().insert(mc, bacteria, mutation);
         mc.getProcessingChain().setSegmenter(new MicroChannelFluo2D());
         bacteria.getProcessingChain().setSegmenter(new BacteriaFluo());
+        mutation.getProcessingChain().setSegmenter(new SpotFluo2D5());
         mc.setTracker(new ObjectIdxTracker());
         bacteria.setTracker(new ClosedMicrochannelTracker());
         bacteria.setTrackCorrector(new MicroChannelBacteriaTrackCorrector());
         if (preProcessing) {// preProcessing 
-            xp.getPreProcessingTemplate().addTransformation(0, null, new SelectBestFocusPlane(3));
-            xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1.5, 0));
+            xp.getPreProcessingTemplate().addTransformation(0, null, new SuppressCentralHorizontalLine(6));
+            xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1, 0)).setActivated(false);
             xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
             xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
-            //xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
+            xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(false);
             xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannels2D());
+            xp.getPreProcessingTemplate().addTransformation(0, null, new SelectBestFocusPlane(3)); // faster after crop, but previous transformation might be aftected if the first plane is really out of focus
             xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY().setReferenceTimePoint(0));
         }
     }
@@ -205,7 +209,7 @@ public class TestProcessBacteria {
         setUpXp(false, "/data/Images/Fluo/OutputTest");
         testImport(inputDir);
         //List<Integer> flip = Arrays.asList(new Integer[]{0});
-        for (int i =0; i<xp.getMicrocopyFieldCount(); ++i) testCrop(i, true); //flip.contains(new Integer(i))
+        for (int i =0; i<xp.getMicrocopyFieldCount(); ++i) testCrop(i, false); //flip.contains(new Integer(i))
     }
     
     public void testCrop(int fieldIdx, boolean flip) {
@@ -213,6 +217,7 @@ public class TestProcessBacteria {
         xp.getMicroscopyField(fieldIdx).getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
         if (flip) xp.getMicroscopyField(fieldIdx).getPreProcessingChain().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
         xp.getMicroscopyField(fieldIdx).getPreProcessingChain().addTransformation(0, null, new CropMicroChannels2D());
+              
         //Image[][] imageInputTC = new Image[xp.getMicroscopyField(0).getInputImages().getTimePointNumber()][1];
         //for (int t = 0; t<imageInputTC.length; ++t) imageInputTC[t][0] = xp.getMicroscopyField(0).getInputImages().getImage(0, t);
         
@@ -223,12 +228,15 @@ public class TestProcessBacteria {
     }
     
     public void testSegMicroChannels() {
-        testCrop("/data/Images/Fluo/testsub");
+        testCrop("/data/Images/Fluo/films1510/63me120r-14102015-LR62R1-lbiptg100x_1");
         Image image = xp.getMicroscopyField(0).getInputImages().getImage(0, 0);
-        ArrayList<Object3D> objects = MicroChannelFluo2D.getObjects(image, 300, 22, 2);
+        ImageDisplayer disp = new IJImageDisplayer();
+        disp.showImage(image);
+        ArrayList<Object3D> objects = MicroChannelFluo2D.run(image, 300, 22, 2);
         ObjectPopulation pop = new ObjectPopulation(objects, image);
         Image labels = pop.getLabelImage();
-        ImageDisplayer disp = new IJImageDisplayer();
+        
+        
         disp.showImage(labels);
         /*Structure microChannel = new Structure("MicroChannel", -1, 0);
         xp.getStructures().insert(microChannel);
@@ -240,7 +248,7 @@ public class TestProcessBacteria {
         testCrop("/data/Images/Fluo/testsub");
         
         Image image = xp.getMicroscopyField(0).getInputImages().getImage(0, 0);
-        ArrayList<Object3D> objects = MicroChannelFluo2D.getObjects(image, 350, 30, 5);
+        ArrayList<Object3D> objects = MicroChannelFluo2D.run(image, 350, 30, 5);
         Object3D o = objects.get(1);
         ImageMask parentMask = o.getMask();
         Image input = image.crop(o.getBounds());
@@ -248,10 +256,10 @@ public class TestProcessBacteria {
     }
     
     public void testSegBacteriesFromXP() {
-        int time = 578;
-        int channel =2;
+        int time = 78;
+        int microChannel =0;
         int field = 0;
-        String dbName = "testFluo";
+        String dbName = "fluo1510";
         //String dbName = "testFluo60";
         Morphium m=MorphiumUtils.createMorphium(dbName);
         ExperimentDAO xpDAO = new ExperimentDAO(m);
@@ -262,11 +270,11 @@ public class TestProcessBacteria {
         MicroscopyField f = xp.getMicroscopyField(field);
         StructureObject root = dao.getRoot(f.getName(), time);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
-        StructureObject mc = root.getChildObjects(0, dao, false).get(channel);
+        StructureObject mc = root.getChildObjects(0, dao, false).get(microChannel);
         Image input = mc.getRawImage(1);
         ImageMask parentMask = mc.getMask();
         BacteriaFluo.debug=true;
-        ObjectPopulation pop = BacteriaFluo.run(input, parentMask, 0.02, 100, 10, 3, 40, 2, 1, 10);
+        ObjectPopulation pop = BacteriaFluo.run(input, parentMask, 0.03, 100, 10, 3, 40, 2, 1, 2);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
         disp.showImage(pop.getLabelImage());
@@ -298,15 +306,24 @@ public class TestProcessBacteria {
         return dao.getTrackErrors(f.getName(), 1).size();
     }
     
-    public void process(String dbName, int field, boolean preProcess) {
-        Morphium m = MorphiumUtils.createMorphium(dbName);
-        ExperimentDAO xpDAO = new ExperimentDAO(m);
-        xp=xpDAO.getExperiment();
+    public void process(String dbName, boolean preProcess, int... fields) {
+        DBConfiguration db = new DBConfiguration(dbName);
+        xp=db.getExperiment();
         logger.info("Experiment: {} retrieved from db: {}", xp.getName(), dbName);
-        ObjectDAO dao = new ObjectDAO(m, xpDAO);
-        MicroscopyField f = xp.getMicroscopyField(field);
-        if (preProcess) Processor.preProcessImages(f, dao, true, true);
-        Processor.processAndTrackStructures(xp, f, dao, true, true);
+        ObjectDAO dao = db.getDao();
+        if (fields.length==0) {
+            if (preProcess) Processor.preProcessImages(xp, dao, true);
+            Processor.processAndTrackStructures(xp, dao);
+        } else {
+            for (int field : fields) {
+                MicroscopyField f = xp.getMicroscopyField(field);
+                if (preProcess) Processor.preProcessImages(f, dao, true, true);
+                Processor.processAndTrackStructures(xp, f, dao, true, true);
+                dao.clearCache();
+            }
+            
+        }
+        
     }
     
     public void correctTracks(String dbName, int field, int structureIdx) {
@@ -364,7 +381,7 @@ public class TestProcessBacteria {
                 
                 if (false) {
                 Image image = f.getInputImages().getImage(0, t);
-                ArrayList<Object3D> objects = MicroChannelFluo2D.getObjects(image, 350, 30, 5);
+                ArrayList<Object3D> objects = MicroChannelFluo2D.run(image, 350, 30, 5);
                 
                 int mcIdx = 0;
                 for (Object3D o : objects) {

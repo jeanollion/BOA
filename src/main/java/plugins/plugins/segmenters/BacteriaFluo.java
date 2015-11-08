@@ -51,14 +51,15 @@ import utils.Utils;
  */
 public class BacteriaFluo implements Segmenter {
     public static boolean debug = false;
-    NumberParameter splitThreshold = new BoundedNumberParameter("Split Threshold", 4, 0.20, 0, 1);
+    NumberParameter splitThreshold = new BoundedNumberParameter("Split Threshold", 4, 0.30, 0, 1); //0.2 dans le cas des grandes variations de fluo
     NumberParameter minSize = new BoundedNumberParameter("Minimum size", 0, 100, 50, null);
     NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 5, 0, null);
     NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 3, 1, 5);
     NumberParameter dogScale = new BoundedNumberParameter("DoG scale", 0, 40, 5, null);
     NumberParameter hessianScale = new BoundedNumberParameter("Hessian scale", 1, 2, 1, 6);
     NumberParameter hessianThresholdFactor = new BoundedNumberParameter("Hessian threshold factor", 1, 1, 0, 5);
-    Parameter[] parameters = new Parameter[]{splitThreshold, minSize, contactLimit, smoothScale, dogScale, hessianScale, hessianThresholdFactor};
+    NumberParameter thresholdForEmptyChannel = new BoundedNumberParameter("Threshold for empty channel", 1, 2, 0, null);
+    Parameter[] parameters = new Parameter[]{splitThreshold, minSize, contactLimit, smoothScale, dogScale, hessianScale, hessianThresholdFactor, thresholdForEmptyChannel};
     
     public BacteriaFluo setSplitThreshold(double splitThreshold) {
         this.splitThreshold.setValue(splitThreshold);
@@ -87,7 +88,7 @@ public class BacteriaFluo implements Segmenter {
     
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         double fusionThreshold = splitThreshold.getValue().doubleValue()/10d;
-        return run(input, parent.getMask(), fusionThreshold, minSize.getValue().intValue(), contactLimit.getValue().intValue(), smoothScale.getValue().doubleValue(), dogScale.getValue().doubleValue(), hessianScale.getValue().doubleValue(), hessianThresholdFactor.getValue().doubleValue(), 5);
+        return run(input, parent.getMask(), fusionThreshold, minSize.getValue().intValue(), contactLimit.getValue().intValue(), smoothScale.getValue().doubleValue(), dogScale.getValue().doubleValue(), hessianScale.getValue().doubleValue(), hessianThresholdFactor.getValue().doubleValue(), thresholdForEmptyChannel.getValue().doubleValue());
     }
     
     
@@ -96,7 +97,7 @@ public class BacteriaFluo implements Segmenter {
         return "Bacteria Fluo: " + Utils.toStringArray(parameters);
     }   
     
-    public static ObjectPopulation run(Image input, ImageMask mask, double fusionThreshold, int minSize, int contactLimit, double smoothScale, double dogScale, double hessianScale, double hessianThresholdFactor, int localThresholdMargin) {
+    public static ObjectPopulation run(Image input, ImageMask mask, double fusionThreshold, int minSize, int contactLimit, double smoothScale, double dogScale, double hessianScale, double hessianThresholdFactor, double thresholdForEmptyChannel) {
         ImageDisplayer disp=debug?new IJImageDisplayer():null;
         double hessianThresholdFacto = 1;
         //ImageFloat smoothed = ImageFeatures.gaussianSmooth(input, smoothScale, smoothScale, false).setName("smoothed");
@@ -109,12 +110,25 @@ public class BacteriaFluo implements Segmenter {
         //Image hessian = ImageFeatures.getHessian(dog, hessianScale, false)[0].setName("hessian");
         if (debug) disp.showImage(dog.duplicate("DoG"));
         //double t0 = IJAutoThresholder.runThresholder(dog, mask, null, AutoThresholder.Method.Otsu, 0);
+        double threshold = IJAutoThresholder.runThresholder(dog, mask, null, AutoThresholder.Method.Otsu, 0);
+        
+        // criterion for empty channel: 
+        double[] musigmaOver = getMeanAndSigma(dog, mask, 0, true);
+        double[] musigmaUnder = getMeanAndSigma(dog, mask, 0, false);
+        if (musigmaOver[2]==0 || musigmaUnder[2]==0) return new ObjectPopulation(input);
+        else {
+            
+            if (musigmaOver[0] - musigmaUnder[0]<thresholdForEmptyChannel) return new ObjectPopulation(input);
+            //if (musigmaUnder[0]+sigmaCoeff*musigmaUnder[1]>musigmaOver[0]) return new ObjectPopulation(input);
+            //logger.debug("over: mu: {} sigma: {}, under: mu: {} sigma: {} criterion: {}", musigmaOver[0], musigmaOver[1], musigmaUnder[0], musigmaUnder[1], musigmaUnder[0]+sigmaCoeff*musigmaUnder[1]);
+            //double welsh = (musigmaOver[0]-musigmaUnder[0])/(Math.sqrt(musigmaOver[1]*musigmaOver[1]/musigmaOver[2]+ musigmaUnder[1]*musigmaUnder[1]/musigmaUnder[2]));
+        }
         ObjectPopulation pop1 = SimpleThresholder.run(dog, 0);
         
         pop1.filter(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
         pop1.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
         
-        double threshold = IJAutoThresholder.runThresholder(dog, mask, null, AutoThresholder.Method.Otsu, 0);
+        
         if (debug) logger.debug("threhsold: {}", threshold);
         pop1.filter(new ObjectPopulation.MeanIntensity(threshold, dog));
         if (debug) disp.showImage(pop1.getLabelImage().duplicate("first seg"));
@@ -135,7 +149,7 @@ public class BacteriaFluo implements Segmenter {
         //ImageOperations.normalize(dog, pop1.getLabelImage(), dog);
         //Image dogNorm = ImageOperations.multiply(dog, null, 100/BasicMeasurements.getPercentileValue(pop1.getObjects().get(0), 0.5, smoothed));
         //Image log = ImageFeatures.getLaplacian(smoothed, 2, true, false);
-        Image hessian = ImageFeatures.getHessian(dog, hessianScale, false)[0].setName("hessian norm");
+        Image hessian = ImageFeatures.getHessian(dog, hessianScale, false)[0].setName("hessian");
         
         if (debug) {
             disp.showImage(dog);
@@ -149,7 +163,7 @@ public class BacteriaFluo implements Segmenter {
         ImageByte watershedMask = new ImageByte("", input);
         for (Object3D maskObject : pop1.getObjects()) {
             maskObject.draw(watershedMask, 1);
-            double[] meanAndSigma = getMeanAndSigma(hessian, watershedMask, 0);
+            double[] meanAndSigma = getMeanAndSigma(hessian, watershedMask, 0, false); // mean & sigma < 0
             //logger.debug("hessian mean: {}, sigma: {}, hessian thld: {}", meanAndSigma[0],meanAndSigma[1], sigmaCoeff * meanAndSigma[1]);
             ImageInteger seedMap = ImageOperations.threshold(hessian, hessianThresholdFacto * meanAndSigma[1], false, false, false, null);
             seedMap = ImageOperations.and(watershedMask, seedMap, seedMap).setName("seeds");
@@ -162,17 +176,18 @@ public class BacteriaFluo implements Segmenter {
             ObjectPopulation localPop= RegionCollection.mergeHessianBacteria(popWS, dog, hessian, fusionThreshold);
             if (res==null) res= localPop;
             else res.addObjects(localPop.getObjects());
+            //if (debug) disp.showImage(localPop.getLabelImage().setName("after merging"));
             maskObject.draw(watershedMask, 0);
         }
         if (res!=null) {
-            if (contactLimit>0) res.filter(new ObjectPopulation.ContactBorder(contactLimit, mask, ObjectPopulation.ContactBorder.Border.Y));
+            if (contactLimit>0) res.filter(new ObjectPopulation.ContactBorder(contactLimit, mask, ObjectPopulation.ContactBorder.Border.YDown));
             res.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
         }        
         return res;
         
     }
     
-    public static double[] getMeanAndSigma(Image image, ImageMask mask, double thld) {
+    public static double[] getMeanAndSigma(Image image, ImageMask mask, double thld, boolean overThreshold) {
         double mean = 0;
         double count = 0;
         double values2 = 0;
@@ -181,7 +196,7 @@ public class BacteriaFluo implements Segmenter {
             for (int xy = 0; xy < image.getSizeXY(); ++xy) {
                 if (mask.insideMask(xy, z)) {
                     value = image.getPixel(xy, z);
-                    if (value <= thld) {
+                    if ((overThreshold && value>=thld) || (!overThreshold && value <= thld)) {
                         mean += value;
                         count++;
                         values2 += value * value;
@@ -192,9 +207,9 @@ public class BacteriaFluo implements Segmenter {
         if (count != 0) {
             mean /= count;
             values2 /= count;
-            return new double[]{mean, Math.sqrt(values2 - mean * mean)};
+            return new double[]{mean, Math.sqrt(values2 - mean * mean), count};
         } else {
-            return new double[]{0, 0};
+            return new double[]{0, 0, 0};
         }
     }
 

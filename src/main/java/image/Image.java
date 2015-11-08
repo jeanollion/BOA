@@ -48,6 +48,8 @@ public abstract class Image implements ImageProperties {
         return (T)this;
     }
     
+    public ImageProperties getProperties() {return new BlankMask(name, this);}
+    
     public static <T> T createEmptyImage(String name, T imageType, ImageProperties properties) {
         if (imageType instanceof ImageByte) return (T)new ImageByte(name, properties);
         else if (imageType instanceof ImageShort) return (T)new ImageShort(name, properties);

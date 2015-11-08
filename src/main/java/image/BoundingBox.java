@@ -129,7 +129,7 @@ public class BoundingBox {
     public void expand(Voxel v) {
         expandX(v.x);
         expandY(v.y);
-        if (v instanceof Voxel) expandZ(v.z);
+        expandZ(v.z);
     }
     
     public void expand(BoundingBox other) {
@@ -296,6 +296,10 @@ public class BoundingBox {
         hash = 29 * hash + this.zMin;
         hash = 29 * hash + this.zMax;
         return hash;
+    }
+    
+    public BlankMask getImageProperties(float scaleXY, float scaleZ) {
+        return new BlankMask("", this, scaleXY, scaleZ);
     }
     
     public BlankMask getImageProperties(String name, float scaleXY, float scaleZ) {

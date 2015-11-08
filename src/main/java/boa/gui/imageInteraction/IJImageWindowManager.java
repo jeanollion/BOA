@@ -49,6 +49,7 @@ import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 
 /**
@@ -117,12 +118,12 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
     }*/
 
     @Override
-    public void selectObjects(Image image, boolean addToCurrentSelection, StructureObject... selectedObjects) {
+    public void selectObjects(Image image, boolean addToCurrentSelection, List<StructureObject> selectedObjects) {
         ImagePlus ip;
         if (image==null) ip = displayer.getCurrentImage();
         else ip = displayer.getImage(image);
         if (ip==null) return;
-        if (selectedObjects==null || selectedObjects.length==0 || (selectedObjects.length==1 && selectedObjects[0]==null)) {
+        if (selectedObjects.isEmpty() || (selectedObjects.get(0)==null)) {
             if (!addToCurrentSelection) {
                 if (ip.getOverlay()!=null) {
                     removeAllRois(ip.getOverlay(), false);
@@ -140,6 +141,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
             } else overlay=new Overlay();
             for (StructureObject o : selectedObjects) {
                 if (o==null) continue;
+                //logger.debug("getting mask of object: {}", o);
                 for (Roi r : getRoi(o.getMask(), i.getObjectOffset(o), !i.is2D).values()) {
                     overlay.add(r);
                     logger.trace("add roi: "+r+ " of bounds : "+r.getBounds()+" to overlay");

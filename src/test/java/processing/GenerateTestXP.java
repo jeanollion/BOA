@@ -17,18 +17,22 @@
  */
 package processing;
 
+import core.Processor;
+
 /**
  *
  * @author jollion
  */
 public class GenerateTestXP {
     public static void main(String[] args) {
+        String dbName = "fluo1510";
         TestProcessBacteria t = new TestProcessBacteria();
         t.setUpXp(true, "/data/Images/Fluo/films1510/Output");
         //t.setUpXp(true, "/home/jollion/Documents/LJP/DataLJP/TestOutput60");
         //t.testImport("/data/Images/Fluo/testsub595-630");
-        t.testImport("/data/Images/Fluo/films1510/63me120r-14102015-LR62R1-lbiptg100x_1_sub60");
+        t.testImport("/data/Images/Fluo/films1510/63me120r-14102015-LR62R1-lbiptg100x_1");
         //t.testImport("/home/jollion/Documents/LJP/DataLJP/test");
-        t.saveXP("fluo1510_sub60");
+        t.saveXP(dbName);
+        t.process(dbName, true);
     }
 }

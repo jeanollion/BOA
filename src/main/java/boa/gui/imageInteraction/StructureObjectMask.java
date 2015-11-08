@@ -57,6 +57,11 @@ public class StructureObjectMask extends ImageObjectInterface {
         return new ImageObjectInterfaceKey(parent, childStructureIdx, false);
     }
 
+    public BoundingBox[] getOffsets() {
+        if (offsets==null) reloadObjects();
+        return offsets;
+    }
+    
     public void reloadObjects() {
         if (childStructureIdx == parent.getStructureIdx()) {
             objects = new ArrayList<StructureObject>(1);
@@ -73,7 +78,7 @@ public class StructureObjectMask extends ImageObjectInterface {
         }
     }
 
-    protected ArrayList<StructureObject> getObjects() {
+    @Override public ArrayList<StructureObject> getObjects() {
         if (objects == null) {
             reloadObjects();
         }
@@ -85,6 +90,7 @@ public class StructureObjectMask extends ImageObjectInterface {
         if (is2D) {
             z = 0;
         }
+        getOffsets();
         for (int i = 0; i < offsets.length; ++i) {
             if (offsets[i].contains(x, y, z)) {
                 if (getObjects().get(i).getMask().insideMask(x - offsets[i].getxMin(), y - offsets[i].getyMin(), z - offsets[i].getzMin())) {
@@ -122,7 +128,7 @@ public class StructureObjectMask extends ImageObjectInterface {
 
     @Override
     public void draw(ImageInteger image) {
-        for (int i = 0; i < offsets.length; ++i) {
+        for (int i = 0; i < getOffsets().length; ++i) {
             getObjects().get(i).getObject().draw(image, objects.get(i).getObject().getLabel(), offsets[i]);
         }
     }
@@ -141,5 +147,7 @@ public class StructureObjectMask extends ImageObjectInterface {
     public boolean isTimeImage() {
         return false;
     }
+
+
 
 }

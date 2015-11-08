@@ -93,13 +93,15 @@ public class Processor {
         images.deleteFromDAO(); // delete images if existing in imageDAO
         PreProcessingChain ppc = field.getPreProcessingChain();
         for (TransformationPluginParameter<Transformation> tpp : ppc.getTransformations()) {
-            Transformation transfo = tpp.getPlugin();
-            logger.trace("adding transformation: {} of class: {} to field: {}", transfo, transfo.getClass(), field.getName());
-            if (computeConfigurationData) {
-                transfo.computeConfigurationData(tpp.getInputChannel(), images);
-                tpp.setConfigurationData(transfo.getConfigurationData());
+            if (tpp.isActivated()) {
+                Transformation transfo = tpp.getPlugin();
+                logger.debug("adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}", transfo, transfo.getClass(), field.getName(), tpp.getInputChannel(), tpp.getOutputChannels());
+                if (computeConfigurationData) {
+                    transfo.computeConfigurationData(tpp.getInputChannel(), images);
+                    tpp.setConfigurationData(transfo.getConfigurationData());
+                }
+                images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
             }
-            images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
         }
     }
     
@@ -108,6 +110,7 @@ public class Processor {
         for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
             logger.info("processing structures of Field: {}, total number of timePoint: {}...", xp.getMicroscopyField(i).getName(), xp.getMicroscopyField(i).getTimePointNumber());
             Processor.processAndTrackStructures(xp, xp.getMicroscopyField(i), dao, false, true);
+            if (dao!=null) dao.clearCache();
         }
     }
     /**
@@ -308,6 +311,7 @@ public class Processor {
             else if (StructureObject.TrackFlag.correctionMergeToErase.equals((o).getTrackFlag())) {
                 if (o.getSiblings().indexOf(o)<o.getSiblings().size()-1) parentsToRelabel.add((StructureObject)o.getParent());
                 if (dao!=null && removeMergedObjectFromDAO) { // delete merged objects before relabel to avoid collapse in case of objects stored in images...
+                    if (o.getId()==null) dao.waiteForWrites();
                     logger.debug("removing object: {}, id: {}", o, o.getId());
                     dao.delete(o);
                     it.remove();

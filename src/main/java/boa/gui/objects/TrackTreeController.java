@@ -54,7 +54,7 @@ public class TrackTreeController {
         if (logger.isTraceEnabled()) logger.trace("track tree controller set structure: number of generators: {}", generatorS.size());
     }
     
-    private int getLastTreeIdxWithSingleSelection() {
+    private int getLastTreeIdxWithSelection() {
         for (int i = structurePathToRoot.length-1; i>=0; --i) {
             if (generatorS.get(structurePathToRoot[i]).hasSelection()) return i;
         }
@@ -62,7 +62,7 @@ public class TrackTreeController {
     }
     
     private void updateParentTracks() {
-        int lastTreeIdx = getLastTreeIdxWithSingleSelection();
+        int lastTreeIdx = getLastTreeIdxWithSelection();
         if (lastTreeIdx+1<structurePathToRoot.length && !generatorS.get(structurePathToRoot[lastTreeIdx+1]).hasSelection()) {
             updateParentTracks(lastTreeIdx);
         }

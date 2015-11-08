@@ -242,8 +242,8 @@ public class Filters {
         @Override public float applyFilter(int x, int y, int z) {
             if (neighborhood.getValueCount()==0) return 0;
             float max = neighborhood.getPixelValues()[0];
-            if (max<threshold) return 0;
             for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]>max) return 0;
+            if (max<threshold) return 0;
             return 1;
         }
     }
@@ -263,8 +263,8 @@ public class Filters {
         @Override public float applyFilter(int x, int y, int z) {
             if (neighborhood.getValueCount()==0) return 0;
             float min = neighborhood.getPixelValues()[0];
-            if (min>threshold) return 0;
             for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]<min) return 0;
+            if (min>threshold) return 0;
             return 1;
         }
     }

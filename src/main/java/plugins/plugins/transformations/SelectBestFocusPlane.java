@@ -49,18 +49,21 @@ public class SelectBestFocusPlane implements Transformation {
         double scale = gradientScale.getValue().doubleValue();
         for (int t = 0; t<inputImages.getTimePointNumber(); ++t) {
             Image image = inputImages.getImage(channelIdx, t);
-            ArrayList<Image> planes = image.splitZPlanes();
-            double maxValues = eval(planes.get(0), scale);
-            int max=0;
-            for (int z = 1; z<planes.size(); ++z) {
-                double temp = eval(planes.get(z), scale);
-                if (temp>maxValues) {
-                    maxValues = temp;
-                    max = z;
+            if (image.getSizeZ()==1) configurationData.add(0);
+            else {
+                ArrayList<Image> planes = image.splitZPlanes();
+                double maxValues = eval(planes.get(0), scale);
+                int max=0;
+                for (int z = 1; z<planes.size(); ++z) {
+                    double temp = eval(planes.get(z), scale);
+                    if (temp>maxValues) {
+                        maxValues = temp;
+                        max = z;
+                    }
                 }
+                configurationData.add(max);
+                logger.debug("select best focus plane: time:{}, plane: {}", t, max);
             }
-            configurationData.add(max);
-            logger.debug("select best focus plane: time:{}, plane: {}", t, max);
         }
     }
     

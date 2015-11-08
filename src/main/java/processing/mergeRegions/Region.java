@@ -84,7 +84,7 @@ public class Region {
 
         public Region fusion(Region region, double[] newCriterion) {
             if (region.label<label) return region.fusion(this, newCriterion);
-            if (col.verbose) ij.IJ.log("fusion:"+label+ "+"+region.label);
+            if (col.verbose) logger.debug("fusion: {}+{}",label,region.label);
             region.setVoxelLabel(label);
             this.voxels.addAll(region.voxels);
             this.mergeCriterionValue=newCriterion;
@@ -144,7 +144,9 @@ public class Region {
         
         @Override 
         public String toString() {
-            return "Region:"+label;
+            String res = "Region: "+label+" Interfaces: ";
+            for (int i = 0; i<interfaces.size(); i++) res+=interfaces.get(i).getOther(this).label+", ";
+            return res;
         }
         
     public static double getRho(ArrayList<Voxel>[] voxIt, Image intensityMap, int nbCPUs) {

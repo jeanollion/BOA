@@ -73,12 +73,13 @@ public class PreProcessingChain extends SimpleContainerParameter {
      * @param outputChannel channel(s) on which apply transformation (null = all channels or same channel, depending {@link TransformationTimeIndependent#getOutputChannelSelectionMode() })
      * @param transformation 
      */
-    public void addTransformation(int inputChannel, int[] outputChannel, Transformation transformation) {
+    public TransformationPluginParameter<Transformation> addTransformation(int inputChannel, int[] outputChannel, Transformation transformation) {
         TransformationPluginParameter<Transformation> tpp= new TransformationPluginParameter<Transformation>("Transformation", Transformation.class, false);
         constantTransformations.insert(tpp);
         tpp.setPlugin(transformation);
         tpp.setInputChannel(inputChannel);
         tpp.setOutputChannel(outputChannel);
+        return tpp;
     }
     
     @Override public ParameterUI getUI() {

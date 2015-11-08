@@ -34,7 +34,7 @@ public class EllipsoidalNeighborhood implements Neighborhood {
     public final int[] dx, dy, dz;
     float[] values;
     float[] distances;
-    int valueCount;
+    int valueCount=0;
     /**
      * 3D Elipsoidal Neighbourhood around a voxel
      * @param radius in pixel in the XY-axis
@@ -132,7 +132,7 @@ public class EllipsoidalNeighborhood implements Neighborhood {
             distances[i] = tempDist[indicies[i]];
         }
     }
-    @Override public void setPixels(Voxel v, Image image) {setPixels(v.x, v.z, v.z, image);}
+    @Override public void setPixels(Voxel v, Image image) {setPixels(v.x, v.y, v.z, image);}
     
     @Override public void setPixels(int x, int y, int z, Image image) {
         valueCount=0;
@@ -173,6 +173,19 @@ public class EllipsoidalNeighborhood implements Neighborhood {
 
     @Override public double getRadiusZ() {
         return radiusZ;
+    }
+    
+    @Override public String toString() {
+        if (this.is3D) {
+            String res = "Neighborhood3D: radiusXY:"+radius+ "radiusZ: "+this.radiusZ+" [";
+            for (int i = 0; i<dx.length; ++i) res+="dx:"+dx[i]+",dy:"+dy[i]+",dz:"+dz[i]+";";
+            return res+"]";
+        } else {
+            String res = "Neighborhood2D: radius:"+radius+ " [";
+            for (int i = 0; i<dx.length; ++i) res+="dx:"+dx[i]+",dy:"+dy[i]+";";
+            return res+"]";
+        }
+        
     }
     
 }

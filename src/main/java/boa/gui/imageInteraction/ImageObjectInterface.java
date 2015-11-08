@@ -45,6 +45,7 @@ public abstract class ImageObjectInterface {
     public abstract void draw(ImageInteger image);
     public abstract Image generateRawImage(int structureIdx);
     public abstract boolean isTimeImage();
+    public abstract ArrayList<StructureObject> getObjects();
     
     @Override
     public boolean equals(Object o) {

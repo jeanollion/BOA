@@ -8,6 +8,10 @@ public class BlankMask extends ImageInteger implements ImageMask {
         super(name, sizeX, sizeY, sizeZ, offsetX, offsetY, offsetZ, scaleXY, scaleZ);
     }
 
+    public BlankMask(int sizeX, int sizeY, int sizeZ) {
+        this("", sizeX, sizeY, sizeZ, 0, 0, 0, 1, 1);
+    }
+    
     public BlankMask(String name, int sizeX, int sizeY, int sizeZ) {
         this(name, sizeX, sizeY, sizeZ, 0, 0, 0, 1, 1);
     }

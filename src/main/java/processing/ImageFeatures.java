@@ -260,7 +260,6 @@ public class ImageFeatures {
     
     public static ImageFloat LoG(Image image, double radX, double radZ) {
         ImageWare in = Builder.create(IJImageWrapper.getImagePlus(image), 3);
-            LoG LoG = new LoG(false);
             ImageWare res;
             if (image.getSizeZ() > 1) {
                 res = LoG.doLoG(in, radX, radX, radZ);

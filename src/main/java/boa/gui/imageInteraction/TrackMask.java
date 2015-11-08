@@ -191,6 +191,13 @@ public class TrackMask extends ImageObjectInterface {
     public boolean isTimeImage() {
         return true;
     }
+
+    @Override
+    public ArrayList<StructureObject> getObjects() {
+        ArrayList<StructureObject> res = new ArrayList<StructureObject>();
+        for (StructureObjectMask m : trackObjects) res.addAll(m.getObjects());
+        return res;
+    }
     
     class bbComparatorX implements Comparator<BoundingBox>{
 

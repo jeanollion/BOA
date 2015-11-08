@@ -28,6 +28,11 @@ public class SmallArray<T> {
     public SmallArray(){}
     public SmallArray(int bucketSize){array=new Object[bucketSize];}
     
+    public boolean has(int idx) {
+        if (array==null) return false;
+        else if (array.length<=idx) return false;
+        else return array[idx]!=null;
+    }
     public T get(int idx) {
         if (array==null) return null;
         else if (array.length<=idx) return null;

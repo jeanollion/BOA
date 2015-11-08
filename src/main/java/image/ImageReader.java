@@ -160,6 +160,7 @@ public class ImageReader {
         } else {
             zMin=0; zMax=sizeZ-1;
         }
+        //logger.debug("open image: {}, sizeX: {}, sizeY: {}, sizeZ: {}, zMin: {}, zMax: {}", this.fullPath, sizeX, sizeY, sizeZ, zMin, zMax);
         ImageStack stack = new ImageStack(sizeX, sizeY);
         for (int z = zMin; z <= zMax; z++) {
             int locZ = invertTZ?coords.getTimePoint():z;
@@ -190,7 +191,7 @@ public class ImageReader {
                         if (lz==null) {
                             lz=lxy;
                             if (res.getSizeZ()>1) {
-                                logger.warn("No calibration in Z dimension found for image: {}, while image haz more than one Z plane", reader.getCurrentFile());
+                                //logger.warn("No calibration in Z dimension found for image: {}, while image haz more than one Z plane", reader.getCurrentFile());
                             }
                         }
                         if (scaleXY==0) scaleXY=lxy.value().floatValue();

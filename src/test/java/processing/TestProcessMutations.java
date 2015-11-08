@@ -52,19 +52,20 @@ public class TestProcessMutations {
         PluginFactory.findPlugins("plugins.plugins");
         TestProcessMutations t = new TestProcessMutations();
         t.init();
-        t.testSegMutationsFromXP(true, 0, 20);
+        t.testSegMutationsFromXP(true, 14, 16);
     }
     public void init() {
-        String dbName = "testFluo60";
+        //String dbName = "testFluo6";
+        String dbName = "fluo1510_sub60";
         db = new DBConfiguration(dbName);
         logger.info("Experiment: {} retrieved from db: {}", db.getExperiment().getName(), dbName);
     }
     public void testSegMutationsFromXP(int time) {
         testSegMutationsFromXP(true, time, null, null, null, null, null);
     }
-    public void testSegMutationsFromXP(boolean parentMC, int time, ArrayList<ImageMask> mcMask_, ArrayList<ImageMask> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
-        int field = 1;
-        int channel = 0;
+    public void testSegMutationsFromXP(boolean parentMC, int time, ArrayList<ImageInteger> mcMask_, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
+        int field = 0;
+        int channel = 3;
         //String dbName = "testFluo";
         
         MicroscopyField f = db.getExperiment().getMicroscopyField(field);
@@ -81,13 +82,14 @@ public class TestProcessMutations {
         }
     }
     
-    public void testSegMutation(StructureObject parent, ArrayList<ImageMask> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
+    public void testSegMutation(StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
             Image input = parent.getRawImage(2);
-            ImageMask parentMask = parent.getMask();
+            ImageInteger parentMask = parent.getMask();
             SpotFluo2D5.debug=true;
             SpotFluo2D5.displayImages=parentMask_==null;
             ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
-            ObjectPopulation pop = SpotFluo2D5.run(input, parentMask, 2, 3, 5, 1.5, 4, intermediateImages);
+            ObjectPopulation pop = SpotFluo2D5.run(input, parentMask, 1.5, 1.5, 5, 7, -0.18, 4, intermediateImages);
+            
             /*ImageDisplayer disp = new IJImageDisplayer();
             disp.showImage(input);
             disp.showImage(pop.getLabelImage());:*/
@@ -99,8 +101,8 @@ public class TestProcessMutations {
     
     static int intervalX = 5;
     public void testSegMutationsFromXP(boolean parentMC, int tStart, int tEnd) {
-        ArrayList<ImageMask> mcMask = new ArrayList<ImageMask>();
-        ArrayList<ImageMask> parentMask = new ArrayList<ImageMask>();
+        ArrayList<ImageInteger> mcMask = new ArrayList<ImageInteger>();
+        ArrayList<ImageInteger> parentMask = new ArrayList<ImageInteger>();
         ArrayList<Image> input = new ArrayList<Image>();
         ArrayList<ImageInteger> outputLabel = new ArrayList<ImageInteger>(); 
         ArrayList<ArrayList<Image>> intermediateImages = new ArrayList<ArrayList<Image>>();
@@ -122,17 +124,22 @@ public class TestProcessMutations {
         xSize-=intervalX;
         Image inputPaste = Image.createEmptyImage("input", input.get(0), new BlankMask("", xSize, ySize, input.get(0).getSizeZ(), 0, 0, 0, 1, 1));
         Image outputLabelPaste = Image.createEmptyImage("labels", outputLabel.get(0), new BlankMask("", xSize, ySize, outputLabel.get(0).getSizeZ(), 0, 0, 0, 1, 1));
+        Image maskPaste = Image.createEmptyImage("mc mask", mcMask.get(0), new BlankMask("", xSize, ySize, mcMask.get(0).getSizeZ(), 0, 0, 0, 1, 1));
         ArrayList<Image> intermediateImagesList = new ArrayList<Image>();
         for (int i = 0; i<intermediateImages.get(0).size(); ++i) intermediateImagesList.add(Image.createEmptyImage(intermediateImages.get(0).get(i).getName(), intermediateImages.get(0).get(i), new BlankMask("", xSize, ySize, intermediateImages.get(0).get(i).getSizeZ(), 0, 0, 0, 1, 1)));
         BoundingBox offset = new BoundingBox(0, 0, 0);
-        ImageMask lastMask = mcMask.get(0);
+        ImageInteger lastMask = mcMask.get(0);
+        pasteImage(lastMask, maskPaste, offset);
         for (int i = 0; i<parentMask.size(); ++i) {
-            if (!mcMask.get(i).equals(lastMask)) offset.translate(mcMask.get(i).getSizeX()+intervalX , 0, 0);
+            if (!mcMask.get(i).equals(lastMask)) {
+                offset.translate(mcMask.get(i).getSizeX()+intervalX , 0, 0);
+                //pasteImage(mcMask.get(i), maskPaste, offset); logger.debug("past mask: sizeX: {}, off: {}", mcMask.get(i).getSizeX(), offset);
+            }
+            
             BoundingBox localOffset= parentMC? offset : parentMask.get(i).getBoundingBox().translate(offset.getxMin(), 0, 0);
             pasteImage(input.get(i), inputPaste, localOffset);
             pasteImage(outputLabel.get(i), outputLabelPaste, localOffset);
             for (int interIdx = 0; interIdx<intermediateImages.get(i).size(); ++interIdx) pasteImage(intermediateImages.get(i).get(interIdx), intermediateImagesList.get(interIdx), localOffset);
-            
             lastMask = mcMask.get(i);
             
         }
@@ -140,6 +147,8 @@ public class TestProcessMutations {
         disp.showImage(inputPaste);
         for (Image i : intermediateImagesList) disp.showImage(i);
         disp.showImage(outputLabelPaste);
+        //disp.showImage(maskPaste);
         
     }
+    
 }

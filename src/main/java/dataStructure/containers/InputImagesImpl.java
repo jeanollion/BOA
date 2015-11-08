@@ -41,7 +41,7 @@ public class InputImagesImpl implements InputImages {
     public void addTransformation(int inputChannel, int[] channelIndicies, Transformation transfo) {
         if (channelIndicies!=null) for (int c : channelIndicies) addTransformation(c, transfo);
         else {
-            if (transfo instanceof TransformationTimeIndependent &&  ((TransformationTimeIndependent)transfo).getOutputChannelSelectionMode()==Transformation.SelectionMode.SAME) addTransformation(inputChannel, transfo);
+            if (transfo instanceof Transformation &&  ((Transformation)transfo).getOutputChannelSelectionMode()==Transformation.SelectionMode.SAME) addTransformation(inputChannel, transfo);
             else for (int c = 0; c<imageTC[0].length; ++c) addTransformation(c, transfo);
         }
     }

@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -55,23 +56,48 @@ import processing.neighborhood.Neighborhood;
  * @author nasique
  */
 public class ObjectPopulation {
+
     private ImageInteger labelImage;
     private ArrayList<Object3D> objects;
     private ImageProperties properties;
+
+    /**
+     * Creates an empty ObjectPopulation instance
+     * @param properties 
+     */
+    public ObjectPopulation(ImageProperties properties) {
+        this.properties = new BlankMask("", properties);
+        this.objects=new ArrayList<Object3D>();
+    }
     
-    public ObjectPopulation(ImageInteger labelImage) {
-        this.labelImage=labelImage;
+    /**
+     *
+     * @param image image with values >0 within segmented objects
+     * @param isLabeledImage if true, the image is considered as a labeled
+     * image, one value per object, if false, the image will be labeled (and
+     * thus modified) by Connected Components Labeling
+     */
+    public ObjectPopulation(ImageInteger image, boolean isLabeledImage) {
+        if (isLabeledImage) {
+            this.labelImage = image;
+        } else {
+            objects = new ArrayList<Object3D>(ImageLabeller.labelImageList(image));
+            labelImage = image;
+            relabel(); // in order to have consistent labels between image & object list
+        }
+        this.properties = labelImage.getProperties();
     }
 
     /*public ObjectPopulation(ArrayList<Object3D> objects) {
-        this.objects = objects;
-    }*/
-    
+     this.objects = objects;
+     }*/
     public ObjectPopulation(ArrayList<Object3D> objects, ImageProperties properties) {
-        if (objects!=null) {
+        if (objects != null) {
             this.objects = objects;
-        } else this.objects = new ArrayList<Object3D>();
-        this.properties=properties;
+        } else {
+            this.objects = new ArrayList<Object3D>();
+        }
+        this.properties = new BlankMask("", properties);
     }
     
     public ObjectPopulation addObjects(Object3D... objects) {
@@ -85,18 +111,23 @@ public class ObjectPopulation {
     }
     
     public ImageInteger getLabelImage() {
-        if (labelImage==null) constructLabelImage();
+        if (labelImage == null) {
+            constructLabelImage();
+        }
         return labelImage;
     }
     
     public ArrayList<Object3D> getObjects() {
-        if (objects==null) constructObjects();
+        if (objects == null) {
+            constructObjects();
+        }
         return objects;
     }
     
     private void constructLabelImage() {
-        if (objects==null || objects.isEmpty()) labelImage = ImageInteger.createEmptyLabelImage("labelImage", 0, getImageProperties());
-        else {
+        if (objects == null || objects.isEmpty()) {
+            labelImage = ImageInteger.createEmptyLabelImage("labelImage", 0, getImageProperties());
+        } else {
             labelImage = ImageInteger.createEmptyLabelImage("labelImage", objects.size(), getImageProperties());
             //logger.debug("creating image: properties: {} imagetype: {} number of objects: {}", properties, labelImage.getClass(), objects.size());
             for (Object3D o : objects) {
@@ -111,16 +142,27 @@ public class ObjectPopulation {
     }
     
     public void eraseObject(Object3D o, boolean eraseInList) {
-        if (labelImage!=null) o.draw(labelImage, 0);
-        if (eraseInList && objects!=null) objects.remove(o);
+        if (labelImage != null) {
+            o.draw(labelImage, 0);
+        }
+        if (eraseInList && objects != null) {
+            objects.remove(o);
+        }
     }
-    public boolean hasImage() {return labelImage!=null;}
+
+    public boolean hasImage() {
+        return labelImage != null;
+    }
     
     public ObjectPopulation setProperties(ImageProperties properties, boolean onlyIfSameSize) {
-        if (labelImage!=null) {
-            if (!onlyIfSameSize || labelImage.sameSize(properties)) labelImage.resetOffset().addOffset(properties);
+        if (labelImage != null) {
+            if (!onlyIfSameSize || labelImage.sameSize(properties)) {
+                labelImage.resetOffset().addOffset(properties);
+            }
             labelImage.setCalibration(properties);
-        } else this.properties = new BlankMask("", properties); //set aussi la taille de l'image
+        } else {
+            this.properties = new BlankMask("", properties); //set aussi la taille de l'image
+        }
         return this;
     }
     
@@ -130,77 +172,98 @@ public class ObjectPopulation {
                 properties = new BlankMask("", labelImage);
             } else if (!objects.isEmpty()) { //unscaled, no offset for label image..
                 BoundingBox box = new BoundingBox();
-                for (Object3D o : objects) box.expand(o.getBounds());
-                properties = box.getImageProperties(); 
+                for (Object3D o : objects) {
+                    box.expand(o.getBounds());
+                }
+                properties = box.getImageProperties();                
             }
         }
         return properties;
     }
     
     public void relabel() {
+        if (objects == null || objects.isEmpty()) {
+            return;
+        }
         int idx = 1;
         if (hasImage()) {
-            ImageOperations.fill(labelImage, 0, null);
             for (Object3D o : getObjects()) {
                 o.label = idx++;
+            }
+            int maxLabel = getObjects().get(objects.size() - 1).getLabel();
+            if (maxLabel > ImageInteger.getMaxValue(labelImage, false)) {
+                labelImage = ImageInteger.createEmptyLabelImage(labelImage.getName(), maxLabel, properties);
+            } else {
+                ImageOperations.fill(labelImage, 0, null);
+            }
+            for (Object3D o : getObjects()) {
                 o.draw(labelImage, o.label);
             }
         } else {
-            for (Object3D o : getObjects()) o.label = idx++;
+            for (Object3D o : objects) {
+                o.label = idx++;
+            }
         }
     }
     
     public void addOffset(int offsetX, int offsetY, int offsetZ) {
-        for (Object3D o : objects) o.addOffset(offsetX, offsetY, offsetZ);
+        for (Object3D o : objects) {
+            o.addOffset(offsetX, offsetY, offsetZ);
+        }
     }
     
     public void addOffset(BoundingBox bounds) {
-        for (Object3D o : objects) o.addOffset(bounds);
-    }
-    
-    /*public void fitToEdges(Image edgeMap, ImageMask mask) {
-        // 1st pass: increase foreground
-        WatershedTransform wt = new WatershedTransform(edgeMap, mask, objects, false, null, null);
-        wt.setPropagationCriterion(wt.new MonotonalPropagation());
-        wt.run();
-        ObjectPopulation pop =  wt.getObjectPopulation();
-        this.objects=pop.getObjects();
-        //set labelImage
-        if (pop.hasImage()) this.labelImage=pop.getLabelImage();
-        else this.labelImage=null;
-        // 2nd pass: increase background
-        ImageInteger background = ImageOperations.xor(getLabelImage(), mask, null);
-        wt = new WatershedTransform(edgeMap, mask, ImageLabeller.labelImageList(background), false, null, null);
-        wt.setPropagationCriterion(wt.new MonotonalPropagation());
-        wt.run();
-        ImageInteger segmentedMap = wt.getLabelImage();
         for (Object3D o : objects) {
-            Iterator<Voxel> it = o.getVoxels().iterator();
-            while(it.hasNext()) {
-                Voxel v = it.next();
-                if (segmentedMap.insideMask(v.x, v.y, v.z)) it.remove();
-            }
+            o.addOffset(bounds);
         }
-        this.labelImage=null; //reset labelImage
-    }*/
+    }
+
+    /*public void fitToEdges(Image edgeMap, ImageMask mask) {
+     // 1st pass: increase foreground
+     WatershedTransform wt = new WatershedTransform(edgeMap, mask, objects, false, null, null);
+     wt.setPropagationCriterion(wt.new MonotonalPropagation());
+     wt.run();
+     ObjectPopulation pop =  wt.getObjectPopulation();
+     this.objects=pop.getObjects();
+     //set labelImage
+     if (pop.hasImage()) this.labelImage=pop.getLabelImage();
+     else this.labelImage=null;
+     // 2nd pass: increase background
+     ImageInteger background = ImageOperations.xor(getLabelImage(), mask, null);
+     wt = new WatershedTransform(edgeMap, mask, ImageLabeller.labelImageList(background), false, null, null);
+     wt.setPropagationCriterion(wt.new MonotonalPropagation());
+     wt.run();
+     ImageInteger segmentedMap = wt.getLabelImage();
+     for (Object3D o : objects) {
+     Iterator<Voxel> it = o.getVoxels().iterator();
+     while(it.hasNext()) {
+     Voxel v = it.next();
+     if (segmentedMap.insideMask(v.x, v.y, v.z)) it.remove();
+     }
+     }
+     this.labelImage=null; //reset labelImage
+     }*/
     public void fitToEdges(Image edgeMap, ImageMask mask) {
         // get seeds outsit label image
         ImageInteger seedMap = Filters.localExtrema(edgeMap, null, false, Filters.getNeighborhood(1, 1, edgeMap));
         this.getLabelImage(); //creates the labelImage        
         // merge background seeds && foreground seeds : background = 1, foreground = label+1
-        for (int z = 0; z<seedMap.getSizeZ(); z++) {
-            for (int xy = 0; xy<seedMap.getSizeXY(); xy++) {
+        for (int z = 0; z < seedMap.getSizeZ(); z++) {
+            for (int xy = 0; xy < seedMap.getSizeXY(); xy++) {
                 if (seedMap.insideMask(xy, z)) {
-                    if (mask.insideMask(xy, z)) seedMap.setPixel(xy, z, labelImage.getPixelInt(xy, z)+1);
-                    else seedMap.setPixel(xy, z, 0);
+                    if (mask.insideMask(xy, z)) {
+                        seedMap.setPixel(xy, z, labelImage.getPixelInt(xy, z) + 1);
+                    } else {
+                        seedMap.setPixel(xy, z, 0);
+                    }
                 }
             }
         }
-        ArrayList<Object3D> seeds = new ArrayList<Object3D>(Arrays.asList(ObjectFactory.getObjectsImage(seedMap, false))); 
+        ArrayList<Object3D> seeds = new ArrayList<Object3D>(Arrays.asList(ObjectFactory.getObjectsImage(seedMap, false)));        
         ObjectPopulation pop = WatershedTransform.watershed(edgeMap, mask, seeds, false, null, null);
         this.objects = pop.getObjects();
         objects.remove(0); // remove background object
-        this.labelImage=null;
+        this.labelImage = null;
     }
     
     public void localThreshold(Image intensity, int marginX, int marginY, int marginZ) {
@@ -208,9 +271,12 @@ public class ObjectPopulation {
         for (Object3D o : objects) {
             o.draw(background, 1);
             BoundingBox bounds = o.getBounds().duplicate();
-            bounds.expandX(bounds.getxMin()-marginX); bounds.expandX(bounds.getxMax()+marginX);
-            bounds.expandY(bounds.getyMin()-marginY); bounds.expandY(bounds.getyMax()+marginY);
-            bounds.expandZ(bounds.getzMin()-marginZ); bounds.expandZ(bounds.getzMax()+marginZ);
+            bounds.expandX(bounds.getxMin() - marginX);
+            bounds.expandX(bounds.getxMax() + marginX);
+            bounds.expandY(bounds.getyMin() - marginY);
+            bounds.expandY(bounds.getyMax() + marginY);
+            bounds.expandZ(bounds.getzMin() - marginZ);
+            bounds.expandZ(bounds.getzMax() + marginZ);
             bounds = bounds.getIntersection(intensity.getBoundingBox().translateToOrigin());
             double thld = runThresholder(intensity, background, bounds, Otsu, 1);
             logger.debug("local threshold: object: {}, thld: {} with bounds: {}, thld with bcg bounds: {}, 2: {}", o.getLabel(), thld, bounds, runThresholder(intensity, background, bounds, Otsu, 1), runThresholder(intensity, background, bounds, Otsu, 2));
@@ -221,11 +287,13 @@ public class ObjectPopulation {
     
     protected void localThreshold(Object3D o, Image intensity, double threshold) {
         Iterator<Voxel> it = o.getVoxels().iterator();
-        while(it.hasNext()) {
+        while (it.hasNext()) {
             Voxel v = it.next();
-            if (intensity.getPixel(v.x, v.y, v.z)<threshold) {
+            if (intensity.getPixel(v.x, v.y, v.z) < threshold) {
                 it.remove();
-                if (hasImage()) labelImage.setPixel(v.x, v.y, v.z, 0);
+                if (hasImage()) {
+                    labelImage.setPixel(v.x, v.y, v.z, 0);
+                }
             }
         }
     }
@@ -237,24 +305,47 @@ public class ObjectPopulation {
     public ObjectPopulation filter(Filter filter, ArrayList<Object3D> removedObjects) {
         //int objectNumber = objects.size();
         Iterator<Object3D> it = objects.iterator();
-        while(it.hasNext()) {
+        while (it.hasNext()) {
             Object3D o = it.next();
             if (!filter.keepObject(o)) {
                 it.remove();
-                if (removedObjects!=null) removedObjects.add(o);
+                if (removedObjects != null) {
+                    removedObjects.add(o);
+                }
             }
         }
         //logger.debug("filter: {}, total object number: {}, remaning objects: {}", filter.getClass().getSimpleName(), objectNumber, objects.size());
         return this;
     }
     
+    /**
+     * 
+     * @param otherPopulations populations that will be combined (destructive). Pixels will be added to overlapping objects, and non-overlapping objects will be added 
+     * @return  the current instance for convinience
+     */
+    public ObjectPopulation combine(List<ObjectPopulation> otherPopulations) {
+        for (ObjectPopulation pop : otherPopulations) {
+            pop.filter(new RemoveAndCombineOverlappingObjects(this));
+            this.getObjects().addAll(pop.getObjects());
+        }
+        relabel();
+        return this;
+    }
+    public void combine(ObjectPopulation... otherPopulations) {
+        if (otherPopulations.length>0) combine(Arrays.asList(otherPopulations));
+    }
+    
     public void keepOnlyLargestObject() {
-        if (objects.isEmpty()) return;
+        if (objects.isEmpty()) {
+            return;
+        }
         int maxIdx = 0;
         int maxSize = objects.get(0).getVoxels().size();
-        for (int i = 1; i<objects.size(); ++i) if (objects.get(i).getVoxels().size()>maxSize) {
-            maxSize = objects.get(i).getVoxels().size();
-            maxIdx = i;
+        for (int i = 1; i < objects.size(); ++i) {
+            if (objects.get(i).getVoxels().size() > maxSize) {
+                maxSize = objects.get(i).getVoxels().size();
+                maxIdx = i;
+            }
         }
         ArrayList<Object3D> objectsTemp = new ArrayList<Object3D>(1);
         objectsTemp.add(objects.get(maxIdx));
@@ -277,144 +368,214 @@ public class ObjectPopulation {
     }
     
     private static int compareCenters(double[] o1, double[] o2, IndexingOrder order) {
-        if (o1[order.i1]!=o2[order.i1]) return Double.compare(o1[order.i1], o2[order.i1]);
-        else if (o1[order.i2]!=o2[order.i2]) return Double.compare(o1[order.i2], o2[order.i2]);
-        else return Double.compare(o1[order.i3], o2[order.i3]);
+        if (o1[order.i1] != o2[order.i1]) {
+            return Double.compare(o1[order.i1], o2[order.i1]);
+        } else if (o1[order.i2] != o2[order.i2]) {
+            return Double.compare(o1[order.i2], o2[order.i2]);
+        } else {
+            return Double.compare(o1[order.i3], o2[order.i3]);
+        }
     }
     
     public static interface Filter {
+
         public boolean keepObject(Object3D object);
     }
+
     public static class Thickness implements Filter {
-        int tX=-1, tY=-1, tZ=-1;
-        public Thickness setX(int minX){
-            this.tX=minX;
-            return this;
-        }
-        public Thickness setY(int minY){
-            this.tY=minY;
-            return this;
-        }
-        public Thickness setZ(int minZ){
-            this.tZ=minZ;
+
+        int tX = -1, tY = -1, tZ = -1;
+
+        public Thickness setX(int minX) {
+            this.tX = minX;
             return this;
         }
 
-        @Override public boolean keepObject(Object3D object) {
-            return (tX<0 || object.getBounds().getSizeX()>tX) && (tY<0 || object.getBounds().getSizeY()>tY) && (tZ<0 || object.getBounds().getSizeZ()>tZ);
+        public Thickness setY(int minY) {
+            this.tY = minY;
+            return this;
+        }
+
+        public Thickness setZ(int minZ) {
+            this.tZ = minZ;
+            return this;
+        }
+        
+        @Override
+        public boolean keepObject(Object3D object) {
+            return (tX < 0 || object.getBounds().getSizeX() > tX) && (tY < 0 || object.getBounds().getSizeY() > tY) && (tZ < 0 || object.getBounds().getSizeZ() > tZ);
         }
     }
+
     public static class RemoveFlatObjects extends Thickness {
+
         public RemoveFlatObjects(Image image) {
-            this(image.getSizeZ()>1);
+            this(image.getSizeZ() > 1);
         }
+
         public RemoveFlatObjects(boolean is3D) {
             super.setX(1).setY(1);
-            if (is3D) super.setZ(1);
+            if (is3D) {
+                super.setZ(1);
+            }
         }
     }
+
     public static class Size implements Filter {
-        int min=-1, max=-1;
+
+        int min = -1, max = -1;
+
         public Size setMin(int min) {
-            this.min=min;
-            return this;
-        }
-        public Size setMax(int max) {
-            this.max=max;
+            this.min = min;
             return this;
         }
 
-        @Override public boolean keepObject(Object3D object) {
+        public Size setMax(int max) {
+            this.max = max;
+            return this;
+        }
+        
+        @Override
+        public boolean keepObject(Object3D object) {
             int size = object.getVoxels().size();
-            return (min<0 || size>=min) && (max<0 || size<max);
+            return (min < 0 || size >= min) && (max < 0 || size < max);
         }
     }
+
     public static class ContactBorder implements Filter {
-        public static enum Border{
-            X, Y, Z, XY, XYZ; 
-            public boolean hasX() {return (this.equals(X) || this.equals(XY) || this.equals(XYZ));}
-            public boolean hasY() {return (this.equals(Y) || this.equals(XY) || this.equals(XYZ));}
-            public boolean hasZ() {return (this.equals(Z) || this.equals(XYZ));}
+
+        public static enum Border {
+
+            X, Y, YDown, YUp, Z, XY, XYZ;            
+            ImageProperties mask;
+            public void setMask(ImageProperties mask) {
+                this.mask=mask;
+            }
+            public boolean contact(Voxel v) {
+                if (hasX() && (v.x == 0 || v.x == mask.getSizeX() - 1)) return true;
+                if (hasY() && (v.y == 0 || v.y == mask.getSizeY() - 1)) return true;
+                if (hasZ() && (v.z == 0 || v.z == mask.getSizeZ() - 1)) return true;
+                if (this.equals(YDown) && v.y==mask.getSizeY() - 1) return true;
+                else if (this.equals(YUp) && v.y==0) return true;
+                return false;
+            }
+            public boolean hasX() {
+                return (this.equals(X) || this.equals(XY) || this.equals(XYZ));
+            }
+
+            public boolean hasY() {
+                return (this.equals(Y) || this.equals(XY) || this.equals(XYZ));
+            }
+
+            public boolean hasZ() {
+                return (this.equals(Z) || this.equals(XYZ));
+            }
         };
         int contactLimit;
         ImageProperties mask;
         Border border;
+
         public ContactBorder(int contactLimit, ImageProperties mask, Border border) {
-            this.contactLimit=contactLimit;
-            this.mask=mask;
-            this.border=border;
+            this.contactLimit = contactLimit;
+            this.mask = mask;
+            this.border = border;
+            border.setMask(mask);
         }
-        @Override public boolean keepObject(Object3D object) {
-            if (contactLimit<=0) return true;
+
+        @Override
+        public boolean keepObject(Object3D object) {
+            if (contactLimit <= 0) {
+                return true;
+            }
             int count = 0;
             for (Voxel v : object.getVoxels()) {
-                if ( (border.hasX() && (v.x==0 || v.x==mask.getSizeX()-1)) || 
-                    (border.hasY() && (v.y==0 || v.y==mask.getSizeY()-1)) ||
-                    (border.hasZ() && (v.z==0 || v.z==mask.getSizeZ()-1))) ++count;
+                if (border.contact(v)) ++count;
             }
-            return count<contactLimit;
+            return count < contactLimit;
         }
     }
+
     public static class MeanIntensity implements Filter {
+
         double threshold;
         Image intensityMap;
+
         public MeanIntensity(double threshold, Image intensityMap) {
-            this.threshold=threshold;
-            this.intensityMap=intensityMap;
+            this.threshold = threshold;
+            this.intensityMap = intensityMap;
         }
-        @Override public boolean keepObject(Object3D object) {
+
+        @Override
+        public boolean keepObject(Object3D object) {
             double mean = BasicMeasurements.getMeanValue(object, intensityMap);
-            return mean>=threshold;
+            return mean >= threshold;
         }
     }
+
     public static class Overlap implements Filter {
+
         ImageInteger labelMap;
         Neighborhood n;
+
         public Overlap(ImageInteger labelMap, double... radius) {
-            this.labelMap=labelMap;
+            this.labelMap = labelMap;
             double rad, radZ;
-            if (radius.length==0) rad=radZ=1;
-            else {
-                rad=radius[0];
-                if (radius.length>=2) radZ=radius[1];
-                else radZ=rad;
-            } 
-            n= labelMap.getSizeZ()>1 ? new EllipsoidalNeighborhood(rad, radZ, false): new EllipsoidalNeighborhood(rad, false);
+            if (radius.length == 0) {
+                rad = radZ = 1.5;
+            } else {
+                rad = radius[0];
+                if (radius.length >= 2) {
+                    radZ = radius[1];
+                } else {
+                    radZ = rad;
+                }
+            }            
+            n = labelMap.getSizeZ() > 1 ? new EllipsoidalNeighborhood(rad, radZ, false) : new EllipsoidalNeighborhood(rad, false);
         }
-        @Override public boolean keepObject(Object3D object) {
+
+        @Override
+        public boolean keepObject(Object3D object) {
             for (Voxel v : object.getVoxels()) {
                 n.setPixels(v, labelMap);
-                for (float f : n.getPixelValues()) if (f>0) return true;
+                for (float f : n.getPixelValues()) {
+                    if (f > 0) {
+                        return true;
+                    }
+                }
             }
             return false;
         }
     }
-    private static class CombinePopulationFromZPlane implements Filter { // suppress objects that are already in other and combine the voxels
+
+    private static class RemoveAndCombineOverlappingObjects implements Filter { // suppress objects that are already in other and combine the voxels
+
         ObjectPopulation other;
         boolean distanceTolerance;
-        public CombinePopulationFromZPlane(ObjectPopulation other, boolean distanceTolerance) {
-            this.other=other;
-            this.distanceTolerance=distanceTolerance;
+
+        public RemoveAndCombineOverlappingObjects(ObjectPopulation other) { //, boolean distanceTolerance
+            this.other = other;
+            //this.distanceTolerance = distanceTolerance;
             
         }
-        @Override public boolean keepObject(Object3D object) {
-            BoundingBox b = object.getBounds();
-            Object3D maxInterO=null;
-            int maxInter=0;
+
+        @Override
+        public boolean keepObject(Object3D object) {
+            Object3D maxInterO = null;
+            int maxInter = 0;
             for (Object3D o : other.getObjects()) {
                 int inter = o.getIntersection(object).size();
-                if (inter>maxInter) {
-                    maxInter=inter;
-                    maxInterO=o;
+                if (inter > maxInter) {
+                    maxInter = inter;
+                    maxInterO = o;
                 }
             }
-            if (maxInterO==null && distanceTolerance) {
+            /*if (maxInterO == null && distanceTolerance) {
                 //TODO cherche l'objet le plus proche modulo une distance de 1 de distance et assigner les voxels
-            }
-            if (maxInterO!=null) {
-                maxInterO.getVoxels().addAll(object.getVoxels());
+            }*/
+            if (maxInterO != null) {
+                maxInterO.addVoxels(object.getVoxels());
                 return false;
-            } 
+            }            
             return true;
         }
     }
