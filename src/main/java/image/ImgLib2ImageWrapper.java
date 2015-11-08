@@ -17,16 +17,28 @@
  */
 package image;
 
+import ij.ImagePlus;
+import static image.IJImageWrapper.getImagePlus;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.ImagePlusAdapter;
+import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.type.numeric.RealType;
+
 /**
  *
  * @author jollion
  */
-public class ImageWrapper {
+public class ImgLib2ImageWrapper {
     
-    public void show() {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public static Image wrap(RandomAccessibleInterval img) {
+        ImagePlus ip = ImageJFunctions.wrap(img, "");
+        return IJImageWrapper.wrap(ip);
     }
-    public void show(String name) {
-        throw new UnsupportedOperationException("Not supported yet.");
+    
+    public static <T extends RealType<T>> Img<T> getImage(Image image) {
+        return ImagePlusAdapter.wrapReal(IJImageWrapper.getImagePlus(image));
     }
 }
