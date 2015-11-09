@@ -65,7 +65,7 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
 
     @Override
     public ParameterUI getUI() {
-        if (gui==null) gui = new ChoiceParameterUI(this);
+        if (gui==null) gui = new ChoiceParameterUI(this, true);
         return gui;
     }
     public boolean sameContent(Parameter other) {

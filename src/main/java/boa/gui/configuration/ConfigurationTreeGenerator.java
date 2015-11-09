@@ -15,6 +15,7 @@
  */
 package boa.gui.configuration;
 
+import static boa.gui.GUI.logger;
 import com.mongodb.MongoClient;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
@@ -27,6 +28,7 @@ import configuration.parameters.SimpleListParameter;
 import configuration.parameters.ui.ArmableUI;
 import configuration.parameters.ui.ChoiceParameterUI;
 import configuration.parameters.ui.MultipleChoiceParameterUI;
+import dataStructure.configuration.PreProcessingChain.PreProcessingChainUI;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
 import java.awt.Component;
@@ -100,8 +102,10 @@ public class ConfigurationTreeGenerator {
                             Parameter p = (Parameter) lastO;
                             ParameterUI ui = p.getUI();
                             if (ui!=null) {
+                                //logger.debug("right click: UI: {}", ui.getClass().getSimpleName());
                                 if (ui instanceof ChoiceParameterUI) ((ArmableUI)ui).refreshArming();
-                                if (ui instanceof MultipleChoiceParameterUI) ((MultipleChoiceParameterUI)ui).addMenuListener(menu);
+                                if (ui instanceof MultipleChoiceParameterUI) ((MultipleChoiceParameterUI)ui).addMenuListener(menu, pathBounds.x, pathBounds.y + pathBounds.height, tree);
+                                if (ui instanceof PreProcessingChainUI) ((PreProcessingChainUI)ui).addMenuListener(menu, pathBounds.x, pathBounds.y + pathBounds.height, tree);
                                 addToMenu(ui.getDisplayComponent(), menu);
                                 menu.addSeparator();
                             }

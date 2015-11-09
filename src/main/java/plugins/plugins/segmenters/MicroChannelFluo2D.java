@@ -97,7 +97,7 @@ public class MicroChannelFluo2D implements Segmenter {
         // get yStart
         float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null);
         ImageFloat imProjY = new ImageFloat("proj(Y)", image.getSizeY(), new float[][]{yProj});
-        ImageInteger heightMask = threshold(imProjY, IJAutoThresholder.runThresholder(imProjY, null, AutoThresholder.Method.Otsu), true, false);
+        ImageInteger heightMask = threshold(imProjY, IJAutoThresholder.runThresholder(imProjY, null, AutoThresholder.Method.IsoData), true, false); //TODO ISODATA 63ME120r141018_04 -> Otsu ne convient pas. Peut etre ne pas mettre subtract background?
         Object3D[] objHeight = ImageLabeller.labelImage(heightMask);
         int yStart;
         if (objHeight.length == 0) {

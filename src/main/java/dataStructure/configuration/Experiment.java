@@ -54,7 +54,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     protected FileChooser imagePath = new FileChooser("Output Image Path", FileChooserOption.DIRECTORIES_ONLY);
     SimpleListParameter<Structure> structures= new SimpleListParameter<Structure>("Structures", -1 , Structure.class);
     SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter<ChannelImage>("Channel Images", 0 , ChannelImage.class);
-    SimpleListParameter<MicroscopyField> fields= new SimpleListParameter<MicroscopyField>("Fields", 0 , MicroscopyField.class);
+    SimpleListParameter<MicroscopyField> fields= new SimpleListParameter<MicroscopyField>("Fields", -1 , MicroscopyField.class);
     PreProcessingChain template = new PreProcessingChain("Pre-Processing chain template");
     ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.SINGLE_FILE.getMethod(), false);
     public enum ImageDAOTypes {LocalFileSystem};

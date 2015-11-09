@@ -172,7 +172,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     
     @Override
     public ChoiceParameterUI getUI(){
-        return new ChoiceParameterUI(this);
+        return new ChoiceParameterUI(this, false);
     }
     
     @Override

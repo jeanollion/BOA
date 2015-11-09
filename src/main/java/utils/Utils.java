@@ -177,6 +177,11 @@ public class Utils {
         }
     }
     
+    public static boolean isSelected(JTree tree, TreePath path) {
+        if (tree.getSelectionCount()!=0) return Arrays.asList(tree.getSelectionPaths()).contains(path);
+        else return false;
+    }
+    
     public static void addToSelectionPaths(JTree tree, ArrayList<TreePath> pathToSelect) {
         TreePath[] sel = tree.getSelectionPaths();
         if (sel!=null) pathToSelect.addAll(Arrays.asList(sel));

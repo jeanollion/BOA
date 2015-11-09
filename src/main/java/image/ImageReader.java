@@ -102,6 +102,8 @@ public class ImageReader {
     }
     
     private void init() {
+        if (!new File(getImagePath()).exists()) logger.error("File: {} was not found", getImagePath());
+        //logger.debug("init reader: {}", getImagePath());
         reader = new ImageProcessorReader(new ChannelSeparator(LociPrefs.makeImageReader()));
         ServiceFactory factory;
         try {

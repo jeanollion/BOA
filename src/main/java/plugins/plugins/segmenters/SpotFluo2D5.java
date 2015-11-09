@@ -139,11 +139,8 @@ public class SpotFluo2D5 implements Segmenter {
         ObjectPopulation seedPop = new ObjectPopulation(seeds, false);
         seedPop.filter(new Overlap(seedsHess, 1.5));
         
-        Map<Object3D, double[]> fit = GaussianFit.run(input, seedPop.getObjects(), 2, 50, 0.01, 0.1);
-        for (Entry<Object3D, double[]> e : fit.entrySet()) {
-            double[] p = e.getValue();
-            logger.debug("gaussian fit on seed: {}, x: {}, y: {}, I: {}, sigmaX: {}, sigmaY: {}, error: {}", e.getKey().getLabel(),p[0], p[1], p[2], 1/Math.sqrt(p[3]), 1/Math.sqrt(p[4]), p[5]);
-        }
+        //Map<Object3D, double[]> fit = GaussianFit.run(smoothed, seedPop.getObjects(), 2, 300, 0.001, 0.01);
+        //GaussianFit.display2DImageAndRois(smoothed, fit);
         ObjectPopulation pop =  watershed(hess, mask, seedPop.getObjects(), false, new MultiplePropagationCriteria(new ThresholdPropagationOnWatershedMap(0), new ThresholdPropagation(contrasted, thresholdLow, true)), new SizeFusionCriterion(minSpotSize));
         pop.filter(new ObjectPopulation.RemoveFlatObjects(input));
         pop.filter(new ObjectPopulation.Size().setMin(minSpotSize));

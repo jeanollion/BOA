@@ -128,7 +128,7 @@ public class TrackTreeGenerator {
                 TreePath path = tree.getPathForLocation(e.getX(), e.getY());
                 if (path==null) return;
                 if (SwingUtilities.isRightMouseButton(e)) {
-                    Utils.addToSelectionPaths(tree, path);
+                    if (!Utils.isSelected(tree, path)) tree.setSelectionPath(path);
                     Rectangle pathBounds = tree.getUI().getPathBounds(tree, path);
                     if (pathBounds != null && pathBounds.contains(e.getX(), e.getY())) {
                         JPopupMenu menu = new JPopupMenu();

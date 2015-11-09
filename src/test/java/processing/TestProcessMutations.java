@@ -50,13 +50,15 @@ public class TestProcessMutations {
     DBConfiguration db;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
+        String dbName = "testFluo60";
+        //String dbName = "fluo1510_sub60";
         TestProcessMutations t = new TestProcessMutations();
-        t.init();
-        t.testSegMutationsFromXP(true, 14, 16);
+        t.init(dbName);
+        //t.testSegMutationsFromXP(true, 0, 1);
+        t.testSegMutationsFromXP(0);
     }
-    public void init() {
-        //String dbName = "testFluo6";
-        String dbName = "fluo1510_sub60";
+    public void init(String dbName) {
+        
         db = new DBConfiguration(dbName);
         logger.info("Experiment: {} retrieved from db: {}", db.getExperiment().getName(), dbName);
     }
@@ -65,14 +67,14 @@ public class TestProcessMutations {
     }
     public void testSegMutationsFromXP(boolean parentMC, int time, ArrayList<ImageInteger> mcMask_, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
         int field = 0;
-        int channel = 3;
+        int channel = 0;
         //String dbName = "testFluo";
         
         MicroscopyField f = db.getExperiment().getMicroscopyField(field);
         StructureObject root = db.getDao().getRoot(f.getName(), time);
         //logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildObjects(0, db.getDao(), false).get(channel);
-        mcMask_.add(mc.getMask());
+        if (mcMask_!=null) mcMask_.add(mc.getMask());
         if (parentMC) {
             testSegMutation(mc, parentMask_, input_, outputLabel, intermediateImages_);
         } else {
@@ -88,8 +90,8 @@ public class TestProcessMutations {
             SpotFluo2D5.debug=true;
             SpotFluo2D5.displayImages=parentMask_==null;
             ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
-            ObjectPopulation pop = SpotFluo2D5.run(input, parentMask, 1.5, 1.5, 5, 7, -0.18, 4, intermediateImages);
-            
+            ObjectPopulation pop = SpotFluo2D5.runPlane(input.getZPlane(0), parentMask, 1.5, 1.5, 5, 4, 0, 4, intermediateImages); // 6 -0.18
+            //ObjectPopulation pop = SpotFluo2D5.runPlane(input, parentMask, 1.5, 1.5, 5, 6, -0.18, 4, intermediateImages);
             /*ImageDisplayer disp = new IJImageDisplayer();
             disp.showImage(input);
             disp.showImage(pop.getLabelImage());:*/

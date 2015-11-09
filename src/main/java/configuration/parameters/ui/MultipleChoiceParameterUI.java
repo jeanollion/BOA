@@ -15,6 +15,7 @@
  */
 package configuration.parameters.ui;
 
+import static boa.gui.GUI.logger;
 import configuration.parameters.ActionableParameter;
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.ChoosableParameter;
@@ -43,24 +44,29 @@ import javax.swing.plaf.basic.BasicCheckBoxMenuItemUI;
  *
  * @author jollion
  */
-public class MultipleChoiceParameterUI implements ParameterUI{
+public class MultipleChoiceParameterUI implements ParameterUI {
     ChoosableParameterMultiple choice;
     ConfigurationTreeModel model;
     JCheckBoxMenuItem[] items;
     JMenuItem[] menuItems;
     boolean multiple=true;
+    JPopupMenu menu;
+    int X, Y;
+    Component parentComponent;
     public MultipleChoiceParameterUI(ChoosableParameterMultiple choice_) {
         this.choice = choice_;
         this.model= ParameterUtils.getModel(choice);
         final String[] choices=choice.getChoiceList();
         this.items = new JCheckBoxMenuItem[choices.length];
         for (int i = 0; i < items.length; i++) {
-            items[i] = new JCheckBoxMenuItem(choices[i]);
-            items[i].setUI(new StayOpenCheckBoxMenuItemUI());
+            items[i] = new StayOpenCBItem(choices[i], this);
+            
+            //items[i] = new JCheckBoxMenuItem(choices[i]);
+            //items[i].setUI(new StayOpenCheckBoxMenuItemUI());
         }
         updateSelectedItemsToUI();
         menuItems = new JMenuItem[4];
-        menuItems[0] = new JMenuItem("Select All");
+        menuItems[0] = new StayOpenMenuItem("Select All", this);
         menuItems[0].setAction(
             new AbstractAction("Select All") {
                 @Override
@@ -70,7 +76,7 @@ public class MultipleChoiceParameterUI implements ParameterUI{
                 }
             }
         );
-        menuItems[1] = new JMenuItem("Select None");
+        menuItems[1] = new StayOpenMenuItem("Select None", this);
         menuItems[1].setAction(
             new AbstractAction("Select None") {
                 @Override
@@ -80,7 +86,7 @@ public class MultipleChoiceParameterUI implements ParameterUI{
                 }
             }
         );
-        menuItems[2] = new JMenuItem("Select Range");
+        menuItems[2] = new StayOpenMenuItem("Select Range", this);
         menuItems[2].setAction(
             new AbstractAction("Select Range") {
                 @Override
@@ -125,7 +131,12 @@ public class MultipleChoiceParameterUI implements ParameterUI{
     
     public JMenuItem[] getDisplayComponent() {return menuItems;}
     
-    public void addMenuListener(JPopupMenu menu) {
+    public void addMenuListener(JPopupMenu menu, int X, int Y, Component parent) {
+        this.menu=menu;
+        this.X=X;
+        this.Y=Y;
+        this.parentComponent=parent;
+        logger.debug("menu set!");
         menu.addPopupMenuListener(new PopupMenuListener() {
             
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
@@ -141,10 +152,8 @@ public class MultipleChoiceParameterUI implements ParameterUI{
             }
         });
     }
-    class StayOpenCheckBoxMenuItemUI extends BasicCheckBoxMenuItemUI {
-        @Override
-        protected void doClick(MenuSelectionManager msm) {
-            menuItem.doClick(0);
-        }
+    public void showMenu() {
+        logger.debug("menu null? {}", menu==null);
+        if (menu!=null) menu.show(parentComponent, X, Y);
     }
 }

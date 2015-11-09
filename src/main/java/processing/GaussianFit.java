@@ -17,9 +17,13 @@
  */
 package processing;
 
-import static core.Processor.logger;
+import boa.gui.imageInteraction.IJImageDisplayer;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.Voxel;
+import ij.ImagePlus;
+import ij.gui.EllipseRoi;
+import ij.gui.Overlay;
+import ij.gui.Roi;
 import image.Image;
 import image.ImgLib2ImageWrapper;
 import java.util.ArrayList;
@@ -39,6 +43,7 @@ import net.imglib2.algorithm.localization.Observation;
 import net.imglib2.algorithm.localization.PeakFitter;
 import net.imglib2.img.Img;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
+import static plugins.Plugin.logger;
 
 /**
  *
@@ -98,5 +103,36 @@ public class GaussianFit {
     private static Localizable getLocalizable(double[] v, boolean is3D) {
         if (is3D) return new Point((long)(v[0]+0.5d), (long)(v[1]+0.5d), (long)(v[2]+0.5d));
         else return new Point((long)(v[0]+0.5d), (long)(v[1]+0.5d));
+    }
+    public static void display2DImageAndRois(Image image, Map<Object3D, double[]> params) {
+        ImagePlus ip = new IJImageDisplayer().showImage(image);
+        final Overlay overlay = new Overlay();
+        ip.setOverlay(overlay);
+        for (Entry<Object3D, double[]> e : params.entrySet()) overlay.add(get2DEllipse(e.getKey(), e.getValue()));
+    }
+    public static Roi get2DEllipse(Object3D o, double[] p) {
+        double Ar = p[2];
+        double x = p[0];
+        double y = p[1];
+        double sx = 1/Math.sqrt(p[3]);
+        double sy = 1/Math.sqrt(p[4]);
+
+        // Draw ellipse on the target image
+        double x1, x2, y1, y2, ar;
+        if (sy < sx) {
+                x1 = x - 2.3548 * sx / 2 + 0.5;
+                x2 = x + 2.3548 * sx / 2 + 0.5;
+                y1 = y + 0.5;
+                y2 = y + 0.5;
+                ar = sy / sx; 
+        } else {
+                x1 = x + 0.5;
+                x2 = x + 0.5;
+                y1 = y - 2.3548 * sy / 2 + 0.5;
+                y2 = y + 2.3548 * sy / 2 + 0.5; 
+                ar = sx / sy; 
+        }
+        logger.debug("gaussian fit on seed: {}; center: {}, x: {}, y: {}, I: {}, sigmaX: {}, sigmaY: {}, error: {}", o.getLabel(), o.getCenter(),p[0], p[1], p[2], 1/Math.sqrt(p[3]), 1/Math.sqrt(p[4]), Math.sqrt(p[5])/Ar);
+        return new EllipseRoi(x1, y1, x2, y2, ar);
     }
 }

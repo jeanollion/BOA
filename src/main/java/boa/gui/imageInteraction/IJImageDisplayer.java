@@ -48,7 +48,7 @@ import java.util.HashMap;
 public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
     protected HashMap<Image, ImagePlus> displayedImages=new HashMap<Image, ImagePlus>();
     protected HashMap<ImagePlus, Image> displayedImagesInv=new HashMap<ImagePlus, Image>();
-    @Override public void showImage(Image image, float... displayRange) {
+    @Override public ImagePlus showImage(Image image, float... displayRange) {
         if (IJ.getInstance()==null) {
             ij.ImageJ.main(new String[0]);
             //new ImageJ();
@@ -73,6 +73,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         ip.show();
         if (displayRange.length>=3) zoom(ip, displayRange[2]);
         else zoom(ip, ImageDisplayer.zoomMagnitude);
+        return ip;
     }
     
     private boolean imageExistButHasBeenClosed(Image image) {

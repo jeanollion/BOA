@@ -125,7 +125,7 @@ public abstract class ImageWindowManager<T> {
         if (i!=null) {
             i.reloadObjects();
             for (Entry<Image, ImageObjectInterfaceKey> e : imageObjectInterfaceMap.entrySet()) if (e.getValue().equals(key)) {
-                logger.debug("updating image: {}", e.getKey().getName());
+                //logger.debug("updating image: {}", e.getKey().getName());
                 if (isLabelImage.get(e.getKey())) i.draw((ImageInteger)e.getKey());
                 if (!track) getDisplayer().updateImageDisplay(e.getKey());
             }
