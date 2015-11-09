@@ -10,6 +10,7 @@ import dataStructure.containers.ObjectContainerBlankMask;
 import dataStructure.containers.ObjectContainerVoxels;
 import image.BlankMask;
 import image.BoundingBox;
+import image.Image;
 import image.ImageByte;
 import image.ImageInteger;
 import image.ImageProperties;
@@ -64,6 +65,35 @@ public class Object3D {
 
     public float getScaleZ() {
         return scaleZ;
+    }
+    
+    public double[] getCenter() {
+        double[] center = new double[3];
+        for (Voxel v : getVoxels()) {
+            center[0] += v.x;
+            center[1] += v.y;
+            center[1] += v.z;
+        }
+        double count = voxels.size();
+        center[0]/=count;
+        center[1]/=count;
+        center[2]/=count;
+        return center;
+    }
+    public double[] getCenter(Image image) {
+        double[] center = new double[3];
+        double count = 0;
+        double value;
+        for (Voxel v : getVoxels()) {
+            value = image.getPixel(v.x, v.y, v.z);
+            center[0] += v.x * value;
+            center[1] += v.y * value;
+            center[1] += v.z * value;
+        }
+        center[0]/=count;
+        center[1]/=count;
+        center[2]/=count;
+        return center;
     }
     
     public synchronized void addVoxels(List<Voxel> voxelsToAdd) {
@@ -248,10 +278,7 @@ public class Object3D {
     }
     
     public boolean is3D() {
-        if (!voxels.isEmpty()) return (voxels.get(0) instanceof Voxel);
-        else if (mask!=null) return mask.getSizeZ()>1;
-        else if (bounds!=null) return bounds.getSizeZ()>1;
-        else return false;
+        return getBounds().getSizeZ()>1;
     }
     
     public Object3D addOffset(int offsetX, int offsetY, int offsetZ) {

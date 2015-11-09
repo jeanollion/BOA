@@ -49,7 +49,10 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
     protected HashMap<Image, ImagePlus> displayedImages=new HashMap<Image, ImagePlus>();
     protected HashMap<ImagePlus, Image> displayedImagesInv=new HashMap<ImagePlus, Image>();
     @Override public void showImage(Image image, float... displayRange) {
-        if (IJ.getInstance()==null) new ImageJ();
+        if (IJ.getInstance()==null) {
+            ij.ImageJ.main(new String[0]);
+            //new ImageJ();
+        }
         if (imageExistButHasBeenClosed(image)) {
             displayedImagesInv.remove(displayedImages.get(image));
             displayedImages.remove(image);
@@ -79,7 +82,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
     private static void zoom(ImagePlus image, double magnitude) {
         ImageCanvas ic = image.getCanvas();
         if (ic==null) return;
-       ic.zoom100Percent();
+        ic.zoom100Percent();
         if (magnitude > 1) {
             for (int i = 0; i < (int) (magnitude + 0.5); i++) {
                 ic.zoomIn(image.getWidth() / 2, image.getHeight() / 2);
@@ -89,6 +92,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                 ic.zoomOut(image.getWidth() / 2, image.getHeight() / 2);
             }
         }
+        image.updateAndDraw();
     }
     
     @Override public ImagePlus getImage(Image image) {
