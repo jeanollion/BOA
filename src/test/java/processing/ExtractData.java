@@ -64,7 +64,7 @@ public class ExtractData {
             fstream = new FileWriter(output);
             out = new BufferedWriter(fstream);
             
-            String headers = "FieldName"+separator+"MicrochannelIdx"+separator+"TimePoint"+separator+"MeanFluoIntensityBacteria"+separator+"MeanFluoIntensityMutation"+separator+"MeanFluoIntensityMutationForeground"+separator+"MutationNumber";
+            String headers = "FieldName"+separator+"MicrochannelIdx"+separator+"TimePoint"+separator+"MeanFluoIntensityBacteria"+separator+"MeanFluoIntensityMutation"+separator+"MeanFluoIntensityMutationForeground"+separator+"MutationNumber"+separator+"BacteriaNumber";
             out.write(headers);
             
             
@@ -93,7 +93,7 @@ public class ExtractData {
                 double fluo = getFluo(s, 1, 1);
                 if ( ! Double.isNaN(fluo)) { 
                     out.newLine();
-                    String line = startLine+mcIdx+separator + s.getTimePoint() + separator + fluo + separator + getFluo(s, 2, 1)+separator + getFluo(s, 2, 2) + separator + getChildCount(s);
+                    String line = startLine+mcIdx+separator + s.getTimePoint() + separator + fluo + separator + getFluo(s, 2, 1)+separator + getFluo(s, 2, 2) + separator + getChildCount(s, 2)  + separator + getChildCount(s, 1);
                     out.write(line);
                 } else break; // pas de bactérie -> on s'arrete ici
             }
@@ -112,7 +112,7 @@ public class ExtractData {
         return fluo/count;
     }
     
-    private int getChildCount(StructureObject mc) {
-        return mc.getChildObjects(2, db.getDao(), false).size();
+    private int getChildCount(StructureObject mc, int structureIdx) {
+        return mc.getChildObjects(structureIdx, db.getDao(), false).size();
     }
 }
