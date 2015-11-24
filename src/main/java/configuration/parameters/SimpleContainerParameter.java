@@ -208,7 +208,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     }
     
     // listenable
-    ArrayList<ParameterListener> listeners;
+    @Transient ArrayList<ParameterListener> listeners;
     public void addListener(ParameterListener listener) {
         if (listeners == null) listeners = new ArrayList<ParameterListener>();
         listeners.add(listener);

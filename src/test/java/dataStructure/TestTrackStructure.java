@@ -66,7 +66,7 @@ public class TestTrackStructure {
         ObjectDAO dao = new ObjectDAO(m, xpDAO);
         
         StructureObject[] rootT = new StructureObject[5];
-        for (int i = 0; i<rootT.length; ++i) rootT[i] = new StructureObject("field1", i, new BlankMask("", 1, 1, 1), xp);
+        for (int i = 0; i<rootT.length; ++i) rootT[i] = new StructureObject("field1", i, new BlankMask("", 1, 1, 1), xp, dao);
         Processor.trackRoot(Arrays.asList(rootT));
         dao.store(true, rootT);
         StructureObject[] mcT = new StructureObject[5];

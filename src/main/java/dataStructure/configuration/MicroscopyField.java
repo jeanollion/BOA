@@ -28,6 +28,7 @@ import dataStructure.containers.InputImage;
 import dataStructure.containers.InputImagesImpl;
 import dataStructure.containers.MultipleImageContainer;
 import dataStructure.containers.MultipleImageContainerSingleFile;
+import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.annotations.Transient;
 import image.BlankMask;
@@ -86,14 +87,14 @@ public class MicroscopyField extends SimpleContainerParameter {
         return mask;
     }
     
-    public ArrayList<StructureObject> createRootObjects() {
+    public ArrayList<StructureObject> createRootObjects(ObjectDAO dao) {
         ArrayList<StructureObject> res = new ArrayList<StructureObject>(getImages().getTimePointNumber());
         if (getMask()==null) {
-            logger.warn("Couldnot initiate root objects, perform preProcessing first");
+            logger.warn("Could not initiate root objects, perform preProcessing first");
             return null;
         }
         for (int t = 0; t<getImages().getTimePointNumber(); ++t) {
-            res.add(new StructureObject(this.name, t, getMask(), getExperiment()));
+            res.add(new StructureObject(this.name, t, getMask(), getExperiment(), dao));
         }
         return res;
     }

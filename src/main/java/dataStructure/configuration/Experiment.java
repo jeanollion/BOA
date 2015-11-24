@@ -61,7 +61,6 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     ImageDAOTypes imageDAOType=ImageDAOTypes.LocalFileSystem;
     
     @Transient ConfigurationTreeModel model;
-    @Transient protected ObjectDAO objectDAO;
     
     public Experiment(String name) {
         super(name);
@@ -75,13 +74,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         initChildList();
     }
     
-    public ObjectDAO getObjectDAO() {
-        return objectDAO;
-    }
-
-    public void setObjectDAO(ObjectDAO objectDAO) {
-        this.objectDAO = objectDAO;
-    }
+    
     
     public void setImportImageMethod(ImportImageMethod method) {this.importMethod.setValue(method.getMethod());}
     
@@ -196,6 +189,22 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         String[] res = new String[childIdx.length];
         for (int i = 0; i<res.length; ++i) res[i] = this.getStructure(childIdx[i]).getName();
         return res;
+    }
+    
+    public boolean isDirectChildOf(int parentStructureIdx, int childStructureIdx) {
+        return this.getStructure(childStructureIdx).getParentStructure()==parentStructureIdx;
+    }
+    
+    public boolean isChildOf(int parentStructureIdx, int childStructureIdx) {
+        if (childStructureIdx<=parentStructureIdx) return false;
+        else if (parentStructureIdx==-1) return true;
+        Structure child = getStructure(childStructureIdx);
+        while(true) {
+            int p = child.getParentStructure();
+            if (p==parentStructureIdx) return true;
+            if (p<parentStructureIdx) return false;
+            child = getStructure(p);
+        }
     }
     
     /**

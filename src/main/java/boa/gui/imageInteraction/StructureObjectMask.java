@@ -70,7 +70,7 @@ public class StructureObjectMask extends ImageObjectInterface {
             offsets[0] = parent.getRelativeBoundingBox(parent).translate(offset.getxMin(), offset.getyMin(), offset.getzMin());
         } else {
             int[] path = parent.getExperiment().getPathToStructure(parent.getStructureIdx(), childStructureIdx);
-            objects = StructureObjectUtils.getAllObjects(parent, path, GUI.getDBConnection().getDao());
+            objects = StructureObjectUtils.getAllObjects(parent, path);
             offsets = new BoundingBox[objects.size()];
             for (int i = 0; i < offsets.length; ++i) {
                 offsets[i] = objects.get(i).getRelativeBoundingBox(parent).translate(offset.getxMin(), offset.getyMin(), offset.getzMin());

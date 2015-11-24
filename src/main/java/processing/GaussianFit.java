@@ -35,20 +35,7 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import net.imglib2.Localizable;
 import net.imglib2.Point;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.algorithm.localization.BruteForceSolver;
-import net.imglib2.algorithm.localization.EllipticGaussianOrtho;
-import net.imglib2.algorithm.localization.FunctionFitter;
-import net.imglib2.algorithm.localization.Gaussian;
-import net.imglib2.algorithm.localization.LevenbergMarquardtSolver;
-import net.imglib2.algorithm.localization.LocalizationUtils;
-import net.imglib2.algorithm.localization.MLEllipticGaussianEstimator;
-import net.imglib2.algorithm.localization.MLEllipticGaussianSimpleEstimator;
-import net.imglib2.algorithm.localization.MLGaussianSimpleEstimator;
-import net.imglib2.algorithm.localization.Observation;
-import net.imglib2.algorithm.localization.PeakFitter;
-import net.imglib2.img.Img;
-import net.imglib2.type.numeric.integer.UnsignedByteType;
+
 import static plugins.Plugin.logger;
 
 /**
@@ -84,7 +71,7 @@ public class GaussianFit {
      * @return for each peak array of fitted parameters: coordinates, intensity@peak, 1/sigma2 in each dimension, error
      */
     public static Map<Object3D, double[]> run(Image image, List<Object3D> peaks, double[][] typicalSigmas, int maxIter, double lambda, double termEpsilon ) {
-        boolean is3D = image.getSizeZ()>1;
+        /*boolean is3D = image.getSizeZ()>1;
         Img img = ImgLib2ImageWrapper.getImage(image);
         //MLEllipticGaussianSimpleEstimator estimator = new MLEllipticGaussianSimpleEstimator(typicalSigmas[0], typicalSigmas[1], typicalSigmas[2]);
         MLGaussianSimpleEstimator estimator = new MLGaussianSimpleEstimator(typicalSigmas[0][0], typicalSigmas[1][0], typicalSigmas[2][0], is3D?3:2);
@@ -118,6 +105,8 @@ public class GaussianFit {
             results2.put(locObj.get(e.getKey()), params);
         }
         return results2;
+                */
+        return null;
     }
     private static Localizable getLocalizable(double[] v, boolean is3D) {
         if (is3D) return new Point((long)(v[0]+0.5d), (long)(v[1]+0.5d), (long)(v[2]+0.5d));

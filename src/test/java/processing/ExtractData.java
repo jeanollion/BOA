@@ -84,7 +84,7 @@ public class ExtractData {
         
         final String startLine = f.getName()+separator;
         StructureObject root = db.getDao().getRoot(f.getName(), 0);
-        ArrayList<StructureObject> mc0 = root.getChildObjects(0, db.getDao(), false);
+        ArrayList<StructureObject> mc0 = root.getChildren(0);
         for (int mcIdx = 0; mcIdx<mc0.size(); ++mcIdx) {
             logger.info("exctract data: field: {}, micro channel: {}", field, mcIdx);
             ArrayList<StructureObject> mcTrack = db.getDao().getTrack(mc0.get(mcIdx));
@@ -102,7 +102,7 @@ public class ExtractData {
     
     private double getFluo(StructureObject o, int imageStructureIdx, int objectStructureIdx) {
         Image im = o.getRawImage(imageStructureIdx);
-        ArrayList<StructureObject> children = o.getChildObjects(objectStructureIdx, db.getDao(), false);
+        ArrayList<StructureObject> children = o.getChildren(objectStructureIdx);
         double fluo = 0;
         double count = 0;
         for (StructureObject c : children) {
@@ -113,6 +113,6 @@ public class ExtractData {
     }
     
     private int getChildCount(StructureObject mc, int structureIdx) {
-        return mc.getChildObjects(structureIdx, db.getDao(), false).size();
+        return mc.getChildren(structureIdx).size();
     }
 }

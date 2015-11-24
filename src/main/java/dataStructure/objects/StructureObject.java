@@ -48,8 +48,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected int idx;
     @Transient protected Experiment xp;
     @Transient protected SmallArray<ArrayList<StructureObject>> childrenSM=new SmallArray<ArrayList<StructureObject>>(); //TODO: switch to ArrayList !!
+    @Transient protected ObjectDAO dao;
     
-    // track-related attributes
+// track-related attributes
     protected int timePoint;
     @Reference(lazyLoading=true, automaticStore=false) protected StructureObject previous;
     @Transient protected StructureObject next; // only available when whole track is retrieved
@@ -75,7 +76,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.idx = idx;
         this.parent=parent;
         this.xp=xp;
-        
+        if (this.parent!=null) this.dao=parent.dao;
     }
     /**
      * Constructor for root objects only.
@@ -84,13 +85,14 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
      * @param mask
      * @param xp 
      */
-    public StructureObject(String fieldName, int timePoint, BlankMask mask, Experiment xp) {
+    public StructureObject(String fieldName, int timePoint, BlankMask mask, Experiment xp, ObjectDAO dao) {
         this.fieldName=fieldName;
         this.timePoint=timePoint;
         if (mask!=null) this.object=new Object3D(mask, 1);
         this.structureIdx = -1;
         this.idx = 0;
         this.xp=xp;
+        this.dao=dao;
     }
     
     // structure-related methods
@@ -142,16 +144,34 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     public boolean isRoot() {return structureIdx==-1;}
     public ArrayList<? extends StructureObject> getChildObjects(int structureIdx) {return getChildren(structureIdx);} // for overriding purpose
-    public ArrayList<StructureObject> getChildren(int structureIdx) {return this.childrenSM.get(structureIdx);}
-    public ArrayList<StructureObject> getChildObjects(int structureIdx, ObjectDAO dao, boolean overrideIfExist) {
-        if (overrideIfExist || getChildren(structureIdx)==null) setChildObjects(dao.getObjects(id, structureIdx), structureIdx);
-        return getChildren(structureIdx);
+    public ArrayList<StructureObject> getChildren(int structureIdx) {
+        ArrayList<StructureObject> res= this.childrenSM.get(structureIdx);
+        if (res==null) {
+            if (getExperiment().isDirectChildOf(this.structureIdx, structureIdx)) { // direct child
+                if (dao!=null) {
+                    res = dao.getObjects(id, structureIdx);
+                    setChildObjects(res, structureIdx);
+                } else logger.debug("getChildObjects called on {} but DAO null, cannot retrieve objects", this);
+                return res;
+            }
+            else { // indirect child
+                int[] path = getExperiment().getPathToStructure(this.getStructureIdx(), structureIdx);
+                if (path.length == 0) {
+                    logger.debug("getChildObjects called on {} but structure: {} is no an (indirect) child of the object's structure", this, structureIdx);
+                    return null;
+                } // structure is not (indirect) child of current structure
+                return StructureObjectUtils.getAllObjects(this, path);
+            }
+        }else return res;
     }
+
     public void setChildObjects(ArrayList<StructureObject> children, int structureIdx) {
         this.childrenSM.set(children, structureIdx);
         for (StructureObject o : children) o.setParent(this);
     }
-    public ArrayList<StructureObject> getSiblings() {return this.getParent().getChildObjects(structureIdx, getExperiment().getObjectDAO(), false);}
+    public ArrayList<StructureObject> getSiblings() {
+        return this.getParent().getChildren(structureIdx);
+    }
     
     public void relabelChildren(int structureIdx, ArrayList<StructureObject> modifiedObjects) {
         //logger.debug("relabeling: {} number of children: {}", this, getChildren(structureIdx).size());
@@ -406,7 +426,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         // update children
         int[] chilIndicies = getExperiment().getChildStructures(structureIdx);
         for (int cIdx : chilIndicies) {
-            ArrayList<StructureObject> otherChildren = otherO.getChildObjects(cIdx, xp.getObjectDAO(), false);
+            ArrayList<StructureObject> otherChildren = otherO.getChildren(cIdx);
             if (otherChildren!=null) {
                 for (StructureObject o : otherChildren) o.setParent(this);
                 //xp.getObjectDAO().updateParent(otherChildren);

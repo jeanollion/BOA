@@ -18,8 +18,6 @@ package dataStructure.configuration;
 
 import boa.gui.configuration.ConfigurationTreeModel;
 import configuration.parameters.ChannelImageParameter;
-import configuration.parameters.ChoiceParameter;
-import configuration.parameters.Parameter;
 import static configuration.parameters.Parameter.logger;
 import configuration.parameters.ParameterListener;
 import configuration.parameters.ParameterUtils;
@@ -74,7 +72,7 @@ public class Structure extends SimpleContainerParameter {
                 else logger.debug("no model found..");
             }
         });
-        initChildren(parentStructure, channelImage, segmentationParent, processingChain, tracker, trackCorrector, objectSplitter);
+        initChildren(parentStructure, channelImage, processingChain, tracker, trackCorrector, objectSplitter); //segmentationParent
     }
     
     public ProcessingChain getProcessingChain() {
@@ -122,6 +120,7 @@ public class Structure extends SimpleContainerParameter {
     }
     
     public int getSegmentationParentStructure() {
+        
         return this.segmentationParent.getSelectedIndex();
     }
     
@@ -140,8 +139,8 @@ public class Structure extends SimpleContainerParameter {
     public void setParent(MutableTreeNode newParent) {
         super.setParent(newParent);
         parentStructure.setMaxStructureIdx(parent.getIndex(this));
-        //retro compatibility: //TOBE REMOVED LATER
-        if (segmentationParent==null) segmentationParent =  new ParentStructureParameter("Segmentation Parent", -1, -1);
+        //retro compatibility: //TO BE REMOVED LATER
+        if (segmentationParent==null) segmentationParent =  new ParentStructureParameter("Segmentation Parent", parentStructure.getSelectedIndex(), -1);
         
         segmentationParent.setMaxStructureIdx(parent.getIndex(this));
     }

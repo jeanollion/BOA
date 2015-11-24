@@ -270,7 +270,7 @@ public class TestProcessBacteria {
         MicroscopyField f = xp.getMicroscopyField(field);
         StructureObject root = dao.getRoot(f.getName(), time);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
-        StructureObject mc = root.getChildObjects(0, dao, false).get(microChannel);
+        StructureObject mc = root.getChildren(0).get(microChannel);
         Image input = mc.getRawImage(1);
         ImageMask parentMask = mc.getMask();
         BacteriaFluo.debug=true;
@@ -395,7 +395,7 @@ public class TestProcessBacteria {
                 } else {
                     StructureObject root = dao.getRoot(f.getName(), t);
                     //logger.debug("field name: {}, root==null? {}", xp.getMicroscopyField(1).getName(), root==null);
-                    ArrayList<StructureObject> mc = root.getChildObjects(0, dao, false);
+                    ArrayList<StructureObject> mc = root.getChildren(0);
                     int mcIdx = 0;
                     for (StructureObject o : mc) {
                         //logger.debug("timePoint: {}, channel: {}", t, o.getIdx());

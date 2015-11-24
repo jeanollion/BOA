@@ -54,8 +54,6 @@ public class ObjectDAO extends DAO<StructureObject>{
         this.morphium=morphium;
         this.xpDAO=xpDAO;
         idCache = new HashMap<ObjectId, StructureObject>();
-        logger.debug("object DAO creation: xpDAO null? {}, experiment null? {}, DAO already set? {}", xpDAO==null, xpDAO==null?"true":xpDAO.getExperiment()==null, xpDAO==null?"false":xpDAO.getExperiment()==null?"false":xpDAO.getExperiment().getObjectDAO()==null);
-        if (xpDAO!=null && xpDAO.getExperiment()!=null && xpDAO.getExperiment().getObjectDAO()==null) xpDAO.getExperiment().setObjectDAO(this);
         agent = new ObjectStoreAgent(this);
     }
     
@@ -80,6 +78,7 @@ public class ObjectDAO extends DAO<StructureObject>{
     
     public void setToCache(StructureObject o) {
         if (xpDAO!=null) o.xp=xpDAO.getExperiment();
+        o.dao=this;
         idCache.put(o.getId(), o);
     }
     

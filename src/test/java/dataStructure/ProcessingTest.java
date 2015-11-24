@@ -19,6 +19,7 @@ package dataStructure;
 
 import TestUtils.Utils;
 import static TestUtils.Utils.showImageIJ;
+import boa.gui.objects.DBConfiguration;
 import configuration.parameters.NumberParameter;
 import testPlugins.dummyPlugins.DummySegmenter;
 import core.Processor;
@@ -203,41 +204,29 @@ public class ProcessingTest {
     
     @Test
     public void StructureObjectTestStore() {
-        MorphiumConfig cfg = new MorphiumConfig();
-        cfg.setGlobalLogLevel(3);
-        cfg.setDatabase("testdb");
-        try {
-            cfg.addHost("localhost", 27017);
-        } catch (UnknownHostException ex) {
-            Utils.logger.error("create morphium", ex);
-        }
-        Morphium m=new Morphium(cfg);
-        m.clearCollection(StructureObject.class);
-        m.clearCollection(Experiment.class);
+        DBConfiguration db = new DBConfiguration("testdb");
+        db.clearObjectsInDB();
         Experiment xp = new Experiment("test");
-        ExperimentDAO xpDAO= new ExperimentDAO(m);
-        xpDAO.store(xp);
-        StructureObject r = new StructureObject("test", 0, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), xp);
-        StructureObject r2 = new StructureObject("test", 1, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), xp);
-        StructureObject r3 = new StructureObject("test", 2, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), xp);
-        ObjectDAO dao = new ObjectDAO(m, xpDAO);
+        db.getXpDAO().store(xp);
+        StructureObject r = new StructureObject("test", 0, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), xp, db.getDao());
+        StructureObject r2 = new StructureObject("test", 1, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), xp, db.getDao());
+        StructureObject r3 = new StructureObject("test", 2, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), xp, db.getDao());
         r2.setPreviousInTrack(r, true);
         r3.setPreviousInTrack(r2, true);
-        dao.store(true, r, r2, r3);
-        dao.waiteForWrites();
-        MorphiumUtils.addDereferencingListeners(m, dao, xpDAO);
-        r2 = dao.getObject(r2.getId());
-        r = dao.getObject(r.getId());
+        db.getDao().store(true, r, r2, r3);
+        db.getDao().waiteForWrites();
+        r2 = db.getDao().getObject(r2.getId());
+        r = db.getDao().getObject(r.getId());
         assertTrue("r2 retrieved", r!=null);
         assertEquals("r unique instanciation", r, r2.getPrevious());
         assertEquals("xp unique instanciation", r.getExperiment(), r2.getExperiment());
-        dao.clearCache();
-        r2 = dao.getObject(r2.getId());
+        db.getDao().clearCache();
+        r2 = db.getDao().getObject(r2.getId());
         assertTrue("r2 retrieved", r!=null);
         assertEquals("r retrieved 2", "test", r2.getFieldName());
         //assertEquals("r previous ", r.getId(), r2.getPrevious().getId()); // not lazy anymore
         
-        assertEquals("r unique instanciation query from fieldName & time point", r2, dao.getRoot("test", 1));
+        assertEquals("r unique instanciation query from fieldName & time point", r2, db.getDao().getRoot("test", 1));
     }
     
     @Test
@@ -276,15 +265,16 @@ public class ProcessingTest {
         xp.setOutputImageDirectory(outputFolder.getAbsolutePath());
         xp.setOutputImageDirectory("/tmp");
         //save to morphium
+        DBConfiguration db = new DBConfiguration("testdb");
+        db.clearObjectsInDB();
         Morphium m=MorphiumUtils.createMorphium("testdb");
         m.clearCollection(Experiment.class);
         m.clearCollection(StructureObject.class);
-        ExperimentDAO xpDAO= new ExperimentDAO(m);
-        xpDAO.store(xp);
-        ObjectDAO dao = new ObjectDAO(m, xpDAO);
+        ExperimentDAO xpDAO= db.getXpDAO();
+        ObjectDAO dao = db.getDao();
 
         Processor.preProcessImages(xp, dao, true);
-        ArrayList<StructureObject> rootTrack = xp.getMicroscopyField(0).createRootObjects();
+        ArrayList<StructureObject> rootTrack = xp.getMicroscopyField(0).createRootObjects(dao);
         assertEquals("root object creation: number of objects", 3, rootTrack.size());
         Processor.processAndTrackStructures(xp, dao);
         dao.waiteForWrites();
@@ -296,7 +286,7 @@ public class ProcessingTest {
         for (int t = 0; t<rootTrack.size(); ++t) {
             //root[t]=dao.getObject(root.get(t).getId());
             for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
-                for (StructureObject parent : StructureObjectUtils.getAllParentObjects(rootTrack.get(t), xp.getPathToRoot(s))) parent.setChildObjects(dao.getObjects(parent.getId(), s), s);
+                for (StructureObject parent : StructureObjectUtils.getAllParentObjects(rootTrack.get(t), xp.getPathToRoot(s), dao)) parent.setChildObjects(dao.getObjects(parent.getId(), s), s);
             }
         }
 

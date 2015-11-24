@@ -73,12 +73,12 @@ public class TestProcessMutations {
         MicroscopyField f = db.getExperiment().getMicroscopyField(field);
         StructureObject root = db.getDao().getRoot(f.getName(), time);
         //logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
-        StructureObject mc = root.getChildObjects(0, db.getDao(), false).get(channel);
+        StructureObject mc = root.getChildren(0).get(channel);
         if (mcMask_!=null) mcMask_.add(mc.getMask());
         if (parentMC) {
             testSegMutation(mc, parentMask_, input_, outputLabel, intermediateImages_);
         } else {
-            for (StructureObject bact : mc.getChildObjects(1, db.getDao(), false)) {
+            for (StructureObject bact : mc.getChildren(1)) {
                 testSegMutation(bact, parentMask_, input_, outputLabel, intermediateImages_);
             }
         }
