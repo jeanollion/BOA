@@ -56,6 +56,7 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
     
     public ParameterUI getUI() {
         if (ui==null) ui=new MultipleChoiceParameterUI(this);
+        else ui.updateUIFromParameter();
         return ui;
     }
     

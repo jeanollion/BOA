@@ -130,7 +130,7 @@ public class BacteriaFluo implements Segmenter {
         
         
         if (debug) logger.debug("threhsold: {}", threshold);
-        pop1.filter(new ObjectPopulation.MeanIntensity(threshold, dog));
+        pop1.filter(new ObjectPopulation.MeanIntensity(threshold, true, dog));
         if (debug) disp.showImage(pop1.getLabelImage().duplicate("first seg"));
         
         /*

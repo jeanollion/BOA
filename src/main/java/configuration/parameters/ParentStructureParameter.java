@@ -38,9 +38,9 @@ public class ParentStructureParameter extends StructureParameter {
 
     public void setMaxStructureIdx(int maxStructure) {
         this.maxStructure = maxStructure;
-        if (this.getSelectedIndex()>maxStructure) {
-            this.setSelectedIndex(-1);
-            Logger.getLogger(getClass().getName()).log(Level.WARNING, "parentStructureParameter:{0}set max structure ({1}) <current selected structure ({2}) -> selected structure set to -1", new Object[]{toString(), maxStructure, this.getSelectedIndex()});
+        if (this.getSelectedIndex()>=maxStructure) {
+            this.setSelectedIndex(maxStructure>=0?maxStructure-1:-1);
+            //Logger.getLogger(getClass().getName()).log(Level.WARNING, "parentStructureParameter:{0}set max structure ({1}) <current selected structure ({2}) -> selected structure set to -1", new Object[]{toString(), maxStructure, this.getSelectedIndex()});
         }
     }
     

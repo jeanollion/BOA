@@ -21,4 +21,5 @@ package configuration.parameters.ui;
  */
 public interface ParameterUI {
     public Object[] getDisplayComponent();
+    //public void updateUIFromParameter();
 }

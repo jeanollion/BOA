@@ -23,6 +23,8 @@ import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.ObjectPopulation.MeanIntensity;
+import dataStructure.objects.ObjectPopulation.Or;
 import dataStructure.objects.ObjectPopulation.Overlap;
 import dataStructure.objects.StructureObjectProcessing;
 import dataStructure.objects.Voxel;
@@ -96,15 +98,17 @@ public class SpotFluo2D5 implements Segmenter {
     public static ObjectPopulation runPlane(Image input, ImageMask mask, double smoothRadius, double laplacianRadius, int minSpotSize, double thresholdSeeds, double thresholdSeedsHess, double thresholdLow, ArrayList<Image> intermediateImages) {
         IJImageDisplayer disp = debug?new IJImageDisplayer():null;
         double hessianRadius = 2;
-        // problem des pixels aveugles: appliquer un median 1 (ou 2) avant translation & rotation ? 
         
         
-        //IJSubtractBackground.filter(input, 10, false, false, false, false);
-        
-        //smoothed = IJFFTBandPass.bandPass(smoothed, 1, 50).setName("bandPass filter");
         //Image smoothed = ImageFeatures.gaussianSmooth(input, smoothRadius, smoothRadius, false).setName("smoothed");
-        Image smoothed = Filters.median(input, null, Filters.getNeighborhood(smoothRadius, smoothRadius, input));
+        Image smoothed = Filters.median(input, new ImageFloat("", 0, 0, 0), Filters.getNeighborhood(smoothRadius, smoothRadius, input));
         ImageFloat bckg = ImageFeatures.gaussianSmooth(input, 10, 10, false);
+        //Image norm = ImageOperations.addImage(input, bckg, null, -1).setName("normalized");
+        
+        //Image norm = IJFFTBandPass.bandPass(input.duplicate(""), 1, 10).setName("bandPass filter");
+        Image norm = Filters.tophat(smoothed, null, Filters.getNeighborhood(5, 5, input));
+        
+        
         smoothed = ImageOperations.addImage(smoothed, bckg, bckg, -1).setName("smoothed");
         
         Image contrasted = ImageFeatures.getLaplacian(smoothed, laplacianRadius, true, false);
@@ -115,7 +119,8 @@ public class SpotFluo2D5 implements Segmenter {
         ImageOperations.affineOperation(smoothed, smoothed, 1d/meanSigma[1], -meanSigma[0]);
         KappaSigma.kappaSigmaThreshold(contrasted, mask, 2, 3, meanSigma);
         ImageOperations.affineOperation(contrasted, contrasted, 1d/meanSigma[1], -meanSigma[0]);
-        
+        //KappaSigma.kappaSigmaThreshold(norm, mask, 2, 3, meanSigma);
+        //ImageOperations.affineOperation(norm, norm, 1d/meanSigma[1], -meanSigma[0]);
         //logger.debug("kappaSigma: mean: {}, sigma: {}", meanSigma[0], meanSigma[1]);
         //Image[] hessMaxDet = ImageFeatures.getHessianMaxAndDeterminant(smoothed, hessianRadius, false); hessMaxDet[0].setName("hessian"); hessMaxDet[1].setName("hessianDet");
         Image hess = ImageFeatures.getHessian(smoothed, hessianRadius, false)[0].setName("hessian max");
@@ -138,9 +143,8 @@ public class SpotFluo2D5 implements Segmenter {
         
         ObjectPopulation seedPop = new ObjectPopulation(seeds, false);
         seedPop.filter(new Overlap(seedsHess, 1.5));
+        //seedPop.filter(new Or(new ObjectPopulation.GaussianFit(norm, 3, 3, 5, 0.2, 0.010, 6), new MeanIntensity(-0.2, false, hess)));
         
-        //Map<Object3D, double[]> fit = GaussianFit.run(smoothed, seedPop.getObjects(), 2, 300, 0.001, 0.01);
-        //GaussianFit.display2DImageAndRois(smoothed, fit);
         ObjectPopulation pop =  watershed(hess, mask, seedPop.getObjects(), false, new MultiplePropagationCriteria(new ThresholdPropagationOnWatershedMap(0), new ThresholdPropagation(contrasted, thresholdLow, true)), new SizeFusionCriterion(minSpotSize));
         pop.filter(new ObjectPopulation.RemoveFlatObjects(input));
         pop.filter(new ObjectPopulation.Size().setMin(minSpotSize));

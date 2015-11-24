@@ -326,7 +326,10 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
 
     @PostLoad public void postLoad() {
         if (postLoaded) return;
-        for (Parameter p : children) p.setParent(this);
+        for (Parameter p : children) {
+            if (p!=null) p.setParent(this);
+            else logger.error("postload parameter null: {}", getName());
+        }
         postLoaded=true;
     }
 

@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -303,7 +304,8 @@ public class ObjectPopulation {
     }
     
     public ObjectPopulation filter(Filter filter, ArrayList<Object3D> removedObjects) {
-        //int objectNumber = objects.size();
+        int objectNumber = objects.size();
+        filter.init(this);
         Iterator<Object3D> it = objects.iterator();
         while (it.hasNext()) {
             Object3D o = it.next();
@@ -314,7 +316,7 @@ public class ObjectPopulation {
                 }
             }
         }
-        //logger.debug("filter: {}, total object number: {}, remaning objects: {}", filter.getClass().getSimpleName(), objectNumber, objects.size());
+        logger.debug("filter: {}, total object number: {}, remaning objects: {}", filter.getClass().getSimpleName(), objectNumber, objects.size());
         return this;
     }
     
@@ -378,7 +380,7 @@ public class ObjectPopulation {
     }
     
     public static interface Filter {
-
+        public void init(ObjectPopulation population);
         public boolean keepObject(Object3D object);
     }
 
@@ -405,6 +407,8 @@ public class ObjectPopulation {
         public boolean keepObject(Object3D object) {
             return (tX < 0 || object.getBounds().getSizeX() > tX) && (tY < 0 || object.getBounds().getSizeY() > tY) && (tZ < 0 || object.getBounds().getSizeZ() > tZ);
         }
+
+        public void init(ObjectPopulation population) {}
     }
 
     public static class RemoveFlatObjects extends Thickness {
@@ -434,7 +438,7 @@ public class ObjectPopulation {
             this.max = max;
             return this;
         }
-        
+        @Override public void init(ObjectPopulation population) {}
         @Override
         public boolean keepObject(Object3D object) {
             int size = object.getVoxels().size();
@@ -481,7 +485,7 @@ public class ObjectPopulation {
             this.border = border;
             border.setMask(mask);
         }
-
+        @Override public void init(ObjectPopulation population) {}
         @Override
         public boolean keepObject(Object3D object) {
             if (contactLimit <= 0) {
@@ -499,17 +503,58 @@ public class ObjectPopulation {
 
         double threshold;
         Image intensityMap;
-
-        public MeanIntensity(double threshold, Image intensityMap) {
+        boolean keepOverThreshold;
+        
+        public MeanIntensity(double threshold, boolean keepOverThreshold, Image intensityMap) {
             this.threshold = threshold;
             this.intensityMap = intensityMap;
+            this.keepOverThreshold=keepOverThreshold;
         }
-
+        @Override public void init(ObjectPopulation population) {}
         @Override
         public boolean keepObject(Object3D object) {
             double mean = BasicMeasurements.getMeanValue(object, intensityMap);
-            return mean >= threshold;
+            return mean >= threshold == keepOverThreshold;
         }
+    }
+    
+    public static class GaussianFit implements Filter {
+        double sigmaSpan, sigmaMin,sigmaMax, precision, errorThreshold, sigmaThreshold; 
+        Image image;
+        Map<Object3D, double[]> fit;
+        public GaussianFit(Image image, double sigmaSpan, double sigmaMin, double sigmaMax, double precision, double errorThreshold, double sigmaThreshold) {
+            this.sigmaSpan=sigmaSpan;
+            this.sigmaMin=sigmaMin;
+            this.sigmaMax=sigmaMax;
+            this.errorThreshold=errorThreshold;
+            this.precision=precision;
+            this.image=image;
+        }
+        @Override public void init(ObjectPopulation population) {
+            fit = processing.GaussianFit.run(image, population.getObjects(), sigmaSpan, sigmaMin, sigmaMax, precision, 300, 0.001, 0.01);
+            //processing.GaussianFit.display2DImageAndRois(image, fit);
+        }
+        @Override
+        public boolean keepObject(Object3D object) {
+            double[] params = fit.get(object);
+            return params[params.length-1]<errorThreshold;// && params[params.length-2]<sigmaThreshold;
+        }
+    }
+    
+    public static class Or implements Filter {
+        Filter[] filters;
+        public Or(Filter... filters) {
+            this.filters=filters;
+        }
+        public void init(ObjectPopulation population) {
+            for (Filter f : filters) f.init(population);
+        }
+
+        public boolean keepObject(Object3D object) {
+            for (Filter f : filters) if (f.keepObject(object)) return true;
+            return false;
+        }
+        
     }
 
     public static class Overlap implements Filter {
@@ -532,7 +577,7 @@ public class ObjectPopulation {
             }            
             n = labelMap.getSizeZ() > 1 ? new EllipsoidalNeighborhood(rad, radZ, false) : new EllipsoidalNeighborhood(rad, false);
         }
-
+        @Override public void init(ObjectPopulation population) {}
         @Override
         public boolean keepObject(Object3D object) {
             for (Voxel v : object.getVoxels()) {
@@ -557,7 +602,7 @@ public class ObjectPopulation {
             //this.distanceTolerance = distanceTolerance;
             
         }
-
+        @Override public void init(ObjectPopulation population) {}
         @Override
         public boolean keepObject(Object3D object) {
             Object3D maxInterO = null;

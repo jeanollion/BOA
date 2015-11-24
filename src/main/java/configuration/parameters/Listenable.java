@@ -21,9 +21,8 @@ package configuration.parameters;
  *
  * @author jollion
  */
-public interface ChoosableParameter extends Parameter, Listenable {
-    public void setSelectedItem(String item);
-    public String[] getChoiceList();
-    public int getSelectedIndex();
-    public boolean isAllowNoSelection();
+public interface Listenable {
+    public void addListener(ParameterListener listener);
+    public void removeListener(ParameterListener listener);
+    public void fireListeners();
 }

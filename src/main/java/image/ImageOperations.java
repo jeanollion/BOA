@@ -161,9 +161,13 @@ public class ImageOperations {
     }
 
     public static <T extends Image> T addImage(Image source1, Image source2, T output, double coeff) {
+        String name = source1.getName()+" + "+coeff+" x "+source2.getName();
         if (!source1.sameSize(source2)) throw new IllegalArgumentException("sources images have different sizes");
-        if (output==null) output = (T)Image.createEmptyImage(source1.getName()+" + "+coeff+" x "+source2.getName(), source1, source1);
-        else if (!output.sameSize(source1)) output = Image.createEmptyImage(source1.getName()+" + "+coeff+" x "+source2.getName(), output, source1);
+        if (output==null) {
+            if (coeff<0 || (int)coeff != coeff) output = (T)new ImageFloat(name, source1);
+            else output = (T)Image.createEmptyImage(name, source1, source1);
+        }
+        else if (!output.sameSize(source1)) output = Image.createEmptyImage(name, output, source1);
         float round = output instanceof ImageInteger?0.5f:0;
         if (coeff==1) {
             for (int z = 0; z<output.sizeZ; ++z) {
@@ -187,8 +191,12 @@ public class ImageOperations {
         return output;
     }
     public static Image affineOperation(Image source1, Image output, double multiplicativeCoefficient, double additiveCoefficient) {
-        if (output==null) output = Image.createEmptyImage(source1.getName()+" x "+multiplicativeCoefficient, source1, source1);
-        else if (!output.sameSize(source1)) output = Image.createEmptyImage(source1.getName()+" x "+multiplicativeCoefficient, output, source1);
+        String name = source1.getName()+" x "+multiplicativeCoefficient + " + "+additiveCoefficient;
+        if (output==null) {
+            if (multiplicativeCoefficient<0 || (int)multiplicativeCoefficient != multiplicativeCoefficient || additiveCoefficient<0) output = new ImageFloat(name, source1);
+            else output = Image.createEmptyImage(name, source1, source1);
+        }
+        else if (!output.sameSize(source1)) output = Image.createEmptyImage(name, output, source1);
         additiveCoefficient += output instanceof ImageInteger?0.5:0;
         for (int z = 0; z<output.sizeZ; ++z) {
             for (int xy=0; xy<output.sizeXY; ++xy) {

@@ -64,7 +64,7 @@ public class MultipleChoiceParameterUI implements ParameterUI {
             //items[i] = new JCheckBoxMenuItem(choices[i]);
             //items[i].setUI(new StayOpenCheckBoxMenuItemUI());
         }
-        updateSelectedItemsToUI();
+        updateUIFromParameter();
         menuItems = new JMenuItem[4];
         menuItems[0] = new StayOpenMenuItem("Select All", this);
         menuItems[0].setAction(
@@ -122,10 +122,11 @@ public class MultipleChoiceParameterUI implements ParameterUI {
     
     public void updateSelectedItemsToParameter() {
         choice.setSelectedIndicies(getSelectedItems() );
+        choice.fireListeners();
         if (model!=null) model.nodeChanged(choice);
     }
     
-    public void updateSelectedItemsToUI() {
+    public void updateUIFromParameter() {
         for (int i : choice.getSelectedItems()) items[i].setSelected(true);
     }
     
@@ -140,7 +141,7 @@ public class MultipleChoiceParameterUI implements ParameterUI {
         menu.addPopupMenuListener(new PopupMenuListener() {
             
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-                updateSelectedItemsToUI();
+                updateUIFromParameter();
             }
 
             public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {

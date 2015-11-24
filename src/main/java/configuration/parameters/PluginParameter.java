@@ -228,5 +228,4 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         }
         return pluginType;
     }
-    
 }

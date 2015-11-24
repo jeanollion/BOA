@@ -31,7 +31,7 @@ import utils.Utils;
 public abstract class IndexChoiceParameter extends SimpleParameter implements ChoosableParameter, ChoosableParameterMultiple {
     protected int[] selectedIndicies;
     protected boolean allowNoSelection, multipleSelection;
-    @Transient ParameterUI ui;
+    //@Transient ParameterUI ui;
     
     public IndexChoiceParameter(String name) {
         this(name, -1, false, false);
@@ -103,12 +103,14 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
     
     public ParameterUI getUI() {
         if (multipleSelection) {
-            if (ui==null) ui = new MultipleChoiceParameterUI(this);
-            return ui;
+            return new MultipleChoiceParameterUI(this);
+            //else ((MultipleChoiceParameterUI)ui).updateUIFromParameter();
+            //return ui;
         }
         else {
-            if (ui==null) ui = new ChoiceParameterUI(this, true);
-            return ui;
+            return  new ChoiceParameterUI(this, true);
+            //else ((ChoiceParameterUI)ui).updateUIFromParameter();
+            //return ui;
         }
     }
 
@@ -147,4 +149,6 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
         }
         return selectedIndicies;
     }
+    
+    
 }
