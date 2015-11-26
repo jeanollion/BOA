@@ -267,10 +267,7 @@ public class ProcessingTest {
         //save to morphium
         DBConfiguration db = new DBConfiguration("testdb");
         db.clearObjectsInDB();
-        Morphium m=MorphiumUtils.createMorphium("testdb");
-        m.clearCollection(Experiment.class);
-        m.clearCollection(StructureObject.class);
-        ExperimentDAO xpDAO= db.getXpDAO();
+        db.getXpDAO().store(xp);
         ObjectDAO dao = db.getDao();
 
         Processor.preProcessImages(xp, dao, true);

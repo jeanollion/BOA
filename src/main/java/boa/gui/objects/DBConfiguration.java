@@ -45,7 +45,7 @@ public class DBConfiguration {
         this.xpDAO=new ExperimentDAO(m);
         this.dao=new ObjectDAO(m, xpDAO);
         if (dl!=null) m.removeDerrferencingListener(dl);
-        dl=MorphiumUtils.addDereferencingListeners(m, dao, xpDAO);
+        dl=MorphiumUtils.addDereferencingListeners(m, xpDAO);
     }
 
     public void updateExperiment() {

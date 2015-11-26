@@ -18,6 +18,8 @@
 package utils;
 
 import static core.Processor.logger;
+import ij.gui.Plot;
+import ij.measure.CurveFitter;
 import image.ImageFloat;
 import java.util.ArrayList;
 import processing.ImageFeatures;
@@ -65,6 +67,7 @@ public class ArrayUtil {
     public static int max(float[] array) {
         return max(array, 0, array.length);
     }
+    
     /**
      * 
      * @param array 
@@ -80,10 +83,43 @@ public class ArrayUtil {
         for (int i = start+1; i<stop; ++i) if (array[i]>array[idxMax]) idxMax=i;
         return idxMax;
     }
+    public static int max(double[] array) {
+        return max(array, 0, array.length);
+    }
+    public static int max(double[] array, int start, int stop) {
+        if (start<0) start=0;
+        if (stop>array.length) stop=array.length;
+        if (stop<start) {int temp = start; start=stop; stop=temp;}
+        int idxMax = start;
+        for (int i = start+1; i<stop; ++i) if (array[i]>array[idxMax]) idxMax=i;
+        return idxMax;
+    }
+    public static int max(int[] array) {
+        return max(array, 0, array.length);
+    }
+    public static int max(int[] array, int start, int stop) {
+        if (start<0) start=0;
+        if (stop>array.length) stop=array.length;
+        if (stop<start) {int temp = start; start=stop; stop=temp;}
+        int idxMax = start;
+        for (int i = start+1; i<stop; ++i) if (array[i]>array[idxMax]) idxMax=i;
+        return idxMax;
+    }
     public static int min(float[] array) {
         return min(array, 0, array.length);
     }
     public static int min(float[] array, int start, int stop) {
+        if (start<0) start=0;
+        if (stop>array.length) stop=array.length;
+        if (stop<start) {int temp = start; start=stop; stop=temp;}
+        int idxMin = start;
+        for (int i = start+1; i<stop; ++i) if (array[i]<array[idxMin]) idxMin=i;
+        return idxMin;
+    }
+    public static int min(double[] array) {
+        return min(array, 0, array.length);
+    }
+    public static int min(double[] array, int start, int stop) {
         if (start<0) start=0;
         if (stop>array.length) stop=array.length;
         if (stop<start) {int temp = start; start=stop; stop=temp;}
@@ -162,4 +198,88 @@ public class ArrayUtil {
         ImageFloat out = ImageFeatures.getDerivative(in, scale, order, 0, 0, override);
         return out.getPixelArray()[0];
     }
+    
+    public static double[] subset(double[] data, int idxStart, int idxStop) {
+        double[] res = new double[idxStop-idxStart];
+        System.arraycopy(data, idxStart, res, 0, res.length);
+        return res;
+    }
+    
+    public static double[] getMeanAndSigma(double[] data) {
+        double mean = 0;
+        double values2 = 0;
+        for (int i = 0; i < data.length; ++i) {
+            mean += data[i];
+            values2 += data[i] * data[i]; 
+        }
+        mean /= (double)data.length;
+        values2 /= (double)data.length;
+        return new double[]{mean, Math.sqrt(values2 - mean * mean)};
+    }
+    public static double[] gaussianFit(int[] data) {
+        double[] data2 = new double[data.length];
+        for (int i = 0; i<data.length; ++i) data2[i] = data[i];
+        return gaussianFit(data2);
+    }
+    public static double[] gaussianFit(float[] data) {
+        double[] data2 = new double[data.length];
+        for (int i = 0; i<data.length; ++i) data2[i] = data[i];
+        return gaussianFit(data2);
+    }
+    /**
+     * Gaussian Fit using ImageJ's curveFitter
+     * @param data
+     * @param halfData
+     * @return fit parameters: 0=MEAN / 1=sigma
+     */
+    public static double[] gaussianFit(double[] data) {
+        //int maxIdx = max(data);
+        //double maxValue = data[maxIdx];
+        double[] xData;
+        /*if (halfData) { // replicate data
+            double[] data2 = new double[data.length * 2 -1];
+            xData = new double[data2.length];
+            if (maxIdx<data.length/2) { //replicate left
+                for (int i = 0; i<data.length; ++i) {
+                    data2[i] = data[data.length-i-1];
+                    data2[i+data.length-1]=data[i];
+                    //xData[i]=i-data.length+1;
+                }
+            } else { // replicate right
+                for (int i = 0; i<data.length; ++i) {
+                    data2[i] = data[i];
+                    data2[i+data.length-1]=data[data.length-i-1];
+                    //xData[i]=i-data.length+1;
+                }
+            }
+            data=data2;
+        }*/ //else {
+            xData = new double[data.length];
+            for (int i = 0; i<data.length; ++i) xData[i] = i;
+        //}
+        
+        CurveFitter fit = new CurveFitter(xData, data);
+        fit.setMaxIterations(10000);
+        fit.setRestarts(1000);
+        fit.doFit(CurveFitter.GAUSSIAN);
+        double[] params = fit.getParams();
+        //Utils.plotProfile("gaussian fit: X-center: "+params[2]+ " sigma: "+params[3], data);
+        //Utils.plotProfile("residuals", fit.getResiduals());
+        return new double[]{params[2], params[3]};
+        
+        /*WeightedObservedPoints obs = new WeightedObservedPoints();
+        for (int i = 0; i<data.length; ++i) obs.add(xData[i], data[i]);
+        GaussianCurveFitter fitter = GaussianCurveFitter.create().withStartPoint(new double[]{maxValue, halfData?0:maxIdx, getMeanAndSigma(data)[1]});
+        double[] params = fitter.fit(obs.toList());
+        
+        Utils.plotProfile("gaussian fit: X-center: "+(params[1]+" XOffset: "+(data.length-1)/2)+ " sigma: "+params[2]+" initialGuess: "+getMeanAndSigma(data)[1], data);
+        return new double[]{params[2], params[1]};
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+            <version>3.5</version>
+        </dependency>
+        */
+    }
+    
 }
