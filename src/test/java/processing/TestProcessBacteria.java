@@ -66,6 +66,7 @@ import plugins.plugins.trackers.ObjectIdxTracker;
 import plugins.plugins.transformations.AutoRotationXY;
 import plugins.plugins.transformations.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
+import plugins.plugins.transformations.ImageStabilizer;
 import plugins.plugins.transformations.ImageStabilizerXY;
 import plugins.plugins.transformations.SelectBestFocusPlane;
 import plugins.plugins.transformations.SuppressCentralHorizontalLine;
@@ -91,12 +92,13 @@ public class TestProcessBacteria {
         //t.subsetTimePoints(595, 630, "/data/Images/Fluo/test", "/data/Images/Fluo/testsub595-630");
         //t.testRotation();
         //t.testSegBacteries();
-        t.testSegBacteriesFromXP();
+        //t.testSegBacteriesFromXP();
         //t.subsetTimePoints(0, 60, "/data/Images/Fluo/films1510/63me120r-14102015-LR62R1-lbiptg100x_1", "/data/Images/Fluo/films1510/63me120r-14102015-LR62R1-lbiptg100x_1_sub60", "champ1");
         //t.testSegMicroChannels();
         //t.testSegBactAllTimes();
         //t.runSegmentationBacteriaOnSubsetofDBXP(569, 630);
         //t.process(0, false);
+        t.testStabilizer();
     }
     
     
@@ -187,13 +189,15 @@ public class TestProcessBacteria {
     //@Test 
     public void testStabilizer() {
         setUpXp(false, "/data/Images/Fluo/OutputTest");
-        testImport("/data/Images/Fluo/test");
+        xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
+        testImport("/data/Images/Fluo/testsub60");
+        
         xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
         xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
         xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
         xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new CropMicroChannels2D());
         xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new ImageStabilizerXY().setReferenceTimePoint(0));
-        
+        //xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new ImageStabilizer().setReferenceTimePoint(0));
         //Image[][] imageInputTC = new Image[xp.getMicroscopyField(0).getInputImages().getTimePointNumber()][1];
         //for (int t = 0; t<imageInputTC.length; ++t) imageInputTC[t][0] = xp.getMicroscopyField(0).getInputImages().getImage(0, t);
         

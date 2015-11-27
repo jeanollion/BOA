@@ -166,7 +166,12 @@
             <version>1.2.1</version>
             <scope>test</scope>
         </dependency>
-        
+        <dependency>
+            <groupId>sc.fiji</groupId>
+            <artifactId>Stitching_</artifactId>
+            <version>3.0.3-SNAPSHOT</version>
+            <type>jar</type>
+        </dependency>
     </dependencies>
 
     <repositories>

@@ -18,8 +18,11 @@
 package dataStructure.containers;
 
 import image.Image;
+import static image.Image.logger;
 import plugins.Transformation;
 import plugins.TransformationTimeIndependent;
+import utils.ThreadRunner;
+import utils.ThreadRunner.ThreadAction;
 
 /**
  *
@@ -52,20 +55,39 @@ public class InputImagesImpl implements InputImages {
         }
     }
 
-    public Image getImage(int channelIdx, int timePoint) {
+    public Image getImage(int channelIdx, int timePoint) { 
+        // TODO: gestion de la memoire: si besoin save & close d'une existante. Attention a signal & réouvrir depuis le DAO et non depuis l'original
         return imageTC[timePoint][channelIdx].getImage();
     }
     
     public void applyTranformationsSaveAndClose() {
-        int tCount = getTimePointNumber();
-        int cCount = getChannelNumber();
+        long tStart = System.currentTimeMillis();
+        final int cCount = getChannelNumber();
+        ThreadRunner.execute(imageTC, new ThreadAction<InputImage[]>() {
+            @Override
+            public void run(InputImage[] imageC) {
+                //long tStart = System.currentTimeMillis();
+                for (int c = 0; c<cCount; ++c) {
+                    imageC[c].getImage();
+                    imageC[c].saveToDAO=true;
+                    imageC[c].closeImage();
+                }
+                //long tEnd = System.currentTimeMillis();
+                //logger.debug("apply transformation & save: {}", tEnd-tStart);
+            }
+        });
+        
+        
+        /*int tCount = getTimePointNumber();
         for (int t = 0; t<tCount; ++t) {
             for (int c = 0; c<cCount; ++c) {
                 imageTC[t][c].getImage();
                 imageTC[t][c].saveToDAO=true;
                 imageTC[t][c].closeImage();
             }
-        }
+        }*/
+        long tEnd = System.currentTimeMillis();
+        logger.debug("apply transformation & save: total time: {}, for {} time points and {} channels", tEnd-tStart, getTimePointNumber(), cCount );
     }
     
     public void deleteFromDAO() {

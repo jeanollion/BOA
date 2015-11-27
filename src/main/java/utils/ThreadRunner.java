@@ -49,7 +49,11 @@ public class ThreadRunner {
     public final int start, end;
     public final Thread[] threads;
     public final AtomicInteger ai;
-
+    
+    public ThreadRunner(int start, int end) {
+        this(start, end, 0);
+    }
+    
     public ThreadRunner(int start, int end, int cpulimit) {
         this.start=start;
         this.end=end;
@@ -105,6 +109,7 @@ public class ThreadRunner {
                 }
             );
         }
+        tr.startAndJoin();
     }
     public static <T> void execute(final ArrayList<T> array, final ThreadAction<T> action) {
         final ThreadRunner tr = new ThreadRunner(0, array.size(), 0);
@@ -120,6 +125,7 @@ public class ThreadRunner {
                 }
             );
         }
+        tr.startAndJoin();
     }
     
     public static interface ThreadAction<T> {
