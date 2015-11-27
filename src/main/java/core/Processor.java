@@ -36,8 +36,12 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import measurement.MeasurementKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import plugins.Measurement;
 import plugins.ObjectSplitter;
 import plugins.Registration;
 import plugins.TrackCorrector;
@@ -329,4 +333,26 @@ public class Processor {
     protected static void relabelParents(HashSet<StructureObject> parentsToRelabel, int childStructureIdx, ArrayList<StructureObject> modifiedObjects) {
         for (StructureObject parent : parentsToRelabel) parent.relabelChildren(childStructureIdx, modifiedObjects);
     }
+    
+    // measurement-related methods
+    public static void performMeasurements(StructureObject root, ObjectDAO dao) {
+        Map<Integer, List<Measurement>> measurements = root.getExperiment().getMeasurementsByStructureIdx();
+        Iterator<Entry<Integer, List<Measurement>>> it = measurements.entrySet().iterator();
+        while(it.hasNext()) {
+            Entry<Integer, List<Measurement>> e = it.next();
+            int structureIdx = e.getKey();
+            ArrayList<StructureObject> parents;
+            if (e.getKey()==-1) {parents = new ArrayList<StructureObject>(1); parents.add(root);}
+            else parents = root.getChildren(structureIdx);
+            ArrayList<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
+            for (Measurement m : e.getValue()) {
+                for (StructureObject o : parents) m.performMeasurement(o, modifiedObjects);
+            }
+            
+            if (dao!=null && !modifiedObjects.isEmpty()) dao.updateMeasurements(modifiedObjects);
+            it.remove(); // can save memory if the measurement instance stores data
+        }
+    }
+    
+    
 }

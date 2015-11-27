@@ -52,22 +52,31 @@ public class ObjectStoreAgent {
     
     private void executeJob(Job job) {
         long tStart = System.currentTimeMillis();
-        dao.storeNow(job.objects, job.updateTrackLinks);
+        job.executeJob();
         long tEnd = System.currentTimeMillis();
-        logger.debug("Job done: {} objects stored in {} ms", job.objects.size(), tEnd-tStart);
+        logger.debug("Job {} done: {} objects processed in {} ms", job.getClass().getSimpleName(), job.objects.size(), tEnd-tStart);
     }
     
-    public synchronized void addJob(List<StructureObject> list, boolean updateTrackLinks) {
-        Job job = new Job(list, updateTrackLinks);
+    public synchronized void storeObjects(List<StructureObject> list, boolean updateTrackLinks) {
+        Job job = new StoreJob(list, updateTrackLinks);
         queue.add(job);
-        if (thread==null || !thread.isAlive()) {
-            
-            logger.debug("StoreAgent: thread was not running, running thread.. state: {}, isInterrupted: {}", thread!=null?thread.getState():"null", thread!=null?thread.isInterrupted():null);
+        if (thread==null || !thread.isAlive()) {        
+            //logger.debug("StoreAgent: thread was not running, running thread.. state: {}, isInterrupted: {}", thread!=null?thread.getState():"null", thread!=null?thread.isInterrupted():null);
             createThread();
             thread.start();
-            
-        } else logger.debug("StoreAgent: thread was already running..,  state: {}, isInterrupted: {}", thread!=null?thread.getState():"null", thread!=null?thread.isInterrupted():null);        
+        } //else logger.debug("StoreAgent: thread was already running..,  state: {}, isInterrupted: {}", thread!=null?thread.getState():"null", thread!=null?thread.isInterrupted():null);        
     }
+    
+    public synchronized void updateMeasurements(List<StructureObject> list) {
+        Job job = new UpdateMeasurementJob(list);
+        queue.add(job);
+        if (thread==null || !thread.isAlive()) {        
+            //logger.debug("StoreAgent: thread was not running, running thread.. state: {}, isInterrupted: {}", thread!=null?thread.getState():"null", thread!=null?thread.isInterrupted():null);
+            createThread();
+            thread.start();
+        } //else logger.debug("StoreAgent: thread was already running..,  state: {}, isInterrupted: {}", thread!=null?thread.getState():"null", thread!=null?thread.isInterrupted():null);        
+    }
+    
     public void join() {
         if (thread!=null) try {
             thread.join();
@@ -76,12 +85,34 @@ public class ObjectStoreAgent {
         }
     }
     
-    private class Job {
-        List<StructureObject> objects;
-        boolean updateTrackLinks;
-        public Job(List<StructureObject> list, boolean updateTrackLinks) {
+    private abstract class Job {
+        protected List<StructureObject> objects;
+        public Job(List<StructureObject> list) {
             this.objects=list;
+        }
+        public abstract void executeJob();
+    }
+    private class StoreJob extends Job {
+        boolean updateTrackLinks;
+        public StoreJob(List<StructureObject> list, boolean updateTrackLinks) {
+            super(list);
             this.updateTrackLinks=updateTrackLinks;
+        }
+
+        @Override
+        public void executeJob() {
+            dao.storeNow(objects, updateTrackLinks);
+        }
+        
+    }
+    private class UpdateMeasurementJob extends Job{
+
+        public UpdateMeasurementJob(List<StructureObject> list) {
+            super(list);
+        }
+        @Override
+        public void executeJob() {
+            dao.updateMeasurementsNow(objects);
         }
     }
 }

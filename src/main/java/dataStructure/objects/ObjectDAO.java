@@ -55,6 +55,7 @@ public class ObjectDAO extends DAO<StructureObject>{
         this.xpDAO=xpDAO;
         idCache = new HashMap<ObjectId, StructureObject>();
         agent = new ObjectStoreAgent(this);
+        
     }
     
     private Query<StructureObject> getQuery(ObjectId parentId, int structureIdx) {
@@ -204,7 +205,7 @@ public class ObjectDAO extends DAO<StructureObject>{
             Utils.removeDuplicates(objects, false);
             if (updateTrackAttributes) Collections.sort(objects, Utils.getStructureObjectComparator());
         }
-        agent.addJob(objects, updateTrackAttributes);
+        agent.storeObjects(objects, updateTrackAttributes);
         //storeNow(objects, updateTrackAttributes);
     }
     public void storeNow(final List<StructureObject> objects, final boolean updateTrackAttributes) {
@@ -400,6 +401,16 @@ public class ObjectDAO extends DAO<StructureObject>{
         List<StructureObject> list =  super.getQuery().f("field_name").eq(fieldName).f("structure_idx").eq(structureIdx).f("track_link_error").eq(true).asList();
         return this.checkAgainstCache(list);
     }
+
+    // measurement-specific methds
+    public void updateMeasurements(List<StructureObject> objects) {
+        this.agent.updateMeasurements(objects);
+    }
+    protected void updateMeasurementsNow(List<StructureObject> objects) {
+        for (StructureObject o : objects) this.morphium.updateUsingFields(o, "measurements");
+    }
+    
+    
     
     // root-specific methods
     

@@ -27,6 +27,7 @@ import configuration.parameters.SimpleParameter;
 import configuration.parameters.ui.ParameterUI;
 import boa.gui.configuration.ConfigurationTreeModel;
 import boa.gui.configuration.TreeModelContainer;
+import configuration.parameters.PluginParameter;
 import dataStructure.containers.ImageDAO;
 import dataStructure.containers.ImageDAOFactory;
 import dataStructure.objects.ObjectDAO;
@@ -38,7 +39,14 @@ import de.caluga.morphium.annotations.caching.Cache;
 import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import measurement.MeasurementKey;
+import measurement.MeasurementKeyObject;
 import org.bson.types.ObjectId;
+import plugins.Measurement;
 import static utils.Utils.toArray;
 
 /**
@@ -54,6 +62,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     protected FileChooser imagePath = new FileChooser("Output Image Path", FileChooserOption.DIRECTORIES_ONLY);
     SimpleListParameter<Structure> structures= new SimpleListParameter<Structure>("Structures", -1 , Structure.class);
     SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter<ChannelImage>("Channel Images", 0 , ChannelImage.class);
+    SimpleListParameter<PluginParameter<Measurement>> measurements = new SimpleListParameter<PluginParameter<Measurement>>("Measurements", -1 , new PluginParameter<Measurement>("Measurement", Measurement.class, true));
     SimpleListParameter<MicroscopyField> fields= new SimpleListParameter<MicroscopyField>("Fields", -1 , MicroscopyField.class);
     PreProcessingChain template = new PreProcessingChain("Pre-Processing chain template");
     ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.SINGLE_FILE.getMethod(), false);
@@ -86,7 +95,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     protected void initChildList() {
-        super.initChildren(importMethod, template, fields, channelImages, structures, imagePath);
+        super.initChildren(importMethod, template, fields, channelImages, structures, measurements, imagePath);
     }
     
     protected void checkInit() {
@@ -189,6 +198,15 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         String[] res = new String[childIdx.length];
         for (int i = 0; i<res.length; ++i) res[i] = this.getStructure(childIdx[i]).getName();
         return res;
+    }
+    
+    public int getFirstCommonParentStructureIdx(int structureIdx1, int structureIdx2) {
+        while (structureIdx1>=0 && structureIdx2>=0) {
+            structureIdx1 = getStructure(structureIdx1).getParentStructure();
+            structureIdx2 = getStructure(structureIdx2).getParentStructure();
+            if (structureIdx1==structureIdx2) return structureIdx1;
+        }
+        return -1;
     }
     
     public boolean isDirectChildOf(int parentStructureIdx, int childStructureIdx) {
@@ -317,7 +335,55 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         return res;
     }
     
-    // model container methods
+    // measurement-related methods
+    
+    public List<MeasurementKey> getAllMeasurementKeys() {
+        if (this.measurements.getChildCount()==0) return Collections.emptyList();
+        else {
+            ArrayList<MeasurementKey> res= new ArrayList<MeasurementKey>();
+            for (PluginParameter<Measurement> p : measurements.getChildren()) {
+                Measurement m = p.getPlugin();
+                if (m!=null) res.addAll(m.getMeasurementKeys());
+            }
+            return res;
+        }
+    }
+    
+    public List<MeasurementKeyObject> getAllMeasurementKeyObject() {
+        if (this.measurements.getChildCount()==0) return Collections.emptyList();
+        else {
+            ArrayList<MeasurementKeyObject> res= new ArrayList<MeasurementKeyObject>();
+            for (PluginParameter<Measurement> p : measurements.getChildren()) {
+                Measurement m = p.getPlugin();
+                if (m!=null) for (MeasurementKey k : m.getMeasurementKeys()) if (k instanceof MeasurementKeyObject) res.add((MeasurementKeyObject)k);
+            }
+            return res;
+        }
+    }
+    
+    public Map<Integer, List<Measurement>> getMeasurementsByStructureIdx() {
+        if (this.measurements.getChildCount()==0) return Collections.emptyMap();
+        else {
+            Map<Integer, List<Measurement>> res = new HashMap<Integer, List<Measurement>>(measurements.getChildCount());
+            for (PluginParameter<Measurement> p : measurements.getChildren()) {
+                Measurement m = p.getPlugin();
+                if (m!=null) {
+                    List<Measurement> l = res.get(m.getStructure());
+                    if (l==null) {
+                        l = new ArrayList<Measurement>();
+                        res.put(m.getStructure(), l);
+                    }
+                    l.add(m);
+                }
+            }
+            return res;
+        }
+    }
+    
+    
+    
+    
+    // model container methods, for configuration tree in GUI
     
     @Override
     public ConfigurationTreeModel getModel() {

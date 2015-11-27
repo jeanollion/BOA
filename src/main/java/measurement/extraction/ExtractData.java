@@ -15,10 +15,10 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package processing;
+package measurement.extraction;
 
-import static TestUtils.Utils.logger;
 import boa.gui.objects.DBConfiguration;
+import static core.Processor.logger;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.StructureObject;
 import image.Image;

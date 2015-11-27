@@ -24,7 +24,9 @@ import image.ImageWriter;
 import image.ObjectFactory;
 import static image.ObjectFactory.getBounds;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.TreeMap;
+import measurement.MeasurementKey;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +52,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     @Transient protected SmallArray<ArrayList<StructureObject>> childrenSM=new SmallArray<ArrayList<StructureObject>>(); //TODO: switch to ArrayList !!
     @Transient protected ObjectDAO dao;
     
-// track-related attributes
+    // track-related attributes
     protected int timePoint;
     @Reference(lazyLoading=true, automaticStore=false) protected StructureObject previous;
     @Transient protected StructureObject next; // only available when whole track is retrieved
@@ -66,6 +68,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     @Transient protected SmallArray<Image> rawImagesC=new SmallArray<Image>();
     @Transient protected SmallArray<Image> preProcessedImageS=new SmallArray<Image>();
     
+    // measurement-related attributes
+    protected HashMap<String, Object> measurements;
     
     public StructureObject(String fieldName, int timePoint, int structureIdx, int idx, Object3D object, StructureObject parent, Experiment xp) {
         this.fieldName=fieldName;
@@ -112,9 +116,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public float getScaleZ() {return getMicroscopyField().getScaleZ();}
     public StructureObject getParent() {
         if (parent==null) return null;
-        try {parent.callLazyLoading();}
-        catch (MorphiumAccessVetoException e) {}
+        parent.callLazyLoading();
         return parent;
+    }
+    public StructureObject getParent(int parentStructureIdx) {
+        StructureObject p = getParent();
+        while (p!=null && p.getStructureIdx()!=parentStructureIdx) p = p.getParent();
+        return p;
     }
     public void setParent(StructureObject parent) {this.parent=parent;}
     public StructureObject getRoot() {
@@ -600,6 +608,19 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             for (StructureObject s : child) objects.add(s.getObject());
             return new ObjectPopulation(objects, this.getMaskProperties());
         }
+    }
+    
+    protected HashMap<String, Object> getMeasurements() {
+        if (measurements==null) measurements=new HashMap<String, Object>();
+        return measurements;
+    }
+    
+    public void setMeasurement(String key, double value) {
+        getMeasurements().put(key, value);
+    }
+    
+    public Object getMesurement(String key) {
+        return getMeasurements().get(key);
     }
     
     @Override
