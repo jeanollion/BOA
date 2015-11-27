@@ -4,6 +4,7 @@
  */
 package utils;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 /**
 Copyright (C) Jean Ollion
@@ -111,7 +112,7 @@ public class ThreadRunner {
         }
         tr.startAndJoin();
     }
-    public static <T> void execute(final ArrayList<T> array, final ThreadAction<T> action) {
+    public static <T> void execute(final List<T> array, final ThreadAction<T> action) {
         final ThreadRunner tr = new ThreadRunner(0, array.size(), 0);
         for (int i = 0; i<tr.threads.length; i++) {
             //final ThreadAction<T> localAction = action

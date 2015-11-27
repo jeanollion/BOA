@@ -36,8 +36,9 @@ import static plugins.plugins.trackers.ObjectIdxTracker.getComparator;
  */
 public class ClosedMicrochannelTracker implements Tracker {
     BoundedNumberParameter maxGrowthRate = new BoundedNumberParameter("Maximum growth rate", 2, 1.5, 1, 2);
+    BoundedNumberParameter minGrowthRate = new BoundedNumberParameter("Minimum growth rate", 2, 1.1, 1, 2);
     BoundedNumberParameter divCriterion = new BoundedNumberParameter("Division Criterion", 2, 0.9, 0.1, 0.99);
-    Parameter[] parameters = new Parameter[]{maxGrowthRate, divCriterion};
+    Parameter[] parameters = new Parameter[]{maxGrowthRate, divCriterion, minGrowthRate};
     
     public ClosedMicrochannelTracker(){} 
     
@@ -46,45 +47,42 @@ public class ClosedMicrochannelTracker implements Tracker {
         divCriterion.setValue(divisionCriterion);
     } 
     
-    public void assignPrevious(ArrayList<? extends StructureObjectTracker> previous, ArrayList<? extends StructureObjectTracker> next) {        
+    @Override public void assignPrevious(ArrayList<? extends StructureObjectTracker> previous, ArrayList<? extends StructureObjectTracker> next) {        
         // sort by y order
         Collections.sort(previous, getComparator(ObjectIdxTracker.IndexingOrder.YXZ));
         Collections.sort(next, getComparator(ObjectIdxTracker.IndexingOrder.YXZ));
         double divCriterion = this.divCriterion.getValue().doubleValue();
         double maxGrowthRate = this.maxGrowthRate.getValue().doubleValue();
+        double minGrowthRate = this.minGrowthRate.getValue().doubleValue();
         logger.trace("closed microchanel tracker: assingPrevious: timepoint: {}, previous count: {}, next count: {}, divCriterion: {}, maxGrowthRate: {}", next.isEmpty()?"no element":next.get(0).getTimePoint(), previous.size(), next.size(), divCriterion, maxGrowthRate);
-        int previousCounter=0;
-        int nextCounter=0;
+        
+        // get size for division criterion
         double[] previousSize = new double[previous.size()];
         for (int i = 0; i<previousSize.length; ++i) previousSize[i] = GeometricalMeasurements.getVolume(previous.get(i).getObject());
         double[] nextSize = new double[next.size()];
         for (int i = 0; i<nextSize.length; ++i) nextSize[i] = GeometricalMeasurements.getVolume(next.get(i).getObject());
+        
+        int previousCounter=0;
+        int nextCounter=0;
         while(nextCounter<next.size() && previousCounter<previous.size()) {
             //logger.trace("previous: {}, size: {} next:{}, size:{}", previousCounter, previousSize[previousCounter], nextCounter, nextSize[nextCounter]);
-            if (nextSize[nextCounter] > previousSize[previousCounter] * maxGrowthRate) { // apprent under-segmentation error in the next
-                if (previousCounter<previous.size()-1) next.get(nextCounter).setPreviousInTrack(previous.get(previousCounter+1), false, TrackFlag.trackError); //signal an error
-                logger.trace("segmentation error detected: previous index: {}, size: {}, next index: {}, size:{}", previousCounter, previousSize[previousCounter], nextCounter, nextSize[nextCounter]);
-                next.get(nextCounter).setPreviousInTrack(previous.get(previousCounter), false, TrackFlag.trackError);
-                previousCounter+=2; // 2 previous were assigned to next signal an error
+            if (nextSize[nextCounter] > previousSize[previousCounter] * maxGrowthRate) { // under-segmentation error in the next / over-segmentation in the previous
+                int previousCounterInit = previousCounter;
+                double prevSize = previousSize[previousCounter];
+                previousCounter++;
+                while(previousCounter<previous.size() && nextSize[nextCounter] > prevSize * minGrowthRate) {
+                    next.get(nextCounter).setPreviousInTrack(previous.get(previousCounter), false, TrackFlag.trackError);
+                    prevSize+=previousSize[previousCounter];
+                    ++previousCounter;
+                    logger.trace("segmentation error detected: previous index: {}, size: {}, next index: {}, size:{}", previousCounter, previousSize[previousCounter], nextCounter, nextSize[nextCounter]);
+                }
+                next.get(nextCounter).setPreviousInTrack(previous.get(previousCounterInit), false, TrackFlag.trackError); // at the end in order to set the 1st previous as previous of next
                 nextCounter++;
             } else if (nextSize[nextCounter]  < previousSize[previousCounter] * divCriterion) { // division
                 if (nextCounter<next.size()-1) { 
                     if (previousSize[previousCounter] * maxGrowthRate <= (nextSize[nextCounter+1]+nextSize[nextCounter])) { // false division
                         next.get(nextCounter).setPreviousInTrack(previous.get(previousCounter), false); // assign first child
                         nextCounter++; previousCounter++;
-                        /*logger.trace("segmentation error detected (division): previous index: {}, size: {}, next index: {}, size:{}", previousCounter, previousSize[previousCounter], nextCounter, nextSize[nextCounter]);
-                        if (previousCounter<previous.size()-1) {
-                            next.get(nextCounter+1).setPreviousInTrack(previous.get(previousCounter+1), false, true); // assing 2nd child to following in the previous + signal an error
-                            next.get(nextCounter+1).setPreviousInTrack(previous.get(previousCounter), true, true); // assign 2nd child + signal an error
-                            //logger.trace("assign previous: {} to next: {} and {} & previous {} to next: {}", previousCounter, nextCounter, nextCounter+1, previousCounter+1, nextCounter+1);
-                            nextCounter+=2;
-                            previousCounter+=2;
-                        } else { // assing 2nd child+signal an error
-                            next.get(nextCounter+1).setPreviousInTrack(previous.get(previousCounter), true, true); 
-                            //logger.trace("assign previous: {} to next: {} and {}", previousCounter, nextCounter, nextCounter+1);
-                            nextCounter+=2;
-                            previousCounter++;
-                        } */
                     } else { 
                         next.get(nextCounter).setPreviousInTrack(previous.get(previousCounter), false); // assign first child
                         next.get(nextCounter+1).setPreviousInTrack(previous.get(previousCounter), true);  //assign 2nd child

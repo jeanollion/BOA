@@ -43,6 +43,8 @@ import plugins.Registration;
 import plugins.TrackCorrector;
 import plugins.Tracker;
 import plugins.Transformation;
+import utils.ThreadRunner;
+import utils.ThreadRunner.ThreadAction;
 import utils.Utils;
 
 /**
@@ -121,44 +123,57 @@ public class Processor {
      * @param deleteObjects
      * @param structures in hierarchical order
      */
-    public static ArrayList<StructureObject> processAndTrackStructures(final Experiment xp, MicroscopyField field, final ObjectDAO dao, boolean deleteObjects, boolean storeObjects, int... structures) {
+    public static ArrayList<StructureObject> processAndTrackStructures(final Experiment xp, MicroscopyField field, final ObjectDAO dao, boolean deleteObjects, final boolean storeObjects, int... structures) {
         if (dao!=null && deleteObjects) dao.deleteObjectsFromField(field.getName());
         ArrayList<StructureObject> root = field.createRootObjects(dao);
         if (root==null) return null;
         Processor.trackRoot(root);
         if (dao!=null && storeObjects) dao.store(root, true, false);
         if (structures.length==0) structures=xp.getStructuresInHierarchicalOrderAsArray();
-        for (int s : structures) {
-            Structure structure = xp.getStructure(s);
+        for (final int s : structures) {
+            final Structure structure = xp.getStructure(s);
             if (structure.hasSegmenter()) {
                 logger.info("processing structure: {}...", s);
-                ArrayList<StructureObject> segmentedObjects=null;
-                for (StructureObject r : root) { // segment TODO: multithread pour chaque root
+                ThreadRunner.execute(root, new ThreadAction<StructureObject>() {
+                    @Override
+                    public void run(StructureObject r) {
+                        ArrayList<StructureObject> segmentedObjects=null;
+                        if (!structure.hasTracker()) segmentedObjects = new ArrayList<StructureObject> ();
+                        Processor.processChildren(s, r, dao, false, segmentedObjects);
+                        if (!structure.hasTracker() && dao!=null && storeObjects) dao.store(segmentedObjects, false, false);
+                    }
+                });
+                /*ArrayList<StructureObject> segmentedObjects=null;
+                for (StructureObject r : root) { // segment
                     if (!structure.hasTracker()) segmentedObjects = new ArrayList<StructureObject> ();
                     Processor.processChildren(s, r, dao, false, segmentedObjects);
                     if (!structure.hasTracker() && dao!=null && storeObjects) dao.store(segmentedObjects, false, false);
-                }
+                }*/
                 
                 if (structure.hasTracker()) { // track todo: multithread pour chaque parent
                     logger.info("tracking structure: {}...", s);
                     ArrayList<StructureObject> parents= StructureObjectUtils.getAllParentObjects(root.get(0), xp.getPathToRoot(s), dao);
-                    for (StructureObject o : parents) {
+                    /*for (StructureObject o : parents) {
                         ArrayList<StructureObject> trackedObjects = new ArrayList<StructureObject>();
                         Processor.trackChildren(structure.getTracker(), o, s, dao, structure.hasTrackCorrector()?null:trackedObjects);
                         if (structure.hasTrackCorrector()) {
                             Processor.correctTrackChildren(structure.getTrackCorrector(), structure.getObjectSplitter(), o, s, dao, false, null);
-                            
                             Processor.trackChildren(structure.getTracker(), o, s, dao, trackedObjects);
                         }
                         if (dao!=null && storeObjects) dao.store(trackedObjects, true, true);
-                    }
-                    /*final int sIdx = s;
-                    ThreadRunner.execute(StructureObjectUtils.getAllParentObjects(root[0], xp.getPathToRoot(s)), new ThreadAction<StructureObject>() {
+                    }*/
+                    ThreadRunner.execute(parents, new ThreadAction<StructureObject>() {
                         @Override
-                        public void run(StructureObject object) {
-                            Processor.track(xp.getStructure(sIdx).getTracker(), object, sIdx, dao);
+                        public void run(StructureObject o) {
+                            ArrayList<StructureObject> trackedObjects = new ArrayList<StructureObject>();
+                            Processor.trackChildren(structure.getTracker(), o, s, dao, structure.hasTrackCorrector()?null:trackedObjects);
+                            if (structure.hasTrackCorrector()) {
+                                Processor.correctTrackChildren(structure.getTrackCorrector(), structure.getObjectSplitter(), o, s, dao, false, null);
+                                Processor.trackChildren(structure.getTracker(), o, s, dao, trackedObjects);
+                            }
+                            if (dao!=null && storeObjects) dao.store(trackedObjects, true, true);
                         }
-                    });*/
+                    });
                 }
             }
         }
@@ -166,16 +181,16 @@ public class Processor {
         return root;
     }
     
-    public static void trackStructure(int structureIdx, Experiment xp, MicroscopyField field, ObjectDAO dao, boolean updateTrackAttributes, List<StructureObject> parentObjects) { // objects are already stored -> have an ID
+    public static void trackStructure(final int structureIdx, Experiment xp, MicroscopyField field, final ObjectDAO dao, final boolean updateTrackAttributes, List<StructureObject> parentObjects) { // objects are already stored -> have an ID
         if (xp.getStructure(structureIdx).hasTracker()) { // structure
             logger.info("tracking structure: {}...", structureIdx);
-            Structure structure = xp.getStructure(structureIdx);
+            final Structure structure = xp.getStructure(structureIdx);
             //ArrayList<StructureObject> modifiedObjectsCorrection = updateTrackAttributes&&structure.hasTrackCorrector()?new ArrayList<StructureObject>() : null;
             if (parentObjects==null) {
                 StructureObject root0 = dao.getRoot(field.getName(), 0);
                 parentObjects = StructureObjectUtils.getAllParentObjects(root0, xp.getPathToRoot(structureIdx), dao);
             }
-            for (StructureObject o : parentObjects) {
+            /*for (StructureObject o : parentObjects) {
                 ArrayList<StructureObject> modifiedObjectsFromTracking = updateTrackAttributes?new ArrayList<StructureObject>() : null;
                 Processor.trackChildren(structure.getTracker(), o, structureIdx, dao, structure.hasTracker()?null:modifiedObjectsFromTracking);
                 if (structure.hasTrackCorrector()) {
@@ -186,7 +201,22 @@ public class Processor {
                     dao.store(modifiedObjectsFromTracking, true, true);
                     //TODO update links, separate each case, when morphium bugs solved
                 }
-            }
+            }*/
+            ThreadRunner.execute(parentObjects, new ThreadAction<StructureObject>() {
+                @Override
+                public void run(StructureObject o) {
+                    ArrayList<StructureObject> modifiedObjectsFromTracking = updateTrackAttributes?new ArrayList<StructureObject>() : null;
+                    Processor.trackChildren(structure.getTracker(), o, structureIdx, dao, structure.hasTracker()?null:modifiedObjectsFromTracking);
+                    if (structure.hasTrackCorrector()) {
+                        Processor.correctTrackChildren(structure.getTrackCorrector(), structure.getObjectSplitter(), o, structureIdx, dao, dao!=null&&updateTrackAttributes, null);
+                        Processor.trackChildren(structure.getTracker(), o, structureIdx, dao, modifiedObjectsFromTracking);                
+                    }
+                    if (updateTrackAttributes && dao!=null) {
+                        dao.store(modifiedObjectsFromTracking, true, true);
+                        //TODO update links, separate each case, when morphium bugs solved
+                    }
+                }
+            });
         } else logger.warn("no tracker for structure: {}", structureIdx);
     }
     

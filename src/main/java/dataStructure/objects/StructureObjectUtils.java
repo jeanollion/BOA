@@ -18,6 +18,7 @@
 package dataStructure.objects;
 
 import static dataStructure.objects.StructureObject.logger;
+import image.BoundingBox;
 import java.util.ArrayList;
 import java.util.Collections;
 import utils.Utils;
@@ -71,6 +72,34 @@ public class StructureObjectUtils {
             int[] pathToRoot2 = new int[pathToStructure.length-1];
             System.arraycopy(pathToStructure, 0, pathToRoot2, 0, pathToRoot2.length);
             return getAllObjects(referenceStructutre, pathToRoot2);
+        }
+    }
+    
+    public static void assignChildren(ArrayList<StructureObject> parent, ArrayList<StructureObject> children) {
+        if (children.isEmpty()) return;
+        int childStructure = children.get(0).getStructureIdx();
+        for (StructureObject p : parent) p.setChildObjects(new ArrayList<StructureObject>(), childStructure);
+        for (StructureObject c : children) {
+            BoundingBox b = c.getBounds();
+            StructureObject currentParent=null;
+            int currentIntersection=-1;
+            for (StructureObject p : parent) {
+                if (p.getBounds().hasIntersection(b)) {
+                    if (currentParent==null) {
+                        currentParent = p;
+                    }
+                    else { // in case of conflict: keep parent that interact most
+                        if (currentIntersection==-1) currentIntersection = c.getObject().getIntersection(currentParent.getObject()).size();
+                        int otherIntersection = c.getObject().getIntersection(p.getObject()).size();
+                        if (otherIntersection>currentIntersection) {
+                            currentIntersection=otherIntersection;
+                            currentParent=p;
+                        }
+                    }
+                }
+            }
+            if (currentParent!=null) currentParent.getChildren(childStructure).add(c);
+            else logger.warn("{} counld not be assigned to any parent", c);
         }
     }
     
