@@ -11,6 +11,7 @@ import de.caluga.morphium.annotations.Reference;
 import de.caluga.morphium.annotations.Transient;
 import de.caluga.morphium.annotations.caching.Cache;
 import de.caluga.morphium.annotations.lifecycle.Lifecycle;
+import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import de.caluga.morphium.annotations.lifecycle.PreStore;
 import image.BlankMask;
 import image.BoundingBox;
@@ -100,6 +101,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     // structure-related methods
+    public ObjectDAO getDAO() {return dao;}
     public ObjectId getId() {return id;}
     public String getFieldName() {return fieldName;}
     public int getStructureIdx() {return structureIdx;}
@@ -480,10 +482,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     // object- and image-related methods
     public Object3D getObject() {
-        if (object==null) {
-            objectContainer.setStructureObject(this);
-            object=objectContainer.getObject();
-        }
+        if (object==null) object=objectContainer.getObject();
         return object;
     }
     public ImageProperties getMaskProperties() {return getObject().getImageProperties();}
@@ -643,5 +642,11 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public void callLazyLoading() throws MorphiumAccessVetoException{} // for lazy-loading listener
     
     public StructureObject(){}
+    
+    @PostLoad
+    public void postLoad() {
+        //logger.debug("post load: {}", this);
+        if (objectContainer!=null) objectContainer.setStructureObject(this);
+    }
 
 }

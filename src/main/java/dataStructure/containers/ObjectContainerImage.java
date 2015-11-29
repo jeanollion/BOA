@@ -22,6 +22,7 @@ import dataStructure.objects.StructureObject;
 import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
 import image.Image;
+import static image.Image.logger;
 import image.ImageInteger;
 
 /**

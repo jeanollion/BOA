@@ -8,6 +8,8 @@ import processing.neighborhood.Neighborhood;
 
 public abstract class Image implements ImageProperties {
     public final static Logger logger = LoggerFactory.getLogger(Image.class);
+
+    
     protected String name;
     protected int sizeX;
     protected int sizeY;
@@ -201,8 +203,6 @@ public abstract class Image implements ImageProperties {
     public abstract int[] getHisto256(ImageMask mask, BoundingBox bounds);
     public int[] getHisto256(ImageMask mask) {return getHisto256(mask, null);}
     abstract int[] getHisto256(double min, double max, ImageMask mask, BoundingBox limit);
-    
-    
     
     
     protected Image cropI(BoundingBox bounds) {

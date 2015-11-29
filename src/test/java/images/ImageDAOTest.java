@@ -19,6 +19,7 @@ package images;
 
 import static TestUtils.GenerateSyntheticData.generateImages;
 import static boa.gui.GUI.logger;
+import boa.gui.objects.DBConfiguration;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
@@ -50,22 +51,15 @@ public class ImageDAOTest {
     @Rule
     public TemporaryFolder testFolder = new TemporaryFolder();
     
-    Experiment xp;
-    Morphium m;
-    ObjectDAO objectDAO;
-    ExperimentDAO xpDAO;
+    DBConfiguration db;
     
     @Test
     public void testImageDAO() throws IOException {
-        m=MorphiumUtils.createMorphium("testImageDAO");
-        m.clearCollection(Experiment.class);
-        m.clearCollection(StructureObject.class);
-        xpDAO = new ExperimentDAO(m);
-        objectDAO = new ObjectDAO(m, xpDAO);
-        MorphiumUtils.addDereferencingListeners(m, objectDAO, xpDAO);
-
+        db = new DBConfiguration("testImageDAO");
+        db.clearObjectsInDB();
+        
         // generate XP
-        xp = new Experiment("test");
+        Experiment xp = new Experiment("test");
         ChannelImage cMic = new ChannelImage("ChannelImageMicroChannel");
         xp.getChannelImages().insert(cMic);
         ChannelImage cBact = new ChannelImage("ChannelImageBact");
@@ -94,26 +88,28 @@ public class ImageDAOTest {
         xp.setOutputImageDirectory(testFolder.newFolder().getAbsolutePath());
         //xp.setOutputImageDirectory("/tmp/test"); new File(xp.getOutputImageDirectory()).mkdirs();
         // save to morphium
-        xpDAO.store(xp);
+        db.getXpDAO().store(xp);
 
         // process
         assertEquals("number of files before preProcess", 0, countFiles(new File(xp.getOutputImageDirectory())));
-        Processor.preProcessImages(xp, objectDAO, true);
+        Processor.preProcessImages(xp, db.getDao(), true);
         assertEquals("number of files after preProcess", 6, countFiles(new File(xp.getOutputImageDirectory())));
-        Processor.processAndTrackStructures(xp, objectDAO);
-        objectDAO.waiteForWrites();
+        Processor.processAndTrackStructures(xp, db.getDao());
+        db.getDao().waiteForWrites();
         assertEquals("number of files after process", 12, countFiles(new File(xp.getOutputImageDirectory())));
-        objectDAO.waiteForWrites();
-        StructureObject root = objectDAO.getRoot("field1", 0);
-        StructureObject mc = objectDAO.getObjects(root.getId(), 0).get(0);
-        objectDAO.deleteChildren(mc, 1);
+        db.getDao().waiteForWrites();
+        StructureObject root = db.getDao().getRoot("field1", 0);
+        StructureObject mc = db.getDao().getObjects(root.getId(), 0).get(0);
+        logger.debug("mc experiment null? {}", mc.getExperiment()==null);
+        logger.debug("mc image dao null? {}", mc.getExperiment().getImageDAO()==null);
+        db.getDao().deleteChildren(mc, 1);
 
         assertEquals("number of files after delete children", 11, countFiles(new File(xp.getOutputImageDirectory())));
-        objectDAO.delete(mc);
+        db.getDao().delete(mc);
         assertEquals("number of files after delete object", 10, countFiles(new File(xp.getOutputImageDirectory())));
-        objectDAO.deleteObjectsFromField("field2");
+        db.getDao().deleteObjectsFromField("field2");
         assertEquals("number of files after delete field", 8, countFiles(new File(xp.getOutputImageDirectory())));
-        objectDAO.deleteAllObjects();
+        db.getDao().deleteAllObjects();
         assertEquals("number of files after delete all", 6, countFiles(new File(xp.getOutputImageDirectory())));
     }
     

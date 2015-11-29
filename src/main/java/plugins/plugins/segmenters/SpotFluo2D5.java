@@ -40,8 +40,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
+import jj2000.j2k.util.ArrayUtil;
 import plugins.Segmenter;
 import plugins.plugins.preFilter.IJSubtractBackground;
+import plugins.plugins.thresholders.BackgroundFit;
 import plugins.plugins.thresholders.KappaSigma;
 import processing.Filters;
 import processing.GaussianFit;
@@ -106,7 +108,7 @@ public class SpotFluo2D5 implements Segmenter {
         //Image norm = ImageOperations.addImage(input, bckg, null, -1).setName("normalized");
         
         //Image norm = IJFFTBandPass.bandPass(input.duplicate(""), 1, 10).setName("bandPass filter");
-        Image norm = Filters.tophat(smoothed, null, Filters.getNeighborhood(5, 5, input));
+        //Image norm = Filters.tophat(smoothed, null, Filters.getNeighborhood(5, 5, input));
         
         
         smoothed = ImageOperations.addImage(smoothed, bckg, bckg, -1).setName("smoothed");
@@ -116,12 +118,18 @@ public class SpotFluo2D5 implements Segmenter {
         // scale lom according to background noise
         double[] meanSigma = new double[2];
         KappaSigma.kappaSigmaThreshold(smoothed, mask, 2, 3, meanSigma);
+        //BackgroundFit.backgroundFit(smoothed, mask, 3, meanSigma);
         ImageOperations.affineOperation(smoothed, smoothed, 1d/meanSigma[1], -meanSigma[0]);
+        
         KappaSigma.kappaSigmaThreshold(contrasted, mask, 2, 3, meanSigma);
+        //BackgroundFit.backgroundFit(contrasted, mask, 3, meanSigma);
         ImageOperations.affineOperation(contrasted, contrasted, 1d/meanSigma[1], -meanSigma[0]);
+        
+        
+        
         //KappaSigma.kappaSigmaThreshold(norm, mask, 2, 3, meanSigma);
         //ImageOperations.affineOperation(norm, norm, 1d/meanSigma[1], -meanSigma[0]);
-        //logger.debug("kappaSigma: mean: {}, sigma: {}", meanSigma[0], meanSigma[1]);
+        //
         //Image[] hessMaxDet = ImageFeatures.getHessianMaxAndDeterminant(smoothed, hessianRadius, false); hessMaxDet[0].setName("hessian"); hessMaxDet[1].setName("hessianDet");
         Image hess = ImageFeatures.getHessian(smoothed, hessianRadius, false)[0].setName("hessian max");
         //Image grad = ImageFeatures.getGradientMagnitude(lom, hessianRadius, false);
@@ -129,6 +137,7 @@ public class SpotFluo2D5 implements Segmenter {
             disp.showImage(input.setName("input"));
             //disp.showImage(lom.setName("laplacian"));
             disp.showImage(hess);
+            disp.showImage(smoothed);
             //disp.showImage(grad);
         }
         ImageByte seeds = Filters.localExtrema(contrasted, null, true, thresholdSeeds, Filters.getNeighborhood(1, 1, input));

@@ -50,16 +50,21 @@ public class IJAutoThresholder implements Thresholder {
     
     public static double runThresholder(Image input, ImageMask mask, BoundingBox limits, Method method, double percentageSuplementalBackground) {
         if (mask==null) mask=new BlankMask("", input);
-        float[] mm = input.getMinAndMax(mask, limits);
         int[] histo = input.getHisto256(mask, limits);
         histo[0]+=(int)(percentageSuplementalBackground * input.getSizeXYZ()+0.5);
-        double binSize=(input instanceof ImageByte)?1:(mm[1]-mm[0])/256d;
-        double min = (input instanceof ImageByte)?0:mm[0];
         AutoThresholder at = new AutoThresholder();
         double thld = at.getThreshold(method, histo);
-        return thld*binSize+min;
+        return convertHisto256Threshold(thld, input, mask, limits);
     }
-
+    
+    public static double convertHisto256Threshold(double threshold256, Image input, ImageMask mask, BoundingBox limits) {
+        if (mask == null) mask = new BlankMask("", input);
+        float[] mm = input.getMinAndMax(mask, limits);
+        double binSize = (input instanceof ImageByte) ? 1 : (mm[1] - mm[0]) / 256.0;
+        double min = (input instanceof ImageByte) ? 0 : mm[0];
+        return threshold256 * binSize + min;
+    }
+    
     public Parameter[] getParameters() {
         return new Parameter[]{method};
     }

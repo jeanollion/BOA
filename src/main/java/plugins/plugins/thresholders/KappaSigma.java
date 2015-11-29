@@ -38,7 +38,7 @@ import plugins.Thresholder;
 public class KappaSigma implements Thresholder {
     NumberParameter sigmaFactor = new BoundedNumberParameter("Sigma factor", 2, 3, 0.01, null);
     NumberParameter iterations = new BoundedNumberParameter("Iteration number", 0, 2, 1, null);
-    
+    Parameter[] parameters = new Parameter[]{sigmaFactor, iterations};
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
         return kappaSigmaThreshold(input, structureObject.getMask(), sigmaFactor.getValue().doubleValue(), iterations.getValue().intValue(), null);
     }
@@ -83,11 +83,11 @@ public class KappaSigma implements Thresholder {
     
     
     public Parameter[] getParameters() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return parameters;
     }
 
     public boolean does3D() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return true;
     }
     
 }

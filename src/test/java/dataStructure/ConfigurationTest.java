@@ -18,6 +18,7 @@
 package dataStructure;
 
 import TestUtils.Utils;
+import boa.gui.objects.DBConfiguration;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
@@ -98,73 +99,51 @@ public class ConfigurationTest {
     
     @Test
     public void testStroreSimpleXPMorphium() {
-        try {
-            MorphiumConfig cfg = new MorphiumConfig();
-            cfg.setGlobalLogLevel(3);
-            cfg.setDatabase("testdb");
-            cfg.addHost("localhost", 27017);
-            Morphium m=new Morphium(cfg);
-            m.clearCollection(Experiment.class);
-            
-            Experiment xp = new Experiment("test xp");
-            int idx = xp.getStructureCount();
-            xp.getStructures().insert(xp.getStructures().createChildInstance("structureTest"));
-            m.store(xp);
-            
-            m=new Morphium(cfg);
-            ExperimentDAO dao = new ExperimentDAO(m);
-            xp = dao.getExperiment();
-            
-            assertEquals("structure nb", idx+1, xp.getStructureCount());
-            assertEquals("structure name", "structureTest", xp.getStructure(idx).getName());
-            assertTrue("xp init postLoad", xp.getChildCount()>0);
-            
-        } catch (UnknownHostException ex) {
-            Utils.logger.error("couldnot connect to db", ex);
-        }
+        DBConfiguration db = new DBConfiguration("testdb");
+        db.clearObjectsInDB();
+        Experiment xp = new Experiment("test xp");
+        int idx = xp.getStructureCount();
+        xp.getStructures().insert(xp.getStructures().createChildInstance("structureTest"));
+        db.getXpDAO().store(xp);
+        db.getXpDAO().clearCache();
+        xp = db.getXpDAO().getExperiment();
+        assertEquals("structure nb", idx+1, xp.getStructureCount());
+        assertEquals("structure name", "structureTest", xp.getStructure(idx).getName());
+        assertTrue("xp init postLoad", xp.getChildCount()>0);
+
     }
     
     @Test
     public void testStroreCompleteXPMorphium() {
-        try {
-            MorphiumConfig cfg = new MorphiumConfig();
-            cfg.setGlobalLogLevel(3);
-            cfg.setDatabase("testdb");
-            cfg.addHost("localhost", 27017);
-            Morphium m=new Morphium(cfg);
-            m.clearCollection(Experiment.class);
-            
-            // set-up experiment structure
-            Experiment xp = new Experiment("test");
-            ChannelImage image = xp.getChannelImages().createChildInstance();
-            xp.getChannelImages().insert(image);
-            Structure microChannel = xp.getStructures().createChildInstance("MicroChannel");
-            Structure bacteries = xp.getStructures().createChildInstance("Bacteries");
-            xp.getStructures().insert(microChannel);
-            bacteries.setParentStructure(0);
-            int idx = xp.getStructureCount();
-            
-            // set-up processing chain
-            PluginFactory.findPlugins("plugin.dummyPlugins");
-            microChannel.getProcessingChain().setSegmenter(new DummySegmenter(true, 2));
-            bacteries.getProcessingChain().setSegmenter(new DummySegmenter(false, 3));
-            
-            // set-up traking
-            PluginFactory.findPlugins("plugins.plugins.trackers");
-            microChannel.setTracker(new ObjectIdxTracker());
-            bacteries.setTracker(new ObjectIdxTracker());
-            
-            m.store(xp);
-            m=new Morphium(cfg);
-            ExperimentDAO dao = new ExperimentDAO(m);
-            xp = dao.getExperiment();
-            
-            assertEquals("structure nb", idx, xp.getStructureCount());
-            assertTrue("xp init postLoad", xp.getChildCount()>0);
-            
-        } catch (UnknownHostException ex) {
-            Utils.logger.error("couldnot connect to db", ex);
-        }
+        DBConfiguration db = new DBConfiguration("testdb");
+        db.clearObjectsInDB();
+
+        // set-up experiment structure
+        Experiment xp = new Experiment("test");
+        ChannelImage image = xp.getChannelImages().createChildInstance();
+        xp.getChannelImages().insert(image);
+        Structure microChannel = xp.getStructures().createChildInstance("MicroChannel");
+        Structure bacteries = xp.getStructures().createChildInstance("Bacteries");
+        xp.getStructures().insert(microChannel);
+        bacteries.setParentStructure(0);
+        int idx = xp.getStructureCount();
+
+        // set-up processing chain
+        PluginFactory.findPlugins("plugin.dummyPlugins");
+        microChannel.getProcessingChain().setSegmenter(new DummySegmenter(true, 2));
+        bacteries.getProcessingChain().setSegmenter(new DummySegmenter(false, 3));
+
+        // set-up traking
+        PluginFactory.findPlugins("plugins.plugins.trackers");
+        microChannel.setTracker(new ObjectIdxTracker());
+        bacteries.setTracker(new ObjectIdxTracker());
+
+        db.getXpDAO().store(xp);
+        db.getXpDAO().clearCache();
+        xp = db.getXpDAO().getExperiment();
+
+        assertEquals("structure nb", idx, xp.getStructureCount());
+        assertTrue("xp init postLoad", xp.getChildCount()>0);
     }
     
     

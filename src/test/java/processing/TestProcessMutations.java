@@ -55,7 +55,7 @@ public class TestProcessMutations {
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
         t.testSegMutationsFromXP(true, 0, 60);
-        //t.testSegMutationsFromXP(14);
+        //t.testSegMutationsFromXP(27);
     }
     public void init(String dbName) {
         

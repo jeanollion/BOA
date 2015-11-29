@@ -167,7 +167,9 @@ public class ObjectDAO extends DAO<StructureObject>{
         morphium.clearCollection(StructureObject.class);
         idCache.clear();
         // delete in ImageDAO
-        for (String fieldName : xpDAO.getExperiment().getFieldsAsString()) this.xpDAO.getExperiment().getImageDAO().deleteFieldMasks(xpDAO.getExperiment(), fieldName);
+        for (String fieldName : xpDAO.getExperiment().getFieldsAsString()) {
+            this.xpDAO.getExperiment().getImageDAO().deleteFieldMasks(xpDAO.getExperiment(), fieldName);
+        }
     }
     
     public void delete(StructureObject o) {

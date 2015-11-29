@@ -39,9 +39,8 @@ import org.slf4j.LoggerFactory;
  */
 public class MorphiumUtils {
     public final static Logger logger = LoggerFactory.getLogger(MorphiumUtils.class);
-    public static DereferencingListener addDereferencingListeners(Morphium m, final ObjectDAO objectDao_, final ExperimentDAO xpDao_) {
+    public static DereferencingListener addDereferencingListeners(Morphium m, final ExperimentDAO xpDao_) {
         DereferencingListener res =new DereferencingListener<Object, StructureObject, ObjectId>() {
-            ObjectDAO objectDAO=objectDao_;
             ExperimentDAO xpDAO = xpDao_;
             AnnotationAndReflectionHelper r = new AnnotationAndReflectionHelper(true);
 
@@ -49,7 +48,7 @@ public class MorphiumUtils {
             public void wouldDereference(StructureObject entityIncludingReference, String fieldInEntity, ObjectId id, Class typeReferenced, boolean lazy) throws MorphiumAccessVetoException {
                 //if (logger.isTraceEnabled()) logger.trace("would dereference: {} refrence: {} lazy: {} field: {}", entityIncludingReference.getFieldName(), typeReferenced.getSimpleName(), lazy, fieldInEntity);
                 Object o = null;
-                if (StructureObject.class.equals(typeReferenced)) o = objectDAO.getObject(id);
+                if (StructureObject.class.equals(typeReferenced)) o = entityIncludingReference.getDAO().getObject(id);
                 else if (Experiment.class.equals(typeReferenced)) o = xpDAO.getExperiment();
                 if (o != null) {
                     //logger.trace("would dereference: object found");
@@ -73,7 +72,7 @@ public class MorphiumUtils {
                 if (referencedObject!=null && logger.isTraceEnabled()) logger.trace("did dereference: {} refrence: {} lazy: {} field: {}", entitiyIncludingReference.getFieldName(), referencedObject.getClass().getSimpleName(), lazy, fieldInEntity);
                 //else if (logger.isTraceEnabled()) logger.trace("did dereference: {} null refrence lazy: {} field: {}", entitiyIncludingReference.getFieldName(), lazy, fieldInEntity);
                 if (referencedObject!=null) {
-                    if (referencedObject instanceof StructureObject) referencedObject=objectDAO.checkAgainstCache((StructureObject)referencedObject);
+                    if (referencedObject instanceof StructureObject) referencedObject=entitiyIncludingReference.getDAO().checkAgainstCache((StructureObject)referencedObject);
                     else if (referencedObject instanceof Experiment) referencedObject=xpDAO.checkAgainstCache((Experiment)referencedObject);
                 }
                 try {
