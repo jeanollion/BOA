@@ -410,7 +410,15 @@ public class ObjectDAO extends DAO<StructureObject>{
         for (StructureObject o : objects) this.morphium.updateUsingFields(o, "measurements");
     }
     
-    
+    public void getObjectWithMeasurementsOnly(List<StructureObject> parents, int structureIdx, ArrayList<StructureObject> output, String... measurementKeys) {
+        // faire une method pour fetch les parent avec juste l'index
+        for (StructureObject parent : parents) {
+            Query<StructureObject> q = this.getQuery(parent.getId(), structureIdx);
+            q.addReturnedField("idx");
+            q.addReturnedField("time_point");
+        }
+        
+    }
     
     // root-specific methods
     
