@@ -158,6 +158,10 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         imagePath.setSelectedFilePath(outputPath);
     }
     
+    public void addMeasurement(Measurement... measurements) {
+        for (Measurement m : measurements) this.measurements.insert(new PluginParameter<Measurement>("Measurement", Measurement.class, m, false));
+    }
+    
     public int[] getStructureToChannelCorrespondance() {
         int[] res = new int[structures.getChildCount()];
         for (int i = 0; i<res.length; i++) res[i] = getStructure(i).getChannelImage();
@@ -368,10 +372,10 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
             for (PluginParameter<Measurement> p : measurements.getChildren()) {
                 Measurement m = p.getPlugin();
                 if (m!=null) {
-                    List<Measurement> l = res.get(m.getStructure());
+                    List<Measurement> l = res.get(m.getCallStructure());
                     if (l==null) {
                         l = new ArrayList<Measurement>();
-                        res.put(m.getStructure(), l);
+                        res.put(m.getCallStructure(), l);
                     }
                     l.add(m);
                 }

@@ -6,7 +6,10 @@ import dataStructure.containers.ObjectContainerImage;
 import dataStructure.containers.ObjectContainer;
 import static dataStructure.containers.ObjectContainer.MAX_VOX_3D;
 import static dataStructure.containers.ObjectContainer.MAX_VOX_2D;
+import static dataStructure.containers.ObjectContainer.MAX_VOX_2D_EMB;
+import static dataStructure.containers.ObjectContainer.MAX_VOX_3D_EMB;
 import dataStructure.containers.ObjectContainerBlankMask;
+import dataStructure.containers.ObjectContainerDB;
 import dataStructure.containers.ObjectContainerVoxels;
 import image.BlankMask;
 import image.BoundingBox;
@@ -201,15 +204,18 @@ public class Object3D {
             if (mask instanceof BlankMask) return new ObjectContainerBlankMask(structureObject);
             else {
                 if (voxels!=null) {
-                    if (!voxelsSizeOverLimit()) return new ObjectContainerVoxels(structureObject);
+                    if (!voxelsSizeOverLimit(true)) return new ObjectContainerVoxels(structureObject);
+                    else if (!voxelsSizeOverLimit(false)) return new ObjectContainerDB(structureObject);
                     else return new ObjectContainerImage(structureObject);
                 } else {
-                    if (!maskSizeOverLimit()) return new ObjectContainerVoxels(structureObject);
+                    if (!maskSizeOverLimit(true)) return new ObjectContainerVoxels(structureObject);
+                    else if (!maskSizeOverLimit(false)) return new ObjectContainerDB(structureObject);
                     else return new ObjectContainerImage(structureObject);
                 }
             }
         } else if (voxels!=null) {
-            if (voxelsSizeOverLimit()) return new ObjectContainerImage(structureObject);
+            if (voxelsSizeOverLimit(false)) return new ObjectContainerImage(structureObject);
+            else if (voxelsSizeOverLimit(true)) return new ObjectContainerDB(structureObject);
             else return new ObjectContainerVoxels(structureObject);
         } else return null;
     }
@@ -258,12 +264,12 @@ public class Object3D {
         }
     }
     
-    private boolean voxelsSizeOverLimit() {
-        if (is3D()) return voxels.size()>MAX_VOX_3D;
-        else return voxels.size()>MAX_VOX_2D;
+    private boolean voxelsSizeOverLimit(boolean emb) {
+        int limit = emb? (is3D() ? MAX_VOX_3D_EMB :MAX_VOX_2D_EMB) : (is3D() ? MAX_VOX_3D :MAX_VOX_2D);
+        return voxels.size()>limit;
     }
-    private boolean maskSizeOverLimit() {
-        int limit = is3D()?MAX_VOX_3D:MAX_VOX_2D;
+    private boolean maskSizeOverLimit(boolean emb) {
+        int limit = emb? (is3D() ? MAX_VOX_3D_EMB :MAX_VOX_2D_EMB) : (is3D() ? MAX_VOX_3D :MAX_VOX_2D);
         int count = 0;
         for (int z = 0; z < mask.getSizeZ(); ++z) {
             for (int y = 0; y < mask.getSizeY(); ++y) {

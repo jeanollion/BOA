@@ -20,6 +20,7 @@ package dataStructure.objects;
 import static dataStructure.objects.StructureObject.logger;
 import image.BoundingBox;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import utils.Utils;
 
@@ -68,17 +69,13 @@ public class StructureObjectUtils {
             ArrayList<StructureObject> res = new ArrayList<StructureObject>(1);
             res.add(referenceStructutre);
             return res;
-        } else {
-            int[] pathToRoot2 = new int[pathToStructure.length-1];
-            System.arraycopy(pathToStructure, 0, pathToRoot2, 0, pathToRoot2.length);
-            return getAllObjects(referenceStructutre, pathToRoot2);
-        }
+        } else return getAllObjects(referenceStructutre, Arrays.copyOfRange(pathToStructure, 0, pathToStructure.length-1));
     }
     
     public static void assignChildren(ArrayList<StructureObject> parent, ArrayList<StructureObject> children) {
         if (children.isEmpty()) return;
         int childStructure = children.get(0).getStructureIdx();
-        for (StructureObject p : parent) p.setChildObjects(new ArrayList<StructureObject>(), childStructure);
+        for (StructureObject p : parent) p.setChildren(new ArrayList<StructureObject>(), childStructure);
         for (StructureObject c : children) {
             BoundingBox b = c.getBounds();
             StructureObject currentParent=null;
@@ -102,5 +99,13 @@ public class StructureObjectUtils {
             else logger.warn("{} counld not be assigned to any parent", c);
         }
     }
-    
+    public static int[] getIndexTree(StructureObject o) {
+        ArrayList<Integer> al = new ArrayList<Integer>();
+        al.add(o.getIdx());
+        while(o.getParent()!=null) {
+            o=o.getParent();
+            al.add(o.getIdx());
+        }
+        return Utils.toArray(al, true);
+    }
 }

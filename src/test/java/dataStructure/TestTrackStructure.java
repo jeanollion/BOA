@@ -49,9 +49,6 @@ public class TestTrackStructure {
         Morphium m=MorphiumUtils.createMorphium("testTrack");
         m.clearCollection(Experiment.class);
         m.clearCollection(StructureObject.class);
-        
-        
-
         Experiment xp = new Experiment("test");
         ChannelImage image = new ChannelImage("ChannelImage");
         xp.getChannelImages().insert(image);

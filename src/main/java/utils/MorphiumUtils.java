@@ -19,6 +19,7 @@ package utils;
 
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
+import dataStructure.objects.Measurements;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.AnnotationAndReflectionHelper;

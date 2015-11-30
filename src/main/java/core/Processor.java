@@ -38,6 +38,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import measurement.MeasurementKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -365,6 +366,9 @@ public class Processor {
     }
     
     // measurement-related methods
+    
+    
+    
     public static void performMeasurements(StructureObject root, ObjectDAO dao) {
         Map<Integer, List<Measurement>> measurements = root.getExperiment().getMeasurementsByStructureIdx();
         Iterator<Entry<Integer, List<Measurement>>> it = measurements.entrySet().iterator();
@@ -374,12 +378,11 @@ public class Processor {
             ArrayList<StructureObject> parents;
             if (e.getKey()==-1) {parents = new ArrayList<StructureObject>(1); parents.add(root);}
             else parents = root.getChildren(structureIdx);
-            ArrayList<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
+            Set<StructureObject> modifiedObjects = new HashSet<StructureObject>();
             for (Measurement m : e.getValue()) {
                 for (StructureObject o : parents) m.performMeasurement(o, modifiedObjects);
             }
-            
-            if (dao!=null && !modifiedObjects.isEmpty()) dao.updateMeasurements(modifiedObjects);
+            if (dao!=null && !modifiedObjects.isEmpty()) dao.updateMeasurements(new ArrayList<StructureObject>(modifiedObjects));
             it.remove(); // can save memory if the measurement instance stores data
         }
     }

@@ -49,8 +49,14 @@ public class StructureParameter extends IndexChoiceParameter {
         if (getXP()!=null) {
             choices=getXP().getStructuresAsString();
         } else {
-            choices = new String[]{"error, no experiment in the tree"}; //no experiment in the tree, make a static method to get experiment...
+            choices = new String[]{"error, no experiment in the tree"};
         }
         return choices;
+    }
+    
+    public int getParentStructureIdx() {
+        if (getXP()==null) logger.error("StructureParameter#getParentStructureIdx(): {}, could not get experiment", name);
+        if (getSelectedIndex()==-1) return -1;
+        else return getXP().getStructure(getSelectedIndex()).getParentStructure();
     }
 }

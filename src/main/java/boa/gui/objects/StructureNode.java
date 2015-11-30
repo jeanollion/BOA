@@ -65,7 +65,7 @@ public class StructureNode implements TreeNode, UIContainer {
                 ArrayList<StructureObject> data = parentObject.getChildren(idx);
                 if (data==null) {
                     data = getGenerator().getObjectDAO().getObjects(parentObject.getId(), idx);
-                    parentObject.setChildObjects(data, idx);
+                    parentObject.setChildren(data, idx);
                     if (logger.isDebugEnabled()) logger.debug("retrieving object from db: fieldName: {} timePoint: {} structure: {}, nb objects: {}", getTimePointNode().parent.fieldName, getTimePointNode().timePoint, idx, data==null?"null":data.size());
                 }
                 if (data!=null) {

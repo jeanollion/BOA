@@ -58,12 +58,13 @@ public class GenerateSyntheticData {
         ImageWriter.writeToFile("/data/Images/Test", "syntheticData", ImageFormat.OMETIF, imageTC);
     }
     
-    public static void generateImages(String name, String dir, int timePoints, int channels) {
+    public static void generateImages(String name, String dir, int timePoints, int channels, int size) {
+        if (size<1) size=1;
         ImageByte[][] imageTC = new ImageByte[timePoints][channels];
         for (int t = 0; t<imageTC.length; ++t) {
             for (int c = 0; c<imageTC[0].length; ++c) {
-                imageTC[t][c] = new ImageByte("T"+t+"C"+c, 100, 100, 100);
-                fill(imageTC[t][c], 2, 1, 99, 1, 99, 1, 99);
+                imageTC[t][c] = new ImageByte("T"+t+"C"+c, size+2, size+2, size+2);
+                fill(imageTC[t][c], 2, 1, size+1, 1, size+1, 1, size+1);
             }
         }
         ImageWriter.writeToFile(dir, name, ImageFormat.OMETIF, imageTC);

@@ -19,6 +19,8 @@ package boa.gui.objects;
 
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
+import dataStructure.containers.RegionVoxelsDB;
+import dataStructure.objects.Measurements;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.DereferencingListener;
@@ -67,5 +69,10 @@ public class DBConfiguration {
     public void clearObjectsInDB() {
         m.clearCollection(Experiment.class);
         m.clearCollection(StructureObject.class);
+        m.clearCollection(Measurements.class);
+        m.clearCollection(RegionVoxelsDB.class);
+    }
+    public Morphium getMorphium() {
+        return m;
     }
 }

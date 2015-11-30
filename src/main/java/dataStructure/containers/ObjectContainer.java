@@ -30,8 +30,10 @@ import image.BoundingBox;
 
 @Embedded(polymorph=true)
 public abstract class ObjectContainer {
-    public static final int MAX_VOX_3D = 5000; //(10 vox ~ 1kb)
-    public static final int MAX_VOX_2D = 7500; //(10 vox ~ 1kb)
+    public static int MAX_VOX_3D = 1200000; //(1 vox = 12B)
+    public static int MAX_VOX_2D = 1900000; //(1 vox =8B)
+    public static final int MAX_VOX_3D_EMB = 50;
+    public static final int MAX_VOX_2D_EMB = 75;
     @Transient protected StructureObject structureObject;
     BoundingBox bounds;
     

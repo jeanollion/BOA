@@ -20,6 +20,7 @@ package plugins;
 import dataStructure.objects.StructureObject;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import measurement.MeasurementKey;
 
 /**
@@ -29,18 +30,22 @@ import measurement.MeasurementKey;
 public interface Measurement extends Plugin {
     /**
      * 
-     * @return index of structure on which the measurement should be performed. In case the measurement depends on several structures, it should be the index of the fisrt common parent
+     * @return index of structure of the objects that will be provided to the method {@link Measurement#performMeasurement(dataStructure.objects.StructureObject, java.util.ArrayList) }. In case the measurement depends on several structures, it should be the index of the fisrt common parent
      */
-    public int getStructure();
+    public int getCallStructure();
     /**
      * 
-     * @return list of MeasurementKeys with no values set.
+     * @return true if the measurement should be called only on track heads, false if it should be called on each timePoint
+     */
+    public boolean callOnlyOnTrackHeads();
+    /**
+     * 
+     * @return list of MeasurementKeys.
      */
     public List<MeasurementKey> getMeasurementKeys();
     /**
      * 
      * @param object object (or closet parent) to perform measurement on
-     * @return list of MeasurementKeys with values set. For each call of this method, new instances of MeasurementKeys should be set
      */
-    public void performMeasurement(StructureObject object, ArrayList<StructureObject> modifiedObjects);
+    public void performMeasurement(StructureObject object, Set<StructureObject> modifiedObjects);
 }

@@ -50,7 +50,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected int structureIdx;
     protected int idx;
     @Transient protected Experiment xp;
-    @Transient protected SmallArray<ArrayList<StructureObject>> childrenSM=new SmallArray<ArrayList<StructureObject>>(); //TODO: switch to ArrayList !!
+    @Transient protected SmallArray<ArrayList<StructureObject>> childrenSM=new SmallArray<ArrayList<StructureObject>>(); //maps structureIdx to Children (equivalent to hashMap)
     @Transient protected ObjectDAO dao;
     
     // track-related attributes
@@ -70,7 +70,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     @Transient protected SmallArray<Image> preProcessedImageS=new SmallArray<Image>();
     
     // measurement-related attributes
-    protected HashMap<String, Object> measurements;
+    protected ObjectId measurementsId;
+    @Transient Measurements measurements;
     
     public StructureObject(String fieldName, int timePoint, int structureIdx, int idx, Object3D object, StructureObject parent, Experiment xp) {
         this.fieldName=fieldName;
@@ -160,7 +161,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             if (getExperiment().isDirectChildOf(this.structureIdx, structureIdx)) { // direct child
                 if (dao!=null) {
                     res = dao.getObjects(id, structureIdx);
-                    setChildObjects(res, structureIdx);
+                    setChildren(res, structureIdx);
                 } else logger.debug("getChildObjects called on {} but DAO null, cannot retrieve objects", this);
                 return res;
             }
@@ -175,9 +176,17 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }else return res;
     }
 
-    public void setChildObjects(ArrayList<StructureObject> children, int structureIdx) {
+    public void setChildren(ArrayList<StructureObject> children, int structureIdx) {
         this.childrenSM.set(children, structureIdx);
         for (StructureObject o : children) o.setParent(this);
+    }
+    void setChild(StructureObject o) {
+        ArrayList<StructureObject> children = this.childrenSM.get(o.getStructureIdx());
+        if (children==null) {
+            children=new ArrayList<StructureObject>();
+            childrenSM.set(children, o.getStructureIdx());
+        }
+        children.add(o);
     }
     public ArrayList<StructureObject> getSiblings() {
         return this.getParent().getChildren(structureIdx);
@@ -609,17 +618,25 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
     }
     
-    protected HashMap<String, Object> getMeasurements() {
-        if (measurements==null) measurements=new HashMap<String, Object>();
+    public Measurements getMeasurements() {
+        if (measurements==null) {
+            if (measurementsId!=null) {
+                measurements=this.dao.getMeasurementsDAO().getObject(measurementsId);
+                if (measurements==null) {
+                    measurementsId=null;
+                    measurements = new Measurements(this);
+                }
+            } else measurements = new Measurements(this);
+        }
         return measurements;
     }
     
-    public void setMeasurement(String key, double value) {
-        getMeasurements().put(key, value);
-    }
-    
-    public Object getMesurement(String key) {
-        return getMeasurements().get(key);
+    void updateMeasurementsIfNecessary() {
+        if (measurements!=null) {
+            measurements.updateObjectProperties(this);
+            if (measurements.modifications) dao.getMeasurementsDAO().store(measurements);
+            this.measurementsId=measurements.id;
+        }
     }
     
     @Override
@@ -639,7 +656,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         //createObjectContainer();
     }*/
     
-    public void callLazyLoading() throws MorphiumAccessVetoException{} // for lazy-loading listener
+    public void callLazyLoading(){} // for lazy-loading listener
     
     public StructureObject(){}
     

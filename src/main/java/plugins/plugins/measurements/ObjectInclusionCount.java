@@ -25,6 +25,7 @@ import configuration.parameters.TextParameter;
 import dataStructure.objects.StructureObject;
 import image.BoundingBox;
 import java.util.ArrayList;
+import java.util.Set;
 import measurement.MeasurementKey;
 import measurement.MeasurementKeyObject;
 import plugins.Measurement;
@@ -41,15 +42,15 @@ public class ObjectInclusionCount implements Measurement {
     protected Parameter[] parameters = new Parameter[]{structureContainer, structureToCount, percentageInclusion, inclusionText};
     
     @Override
-    public int getStructure() {
+    public int getCallStructure() {
         return structureContainer.getSelectedIndex();
     }
     
     @Override
-    public void performMeasurement(StructureObject object, ArrayList<StructureObject> modifiedObjects) {
+    public void performMeasurement(StructureObject object, Set<StructureObject> modifiedObjects) {
         int common = object.getExperiment().getFirstCommonParentStructureIdx(structureContainer.getSelectedIndex(), structureToCount.getSelectedIndex());
         StructureObject parent = object.getParent(common);
-        object.setMeasurement(inclusionText.getValue(), count(parent, object, structureToCount.getSelectedIndex(), percentageInclusion.getValue().doubleValue()/100d));
+        object.getMeasurements().setValue(inclusionText.getValue(), count(parent, object, structureToCount.getSelectedIndex(), percentageInclusion.getValue().doubleValue()/100d));
         modifiedObjects.add(object);
     }
     
@@ -84,6 +85,10 @@ public class ObjectInclusionCount implements Measurement {
 
     public boolean does3D() {
         return true;
+    }
+
+    public boolean callOnlyOnTrackHeads() {
+        return false;
     }
     
 }

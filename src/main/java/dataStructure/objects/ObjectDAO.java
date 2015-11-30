@@ -20,6 +20,7 @@ package dataStructure.objects;
 import dataStructure.configuration.*;
 import com.mongodb.MongoClient;
 import dataStructure.configuration.Experiment;
+import dataStructure.containers.ObjectContainerDB;
 import dataStructure.objects.StructureObject;
 import static dataStructure.objects.StructureObject.logger;
 import de.caluga.morphium.DAO;
@@ -46,8 +47,11 @@ import utils.Utils;
 public class ObjectDAO extends DAO<StructureObject>{
     Morphium morphium;
     ExperimentDAO xpDAO;
+    MeasurementsDAO measurementsDAO;
+    RegionDAO regionDAO;
     HashMap<ObjectId, StructureObject> idCache;
     final ObjectStoreAgent agent;
+    
     public ObjectDAO(Morphium morphium, ExperimentDAO xpDAO) {
         super(morphium, StructureObject.class);
         morphium.ensureIndicesFor(StructureObject.class);
@@ -55,10 +59,11 @@ public class ObjectDAO extends DAO<StructureObject>{
         this.xpDAO=xpDAO;
         idCache = new HashMap<ObjectId, StructureObject>();
         agent = new ObjectStoreAgent(this);
-        
+        measurementsDAO = new MeasurementsDAO(morphium);
+        regionDAO = new RegionDAO(morphium);
     }
     
-    private Query<StructureObject> getQuery(ObjectId parentId, int structureIdx) {
+    protected Query<StructureObject> getQuery(ObjectId parentId, int structureIdx) {
         // voir si la query est optimisée pour index composé
         return super.getQuery().f("parent").eq(parentId).f("structure_idx").eq(structureIdx);
     }
@@ -97,7 +102,7 @@ public class ObjectDAO extends DAO<StructureObject>{
         this.idCache=new HashMap<ObjectId, StructureObject>();
     }
     
-    private ArrayList<StructureObject> checkAgainstCache(List<StructureObject> list) {
+    protected ArrayList<StructureObject> checkAgainstCache(List<StructureObject> list) {
         ArrayList<StructureObject> res= new ArrayList<StructureObject>(list.size());
         for (StructureObject o : list) res.add(checkAgainstCache(o));
         return res;
@@ -110,6 +115,17 @@ public class ObjectDAO extends DAO<StructureObject>{
     
     public void deleteChildren(StructureObject parent, int structureIdx) {
         this.waiteForWrites();
+        // delete measurements
+        Query<StructureObject> q = getQuery(parent.getId(), structureIdx);
+        q.addReturnedField("measurements_id");
+        q.addReturnedField("object_container");
+        for (StructureObject o : q.asList()) {
+            o.dao=this;
+            if (o.measurementsId!=null) measurementsDAO.delete(o.measurementsId);
+            if (o.objectContainer!=null && o.objectContainer instanceof ObjectContainerDB) o.objectContainer.deleteObject();
+            
+        }
+        
         if (parent.getId()!=null) morphium.delete(getQuery(parent.getId(), structureIdx));
         // also delete in cache: 
         Iterator<Entry<ObjectId, StructureObject>> it = idCache.entrySet().iterator();
@@ -129,38 +145,10 @@ public class ObjectDAO extends DAO<StructureObject>{
         while(it.hasNext()) if (it.next().getValue().fieldName.equals(fieldName)) it.remove();
         // delete in ImageDAO
         this.xpDAO.getExperiment().getImageDAO().deleteFieldMasks(xpDAO.getExperiment(), fieldName);
+        regionDAO.deleteObjectsFromField(fieldName);
+        //delete measurements
+        measurementsDAO.deleteObjectsFromField(fieldName);
     }
-    
-    /*public void deleteObjectsFromFieldTP(String fieldName, int timePoint) {
-        morphium.delete(super.getQuery().f("field_name").eq(fieldName).f("time_point").eq(timePoint));
-        // also delete in cache: 
-        Iterator<Entry<ObjectId, StructureObject>> it = idCache.entrySet().iterator();
-        while(it.hasNext()) {
-            StructureObject o = it.next().getValue();
-            if (o.fieldName.equals(fieldName) && o.getTimePoint()==timePoint) it.remove();
-        }
-    }*/
-    
-    /*public void deleteObjectsFromFieldS(String fieldName, int structureIdx) {
-        morphium.delete(super.getQuery().f("field_name").eq(fieldName).f("structure_idx").eq(structureIdx));
-        // delete in cache: 
-        Iterator<Entry<ObjectId, StructureObject>> it = idCache.entrySet().iterator();
-        while(it.hasNext()) {
-            StructureObject o = it.next().getValue();
-            if (o.fieldName.equals(fieldName) && o.getStructureIdx()==structureIdx) it.remove();
-        }
-        
-    }*/
-    
-    /*public void deleteObjectsFromField(String fieldName, int timePoint, int structureIdx) {
-        morphium.delete(super.getQuery().f("field_name").eq(fieldName).f("time_point").eq(timePoint).f("structure_idx").eq(structureIdx));
-        // also delete in cache: 
-        Iterator<Entry<ObjectId, StructureObject>> it = idCache.entrySet().iterator();
-        while(it.hasNext()) {
-            StructureObject o = it.next().getValue();
-            if (o.fieldName.equals(fieldName) && o.getTimePoint()==timePoint && o.getStructureIdx()==structureIdx) it.remove();
-        }
-    }*/
     
     public void deleteAllObjects() {
         this.waiteForWrites(); //TODO interrupt
@@ -170,6 +158,9 @@ public class ObjectDAO extends DAO<StructureObject>{
         for (String fieldName : xpDAO.getExperiment().getFieldsAsString()) {
             this.xpDAO.getExperiment().getImageDAO().deleteFieldMasks(xpDAO.getExperiment(), fieldName);
         }
+        regionDAO.deleteAllObjects();
+        // delete measurements
+        measurementsDAO.deleteAllObjects();
     }
     
     public void delete(StructureObject o) {
@@ -178,6 +169,7 @@ public class ObjectDAO extends DAO<StructureObject>{
             morphium.delete(o);
             idCache.remove(o.getId());
         }
+        measurementsDAO.delete(o.getMeasurements());
         o.deleteMask();
     }
     
@@ -187,6 +179,7 @@ public class ObjectDAO extends DAO<StructureObject>{
     
     public void store(StructureObject object) {
         object.updateObjectContainer();
+        object.updateMeasurementsIfNecessary();
         morphium.store(object);
         idCache.put(object.getId(), object);
     }
@@ -218,6 +211,7 @@ public class ObjectDAO extends DAO<StructureObject>{
         boolean updateTrackHead = false;
         for (StructureObject o : objects) {
             o.updateObjectContainer();
+            o.updateMeasurementsIfNecessary();
             if (updateTrackAttributes) {
                 updateTrackHead = o.getTrackHeadId()==null && o.isTrackHead; // getTrackHeadId method should always be called
                 o.getParentTrackHeadId();
@@ -409,23 +403,21 @@ public class ObjectDAO extends DAO<StructureObject>{
         this.agent.updateMeasurements(objects);
     }
     protected void updateMeasurementsNow(List<StructureObject> objects) {
-        for (StructureObject o : objects) this.morphium.updateUsingFields(o, "measurements");
+        for (StructureObject o : objects) {
+            o.getMeasurements().updateObjectProperties(o);
+            this.measurementsDAO.store(o.getMeasurements());
+        }
     }
     
-    public void getObjectWithMeasurementsOnly(List<StructureObject> parents, int structureIdx, ArrayList<StructureObject> output, String... measurementKeys) {
-        // faire une method pour fetch les parent avec juste l'index
-        for (StructureObject parent : parents) {
-            Query<StructureObject> q = this.getQuery(parent.getId(), structureIdx);
-            q.addReturnedField("idx");
-            q.addReturnedField("time_point");
-        }
-        
-    }
     
     // root-specific methods
     
-    private Query<StructureObject> getRootQuery(String fieldName, int timePoint) {
-        if (timePoint<0) return super.getQuery().f("field_name").eq(fieldName).f("structure_idx").eq(-1).sort("time_point");
+    protected Query<StructureObject> getRootQuery(String fieldName) {
+        return super.getQuery().f("field_name").eq(fieldName).f("structure_idx").eq(-1).sort("time_point");
+    }
+    
+    protected Query<StructureObject> getRootQuery(String fieldName, int timePoint) {
+        if (timePoint<0) return getRootQuery(fieldName);
         else return super.getQuery().f("field_name").eq(fieldName).f("time_point").eq(timePoint).f("structure_idx").eq(-1);
     }
     /*private ObjectId getRootId(String fieldName, int timePoint) {
@@ -439,8 +431,12 @@ public class ObjectDAO extends DAO<StructureObject>{
     }
     
     public ArrayList<StructureObject> getRoots(String fieldName) {
-        ArrayList<StructureObject> res = this.checkAgainstCache(getRootQuery(fieldName, -1).asList());
+        ArrayList<StructureObject> res = this.checkAgainstCache(getRootQuery(fieldName).asList());
         setTrackLinks(res);
         return res;
     }
+    
+    public MeasurementsDAO getMeasurementsDAO() {return this.measurementsDAO;}
+    
+    public RegionDAO getRegionDAO() {return this.regionDAO;}
 }

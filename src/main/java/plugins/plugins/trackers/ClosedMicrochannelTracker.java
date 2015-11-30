@@ -73,8 +73,8 @@ public class ClosedMicrochannelTracker implements Tracker {
                 while(previousCounter<previous.size() && nextSize[nextCounter] > prevSize * minGrowthRate) {
                     next.get(nextCounter).setPreviousInTrack(previous.get(previousCounter), false, TrackFlag.trackError);
                     prevSize+=previousSize[previousCounter];
-                    ++previousCounter;
                     logger.trace("segmentation error detected: previous index: {}, size: {}, next index: {}, size:{}", previousCounter, previousSize[previousCounter], nextCounter, nextSize[nextCounter]);
+                    ++previousCounter;
                 }
                 next.get(nextCounter).setPreviousInTrack(previous.get(previousCounterInit), false, TrackFlag.trackError); // at the end in order to set the 1st previous as previous of next
                 nextCounter++;

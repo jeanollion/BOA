@@ -283,7 +283,7 @@ public class ProcessingTest {
         for (int t = 0; t<rootTrack.size(); ++t) {
             //root[t]=dao.getObject(root.get(t).getId());
             for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
-                for (StructureObject parent : StructureObjectUtils.getAllParentObjects(rootTrack.get(t), xp.getPathToRoot(s), dao)) parent.setChildObjects(dao.getObjects(parent.getId(), s), s);
+                for (StructureObject parent : StructureObjectUtils.getAllParentObjects(rootTrack.get(t), xp.getPathToRoot(s), dao)) parent.setChildren(dao.getObjects(parent.getId(), s), s);
             }
         }
 

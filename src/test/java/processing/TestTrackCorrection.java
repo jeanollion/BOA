@@ -119,7 +119,6 @@ public class TestTrackCorrection {
         test(actual, expected);
     }
     
-    
     private void test(int[] actual, int[] expected) {
         logger.info("testing without DB...");
         //testWithoutDB(actual, expected);
@@ -247,28 +246,29 @@ public class TestTrackCorrection {
     
     }
     
-    private ArrayList<StructureObject> generateData(boolean track, boolean correctTrack, int... numberOfObjectsT) {
+    public ArrayList<StructureObject> generateData( boolean track, boolean correctTrack, int... numberOfObjectsT) {
         try {
-            Image[][] testImage = generateImageTC(numberOfObjectsT);
-            File input = testFolder.newFolder();
-            ImageWriter.writeToFile(input.getAbsolutePath(), "field1", ImageFormat.OMETIF, testImage);
-            Experiment xp = generateXP(testFolder.newFolder().getAbsolutePath(), track, correctTrack);
-            Processor.importFiles(xp, input.getAbsolutePath());
-            Processor.preProcessImages(xp, null, true);
-            MicroscopyField f= xp.getMicroscopyField(0);
-            if (db!=null) db.getXpDAO().store(xp);
-            ArrayList<StructureObject> res= Processor.processAndTrackStructures(xp, f, db!=null?db.getDao():null, true, true, 0);
-            if (db!=null) db.getDao().waiteForWrites();
-            return res;
-            
+            return generateData(testFolder.newFolder(), testFolder.newFolder(), db, objectSize, track, correctTrack, numberOfObjectsT);
         } catch (IOException ex) {
             logger.error("Test Track Correction Error: ", ex);
             return null;
         }
     }
     
-    private static Experiment generateXP(String outputDir, boolean tracker, boolean trackCorrection) throws IOException {
-        
+    public static ArrayList<StructureObject> generateData(File input, File output, DBConfiguration db, int objectSize, boolean track, boolean correctTrack, int... numberOfObjectsT) {
+        Image[][] testImage = generateImageTC(objectSize, numberOfObjectsT);
+        ImageWriter.writeToFile(input.getAbsolutePath(), "field1", ImageFormat.OMETIF, testImage);
+        Experiment xp = generateXP(output.getAbsolutePath(), track, correctTrack);
+        Processor.importFiles(xp, input.getAbsolutePath());
+        Processor.preProcessImages(xp, null, true);
+        MicroscopyField f= xp.getMicroscopyField(0);
+        if (db!=null) db.getXpDAO().store(xp);
+        ArrayList<StructureObject> res= Processor.processAndTrackStructures(xp, f, db!=null?db.getDao():null, true, true, 0);
+        if (db!=null) db.getDao().waiteForWrites();
+        return res;
+    }
+    
+    private static Experiment generateXP(String outputDir, boolean tracker, boolean trackCorrection) {
         Experiment xp = new Experiment();
         xp.getChannelImages().insert(new ChannelImage("channel"));
         xp.setOutputImageDirectory(outputDir);
@@ -291,7 +291,7 @@ public class TestTrackCorrection {
         xp.getStructure(0).setTrackCorrector(new MicroChannelBacteriaTrackCorrector());
     }
     
-    private static Image[][] generateImageTC(int... numberOfObjectsT) {
+    private static Image[][] generateImageTC(int objectSize, int... numberOfObjectsT) {
         Image[][] res = new Image[numberOfObjectsT.length][1];
         for (int t = 0; t<numberOfObjectsT.length; ++t) {
             res[t][0] = new ImageByte("", 3, objectSize+2, 1);
