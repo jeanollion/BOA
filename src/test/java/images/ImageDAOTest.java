@@ -59,9 +59,9 @@ public class ImageDAOTest {
     
     DBConfiguration db;
     
-    public static void main(String[] args) throws IOException {
+    /*public static void main(String[] args) throws IOException {
         new ImageDAOTest().testImageDAO();
-    }
+    }*/
     
     @Test
     public void testImageDAO() throws IOException {

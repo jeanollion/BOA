@@ -43,6 +43,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import measurement.MeasurementKey;
 import measurement.MeasurementKeyObject;
 import org.bson.types.ObjectId;
@@ -365,19 +366,39 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         }
     }
     
-    public Map<Integer, List<Measurement>> getMeasurementsByStructureIdx() {
+    public Map<Integer, String[]> getAllMeasurementNamesByStructureIdx(Class<? extends MeasurementKey> classFilter, int... structures) {
+        Map<Integer, ArrayList<String>> map = new HashMap<Integer, ArrayList<String>>(this.getStructureCount());
+        List<MeasurementKey> allKeys = getAllMeasurementKeys();
+        for (MeasurementKey k : allKeys) {
+            if (classFilter==null || classFilter.equals(k.getClass())) {
+                ArrayList<String> l = map.get(k.getStoreStructureIdx());
+                if (l==null) {
+                    l=new ArrayList<String>();
+                    map.put(k.getStoreStructureIdx(), l);
+                }
+                l.add(k.getKey());
+            }
+        }
+        Map<Integer, String[]> mapRes = new HashMap<Integer, String[]>(map.size());
+        for (Entry<Integer, ArrayList<String>> e : map.entrySet()) mapRes.put(e.getKey(), e.getValue().toArray(new String[e.getValue().size()]));
+        return mapRes;
+    }
+    
+    public Map<Integer, List<Measurement>> getMeasurementsByCallStructureIdx(int... structureIdx) {
         if (this.measurements.getChildCount()==0) return Collections.emptyMap();
         else {
-            Map<Integer, List<Measurement>> res = new HashMap<Integer, List<Measurement>>(measurements.getChildCount());
+            Map<Integer, List<Measurement>> res = new HashMap<Integer, List<Measurement>>(structureIdx.length>0?structureIdx.length : this.getStructureCount());
             for (PluginParameter<Measurement> p : measurements.getChildren()) {
                 Measurement m = p.getPlugin();
                 if (m!=null) {
-                    List<Measurement> l = res.get(m.getCallStructure());
-                    if (l==null) {
-                        l = new ArrayList<Measurement>();
-                        res.put(m.getCallStructure(), l);
+                    if (structureIdx.length==0 || contains(structureIdx, m.getCallStructure())) {
+                        List<Measurement> l = res.get(m.getCallStructure());
+                        if (l==null) {
+                            l = new ArrayList<Measurement>();
+                            res.put(m.getCallStructure(), l);
+                        }
+                        l.add(m);
                     }
-                    l.add(m);
                 }
             }
             return res;
@@ -385,7 +406,10 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     
-    
+    private static boolean contains(int[] structures, int structureIdx) {
+        for (int s: structures) if (s==structureIdx) return true;
+        return false;
+    }
     
     // model container methods, for configuration tree in GUI
     

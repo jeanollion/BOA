@@ -17,6 +17,7 @@
  */
 package dataStructure.objects;
 
+import static core.Processor.logger;
 import de.caluga.morphium.annotations.Entity;
 import de.caluga.morphium.annotations.Id;
 import de.caluga.morphium.annotations.Index;
@@ -81,7 +82,8 @@ public class Measurements implements Comparable<Measurements>{
         String[] baseReturnedFields = getBaseFields();
         String[] returnedFields = new String[baseReturnedFields.length+measurements.length];
         System.arraycopy(baseReturnedFields, 0, returnedFields, 0, baseReturnedFields.length);
-        for (int i = 0; i<measurements.length; ++i) baseReturnedFields[i+baseReturnedFields.length] = "values."+measurements[i];
+        //logger.debug("getReturned Fields: base length: {}, returnedFields length: {}, measurements length: {}", baseReturnedFields.length,returnedFields.length, measurements.length);
+        for (int i = 0; i<measurements.length; ++i) returnedFields[i+baseReturnedFields.length] = "values."+measurements[i];
         return returnedFields;
     }
     
@@ -122,20 +124,20 @@ public class Measurements implements Comparable<Measurements>{
         modifications=true;
     }
     
-    public int compareTo(Measurements o) { // fieldName / structureIdx / indicies / timePoint
+    public int compareTo(Measurements o) { // fieldName / structureIdx / timePoint / indicies
         int f = fieldName.compareTo(o.fieldName);
         if (f!=0) return f;
         if (structureIdx<o.structureIdx) return -1;
         else if (structureIdx>o.structureIdx) return 1;
+        if (timePoint<o.timePoint) return -1;
+        else if (timePoint>o.timePoint) return 1;
         else {
             for (int i  = 0; i<indicies.length; ++i) {
                 if (indicies[i]<o.indicies[i]) return -1;
                 if (indicies[i]>o.indicies[i]) return 1;
             }
-            if (timePoint<o.timePoint) return -1;
-            else if (timePoint>o.timePoint) return 1;
-            else return 0;
         }
+        return 0;
     }
     
     @Override 
@@ -145,8 +147,7 @@ public class Measurements implements Comparable<Measurements>{
             if (fieldName == null ? m.fieldName != null : !fieldName.equals(m.fieldName)) return false;
             if (structureIdx!=m.structureIdx) return false;
             if (timePoint!=m.timePoint) return false;
-            for (int i  = 0; i<indicies.length; ++i) if (indicies[i]!=m.indicies[i]) return false;
-            return true;
+            return Arrays.equals(indicies, m.indicies);
         } else return false;
     }
 

@@ -35,4 +35,9 @@ public class MeasurementKeyObject extends MeasurementKey {
     @Override public Object getValue() {
         return value;
     }
+
+    @Override
+    public int getStoreStructureIdx() {
+        return structureIdx;
+    }
 }

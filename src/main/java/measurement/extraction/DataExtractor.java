@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import static measurement.extraction.ExtractData.separator;
+import utils.Utils;
 
 /**
  *
@@ -45,12 +46,7 @@ public class DataExtractor {
     final static char separator =';';
     final static char indexSeparator ='-';
     final static String NaN = "NaN";
-    Experiment xp;
-    MeasurementsDAO dao;
-    public DataExtractor(Experiment xp, MeasurementsDAO dao) {
-        this.dao=dao;
-        this.xp=xp;
-    }
+
     protected static String getBaseHeader() {
         return "FieldName"+separator+"Indicies"+separator+"TimePoint";
     }
@@ -58,12 +54,13 @@ public class DataExtractor {
         String line = m.getFieldName();
         int[] idx = m.getIndicies();
         if (idx.length==0) line+=separator+-1;
-        else for (int i=0; i<idx.length; ++i) line+=indexSeparator+idx[i];
+        else line+=Utils.toStringArray(idx, String.valueOf(separator), "", String.valueOf(indexSeparator));
         return line+separator+m.getTimePoint();
     }
     protected static String getHeader(ArrayList<String> measurements) {
         String header = getBaseHeader();
         for (String m : measurements) header+=separator+m;
+        //logger.debug("extract data: header: {}", header);
         return header;
     }
     protected static ArrayList<String> getAllMeasurements(Map<Integer, String[]> measurements) {
@@ -71,13 +68,15 @@ public class DataExtractor {
         for (String[] s : measurements.values()) l.addAll(Arrays.asList(s));
         return l;
     }
-    public void extractMeasurementObjects(String outputFile, int structureIdx, String... measurements) {
+    public static void extractMeasurementObjects(DBConfiguration db, String outputFile, int structureIdx, String... measurements) {
         HashMap<Integer, String[]> map = new HashMap<Integer, String[]>(1);
         map.put(structureIdx, measurements);
-        extractMeasurementObjects(outputFile, map);
+        extractMeasurementObjects(db, outputFile, map);
     }
     
-    public void extractMeasurementObjects(String outputFile, Map<Integer, String[]> allMeasurements) {
+    public static void extractMeasurementObjects(DBConfiguration db, String outputFile, Map<Integer, String[]> allMeasurements) {
+        Experiment xp = db.getExperiment();
+        MeasurementsDAO dao = db.getDao().getMeasurementsDAO();
         FileWriter fstream;
         BufferedWriter out;
         try {
@@ -95,8 +94,8 @@ public class DataExtractor {
                     parentOrder[s] = xp.getPathToStructure(s, currentStructureIdx).length;
                 }
             }
+            String[] currentMeasurementNames = allMeasurementsSort.pollLastEntry().getValue();
             for (String fieldName : xp.getFieldsAsString()) {
-                String[] currentMeasurementNames = allMeasurementsSort.pollLastEntry().getValue();
                 TreeMap<Integer, List<Measurements>> parentMeasurements = new TreeMap<Integer, List<Measurements>>();
                 for (Entry<Integer, String[]> e : allMeasurementsSort.entrySet()) parentMeasurements.put(e.getKey(), dao.getMeasurements(fieldName, e.getKey(), e.getValue()));
                 List<Measurements> currentMeasurements = dao.getMeasurements(fieldName, currentStructureIdx, currentMeasurementNames);

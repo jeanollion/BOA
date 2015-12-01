@@ -63,7 +63,7 @@ public class InputImagesImpl implements InputImages {
     public void applyTranformationsSaveAndClose() {
         long tStart = System.currentTimeMillis();
         final int cCount = getChannelNumber();
-        ThreadRunner.execute(imageTC, new ThreadAction<InputImage[]>() {
+        ThreadRunner.execute(imageTC, false, new ThreadAction<InputImage[]>() {
             @Override
             public void run(InputImage[] imageC) {
                 //long tStart = System.currentTimeMillis();

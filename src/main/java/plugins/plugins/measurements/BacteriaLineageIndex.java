@@ -39,7 +39,6 @@ public class BacteriaLineageIndex implements Measurement {
     protected StructureParameter structure = new StructureParameter("Bacteria Structure", -1, false, false);
     protected TextParameter keyName = new TextParameter("Lineage Index Name", "LineageIndex", false);
     protected Parameter[] parameters = new Parameter[]{structure, keyName};
-    public static String[] trackHeadNames = new String[]{"A", "B", "C", "D"}; // toDO: automatic...
     public static char[] lineageName = new char[]{'H', 'T'};
     
     public BacteriaLineageIndex() {}
@@ -70,15 +69,15 @@ public class BacteriaLineageIndex implements Measurement {
         ArrayList<StructureObject> bacteria = parentTrackHead.getChildren(bIdx);
         int trackHeadIdx = 0;
         for (StructureObject o : bacteria) {
-            o.getMeasurements().setValue(key, trackHeadNames[trackHeadIdx++]);
+            o.getMeasurements().setValue(key, getTrackHeadName(trackHeadIdx++));
             modifiedObjects.add(o);
         }
         while(parentTrackHead.getNext()!=null) {
             parentTrackHead = parentTrackHead.getNext();
             bacteria = parentTrackHead.getChildren(bIdx);
             for (StructureObject o : bacteria) {
-                if (o.getPrevious()==null) o.getMeasurements().setValue(key, trackHeadNames[trackHeadIdx++]);
-                else if (o.getPrevious()==o.getNext()) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[0]);
+                if (o.getPrevious()==null) o.getMeasurements().setValue(key, getTrackHeadName(trackHeadIdx++));
+                else if (o.isTrackHead()) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[0]);
                 else o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[1]);
                 modifiedObjects.add(o);
             }
@@ -99,5 +98,10 @@ public class BacteriaLineageIndex implements Measurement {
     public boolean does3D() {
         return true;
     }
-    
+    private static String getTrackHeadName(int trackHeadIdx) {
+        char c = (char)(trackHeadIdx%26 + 65); //ASCII UPPER CASE +65
+        int mod = trackHeadIdx/26;
+        if (mod>0) return String.valueOf(c)+mod;
+        else return String.valueOf(c);
+    }
 }

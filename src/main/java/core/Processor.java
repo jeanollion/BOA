@@ -84,6 +84,7 @@ public class Processor {
     public static void preProcessImages(Experiment xp, ObjectDAO dao, boolean computeConfigurationData) {
         for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
             preProcessImages(xp.getMicroscopyField(i), dao, false, computeConfigurationData);
+            if (dao!=null) dao.clearCache();
         }
         if (dao!=null) dao.deleteAllObjects();
     }
@@ -370,30 +371,35 @@ public class Processor {
     public static void performMeasurements(Experiment xp, ObjectDAO dao) {
         for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
             performMeasurements(xp.getMicroscopyField(i).getName(), dao);
+            if (dao!=null) dao.clearCache();
         }
     }
     
-    public static void performMeasurements(String fieldName, ObjectDAO dao) {
+    public static void performMeasurements(String fieldName, final ObjectDAO dao) {
         ArrayList<StructureObject> roots = dao.getRoots(fieldName);
-        logger.debug("{} number of roots: {}", fieldName, roots.size());
-        Map<Integer, List<Measurement>> measurements = dao.getExperiment().getMeasurementsByStructureIdx();
-        Iterator<StructureObject> it = roots.iterator();
-        while(it.hasNext()) {
-            StructureObject root = it.next();
-            for(Entry<Integer, List<Measurement>> e : measurements.entrySet()) {
-                int structureIdx = e.getKey();
-                List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
-                ArrayList<StructureObject> parents;
-                if (structureIdx==-1) {parents = new ArrayList<StructureObject>(1); parents.add(root);}
-                else parents = root.getChildren(structureIdx);
-                for (Measurement m : e.getValue()) {
-                    for (StructureObject o : parents) {
-                        if (!m.callOnlyOnTrackHeads() || o.isTrackHead()) m.performMeasurement(o, modifiedObjects);
+        final StructureObject[] rootArray = roots.toArray(new StructureObject[roots.size()]);
+        roots=null; // saves memory
+        logger.debug("{} number of roots: {}", fieldName, rootArray.length);
+        final Map<Integer, List<Measurement>> measurements = dao.getExperiment().getMeasurementsByCallStructureIdx();
+
+        ThreadRunner.execute(rootArray, true, new ThreadAction<StructureObject>() {
+            @Override
+            public void run(StructureObject root) {
+                for(Entry<Integer, List<Measurement>> e : measurements.entrySet()) {
+                    int structureIdx = e.getKey();
+                    List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
+                    ArrayList<StructureObject> parents;
+                    if (structureIdx==-1) {parents = new ArrayList<StructureObject>(1); parents.add(root);}
+                    else parents = root.getChildren(structureIdx);
+                    for (Measurement m : e.getValue()) {
+                        for (StructureObject o : parents) {
+                            if (!m.callOnlyOnTrackHeads() || o.isTrackHead()) m.performMeasurement(o, modifiedObjects);
+                        }
                     }
+                    if (dao!=null && !modifiedObjects.isEmpty()) dao.updateMeasurements(modifiedObjects);
                 }
-                if (dao!=null && !modifiedObjects.isEmpty()) dao.updateMeasurements(modifiedObjects);
             }
-            it.remove();
-        } 
+        });
+        
     }
 }

@@ -116,6 +116,18 @@ public class Utils {
         return res;
     }
     
+    public static <T> String toStringArray(int[] array) {
+        return toStringArray(array, "[", "]", "; ");
+    }
+    
+    public static <T> String toStringArray(int[] array, String init, String end, String sep) {
+        if (array.length==0) return init+end;
+        String res = init;
+        for (int i = 0; i<array.length-1; ++i) res+=array[i]+sep;
+        res+=array[array.length-1]+end;
+        return res;
+    }
+    
     public static<T> ArrayList<T> reverseOrder(ArrayList<T> arrayList) {
         ArrayList<T> res = new ArrayList<T>(arrayList.size());
         for (int i = arrayList.size()-1; i>=0; --i) res.add(arrayList.get(i));
@@ -232,7 +244,7 @@ public class Utils {
         }
     }
     
-    public static File[] chooseFile(String dialogTitle, String directory, FileChooser.FileChooserOption option, Component parent) {
+    public static File[] chooseFiles(String dialogTitle, String directory, FileChooser.FileChooserOption option, Component parent) {
         final JFileChooser fc = new JFileChooser();
         fc.setFileSelectionMode(option.getOption());
         //fc.setFileHidingEnabled(false);
@@ -241,13 +253,18 @@ public class Utils {
         if (dialogTitle!=null) fc.setDialogTitle(dialogTitle);
         else fc.setDialogTitle("Choose Files");
         int returnval = fc.showOpenDialog(parent);
-        System.out.println("return val"+returnval);
         if (returnval == JFileChooser.APPROVE_OPTION) {
             File[] res;
             if (option.getMultipleSelectionEnabled()) res = fc.getSelectedFiles();
             else res = new File[]{fc.getSelectedFile()};
             return res;
         } else return null;
+    }
+    
+    public static File chooseFile(String dialogTitle, String directory, FileChooser.FileChooserOption option, Component parent) {
+        File[] res = chooseFiles(dialogTitle,directory, option,  parent);
+        if (res!=null) return res[0];
+        else return null;
     }
     
     public static String[] convertFilesToString(File[] files) {

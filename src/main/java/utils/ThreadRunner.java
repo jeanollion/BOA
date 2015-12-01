@@ -96,7 +96,7 @@ public class ThreadRunner {
         return Math.max(1, Math.min(Runtime.getRuntime().availableProcessors(), end-start));
     }
 
-    public static <T> void execute(final T[] array, final ThreadAction<T> action) {
+    public static <T> void execute(final T[] array, final boolean setToNull, final ThreadAction<T> action) {
         final ThreadRunner tr = new ThreadRunner(0, array.length, 0);
         for (int i = 0; i<tr.threads.length; i++) {
             //final ThreadAction<T> localAction = action
@@ -105,6 +105,7 @@ public class ThreadRunner {
                     public void run() { 
                         for (int idx = tr.ai.getAndIncrement(); idx<tr.end; idx = tr.ai.getAndIncrement()) {
                             action.run(array[idx]);
+                            if (setToNull) array[idx]=null;
                         }
                     }
                 }
