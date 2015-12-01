@@ -58,10 +58,7 @@ public class DataExtractor {
         String line = m.getFieldName();
         int[] idx = m.getIndicies();
         if (idx.length==0) line+=separator+-1;
-        else {
-            line+=separator+idx[0];
-            for (int i=1; i<idx.length; ++i) line+=indexSeparator+idx[i];
-        }
+        else for (int i=0; i<idx.length; ++i) line+=indexSeparator+idx[i];
         return line+separator+m.getTimePoint();
     }
     protected static String getHeader(ArrayList<String> measurements) {

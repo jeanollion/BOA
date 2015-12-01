@@ -319,6 +319,10 @@ public class BoundingBox {
         return this;
     }
     
+    public boolean isOffsetNull() {
+        return xMin==0 && yMin==0 && zMin==0;
+    }
+    
     @Override
     public String toString() {
         return "xMin: "+xMin+" xMax: "+xMax+" yMin: "+yMin+" yMax: "+yMax+" zMin: "+zMin+" zMax: "+zMax;

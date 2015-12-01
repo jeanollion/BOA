@@ -120,6 +120,7 @@ public class ObjectDAO extends DAO<StructureObject>{
         q.addReturnedField("measurements_id");
         q.addReturnedField("object_container");
         for (StructureObject o : q.asList()) {
+            logger.debug("delete children: id {}, mes id {}", o.id, o.measurementsId);
             o.dao=this;
             if (o.measurementsId!=null) measurementsDAO.delete(o.measurementsId);
             if (o.objectContainer!=null && o.objectContainer instanceof ObjectContainerDB) o.objectContainer.deleteObject();
@@ -400,12 +401,15 @@ public class ObjectDAO extends DAO<StructureObject>{
 
     // measurement-specific methds
     public void updateMeasurements(List<StructureObject> objects) {
+        Utils.removeDuplicates(objects, false);
         this.agent.updateMeasurements(objects);
     }
     protected void updateMeasurementsNow(List<StructureObject> objects) {
         for (StructureObject o : objects) {
             o.getMeasurements().updateObjectProperties(o);
             this.measurementsDAO.store(o.getMeasurements());
+            o.measurementsId=o.getMeasurements().getId();
+            morphium.updateUsingFields(o, "measurements_id");
         }
     }
     
@@ -439,4 +443,8 @@ public class ObjectDAO extends DAO<StructureObject>{
     public MeasurementsDAO getMeasurementsDAO() {return this.measurementsDAO;}
     
     public RegionDAO getRegionDAO() {return this.regionDAO;}
+    
+    public Experiment getExperiment() {
+        return this.xpDAO.getExperiment();
+    }
 }

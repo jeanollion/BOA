@@ -19,6 +19,7 @@ package images;
 
 import static TestUtils.GenerateSyntheticData.generateImages;
 import static boa.gui.GUI.logger;
+import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.objects.DBConfiguration;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
@@ -27,6 +28,7 @@ import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.Structure;
 import dataStructure.containers.ObjectContainer;
 import dataStructure.containers.RegionVoxelsDB;
+import dataStructure.objects.Measurements;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
@@ -41,6 +43,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import plugins.PluginFactory;
+import plugins.plugins.measurements.ObjectInclusionCount;
 import plugins.plugins.segmenters.SimpleThresholder;
 import plugins.plugins.thresholders.ConstantValue;
 import plugins.plugins.trackers.ObjectIdxTracker;
@@ -55,6 +58,10 @@ public class ImageDAOTest {
     public TemporaryFolder testFolder = new TemporaryFolder();
     
     DBConfiguration db;
+    
+    public static void main(String[] args) throws IOException {
+        new ImageDAOTest().testImageDAO();
+    }
     
     @Test
     public void testImageDAO() throws IOException {
@@ -104,6 +111,12 @@ public class ImageDAOTest {
         Processor.processAndTrackStructures(xp, db.getDao());
         db.getDao().waiteForWrites();
         ObjectContainer.MAX_VOX_3D=old3DLimit;
+        int sleep = 1000;
+        try {
+            Thread.sleep(sleep); // wait that all images are written
+        } catch(InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
         assertEquals("number of files after process", 12, countFiles(new File(xp.getOutputImageDirectory())));
         db.getDao().waiteForWrites();
         StructureObject root = db.getDao().getRoot("field1", 0);
@@ -118,28 +131,38 @@ public class ImageDAOTest {
         db.getDao().deleteAllObjects();
         assertEquals("number of files after delete all", 6, countFiles(new File(xp.getOutputImageDirectory())));
         long t1 = System.currentTimeMillis();
+        
+        // test object stored in other collection + measurements
         // limit set back -> objects stored in DB
         Processor.processAndTrackStructures(xp, db.getDao());
+        xp.addMeasurement(new ObjectInclusionCount(1, 1, 50));
+        Processor.performMeasurements(xp, db.getDao());
         db.getDao().waiteForWrites();
         assertEquals("number of files after process (limit set back)", 6, countFiles(new File(xp.getOutputImageDirectory())));
         root = db.getDao().getRoot("field1", 0);
         mc = db.getDao().getObjects(root.getId(), 0).get(0);
-        assertEquals("number of stored objects ", 6, countObjects(db));
+        assertEquals("number of stored objects ", 6, countObjects(db, RegionVoxelsDB.class));
+        assertEquals("number of measurements ", 3, countObjects(db, Measurements.class));
         assertTrue("object voxels retrieved: ", mc.getObject().getVoxels().size()>1);
+
         db.getDao().deleteChildren(mc, 1);
-        assertEquals("number of files after delete children", 5, countObjects(db));
+        assertEquals("number of files after delete children", 5, countObjects(db, RegionVoxelsDB.class));
+        assertEquals("number of measurements after delete children", 2, countObjects(db, Measurements.class));
         db.getDao().delete(mc);
-        assertEquals("number of files after delete object", 4, countObjects(db));
+        assertEquals("number of files after delete object", 4, countObjects(db, RegionVoxelsDB.class));
+        assertEquals("number of measurements after delete object", 2, countObjects(db, Measurements.class));
         db.getDao().deleteObjectsFromField("field2");
-        assertEquals("number of files after delete field", 2, countObjects(db));
+        assertEquals("number of files after delete field", 2, countObjects(db, RegionVoxelsDB.class));
+        assertEquals("number of measurements after delete field", 1, countObjects(db, Measurements.class));
         db.getDao().deleteAllObjects();
-        assertEquals("number of files after delete all", 0, countObjects(db));
+        assertEquals("number of files after delete all", 0, countObjects(db, RegionVoxelsDB.class));
+        assertEquals("number of measurements after delete all", 0, countObjects(db, Measurements.class));
         long t2 = System.currentTimeMillis();
-        logger.debug("ImageDAO TEST : time with file system: {}, time with db: {}", t1-t0, t2-t1);
+        logger.debug("ImageDAO TEST : time with file system: {}, time with db: {}", t1-t0-sleep, t2-t1);
     }
     
-    private static int countObjects(DBConfiguration db) {
-        return (int) db.getMorphium().createQueryFor(RegionVoxelsDB.class).countAll();
+    private static int countObjects(DBConfiguration db, Class clazz) {
+        return (int) db.getMorphium().createQueryFor(clazz).countAll();
     }
     
     private static int countFiles(File dir) {

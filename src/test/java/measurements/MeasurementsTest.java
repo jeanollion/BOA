@@ -58,6 +58,6 @@ public class MeasurementsTest {
         setUpDB();
         TestTrackCorrection.generateData(testFolder.newFolder(), testFolder.newFolder(), db, 100, true, true, 4, 4, 5, 6, 6, 6, 6, 7, 7, 7, 8);
         db.getExperiment().addMeasurement(new BacteriaLineageIndex(0));
-        Processor.performMeasurements(null, null);
+        
     }
 }

@@ -46,6 +46,7 @@ public interface Measurement extends Plugin {
     /**
      * 
      * @param object object (or closet parent) to perform measurement on
+     * @param modifiedObjects
      */
-    public void performMeasurement(StructureObject object, Set<StructureObject> modifiedObjects);
+    public void performMeasurement(StructureObject object, List<StructureObject> modifiedObjects);
 }

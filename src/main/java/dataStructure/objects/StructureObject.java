@@ -123,7 +123,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return parent;
     }
     public StructureObject getParent(int parentStructureIdx) {
-        StructureObject p = getParent();
+        StructureObject p = this;
         while (p!=null && p.getStructureIdx()!=parentStructureIdx) p = p.getParent();
         return p;
     }

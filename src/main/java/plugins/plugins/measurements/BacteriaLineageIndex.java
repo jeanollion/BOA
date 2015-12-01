@@ -25,6 +25,7 @@ import configuration.parameters.TextParameter;
 import dataStructure.objects.StructureObject;
 import image.BoundingBox;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import measurement.MeasurementKey;
 import measurement.MeasurementKeyObject;
@@ -63,7 +64,7 @@ public class BacteriaLineageIndex implements Measurement {
     }
     
     @Override
-    public void performMeasurement(StructureObject parentTrackHead, Set<StructureObject> modifiedObjects) {
+    public void performMeasurement(StructureObject parentTrackHead, List<StructureObject> modifiedObjects) {
         int bIdx = structure.getSelectedIndex();
         String key = this.keyName.getValue();
         ArrayList<StructureObject> bacteria = parentTrackHead.getChildren(bIdx);

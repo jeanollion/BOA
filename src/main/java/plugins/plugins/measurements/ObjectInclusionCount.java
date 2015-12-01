@@ -22,9 +22,11 @@ import configuration.parameters.ChoiceParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.StructureParameter;
 import configuration.parameters.TextParameter;
+import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
 import image.BoundingBox;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import measurement.MeasurementKey;
 import measurement.MeasurementKeyObject;
@@ -41,13 +43,22 @@ public class ObjectInclusionCount implements Measurement {
     protected TextParameter inclusionText = new TextParameter("Inclusion Key Name", "ObjectNumber", false);
     protected Parameter[] parameters = new Parameter[]{structureContainer, structureToCount, percentageInclusion, inclusionText};
     
+    public ObjectInclusionCount() {}
+    
+    public ObjectInclusionCount(int containingStructure, int structureToCount, double minPercentageInclusion) {
+        this.structureContainer.setSelectedIndex(containingStructure);
+        this.structureToCount.setSelectedIndex(structureToCount);
+        this.percentageInclusion.setValue(minPercentageInclusion);
+    }
+    
     @Override
     public int getCallStructure() {
         return structureContainer.getSelectedIndex();
     }
-    
+    // TODO: only track heads
     @Override
-    public void performMeasurement(StructureObject object, Set<StructureObject> modifiedObjects) {
+    public void performMeasurement(StructureObject object, List<StructureObject> modifiedObjects) {
+        //logger.debug("perform ObjectInclusion count on: {}", object);
         int common = object.getExperiment().getFirstCommonParentStructureIdx(structureContainer.getSelectedIndex(), structureToCount.getSelectedIndex());
         StructureObject parent = object.getParent(common);
         object.getMeasurements().setValue(inclusionText.getValue(), count(parent, object, structureToCount.getSelectedIndex(), percentageInclusion.getValue().doubleValue()/100d));
@@ -62,20 +73,34 @@ public class ObjectInclusionCount implements Measurement {
     }
     
     public static int count(StructureObject commonParent, StructureObject container, int structureToCount, double percentageInclusion) {
+        if (structureToCount==container.getStructureIdx()) return 1;
         ArrayList<StructureObject> toCount = commonParent.getChildren(structureToCount);
         if (toCount==null || toCount.isEmpty()) return 0;
         int count = 0;
-        BoundingBox parent = container.getBounds();
-        for (StructureObject o : toCount) {
-            if (o.getBounds().hasIntersection(parent)) {
-                 if (percentageInclusion==0) ++count;
-                 else {
-                    if (o.getObject().getVoxels().isEmpty()) continue;
-                    double incl = o.getObject().getIntersection(container.getObject()).size() / o.getObject().getVoxels().size();
-                    if (incl>=percentageInclusion) ++count;
-                 }
-            }
+        Object3D containerObject = container.getObject();
+        // structureToCount coordinates should be expressed in container's reference
+        BoundingBox offsetC;
+        if (commonParent!=container) offsetC = container.getParent().getRelativeBoundingBox(commonParent);
+        else {
+            offsetC = container.getBounds();
+            offsetC = new BoundingBox(-offsetC.getxMin(), -offsetC.getyMin(), -offsetC.getzMin());
         }
+        for (StructureObject o : toCount) {
+            BoundingBox offsetP = o.getParent().getRelativeBoundingBox(commonParent).translate(-offsetC.getxMin(), -offsetC.getyMin(), -offsetC.getzMin());
+            o.getObject().addOffset(offsetP.getxMin(), offsetP.getyMin(), offsetP.getzMin());
+            logger.debug("add offset: {}, offsetC: {}, offsetP: {}", offsetP, offsetC, o.getParent().getRelativeBoundingBox(commonParent));
+            if (o.getBounds().hasIntersection(containerObject.getBounds())) {
+                if (percentageInclusion==0) ++count;
+                else {
+                    if (o.getObject().getVoxels().isEmpty()) continue;
+                    double incl = (double)o.getObject().getIntersection(containerObject).size() / (double)o.getObject().getVoxels().size();
+                    //logger.debug("inclusion: {}, threshold: {}, container: {}, parent:{}", incl, percentageInclusion, container, o.getParent());
+                    if (incl>=percentageInclusion) ++count;
+                }
+            }
+            o.getObject().resetOffset();
+        }
+        
         return count;
     }
     

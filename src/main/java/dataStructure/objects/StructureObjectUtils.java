@@ -100,9 +100,10 @@ public class StructureObjectUtils {
         }
     }
     public static int[] getIndexTree(StructureObject o) {
+        if (o.isRoot()) return new int[0];
         ArrayList<Integer> al = new ArrayList<Integer>();
         al.add(o.getIdx());
-        while(o.getParent()!=null) {
+        while(!o.getParent().isRoot()) {
             o=o.getParent();
             al.add(o.getIdx());
         }

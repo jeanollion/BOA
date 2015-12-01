@@ -35,6 +35,7 @@ public class Object3D {
     protected int label;
     protected ArrayList<Voxel> voxels; //lazy -> use getter // coordonnées des voxel -> par rapport au parent
     protected float scaleXY=1, scaleZ=1;
+    protected BoundingBox currentOffset=null;
     /**
      * Voxel
      * @param mask : image containing only the object, and whose bounding box is the same as the one of the object
@@ -111,6 +112,7 @@ public class Object3D {
             //if (!mask_.containsWithOffset(v.x, v.y, v.z)) logger.error("voxel out of bounds: {}", v); // can happen if bounds were not updated before the object was saved
             mask_.setPixelWithOffset(v.x, v.y, v.z, 1);
         }
+        if (currentOffset!=null) mask_.addOffset(currentOffset);
         this.mask=mask_;
     }
 
@@ -125,6 +127,7 @@ public class Object3D {
                 }
             }
         }
+        if (currentOffset!=null) for (Voxel v : voxels) v.translate(currentOffset.getxMin(), currentOffset.getyMin(), currentOffset.getzMin());
         voxels=voxels_;
     }
     
@@ -288,13 +291,23 @@ public class Object3D {
     }
     
     public Object3D addOffset(int offsetX, int offsetY, int offsetZ) {
+        if (offsetX==0 && offsetY==0 && offsetZ==0) return this;
         if (mask!=null) mask.addOffset(offsetX, offsetY, offsetZ);
         if (bounds!=null) bounds.translate(offsetX, offsetY, offsetZ);
         if (voxels!=null) for (Voxel v : voxels) v.translate(offsetX, offsetY, offsetZ);
+        if (currentOffset == null) currentOffset = new BoundingBox(offsetX, offsetY, offsetZ);
+        else currentOffset.translate(offsetX, offsetX, offsetX);
         return this;
     }
     public Object3D addOffset(BoundingBox bounds) {
+        if (bounds.isOffsetNull()) return this;
         return addOffset(bounds.getxMin(), bounds.getyMin(), bounds.getzMin()); 
+    }
+    public void resetOffset() {
+        if (currentOffset!=null) {
+            addOffset(-currentOffset.getxMin(), -currentOffset.getyMin(), -currentOffset.getzMin());
+            currentOffset=null;
+        }
     }
     public Object3D setLabel(int label) {
         this.label=label;

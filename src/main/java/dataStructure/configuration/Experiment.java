@@ -206,9 +206,9 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     public int getFirstCommonParentStructureIdx(int structureIdx1, int structureIdx2) {
         while (structureIdx1>=0 && structureIdx2>=0) {
-            structureIdx1 = getStructure(structureIdx1).getParentStructure();
-            structureIdx2 = getStructure(structureIdx2).getParentStructure();
-            if (structureIdx1==structureIdx2) return structureIdx1;
+            if (structureIdx1>structureIdx2) structureIdx1 = getStructure(structureIdx1).getParentStructure();
+            else if (structureIdx1<structureIdx2) structureIdx2 = getStructure(structureIdx2).getParentStructure();
+            else return structureIdx1;
         }
         return -1;
     }
