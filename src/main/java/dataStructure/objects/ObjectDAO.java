@@ -83,7 +83,6 @@ public class ObjectDAO extends DAO<StructureObject>{
     public StructureObject getFromCache(ObjectId id) {return idCache.get(id);}
     
     public void setToCache(StructureObject o) {
-        if (xpDAO!=null) o.xp=xpDAO.getExperiment();
         o.dao=this;
         idCache.put(o.getId(), o);
     }

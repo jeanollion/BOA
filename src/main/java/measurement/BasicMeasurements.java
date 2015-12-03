@@ -21,6 +21,7 @@ import dataStructure.objects.Object3D;
 import dataStructure.objects.Voxel;
 import image.Image;
 import java.util.Collections;
+import java.util.List;
 
 /**
  *
@@ -33,9 +34,12 @@ public class BasicMeasurements {
         return value;
     }
     public static double getMeanValue(Object3D object, Image image) {
+        return getMeanValue(object.getVoxels(), image);
+    }
+    public static double getMeanValue(List<Voxel> voxels, Image image) {
         double value=0;
-        for (Voxel v : object.getVoxels()) value+=image.getPixel(v.x, v.y, v.z);
-        if (!object.getVoxels().isEmpty()) return value/object.getVoxels().size();
+        for (Voxel v : voxels) value+=image.getPixel(v.x, v.y, v.z);
+        if (!voxels.isEmpty()) return value/voxels.size();
         else return 0;
     }
     public static double getSdValue(Object3D object, Image image) {

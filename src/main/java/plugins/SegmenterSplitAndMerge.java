@@ -18,13 +18,26 @@
 package plugins;
 
 import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
-import image.Image;
+import java.util.List;
 
 /**
  *
  * @author jollion
  */
-public interface ObjectSplitter extends ImageProcessingPlugin {
-    public ObjectPopulation splitObject(Image input, Object3D object, boolean smooth, boolean invertedIntensities);
+public interface SegmenterSplitAndMerge extends Segmenter {
+    /**
+     * Split an object into several objects
+     * @param o object to be splitted
+     * @param result list in which put the resulting objects
+     * @return a value representing the cost of splitting the object, NaN if the object could not be split
+     */
+    public double split(Object3D o, List<Object3D> result);
+    /**
+     * Merge two objects into one single object
+     * @param o1 object to be splitted
+     * @param o2 object to be splitted
+     * @param result a list in which the resulting merged object will be inserted
+     * @return a value representing the cost of merging the two objects, NaN if the two objects are not in contact
+     */
+    public double merge(Object3D o1, Object3D o2, List<Object3D> result);
 }

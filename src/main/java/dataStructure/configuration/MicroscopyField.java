@@ -94,7 +94,7 @@ public class MicroscopyField extends SimpleContainerParameter {
             return null;
         }
         for (int t = 0; t<getImages().getTimePointNumber(); ++t) {
-            res.add(new StructureObject(this.name, t, getMask(), getExperiment(), dao));
+            res.add(new StructureObject(this.name, t, getMask(), dao));
         }
         return res;
     }

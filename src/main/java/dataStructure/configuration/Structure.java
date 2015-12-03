@@ -88,7 +88,7 @@ public class Structure extends SimpleContainerParameter {
     }
     
     public Tracker getTracker() {
-        return this.tracker.getPlugin();
+        return this.tracker.instanciatePlugin();
     }
     
     public void setTracker(Tracker tracker) {
@@ -100,7 +100,7 @@ public class Structure extends SimpleContainerParameter {
     }
     
     public TrackCorrector getTrackCorrector() {
-        return this.trackCorrector.getPlugin();
+        return this.trackCorrector.instanciatePlugin();
     }
     
     public void setTrackCorrector(TrackCorrector trackCorrector) {
@@ -108,7 +108,7 @@ public class Structure extends SimpleContainerParameter {
     }
     
     public ObjectSplitter getObjectSplitter() {
-        return this.objectSplitter.getPlugin();
+        return this.objectSplitter.instanciatePlugin();
     }
     
     public void setObjectSplitter(ObjectSplitter objectSplitter) {

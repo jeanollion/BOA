@@ -353,7 +353,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         else {
             ArrayList<MeasurementKey> res= new ArrayList<MeasurementKey>();
             for (PluginParameter<Measurement> p : measurements.getActivatedChildren()) {
-                Measurement m = p.getPlugin();
+                Measurement m = p.instanciatePlugin();
                 if (m!=null) res.addAll(m.getMeasurementKeys());
             }
             return res;
@@ -365,7 +365,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         else {
             ArrayList<MeasurementKeyObject> res= new ArrayList<MeasurementKeyObject>();
             for (PluginParameter<Measurement> p : measurements.getActivatedChildren()) {
-                Measurement m = p.getPlugin();
+                Measurement m = p.instanciatePlugin();
                 if (m!=null) for (MeasurementKey k : m.getMeasurementKeys()) if (k instanceof MeasurementKeyObject) res.add((MeasurementKeyObject)k);
             }
             return res;
@@ -395,7 +395,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         else {
             Map<Integer, List<Measurement>> res = new HashMap<Integer, List<Measurement>>(structureIdx.length>0?structureIdx.length : this.getStructureCount());
             for (PluginParameter<Measurement> p : measurements.getActivatedChildren()) {
-                Measurement m = p.getPlugin();
+                Measurement m = p.instanciatePlugin();
                 if (m!=null) {
                     if (structureIdx.length==0 || contains(structureIdx, m.getCallStructure())) {
                         List<Measurement> l = res.get(m.getCallStructure());

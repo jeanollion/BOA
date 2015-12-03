@@ -2,6 +2,7 @@ package processing.mergeRegions;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import static core.Processor.logger;
+import dataStructure.objects.Object3D;
 import dataStructure.objects.Voxel;
 import ij.IJ;
 import image.Image;
@@ -11,6 +12,7 @@ import image.ImageLabeller;
 import image.ImageProperties;
 import image.ImageShort;
 import java.util.*;
+import processing.neighborhood.EllipsoidalNeighborhood;
 
 /**
  *
@@ -65,7 +67,7 @@ public class InterfaceCollection {
         int[][] neigh = inputLabels.getSizeZ()>1 ? ImageLabeller.neigh3DHalf : ImageLabeller.neigh2DHalf;
         for (Region r : regions.regions.values()) {
             for (Voxel vox : r.voxels) {
-                vox = vox.copy(); // to avoid having the same instance of voxel as in the region.
+                vox = vox.copy(); // to avoid having the same instance of voxel as in the region. //TODO why?
                 for (int i = 0; i<neigh.length; ++i) {
                     n = new Voxel(vox.x+neigh[i][0], vox.y+neigh[i][1], vox.z+neigh[i][2]); // en avant pour les interactions avec d'autre spots / 0
                     if (inputLabels.contains(n.x, n.y, n.z)) { 
@@ -87,6 +89,30 @@ public class InterfaceCollection {
             if (intensityMap!=null) setVoxelIntensity(intensityMap);
         }
         if (verbose) ij.IJ.log("Interface collection: nb of interfaces:"+interfaces.size());
+    }
+    
+    public static ArrayList<Voxel> getInteface(Object3D o1, Object3D o2, ImageInteger labelImage) {
+        EllipsoidalNeighborhood neigh = labelImage.getSizeZ()>1 ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true);
+        Object3D min;
+        int otherLabel;
+        if (o1.getVoxels().size()<=o2.getVoxels().size()) {
+            min=o1;
+            otherLabel = o2.getLabel();
+        } else {
+            min = o2;
+            otherLabel = o1.getLabel();
+        }
+        int xx, yy, zz;
+        ArrayList<Voxel> inter = new ArrayList<Voxel>();
+        for (Voxel v : min.getVoxels()) {
+            for (int i = 0; i<neigh.dx.length; ++i) {
+                xx=v.x+neigh.dx[i];
+                yy=v.y+neigh.dy[i];
+                zz=v.z+neigh.dz[i];
+                if (labelImage.contains(xx, yy, zz) && labelImage.getPixelInt(xx, yy, zz)==otherLabel) inter.add(v);
+            }
+        }
+        return inter;
     }
     
     public static void mergeAllConnected(RegionCollection regions) {

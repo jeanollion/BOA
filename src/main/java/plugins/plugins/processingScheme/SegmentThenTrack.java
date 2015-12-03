@@ -19,27 +19,61 @@ package plugins.plugins.processingScheme;
 
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
+import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
+import image.Image;
 import java.util.List;
 import plugins.ProcessingScheme;
 import plugins.Segmenter;
 import plugins.Tracker;
+import utils.ThreadRunner;
+import utils.ThreadRunner.ThreadAction;
 
 /**
  *
  * @author jollion
  */
 public class SegmentThenTrack implements ProcessingScheme {
-    PluginParameter<Tracker> tracker = new PluginParameter<Tracker>("Tracker", Tracker.class, true);
+    protected PluginParameter<Tracker> tracker = new PluginParameter<Tracker>("Tracker", Tracker.class, true);
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, false);
-    Parameter[] parameters= new Parameter[]{segmenter, tracker};
+    protected Parameter[] parameters= new Parameter[]{segmenter, tracker};
     
-    public void segmentAndTrack(List<StructureObject> parentTrack) {
+    public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack) {
+        /*ThreadRunner.execute(parentTrack, new ThreadAction<StructureObject>() {
+            public void run(StructureObject parent) {
+                Segmenter s = segmenter.instanciatePlugin();
+                ObjectPopulation pop = s.runSegmenter(parent.getRawImage(structureIdx), structureIdx, parent);
+                parent.setChildren(pop, structureIdx);
+            }
+        });*/
+        StructureObject prevParent = parentTrack.get(0);
+        StructureObject currentParent;
+        segment(prevParent, structureIdx);
+        Tracker t = tracker.instanciatePlugin();
+        for (int i = 1; i<parentTrack.size(); ++i) {
+            currentParent = parentTrack.get(i);
+            segment(currentParent, structureIdx);
+            t.assignPrevious(prevParent.getChildren(structureIdx), currentParent.getChildren(structureIdx));
+            prevParent = currentParent;
+        }
         
     }
+    
+    private void segment(StructureObject parent, int structureIdx) {
+        Segmenter s = segmenter.instanciatePlugin();
+        ObjectPopulation pop = s.runSegmenter(parent.getRawImage(structureIdx), structureIdx, parent);
+        parent.setChildren(pop, structureIdx);
+    }
 
-    public void trackOnly(List<StructureObject> parentTrack) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void trackOnly(final int structureIdx, List<StructureObject> parentTrack) {
+        Tracker t = tracker.instanciatePlugin();
+        StructureObject prevParent = parentTrack.get(0);
+        StructureObject currentParent;
+        for (int i = 1; i<parentTrack.size(); ++i) {
+            currentParent = parentTrack.get(i);
+            t.assignPrevious(prevParent.getChildren(structureIdx), currentParent.getChildren(structureIdx));
+            prevParent = currentParent;
+        }
     }
 
     public Parameter[] getParameters() {

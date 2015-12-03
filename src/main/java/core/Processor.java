@@ -101,7 +101,7 @@ public class Processor {
         PreProcessingChain ppc = field.getPreProcessingChain();
         for (TransformationPluginParameter<Transformation> tpp : ppc.getTransformations()) {
             if (tpp.isActivated()) {
-                Transformation transfo = tpp.getPlugin();
+                Transformation transfo = tpp.instanciatePlugin();
                 logger.debug("adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}", transfo, transfo.getClass(), field.getName(), tpp.getInputChannel(), tpp.getOutputChannels());
                 if (computeConfigurationData) {
                     transfo.computeConfigurationData(tpp.getInputChannel(), images);

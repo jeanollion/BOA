@@ -40,15 +40,15 @@ import processing.WatershedTransform;
 public class WatershedObjectSplitter implements ObjectSplitter {
     static final boolean debug = false;
     //BoundedNumberParameter numberOfObjects = new BoundedNumberParameter("Maximum growth rate", 2, 1.5, 1, 2);
-    public ObjectPopulation splitObject(Image input, Object3D object) {
-        return split(input, object.getMask());
+    public ObjectPopulation splitObject(Image input, Object3D object, boolean smooth, boolean invertedIntensities) {
+        return split(input, object.getMask(), smooth, invertedIntensities);
     }
     
-    public static ObjectPopulation split(Image input, ImageMask mask) {
+    public static ObjectPopulation split(Image input, ImageMask mask, boolean smooth, boolean invertedIntensities) {
         // TODO smooth in prefilters..
-        Image smoothed = ImageFeatures.gaussianSmooth(input, 2, 2, false);
+        if (smooth) input = ImageFeatures.gaussianSmooth(input, 2, 2, false);
         
-        ImageByte localMax = Filters.localExtrema(smoothed, null, true, Filters.getNeighborhood(1, 1, input));
+        ImageByte localMax = Filters.localExtrema(input, null, !invertedIntensities, Filters.getNeighborhood(1, 1, input));
         ImageOperations.and(localMax, mask, localMax); // limit @ seeds within mask
         List<Object3D> seeds = ImageLabeller.labelImageList(localMax);
         if (seeds.size()<2) {
@@ -58,7 +58,7 @@ public class WatershedObjectSplitter implements ObjectSplitter {
             return null;
         }
         else {
-            ObjectPopulation pop =  WatershedTransform.watershed(smoothed, mask, seeds, true, null, new WatershedTransform.NumberFusionCriterion(2));
+            ObjectPopulation pop =  WatershedTransform.watershed(input, mask, seeds, !invertedIntensities, null, new WatershedTransform.NumberFusionCriterion(2));
             if (debug) new IJImageDisplayer().showImage(pop.getLabelImage());
             return pop;
         }

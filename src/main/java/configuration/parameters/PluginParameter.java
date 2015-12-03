@@ -114,7 +114,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         }
     }
     
-    public T getPlugin() {
+    public T instanciatePlugin() {
         if (!isOnePluginSet()) return null;
         T instance = PluginFactory.getPlugin(getPluginType(), pluginName);
         //if (Parameter.logger.isTraceEnabled()) Parameter.logger.trace("instanciating plugin: type {}, name {} instance==null? {} current parameters {}", pluginType, pluginName, instance==null, pluginParameters.size());

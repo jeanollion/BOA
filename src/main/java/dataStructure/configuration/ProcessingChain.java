@@ -44,7 +44,7 @@ public class ProcessingChain extends SimpleContainerParameter {
     
     public ArrayList<PreFilter> getPrefilters() {
         ArrayList<PreFilter> res = new ArrayList<PreFilter> (preFilters.getChildCount());
-        for (PluginParameter p : preFilters.getChildren()) if (((PluginParameter)p).isOnePluginSet() && ((PluginParameter)p).isActivated()) res.add((PreFilter)((PluginParameter)p).getPlugin());
+        for (PluginParameter p : preFilters.getChildren()) if (((PluginParameter)p).isOnePluginSet() && ((PluginParameter)p).isActivated()) res.add((PreFilter)((PluginParameter)p).instanciatePlugin());
         return res;
         //return preFilters.getChildren().toArray(new PreFilter[preFilters.getChildCount()]);
         //return Arrays.copyOf(preFilters.getChildren().toArray(new Parameter[preFilters.getChildCount()]), preFilters.getChildCount(), PreFilter[].class);
@@ -52,13 +52,13 @@ public class ProcessingChain extends SimpleContainerParameter {
     
     public ArrayList<PostFilter> getPostfilters() {
         ArrayList<PostFilter> res = new ArrayList<PostFilter> (postFilters.getChildCount());
-        for (Parameter p : postFilters.getChildren()) if (((PluginParameter)p).isOnePluginSet() && ((PluginParameter)p).isActivated()) res.add((PostFilter)((PluginParameter)p).getPlugin());
+        for (Parameter p : postFilters.getChildren()) if (((PluginParameter)p).isOnePluginSet() && ((PluginParameter)p).isActivated()) res.add((PostFilter)((PluginParameter)p).instanciatePlugin());
         return res;
     }
     
     
     public Segmenter getSegmenter() {
-        if (segmenter.isActivated()) return segmenter.getPlugin();
+        if (segmenter.isActivated()) return segmenter.instanciatePlugin();
         else return null;
     }
     

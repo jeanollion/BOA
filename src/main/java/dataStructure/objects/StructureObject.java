@@ -49,7 +49,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected String fieldName;
     protected int structureIdx;
     protected int idx;
-    @Transient protected Experiment xp;
     @Transient protected SmallArray<ArrayList<StructureObject>> childrenSM=new SmallArray<ArrayList<StructureObject>>(); //maps structureIdx to Children (equivalent to hashMap)
     @Transient protected ObjectDAO dao;
     
@@ -73,7 +72,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected ObjectId measurementsId;
     @Transient Measurements measurements;
     
-    public StructureObject(String fieldName, int timePoint, int structureIdx, int idx, Object3D object, StructureObject parent, Experiment xp) {
+    public StructureObject(String fieldName, int timePoint, int structureIdx, int idx, Object3D object, StructureObject parent) {
         this.fieldName=fieldName;
         this.timePoint = timePoint;
         this.object=object;
@@ -81,7 +80,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.structureIdx = structureIdx;
         this.idx = idx;
         this.parent=parent;
-        this.xp=xp;
         if (this.parent!=null) this.dao=parent.dao;
     }
     /**
@@ -91,13 +89,12 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
      * @param mask
      * @param xp 
      */
-    public StructureObject(String fieldName, int timePoint, BlankMask mask, Experiment xp, ObjectDAO dao) {
+    public StructureObject(String fieldName, int timePoint, BlankMask mask, ObjectDAO dao) {
         this.fieldName=fieldName;
         this.timePoint=timePoint;
         if (mask!=null) this.object=new Object3D(mask, 1);
         this.structureIdx = -1;
         this.idx = 0;
-        this.xp=xp;
         this.dao=dao;
     }
     
@@ -110,9 +107,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public int getIdx() {return idx;}
     
     public Experiment getExperiment() {
-        if (xp==null) return null;
-        xp.callLazyLoading();
-        return xp;
+        if (dao==null) return null;
+        return dao.getExperiment();
     }
     public MicroscopyField getMicroscopyField() {return getExperiment().getMicroscopyField(fieldName);}
     public float getScaleXY() {return getMicroscopyField().getScaleXY();}
@@ -183,6 +179,14 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.childrenSM.set(children, structureIdx);
         for (StructureObject o : children) o.setParent(this);
     }
+    
+    public void setChildren(ObjectPopulation population, int structureIdx) {
+        population.relabel();
+        ArrayList<StructureObject> res = new ArrayList<StructureObject>(population.getObjects().size());
+        childrenSM.set(res, structureIdx);
+        for (int i = 0; i<population.getObjects().size(); ++i) res.add(new StructureObject(fieldName, timePoint, structureIdx, i, population.getObjects().get(i), this));
+    }
+    
     void setChild(StructureObject o) {
         ArrayList<StructureObject> children = this.childrenSM.get(o.getStructureIdx());
         if (children==null) {
@@ -460,7 +464,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public StructureObject split(ObjectSplitter splitter) { // in 2 objects
         // get cropped image
-        ObjectPopulation pop = splitter.splitObject(getFilteredImage(structureIdx),  getObject());
+        ObjectPopulation pop = splitter.splitObject(getFilteredImage(structureIdx),  getObject(), true, false);
         if (pop==null) {
             this.flag=TrackFlag.correctionSplitError;
             logger.warn("split error: {}", this);
@@ -475,7 +479,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             logger.warn("split structureObject: {} yielded in {} objects, but only two will be considered", this, pop.getObjects().size());
         } 
         
-        StructureObject res = new StructureObject(fieldName, timePoint, structureIdx, idx+1, pop.getObjects().get(1).setLabel(idx+2), getParent(), getExperiment());
+        StructureObject res = new StructureObject(fieldName, timePoint, structureIdx, idx+1, pop.getObjects().get(1).setLabel(idx+2), getParent());
         /*ArrayList<StructureObject> res = new ArrayList<StructureObject>(pop.getObjects().size()-1);
         for (int i = 1; i<pop.getObjects().size(); ++i) {
             res.add(new StructureObject(fieldName, timePoint, structureIdx, currentIdx++, pop.getObjects().get(i), getParent(), getExperiment()));
@@ -607,7 +611,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             seg.relabel();
             ArrayList<StructureObject> res = new ArrayList<StructureObject>(seg.getObjects().size());
             childrenSM.set(res, structureIdx);
-            for (int i = 0; i<seg.getObjects().size(); ++i) res.add(new StructureObject(fieldName, timePoint, structureIdx, i, seg.getObjects().get(i), this, getExperiment()));
+            for (int i = 0; i<seg.getObjects().size(); ++i) res.add(new StructureObject(fieldName, timePoint, structureIdx, i, seg.getObjects().get(i), this));
         }
     }
     

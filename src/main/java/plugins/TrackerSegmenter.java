@@ -24,8 +24,11 @@ import java.util.List;
  *
  * @author jollion
  */
-public interface ProcessingScheme extends Plugin {
-    //public void setThreadNumber(int threadNumber);
+public interface TrackerSegmenter extends Tracker {
+    /**
+     * This method segment & assign the children of each element of the {@param parentTrack}, and sets the track links for each child
+     * @param structureIdx index of child structure to be segmented and tracked
+     * @param parentTrack parent track, sorted in the order of increasing timePoint
+     */
     public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack);
-    public void trackOnly(int structureIdx, List<StructureObject> parentTrack);
 }
