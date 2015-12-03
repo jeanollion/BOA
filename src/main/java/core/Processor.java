@@ -44,7 +44,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plugins.Measurement;
 import plugins.ObjectSplitter;
-import plugins.Registration;
 import plugins.TrackCorrector;
 import plugins.Tracker;
 import plugins.Transformation;
@@ -130,12 +129,21 @@ public class Processor {
      * @param structures in hierarchical order
      */
     public static ArrayList<StructureObject> processAndTrackStructures(final Experiment xp, MicroscopyField field, final ObjectDAO dao, boolean deleteObjects, final boolean storeObjects, int... structures) {
-        if (dao!=null && deleteObjects) dao.deleteObjectsFromField(field.getName());
-        ArrayList<StructureObject> root = field.createRootObjects(dao);
-        if (root==null) return null;
-        Processor.trackRoot(root);
-        if (dao!=null && storeObjects) dao.store(root, true, false);
+        ArrayList<StructureObject> root=null;
+        if (deleteObjects && structures.length==0) {
+            if (dao!=null) dao.deleteObjectsFromField(field.getName());
+            deleteObjects=false;
+        } else if (dao!=null) root = dao.getRoots(field.getName());
+        
+        if (root==null || root.isEmpty()) {
+            root = field.createRootObjects(dao);
+            if (root==null) return null;
+            Processor.trackRoot(root);
+            if (dao!=null && storeObjects) dao.store(root, true, false);
+        }
+        
         if (structures.length==0) structures=xp.getStructuresInHierarchicalOrderAsArray();
+        final boolean deleteO = deleteObjects;
         for (final int s : structures) {
             final Structure structure = xp.getStructure(s);
             if (structure.hasSegmenter()) {
@@ -145,7 +153,7 @@ public class Processor {
                     public void run(StructureObject r) {
                         ArrayList<StructureObject> segmentedObjects=null;
                         if (!structure.hasTracker()) segmentedObjects = new ArrayList<StructureObject> ();
-                        Processor.processChildren(s, r, dao, false, segmentedObjects);
+                        Processor.processChildren(s, r, dao, deleteO, segmentedObjects);
                         if (!structure.hasTracker() && dao!=null && storeObjects) dao.store(segmentedObjects, false, false);
                     }
                 });
@@ -376,6 +384,7 @@ public class Processor {
     }
     
     public static void performMeasurements(String fieldName, final ObjectDAO dao) {
+        long t0 = System.currentTimeMillis();
         ArrayList<StructureObject> roots = dao.getRoots(fieldName);
         final StructureObject[] rootArray = roots.toArray(new StructureObject[roots.size()]);
         roots=null; // saves memory
@@ -385,9 +394,9 @@ public class Processor {
         ThreadRunner.execute(rootArray, true, new ThreadAction<StructureObject>() {
             @Override
             public void run(StructureObject root) {
+                List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
                 for(Entry<Integer, List<Measurement>> e : measurements.entrySet()) {
                     int structureIdx = e.getKey();
-                    List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
                     ArrayList<StructureObject> parents;
                     if (structureIdx==-1) {parents = new ArrayList<StructureObject>(1); parents.add(root);}
                     else parents = root.getChildren(structureIdx);
@@ -396,10 +405,11 @@ public class Processor {
                             if (!m.callOnlyOnTrackHeads() || o.isTrackHead()) m.performMeasurement(o, modifiedObjects);
                         }
                     }
-                    if (dao!=null && !modifiedObjects.isEmpty()) dao.updateMeasurements(modifiedObjects);
                 }
+                if (dao!=null && !modifiedObjects.isEmpty()) dao.updateMeasurements(modifiedObjects);
             }
         });
-        
+        long t1 = System.currentTimeMillis();
+        logger.debug("measurements on field: {}: time: {}", fieldName, t1-t0);
     }
 }

@@ -19,9 +19,13 @@ package plugins.plugins.measurements;
 
 import configuration.parameters.Parameter;
 import configuration.parameters.StructureParameter;
+import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
+import dataStructure.objects.Voxel;
 import java.util.ArrayList;
 import java.util.List;
+import measurement.BasicMeasurements;
+import measurement.GeometricalMeasurements;
 import measurement.MeasurementKey;
 import measurement.MeasurementKeyObject;
 import plugins.Measurement;
@@ -30,10 +34,19 @@ import plugins.Measurement;
  *
  * @author jollion
  */
-public class MeasurementBacteria implements Measurement {
+public class BacteriaMeasurements implements Measurement {
     protected StructureParameter structure = new StructureParameter("Bacteria Structure", -1, false, false);
     protected StructureParameter mutation = new StructureParameter("Mutation Structure", -1, false, false);
     protected Parameter[] parameters = new Parameter[]{structure, mutation};
+    
+    
+    public BacteriaMeasurements(){}
+    
+    public BacteriaMeasurements(int bacteriaStructureIdx, int mutationStructureIdx){
+        this.structure.setSelectedIndex(bacteriaStructureIdx);
+        this.mutation.setSelectedIndex(mutationStructureIdx);
+    }
+    
     public int getCallStructure() {
         return structure.getSelectedIndex();
     }
@@ -45,15 +58,23 @@ public class MeasurementBacteria implements Measurement {
     public List<MeasurementKey> getMeasurementKeys() {
         ArrayList<MeasurementKey> res = new ArrayList<MeasurementKey>();
         res.add(new MeasurementKeyObject("Area(units)", structure.getSelectedIndex()));
-        res.add(new MeasurementKeyObject("FeretMax(units)", structure.getSelectedIndex()));
-        res.add(new MeasurementKeyObject("FeretMin(units)", structure.getSelectedIndex()));
+        res.add(new MeasurementKeyObject("Length(units)", structure.getSelectedIndex()));
+        res.add(new MeasurementKeyObject("SignalIntegratedIntensity", structure.getSelectedIndex()));
+        //res.add(new MeasurementKeyObject("FeretMin(units)", structure.getSelectedIndex()));
         //res.add(new MeasurementKeyObject("Squeleton", structure.getSelectedIndex()));
         res.add(new MeasurementKeyObject("MutationCount", structure.getSelectedIndex()));
         return res;
     }
 
     public void performMeasurement(StructureObject object, List<StructureObject> modifiedObjects) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        // measurements on bacteria
+        Object3D o = object.getObject();
+        //object.getMeasurements().setValue("Area(units)", GeometricalMeasurements.getVolume(o));
+        object.getMeasurements().setValue("Length(units)", GeometricalMeasurements.getFeretMax(o));
+        //object.getMeasurements().setValue("MutationCount", ObjectInclusionCount.count(object, mutation.getSelectedIndex(), 0.1d, true));
+        StructureObject parent = object.isRoot()?object:object.getParent();
+        //object.getMeasurements().setValue("SignalIntegratedIntensity", BasicMeasurements.getSum(o, parent.getRawImage(object.getStructureIdx())));
+        modifiedObjects.add(object);
     }
 
     public Parameter[] getParameters() {

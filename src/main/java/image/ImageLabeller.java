@@ -42,11 +42,11 @@ public class ImageLabeller {
     int sizeX;
     HashMap<Integer, Spot> spots;
     ImageMask mask;
-    public static final int[][] neigh3D = new int[][]{
+    public static final int[][] neigh3DHalf = new int[][]{
             {1, 1, -1}, {0, 1, -1}, {-1, 1, -1}, {1, 0, -1}, {0, 0, -1}, {-1, 0, -1}, {1, -1, -1}, {0, 1, -1}, {-1, -1, -1},
             {1, -1, 0}, {0, -1, 0}, {-1, -1, 0}, {-1, 0, 0}
         };
-    public static final int[][] neigh2D = new int[][]{
+    public static final int[][] neigh2DHalf = new int[][]{
             {1, -1, 0}, {0, -1, 0}, {-1, -1, 0}, {-1, 0, 0}
         };
     int[][] neigh;
@@ -63,8 +63,8 @@ public class ImageLabeller {
         if (mask instanceof BlankMask) return new Object3D[]{new Object3D((BlankMask)mask, 1)};
         else {
             ImageLabeller il = new ImageLabeller(mask);
-            if (mask.getSizeZ()>1) il.neigh=ImageLabeller.neigh3D;
-            else il.neigh=ImageLabeller.neigh2D;
+            if (mask.getSizeZ()>1) il.neigh=ImageLabeller.neigh3DHalf;
+            else il.neigh=ImageLabeller.neigh2DHalf;
             il.labelSpots();
             return il.getObjects();
         }

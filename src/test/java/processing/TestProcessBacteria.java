@@ -53,6 +53,8 @@ import org.junit.Test;
 import plugins.PluginFactory;
 import plugins.Segmenter;
 import plugins.plugins.ObjectSplitter.WatershedObjectSplitter;
+import plugins.plugins.measurements.BacteriaLineageIndex;
+import plugins.plugins.measurements.BacteriaMeasurements;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.preFilter.Median;
 import plugins.plugins.segmenters.BacteriaFluo;
@@ -120,6 +122,8 @@ public class TestProcessBacteria {
         mc.setTracker(new ObjectIdxTracker());
         bacteria.setTracker(new ClosedMicrochannelTracker());
         bacteria.setTrackCorrector(new MicroChannelBacteriaTrackCorrector());
+        xp.addMeasurement(new BacteriaLineageIndex(1));
+        xp.addMeasurement(new BacteriaMeasurements(1, 2));
         if (preProcessing) {// preProcessing 
             xp.getPreProcessingTemplate().addTransformation(0, null, new SuppressCentralHorizontalLine(6));
             xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1, 0)).setActivated(false);

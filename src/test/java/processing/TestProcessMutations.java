@@ -54,8 +54,8 @@ public class TestProcessMutations {
         //String dbName = "fluo1510_sub60";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
-        t.testSegMutationsFromXP(true, 0, 60);
-        //t.testSegMutationsFromXP(27);
+        //t.testSegMutationsFromXP(true, 0, 60);
+        t.testSegMutationsFromXP(27);
     }
     public void init(String dbName) {
         

@@ -42,7 +42,6 @@ import javax.swing.JSeparator;
 import javax.swing.MenuElement;
 import javax.swing.MenuSelectionManager;
 import javax.swing.plaf.basic.BasicMenuItemUI;
-import plugins.Registration;
 import plugins.Transformation;
 import plugins.TransformationTimeIndependent;
 import utils.Utils;

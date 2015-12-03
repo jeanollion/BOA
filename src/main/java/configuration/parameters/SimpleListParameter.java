@@ -26,6 +26,7 @@ import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.tree.MutableTreeNode;
@@ -145,6 +146,16 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     public void setActivatedAll(boolean activated) {
         if (isDeactivatable()) {
             for (Parameter p: getChildren()) ((Deactivatable)p).setActivated(activated);
+        }
+    }
+    
+    @Override
+    public List<T> getActivatedChildren() {
+        if (!isDeactivatable()) return getChildren();
+        else {
+            List<T> res = new ArrayList<T>(this.getChildCount());
+            for (T p: getChildren()) if (((Deactivatable)p).isActivated()) res.add(p);
+            return res;
         }
     }
     

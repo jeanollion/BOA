@@ -16,6 +16,7 @@ import image.BoundingBox;
 import image.Image;
 import image.ImageByte;
 import image.ImageInteger;
+import image.ImageMask;
 import image.ImageProperties;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,6 +24,8 @@ import java.util.List;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import processing.neighborhood.EllipsoidalNeighborhood;
+import processing.neighborhood.Neighborhood;
 /**
  * 
  * @author jollion
@@ -171,6 +174,31 @@ public class Object3D {
         return voxels;
     }
     
+    public ArrayList<Voxel> getContour() {
+        ArrayList<Voxel> res = new ArrayList<Voxel>();
+        ImageMask mask = getMask();
+        EllipsoidalNeighborhood neigh = this.is3D() ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true);
+        int xx, yy, zz;
+        for (int i = 0; i<neigh.dx.length; ++i) {
+            neigh.dx[i]-=mask.getOffsetX();
+            neigh.dy[i]-=mask.getOffsetY();
+            neigh.dz[i]-=mask.getOffsetZ();
+        }
+        for (Voxel v : getVoxels()) {
+            for (int i = 0; i<neigh.dx.length; ++i) {
+                xx=v.x+neigh.dx[i];
+                yy=v.y+neigh.dy[i];
+                zz=v.z+neigh.dz[i];
+                if (!mask.contains(xx, yy, zz) || !mask.insideMask(xx, yy, zz)) {
+                    res.add(v);
+                    break;
+                }
+            }
+        }
+        //logger.debug("contour: {} (total: {})", res.size(), getVoxels().size());
+        return res; // set as attribute ? => erase when modification of the object
+    }
+    
     protected void createBoundsFromVoxels() {
         BoundingBox bounds_  = new BoundingBox();
         for (Voxel v : voxels) bounds_.expand(v);
@@ -192,6 +220,22 @@ public class Object3D {
     public Set<Voxel> getIntersection(Object3D other) {
         if (!this.getBounds().hasIntersection(other.getBounds())) return Collections.emptySet();
         else return Sets.intersection(Sets.newHashSet(getVoxels()), Sets.newHashSet(other.getVoxels()));
+    }
+    
+  
+    public int getIntersectionCount2(Object3D other) {
+        if (!this.getBounds().hasIntersection(other.getBounds())) return 0;
+        else {
+            ImageMask m = other.getMask();
+            int count = 0;
+            int offX = m.getOffsetX();
+            int offY = m.getOffsetY();
+            int offZ = m.getOffsetZ();
+            for (Voxel v : this.getVoxels()) {
+                if (m.insideMask(v.x-offX, v.y-offY, v.z-offZ)) ++count;
+            }
+            return count;
+        }
     }
     
     public void merge(Object3D other) {

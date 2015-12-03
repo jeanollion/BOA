@@ -115,25 +115,33 @@ public class ObjectDAO extends DAO<StructureObject>{
     
     public void deleteChildren(StructureObject parent, int structureIdx) {
         this.waiteForWrites();
+        ArrayList<Integer> directChildren = this.getExperiment().getAllDirectChildren(structureIdx);
         // delete measurements
-        Query<StructureObject> q = getQuery(parent.getId(), structureIdx);
-        q.addReturnedField("measurements_id");
-        q.addReturnedField("object_container");
-        for (StructureObject o : q.asList()) {
-            logger.debug("delete children: id {}, mes id {}", o.id, o.measurementsId);
-            o.dao=this;
-            if (o.measurementsId!=null) measurementsDAO.delete(o.measurementsId);
-            if (o.objectContainer!=null && o.objectContainer instanceof ObjectContainerDB) o.objectContainer.deleteObject();
-            
+        List<StructureObject> children=null;
+        if (parent.hasChildren(structureIdx)) children = parent.getChildren(structureIdx);
+        else if (parent.getId()!=null) { // get only minimal information
+            Query<StructureObject> q = getQuery(parent.getId(), structureIdx);
+            q.addReturnedField("measurements_id");
+            q.addReturnedField("object_container");
+            children = q.asList();
         }
-        
+        if (children!=null) {
+            for (StructureObject o : children) {
+                logger.debug("delete children: id {}, mes id {}", o.id, o.measurementsId);
+                o.dao=this; // in case it was retrieved from this method
+                if (o.measurementsId!=null) measurementsDAO.delete(o.measurementsId);
+                if (o.objectContainer!=null && o.objectContainer instanceof ObjectContainerDB) o.objectContainer.deleteObject();
+                for (int s : directChildren) deleteChildren(o, s); // also delete all direct chilren
+                this.idCache.remove(o.getId()); // delete in cache:
+            }
+        }
         if (parent.getId()!=null) morphium.delete(getQuery(parent.getId(), structureIdx));
         // also delete in cache: 
-        Iterator<Entry<ObjectId, StructureObject>> it = idCache.entrySet().iterator();
+        /*Iterator<Entry<ObjectId, StructureObject>> it = idCache.entrySet().iterator();
         while(it.hasNext()) {
             StructureObject cur = it.next().getValue();
-            if (cur.getStructureIdx()==structureIdx && parent.equals(cur.getParent())) it.remove();
-        }
+            if (cur.getStructureIdx()==structureIdx && parent.getId().equals(cur.getParent().getId())) it.remove();
+        }*/
         // delete in ImageDAO
         this.xpDAO.getExperiment().getImageDAO().deleteChildren(parent, structureIdx);
     }
@@ -377,6 +385,7 @@ public class ObjectDAO extends DAO<StructureObject>{
     }
     
     protected static void setTrackLinks(ArrayList<StructureObject> track) {
+        if (track.isEmpty()) return;
         StructureObject trackHead = track.get(0).getTrackHead();
         StructureObject prev = null;
         for (StructureObject o : track) {

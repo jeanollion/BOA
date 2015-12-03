@@ -159,8 +159,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (actionStructureModel==null) {
             actionStructureModel = new DefaultListModel();
             this.actionStructureList.setModel(actionStructureModel);
-        }
-        else this.actionStructureList.removeAll();
+        } else actionStructureModel.removeAllElements();
         for (Structure s : db.getExperiment().getStructures().getChildren()) actionStructureModel.addElement(s.getName());
     }
     public int[] getSelectedStructures() {
@@ -176,8 +175,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (actionMicroscopyFieldModel==null) {
             actionMicroscopyFieldModel = new DefaultListModel();
             this.actionMicroscopyFieldList.setModel(actionMicroscopyFieldModel);
-        }
-        else this.actionMicroscopyFieldList.removeAll();
+        } else actionMicroscopyFieldModel.removeAllElements();
         for (int i =0; i<db.getExperiment().getMicrocopyFieldCount(); ++i) actionMicroscopyFieldModel.addElement(db.getExperiment().getMicroscopyField(i).getName());
     }
     public int[] getSelectedMicroscopyFields() {
@@ -720,7 +718,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (host==null || host.length()==0) host = "localhost";
         //setDBConnection("testFluo595-630", host);
         //setDBConnection("testFluo", host);
-        setDBConnection("fluo1510", host);
+        setDBConnection("testFluo60", host);
+        //setDBConnection("fluo1510", host);
     }//GEN-LAST:event_connectButtonActionPerformed
 
     private void preProcessButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_preProcessButtonActionPerformed

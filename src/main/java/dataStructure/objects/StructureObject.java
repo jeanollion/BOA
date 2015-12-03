@@ -175,6 +175,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             }
         }else return res;
     }
+    public boolean hasChildren(int structureIdx) {
+        return childrenSM.has(structureIdx);
+    }
 
     public void setChildren(ArrayList<StructureObject> children, int structureIdx) {
         this.childrenSM.set(children, structureIdx);

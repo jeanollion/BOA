@@ -17,10 +17,14 @@
  */
 package plugins;
 
+import dataStructure.objects.StructureObject;
+import java.util.List;
+
 /**
  *
  * @author jollion
  */
-public interface Rotation extends TransformationTimeIndependent {
-    
+public interface ProcessingScheme extends Plugin {
+    public void segmentAndTrack(List<StructureObject> parentTrack);
+    public void trackOnly(List<StructureObject> parentTrack);
 }

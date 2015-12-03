@@ -105,7 +105,7 @@ public class TextParameter extends SimpleParameter {
         public Object[] getDisplayComponent() {
             text.setText(p.getName());
             // resize text area..
-            text.setPreferredSize(new Dimension(p.getName().length() * 8 + 100, 20));
+            text.setPreferredSize(new Dimension(p.getName().length() * 8 + 100, 25));
             return component;
         }
 

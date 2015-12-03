@@ -59,4 +59,13 @@ public class StructureParameter extends IndexChoiceParameter {
         if (getSelectedIndex()==-1) return -1;
         else return getXP().getStructure(getSelectedIndex()).getParentStructure();
     }
+    
+    public int getFirstCommonParentStructureIdx(int otherStructureIdx) {
+        if (getSelectedIndex()==-1 || otherStructureIdx==-1) return -1;
+        if (getXP()==null) {
+            logger.error("StructureParameter#getParentStructureIdx(): {}, could not get experiment", name);
+            return -1;
+        }
+        else return getXP().getFirstCommonParentStructureIdx(getSelectedIndex(), otherStructureIdx);
+    }
 }

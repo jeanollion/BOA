@@ -18,7 +18,8 @@ public class ImageFloat extends Image {
     
     public ImageFloat(String name, int sizeX, int sizeY, int sizeZ) {
         super(name, sizeX, sizeY, sizeZ);
-        this.pixels=new float[sizeZ][sizeX*sizeY];
+        if (sizeZ>0 && sizeX>0 && sizeY>0) this.pixels=new float[sizeZ][sizeX*sizeY];
+        else pixels = null;
     }
     
     public ImageFloat(String name, int sizeX, float[][] pixels) {

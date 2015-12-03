@@ -101,7 +101,6 @@ public class SpotFluo2D5 implements Segmenter {
         IJImageDisplayer disp = debug?new IJImageDisplayer():null;
         double hessianRadius = 2;
         
-        
         //Image smoothed = ImageFeatures.gaussianSmooth(input, smoothRadius, smoothRadius, false).setName("smoothed");
         Image smoothed = Filters.median(input, new ImageFloat("", 0, 0, 0), Filters.getNeighborhood(smoothRadius, smoothRadius, input));
         ImageFloat bckg = ImageFeatures.gaussianSmooth(input, 10, 10, false);
@@ -138,7 +137,6 @@ public class SpotFluo2D5 implements Segmenter {
             //disp.showImage(lom.setName("laplacian"));
             disp.showImage(hess);
             disp.showImage(smoothed);
-            //disp.showImage(grad);
         }
         ImageByte seeds = Filters.localExtrema(contrasted, null, true, thresholdSeeds, Filters.getNeighborhood(1, 1, input));
         ImageByte seedsHess = Filters.localExtrema(hess, null, false, thresholdSeedsHess, Filters.getNeighborhood(1, 1, input));

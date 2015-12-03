@@ -40,5 +40,6 @@ public interface Neighborhood {
     public int getValueCount();
     public double getRadiusXY();
     public double getRadiusZ();
+    public boolean is3D();
     // float[] getCoefficientValue();
 }

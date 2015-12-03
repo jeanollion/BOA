@@ -20,6 +20,7 @@ package processing;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import dataStructure.objects.Voxel;
 import image.Image;
+import static image.Image.logger;
 import image.ImageByte;
 import image.ImageFloat;
 import java.util.Arrays;
@@ -34,8 +35,7 @@ import utils.ArrayUtil;
  */
 public class Filters {
     public static Neighborhood getNeighborhood(double scaleXY, double scaleZ, Image image) {return image.getSizeZ()>1 ? new EllipsoidalNeighborhood(scaleXY, scaleZ, false) : new EllipsoidalNeighborhood(scaleXY, false);}
-    
-    
+      
     public static <T extends Image> T mean(Image image, T output, Neighborhood neighborhood) {
         return applyFilter(image, output, new Mean(), neighborhood);
     }

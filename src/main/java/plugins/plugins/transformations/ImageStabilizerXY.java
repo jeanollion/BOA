@@ -33,7 +33,7 @@ import image.ImageFloat;
 import image.TypeConverter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import plugins.Registration;
+import plugins.Transformation;
 import static plugins.plugins.transformations.ImageStabilizerCore.combine;
 import static plugins.plugins.transformations.ImageStabilizerCore.gradient;
 import processing.ImageTransformation;
@@ -44,7 +44,7 @@ import utils.ThreadRunner.ThreadAction;
  *
  * @author nasique
  */
-public class ImageStabilizerXY implements Registration {
+public class ImageStabilizerXY implements Transformation {
     TimePointParameter ref = new TimePointParameter("Reference time point", 50, false, false);
     ChoiceParameter transformationType = new ChoiceParameter("Transformation", new String[]{"Translation"}, "Translation", false); //, "Affine"
     ChoiceParameter pyramidLevel = new ChoiceParameter("Pyramid Level", new String[]{"0", "1", "2", "3", "4"}, "0", false);

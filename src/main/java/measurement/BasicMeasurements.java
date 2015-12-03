@@ -27,6 +27,11 @@ import java.util.Collections;
  * @author jollion
  */
 public class BasicMeasurements {
+    public static double getSum(Object3D object, Image image) {
+        double value=0;
+        for (Voxel v : object.getVoxels()) value+=image.getPixel(v.x, v.y, v.z);
+        return value;
+    }
     public static double getMeanValue(Object3D object, Image image) {
         double value=0;
         for (Voxel v : object.getVoxels()) value+=image.getPixel(v.x, v.y, v.z);

@@ -17,6 +17,7 @@
  */
 package plugins.plugins.measurements;
 
+import configuration.parameters.BooleanParameter;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.Parameter;
@@ -25,6 +26,7 @@ import configuration.parameters.TextParameter;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
 import image.BoundingBox;
+import image.ImageMask;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -39,9 +41,10 @@ import plugins.Measurement;
 public class ObjectInclusionCount implements Measurement {
     protected StructureParameter structureContainer = new StructureParameter("Containing Structure", -1, false, false);
     protected StructureParameter structureToCount = new StructureParameter("Structure to count", -1, false, false);
+    protected BooleanParameter onlyTrackHeads = new BooleanParameter("Count Only TrackHeads", false);
     protected BoundedNumberParameter percentageInclusion = new BoundedNumberParameter("Minimum percentage of inclusion", 0, 100, 0, 100);
     protected TextParameter inclusionText = new TextParameter("Inclusion Key Name", "ObjectNumber", false);
-    protected Parameter[] parameters = new Parameter[]{structureContainer, structureToCount, percentageInclusion, inclusionText};
+    protected Parameter[] parameters = new Parameter[]{structureContainer, structureToCount, percentageInclusion, onlyTrackHeads, inclusionText};
     
     public ObjectInclusionCount() {}
     
@@ -53,16 +56,25 @@ public class ObjectInclusionCount implements Measurement {
     
     @Override
     public int getCallStructure() {
-        return structureContainer.getSelectedIndex();
+        return structureContainer.getFirstCommonParentStructureIdx(structureToCount.getSelectedIndex());
     }
     // TODO: only track heads
     @Override
     public void performMeasurement(StructureObject object, List<StructureObject> modifiedObjects) {
-        //logger.debug("perform ObjectInclusion count on: {}", object);
-        int common = object.getExperiment().getFirstCommonParentStructureIdx(structureContainer.getSelectedIndex(), structureToCount.getSelectedIndex());
-        StructureObject parent = object.getParent(common);
-        object.getMeasurements().setValue(inclusionText.getValue(), count(parent, object, structureToCount.getSelectedIndex(), percentageInclusion.getValue().doubleValue()/100d));
-        modifiedObjects.add(object);
+        double p = percentageInclusion.getValue().doubleValue()/100d;
+        if (object.getStructureIdx()==structureContainer.getSelectedIndex()) {
+            object.getMeasurements().setValue(inclusionText.getValue(), count(object, structureToCount.getSelectedIndex(), p, onlyTrackHeads.getSelected()));
+            modifiedObjects.add(object);
+        } else {
+            ArrayList<StructureObject> containers = object.getChildren(structureContainer.getSelectedIndex());
+            ArrayList<StructureObject> toCount = object.getChildren(structureToCount.getSelectedIndex());
+            for (StructureObject c : containers) {
+                c.getMeasurements().setValue(inclusionText.getValue(), count(object, c, toCount, p, onlyTrackHeads.getSelected()));
+                modifiedObjects.add(c);
+            }
+        }
+        
+        
     }
     
     @Override 
@@ -72,9 +84,7 @@ public class ObjectInclusionCount implements Measurement {
         return res;
     }
     
-    public static int count(StructureObject commonParent, StructureObject container, int structureToCount, double percentageInclusion) {
-        if (structureToCount==container.getStructureIdx()) return 1;
-        ArrayList<StructureObject> toCount = commonParent.getChildren(structureToCount);
+    public static int count(StructureObject commonParent, StructureObject container, List<StructureObject> toCount, double proportionInclusion, boolean onlyTrackHeads) {
         if (toCount==null || toCount.isEmpty()) return 0;
         int count = 0;
         Object3D containerObject = container.getObject();
@@ -86,22 +96,33 @@ public class ObjectInclusionCount implements Measurement {
             offsetC = new BoundingBox(-offsetC.getxMin(), -offsetC.getyMin(), -offsetC.getzMin());
         }
         for (StructureObject o : toCount) {
+            if (onlyTrackHeads && !o.isTrackHead()) continue;
             BoundingBox offsetP = o.getParent().getRelativeBoundingBox(commonParent).translate(-offsetC.getxMin(), -offsetC.getyMin(), -offsetC.getzMin());
             o.getObject().addOffset(offsetP.getxMin(), offsetP.getyMin(), offsetP.getzMin());
-            logger.debug("add offset: {}, offsetC: {}, offsetP: {}", offsetP, offsetC, o.getParent().getRelativeBoundingBox(commonParent));
+            //logger.debug("add offset: {}, offsetC: {}, offsetP: {}", offsetP, offsetC, o.getParent().getRelativeBoundingBox(commonParent));
             if (o.getBounds().hasIntersection(containerObject.getBounds())) {
-                if (percentageInclusion==0) ++count;
+                if (proportionInclusion==0) ++count;
                 else {
                     if (o.getObject().getVoxels().isEmpty()) continue;
                     double incl = (double)o.getObject().getIntersection(containerObject).size() / (double)o.getObject().getVoxels().size();
                     //logger.debug("inclusion: {}, threshold: {}, container: {}, parent:{}", incl, percentageInclusion, container, o.getParent());
-                    if (incl>=percentageInclusion) ++count;
+                    if (incl>=proportionInclusion) ++count;
                 }
             }
             o.getObject().resetOffset();
         }
-        
+        //logger.debug("inclusion count: commont parent: {} container: {}, toTest: {}, result: {}", commonParent, container, toCount.size(), count);
         return count;
+    }
+
+    public static int count(StructureObject container, int structureToCount, double proportionInclusion, boolean onlyTrackHeads) {
+        if (structureToCount==container.getStructureIdx()) return 1;
+        int common = container.getExperiment().getFirstCommonParentStructureIdx(container.getStructureIdx(), structureToCount);
+        StructureObject commonParent = container.getParent(common);
+
+        ArrayList<StructureObject> toCount = commonParent.getChildren(structureToCount);
+        return count(commonParent, container, toCount, proportionInclusion, onlyTrackHeads);
+        
     }
     
     public Parameter[] getParameters() {

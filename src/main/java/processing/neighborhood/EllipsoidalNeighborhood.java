@@ -20,6 +20,8 @@ package processing.neighborhood;
 import static core.Processor.logger;
 import dataStructure.objects.Voxel;
 import image.Image;
+import image.ImageProperties;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 
@@ -186,6 +188,29 @@ public class EllipsoidalNeighborhood implements Neighborhood {
             return res+"]";
         }
         
+    }
+    
+    public void addVoxels(Voxel v, ImageProperties p, ArrayList<Voxel> res) {
+        int xx, yy;
+        if (is3D) { 
+            int zz;
+            for (int i = 0; i<dx.length; ++i) {
+                xx=v.x+dx[i];
+                yy=v.y+dy[i];
+                zz=v.z+dz[i];
+                if (p.contains(xx, yy, zz)) res.add(new Voxel(xx, yy, zz));
+            }
+        } else {
+            for (int i = 0; i<dx.length; ++i) {
+                xx=v.x+dx[i];
+                yy=v.y+dy[i];
+                if (p.contains(xx, yy, 0)) res.add(new Voxel(xx, yy, 0));
+            }
+        }
+    }
+
+    public boolean is3D() {
+        return is3D;
     }
     
 }

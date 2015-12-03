@@ -35,9 +35,6 @@ import de.caluga.morphium.annotations.Entity;
 import de.caluga.morphium.annotations.Id;
 import de.caluga.morphium.annotations.Index;
 import de.caluga.morphium.annotations.Transient;
-import de.caluga.morphium.annotations.caching.Cache;
-import de.caluga.morphium.annotations.lifecycle.Lifecycle;
-import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -230,6 +227,15 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         }
     }
     
+    public ArrayList<Integer> getAllDirectChildren(int parentStructureIdx) {
+        int max = this.getStructureCount();
+        ArrayList<Integer> res = new ArrayList<Integer>(max);
+        for (int s = parentStructureIdx+1; s<max; ++s) {
+            if (isDirectChildOf(parentStructureIdx, s)) res.add(s);
+        }
+        return res;
+    }
+    
     /**
      * 
      * @param structureIdx
@@ -346,7 +352,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         if (this.measurements.getChildCount()==0) return Collections.emptyList();
         else {
             ArrayList<MeasurementKey> res= new ArrayList<MeasurementKey>();
-            for (PluginParameter<Measurement> p : measurements.getChildren()) {
+            for (PluginParameter<Measurement> p : measurements.getActivatedChildren()) {
                 Measurement m = p.getPlugin();
                 if (m!=null) res.addAll(m.getMeasurementKeys());
             }
@@ -358,7 +364,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         if (this.measurements.getChildCount()==0) return Collections.emptyList();
         else {
             ArrayList<MeasurementKeyObject> res= new ArrayList<MeasurementKeyObject>();
-            for (PluginParameter<Measurement> p : measurements.getChildren()) {
+            for (PluginParameter<Measurement> p : measurements.getActivatedChildren()) {
                 Measurement m = p.getPlugin();
                 if (m!=null) for (MeasurementKey k : m.getMeasurementKeys()) if (k instanceof MeasurementKeyObject) res.add((MeasurementKeyObject)k);
             }
@@ -388,7 +394,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         if (this.measurements.getChildCount()==0) return Collections.emptyMap();
         else {
             Map<Integer, List<Measurement>> res = new HashMap<Integer, List<Measurement>>(structureIdx.length>0?structureIdx.length : this.getStructureCount());
-            for (PluginParameter<Measurement> p : measurements.getChildren()) {
+            for (PluginParameter<Measurement> p : measurements.getActivatedChildren()) {
                 Measurement m = p.getPlugin();
                 if (m!=null) {
                     if (structureIdx.length==0 || contains(structureIdx, m.getCallStructure())) {

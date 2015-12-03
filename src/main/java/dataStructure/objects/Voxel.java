@@ -91,4 +91,8 @@ public class Voxel implements Comparable<Voxel> {
         }
     }
     
+    public double getDistanceSquare(Voxel other, double scaleXY, double scaleZ) {
+        return Math.pow((x-other.x) * scaleXY, 2) + Math.pow((y-other.y) * scaleXY, 2) + Math.pow((z-other.z) * scaleZ, 2);
+    }
+    
 }

@@ -19,6 +19,7 @@ package measurement;
 
 import dataStructure.objects.Object3D;
 import dataStructure.objects.Voxel;
+import java.util.ArrayList;
 
 /**
  *
@@ -30,6 +31,19 @@ public class GeometricalMeasurements {
         int count = o.getVoxels().size();
         return count * o.getScaleXY() * o.getScaleXY() * o.getScaleZ();
     }
-    
+    public static double getFeretMax(Object3D o) {
+        double d2Max = 0;
+        ArrayList<Voxel> list = o.getContour();
+        int voxCount = list.size();
+        double scaleXY = o.getScaleXY();
+        double scaleZ = o.getScaleZ();
+        for (int i = 0; i<voxCount-1; ++i) {
+            for (int j = i+1; j<voxCount; ++j) {
+                double d2Temp = list.get(i).getDistanceSquare(list.get(j), scaleXY, scaleZ);
+                if (d2Temp>d2Max) d2Max = d2Temp;
+            }
+        }
+        return Math.sqrt(d2Max);
+    }
     
 }

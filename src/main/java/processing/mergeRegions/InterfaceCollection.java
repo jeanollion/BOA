@@ -62,7 +62,7 @@ public class InterfaceCollection {
         ImageInteger inputLabels = regions.labelMap;
         Voxel n;
         int otherLabel;
-        int[][] neigh = inputLabels.getSizeZ()>1 ? ImageLabeller.neigh3D : ImageLabeller.neigh2D;
+        int[][] neigh = inputLabels.getSizeZ()>1 ? ImageLabeller.neigh3DHalf : ImageLabeller.neigh2DHalf;
         for (Region r : regions.regions.values()) {
             for (Voxel vox : r.voxels) {
                 vox = vox.copy(); // to avoid having the same instance of voxel as in the region.
@@ -92,7 +92,7 @@ public class InterfaceCollection {
     public static void mergeAllConnected(RegionCollection regions) {
         ImageInteger inputLabels = regions.labelMap;
         int otherLabel;
-        int[][] neigh = inputLabels.getSizeZ()>1 ? ImageLabeller.neigh3D : ImageLabeller.neigh2D;
+        int[][] neigh = inputLabels.getSizeZ()>1 ? ImageLabeller.neigh3DHalf : ImageLabeller.neigh2DHalf;
         Voxel n;
         for (int z = 0; z<inputLabels.getSizeZ(); z++) {
             for (int y = 0; y<inputLabels.getSizeY(); y++) {

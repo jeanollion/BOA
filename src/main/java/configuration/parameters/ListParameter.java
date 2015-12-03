@@ -15,6 +15,8 @@
  */
 package configuration.parameters;
 
+import java.util.List;
+
 /**
  *
  * @author jollion
@@ -32,5 +34,6 @@ public interface ListParameter<T extends Parameter> extends ContainerParameter {
     public int getUnMutableIndex();
     public boolean isDeactivatable();
     public void setActivatedAll(boolean activated);
+    public List<T> getActivatedChildren();
     public T getChildByName(String name);
 }
