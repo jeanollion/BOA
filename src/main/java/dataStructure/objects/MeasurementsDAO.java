@@ -49,6 +49,7 @@ public class MeasurementsDAO extends DAO<Measurements>{
     }
     
     public void delete(Measurements o) {
+        if (o==null) return;
         if (o.getId()!=null) morphium.delete(o);
     }
     

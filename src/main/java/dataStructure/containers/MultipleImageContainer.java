@@ -37,4 +37,5 @@ public abstract class MultipleImageContainer {
     public abstract String getName();
     public float getScaleXY() {return (float)scaleXY;}
     public float getScaleZ() {return (float)scaleZ;}
+    public abstract MultipleImageContainer duplicate();
 }

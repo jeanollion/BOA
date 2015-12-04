@@ -324,6 +324,7 @@
                       <Component id="previousTrackErrorButton" alignment="0" max="32767" attributes="0"/>
                       <Component id="interactiveStructure" alignment="0" max="32767" attributes="0"/>
                       <Component id="selectAllObjects" alignment="0" max="32767" attributes="0"/>
+                      <Component id="deleteObjectsButton" alignment="0" max="32767" attributes="0"/>
                   </Group>
                 </DimensionLayout>
                 <DimensionLayout dim="1">
@@ -344,11 +345,12 @@
                           <Component id="splitObjectButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="mergeObjectsButton" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace min="-2" pref="2" max="-2" attributes="0"/>
+                          <Component id="deleteObjectsButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="selectContainingTrackToggleButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="collapseAllObjectButton" min="-2" max="-2" attributes="0"/>
-                          <EmptySpace max="-2" attributes="0"/>
                       </Group>
                   </Group>
                 </DimensionLayout>
@@ -436,6 +438,14 @@
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="selectAllObjectsActionPerformed"/>
+                  </Events>
+                </Component>
+                <Component class="javax.swing.JButton" name="deleteObjectsButton">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" value="Delete Objects"/>
+                  </Properties>
+                  <Events>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="deleteObjectsButtonActionPerformed"/>
                   </Events>
                 </Component>
               </SubComponents>

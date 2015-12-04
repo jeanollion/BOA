@@ -126,7 +126,10 @@ public abstract class ImageWindowManager<T> {
             i.reloadObjects();
             for (Entry<Image, ImageObjectInterfaceKey> e : imageObjectInterfaceMap.entrySet()) if (e.getValue().equals(key)) {
                 //logger.debug("updating image: {}", e.getKey().getName());
-                if (isLabelImage.get(e.getKey())) i.draw((ImageInteger)e.getKey());
+                if (isLabelImage.get(e.getKey())) {
+                    ImageOperations.fill(((ImageInteger)e.getKey()), 0, null);
+                    i.draw((ImageInteger)e.getKey());
+                }
                 if (!track) getDisplayer().updateImageDisplay(e.getKey());
             }
         }
@@ -141,6 +144,7 @@ public abstract class ImageWindowManager<T> {
                 parentTrack=parentTrack.getNext();
             }
         } else reloadObjects_(parent, childStructureIdx, false);
+        if (parent.getParent()!=null) reloadObjects(parent.getParent(), childStructureIdx, wholeTrack);
     } 
     
     protected ImageObjectInterface getImageObjectInterface(Image image) {

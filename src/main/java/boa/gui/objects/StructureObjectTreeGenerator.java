@@ -110,6 +110,7 @@ public class StructureObjectTreeGenerator {
     public void selectObject(StructureObject object, boolean addToSelection) {
         if (object==null && !addToSelection) tree.setSelectionRow(-1);
         else {
+            if (object==null) return;
             if (addToSelection) Utils.addToSelectionPaths(tree, getObjectTreePath(object));
             else tree.setSelectionPath(getObjectTreePath(object));
         }
@@ -167,29 +168,40 @@ public class StructureObjectTreeGenerator {
         return this.treeModel;
     }
     
-    public ArrayList<StructureObject> getSelectedObjects() {
+    public ArrayList<StructureObject> getSelectedObjects(boolean onlyFromSameStructureIdx) {
         ArrayList<StructureObject> res = new ArrayList<StructureObject>(tree.getSelectionCount());
+        int structureIdx = -1;
         for (TreePath p : tree.getSelectionPaths()) {
             if (p.getLastPathComponent() instanceof ObjectNode) {
-                res.add(((ObjectNode)p.getLastPathComponent()).data);
+                StructureObject o = ((ObjectNode)p.getLastPathComponent()).data;
+                if (onlyFromSameStructureIdx) {
+                    if (structureIdx==-1) {
+                        structureIdx = o.getStructureIdx();
+                        res.add(o);
+                    } else if (o.getStructureIdx()==structureIdx) res.add(o);
+                } else res.add(o);
             }
         }
         return res;
     }
     /**
      * 
-     * @return a list of selected structureObject that have the same parent as the first selected object of the tree
+     * @return a list of selected structureObject that have the same parent & structrueIdx as the first selected object of the tree
      */
     public ArrayList<StructureObject> getSelectedObjectsFromSameParent() {
         ArrayList<StructureObject> res = new ArrayList<StructureObject>(tree.getSelectionCount());
         StructureNode parent = null;
+        int structureIdx=-1;
         for (TreePath p : tree.getSelectionPaths()) {
             if (p.getLastPathComponent() instanceof ObjectNode) {
                 if (parent==null) {
                     parent = (StructureNode) p.getPathComponent(p.getPathCount()-2);
-                    res.add(((ObjectNode)p.getLastPathComponent()).data);
+                    StructureObject o = ((ObjectNode)p.getLastPathComponent()).data;
+                    res.add(o);
+                    structureIdx = o.getStructureIdx();
                 } else if (p.getPathComponent(p.getPathCount()-2).equals(parent)) {
-                    res.add(((ObjectNode)p.getLastPathComponent()).data);
+                    StructureObject o = ((ObjectNode)p.getLastPathComponent()).data;
+                    if (o.getStructureIdx()==structureIdx) res.add(o);
                 }
             }
         }

@@ -29,11 +29,11 @@ import org.bson.types.ObjectId;
  * @author jollion
  */
 @Embedded(polymorph=true)
-public class ObjectContainerDB extends ObjectContainer {
+public class ObjectContainerVoxelsDB extends ObjectContainer {
     protected ObjectId regionId;
     @Transient RegionVoxelsDB region;
     
-    public ObjectContainerDB(StructureObject structureObject) {
+    public ObjectContainerVoxelsDB(StructureObject structureObject) {
         super(structureObject);
     }
 

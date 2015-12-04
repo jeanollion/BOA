@@ -17,6 +17,9 @@
  */
 package images;
 
+import static TestUtils.Utils.logger;
+import image.Image;
+import image.ImageIOCoordinates;
 import image.ImageReader;
 import org.junit.Test;
 
@@ -24,12 +27,14 @@ import org.junit.Test;
  *
  * @author jollion
  */
-public class TestND {
+public class TestOpenImage {
     //@Test
     public void testDim() {
-        ImageReader r = new ImageReader("/data/Images/mg6300WT_LB_LR62silicium_oil37.nd2");
+        ImageReader r = new ImageReader("/data/Images/Fluo/films1511/151127/champ1/me121r-27112018_01_R3D.dv");
         int[][] stc = r.getSTCXYZNumbers();
-        System.out.println("number of series: "+stc.length+ " time points: "+stc[0][0]+ " channels: "+stc[0][1]);
+        logger.info("number of series: "+stc.length+ " time points (0): "+stc[0][0]+ " channels (0): "+stc[0][1]);
+        Image im = r.openImage(new ImageIOCoordinates(0, 0, 2));
+        logger.info("X: "+im.getSizeX()+ " Y: "+im.getSizeY()+ " Z: "+im.getSizeZ());
         //>5min .. 60 series 985 timePoints 1 channel
     }
 }

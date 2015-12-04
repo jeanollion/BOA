@@ -270,4 +270,6 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
         o2.draw(splitMask, 0);
         return inter;
     }
+
+    @Override public boolean isTimeDependent() {return false;}
 }

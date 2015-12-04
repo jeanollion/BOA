@@ -77,24 +77,22 @@ public class SpotFluo2D5 implements Segmenter {
     }
     
     public static ObjectPopulation run(Image input, ImageMask mask, double smoothRadius, double laplacianRadius, int minSpotSize, double thresholdHigh, double thresholdSeedHess, double thresholdLow, ArrayList<Image> intermediateImages) {
-        // tester sur average, max, ou plan par plan
-        ArrayList<Image> planes = input.splitZPlanes();
-        ArrayList<ObjectPopulation> populations = new ArrayList<ObjectPopulation>(planes.size());
-        for (Image plane : planes) {
-            ObjectPopulation obj = runPlane(plane, mask, smoothRadius, laplacianRadius, minSpotSize, thresholdHigh, thresholdSeedHess, thresholdLow, intermediateImages);
-            //if (true) return obj;
-            if (obj!=null && !obj.getObjects().isEmpty()) populations.add(obj);
-        }
-        if (populations.isEmpty()) return new ObjectPopulation(new ArrayList<Object3D>(0), planes.get(0));
-        // combine: 
-        ObjectPopulation pop = populations.remove(populations.size()-1);
-        pop.combine(populations);
-        return pop;
+        if (input.getSizeZ()>1) {
+            // tester sur average, max, ou plan par plan
+            ArrayList<Image> planes = input.splitZPlanes();
+            ArrayList<ObjectPopulation> populations = new ArrayList<ObjectPopulation>(planes.size());
+            for (Image plane : planes) {
+                ObjectPopulation obj = runPlane(plane, mask, smoothRadius, laplacianRadius, minSpotSize, thresholdHigh, thresholdSeedHess, thresholdLow, intermediateImages);
+                //if (true) return obj;
+                if (obj!=null && !obj.getObjects().isEmpty()) populations.add(obj);
+            }
+            if (populations.isEmpty()) return new ObjectPopulation(new ArrayList<Object3D>(0), planes.get(0));
+            // combine: 
+            ObjectPopulation pop = populations.remove(populations.size()-1);
+            pop.combine(populations);
+            return pop;
+        } else return runPlane(input, mask, smoothRadius, laplacianRadius, minSpotSize, thresholdHigh, thresholdSeedHess, thresholdLow, intermediateImages);
         
-        // autre stratégies: plan par plan puis choix entre les spots qui se recouvrent
-        // smooth puis projection maximale
-        /*Image avg = ImageOperations.meanZProjection(input);
-        return runPlane(avg, mask, smoothRadius, laplacianRadius, minSpotSize, thresholdHigh, thresholdLow, intermediateImages);*/
     }
     
     public static ObjectPopulation runPlane(Image input, ImageMask mask, double smoothRadius, double laplacianRadius, int minSpotSize, double thresholdSeeds, double thresholdSeedsHess, double thresholdLow, ArrayList<Image> intermediateImages) {
@@ -164,8 +162,6 @@ public class SpotFluo2D5 implements Segmenter {
         return parameters;
     }
 
-    public boolean does3D() {
-        return true;
-    }
+    @Override public boolean isTimeDependent() {return false;}
     
 }

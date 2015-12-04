@@ -242,8 +242,14 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
         ImagePlus ip = displayer.getImage(image);
         if (ip!=null) ip.setOverlay(null);
     }
-    
-    private HashMap<Integer, Roi> getRoi(ImageInteger mask, BoundingBox offset, boolean is3D) {
+    /**
+     * 
+     * @param mask
+     * @param offset
+     * @param is3D
+     * @return maping of Roi to Z-slice (taking into account the provided offset)
+     */
+    public static HashMap<Integer, Roi> getRoi(ImageInteger mask, BoundingBox offset, boolean is3D) {
         HashMap<Integer, Roi> res = new HashMap<Integer, Roi>(mask.getSizeZ());
         ThresholdToSelection tts = new ThresholdToSelection();
         ImagePlus maskPlus = IJImageWrapper.getImagePlus(mask);

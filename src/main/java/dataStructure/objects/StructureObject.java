@@ -110,9 +110,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (dao==null) return null;
         return dao.getExperiment();
     }
-    public MicroscopyField getMicroscopyField() {return getExperiment().getMicroscopyField(fieldName);}
-    public float getScaleXY() {return getMicroscopyField().getScaleXY();}
-    public float getScaleZ() {return getMicroscopyField().getScaleZ();}
+    public MicroscopyField getMicroscopyField() {return getExperiment()!=null?getExperiment().getMicroscopyField(fieldName):null;}
+    public float getScaleXY() {return getMicroscopyField()!=null?getMicroscopyField().getScaleXY():1;}
+    public float getScaleZ() {return getMicroscopyField()!=null?getMicroscopyField().getScaleZ():1;}
     public StructureObject getParent() {
         if (parent==null) return null;
         parent.callLazyLoading();
@@ -281,6 +281,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.next=null;
         this.trackHead=null;
         this.trackHeadId=null;
+        this.isTrackHead=true;
+        this.flag=null;
     }
     public void setTrackFlag(TrackFlag flag) {this.flag=flag;}
     public TrackFlag getTrackFlag() {return this.flag;}
@@ -518,6 +520,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         //logger.debug("updating object container: {} of object: {}", objectContainer.getClass(), this );
         
     }
+    //public ObjectContainer getObjectContainer() {return objectContainer;}
     public void deleteMask(){if (objectContainer!=null) objectContainer.deleteObject();};
     
     public Image getRawImage(int structureIdx) {

@@ -110,6 +110,7 @@ public class StructureObjectMask extends ImageObjectInterface {
         if (i >= 0) {
             return offsets[i];
         } else {
+            logger.warn("object: {} not found", object);
             return null;
         }
     }

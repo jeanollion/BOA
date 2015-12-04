@@ -162,9 +162,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         } else actionStructureModel.removeAllElements();
         for (Structure s : db.getExperiment().getStructures().getChildren()) actionStructureModel.addElement(s.getName());
     }
-    public int[] getSelectedStructures() {
+    public int[] getSelectedStructures(boolean returnAllIfNoneIsSelected) {
         int[] res = actionStructureList.getSelectedIndices();
-        if (res.length==0) {
+        if (res.length==0 && returnAllIfNoneIsSelected) {
             res=new int[db.getExperiment().getStructureCount()];
             for (int i = 0; i<res.length; ++i) res[i]=i;
         }
@@ -361,6 +361,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         previousTrackErrorButton = new javax.swing.JButton();
         interactiveStructure = new javax.swing.JComboBox();
         selectAllObjects = new javax.swing.JButton();
+        deleteObjectsButton = new javax.swing.JButton();
         ObjectTreeJSP = new javax.swing.JSplitPane();
         StructurePanel = new javax.swing.JPanel();
         structureJSP = new javax.swing.JScrollPane();
@@ -583,6 +584,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
+        deleteObjectsButton.setText("Delete Objects");
+        deleteObjectsButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                deleteObjectsButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout ControlPanelLayout = new javax.swing.GroupLayout(ControlPanel);
         ControlPanel.setLayout(ControlPanelLayout);
         ControlPanelLayout.setHorizontalGroup(
@@ -597,6 +605,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             .addComponent(previousTrackErrorButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(interactiveStructure, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(selectAllObjects, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(deleteObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         ControlPanelLayout.setVerticalGroup(
             ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -616,11 +625,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addComponent(splitObjectButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(mergeObjectsButton)
+                .addGap(2, 2, 2)
+                .addComponent(deleteObjectsButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(selectContainingTrackToggleButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(collapseAllObjectButton)
-                .addContainerGap())
+                .addComponent(collapseAllObjectButton))
         );
 
         StructurePanel.setBorder(javax.swing.BorderFactory.createTitledBorder("SegmentedObjects"));
@@ -701,8 +711,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void segmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_segmentButtonActionPerformed
         if (!checkConnection()) return;
-        int[] selectedStructures = this.getSelectedStructures();
-        for (int i : this.getSelectedMicroscopyFields()) Processor.processAndTrackStructures(db.getExperiment(), db.getExperiment().getMicroscopyField(i), db.getDao(), true, true, selectedStructures );
+        int[] selectedStructures = this.getSelectedStructures(false);
+        for (int i : this.getSelectedMicroscopyFields()) {
+            Processor.processAndTrackStructures(db.getExperiment(), db.getExperiment().getMicroscopyField(i), db.getDao(), true, true, selectedStructures );
+        }
         reloadTree=true;
     }//GEN-LAST:event_segmentButtonActionPerformed
 
@@ -718,8 +730,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (host==null || host.length()==0) host = "localhost";
         //setDBConnection("testFluo595-630", host);
         //setDBConnection("testFluo", host);
-        setDBConnection("testFluo60", host);
-        //setDBConnection("fluo1510", host);
+        //setDBConnection("testFluo60", host);
+        //setDBConnection("fluo151127", host);
+        setDBConnection("fluo151130", host);
     }//GEN-LAST:event_connectButtonActionPerformed
 
     private void preProcessButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_preProcessButtonActionPerformed
@@ -841,7 +854,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void extractMeasurementsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_extractMeasurementsActionPerformed
         if (!checkConnection()) return;
-        int[] selectedStructures = this.getSelectedStructures();
+        int[] selectedStructures = this.getSelectedStructures(true);
         File outputDir = Utils.chooseFile("Choose directory", null, FileChooser.FileChooserOption.DIRECTORIES_ONLY, this);
         if (outputDir!=null) {
             String file = outputDir.getAbsolutePath()+File.separator+"output"+Utils.toStringArray(selectedStructures, "_", "", "_")+".xls";
@@ -857,6 +870,34 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             Processor.performMeasurements(db.getExperiment().getMicroscopyField(i).getName(), db.getDao());
         }
     }//GEN-LAST:event_performMeasurementsActionPerformed
+
+    private void deleteObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteObjectsButtonActionPerformed
+        if (!checkConnection()) return;
+        ArrayList<StructureObject> sel = objectTreeGenerator.getSelectedObjects(true);
+        if (sel.isEmpty()) logger.warn("Delete Objects: select one or several objects to delete first!");
+        else {
+            int structureIdx = sel.get(0).getStructureIdx();
+            ArrayList<StructureObject> parents = new ArrayList<StructureObject>();
+            for (StructureObject o : sel) {
+                parents.add(o.getParent());
+                o.getParent().getChildren(o.getStructureIdx()).remove(o);
+            }
+            Utils.removeDuplicates(parents, false);
+            logger.info("Deleting {} objects, from {} parents", sel.size(), parents.size());
+            db.getDao().delete(sel);
+            ArrayList<StructureObject> modified = new ArrayList<StructureObject>();
+            for (StructureObject p : parents) p.relabelChildren(structureIdx, modified);
+            db.getDao().store(modified, false, false);
+            //Update object tree
+            for (StructureObject s : parents) {
+                ObjectNode node = objectTreeGenerator.getObjectNode(s);
+                node.getParent().createChildren();
+                objectTreeGenerator.reload(node.getParent());
+            }
+            //Update all opened images & objectImageInteraction
+            for (StructureObject p : parents) ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
+        }
+    }//GEN-LAST:event_deleteObjectsButtonActionPerformed
 
     public static DBConfiguration getDBConnection() {
         if (getInstance()==null) return null;
@@ -921,6 +962,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JButton collapseAllObjectButton;
     private javax.swing.JScrollPane configurationJSP;
     private javax.swing.JButton connectButton;
+    private javax.swing.JButton deleteObjectsButton;
     private javax.swing.JButton extractMeasurements;
     private javax.swing.JTextField hostName;
     private javax.swing.JButton importImageButton;

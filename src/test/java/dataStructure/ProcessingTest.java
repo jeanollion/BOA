@@ -208,9 +208,9 @@ public class ProcessingTest {
         db.clearObjectsInDB();
         Experiment xp = new Experiment("test");
         db.getXpDAO().store(xp);
-        StructureObject r = new StructureObject("test", 0, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), xp, db.getDao());
-        StructureObject r2 = new StructureObject("test", 1, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), xp, db.getDao());
-        StructureObject r3 = new StructureObject("test", 2, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), xp, db.getDao());
+        StructureObject r = new StructureObject("test", 0, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), db.getDao());
+        StructureObject r2 = new StructureObject("test", 1, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), db.getDao());
+        StructureObject r3 = new StructureObject("test", 2, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), db.getDao());
         r2.setPreviousInTrack(r, true);
         r3.setPreviousInTrack(r2, true);
         db.getDao().store(true, r, r2, r3);

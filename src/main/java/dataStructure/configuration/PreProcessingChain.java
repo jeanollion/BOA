@@ -30,6 +30,7 @@ import de.caluga.morphium.annotations.Transient;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
@@ -64,8 +65,8 @@ public class PreProcessingChain extends SimpleContainerParameter {
         super.initChildren(constantTransformations);
     }
     
-    public ArrayList<TransformationPluginParameter<Transformation>> getTransformations() {
-        return constantTransformations.getChildren();
+    public List<TransformationPluginParameter<Transformation>> getTransformations() {
+        return constantTransformations.getActivatedChildren();
     }
     
     /**

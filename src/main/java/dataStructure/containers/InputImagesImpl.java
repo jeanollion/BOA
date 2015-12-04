@@ -40,6 +40,7 @@ public class InputImagesImpl implements InputImages {
     public int getTimePointNumber() {return imageTC.length;}
     public int getChannelNumber() {return imageTC[0].length;}
     public int getDefaultTimePoint() {return defaultTimePoint;}
+    @Override public int getSizeZ(int channelIdx) {return imageTC[0][channelIdx].imageSources.getSizeZ(channelIdx);}
     
     public void addTransformation(int inputChannel, int[] channelIndicies, Transformation transfo) {
         if (channelIndicies!=null) for (int c : channelIndicies) addTransformation(c, transfo);
@@ -64,6 +65,14 @@ public class InputImagesImpl implements InputImages {
         long tStart = System.currentTimeMillis();
         final int cCount = getChannelNumber();
         ThreadRunner.execute(imageTC, false, new ThreadAction<InputImage[]>() {
+            //MultipleImageContainer container;
+            @Override public void setUp() {
+                //container = imageTC[0][0].duplicateContainer();
+                //logger.debug("Creating container for thread: {}, id: {}", Thread.currentThread(), container);
+            }
+            @Override public void tearDown() {
+                //container.close();
+            };
             @Override
             public void run(InputImage[] imageC) {
                 //long tStart = System.currentTimeMillis();
@@ -77,15 +86,16 @@ public class InputImagesImpl implements InputImages {
             }
         });
         
-        
-        /*int tCount = getTimePointNumber();
+        /*
+        int tCount = getTimePointNumber();
         for (int t = 0; t<tCount; ++t) {
             for (int c = 0; c<cCount; ++c) {
                 imageTC[t][c].getImage();
                 imageTC[t][c].saveToDAO=true;
                 imageTC[t][c].closeImage();
             }
-        }*/
+        }
+        */
         long tEnd = System.currentTimeMillis();
         logger.debug("apply transformation & save: total time: {}, for {} time points and {} channels", tEnd-tStart, getTimePointNumber(), cCount );
     }

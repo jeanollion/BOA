@@ -27,4 +27,5 @@ import image.Image;
  */
 public interface Segmenter extends ImageProcessingPlugin {
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent);
+    public boolean isTimeDependent();
 }

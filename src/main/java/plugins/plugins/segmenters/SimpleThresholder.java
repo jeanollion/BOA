@@ -85,8 +85,5 @@ public class SimpleThresholder implements Segmenter {
         return new Parameter[]{threshold};
     }
 
-    public boolean does3D() {
-        return true;
-    }
-    
+    @Override public boolean isTimeDependent() {return false;}
 }

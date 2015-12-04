@@ -55,6 +55,22 @@ public class InputImage {
         transformationsToApply.add(t);
     }
     
+    public MultipleImageContainer duplicateContainer() {
+        return imageSources.duplicate();
+    }
+    
+    public Image getImage(MultipleImageContainer container) {
+        if (image == null) {
+            image = dao.openPreProcessedImage(channelIdx, timePoint, microscopyFieldName); //try to open from DAO
+            if (image==null) {
+                image = container.getImage(timePoint, channelIdx);
+                originalImageType = Image.createEmptyImage("source Type", image, new BlankMask("", 0, 0, 0));
+            }
+        }
+        applyTransformations();
+        return image;
+    } 
+    
     public Image getImage() {
         if (image == null) {
             image = dao.openPreProcessedImage(channelIdx, timePoint, microscopyFieldName); //try to open from DAO
@@ -74,9 +90,10 @@ public class InputImage {
         Iterator<Transformation> it = transformationsToApply.iterator();
         //new IJImageDisplayer().showImage(image);
         while(it.hasNext()) {
-            image = it.next().applyTransformation(channelIdx, timePoint, image);
+            Transformation t = it.next();
+            image =t.applyTransformation(channelIdx, timePoint, image);
             it.remove();
-            //new IJImageDisplayer().showImage(image);
+            //new IJImageDisplayer().showImage(image.setName("after: "+t.getClass().getSimpleName()));
         }
     }
     

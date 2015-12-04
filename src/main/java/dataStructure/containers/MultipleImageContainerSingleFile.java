@@ -47,6 +47,10 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
         this.sizeZ=sizeZ;
     }
     
+    public MultipleImageContainerSingleFile duplicate() {
+        return new MultipleImageContainerSingleFile(name, filePath, seriesIdx, timePointNumber, channelNumber, sizeZ);
+    }
+    
     public void setImagePath(String path) {
         this.filePath=path;
     }
@@ -82,7 +86,7 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
     }
     
     @Override
-    public Image getImage(int timePoint, int channel) {
+    public synchronized Image getImage(int timePoint, int channel) {
         if (this.timePointNumber==1) timePoint=0;
         ImageIOCoordinates ioCoordinates = getImageIOCoordinates(timePoint, channel);
         if (bounds!=null) ioCoordinates.setBounds(bounds);
@@ -96,7 +100,7 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
     }
     
     @Override
-    public Image getImage(int timePoint, int channel, BoundingBox bounds) {
+    public synchronized Image getImage(int timePoint, int channel, BoundingBox bounds) {
         if (this.timePointNumber==1) timePoint=0;
         ImageIOCoordinates ioCoordinates = getImageIOCoordinates(timePoint, channel);
         ImageIOCoordinates ioCoords = ioCoordinates.duplicate();

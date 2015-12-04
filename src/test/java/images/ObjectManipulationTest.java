@@ -17,12 +17,19 @@
  */
 package images;
 
+import static TestUtils.GenerateSyntheticData.generateImages;
 import TestUtils.Utils;
+import boa.gui.objects.DBConfiguration;
+import dataStructure.configuration.Experiment;
+import dataStructure.configuration.Structure;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
 import image.BoundingBox;
+import image.Image;
 import image.ImageByte;
+import image.ImageLabeller;
 import image.ObjectFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -148,4 +155,26 @@ public class ObjectManipulationTest {
             assertTrue("voxel: "+i, expected.getVoxels().get(i).equals(actual.getVoxels().get(i)));
         }
     }
+    
+    @Test
+    public void testStoreObject() {
+        DBConfiguration db = new DBConfiguration("testdb");
+        db.clearObjectsInDB();
+        /*Experiment xp = new Experiment();
+        xp.getStructures().insert(new Structure("test"));
+        db.getXpDAO().store(xp);
+        */
+        //ImageByte[][] imagesTC = generateImages(null, null, 1, 1, 20);
+        //Object3D o3D = ImageLabeller.labelImage(imagesTC[0][0])[0];
+        StructureObject o = new StructureObject("f", 0, 0, 0, o1, null);
+        o.updateObjectContainer();
+        db.getDao().store(o);
+        db.getDao().clearCache();
+        o = db.getDao().getObject(o.getId());
+        Object3D o1Fetched = o.getObject();
+        assertEquals("object voxel number", o1.getVoxels().size(), o1Fetched.getVoxels().size());
+    }
+    /*public static void main(String[] args) {
+        new ObjectManipulationTest().testStoreObject();
+    }*/
 }

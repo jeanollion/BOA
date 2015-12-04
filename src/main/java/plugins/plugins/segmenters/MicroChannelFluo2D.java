@@ -81,7 +81,7 @@ public class MicroChannelFluo2D implements Segmenter {
                 objects = new ArrayList<Object3D>(0);
                 logger.debug("MicroChannelFluo2D: current timepoint: {}, reference timepoint: {} no objects found", parent.getTimePoint(), refTimePoint);
             } else {
-                ArrayList<? extends StructureObject> oos = ((StructureObject) ref).getChildObjects(structureIdx);
+                ArrayList<StructureObject> oos = ((StructureObject) ref).getChildren(structureIdx);
                 objects = new ArrayList<Object3D>(oos.size());
                 for (StructureObject o : oos) {
                     objects.add(o.getObject());
@@ -133,7 +133,7 @@ public class MicroChannelFluo2D implements Segmenter {
         // get all XCenters
         float[] xProj = ImageOperations.meanProjection(image, ImageOperations.Axis.X, null);
         ImageFloat imProjX = new ImageFloat("proj(X)", image.getSizeX(), new float[][]{xProj});
-        ImageInteger widthMask = threshold(imProjX, IJAutoThresholder.runThresholder(imProjX, null, AutoThresholder.Method.Otsu), true, false);
+        ImageInteger widthMask = threshold(imProjX, IJAutoThresholder.runThresholder(imProjX, null, AutoThresholder.Method.IsoData), true, false);
         Object3D[] objWidth = ImageLabeller.labelImage(widthMask);
 
         ArrayList<Object3D> res = new ArrayList<Object3D>(objWidth.length);
@@ -153,7 +153,7 @@ public class MicroChannelFluo2D implements Segmenter {
         return parameters;
     }
 
-    public boolean does3D() {
+    public boolean isTimeDependent() {
         return true;
     }
 

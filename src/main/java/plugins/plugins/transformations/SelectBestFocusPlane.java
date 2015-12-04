@@ -24,9 +24,11 @@ import dataStructure.containers.InputImages;
 import image.Image;
 import image.ImageOperations;
 import java.util.ArrayList;
+import java.util.Arrays;
 import plugins.Transformation;
 import plugins.TransformationTimeIndependent;
 import processing.ImageFeatures;
+import utils.ThreadRunner;
 
 /**
  *
@@ -45,27 +47,41 @@ public class SelectBestFocusPlane implements Transformation {
         return SelectionMode.SAME;
     }
 
-    public void computeConfigurationData(int channelIdx, InputImages inputImages) {
-        double scale = gradientScale.getValue().doubleValue();
-        for (int t = 0; t<inputImages.getTimePointNumber(); ++t) {
-            Image image = inputImages.getImage(channelIdx, t);
-            if (image.getSizeZ()==1) configurationData.add(0);
-            else {
-                ArrayList<Image> planes = image.splitZPlanes();
-                double maxValues = eval(planes.get(0), scale);
-                int max=0;
-                for (int z = 1; z<planes.size(); ++z) {
-                    double temp = eval(planes.get(z), scale);
-                    if (temp>maxValues) {
-                        maxValues = temp;
-                        max = z;
+    public void computeConfigurationData(final int channelIdx, final InputImages inputImages) {
+        final double scale = gradientScale.getValue().doubleValue();
+        final Integer[] conf = new Integer[inputImages.getTimePointNumber()];
+        if (inputImages.getSizeZ(channelIdx)>1) {
+            final ThreadRunner tr = new ThreadRunner(0, conf.length, 0);
+            for (int i = 0; i<tr.threads.length; i++) {
+                tr.threads[i] = new Thread(
+                    new Runnable() {
+                        public void run() { 
+                            for (int t = tr.ai.getAndIncrement(); t<tr.end; t = tr.ai.getAndIncrement()) {
+                                Image image = inputImages.getImage(channelIdx, t);
+                                if (image.getSizeZ()>1) {
+                                    ArrayList<Image> planes = image.splitZPlanes();
+                                    double maxValues = eval(planes.get(0), scale);
+                                    int max=0;
+                                    for (int z = 1; z<planes.size(); ++z) {
+                                        double temp = eval(planes.get(z), scale);
+                                        if (temp>maxValues) {
+                                            maxValues = temp;
+                                            max = z;
+                                        }
+                                    }
+                                    conf[t] = max;
+                                    logger.debug("select best focus plane: time:{}, plane: {}", t, max);
+                                }
+                            }
+                        }
                     }
-                }
-                configurationData.add(max);
-                logger.debug("select best focus plane: time:{}, plane: {}", t, max);
+                );
             }
+            tr.startAndJoin();
         }
+        configurationData.addAll(Arrays.asList(conf));
     }
+    
     
     private static double eval(Image plane, double scale) {
         Image gradient = ImageFeatures.getGradientMagnitude(plane, scale, false);

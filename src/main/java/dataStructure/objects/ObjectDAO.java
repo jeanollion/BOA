@@ -20,7 +20,7 @@ package dataStructure.objects;
 import dataStructure.configuration.*;
 import com.mongodb.MongoClient;
 import dataStructure.configuration.Experiment;
-import dataStructure.containers.ObjectContainerDB;
+import dataStructure.containers.ObjectContainerVoxelsDB;
 import dataStructure.objects.StructureObject;
 import static dataStructure.objects.StructureObject.logger;
 import de.caluga.morphium.DAO;
@@ -31,6 +31,7 @@ import de.caluga.morphium.query.Query;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -117,8 +118,8 @@ public class ObjectDAO extends DAO<StructureObject>{
         ArrayList<Integer> directChildren = this.getExperiment().getAllDirectChildren(structureIdx);
         // delete measurements
         List<StructureObject> children=null;
-        if (parent.hasChildren(structureIdx)) children = parent.getChildren(structureIdx);
-        else if (parent.getId()!=null) { // get only minimal information
+        if (parent !=null && parent.hasChildren(structureIdx)) children = parent.getChildren(structureIdx);
+        else if (parent!=null && parent.getId()!=null) { // get only minimal information
             Query<StructureObject> q = getQuery(parent.getId(), structureIdx);
             q.addReturnedField("measurements_id");
             q.addReturnedField("object_container");
@@ -128,8 +129,9 @@ public class ObjectDAO extends DAO<StructureObject>{
             for (StructureObject o : children) {
                 logger.debug("delete children: id {}, mes id {}", o.id, o.measurementsId);
                 o.dao=this; // in case it was retrieved from this method
+                o.parent=parent;
                 if (o.measurementsId!=null) measurementsDAO.delete(o.measurementsId);
-                if (o.objectContainer!=null && o.objectContainer instanceof ObjectContainerDB) o.objectContainer.deleteObject();
+                if (o.objectContainer!=null && o.objectContainer instanceof ObjectContainerVoxelsDB) o.objectContainer.deleteObject();
                 for (int s : directChildren) deleteChildren(o, s); // also delete all direct chilren
                 this.idCache.remove(o.getId()); // delete in cache:
             }
@@ -143,6 +145,31 @@ public class ObjectDAO extends DAO<StructureObject>{
         }*/
         // delete in ImageDAO
         this.xpDAO.getExperiment().getImageDAO().deleteChildren(parent, structureIdx);
+    }
+    
+    public void deleteObjectsFromFieldByStructure(String fieldName, int... structures) {
+        ArrayList<Integer> toDelete = new ArrayList<Integer>();
+        for (int s : structures) toDelete.addAll(this.getExperiment().getAllDirectChildren(s));
+        Utils.removeDuplicates(toDelete, false);
+        Collections.sort(toDelete, new Comparator<Integer>() {
+            public int compare(Integer arg0, Integer arg1) {
+                return Integer.compare(arg1, arg0); // reverse order
+            }
+        }); 
+        for (int s : toDelete ) {
+            Query<StructureObject> q = super.getQuery().f("field_name").eq(fieldName).f("structure_idx").eq(s);
+            q.addReturnedField("measurements_id");
+            q.addReturnedField("object_container");
+            q.addReturnedField("parent"); // for objects stored in localFileSystemDAO
+            List<StructureObject> children = q.asList();
+            for (StructureObject o : children) {
+                logger.debug("delete children: id {}, mes id {}", o.id, o.measurementsId);
+                o.dao=this; // in case it was retrieved from this method
+                if (o.measurementsId!=null) measurementsDAO.delete(o.measurementsId);
+                if (o.objectContainer!=null && o.objectContainer instanceof ObjectContainerVoxelsDB) o.objectContainer.deleteObject();
+                this.idCache.remove(o.getId()); // delete in cache:
+            }
+        }
     }
     
     public void deleteObjectsFromField(String fieldName) {
@@ -172,10 +199,12 @@ public class ObjectDAO extends DAO<StructureObject>{
     }
     
     public void delete(StructureObject o) {
+        if (o==null) return;
         if (o.getId()==null) this.waiteForWrites(); 
         if (o.getId()!=null) {
             morphium.delete(o);
             idCache.remove(o.getId());
+            //logger.debug("deleting: {}", o);
         }
         measurementsDAO.delete(o.getMeasurements());
         o.deleteMask();

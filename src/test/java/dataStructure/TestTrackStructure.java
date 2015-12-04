@@ -63,16 +63,16 @@ public class TestTrackStructure {
         ObjectDAO dao = new ObjectDAO(m, xpDAO);
         
         StructureObject[] rootT = new StructureObject[5];
-        for (int i = 0; i<rootT.length; ++i) rootT[i] = new StructureObject("field1", i, new BlankMask("", 1, 1, 1), xp, dao);
+        for (int i = 0; i<rootT.length; ++i) rootT[i] = new StructureObject("field1", i, new BlankMask("", 1, 1, 1), dao);
         Processor.trackRoot(Arrays.asList(rootT));
         dao.store(true, rootT);
         StructureObject[] mcT = new StructureObject[5];
-        for (int i = 0; i<mcT.length; ++i) mcT[i] = new StructureObject("field1", i, 0, 0, new Object3D(new BlankMask("", 1, 1, 1), 1), rootT[i], xp);
+        for (int i = 0; i<mcT.length; ++i) mcT[i] = new StructureObject("field1", i, 0, 0, new Object3D(new BlankMask("", 1, 1, 1), 1), rootT[i]);
         Processor.trackRoot(Arrays.asList(mcT));
         dao.store(true, mcT);
         StructureObject[][] bTM = new StructureObject[5][3];
         for (int t = 0; t<bTM.length; ++t) {
-            for (int j = 0; j<3; ++j) bTM[t][j] = new StructureObject("field1", t, 1, j, new Object3D(new BlankMask("", 1, 1, 1), j+1), mcT[t], xp);
+            for (int j = 0; j<3; ++j) bTM[t][j] = new StructureObject("field1", t, 1, j, new Object3D(new BlankMask("", 1, 1, 1), j+1), mcT[t]);
             //dao.store(bTM[i]);
         }
         for (int i= 1; i<mcT.length; ++i) bTM[i][0].setPreviousInTrack(bTM[i-1][0], false);

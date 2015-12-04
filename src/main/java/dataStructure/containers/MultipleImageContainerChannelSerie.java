@@ -21,6 +21,7 @@ import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
 import image.BoundingBox;
 import image.Image;
+import static image.Image.logger;
 import image.ImageIOCoordinates;
 import image.ImageReader;
 
@@ -43,6 +44,10 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
         this.timePointNumber = timePointNumber;
         this.reader=new ImageReader[imagePathC.length];
         this.sizeZC= sizeZC;
+    }
+    
+    public MultipleImageContainerChannelSerie duplicate() {
+        return new MultipleImageContainerChannelSerie(name, filePathC, timePointNumber, sizeZC);
     }
     
     public void setImagePath(String[] path) {
@@ -84,7 +89,8 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
     }
     
     @Override
-    public Image getImage(int timePoint, int channel) {
+    public synchronized Image getImage(int timePoint, int channel) {
+        //logger.debug("getImage calling thread: {}", Thread.currentThread());
         if (this.timePointNumber==1) timePoint=0;
         ImageIOCoordinates ioCoordinates = getImageIOCoordinates(timePoint);
         if (bounds!=null) ioCoordinates.setBounds(bounds);
@@ -98,7 +104,8 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
     }
     
     @Override
-    public Image getImage(int timePoint, int channel, BoundingBox bounds) {
+    public synchronized Image getImage(int timePoint, int channel, BoundingBox bounds) {
+        
         if (this.timePointNumber==1) timePoint=0;
         ImageIOCoordinates ioCoordinates = getImageIOCoordinates(timePoint);
         ImageIOCoordinates ioCoords = ioCoordinates.duplicate();

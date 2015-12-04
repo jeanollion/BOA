@@ -103,10 +103,12 @@ public class ThreadRunner {
             tr.threads[i] = new Thread(
                 new Runnable() {
                     public void run() { 
+                        action.setUp();
                         for (int idx = tr.ai.getAndIncrement(); idx<tr.end; idx = tr.ai.getAndIncrement()) {
                             action.run(array[idx]);
                             if (setToNull) array[idx]=null;
                         }
+                        action.tearDown();
                     }
                 }
             );
@@ -120,9 +122,11 @@ public class ThreadRunner {
             tr.threads[i] = new Thread(
                 new Runnable() {
                     public void run() { 
+                        action.setUp();
                         for (int idx = tr.ai.getAndIncrement(); idx<tr.end; idx = tr.ai.getAndIncrement()) {
                             action.run(array.get(idx));
                         }
+                        action.tearDown();
                     }
                 }
             );
@@ -131,7 +135,8 @@ public class ThreadRunner {
     }
     
     public static interface ThreadAction<T> {
+        public void setUp();
         public void run(T object);
+        public void tearDown();
     }
-    
 }

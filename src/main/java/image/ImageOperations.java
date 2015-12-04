@@ -429,7 +429,7 @@ public class ImageOperations {
             
     }
     
-    public static void fill(Image image, double value, BoundingBox area) {
+    public static void fill(Image image, double value, BoundingBox area) { // TODO: use System method
         if (area==null) area=image.getBoundingBox().translateToOrigin();
         for (int z= area.getzMin();z<=area.getzMax();++z) {
             for (int y = area.getyMin(); y<=area.getyMax(); y++) {
