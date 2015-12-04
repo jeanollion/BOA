@@ -39,6 +39,7 @@ import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Rectangle;
 import java.awt.Scrollbar;
 import java.awt.event.ActionEvent;
 import java.awt.event.AdjustmentEvent;
@@ -262,9 +263,9 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
             Roi roi = maskPlus.getRoi();
             if (roi!=null) {
                 //roi.setPosition(z+1+mask.getOffsetZ());
-                roi.setLocation(offset.getxMin(), offset.getyMin());
+                Rectangle bds = roi.getBounds();
+                roi.setLocation(bds.x+offset.getxMin(), bds.y+offset.getyMin());
                 if (is3D) roi.setPosition(z+1+offset.getzMin());
-                //roi.setPosition(0, z+1+offset.getzMin(), 0);
                 res.put(z+mask.getOffsetZ(), roi);
             }
         }

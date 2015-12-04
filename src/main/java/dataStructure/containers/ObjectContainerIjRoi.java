@@ -34,9 +34,12 @@ import ij.plugin.filter.Filler;
 import image.IJImageWrapper;
 import static image.Image.logger;
 import image.ImageByte;
+import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 
 /**
  *
@@ -45,7 +48,7 @@ import java.util.Map.Entry;
 @Embedded(polymorph = true)
 public class ObjectContainerIjRoi extends ObjectContainer {
     //@Transient HashMap<Integer, Roi> roiZTemp;
-    HashMap<String, byte[]> roiZ;
+    ArrayList<byte[]> roiZ;
     
     public ObjectContainerIjRoi(StructureObject structureObject) {
         super(structureObject);
@@ -61,20 +64,23 @@ public class ObjectContainerIjRoi extends ObjectContainer {
     }
 
     private void createRoi(Object3D object) {
-        HashMap<Integer, Roi> roiZTemp = IJImageWindowManager.getRoi(object.getMask(), object.getBounds(), object.is3D());
-        roiZ = new HashMap<String, byte[]>(roiZTemp.size());
-        for (Entry<Integer, Roi> e : roiZTemp.entrySet()) roiZ.put(e.getKey().toString(), RoiEncoder.saveAsByteArray(e.getValue()));
+        Map<Integer, Roi> roiZTemp = IJImageWindowManager.getRoi(object.getMask(), object.getBounds(), object.is3D());
+        roiZ = new ArrayList<byte[]>(roiZTemp.size());
+        roiZTemp = new TreeMap<Integer, Roi>(roiZTemp);
+        for (Entry<Integer, Roi> e : roiZTemp.entrySet()) roiZ.add(RoiEncoder.saveAsByteArray(e.getValue()));
     }
     
     private ImageByte getMask() {
         ImageStack stack = new ImageStack(bounds.getSizeX(), bounds.getSizeY(), bounds.getSizeZ());
-        for (Entry<String, byte[]> e : roiZ.entrySet()) {
-            int z = Integer.parseInt(e.getKey())-bounds.getzMin()+1;
-            Roi r = RoiDecoder.openFromByteArray(e.getValue());
+        int z= 1;
+        for (byte[] b : roiZ) {
+            Roi r = RoiDecoder.openFromByteArray(b);
             r.setPosition(z);
-            r.setLocation(0, 0);
+            Rectangle bds = r.getBounds();
+            r.setLocation(bds.x-bounds.getxMin(), bds.y-bounds.getyMin());
             stack.setProcessor(r.getMask(), z);
             //logger.debug("Roi: Z: {}, bounds: {}", z-1, r.getBounds());
+            ++z;
         }
         ImageByte res = (ImageByte) IJImageWrapper.wrap(new ImagePlus("MASK", stack));
         res.setCalibration(bounds.getImageProperties(structureObject.getScaleXY(), structureObject.getScaleZ())).addOffset(bounds);
