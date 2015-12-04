@@ -393,6 +393,7 @@ public class TestProcessBacteria {
             db.getExperiment().getStructure(1).setTrackCorrector(null);
             MicroscopyField f = db.getExperiment().getMicroscopyField(0);
             ArrayList<StructureObject> rootTrack = Processor.processAndTrackStructures(db.getExperiment(), f, db.getDao(), false, false, 0, 1);
+            db.getDao().waiteForWrites();
             int[] pathToStructure = db.getExperiment().getPathToRoot(1);
             int count = 0;
             for (StructureObject root : rootTrack) {

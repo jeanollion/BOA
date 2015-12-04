@@ -60,21 +60,28 @@ public class ObjectStoreAgent {
     public synchronized void storeObjects(List<StructureObject> list, boolean updateTrackLinks) {
         Job job = new StoreJob(list, updateTrackLinks);
         queue.add(job);
+        runThreadIfNecessary();
+    }
+    
+    private void runThreadIfNecessary() {
         if (thread==null || !thread.isAlive()) {        
             //logger.debug("StoreAgent: thread was not running, running thread.. state: {}, isInterrupted: {}", thread!=null?thread.getState():"null", thread!=null?thread.isInterrupted():null);
             createThread();
             thread.start();
         } //else logger.debug("StoreAgent: thread was already running..,  state: {}, isInterrupted: {}", thread!=null?thread.getState():"null", thread!=null?thread.isInterrupted():null);        
+
     }
     
     public synchronized void updateMeasurements(List<StructureObject> list) {
         Job job = new UpdateMeasurementJob(list);
         queue.add(job);
-        if (thread==null || !thread.isAlive()) {        
-            //logger.debug("StoreAgent: thread was not running, running thread.. state: {}, isInterrupted: {}", thread!=null?thread.getState():"null", thread!=null?thread.isInterrupted():null);
-            createThread();
-            thread.start();
-        } //else logger.debug("StoreAgent: thread was already running..,  state: {}, isInterrupted: {}", thread!=null?thread.getState():"null", thread!=null?thread.isInterrupted():null);        
+        runThreadIfNecessary();
+    }
+    
+    public synchronized void clearCache() {
+        Job j = new ClearCache();
+        queue.add(j);
+        runThreadIfNecessary();
     }
     
     public void join() {
@@ -113,6 +120,16 @@ public class ObjectStoreAgent {
         @Override
         public void executeJob() {
             dao.updateMeasurementsNow(objects);
+        }
+    }
+    private class ClearCache extends Job{
+
+        public ClearCache() {
+            super(null);
+        }
+        @Override
+        public void executeJob() {
+            dao.clearCacheNow();
         }
     }
 }

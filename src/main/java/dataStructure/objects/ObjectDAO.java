@@ -98,7 +98,10 @@ public class ObjectDAO extends DAO<StructureObject>{
     }
     
     public void clearCache() {
-        this.waiteForWrites();
+        agent.clearCache();
+    }
+    
+    public void clearCacheNow() {
         this.idCache=new HashMap<ObjectId, StructureObject>();
     }
     
