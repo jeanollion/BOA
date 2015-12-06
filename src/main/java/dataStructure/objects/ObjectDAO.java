@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.SwingUtilities;
 import org.bson.types.ObjectId;
 import utils.MorphiumUtils;
@@ -50,7 +51,7 @@ public class ObjectDAO extends DAO<StructureObject>{
     ExperimentDAO xpDAO;
     MeasurementsDAO measurementsDAO;
     RegionDAO regionDAO;
-    HashMap<ObjectId, StructureObject> idCache;
+    ConcurrentHashMap<ObjectId, StructureObject> idCache;
     final ObjectStoreAgent agent;
     
     public ObjectDAO(Morphium morphium, ExperimentDAO xpDAO) {
@@ -58,7 +59,7 @@ public class ObjectDAO extends DAO<StructureObject>{
         morphium.ensureIndicesFor(StructureObject.class);
         this.morphium=morphium;
         this.xpDAO=xpDAO;
-        idCache = new HashMap<ObjectId, StructureObject>();
+        idCache = new ConcurrentHashMap<ObjectId, StructureObject>();
         agent = new ObjectStoreAgent(this);
         measurementsDAO = new MeasurementsDAO(morphium);
         regionDAO = new RegionDAO(morphium);
@@ -97,12 +98,20 @@ public class ObjectDAO extends DAO<StructureObject>{
         } else return res;
     }
     
-    public void clearCache() {
-        agent.clearCache();
+    public void clearCacheLater(String fieldName) {
+        agent.clearCache(fieldName);
     }
     
-    public void clearCacheNow() {
-        this.idCache=new HashMap<ObjectId, StructureObject>();
+    void clearCacheNow(String fieldName) {
+        Iterator<Entry<ObjectId, StructureObject>> it = idCache.entrySet().iterator();
+        while(it.hasNext()) {
+            Entry<ObjectId, StructureObject> e = it.next();
+            if (e.getValue().fieldName.equals(fieldName)) idCache.remove(e.getKey());
+        }
+    }
+    
+    public void clearCache() {
+        this.idCache.clear();
     }
     
     protected ArrayList<StructureObject> checkAgainstCache(List<StructureObject> list) {

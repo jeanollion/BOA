@@ -78,8 +78,8 @@ public class ObjectStoreAgent {
         runThreadIfNecessary();
     }
     
-    public synchronized void clearCache() {
-        Job j = new ClearCache();
+    public synchronized void clearCache(String fieldName) {
+        Job j = new ClearCache(fieldName);
         queue.add(j);
         runThreadIfNecessary();
     }
@@ -123,13 +123,14 @@ public class ObjectStoreAgent {
         }
     }
     private class ClearCache extends Job{
-
-        public ClearCache() {
+        String fieldName;
+        public ClearCache(String fieldName) {
             super(null);
+            this.fieldName=fieldName;
         }
         @Override
         public void executeJob() {
-            dao.clearCacheNow();
+            dao.clearCacheNow(fieldName);
         }
     }
 }

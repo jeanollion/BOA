@@ -83,7 +83,6 @@ public class Processor {
     public static void preProcessImages(Experiment xp, ObjectDAO dao, boolean computeConfigurationData) {
         for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
             preProcessImages(xp.getMicroscopyField(i), dao, false, computeConfigurationData);
-            if (dao!=null) dao.clearCache();
         }
         if (dao!=null) dao.deleteAllObjects();
     }
@@ -115,7 +114,7 @@ public class Processor {
         for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
             logger.info("processing structures of Field: {}, total number of timePoint: {}...", xp.getMicroscopyField(i).getName(), xp.getMicroscopyField(i).getTimePointNumber());
             Processor.processAndTrackStructures(xp, xp.getMicroscopyField(i), dao, false, true);
-            if (dao!=null) dao.clearCache();
+            if (dao!=null) dao.clearCacheLater(xp.getMicroscopyField(i).getName());
         }
     }
     /**
@@ -389,7 +388,7 @@ public class Processor {
     public static void performMeasurements(Experiment xp, ObjectDAO dao) {
         for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
             performMeasurements(xp.getMicroscopyField(i).getName(), dao);
-            if (dao!=null) dao.clearCache();
+            if (dao!=null) dao.clearCacheLater(xp.getMicroscopyField(i).getName());
         }
     }
     
