@@ -83,23 +83,50 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
             }
 
             public void mousePressed(MouseEvent e) {
-                int x = e.getX();
-		int y = e.getY();
-		int offscreenX = canvas.offScreenX(x);
-		int offscreenY = canvas.offScreenY(y);
-                boolean ctrl = (e.getModifiers() & ActionEvent.CTRL_MASK) == ActionEvent.CTRL_MASK;
-                //logger.trace("mousepressed: x={}, y={} ctrl: {}", offscreenX, offscreenY, ctrl);
-                ImageObjectInterface i = getImageObjectInterface(image);
-                if (i!=null) {
-                    StructureObject o = i.getClickedObject(offscreenX, offscreenY, ip.getSlice()-1);
-                    selectObjects(image, ctrl, o);
-                    logger.trace("selected object: "+o);
-                    listener.fireObjectSelected(o, ctrl, i.isTimeImage());
-                } else logger.trace("no image interface found");
+                //logger.debug("mousepressed");
+                
             }
 
             public void mouseReleased(MouseEvent e) {
-                //logger.trace("mousereleased");
+                logger.debug("mousereleased");
+                if (IJ.getToolName().equals("zoom")) return;
+                boolean ctrl = (e.getModifiers() & ActionEvent.CTRL_MASK) == ActionEvent.CTRL_MASK;
+                ImageObjectInterface i = getImageObjectInterface(image);
+                if (i==null) {
+                    logger.trace("no image interface found");
+                    return;
+                }
+                Roi r = ip.getRoi();
+                BoundingBox selection = null;
+                if (r!=null) {
+                    Rectangle rect = r.getBounds();
+                    selection = new BoundingBox(rect.x, rect.x+rect.width, rect.y, rect.y+rect.height, ip.getSlice()-1, ip.getSlice()-1);
+                    if (selection.getSizeX()==0 && selection.getSizeY()==0) selection=null;
+                }
+                if (selection!=null) {
+                    logger.debug("selection: {}", selection);
+                    ArrayList<StructureObject> selectedObjects = new ArrayList<StructureObject>();
+                    i.addClickedObjects(selection, selectedObjects);
+                    logger.debug("selection: {}, number of objects: {}", selection, selectedObjects.size());
+                    selectObjects(image, ctrl, selectedObjects);
+                    listener.fireObjectSelected(selectedObjects, ctrl, i.isTimeImage());
+                } else {
+                    int x = e.getX();
+                    int y = e.getY();
+                    int offscreenX = canvas.offScreenX(x);
+                    int offscreenY = canvas.offScreenY(y);
+                    
+                    //logger.trace("mousepressed: x={}, y={} ctrl: {}", offscreenX, offscreenY, ctrl);
+
+                    StructureObject o = i.getClickedObject(offscreenX, offscreenY, ip.getSlice()-1);
+                    ArrayList<StructureObject> selectedObjects = new ArrayList<StructureObject>(1);
+                    selectedObjects.add(o);
+                    selectObjects(image, ctrl, selectedObjects);
+                    logger.trace("selected object: "+o);
+                    listener.fireObjectSelected(selectedObjects, ctrl, i.isTimeImage());
+                    
+                }
+                
             }
 
             public void mouseEntered(MouseEvent e) {
@@ -136,6 +163,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
         ImageObjectInterface i = getImageObjectInterface(image);
         if (i!=null) {
             Overlay overlay;
+            
             if (ip.getOverlay()!=null) {
                 overlay=ip.getOverlay();
                 if (!addToCurrentSelection) removeAllRois(overlay, false);

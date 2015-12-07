@@ -26,5 +26,5 @@ import image.Image;
  * @author jollion
  */
 public interface ObjectSplitter extends ImageProcessingPlugin {
-    public ObjectPopulation splitObject(Image input, Object3D object, boolean smooth, boolean invertedIntensities);
+    public ObjectPopulation splitObject(Image input, Object3D object, boolean invertedIntensities);
 }

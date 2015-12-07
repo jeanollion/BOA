@@ -254,7 +254,7 @@ public class TestProcessBacteria {
     }
     
     public void testSegBacteries() {
-        testCrop("/data/Images/Fluo/testsub");
+        testCrop("/data/Images/Fluo/testsub", false);
         
         Image image = xp.getMicroscopyField(0).getInputImages().getImage(0, 0);
         ArrayList<Object3D> objects = MicroChannelFluo2D.run(image, 350, 30, 5);
@@ -283,7 +283,7 @@ public class TestProcessBacteria {
         Image input = mc.getRawImage(1);
         ImageMask parentMask = mc.getMask();
         BacteriaFluo.debug=true;
-        ObjectPopulation pop = BacteriaFluo.run(input, parentMask, 0.03, 100, 10, 3, 40, 2, 1, 2);
+        ObjectPopulation pop = BacteriaFluo.run(input, parentMask, 0.03, 100, 10, 3, 40, 2, 1, 2, null);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
         disp.showImage(pop.getLabelImage());
@@ -325,7 +325,7 @@ public class TestProcessBacteria {
     public static ObjectPopulation testObjectSplitter(Image input, Object3D objectToSplit) {
         Image splitImage = input.crop(objectToSplit.getBounds());
         ImageInteger splitMask = objectToSplit.getMask();
-        return WatershedObjectSplitter.split(splitImage, splitMask);
+        return WatershedObjectSplitter.split(splitImage, splitMask, false);
     }
     
     public static void testSegBacteria(Image input, ImageMask parentMask) {

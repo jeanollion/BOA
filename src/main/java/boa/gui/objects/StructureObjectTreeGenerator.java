@@ -169,7 +169,9 @@ public class StructureObjectTreeGenerator {
     }
     
     public ArrayList<StructureObject> getSelectedObjects(boolean onlyFromSameStructureIdx) {
+        
         ArrayList<StructureObject> res = new ArrayList<StructureObject>(tree.getSelectionCount());
+        if (tree.getSelectionCount()==0) return res;
         int structureIdx = -1;
         for (TreePath p : tree.getSelectionPaths()) {
             if (p.getLastPathComponent() instanceof ObjectNode) {

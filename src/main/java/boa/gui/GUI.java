@@ -48,6 +48,7 @@ import java.io.File;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.logging.Level;
@@ -193,13 +194,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }
     
     // ImageObjectListener implementation
-    public void fireObjectSelected(StructureObject selectedObject, boolean addToSelection, boolean track) {
+    public void fireObjectSelected(List<StructureObject> selectedObjects, boolean addToSelection, boolean track) {
         if (track) {
             // selection de la track
             
         }
         // selection de l'objet dans l'arbre d'objets
-        objectTreeGenerator.selectObject(selectedObject, addToSelection);
+        if (!addToSelection ) objectTreeGenerator.selectObject(null, false);
+        for (StructureObject selectedObject : selectedObjects) objectTreeGenerator.selectObject(selectedObject, true);
         logger.trace("fire object selected");
     }
     

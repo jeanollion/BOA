@@ -32,6 +32,7 @@ import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plugins.ObjectSplitter;
+import processing.ImageFeatures;
 import static processing.PluginSequenceRunner.postFilterImage;
 import static processing.PluginSequenceRunner.preFilterImage;
 import static processing.PluginSequenceRunner.segmentImage;
@@ -466,7 +467,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public StructureObject split(ObjectSplitter splitter) { // in 2 objects
         // get cropped image
-        ObjectPopulation pop = splitter.splitObject(getFilteredImage(structureIdx),  getObject(), true, false);
+        Image image = ImageFeatures.gaussianSmooth(getFilteredImage(structureIdx), 2, 2, false);
+        ObjectPopulation pop = splitter.splitObject(image,  getObject(), false);
         if (pop==null) {
             this.flag=TrackFlag.correctionSplitError;
             logger.warn("split error: {}", this);

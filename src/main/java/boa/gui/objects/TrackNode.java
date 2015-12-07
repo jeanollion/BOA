@@ -253,6 +253,7 @@ public class TrackNode implements TreeNode, UIContainer {
                             Processor.processStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.getObjectDAO(), parents, null);
                             Processor.trackStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.getObjectDAO(), true, root.generator.getSelectedTrackHeads());
                             // reload tree
+                            root.generator.getObjectDAO().waiteForWrites();
                             root.generator.controller.updateParentTracks(root.generator.controller.getTreeIdx(trackHead.getStructureIdx()));
                             // reload objects
                             ImageWindowManagerFactory.getImageManager().reloadObjects(trackHead, structureIdx, true);
@@ -273,6 +274,7 @@ public class TrackNode implements TreeNode, UIContainer {
                             Experiment xp = root.generator.getExperiment();
                             Processor.trackStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.getObjectDAO(), true, root.generator.getSelectedTrackHeads());
                             // reload tree
+                            root.generator.getObjectDAO().waiteForWrites();
                             root.generator.controller.updateParentTracks(root.generator.controller.getTreeIdx(trackHead.getStructureIdx()));
                             // reload objects
                             ImageWindowManagerFactory.getImageManager().reloadObjects(trackHead, structureIdx, true);

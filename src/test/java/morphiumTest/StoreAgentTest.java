@@ -52,7 +52,7 @@ public class StoreAgentTest {
     }
     private static List<StructureObject> getList(StructureObject parent, int n) {
         List<StructureObject> list = new ArrayList<StructureObject>(n);
-        for (int i = 0; i<n; ++i) list.add(new StructureObject("test", i, 0, i%10, new Object3D(getVoxelList(100), 1, 1, 1), parent, null));
+        for (int i = 0; i<n; ++i) list.add(new StructureObject("test", i, 0, i%10, new Object3D(getVoxelList(100), 1, 1, 1), parent));
         return list;
     }
     private static ArrayList<Voxel> getVoxelList(int n ) {

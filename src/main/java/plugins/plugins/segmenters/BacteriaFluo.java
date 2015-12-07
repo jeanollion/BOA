@@ -232,7 +232,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
         if (dog==null || hessian==null) throw new Error("Segment method have to be called before split method");
         if (splitMask==null) splitMask = new ImageByte("split mask", dog);
         o.draw(splitMask, 1);
-        ObjectPopulation pop = WatershedObjectSplitter.split(dog, splitMask, false, true);
+        ObjectPopulation pop = WatershedObjectSplitter.split(dog, splitMask, true);
         o.draw(splitMask, 0);
         if (pop.getObjects().isEmpty() || pop.getObjects().size()==1) return Double.NaN;
         else {

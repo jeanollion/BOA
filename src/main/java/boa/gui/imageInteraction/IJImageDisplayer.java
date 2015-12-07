@@ -30,6 +30,7 @@ import i5d.cal.ChannelDisplayProperties;
 import i5d.gui.ChannelControl;
 import ij.ImageStack;
 import ij.WindowManager;
+import ij.gui.GUI;
 import ij.gui.ImageCanvas;
 import image.BoundingBox;
 import image.ImageByte;
@@ -37,6 +38,7 @@ import image.ImageFloat;
 import image.ImageShort;
 import image.TypeConverter;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.image.ColorModel;
 import java.util.HashMap;
@@ -84,6 +86,8 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         ImageCanvas ic = image.getCanvas();
         if (ic==null) return;
         ic.zoom100Percent();
+        logger.debug("zz");
+        IJ.runPlugIn("ij.plugin.Zoom", null);
         if (magnitude > 1) {
             for (int i = 0; i < (int) (magnitude + 0.5); i++) {
                 ic.zoomIn(image.getWidth() / 2, image.getHeight() / 2);
@@ -93,7 +97,18 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                 ic.zoomOut(image.getWidth() / 2, image.getHeight() / 2);
             }
         }
+        
+        /*Dimension d = image.getCanvas().getSize();
+        Rectangle max = GUI.getMaxWindowBounds();
+        logger.debug("zoom: max height: {}, image height: {}, current height: {}", max.height, image.getHeight(), d.height);
+        if (d.width < image.getWidth()) d.width=Math.min(max.width, image.getWidth());
+        if (d.height < image.getHeight()) d.width=Math.min(max.height, image.getHeight());
+        
+        image.getCanvas().setSize(d.width, d.height);*/
         image.updateAndDraw();
+        //logger.debug("window: {}", image.getWindow().getSize());
+        //image.getWindow().repaint();
+        
     }
     
     @Override public ImagePlus getImage(Image image) {

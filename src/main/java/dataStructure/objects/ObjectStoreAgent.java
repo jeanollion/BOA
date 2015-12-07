@@ -54,7 +54,8 @@ public class ObjectStoreAgent {
         long tStart = System.currentTimeMillis();
         job.executeJob();
         long tEnd = System.currentTimeMillis();
-        logger.debug("Job {} done: {} objects processed in {} ms", job.getClass().getSimpleName(), job.objects.size(), tEnd-tStart);
+        if (job.getClass()!=ClearCache.class) logger.debug("Job {} done: {} objects processed in {} ms", job.getClass().getSimpleName(), job.objects.size(), tEnd-tStart);
+        else logger.debug("ClearCache done: in {} ms", tEnd-tStart);
     }
     
     public synchronized void storeObjects(List<StructureObject> list, boolean updateTrackLinks) {

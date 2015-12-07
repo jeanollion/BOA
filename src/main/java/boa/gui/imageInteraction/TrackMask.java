@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import javax.swing.SwingUtilities;
@@ -95,6 +96,19 @@ public class TrackMask extends ImageObjectInterface {
         if (i<0) i=-i-2; // element inférieur à x puisqu'on compare les xmin des bounding box
         if (trackOffset[i].contains(x, y, z)) return trackObjects[i].getClickedObject(x, y, z);
         else return null;
+    }
+    
+    @Override
+    public void addClickedObjects(BoundingBox selection, List<StructureObject> list) {
+        if (is2D && selection.getSizeZ()>0) {
+            selection=new BoundingBox(selection.getxMin(), selection.getxMax(), selection.getyMin(), selection.getyMax(), 0, 0);
+        }
+        int iMin = Arrays.binarySearch(trackOffset, new BoundingBox(selection.getxMin(), selection.getxMin(), 0, 0, 0, 0), new bbComparatorX());
+        if (iMin<0) iMin=-iMin-2; // element inférieur à x puisqu'on compare les xmin des bounding box
+        int iMax = Arrays.binarySearch(trackOffset, new BoundingBox(selection.getxMax(), selection.getxMax(), 0, 0, 0, 0), new bbComparatorX());
+        if (iMax<0) iMax=-iMax-2; // element inférieur à x puisqu'on compare les xmin des bounding box
+        logger.debug("looking for objects from time: {} to time: {}", iMin, iMax);
+        for (int i = iMin; i<=iMax; ++i) trackObjects[i].addClickedObjects(selection, list);
     }
     
     public int getClosestTimePoint(int x) {

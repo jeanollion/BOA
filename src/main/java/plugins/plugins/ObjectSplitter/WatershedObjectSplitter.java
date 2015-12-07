@@ -40,13 +40,11 @@ import processing.WatershedTransform;
 public class WatershedObjectSplitter implements ObjectSplitter {
     static final boolean debug = false;
     //BoundedNumberParameter numberOfObjects = new BoundedNumberParameter("Maximum growth rate", 2, 1.5, 1, 2);
-    public ObjectPopulation splitObject(Image input, Object3D object, boolean smooth, boolean invertedIntensities) {
-        return split(input, object.getMask(), smooth, invertedIntensities);
+    public ObjectPopulation splitObject(Image input, Object3D object, boolean invertedIntensities) {
+        return split(input, object.getMask(), invertedIntensities);
     }
     
-    public static ObjectPopulation split(Image input, ImageMask mask, boolean smooth, boolean invertedIntensities) {
-        // TODO smooth in prefilters..
-        if (smooth) input = ImageFeatures.gaussianSmooth(input, 2, 2, false);
+    public static ObjectPopulation split(Image input, ImageMask mask, boolean invertedIntensities) {
         
         ImageByte localMax = Filters.localExtrema(input, null, !invertedIntensities, Filters.getNeighborhood(1, 1, input));
         ImageOperations.and(localMax, mask, localMax); // limit @ seeds within mask

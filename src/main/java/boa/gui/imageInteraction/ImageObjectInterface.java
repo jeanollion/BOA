@@ -23,6 +23,7 @@ import image.Image;
 import image.ImageInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  *
@@ -40,6 +41,7 @@ public abstract class ImageObjectInterface {
     public abstract ImageObjectInterfaceKey getKey();
     public abstract void reloadObjects();
     public abstract StructureObject getClickedObject(int x, int y, int z);
+    public abstract void addClickedObjects(BoundingBox selection, List<StructureObject> list);
     public abstract BoundingBox getObjectOffset(StructureObject object);
     public abstract ImageInteger generateImage();
     public abstract void draw(ImageInteger image);
