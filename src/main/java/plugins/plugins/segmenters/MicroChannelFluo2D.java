@@ -34,6 +34,9 @@ import image.ImageLabeller;
 import image.ImageOperations;
 import static image.ImageOperations.threshold;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import plugins.Segmenter;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import processing.Filters;
@@ -51,49 +54,27 @@ public class MicroChannelFluo2D implements Segmenter {
     NumberParameter channelHeight = new BoundedNumberParameter("MicroChannel Height (pixels)", 0, 350, 5, null);
     NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Width (pixels)", 0, 30, 5, null);
     NumberParameter yMargin = new BoundedNumberParameter("y-margin", 0, 5, 0, null);
-    Parameter[] parameters = new Parameter[]{channelHeight, channelWidth, yMargin};
+    BoundedNumberParameter refTimePoint = new BoundedNumberParameter("Reference time point", 0, 50, 0, null);
+    Parameter[] parameters = new Parameter[]{channelHeight, channelWidth, yMargin, refTimePoint};
     public static boolean debug = false;
 
     public MicroChannelFluo2D() {
     }
 
-    public MicroChannelFluo2D(int channelHeight, int channelWidth, int yMargin) {
+    public MicroChannelFluo2D(int channelHeight, int channelWidth, int yMargin, int refTimePoint) {
         this.channelHeight.setValue(channelHeight);
         this.channelWidth.setValue(channelWidth);
         this.yMargin.setValue(yMargin);
+        this.refTimePoint.setValue(refTimePoint);
     }
 
+    @Override
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        // TODO: sum sur tous les temps ou un subset des temps pour une meilleure precision?
-
-        // faire le calcul que pour le premier temps et copier les objets pour les temps suivants 
-        int refTimePoint = 0;
-        ArrayList<Object3D> objects;
-        if (parent.getTimePoint() == refTimePoint) {
-            objects = run(input, channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), yMargin.getValue().intValue());
-            logger.debug("MicroChannelFluo2D: current timepoint: {} segmented objects: {}, channelHeight: {}, channel width: {}, yMargin: {}", parent.getTimePoint(), objects.size(), channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), yMargin.getValue().intValue());
-        } else {
-            StructureObjectProcessing ref = parent;
-            while (ref.getTimePoint() > 0 && ref.getTimePoint() != refTimePoint) {
-                ref = (StructureObjectProcessing) ref.getPrevious();
-            }
-            if (ref.getTimePoint() != refTimePoint) {
-                objects = new ArrayList<Object3D>(0);
-                logger.debug("MicroChannelFluo2D: current timepoint: {}, reference timepoint: {} no objects found", parent.getTimePoint(), refTimePoint);
-            } else {
-                ArrayList<StructureObject> oos = ((StructureObject) ref).getChildren(structureIdx);
-                objects = new ArrayList<Object3D>(oos.size());
-                for (StructureObject o : oos) {
-                    objects.add(o.getObject());
-                }
-                logger.debug("MicroChannelFluo2D: current timepoint: {}, reference timepoint: {} copied objects: {}", parent.getTimePoint(), refTimePoint, objects.size());
-            }
-        }
-        return new ObjectPopulation(objects, input);
+        ObjectPopulation objects = run(input, channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), yMargin.getValue().intValue());
+        return objects;
     }
 
-    public static ArrayList<Object3D> run(Image image, int channelHeight, int channelWidth, int yMargin) {
-
+    public static ObjectPopulation run(Image image, int channelHeight, int channelWidth, int yMargin) {
         // get yStart
         float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null);
         ImageFloat imProjY = new ImageFloat("proj(Y)", image.getSizeY(), new float[][]{yProj});
@@ -146,15 +127,11 @@ public class MicroChannelFluo2D implements Segmenter {
             disp.showImage(imProjY.setName("imm proj Y"));
             disp.showImage(imProjX.setName("imm proj X"));
         }
-        return res;
+        return new ObjectPopulation(res, image);
     }
 
     public Parameter[] getParameters() {
         return parameters;
-    }
-
-    public boolean isTimeDependent() {
-        return true;
     }
 
 }

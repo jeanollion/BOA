@@ -66,7 +66,7 @@ public class DummySegmenter implements Segmenter {
         return new ObjectPopulation(objects, input);
     }
 
-    public boolean isTimeDependent() {
+    public boolean callOnlyOnTrackHeads() {
         return false;
     }
 

@@ -26,8 +26,10 @@ import dataStructure.objects.StructureObjectTracker;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import measurement.GeometricalMeasurements;
 import plugins.Tracker;
+import plugins.TrackerSegmenter;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparator;
 
 /**
@@ -110,8 +112,6 @@ public class ClosedMicrochannelTracker implements Tracker {
         return parameters;
     }
 
-    public boolean does3D() {
-        return true;
-    }
+    
     
 }

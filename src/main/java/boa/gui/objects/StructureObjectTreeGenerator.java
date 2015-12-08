@@ -152,6 +152,7 @@ public class StructureObjectTreeGenerator {
     private ArrayList<StructureObject> getObjectPath(StructureObject object) {
         ArrayList<StructureObject> res = new ArrayList<StructureObject>();
         res.add(object);
+        if (object.isRoot()) return res;
         while(!object.getParent().isRoot()) {
             res.add(object.getParent());
             object=object.getParent();

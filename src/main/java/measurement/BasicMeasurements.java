@@ -22,6 +22,7 @@ import dataStructure.objects.Voxel;
 import image.Image;
 import java.util.Collections;
 import java.util.List;
+import static plugins.Plugin.logger;
 
 /**
  *
@@ -38,8 +39,11 @@ public class BasicMeasurements {
     }
     public static double getMeanValue(List<Voxel> voxels, Image image) {
         double value=0;
-        for (Voxel v : voxels) value+=image.getPixel(v.x, v.y, v.z);
-        if (!voxels.isEmpty()) return value/voxels.size();
+        for (Voxel v : voxels) {
+            //if (v.x<0 || v.y<0 || v.z<0) logger.debug("negative vox: {}", v);
+            value+=image.getPixel(v.x, v.y, v.z);
+        }
+        if (!voxels.isEmpty()) return value/(double)voxels.size();
         else return 0;
     }
     public static double getSdValue(Object3D object, Image image) {

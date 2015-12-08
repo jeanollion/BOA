@@ -69,8 +69,6 @@ public class BacteriesFluo2D implements Segmenter {
         return run(input, parent.getMask(), splitValue, smoothScale, dogScale, logScale);
     }
     
-    @Override public boolean isTimeDependent() {return false;}
-    
     public static ObjectPopulation run(Image input, ImageMask mask, double splitThreshold, double smoothScale, double dogScale, double logScale) {
         
         // filtrage: 

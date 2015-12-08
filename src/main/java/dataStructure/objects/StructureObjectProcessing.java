@@ -4,6 +4,8 @@ import image.Image;
 
 public interface StructureObjectProcessing extends StructureObjectPreProcessing {
 
-    public Image getFilteredImage(int structureIdx);
+    public Image getRawImage(int structureIdx);
     @Override public StructureObjectProcessing getNext();
+    @Override public StructureObjectProcessing getPrevious();
+    public void setChildren(ObjectPopulation children, int structureIdx);
 }

@@ -1,5 +1,6 @@
 package dataStructure.objects;
 
+import static dataStructure.objects.Object3D.logger;
 import java.util.Comparator;
 
 
@@ -41,14 +42,16 @@ public class Voxel implements Comparable<Voxel> {
         return "Voxel3D{" + "x=" + x + ", y=" + y + ", z=" + z + ", value=" + value + '}';
     }
 
-    public Voxel copy() {
+    public Voxel duplicate() {
         return new Voxel(x, y, z);
     }
 
     public Voxel translate(int dX, int dY, int dZ) {
+        //if ((x+dX)<0) logger.debug("voxel neg: dX: {}, v: {}", dX, this);
         x+=dX;
         y+=dY;
         z+=dZ;
+        
         return this;
     }
     

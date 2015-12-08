@@ -83,6 +83,7 @@ public class ObjectStoreAgent {
         Job j = new ClearCache(fieldName);
         queue.add(j);
         runThreadIfNecessary();
+        logger.debug("ClearCache job added");
     }
     
     public void join() {

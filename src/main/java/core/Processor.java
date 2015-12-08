@@ -26,6 +26,7 @@ import dataStructure.containers.InputImagesImpl;
 import dataStructure.containers.MultipleImageContainer;
 import dataStructure.containers.MultipleImageContainerSingleFile;
 import dataStructure.objects.ObjectDAO;
+import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import static dataStructure.objects.StructureObject.TrackFlag.correctionMergeToErase;
 import dataStructure.objects.StructureObjectTrackCorrection;
@@ -33,6 +34,7 @@ import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -44,9 +46,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plugins.Measurement;
 import plugins.ObjectSplitter;
+import plugins.ProcessingScheme;
+import plugins.Segmenter;
 import plugins.TrackCorrector;
 import plugins.Tracker;
 import plugins.Transformation;
+import plugins.plugins.processingScheme.SegmentOnly;
 import utils.ThreadRunner;
 import utils.ThreadRunner.ThreadAction;
 import utils.Utils;
@@ -157,8 +162,8 @@ public class Processor {
                         if (!structure.hasTracker() && dao!=null && storeObjects) dao.store(segmentedObjects, false, false);
                     }
                 };
-                if (!structure.getProcessingChain().getSegmenter().isTimeDependent()) ThreadRunner.execute(root, ta);
-                else for (StructureObject o : root) ta.run(o);
+                ThreadRunner.execute(root, ta);
+                
                 /*ArrayList<StructureObject> segmentedObjects=null;
                 for (StructureObject r : root) { // segment
                     if (!structure.hasTracker()) segmentedObjects = new ArrayList<StructureObject> ();
@@ -198,12 +203,13 @@ public class Processor {
         return root;
     }
     
+    
     public static void trackStructure(final int structureIdx, Experiment xp, MicroscopyField field, final ObjectDAO dao, final boolean updateTrackAttributes, List<StructureObject> parentObjects) { // objects are already stored -> have an ID
         if (xp.getStructure(structureIdx).hasTracker()) { // structure
             logger.info("tracking structure: {}...", structureIdx);
             final Structure structure = xp.getStructure(structureIdx);
             //ArrayList<StructureObject> modifiedObjectsCorrection = updateTrackAttributes&&structure.hasTrackCorrector()?new ArrayList<StructureObject>() : null;
-            if (parentObjects==null) {
+            if (parentObjects==null || parentObjects.isEmpty()) {
                 StructureObject root0 = dao.getRoot(field.getName(), 0);
                 parentObjects = StructureObjectUtils.getAllParentObjects(root0, xp.getPathToRoot(structureIdx), dao);
             }
@@ -292,7 +298,9 @@ public class Processor {
             logger.info("Segmenting structure: {} timePoint: {} number of parents: {}", structureIdx, parent.getTimePoint(), allParents.size());
             for (StructureObject localParent : allParents) {
                 if (dao!=null) dao.deleteChildren(localParent, structureIdx);
-                localParent.segmentChildren(structureIdx);
+                Segmenter s = localParent.getExperiment().getStructure(structureIdx).getProcessingChain().getSegmenter();
+                ObjectPopulation o = s.runSegmenter(localParent.getRawImage(structureIdx), structureIdx, localParent);
+                localParent.setChildren(o, structureIdx);
                 segmentedObjects.addAll(localParent.getChildren(structureIdx));
                 //if (dao!=null) dao.store(localParent.getChildren(structureIdx));
                 if (logger.isDebugEnabled()) logger.debug("Segmenting structure: {} from parent: {} number of objects: {}", structureIdx, localParent, localParent.getChildObjects(structureIdx).size());
@@ -306,12 +314,15 @@ public class Processor {
         // get all parent objects of the structure
         ArrayList<StructureObject> allParents = StructureObjectUtils.getAllParentObjects(parent, parent.getExperiment().getPathToStructure(parent.getStructureIdx(), structureIdx), dao);
         //logger.info("Segmenting structure: {}, timePoint: {}, number of parents: {}...", structureIdx, parent.getTimePoint(), allParents.size());
+        
+        // multithread a ce niveau? 
         for (StructureObject localParent : allParents) {
             if (dao!=null && deleteObjects) dao.deleteChildren(localParent, structureIdx);
-            localParent.segmentChildren(structureIdx);
+            Segmenter s = localParent.getExperiment().getStructure(structureIdx).getProcessingChain().getSegmenter();
+            ObjectPopulation o = s.runSegmenter(localParent.getRawImage(structureIdx), structureIdx, localParent);
+            localParent.setChildren(o, structureIdx);
             //if (dao!=null) dao.store(localParent.getChildren(structureIdx));
             if (segmentedObjects!=null) segmentedObjects.addAll(localParent.getChildren(structureIdx));
-            //if (logger.isDebugEnabled()) logger.debug("Segmented structure: {} from parent: {} number of objects: {}", structureIdx, localParent, localParent.getChildObjects(structureIdx).size());
         }
     }
     
@@ -366,7 +377,7 @@ public class Processor {
                 if (dao!=null && removeMergedObjectFromDAO) { // delete merged objects before relabel to avoid collapse in case of objects stored in images...
                     if (o.getId()==null) dao.waiteForWrites();
                     logger.debug("removing object: {}, id: {}", o, o.getId());
-                    dao.delete(o);
+                    dao.delete(o, false);
                     it.remove();
                 }
             }
@@ -381,6 +392,34 @@ public class Processor {
     }
     protected static void relabelParents(HashSet<StructureObject> parentsToRelabel, int childStructureIdx, ArrayList<StructureObject> modifiedObjects) {
         for (StructureObject parent : parentsToRelabel) parent.relabelChildren(childStructureIdx, modifiedObjects);
+    }
+    
+    // processing-related methods
+    
+    public static void executeProcessingScheme(List<StructureObject> parentTrack, final int structureIdx, final boolean trackOnly) {
+        if (parentTrack.isEmpty()) return;
+        final ObjectDAO dao = parentTrack.get(0).getDAO();
+        Experiment xp = parentTrack.get(0).getExperiment();
+        final ProcessingScheme ps = xp.getStructure(structureIdx).getProcessingScheme();
+        if (xp.getStructure(structureIdx).getParentStructure()==-1) { // parents = roots
+            execute(ps, structureIdx, parentTrack, trackOnly, dao);
+        } else {
+            HashMap<StructureObject, ArrayList<StructureObject>> allParentTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
+            // one thread per track
+            ThreadAction<ArrayList<StructureObject>> ta = new ThreadAction<ArrayList<StructureObject>>() {
+                public void run(ArrayList<StructureObject> pt) {
+                    execute(ps, structureIdx, pt, trackOnly, dao);
+                }
+                public void setUp() {}
+                public void tearDown() {}
+            };
+            ThreadRunner.execute(new ArrayList<ArrayList<StructureObject>> (allParentTracks.values()), ta);
+        }
+    }
+    private static void execute(ProcessingScheme ps, int structureIdx, List<StructureObject> parentTrack, boolean trackOnly, ObjectDAO dao) {
+        if (trackOnly) ps.trackOnly(structureIdx, parentTrack);
+        else ps.segmentAndTrack(structureIdx, parentTrack);
+        for (StructureObject p : parentTrack) dao.store(p.getChildren(structureIdx), !(ps instanceof SegmentOnly), false);
     }
     
     // measurement-related methods
@@ -405,6 +444,8 @@ public class Processor {
             @Override public void tearDown() {};
             @Override
             public void run(StructureObject root) {
+                long t0 = System.currentTimeMillis();
+                logger.debug("running measurements on: {}", root);
                 List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
                 for(Entry<Integer, List<Measurement>> e : measurements.entrySet()) {
                     int structureIdx = e.getKey();
@@ -417,10 +458,14 @@ public class Processor {
                         }
                     }
                 }
+                long t1 = System.currentTimeMillis();
+                logger.debug("running measurements on: {}, time elapsed: {}ms", root, t1-t0);
                 if (dao!=null && !modifiedObjects.isEmpty()) dao.updateMeasurements(modifiedObjects);
             }
         });
         long t1 = System.currentTimeMillis();
         logger.debug("measurements on field: {}: time: {}", fieldName, t1-t0);
+        dao.waiteForWrites();
+        dao.clearCache();
     }
 }

@@ -24,6 +24,8 @@ import dataStructure.objects.StructureObject;
 import java.util.List;
 import plugins.ProcessingScheme;
 import plugins.Segmenter;
+import utils.ThreadRunner;
+import utils.ThreadRunner.ThreadAction;
 
 /**
  *
@@ -33,17 +35,20 @@ public class SegmentOnly implements ProcessingScheme {
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, false);
     Parameter[] parameters= new Parameter[]{segmenter};
     
-    public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack) {
-        for (StructureObject parent : parentTrack) {
-            Segmenter s = segmenter.instanciatePlugin();
-            ObjectPopulation pop = s.runSegmenter(parent.getRawImage(structureIdx), structureIdx, parent);
-            parent.setChildren(pop, structureIdx);
-        }
+    @Override public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack) {
+        ThreadAction<StructureObject> ta = new ThreadAction<StructureObject>() {
+            @Override public void run(StructureObject parent) {
+                Segmenter s = segmenter.instanciatePlugin();
+                ObjectPopulation pop = s.runSegmenter(parent.getRawImage(structureIdx), structureIdx, parent);
+                parent.setChildren(pop, structureIdx);
+            }
+            @Override public void setUp() {}
+            @Override public void tearDown() {}
+        };
+        ThreadRunner.execute(parentTrack, ta);
     }
 
-    public void trackOnly(int structureIdx, List<StructureObject> parentTrack) {
-        
-    }
+    @Override public void trackOnly(int structureIdx, List<StructureObject> parentTrack) {}
 
     public Parameter[] getParameters() {
         return parameters;

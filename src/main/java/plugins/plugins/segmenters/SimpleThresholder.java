@@ -85,5 +85,4 @@ public class SimpleThresholder implements Segmenter {
         return new Parameter[]{threshold};
     }
 
-    @Override public boolean isTimeDependent() {return false;}
 }

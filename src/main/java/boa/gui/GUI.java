@@ -123,27 +123,29 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }
     
     public void setDBConnection(String dbName, String hostname) {
+        long t0 = System.currentTimeMillis();
         Morphium m=MorphiumUtils.createMorphium(hostname, 27017, dbName);
+        long t1 = System.currentTimeMillis();
         if (m==null) return;
-        logger.info("Connection established with db: {} @ host: {}", dbName, hostName);
+        logger.info("Connection established with db: {} @ host: {}, in {} ms", dbName, hostName, t1-t0);
         setDBConnection(m);
     }
     
     public void setDBConnection(Morphium m) {
         if (m==null) return;
         this.db = new DBConfiguration(m);
+        db.getExperiment();
         if (db.getExperiment()==null) {
             logger.warn("no experiment found in DB, using dummy experiment");
             Experiment xp = new Experiment("xp test UI");
             db.getXpDAO().store(xp);
             db.getXpDAO().clearCache();
-        } else logger.info("Experiment found: {}", db.getExperiment().getName());
-        
+        } else logger.info("Experiment found: {} in {} (dao in: {})", db.getExperiment().getName(), t11-t1, t1-t0);
         configurationTreeGenerator = new ConfigurationTreeGenerator(db.getXpDAO());
         configurationJSP.setViewportView(configurationTreeGenerator.getTree());
         populateActionStructureList();
         populateActionMicroscopyFieldList();
-        loadObjectTrees();
+        reloadTree=true;
     }
     
     protected void loadObjectTrees() {
@@ -349,6 +351,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         actionMicroscopyFieldList = new javax.swing.JList();
         extractMeasurements = new javax.swing.JButton();
         performMeasurements = new javax.swing.JButton();
+        trackActionButton = new javax.swing.JButton();
         ConfigurationPanel = new javax.swing.JPanel();
         configurationJSP = new javax.swing.JScrollPane();
         DataPanel = new javax.swing.JPanel();
@@ -439,6 +442,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
+        trackActionButton.setText("Track");
+        trackActionButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                trackActionButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout actionPanelLayout = new javax.swing.GroupLayout(actionPanel);
         actionPanel.setLayout(actionPanelLayout);
         actionPanelLayout.setHorizontalGroup(
@@ -448,7 +458,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(actionPanelLayout.createSequentialGroup()
                         .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(segmentButton)
+                            .addGroup(actionPanelLayout.createSequentialGroup()
+                                .addComponent(segmentButton)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(trackActionButton))
                             .addGroup(actionPanelLayout.createSequentialGroup()
                                 .addComponent(preProcessButton)
                                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -486,7 +499,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                             .addComponent(preProcessButton)
                             .addComponent(reProcess))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(segmentButton)
+                        .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(segmentButton)
+                            .addComponent(trackActionButton))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addComponent(performMeasurements))
                     .addGroup(actionPanelLayout.createSequentialGroup()
@@ -826,7 +841,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 res.merge(toMerge);
                 siblings.remove(toMerge);
             }
-            db.getDao().delete(sel);
+            db.getDao().delete(sel, false);
             ArrayList<StructureObject> modified = new ArrayList<StructureObject>(siblings.size());
             modified.add(res);
             res.getParent().relabelChildren(res.getStructureIdx(), modified);
@@ -888,7 +903,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
             Utils.removeDuplicates(parents, false);
             logger.info("Deleting {} objects, from {} parents", sel.size(), parents.size());
-            db.getDao().delete(sel);
+            db.getDao().delete(sel, true);
             ArrayList<StructureObject> modified = new ArrayList<StructureObject>();
             for (StructureObject p : parents) p.relabelChildren(structureIdx, modified);
             db.getDao().store(modified, false, false);
@@ -902,6 +917,19 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             for (StructureObject p : parents) ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
         }
     }//GEN-LAST:event_deleteObjectsButtonActionPerformed
+
+    private void trackActionButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_trackActionButtonActionPerformed
+        if (!checkConnection()) return;
+        int[] selectedStructures = this.getSelectedStructures(true);
+        for (int i : this.getSelectedMicroscopyFields()) {
+            for (int s : selectedStructures) { 
+                Processor.trackStructure(s, db.getExperiment(), db.getExperiment().getMicroscopyField(i), db.getDao(), true);
+            }
+            db.getDao().clearCacheLater(db.getExperiment().getMicroscopyField(i).getName());
+        }
+        db.getDao().waiteForWrites();
+        reloadTree=true;
+    }//GEN-LAST:event_trackActionButtonActionPerformed
 
     public static DBConfiguration getDBConnection() {
         if (getInstance()==null) return null;
@@ -985,6 +1013,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JToggleButton selectContainingTrackToggleButton;
     private javax.swing.JButton splitObjectButton;
     private javax.swing.JScrollPane structureJSP;
+    private javax.swing.JButton trackActionButton;
     private javax.swing.JComboBox trackStructureJCB;
     private javax.swing.JPanel trackSubPanel;
     // End of variables declaration//GEN-END:variables

@@ -210,20 +210,22 @@ public class ObjectDAO extends DAO<StructureObject>{
         measurementsDAO.deleteAllObjects();
     }
     
-    public void delete(StructureObject o) {
+    public void delete(StructureObject o, boolean deleteChildren) {
         if (o==null) return;
         if (o.getId()==null) this.waiteForWrites(); 
+        if (deleteChildren) for (int s : o.getExperiment().getChildStructures(o.getStructureIdx())) this.deleteChildren(o, s);
         if (o.getId()!=null) {
             morphium.delete(o);
             idCache.remove(o.getId());
             //logger.debug("deleting: {}", o);
+            
         }
         measurementsDAO.delete(o.getMeasurements());
         o.deleteMask();
     }
     
-    public void delete(ArrayList<StructureObject> list) {
-        for (StructureObject o : list ) delete(o); // TODO see if morphium has optimized batched operation, or do on another thread;
+    public void delete(ArrayList<StructureObject> list, boolean deleteChildren) {
+        for (StructureObject o : list ) delete(o, deleteChildren); // TODO see if morphium has optimized batched operation, or do on another thread;
     }
     
     public void store(StructureObject object) {
@@ -245,6 +247,7 @@ public class ObjectDAO extends DAO<StructureObject>{
         logger.debug("wait for writes done.");
     }
     public void store(final List<StructureObject> objects, final boolean updateTrackAttributes, boolean removeDuplicatesAndSortIfNecessary) {
+        if (objects==null || objects.isEmpty()) return;
         if (removeDuplicatesAndSortIfNecessary) {
             Utils.removeDuplicates(objects, false);
             if (updateTrackAttributes) Collections.sort(objects, Utils.getStructureObjectComparator());

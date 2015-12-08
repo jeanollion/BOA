@@ -35,7 +35,7 @@ import utils.Utils;
  */
 
 @Entity
-@Index(value={"field_name", "structure_idx", "is_track_head",  "time_point"})
+@Index(value={"field_name", "structure_idx"})
 public class Measurements implements Comparable<Measurements>{
     protected @Id ObjectId id;
     protected String fieldName;

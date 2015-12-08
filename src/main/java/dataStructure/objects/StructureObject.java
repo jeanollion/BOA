@@ -33,14 +33,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plugins.ObjectSplitter;
 import processing.ImageFeatures;
-import static processing.PluginSequenceRunner.postFilterImage;
-import static processing.PluginSequenceRunner.preFilterImage;
-import static processing.PluginSequenceRunner.segmentImage;
 import utils.SmallArray;
 
 @Lifecycle
 @Entity(collectionName = "Objects")
-@Index(value={"field_name, time_point, structure_idx", "parent,structure_idx,idx", "track_head_id, time_point", "is_track_head, parent_track_head_id, structure_idx, time_point, idx"})
+@Index(value={"field_name, structure_idx, time_point", "parent"})
 public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker, StructureObjectTrackCorrection {
     public enum TrackFlag{trackError, correctionMerge, correctionMergeToErase, correctionSplit, correctionSplitNew, correctionSplitError};
     public final static Logger logger = LoggerFactory.getLogger(StructureObject.class);
@@ -50,7 +47,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected String fieldName;
     protected int structureIdx;
     protected int idx;
-    @Transient protected SmallArray<ArrayList<StructureObject>> childrenSM=new SmallArray<ArrayList<StructureObject>>(); //maps structureIdx to Children (equivalent to hashMap)
+    @Transient protected final SmallArray<ArrayList<StructureObject>> childrenSM=new SmallArray<ArrayList<StructureObject>>(); //maps structureIdx to Children (equivalent to hashMap)
     @Transient protected ObjectDAO dao;
     
     // track-related attributes
@@ -67,7 +64,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     @Transient private boolean objectModified=false;
     protected ObjectContainer objectContainer;
     @Transient protected SmallArray<Image> rawImagesC=new SmallArray<Image>();
-    @Transient protected SmallArray<Image> preProcessedImageS=new SmallArray<Image>();
+    //@Transient protected SmallArray<Image> preProcessedImageS=new SmallArray<Image>();
     
     // measurement-related attributes
     protected ObjectId measurementsId;
@@ -156,19 +153,23 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         ArrayList<StructureObject> res= this.childrenSM.get(structureIdx);
         if (res==null) {
             if (getExperiment().isDirectChildOf(this.structureIdx, structureIdx)) { // direct child
-                if (dao!=null) {
-                    res = dao.getObjects(id, structureIdx);
-                    setChildren(res, structureIdx);
-                } else logger.debug("getChildObjects called on {} but DAO null, cannot retrieve objects", this);
-                return res;
+                synchronized(childrenSM) {
+                    res= this.childrenSM.get(structureIdx);
+                    if (res==null) {
+                        if (dao!=null) {
+                            res = dao.getObjects(id, structureIdx);
+                            setChildren(res, structureIdx);
+                        } else logger.debug("getChildObjects called on {} but DAO null, cannot retrieve objects", this);
+                    }
+                    return res; 
+                }
             }
             else { // indirect child
                 int[] path = getExperiment().getPathToStructure(this.getStructureIdx(), structureIdx);
-                if (path.length == 0) {
-                    logger.debug("getChildObjects called on {} but structure: {} is no an (indirect) child of the object's structure", this, structureIdx);
+                if (path.length == 0) { // structure is not (indirect) child of current structure
+                    logger.error("getChildObjects called on {} but structure: {} is no an (indirect) child of the object's structure", this, structureIdx);
                     return null;
-                } // structure is not (indirect) child of current structure
-                return StructureObjectUtils.getAllObjects(this, path);
+                } else return StructureObjectUtils.getAllObjects(this, path);
             }
         }else return res;
     }
@@ -295,8 +296,21 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     public StructureObject getNext() {
-        //if (next==null) return null;
-        //next.callLazyLoading();
+        if (next==null) {
+            synchronized(this) {
+                if (next==null) {
+                    if (isRoot()) {
+                        next = dao.getRoot(fieldName, timePoint+1);
+                    } else {
+                        ArrayList<StructureObject> nextSiblings = getParent().getNext().getChildren(structureIdx);
+                        for (StructureObject o : nextSiblings) if (o.getPrevious()==this) {
+                            next = o;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
         return next;
     }
     
@@ -467,7 +481,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public StructureObject split(ObjectSplitter splitter) { // in 2 objects
         // get cropped image
-        Image image = ImageFeatures.gaussianSmooth(getFilteredImage(structureIdx), 2, 2, false);
+        Image image = ImageFeatures.gaussianSmooth(getRawImage(structureIdx), 2, 2, false);
         ObjectPopulation pop = splitter.splitObject(image,  getObject(), false);
         if (pop==null) {
             this.flag=TrackFlag.correctionSplitError;
@@ -475,7 +489,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             return null;
         }
         // first object returned by splitter is updated to current structureObject
-        pop.addOffset(this.getBounds());
+        pop.addOffset(this.getBounds(), false);
         objectModified=true;
         this.object=pop.getObjects().get(0).setLabel(idx+1);
         flushImages();
@@ -502,7 +516,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     // object- and image-related methods
     public Object3D getObject() {
-        if (object==null) object=objectContainer.getObject();
+        if (object==null) {
+            synchronized(this) {
+                if (object==null) {
+                    object=objectContainer.getObject();
+                }
+            }
+        }
         return object;
     }
     public ImageProperties getMaskProperties() {return getObject().getImageProperties();}
@@ -528,19 +548,23 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public Image getRawImage(int structureIdx) {
         int channelIdx = getExperiment().getChannelImageIdx(structureIdx);
         if (rawImagesC.get(channelIdx)==null) { // chercher l'image chez le parent avec les bounds
-            if (isRoot()) {
-                if (rawImagesC.getAndExtend(channelIdx)==null) rawImagesC.set(getExperiment().getImageDAO().openPreProcessedImage(channelIdx, timePoint, fieldName), channelIdx);
-            } else {
-                StructureObject parentWithImage=getFirstParentWithOpenedRawImage(structureIdx);
-                if (parentWithImage!=null) {
-                    BoundingBox bb=getRelativeBoundingBox(parentWithImage);
-                    extendBoundsInZIfNecessary(channelIdx, bb);
-                    rawImagesC.set(parentWithImage.getRawImage(structureIdx).crop(bb), channelIdx);
-                } else { // opens only the bb of the object from the root objects
-                    StructureObject root = getRoot();
-                    BoundingBox bb=getRelativeBoundingBox(root);
-                    extendBoundsInZIfNecessary(channelIdx, bb);
-                    rawImagesC.set(root.openRawImage(structureIdx, bb), channelIdx);
+            synchronized(rawImagesC) {
+                if (rawImagesC.get(channelIdx)==null) {
+                    if (isRoot()) {
+                        if (rawImagesC.getAndExtend(channelIdx)==null) rawImagesC.set(getExperiment().getImageDAO().openPreProcessedImage(channelIdx, timePoint, fieldName), channelIdx);
+                    } else {
+                        StructureObject parentWithImage=getFirstParentWithOpenedRawImage(structureIdx);
+                        if (parentWithImage!=null) {
+                            BoundingBox bb=getRelativeBoundingBox(parentWithImage);
+                            extendBoundsInZIfNecessary(channelIdx, bb);
+                            rawImagesC.set(parentWithImage.getRawImage(structureIdx).crop(bb), channelIdx);
+                        } else { // opens only the bb of the object from the root objects
+                            StructureObject root = getRoot();
+                            BoundingBox bb=getRelativeBoundingBox(root);
+                            extendBoundsInZIfNecessary(channelIdx, bb);
+                            rawImagesC.set(root.openRawImage(structureIdx, bb), channelIdx);
+                        }
+                    }
                 }
             }
         }
@@ -562,7 +586,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public Image openRawImage(int structureIdx, BoundingBox bounds) {
         int channelIdx = getExperiment().getChannelImageIdx(structureIdx);
-        
         if (rawImagesC.get(channelIdx)==null) return getExperiment().getImageDAO().openPreProcessedImage(channelIdx, timePoint, fieldName, bounds); //opens only within bounds
         else return rawImagesC.get(channelIdx).crop(bounds);
     }
@@ -590,7 +613,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return res;
     }
     
-    public Image getFilteredImage(int structureIdx) {
+    /*public Image getFilteredImage(int structureIdx) {
         if (preProcessedImageS.get(structureIdx)==null) createPreFilterImage(structureIdx);
         return preProcessedImageS.get(structureIdx);
     }
@@ -598,13 +621,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public void createPreFilterImage(int structureIdx) {
         Image raw = getRawImage(structureIdx);
         if (raw!=null) preProcessedImageS.set(preFilterImage(getRawImage(structureIdx), this, getExperiment().getStructure(structureIdx).getProcessingChain().getPrefilters()), structureIdx);
-    }
+    }*/
     
     public void flushImages() {
-        for (int i = 0; i<preProcessedImageS.getBucketSize(); ++i) preProcessedImageS.setQuick(null, i);
+        //for (int i = 0; i<preProcessedImageS.getBucketSize(); ++i) preProcessedImageS.setQuick(null, i);
         for (int i = 0; i<rawImagesC.getBucketSize(); ++i) rawImagesC.setQuick(null, i);
     }
-    
+    /*
     public void segmentChildren(int structureIdx) {
         
         ObjectPopulation seg = segmentImage(getFilteredImage(structureIdx), structureIdx, this, getExperiment().getStructure(structureIdx).getProcessingChain().getSegmenter());
@@ -618,7 +641,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             childrenSM.set(res, structureIdx);
             for (int i = 0; i<seg.getObjects().size(); ++i) res.add(new StructureObject(fieldName, timePoint, structureIdx, i, seg.getObjects().get(i), this));
         }
-    }
+    }*/
+    
+    
     
     public ObjectPopulation getObjectPopulation(int structureIdx) {
         ArrayList<StructureObject> child = this.childrenSM.get(structureIdx);
@@ -632,13 +657,17 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public Measurements getMeasurements() {
         if (measurements==null) {
-            if (measurementsId!=null) {
-                measurements=this.dao.getMeasurementsDAO().getObject(measurementsId);
+            synchronized(this) {
                 if (measurements==null) {
-                    measurementsId=null;
-                    measurements = new Measurements(this);
+                    if (measurementsId!=null) {
+                        measurements=this.dao.getMeasurementsDAO().getObject(measurementsId);
+                        if (measurements==null) {
+                            measurementsId=null;
+                            measurements = new Measurements(this);
+                        }
+                    } else measurements = new Measurements(this);
                 }
-            } else measurements = new Measurements(this);
+            }
         }
         return measurements;
     }

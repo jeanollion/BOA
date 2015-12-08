@@ -101,6 +101,18 @@ public class ObjectPopulation {
         this.properties = new BlankMask("", properties);
     }
     
+    public ObjectPopulation duplicate() {
+        if (objects!=null) {
+            ArrayList<Object3D> ob = new ArrayList<Object3D>(objects.size());
+            for (Object3D o : objects) ob.add(o.duplicate());
+            return new ObjectPopulation(objects, properties);
+        } else if (labelImage!=null) {
+            return new ObjectPopulation((ImageInteger)labelImage.duplicate(""), true);
+        }
+        return new ObjectPopulation(null , properties);
+        
+    }
+    
     public ObjectPopulation addObjects(Object3D... objects) {
         this.objects.addAll(Arrays.asList(objects));
         return this;
@@ -213,9 +225,9 @@ public class ObjectPopulation {
         }
     }
     
-    public void addOffset(BoundingBox bounds) {
+    public void addOffset(BoundingBox bounds, boolean remove) {
         for (Object3D o : objects) {
-            o.addOffset(bounds);
+            o.translate(bounds, remove);
         }
     }
 

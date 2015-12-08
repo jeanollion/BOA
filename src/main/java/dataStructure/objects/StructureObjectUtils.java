@@ -22,6 +22,8 @@ import image.BoundingBox;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
 import utils.Utils;
 
 /**
@@ -108,5 +110,24 @@ public class StructureObjectUtils {
             al.add(o.getIdx());
         }
         return Utils.toArray(al, true);
+    }
+    public static HashMap<StructureObject, ArrayList<StructureObject>> getAllTracks(List<StructureObject> parentTrack, int structureIdx) {
+        HashMap<StructureObject, ArrayList<StructureObject>>  res = new HashMap<StructureObject, ArrayList<StructureObject>>();
+        for (StructureObject p : parentTrack) {
+            ArrayList<StructureObject> children = p.getChildren(structureIdx);
+            for (StructureObject c : children) {
+                ArrayList<StructureObject> l;
+                if (c.isTrackHead()) {
+                    l = new ArrayList<StructureObject>();
+                    l.add(c);
+                    res.put(c, l);
+                } else {
+                    l = res.get(c.getTrackHead());
+                    if (l!=null) l.add(c);
+                    else logger.error("getAllTracks: track not found for Object: {}, trackHead: {}", c, c.getTrackHead());
+                }
+            }
+        }
+        return res;
     }
 }

@@ -161,7 +161,5 @@ public class SpotFluo2D5 implements Segmenter {
     public Parameter[] getParameters() {
         return parameters;
     }
-
-    @Override public boolean isTimeDependent() {return false;}
     
 }

@@ -29,6 +29,7 @@ import configuration.parameters.ui.ParameterUI;
 import de.caluga.morphium.annotations.Transient;
 import javax.swing.tree.MutableTreeNode;
 import plugins.ObjectSplitter;
+import plugins.ProcessingScheme;
 import plugins.TrackCorrector;
 import plugins.Tracker;
 import plugins.plugins.ObjectSplitter.WatershedObjectSplitter;
@@ -46,6 +47,9 @@ public class Structure extends SimpleContainerParameter {
     PluginParameter<Tracker> tracker = new PluginParameter<Tracker>("Tracker", Tracker.class, true);
     PluginParameter<TrackCorrector> trackCorrector = new PluginParameter<TrackCorrector>("Track corrector", TrackCorrector.class, true);
     PluginParameter<ObjectSplitter> objectSplitter = new PluginParameter<ObjectSplitter>("Object Splitter", ObjectSplitter.class, new WatershedObjectSplitter(), false);
+    
+    PluginParameter<ProcessingScheme> processingScheme = new PluginParameter<ProcessingScheme>("Processing Scheme", ProcessingScheme.class, true);
+    
     @Transient NameEditorUI ui;
     public Structure(String name) {
         this(name, -1, -1);
@@ -77,6 +81,10 @@ public class Structure extends SimpleContainerParameter {
     
     public ProcessingChain getProcessingChain() {
         return processingChain;
+    }
+
+    public ProcessingScheme getProcessingScheme() {
+        return this.processingScheme.instanciatePlugin();
     }
     
     public boolean hasSegmenter() {

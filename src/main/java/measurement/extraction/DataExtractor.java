@@ -77,8 +77,11 @@ public class DataExtractor {
     public static void extractMeasurementObjects(DBConfiguration db, String outputFile, Map<Integer, String[]> allMeasurements) {
         Experiment xp = db.getExperiment();
         MeasurementsDAO dao = db.getDao().getMeasurementsDAO();
+        db.getDao().waiteForWrites();
+        long t0 = System.currentTimeMillis();
         FileWriter fstream;
         BufferedWriter out;
+        int count = 0;
         try {
             File output = new File(outputFile);
             output.delete();
@@ -115,9 +118,12 @@ public class DataExtractor {
                     for (String mName : currentMeasurementNames) line+=separator+m.getValueAsString(mName);
                     out.newLine();
                     out.write(line);
+                    ++count;
                 }
             }
             out.close();
+            long t1 = System.currentTimeMillis();
+            logger.debug("data extractions: {} line in: {} ms", count, t1-t0);
         } catch (IOException ex) {
             logger.debug("init extract data error: {}", ex);
         }

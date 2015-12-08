@@ -62,7 +62,7 @@ public class MeasurementsDAO extends DAO<Measurements>{
     }
     
     protected Query<Measurements> getQuery(String fieldName, int structureIdx, String... measurements) {
-        Query<Measurements> q= super.getQuery().f("field_name").eq(fieldName).f("structure_idx").eq(structureIdx).sort("time_point");
+        Query<Measurements> q= super.getQuery().f("field_name").eq(fieldName).f("structure_idx").eq(structureIdx);
         if (measurements.length>0) q.setReturnedFields(Measurements.getReturnedFields(measurements));
         return q;
     }

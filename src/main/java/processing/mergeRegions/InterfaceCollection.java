@@ -67,7 +67,7 @@ public class InterfaceCollection {
         int[][] neigh = inputLabels.getSizeZ()>1 ? ImageLabeller.neigh3DHalf : ImageLabeller.neigh2DHalf;
         for (Region r : regions.regions.values()) {
             for (Voxel vox : r.voxels) {
-                vox = vox.copy(); // to avoid having the same instance of voxel as in the region. //TODO why?
+                vox = vox.duplicate(); // to avoid having the same instance of voxel as in the region. //TODO why?
                 for (int i = 0; i<neigh.length; ++i) {
                     n = new Voxel(vox.x+neigh[i][0], vox.y+neigh[i][1], vox.z+neigh[i][2]); // en avant pour les interactions avec d'autre spots / 0
                     if (inputLabels.contains(n.x, n.y, n.z)) { 

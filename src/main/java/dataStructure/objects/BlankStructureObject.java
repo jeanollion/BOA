@@ -65,5 +65,9 @@ public class BlankStructureObject implements StructureObjectProcessing {
     public Object3D getObject() {
         return null;
     }
+
+    public void setChildren(ObjectPopulation children, int structureIdx) {
+        
+    }
     
 }

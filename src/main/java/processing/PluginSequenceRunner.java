@@ -49,7 +49,7 @@ public class PluginSequenceRunner {
         }
     }
     
-    public static ObjectPopulation segmentImage(Image input, int structureIdx, StructureObjectProcessing structureObject, Segmenter segmenter) {
+    /*public static ObjectPopulation segmentImage(Image input, int structureIdx, StructureObjectProcessing structureObject, Segmenter segmenter) {
         Plugin.logger.debug("segmenting: {} segmenter class: {} segmenter {}", structureObject, (segmenter==null?"null":segmenter.getClass()), segmenter);
         if (segmenter==null) return new ObjectPopulation(new ArrayList<Object3D>(0), new BlankMask("", input));
         else {
@@ -57,7 +57,7 @@ public class PluginSequenceRunner {
             if (pop!=null) return pop.setProperties(input, true);
             else return new ObjectPopulation(new ArrayList<Object3D>(0), new BlankMask("", input));
         }
-    }
+    }*/
     
     public static ObjectPopulation postFilterImage(ObjectPopulation objectPopulation, StructureObjectProcessing structureObject, ArrayList<PostFilter> postFilters) {
         if (postFilters==null || postFilters.isEmpty()) return objectPopulation;

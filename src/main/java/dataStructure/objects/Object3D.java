@@ -63,6 +63,17 @@ public class Object3D {
         this.bounds=bounds;
     }
     
+    public Object3D duplicate() {
+        if (this.mask!=null) return new Object3D((ImageInteger)mask.duplicate(""), label);
+        else if (this.voxels!=null) {
+            ArrayList<Voxel> vox = new ArrayList<Voxel> (voxels.size());
+            for (Voxel v : voxels) vox.add(v.duplicate());
+            if (bounds==null) return new Object3D(voxels, label, scaleXY, scaleZ);
+            else return new Object3D(vox, label, bounds, scaleXY, scaleZ);
+        }
+        return null;
+    }
+    
     public int getLabel() {
         return label;
     }
@@ -116,11 +127,12 @@ public class Object3D {
             //if (!mask_.containsWithOffset(v.x, v.y, v.z)) logger.error("voxel out of bounds: {}", v); // can happen if bounds were not updated before the object was saved
             mask_.setPixelWithOffset(v.x, v.y, v.z, 1);
         }
-        if (currentOffset!=null) mask_.addOffset(currentOffset);
+        //if (currentOffset!=null) mask_.addOffset(currentOffset);
         this.mask=mask_;
     }
 
     protected void createVoxels() {
+        //logger.debug("create voxels: mask offset: {}", mask.getBoundingBox());
         ArrayList<Voxel> voxels_=new ArrayList<Voxel>();
         for (int z = 0; z < mask.getSizeZ(); ++z) {
             for (int y = 0; y < mask.getSizeY(); ++y) {
@@ -131,7 +143,6 @@ public class Object3D {
                 }
             }
         }
-        if (currentOffset!=null) for (Voxel v : voxels) v.translate(currentOffset.getxMin(), currentOffset.getyMin(), currentOffset.getzMin());
         voxels=voxels_;
     }
     
@@ -344,12 +355,16 @@ public class Object3D {
         if (bounds!=null) bounds.translate(offsetX, offsetY, offsetZ);
         if (voxels!=null) for (Voxel v : voxels) v.translate(offsetX, offsetY, offsetZ);
         if (currentOffset == null) currentOffset = new BoundingBox(offsetX, offsetY, offsetZ);
-        else currentOffset.translate(offsetX, offsetX, offsetX);
+        else {
+            currentOffset.translate(offsetX, offsetX, offsetX);
+            if (currentOffset.isOffsetNull()) currentOffset=null;
+        }
         return this;
     }
-    public Object3D addOffset(BoundingBox bounds) {
+    public Object3D translate(BoundingBox bounds, boolean remove) {
         if (bounds.isOffsetNull()) return this;
-        return addOffset(bounds.getxMin(), bounds.getyMin(), bounds.getzMin()); 
+        if (remove) return addOffset(-bounds.getxMin(), -bounds.getyMin(), -bounds.getzMin()); 
+        else return addOffset(bounds.getxMin(), bounds.getyMin(), bounds.getzMin()); 
     }
     public void resetOffset() {
         if (currentOffset!=null) {

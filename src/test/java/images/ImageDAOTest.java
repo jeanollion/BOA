@@ -124,7 +124,7 @@ public class ImageDAOTest {
         db.getDao().deleteChildren(mc, 1);
 
         assertEquals("number of files after delete children", 11, countFiles(new File(xp.getOutputImageDirectory())));
-        db.getDao().delete(mc);
+        db.getDao().delete(mc, true);
         assertEquals("number of files after delete object", 10, countFiles(new File(xp.getOutputImageDirectory())));
         db.getDao().deleteObjectsFromField("field2");
         assertEquals("number of files after delete field", 8, countFiles(new File(xp.getOutputImageDirectory())));
@@ -148,7 +148,7 @@ public class ImageDAOTest {
         db.getDao().deleteChildren(mc, 1);
         assertEquals("number of files after delete children", 5, countObjects(db, RegionVoxelsDB.class));
         assertEquals("number of measurements after delete children", 2, countObjects(db, Measurements.class));
-        db.getDao().delete(mc);
+        db.getDao().delete(mc, true);
         assertEquals("number of files after delete object", 4, countObjects(db, RegionVoxelsDB.class));
         assertEquals("number of measurements after delete object", 2, countObjects(db, Measurements.class));
         db.getDao().deleteObjectsFromField("field2");
