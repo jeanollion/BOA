@@ -86,6 +86,7 @@ public class FieldNode implements TreeNode, UIContainer {
     }
 
     public boolean isLeaf() {
+        if (children==null) return false; // lazy-loading
         return getChildCount()==0;
     }
 

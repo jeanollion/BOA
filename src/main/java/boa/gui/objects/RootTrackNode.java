@@ -58,7 +58,8 @@ public class RootTrackNode implements TreeNode {
     
     public boolean containsError() {
         if (containsErrors==null) {
-            for (TrackNode t : children) {
+            if (children==null) return false; // lazy-loading
+            for (TrackNode t : getChildren()) {
                 if (t.containsError()) {
                     containsErrors=true;
                     break;
@@ -159,6 +160,7 @@ public class RootTrackNode implements TreeNode {
     }
 
     public boolean isLeaf() {
+        if (children==null) return false; // lazy-loading
         return getChildCount()==0;
     }
 

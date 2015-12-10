@@ -140,7 +140,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             Experiment xp = new Experiment("xp test UI");
             db.getXpDAO().store(xp);
             db.getXpDAO().clearCache();
-        } else logger.info("Experiment found: {} in {} (dao in: {})", db.getExperiment().getName(), t11-t1, t1-t0);
+        } else logger.info("Experiment found: {} ", db.getExperiment().getName());
         configurationTreeGenerator = new ConfigurationTreeGenerator(db.getXpDAO());
         configurationJSP.setViewportView(configurationTreeGenerator.getTree());
         populateActionStructureList();
