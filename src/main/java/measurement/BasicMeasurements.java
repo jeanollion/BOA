@@ -20,6 +20,7 @@ package measurement;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.Voxel;
 import image.Image;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import static plugins.Plugin.logger;
@@ -60,6 +61,30 @@ public class BasicMeasurements {
             value2/=(double)object.getVoxels().size();
             return Math.sqrt(value2-value*value);
         } else return 0;
+    }
+    public static double[] getMeanSdValue(List<Voxel> voxels, Image image) {
+        double value=0;
+        double value2=0;
+        double tmp;
+        for (Voxel v : voxels) {
+            tmp=image.getPixel(v.x, v.y, v.z);
+            value+=tmp;
+            value2+=tmp*tmp;
+        }
+        if (!voxels.isEmpty()) {
+            value/=(double)voxels.size();
+            value2/=(double)voxels.size();
+            return new double[] {value, Math.sqrt(value2-value*value)};
+        } else return null;
+    }
+    public static double[] getSNR(List<Voxel> foreground, List<Voxel> background, Image image) {
+        if (foreground.isEmpty() || background.isEmpty()) return null;
+        List<Voxel> bck = new ArrayList<Voxel> (background);
+        bck.removeAll(foreground);
+        double[] sdMeanBack = getMeanSdValue(bck, image);
+        double fore = getMeanValue(foreground, image);
+        return new double[] {(fore - sdMeanBack[0]) / sdMeanBack[1], fore, sdMeanBack[0], sdMeanBack[1]};
+        
     }
     public static double getMaxValue(Object3D object, Image image) {
         double max=-Double.MAX_VALUE;

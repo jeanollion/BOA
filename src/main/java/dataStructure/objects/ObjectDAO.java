@@ -452,16 +452,18 @@ public class ObjectDAO extends DAO<StructureObject>{
     }
 
     // measurement-specific methds
-    public void updateMeasurements(List<StructureObject> objects) {
+    public void upsertMeasurements(List<StructureObject> objects) {
         Utils.removeDuplicates(objects, false);
-        this.agent.updateMeasurements(objects);
+        this.agent.upsertMeasurements(objects);
     }
-    protected void updateMeasurementsNow(List<StructureObject> objects) {
+    protected void upsertMeasurementsNow(List<StructureObject> objects) {
         for (StructureObject o : objects) {
             o.getMeasurements().updateObjectProperties(o);
-            this.measurementsDAO.store(o.getMeasurements());
-            o.measurementsId=o.getMeasurements().getId();
-            morphium.updateUsingFields(o, "measurements_id");
+            this.measurementsDAO.store(o.getMeasurements()); // toDO -> partial update if already an ID
+            if (!o.getMeasurements().getId().equals(o.measurementsId)) {
+                o.measurementsId=o.getMeasurements().getId();
+                morphium.updateUsingFields(o, "measurements_id");
+            }
         }
     }
     

@@ -73,7 +73,7 @@ public class ObjectStoreAgent {
 
     }
     
-    public synchronized void updateMeasurements(List<StructureObject> list) {
+    public synchronized void upsertMeasurements(List<StructureObject> list) {
         Job job = new UpdateMeasurementJob(list);
         queue.add(job);
         runThreadIfNecessary();
@@ -121,7 +121,7 @@ public class ObjectStoreAgent {
         }
         @Override
         public void executeJob() {
-            dao.updateMeasurementsNow(objects);
+            dao.upsertMeasurementsNow(objects);
         }
     }
     private class ClearCache extends Job{

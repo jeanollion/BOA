@@ -460,7 +460,7 @@ public class Processor {
                 }
                 long t1 = System.currentTimeMillis();
                 logger.debug("running measurements on: {}, time elapsed: {}ms", root, t1-t0);
-                if (dao!=null && !modifiedObjects.isEmpty()) dao.updateMeasurements(modifiedObjects);
+                if (dao!=null && !modifiedObjects.isEmpty()) dao.upsertMeasurements(modifiedObjects);
             }
         });
         long t1 = System.currentTimeMillis();
