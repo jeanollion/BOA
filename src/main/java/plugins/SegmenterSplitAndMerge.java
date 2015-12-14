@@ -33,11 +33,9 @@ public interface SegmenterSplitAndMerge extends Segmenter {
      */
     public double split(Object3D o, List<Object3D> result);
     /**
-     * Merge two objects into one single object
-     * @param o1 object to be splitted
-     * @param o2 object to be splitted
-     * @param result a list in which the resulting merged object will be inserted
-     * @return a value representing the cost of merging the two objects, NaN if the two objects are not in contact
+     * Compute Merge Cost & removes from the list objects that are not in contact with the first object from the list
+     * @param objects objects to be merged
+     * @return a value representing the cost of merging the objects, NaN if none of the objects are in contact. 
      */
-    public double merge(Object3D o1, Object3D o2, List<Object3D> result);
+    public double computeMergeCost(List<Object3D> objects);
 }

@@ -112,6 +112,10 @@ public class ClosedMicrochannelTracker implements Tracker {
         return parameters;
     }
 
+    public void track(int structureIdx, List<StructureObject> parentTrack) {
+        
+    }
+
     
     
 }

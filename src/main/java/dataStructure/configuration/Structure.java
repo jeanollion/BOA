@@ -76,7 +76,9 @@ public class Structure extends SimpleContainerParameter {
                 else logger.debug("no model found..");
             }
         });
-        initChildren(parentStructure, channelImage, processingChain, tracker, trackCorrector, objectSplitter); //segmentationParent
+        // for retro-compatibility only, to remove later
+        if (processingScheme==null) processingScheme = new PluginParameter<ProcessingScheme>("Processing Scheme", ProcessingScheme.class, true); // for retro-compatibility only, to remove later
+        initChildren(parentStructure, channelImage, processingScheme, processingChain, tracker, trackCorrector, objectSplitter); //segmentationParent
     }
     
     public ProcessingChain getProcessingChain() {
@@ -84,7 +86,7 @@ public class Structure extends SimpleContainerParameter {
     }
 
     public ProcessingScheme getProcessingScheme() {
-        return this.processingScheme.instanciatePlugin();
+        return processingScheme.instanciatePlugin();
     }
     
     public boolean hasSegmenter() {

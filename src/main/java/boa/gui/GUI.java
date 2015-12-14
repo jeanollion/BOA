@@ -730,10 +730,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (!checkConnection()) return;
         int[] selectedStructures = this.getSelectedStructures(false);
         for (int i : this.getSelectedMicroscopyFields()) {
-            Processor.processAndTrackStructures(db.getExperiment(), db.getExperiment().getMicroscopyField(i), db.getDao(), true, true, selectedStructures );
-            db.getDao().clearCacheLater(db.getExperiment().getMicroscopyField(i).getName());
+            //Processor.processAndTrackStructures(db.getExperiment(), db.getExperiment().getMicroscopyField(i), db.getDao(), true, true, selectedStructures );
+            String fieldName = db.getExperiment().getMicroscopyField(i).getName();
+            List<StructureObject> roots = Processor.getOrCreateRootTrack(db.getDao(), fieldName);
+            for (int s : selectedStructures) Processor.executeProcessingScheme(roots, s, false);
+            db.getDao().clearCacheLater(fieldName);
         }
         db.getDao().waiteForWrites();
+        
+        
         reloadTree=true;
     }//GEN-LAST:event_segmentButtonActionPerformed
 

@@ -41,6 +41,7 @@ public class MicrochannelProcessor implements TrackerSegmenter {
         StructureObject ref = getRefTimePoint(refTimePoint, parentTrack);
         ObjectPopulation pop = segmenter.runSegmenter(ref.getRawImage(structureIdx), structureIdx, ref);
         ref.setChildren(pop, structureIdx);
+        Collections.sort(ref.getChildren(structureIdx), getComparator(ObjectIdxTracker.IndexingOrder.XYZ));
         StructureObject prev=null;
         for (StructureObject s : parentTrack) {
             if (s!=ref) s.setChildren(pop, structureIdx);
@@ -51,13 +52,25 @@ public class MicrochannelProcessor implements TrackerSegmenter {
         }
     }
 
+    public void track(int structureIdx, List<StructureObject> parentTrack) {
+        if (parentTrack.isEmpty()) return;
+        ArrayList<StructureObject> previousChildren = new ArrayList<StructureObject>(parentTrack.get(0).getChildren(structureIdx));
+        Collections.sort(previousChildren, getComparator(ObjectIdxTracker.IndexingOrder.XYZ));
+        for (int i = 1; i<parentTrack.size(); ++i) {
+            ArrayList<StructureObject> currentChildren = new ArrayList<StructureObject>(parentTrack.get(i).getChildren(structureIdx));
+            Collections.sort(currentChildren, getComparator(ObjectIdxTracker.IndexingOrder.XYZ));
+            assignPrevious(previousChildren, currentChildren);
+            previousChildren = currentChildren;
+        }
+    }
+    
     public void assignPrevious(ArrayList<? extends StructureObjectTracker> previous, ArrayList<? extends StructureObjectTracker> next) {
-        Collections.sort(previous, getComparator(ObjectIdxTracker.IndexingOrder.XYZ));
-        Collections.sort(next, getComparator(ObjectIdxTracker.IndexingOrder.XYZ));
+        int lim = Math.min(previous.size(), next.size());
         for (int i = 0; i<Math.min(previous.size(), next.size()); ++i) {
             next.get(i).setPreviousInTrack(previous.get(i), false);
             Plugin.logger.trace("assign previous {} to next {}", previous.get(i), next.get(i));
         }
+        for (int i = lim; i<next.size(); ++i) next.get(i).resetTrackLinks();
     }
     
     private static StructureObject getRefTimePoint(int refTimePoint, List<StructureObject> track) {
@@ -70,5 +83,7 @@ public class MicrochannelProcessor implements TrackerSegmenter {
     public Parameter[] getParameters() {
         return segmenter.getParameters();
     }
+
+    
     
 }

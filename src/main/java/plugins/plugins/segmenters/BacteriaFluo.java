@@ -36,6 +36,7 @@ import image.ImageMask;
 import image.ImageOperations;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import measurement.BasicMeasurements;
 import plugins.Segmenter;
@@ -228,8 +229,8 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
         return true;
     }
 
-    public double split(Object3D o, List<Object3D> result) {
-        if (dog==null || hessian==null) throw new Error("Segment method have to be called before split method");
+    @Override public double split(Object3D o, List<Object3D> result) {
+        if (dog==null || hessian==null) throw new Error("Segment method have to be called before split method in order to initialize images");
         if (splitMask==null) splitMask = new ImageByte("split mask", dog);
         o.draw(splitMask, 1);
         ObjectPopulation pop = WatershedObjectSplitter.split(dog, splitMask, true);
@@ -240,23 +241,41 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
             Object3D o2 = pop.getObjects().get(1);
             result.add(o1);
             result.add(o2);
-            return getInterfaceValue(o1, o2);
+            return getInterfaceValue(getInterface(o1, o2));
         }
     }
 
-    public double merge(Object3D o1, Object3D o2, List<Object3D> result) {
-        if (dog==null || hessian==null) throw new Error("Segment method have to be called before merge method");
+    @Override public double computeMergeCost(List<Object3D> objects) {
+        if (dog==null || hessian==null) throw new Error("Segment method have to be called before merge method in order to initialize images");
         if (splitMask==null) splitMask = new ImageByte("split mask", dog);
-        ArrayList<Voxel> inter = getInterface(o1, o2);
-        if (inter.isEmpty()) return Double.NaN;
-        ArrayList<Voxel> vox = new ArrayList<Voxel>(o1.getVoxels().size()+o2.getVoxels().size());
-        vox.addAll(o1.getVoxels());
-        vox.addAll(o2.getVoxels());
-        result.add(new Object3D(vox, Math.min(o1.getLabel(), o2.getLabel()), o1.getScaleXY(), o1.getScaleZ()));
-        return getInterfaceValue(o1, o2);
+        if (objects.isEmpty() || objects.size()==1) return 0;
+        Iterator<Object3D> it = objects.iterator();
+        Object3D ref  = objects.get(0);
+        double maxCost = Double.MIN_VALUE;
+        while (it.hasNext()) { //first round : remove objects not connected with ref & compute interactions with ref objects
+            Object3D n = it.next();
+            if (n!=ref) {
+                ArrayList<Voxel> inter = getInterface(ref, n);
+                if (inter.isEmpty()) it.remove();
+                else {
+                    double c = getInterfaceValue(inter);
+                    if (c>maxCost) maxCost = c;
+                }
+            }
+        }
+        for (int i = 2; i<objects.size()-1; ++i) { // second round compute other interactions
+            for (int j = i+1; j<objects.size(); ++j) {
+                ArrayList<Voxel> inter = getInterface(objects.get(i), objects.get(j));
+                if (!inter.isEmpty()) {
+                    double c = getInterfaceValue(inter);
+                    if (c>maxCost) maxCost = c;
+                }
+            }
+        }
+        if (maxCost==Double.MIN_VALUE) return Double.NaN;
+        return maxCost;
     }
-    private double getInterfaceValue(Object3D o1, Object3D o2) {
-        ArrayList<Voxel> inter = getInterface(o1, o2);
+    private double getInterfaceValue(ArrayList<Voxel> inter) {
         double meanHess = BasicMeasurements.getMeanValue(inter, hessian);
         double meanDOG = BasicMeasurements.getMeanValue(inter, dog);
         return meanHess / meanDOG;

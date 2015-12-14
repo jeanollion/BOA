@@ -17,14 +17,17 @@
  */
 package plugins;
 
+import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectTracker;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
  * @author jollion
  */
 public interface Tracker extends Plugin {
+    public void track(int structureIdx, List<StructureObject> parentTrack);
     /**
      * assign {@param previous} to {@param next} using the method {@link StructureObjectAbstract#setParentTrack(dataStructure.objects.Track, boolean) }
      * @param previous objects that share a given parent object

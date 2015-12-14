@@ -33,15 +33,12 @@ import dataStructure.objects.StructureObjectTrackCorrection;
 import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
-import measurement.MeasurementKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plugins.Measurement;
@@ -79,12 +76,7 @@ public class Processor {
         }
         logger.info("{} fields found int files: {}", count, selectedFiles);
     }
-    
-    
-    /*public static StructureObjectRoot initRoot(Experiment xp) {
-        
-    }*/
-    
+       
     public static void preProcessImages(Experiment xp, ObjectDAO dao, boolean computeConfigurationData) {
         for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
             preProcessImages(xp.getMicroscopyField(i), dao, false, computeConfigurationData);
@@ -396,6 +388,12 @@ public class Processor {
     
     // processing-related methods
     
+    public static List<StructureObject> getOrCreateRootTrack(ObjectDAO dao, String fieldName) {
+        List<StructureObject> res = dao.getRoots(fieldName);
+        if (res==null) res = dao.getExperiment().getMicroscopyField(fieldName).createRootObjects(dao);
+        return res;
+    }
+    
     public static void executeProcessingScheme(List<StructureObject> parentTrack, final int structureIdx, final boolean trackOnly) {
         if (parentTrack.isEmpty()) return;
         final ObjectDAO dao = parentTrack.get(0).getDAO();
@@ -407,15 +405,14 @@ public class Processor {
             HashMap<StructureObject, ArrayList<StructureObject>> allParentTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
             // one thread per track
             ThreadAction<ArrayList<StructureObject>> ta = new ThreadAction<ArrayList<StructureObject>>() {
-                public void run(ArrayList<StructureObject> pt) {
-                    execute(ps, structureIdx, pt, trackOnly, dao);
-                }
+                public void run(ArrayList<StructureObject> pt) {execute(ps, structureIdx, pt, trackOnly, dao);}
                 public void setUp() {}
                 public void tearDown() {}
             };
             ThreadRunner.execute(new ArrayList<ArrayList<StructureObject>> (allParentTracks.values()), ta);
         }
     }
+    
     private static void execute(ProcessingScheme ps, int structureIdx, List<StructureObject> parentTrack, boolean trackOnly, ObjectDAO dao) {
         if (trackOnly) ps.trackOnly(structureIdx, parentTrack);
         else ps.segmentAndTrack(structureIdx, parentTrack);
