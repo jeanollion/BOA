@@ -55,8 +55,6 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     BoundedNumberParameter divCriterion = new BoundedNumberParameter("Division Criterion", 2, 0.9, 0.1, 0.99);
     Parameter[] parameters = new Parameter[]{segmenter, maxGrowthRate, divCriterion, minGrowthRate};
 
-    
-    
     // tracking-related attributes
     private enum Flag {errorType1, errorType2, correctionMerge, correctionSplit;}
     ArrayList<Object3D>[] populations;
@@ -66,12 +64,14 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     int structureIdx;
     double maxGR, minGR;
     static int loopLimit=100;
-    public BacteriaClosedMicrochannelTrackerLocalCorrections(){} 
     
-    public BacteriaClosedMicrochannelTrackerLocalCorrections(double maximumGrowthRate, double divisionCriterion) {
-        maxGrowthRate.setValue(maximumGrowthRate);
-        divCriterion.setValue(divisionCriterion);
-    } 
+    public BacteriaClosedMicrochannelTrackerLocalCorrections() {}
+    
+    public BacteriaClosedMicrochannelTrackerLocalCorrections(SegmenterSplitAndMerge segmenter, double maxGrowthRate, double minGrowthRate) {
+        this.segmenter.setPlugin(segmenter);
+        this.maxGrowthRate.setValue(maxGrowthRate);
+        this.minGrowthRate.setValue(minGrowthRate);
+    }
     
     @Override public void assignPrevious(ArrayList<? extends StructureObjectTracker> previous, ArrayList<? extends StructureObjectTracker> next) {        
 
@@ -105,12 +105,12 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             int corr = assignPrevious(currentTimePoint, performCorrection);
             if (corr==-1) {
                 ++currentTimePoint;
-                if (maxTimePoint<currentTimePoint) {
+                if (maxTimePoint<currentTimePoint) { // when max timePoint in reached -> reset counter
                     maxTimePoint=currentTimePoint;
                     nLoop=0;
                 }
             } else {
-                nLoop++;
+                ++nLoop;
                 if (nLoop>loopLimit) for (currentTimePoint = corr; currentTimePoint<=maxTimePoint; ++currentTimePoint) assignPrevious(currentTimePoint, false); // no more corrections
                 else currentTimePoint = corr;
             }
@@ -139,8 +139,6 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             else children.get(i).setPreviousInTrack(childrenPrev.get(ta.prev.idx), ta.trackHead, ta.flag!=null?TrackFlag.trackError:null);
         }
     }
-    
-    
     
     protected void init(List<StructureObject> parentTrack, int structureIdx, boolean segment) {
         int timePointNumber = parents.size();

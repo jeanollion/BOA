@@ -34,7 +34,15 @@ import static plugins.plugins.trackers.ObjectIdxTracker.getComparator;
  * @author jollion
  */
 public class MicrochannelProcessor implements TrackerSegmenter {
-    MicroChannelFluo2D segmenter = new MicroChannelFluo2D();
+    MicroChannelFluo2D segmenter;
+    
+    public MicrochannelProcessor(){
+        segmenter = new MicroChannelFluo2D();
+    }
+    
+    public MicrochannelProcessor(MicroChannelFluo2D segmenter){
+        this.segmenter=segmenter;
+    }
     
     public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack) {
         int refTimePoint = 50;

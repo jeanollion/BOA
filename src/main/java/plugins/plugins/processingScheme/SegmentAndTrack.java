@@ -34,6 +34,12 @@ public class SegmentAndTrack implements ProcessingScheme {
     PluginParameter<TrackerSegmenter> tracker = new PluginParameter<TrackerSegmenter>("Tracker", TrackerSegmenter.class, true);
     Parameter[] parameters= new Parameter[]{tracker};
     
+    public SegmentAndTrack(){}
+    
+    public SegmentAndTrack(TrackerSegmenter tracker){
+        this.tracker.setPlugin(tracker);
+    }
+    
     public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack) {
         TrackerSegmenter t = tracker.instanciatePlugin();
         t.segmentAndTrack(structureIdx, parentTrack);

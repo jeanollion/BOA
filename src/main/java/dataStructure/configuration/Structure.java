@@ -89,6 +89,10 @@ public class Structure extends SimpleContainerParameter {
         return processingScheme.instanciatePlugin();
     }
     
+    public void setProcessingScheme(ProcessingScheme ps) {
+        this.processingScheme.setPlugin(ps);
+    }
+    
     public boolean hasSegmenter() {
         return processingChain.segmenter.isOnePluginSet() && processingChain.segmenter.isActivated();
     }

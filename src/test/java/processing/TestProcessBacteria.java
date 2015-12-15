@@ -57,13 +57,16 @@ import plugins.plugins.measurements.BacteriaLineageIndex;
 import plugins.plugins.measurements.BacteriaMeasurements;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.preFilter.Median;
+import plugins.plugins.processingScheme.SegmentAndTrack;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.BacteriesFluo2D;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.segmenters.SpotFluo2D5;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.trackCorrector.MicroChannelBacteriaTrackCorrector;
+import plugins.plugins.trackers.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import plugins.plugins.trackers.ClosedMicrochannelTracker;
+import plugins.plugins.trackers.MicrochannelProcessor;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import plugins.plugins.transformations.AutoRotationXY;
 import plugins.plugins.transformations.CropMicroChannels2D;
@@ -124,6 +127,10 @@ public class TestProcessBacteria {
         mc.setTracker(new ObjectIdxTracker());
         bacteria.setTracker(new ClosedMicrochannelTracker());
         bacteria.setTrackCorrector(new MicroChannelBacteriaTrackCorrector());
+        
+        mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessor()));
+        bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo(), 1.1, 1.7)));
+        
         xp.addMeasurement(new BacteriaLineageIndex(1));
         xp.addMeasurement(new BacteriaMeasurements(1, 2));
         if (preProcessing) {// preProcessing 
@@ -241,8 +248,7 @@ public class TestProcessBacteria {
         Image image = xp.getMicroscopyField(0).getInputImages().getImage(0, 0);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(image);
-        ArrayList<Object3D> objects = MicroChannelFluo2D.run(image, 300, 22, 2);
-        ObjectPopulation pop = new ObjectPopulation(objects, image);
+        ObjectPopulation pop = MicroChannelFluo2D.run(image, 300, 22, 2);
         Image labels = pop.getLabelImage();
         
         
@@ -257,8 +263,8 @@ public class TestProcessBacteria {
         testCrop("/data/Images/Fluo/testsub", false);
         
         Image image = xp.getMicroscopyField(0).getInputImages().getImage(0, 0);
-        ArrayList<Object3D> objects = MicroChannelFluo2D.run(image, 350, 30, 5);
-        Object3D o = objects.get(1);
+        ObjectPopulation objects = MicroChannelFluo2D.run(image, 350, 30, 5);
+        Object3D o = objects.getObjects().get(1);
         ImageMask parentMask = o.getMask();
         Image input = image.crop(o.getBounds());
         testSegBacteria(input, parentMask);
@@ -311,8 +317,7 @@ public class TestProcessBacteria {
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(image);
         MicroChannelFluo2D.debug=true;
-        ArrayList<Object3D> objects = MicroChannelFluo2D.run(image, 300, 22, 2);
-        ObjectPopulation pop = new ObjectPopulation(objects, image);
+        ObjectPopulation pop = MicroChannelFluo2D.run(image, 300, 22, 2);
         Image labels = pop.getLabelImage();
         
         
@@ -429,10 +434,10 @@ public class TestProcessBacteria {
                 
                 if (false) {
                 Image image = f.getInputImages().getImage(0, t);
-                ArrayList<Object3D> objects = MicroChannelFluo2D.run(image, 350, 30, 5);
+                ObjectPopulation popMC = MicroChannelFluo2D.run(image, 350, 30, 5);
                 
                 int mcIdx = 0;
-                for (Object3D o : objects) {
+                for (Object3D o : popMC.getObjects()) {
                     //logger.debug("timePoint: {}, microchannel: {}", t, mcIdx);
                     ImageMask parentMask = o.getMask();
                     Image input = image.crop(o.getBounds());
