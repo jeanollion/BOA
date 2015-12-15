@@ -86,7 +86,6 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         ImageCanvas ic = image.getCanvas();
         if (ic==null) return;
         ic.zoom100Percent();
-        logger.debug("zz");
         IJ.runPlugIn("ij.plugin.Zoom", null);
         if (magnitude > 1) {
             for (int i = 0; i < (int) (magnitude + 0.5); i++) {

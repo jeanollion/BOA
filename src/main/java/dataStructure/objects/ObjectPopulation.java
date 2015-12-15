@@ -98,7 +98,7 @@ public class ObjectPopulation {
         } else {
             this.objects = new ArrayList<Object3D>();
         }
-        this.properties = new BlankMask("", properties);
+        if (properties!=null) this.properties = new BlankMask("", properties);
     }
     
     public ObjectPopulation duplicate() {

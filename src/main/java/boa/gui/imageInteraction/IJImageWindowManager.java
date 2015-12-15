@@ -88,7 +88,6 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
             }
 
             public void mouseReleased(MouseEvent e) {
-                logger.debug("mousereleased");
                 if (IJ.getToolName().equals("zoom") || IJ.getToolName().equals("hand")) return;
                 boolean ctrl = (e.getModifiers() & ActionEvent.CTRL_MASK) == ActionEvent.CTRL_MASK;
                 ImageObjectInterface i = getImageObjectInterface(image);

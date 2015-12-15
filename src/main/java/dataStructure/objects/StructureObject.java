@@ -182,11 +182,12 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         for (StructureObject o : children) o.setParent(this);
     }
     
-    public void setChildren(ObjectPopulation population, int structureIdx) {
+    @Override public ArrayList<StructureObject> setChildren(ObjectPopulation population, int structureIdx) {
         population.relabel();
         ArrayList<StructureObject> res = new ArrayList<StructureObject>(population.getObjects().size());
         childrenSM.set(res, structureIdx);
         for (int i = 0; i<population.getObjects().size(); ++i) res.add(new StructureObject(fieldName, timePoint, structureIdx, i, population.getObjects().get(i), this));
+        return res;
     }
     
     void setChild(StructureObject o) {
