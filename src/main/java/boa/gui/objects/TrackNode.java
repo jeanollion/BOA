@@ -23,6 +23,7 @@ import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import core.Processor;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectUtils;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,6 +37,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.tree.TreeNode;
 import org.bson.types.ObjectId;
+import utils.ThreadRunner;
+import utils.ThreadRunner.ThreadAction;
 
 /**
  *
@@ -102,10 +105,7 @@ public class TrackNode implements TreeNode, UIContainer {
                     Iterator<StructureObject> subIt = entry.getValue().iterator();
                     while (subIt.hasNext()) {
                         StructureObject o = subIt.next();
-                        if (o.getPrevious()==null) {
-                            children.add(new TrackNode(this, root, o, true));
-                            subIt.remove();
-                        } else if (trackContainscontainsId(o.getPrevious())) {
+                        if (trackContainscontainsId(o.getPrevious())) {
                             children.add(new TrackNode(this, root, o));
                             subIt.remove();
                         }
@@ -245,13 +245,19 @@ public class TrackNode implements TreeNode, UIContainer {
                 runSegAndTracking[i].setAction(new AbstractAction(childStructureNames[i]) {
                         @Override
                         public void actionPerformed(ActionEvent ae) {
-                            int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
+                            final int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
                             logger.debug("running segmentation and tracking for structure: {} of idx: {}, within track: {}", ae.getActionCommand(), structureIdx, trackHead);
-                            Experiment xp = root.generator.getExperiment();
+                            /*Experiment xp = root.generator.getExperiment();
                             ArrayList<StructureObject> parents = new ArrayList<StructureObject>();
                             for (TrackNode n : root.generator.getSelectedTrackNodes()) parents.addAll(n.track);
                             Processor.processStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.getObjectDAO(), parents, null);
                             Processor.trackStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.getObjectDAO(), true, root.generator.getSelectedTrackHeads());
+                            */
+                            ThreadRunner.execute(root.generator.getSelectedTrackNodes(), new ThreadAction<TrackNode>() {
+                                @Override public void run(TrackNode n) {
+                                    Processor.executeProcessingScheme(n.getTrack(), structureIdx, false, true);
+                                }
+                            });
                             // reload tree
                             root.generator.getObjectDAO().waiteForWrites();
                             root.generator.controller.updateParentTracks(root.generator.controller.getTreeIdx(trackHead.getStructureIdx()));
@@ -269,10 +275,16 @@ public class TrackNode implements TreeNode, UIContainer {
                 runTracking[i].setAction(new AbstractAction(childStructureNames[i]) {
                         @Override
                         public void actionPerformed(ActionEvent ae) {
-                            int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
+                            final int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
                             logger.debug("running tracking for structure: {} of idx: {}, within track: {}", ae.getActionCommand(), structureIdx, trackHead);
-                            Experiment xp = root.generator.getExperiment();
+                            /*Experiment xp = root.generator.getExperiment();
                             Processor.trackStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.getObjectDAO(), true, root.generator.getSelectedTrackHeads());
+                            */
+                            ThreadRunner.execute(root.generator.getSelectedTrackNodes(), new ThreadAction<TrackNode>() {
+                                @Override public void run(TrackNode n) {
+                                    Processor.executeProcessingScheme(n.getTrack(), structureIdx, true, false);
+                                }
+                            });
                             // reload tree
                             root.generator.getObjectDAO().waiteForWrites();
                             root.generator.controller.updateParentTracks(root.generator.controller.getTreeIdx(trackHead.getStructureIdx()));

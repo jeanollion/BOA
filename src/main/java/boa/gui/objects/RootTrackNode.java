@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeMap;
@@ -119,14 +120,30 @@ public class RootTrackNode implements TreeNode {
     
     public ArrayList<TrackNode> getChildren() {
         if (children==null) {
-            Entry<Integer, List<StructureObject>>  childrenObjects = getRemainingTrackHeads().pollFirstEntry();
+            children = new ArrayList<TrackNode>();
+            Iterator<Entry<Integer, List<StructureObject>>> it = getRemainingTrackHeads().entrySet().iterator();
+            while (it.hasNext()) {
+                Entry<Integer, List<StructureObject>> entry = it.next();
+                Iterator<StructureObject> subIt = entry.getValue().iterator();
+                while (subIt.hasNext()) {
+                    StructureObject o = subIt.next();
+                    if (o.getPrevious()==null) {
+                        children.add(new TrackNode(this, this, o));
+                        subIt.remove();
+                    }
+                }
+                if (entry.getValue().isEmpty()) {
+                    it.remove();
+                }
+            }
+            /*Entry<Integer, List<StructureObject>>  childrenObjects = getRemainingTrackHeads().pollFirstEntry();
             if (childrenObjects!=null) {
                 children = new ArrayList<TrackNode>(childrenObjects.getValue().size());
                 for (StructureObject o : childrenObjects.getValue()) children.add(new TrackNode(this, this, o));
                 logger.trace("number of children: {}" , children.size());
             } else {
                 children = new ArrayList<TrackNode>(0);
-            }
+            }*/
         }
         return children;
     }

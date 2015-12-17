@@ -235,8 +235,16 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
         o.draw(splitMask, 1);
         ObjectPopulation pop = WatershedObjectSplitter.split(dog, splitMask, true);
         o.draw(splitMask, 0);
-        if (pop.getObjects().isEmpty() || pop.getObjects().size()==1) return Double.NaN;
+        if (pop==null || pop.getObjects().isEmpty() || pop.getObjects().size()==1) return Double.NaN;
+        ArrayList<Object3D> remove = new ArrayList<Object3D>(pop.getObjects().size());
+        pop.filter(new ObjectPopulation.Thickness().setX(2).setY(2), remove); // remove thin objects
+        pop.filter(new ObjectPopulation.Size().setMin(minSize.getValue().intValue()), remove); // remove small objects
+        if (pop.getObjects().size()<=1) return Double.NaN;
         else {
+            if (!remove.isEmpty()) {
+                logger.warn("BacteriaFluo split: small objects removed need to merge them");
+            }
+            
             Object3D o1 = pop.getObjects().get(0);
             Object3D o2 = pop.getObjects().get(1);
             result.add(o1);

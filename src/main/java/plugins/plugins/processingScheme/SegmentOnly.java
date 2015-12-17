@@ -42,8 +42,6 @@ public class SegmentOnly implements ProcessingScheme {
                 ObjectPopulation pop = s.runSegmenter(parent.getRawImage(structureIdx), structureIdx, parent);
                 parent.setChildren(pop, structureIdx);
             }
-            @Override public void setUp() {}
-            @Override public void tearDown() {}
         };
         ThreadRunner.execute(parentTrack, ta);
     }

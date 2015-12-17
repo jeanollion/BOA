@@ -144,8 +144,6 @@ public class Processor {
             if (structure.hasSegmenter()) {
                 logger.info("processing structure: {}...", s);
                 ThreadAction<StructureObject> ta = new ThreadAction<StructureObject>() {
-                    @Override public void setUp() {};
-                    @Override public void tearDown() {};
                     @Override
                     public void run(StructureObject r) {
                         ArrayList<StructureObject> segmentedObjects=null;
@@ -176,8 +174,6 @@ public class Processor {
                         if (dao!=null && storeObjects) dao.store(trackedObjects, true, true);
                     }*/
                     ThreadRunner.execute(parents, new ThreadAction<StructureObject>() {
-                        @Override public void setUp() {};
-                        @Override public void tearDown() {};
                         @Override
                         public void run(StructureObject o) {
                             ArrayList<StructureObject> trackedObjects = new ArrayList<StructureObject>();
@@ -218,8 +214,6 @@ public class Processor {
                 }
             }*/
             ThreadRunner.execute(parentObjects, new ThreadAction<StructureObject>() {
-                @Override public void setUp() {};
-                @Override public void tearDown() {};
                 @Override
                 public void run(StructureObject o) {
                     ArrayList<StructureObject> modifiedObjectsFromTracking = updateTrackAttributes?new ArrayList<StructureObject>() : null;
@@ -394,18 +388,18 @@ public class Processor {
         return res;
     }
     
-    public static void executeProcessingScheme(List<StructureObject> parentTrack, final int structureIdx, final boolean trackOnly) {
+    public static void executeProcessingScheme(List<StructureObject> parentTrack, final int structureIdx, final boolean trackOnly, final boolean deleteChildren) {
         if (parentTrack.isEmpty()) return;
         final ObjectDAO dao = parentTrack.get(0).getDAO();
         Experiment xp = parentTrack.get(0).getExperiment();
         final ProcessingScheme ps = xp.getStructure(structureIdx).getProcessingScheme();
-        if (xp.getStructure(structureIdx).getParentStructure()==-1) { // parents = roots
-            execute(ps, structureIdx, parentTrack, trackOnly, dao);
+        if (xp.getStructure(structureIdx).getParentStructure()==-1 || parentTrack.get(0).getStructureIdx()==xp.getStructure(structureIdx).getParentStructure()) { // parents = roots
+            execute(ps, structureIdx, parentTrack, trackOnly, deleteChildren, dao);
         } else {
             HashMap<StructureObject, ArrayList<StructureObject>> allParentTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
             // one thread per track
             ThreadAction<ArrayList<StructureObject>> ta = new ThreadAction<ArrayList<StructureObject>>() {
-                public void run(ArrayList<StructureObject> pt) {execute(ps, structureIdx, pt, trackOnly, dao);}
+                public void run(ArrayList<StructureObject> pt) {execute(ps, structureIdx, pt, trackOnly, deleteChildren, dao);}
                 public void setUp() {}
                 public void tearDown() {}
             };
@@ -413,7 +407,8 @@ public class Processor {
         }
     }
     
-    private static void execute(ProcessingScheme ps, int structureIdx, List<StructureObject> parentTrack, boolean trackOnly, ObjectDAO dao) {
+    private static void execute(ProcessingScheme ps, int structureIdx, List<StructureObject> parentTrack, boolean trackOnly, boolean deleteChildren, ObjectDAO dao) {
+        if (!trackOnly && deleteChildren) for (StructureObject p : parentTrack) dao.deleteChildren(p, structureIdx);
         if (trackOnly) ps.trackOnly(structureIdx, parentTrack);
         else ps.segmentAndTrack(structureIdx, parentTrack);
         for (StructureObject p : parentTrack) dao.store(p.getChildren(structureIdx), !(ps instanceof SegmentOnly), false);
@@ -437,8 +432,6 @@ public class Processor {
         final Map<Integer, List<Measurement>> measurements = dao.getExperiment().getMeasurementsByCallStructureIdx();
 
         ThreadRunner.execute(rootArray, true, new ThreadAction<StructureObject>() {
-            @Override public void setUp() {};
-            @Override public void tearDown() {};
             @Override
             public void run(StructureObject root) {
                 long t0 = System.currentTimeMillis();

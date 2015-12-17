@@ -23,6 +23,7 @@ import plugins.Transformation;
 import plugins.TransformationTimeIndependent;
 import utils.ThreadRunner;
 import utils.ThreadRunner.ThreadAction;
+import utils.ThreadRunner.ThreadAction2;
 
 /**
  *
@@ -64,7 +65,7 @@ public class InputImagesImpl implements InputImages {
     public void applyTranformationsSaveAndClose() {
         long tStart = System.currentTimeMillis();
         final int cCount = getChannelNumber();
-        ThreadRunner.execute(imageTC, false, new ThreadAction<InputImage[]>() {
+        ThreadRunner.execute(imageTC, false, new ThreadAction2<InputImage[]>() {
             //MultipleImageContainer container;
             @Override public void setUp() {
                 //container = imageTC[0][0].duplicateContainer();

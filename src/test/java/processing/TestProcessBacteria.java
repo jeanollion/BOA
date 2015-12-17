@@ -129,7 +129,7 @@ public class TestProcessBacteria {
         bacteria.setTrackCorrector(new MicroChannelBacteriaTrackCorrector());
         
         mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessor()));
-        bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo(), 1.1, 1.7)));
+        bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo(), 0.9, 1.1, 1.7, 1, 5)));
         
         xp.addMeasurement(new BacteriaLineageIndex(1));
         xp.addMeasurement(new BacteriaMeasurements(1, 2));

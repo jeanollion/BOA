@@ -729,11 +729,17 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void segmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_segmentButtonActionPerformed
         if (!checkConnection()) return;
         int[] selectedStructures = this.getSelectedStructures(false);
-        for (int i : this.getSelectedMicroscopyFields()) {
+        int[] microscopyFields = this.getSelectedMicroscopyFields();
+         boolean allStructures = selectedStructures.length==db.getExperiment().getStructureCount();
+        boolean deleteAll = allStructures && microscopyFields.length==db.getExperiment().getMicrocopyFieldCount();
+        if (deleteAll) db.getDao().deleteAllObjects();        
+        for (int i : microscopyFields) {
             //Processor.processAndTrackStructures(db.getExperiment(), db.getExperiment().getMicroscopyField(i), db.getDao(), true, true, selectedStructures );
             String fieldName = db.getExperiment().getMicroscopyField(i).getName();
+            boolean deleteAllField = allStructures && !deleteAll;
+            if (deleteAllField) db.getDao().deleteObjectsFromField(fieldName);
             List<StructureObject> roots = Processor.getOrCreateRootTrack(db.getDao(), fieldName);
-            for (int s : selectedStructures) Processor.executeProcessingScheme(roots, s, false);
+            for (int s : selectedStructures) Processor.executeProcessingScheme(roots, s, false, !deleteAllField);
             db.getDao().clearCacheLater(fieldName);
         }
         db.getDao().waiteForWrites();

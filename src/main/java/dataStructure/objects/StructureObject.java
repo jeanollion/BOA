@@ -303,7 +303,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                     if (isRoot()) {
                         next = dao.getRoot(fieldName, timePoint+1);
                     } else {
-                        ArrayList<StructureObject> nextSiblings = getParent().getNext().getChildren(structureIdx);
+                        StructureObject nextParent = getParent().getNext();
+                        if (nextParent==null) return null;
+                        ArrayList<StructureObject> nextSiblings = nextParent.getChildren(structureIdx);
                         for (StructureObject o : nextSiblings) if (o.getPrevious()==this) {
                             next = o;
                             break;

@@ -50,7 +50,7 @@ public class WatershedObjectSplitter implements ObjectSplitter {
         ImageOperations.and(localMax, mask, localMax); // limit @ seeds within mask
         List<Object3D> seeds = ImageLabeller.labelImageList(localMax);
         if (seeds.size()<2) {
-            logger.warn("Object splitter : less than 2 seeds found");
+            //logger.warn("Object splitter : less than 2 seeds found");
             //new IJImageDisplayer().showImage(smoothed.setName("smoothed"));
             //new IJImageDisplayer().showImage(localMax.setName("localMax"));
             return null;
