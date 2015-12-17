@@ -730,7 +730,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (!checkConnection()) return;
         int[] selectedStructures = this.getSelectedStructures(false);
         int[] microscopyFields = this.getSelectedMicroscopyFields();
-         boolean allStructures = selectedStructures.length==db.getExperiment().getStructureCount();
+        boolean allStructures = selectedStructures.length==db.getExperiment().getStructureCount();
         boolean deleteAll = allStructures && microscopyFields.length==db.getExperiment().getMicrocopyFieldCount();
         if (deleteAll) db.getDao().deleteAllObjects();        
         for (int i : microscopyFields) {
@@ -739,6 +739,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             boolean deleteAllField = allStructures && !deleteAll;
             if (deleteAllField) db.getDao().deleteObjectsFromField(fieldName);
             List<StructureObject> roots = Processor.getOrCreateRootTrack(db.getDao(), fieldName);
+            logger.debug("roots: {}", roots.size());
             for (int s : selectedStructures) Processor.executeProcessingScheme(roots, s, false, !deleteAllField);
             db.getDao().clearCacheLater(fieldName);
         }

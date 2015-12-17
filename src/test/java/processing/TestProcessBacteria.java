@@ -94,18 +94,17 @@ public class TestProcessBacteria {
         //t.correctTracks("testFluo60", 0, 1);
         //t.process("testFluo60", 0, false);
         //t.testSegBactTrackErrors();
-        //t.subsetTimePoints(595, 630, "/data/Images/Fluo/test", "/data/Images/Fluo/testsub595-630");
         //t.testRotation();
         //t.testSegBacteries();
         //t.testSegBacteriesFromXP();
-        //t.subsetTimePoints(0, 60, "/data/Images/Fluo/films1510/63me120r-14102015-LR62R1-lbiptg100x_1", "/data/Images/Fluo/films1510/63me120r-14102015-LR62R1-lbiptg100x_1_sub60", "champ1");
+        //t.subsetTimePoints(88, 119, "/data/Images/Fluo/films1511/151130/champ01", "/data/Images/Fluo/films1511/151130/champ01_sub88-118", "champ1sub88-118");
         //t.testSegMicroChannels();
         //t.testSegBactAllTimes();
         //t.runSegmentationBacteriaOnSubsetofDBXP(569, 630);
         //t.process(0, false);
         //t.testStabilizer();
         //t.testPreProcessing("fluo151127", 0);
-        t.testSegMicrochannelsFromXP();
+        //t.testSegMicrochannelsFromXP();
     }
     
     
@@ -274,8 +273,8 @@ public class TestProcessBacteria {
         int time = 78;
         int microChannel =0;
         int field = 0;
-        String dbName = "fluo1510";
-        //String dbName = "testFluo60";
+        //String dbName = "fluo1510";
+        String dbName = "testFluo60";
         Morphium m=MorphiumUtils.createMorphium(dbName);
         ExperimentDAO xpDAO = new ExperimentDAO(m);
         xp=xpDAO.getExperiment();

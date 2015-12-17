@@ -384,7 +384,11 @@ public class Processor {
     
     public static List<StructureObject> getOrCreateRootTrack(ObjectDAO dao, String fieldName) {
         List<StructureObject> res = dao.getRoots(fieldName);
-        if (res==null) res = dao.getExperiment().getMicroscopyField(fieldName).createRootObjects(dao);
+        if (res==null || res.isEmpty()) {
+            res = dao.getExperiment().getMicroscopyField(fieldName).createRootObjects(dao);
+            Processor.trackRoot(res);
+            dao.store(res, true, false);
+        }
         return res;
     }
     
@@ -393,10 +397,12 @@ public class Processor {
         final ObjectDAO dao = parentTrack.get(0).getDAO();
         Experiment xp = parentTrack.get(0).getExperiment();
         final ProcessingScheme ps = xp.getStructure(structureIdx).getProcessingScheme();
-        if (xp.getStructure(structureIdx).getParentStructure()==-1 || parentTrack.get(0).getStructureIdx()==xp.getStructure(structureIdx).getParentStructure()) { // parents = roots
+        int parentStructure = xp.getStructure(structureIdx).getParentStructure();
+        if (parentStructure==-1 || parentTrack.get(0).getStructureIdx()==parentStructure) { // parents = roots
             execute(ps, structureIdx, parentTrack, trackOnly, deleteChildren, dao);
         } else {
-            HashMap<StructureObject, ArrayList<StructureObject>> allParentTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
+            HashMap<StructureObject, ArrayList<StructureObject>> allParentTracks = StructureObjectUtils.getAllTracks(parentTrack, parentStructure);
+            logger.debug("ex ps: structure: {}, allParentTracks: {}", structureIdx, allParentTracks.size());
             // one thread per track
             ThreadAction<ArrayList<StructureObject>> ta = new ThreadAction<ArrayList<StructureObject>>() {
                 public void run(ArrayList<StructureObject> pt) {execute(ps, structureIdx, pt, trackOnly, deleteChildren, dao);}

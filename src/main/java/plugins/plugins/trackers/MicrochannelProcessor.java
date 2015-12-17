@@ -53,10 +53,8 @@ public class MicrochannelProcessor implements TrackerSegmenter {
         StructureObject prev=null;
         for (StructureObject s : parentTrack) {
             if (s!=ref) s.setChildren(pop, structureIdx);
-            if (prev!=null) {
-                assignPrevious(prev.getChildObjects(structureIdx), s.getChildObjects(structureIdx));
-                prev=s;
-            }
+            if (prev!=null) assignPrevious(prev.getChildObjects(structureIdx), s.getChildObjects(structureIdx));
+            prev=s;
         }
     }
 

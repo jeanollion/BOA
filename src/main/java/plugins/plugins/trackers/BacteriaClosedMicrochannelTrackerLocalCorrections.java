@@ -205,7 +205,12 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     populations[timePoint] = new ArrayList<Object3D>(list.size());
                     for (StructureObject o : list)  populations[timePoint].add(o.getObject());
                 } else populations[timePoint] = new ArrayList<Object3D>(0);
-            } else populations[timePoint] = getSegmenter(timePoint).runSegmenter(parent.getRawImage(structureIdx), structureIdx, parent).getObjects();
+            } else {
+                //logger.debug("tp: {}, seg null? {} image null ? {}", timePoint, getSegmenter(timePoint)==null, parent.getRawImage(structureIdx)==null);
+                ObjectPopulation pop= getSegmenter(timePoint).runSegmenter(parent.getRawImage(structureIdx), structureIdx, parent);
+                if (pop!=null) populations[timePoint] = pop.getObjects();
+                else populations[timePoint] = new ArrayList<Object3D>(0);
+            }
             //logger.debug("get object @ {}, size: {}", timePoint, populations[timePoint].size());
         }
         return populations[timePoint];
@@ -271,7 +276,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             this.timePoint=timePoint;
             idxPrevLim = getObjects(timePoint-1).size();
             idxLim = getObjects(timePoint).size();
-
+            //logger.debug("ini assigner: {}", timePoint);
         }
         protected boolean isValid() {
             return size>0 && sizePrev>0;
