@@ -29,6 +29,7 @@ import dataStructure.configuration.Structure;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectTrackCorrection;
+import dataStructure.objects.StructureObjectUtils;
 import de.caluga.morphium.Morphium;
 import image.Image;
 import image.ImageByte;
@@ -123,16 +124,7 @@ public class TestTrackCorrectionNew {
     }
     
     private void test(int[] actual, int[] expected) {
-        logger.info("testing without DB...");
-        testWithoutDB(actual, expected);
-        logger.info("testing with DB, whole process...");
         testWholeProcessDB(actual, expected);
-    }
-    
-    private void testWithoutDB(int[] actual, int[] expected) {
-        db=null;
-        ArrayList<StructureObject> root = generateData(actual);
-        testTrackCorrection(root, actual, expected);
     }
     
     // whole process at once
@@ -146,10 +138,8 @@ public class TestTrackCorrectionNew {
     }
     
     private void testTrackCorrection(ArrayList<StructureObject> root, int[] actual, int[] expected) {
-        if (db!=null) { // retrieve objects as track to set trackLinks
-            db.getDao().getAllTracks(root.get(0), 0);
-            for (StructureObject parent : root) parent.getChildren(0);
-        } 
+        StructureObjectUtils.getAllTracks(root, 0); //sets track links
+        assertEquals("number of root", actual.length, root.size());
         for (int i = 0; i<expected.length; ++i) {
             assertEquals("correction @t="+i, expected[i], root.get(i).getChildren(0).size()); // object number
             if (expected[i]==1) {
@@ -206,16 +196,6 @@ public class TestTrackCorrectionNew {
                     assertEquals("time: "+i+" track: 0, parent trackHead", parentTrackHead, oNext1.getParent().getTrackHead());
                 }
             }
-            // test des flags
-            if (expected[i]>actual[i]) { // split
-                StructureObject o1 = root.get(i).getChildren(0).get(0);
-                assertEquals("time: "+i+" track: 0 flag split", StructureObject.TrackFlag.correctionSplit, o1.getTrackFlag());
-                StructureObject o2 = root.get(i).getChildren(0).get(1);
-                assertEquals("time: "+i+" track: 1 flag split new", StructureObject.TrackFlag.correctionSplitNew, o2.getTrackFlag());
-            } else if (expected[i]<actual[i]) { // merge
-                StructureObject o1 = root.get(i).getChildren(0).get(0);
-                assertEquals("time: "+i+" track: 0 flag split", StructureObject.TrackFlag.correctionMerge, o1.getTrackFlag());
-            }
         }
     
     }
@@ -237,10 +217,12 @@ public class TestTrackCorrectionNew {
         Processor.preProcessImages(xp, null, true);
         MicroscopyField f= xp.getMicroscopyField(0);
         if (db!=null) db.getXpDAO().store(xp);
-        ArrayList<StructureObject> root = ...
-        Processor.executeProcessingScheme(root, objectSize, true);
+        ArrayList<StructureObject> root = f.createRootObjects((db!=null)?db.getDao():null);
+        logger.debug("create root objects: {}", root.size());
+        if (db!=null) db.getDao().store(root, false, false);
+        Processor.executeProcessingScheme(root, 0, false);
         if (db!=null) db.getDao().waiteForWrites();
-        return res;
+        return root;
     }
     
     private static Experiment generateXP(String outputDir) {

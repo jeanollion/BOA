@@ -46,14 +46,15 @@ public class SegmentAndTrack implements ProcessingScheme {
     }
 
     public void trackOnly(int structureIdx, List<StructureObject> parentTrack) {
-        Tracker t = tracker.instanciatePlugin();
-        StructureObject prevParent = parentTrack.get(0);
+        TrackerSegmenter t = tracker.instanciatePlugin();
+        t.track(structureIdx, parentTrack);
+        /*StructureObject prevParent = parentTrack.get(0);
         StructureObject currentParent;
         for (int i = 1; i<parentTrack.size(); ++i) {
             currentParent = parentTrack.get(i);
             t.assignPrevious(prevParent.getChildren(structureIdx), currentParent.getChildren(structureIdx));
             prevParent = currentParent;
-        }
+        }*/
     }
 
     public Parameter[] getParameters() {

@@ -19,6 +19,7 @@ package dataStructure.objects;
 
 import image.Image;
 import image.ImageMask;
+import java.util.ArrayList;
 
 /**
  *
@@ -66,8 +67,8 @@ public class BlankStructureObject implements StructureObjectProcessing {
         return null;
     }
 
-    public void setChildren(ObjectPopulation children, int structureIdx) {
-        
+    public ArrayList<StructureObject> setChildren(ObjectPopulation children, int structureIdx) {
+        return null;
     }
     
 }

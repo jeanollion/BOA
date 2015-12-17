@@ -23,6 +23,7 @@ import configuration.parameters.PluginParameter;
 import configuration.parameters.SimpleContainerParameter;
 import configuration.parameters.SimpleListParameter;
 import configuration.parameters.StructureParameter;
+import core.Processor;
 import dataStructure.containers.ImageDAO;
 import dataStructure.containers.InputImage;
 import dataStructure.containers.InputImagesImpl;
@@ -96,6 +97,7 @@ public class MicroscopyField extends SimpleContainerParameter {
         for (int t = 0; t<getImages().getTimePointNumber(); ++t) {
             res.add(new StructureObject(this.name, t, getMask(), dao));
         }
+        Processor.trackRoot(res);
         return res;
     }
     

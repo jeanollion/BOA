@@ -128,6 +128,21 @@ public class StructureObjectUtils {
                 }
             }
         }
+        for (ArrayList<StructureObject> l : res.values()) setTrackLinks(l);
         return res;
+    }
+    
+    protected static void setTrackLinks(ArrayList<StructureObject> track) {
+        if (track.isEmpty()) return;
+        StructureObject trackHead = track.get(0).getTrackHead();
+        StructureObject prev = null;
+        for (StructureObject o : track) {
+            o.trackHead=trackHead;
+            if (prev!=null) {
+                o.previous=prev;
+                prev.next=o;
+            }
+            prev = o;
+        }
     }
 }
