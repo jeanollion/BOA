@@ -62,7 +62,7 @@ import processing.neighborhood.EllipsoidalSubVoxNeighborhood;
  *
  * @author jollion
  */
-public class MutationsBlinking implements Segmenter {
+public class MutationSegmenter implements Segmenter {
     public static boolean debug = false;
     public static boolean displayImages = false;
     NumberParameter smoothRadius = new BoundedNumberParameter("Smooth Radius", 1, 1.5, 0, 10);
@@ -71,23 +71,19 @@ public class MutationsBlinking implements Segmenter {
     NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 2, 3.7, 1, null);
     NumberParameter thresholdSeedsHess = new BoundedNumberParameter("Threshold for Seeds (hessian)", 2, -0.84, null, 0);
     NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 2, 3, 1, null);
-    NumberParameter thresholdHighBlink = new BoundedNumberParameter("Threshold for Seeds (blinking)", 2, 4.26, 1, null);
-    NumberParameter thresholdSeedsHessBlink = new BoundedNumberParameter("Threshold for Seeds (hessian, blinking)", 2, -0.97, null, 0);
-    NumberParameter thresholdLowBlink = new BoundedNumberParameter("Threshold for propagation (blinking)", 2, 3.45, 1, null);
-    NumberParameter thresholdBlinkState = new BoundedNumberParameter("Threshold for blink state", 1, 110, 1, null);
     
-    Parameter[] parameters = new Parameter[]{smoothRadius, laplacianRadius,minSpotSize, thresholdBlinkState, thresholdHigh, thresholdSeedsHess, thresholdLow, thresholdHighBlink, thresholdSeedsHessBlink, thresholdLowBlink };
+    Parameter[] parameters = new Parameter[]{smoothRadius, laplacianRadius,minSpotSize, thresholdHigh, thresholdSeedsHess, thresholdLow};
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        return run(input, parent.getMask(), smoothRadius.getValue().doubleValue(), laplacianRadius.getValue().doubleValue(), minSpotSize.getValue().intValue(), thresholdBlinkState.getValue().doubleValue(), thresholdHigh.getValue().doubleValue(), thresholdSeedsHess.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), thresholdHighBlink.getValue().doubleValue(), thresholdSeedsHessBlink.getValue().doubleValue(), thresholdLowBlink.getValue().doubleValue(), null);
+        return run(input, parent.getMask(), smoothRadius.getValue().doubleValue(), laplacianRadius.getValue().doubleValue(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdSeedsHess.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), null);
     }
     
-    public static ObjectPopulation run(Image input, ImageMask mask, double smoothRadius, double laplacianRadius, int minSpotSize, double thresholdBlinkState, double thresholdHigh, double thresholdSeedHess, double thresholdLow, double thresholdHighBlink, double thresholdSeedHessBlink, double thresholdLowBlink, ArrayList<Image> intermediateImages) {
+    public static ObjectPopulation run(Image input, ImageMask mask, double smoothRadius, double laplacianRadius, int minSpotSize, double thresholdHigh, double thresholdSeedHess, double thresholdLow, ArrayList<Image> intermediateImages) {
         if (input.getSizeZ()>1) {
             // tester sur average, max, ou plan par plan
             ArrayList<Image> planes = input.splitZPlanes();
             ArrayList<ObjectPopulation> populations = new ArrayList<ObjectPopulation>(planes.size());
             for (Image plane : planes) {
-                ObjectPopulation obj = runPlane(plane, mask, smoothRadius, laplacianRadius, minSpotSize, thresholdBlinkState, thresholdHigh, thresholdSeedHess, thresholdLow, thresholdHighBlink, thresholdSeedHessBlink, thresholdLowBlink, intermediateImages);
+                ObjectPopulation obj = runPlane(plane, mask, smoothRadius, laplacianRadius, minSpotSize, thresholdHigh, thresholdSeedHess, thresholdLow, intermediateImages);
                 //if (true) return obj;
                 if (obj!=null && !obj.getObjects().isEmpty()) populations.add(obj);
             }
@@ -96,19 +92,12 @@ public class MutationsBlinking implements Segmenter {
             ObjectPopulation pop = populations.remove(populations.size()-1);
             pop.combine(populations);
             return pop;
-        } else return runPlane(input, mask, smoothRadius, laplacianRadius, minSpotSize, thresholdBlinkState, thresholdHigh, thresholdSeedHess, thresholdLow, thresholdHighBlink, thresholdSeedHessBlink, thresholdLowBlink, intermediateImages);
+        } else return runPlane(input, mask, smoothRadius, laplacianRadius, minSpotSize, thresholdHigh, thresholdSeedHess, thresholdLow, intermediateImages);
     }
     
-    public static ObjectPopulation runPlane(Image input, ImageMask mask, double smoothRadius, double laplacianRadius, int minSpotSize, double thresholdBlinkState, double thresholdSeeds, double thresholdSeedsHess, double thresholdLow, double thresholdSeedsBlink, double thresholdSeedsHessBlink, double thresholdLowBlink, ArrayList<Image> intermediateImages) {
+    public static ObjectPopulation runPlane(Image input, ImageMask mask, double smoothRadius, double laplacianRadius, int minSpotSize, double thresholdSeeds, double thresholdSeedsHess, double thresholdLow, ArrayList<Image> intermediateImages) {
         IJImageDisplayer disp = debug?new IJImageDisplayer():null;
-        double[] meanSigma = new double[2];
-        KappaSigma.kappaSigmaThreshold(input, mask, 2, 1, meanSigma);
-        boolean blink = meanSigma[0]>110;
-        if (blink) {
-            thresholdSeeds=thresholdSeedsBlink;
-            thresholdSeedsHess=thresholdSeedsHessBlink;
-            thresholdLow=thresholdLowBlink;
-        }
+
         double hessianRadius = 2;
         //Image smoothed = ImageFeatures.gaussianSmooth(input, smoothRadius, smoothRadius, false).setName("smoothed");
         Image smoothed = Filters.median(input, new ImageFloat("", 0, 0, 0), Filters.getNeighborhood(smoothRadius, smoothRadius, input));

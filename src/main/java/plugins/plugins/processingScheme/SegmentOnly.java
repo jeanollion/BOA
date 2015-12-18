@@ -35,6 +35,12 @@ public class SegmentOnly implements ProcessingScheme {
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, false);
     Parameter[] parameters= new Parameter[]{segmenter};
     
+    public SegmentOnly() {}
+    
+    public SegmentOnly(Segmenter segmenter) {
+        this.segmenter.setPlugin(segmenter);
+    }
+    
     @Override public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack) {
         ThreadAction<StructureObject> ta = new ThreadAction<StructureObject>() {
             @Override public void run(StructureObject parent) {

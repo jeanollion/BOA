@@ -386,10 +386,34 @@ public class Processor {
         List<StructureObject> res = dao.getRoots(fieldName);
         if (res==null || res.isEmpty()) {
             res = dao.getExperiment().getMicroscopyField(fieldName).createRootObjects(dao);
-            Processor.trackRoot(res);
             dao.store(res, true, false);
         }
         return res;
+    }
+    
+    public static void processAndTrackStructures(ObjectDAO dao, boolean deleteObjects, int... structures) {
+        Experiment xp = dao.getExperiment();
+        if (deleteObjects && structures.length==0) {
+            dao.deleteAllObjects();
+            deleteObjects=false;
+        }
+        for (String fieldName : xp.getFieldsAsString()) {
+            processAndTrackStructures(fieldName, dao, deleteObjects, structures);
+            dao.clearCache(); // todo : clear cache later..
+        }
+    }
+    
+    public static void processAndTrackStructures(String fieldName, ObjectDAO dao, boolean deleteObjects, int... structures) {
+        Experiment xp = dao.getExperiment();
+        if (deleteObjects) {
+            if (dao!=null) {
+                if (structures.length==0) dao.deleteObjectsFromField(fieldName);
+                else dao.deleteObjectsFromFieldByStructure(fieldName, structures);
+            }
+        } 
+        List<StructureObject> root = getOrCreateRootTrack(dao, fieldName);
+        if (structures.length==0) structures=xp.getStructuresInHierarchicalOrderAsArray();
+        for (int s: structures) executeProcessingScheme(root, s, false, false);
     }
     
     public static void executeProcessingScheme(List<StructureObject> parentTrack, final int structureIdx, final boolean trackOnly, final boolean deleteChildren) {

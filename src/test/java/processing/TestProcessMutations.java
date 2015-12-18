@@ -39,7 +39,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import plugins.PluginFactory;
 import plugins.plugins.segmenters.BacteriaFluo;
-import plugins.plugins.segmenters.MutationsBlinking;
+import plugins.plugins.segmenters.MutationSegmenter;
 import plugins.plugins.segmenters.SpotFluo2D5;
 import utils.MorphiumUtils;
 
@@ -92,7 +92,7 @@ public class TestProcessMutations {
             SpotFluo2D5.displayImages=parentMask_==null;
             ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
             //ObjectPopulation pop = SpotFluo2D5.runPlane(input.getZPlane(0), parentMask, 1.5, 1.5, 5, 4, -0.2, 4, intermediateImages); // 6 -0.18
-            ObjectPopulation pop = MutationsBlinking.runPlane(input.getZPlane(0), parentMask, 1.5, 1.5, 5, 110, 3.7, -0.84, 3, 4.26, -0.966, 3.45, intermediateImages); // 6 -0.18
+            ObjectPopulation pop = MutationSegmenter.runPlane(input.getZPlane(0), parentMask, 1.5, 1.5, 5, 3.7, -0.84, 3, intermediateImages); // 6 -0.18
             if (parentMask_!=null) parentMask_.add(parentMask);
             if (input_!=null) input_.add(input);
             if (outputLabel!=null) outputLabel.add(pop.getLabelImage());

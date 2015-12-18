@@ -21,6 +21,7 @@ import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObjectProcessing;
+import image.BlankMask;
 import image.Image;
 import image.ImageByte;
 import image.ImageFloat;
@@ -46,6 +47,7 @@ public class BackgroundFit implements Thresholder {
     }
     public static double backgroundFit(Image input, ImageMask mask, double sigmaFactor, double[] meanSigma) {
         if (meanSigma!=null && meanSigma.length<2) throw new IllegalArgumentException("Argument Mean Sigma should be null or of size 2 to recieve mean and sigma values");
+        if (mask==null) mask = new BlankMask(input);
         int[] histo = input.getHisto256(mask);
         float[] histoSmooth = smooth(histo, 2); //2 ou 3
         // fit on whole histogram
@@ -65,7 +67,7 @@ public class BackgroundFit implements Thresholder {
             meanSigma[0] = fit[0] * binSize + min;
             meanSigma[1] = fit[1] * binSize;
         }
-        logger.debug("gaussian fit histo: modal value: {}, sigma: {}, threshold: {}", meanSigma[0], meanSigma[1], threshold);
+        //logger.debug("gaussian fit histo: modal value: {}, sigma: {}, threshold: {}", meanSigma[0], meanSigma[1], threshold);
         return threshold;
     }
     

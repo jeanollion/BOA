@@ -198,11 +198,25 @@ public class ImageOperations {
         }
         else if (!output.sameSize(source1)) output = Image.createEmptyImage(name, output, source1);
         additiveCoefficient += output instanceof ImageInteger?0.5:0;
-        for (int z = 0; z<output.sizeZ; ++z) {
-            for (int xy=0; xy<output.sizeXY; ++xy) {
-                output.setPixel(xy, z, source1.getPixel(xy, z)*multiplicativeCoefficient+additiveCoefficient);
-            }
-        } 
+        if (additiveCoefficient!=0 && multiplicativeCoefficient!=1) {
+            for (int z = 0; z<output.sizeZ; ++z) {
+                for (int xy=0; xy<output.sizeXY; ++xy) {
+                    output.setPixel(xy, z, source1.getPixel(xy, z)*multiplicativeCoefficient+additiveCoefficient);
+                }
+            } 
+        } else if (additiveCoefficient==0) {
+            for (int z = 0; z<output.sizeZ; ++z) {
+                for (int xy=0; xy<output.sizeXY; ++xy) {
+                    output.setPixel(xy, z, source1.getPixel(xy, z)*multiplicativeCoefficient);
+                }
+            } 
+        } else {
+            for (int z = 0; z<output.sizeZ; ++z) {
+                for (int xy=0; xy<output.sizeXY; ++xy) {
+                    output.setPixel(xy, z, source1.getPixel(xy, z) +additiveCoefficient );
+                }
+            } 
+        }
         return output;
     }
     

@@ -21,6 +21,7 @@ import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObjectProcessing;
+import image.BlankMask;
 import image.Image;
 import image.ImageMask;
 import plugins.Thresholder;
@@ -45,6 +46,7 @@ public class KappaSigma implements Thresholder {
 
     public static double kappaSigmaThreshold(Image input, ImageMask mask, double sigmaFactor, int iterations, double[] meanSigma) {
         if (meanSigma!=null && meanSigma.length<2) throw new IllegalArgumentException("Argument Mean Sigma should be null or of size 2 to recieve mean and sigma values");
+        if (mask==null) mask = new BlankMask(input);
         double lastThreshold = Double.MAX_VALUE;
         double count, mean, mean2, sigma;
         if (iterations<=0) iterations=1;
@@ -74,7 +76,7 @@ public class KappaSigma implements Thresholder {
                 }
             }
             double newThreshold = mean + sigmaFactor * sigma;
-            logger.trace("Kappa Sigma Thresholder: Iteration:"+ i+" Mean Background Value: "+mean+ " Sigma: "+sigma+ " threshold: "+newThreshold);
+            //logger.trace("Kappa Sigma Thresholder: Iteration:"+ i+" Mean Background Value: "+mean+ " Sigma: "+sigma+ " threshold: "+newThreshold);
             if (newThreshold == lastThreshold) return lastThreshold;
             else lastThreshold = newThreshold;
         }

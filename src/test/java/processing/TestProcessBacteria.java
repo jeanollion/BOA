@@ -58,9 +58,11 @@ import plugins.plugins.measurements.BacteriaMeasurements;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.preFilter.Median;
 import plugins.plugins.processingScheme.SegmentAndTrack;
+import plugins.plugins.processingScheme.SegmentOnly;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.BacteriesFluo2D;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
+import plugins.plugins.segmenters.MutationSegmenter;
 import plugins.plugins.segmenters.SpotFluo2D5;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.trackCorrector.MicroChannelBacteriaTrackCorrector;
@@ -72,6 +74,7 @@ import plugins.plugins.transformations.AutoRotationXY;
 import plugins.plugins.transformations.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
 import plugins.plugins.transformations.ImageStabilizerXY;
+import plugins.plugins.transformations.ScaleHistogram;
 import plugins.plugins.transformations.SelectBestFocusPlane;
 import plugins.plugins.transformations.SuppressCentralHorizontalLine;
 import processing.ImageTransformation.InterpolationScheme;
@@ -113,7 +116,7 @@ public class TestProcessBacteria {
         xp = new Experiment("testXP");
         xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
         //xp.setImportImageMethod(Experiment.ImportImageMethod.SINGLE_FILE);
-        xp.getChannelImages().insert(new ChannelImage("trans", "_REF"), new ChannelImage("fluo", ""));
+        xp.getChannelImages().insert(new ChannelImage("RFP", "_REF"), new ChannelImage("YFP", ""));
         xp.setOutputImageDirectory(outputDir);
         File f =  new File(outputDir); f.mkdirs(); //deleteDirectory(f);
         Structure mc = new Structure("MicroChannel", -1, 0);
@@ -129,6 +132,7 @@ public class TestProcessBacteria {
         
         mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessor()));
         bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo(), 0.9, 1.1, 1.7, 1, 5)));
+        mutation.setProcessingScheme(new SegmentOnly(new MutationSegmenter()));
         
         xp.addMeasurement(new BacteriaLineageIndex(1));
         xp.addMeasurement(new BacteriaMeasurements(1, 2));
@@ -136,6 +140,7 @@ public class TestProcessBacteria {
             xp.getPreProcessingTemplate().addTransformation(0, null, new SuppressCentralHorizontalLine(6)).setActivated(false);
             xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1, 0)).setActivated(false);
             xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
+            xp.getPreProcessingTemplate().addTransformation(1, null, new ScaleHistogram(100, true));
             xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
             xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(true);
             xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannels2D());
@@ -355,12 +360,14 @@ public class TestProcessBacteria {
         ObjectDAO dao = db.getDao();
         if (fields.length==0) {
             if (preProcess) Processor.preProcessImages(xp, dao, true);
-            Processor.processAndTrackStructures(xp, dao);
+            //Processor.processAndTrackStructures(xp, dao);
+            Processor.processAndTrackStructures(dao, preProcess);
         } else {
             for (int field : fields) {
                 MicroscopyField f = xp.getMicroscopyField(field);
                 if (preProcess) Processor.preProcessImages(f, dao, true, true);
-                Processor.processAndTrackStructures(xp, f, dao, true, true);
+                //Processor.processAndTrackStructures(xp, f, dao, true, true);
+                Processor.processAndTrackStructures(f.getName(), dao, preProcess);
                 dao.clearCache();
             }
         }
