@@ -51,6 +51,7 @@ import processing.IJFFTBandPass;
 import processing.ImageFeatures;
 import processing.LoG;
 import processing.WatershedTransform;
+import processing.WatershedTransform.MonotonalPropagation;
 import processing.WatershedTransform.MultiplePropagationCriteria;
 import processing.WatershedTransform.SizeFusionCriterion;
 import processing.WatershedTransform.ThresholdPropagation;
@@ -65,25 +66,23 @@ import processing.neighborhood.EllipsoidalSubVoxNeighborhood;
 public class MutationSegmenter implements Segmenter {
     public static boolean debug = false;
     public static boolean displayImages = false;
-    NumberParameter smoothRadius = new BoundedNumberParameter("Smooth Radius", 1, 1.5, 0, 10);
-    NumberParameter laplacianRadius = new BoundedNumberParameter("Laplacian Radius", 1, 1.5, 1, 5);
-    NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxel)", 0, 5, 1, null);
-    NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 2, 3.7, 1, null);
-    NumberParameter thresholdSeedsHess = new BoundedNumberParameter("Threshold for Seeds (hessian)", 2, -0.84, null, 0);
-    NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 2, 3, 1, null);
+    NumberParameter scale = new BoundedNumberParameter("Scale", 1, 2.5, 1.5, 5);
+    NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxels)", 0, 5, 1, null);
+    NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 2, 2, 1, null);
+    NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 2, 1, 0, null);
     
-    Parameter[] parameters = new Parameter[]{smoothRadius, laplacianRadius,minSpotSize, thresholdHigh, thresholdSeedsHess, thresholdLow};
+    Parameter[] parameters = new Parameter[]{scale, minSpotSize, thresholdHigh,  thresholdLow};
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        return run(input, parent.getMask(), smoothRadius.getValue().doubleValue(), laplacianRadius.getValue().doubleValue(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdSeedsHess.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), null);
+        return run(input, parent.getMask(), scale.getValue().doubleValue(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), null);
     }
     
-    public static ObjectPopulation run(Image input, ImageMask mask, double smoothRadius, double laplacianRadius, int minSpotSize, double thresholdHigh, double thresholdSeedHess, double thresholdLow, ArrayList<Image> intermediateImages) {
+    public static ObjectPopulation run(Image input, ImageMask mask, double scale, int minSpotSize, double thresholdHigh , double thresholdLow, ArrayList<Image> intermediateImages) {
         if (input.getSizeZ()>1) {
             // tester sur average, max, ou plan par plan
             ArrayList<Image> planes = input.splitZPlanes();
             ArrayList<ObjectPopulation> populations = new ArrayList<ObjectPopulation>(planes.size());
             for (Image plane : planes) {
-                ObjectPopulation obj = runPlane(plane, mask, smoothRadius, laplacianRadius, minSpotSize, thresholdHigh, thresholdSeedHess, thresholdLow, intermediateImages);
+                ObjectPopulation obj = runPlane(plane, mask, scale, minSpotSize, thresholdHigh, thresholdLow, intermediateImages);
                 //if (true) return obj;
                 if (obj!=null && !obj.getObjects().isEmpty()) populations.add(obj);
             }
@@ -92,42 +91,35 @@ public class MutationSegmenter implements Segmenter {
             ObjectPopulation pop = populations.remove(populations.size()-1);
             pop.combine(populations);
             return pop;
-        } else return runPlane(input, mask, smoothRadius, laplacianRadius, minSpotSize, thresholdHigh, thresholdSeedHess, thresholdLow, intermediateImages);
+        } else return runPlane(input, mask, scale, minSpotSize, thresholdHigh, thresholdLow, intermediateImages);
     }
     
-    public static ObjectPopulation runPlane(Image input, ImageMask mask, double smoothRadius, double laplacianRadius, int minSpotSize, double thresholdSeeds, double thresholdSeedsHess, double thresholdLow, ArrayList<Image> intermediateImages) {
+    public static ObjectPopulation runPlane(Image input, ImageMask mask, double scale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
         IJImageDisplayer disp = debug?new IJImageDisplayer():null;
-
-        double hessianRadius = 2;
-        //Image smoothed = ImageFeatures.gaussianSmooth(input, smoothRadius, smoothRadius, false).setName("smoothed");
-        Image smoothed = Filters.median(input, new ImageFloat("", 0, 0, 0), Filters.getNeighborhood(smoothRadius, smoothRadius, input));
-        
-        //ImageFloat bckg = ImageFeatures.gaussianSmooth(input, 10, 10, false);
-        //smoothed = ImageOperations.addImage(smoothed, bckg, bckg, -1).setName("smoothed");
-        
-        Image contrasted = ImageFeatures.getLaplacian(smoothed, laplacianRadius, true, false);
-        Image hess = ImageFeatures.getHessian(smoothed, hessianRadius, false)[0].setName("hessian max");
+        Image lap = ImageFeatures.getLaplacian(input, scale, true, false).setName("laplacian: "+scale);
+        //Image lapSP = ImageFeatures.getScaleSpaceLaplacian(input, new double[]{2, 4, 6, 8, 10});
+        //Image hessSP = ImageFeatures.getScaleSpaceHessianDet(input, new double[]{2, 4, 6, 8, 10});
+        Image[] hess = ImageFeatures.getHessianMaxAndDeterminant(input, scale, false);
+        Image det = hess[1].setName("hessian det");
+        Image hessMax = hess[0].setName("hessian max");
         if (displayImages) {
             disp.showImage(input.setName("input"));
             //disp.showImage(lom.setName("laplacian"));
-            disp.showImage(hess);
-            disp.showImage(smoothed);
+            disp.showImage(det);
+            disp.showImage(hessMax);
         }
-        ImageByte seeds = Filters.localExtrema(contrasted, null, true, thresholdSeeds, Filters.getNeighborhood(1, 1, input));
-        ImageByte seedsHess = Filters.localExtrema(hess, null, false, thresholdSeedsHess, Filters.getNeighborhood(1, 1, input));
+        ImageByte seeds = Filters.localExtrema(det, null, true, thresholdSeeds, Filters.getNeighborhood(scale, scale, input));
+        
         if (intermediateImages!=null) {
-            intermediateImages.add(smoothed);
-            intermediateImages.add(contrasted);
-            intermediateImages.add(hess);
-            intermediateImages.add(seeds);
-            intermediateImages.add(seedsHess);
+            intermediateImages.add(det);
+            //intermediateImages.add(hessMax);
+            intermediateImages.add(lap);
         }
         
         ObjectPopulation seedPop = new ObjectPopulation(seeds, false);
-        seedPop.filter(new Overlap(seedsHess, 1.5));
+        //seedPop.filter(new Overlap(seedsHess, 1.5));
         //seedPop.filter(new Or(new ObjectPopulation.GaussianFit(norm, 3, 3, 5, 0.2, 0.010, 6), new MeanIntensity(-0.2, false, hess)));
-        
-        ObjectPopulation pop =  watershed(hess, mask, seedPop.getObjects(), false, new MultiplePropagationCriteria(new ThresholdPropagationOnWatershedMap(0), new ThresholdPropagation(contrasted, thresholdLow, true)), new SizeFusionCriterion(minSpotSize));
+        ObjectPopulation pop =  watershed(det, mask, seedPop.getObjects(), true, new MultiplePropagationCriteria(new ThresholdPropagationOnWatershedMap(thresholdPropagation), new MonotonalPropagation(), new ThresholdPropagation(hessMax, 0, false)), new SizeFusionCriterion(minSpotSize));
         pop.filter(new ObjectPopulation.RemoveFlatObjects(input));
         pop.filter(new ObjectPopulation.Size().setMin(minSpotSize));
         return pop;

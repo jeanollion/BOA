@@ -376,7 +376,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        segmentButton.setText("Segment");
+        segmentButton.setText("SegmentAnd Track");
         segmentButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 segmentButtonActionPerformed(evt);
@@ -442,7 +442,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
-        trackActionButton.setText("Track");
+        trackActionButton.setText("Track Only");
         trackActionButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 trackActionButtonActionPerformed(evt);
@@ -475,7 +475,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                         .addGap(100, 100, 100)
                         .addComponent(actionStructureJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 155, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(actionMicroscopyFieldJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 205, Short.MAX_VALUE))
+                        .addComponent(actionMicroscopyFieldJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 161, Short.MAX_VALUE))
                     .addGroup(actionPanelLayout.createSequentialGroup()
                         .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(saveExperiment)
@@ -546,7 +546,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
-        collapseAllObjectButton.setText("Collapse All Objects");
+        collapseAllObjectButton.setText("Collapse Object-tree");
         collapseAllObjectButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 collapseAllObjectButtonActionPerformed(evt);
@@ -741,7 +741,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             List<StructureObject> roots = Processor.getOrCreateRootTrack(db.getDao(), fieldName);
             logger.debug("roots: {}", roots.size());
             for (int s : selectedStructures) Processor.executeProcessingScheme(roots, s, false, !deleteAllField);
-            db.getDao().clearCacheLater(fieldName);
+            //db.getDao().clearCacheLater(fieldName);
+            db.getDao().clearCache();
         }
         db.getDao().waiteForWrites();
         

@@ -35,7 +35,7 @@ import plugins.plugins.thresholders.KappaSigma;
  */
 public class ScaleHistogram implements Transformation {
     BoundedNumberParameter scaleFactor= new BoundedNumberParameter("Scale Factor", 1, 100, 1, null);
-    BooleanParameter method = new BooleanParameter("Mean estimation method", "Gaussian Fit", "Kappa-Sigma", true);
+    BooleanParameter method = new BooleanParameter("Mean estimation method", "Gaussian Fit", "Kappa-Sigma", false);
     Parameter[] parameters = new Parameter[]{scaleFactor, method};
     
     public ScaleHistogram() {}
@@ -45,14 +45,67 @@ public class ScaleHistogram implements Transformation {
         method.setSelected(gaussianFit);
     }
     
-    public void computeConfigurationData(int channelIdx, InputImages inputImages) {}
-
+    public void computeConfigurationData(int channelIdx, InputImages inputImages) {
+        /*double scaleFactor = this.scaleFactor.getValue().doubleValue();
+        double[] means = new double[inputImages.getTimePointNumber()]; 
+        double[] meansGF = new double[inputImages.getTimePointNumber()]; 
+        double[] meansKS3 = new double[inputImages.getTimePointNumber()];
+        double[] meansKS4 = new double[inputImages.getTimePointNumber()];
+        for (int t = 0; t<inputImages.getTimePointNumber(); ++t) {
+            Image i = inputImages.getImage(channelIdx, t);
+            means[t] = getMean(i);
+            meansGF[t] = getMean(scaleGF(i, scaleFactor));
+            meansKS3[t] = getMean(scaleKS(i, scaleFactor, 3, 2));
+            meansKS4[t] = getMean(scaleKS(i, scaleFactor, 4, 2));
+        }
+        normal: 114 / 6.8
+        result: GF: 105 / 0.75
+        KS3 : 100 / 0.03
+        KS4: 100 / 0.02
+        logger.debug("ScaleHistogram: no correction: {}, gaussian fit: {}, ks 3: {}, ks 4: {}", getMeanSD(means), getMeanSD(meansGF), getMeanSD(meansKS3), getMeanSD(meansKS4));
+        */
+    
+    }
+    
+    
+    
+    private static Image scaleGF(Image image, double scaleFactor) {
+        double[] meanSigma = new double[2];
+        BackgroundFit.backgroundFit(image, null, 1, meanSigma);
+        double scale = scaleFactor / meanSigma[0];
+        return ImageOperations.affineOperation(image, null, scale, 0);
+    }
+    
+    private static Image scaleKS(Image image, double scaleFactor, double sigmaFactorKS, int iterationsKS) {
+        double[] meanSigma = new double[2];
+        KappaSigma.kappaSigmaThreshold(image, null, sigmaFactorKS, iterationsKS, meanSigma);
+        double scale = scaleFactor / meanSigma[0];
+        return ImageOperations.affineOperation(image, null, scale, 0);
+    }
+    
+    private static double getMean(Image image) {
+        double[] meanSigma = new double[2];
+        KappaSigma.kappaSigmaThreshold(image, null, 3, 1, meanSigma);
+        return meanSigma[0];
+    }
+    
+    private static double[] getMeanSD(double[] values) {
+        double mean=0;
+        double mean2=0;
+        for (double val : values) {
+            mean+=val;
+            mean2+=val*val;
+        }
+        mean/=(double)values.length;
+        return new double[]{mean, Math.sqrt(mean2/(double)values.length - mean*mean)};
+    }
+    
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         double[] meanSigma = new double[2];
         if (method.getSelected()) BackgroundFit.backgroundFit(image, null, 1, meanSigma);
         else KappaSigma.kappaSigmaThreshold(image, null, 3, 2, meanSigma);
         double scale = scaleFactor.getValue().doubleValue() / meanSigma[0];
-        logger.debug("timePoint: {} estimated background : {}, scale value: {}", timePoint, meanSigma[0], scale);
+        logger.debug("timePoint: {} estimated background : {}, scale value: {}, method: {}", timePoint, meanSigma[0], scale, method.getSelectedItem());
         return ImageOperations.affineOperation(image, image instanceof ImageFloat? image: null, scale, 0);
     }
 

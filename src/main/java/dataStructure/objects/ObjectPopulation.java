@@ -79,14 +79,12 @@ public class ObjectPopulation {
      * thus modified) by Connected Components Labeling
      */
     public ObjectPopulation(ImageInteger image, boolean isLabeledImage) {
-        if (isLabeledImage) {
-            this.labelImage = image;
-        } else {
+        this.properties = image.getProperties();
+        labelImage = image;
+        if (!isLabeledImage) {
             objects = new ArrayList<Object3D>(ImageLabeller.labelImageList(image));
-            labelImage = image;
             relabel(); // in order to have consistent labels between image & object list
         }
-        this.properties = labelImage.getProperties();
     }
 
     /*public ObjectPopulation(ArrayList<Object3D> objects) {

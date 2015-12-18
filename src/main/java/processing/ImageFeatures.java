@@ -36,6 +36,7 @@ import imagescience.image.FloatImage;
 import imagescience.segment.Thresholder;
 import imageware.Builder;
 import imageware.ImageWare;
+import java.util.ArrayList;
 import java.util.Vector;
 import utils.ThreadRunner;
 
@@ -185,21 +186,22 @@ public class ImageFeatures {
     }
     
     public static ImageFloat getLaplacian(Image image, double scale, boolean invert, boolean overrideIfFloat) {
-        scale *= image.getScaleXY();
+        double s = scale * image.getScaleXY();
         final imagescience.image.Image is = ImagescienceWrapper.getImagescience(image);
         boolean duplicate = !((image instanceof ImageFloat) && overrideIfFloat);
-        ImageFloat res = (ImageFloat)ImagescienceWrapper.wrap(new Laplacian().run(duplicate?is.duplicate():is, scale));
-        if (invert) ImageOperations.affineOperation(res, res, -1, 0);
-        res.setCalibration(image).resetOffset().addOffset(image).setName(image.getName() + ":laplacian");
+        ImageFloat res = (ImageFloat)ImagescienceWrapper.wrap(new Laplacian().run(duplicate?is.duplicate():is, s));
+        if (invert) ImageOperations.affineOperation(res, res, -scale, 0);
+        else ImageOperations.affineOperation(res, res, scale, 0);
+        res.setCalibration(image).resetOffset().addOffset(image).setName(image.getName() + ":laplacian:"+scale);
         return res;
     }
     
     public static ImageFloat[] getHessian(Image image, double scale, boolean overrideIfFloat) {
         ImageFloat[] res = new ImageFloat[image.getSizeZ()==1?2:3];
         final imagescience.image.Image is = ImagescienceWrapper.getImagescience(image);
-        scale *= image.getScaleXY();
+        double s = scale * image.getScaleXY();
         boolean duplicate = !((image instanceof ImageFloat) && overrideIfFloat);
-        Vector vector = new Hessian().run(duplicate?is.duplicate():is, scale, false);
+        Vector vector = new Hessian().run(duplicate?is.duplicate():is, s, false);
         for (int i=0;i<res.length;i++) {
             res[i] = (ImageFloat)ImagescienceWrapper.wrap((imagescience.image.Image) vector.get(i));
             res[i].setCalibration(image);
@@ -210,25 +212,41 @@ public class ImageFeatures {
     }
     public static ImageFloat[] getHessianMaxAndDeterminant(Image image, double scale, boolean overrideIfFloat) {
         ImageFloat[] hess=getHessian(image, scale, overrideIfFloat);
-        ImageFloat output = hess[hess.length-1];
+        ImageFloat det = hess[hess.length-1];
+        double scaleDet;
         if (hess.length==2) {
-            for (int xy = 0; xy<hess[0].getSizeXY(); ++xy) {
-                
-                output.setPixel(xy, 0, sqrt(hess[0].getPixel(xy, 0)*hess[1].getPixel(xy, 0)));
-            }
+            scaleDet = scale*scale;
+            for (int xy = 0; xy<hess[0].getSizeXY(); ++xy) det.setPixel(xy, 0, hess[0].getPixel(xy, 0)*hess[1].getPixel(xy, 0)*scaleDet); //sqrt?
         } else if (hess.length==3) {
-            double pow = 1d/3d;
+            //double pow = 1d/3d;
+            scaleDet = scale *scale*scale;
             for (int z = 0; z<hess[0].getSizeZ(); ++z) {
                 for (int xy = 0; xy<hess[0].getSizeXY(); ++xy) {
-                    output.setPixel(xy, z, Math.pow(hess[0].getPixel(xy, z)*hess[1].getPixel(xy, z)*hess[2].getPixel(xy, z), pow));
+                    det.setPixel(xy, z, hess[0].getPixel(xy, z)*hess[1].getPixel(xy, z)*hess[2].getPixel(xy, z)*scaleDet); // pow?
                 }
             }
         } else {
             logger.warn("wrong number of dimension {}, hessian determient cannot be computed", hess.length);
             return null;
         }
-        return new ImageFloat[]{hess[0], output};
+        ImageOperations.affineOperation(hess[0], hess[0], scale, 0);
+        return new ImageFloat[]{hess[0], det};
     }
+    
+    public static Image getScaleSpaceHessianDet(Image plane, double[] scales) {
+        if (plane.getSizeZ()>1) throw new IllegalArgumentException("2D image only");
+        ArrayList<ImageFloat> planes = new ArrayList<ImageFloat>(scales.length);
+        for (double s : scales) planes.add(ImageFeatures.getHessianMaxAndDeterminant(plane, s, false)[1]);
+        return Image.mergeZPlanes(planes);
+    }
+    
+    public static Image getScaleSpaceLaplacian(Image plane, double[] scales) {
+        if (plane.getSizeZ()>1) throw new IllegalArgumentException("2D image only");
+        ArrayList<ImageFloat> planes = new ArrayList<ImageFloat>(scales.length);
+        for (double s : scales) planes.add(ImageFeatures.getLaplacian(plane, s, true, false));
+        return Image.mergeZPlanes(planes);
+    }
+    
     private static double sqrt(double number) {
         return number>=0?Math.sqrt(number):-Math.sqrt(-number);
     }
@@ -247,6 +265,12 @@ public class ImageFeatures {
         image.setCalibration(old_scaleXY, old_scaleZ);
         res.setCalibration(old_scaleXY, old_scaleZ);
         res.resetOffset().addOffset(image);
+        return res;
+    }
+    
+    public static ImageFloat gaussianSmoothScaled(Image image, double scaleXY, double scaleZ, boolean overrideIfFloat) {
+        ImageFloat res = gaussianSmooth(image, scaleXY, scaleZ, overrideIfFloat);
+        ImageOperations.affineOperation(image, image, scaleXY, 0);
         return res;
     }
     

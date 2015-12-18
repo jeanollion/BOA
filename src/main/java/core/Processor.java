@@ -430,8 +430,6 @@ public class Processor {
             // one thread per track
             ThreadAction<ArrayList<StructureObject>> ta = new ThreadAction<ArrayList<StructureObject>>() {
                 public void run(ArrayList<StructureObject> pt) {execute(ps, structureIdx, pt, trackOnly, deleteChildren, dao);}
-                public void setUp() {}
-                public void tearDown() {}
             };
             ThreadRunner.execute(new ArrayList<ArrayList<StructureObject>> (allParentTracks.values()), ta);
         }

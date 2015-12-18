@@ -52,10 +52,11 @@ public class TestProcessMutations {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         //String dbName = "testFluo60";
-        String dbName = "fluo151130_sub88-118";
+        //String dbName = "fluo151130_sub88-118";
+        String dbName = "fluo151130";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
-        t.testSegMutationsFromXP(true, 0, 30);
+        t.testSegMutationsFromXP(2, 2, true, 0, 20);
         //t.testSegMutationsFromXP(27);
     }
     public void init(String dbName) {
@@ -63,18 +64,14 @@ public class TestProcessMutations {
         db = new DBConfiguration(dbName);
         logger.info("Experiment: {} retrieved from db: {}", db.getExperiment().getName(), dbName);
     }
-    public void testSegMutationsFromXP(int time) {
-        testSegMutationsFromXP(true, time, null, null, null, null, null);
+    public void testSegMutationsFromXP(int fieldIdx, int mcIdx, int time) {
+        testSegMutationsFromXP(fieldIdx, mcIdx, true, time, null, null, null, null, null);
     }
-    public void testSegMutationsFromXP(boolean parentMC, int time, ArrayList<ImageInteger> mcMask_, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
-        int field = 0;
-        int channel = 1;
-        //String dbName = "testFluo";
-        
-        MicroscopyField f = db.getExperiment().getMicroscopyField(field);
+    public void testSegMutationsFromXP(int fieldIdx, int mcIdx, boolean parentMC, int time, ArrayList<ImageInteger> mcMask_, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
+        MicroscopyField f = db.getExperiment().getMicroscopyField(fieldIdx);
         StructureObject root = db.getDao().getRoot(f.getName(), time);
         //logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
-        StructureObject mc = root.getChildren(0).get(channel);
+        StructureObject mc = root.getChildren(0).get(mcIdx);
         if (mcMask_!=null) mcMask_.add(mc.getMask());
         if (parentMC) {
             testSegMutation(mc, parentMask_, input_, outputLabel, intermediateImages_);
@@ -92,7 +89,7 @@ public class TestProcessMutations {
             SpotFluo2D5.displayImages=parentMask_==null;
             ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
             //ObjectPopulation pop = SpotFluo2D5.runPlane(input.getZPlane(0), parentMask, 1.5, 1.5, 5, 4, -0.2, 4, intermediateImages); // 6 -0.18
-            ObjectPopulation pop = MutationSegmenter.runPlane(input.getZPlane(0), parentMask, 1.5, 1.5, 5, 3.7, -0.84, 3, intermediateImages); // 6 -0.18
+            ObjectPopulation pop = MutationSegmenter.runPlane(input.getZPlane(0), parentMask, 2.5, 5, 2, 1, intermediateImages); // 6 -0.18
             if (parentMask_!=null) parentMask_.add(parentMask);
             if (input_!=null) input_.add(input);
             if (outputLabel!=null) outputLabel.add(pop.getLabelImage());
@@ -100,7 +97,7 @@ public class TestProcessMutations {
     }
     
     static int intervalX = 5;
-    public void testSegMutationsFromXP(boolean parentMC, int tStart, int tEnd) {
+    public void testSegMutationsFromXP(int fieldIdx, int mcIdx, boolean parentMC, int tStart, int tEnd) {
         ArrayList<ImageInteger> mcMask = new ArrayList<ImageInteger>();
         ArrayList<ImageInteger> parentMask = new ArrayList<ImageInteger>();
         ArrayList<Image> input = new ArrayList<Image>();
@@ -109,7 +106,7 @@ public class TestProcessMutations {
         
         for (int t = tStart; t<tEnd; ++t) {
             logger.debug("SEG MUT: time: {}", t);
-            testSegMutationsFromXP(parentMC, t, mcMask, parentMask, input, outputLabel, intermediateImages);
+            testSegMutationsFromXP(fieldIdx, mcIdx, parentMC, t, mcMask, parentMask, input, outputLabel, intermediateImages);
         }
         
         int xSize = 0;

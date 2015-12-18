@@ -178,6 +178,7 @@ public class Filters {
             else return neighborhood.getPixelValues()[neighborhood.getValueCount()/2];
         }
     }
+
     /*private static class MedianSelection extends Filter { // TODO: selection algorithm:  http://blog.teamleadnet.com/2012/07/quick-select-algorithm-find-kth-element.html
         @Override public float applyFilter(int x, int y, int z) {
             if (neighborhood.getValueCount()==0) return 0;

@@ -138,9 +138,9 @@ public class TestProcessBacteria {
         xp.addMeasurement(new BacteriaMeasurements(1, 2));
         if (preProcessing) {// preProcessing 
             xp.getPreProcessingTemplate().addTransformation(0, null, new SuppressCentralHorizontalLine(6)).setActivated(false);
-            xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1, 0)).setActivated(false);
+            xp.getPreProcessingTemplate().addTransformation(1, null, new ScaleHistogram(100, true)); // to remove blinking
+            xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1, 0)).setActivated(true); // to remove salt and pepper noise
             xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
-            xp.getPreProcessingTemplate().addTransformation(1, null, new ScaleHistogram(100, true));
             xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
             xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(true);
             xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannels2D());
