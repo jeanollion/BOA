@@ -89,9 +89,9 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     }
     
     @Override
-    public Parameter duplicate() {
+    public <T extends Parameter> T duplicate() {
         try {
-            Parameter p = (Parameter) this.getClass().getDeclaredConstructor(String.class).newInstance(name);
+            T p = (T) this.getClass().getDeclaredConstructor(String.class).newInstance(name);
             p.setContentFrom(this);
             return p;
         } catch (NoSuchMethodException ex) {

@@ -38,6 +38,10 @@ public class TextParameter extends SimpleParameter {
     boolean allowSpecialCharacters;
     String value;
     
+    public TextParameter(String name) {
+        this(name, "", true);
+    }
+    
     public TextParameter(String name, String defaultText, boolean allowSpecialCharacters) {
         super(name);
         this.value=defaultText;
@@ -56,6 +60,10 @@ public class TextParameter extends SimpleParameter {
     public void setContentFrom(Parameter other) {
         if (other instanceof TextParameter) this.value=((TextParameter)other).getValue();
         else throw new IllegalArgumentException("wrong parameter type");
+    }
+    
+    @Override public TextParameter duplicate() {
+        return new TextParameter(name, value, allowSpecialCharacters);
     }
     
     public void setValue(String value) {this.value=value;}

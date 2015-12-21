@@ -77,7 +77,14 @@ public class BasicMeasurements {
             return new double[] {value, Math.sqrt(value2-value*value)};
         } else return null;
     }
-    public static double[] getSNR(List<Voxel> foreground, List<Voxel> background, Image image) {
+    /**
+     * 
+     * @param foreground
+     * @param background
+     * @param image
+     * @return [SNR, Mean ForeGround, Mean BackGround, Sd Background]
+     */
+    public static double[] getSNR(List<Voxel> foreground, List<Voxel> background, Image image) { 
         if (foreground.isEmpty() || background.isEmpty()) return null;
         List<Voxel> bck = new ArrayList<Voxel> (background);
         bck.removeAll(foreground);

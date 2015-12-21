@@ -447,7 +447,8 @@ public class Processor {
     public static void performMeasurements(Experiment xp, ObjectDAO dao) {
         for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
             performMeasurements(xp.getMicroscopyField(i).getName(), dao);
-            if (dao!=null) dao.clearCacheLater(xp.getMicroscopyField(i).getName());
+            //if (dao!=null) dao.clearCacheLater(xp.getMicroscopyField(i).getName());
+            dao.clearCache();
         }
     }
     

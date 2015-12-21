@@ -69,10 +69,11 @@ public class BacteriaMeasurementsWoleMC implements Measurement {
         //res.add(new MeasurementKeyObject("Squeleton", structure.getSelectedIndex()));
         res.add(new MeasurementKeyObject("MutationCount", parentIdx));
         res.add(new MeasurementKeyObject("BacteriaCount", parentIdx));
-        res.add(new MeasurementKeyObject("MM_MutationCount", parentIdx));
-        res.add(new MeasurementKeyObject("MM_FeretMax", parentIdx));
-        res.add(new MeasurementKeyObject("MM_MeanValue", parentIdx));
-        res.add(new MeasurementKeyObject("MM_Volume", parentIdx));
+        res.add(new MeasurementKeyObject("M_MutationCount", parentIdx));
+        res.add(new MeasurementKeyObject("M_FeretMax", parentIdx));
+        res.add(new MeasurementKeyObject("M_MeanValue", parentIdx));
+        res.add(new MeasurementKeyObject("M_Volume", parentIdx));
+        res.add(new MeasurementKeyObject("MutationForegroundSingle", mutation.getSelectedIndex()));
         return res;
     }
 
@@ -86,24 +87,27 @@ public class BacteriaMeasurementsWoleMC implements Measurement {
         BoundingBox bounds = o.getBounds().duplicate();
         o.translate(bounds, true);
         object.getMeasurements().setValue("BacteriaMeanIntensity", BasicMeasurements.getMeanValue(o, bactImage));
-        object.getMeasurements().setValue("MutationMeanIntensity", BasicMeasurements.getMeanValue(o, mutImage));
-        
         ArrayList<StructureObject> mutList = object.getChildren(mutation.getSelectedIndex());
+        if (mutList.isEmpty()) object.getMeasurements().setValue("MutationMeanIntensity", BasicMeasurements.getMeanValue(o, mutImage));
         if (!mutList.isEmpty()) {
             List<Voxel> mutVox = new ArrayList<Voxel>();
             for (StructureObject m : mutList) mutVox.addAll(m.getObject().getVoxels());
             double[] snr = BasicMeasurements.getSNR(mutVox, o.getVoxels(), mutImage);
             object.getMeasurements().setValue("MutationSNR", snr[0]);
-            object.getMeasurements().setValue("MutationForeground", snr[1]);            
+            object.getMeasurements().setValue("MutationForeground", snr[1]);    
+            object.getMeasurements().setValue("MutationMeanIntensity", snr[2]);    
         }
-        
+        for (StructureObject m : mutList) {
+              m.getMeasurements().setValue("MutationForegroundSingle", BasicMeasurements.getMeanValue(m.getObject().getVoxels(), mutImage));
+              modifiedObjects.add(m);
+        }
         ArrayList<StructureObject> bactList = object.getChildren(bacteria.getSelectedIndex());
         if (!bactList.isEmpty()) {
             StructureObject mm = bactList.get(0);
-            object.getMeasurements().setValue("MM_MutationCount", ObjectInclusionCount.count(object, mm, mutList, 0, true));
-            object.getMeasurements().setValue("MM_FeretMax", GeometricalMeasurements.getFeretMax(mm.getObject()));
-            object.getMeasurements().setValue("MM_MeanValue", BasicMeasurements.getMeanValue(mm.getObject(), bactImage));
-            object.getMeasurements().setValue("MM_Volume", GeometricalMeasurements.getVolume(mm.getObject()));
+            object.getMeasurements().setValue("M_MutationCount", ObjectInclusionCount.count(object, mm, mutList, 0, true));
+            object.getMeasurements().setValue("M_FeretMax", GeometricalMeasurements.getFeretMax(mm.getObject()));
+            object.getMeasurements().setValue("M_MeanValue", BasicMeasurements.getMeanValue(mm.getObject(), bactImage));
+            object.getMeasurements().setValue("M_Volume", GeometricalMeasurements.getVolume(mm.getObject()));
         }
         o.resetOffset();
         modifiedObjects.add(object);

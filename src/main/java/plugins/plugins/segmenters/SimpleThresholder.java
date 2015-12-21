@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import plugins.Segmenter;
 import plugins.Thresholder;
+import plugins.plugins.thresholders.ConstantValue;
 
 /**
  *
@@ -47,6 +48,10 @@ public class SimpleThresholder implements Segmenter {
     
     public SimpleThresholder(Thresholder thresholder) {
         this.threshold= new PluginParameter<Thresholder>("Threshold", Thresholder.class, thresholder, false);
+    }
+    
+    public SimpleThresholder(double threshold) {
+        this.threshold= new PluginParameter<Thresholder>("Threshold", Thresholder.class, new ConstantValue(threshold), false);
     }
     
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing structureObject) {

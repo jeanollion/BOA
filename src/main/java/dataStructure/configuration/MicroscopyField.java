@@ -133,6 +133,12 @@ public class MicroscopyField extends SimpleContainerParameter {
         return images;
     }
     
+    @Override public MicroscopyField duplicate() {
+        MicroscopyField mf = super.duplicate();
+        mf.setImages(images.duplicate());
+        return mf;
+    }
+    
     @Override
     public String toString() {
         if (images!=null) return name;// + " number of time points: "+images.getTimePointNumber();

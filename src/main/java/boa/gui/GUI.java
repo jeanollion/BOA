@@ -31,6 +31,8 @@ import boa.gui.objects.StructureObjectTreeGenerator;
 import boa.gui.objects.TrackNode;
 import boa.gui.objects.TrackTreeController;
 import boa.gui.objects.TrackTreeGenerator;
+import com.mongodb.MongoClient;
+import com.mongodb.client.MongoIterable;
 import configuration.parameters.FileChooser;
 import configuration.parameters.NumberParameter;
 import core.Processor;
@@ -47,6 +49,7 @@ import java.awt.Dimension;
 import java.io.File;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +58,7 @@ import java.util.logging.Level;
 import javax.swing.ComboBoxModel;
 import javax.swing.DefaultListModel;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.event.ChangeEvent;
@@ -103,7 +107,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     public GUI() {
         this.instance=this;
         initComponents();
-        
+        addHorizontalScrollBar(DBName);
+        refreshDBNames();
         addHorizontalScrollBar(trackStructureJCB);
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         PluginFactory.findPlugins("plugins.plugins");
@@ -129,6 +134,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (m==null) return;
         logger.info("Connection established with db: {} @ host: {}, in {} ms", dbName, hostName, t1-t0);
         setDBConnection(m);
+        if (db!=null) {
+            this.setTitle("Experiment: "+db.getExperiment().getName());
+        } else this.setTitle("No Experiment set");
     }
     
     public void setDBConnection(Morphium m) {
@@ -352,6 +360,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         extractMeasurements = new javax.swing.JButton();
         performMeasurements = new javax.swing.JButton();
         trackActionButton = new javax.swing.JButton();
+        duplicateExperiment = new javax.swing.JButton();
+        DBName = new javax.swing.JComboBox();
+        refreshDBNames = new javax.swing.JButton();
+        jScrollPane1 = new javax.swing.JScrollPane();
+        runActionList = new javax.swing.JList();
+        runActions = new javax.swing.JButton();
         ConfigurationPanel = new javax.swing.JPanel();
         configurationJSP = new javax.swing.JScrollPane();
         DataPanel = new javax.swing.JPanel();
@@ -390,7 +404,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
-        connectButton.setText("Connect");
+        connectButton.setText("Set Experiment");
         connectButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 connectButtonActionPerformed(evt);
@@ -449,6 +463,45 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
+        duplicateExperiment.setText("Duplicate Experiment");
+        duplicateExperiment.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                duplicateExperimentActionPerformed(evt);
+            }
+        });
+
+        DBName.setMaximumSize(new java.awt.Dimension(140, 27));
+        DBName.setMinimumSize(new java.awt.Dimension(140, 27));
+        DBName.setPreferredSize(new java.awt.Dimension(140, 27));
+        DBName.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                DBNameActionPerformed(evt);
+            }
+        });
+
+        refreshDBNames.setText("Refresh List");
+        refreshDBNames.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                refreshDBNamesActionPerformed(evt);
+            }
+        });
+
+        runActionList.setBorder(javax.swing.BorderFactory.createTitledBorder("Run..."));
+        runActionList.setModel(new javax.swing.AbstractListModel() {
+            String[] strings = { "Pre-Processing", "Re-Run Pre-Processing", "Segment", "Track", "Measurements" };
+            public int getSize() { return strings.length; }
+            public Object getElementAt(int i) { return strings[i]; }
+        });
+        runActionList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+        jScrollPane1.setViewportView(runActionList);
+
+        runActions.setText("Run Selected Actions");
+        runActions.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                runActionsActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout actionPanelLayout = new javax.swing.GroupLayout(actionPanel);
         actionPanel.setLayout(actionPanelLayout);
         actionPanelLayout.setHorizontalGroup(
@@ -457,41 +510,52 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addContainerGap()
                 .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(actionPanelLayout.createSequentialGroup()
-                        .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(actionPanelLayout.createSequentialGroup()
-                                .addComponent(segmentButton)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(trackActionButton))
-                            .addGroup(actionPanelLayout.createSequentialGroup()
-                                .addComponent(preProcessButton)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(reProcess))
-                            .addComponent(importImageButton)
-                            .addGroup(actionPanelLayout.createSequentialGroup()
-                                .addComponent(connectButton)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(hostName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                            .addComponent(performMeasurements))
-                        .addGap(100, 100, 100)
+                        .addComponent(segmentButton)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(trackActionButton))
+                    .addGroup(actionPanelLayout.createSequentialGroup()
+                        .addComponent(preProcessButton)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(reProcess))
+                    .addGroup(actionPanelLayout.createSequentialGroup()
+                        .addComponent(hostName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(refreshDBNames))
+                    .addComponent(importImageButton)
+                    .addGroup(actionPanelLayout.createSequentialGroup()
+                        .addComponent(DBName, javax.swing.GroupLayout.PREFERRED_SIZE, 144, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(connectButton))
+                    .addComponent(saveExperiment)
+                    .addComponent(extractMeasurements)
+                    .addComponent(duplicateExperiment)
+                    .addComponent(performMeasurements))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(actionPanelLayout.createSequentialGroup()
                         .addComponent(actionStructureJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 155, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(actionMicroscopyFieldJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 161, Short.MAX_VALUE))
+                        .addComponent(actionMicroscopyFieldJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
                     .addGroup(actionPanelLayout.createSequentialGroup()
-                        .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(saveExperiment)
-                            .addComponent(extractMeasurements))
-                        .addGap(0, 0, Short.MAX_VALUE)))
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(runActions)
+                        .addGap(0, 82, Short.MAX_VALUE)))
                 .addContainerGap())
         );
         actionPanelLayout.setVerticalGroup(
             actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(actionPanelLayout.createSequentialGroup()
-                .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, actionPanelLayout.createSequentialGroup()
+                .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(actionPanelLayout.createSequentialGroup()
                         .addGap(11, 11, 11)
                         .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(connectButton)
-                            .addComponent(hostName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addComponent(hostName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(refreshDBNames))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                            .addComponent(DBName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(connectButton))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(importImageButton)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -501,19 +565,28 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                             .addComponent(segmentButton)
-                            .addComponent(trackActionButton))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(performMeasurements))
+                            .addComponent(trackActionButton)))
                     .addGroup(actionPanelLayout.createSequentialGroup()
                         .addContainerGap()
-                        .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                            .addComponent(actionStructureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 178, Short.MAX_VALUE)
-                            .addComponent(actionMicroscopyFieldJSP))))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(extractMeasurements)
-                .addGap(2, 2, 2)
-                .addComponent(saveExperiment)
-                .addContainerGap(191, Short.MAX_VALUE))
+                        .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(actionMicroscopyFieldJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 178, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addComponent(actionStructureJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 178, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(actionPanelLayout.createSequentialGroup()
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(performMeasurements)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(extractMeasurements)
+                        .addGap(43, 43, 43)
+                        .addComponent(duplicateExperiment)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(saveExperiment))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, actionPanelLayout.createSequentialGroup()
+                        .addGap(16, 16, 16)
+                        .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(runActions)
+                            .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 169, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                .addContainerGap(83, Short.MAX_VALUE))
         );
 
         jTabbedPane1.addTab("Actions", actionPanel);
@@ -526,7 +599,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         ConfigurationPanelLayout.setVerticalGroup(
             ConfigurationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 449, Short.MAX_VALUE)
+            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 458, Short.MAX_VALUE)
         );
 
         jTabbedPane1.addTab("Configuration", ConfigurationPanel);
@@ -660,7 +733,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         StructurePanelLayout.setVerticalGroup(
             StructurePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(structureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 403, Short.MAX_VALUE)
+            .addComponent(structureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 410, Short.MAX_VALUE)
         );
 
         ObjectTreeJSP.setLeftComponent(StructurePanel);
@@ -679,7 +752,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         TimePanelLayout.setVerticalGroup(
             TimePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 403, Short.MAX_VALUE)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 410, Short.MAX_VALUE)
         );
 
         ObjectTreeJSP.setRightComponent(TimePanel);
@@ -710,7 +783,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jTabbedPane1)
+            .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 653, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -720,6 +793,34 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
+    
+    private void runAction(String fieldName, boolean preProcess, boolean reProcess, boolean segmentAndTrack, boolean trackOnly, boolean measurements, boolean objectsAreAlreadyDeleted) {
+        if (preProcess || reProcess) {
+            logger.info("Pre-Processing: Field: {}", fieldName);
+            Processor.preProcessImages(db.getExperiment().getMicroscopyField(fieldName), db.getDao(), true, preProcess);
+        }
+        if (segmentAndTrack || trackOnly) {
+            int[] selectedStructures = this.getSelectedStructures(false);
+            List<StructureObject> roots = Processor.getOrCreateRootTrack(db.getDao(), fieldName);
+            logger.debug("roots: {}", roots.size());
+            for (int s : selectedStructures) {
+                if (!trackOnly) logger.info("Segmentation & Tracking: Field: {}, Structure: {}", fieldName, s);
+                else logger.info("Tracking: Field: {}, Structure: {}", fieldName, s);
+                Processor.executeProcessingScheme(roots, s, trackOnly, !objectsAreAlreadyDeleted);
+            }
+        }
+        if (measurements) {
+            logger.info("Measurements: Field: {}", fieldName);
+            Processor.performMeasurements(fieldName, db.getDao());
+        }
+    }
+    
+    private void preProcess(boolean computeConfigData) {
+        for (int i : this.getSelectedMicroscopyFields()) {
+            
+        }
+    }
+    
     private void trackStructureJCBActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_trackStructureJCBActionPerformed
         if (!checkConnection()) return;
         logger.debug("trackStructureJCBActionPerformed: selected index: {} action event: {}", trackStructureJCB.getSelectedIndex(), evt);
@@ -728,23 +829,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void segmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_segmentButtonActionPerformed
         if (!checkConnection()) return;
-        int[] selectedStructures = this.getSelectedStructures(false);
-        int[] microscopyFields = this.getSelectedMicroscopyFields();
-        boolean allStructures = selectedStructures.length==db.getExperiment().getStructureCount();
-        boolean deleteAll = allStructures && microscopyFields.length==db.getExperiment().getMicrocopyFieldCount();
-        if (deleteAll) db.getDao().deleteAllObjects();        
-        for (int i : microscopyFields) {
-            //Processor.processAndTrackStructures(db.getExperiment(), db.getExperiment().getMicroscopyField(i), db.getDao(), true, true, selectedStructures );
-            String fieldName = db.getExperiment().getMicroscopyField(i).getName();
-            boolean deleteAllField = allStructures && !deleteAll;
-            if (deleteAllField) db.getDao().deleteObjectsFromField(fieldName);
-            List<StructureObject> roots = Processor.getOrCreateRootTrack(db.getDao(), fieldName);
-            logger.debug("roots: {}", roots.size());
-            for (int s : selectedStructures) Processor.executeProcessingScheme(roots, s, false, !deleteAllField);
-            //db.getDao().clearCacheLater(fieldName);
-            db.getDao().clearCache();
-        }
-        db.getDao().waiteForWrites();
+        
         
         
         reloadTree=true;
@@ -764,17 +849,23 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         //setDBConnection("testFluo", host);
         //setDBConnection("testFluo60", host);
         //setDBConnection("fluo151127", host);
-        setDBConnection("fluo151130", host);
+        //setDBConnection("fluo151130", host);
+        String dbName = Utils.getSelectedString(DBName);
+        if (dbName!=null) setDBConnection(dbName, host);
+        updateConnectButton();
+        //setDBConnection("chromaticShift", host);
     }//GEN-LAST:event_connectButtonActionPerformed
 
     private void preProcessButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_preProcessButtonActionPerformed
         if (!checkConnection()) return;
-        for (int i : this.getSelectedMicroscopyFields()) Processor.preProcessImages(db.getExperiment().getMicroscopyField(i), db.getDao(), true, true);
+        preProcess(true);
         //Processor.preProcessImages(this.db.getExperiment(), db.getDao(), true);
         reloadTree=true;
         db.updateExperiment(); //stores preProcessing configurations
     }//GEN-LAST:event_preProcessButtonActionPerformed
 
+    
+    
     private void saveExperimentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_saveExperimentActionPerformed
         if (!checkConnection()) return;
         db.updateExperiment();
@@ -782,7 +873,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void reProcessActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_reProcessActionPerformed
         if (!checkConnection()) return;
-        for (int i : this.getSelectedMicroscopyFields()) Processor.preProcessImages(db.getExperiment().getMicroscopyField(i), db.getDao(), true, false);
+        preProcess(false);
         //Processor.preProcessImages(this.db.getExperiment(), db.getDao(), false);
         reloadTree=true;
     }//GEN-LAST:event_reProcessActionPerformed
@@ -899,7 +990,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void performMeasurementsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_performMeasurementsActionPerformed
         if (!checkConnection()) return;
         for (int i : this.getSelectedMicroscopyFields()) {
-            Processor.performMeasurements(db.getExperiment().getMicroscopyField(i).getName(), db.getDao());
+            
         }
     }//GEN-LAST:event_performMeasurementsActionPerformed
 
@@ -944,6 +1035,90 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         reloadTree=true;
     }//GEN-LAST:event_trackActionButtonActionPerformed
 
+    private void duplicateExperimentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_duplicateExperimentActionPerformed
+        String name = JOptionPane.showInputDialog("New DB name:");
+        if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
+        else {
+            DBConfiguration db2 = new DBConfiguration(name);
+            Experiment xp2 = db.getExperiment().duplicate();
+            db2.getXpDAO().store(xp2);
+            
+        }
+    }//GEN-LAST:event_duplicateExperimentActionPerformed
+
+    private void refreshDBNamesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_refreshDBNamesActionPerformed
+        this.refreshDBNames();
+    }//GEN-LAST:event_refreshDBNamesActionPerformed
+
+    private void DBNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_DBNameActionPerformed
+        updateConnectButton();
+        
+    }//GEN-LAST:event_DBNameActionPerformed
+
+    private void runActionsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runActionsActionPerformed
+        if (!checkConnection()) return;
+        boolean preProcess=false;
+        boolean reRunPreProcess=false;
+        boolean segmentAndTrack = false;
+        boolean trackOnly = false;
+        boolean runMeasurements=false;
+        for (int i : this.runActionList.getSelectedIndices()) {
+            if (i==0) preProcess=true;
+            if (i==1) reRunPreProcess=!preProcess;
+            if (i==2) segmentAndTrack=true;
+            if (i==3) trackOnly = !segmentAndTrack;
+            if (i==4) runMeasurements=true;
+        }
+        int[] microscopyFields = this.getSelectedMicroscopyFields();
+        int[] selectedStructures = this.getSelectedStructures(true);
+        boolean allStructures = selectedStructures.length==db.getExperiment().getStructureCount();
+        boolean deleteAll = allStructures && microscopyFields.length==db.getExperiment().getMicrocopyFieldCount();
+        if (deleteAll) db.getDao().deleteAllObjects();  
+        boolean deleteAllField = allStructures && !deleteAll;
+        
+        for (int f : microscopyFields) {
+            String fieldName = db.getExperiment().getMicroscopyField(f).getName();
+            if (deleteAllField) db.getDao().deleteObjectsFromField(fieldName);
+            this.runAction(fieldName, preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements, deleteAllField || deleteAll);
+            db.getDao().clearCache();
+        }
+    }//GEN-LAST:event_runActionsActionPerformed
+    
+    private void updateConnectButton() {
+        String s = Utils.getSelectedString(DBName);
+        logger.debug("DBName action: selected : {}, current: {} ", s, db!=null? db.getMorphium().getDatabase().getName() : null);
+        if (s==null || s.length()==0) this.connectButton.setEnabled(false);
+        else {
+            if (this.db!=null && db.getMorphium().getDatabase().getName().equals(s)) this.connectButton.setEnabled(false);
+            else this.connectButton.setEnabled(true);
+        }
+    }
+    
+    private void refreshDBNames() {
+        List<String> names = getDBNames();
+        String old = (String)DBName.getSelectedItem();
+        this.DBName.removeAllItems();
+        this.DBName.addItem("");
+        for (String s : names) DBName.addItem(s);
+        if (names.contains(old)) DBName.setSelectedItem(old);
+    }
+    
+    public List<String> getDBNames() {
+        return getDBNames(this.hostName.getText(), 27017);
+    }
+    
+    public static List<String> getDBNames(String hostName, int portNumber) {
+        long t0 = System.currentTimeMillis();
+        MongoClient mongoClient = new MongoClient(hostName, portNumber);
+        MongoIterable<String> dbs = mongoClient.listDatabaseNames();
+        List<String> res = new ArrayList<String>();
+        for (String s : dbs) res.add(s);
+        Collections.sort(res);
+        long t1 = System.currentTimeMillis();
+        logger.info("{} db names retrieved in: {}ms", res.size(), t1-t0);
+        return res;
+    }
+    
     public static DBConfiguration getDBConnection() {
         if (getInstance()==null) return null;
         return getInstance().db;
@@ -994,6 +1169,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel ConfigurationPanel;
     private javax.swing.JPanel ControlPanel;
+    private javax.swing.JComboBox DBName;
     private javax.swing.JPanel DataPanel;
     private javax.swing.JSplitPane ObjectTreeJSP;
     private javax.swing.JPanel StructurePanel;
@@ -1008,10 +1184,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JScrollPane configurationJSP;
     private javax.swing.JButton connectButton;
     private javax.swing.JButton deleteObjectsButton;
+    private javax.swing.JButton duplicateExperiment;
     private javax.swing.JButton extractMeasurements;
     private javax.swing.JTextField hostName;
     private javax.swing.JButton importImageButton;
     private javax.swing.JComboBox interactiveStructure;
+    private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JTabbedPane jTabbedPane1;
     private javax.swing.JButton mergeObjectsButton;
     private javax.swing.JButton nextTrackErrorButton;
@@ -1019,6 +1197,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JButton preProcessButton;
     private javax.swing.JButton previousTrackErrorButton;
     private javax.swing.JButton reProcess;
+    private javax.swing.JButton refreshDBNames;
+    private javax.swing.JList runActionList;
+    private javax.swing.JButton runActions;
     private javax.swing.JButton saveExperiment;
     private javax.swing.JButton segmentButton;
     private javax.swing.JButton selectAllObjects;

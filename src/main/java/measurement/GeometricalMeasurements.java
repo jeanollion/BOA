@@ -19,6 +19,7 @@ package measurement;
 
 import dataStructure.objects.Object3D;
 import dataStructure.objects.Voxel;
+import image.Image;
 import java.util.ArrayList;
 
 /**
@@ -44,6 +45,17 @@ public class GeometricalMeasurements {
             }
         }
         return Math.sqrt(d2Max);
+    }
+    
+    public static double getDistance(Object3D o1, Object3D o2) {
+        return getDistance(o1.getCenter(), o2.getCenter(), o1.getScaleXY(), o1.getScaleZ());
+    }
+    public static double getDistance(Object3D o1, Object3D o2, Image im1, Image im2) {
+        return getDistance(o1.getCenter(im1), o2.getCenter(im2), o1.getScaleXY(), o1.getScaleZ());
+    }
+    
+    public static double getDistance(double[] c1, double[] c2, double scaleXY, double scaleZ) {
+        return Math.sqrt(Math.pow((c1[0]-c2[0])*scaleXY, 2) + Math.pow((c1[1]-c2[1])*scaleXY, 2) + Math.pow((c1[2]-c2[2])*scaleZ, 2));
     }
     
 }

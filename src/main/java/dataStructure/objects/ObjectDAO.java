@@ -258,7 +258,7 @@ public class ObjectDAO extends DAO<StructureObject>{
     public void storeNow(final List<StructureObject> objects, final boolean updateTrackAttributes) {
         if (objects==null) return;
         
-        logger.debug("calling store metohd: nb of objects: {} updateTrack: {}", objects.size(), updateTrackAttributes);
+        //logger.debug("calling store metohd: nb of objects: {} updateTrack: {}", objects.size(), updateTrackAttributes);
         
         boolean updateTrackHead = false;
         for (StructureObject o : objects) {
@@ -459,7 +459,9 @@ public class ObjectDAO extends DAO<StructureObject>{
     protected void upsertMeasurementsNow(List<StructureObject> objects) {
         for (StructureObject o : objects) {
             o.getMeasurements().updateObjectProperties(o);
+            //if (o.getMeasurements().id!=null) measurementsDAO.delete(o.getMeasurements());
             this.measurementsDAO.store(o.getMeasurements()); // toDO -> partial update if already an ID
+            
             if (!o.getMeasurements().getId().equals(o.measurementsId)) {
                 o.measurementsId=o.getMeasurements().getId();
                 morphium.updateUsingFields(o, "measurements_id");

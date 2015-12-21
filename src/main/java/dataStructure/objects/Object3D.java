@@ -91,7 +91,7 @@ public class Object3D {
         for (Voxel v : getVoxels()) {
             center[0] += v.x;
             center[1] += v.y;
-            center[1] += v.z;
+            center[2] += v.z;
         }
         double count = voxels.size();
         center[0]/=count;
@@ -107,7 +107,8 @@ public class Object3D {
             value = image.getPixel(v.x, v.y, v.z);
             center[0] += v.x * value;
             center[1] += v.y * value;
-            center[1] += v.z * value;
+            center[2] += v.z * value;
+            count+=value;
         }
         center[0]/=count;
         center[1]/=count;

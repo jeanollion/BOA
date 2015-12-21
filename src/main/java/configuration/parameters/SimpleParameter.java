@@ -57,15 +57,20 @@ public abstract class SimpleParameter implements Parameter {
     @Override
     public <T extends Parameter> T duplicate() {
         try {
-            SimpleParameter p = (SimpleParameter)this.getClass().newInstance();
-            p.setName(name);
-            p.setContentFrom(this);
-            return (T)p;
-        } catch (InstantiationException ex) {
-            logger.error("duplicate Simple Parameter", ex);
-        } catch (IllegalAccessException ex) {
-            logger.error("duplicate Simple Parameter", ex);
-        } return null;
+                Parameter p = this.getClass().getDeclaredConstructor(String.class).newInstance(name);
+                p.setContentFrom(this);
+                return (T)p;
+            } catch (Exception ex) {
+                try {
+                    SimpleParameter p = (SimpleParameter)this.getClass().newInstance();
+                    p.setName(name);
+                    p.setContentFrom(this);
+                return (T)p;
+                } catch (Exception ex2) {
+                    logger.error("duplicate Simple Parameter", ex2);
+                }
+            }
+        return null;
     }
     
     @Override

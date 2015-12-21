@@ -88,7 +88,9 @@ public class Utils {
         Matcher m = p.matcher(s);
         return !m.find();
     }
-    
+    public static String getSelectedString(JComboBox jcb) {
+        return (jcb.getSelectedIndex()==-1)?null : (String)jcb.getSelectedItem();
+    }
     
     public static String formatInteger(int paddingSize, int number) {
         return String.format(Locale.US, "%0" + paddingSize + "d", number);

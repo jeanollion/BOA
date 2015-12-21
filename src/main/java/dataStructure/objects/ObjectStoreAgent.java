@@ -45,7 +45,7 @@ public class ObjectStoreAgent {
 
             public void run() {
                 while (!queue.isEmpty()) executeJob(queue.poll());
-                logger.debug("StoreAgent: no more jobs to run");
+                //logger.debug("StoreAgent: no more jobs to run");
             }
         });
     }
@@ -54,8 +54,8 @@ public class ObjectStoreAgent {
         long tStart = System.currentTimeMillis();
         job.executeJob();
         long tEnd = System.currentTimeMillis();
-        if (job.getClass()!=ClearCache.class) logger.debug("Job {} done: {} objects processed in {} ms", job.getClass().getSimpleName(), job.objects.size(), tEnd-tStart);
-        else logger.debug("ClearCache done: in {} ms", tEnd-tStart);
+        //if (job.getClass()!=ClearCache.class) logger.debug("Job {} done: {} objects processed in {} ms", job.getClass().getSimpleName(), job.objects.size(), tEnd-tStart);
+        //else logger.debug("ClearCache done: in {} ms", tEnd-tStart);
     }
     
     public synchronized void storeObjects(List<StructureObject> list, boolean updateTrackLinks) {
@@ -90,7 +90,7 @@ public class ObjectStoreAgent {
         if (thread!=null) try {
             thread.join();
         } catch (InterruptedException ex) {
-            logger.debug("ObjectStoreAgent Error: join thread", ex);
+            //logger.debug("ObjectStoreAgent Error: join thread", ex);
         }
     }
     

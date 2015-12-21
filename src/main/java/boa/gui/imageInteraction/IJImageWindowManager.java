@@ -99,11 +99,10 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                 BoundingBox selection = null;
                 if (r!=null) {
                     Rectangle rect = r.getBounds();
-                    selection = new BoundingBox(rect.x, rect.x+rect.width, rect.y, rect.y+rect.height, ip.getSlice()-1, ip.getSlice()-1);
+                    selection = new BoundingBox(rect.x, rect.x+rect.width, rect.y, rect.y+rect.height, ip.getSlice()-1, ip.getSlice());
                     if (selection.getSizeX()==0 && selection.getSizeY()==0) selection=null;
                 }
                 if (selection!=null) {
-                    logger.debug("selection: {}", selection);
                     ArrayList<StructureObject> selectedObjects = new ArrayList<StructureObject>();
                     i.addClickedObjects(selection, selectedObjects);
                     logger.debug("selection: {}, number of objects: {}", selection, selectedObjects.size());
