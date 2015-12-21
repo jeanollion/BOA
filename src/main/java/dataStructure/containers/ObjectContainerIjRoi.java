@@ -31,9 +31,12 @@ import ij.gui.Roi;
 import ij.io.RoiDecoder;
 import ij.io.RoiEncoder;
 import ij.plugin.filter.Filler;
+import ij.process.ImageProcessor;
+import image.BoundingBox;
 import image.IJImageWrapper;
 import static image.Image.logger;
 import image.ImageByte;
+import image.ImageOperations;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -78,7 +81,14 @@ public class ObjectContainerIjRoi extends ObjectContainer {
             r.setPosition(z);
             Rectangle bds = r.getBounds();
             r.setLocation(bds.x-bounds.getxMin(), bds.y-bounds.getyMin());
-            stack.setProcessor(r.getMask(), z);
+            ImageProcessor mask = r.getMask();
+            if (mask.getWidth()!=stack.getWidth() || mask.getHeight()!=stack.getHeight()) { // need to put image
+                ImageByte i = (ImageByte)IJImageWrapper.wrap(new ImagePlus("", mask));
+                ImageByte iOut = new ImageByte("", bounds.getSizeX(), bounds.getSizeY(), 1);
+                ImageOperations.pasteImage(i, iOut, new BoundingBox(bds.x-bounds.getxMin(), bds.y-bounds.getyMin(), 0));
+                mask = IJImageWrapper.getImagePlus(iOut).getProcessor();
+            }
+            stack.setProcessor(mask, z);
             //logger.debug("Roi: Z: {}, bounds: {}", z-1, r.getBounds());
             ++z;
         }
