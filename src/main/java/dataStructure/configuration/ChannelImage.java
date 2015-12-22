@@ -30,14 +30,15 @@ import de.caluga.morphium.annotations.Transient;
  */
 public class ChannelImage extends SimpleContainerParameter {
     @Transient NameEditorUI ui;
-    TextParameter importKeyWord = new TextParameter("import file channel keyword", "", true);
+    TextParameter importKeyWord ;
     
     public ChannelImage(String name) {
         super(name);
+        importKeyWord = new TextParameter("import file channel keyword", "", true);
     }
     
     public ChannelImage(String name, String keyword) {
-        super(name);
+        this(name);
         setImportImageChannelKeyword(keyword);
     }
     

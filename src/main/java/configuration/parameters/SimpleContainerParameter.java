@@ -35,12 +35,13 @@ import javax.swing.tree.TreeNode;
  *
  * @author jollion
  */
+@Lifecycle
 @Embedded(polymorph = true)
 public abstract class SimpleContainerParameter implements ContainerParameter {
     protected String name;
     @Transient protected ContainerParameter parent;
     @Transient protected ArrayList<Parameter> children;
-
+    @Transient protected boolean postLoaded=false;
     public SimpleContainerParameter(String name) {
         this.name=name;
     }
@@ -53,26 +54,19 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
             children=parameters;
             int idx = 0;
             for (Parameter p : parameters) {
-                if (p==null) System.out.println("param null:"+idx);
+                if (p==null) logger.warn("SCP initChildren error: param null: {}", idx);
                 p.setParent(this);
+                if (p instanceof SimpleContainerParameter) ((SimpleContainerParameter)p).initChildList();
                 idx++;
             }
         }
     }
     
     protected void initChildren(Parameter... parameters) {
-        if (parameters==null) {
+        if (parameters==null || parameters.length==0) {
             children = new ArrayList<Parameter>(0);
         } else {
-            children = new ArrayList<Parameter>(parameters.length);
-            children.addAll(Arrays.asList(parameters));
-            int idx = 0;
-            for (Parameter p : parameters) {
-                if (p==null) System.out.println("param null:"+idx);
-                p.setParent(this);
-                if (p instanceof SimpleContainerParameter) ((SimpleContainerParameter)p).initChildList();
-                idx++;
-            }
+            initChildren(new ArrayList<Parameter>(Arrays.asList(parameters)));
         }
     }
     
@@ -222,4 +216,13 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     
     // morphium
     protected SimpleContainerParameter() {}
+    
+    // morphium
+
+    @PostLoad public void postLoad() {
+        //logger.debug("post load on : {}, of class: {}, alreadyPostLoaded: {}, parent: {}", name, this.getClass().getSimpleName(), postLoaded, parent!=null? parent.getName():null);
+        if (postLoaded) return;
+        initChildList();
+        postLoaded=true;
+    }
 }

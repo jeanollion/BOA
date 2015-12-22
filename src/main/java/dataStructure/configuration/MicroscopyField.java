@@ -43,18 +43,20 @@ import plugins.PreFilter;
 public class MicroscopyField extends SimpleContainerParameter {
     
     MultipleImageContainer images;
-    PreProcessingChain preProcessingChain=new PreProcessingChain("Pre-Processing chain");
+    PreProcessingChain preProcessingChain;
     @Transient InputImagesImpl inputImages;
     @Transient public static final int defaultTimePoint = 50;
     //ui: bouton droit = selectionner un champ?
     
     public MicroscopyField(String name) {
         super(name);
+        preProcessingChain=new PreProcessingChain("Pre-Processing chain");
         initChildList();
     }
     
     @Override
     protected void initChildList() {
+        //logger.debug("MF: {}, init list..", name);
         initChildren(preProcessingChain);
     }
     

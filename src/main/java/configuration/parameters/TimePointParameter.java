@@ -17,6 +17,7 @@
  */
 package configuration.parameters;
 
+import configuration.parameters.ui.ParameterUI;
 import dataStructure.configuration.Experiment;
 import de.caluga.morphium.annotations.Transient;
 
@@ -24,42 +25,46 @@ import de.caluga.morphium.annotations.Transient;
  *
  * @author jollion
  */
-public class TimePointParameter extends IndexChoiceParameter {
+public class TimePointParameter extends BoundedNumberParameter {
     @Transient private int timePointNumber=-1;
     
-    public TimePointParameter() {super("");}
+    public TimePointParameter(String name, int defaultTimePoint) {
+        super(name, 0, defaultTimePoint, 0, null);
+    }
     
     public TimePointParameter(String name) {
-        super(name);
+        this(name, 0);
     }
-    public TimePointParameter(String name, int selectedTimePoint, boolean allowNoSelection, boolean multipleSelection) {
-        super(name, selectedTimePoint, allowNoSelection, multipleSelection);
-    }
+    public TimePointParameter() {this("");}
     
-    public TimePointParameter(String name, int[] selectedTimePoints, boolean allowNoSelection) {
-        super(name, selectedTimePoints, allowNoSelection);
-    }
     
-    public int getTimePointNumber() {
-        if (timePointNumber==-1) timePointNumber = ParameterUtils.getTimePointNumber(this);
+    public int getMaxTimePoint() {
+        if (timePointNumber==-1) {
+            timePointNumber = ParameterUtils.getTimePointNumber(this);
+            super.upperBound=timePointNumber;
+        }
         return timePointNumber;
     }
     
-    @Override 
-    public int getSelectedIndex() {
-        if (getTimePointNumber()>0 && timePointNumber<=super.getSelectedIndex()) return timePointNumber-1;
-        else return super.getSelectedIndex();
+    public void setTimePoint(int timePoint) {
+        super.setValue(timePoint);
     }
     
-    @Override
-    public String[] getChoiceList() {
-        String[] choices;
-        if (getTimePointNumber()>0) {
-            choices=ParameterUtils.createChoiceList(0, timePointNumber);
-        } else {
-            choices = new String[]{"error, no experiment in the tree"}; //no experiment in the tree, make a static method to get experiment...
-        }
-        return choices;
+    private int checkWithBounds(int timePoint) {
+        int max = getMaxTimePoint();
+        if (max>=0) {
+            if (timePoint>=max) return Math.max(0, max-1);
+            else return Math.max(0, timePoint);
+        } else return 0;
+    }
+    
+    public int getSelectedTimePoint() {
+        return checkWithBounds(super.getValue().intValue());
+    }
+    
+    @Override public ParameterUI getUI() {
+        getMaxTimePoint(); // sets the upper bound
+        return super.getUI();
     }
     
 }

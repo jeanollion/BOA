@@ -38,9 +38,7 @@ public class BoundedNumberParameter extends NumberParameter {
         return upperBound;
     }
     
-    
-    
-    @Override public NumberParameter duplicate() {
-        return new NumberParameter(name, decimalPlaces, value);
+    @Override public BoundedNumberParameter duplicate() {
+        return new BoundedNumberParameter(name, decimalPlaces, value, lowerBound, upperBound);
     }
 }

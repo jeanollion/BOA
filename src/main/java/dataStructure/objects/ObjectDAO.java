@@ -242,9 +242,9 @@ public class ObjectDAO extends DAO<StructureObject>{
         else store(Arrays.asList(object), updateTrackAttributes, false);
     }
     public void waiteForWrites() {
-        logger.debug("wait for writes...");
+        //logger.debug("wait for writes...");
         agent.join();
-        logger.debug("wait for writes done.");
+        //logger.debug("wait for writes done.");
     }
     public void store(final List<StructureObject> objects, final boolean updateTrackAttributes, boolean removeDuplicatesAndSortIfNecessary) {
         if (objects==null || objects.isEmpty()) return;

@@ -53,15 +53,18 @@ import utils.Utils;
  */
 public class PreProcessingChain extends SimpleContainerParameter {
     
-    SimpleListParameter<TransformationPluginParameter<Transformation>> constantTransformations= new SimpleListParameter<TransformationPluginParameter<Transformation>>("Transformations", new TransformationPluginParameter<Transformation>("Transformation", Transformation.class, false));
+    SimpleListParameter<TransformationPluginParameter<Transformation>> constantTransformations;
     
     public PreProcessingChain(String name) {
         super(name);
+        constantTransformations = new SimpleListParameter<TransformationPluginParameter<Transformation>>("Transformations", new TransformationPluginParameter<Transformation>("Transformation", Transformation.class, false));
+        //logger.debug("new PPC: {}", name);
         initChildList();
     }
     
     @Override
     protected void initChildList() {
+        //logger.debug("PreProc chain: {}, init list..", name);
         super.initChildren(constantTransformations);
     }
     

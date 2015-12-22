@@ -55,6 +55,10 @@ public class ThreadRunner {
         this(start, end, 0);
     }
     
+    public int size() {
+        return this.threads.length;
+    }
+    
     public ThreadRunner(int start, int end, int cpulimit) {
         this.start=start;
         this.end=end;

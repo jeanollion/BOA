@@ -138,7 +138,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         logger.info("Connection established with db: {} @ host: {}, in {} ms", dbName, hostName, t1-t0);
         setDBConnection(m);
         if (db!=null) {
-            this.setTitle("Experiment: "+db.getExperiment().getName());
+            this.setTitle("Experiment: "+db.getMorphium().getDatabase().getName());
         } else this.setTitle("No Experiment set");
     }
     
@@ -780,7 +780,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             Processor.preProcessImages(db.getExperiment().getMicroscopyField(fieldName), db.getDao(), true, preProcess);
         }
         if (segmentAndTrack || trackOnly) {
-            int[] selectedStructures = this.getSelectedStructures(false);
+            int[] selectedStructures = this.getSelectedStructures(true);
             List<StructureObject> roots = Processor.getOrCreateRootTrack(db.getDao(), fieldName);
             logger.debug("roots: {}", roots.size());
             for (int s : selectedStructures) {
@@ -1024,6 +1024,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             this.runAction(fieldName, preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements, needToDeleteObjects && !deleteAllField && !deleteAll);
             db.getDao().clearCache();
         }
+        if (needToDeleteObjects) this.reloadTree=true;
     }//GEN-LAST:event_runActionsActionPerformed
 
     private void newXPActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newXPActionPerformed

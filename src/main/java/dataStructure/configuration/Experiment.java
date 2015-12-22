@@ -57,31 +57,35 @@ import static utils.Utils.toArray;
 @Index(value="name", options="unique:1")
 public class Experiment extends SimpleContainerParameter implements TreeModelContainer {
     @Id protected ObjectId id;
-    protected FileChooser imagePath = new FileChooser("Output Image Path", FileChooserOption.DIRECTORIES_ONLY);
-    SimpleListParameter<Structure> structures= new SimpleListParameter<Structure>("Structures", -1 , Structure.class);
-    SimpleListParameter<ChannelImage> channelImages= new SimpleListParameter<ChannelImage>("Channel Images", 0 , ChannelImage.class);
-    SimpleListParameter<PluginParameter<Measurement>> measurements = new SimpleListParameter<PluginParameter<Measurement>>("Measurements", -1 , new PluginParameter<Measurement>("Measurement", Measurement.class, true));
-    SimpleListParameter<MicroscopyField> fields= new SimpleListParameter<MicroscopyField>("Fields", -1 , MicroscopyField.class);
-    PreProcessingChain template = new PreProcessingChain("Pre-Processing chain template");
-    ChoiceParameter importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.SINGLE_FILE.getMethod(), false);
+    protected FileChooser imagePath;
+    SimpleListParameter<Structure> structures;
+    SimpleListParameter<ChannelImage> channelImages;
+    SimpleListParameter<PluginParameter<Measurement>> measurements;
+    SimpleListParameter<MicroscopyField> fields;
+    PreProcessingChain template;
+    ChoiceParameter importMethod;
     public enum ImageDAOTypes {LocalFileSystem};
     ImageDAOTypes imageDAOType=ImageDAOTypes.LocalFileSystem;
-    
     @Transient ConfigurationTreeModel model;
     
     public Experiment(String name) {
         super(name);
+        structures= new SimpleListParameter<Structure>("Structures", -1 , Structure.class);
+        imagePath = new FileChooser("Output Image Path", FileChooserOption.DIRECTORIES_ONLY);
+        channelImages= new SimpleListParameter<ChannelImage>("Channel Images", 0 , ChannelImage.class);
+        measurements = new SimpleListParameter<PluginParameter<Measurement>>("Measurements", -1 , new PluginParameter<Measurement>("Measurement", Measurement.class, true));
+        fields= new SimpleListParameter<MicroscopyField>("Fields", -1 , MicroscopyField.class);
+        template = new PreProcessingChain("Pre-Processing chain template");
+        importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.SINGLE_FILE.getMethod(), false);
         initChildList();
     }
     
     public Experiment(String name, Structure... defaultStructures) {
-        super(name);
+        this(name);
         for (Structure s : defaultStructures) structures.insert(s);
         structures.setUnmutableIndex(defaultStructures.length-1);
         initChildList();
     }
-    
-    
     
     public void setImportImageMethod(ImportImageMethod method) {this.importMethod.setValue(method.getMethod());}
     

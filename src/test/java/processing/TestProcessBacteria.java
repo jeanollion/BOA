@@ -154,6 +154,7 @@ public class TestProcessBacteria {
         m.clearCollection(Experiment.class);
         m.clearCollection(StructureObject.class);
         ExperimentDAO xpDAO = new ExperimentDAO(m);
+        xp.setName(dbName);
         xpDAO.store(xp);
         logger.info("Experiment: {} stored in db: {}", xp.getName(), dbName);
     }

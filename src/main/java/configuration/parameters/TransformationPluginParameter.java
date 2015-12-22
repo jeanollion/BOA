@@ -31,16 +31,20 @@ import plugins.TransformationTimeIndependent;
  */
 public class TransformationPluginParameter<T extends Transformation> extends PluginParameter<T> {
     ArrayList configurationData;
-    ChannelImageParameter inputChannel = new ChannelImageParameter("Configuration Channel", -1);
-    ChannelImageParameter outputChannel=null;
+    ChannelImageParameter inputChannel;
+    ChannelImageParameter outputChannel;
     //Parameter inputTimePoints;
     
     public TransformationPluginParameter(String name, Class<T> pluginType, boolean allowNoSelection) {
         super(name, pluginType, allowNoSelection);
+        outputChannel=null;
+        inputChannel = new ChannelImageParameter("Configuration Channel", -1);
     }
     
     public TransformationPluginParameter(String name, Class<T> pluginType, String defaultMethod, boolean allowNoSelection) {
         super(name, pluginType, defaultMethod, allowNoSelection);
+        outputChannel=null;
+        inputChannel = new ChannelImageParameter("Configuration Channel", -1);
     }
     
     // constructeur désactivé car la methode setPlugin a besoin de l'experience

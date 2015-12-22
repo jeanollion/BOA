@@ -36,10 +36,10 @@ public class ChoiceParameterUI implements ArmableUI {
     ConfigurationTreeModel model;
     JMenuItem[] actions;
     int inc;
-    final static int choiceLimit = 50;
+    //final static int choiceLimit = 50;
     boolean limitChoice;
     public static String NO_SELECTION="no selection";
-    double modulo;
+    //double modulo;
     public ChoiceParameterUI(ChoosableParameter choice_, boolean limitChoice) {
         this.choice = choice_;
         this.limitChoice=limitChoice;
@@ -56,13 +56,14 @@ public class ChoiceParameterUI implements ArmableUI {
             System.arraycopy(c, 0, res, 1, c.length);
             choices=res;
         } else choices=choice.getChoiceList();
-        this.actions = new JMenuItem[!limitChoice || choiceLimit>choices.length? choices.length:choiceLimit];
-        modulo = (!limitChoice || choiceLimit>choices.length)? 1 : (double)choices.length/(double)(choiceLimit-1);
+        //this.actions = new JMenuItem[!limitChoice || choiceLimit>choices.length? choices.length:choiceLimit];
+        this.actions = new JMenuItem[choices.length];
+        //modulo = (!limitChoice || choiceLimit>choices.length)? 1 : (double)choices.length/(double)(choiceLimit-1);
         for (int i = 0; i < actions.length; i++) {
-            int choiceIdx = (int)(i * modulo);
-            actions[i] = new JMenuItem(choices[choiceIdx]);
+            //int choiceIdx = (int)(i * modulo);
+            actions[i] = new JMenuItem(choices[i]);
             actions[i].setAction(
-                new AbstractAction(choices[choiceIdx]) {
+                new AbstractAction(choices[i]) {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
                         //if (ae.getActionCommand().equals("no selection"))
@@ -84,7 +85,8 @@ public class ChoiceParameterUI implements ArmableUI {
         unArm();
         int sel = choice.getSelectedIndex();
         if (sel>=0) {
-            actions[(int)((sel+inc) / modulo+0.5)].setArmed(true);
+            //actions[(int)((sel+inc) / modulo+0.5)].setArmed(true);
+            actions[sel+inc].setArmed(true);
         }
         if (inc>0 && sel<0) actions[0].setArmed(true);
     }

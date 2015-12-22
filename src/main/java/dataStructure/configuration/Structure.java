@@ -40,26 +40,29 @@ import plugins.plugins.ObjectSplitter.WatershedObjectSplitter;
  */
 
 public class Structure extends SimpleContainerParameter {
-    ParentStructureParameter parentStructure =  new ParentStructureParameter("Parent Structure", -1, -1);
-    ParentStructureParameter segmentationParent =  new ParentStructureParameter("Segmentation Parent", -1, -1);
-    ChannelImageParameter channelImage = new ChannelImageParameter("Channel Image", 0);
-    ProcessingChain processingChain = new ProcessingChain("Processing Chain");
-    PluginParameter<Tracker> tracker = new PluginParameter<Tracker>("Tracker", Tracker.class, true);
-    PluginParameter<TrackCorrector> trackCorrector = new PluginParameter<TrackCorrector>("Track corrector", TrackCorrector.class, true);
-    PluginParameter<ObjectSplitter> objectSplitter = new PluginParameter<ObjectSplitter>("Object Splitter", ObjectSplitter.class, new WatershedObjectSplitter(), false);
-    
-    PluginParameter<ProcessingScheme> processingScheme = new PluginParameter<ProcessingScheme>("Processing Scheme", ProcessingScheme.class, true);
+    ParentStructureParameter parentStructure;
+    ParentStructureParameter segmentationParent;
+    ChannelImageParameter channelImage;
+    ProcessingChain processingChain;
+    PluginParameter<ObjectSplitter> objectSplitter;
+    PluginParameter<ProcessingScheme> processingScheme;
     
     @Transient NameEditorUI ui;
-    public Structure(String name) {
-        this(name, -1, -1);
-    }
+    
     
     public Structure(String name, int parentStructure, int channelImage) {
         super(name);
-        this.parentStructure.setSelectedIndex(parentStructure);
-        this.channelImage.setSelectedIndex(channelImage);
+        this.parentStructure =  new ParentStructureParameter("Parent Structure", parentStructure, -1);
+        segmentationParent =  new ParentStructureParameter("Segmentation Parent", -1, -1);
+        this.channelImage = new ChannelImageParameter("Channel Image", channelImage);
+        processingChain = new ProcessingChain("Processing Chain");
+        objectSplitter = new PluginParameter<ObjectSplitter>("Object Splitter", ObjectSplitter.class, new WatershedObjectSplitter(), false);
+        processingScheme = new PluginParameter<ProcessingScheme>("Processing Scheme", ProcessingScheme.class, true);
         initChildList();
+    }
+    
+    public Structure(String name) {
+        this(name, -1, -1);
     }
     
     @Override
@@ -78,7 +81,7 @@ public class Structure extends SimpleContainerParameter {
         });
         // for retro-compatibility only, to remove later
         if (processingScheme==null) processingScheme = new PluginParameter<ProcessingScheme>("Processing Scheme", ProcessingScheme.class, true); // for retro-compatibility only, to remove later
-        initChildren(parentStructure, channelImage, processingScheme, processingChain, tracker, trackCorrector, objectSplitter); //segmentationParent
+        initChildren(parentStructure, channelImage, processingScheme, processingChain, objectSplitter); //segmentationParent
     }
     
     public ProcessingChain getProcessingChain() {
@@ -95,30 +98,6 @@ public class Structure extends SimpleContainerParameter {
     
     public boolean hasSegmenter() {
         return processingChain.segmenter.isOnePluginSet() && processingChain.segmenter.isActivated();
-    }
-    
-    public boolean hasTracker() {
-        return tracker.isOnePluginSet();
-    }
-    
-    public Tracker getTracker() {
-        return this.tracker.instanciatePlugin();
-    }
-    
-    public void setTracker(Tracker tracker) {
-        this.tracker.setPlugin(tracker);
-    }
-    
-    public boolean hasTrackCorrector() {
-        return trackCorrector.isOnePluginSet();
-    }
-    
-    public TrackCorrector getTrackCorrector() {
-        return this.trackCorrector.instanciatePlugin();
-    }
-    
-    public void setTrackCorrector(TrackCorrector trackCorrector) {
-        this.trackCorrector.setPlugin(trackCorrector);
     }
     
     public ObjectSplitter getObjectSplitter() {
