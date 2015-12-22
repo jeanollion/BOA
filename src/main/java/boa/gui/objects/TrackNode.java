@@ -254,7 +254,7 @@ public class TrackNode implements TreeNode, UIContainer {
                             Processor.trackStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.getObjectDAO(), true, root.generator.getSelectedTrackHeads());
                             */
                             ThreadRunner.execute(root.generator.getSelectedTrackNodes(), new ThreadAction<TrackNode>() {
-                                @Override public void run(TrackNode n) {
+                                @Override public void run(TrackNode n, int idx) {
                                     Processor.executeProcessingScheme(n.getTrack(), structureIdx, false, true);
                                 }
                             });
@@ -281,7 +281,7 @@ public class TrackNode implements TreeNode, UIContainer {
                             Processor.trackStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.getObjectDAO(), true, root.generator.getSelectedTrackHeads());
                             */
                             ThreadRunner.execute(root.generator.getSelectedTrackNodes(), new ThreadAction<TrackNode>() {
-                                @Override public void run(TrackNode n) {
+                                @Override public void run(TrackNode n, int idx) {
                                     Processor.executeProcessingScheme(n.getTrack(), structureIdx, true, false);
                                 }
                             });

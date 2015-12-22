@@ -1017,7 +1017,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         boolean deleteAll =  needToDeleteObjects && allStructures && microscopyFields.length==db.getExperiment().getMicrocopyFieldCount();
         if (deleteAll) db.getDao().deleteAllObjects();  
         boolean deleteAllField = needToDeleteObjects && allStructures && !deleteAll;
-        
+        logger.debug("Run actions: preProcess: {}, rePreProcess: {}, segmentAndTrack: {}, trackOnly: {}, runMeasurements: {}, need to delete objects: {}, delete all: {}, delete all by field: {}", preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements, needToDeleteObjects, deleteAll, deleteAllField);
         for (int f : microscopyFields) {
             String fieldName = db.getExperiment().getMicroscopyField(f).getName();
             if (deleteAllField) db.getDao().deleteObjectsFromField(fieldName);

@@ -482,20 +482,14 @@ public class ImageOperations {
             for (int xy = 0; xy < image.getSizeXY(); ++xy) {
                 if (mask.insideMask(xy, z)) {
                     value = image.getPixel(xy, z);
-                    //if (value <= thld) {
-                        mean += value;
-                        count++;
-                        values2 += value * value;
-                    //}
+                    mean += value;
+                    count++;
+                    values2 += value * value;
                 }
             }
         }
-        if (count != 0) {
-            mean /= count;
-            values2 /= count;
-            return new double[]{mean, Math.sqrt(values2 - mean * mean)};
-        } else {
-            return new double[]{0, 0};
-        }
+        mean /= count;
+        values2 /= count;
+        return new double[]{mean, Math.sqrt(values2 - mean * mean)};
     }
 }

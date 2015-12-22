@@ -145,7 +145,7 @@ public class Processor {
                 logger.info("processing structure: {}...", s);
                 ThreadAction<StructureObject> ta = new ThreadAction<StructureObject>() {
                     @Override
-                    public void run(StructureObject r) {
+                    public void run(StructureObject r, int idx) {
                         ArrayList<StructureObject> segmentedObjects=null;
                         if (!structure.hasTracker()) segmentedObjects = new ArrayList<StructureObject> ();
                         Processor.processChildren(s, r, dao, false, segmentedObjects);
@@ -175,7 +175,7 @@ public class Processor {
                     }*/
                     ThreadRunner.execute(parents, new ThreadAction<StructureObject>() {
                         @Override
-                        public void run(StructureObject o) {
+                        public void run(StructureObject o, int idx) {
                             ArrayList<StructureObject> trackedObjects = new ArrayList<StructureObject>();
                             Processor.trackChildren(structure.getTracker(), o, s, dao, structure.hasTrackCorrector()?null:trackedObjects);
                             if (structure.hasTrackCorrector()) {
@@ -215,7 +215,7 @@ public class Processor {
             }*/
             ThreadRunner.execute(parentObjects, new ThreadAction<StructureObject>() {
                 @Override
-                public void run(StructureObject o) {
+                public void run(StructureObject o, int idx) {
                     ArrayList<StructureObject> modifiedObjectsFromTracking = updateTrackAttributes?new ArrayList<StructureObject>() : null;
                     Processor.trackChildren(structure.getTracker(), o, structureIdx, dao, structure.hasTracker()?null:modifiedObjectsFromTracking);
                     if (structure.hasTrackCorrector()) {
@@ -429,7 +429,7 @@ public class Processor {
             logger.debug("ex ps: structure: {}, allParentTracks: {}", structureIdx, allParentTracks.size());
             // one thread per track
             ThreadAction<ArrayList<StructureObject>> ta = new ThreadAction<ArrayList<StructureObject>>() {
-                public void run(ArrayList<StructureObject> pt) {execute(ps, structureIdx, pt, trackOnly, deleteChildren, dao);}
+                public void run(ArrayList<StructureObject> pt, int idx) {execute(ps, structureIdx, pt, trackOnly, deleteChildren, dao);}
             };
             ThreadRunner.execute(new ArrayList<ArrayList<StructureObject>> (allParentTracks.values()), ta);
         }
@@ -462,7 +462,7 @@ public class Processor {
 
         ThreadRunner.execute(rootArray, true, new ThreadAction<StructureObject>() {
             @Override
-            public void run(StructureObject root) {
+            public void run(StructureObject root, int idx) {
                 long t0 = System.currentTimeMillis();
                 logger.debug("running measurements on: {}", root);
                 List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
