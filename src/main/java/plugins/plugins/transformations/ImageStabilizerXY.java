@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 nasique
+ * Copyright (C) 2015 jollion
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,6 +17,7 @@
  */
 package plugins.plugins.transformations;
 
+import boa.gui.imageInteraction.IJImageDisplayer;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.NumberParameter;
@@ -85,9 +86,10 @@ public class ImageStabilizerXY implements Transformation {
     public void computeConfigurationData(final int channelIdx, final InputImages inputImages) {
         long tStart = System.currentTimeMillis();
         final int tRef = inputImages.getDefaultTimePoint();
+        //final int tRef=0;
         final Image imageRef = inputImages.getImage(channelIdx, tRef);
-        
-        
+        //new IJImageDisplayer().showImage(imageRef.setName("ref image"));
+        //if (true) return;
         final Double[][] translationTXYArray = new Double[inputImages.getTimePointNumber()][];
         final FloatProcessor ipFloatRef = getFloatProcessor(imageRef, true);
                 

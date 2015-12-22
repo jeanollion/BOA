@@ -37,6 +37,7 @@ import dataStructure.objects.StructureObject;
 import de.caluga.morphium.annotations.Transient;
 import image.BlankMask;
 import java.util.ArrayList;
+import java.util.List;
 import javax.swing.JOptionPane;
 import plugins.PreFilter;
 
@@ -103,7 +104,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         for (int t = 0; t<getImages().getTimePointNumber(); ++t) {
             res.add(new StructureObject(this.name, t, getMask(), dao));
         }
-        Processor.trackRoot(res);
+        for (int i = 1; i<res.size(); ++i) res.get(i).setPreviousInTrack(res.get(i-1), false);
         return res;
     }
     

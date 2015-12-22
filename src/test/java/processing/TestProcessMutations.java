@@ -56,7 +56,7 @@ public class TestProcessMutations {
         String dbName = "fluo151130";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
-        t.testSegMutationsFromXP(2, 2, true, 0, 20);
+        t.testSegMutationsFromXP(0, 0, true, 0, 20);
         //t.testSegMutationsFromXP(27);
     }
     public void init(String dbName) {
@@ -85,9 +85,9 @@ public class TestProcessMutations {
     public void testSegMutation(StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
             Image input = parent.getRawImage(2);
             ImageInteger parentMask = parent.getMask();
-            SpotFluo2D5.debug=true;
-            SpotFluo2D5.displayImages=parentMask_==null;
             ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
+            //SpotFluo2D5.debug=true;
+            //SpotFluo2D5.displayImages=parentMask_==null;
             //ObjectPopulation pop = SpotFluo2D5.runPlane(input.getZPlane(0), parentMask, 1.5, 1.5, 5, 4, -0.2, 4, intermediateImages); // 6 -0.18
             ObjectPopulation pop = MutationSegmenter.runPlane(input.getZPlane(0), parentMask, 2.5, 5, 2, 1, intermediateImages); // 6 -0.18
             if (parentMask_!=null) parentMask_.add(parentMask);

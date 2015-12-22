@@ -43,7 +43,6 @@ public class Structure extends SimpleContainerParameter {
     ParentStructureParameter parentStructure;
     ParentStructureParameter segmentationParent;
     ChannelImageParameter channelImage;
-    ProcessingChain processingChain;
     PluginParameter<ObjectSplitter> objectSplitter;
     PluginParameter<ProcessingScheme> processingScheme;
     
@@ -55,7 +54,6 @@ public class Structure extends SimpleContainerParameter {
         this.parentStructure =  new ParentStructureParameter("Parent Structure", parentStructure, -1);
         segmentationParent =  new ParentStructureParameter("Segmentation Parent", -1, -1);
         this.channelImage = new ChannelImageParameter("Channel Image", channelImage);
-        processingChain = new ProcessingChain("Processing Chain");
         objectSplitter = new PluginParameter<ObjectSplitter>("Object Splitter", ObjectSplitter.class, new WatershedObjectSplitter(), false);
         processingScheme = new PluginParameter<ProcessingScheme>("Processing Scheme", ProcessingScheme.class, true);
         initChildList();
@@ -81,23 +79,15 @@ public class Structure extends SimpleContainerParameter {
         });
         // for retro-compatibility only, to remove later
         if (processingScheme==null) processingScheme = new PluginParameter<ProcessingScheme>("Processing Scheme", ProcessingScheme.class, true); // for retro-compatibility only, to remove later
-        initChildren(parentStructure, channelImage, processingScheme, processingChain, objectSplitter); //segmentationParent
+        initChildren(parentStructure, channelImage, processingScheme, objectSplitter); //segmentationParent
     }
     
-    public ProcessingChain getProcessingChain() {
-        return processingChain;
-    }
-
     public ProcessingScheme getProcessingScheme() {
         return processingScheme.instanciatePlugin();
     }
     
     public void setProcessingScheme(ProcessingScheme ps) {
         this.processingScheme.setPlugin(ps);
-    }
-    
-    public boolean hasSegmenter() {
-        return processingChain.segmenter.isOnePluginSet() && processingChain.segmenter.isActivated();
     }
     
     public ObjectSplitter getObjectSplitter() {

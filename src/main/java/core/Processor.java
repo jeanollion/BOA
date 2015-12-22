@@ -76,7 +76,9 @@ public class Processor {
         }
         logger.info("{} fields found int files: {}", count, selectedFiles);
     }
-       
+    
+    // preProcessing-related methods
+    
     public static void preProcessImages(Experiment xp, ObjectDAO dao, boolean computeConfigurationData) {
         for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
             preProcessImages(xp.getMicroscopyField(i), dao, false, computeConfigurationData);
@@ -105,131 +107,6 @@ public class Processor {
             images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
         }
     }
-    
-    
-    
-    public static void processStructure(int structureIdx, Experiment xp, MicroscopyField field, ObjectDAO dao, List<StructureObject> parentObjects, ArrayList<StructureObject> segmentedObjects) {
-        if (!xp.getStructure(structureIdx).hasSegmenter()) {
-            logger.warn("no segmenter set for structure: {}", xp.getStructure(structureIdx).getName());
-            return;
-        }
-        boolean automaticStore = false;
-        if (segmentedObjects==null) {
-            automaticStore= true;
-            segmentedObjects = new ArrayList<StructureObject>();
-        }
-        if (parentObjects==null) {
-            if (dao!=null) parentObjects=dao.getRoots(field.getName());
-            if (parentObjects==null || parentObjects.isEmpty()) {
-                if (xp.getStructure(structureIdx).getParentStructure()!=-1) throw new RuntimeException("No root objects detected, in order to segment structure: "+structureIdx+"one need to segment all its parent structures");
-                else {
-                    parentObjects = field.createRootObjects(dao);
-                    Processor.trackRoot(parentObjects);
-                    if (dao!=null) dao.store(parentObjects, true, false);
-                }
-            }
-        }
-        for (StructureObject parent : parentObjects) {
-            ArrayList<StructureObject> allParents = StructureObjectUtils.getAllParentObjects(parent, parent.getExperiment().getPathToStructure(parent.getStructureIdx(), structureIdx), dao);
-            logger.info("Segmenting structure: {} timePoint: {} number of parents: {}", structureIdx, parent.getTimePoint(), allParents.size());
-            for (StructureObject localParent : allParents) {
-                if (dao!=null) dao.deleteChildren(localParent, structureIdx);
-                Segmenter s = localParent.getExperiment().getStructure(structureIdx).getProcessingChain().getSegmenter();
-                ObjectPopulation o = s.runSegmenter(localParent.getRawImage(structureIdx), structureIdx, localParent);
-                localParent.setChildren(o, structureIdx);
-                segmentedObjects.addAll(localParent.getChildren(structureIdx));
-                //if (dao!=null) dao.store(localParent.getChildren(structureIdx));
-                if (logger.isDebugEnabled()) logger.debug("Segmenting structure: {} from parent: {} number of objects: {}", structureIdx, localParent, localParent.getChildObjects(structureIdx).size());
-            }
-        }
-        if (automaticStore & dao !=null) dao.store(segmentedObjects, true, false);
-    }
-    
-    public static void processChildren(int structureIdx, StructureObject parent, ObjectDAO dao, boolean deleteObjects, ArrayList<StructureObject> segmentedObjects) {
-        //if (!parent.isRoot()) throw new IllegalArgumentException("this method only applies to root objects");
-        // get all parent objects of the structure
-        ArrayList<StructureObject> allParents = StructureObjectUtils.getAllParentObjects(parent, parent.getExperiment().getPathToStructure(parent.getStructureIdx(), structureIdx), dao);
-        //logger.info("Segmenting structure: {}, timePoint: {}, number of parents: {}...", structureIdx, parent.getTimePoint(), allParents.size());
-        
-        // multithread a ce niveau? 
-        for (StructureObject localParent : allParents) {
-            if (dao!=null && deleteObjects) dao.deleteChildren(localParent, structureIdx);
-            Segmenter s = localParent.getExperiment().getStructure(structureIdx).getProcessingChain().getSegmenter();
-            ObjectPopulation o = s.runSegmenter(localParent.getRawImage(structureIdx), structureIdx, localParent);
-            localParent.setChildren(o, structureIdx);
-            //if (dao!=null) dao.store(localParent.getChildren(structureIdx));
-            if (segmentedObjects!=null) segmentedObjects.addAll(localParent.getChildren(structureIdx));
-        }
-    }
-    
-    public static void trackRoot(List<StructureObject> rootsT) {
-        //logger.debug("tracking root objects. dao==null? {}", dao==null);
-        for (int i = 1; i<rootsT.size(); ++i) rootsT.get(i).setPreviousInTrack(rootsT.get(i-1), false);
-        //if (dao!=null) dao.updateTrackAttributes(rootsT);
-    }
-    
-    protected static void trackChildren(Tracker tracker, StructureObject parentTrack, int structureIdx, ObjectDAO dao, ArrayList<StructureObject> objects) {
-        if (logger.isDebugEnabled()) logger.debug("tracking objects from structure: {} parentTrack: {} / Tracker: {} / dao==null? {}", structureIdx, parentTrack, tracker==null?"NULL":tracker.getClass(), dao==null);
-        if (tracker==null) return;
-        // TODO gestion de la memoire vive -> si trop ouvert, fermer les images & masques des temps précédents.
-        for (StructureObject o : parentTrack.getChildren(structureIdx)) {
-            o.getParentTrackHeadId();
-            o.resetTrackLinks();
-        }
-        while(parentTrack.getNext()!=null) {
-            
-            tracker.assignPrevious(parentTrack.getChildObjects(structureIdx), parentTrack.getNext().getChildObjects(structureIdx));
-            //if (dao!=null) dao.updateTrackAttributes(parentTrack.getChildren(structureIdx));
-            if (objects!=null) objects.addAll(parentTrack.getChildren(structureIdx));
-            parentTrack = parentTrack.getNext();
-        }
-        if (objects!=null) objects.addAll(parentTrack.getChildren(structureIdx));
-        //if (dao!=null) dao.updateTrackAttributes(parentTrack.getChildren(structureIdx)); // update the last one
-    }
-    
-    protected static void correctTrackChildren(TrackCorrector trackCorrector, ObjectSplitter splitter, StructureObject parentTrack, int structureIdx, ObjectDAO dao, boolean removeMergedObjectFromDAO, ArrayList<StructureObject> modifiedObjects) {
-        if (logger.isDebugEnabled()) logger.debug("correcting tracks from structure: {} parentTrack: {} / Tracker: {} / dao==null? {}", structureIdx, parentTrack, trackCorrector==null?"NULL":trackCorrector.getClass(), dao==null);
-        if (trackCorrector==null) return;
-        // TODO gestion de la memoire vive -> si trop ouvert, fermer les images & masques des temps précédents.
-        
-        ArrayList<StructureObjectTrackCorrection> localModifiedObjects = new ArrayList<StructureObjectTrackCorrection>();
-        for (StructureObject o : parentTrack.getChildObjects(structureIdx)) o.getParentTrackHeadId(); //sets parentTrackHeadId
-        while(parentTrack.getNext()!=null) {
-            ArrayList<StructureObject> children = new ArrayList<StructureObject>(parentTrack.getChildObjects(structureIdx)); // to avoid concurrent modifications exception
-            for (StructureObject child : children) if (child.getTrackFlag()!=correctionMergeToErase && child.isTrackHead()) trackCorrector.correctTrack(child, splitter, localModifiedObjects);
-            parentTrack = parentTrack.getNext();
-        }
-        //int sizeBefore = modifiedObjects.size();
-        Utils.removeDuplicates(localModifiedObjects, false);
-        HashSet<StructureObject> parentsToRelabel = new HashSet<StructureObject>();
-        Iterator<StructureObjectTrackCorrection> it = localModifiedObjects.iterator();
-        while (it.hasNext()) {
-            StructureObject o = (StructureObject)it.next();
-            if (StructureObject.TrackFlag.correctionSplitNew.equals((o).getTrackFlag())) {
-                if (o.getSiblings().indexOf(o)<o.getSiblings().size()-1) parentsToRelabel.add(o.getParent());
-            }
-            else if (StructureObject.TrackFlag.correctionMergeToErase.equals((o).getTrackFlag())) {
-                if (o.getSiblings().indexOf(o)<o.getSiblings().size()-1) parentsToRelabel.add((StructureObject)o.getParent());
-                if (dao!=null && removeMergedObjectFromDAO) { // delete merged objects before relabel to avoid collapse in case of objects stored in images...
-                    if (o.getId()==null) dao.waiteForWrites();
-                    logger.debug("removing object: {}, id: {}", o, o.getId());
-                    dao.delete(o, false);
-                    it.remove();
-                }
-            }
-        }
-        
-        relabelParents(parentsToRelabel, structureIdx, modifiedObjects);
-        if (modifiedObjects!=null) {
-            modifiedObjects.ensureCapacity(modifiedObjects.size()+localModifiedObjects.size());
-            for (StructureObjectTrackCorrection o : localModifiedObjects) modifiedObjects.add((StructureObject)o);
-            Utils.removeDuplicates(modifiedObjects, false);
-        }
-    }
-    protected static void relabelParents(HashSet<StructureObject> parentsToRelabel, int childStructureIdx, ArrayList<StructureObject> modifiedObjects) {
-        for (StructureObject parent : parentsToRelabel) parent.relabelChildren(childStructureIdx, modifiedObjects);
-    }
-    
     // processing-related methods
     
     public static List<StructureObject> getOrCreateRootTrack(ObjectDAO dao, String fieldName) {

@@ -145,7 +145,7 @@ public class TestProcessBacteria {
             xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(true);
             xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannels2D());
             xp.getPreProcessingTemplate().addTransformation(0, null, new SelectBestFocusPlane(3)).setActivated(false); // faster after crop, but previous transformation might be aftected if the first plane is really out of focus
-            xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY().setReferenceTimePoint(0));
+            xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY());
         }
     }
     
@@ -213,7 +213,7 @@ public class TestProcessBacteria {
         xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
         xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
         xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new CropMicroChannels2D());
-        xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new ImageStabilizerXY().setReferenceTimePoint(0));
+        xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new ImageStabilizerXY());
         //xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new ImageStabilizer().setReferenceTimePoint(0));
         //Image[][] imageInputTC = new Image[xp.getMicroscopyField(0).getInputImages().getTimePointNumber()][1];
         //for (int t = 0; t<imageInputTC.length; ++t) imageInputTC[t][0] = xp.getMicroscopyField(0).getInputImages().getImage(0, t);
@@ -348,8 +348,7 @@ public class TestProcessBacteria {
     
     public int getTrackErrorNumber(MicroscopyField f, ObjectDAO dao) {
         ArrayList<StructureObject> segO = new ArrayList<StructureObject> ();
-        Processor.processStructure(1, xp, f, dao, null, segO);
-        Processor.trackStructure(1, xp, f, dao, false);
+        Processor.executeProcessingScheme(f.createRootObjects(dao), 1, false, true);
         dao.store(segO, true, false);
         return dao.getTrackErrors(f.getName(), 1).size();
     }
@@ -383,39 +382,6 @@ public class TestProcessBacteria {
         Image im =f.getInputImages().getImage(0, 0).setName("preProcessed");
         new IJImageDisplayer().showImage(im);
     }
-    
-    
-    public void correctTracks(String dbName, int field, int structureIdx) {
-        Morphium m = MorphiumUtils.createMorphium(dbName);
-        ExperimentDAO xpDAO = new ExperimentDAO(m);
-        xp=xpDAO.getExperiment();
-        ObjectDAO dao = new ObjectDAO(m, xpDAO);
-        MicroscopyField f = xp.getMicroscopyField(field);
-        Processor.correctTrackStructure(structureIdx, xp, f, dao, true);
-    }
-    
-    public void testSegBactTrackErrors() {
-        String dbName = "testFluo60";
-        DBConfiguration db = new DBConfiguration(MorphiumUtils.createMorphium(dbName));
-        ArrayList<Segmenter> segmenters = new ArrayList<Segmenter>();
-        segmenters.add(new BacteriaFluo().setSplitThreshold(0.1));
-        ArrayList<Integer> errors = new ArrayList<Integer>();
-        for (Segmenter s : segmenters) {
-            db.getExperiment().getStructure(1).getProcessingChain().setSegmenter(s);
-            db.getExperiment().getStructure(1).setTrackCorrector(null);
-            MicroscopyField f = db.getExperiment().getMicroscopyField(0);
-            ArrayList<StructureObject> rootTrack = Processor.processAndTrackStructures(db.getExperiment(), f, db.getDao(), false, false, 0, 1);
-            db.getDao().waiteForWrites();
-            int[] pathToStructure = db.getExperiment().getPathToRoot(1);
-            int count = 0;
-            for (StructureObject root : rootTrack) {
-                for (StructureObject o : StructureObjectUtils.getAllObjects(root, pathToStructure)) if (StructureObject.TrackFlag.trackError.equals(o.getTrackFlag())) ++count;
-            }
-            errors.add(count);
-        }
-        for (int idx = 0; idx<errors.size(); ++idx) logger.info("{}, Errors: {}", segmenters.get(idx), errors.get(idx));
-    }
-    
     
     public void testSegBactAllTimes() {
         String dbName = "testFluo";
