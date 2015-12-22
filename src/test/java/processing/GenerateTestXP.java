@@ -25,10 +25,11 @@ import core.Processor;
  */
 public class GenerateTestXP {
     public static void main(String[] args) {
-        String dbName = "fluo151130";
+        String dbName = "fluo151130_OutputNewScaling";
         TestProcessBacteria t = new TestProcessBacteria();
+        t.setUpXp(true, "/home/jollion/Documents/LJP/DataLJP/Fluo151130/OutputNewScaling/");
         //t.setUpXp(true, "/data/Images/Fluo/films1511/151130/Output");
-        t.setUpXp(true, "/data/Images/Fluo/films1511/151130/Output_champ01_sub88-118");
+        //t.setUpXp(true, "/data/Images/Fluo/films1511/151130/Output_champ01_sub88-118");
         //t.setUpXp(true, "/data/Images/Fluo/films1510/Output");
         //t.setUpXp(true, "/home/jollion/Documents/LJP/DataLJP/TestOutput60");
         //t.testImport("/data/Images/Fluo/testsub595-630");

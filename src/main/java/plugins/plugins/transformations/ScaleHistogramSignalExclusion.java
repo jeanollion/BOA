@@ -46,10 +46,11 @@ public class ScaleHistogramSignalExclusion implements Transformation {
     
     public ScaleHistogramSignalExclusion() {}
     
-    public ScaleHistogramSignalExclusion(double sigmaTh, double muTh, int signalExclusion) {
+    public ScaleHistogramSignalExclusion(double sigmaTh, double muTh, int signalExclusion, double signalExclusionThreshold) {
         this.sigmaTh.setValue(sigmaTh);
         this.muTh.setValue(muTh);
         if (signalExclusion>=0) this.signalExclusion.setSelectedIndex(signalExclusion);
+        this.signalExclusionThreshold.setValue(signalExclusionThreshold);
     }
     
     public void computeConfigurationData(final int channelIdx, final InputImages inputImages) {
@@ -77,6 +78,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
             );
         }
         tr.startAndJoin();
+        meanSigmaT=new ArrayList<ArrayList<Double>>(sigmaMu.length);
         for (Double[] d : sigmaMu) meanSigmaT.add(new ArrayList<Double>(Arrays.asList(d)));
     }
     public static Double[] computeMeanSigma(Image image, Image exclusionSignal, double exclusionThreshold, ImageInteger exclusionMask, int timePoint) {

@@ -75,6 +75,7 @@ import plugins.plugins.transformations.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
 import plugins.plugins.transformations.ImageStabilizerXY;
 import plugins.plugins.transformations.ScaleHistogram;
+import plugins.plugins.transformations.ScaleHistogramSignalExclusion;
 import plugins.plugins.transformations.SelectBestFocusPlane;
 import plugins.plugins.transformations.SuppressCentralHorizontalLine;
 import processing.ImageTransformation.InterpolationScheme;
@@ -138,7 +139,7 @@ public class TestProcessBacteria {
         xp.addMeasurement(new BacteriaMeasurements(1, 2));
         if (preProcessing) {// preProcessing 
             xp.getPreProcessingTemplate().addTransformation(0, null, new SuppressCentralHorizontalLine(6)).setActivated(false);
-            xp.getPreProcessingTemplate().addTransformation(1, null, new ScaleHistogram(100, true)); // to remove blinking
+            xp.getPreProcessingTemplate().addTransformation(1, null, new ScaleHistogramSignalExclusion(111.5, 12, 0, 50)); // to remove blinking
             xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1, 0)).setActivated(true); // to remove salt and pepper noise
             xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
             xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
