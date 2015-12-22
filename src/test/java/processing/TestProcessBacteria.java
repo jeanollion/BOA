@@ -123,13 +123,13 @@ public class TestProcessBacteria {
         Structure bacteria = new Structure("Bacteria", 0, 0);
         Structure mutation = new Structure("Mutation", 0, 1); // parent structure 1 segParentStructure 0
         xp.getStructures().insert(mc, bacteria, mutation);
-        mc.getProcessingChain().setSegmenter(new MicroChannelFluo2D());
+        /*mc.getProcessingChain().setSegmenter(new MicroChannelFluo2D());
         bacteria.getProcessingChain().setSegmenter(new BacteriaFluo());
         mutation.getProcessingChain().setSegmenter(new SpotFluo2D5());
         mc.setTracker(new ObjectIdxTracker());
         bacteria.setTracker(new ClosedMicrochannelTracker());
         bacteria.setTrackCorrector(new MicroChannelBacteriaTrackCorrector());
-        
+        */
         mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessor()));
         bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo(), 0.9, 1.1, 1.7, 1, 5)));
         mutation.setProcessingScheme(new SegmentOnly(new MutationSegmenter()));

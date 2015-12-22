@@ -113,8 +113,8 @@ public class MorphiumUtils {
             cfg.addHost(hostName, portNumber);
             
             Morphium m=new Morphium(cfg);
-            m.readMaximums();
-            logger.debug("max write batch size {}" , m.getMaxWriteBatchSize());
+            //m.readMaximums();
+            //logger.debug("max write batch size {}" , m.getMaxWriteBatchSize());
             return m;
         } catch (UnknownHostException ex) {
             logger.error("Couldnot instanciate morphim", ex);
