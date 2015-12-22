@@ -68,7 +68,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
                             Image signalExclusion=null;
                             ImageInteger exclusionMask = null;
                             if (chExcl>=0) {
-                                signalExclusion = inputImages.getImage(chExcl, channelIdx);
+                                signalExclusion = inputImages.getImage(chExcl, idx);
                                 exclusionMask = exclusionMasks[trIdx];
                             }
                             sigmaMu[idx] = computeMeanSigma(inputImages.getImage(channelIdx, idx), signalExclusion, exclThld, exclusionMask, idx);
@@ -79,8 +79,12 @@ public class ScaleHistogramSignalExclusion implements Transformation {
         }
         tr.startAndJoin();
         meanSigmaT=new ArrayList<ArrayList<Double>>(sigmaMu.length);
-        for (Double[] d : sigmaMu) meanSigmaT.add(new ArrayList<Double>(Arrays.asList(d)));
+        for (Double[] d : sigmaMu) {
+            //logger.debug("sigmaMu: {}", (Object[])d);
+            meanSigmaT.add(new ArrayList<Double>(Arrays.asList(d)));
+        }
     }
+    
     public static Double[] computeMeanSigma(Image image, Image exclusionSignal, double exclusionThreshold, ImageInteger exclusionMask, int timePoint) {
         long t0 = System.currentTimeMillis();
         if (exclusionMask!=null) ImageOperations.threshold(exclusionSignal, exclusionThreshold, false, true, true, exclusionMask);
@@ -96,7 +100,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
         ArrayList<Double> muSig = this.meanSigmaT.get(timePoint);
         double alpha = muSig.get(1) / this.sigmaTh.getValue().doubleValue();
         double beta = muSig.get(0) - alpha * this.muTh.getValue().doubleValue();
-        return ImageOperations.affineOperation(image, image instanceof ImageFloat? image: null, 1d/alpha, -beta/alpha);
+        return ImageOperations.affineOperation(image, image instanceof ImageFloat? image: new ImageFloat("", 0, 0, 0), 1d/alpha, -beta/alpha);
     }
 
     public ArrayList getConfigurationData() {

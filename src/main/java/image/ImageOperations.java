@@ -195,8 +195,7 @@ public class ImageOperations {
         if (output==null) {
             if (multiplicativeCoefficient<0 || (int)multiplicativeCoefficient != multiplicativeCoefficient || additiveCoefficient<0) output = new ImageFloat(name, source1);
             else output = Image.createEmptyImage(name, source1, source1);
-        }
-        else if (!output.sameSize(source1)) output = Image.createEmptyImage(name, output, source1);
+        } else if (!output.sameSize(source1)) output = Image.createEmptyImage(name, output, source1);
         additiveCoefficient += output instanceof ImageInteger?0.5:0;
         if (additiveCoefficient!=0 && multiplicativeCoefficient!=1) {
             for (int z = 0; z<output.sizeZ; ++z) {

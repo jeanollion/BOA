@@ -95,6 +95,7 @@ public class MutationSegmenter implements Segmenter {
     }
     
     public static ObjectPopulation runPlane(Image input, ImageMask mask, double scale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
+        if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
         IJImageDisplayer disp = debug?new IJImageDisplayer():null;
         Image lap = ImageFeatures.getLaplacian(input, scale, true, false).setName("laplacian: "+scale);
         //Image lapSP = ImageFeatures.getScaleSpaceLaplacian(input, new double[]{2, 4, 6, 8, 10});
@@ -112,8 +113,9 @@ public class MutationSegmenter implements Segmenter {
         
         if (intermediateImages!=null) {
             intermediateImages.add(det);
-            //intermediateImages.add(hessMax);
+            intermediateImages.add(hessMax);
             intermediateImages.add(lap);
+            intermediateImages.add(input);
         }
         
         ObjectPopulation seedPop = new ObjectPopulation(seeds, false);

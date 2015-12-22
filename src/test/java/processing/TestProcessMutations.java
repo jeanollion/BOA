@@ -53,7 +53,7 @@ public class TestProcessMutations {
         PluginFactory.findPlugins("plugins.plugins");
         //String dbName = "testFluo60";
         //String dbName = "fluo151130_sub88-118";
-        String dbName = "fluo151130";
+        String dbName = "fluo151130_OutputNewScaling";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
         t.testSegMutationsFromXP(0, 0, true, 0, 20);
@@ -83,17 +83,17 @@ public class TestProcessMutations {
     }
     
     public void testSegMutation(StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
-            Image input = parent.getRawImage(2);
-            ImageInteger parentMask = parent.getMask();
-            ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
-            //SpotFluo2D5.debug=true;
-            //SpotFluo2D5.displayImages=parentMask_==null;
-            //ObjectPopulation pop = SpotFluo2D5.runPlane(input.getZPlane(0), parentMask, 1.5, 1.5, 5, 4, -0.2, 4, intermediateImages); // 6 -0.18
-            ObjectPopulation pop = MutationSegmenter.runPlane(input.getZPlane(0), parentMask, 2.5, 5, 2, 1, intermediateImages); // 6 -0.18
-            if (parentMask_!=null) parentMask_.add(parentMask);
-            if (input_!=null) input_.add(input);
-            if (outputLabel!=null) outputLabel.add(pop.getLabelImage());
-            if (intermediateImages_!=null) intermediateImages_.add(intermediateImages);
+        Image input = parent.getRawImage(2);
+        ImageInteger parentMask = parent.getMask();
+        ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
+        //SpotFluo2D5.debug=true;
+        //SpotFluo2D5.displayImages=parentMask_==null;
+        //ObjectPopulation pop = SpotFluo2D5.runPlane(input.getZPlane(0), parentMask, 1.5, 1.5, 5, 4, -0.2, 4, intermediateImages); // 6 -0.18
+        ObjectPopulation pop = MutationSegmenter.runPlane(input.getZPlane(0), parentMask, 2.5, 5, 2, 1, intermediateImages); // 6 -0.18
+        if (parentMask_!=null) parentMask_.add(parentMask);
+        if (input_!=null) input_.add(input);
+        if (outputLabel!=null) outputLabel.add(pop.getLabelImage());
+        if (intermediateImages_!=null) intermediateImages_.add(intermediateImages);
     }
     
     static int intervalX = 5;
