@@ -76,13 +76,16 @@ public class ScaleHistogramSignalExclusion implements Transformation {
                 }
             );
         }
+        tr.startAndJoin();
         meanSigmaT = new ArrayList<double[]>(Arrays.asList(sigmaMu));
     }
     public static double[] computeMeanSigma(Image image, Image exclusionSignal, double exclusionThreshold, ImageInteger exclusionMask, int timePoint) {
+        long t0 = System.currentTimeMillis();
         if (exclusionMask!=null) ImageOperations.threshold(exclusionSignal, exclusionThreshold, false, true, true, exclusionMask);
         else exclusionMask = new BlankMask(image);
         double[] res=   ImageOperations.getMeanAndSigma(image, exclusionMask);
-        logger.debug("ScaleHistogram signal exclusion: timePoint: {}, mean sigma: {}, signal exclusion? {}", timePoint, res, exclusionSignal!=null);
+        long t1 = System.currentTimeMillis();
+        logger.debug("ScaleHistogram signal exclusion: timePoint: {}, mean sigma: {}, signal exclusion? {}, processing time: {}", timePoint, res, exclusionSignal!=null, t1-t0);
         return res;
     }
     

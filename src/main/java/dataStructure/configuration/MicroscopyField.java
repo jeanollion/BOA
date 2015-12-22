@@ -17,6 +17,9 @@
  */
 package dataStructure.configuration;
 
+import boa.gui.GUI;
+import com.mongodb.MongoClient;
+import configuration.parameters.ListElementRemovable;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
@@ -34,13 +37,14 @@ import dataStructure.objects.StructureObject;
 import de.caluga.morphium.annotations.Transient;
 import image.BlankMask;
 import java.util.ArrayList;
+import javax.swing.JOptionPane;
 import plugins.PreFilter;
 
 /**
  *
  * @author jollion
  */
-public class MicroscopyField extends SimpleContainerParameter {
+public class MicroscopyField extends SimpleContainerParameter implements ListElementRemovable {
     
     MultipleImageContainer images;
     PreProcessingChain preProcessingChain;
@@ -147,4 +151,21 @@ public class MicroscopyField extends SimpleContainerParameter {
         return name + " no selected images";
     }
     
+    @Override
+    public void removeFromParent() { // when removed from GUI
+        super.removeFromParent();
+        
+    }
+    // listElementRemovable
+    public boolean removeFromParentList(boolean callFromGUI) {
+        if (callFromGUI) {
+            // delete all objects..
+            int response = JOptionPane.showConfirmDialog(null, "Delete Field: "+name+ "(all data will be lost)", "Confirm",
+            JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+            if (response != JOptionPane.YES_OPTION) return false;
+        }
+        GUI.getDBConnection().getDao().deleteObjectsFromField(name);
+        this.getInputImages().deleteFromDAO();
+        return true;
+    }
 }

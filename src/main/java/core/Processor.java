@@ -88,7 +88,7 @@ public class Processor {
         setTransformations(field, computeConfigurationData);
         InputImagesImpl images = field.getInputImages();
         images.applyTranformationsSaveAndClose();
-        if (deleteObjects) if (dao!=null && deleteObjects) dao.deleteObjectsFromField(field.getName());
+        if (dao!=null && deleteObjects) dao.deleteObjectsFromField(field.getName());
     }
     
     public static void setTransformations(MicroscopyField field, boolean computeConfigurationData) {

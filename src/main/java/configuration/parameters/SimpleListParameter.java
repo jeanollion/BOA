@@ -262,6 +262,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     @Override
     public void remove(MutableTreeNode node) {
         //System.out.println("removing node:"+((Parameter)node).toString() +" total number: "+children.size());
+        logger.info("(list) removing node:"+((Parameter)node).toString() +" total number: "+children.size());
         getChildren().remove((T)node);
     }
 
@@ -272,6 +273,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
 
     @Override
     public void removeFromParent() {
+        logger.info("(list) removing node from parent:"+((Parameter)this).toString() +" total number: "+children.size());
         if (parent!=null) this.parent.remove(this);
     }
     

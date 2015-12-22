@@ -22,11 +22,16 @@ import configuration.parameters.ParameterUtils;
 import configuration.parameters.SimpleParameter;
 import configuration.parameters.ui.ListParameterUI;
 import boa.gui.configuration.ConfigurationTreeModel;
+import configuration.parameters.ListElementRemovable;
+import static configuration.parameters.Parameter.logger;
+import dataStructure.configuration.MicroscopyField;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
+import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.TreeNode;
 
 /**
  *
@@ -62,8 +67,23 @@ public class SimpleListParameterUI implements ListParameterUI{
             new AbstractAction(actionNames[1]) {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    list.removeAllElements();
-                    model.nodeStructureChanged(list);
+                    if (list.getChildCount()==0) return;
+                    TreeNode child = list.getChildAt(0);
+                    // 
+                    if ((child instanceof ListElementRemovable)) {
+                        if (((ListElementRemovable)child).removeFromParentList(true)) { // call from GUI only for the first
+                            model.removeNodeFromParent((MutableTreeNode)child);
+                            while (list.getChildCount()>0) {
+                                child = list.getChildAt(0);
+                                ((ListElementRemovable)child).removeFromParentList(false);
+                                model.removeNodeFromParent((MutableTreeNode)child);
+                            }
+                        }
+                    } else {
+                        list.removeAllElements();
+                        model.nodeStructureChanged(list);
+                    }
+                    
                 }
             }
         );
@@ -115,7 +135,9 @@ public class SimpleListParameterUI implements ListParameterUI{
             new AbstractAction(childActionNames[1]) {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    model.removeNodeFromParent(child);
+                    if (!(child instanceof ListElementRemovable) || ((ListElementRemovable)child).removeFromParentList(true) ) {
+                        model.removeNodeFromParent(child);
+                    }
                 }
             }
         );
