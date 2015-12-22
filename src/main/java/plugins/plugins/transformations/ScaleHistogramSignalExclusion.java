@@ -46,7 +46,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
     
     public ScaleHistogramSignalExclusion() {}
     
-    public ScaleHistogramSignalExclusion(double sigmaTh, double muTh, int signalExclusion, double signalExclusionThreshold) {
+    public ScaleHistogramSignalExclusion(double muTh, double sigmaTh, int signalExclusion, double signalExclusionThreshold) {
         this.sigmaTh.setValue(sigmaTh);
         this.muTh.setValue(muTh);
         if (signalExclusion>=0) this.signalExclusion.setSelectedIndex(signalExclusion);

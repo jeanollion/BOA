@@ -56,7 +56,7 @@ public class TestProcessMutations {
         String dbName = "fluo151130_OutputNewScaling";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
-        t.testSegMutationsFromXP(0, 0, true, 0, 20);
+        t.testSegMutationsFromXP(0, 0, true, 20, 28);
         //t.testSegMutationsFromXP(27);
     }
     public void init(String dbName) {
@@ -89,7 +89,7 @@ public class TestProcessMutations {
         //SpotFluo2D5.debug=true;
         //SpotFluo2D5.displayImages=parentMask_==null;
         //ObjectPopulation pop = SpotFluo2D5.runPlane(input.getZPlane(0), parentMask, 1.5, 1.5, 5, 4, -0.2, 4, intermediateImages); // 6 -0.18
-        ObjectPopulation pop = MutationSegmenter.runPlane(input.getZPlane(0), parentMask, 2.5, 5, 2, 1, intermediateImages); // 6 -0.18
+        ObjectPopulation pop = MutationSegmenter.runPlane(input.getZPlane(0), parentMask, 2.5, 5, 3.5, 2, intermediateImages); // 6 -0.18
         if (parentMask_!=null) parentMask_.add(parentMask);
         if (input_!=null) input_.add(input);
         if (outputLabel!=null) outputLabel.add(pop.getLabelImage());
