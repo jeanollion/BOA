@@ -55,6 +55,7 @@ import plugins.Segmenter;
 import plugins.plugins.ObjectSplitter.WatershedObjectSplitter;
 import plugins.plugins.measurements.BacteriaLineageIndex;
 import plugins.plugins.measurements.BacteriaMeasurements;
+import plugins.plugins.measurements.BacteriaMeasurementsWoleMC;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.preFilter.Median;
 import plugins.plugins.processingScheme.SegmentAndTrack;
@@ -135,8 +136,9 @@ public class TestProcessBacteria {
         bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo(), 0.9, 1.1, 1.7, 1, 5)));
         mutation.setProcessingScheme(new SegmentOnly(new MutationSegmenter()));
         
-        xp.addMeasurement(new BacteriaLineageIndex(1));
-        xp.addMeasurement(new BacteriaMeasurements(1, 2));
+        //xp.addMeasurement(new BacteriaLineageIndex(1));
+        //xp.addMeasurement(new BacteriaMeasurements(1, 2));
+        xp.addMeasurement(new BacteriaMeasurementsWoleMC(1, 2));
         if (preProcessing) {// preProcessing 
             xp.getPreProcessingTemplate().addTransformation(0, null, new SuppressCentralHorizontalLine(6)).setActivated(false);
             xp.getPreProcessingTemplate().addTransformation(1, null, new ScaleHistogramSignalExclusion(106, 7.8, 0, 50)); // to remove blinking

@@ -97,7 +97,11 @@ public class ThreadRunner {
     }
     
     private int getNbCpus() {
-        return Math.max(1, Math.min(Runtime.getRuntime().availableProcessors(), end-start));
+        return Math.max(1, Math.min(getMaxCPUs(), end-start));
+    }
+    
+    public static int getMaxCPUs() {
+        return Runtime.getRuntime().availableProcessors();
     }
 
     public static <T> void execute(final T[] array, final boolean setToNull, final ThreadAction<T> action) {

@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import utils.ThreadRunner;
+import utils.ThreadRunner.ThreadAction;
 
 /**
  *
@@ -122,6 +124,7 @@ public class ObjectStoreAgent {
         @Override
         public void executeJob() {
             dao.upsertMeasurementsNow(objects);
+            
         }
     }
     private class ClearCache extends Job{

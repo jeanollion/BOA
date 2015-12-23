@@ -73,17 +73,20 @@ public class BacteriaMeasurementsWoleMC implements Measurement {
         res.add(new MeasurementKeyObject("M_FeretMax", parentIdx));
         res.add(new MeasurementKeyObject("M_MeanValue", parentIdx));
         res.add(new MeasurementKeyObject("M_Volume", parentIdx));
-        res.add(new MeasurementKeyObject("MutationForegroundSingle", mutation.getSelectedIndex()));
+        //res.add(new MeasurementKeyObject("MutationForegroundSingle", mutation.getSelectedIndex()));
         return res;
     }
 
     public void performMeasurement(StructureObject object, List<StructureObject> modifiedObjects) {
         // measurements on microchannels
         Object3D o = object.getObject();
+        long t0 = System.currentTimeMillis();
         object.getMeasurements().setValue("MutationCount", ObjectInclusionCount.count(object, mutation.getSelectedIndex(), 0, true));
         object.getMeasurements().setValue("BacteriaCount", ObjectInclusionCount.count(object, bacteria.getSelectedIndex(), 0, false));
+        long t1 = System.currentTimeMillis();
         Image bactImage = object.getRawImage(bacteria.getSelectedIndex());
         Image mutImage = object.getRawImage(mutation.getSelectedIndex());
+        long t2 = System.currentTimeMillis();
         BoundingBox bounds = o.getBounds().duplicate();
         o.translate(bounds, true);
         object.getMeasurements().setValue("BacteriaMeanIntensity", BasicMeasurements.getMeanValue(o, bactImage));
@@ -97,20 +100,26 @@ public class BacteriaMeasurementsWoleMC implements Measurement {
             object.getMeasurements().setValue("MutationForeground", snr[1]);    
             object.getMeasurements().setValue("MutationMeanIntensity", snr[2]);    
         }
-        for (StructureObject m : mutList) {
+        long t3 = System.currentTimeMillis();
+        /*for (StructureObject m : mutList) {
               m.getMeasurements().setValue("MutationForegroundSingle", BasicMeasurements.getMeanValue(m.getObject().getVoxels(), mutImage));
               modifiedObjects.add(m);
-        }
+        }*/
+        long t4=t3, t5=t3;
         ArrayList<StructureObject> bactList = object.getChildren(bacteria.getSelectedIndex());
         if (!bactList.isEmpty()) {
             StructureObject mm = bactList.get(0);
             object.getMeasurements().setValue("M_MutationCount", ObjectInclusionCount.count(object, mm, mutList, 0, true));
+            t4 = System.currentTimeMillis();
             object.getMeasurements().setValue("M_FeretMax", GeometricalMeasurements.getFeretMax(mm.getObject()));
             object.getMeasurements().setValue("M_MeanValue", BasicMeasurements.getMeanValue(mm.getObject(), bactImage));
             object.getMeasurements().setValue("M_Volume", GeometricalMeasurements.getVolume(mm.getObject()));
+            t5 = System.currentTimeMillis();
         }
+        
         o.resetOffset();
         modifiedObjects.add(object);
+        //logger.debug("BMWMC on {}. inclusion: {}ms, get images: {}ms, intensity meas: {}ms, M inclusion: {}ms, M intensity {}ms", object, t1-t0, t2-t1, t3-t2, t4-t3, t5-t4);
     }
 
     public Parameter[] getParameters() {

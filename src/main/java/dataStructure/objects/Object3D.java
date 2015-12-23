@@ -236,7 +236,7 @@ public class Object3D {
     }
     
   
-    public int getIntersectionCount2(Object3D other) {
+    public int getIntersectionCountMask(Object3D other) {
         if (!this.getBounds().hasIntersection(other.getBounds())) return 0;
         else {
             ImageMask m = other.getMask();

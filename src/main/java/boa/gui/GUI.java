@@ -1026,7 +1026,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             String fieldName = db.getExperiment().getMicroscopyField(f).getName();
             if (deleteAllField) db.getDao().deleteObjectsFromField(fieldName);
             this.runAction(fieldName, preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements, needToDeleteObjects && !deleteAllField && !deleteAll);
-            if (preProcess) db.updateExperiment();
+            if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field
             db.getDao().clearCache();
         }
         if (needToDeleteObjects) this.reloadTree=true;

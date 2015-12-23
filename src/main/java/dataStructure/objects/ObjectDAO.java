@@ -40,6 +40,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.SwingUtilities;
 import org.bson.types.ObjectId;
 import utils.MorphiumUtils;
+import utils.ThreadRunner;
 import utils.Utils;
 
 /**
@@ -454,18 +455,25 @@ public class ObjectDAO extends DAO<StructureObject>{
     // measurement-specific methds
     public void upsertMeasurements(List<StructureObject> objects) {
         Utils.removeDuplicates(objects, false);
-        this.agent.upsertMeasurements(objects);
+        //this.agent.upsertMeasurements(objects);
+        ThreadRunner.execute(objects, new ThreadRunner.ThreadAction<StructureObject>() {
+            public void run(StructureObject object, int idx) {
+                upsertMeasurement(object);
+            }
+        });
     }
     protected void upsertMeasurementsNow(List<StructureObject> objects) {
-        for (StructureObject o : objects) {
-            o.getMeasurements().updateObjectProperties(o);
-            //if (o.getMeasurements().id!=null) measurementsDAO.delete(o.getMeasurements());
-            this.measurementsDAO.store(o.getMeasurements()); // toDO -> partial update if already an ID
-            
-            if (!o.getMeasurements().getId().equals(o.measurementsId)) {
-                o.measurementsId=o.getMeasurements().getId();
-                morphium.updateUsingFields(o, "measurements_id");
-            }
+        for (StructureObject o : objects) upsertMeasurement(o);
+    }
+    
+    protected void upsertMeasurement(StructureObject o) {
+        o.getMeasurements().updateObjectProperties(o);
+        //if (o.getMeasurements().id!=null) measurementsDAO.delete(o.getMeasurements());
+        this.measurementsDAO.store(o.getMeasurements()); // toDO -> partial update if already an ID
+
+        if (!o.getMeasurements().getId().equals(o.measurementsId)) {
+            o.measurementsId=o.getMeasurements().getId();
+            morphium.updateUsingFields(o, "measurements_id");
         }
     }
     

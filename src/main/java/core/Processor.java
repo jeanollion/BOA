@@ -33,6 +33,7 @@ import dataStructure.objects.StructureObjectTrackCorrection;
 import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -186,12 +187,14 @@ public class Processor {
         roots=null; // saves memory
         logger.debug("{} number of roots: {}", fieldName, rootArray.length);
         final Map<Integer, List<Measurement>> measurements = dao.getExperiment().getMeasurementsByCallStructureIdx();
-
+         final List<StructureObject> allModifiedObjects = new ArrayList<StructureObject>();
+        final List<StructureObject> allModifiedObjectsSync = Collections.synchronizedList(allModifiedObjects);
+        
         ThreadRunner.execute(rootArray, true, new ThreadAction<StructureObject>() {
             @Override
             public void run(StructureObject root, int idx) {
                 long t0 = System.currentTimeMillis();
-                logger.debug("running measurements on: {}", root);
+                //logger.debug("running measurements on: {}", root);
                 List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
                 for(Entry<Integer, List<Measurement>> e : measurements.entrySet()) {
                     int structureIdx = e.getKey();
@@ -204,14 +207,17 @@ public class Processor {
                         }
                     }
                 }
+                allModifiedObjectsSync.addAll(modifiedObjects);
                 long t1 = System.currentTimeMillis();
-                logger.debug("running measurements on: {}, time elapsed: {}ms", root, t1-t0);
-                if (dao!=null && !modifiedObjects.isEmpty()) dao.upsertMeasurements(modifiedObjects);
+                logger.debug("measurements on: {}, time elapsed: {}ms", root, t1-t0);
+                //if (dao!=null && !modifiedObjects.isEmpty()) dao.upsertMeasurements(modifiedObjects);
             }
         });
         long t1 = System.currentTimeMillis();
-        logger.debug("measurements on field: {}: time: {}", fieldName, t1-t0);
-        dao.waiteForWrites();
-        dao.clearCache();
+        
+        if (dao!=null && !allModifiedObjects.isEmpty()) dao.upsertMeasurements(allModifiedObjects);
+        long t2 = System.currentTimeMillis();
+        logger.debug("measurements on field: {}: time: {}, upsert time: {} ({} objects)", fieldName, t1-t0, t2-t1, allModifiedObjects.size());
+        
     }
 }
