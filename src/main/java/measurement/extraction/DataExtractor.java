@@ -47,7 +47,7 @@ public class DataExtractor {
     final static char indexSeparator ='-';
     final static String NaN = "NaN";
 
-    protected static String getBaseHeader() {
+    protected static String getBaseHeader() { //TODO split Indicies column ...
         return "FieldName"+separator+"Indicies"+separator+"TimePoint";
     }
     protected static String getBaseLine(Measurements m) {
@@ -76,8 +76,6 @@ public class DataExtractor {
     
     public static void extractMeasurementObjects(DBConfiguration db, String outputFile, Map<Integer, String[]> allMeasurements) {
         Experiment xp = db.getExperiment();
-        MeasurementsDAO dao = db.getDao().getMeasurementsDAO();
-        db.getDao().waiteForWrites();
         long t0 = System.currentTimeMillis();
         FileWriter fstream;
         BufferedWriter out;
@@ -99,9 +97,10 @@ public class DataExtractor {
             }
             String[] currentMeasurementNames = allMeasurementsSort.pollLastEntry().getValue();
             for (String fieldName : xp.getFieldsAsString()) {
+                MeasurementsDAO dao = db.getDao(fieldName).getMeasurementsDAO();
                 TreeMap<Integer, List<Measurements>> parentMeasurements = new TreeMap<Integer, List<Measurements>>();
-                for (Entry<Integer, String[]> e : allMeasurementsSort.entrySet()) parentMeasurements.put(e.getKey(), dao.getMeasurements(fieldName, e.getKey(), e.getValue()));
-                List<Measurements> currentMeasurements = dao.getMeasurements(fieldName, currentStructureIdx, currentMeasurementNames);
+                for (Entry<Integer, String[]> e : allMeasurementsSort.entrySet()) parentMeasurements.put(e.getKey(), dao.getMeasurements(e.getKey(), e.getValue()));
+                List<Measurements> currentMeasurements = dao.getMeasurements(currentStructureIdx, currentMeasurementNames);
                 for (Measurements m : currentMeasurements) {
                     String line = getBaseLine(m);
                     // add measurements from parents of the the current structure

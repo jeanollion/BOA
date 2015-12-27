@@ -324,12 +324,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             xp.setOutputImageDirectory("/data/Images/Test/Output");
             
             // save to morphium
-            xpDAO.store(xp);
+            xpDAO.storeLater(xp);
             
             // process
             Processor.preProcessImages(xp, objectDAO, true);
             ArrayList<StructureObject> root = xp.getMicroscopyField(0).createRootObjects();
-            objectDAO.store(root); 
+            objectDAO.storeLater(root); 
             Processor.trackRoot(root, objectDAO);
             for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
                 for (int t = 0; t<root.size(); ++t) Processor.processStructure(s, root.get(t), objectDAO, false); // process
@@ -777,11 +777,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void runAction(String fieldName, boolean preProcess, boolean reProcess, boolean segmentAndTrack, boolean trackOnly, boolean measurements, boolean deleteObjects) {
         if (preProcess || reProcess) {
             logger.info("Pre-Processing: Field: {}", fieldName);
-            Processor.preProcessImages(db.getExperiment().getMicroscopyField(fieldName), db.getDao(), true, preProcess);
+            Processor.preProcessImages(db.getExperiment().getMicroscopyField(fieldName), db.getDao(fieldName), true, preProcess);
         }
         if (segmentAndTrack || trackOnly) {
             int[] selectedStructures = this.getSelectedStructures(true);
-            List<StructureObject> roots = Processor.getOrCreateRootTrack(db.getDao(), fieldName);
+            List<StructureObject> roots = Processor.getOrCreateRootTrack(db.getDao(fieldName));
             if (roots==null) {
                 logger.error("Field: {} no pre-processed image found", fieldName);
                 return;
@@ -795,7 +795,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         }
         if (measurements) {
             logger.info("Measurements: Field: {}", fieldName);
-            Processor.performMeasurements(fieldName, db.getDao());
+            Processor.performMeasurements(db.getDao(fieldName));
         }
     }
     
@@ -871,6 +871,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void splitObjectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_splitObjectButtonActionPerformed
         if (!checkConnection()) return;
         StructureObject sel = objectTreeGenerator.getFisrtSelectedObject();
+        String fieldName = sel.getFieldName();
         if (sel==null) logger.warn("Select an object to Split first!");
         else {
             ObjectSplitter splitter = this.db.getExperiment().getStructure(sel.getStructureIdx()).getObjectSplitter();
@@ -886,7 +887,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                     modified.add(newObject);
                     modified.add(sel);
                     sel.getParent().relabelChildren(sel.getStructureIdx(), modified);
-                    db.getDao().store(modified, false, false);
+                    db.getDao(fieldName).store(modified, false);
                     //Update tree
                     ObjectNode node = objectTreeGenerator.getObjectNode(sel);
                     node.getParent().createChildren();
@@ -904,16 +905,17 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (sel.isEmpty()) logger.warn("Merge Objects: select several objects from same parent first!");
         else {
             StructureObject res = sel.remove(0);
+            String fieldName = res.getFieldName();
             ArrayList<StructureObject> siblings = res.getParent().getChildren(res.getStructureIdx());
             for (StructureObject toMerge : sel) {
                 res.merge(toMerge);
                 siblings.remove(toMerge);
             }
-            db.getDao().delete(sel, false);
+            db.getDao(fieldName).delete(sel, false);
             ArrayList<StructureObject> modified = new ArrayList<StructureObject>(siblings.size());
             modified.add(res);
             res.getParent().relabelChildren(res.getStructureIdx(), modified);
-            db.getDao().store(modified, false, false);
+            db.getDao(fieldName).store(modified, false);
             //Update object tree
             ObjectNode node = objectTreeGenerator.getObjectNode(res);
             node.getParent().createChildren();
@@ -957,6 +959,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (sel.isEmpty()) logger.warn("Delete Objects: select one or several objects to delete first!");
         else {
             int structureIdx = sel.get(0).getStructureIdx();
+            String fieldName = sel.get(0).getFieldName();
             ArrayList<StructureObject> parents = new ArrayList<StructureObject>();
             for (StructureObject o : sel) {
                 parents.add(o.getParent());
@@ -964,10 +967,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
             Utils.removeDuplicates(parents, false);
             logger.info("Deleting {} objects, from {} parents", sel.size(), parents.size());
-            db.getDao().delete(sel, true);
+            db.getDao(fieldName).delete(sel, true);
             ArrayList<StructureObject> modified = new ArrayList<StructureObject>();
             for (StructureObject p : parents) p.relabelChildren(structureIdx, modified);
-            db.getDao().store(modified, false, false);
+            db.getDao(fieldName).store(modified, false);
             //Update object tree
             for (StructureObject s : parents) {
                 ObjectNode node = objectTreeGenerator.getObjectNode(s);
@@ -1019,15 +1022,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         boolean allStructures = selectedStructures.length==db.getExperiment().getStructureCount();
         boolean needToDeleteObjects = preProcess || reRunPreProcess || segmentAndTrack;
         boolean deleteAll =  needToDeleteObjects && allStructures && microscopyFields.length==db.getExperiment().getMicrocopyFieldCount();
-        if (deleteAll) db.getDao().deleteAllObjects();  
+        if (deleteAll) db.deleteAllObjects();  
         boolean deleteAllField = needToDeleteObjects && allStructures && !deleteAll;
         logger.debug("Run actions: preProcess: {}, rePreProcess: {}, segmentAndTrack: {}, trackOnly: {}, runMeasurements: {}, need to delete objects: {}, delete all: {}, delete all by field: {}", preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements, needToDeleteObjects, deleteAll, deleteAllField);
         for (int f : microscopyFields) {
             String fieldName = db.getExperiment().getMicroscopyField(f).getName();
-            if (deleteAllField) db.getDao().deleteObjectsFromField(fieldName);
+            if (deleteAllField) db.getDao(fieldName).deleteAllObjects();
             this.runAction(fieldName, preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements, needToDeleteObjects && !deleteAllField && !deleteAll);
             if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field
-            db.getDao().clearCache();
+            db.getDao(fieldName).clearCache();
         }
         if (needToDeleteObjects) this.reloadTree=true;
     }//GEN-LAST:event_runActionsActionPerformed
@@ -1080,20 +1083,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }
     
     public List<String> getDBNames() {
-        return getDBNames(getHostName(), 27017);
+        return DBUtil.getDBNames(getHostName());
     }
     
-    public static List<String> getDBNames(String hostName, int portNumber) {
-        long t0 = System.currentTimeMillis();
-        MongoClient mongoClient = new MongoClient(hostName, portNumber);
-        MongoIterable<String> dbs = mongoClient.listDatabaseNames();
-        List<String> res = new ArrayList<String>();
-        for (String s : dbs) res.add(s);
-        Collections.sort(res);
-        long t1 = System.currentTimeMillis();
-        logger.info("{} db names retrieved in: {}ms", res.size(), t1-t0);
-        return res;
-    }
     
     public static DBConfiguration getDBConnection() {
         if (getInstance()==null) return null;

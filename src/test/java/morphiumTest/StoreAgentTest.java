@@ -38,12 +38,12 @@ public class StoreAgentTest {
         try {
             DBConfiguration db = new DBConfiguration("storeAgentTest");
             
-            db.getDao().store(getList(null, 50), true, false);
-            db.getDao().store(getList(null, 500), true, false);
-            db.getDao().store(getList(null, 500), true, false);
+            db.getDao().storeLater(getList(null, 50), true, false);
+            db.getDao().storeLater(getList(null, 500), true, false);
+            db.getDao().storeLater(getList(null, 500), true, false);
             Thread.sleep(5000);
-            db.getDao().store(getList(null, 50), true, false);
-            db.getDao().store(getList(null, 500), true, false);
+            db.getDao().storeLater(getList(null, 50), true, false);
+            db.getDao().storeLater(getList(null, 500), true, false);
             Thread.sleep(5000);
             
         } catch (InterruptedException ex) {

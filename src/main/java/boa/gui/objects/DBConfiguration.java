@@ -19,12 +19,12 @@ package boa.gui.objects;
 
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
-import dataStructure.containers.RegionVoxelsDB;
 import dataStructure.objects.Measurements;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.DereferencingListener;
 import de.caluga.morphium.Morphium;
+import java.util.HashMap;
 import utils.MorphiumUtils;
 
 /**
@@ -34,7 +34,7 @@ import utils.MorphiumUtils;
 public class DBConfiguration {
     Morphium m;
     ExperimentDAO xpDAO;
-    ObjectDAO dao;
+    HashMap<String, ObjectDAO> DAOs;
     DereferencingListener dl;
     public DBConfiguration(Morphium m) {
         this.m=m;
@@ -45,7 +45,7 @@ public class DBConfiguration {
     }
     public void generateDAOs() {
         this.xpDAO=new ExperimentDAO(m);
-        this.dao=new ObjectDAO(m, xpDAO);
+        this.DAOs=new HashMap<String, ObjectDAO>();
         if (dl!=null) m.removeDerrferencingListener(dl);
         dl=MorphiumUtils.addDereferencingListeners(m, xpDAO);
     }
@@ -62,15 +62,23 @@ public class DBConfiguration {
         if (xpDAO==null) generateDAOs();
         return xpDAO.getExperiment();
     }
-    public ObjectDAO getDao() {
-        if (dao==null) generateDAOs();
+    public ObjectDAO getDao(String fieldName) {
+        if (DAOs==null) generateDAOs();
+        ObjectDAO dao = DAOs.get(fieldName);
+        if (dao==null) {
+            dao = new ObjectDAO(m, xpDAO, fieldName);
+            DAOs.put(fieldName, dao);
+        }
         return dao;
     }
-    public void clearObjectsInDB() {
-        m.clearCollection(Experiment.class);
+    public void deleteAllObjects() {
         m.clearCollection(StructureObject.class);
         m.clearCollection(Measurements.class);
-        m.clearCollection(RegionVoxelsDB.class);
+    }
+    
+    public void clearObjectsInDB() {
+        m.clearCollection(Experiment.class);
+        deleteAllObjects();
     }
     public Morphium getMorphium() {
         return m;

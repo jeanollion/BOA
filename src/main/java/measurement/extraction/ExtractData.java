@@ -83,11 +83,11 @@ public class ExtractData {
         MicroscopyField f = db.getExperiment().getMicroscopyField(field);
         
         final String startLine = f.getName()+separator;
-        StructureObject root = db.getDao().getRoot(f.getName(), 0);
+        StructureObject root = db.getDao(f.getName()).getRoot( 0);
         ArrayList<StructureObject> mc0 = root.getChildren(0);
         for (int mcIdx = 0; mcIdx<mc0.size(); ++mcIdx) {
             logger.info("exctract data: field: {}, micro channel: {}", field, mcIdx);
-            ArrayList<StructureObject> mcTrack = db.getDao().getTrack(mc0.get(mcIdx));
+            ArrayList<StructureObject> mcTrack = db.getDao(f.getName()).getTrack(mc0.get(mcIdx));
             for (int t = 0; t<mcTrack.size(); ++t) {
                 StructureObject s = mcTrack.get(t);
                 double fluo = getFluo(s, 1, 1);

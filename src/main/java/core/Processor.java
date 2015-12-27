@@ -17,6 +17,7 @@
  */
 package core;
 
+import boa.gui.objects.DBConfiguration;
 import configuration.parameters.TransformationPluginParameter;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.MicroscopyField;
@@ -80,18 +81,18 @@ public class Processor {
     
     // preProcessing-related methods
     
-    public static void preProcessImages(Experiment xp, ObjectDAO dao, boolean computeConfigurationData) {
+    public static void preProcessImages(Experiment xp, DBConfiguration db, boolean computeConfigurationData) {
         for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
-            preProcessImages(xp.getMicroscopyField(i), dao, false, computeConfigurationData);
+            preProcessImages(xp.getMicroscopyField(i), db.getDao(xp.getMicroscopyField(i).getName()), false, computeConfigurationData);
         }
-        if (dao!=null) dao.deleteAllObjects();
     }
     
     public static void preProcessImages(MicroscopyField field, ObjectDAO dao, boolean deleteObjects, boolean computeConfigurationData) {
+        if (dao.fieldName!=field.getName()) throw new IllegalArgumentException("field name should be equal");
         setTransformations(field, computeConfigurationData);
         InputImagesImpl images = field.getInputImages();
         images.applyTranformationsSaveAndClose();
-        if (dao!=null && deleteObjects) dao.deleteObjectsFromField(field.getName());
+        if (dao!=null && deleteObjects) dao.deleteAllObjects();
     }
     
     public static void setTransformations(MicroscopyField field, boolean computeConfigurationData) {
@@ -110,36 +111,34 @@ public class Processor {
     }
     // processing-related methods
     
-    public static List<StructureObject> getOrCreateRootTrack(ObjectDAO dao, String fieldName) {
-        List<StructureObject> res = dao.getRoots(fieldName);
+    public static List<StructureObject> getOrCreateRootTrack(ObjectDAO dao) {
+        List<StructureObject> res = dao.getRoots();
         if (res==null || res.isEmpty()) {
-            res = dao.getExperiment().getMicroscopyField(fieldName).createRootObjects(dao);
-            dao.store(res, true, false);
+            res = dao.getExperiment().getMicroscopyField(dao.getFieldName()).createRootObjects(dao);
+            for (StructureObject o : res) dao.store(o, true);
         }
         return res;
     }
     
-    public static void processAndTrackStructures(ObjectDAO dao, boolean deleteObjects, int... structures) {
-        Experiment xp = dao.getExperiment();
+    public static void processAndTrackStructures(DBConfiguration db, boolean deleteObjects, int... structures) {
+        Experiment xp = db.getExperiment();
         if (deleteObjects && structures.length==0) {
-            dao.deleteAllObjects();
+            db.deleteAllObjects();
             deleteObjects=false;
         }
         for (String fieldName : xp.getFieldsAsString()) {
-            processAndTrackStructures(fieldName, dao, deleteObjects, structures);
-            dao.clearCache(); // todo : clear cache later..
+            processAndTrackStructures(db.getDao(fieldName), deleteObjects, structures);
+            db.getDao(fieldName);
         }
     }
     
-    public static void processAndTrackStructures(String fieldName, ObjectDAO dao, boolean deleteObjects, int... structures) {
+    public static void processAndTrackStructures(ObjectDAO dao, boolean deleteObjects, int... structures) {
         Experiment xp = dao.getExperiment();
         if (deleteObjects) {
-            if (dao!=null) {
-                if (structures.length==0) dao.deleteObjectsFromField(fieldName);
-                else dao.deleteObjectsFromFieldByStructure(fieldName, structures);
-            }
+            if (structures.length==0) dao.deleteAllObjects();
+            else dao.deleteObjectsByStructure(structures);
         } 
-        List<StructureObject> root = getOrCreateRootTrack(dao, fieldName);
+        List<StructureObject> root = getOrCreateRootTrack(dao);
         if (structures.length==0) structures=xp.getStructuresInHierarchicalOrderAsArray();
         for (int s: structures) executeProcessingScheme(root, s, false, false);
     }
@@ -150,6 +149,10 @@ public class Processor {
         Experiment xp = parentTrack.get(0).getExperiment();
         final ProcessingScheme ps = xp.getStructure(structureIdx).getProcessingScheme();
         int parentStructure = xp.getStructure(structureIdx).getParentStructure();
+        if (trackOnly && ps instanceof SegmentOnly) return;
+        //ArrayList<ArrayList<StructureObject>> objectsToStore = new ArrayList<ArrayList<StructureObject>>();
+        //List<ArrayList<StructureObject>> objectsToStoreSync = Collections.synchronizedList(objectsToStore);
+        
         if (parentStructure==-1 || parentTrack.get(0).getStructureIdx()==parentStructure) { // parents = roots
             execute(ps, structureIdx, parentTrack, trackOnly, deleteChildren, dao);
         } else {
@@ -161,33 +164,42 @@ public class Processor {
             };
             ThreadRunner.execute(new ArrayList<ArrayList<StructureObject>> (allParentTracks.values()), ta);
         }
+        if (ps instanceof SegmentOnly) { // gather all objects and store
+            ArrayList<StructureObject> children = new ArrayList<StructureObject>();
+            for (StructureObject p : parentTrack) children.addAll(p.getChildren(structureIdx));
+            dao.store(parentTrack, false);
+        } else { // store by time point
+            for (StructureObject p : parentTrack) {
+                dao.store(p.getChildren(structureIdx), true);
+            }
+        }
     }
     
     private static void execute(ProcessingScheme ps, int structureIdx, List<StructureObject> parentTrack, boolean trackOnly, boolean deleteChildren, ObjectDAO dao) {
         if (!trackOnly && deleteChildren) for (StructureObject p : parentTrack) dao.deleteChildren(p, structureIdx);
         if (trackOnly) ps.trackOnly(structureIdx, parentTrack);
         else ps.segmentAndTrack(structureIdx, parentTrack);
-        for (StructureObject p : parentTrack) dao.store(p.getChildren(structureIdx), !(ps instanceof SegmentOnly), false);
     }
     
     // measurement-related methods
     
-    public static void performMeasurements(Experiment xp, ObjectDAO dao) {
+    public static void performMeasurements(Experiment xp, DBConfiguration db) {
         for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
-            performMeasurements(xp.getMicroscopyField(i).getName(), dao);
+            String fieldName = xp.getMicroscopyField(i).getName();
+            performMeasurements(db.getDao(fieldName));
             //if (dao!=null) dao.clearCacheLater(xp.getMicroscopyField(i).getName());
-            dao.clearCache();
+            db.getDao(fieldName).clearCache();
         }
     }
     
-    public static void performMeasurements(String fieldName, final ObjectDAO dao) {
+    public static void performMeasurements(final ObjectDAO dao) {
         long t0 = System.currentTimeMillis();
-        ArrayList<StructureObject> roots = dao.getRoots(fieldName);
+        ArrayList<StructureObject> roots = dao.getRoots();
         final StructureObject[] rootArray = roots.toArray(new StructureObject[roots.size()]);
         roots=null; // saves memory
-        logger.debug("{} number of roots: {}", fieldName, rootArray.length);
+        logger.debug("{} number of roots: {}", dao.fieldName, rootArray.length);
         final Map<Integer, List<Measurement>> measurements = dao.getExperiment().getMeasurementsByCallStructureIdx();
-         final List<StructureObject> allModifiedObjects = new ArrayList<StructureObject>();
+        final List<StructureObject> allModifiedObjects = new ArrayList<StructureObject>();
         final List<StructureObject> allModifiedObjectsSync = Collections.synchronizedList(allModifiedObjects);
         
         ThreadRunner.execute(rootArray, true, new ThreadAction<StructureObject>() {
@@ -217,7 +229,7 @@ public class Processor {
         
         if (dao!=null && !allModifiedObjects.isEmpty()) dao.upsertMeasurements(allModifiedObjects);
         long t2 = System.currentTimeMillis();
-        logger.debug("measurements on field: {}: time: {}, upsert time: {} ({} objects)", fieldName, t1-t0, t2-t1, allModifiedObjects.size());
+        logger.debug("measurements on field: {}: time: {}, upsert time: {} ({} objects)", dao.fieldName, t1-t0, t2-t1, allModifiedObjects.size());
         
     }
 }

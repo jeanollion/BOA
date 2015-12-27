@@ -77,7 +77,7 @@ public class RootTrackNode implements TreeNode {
                 logger.warn("No track head or fieldName defined for RootTrackNode instance");
                 return null;
             }
-            parentTrackHead = parent.generator.getObjectDAO().getRoot(fieldName, 0);
+            parentTrackHead = parent.generator.getObjectDAO(fieldName).getRoot(0);
             if (parentTrackHead!=null) logger.trace("parentTrackHead id:"+parentTrackHead.getId());
         }
         return parentTrackHead;
@@ -85,7 +85,7 @@ public class RootTrackNode implements TreeNode {
     
     public TreeMap<Integer, List<StructureObject>> getRemainingTrackHeads() {
         if (remainingTrackHeadsTM==null) {
-            ArrayList<StructureObject> trackHeads = generator.getObjectDAO().getTrackHeads(getParentTrackHead(), structureIdx);
+            ArrayList<StructureObject> trackHeads = generator.getObjectDAO(fieldName).getTrackHeads(getParentTrackHead(), structureIdx);
             remainingTrackHeadsTM = new TreeMap<Integer, List<StructureObject>>();
             if (trackHeads.isEmpty()) {
                 logger.trace("structure: {} no trackHeads found", structureIdx);

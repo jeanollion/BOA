@@ -219,7 +219,7 @@ public class TestTrackCorrectionNew {
         if (db!=null) db.getXpDAO().store(xp);
         ArrayList<StructureObject> root = f.createRootObjects((db!=null)?db.getDao():null);
         logger.debug("create root objects: {}", root.size());
-        if (db!=null) db.getDao().store(root, false, false);
+        if (db!=null) db.getDao().storeLater(root, false, false);
         Processor.executeProcessingScheme(root, 0, false, false);
         if (db!=null) db.getDao().waiteForWrites();
         return root;

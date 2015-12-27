@@ -42,8 +42,8 @@ public class MeasureChromaticShift {
         db.clearObjectsInDB();
         db.getXpDAO().store(xp);
         Processor.preProcessImages(xp, null, true);
-        Processor.processAndTrackStructures(db.getDao(), false);
-        Processor.performMeasurements(xp, db.getDao());
+        Processor.processAndTrackStructures(db, false);
+        Processor.performMeasurements(xp, db);
     }
     private static Experiment generateXP(final double[] thresholds, String inputDirectory, String outputDirectory) {
         Experiment xp = new Experiment("Chromatic Shift");

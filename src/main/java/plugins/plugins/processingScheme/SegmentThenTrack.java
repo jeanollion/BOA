@@ -37,7 +37,11 @@ public class SegmentThenTrack implements ProcessingScheme {
     protected PluginParameter<Tracker> tracker = new PluginParameter<Tracker>("Tracker", Tracker.class, true);
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, false);
     protected Parameter[] parameters= new Parameter[]{segmenter, tracker};
-    
+    public SegmentThenTrack() {}
+    public SegmentThenTrack(Segmenter segmenter, Tracker tracker) {
+        this.segmenter.setPlugin(segmenter);
+        this.tracker.setPlugin(tracker);
+    }
     public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack) {
         /*ThreadRunner.execute(parentTrack, new ThreadAction<StructureObject>() {
             public void run(StructureObject parent) {

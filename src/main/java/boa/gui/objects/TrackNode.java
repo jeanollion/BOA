@@ -62,7 +62,7 @@ public class TrackNode implements TreeNode, UIContainer {
     }
 
     public ArrayList<StructureObject> getTrack() {
-        if (track==null) track=root.generator.getObjectDAO().getTrack(trackHead);
+        if (track==null) track=root.generator.getObjectDAO(this.trackHead.getFieldName()).getTrack(trackHead);
         if (track==null) logger.error("Could not retrieve track from trackHead: {}", trackHead);
         return track;
     }
@@ -259,7 +259,6 @@ public class TrackNode implements TreeNode, UIContainer {
                                 }
                             });
                             // reload tree
-                            root.generator.getObjectDAO().waiteForWrites();
                             root.generator.controller.updateParentTracks(root.generator.controller.getTreeIdx(trackHead.getStructureIdx()));
                             // reload objects
                             ImageWindowManagerFactory.getImageManager().reloadObjects(trackHead, structureIdx, true);
@@ -286,7 +285,6 @@ public class TrackNode implements TreeNode, UIContainer {
                                 }
                             });
                             // reload tree
-                            root.generator.getObjectDAO().waiteForWrites();
                             root.generator.controller.updateParentTracks(root.generator.controller.getTreeIdx(trackHead.getStructureIdx()));
                             // reload objects
                             ImageWindowManagerFactory.getImageManager().reloadObjects(trackHead, structureIdx, true);

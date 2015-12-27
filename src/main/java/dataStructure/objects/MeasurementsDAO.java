@@ -28,16 +28,26 @@ import org.bson.types.ObjectId;
  *
  * @author jollion
  */
-public class MeasurementsDAO extends DAO<Measurements>{
+public class MeasurementsDAO {
     Morphium morphium;
-    public MeasurementsDAO(Morphium morphium) {
-        super(morphium, Measurements.class);
+    final String fieldName, collectionName;
+    public MeasurementsDAO(Morphium morphium, String fieldName) {
+        this.fieldName=fieldName;
+        this.collectionName="objects_"+fieldName;
         morphium.ensureIndicesFor(Measurements.class);
         this.morphium=morphium;
     }
     
+    protected Query<Measurements> getQuery() {
+        Query<Measurements> res =  morphium.createQueryFor(Measurements.class); 
+        res.setCollectionName(collectionName);
+        return res;
+    }
+    
     public Measurements getObject(ObjectId id) {
-        return super.getQuery().getById(id);
+        Measurements m =  getQuery().getById(id);
+        m.fieldName=fieldName;
+        return m;
     }
     
     public void store(Measurements o) {
@@ -45,7 +55,7 @@ public class MeasurementsDAO extends DAO<Measurements>{
     }
     
     public void delete(ObjectId id) {
-        morphium.delete(super.getQuery().f("_id").eq(id));
+        morphium.delete(getQuery().f("_id").eq(id));
     }
     
     public void delete(Measurements o) {
@@ -57,18 +67,15 @@ public class MeasurementsDAO extends DAO<Measurements>{
         morphium.clearCollection(Measurements.class);
     }
     
-    public void deleteObjectsFromField(String fieldName) {
-        morphium.delete(super.getQuery().f("field_name").eq(fieldName));
-    }
-    
-    protected Query<Measurements> getQuery(String fieldName, int structureIdx, String... measurements) {
-        Query<Measurements> q= super.getQuery().f("field_name").eq(fieldName).f("structure_idx").eq(structureIdx);
+    protected Query<Measurements> getQuery(int structureIdx, String... measurements) {
+        Query<Measurements> q= getQuery().f("structure_idx").eq(structureIdx);
         if (measurements.length>0) q.setReturnedFields(Measurements.getReturnedFields(measurements));
         return q;
     }
-    public List<Measurements> getMeasurements(String fieldName, int structureIdx, String... measurements) {
-        List<Measurements> res = getQuery(fieldName, structureIdx, measurements).asList();
+    public List<Measurements> getMeasurements(int structureIdx, String... measurements) {
+        List<Measurements> res = getQuery(structureIdx, measurements).asList();
         Collections.sort(res);
+        for (Measurements m : res) m.fieldName=fieldName;
         return res;
     }
 }

@@ -37,14 +37,13 @@ import utils.SmallArray;
 
 @Lifecycle
 @Entity(collectionName = "Objects")
-@Index(value={"field_name, structure_idx, time_point", "parent"})
+@Index(value={"structure_idx, time_point", "parent"})
 public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker, StructureObjectTrackCorrection {
     public enum TrackFlag{trackError, correctionMerge, correctionMergeToErase, correctionSplit, correctionSplitNew, correctionSplitError};
     public final static Logger logger = LoggerFactory.getLogger(StructureObject.class);
     //structure-related attributes
     @Id protected ObjectId id;
     @Reference(lazyLoading=true, automaticStore=false) protected StructureObject parent;
-    protected String fieldName;
     protected int structureIdx;
     protected int idx;
     @Transient protected final SmallArray<ArrayList<StructureObject>> childrenSM=new SmallArray<ArrayList<StructureObject>>(); //maps structureIdx to Children (equivalent to hashMap)
@@ -70,8 +69,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected ObjectId measurementsId;
     @Transient Measurements measurements;
     
-    public StructureObject(String fieldName, int timePoint, int structureIdx, int idx, Object3D object, StructureObject parent) {
-        this.fieldName=fieldName;
+    public StructureObject(int timePoint, int structureIdx, int idx, Object3D object, StructureObject parent) {
         this.timePoint = timePoint;
         this.object=object;
         if (object!=null) this.object.label=idx+1;
@@ -87,8 +85,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
      * @param mask
      * @param xp 
      */
-    public StructureObject(String fieldName, int timePoint, BlankMask mask, ObjectDAO dao) {
-        this.fieldName=fieldName;
+    public StructureObject(int timePoint, BlankMask mask, ObjectDAO dao) {
         this.timePoint=timePoint;
         if (mask!=null) this.object=new Object3D(mask, 1);
         this.structureIdx = -1;
@@ -99,7 +96,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     // structure-related methods
     public ObjectDAO getDAO() {return dao;}
     public ObjectId getId() {return id;}
-    public String getFieldName() {return fieldName;}
+    public String getFieldName() {return dao.fieldName;}
     public int getStructureIdx() {return structureIdx;}
     public int getTimePoint() {return timePoint;}
     public int getIdx() {return idx;}
@@ -108,7 +105,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (dao==null) return null;
         return dao.getExperiment();
     }
-    public MicroscopyField getMicroscopyField() {return getExperiment()!=null?getExperiment().getMicroscopyField(fieldName):null;}
+    public MicroscopyField getMicroscopyField() {return getExperiment()!=null?getExperiment().getMicroscopyField(getFieldName()):null;}
     public float getScaleXY() {return getMicroscopyField()!=null?getMicroscopyField().getScaleXY():1;}
     public float getScaleZ() {return getMicroscopyField()!=null?getMicroscopyField().getScaleZ():1;}
     public StructureObject getParent() {
@@ -186,7 +183,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         population.relabel();
         ArrayList<StructureObject> res = new ArrayList<StructureObject>(population.getObjects().size());
         childrenSM.set(res, structureIdx);
-        for (int i = 0; i<population.getObjects().size(); ++i) res.add(new StructureObject(fieldName, timePoint, structureIdx, i, population.getObjects().get(i), this));
+        for (int i = 0; i<population.getObjects().size(); ++i) res.add(new StructureObject(timePoint, structureIdx, i, population.getObjects().get(i), this));
         return res;
     }
     
@@ -301,7 +298,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             synchronized(this) {
                 if (next==null) {
                     if (isRoot()) {
-                        next = dao.getRoot(fieldName, timePoint+1);
+                        next = dao.getRoot(timePoint+1);
                     } else {
                         StructureObject nextParent = getParent().getNext();
                         if (nextParent==null) return null;
@@ -500,13 +497,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             logger.warn("split structureObject: {} yielded in {} objects, but only two will be considered", this, pop.getObjects().size());
         } 
         
-        StructureObject res = new StructureObject(fieldName, timePoint, structureIdx, idx+1, pop.getObjects().get(1).setLabel(idx+2), getParent());
+        StructureObject res = new StructureObject(timePoint, structureIdx, idx+1, pop.getObjects().get(1).setLabel(idx+2), getParent());
         /*ArrayList<StructureObject> res = new ArrayList<StructureObject>(pop.getObjects().size()-1);
         for (int i = 1; i<pop.getObjects().size(); ++i) {
             res.add(new StructureObject(fieldName, timePoint, structureIdx, currentIdx++, pop.getObjects().get(i), getParent(), getExperiment()));
         }*/
-        //if (res.size()>1) xp.getObjectDAO().store(res);
-        //else xp.getObjectDAO().store(res.get(0));
+        //if (res.size()>1) xp.getObjectDAO().storeLater(res);
+        //else xp.getObjectDAO().storeLater(res.get(0));
         //logger.debug("split: adding: {} at position: {}/{}", res, getParent().getChildren(structureIdx).indexOf(this)+1, getParent().getChildren(structureIdx).size());
         this.getParent().getChildren(structureIdx).add(getParent().getChildren(structureIdx).indexOf(this)+1, res);
         
@@ -554,7 +551,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             synchronized(rawImagesC) {
                 if (rawImagesC.get(channelIdx)==null) {
                     if (isRoot()) {
-                        if (rawImagesC.getAndExtend(channelIdx)==null) rawImagesC.set(getExperiment().getImageDAO().openPreProcessedImage(channelIdx, timePoint, fieldName), channelIdx);
+                        if (rawImagesC.getAndExtend(channelIdx)==null) rawImagesC.set(getExperiment().getImageDAO().openPreProcessedImage(channelIdx, timePoint, getFieldName()), channelIdx);
                     } else {
                         StructureObject parentWithImage=getFirstParentWithOpenedRawImage(structureIdx);
                         if (parentWithImage!=null) {
@@ -576,7 +573,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     private void extendBoundsInZIfNecessary(int channelIdx, BoundingBox bounds) { //when the current structure is 2D but channel is 3D 
         //logger.debug("extends bounds if necessary: is2D: {}, bounds 2D: {}, sizeZ of image to open: {}", is2D(), bounds.getSizeZ(), getExperiment().getMicroscopyField(fieldName).getSizeZ(channelIdx));
         if (bounds.getSizeZ()==1 && is2D() && channelIdx!=this.getExperiment().getChannelImageIdx(structureIdx)) { 
-            int sizeZ = getExperiment().getMicroscopyField(fieldName).getSizeZ(channelIdx); //TODO no reliable if a transformation removes planes -> need to record the dimensions of the preProcessed Images
+            int sizeZ = getExperiment().getMicroscopyField(getFieldName()).getSizeZ(channelIdx); //TODO no reliable if a transformation removes planes -> need to record the dimensions of the preProcessed Images
             if (sizeZ>1) {
                 bounds.expandZ(sizeZ-1);
             }
@@ -589,7 +586,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public Image openRawImage(int structureIdx, BoundingBox bounds) {
         int channelIdx = getExperiment().getChannelImageIdx(structureIdx);
-        if (rawImagesC.get(channelIdx)==null) return getExperiment().getImageDAO().openPreProcessedImage(channelIdx, timePoint, fieldName, bounds); //opens only within bounds
+        if (rawImagesC.get(channelIdx)==null) return getExperiment().getImageDAO().openPreProcessedImage(channelIdx, timePoint, getFieldName(), bounds); //opens only within bounds
         else return rawImagesC.get(channelIdx).crop(bounds);
     }
     
@@ -685,8 +682,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     @Override
     public String toString() {
-        if (isRoot()) return "Root: F:"+fieldName + ",T:"+timePoint;
-        else return "F:"+fieldName+ ",T:"+timePoint+ ",S:"+structureIdx+ ",Idx:"+idx+ ",P:["+getParent().toStringShort()+"]" + (flag==null?"":"{"+flag+"}") ;
+        if (isRoot()) return "Root: F:"+getFieldName() + ",T:"+timePoint;
+        else return "F:"+getFieldName()+ ",T:"+timePoint+ ",S:"+structureIdx+ ",Idx:"+idx+ ",P:["+getParent().toStringShort()+"]" + (flag==null?"":"{"+flag+"}") ;
     }
     
     protected String toStringShort() {

@@ -64,8 +64,8 @@ public class TrackTreeGenerator {
         this.controller=controller;
     }
     
-    public ObjectDAO getObjectDAO() {
-        return db.getDao();
+    public ObjectDAO getObjectDAO(String fieldName) {
+        return db.getDao(fieldName);
     }
     
     public Experiment getExperiment() {
@@ -195,10 +195,10 @@ public class TrackTreeGenerator {
     
     private ArrayList<StructureObject> getObjectPath(StructureObject o) {
         ArrayList<StructureObject> res = new ArrayList<StructureObject>();
-        o = db.getDao().getObject(o.getTrackHeadId());
+        o = db.getDao(o.getFieldName()).getObject(o.getTrackHeadId());
         res.add(o);
         while(o.getTimePoint()>0) {
-            o = db.getDao().getObject(o.getPrevious().getTrackHeadId());
+            o = db.getDao(o.getFieldName()).getObject(o.getPrevious().getTrackHeadId());
             res.add(o);
         }
         return res;

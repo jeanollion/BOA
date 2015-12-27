@@ -102,7 +102,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
             return null;
         }
         for (int t = 0; t<getImages().getTimePointNumber(); ++t) {
-            res.add(new StructureObject(this.name, t, getMask(), dao));
+            res.add(new StructureObject(t, getMask(), dao));
         }
         for (int i = 1; i<res.size(); ++i) res.get(i).setPreviousInTrack(res.get(i-1), false);
         return res;
@@ -165,7 +165,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
             JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
             if (response != JOptionPane.YES_OPTION) return false;
         }
-        GUI.getDBConnection().getDao().deleteObjectsFromField(name);
+        GUI.getDBConnection().getDao(name).deleteAllObjects();
         this.getInputImages().deleteFromDAO();
         return true;
     }

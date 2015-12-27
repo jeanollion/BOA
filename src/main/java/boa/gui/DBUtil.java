@@ -21,6 +21,8 @@ import static boa.gui.GUI.logger;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoIterable;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  *
@@ -29,13 +31,17 @@ import java.util.ArrayList;
 public class DBUtil {
     public static ArrayList<String> getDBNames(String hostName) {
         try {
+            long t0 = System.currentTimeMillis();
             MongoClient c = new MongoClient(hostName);
             MongoIterable<String> dbs = c.listDatabaseNames();
             ArrayList<String> res = new ArrayList<String>();
             for (String s : dbs) res.add(s);
+            Collections.sort(res);
+            long t1 = System.currentTimeMillis();
+            GUI.logger.info("{} db names retrieved in: {}ms", res.size(), t1 - t0);
             return res;
         } catch (Exception e) {
-            logger.error("DB connection error", e);
+            logger.error("DB connection error: check hostname or DB server status", e);
         }
         return null;
     }

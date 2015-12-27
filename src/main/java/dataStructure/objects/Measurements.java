@@ -35,10 +35,10 @@ import utils.Utils;
  */
 
 @Entity
-@Index(value={"field_name", "structure_idx"})
+@Index(value={"structure_idx"})
 public class Measurements implements Comparable<Measurements>{
     protected @Id ObjectId id;
-    protected String fieldName;
+    @Transient protected String fieldName;
     protected int timePoint, structureIdx;
     boolean isTrackHead;
     protected int[] indicies;
@@ -46,7 +46,7 @@ public class Measurements implements Comparable<Measurements>{
     @Transient boolean modifications;
     
     public Measurements(StructureObject o) {
-        this.fieldName=o.fieldName;
+        this.fieldName=o.getFieldName();
         this.timePoint=o.getTimePoint();
         this.structureIdx=o.getStructureIdx();
         this.isTrackHead=o.isTrackHead;
@@ -76,7 +76,7 @@ public class Measurements implements Comparable<Measurements>{
     }
         
     static String[] getBaseFields() {
-        return new String[]{"field_name", "time_point", "structure_idx", "indicies", "is_track_head"};
+        return new String[]{"time_point", "structure_idx", "indicies", "is_track_head"};
     }
     static String[] getReturnedFields(String... measurements) {
         String[] baseReturnedFields = getBaseFields();

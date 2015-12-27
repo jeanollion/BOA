@@ -73,7 +73,7 @@ public class TestTrackStructure {
         StructureObject[][] bTM = new StructureObject[5][3];
         for (int t = 0; t<bTM.length; ++t) {
             for (int j = 0; j<3; ++j) bTM[t][j] = new StructureObject("field1", t, 1, j, new Object3D(new BlankMask("", 1, 1, 1), j+1), mcT[t]);
-            //dao.store(bTM[i]);
+            //dao.storeLater(bTM[i]);
         }
         for (int i= 1; i<mcT.length; ++i) bTM[i][0].setPreviousInTrack(bTM[i-1][0], false);
         bTM[1][1].setPreviousInTrack(bTM[0][0], true);
@@ -89,7 +89,7 @@ public class TestTrackStructure {
         */
         ArrayList<StructureObject> toStore = new ArrayList<StructureObject>();
         for (int i = 0; i<bTM.length; ++i) toStore.addAll(Arrays.asList(bTM[i]));
-        dao.store(toStore, true, false);
+        dao.storeLater(toStore, true, false);
         dao.waiteForWrites();
         dao.clearCache();
         // retrive tracks head for microChannels

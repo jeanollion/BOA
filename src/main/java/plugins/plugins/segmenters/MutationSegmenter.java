@@ -68,8 +68,8 @@ public class MutationSegmenter implements Segmenter {
     public static boolean displayImages = false;
     NumberParameter scale = new BoundedNumberParameter("Scale", 1, 2.5, 1.5, 5);
     NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxels)", 0, 5, 1, null);
-    NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 2, 2, 1, null);
-    NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 2, 1, 0, null);
+    NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 2, 2.75, 1, null);
+    NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 2, 2, 0, null);
     
     Parameter[] parameters = new Parameter[]{scale, minSpotSize, thresholdHigh,  thresholdLow};
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
@@ -97,7 +97,8 @@ public class MutationSegmenter implements Segmenter {
     public static ObjectPopulation runPlane(Image input, ImageMask mask, double scale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
         if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
         IJImageDisplayer disp = debug?new IJImageDisplayer():null;
-        Image lap = ImageFeatures.getLaplacian(input, scale, true, false).setName("laplacian: "+scale);
+        input = IJSubtractBackground.filter(input.duplicate("sub"), scale+1, false, false, true, false);
+        //Image lap = ImageFeatures.getLaplacian(input, scale, true, false).setName("laplacian: "+scale);
         //Image lapSP = ImageFeatures.getScaleSpaceLaplacian(input, new double[]{2, 4, 6, 8, 10});
         //Image hessSP = ImageFeatures.getScaleSpaceHessianDet(input, new double[]{2, 4, 6, 8, 10});
         Image[] hess = ImageFeatures.getHessianMaxAndDeterminant(input, scale, false);
@@ -114,7 +115,7 @@ public class MutationSegmenter implements Segmenter {
         if (intermediateImages!=null) {
             intermediateImages.add(det);
             intermediateImages.add(hessMax);
-            intermediateImages.add(lap);
+            //intermediateImages.add(lap);
             intermediateImages.add(input);
         }
         

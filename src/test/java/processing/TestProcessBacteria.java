@@ -352,7 +352,7 @@ public class TestProcessBacteria {
     public int getTrackErrorNumber(MicroscopyField f, ObjectDAO dao) {
         ArrayList<StructureObject> segO = new ArrayList<StructureObject> ();
         Processor.executeProcessingScheme(f.createRootObjects(dao), 1, false, true);
-        dao.store(segO, true, false);
+        dao.storeLater(segO, true, false);
         return dao.getTrackErrors(f.getName(), 1).size();
     }
     
@@ -362,9 +362,9 @@ public class TestProcessBacteria {
         logger.info("Experiment: {} retrieved from db: {}", xp.getName(), dbName);
         ObjectDAO dao = db.getDao();
         if (fields.length==0) {
-            if (preProcess) Processor.preProcessImages(xp, dao, true);
+            if (preProcess) Processor.preProcessImages(xp, db, true);
             //Processor.processAndTrackStructures(xp, dao);
-            Processor.processAndTrackStructures(dao, preProcess);
+            Processor.processAndTrackStructures(db, preProcess);
         } else {
             for (int field : fields) {
                 MicroscopyField f = xp.getMicroscopyField(field);

@@ -162,7 +162,7 @@ public class ObjectManipulationTest {
         db.clearObjectsInDB();
         /*Experiment xp = new Experiment();
         xp.getStructures().insert(new Structure("test"));
-        db.getXpDAO().store(xp);
+        db.getXpDAO().storeLater(xp);
         */
         //ImageByte[][] imagesTC = generateImages(null, null, 1, 1, 20);
         //Object3D o3D = ImageLabeller.labelImage(imagesTC[0][0])[0];

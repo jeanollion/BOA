@@ -1,8 +1,6 @@
 package dataStructure.objects;
 
 import com.google.common.collect.Sets;
-import dataStructure.containers.ImageDAO;
-import dataStructure.containers.ObjectContainerImage;
 import dataStructure.containers.ObjectContainer;
 import static dataStructure.containers.ObjectContainer.MAX_VOX_3D;
 import static dataStructure.containers.ObjectContainer.MAX_VOX_2D;
@@ -10,7 +8,6 @@ import static dataStructure.containers.ObjectContainer.MAX_VOX_2D_EMB;
 import static dataStructure.containers.ObjectContainer.MAX_VOX_3D_EMB;
 import dataStructure.containers.ObjectContainerBlankMask;
 import dataStructure.containers.ObjectContainerIjRoi;
-import dataStructure.containers.ObjectContainerVoxelsDB;
 import dataStructure.containers.ObjectContainerVoxels;
 import image.BlankMask;
 import image.BoundingBox;

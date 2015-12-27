@@ -56,7 +56,7 @@ public class TestProcessMutations {
         String dbName = "fluo151130_OutputNewScaling";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
-        t.testSegMutationsFromXP(0, 0, true, 20, 28);
+        t.testSegMutationsFromXP(0, 0, true, 0, 37);
         //t.testSegMutationsFromXP(27);
     }
     public void init(String dbName) {
@@ -69,7 +69,7 @@ public class TestProcessMutations {
     }
     public void testSegMutationsFromXP(int fieldIdx, int mcIdx, boolean parentMC, int time, ArrayList<ImageInteger> mcMask_, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
         MicroscopyField f = db.getExperiment().getMicroscopyField(fieldIdx);
-        StructureObject root = db.getDao().getRoot(f.getName(), time);
+        StructureObject root = db.getDao(f.getName()).getRoot(time);
         //logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(mcIdx);
         if (mcMask_!=null) mcMask_.add(mc.getMask());

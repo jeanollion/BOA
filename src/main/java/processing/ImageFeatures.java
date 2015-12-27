@@ -207,29 +207,27 @@ public class ImageFeatures {
             res[i].setCalibration(image);
             res[i].resetOffset().addOffset(image);
             res[i].setName(image.getName() + ":hessian" + (i + 1));
+            ImageOperations.affineOperation(res[i], res[i], scale, 0);
         }
         return res;
     }
     public static ImageFloat[] getHessianMaxAndDeterminant(Image image, double scale, boolean overrideIfFloat) {
         ImageFloat[] hess=getHessian(image, scale, overrideIfFloat);
         ImageFloat det = hess[hess.length-1];
-        double scaleDet;
         if (hess.length==2) {
-            scaleDet = scale*scale;
-            for (int xy = 0; xy<hess[0].getSizeXY(); ++xy) det.setPixel(xy, 0, hess[0].getPixel(xy, 0)*hess[1].getPixel(xy, 0)*scaleDet); //sqrt?
+            for (int xy = 0; xy<hess[0].getSizeXY(); ++xy) det.setPixel(xy, 0, hess[0].getPixel(xy, 0)*hess[1].getPixel(xy, 0)); //sqrt?
         } else if (hess.length==3) {
             //double pow = 1d/3d;
-            scaleDet = scale *scale*scale;
             for (int z = 0; z<hess[0].getSizeZ(); ++z) {
                 for (int xy = 0; xy<hess[0].getSizeXY(); ++xy) {
-                    det.setPixel(xy, z, hess[0].getPixel(xy, z)*hess[1].getPixel(xy, z)*hess[2].getPixel(xy, z)*scaleDet); // pow?
+                    det.setPixel(xy, z, hess[0].getPixel(xy, z)*hess[1].getPixel(xy, z)*hess[2].getPixel(xy, z)); // pow?
                 }
             }
         } else {
             logger.warn("wrong number of dimension {}, hessian determient cannot be computed", hess.length);
             return null;
         }
-        ImageOperations.affineOperation(hess[0], hess[0], scale, 0);
+        
         return new ImageFloat[]{hess[0], det};
     }
     

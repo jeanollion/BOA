@@ -105,6 +105,7 @@ public class ThreadRunner {
     }
 
     public static <T> void execute(final T[] array, final boolean setToNull, final ThreadAction<T> action) {
+        if (array==null) return;
         if (array.length==0) return;
         if (array.length==1) {
             if (action instanceof ThreadAction2) ((ThreadAction2)action).setUp();
@@ -131,6 +132,7 @@ public class ThreadRunner {
         tr.startAndJoin();
     }
     public static <T> void execute(final List<T> array, final ThreadAction<T> action) {
+        if (array==null) return;
         if (array.isEmpty()) return;
         if (array.size()==1) {
             if (action instanceof ThreadAction2) ((ThreadAction2)action).setUp();

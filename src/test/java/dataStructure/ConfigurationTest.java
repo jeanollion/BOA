@@ -33,6 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 import testPlugins.dummyPlugins.DummySegmenter;
 import plugins.PluginFactory;
+import plugins.plugins.processingScheme.SegmentThenTrack;
 import plugins.plugins.trackers.ObjectIdxTracker;
 
 /**
@@ -128,15 +129,11 @@ public class ConfigurationTest {
         bacteries.setParentStructure(0);
         int idx = xp.getStructureCount();
 
-        // set-up processing chain
+        // set-up processing & tracking 
         PluginFactory.findPlugins("plugin.dummyPlugins");
-        microChannel.getProcessingChain().setSegmenter(new DummySegmenter(true, 2));
-        bacteries.getProcessingChain().setSegmenter(new DummySegmenter(false, 3));
-
-        // set-up traking
-        PluginFactory.findPlugins("plugins.plugins.trackers");
-        microChannel.setTracker(new ObjectIdxTracker());
-        bacteries.setTracker(new ObjectIdxTracker());
+        microChannel.setProcessingScheme(new SegmentThenTrack(new DummySegmenter(true, 2), new ObjectIdxTracker()));
+        bacteries.setProcessingScheme(new SegmentThenTrack(new DummySegmenter(true, 3), new ObjectIdxTracker()));
+        
 
         db.getXpDAO().store(xp);
         db.getXpDAO().clearCache();
