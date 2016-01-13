@@ -66,7 +66,7 @@ public class MeasurementsDAO {
     public void delete(Measurements o) {
         if (o==null) return;
         if (o.getId()!=null) masterDAO.m.delete(o, collectionName, null);
-        logger.debug("delete meas: {}, from colleciton: {}", o.getId(), collectionName);
+        //logger.debug("delete meas: {}, from colleciton: {}", o.getId(), collectionName);
     }
     
     public void deleteByStructureIdx(int structureIdx) {

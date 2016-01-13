@@ -67,14 +67,14 @@ public class DeleteFromDAOTest {
         new DeleteFromDAOTest().deleteTest();
     }*/
     
-    @Test 
+    //@Test 
     public void deleteTestMorphium() throws IOException {
         MasterDAO dao = new MorphiumMasterDAO("testImageDAO");
         dao.reset();
         deleteTest(dao);
     }
     
-    //@Test 
+    @Test 
     public void deleteTestBasic() throws IOException {
         MasterDAO dao = new BasicMasterDAO();
         dao.reset();
@@ -130,23 +130,27 @@ public class DeleteFromDAOTest {
         assertEquals(prefix+"number of stored objects ", 15, countObjects(masterDAO, StructureObject.class));
         assertEquals(prefix+"number of measurements ", 5, countObjects(masterDAO, Measurements.class));
         assertTrue(prefix+"object retrieved: ", mc.getObject().getVoxels().size()>=1);
-        //revoir les fonctions deletes avec la gestions des enfant directs et indirects.. la fonction delete doit elle appeller deleteChildren?
+        logger.debug("before delete children");
         dao.deleteChildren(mc, 1);
         assertEquals(prefix+"number of objects after delete children", 14, countObjects(masterDAO, StructureObject.class));
         assertEquals(prefix+"number of measurements after delete children", 4, countObjects(masterDAO, Measurements.class));
+        logger.debug("before delete ");
         dao.delete(root, true);
         assertEquals(prefix+"number of objects after delete root", 12, countObjects(masterDAO, StructureObject.class));
         assertEquals(prefix+"number of measurements after delete root", 4, countObjects(masterDAO, Measurements.class));
+        logger.debug("before delete children2");
         dao11.deleteChildren(dao11.getRoot(0), 0);
         assertEquals(prefix+"number of objects after delete root's children", 10, countObjects(masterDAO, StructureObject.class));
         assertEquals(prefix+"number of measurements after delete root's children", 3, countObjects(masterDAO, Measurements.class));
+        logger.debug("before delete all 1");
         dao11.deleteAllObjects();
         assertEquals(prefix+"number of objects after delete all objects", 9, countObjects(masterDAO, StructureObject.class));
         assertEquals(prefix+"number of measurements after delete all objects", 3, countObjects(masterDAO, Measurements.class));
-        
+        logger.debug("before delete all objects 2");
         masterDAO.getDao("field2").deleteAllObjects();
         assertEquals(prefix+"number of objects after delete field", 6, countObjects(masterDAO, StructureObject.class));
         assertEquals(prefix+"number of measurements after delete field", 2, countObjects(masterDAO, Measurements.class));
+        logger.debug("before delete by structureIdx");
         masterDAO.getDao("field3").deleteObjectsByStructureIdx(0);
         assertEquals(prefix+"number of objects after delete by structureIdx", 4, countObjects(masterDAO, StructureObject.class));
         assertEquals(prefix+"number of measurements after by structureIdx", 1, countObjects(masterDAO, Measurements.class));        
@@ -173,7 +177,11 @@ public class DeleteFromDAOTest {
             for (String f : db.getExperiment().getFieldsAsString()) {
                 ArrayList<StructureObject> rootTrack = db.getDao(f).getRoots();
                 allObjects.addAll(rootTrack);
-                for (int s = 0; s<db.getExperiment().getStructureCount(); ++s) for (StructureObject r : rootTrack) allObjects.addAll(r.getChildren(s));
+                for (int s = 0; s<db.getExperiment().getStructureCount(); ++s) {
+                    for (StructureObject r : rootTrack) {
+                        allObjects.addAll(r.getChildren(s));
+                    }
+                }
             }
             if (clazz == StructureObject.class) {
                  return allObjects.size();

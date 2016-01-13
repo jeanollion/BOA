@@ -61,6 +61,14 @@ public class SmallArray<T> {
         }
         array[idx]=element;
     }
+    public void extend(int newSize) {
+        if (array==null) array=new Object[newSize];
+        else if (array.length<newSize) {
+             Object[] newArray=new Object[newSize];
+             System.arraycopy(array, 0, newArray, 0, array.length);
+             array=newArray;
+        }
+    }
     public void setQuick(T element, int idx) {array[idx]=element;}
     public int getBucketSize() {
         if (array==null) return 0;
@@ -100,5 +108,8 @@ public class SmallArray<T> {
         if (object==null) return -1;
         for (int i = 0; i<array.length; ++i) if (object.equals(array[i])) return i;
         return -1;
+    }
+    public void flush() {
+        array=null;
     }
 }

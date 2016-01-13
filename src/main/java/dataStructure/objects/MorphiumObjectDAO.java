@@ -150,7 +150,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
                 for (int s : directChildren) deleteChildren(o, s); // also delete all direct chilren (recursive call)
             }
         }
-        logger.debug("delete {} children. direct structures to delete: {}", children==null?0:children.size(), directChildren);
+        //logger.debug("delete {} children. direct structures to delete: {}", children==null?0:children.size(), directChildren);
     }
     
     private static ArrayList<Integer> listAllStructureAndChildrenStructure(Experiment xp, int... structures) {
@@ -436,7 +436,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
         this.measurementsDAO.store(o.getMeasurements()); // toDO -> partial update if already an ID
         
         
-        logger.debug("store meas: id: {}, id in object: {}: {}", o.measurements.id, o, o.measurementsId);
+        //logger.debug("store meas: id: {}, id in object: {}: {}", o.measurements.id, o, o.measurementsId);
         if (!o.getMeasurements().getId().equals(o.measurementsId)) {
             o.measurementsId=o.getMeasurements().getId();
             
