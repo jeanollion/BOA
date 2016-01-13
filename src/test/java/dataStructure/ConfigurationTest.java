@@ -93,8 +93,8 @@ public class ConfigurationTest {
     
     @Test
     public void testGetChildren() {
-        assertArrayEquals("getChildren 3", new int[]{5, 6}, xp.getChildStructures(3));
-        assertArrayEquals("getChildren 2", new int[]{}, xp.getChildStructures(2));
+        assertArrayEquals("getChildren 3", new int[]{5, 6}, xp.getAllDirectChildStructuresAsArray(3));
+        assertArrayEquals("getChildren 2", new int[]{}, xp.getAllDirectChildStructuresAsArray(2));
         assertArrayEquals("getAllChildren 0", new int[]{1, 2, 3, 5, 6}, xp.getAllChildStructures(0));
     }
     

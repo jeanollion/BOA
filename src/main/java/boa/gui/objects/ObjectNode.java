@@ -50,7 +50,7 @@ public class ObjectNode implements TreeNode, UIContainer, StructureNodeContainer
         this.data=data;
         this.idx=idx;
         this.parent = parent;
-        int[] childrenIndicies = getGenerator().getExperiment().getChildStructures(parent.idx);
+        int[] childrenIndicies = getGenerator().getExperiment().getAllDirectChildStructuresAsArray(parent.idx);
         children = new StructureNode[childrenIndicies.length];
         for (int i = 0; i<children.length; ++i) children[i]=new StructureNode(childrenIndicies[i], this);
     }

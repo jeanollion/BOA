@@ -45,6 +45,7 @@ import measurement.MeasurementKey;
 import measurement.MeasurementKeyObject;
 import org.bson.types.ObjectId;
 import plugins.Measurement;
+import utils.Utils;
 import static utils.Utils.toArray;
 
 /**
@@ -231,7 +232,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         }
     }
     
-    public ArrayList<Integer> getAllDirectChildren(int parentStructureIdx) {
+    public ArrayList<Integer> getAllDirectChildStructures(int parentStructureIdx) {
         int max = this.getStructureCount();
         ArrayList<Integer> res = new ArrayList<Integer>(max);
         for (int s = parentStructureIdx+1; s<max; ++s) {
@@ -245,17 +246,8 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
      * @param structureIdx
      * @return indexes of structures that are direct children of the structure of index {@param structureIdx}
      */
-    public int[] getChildStructures(int structureIdx) {
-        ArrayList<Integer> childrenAL = new ArrayList<Integer>(5);
-        int idx = 0;
-        for (Structure s : structures.getChildren()) {
-            if (s.getParentStructure()==structureIdx) childrenAL.add(idx);
-            idx++;
-        }
-        int [] childrenArray=new int[childrenAL.size()];
-        idx = 0;
-        for (int i : childrenAL) childrenArray[idx++]=i;
-        return childrenArray;
+    public int[] getAllDirectChildStructuresAsArray(int structureIdx) {
+        return Utils.toArray(getAllDirectChildStructures(structureIdx), false);
     }
     /**
      * 

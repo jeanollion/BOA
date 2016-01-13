@@ -18,7 +18,6 @@
 package dataStructure.objects;
 
 import dataStructure.configuration.Experiment;
-import dataStructure.configuration.ExperimentDAO;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -63,11 +62,11 @@ public class BasicObjectDAO implements ObjectDAO {
     }
 
     public void deleteChildren(StructureObject parent, int structureIdx) {
-        this.rootTrack[parent.getTimePoint()].setChildren(null, structureIdx);
+        parent.setChildren(null, structureIdx);
     }
 
     public void deleteObjectsByStructureIdx(int... structures) {
-        
+        for (int s : structures) deleteObjectByStructureIdx(s);
     }
     
     protected void deleteObjectByStructureIdx(int structureIdx) {
@@ -85,7 +84,11 @@ public class BasicObjectDAO implements ObjectDAO {
     public void deleteAllObjects() {
         this.rootTrack=null;
     }
-
+    /**
+     * 
+     * @param o
+     * @param deleteChildren not used in this DAO, chilren are always deleted
+     */
     public void delete(StructureObject o, boolean deleteChildren) {
         if (o.getStructureIdx()==-1) rootTrack[o.getTimePoint()]=null;
         else o.getParent().getChildren(o.getStructureIdx()).remove(o);
@@ -109,8 +112,9 @@ public class BasicObjectDAO implements ObjectDAO {
             if (children == null) {
                 children = new ArrayList<StructureObject>();
                 object.getParent().setChildren(children, object.getStructureIdx());
+            } else {
+                if (!children.contains(object)) children.add(object.idx, object);
             }
-            children.add(object.idx, object);
         }
     }
 
@@ -119,7 +123,8 @@ public class BasicObjectDAO implements ObjectDAO {
     }
 
     public ArrayList<StructureObject> getRoots() {
-        return new ArrayList<StructureObject>(Arrays.asList(rootTrack));
+        if (rootTrack!=null) return new ArrayList<StructureObject>(Arrays.asList(rootTrack));
+        else return null;
     }
 
     public StructureObject getRoot(int timePoint) {

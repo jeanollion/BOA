@@ -31,12 +31,26 @@ public interface ObjectDAO {
     public String getFieldName();
     public void clearCache();
     public ArrayList<StructureObject> getChildren(StructureObject parent, int structureIdx); // needs indicies: structureIdx & parent
+    /**
+     * Deletes the children of {@param parent} of structure {@param structureIdx}
+     * @param parent
+     * @param structureIdx 
+     */
     public void deleteChildren(final StructureObject parent, int structureIdx);
+    /**
+     * Deletes all objects from the given structure index  plus all objects from direct or indirect children structures
+     * @param structures 
+     */
     public void deleteObjectsByStructureIdx(int... structures);
     public void deleteAllObjects();
+    /**
+     * 
+     * @param o object to delete
+     * @param deleteChildren if true, deletes all direct or indirect chilren
+     */
     public void delete(StructureObject o, boolean deleteChildren);
-    revoir les fonctions deletes avec la gestions des enfant directs et indirects.. la fonction delete doit elle appeller deleteChildren?
     public void delete(List<StructureObject> list, final boolean deleteChildren);
+    //revoir les fonctions deletes avec la gestions des enfant directs et indirects.. la fonction delete doit elle appeller deleteChildren?
     public void store(StructureObject object, boolean updateTrackAttributes);
     public void store(final List<StructureObject> objects, final boolean updateTrackAttributes);
     

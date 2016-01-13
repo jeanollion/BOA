@@ -17,6 +17,8 @@
  */
 package dataStructure.objects;
 
+import com.mongodb.BasicDBObject;
+import static dataStructure.objects.StructureObject.logger;
 import de.caluga.morphium.DAO;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.query.Query;
@@ -55,20 +57,26 @@ public class MeasurementsDAO {
     }
     
     public void delete(ObjectId id) {
-        getQuery().f("_id").eq(id).delete();
+        //masterDAO.m.delete(getQuery().f("id").eq(id));
+        BasicDBObject db = new BasicDBObject().append("_id", id);
+        //logger.debug("delete meas by id: {}, from colleciton: {}", db, collectionName);
+        masterDAO.m.getDatabase().getCollection(collectionName).remove(db);
     }
     
     public void delete(Measurements o) {
         if (o==null) return;
         if (o.getId()!=null) masterDAO.m.delete(o, collectionName, null);
+        logger.debug("delete meas: {}, from colleciton: {}", o.getId(), collectionName);
     }
     
     public void deleteByStructureIdx(int structureIdx) {
-        getQuery().f("structure_idx").eq(structureIdx).delete();
+        //getQuery().f("structure_idx").eq(structureIdx).delete();
+        masterDAO.getMorphium().getDatabase().getCollection(collectionName).remove( new BasicDBObject("structure_idx", structureIdx));
     }
     
     public void deleteAllObjects() {
-        masterDAO.m.clearCollection(Measurements.class, collectionName);
+        masterDAO.m.getDatabase().getCollection(collectionName).drop();
+        //masterDAO.m.clearCollection(Measurements.class, collectionName);
     }
     
     protected Query<Measurements> getQuery(int structureIdx, String... measurements) {

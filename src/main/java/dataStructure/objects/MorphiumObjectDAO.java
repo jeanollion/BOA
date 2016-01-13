@@ -17,6 +17,8 @@
  */
 package dataStructure.objects;
 
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBObject;
 import dataStructure.configuration.*;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.StructureObject;
@@ -121,51 +123,57 @@ public class MorphiumObjectDAO implements ObjectDAO {
     }
     
     public void deleteChildren(final StructureObject parent, int structureIdx) {
-        ArrayList<Integer> directChildren = this.getExperiment().getAllDirectChildren(structureIdx);
+        if (parent == null) return;
+        ArrayList<Integer> directChildren = this.getExperiment().getAllDirectChildStructures(structureIdx);
         // delete measurements
         List<StructureObject> children=null;
         Query<StructureObject> q=null;
-        if (parent !=null && parent.hasChildren(structureIdx)) children = parent.getChildren(structureIdx);
-        else if (parent!=null && parent.getId()!=null) { // get only minimal information
+        if (parent.hasChildren(structureIdx)) children = parent.getChildren(structureIdx);
+        else if (parent.getId()!=null) { // get only minimal information
             q = getChildrenQuery(parent, structureIdx);
             q.addReturnedField("measurements_id");
             //q.addReturnedField("object_container");
             children = q.asList();
+            for (StructureObject o : children) {o.dao=this; o.parent=parent;}
         }
         if (children!=null) {
-            final MorphiumObjectDAO instance=this;
             ThreadRunner.execute(children, new ThreadAction<StructureObject>() {
                 public void run(StructureObject o, int idx) {
-                    o.dao=instance; // in case it was retrieved from this method
-                    o.parent=parent;
+                    masterDAO.m.delete(o, collectionName, null);
+                    //logger.debug("delete {}", o.getId());
                     if (o.measurementsId!=null) measurementsDAO.delete(o.measurementsId);
                     //if (o.objectContainer!=null) o.objectContainer.deleteObject();    
                 }
             });
             for (StructureObject o : children) {
-                this.idCache.remove(o.getId()); // delete in cache:
-                for (int s : directChildren) deleteChildren(o, s); // also delete all direct chilren
-            } 
+                this.idCache.remove(o.getId()); // delete in cache
+                for (int s : directChildren) deleteChildren(o, s); // also delete all direct chilren (recursive call)
+            }
         }
-        if (parent.getId()!=null) {
-            if (q==null) q = getChildrenQuery(parent, structureIdx);
-            q.delete();
-        }
-        logger.debug("delete {} children. direct structures to delete: {}", children.size(), directChildren);
+        logger.debug("delete {} children. direct structures to delete: {}", children==null?0:children.size(), directChildren);
     }
     
-    public void deleteObjectsByStructureIdx(int... structures) {
-        if (structures.length==0) return;
+    private static ArrayList<Integer> listAllStructureAndChildrenStructure(Experiment xp, int... structures) {
         ArrayList<Integer> toDelete = new ArrayList<Integer>();
-        for (int s : structures) for (int subS : getExperiment().getAllChildStructures(s)) toDelete.add(subS);
+        for (int s : structures) {
+            toDelete.add(s);
+            for (int subS : xp.getAllChildStructures(s)) toDelete.add(subS);
+        }
         Utils.removeDuplicates(toDelete, false);
         Collections.sort(toDelete, new Comparator<Integer>() {
             public int compare(Integer arg0, Integer arg1) {
                 return Integer.compare(arg1, arg0); // reverse order to be able to access parents if needed
             }
         });
+        return toDelete;
+    }
+    
+    public void deleteObjectsByStructureIdx(int... structures) {
+        if (structures.length==0) return;
+        ArrayList<Integer> toDelete = listAllStructureAndChildrenStructure(getExperiment(), structures);
         for (int s : toDelete ) {
-            getQuery().f("structure_idx").eq(s).delete();
+            //getQuery().f("structure_idx").eq(s).delete();
+            masterDAO.getMorphium().getDatabase().getCollection(collectionName).remove( new BasicDBObject("structure_idx", s));
             /*q.addReturnedField("measurements_id");
             //q.addReturnedField("object_container");
             List<StructureObject> children = q.asList();
@@ -189,7 +197,8 @@ public class MorphiumObjectDAO implements ObjectDAO {
     }
     
     public void deleteAllObjects() {
-        masterDAO.m.clearCollection(StructureObject.class, collectionName);
+        //masterDAO.m.clearCollection(StructureObject.class, collectionName);
+        masterDAO.m.getDatabase().getCollection(collectionName).drop();
         idCache.clear();
         measurementsDAO.deleteAllObjects();
     }
@@ -197,7 +206,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
     public void delete(StructureObject o, boolean deleteChildren) {
         if (o==null) return;
         if (o.getId()==null) return;
-        if (deleteChildren) for (int s : o.getExperiment().getChildStructures(o.getStructureIdx())) this.deleteChildren(o, s);
+        if (deleteChildren) for (int s : o.getExperiment().getAllDirectChildStructures(o.getStructureIdx())) deleteChildren(o, s);
         if (o.getId()!=null) {
             masterDAO.m.delete(o, collectionName, null);
             idCache.remove(o.getId());
@@ -425,11 +434,20 @@ public class MorphiumObjectDAO implements ObjectDAO {
         o.getMeasurements().updateObjectProperties(o);
         //if (o.getMeasurements().id!=null) measurementsDAO.delete(o.getMeasurements());
         this.measurementsDAO.store(o.getMeasurements()); // toDO -> partial update if already an ID
-
+        
+        
+        logger.debug("store meas: id: {}, id in object: {}: {}", o.measurements.id, o, o.measurementsId);
         if (!o.getMeasurements().getId().equals(o.measurementsId)) {
             o.measurementsId=o.getMeasurements().getId();
-            AsyncOperationCallback cb = null;
-            masterDAO.m.updateUsingFields(o, collectionName, cb, "measurements_id");
+            
+            // when morphium bug solved -> update
+            DBObject find = new BasicDBObject("_id", o.getId());
+            DBObject update = new BasicDBObject("measurements_id", o.measurementsId);
+            update = new BasicDBObject("$set", update);
+            this.masterDAO.m.getDatabase().getCollection(collectionName).update(find, update, false, false);
+            /*AsyncOperationCallback cb = null;
+            masterDAO.m.updateUsingFields(o, collectionName, cb, "measurements_id");*/
+        
         }
     }
     

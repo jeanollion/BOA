@@ -36,7 +36,7 @@ import processing.ImageFeatures;
 import utils.SmallArray;
 
 @Lifecycle
-@Entity(collectionName = "Objects")
+@Entity
 @Index(value={"structure_idx, parent"})
 public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker, StructureObjectTrackCorrection {
     public enum TrackFlag{trackError, correctionMerge, correctionMergeToErase, correctionSplit, correctionSplitNew, correctionSplitError};
@@ -467,7 +467,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         otherO.setTrackFlag(TrackFlag.correctionMergeToErase);
         otherO.isTrackHead=false; // so that it won't be detected in the correction
         // update children
-        int[] chilIndicies = getExperiment().getChildStructures(structureIdx);
+        int[] chilIndicies = getExperiment().getAllDirectChildStructuresAsArray(structureIdx);
         for (int cIdx : chilIndicies) {
             ArrayList<StructureObject> otherChildren = otherO.getChildren(cIdx);
             if (otherChildren!=null) {
