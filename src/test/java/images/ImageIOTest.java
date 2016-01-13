@@ -18,6 +18,7 @@
 package images;
 
 import TestUtils.Utils;
+import static TestUtils.Utils.logger;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.process.ImageProcessor;
@@ -398,6 +399,7 @@ public class ImageIOTest {
         ImageShort im = (ImageShort)reader.openImage(new ImageIOCoordinates(bb));
         reader.closeReader();
         BoundingBox retrieveBB = new BoundingBox(im, true);
+        //logger.debug("bb: {}, retrieve: {}", bb, retrieveBB);
         Assert.assertEquals("Retrieve Image View: Dimensions", bb, retrieveBB);
         Assert.assertEquals("Retrieve pixel value", 3, im.getPixelInt(2-im.getOffsetX(), 3-im.getOffsetY(), 5-im.getOffsetZ()));
     }

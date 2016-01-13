@@ -154,7 +154,7 @@ public class ImageReader {
         if (coords.getBounds()!=null) {
             zMin=Math.max(coords.getBounds().getzMin(), 0);
             zMax=Math.min(coords.getBounds().getzMax(), sizeZ-1);
-            if (zMin>=zMax) zMin=0; zMax=sizeZ-1;
+            if (zMin>=zMax) {zMin=0; zMax=sizeZ-1;}
             if (this.supportView) {
                 sizeX = coords.getBounds().getSizeX();
                 sizeY = coords.getBounds().getSizeY();
@@ -163,7 +163,7 @@ public class ImageReader {
         } else {
             zMin=0; zMax=sizeZ-1;
         }
-        //logger.debug("open image: {}, sizeX: {}, sizeY: {}, sizeZ: {}, zMin: {}, zMax: {}", this.fullPath, sizeX, sizeY, sizeZ, zMin, zMax);
+        //logger.debug("open image: {}, sizeX: {}, sizeY: {}, sizeZ: {}, zMin: {}, zMax: {}", this.getImagePath(), sizeX, sizeY, sizeZ, zMin, zMax);
         ImageStack stack = new ImageStack(sizeX, sizeY);
         for (int z = zMin; z <= zMax; z++) {
             int locZ = invertTZ?coords.getTimePoint():z;
