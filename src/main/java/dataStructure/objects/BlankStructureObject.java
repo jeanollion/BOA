@@ -67,7 +67,7 @@ public class BlankStructureObject implements StructureObjectProcessing {
         return null;
     }
 
-    public ArrayList<StructureObject> setChildren(ObjectPopulation children, int structureIdx) {
+    public ArrayList<StructureObject> setChildrenObjects(ObjectPopulation children, int structureIdx) {
         return null;
     }
     

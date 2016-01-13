@@ -17,7 +17,7 @@
  */
 package measurements;
 
-import boa.gui.objects.DBConfiguration;
+import dataStructure.objects.MorphiumMasterDAO;
 import core.Processor;
 import java.io.IOException;
 import org.junit.Before;
@@ -34,7 +34,7 @@ import utils.MorphiumUtils;
  * @author jollion
  */
 public class MeasurementsTest {
-    DBConfiguration db;
+    MorphiumMasterDAO db;
     
     @Rule
     public TemporaryFolder testFolder = new TemporaryFolder();
@@ -46,9 +46,9 @@ public class MeasurementsTest {
     }
     
     public void setUpDB() {
-        if (db==null) db = new DBConfiguration(MorphiumUtils.createMorphium("testTrackCorrection"));
+        if (db==null) db = new MorphiumMasterDAO(MorphiumUtils.createMorphium("testTrackCorrection"));
         db.getDao().waiteForWrites();
-        db.clearObjectsInDB();
+        db.reset();
         db.generateDAOs();
     }
     

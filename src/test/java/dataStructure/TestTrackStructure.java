@@ -23,8 +23,9 @@ import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
+import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectDAO;
+import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
@@ -46,33 +47,30 @@ import utils.MorphiumUtils;
 public class TestTrackStructure {
     @Test
     public void testTrackStructure() {
-        Morphium m=MorphiumUtils.createMorphium("testTrack");
-        m.clearCollection(Experiment.class);
-        m.clearCollection(StructureObject.class);
+        MorphiumMasterDAO masterDAO = new MorphiumMasterDAO("testTrack");
+        masterDAO.reset();
         Experiment xp = new Experiment("test");
         ChannelImage image = new ChannelImage("ChannelImage");
         xp.getChannelImages().insert(image);
-        xp.getStructures().removeAllElements();
         Structure microChannel = new Structure("MicroChannel", -1, 0);
         Structure bacteries = new Structure("Bacteries", 0, 0);
         xp.getStructures().insert(microChannel, bacteries);
         bacteries.setParentStructure(0);
         xp.createMicroscopyField("field1");
-        ExperimentDAO xpDAO = new ExperimentDAO(m);
-        xpDAO.store(xp);
-        ObjectDAO dao = new ObjectDAO(m, xpDAO);
-        
+        masterDAO.setExperiment(xp);
+        MorphiumObjectDAO dao = masterDAO.getDao("field1");
         StructureObject[] rootT = new StructureObject[5];
-        for (int i = 0; i<rootT.length; ++i) rootT[i] = new StructureObject("field1", i, new BlankMask("", 1, 1, 1), dao);
-        Processor.trackRoot(Arrays.asList(rootT));
-        dao.store(true, rootT);
+        for (int i = 0; i<rootT.length; ++i) rootT[i] = new StructureObject(i, new BlankMask("", 1, 1, 1), dao);
+        
+        MicroscopyField.setTrackLinks(Arrays.asList(rootT));
+        dao.storeSequentially(Arrays.asList(rootT), true);
         StructureObject[] mcT = new StructureObject[5];
-        for (int i = 0; i<mcT.length; ++i) mcT[i] = new StructureObject("field1", i, 0, 0, new Object3D(new BlankMask("", 1, 1, 1), 1), rootT[i]);
-        Processor.trackRoot(Arrays.asList(mcT));
-        dao.store(true, mcT);
+        for (int i = 0; i<mcT.length; ++i) mcT[i] = new StructureObject(i, 0, 0, new Object3D(new BlankMask("", 1, 1, 1), 1), rootT[i]);
+        MicroscopyField.setTrackLinks(Arrays.asList(mcT));
+        dao.storeSequentially(Arrays.asList(mcT), true);
         StructureObject[][] bTM = new StructureObject[5][3];
         for (int t = 0; t<bTM.length; ++t) {
-            for (int j = 0; j<3; ++j) bTM[t][j] = new StructureObject("field1", t, 1, j, new Object3D(new BlankMask("", 1, 1, 1), j+1), mcT[t]);
+            for (int j = 0; j<3; ++j) bTM[t][j] = new StructureObject(t, 1, j, new Object3D(new BlankMask("", 1, 1, 1), j+1), mcT[t]);
             //dao.storeLater(bTM[i]);
         }
         for (int i= 1; i<mcT.length; ++i) bTM[i][0].setPreviousInTrack(bTM[i-1][0], false);
@@ -87,23 +85,20 @@ public class TestTrackStructure {
         1.0->2
         2.0
         */
-        ArrayList<StructureObject> toStore = new ArrayList<StructureObject>();
-        for (int i = 0; i<bTM.length; ++i) toStore.addAll(Arrays.asList(bTM[i]));
-        dao.storeLater(toStore, true, false);
-        dao.waiteForWrites();
+        for (int i = 0; i<bTM.length; ++i) dao.store(Arrays.asList(bTM[i]), true);
         dao.clearCache();
         // retrive tracks head for microChannels
         ArrayList<StructureObject> mcHeads = dao.getTrackHeads(rootT[0], 0);
         assertEquals("number of heads for microChannels", 1, mcHeads.size());
         assertEquals("head for microChannel", mcT[0].getId(), mcHeads.get(0).getId());
-        assertEquals("head for microChannel (unique instanciation)", dao.getObject(mcT[0].getId()), mcHeads.get(0));
+        assertEquals("head for microChannel (unique instanciation)", dao.getById(mcT[0].getId()), mcHeads.get(0));
 
         // retrieve microChannel track
         ArrayList<StructureObject> mcTrack = dao.getTrack(mcT[0]);
         assertEquals("number of elements in microChannel track", 5, mcTrack.size());
         for (int i = 0; i<mcTrack.size(); ++i) assertEquals("microChannel track element: "+i, mcT[i].getId(), mcTrack.get(i).getId());
         assertEquals("head of microChannel track (unique instanciation)", mcHeads.get(0), mcTrack.get(0));
-        for (int i = 0; i<mcTrack.size(); ++i) assertEquals("microChannel track element: "+i+ " unique instanciation", dao.getObject(mcT[i].getId()), mcTrack.get(i));
+        for (int i = 0; i<mcTrack.size(); ++i) assertEquals("microChannel track element: "+i+ " unique instanciation", dao.getById(mcT[i].getId()), mcTrack.get(i));
 
         // retrive tracks head for bacteries
         ArrayList<StructureObject> bHeads = dao.getTrackHeads(mcT[0], 1);
@@ -113,14 +108,14 @@ public class TestTrackStructure {
         assertEquals("head for bacteries (2)", bTM[0][2].getId(), bHeads.get(2).getId());
         assertEquals("head for bacteries (3)", bTM[1][1].getId(), bHeads.get(3).getId());
         assertEquals("head for bacteries (4)", bTM[3][2].getId(), bHeads.get(4).getId());
-        assertEquals("head for bacteries (0, unique instanciation)", dao.getObject(bTM[0][0].getId()), bHeads.get(0));
+        assertEquals("head for bacteries (0, unique instanciation)", dao.getById(bTM[0][0].getId()), bHeads.get(0));
 
         // retrieve bacteries track
         ArrayList<StructureObject> bTrack0 = dao.getTrack(bHeads.get(0));
         assertEquals("number of elements in bacteries track (0)", 5, bTrack0.size());
         for (int i = 0; i<mcTrack.size(); ++i) assertEquals("bacteries track element: "+i, bTM[i][0].getId(), bTrack0.get(i).getId());
         assertEquals("head of microChannel track (unique instanciation)", bHeads.get(0), bTrack0.get(0));
-        for (int i = 0; i<mcTrack.size(); ++i) assertEquals("bacteries track element: "+i+ " unique instanciation", dao.getObject(bTM[i][0].getId()), bTrack0.get(i));
+        for (int i = 0; i<mcTrack.size(); ++i) assertEquals("bacteries track element: "+i+ " unique instanciation", dao.getById(bTM[i][0].getId()), bTrack0.get(i));
 
         
     }

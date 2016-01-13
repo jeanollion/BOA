@@ -29,17 +29,17 @@ import org.bson.types.ObjectId;
  * @author jollion
  */
 public class MeasurementsDAO {
-    Morphium morphium;
-    final String fieldName, collectionName;
-    public MeasurementsDAO(Morphium morphium, String fieldName) {
+    final MorphiumMasterDAO masterDAO;
+    public final String fieldName, collectionName;
+    public MeasurementsDAO(MorphiumMasterDAO masterDAO, String fieldName) {
         this.fieldName=fieldName;
-        this.collectionName="objects_"+fieldName;
-        morphium.ensureIndicesFor(Measurements.class);
-        this.morphium=morphium;
+        this.collectionName="measurements_"+fieldName;
+        this.masterDAO=masterDAO;
+        masterDAO.m.ensureIndicesFor(Measurements.class, collectionName);
     }
     
     protected Query<Measurements> getQuery() {
-        Query<Measurements> res =  morphium.createQueryFor(Measurements.class); 
+        Query<Measurements> res =  masterDAO.m.createQueryFor(Measurements.class); 
         res.setCollectionName(collectionName);
         return res;
     }
@@ -51,20 +51,24 @@ public class MeasurementsDAO {
     }
     
     public void store(Measurements o) {
-        morphium.store(o);
+        masterDAO.m.storeNoCache(o, collectionName, null);
     }
     
     public void delete(ObjectId id) {
-        morphium.delete(getQuery().f("_id").eq(id));
+        getQuery().f("_id").eq(id).delete();
     }
     
     public void delete(Measurements o) {
         if (o==null) return;
-        if (o.getId()!=null) morphium.delete(o);
+        if (o.getId()!=null) masterDAO.m.delete(o, collectionName, null);
+    }
+    
+    public void deleteByStructureIdx(int structureIdx) {
+        getQuery().f("structure_idx").eq(structureIdx).delete();
     }
     
     public void deleteAllObjects() {
-        morphium.clearCollection(Measurements.class);
+        masterDAO.m.clearCollection(Measurements.class, collectionName);
     }
     
     protected Query<Measurements> getQuery(int structureIdx, String... measurements) {

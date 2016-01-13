@@ -37,7 +37,7 @@ import utils.SmallArray;
 
 @Lifecycle
 @Entity(collectionName = "Objects")
-@Index(value={"structure_idx, time_point", "parent"})
+@Index(value={"structure_idx, parent"})
 public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker, StructureObjectTrackCorrection {
     public enum TrackFlag{trackError, correctionMerge, correctionMergeToErase, correctionSplit, correctionSplitNew, correctionSplitError};
     public final static Logger logger = LoggerFactory.getLogger(StructureObject.class);
@@ -96,7 +96,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     // structure-related methods
     public ObjectDAO getDAO() {return dao;}
     public ObjectId getId() {return id;}
-    public String getFieldName() {return dao.fieldName;}
+    public String getFieldName() {return dao.getFieldName();}
     public int getStructureIdx() {return structureIdx;}
     public int getTimePoint() {return timePoint;}
     public int getIdx() {return idx;}
@@ -154,7 +154,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                     res= this.childrenSM.get(structureIdx);
                     if (res==null) {
                         if (dao!=null) {
-                            res = dao.getObjects(id, structureIdx);
+                            res = dao.getChildren(this, structureIdx);
                             setChildren(res, structureIdx);
                         } else logger.debug("getChildObjects called on {} but DAO null, cannot retrieve objects", this);
                     }
@@ -176,10 +176,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
 
     public void setChildren(ArrayList<StructureObject> children, int structureIdx) {
         this.childrenSM.set(children, structureIdx);
-        for (StructureObject o : children) o.setParent(this);
+        if (children!=null) for (StructureObject o : children) o.setParent(this);
     }
     
-    @Override public ArrayList<StructureObject> setChildren(ObjectPopulation population, int structureIdx) {
+    @Override public ArrayList<StructureObject> setChildrenObjects(ObjectPopulation population, int structureIdx) {
         population.relabel();
         ArrayList<StructureObject> res = new ArrayList<StructureObject>(population.getObjects().size());
         childrenSM.set(res, structureIdx);
@@ -498,9 +498,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         } 
         
         StructureObject res = new StructureObject(timePoint, structureIdx, idx+1, pop.getObjects().get(1).setLabel(idx+2), getParent());
-        /*ArrayList<StructureObject> res = new ArrayList<StructureObject>(pop.getObjects().size()-1);
-        for (int i = 1; i<pop.getObjects().size(); ++i) {
-            res.add(new StructureObject(fieldName, timePoint, structureIdx, currentIdx++, pop.getObjects().get(i), getParent(), getExperiment()));
+        /*ArrayList<StructureObject> res = new ArrayList<StructureObject>(pop.getChildren().size()-1);
+        for (int i = 1; i<pop.getChildren().size(); ++i) {
+            res.add(new StructureObject(fieldName, timePoint, structureIdx, currentIdx++, pop.getChildren().get(i), getParent(), getExperiment()));
         }*/
         //if (res.size()>1) xp.getObjectDAO().storeLater(res);
         //else xp.getObjectDAO().storeLater(res.get(0));
@@ -631,15 +631,15 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public void segmentChildren(int structureIdx) {
         
         ObjectPopulation seg = segmentImage(getFilteredImage(structureIdx), structureIdx, this, getExperiment().getStructure(structureIdx).getProcessingChain().getSegmenter());
-        if (seg.getObjects().isEmpty()) {
+        if (seg.getChildren().isEmpty()) {
             childrenSM.set(new ArrayList<StructureObject>(0), structureIdx);
         }
         else {
             seg = postFilterImage(seg, this, getExperiment().getStructure(structureIdx).getProcessingChain().getPostfilters());
             seg.relabel();
-            ArrayList<StructureObject> res = new ArrayList<StructureObject>(seg.getObjects().size());
+            ArrayList<StructureObject> res = new ArrayList<StructureObject>(seg.getChildren().size());
             childrenSM.set(res, structureIdx);
-            for (int i = 0; i<seg.getObjects().size(); ++i) res.add(new StructureObject(fieldName, timePoint, structureIdx, i, seg.getObjects().get(i), this));
+            for (int i = 0; i<seg.getChildren().size(); ++i) res.add(new StructureObject(fieldName, timePoint, structureIdx, i, seg.getChildren().get(i), this));
         }
     }*/
     
@@ -659,8 +659,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (measurements==null) {
             synchronized(this) {
                 if (measurements==null) {
-                    if (measurementsId!=null) {
-                        measurements=this.dao.getMeasurementsDAO().getObject(measurementsId);
+                    if (measurementsId!=null && dao instanceof MorphiumObjectDAO) {
+                        measurements=((MorphiumObjectDAO)dao).getMeasurementsDAO().getObject(measurementsId);
                         if (measurements==null) {
                             measurementsId=null;
                             measurements = new Measurements(this);
@@ -672,10 +672,14 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return measurements;
     }
     
+    public boolean hasMeasurements() {
+        return measurementsId!=null || measurements!=null;
+    }
+    
     void updateMeasurementsIfNecessary() {
         if (measurements!=null) {
-            measurements.updateObjectProperties(this);
-            if (measurements.modifications) dao.getMeasurementsDAO().store(measurements);
+            if (measurements.modifications) dao.upsertMeasurement(this);
+            else measurements.updateObjectProperties(this);
             this.measurementsId=measurements.id;
         }
     }

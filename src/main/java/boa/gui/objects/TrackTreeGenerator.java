@@ -19,8 +19,6 @@ package boa.gui.objects;
 
 import static boa.gui.configuration.ConfigurationTreeGenerator.addToMenu;
 import dataStructure.configuration.Experiment;
-import dataStructure.configuration.ExperimentDAO;
-import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.Morphium;
 import java.awt.Rectangle;
@@ -43,23 +41,21 @@ import boa.gui.configuration.TransparentTreeCellRenderer;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
-import java.awt.Color;
-import java.awt.event.InputEvent;
+import dataStructure.objects.MasterDAO;
+import dataStructure.objects.ObjectDAO;
 import java.util.ArrayList;
-import java.util.Arrays;
-import javax.swing.tree.DefaultTreeModel;
 import utils.Utils;
 /**
  *
  * @author nasique
  */
 public class TrackTreeGenerator {
-    DBConfiguration db;
+    MasterDAO db;
     protected StructureObjectTreeModel treeModel;
     JTree tree;
     TrackTreeController controller;
     
-    public TrackTreeGenerator(DBConfiguration db, TrackTreeController controller) {
+    public TrackTreeGenerator(MasterDAO db, TrackTreeController controller) {
         this.db = db;
         this.controller=controller;
     }
@@ -195,10 +191,12 @@ public class TrackTreeGenerator {
     
     private ArrayList<StructureObject> getObjectPath(StructureObject o) {
         ArrayList<StructureObject> res = new ArrayList<StructureObject>();
-        o = db.getDao(o.getFieldName()).getObject(o.getTrackHeadId());
+        //o = db.getDao(o.getFieldName()).getById(o.getTrackHeadId());
+        o = o.getTrackHead();
         res.add(o);
         while(o.getTimePoint()>0) {
-            o = db.getDao(o.getFieldName()).getObject(o.getPrevious().getTrackHeadId());
+            //o = db.getDao(o.getFieldName()).getById(o.getPrevious().getTrackHeadId());
+            o = o.getPrevious().getTrackHead();
             res.add(o);
         }
         return res;

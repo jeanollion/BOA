@@ -18,7 +18,7 @@
 package dataStructure;
 
 import TestUtils.Utils;
-import boa.gui.objects.DBConfiguration;
+import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
@@ -100,12 +100,12 @@ public class ConfigurationTest {
     
     @Test
     public void testStroreSimpleXPMorphium() {
-        DBConfiguration db = new DBConfiguration("testdb");
-        db.clearObjectsInDB();
+        MorphiumMasterDAO db = new MorphiumMasterDAO("testdb");
+        db.reset();
         Experiment xp = new Experiment("test xp");
         int idx = xp.getStructureCount();
         xp.getStructures().insert(xp.getStructures().createChildInstance("structureTest"));
-        db.getXpDAO().store(xp);
+        db.setExperiment(xp);
         db.getXpDAO().clearCache();
         xp = db.getXpDAO().getExperiment();
         assertEquals("structure nb", idx+1, xp.getStructureCount());
@@ -116,8 +116,8 @@ public class ConfigurationTest {
     
     @Test
     public void testStroreCompleteXPMorphium() {
-        DBConfiguration db = new DBConfiguration("testdb");
-        db.clearObjectsInDB();
+        MorphiumMasterDAO db = new MorphiumMasterDAO("testdb");
+        db.reset();
 
         // set-up experiment structure
         Experiment xp = new Experiment("test");

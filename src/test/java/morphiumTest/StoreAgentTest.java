@@ -18,7 +18,7 @@
 package morphiumTest;
 
 import static TestUtils.Utils.logger;
-import boa.gui.objects.DBConfiguration;
+import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
@@ -36,7 +36,7 @@ public class StoreAgentTest {
     //@Test
     public void storeAgentTest() {
         try {
-            DBConfiguration db = new DBConfiguration("storeAgentTest");
+            MorphiumMasterDAO db = new MorphiumMasterDAO("storeAgentTest");
             
             db.getDao().storeLater(getList(null, 50), true, false);
             db.getDao().storeLater(getList(null, 500), true, false);

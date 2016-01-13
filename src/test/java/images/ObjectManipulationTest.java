@@ -19,7 +19,7 @@ package images;
 
 import static TestUtils.GenerateSyntheticData.generateImages;
 import TestUtils.Utils;
-import boa.gui.objects.DBConfiguration;
+import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.Object3D;
@@ -158,8 +158,8 @@ public class ObjectManipulationTest {
     
     @Test
     public void testStoreObject() {
-        DBConfiguration db = new DBConfiguration("testdb");
-        db.clearObjectsInDB();
+        MorphiumMasterDAO db = new MorphiumMasterDAO("testdb");
+        db.reset();
         /*Experiment xp = new Experiment();
         xp.getStructures().insert(new Structure("test"));
         db.getXpDAO().storeLater(xp);

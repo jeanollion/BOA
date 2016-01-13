@@ -48,11 +48,11 @@ public class MicrochannelProcessor implements TrackerSegmenter {
         int refTimePoint = 50;
         StructureObject ref = getRefTimePoint(refTimePoint, parentTrack);
         ObjectPopulation pop = segmenter.runSegmenter(ref.getRawImage(structureIdx), structureIdx, ref);
-        ref.setChildren(pop, structureIdx);
+        ref.setChildrenObjects(pop, structureIdx);
         Collections.sort(ref.getChildren(structureIdx), getComparator(ObjectIdxTracker.IndexingOrder.XYZ));
         StructureObject prev=null;
         for (StructureObject s : parentTrack) {
-            if (s!=ref) s.setChildren(pop, structureIdx);
+            if (s!=ref) s.setChildrenObjects(pop, structureIdx);
             if (prev!=null) assignPrevious(prev.getChildObjects(structureIdx), s.getChildObjects(structureIdx));
             prev=s;
         }

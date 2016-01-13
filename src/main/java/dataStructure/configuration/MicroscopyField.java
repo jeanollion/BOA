@@ -31,7 +31,6 @@ import dataStructure.containers.ImageDAO;
 import dataStructure.containers.InputImage;
 import dataStructure.containers.InputImagesImpl;
 import dataStructure.containers.MultipleImageContainer;
-import dataStructure.containers.MultipleImageContainerSingleFile;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.annotations.Transient;
@@ -104,11 +103,13 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         for (int t = 0; t<getImages().getTimePointNumber(); ++t) {
             res.add(new StructureObject(t, getMask(), dao));
         }
-        for (int i = 1; i<res.size(); ++i) res.get(i).setPreviousInTrack(res.get(i-1), false);
+        setTrackLinks(res);
         return res;
     }
     
-    
+    public static void setTrackLinks(List<StructureObject> list) {
+        for (int i = 1; i<list.size(); ++i) list.get(i).setPreviousInTrack(list.get(i-1), false);
+    }
     protected Experiment getExperiment() {
         return (Experiment) parent.getParent();
     }

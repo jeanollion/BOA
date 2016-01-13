@@ -22,11 +22,8 @@ import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageObjectListener;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import static boa.gui.imageInteraction.ImageWindowManagerFactory.getImageManager;
-import boa.gui.objects.DBConfiguration;
 import boa.gui.objects.ObjectNode;
 import dataStructure.configuration.Experiment;
-import dataStructure.configuration.ExperimentDAO;
-import dataStructure.objects.ObjectDAO;
 import boa.gui.objects.StructureObjectTreeGenerator;
 import boa.gui.objects.TrackNode;
 import boa.gui.objects.TrackTreeController;
@@ -38,6 +35,8 @@ import configuration.parameters.NumberParameter;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Structure;
+import dataStructure.objects.MorphiumMasterDAO;
+import dataStructure.objects.MasterDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import de.caluga.morphium.Morphium;
@@ -87,7 +86,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private static GUI instance;
     
     // db-related attributes
-    DBConfiguration db;
+    MasterDAO db;
     
     // xp tree-related attributes
     ConfigurationTreeGenerator configurationTreeGenerator;
@@ -138,7 +137,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         logger.info("Connection established with db: {} @ host: {}, in {} ms", dbName, hostName, t1-t0);
         setDBConnection(m);
         if (db!=null) {
-            this.setTitle("Experiment: "+db.getMorphium().getDatabase().getName());
+            this.setTitle("Experiment: "+dbName);
         } else this.setTitle("No Experiment set");
     }
     
@@ -147,15 +146,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             unsetXP();
             return;
         }
-        this.db = new DBConfiguration(m);
+        this.db = new MorphiumMasterDAO(m);
         db.getExperiment();
         if (db.getExperiment()==null) {
             logger.warn("no experiment found in DB, using dummy experiment");
             Experiment xp = new Experiment("xp test UI");
-            db.getXpDAO().store(xp);
-            db.getXpDAO().clearCache();
+            db.setExperiment(xp);
         } else logger.info("Experiment found: {} ", db.getExperiment().getName());
-        configurationTreeGenerator = new ConfigurationTreeGenerator(db.getXpDAO());
+        configurationTreeGenerator = new ConfigurationTreeGenerator(db.getExperiment());
         configurationJSP.setViewportView(configurationTreeGenerator.getTree());
         populateActionStructureList();
         populateActionMicroscopyFieldList();
@@ -295,7 +293,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             m.clearCollection(Experiment.class);
             m.clearCollection(StructureObject.class);
             xpDAO = new ExperimentDAO(m);
-            objectDAO = new ObjectDAO(m, xpDAO);
+            objectDAO = new MorphiumObjectDAO(m, xpDAO);
             MorphiumUtils.addDereferencingListeners(m, objectDAO, xpDAO);
             
             // generate XP
@@ -987,10 +985,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
         else if (getDBNames().contains(name)) logger.error("DB name already exists");
         else {
-            DBConfiguration db2 = new DBConfiguration(name);
+            MorphiumMasterDAO db2 = new MorphiumMasterDAO(name);
             Experiment xp2 = db.getExperiment().duplicate();
             xp2.setName(name);
-            db2.getXpDAO().store(xp2);
+            db2.setExperiment(xp2);
         }
     }//GEN-LAST:event_duplicateExperimentActionPerformed
 
@@ -1040,10 +1038,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
         else if (getDBNames().contains(name)) logger.error("XP name already exists");
         else {
-            DBConfiguration db2 = new DBConfiguration(name);
+            MorphiumMasterDAO db2 = new MorphiumMasterDAO(name);
             Experiment xp2 = new Experiment(name);
             xp2.setName(name);
-            db2.getXpDAO().store(xp2);
+            db2.setExperiment(xp2);
             this.setDBConnection(name, getHostName());
             refreshDBNames();
             if (this.db!=null) dbNames.setSelectedItem(name);
@@ -1065,10 +1063,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     
     private void updateConnectButton() {
         String s = Utils.getSelectedString(dbNames);
-        logger.debug("DBName action: selected : {}, current: {} ", s, db!=null? db.getMorphium().getDatabase().getName() : null);
+        logger.debug("DBName action: selected : {}, current: {} ", s, db!=null? db.getDBName() : null);
         if (s==null || s.length()==0) this.connectButton.setEnabled(false);
         else {
-            if (this.db!=null && db.getMorphium().getDatabase().getName().equals(s)) this.connectButton.setEnabled(false);
+            if (this.db!=null && db.getDBName().equals(s)) this.connectButton.setEnabled(false);
             else this.connectButton.setEnabled(true);
         }
     }
@@ -1087,7 +1085,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }
     
     
-    public static DBConfiguration getDBConnection() {
+    public static MasterDAO getDBConnection() {
         if (getInstance()==null) return null;
         return getInstance().db;
     }

@@ -19,7 +19,7 @@ package dataStructure;
 
 import TestUtils.Utils;
 import static TestUtils.Utils.showImageIJ;
-import boa.gui.objects.DBConfiguration;
+import dataStructure.objects.MorphiumMasterDAO;
 import configuration.parameters.NumberParameter;
 import testPlugins.dummyPlugins.DummySegmenter;
 import core.Processor;
@@ -30,8 +30,9 @@ import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
 import dataStructure.containers.ImageDAO;
 import dataStructure.containers.MultipleImageContainer;
+import dataStructure.objects.BasicMasterDAO;
 import dataStructure.objects.StructureObject;
-import dataStructure.objects.ObjectDAO;
+import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.StructureObjectUtils;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
@@ -56,6 +57,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plugins.PluginFactory;
 import plugins.Segmenter;
+import plugins.plugins.processingScheme.SegmentThenTrack;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import plugins.plugins.transformations.SimpleTranslation;
 import utils.MorphiumUtils;
@@ -103,6 +105,8 @@ public class ProcessingTest {
         
         Processor.importFiles(xp, folder.getAbsolutePath());
         assertEquals("number of fields detected", 6-1-1, xp.getMicrocopyFieldCount()); // 6 - 1 (unique title) - 1 (channel number)
+        assertTrue("field non null", xp.getMicroscopyField(title)!=null);
+        assertTrue("images non null", xp.getMicroscopyField(title).getInputImages()!=null);
         Utils.assertImage(images[0][0], xp.getMicroscopyField(title).getInputImages().getImage(0, 0), 0);
     }
     
@@ -169,23 +173,9 @@ public class ProcessingTest {
         f.getPreProcessingChain().addTransformation(0, null, t2);
         
         //pre-process
-        Processor.preProcessImages(xp, null, true);
-        
-        // passage through morphium
-        MorphiumConfig cfg = new MorphiumConfig();
-        cfg.setGlobalLogLevel(3);
-        cfg.setDatabase("testdb");
-        try {
-            cfg.addHost("localhost", 27017);
-        } catch (UnknownHostException ex) {
-            Utils.logger.error("create morphium", ex);
-        }
-        Morphium m=new Morphium(cfg);
-        m.clearCollection(Experiment.class);
-        m.store(xp);
-        m.clearCachefor(Experiment.class);
-        xp = m.createQueryFor(Experiment.class).getById(xp.getId());
-        
+        BasicMasterDAO masterDAO = new BasicMasterDAO(xp);
+        Processor.preProcessImages(masterDAO, true);
+       
         // test 
         ImageDAO dao = xp.getImageDAO();
         Image image = dao.openPreProcessedImage(0, 0, "field1");
@@ -204,29 +194,31 @@ public class ProcessingTest {
     
     @Test
     public void StructureObjectTestStore() {
-        DBConfiguration db = new DBConfiguration("testdb");
-        db.clearObjectsInDB();
+        MorphiumMasterDAO db = new MorphiumMasterDAO("testdb");
+        db.reset();
         Experiment xp = new Experiment("test");
         db.getXpDAO().store(xp);
-        StructureObject r = new StructureObject("test", 0, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), db.getDao());
-        StructureObject r2 = new StructureObject("test", 1, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), db.getDao());
-        StructureObject r3 = new StructureObject("test", 2, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), db.getDao());
+        String f = "test";
+        StructureObject r = new StructureObject(0, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), db.getDao(f));
+        StructureObject r2 = new StructureObject(1, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), db.getDao(f));
+        StructureObject r3 = new StructureObject(2, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), db.getDao(f));
         r2.setPreviousInTrack(r, true);
         r3.setPreviousInTrack(r2, true);
-        db.getDao().store(true, r, r2, r3);
-        db.getDao().waiteForWrites();
-        r2 = db.getDao().getObject(r2.getId());
-        r = db.getDao().getObject(r.getId());
+        db.getDao(f).store(r, true);
+        db.getDao(f).store(r2, true);
+        db.getDao(f).store(r3, true);
+        r2 = db.getDao(f).getById(r2.getId());
+        r = db.getDao(f).getById(r.getId());
         assertTrue("r2 retrieved", r!=null);
         assertEquals("r unique instanciation", r, r2.getPrevious());
         assertEquals("xp unique instanciation", r.getExperiment(), r2.getExperiment());
-        db.getDao().clearCache();
-        r2 = db.getDao().getObject(r2.getId());
-        assertTrue("r2 retrieved", r!=null);
+        db.getDao(f).clearCache();
+        r2 = db.getDao(f).getById(r2.getId());
+        assertTrue("r2 retrieved", r2!=null);
         assertEquals("r retrieved 2", "test", r2.getFieldName());
         //assertEquals("r previous ", r.getId(), r2.getPrevious().getId()); // not lazy anymore
         
-        assertEquals("r unique instanciation query from fieldName & time point", r2, db.getDao().getRoot("test", 1));
+        assertEquals("r unique instanciation query from fieldName & time point", r2, db.getDao(f).getRoot(1));
     }
     
     @Test
@@ -241,49 +233,45 @@ public class ProcessingTest {
         Structure bacteries = new Structure("Bacteries", 0, 0);
         bacteries.setParentStructure(0);
         xp.getStructures().insert(microChannel, bacteries);
+        String fieldName = "field1";
 
-
-        // set-up processing chain
+        // set-up processing scheme
         PluginFactory.findPlugins("testPlugins.dummyPlugins");
-
-        microChannel.getProcessingChain().setSegmenter(new DummySegmenter(true, 2));
-        bacteries.getProcessingChain().setSegmenter(new DummySegmenter(false, 3));
-        assertTrue("segmenter set", microChannel.getProcessingChain().getSegmenter() instanceof DummySegmenter);
-        assertEquals("segmenter set (2)", 2, ((NumberParameter)microChannel.getProcessingChain().getSegmenter().getParameters()[0]).getValue().intValue());
-        // set-up traking
-        PluginFactory.findPlugins("plugins.plugins.trackers");
-        microChannel.setTracker(new ObjectIdxTracker());
-        bacteries.setTracker(new ObjectIdxTracker());
-
+        PluginFactory.findPlugins("plugins.plugins");
+        microChannel.setProcessingScheme(new SegmentThenTrack(new DummySegmenter(true, 2), new ObjectIdxTracker()));
+        bacteries.setProcessingScheme(new SegmentThenTrack(new DummySegmenter(true, 3), new ObjectIdxTracker()));
+        Segmenter seg = ((SegmentThenTrack)microChannel.getProcessingScheme()).getSegmenter();
+        assertTrue("segmenter set", seg instanceof DummySegmenter);
+        assertEquals("segmenter set (2)", 2, ((NumberParameter)seg.getParameters()[0]).getValue().intValue());
+        
         // set up fields
         ImageByte[][] images = createDummyImagesTC(50, 50, 1, 3, 1);
         images[0][0].setPixel(12, 12, 0, 2);
         File folder = testFolder.newFolder("TestInputImagesStructureObject");
-        ImageWriter.writeToFile(folder.getAbsolutePath(), "field1", ImageFormat.OMETIF, images);
+        ImageWriter.writeToFile(folder.getAbsolutePath(), fieldName, ImageFormat.OMETIF, images);
         Processor.importFiles(xp, folder.getAbsolutePath());
         File outputFolder = testFolder.newFolder("TestOutputImagesStructureObject");
         xp.setOutputImageDirectory(outputFolder.getAbsolutePath());
         xp.setOutputImageDirectory("/tmp");
         //save to morphium
-        DBConfiguration db = new DBConfiguration("testdb");
-        db.clearObjectsInDB();
-        db.getXpDAO().store(xp);
-        ObjectDAO dao = db.getDao();
-
-        Processor.preProcessImages(xp, dao, true);
+        MorphiumMasterDAO db = new MorphiumMasterDAO("testdb");
+        db.reset();
+        db.setExperiment(xp);
+        MorphiumObjectDAO dao = db.getDao(fieldName);
+        
+        Processor.preProcessImages(db, true);
         ArrayList<StructureObject> rootTrack = xp.getMicroscopyField(0).createRootObjects(dao);
         assertEquals("root object creation: number of objects", 3, rootTrack.size());
-        Processor.processAndTrackStructures(xp, dao);
-        dao.waiteForWrites();
+        Processor.processAndTrackStructures(db, true);
         dao.clearCache();
 
-        StructureObject rootFetch = dao.getRoot(xp.getMicroscopyField(0).getName(), 0);
-
+        StructureObject rootFetch = dao.getRoot(0);
+        assertEquals("root fetch", rootTrack.get(0), rootFetch);
         rootTrack = dao.getTrack(rootFetch);
         for (int t = 0; t<rootTrack.size(); ++t) {
-            //root[t]=dao.getObject(root.get(t).getId());
-            for (int s : xp.getStructuresInHierarchicalOrderAsArray()) {
-                for (StructureObject parent : StructureObjectUtils.getAllParentObjects(rootTrack.get(t), xp.getPathToRoot(s), dao)) parent.setChildren(dao.getObjects(parent.getId(), s), s);
+            //root[t]=dao.getById(root.get(t).getId());
+            for (int sIdx : xp.getStructuresInHierarchicalOrderAsArray()) {
+                for (StructureObject parent : StructureObjectUtils.getAllParentObjects(rootTrack.get(t), xp.getPathToRoot(sIdx), dao)) parent.setChildren(dao.getChildren(parent, sIdx), sIdx);
             }
         }
 

@@ -17,7 +17,7 @@
  */
 package measurement.extraction;
 
-import boa.gui.objects.DBConfiguration;
+import dataStructure.objects.MorphiumMasterDAO;
 import static core.Processor.logger;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.StructureObject;
@@ -37,7 +37,7 @@ import measurement.BasicMeasurements;
  * @author jollion
  */
 public class ExtractData {
-    DBConfiguration db;
+    MorphiumMasterDAO db;
     FileWriter fstream;
     BufferedWriter out;
     final static char separator =';';
@@ -55,7 +55,7 @@ public class ExtractData {
         try {
             //String dbName = "testFluo6";
             
-            db = new DBConfiguration(dbName);
+            db = new MorphiumMasterDAO(dbName);
             logger.info("Experiment: {} retrieved from db: {}", db.getExperiment().getName(), dbName);
             
             

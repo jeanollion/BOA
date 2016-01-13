@@ -133,7 +133,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 if (children.size()!=populations[t].size()) logger.error("BCMTLC: error @ parent: {}, children and tracker objects differ in number", parent);
                 else setAttributes(t, children, childrenPrev);
             } else { // creates new structureObjects
-                children = parent.setChildren(new ObjectPopulation(populations[t], null), structureIdx);
+                children = parent.setChildrenObjects(new ObjectPopulation(populations[t], null), structureIdx);
                 setAttributes(t, children, childrenPrev);
             }
             childrenPrev=children;

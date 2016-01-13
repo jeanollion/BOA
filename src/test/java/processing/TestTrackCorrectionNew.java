@@ -19,14 +19,14 @@ package processing;
 
 import static TestUtils.Utils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
-import boa.gui.objects.DBConfiguration;
+import dataStructure.objects.MorphiumMasterDAO;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
-import dataStructure.objects.ObjectDAO;
+import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectTrackCorrection;
 import dataStructure.objects.StructureObjectUtils;
@@ -63,7 +63,7 @@ import utils.MorphiumUtils;
  * @author jollion
  */
 public class TestTrackCorrectionNew {
-    DBConfiguration db;
+    MorphiumMasterDAO db;
     
     @Rule
     public TemporaryFolder testFolder = new TemporaryFolder();
@@ -75,9 +75,9 @@ public class TestTrackCorrectionNew {
     }
     
     public void setUpDB() {
-        if (db==null) db = new DBConfiguration(MorphiumUtils.createMorphium("testTrackCorrection"));
+        if (db==null) db = new MorphiumMasterDAO(MorphiumUtils.createMorphium("testTrackCorrection"));
         db.getDao().waiteForWrites();
-        db.clearObjectsInDB();
+        db.reset();
         db.generateDAOs();
     }
 
@@ -209,7 +209,7 @@ public class TestTrackCorrectionNew {
         }
     }
     
-    public static ArrayList<StructureObject> generateData(File input, File output, DBConfiguration db, int objectSize, int... numberOfObjectsT) {
+    public static ArrayList<StructureObject> generateData(File input, File output, MorphiumMasterDAO db, int objectSize, int... numberOfObjectsT) {
         Image[][] testImage = generateImageTC(objectSize, numberOfObjectsT);
         ImageWriter.writeToFile(input.getAbsolutePath(), "field1", ImageFormat.OMETIF, testImage);
         Experiment xp = generateXP(output.getAbsolutePath());

@@ -30,7 +30,7 @@ import boa.gui.configuration.TreeModelContainer;
 import configuration.parameters.PluginParameter;
 import dataStructure.containers.ImageDAO;
 import dataStructure.containers.ImageDAOFactory;
-import dataStructure.objects.ObjectDAO;
+import dataStructure.objects.MorphiumObjectDAO;
 import de.caluga.morphium.annotations.Entity;
 import de.caluga.morphium.annotations.Id;
 import de.caluga.morphium.annotations.Index;
@@ -301,8 +301,8 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     /**
      * 
-     * @param startStructureIdx start structure (excluded) anterior to {@param stopStructureIdx} in the structure hierarchy
-     * @param stopStructureIdx stop structure (included) posterior to {@param stopStructureIdx} in the structure hierarchy
+     * @param startStructureIdx start structure (excluded), must be anterior to {@param stopStructureIdx} in the structure hierarchy
+     * @param stopStructureIdx stop structure (included), must be posterior to {@param stopStructureIdx} in the structure hierarchy
      * @return 
      */
     public int[] getPathToStructure(int startStructureIdx, int stopStructureIdx) {

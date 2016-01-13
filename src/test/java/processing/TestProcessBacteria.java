@@ -20,7 +20,7 @@ package processing;
 import static TestUtils.Utils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
-import boa.gui.objects.DBConfiguration;
+import dataStructure.objects.MorphiumMasterDAO;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
@@ -29,7 +29,7 @@ import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectDAO;
+import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
@@ -289,7 +289,7 @@ public class TestProcessBacteria {
         xp=xpDAO.getExperiment();
         logger.info("Experiment: {} retrieved from db: {}", xp.getName(), dbName);
 
-        ObjectDAO dao = new ObjectDAO(m, xpDAO);
+        MorphiumObjectDAO dao = new MorphiumObjectDAO(m, xpDAO);
         MicroscopyField f = xp.getMicroscopyField(field);
         StructureObject root = dao.getRoot(f.getName(), time);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
@@ -303,7 +303,7 @@ public class TestProcessBacteria {
         disp.showImage(pop.getLabelImage());
         
         // test split
-        //ObjectPopulation popSplit = testObjectSplitter(input, pop.getObjects().get(0));
+        //ObjectPopulation popSplit = testObjectSplitter(input, pop.getChildren().get(0));
         //disp.showImage(popSplit.getLabelImage());
     }
     
@@ -317,7 +317,7 @@ public class TestProcessBacteria {
         xp=xpDAO.getExperiment();
         logger.info("Experiment: {} retrieved from db: {}", xp.getName(), dbName);
 
-        ObjectDAO dao = new ObjectDAO(m, xpDAO);
+        MorphiumObjectDAO dao = new MorphiumObjectDAO(m, xpDAO);
         MicroscopyField f = xp.getMicroscopyField(field);
         StructureObject root = dao.getRoot(f.getName(), time);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
@@ -349,7 +349,7 @@ public class TestProcessBacteria {
         disp.showImage(pop.getLabelImage());
     }
     
-    public int getTrackErrorNumber(MicroscopyField f, ObjectDAO dao) {
+    public int getTrackErrorNumber(MicroscopyField f, MorphiumObjectDAO dao) {
         ArrayList<StructureObject> segO = new ArrayList<StructureObject> ();
         Processor.executeProcessingScheme(f.createRootObjects(dao), 1, false, true);
         dao.storeLater(segO, true, false);
@@ -357,10 +357,10 @@ public class TestProcessBacteria {
     }
     
     public void process(String dbName, boolean preProcess, int... fields) {
-        DBConfiguration db = new DBConfiguration(dbName);
+        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
         xp=db.getExperiment();
         logger.info("Experiment: {} retrieved from db: {}", xp.getName(), dbName);
-        ObjectDAO dao = db.getDao();
+        MorphiumObjectDAO dao = db.getDao();
         if (fields.length==0) {
             if (preProcess) Processor.preProcessImages(xp, db, true);
             //Processor.processAndTrackStructures(xp, dao);
@@ -377,7 +377,7 @@ public class TestProcessBacteria {
     }
     
     public void testPreProcessing(String dbName, int field) {
-        DBConfiguration db = new DBConfiguration(dbName);
+        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
         xp=db.getExperiment();
         logger.info("Experiment: {} retrieved from db: {}", xp.getName(), dbName);
         MicroscopyField f = xp.getMicroscopyField(field);
@@ -399,7 +399,7 @@ public class TestProcessBacteria {
             logger.info("Experiment: {} retrieved from db: {}", xp.getName(), dbName);
             
             
-            ObjectDAO dao = new ObjectDAO(m, xpDAO);
+            MorphiumObjectDAO dao = new MorphiumObjectDAO(m, xpDAO);
             
             MicroscopyField f = xp.getMicroscopyField(0);
             int nbVariables = 11;

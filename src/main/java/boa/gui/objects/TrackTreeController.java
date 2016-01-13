@@ -17,10 +17,12 @@
  */
 package boa.gui.objects;
 
+import dataStructure.objects.MorphiumMasterDAO;
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
 import dataStructure.configuration.ExperimentDAO;
-import dataStructure.objects.ObjectDAO;
+import dataStructure.objects.MasterDAO;
+import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.StructureObject;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -32,12 +34,12 @@ import javax.swing.JTree;
  * @author nasique
  */
 public class TrackTreeController {
-    DBConfiguration db;
+    MasterDAO db;
     HashMap<Integer, TrackTreeGenerator> generatorS;
     int[] structurePathToRoot;
     StructureObjectTreeGenerator objectGenerator;
     
-    public TrackTreeController(DBConfiguration db, StructureObjectTreeGenerator objectGenerator) {
+    public TrackTreeController(MasterDAO db, StructureObjectTreeGenerator objectGenerator) {
         this.db = db;
         this.objectGenerator=objectGenerator;
     }

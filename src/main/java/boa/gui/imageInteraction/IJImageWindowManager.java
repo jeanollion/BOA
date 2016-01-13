@@ -18,7 +18,7 @@
 package boa.gui.imageInteraction;
 
 import static boa.gui.GUI.logger;
-import boa.gui.objects.DBConfiguration;
+import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.StructureObject;
 import ij.IJ;
 import ij.ImagePlus;

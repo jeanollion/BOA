@@ -17,11 +17,13 @@
  */
 package measurement.extraction;
 
-import boa.gui.objects.DBConfiguration;
+import dataStructure.objects.MorphiumMasterDAO;
 import static core.Processor.logger;
 import dataStructure.configuration.Experiment;
+import dataStructure.objects.MasterDAO;
 import dataStructure.objects.Measurements;
 import dataStructure.objects.MeasurementsDAO;
+import dataStructure.objects.ObjectDAO;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -68,13 +70,13 @@ public class DataExtractor {
         for (String[] s : measurements.values()) l.addAll(Arrays.asList(s));
         return l;
     }
-    public static void extractMeasurementObjects(DBConfiguration db, String outputFile, int structureIdx, String... measurements) {
+    public static void extractMeasurementObjects(MorphiumMasterDAO db, String outputFile, int structureIdx, String... measurements) {
         HashMap<Integer, String[]> map = new HashMap<Integer, String[]>(1);
         map.put(structureIdx, measurements);
         extractMeasurementObjects(db, outputFile, map);
     }
     
-    public static void extractMeasurementObjects(DBConfiguration db, String outputFile, Map<Integer, String[]> allMeasurements) {
+    public static void extractMeasurementObjects(MasterDAO db, String outputFile, Map<Integer, String[]> allMeasurements) {
         Experiment xp = db.getExperiment();
         long t0 = System.currentTimeMillis();
         FileWriter fstream;
@@ -97,7 +99,7 @@ public class DataExtractor {
             }
             String[] currentMeasurementNames = allMeasurementsSort.pollLastEntry().getValue();
             for (String fieldName : xp.getFieldsAsString()) {
-                MeasurementsDAO dao = db.getDao(fieldName).getMeasurementsDAO();
+                ObjectDAO dao = db.getDao(fieldName);
                 TreeMap<Integer, List<Measurements>> parentMeasurements = new TreeMap<Integer, List<Measurements>>();
                 for (Entry<Integer, String[]> e : allMeasurementsSort.entrySet()) parentMeasurements.put(e.getKey(), dao.getMeasurements(e.getKey(), e.getValue()));
                 List<Measurements> currentMeasurements = dao.getMeasurements(currentStructureIdx, currentMeasurementNames);

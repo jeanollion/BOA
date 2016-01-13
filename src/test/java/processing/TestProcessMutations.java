@@ -20,11 +20,11 @@ package processing;
 import static TestUtils.Utils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
-import boa.gui.objects.DBConfiguration;
+import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.MicroscopyField;
-import dataStructure.objects.ObjectDAO;
+import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.Morphium;
@@ -48,7 +48,7 @@ import utils.MorphiumUtils;
  * @author jollion
  */
 public class TestProcessMutations {
-    DBConfiguration db;
+    MorphiumMasterDAO db;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         //String dbName = "testFluo60";
@@ -61,7 +61,7 @@ public class TestProcessMutations {
     }
     public void init(String dbName) {
         
-        db = new DBConfiguration(dbName);
+        db = new MorphiumMasterDAO(dbName);
         logger.info("Experiment: {} retrieved from db: {}", db.getExperiment().getName(), dbName);
     }
     public void testSegMutationsFromXP(int fieldIdx, int mcIdx, int time) {

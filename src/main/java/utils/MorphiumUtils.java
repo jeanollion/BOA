@@ -20,7 +20,7 @@ package utils;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.objects.Measurements;
-import dataStructure.objects.ObjectDAO;
+import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.AnnotationAndReflectionHelper;
 import de.caluga.morphium.DereferencingListener;
@@ -49,7 +49,7 @@ public class MorphiumUtils {
             public void wouldDereference(StructureObject entityIncludingReference, String fieldInEntity, ObjectId id, Class typeReferenced, boolean lazy) throws MorphiumAccessVetoException {
                 //if (logger.isTraceEnabled()) logger.trace("would dereference: {} refrence: {} lazy: {} field: {}", entityIncludingReference.getFieldName(), typeReferenced.getSimpleName(), lazy, fieldInEntity);
                 Object o = null;
-                if (StructureObject.class.equals(typeReferenced)) o = entityIncludingReference.getDAO().getObject(id);
+                if (StructureObject.class.equals(typeReferenced)) o = ((MorphiumObjectDAO)entityIncludingReference.getDAO()).getById(id);
                 else if (Experiment.class.equals(typeReferenced)) o = xpDAO.getExperiment();
                 if (o != null) {
                     //logger.trace("would dereference: object found");
@@ -68,25 +68,8 @@ public class MorphiumUtils {
 
             @Override
             public Object didDereference(StructureObject entitiyIncludingReference, String fieldInEntity, Object referencedObject, boolean lazy) {
-                //logger.trace("did dereference: {} previous field: {}", referencedObject, entitiyIncludingReference.previous);
-                
-                if (referencedObject!=null && logger.isTraceEnabled()) logger.trace("did dereference: {} refrence: {} lazy: {} field: {}", entitiyIncludingReference.getFieldName(), referencedObject.getClass().getSimpleName(), lazy, fieldInEntity);
-                //else if (logger.isTraceEnabled()) logger.trace("did dereference: {} null refrence lazy: {} field: {}", entitiyIncludingReference.getFieldName(), lazy, fieldInEntity);
-                if (referencedObject!=null) {
-                    if (referencedObject instanceof StructureObject) referencedObject=entitiyIncludingReference.getDAO().checkAgainstCache((StructureObject)referencedObject);
-                    else if (referencedObject instanceof Experiment) referencedObject=xpDAO.checkAgainstCache((Experiment)referencedObject);
-                }
-                try {
-                    Field f = r.getField(entitiyIncludingReference.getClass(), fieldInEntity);
-                    f.set(entitiyIncludingReference, referencedObject);
-                } catch (IllegalArgumentException ex) {
-                    logger.error("referencing error", ex);
-                } catch (IllegalAccessException ex) {
-                    logger.error("referencing error", ex);
-                }
-                //logger.trace("did dereference: after cache check: {} previous field: {}", referencedObject, entitiyIncludingReference.previous);
+                logger.error("did dereference: {} entityIncludingRef: {}", referencedObject, entitiyIncludingReference);
                 return referencedObject;
-                //return null;
             }
         };
         m.addDereferencingListener(res);

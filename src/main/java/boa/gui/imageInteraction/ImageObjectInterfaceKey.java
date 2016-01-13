@@ -59,7 +59,7 @@ public class ImageObjectInterfaceKey {
         if (this.timeImage != other.timeImage) {
             return false;
         }
-        if (this.parent != other.parent && (this.parent == null || !this.parent.equals(other.parent))) {
+        if (this.parent != other.parent && (this.parent == null || !this.parent.getId().equals(other.parent.getId()))) {
             return false;
         }
         return (other.childStructureIdx<0 || childStructureIdx<0 || this.childStructureIdx == other.childStructureIdx); // key with structureIdx==-1 equals to all keys

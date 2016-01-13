@@ -21,7 +21,7 @@ import static boa.gui.configuration.ConfigurationTreeGenerator.addToMenu;
 import static boa.gui.GUI.logger;
 import boa.gui.configuration.TransparentTreeCellRenderer;
 import dataStructure.configuration.Experiment;
-import dataStructure.configuration.ExperimentDAO;
+import dataStructure.objects.MasterDAO;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.Morphium;
@@ -47,12 +47,12 @@ import utils.Utils;
  * @author nasique
  */
 public class StructureObjectTreeGenerator {
-    DBConfiguration db;
+    MasterDAO db;
     protected StructureObjectTreeModel treeModel;
     protected JTree tree;
     protected ExperimentNode experimentNode;
     
-    public StructureObjectTreeGenerator(DBConfiguration db) {
+    public StructureObjectTreeGenerator(MasterDAO db) {
         this.db = db;
         this.experimentNode=new ExperimentNode(this);
         

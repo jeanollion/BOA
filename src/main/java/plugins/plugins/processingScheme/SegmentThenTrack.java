@@ -42,14 +42,10 @@ public class SegmentThenTrack implements ProcessingScheme {
         this.segmenter.setPlugin(segmenter);
         this.tracker.setPlugin(tracker);
     }
+    public Segmenter getSegmenter() {return segmenter.instanciatePlugin();}
+    public Tracker getTracker() {return tracker.instanciatePlugin();}
+    
     public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack) {
-        /*ThreadRunner.execute(parentTrack, new ThreadAction<StructureObject>() {
-            public void run(StructureObject parent) {
-                segment(parent, structureIdx);
-            }
-            @Override public void setUp() {}
-            @Override public void tearDown() {}
-        });*/
         StructureObject prevParent = parentTrack.get(0);
         StructureObject currentParent;
         segment(prevParent, structureIdx);
@@ -65,7 +61,7 @@ public class SegmentThenTrack implements ProcessingScheme {
     private void segment(StructureObject parent, int structureIdx) {
         Segmenter s = segmenter.instanciatePlugin();
         ObjectPopulation pop = s.runSegmenter(parent.getRawImage(structureIdx), structureIdx, parent);
-        parent.setChildren(pop, structureIdx);
+        parent.setChildrenObjects(pop, structureIdx);
     }
 
     public void trackOnly(final int structureIdx, List<StructureObject> parentTrack) {

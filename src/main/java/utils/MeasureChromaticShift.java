@@ -17,7 +17,7 @@
  */
 package utils;
 
-import boa.gui.objects.DBConfiguration;
+import dataStructure.objects.MorphiumMasterDAO;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
@@ -38,12 +38,12 @@ public class MeasureChromaticShift {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         Experiment xp = generateXP(new double[]{125, 600}, "/data/Images/ChromaticShift/billes2", "/data/Images/ChromaticShift/billesOutput");
-        DBConfiguration db = new DBConfiguration("chromaticShift");
-        db.clearObjectsInDB();
-        db.getXpDAO().store(xp);
-        Processor.preProcessImages(xp, null, true);
+        MorphiumMasterDAO db = new MorphiumMasterDAO("chromaticShift");
+        db.reset();
+        db.setExperiment(xp);
+        Processor.preProcessImages(db, true);
         Processor.processAndTrackStructures(db, false);
-        Processor.performMeasurements(xp, db);
+        Processor.performMeasurements(db);
     }
     private static Experiment generateXP(final double[] thresholds, String inputDirectory, String outputDirectory) {
         Experiment xp = new Experiment("Chromatic Shift");

@@ -17,27 +17,19 @@
  */
 package core;
 
-import boa.gui.objects.DBConfiguration;
 import configuration.parameters.TransformationPluginParameter;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.PreProcessingChain;
-import dataStructure.configuration.Structure;
 import dataStructure.containers.InputImagesImpl;
 import dataStructure.containers.MultipleImageContainer;
-import dataStructure.containers.MultipleImageContainerSingleFile;
+import dataStructure.objects.MasterDAO;
 import dataStructure.objects.ObjectDAO;
-import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
-import static dataStructure.objects.StructureObject.TrackFlag.correctionMergeToErase;
-import dataStructure.objects.StructureObjectTrackCorrection;
 import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -81,18 +73,19 @@ public class Processor {
     
     // preProcessing-related methods
     
-    public static void preProcessImages(Experiment xp, DBConfiguration db, boolean computeConfigurationData) {
+    public static void preProcessImages(MasterDAO db, boolean computeConfigurationData) {
+        Experiment xp = db.getExperiment();
         for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
             preProcessImages(xp.getMicroscopyField(i), db.getDao(xp.getMicroscopyField(i).getName()), false, computeConfigurationData);
         }
     }
     
     public static void preProcessImages(MicroscopyField field, ObjectDAO dao, boolean deleteObjects, boolean computeConfigurationData) {
-        if (dao.fieldName!=field.getName()) throw new IllegalArgumentException("field name should be equal");
+        if (!dao.getFieldName().equals(field.getName())) throw new IllegalArgumentException("field name should be equal");
         setTransformations(field, computeConfigurationData);
         InputImagesImpl images = field.getInputImages();
         images.applyTranformationsSaveAndClose();
-        if (dao!=null && deleteObjects) dao.deleteAllObjects();
+        if (deleteObjects) dao.deleteAllObjects();
     }
     
     public static void setTransformations(MicroscopyField field, boolean computeConfigurationData) {
@@ -120,7 +113,7 @@ public class Processor {
         return res;
     }
     
-    public static void processAndTrackStructures(DBConfiguration db, boolean deleteObjects, int... structures) {
+    public static void processAndTrackStructures(MasterDAO db, boolean deleteObjects, int... structures) {
         Experiment xp = db.getExperiment();
         if (deleteObjects && structures.length==0) {
             db.deleteAllObjects();
@@ -136,7 +129,7 @@ public class Processor {
         Experiment xp = dao.getExperiment();
         if (deleteObjects) {
             if (structures.length==0) dao.deleteAllObjects();
-            else dao.deleteObjectsByStructure(structures);
+            else dao.deleteObjectsByStructureIdx(structures);
         } 
         List<StructureObject> root = getOrCreateRootTrack(dao);
         if (structures.length==0) structures=xp.getStructuresInHierarchicalOrderAsArray();
@@ -183,7 +176,8 @@ public class Processor {
     
     // measurement-related methods
     
-    public static void performMeasurements(Experiment xp, DBConfiguration db) {
+    public static void performMeasurements(MasterDAO db) {
+        Experiment xp = db.getExperiment();
         for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
             String fieldName = xp.getMicroscopyField(i).getName();
             performMeasurements(db.getDao(fieldName));
@@ -197,7 +191,7 @@ public class Processor {
         ArrayList<StructureObject> roots = dao.getRoots();
         final StructureObject[] rootArray = roots.toArray(new StructureObject[roots.size()]);
         roots=null; // saves memory
-        logger.debug("{} number of roots: {}", dao.fieldName, rootArray.length);
+        logger.debug("{} number of roots: {}", dao.getFieldName(), rootArray.length);
         final Map<Integer, List<Measurement>> measurements = dao.getExperiment().getMeasurementsByCallStructureIdx();
         final List<StructureObject> allModifiedObjects = new ArrayList<StructureObject>();
         final List<StructureObject> allModifiedObjectsSync = Collections.synchronizedList(allModifiedObjects);
@@ -229,7 +223,7 @@ public class Processor {
         
         if (dao!=null && !allModifiedObjects.isEmpty()) dao.upsertMeasurements(allModifiedObjects);
         long t2 = System.currentTimeMillis();
-        logger.debug("measurements on field: {}: time: {}, upsert time: {} ({} objects)", dao.fieldName, t1-t0, t2-t1, allModifiedObjects.size());
+        logger.debug("measurements on field: {}: time: {}, upsert time: {} ({} objects)", dao.getFieldName(), t1-t0, t2-t1, allModifiedObjects.size());
         
     }
 }

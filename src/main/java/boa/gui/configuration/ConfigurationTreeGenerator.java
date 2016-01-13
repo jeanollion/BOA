@@ -65,11 +65,9 @@ public class ConfigurationTreeGenerator {
     protected ConfigurationTreeModel treeModel;
     protected JTree tree;
     private static final boolean soutParent=false;
-    protected ExperimentDAO xpDAO;
     
-    public ConfigurationTreeGenerator(ExperimentDAO xpDAO) {
-        this.xpDAO=xpDAO;
-        rootParameter = xpDAO.getExperiment();
+    public ConfigurationTreeGenerator(Experiment xp) {
+        rootParameter = xp;
     }
     
     public JTree getTree() {

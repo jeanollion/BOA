@@ -161,8 +161,9 @@ public class ImageFieldFactory {
     
     
     private static String removeExtension(String s) {
-        if (s.indexOf(".")>0) s= s.substring(0, s.lastIndexOf(".")); // removes the extension
-        s=s.replaceAll(".", "_"); // removes all "."
+        int idx = s.indexOf(".");
+        if (idx>0) return s.substring(0, idx); // removes the extension
+        //s=s.replaceAll(".", "_"); // removes all "."
         return s;
     }
     
