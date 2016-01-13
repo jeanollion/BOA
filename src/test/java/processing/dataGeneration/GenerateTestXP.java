@@ -93,12 +93,12 @@ public class GenerateTestXP {
         xp.addMeasurement(new BacteriaMeasurementsWoleMC(1, 2));
         if (setUpPreProcessing) {// preProcessing 
             xp.getPreProcessingTemplate().addTransformation(0, null, new SuppressCentralHorizontalLine(6)).setActivated(false);
-            xp.getPreProcessingTemplate().addTransformation(1, null, new ScaleHistogramSignalExclusion(106, 7.8, 0, 50)); // to remove blinking
             xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1, 0)).setActivated(true); // to remove salt and pepper noise
             xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
             xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
             xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(true);
             xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannels2D());
+            xp.getPreProcessingTemplate().addTransformation(1, null, new ScaleHistogramSignalExclusion(106, 7.8, 0, 50)); // to remove blinking
             xp.getPreProcessingTemplate().addTransformation(0, null, new SelectBestFocusPlane(3)).setActivated(false); // faster after crop, but previous transformation might be aftected if the first plane is really out of focus
             xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY());
         }

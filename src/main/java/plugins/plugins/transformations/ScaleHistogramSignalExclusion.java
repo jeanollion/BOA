@@ -42,7 +42,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
     ChannelImageParameter signalExclusion = new ChannelImageParameter("Channel for Signal Exclusion");
     BoundedNumberParameter signalExclusionThreshold = new BoundedNumberParameter("Signal Exclusion Threshold", 1, 50, 0, null);
     Parameter[] parameters = new Parameter[]{sigmaTh, muTh, signalExclusion, signalExclusionThreshold};
-    ArrayList<ArrayList<Double>> meanSigmaT;
+    ArrayList<ArrayList<Double>> meanSigmaT = new ArrayList<ArrayList<Double>>();;
     
     public ScaleHistogramSignalExclusion() {}
     
@@ -96,7 +96,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
     }
     
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        if (meanSigmaT==null || meanSigmaT.isEmpty() || meanSigmaT.size()<=timePoint) throw new Error("ScaleHistogram transformation not configured");
+        if (meanSigmaT==null || meanSigmaT.isEmpty() || meanSigmaT.size()<timePoint) throw new Error("ScaleHistogram transformation not configured: "+ (meanSigmaT==null?"null":  meanSigmaT.size()));
         ArrayList<Double> muSig = this.meanSigmaT.get(timePoint);
         double alpha = muSig.get(1) / this.sigmaTh.getValue().doubleValue();
         double beta = muSig.get(0) - alpha * this.muTh.getValue().doubleValue();
