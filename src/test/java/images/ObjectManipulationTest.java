@@ -156,25 +156,5 @@ public class ObjectManipulationTest {
         }
     }
     
-    @Test
-    public void testStoreObject() {
-        MorphiumMasterDAO db = new MorphiumMasterDAO("testdb");
-        db.reset();
-        /*Experiment xp = new Experiment();
-        xp.getStructures().insert(new Structure("test"));
-        db.getXpDAO().storeLater(xp);
-        */
-        //ImageByte[][] imagesTC = generateImages(null, null, 1, 1, 20);
-        //Object3D o3D = ImageLabeller.labelImage(imagesTC[0][0])[0];
-        StructureObject o = new StructureObject("f", 0, 0, 0, o1, null);
-        o.updateObjectContainer();
-        db.getDao().store(o);
-        db.getDao().clearCache();
-        o = db.getDao().getObject(o.getId());
-        Object3D o1Fetched = o.getObject();
-        assertEquals("object voxel number", o1.getVoxels().size(), o1Fetched.getVoxels().size());
-    }
-    /*public static void main(String[] args) {
-        new ObjectManipulationTest().testStoreObject();
-    }*/
+    
 }

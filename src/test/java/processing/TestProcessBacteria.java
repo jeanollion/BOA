@@ -28,6 +28,7 @@ import dataStructure.configuration.Experiment.ImportImageMethod;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
+import dataStructure.objects.MasterDAO;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.ObjectPopulation;
@@ -90,6 +91,7 @@ import static utils.Utils.deleteDirectory;
  * @author jollion
  */
 public class TestProcessBacteria {
+    MasterDAO mDAO;
     Experiment xp;
     
     public static void main(String[] args) {
@@ -114,6 +116,7 @@ public class TestProcessBacteria {
     
     
     public void setUpXp(boolean preProcessing, String outputDir) {
+        
         PluginFactory.findPlugins("plugins.plugins");
         xp = new Experiment("testXP");
         xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
@@ -150,15 +153,14 @@ public class TestProcessBacteria {
             xp.getPreProcessingTemplate().addTransformation(0, null, new SelectBestFocusPlane(3)).setActivated(false); // faster after crop, but previous transformation might be aftected if the first plane is really out of focus
             xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY());
         }
+        if (dbName!=null) saveXP(dbName);
     }
     
     public void saveXP(String dbName) {
-        Morphium m=MorphiumUtils.createMorphium(dbName);
-        m.clearCollection(Experiment.class);
-        m.clearCollection(StructureObject.class);
-        ExperimentDAO xpDAO = new ExperimentDAO(m);
+        mDAO = new MorphiumMasterDAO(dbName);
+        mDAO.reset();
         xp.setName(dbName);
-        xpDAO.store(xp);
+        mDAO.setExperiment(xp);
         logger.info("Experiment: {} stored in db: {}", xp.getName(), dbName);
     }
     
@@ -220,8 +222,7 @@ public class TestProcessBacteria {
         //xp.getMicroscopyField(0).getPreProcessingChain().addTransformation(0, null, new ImageStabilizer().setReferenceTimePoint(0));
         //Image[][] imageInputTC = new Image[xp.getMicroscopyField(0).getInputImages().getTimePointNumber()][1];
         //for (int t = 0; t<imageInputTC.length; ++t) imageInputTC[t][0] = xp.getMicroscopyField(0).getInputImages().getImage(0, t);
-        
-        Processor.preProcessImages(xp, null, true);
+        Processor.preProcessImages(mDAO, true);
         ImageDisplayer disp = new IJImageDisplayer();
         Image[][] imageOutputTC = new Image[xp.getMicroscopyField(0).getInputImages().getTimePointNumber()][1];
         for (int t = 0; t<imageOutputTC.length; ++t) imageOutputTC[t][0] = xp.getMicroscopyField(0).getInputImages().getImage(0, t);

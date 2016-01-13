@@ -38,6 +38,7 @@ import image.ImageWriter;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static org.junit.Assert.assertEquals;
@@ -64,7 +65,6 @@ import utils.MorphiumUtils;
  */
 public class TestTrackCorrectionNew {
     MorphiumMasterDAO db;
-    
     @Rule
     public TemporaryFolder testFolder = new TemporaryFolder();
 
@@ -76,9 +76,7 @@ public class TestTrackCorrectionNew {
     
     public void setUpDB() {
         if (db==null) db = new MorphiumMasterDAO(MorphiumUtils.createMorphium("testTrackCorrection"));
-        db.getDao().waiteForWrites();
         db.reset();
-        db.generateDAOs();
     }
 
     //@Test 
@@ -131,10 +129,8 @@ public class TestTrackCorrectionNew {
     private void testWholeProcessDB(int[] actual, int[] expected) {
         setUpDB();
         generateData(actual);
-        db.getDao().waiteForWrites();
-        db.getDao().clearCache();
-        testTrackCorrection(db.getDao().getRoots(db.getExperiment().getMicroscopyField(0).getName()), actual, expected);
-        db.getDao().waiteForWrites();
+        db.getDao(db.getExperiment().getMicroscopyField(0).getName()).clearCache();
+        testTrackCorrection(db.getDao(db.getExperiment().getMicroscopyField(0).getName()).getRoots(), actual, expected);
     }
     
     private void testTrackCorrection(ArrayList<StructureObject> root, int[] actual, int[] expected) {
@@ -200,7 +196,7 @@ public class TestTrackCorrectionNew {
     
     }
     
-    public ArrayList<StructureObject> generateData(int... numberOfObjectsT) {
+    public List<StructureObject> generateData(int... numberOfObjectsT) {
         try {
             return generateData(testFolder.newFolder(), testFolder.newFolder(), db, objectSize, numberOfObjectsT);
         } catch (IOException ex) {
@@ -209,24 +205,22 @@ public class TestTrackCorrectionNew {
         }
     }
     
-    public static ArrayList<StructureObject> generateData(File input, File output, MorphiumMasterDAO db, int objectSize, int... numberOfObjectsT) {
+    public static List<StructureObject> generateData(File input, File output, MorphiumMasterDAO db, int objectSize, int... numberOfObjectsT) {
         Image[][] testImage = generateImageTC(objectSize, numberOfObjectsT);
         ImageWriter.writeToFile(input.getAbsolutePath(), "field1", ImageFormat.OMETIF, testImage);
         Experiment xp = generateXP(output.getAbsolutePath());
+        db.setExperiment(xp);
         Processor.importFiles(xp, input.getAbsolutePath());
-        Processor.preProcessImages(xp, null, true);
+        Processor.preProcessImages(db, true);
         MicroscopyField f= xp.getMicroscopyField(0);
-        if (db!=null) db.getXpDAO().store(xp);
-        ArrayList<StructureObject> root = f.createRootObjects((db!=null)?db.getDao():null);
+        List<StructureObject> root = Processor.getOrCreateRootTrack(db.getDao(f.getName()));
         logger.debug("create root objects: {}", root.size());
-        if (db!=null) db.getDao().storeLater(root, false, false);
         Processor.executeProcessingScheme(root, 0, false, false);
-        if (db!=null) db.getDao().waiteForWrites();
         return root;
     }
     
     private static Experiment generateXP(String outputDir) {
-        Experiment xp = new Experiment();
+        Experiment xp = new Experiment("testTrackCorrection");
         xp.getChannelImages().insert(new ChannelImage("channel"));
         xp.setOutputImageDirectory(outputDir);
         Structure s = new Structure("Structure", -1, 0);
