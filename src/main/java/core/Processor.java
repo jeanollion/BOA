@@ -163,7 +163,7 @@ public class Processor {
             dao.store(children, false);
         } else { // store by time point in order to include tracklinks
             for (StructureObject p : parentTrack) {
-                logger.debug("storing object of structure: {} from timepoint: {}", structureIdx, p.getTimePoint());
+                //logger.debug("storing object of structure: {} from timepoint: {}", structureIdx, p.getTimePoint());
                 dao.store(p.getChildren(structureIdx), true);
             }
         }

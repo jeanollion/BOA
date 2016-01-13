@@ -15,11 +15,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package processing;
+package processing.dataGeneration;
 
+import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.Structure;
+import dataStructure.objects.MasterDAO;
+import dataStructure.objects.MorphiumMasterDAO;
 import java.io.File;
 import plugins.PluginFactory;
 import plugins.plugins.measurements.BacteriaMeasurementsWoleMC;
@@ -38,6 +41,7 @@ import plugins.plugins.transformations.ImageStabilizerXY;
 import plugins.plugins.transformations.ScaleHistogramSignalExclusion;
 import plugins.plugins.transformations.SelectBestFocusPlane;
 import plugins.plugins.transformations.SuppressCentralHorizontalLine;
+import processing.ImageTransformation;
 
 
 /**
@@ -46,20 +50,26 @@ import plugins.plugins.transformations.SuppressCentralHorizontalLine;
  */
 public class GenerateTestXP {
     public static void main(String[] args) {
-        String dbName = "fluo151130_OutputNewScaling";
-        TestProcessBacteria t = new TestProcessBacteria();
-        t.setUpXp(true, "/home/jollion/Documents/LJP/DataLJP/Fluo151130/OutputNewScaling/");
-        //t.setUpXp(true, "/data/Images/Fluo/films1511/151130/Output");
-        //t.setUpXp(true, "/data/Images/Fluo/films1511/151130/Output_champ01_sub88-118");
-        //t.setUpXp(true, "/data/Images/Fluo/films1510/Output");
-        //t.setUpXp(true, "/home/jollion/Documents/LJP/DataLJP/TestOutput60");
-        //t.testImport("/data/Images/Fluo/testsub595-630");
-        //t.testImport("/data/Images/Fluo/films1511/151130/champ01_sub88-118");
-        //t.testImport("/data/Images/Fluo/films1510/63me120r-14102015-LR62R1-lbiptg100x_1");
-        //t.testImport("/home/jollion/Documents/LJP/DataLJP/test");
-        t.saveXP(dbName);
-        //t.process(dbName, true);
+        //String dbName = "fluo151130_OutputNewScaling";
+        //String outputDir = "/home/jollion/Documents/LJP/DataLJP/Fluo151130/OutputNewScaling/";
+        String dbName = "testSub60";
+        String outputDir = "/home/jollion/Documents/LJP/DataLJP/TestOutput60";
+        String inputDir = "/home/jollion/Documents/LJP/DataLJP/testsub60";
+        boolean performProcessing = true;
+        
+        MasterDAO mDAO = new MorphiumMasterDAO(dbName);
+        mDAO.reset();
+        Experiment xp = generateXP(outputDir, true); 
+        mDAO.setExperiment(xp);
+        
+        if (performProcessing) {
+            Processor.importFiles(xp, inputDir);
+            Processor.preProcessImages(mDAO, true);
+            Processor.processAndTrackStructures(mDAO, true, 0);
+            mDAO.updateExperiment(); // save changes
+        }
     }
+    
     
     public static Experiment generateXP(String outputDir, boolean setUpPreProcessing) {
         PluginFactory.findPlugins("plugins.plugins");
@@ -94,4 +104,5 @@ public class GenerateTestXP {
         }
         return xp;
     }
+
 }

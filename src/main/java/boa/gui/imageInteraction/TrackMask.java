@@ -51,6 +51,7 @@ public class TrackMask extends ImageObjectInterface {
     ArrayList<StructureObject> parentTrack;
     public TrackMask(ArrayList<StructureObject> parentTrack, int childStructureIdx) {
         super(parentTrack.get(0), childStructureIdx);
+        //logger.debug("creating track mask from head: {}, size: {}", parentTrack.get(0), parentTrack.size());
         this.parentTrack=parentTrack;
         trackOffset = new BoundingBox[parentTrack.size()];
         trackObjects = new StructureObjectMask[parentTrack.size()];

@@ -194,7 +194,7 @@ public abstract class ImageWindowManager<T> {
         if (i==null && track!=null && !track.isEmpty()) i = this.getImageObjectInterface(track.get(0).getTrackHead(), track.get(0).getStructureIdx(), false);
         if (i==null) return;
         ArrayList<Image> images= Utils.getKeys(this.imageObjectInterfaceMap, i.getKey().getKey(-1));
-        //logger.debug("display track: {}", images);
+        logger.debug("display track on {} images", images.size());
         for (Image image : images) displayTrack(image, addToCurrentSelectedTracks, track, color);
     }
     public void goToNextTrackError(Image trackImage, ArrayList<StructureObject> tracks) {

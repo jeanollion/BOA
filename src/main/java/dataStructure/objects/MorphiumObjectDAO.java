@@ -351,20 +351,19 @@ public class MorphiumObjectDAO implements ObjectDAO {
     // TODO for faster retrieve:  retrieve only: timepoint, idx, structureIdx, parent + set dao & set trackHead as this -> ATTENTION object retrieved incompletely..
     public ArrayList<StructureObject> getTrackHeads(StructureObject parentTrack, int structureIdx) {
         if (parentTrack==null) return new ArrayList<StructureObject>(0);
-        List<StructureObject> list =  getQuery().f("is_track_head").eq(true).f("parent_track_head_id").eq(parentTrack.getTrackHeadId()).f("structure_idx").eq(structureIdx).sort("time_point", "idx").asList();
-        logger.trace("track head query: parentTrack: {} structure: {} result length: {}", parentTrack.getTrackHeadId(), structureIdx, list.size());
+        Query<StructureObject> q = getQuery().f("is_track_head").eq(true).f("parent_track_head_id").eq(parentTrack.getTrackHeadId()).f("structure_idx").eq(structureIdx).sort("time_point", "idx");
+        List<StructureObject> list =  q.asList();
+        //logger.debug("track head query: parentTrack: {} structure: {} result length: {}, collectionName: {}, query: {}", parentTrack.getTrackHeadId(), structureIdx, list.size(), collectionName, q.toQueryObject());
         return this.checkAgainstCache(list);
     }
     
     public ArrayList<StructureObject> getTrack(StructureObject trackHead) {
         List<StructureObject> list =  getQuery().f("structure_idx").eq(trackHead.getStructureIdx()).f("track_head_id").eq(trackHead.getTrackHeadId()).sort("time_point").asList();
-        if (list.isEmpty()) {
-            list.add(trackHead);
-            return checkAgainstCache(list);
-        }
-        if (list.get(0)!=trackHead) list.add(0, trackHead); // track_head_id is not updated for trackHead
+        if (list.isEmpty()) list.add(trackHead);
+        else if (list.get(0)!=trackHead) list.add(0, trackHead); // track_head_id is not updated for trackHead
         ArrayList<StructureObject> res  = checkAgainstCache(list);
         setTrackLinks(res);
+        //logger.debug("get track: from head: {}, number of objects {}", trackHead, res.size());
         return res;
     }
     

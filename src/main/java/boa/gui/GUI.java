@@ -287,7 +287,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         trackSubPanel.repaint();
     }
     
-    
     /*private void initDBImages() {
             m=MorphiumUtils.createMorphium("testGUI");
             m.clearCollection(Experiment.class);

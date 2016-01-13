@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package processing;
+package processing.dataGeneration;
 
 import static TestUtils.Utils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
@@ -80,6 +80,7 @@ import plugins.plugins.transformations.ScaleHistogram;
 import plugins.plugins.transformations.ScaleHistogramSignalExclusion;
 import plugins.plugins.transformations.SelectBestFocusPlane;
 import plugins.plugins.transformations.SuppressCentralHorizontalLine;
+import processing.ImageTransformation;
 import processing.ImageTransformation.InterpolationScheme;
 import testPlugins.dummyPlugins.DummySegmenter;
 import utils.MorphiumUtils;

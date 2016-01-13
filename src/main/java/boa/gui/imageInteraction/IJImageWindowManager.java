@@ -181,7 +181,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
     
     @Override
     public void displayTrack(Image image, boolean addToCurrentSelectedTracks, ArrayList<StructureObject> track, Color color) {
-        logger.trace("display selected track: image: {}, addToCurrentTracks: {}, track length: {} color: {}", image,addToCurrentSelectedTracks, track==null?"null":track.size(), color);
+        //logger.debug("display selected track: image: {}, addToCurrentTracks: {}, track length: {} color: {}", image,addToCurrentSelectedTracks, track==null?"null":track.size(), color);
         ImagePlus ip;
         if (image==null) {
             ip = displayer.getCurrentImage();

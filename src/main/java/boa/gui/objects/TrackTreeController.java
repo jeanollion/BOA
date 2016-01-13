@@ -77,7 +77,7 @@ public class TrackTreeController {
         logger.debug("update parent track lastSelectedIdx: {} number of structures: {}", lastSelectedTreeIdx, structurePathToRoot.length);
         if (lastSelectedTreeIdx==-1) setParentTrackOnRootTree();
         else if (lastSelectedTreeIdx+1<structurePathToRoot.length) {
-            logger.debug("setting parent track on tree for structure: {}", structurePathToRoot[lastSelectedTreeIdx+1]);
+            //logger.debug("setting parent track on tree for structure: {}", structurePathToRoot[lastSelectedTreeIdx+1]);
             generatorS.get(structurePathToRoot[lastSelectedTreeIdx+1]).setParentTrack(generatorS.get(structurePathToRoot[lastSelectedTreeIdx]).getSelectedTrack(), structurePathToRoot[lastSelectedTreeIdx+1]);
             clearTreesFromIdx(lastSelectedTreeIdx+2);
         }

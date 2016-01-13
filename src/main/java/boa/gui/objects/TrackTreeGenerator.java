@@ -106,14 +106,20 @@ public class TrackTreeGenerator {
     
     private StructureObject getParentTrackHead() {
         Object root = treeModel.getRoot();
+        //logger.debug("get parent trackhead: root: {}", root.getClass().getSimpleName());
         if (root instanceof RootTrackNode) return ((RootTrackNode)root).getParentTrackHead();
+        else if (root instanceof TrackExperimentNode && tree.getSelectionCount()==1) {
+            ArrayList<StructureObject> al = getSelectedTrackHeads();
+            if (!al.isEmpty()) return getSelectedTrackHeads().get(0);
+            else return null;
+        }
         else return null;
     }
     
     private void generateTree(TreeNode root) {
         treeModel = new StructureObjectTreeModel(root);
         tree=new JTree(treeModel);
-        //tree.setRootVisible(false);
+        if (root instanceof TrackExperimentNode) tree.setRootVisible(false);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
         tree.setOpaque(false);
         tree.setCellRenderer(new TrackTreeCellRenderer());
@@ -157,6 +163,7 @@ public class TrackTreeGenerator {
     public void displaySelectedTracks() {
         logger.debug("display: {} selected tracks", tree.getSelectionCount());
         ImageObjectInterface i = getImageObjectInterface();
+        logger.debug("image object interface found? {}", i!=null);
         if (i!=null) ImageWindowManagerFactory.getImageManager().displayTrackAllImages(i, false, null, null); // unselect tracks
         if (tree.getSelectionCount()>0 && i!=null) {
             //Color[] palette = Utils.generatePalette(tree.getSelectionCount(), true);

@@ -47,6 +47,7 @@ public class RootTrackNode implements TreeNode {
         this.generator = generator;
         this.parentTrackHead=parentTrackHead;
         this.structureIdx=structureIdx;
+        this.fieldName=parentTrackHead.getFieldName();
     }
     
     public RootTrackNode(TrackExperimentNode parent, String fieldName, int structureIdx) { // constructor when parent == root
@@ -88,8 +89,9 @@ public class RootTrackNode implements TreeNode {
             ArrayList<StructureObject> trackHeads = generator.getObjectDAO(fieldName).getTrackHeads(getParentTrackHead(), structureIdx);
             remainingTrackHeadsTM = new TreeMap<Integer, List<StructureObject>>();
             if (trackHeads.isEmpty()) {
-                logger.trace("structure: {} no trackHeads found", structureIdx);
+                logger.debug("structure: {} no trackHeads found", structureIdx);
             } else {
+                //logger.debug("structure: {} nb trackHeads found: {}", structureIdx, trackHeads.size());
                 HashMap<Integer, List<StructureObject>> map  = new HashMap<Integer, List<StructureObject>> (trackHeads.get(trackHeads.size()-1).getTimePoint()-trackHeads.get(0).getTimePoint()+1);
                 int currentTimePoint = trackHeads.get(0).getTimePoint();
                 int lastIdx = 0;
@@ -136,14 +138,6 @@ public class RootTrackNode implements TreeNode {
                     it.remove();
                 }
             }
-            /*Entry<Integer, List<StructureObject>>  childrenObjects = getRemainingTrackHeads().pollFirstEntry();
-            if (childrenObjects!=null) {
-                children = new ArrayList<TrackNode>(childrenObjects.getValue().size());
-                for (StructureObject o : childrenObjects.getValue()) children.add(new TrackNode(this, this, o));
-                logger.trace("number of children: {}" , children.size());
-            } else {
-                children = new ArrayList<TrackNode>(0);
-            }*/
         }
         return children;
     }
@@ -154,7 +148,7 @@ public class RootTrackNode implements TreeNode {
     }
     
     // TreeNode implementation
-    @Override public String toString() {return (fieldName!=null?fieldName+"::": "")+(structureIdx>=0?generator.getExperiment().getStructure(structureIdx).getName():"Root");}
+    @Override public String toString() {return (parent!=null?fieldName+"::": "")+(structureIdx>=0?generator.getExperiment().getStructure(structureIdx).getName():"Root");}
     
     public TrackNode getChildAt(int childIndex) {
         return getChildren().get(childIndex);
