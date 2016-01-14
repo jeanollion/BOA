@@ -31,6 +31,10 @@ public class ChannelImageParameter extends StructureParameter {
         super(name, selectedChannel, false, false);
     }
     
+    public ChannelImageParameter(String name, int selectedChannel, boolean allowNoSelection) {
+        super(name, selectedChannel, allowNoSelection, false);
+    }
+    
     public ChannelImageParameter(String name, int[] selectedChannels) {
         super(name, selectedChannels, false);
     }

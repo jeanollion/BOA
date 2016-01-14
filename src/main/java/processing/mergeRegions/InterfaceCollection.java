@@ -88,7 +88,7 @@ public class InterfaceCollection {
             interfaces = new HashSet<Interface>(interfaceMap.values());
             if (intensityMap!=null) setVoxelIntensity(intensityMap);
         }
-        if (verbose) ij.IJ.log("Interface collection: nb of interfaces:"+interfaces.size());
+        if (verbose) logger.debug("Interface collection: nb of interfaces:"+interfaces.size());
     }
     
     public static ArrayList<Voxel> getInteface(Object3D o1, Object3D o2, ImageInteger labelImage) {
@@ -341,7 +341,7 @@ public class InterfaceCollection {
         int clusterLabel = 0;
         int size = 0;
         for (HashSet<Interface> c : clusters) {
-            if (verbose) IJ.log("mergeSort cluster: "+ ++clusterLabel);
+            if (verbose) logger.debug("mergeSort cluster: "+ ++clusterLabel);
             interfaces = c;
             mergeSort();
             size+=interfaces.size();
@@ -366,21 +366,4 @@ public class InterfaceCollection {
             } else if (i.hasNoInteractants()) it.remove();
         }
     }
-    
-    /*
-    protected void mergeSort() {
-        //compute strength
-        if (Core.debug) ij.IJ.log("Merge Regions: nb interactions:"+interfaces.size());
-        for (Interface i : interfaces) i.computeStrength();
-        Collections.sort(interfaces);
-        int idx = 0;
-        while (idx<interfaces.size()) {
-            if (interfaces.get(idx).checkFusionCriteria()) {
-                if (fusion(interfaces.remove(idx), false)) idx=0; //fusion > sort > RAZ
-            } else if (interfaces.get(idx).hasNoInteractants()) interfaces.remove(idx);
-            else idx++;
-        }
-    }
-    * 
-    */
 }

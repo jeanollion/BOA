@@ -45,7 +45,7 @@ public class RegionCollection {
     ImageInteger labelMap;
     Image inputGray;
     InterfaceCollection interfaces;
-    boolean verbose;
+    public static boolean verbose=false;
     int nCPUs;
     public RegionCollection(ImageInteger labelMap, Image intensityMap, boolean verbose, int nCPUs) {
         this.verbose=verbose;
@@ -119,7 +119,7 @@ public class RegionCollection {
     }
     
     public static ObjectPopulation mergeHessianBacteria(ObjectPopulation pop, Image intensities, Image hessian, double fusionThreshold) {
-        RegionCollection r = new RegionCollection(pop, intensities, false, 1);
+        RegionCollection r = new RegionCollection(pop, intensities, verbose, 1);
         r.initInterfaces(hessian);
         r.mergeSortHessianCondBacteria(hessian, fusionThreshold);
         return r.getObjectPopulation();
@@ -191,7 +191,7 @@ public class RegionCollection {
                 }
             }
         }
-        if (verbose) ij.IJ.log("Region collection: nb of spots:"+regions.size());
+        if (verbose) logger.debug("Region collection: nb of spots:"+regions.size());
     }
     
     public void fusion(Region r1, Region r2, double[] newCriterion) {

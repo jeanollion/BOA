@@ -118,20 +118,20 @@ public class InterfaceVoxels extends Interface {
             // compute rho of the fused regions....
             //double rho = Region.getRho(allVoxels, this.col.intensityMap, this.col.regions.nCPUs);
             double rho = 1; // TODO revoir le code!!!
-            if (this.col.verbose) IJ.log("check fusion: "+r1.label+ " val="+r1.mergeCriterionValue+ " + "+r2.label+ " val="+r2.mergeCriterionValue+ " criterion:"+rho);
+            if (this.col.verbose) logger.debug("check fusion: "+r1.label+ " val="+r1.mergeCriterionValue+ " + "+r2.label+ " val="+r2.mergeCriterionValue+ " criterion:"+rho);
             // compare it to rho of each region
             if (rho>r1.mergeCriterionValue[0] && rho>r2.mergeCriterionValue[0]) return new double[]{rho};
             else return null;
         } else if (col.fusionMethod==1) {
             ArrayList<Voxel>[] allVoxels = new ArrayList[]{r1.voxels, r2.voxels};
             double hess = Region.getHessianMeanValue(allVoxels, col.hessian, col.erode, col.regions.nCPUs);
-            if (this.col.verbose) IJ.log("check fusion: "+r1.label+ " val="+r1.mergeCriterionValue+ " + "+r2.label+ " val="+r2.mergeCriterionValue+ " criterion:"+hess);
+            if (this.col.verbose) logger.debug("check fusion: "+r1.label+ " val="+r1.mergeCriterionValue+ " + "+r2.label+ " val="+r2.mergeCriterionValue+ " criterion:"+hess);
             if (hess<r1.mergeCriterionValue[0] && hess<r2.mergeCriterionValue[0]) return new double[]{hess};
             else return null;
         } else if (col.fusionMethod==2) { // compare mean value to treshold
             double meanIntensity = getMean(col.regions.inputGray);
             double stat = -this.strength/(meanIntensity); // meanintensity sur les 2 spots?
-            //logger.debug("Interface: {}, stat: {} threshold: {}, fusion: {}", this, stat, col.fusionThreshold, stat<=col.fusionThreshold);
+            if (col.verbose) logger.debug("Interface: {}, stat: {} threshold: {}, fusion: {}", this, stat, col.fusionThreshold, stat<=col.fusionThreshold);
             if (stat<=col.fusionThreshold) return new double[0]; //strenght = -mean(hessian@interface)
             else return null;
             /*double[] musigma = getMeanAndSigma();

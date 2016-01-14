@@ -17,6 +17,7 @@
  */
 package plugins.plugins.transformations;
 
+import configuration.parameters.BooleanParameter;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ChannelImageParameter;
 import configuration.parameters.Parameter;
@@ -39,23 +40,26 @@ import utils.ThreadRunner;
 public class ScaleHistogramSignalExclusion implements Transformation {
     BoundedNumberParameter sigmaTh= new BoundedNumberParameter("Theorical Sigma", 2, 7.83, 1, null);
     BoundedNumberParameter muTh= new BoundedNumberParameter("Theorical Mean", 2, 106, 1, null);
-    ChannelImageParameter signalExclusion = new ChannelImageParameter("Channel for Signal Exclusion");
+    ChannelImageParameter signalExclusion = new ChannelImageParameter("Channel for Signal Exclusion", -1, true);
     BoundedNumberParameter signalExclusionThreshold = new BoundedNumberParameter("Signal Exclusion Threshold", 1, 50, 0, null);
-    Parameter[] parameters = new Parameter[]{sigmaTh, muTh, signalExclusion, signalExclusionThreshold};
+    BooleanParameter underThreshold = new BooleanParameter("Consider only signal under threshold", true);
+    Parameter[] parameters = new Parameter[]{sigmaTh, muTh, signalExclusion, signalExclusionThreshold, underThreshold};
     ArrayList<ArrayList<Double>> meanSigmaT = new ArrayList<ArrayList<Double>>();;
     
     public ScaleHistogramSignalExclusion() {}
     
-    public ScaleHistogramSignalExclusion(double muTh, double sigmaTh, int signalExclusion, double signalExclusionThreshold) {
+    public ScaleHistogramSignalExclusion(double muTh, double sigmaTh, int signalExclusion, double signalExclusionThreshold, boolean underThreshold) {
         this.sigmaTh.setValue(sigmaTh);
         this.muTh.setValue(muTh);
         if (signalExclusion>=0) this.signalExclusion.setSelectedIndex(signalExclusion);
         this.signalExclusionThreshold.setValue(signalExclusionThreshold);
+        this.underThreshold.setSelected(underThreshold);
     }
     
     public void computeConfigurationData(final int channelIdx, final InputImages inputImages) {
         final int chExcl = signalExclusion.getSelectedIndex();
         final double exclThld = signalExclusionThreshold.getValue().doubleValue();
+        final boolean underThreshold = this.underThreshold.getSelected();
         final ThreadRunner tr = new ThreadRunner(0, inputImages.getTimePointNumber());
         final ImageInteger[] exclusionMasks = (chExcl>=0) ?  new ImageInteger[tr.size()] : null;
         final Double[][] sigmaMu = new Double[inputImages.getTimePointNumber()][];
@@ -71,7 +75,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
                                 signalExclusion = inputImages.getImage(chExcl, idx);
                                 exclusionMask = exclusionMasks[trIdx];
                             }
-                            sigmaMu[idx] = computeMeanSigma(inputImages.getImage(channelIdx, idx), signalExclusion, exclThld, exclusionMask, idx);
+                            sigmaMu[idx] = computeMeanSigma(inputImages.getImage(channelIdx, idx), signalExclusion, exclThld, underThreshold, exclusionMask, idx);
                         }
                     }
                 }
@@ -85,13 +89,13 @@ public class ScaleHistogramSignalExclusion implements Transformation {
         }
     }
     
-    public static Double[] computeMeanSigma(Image image, Image exclusionSignal, double exclusionThreshold, ImageInteger exclusionMask, int timePoint) {
+    public static Double[] computeMeanSigma(Image image, Image exclusionSignal, double exclusionThreshold, boolean underThreshold, ImageInteger exclusionMask, int timePoint) {
         long t0 = System.currentTimeMillis();
-        if (exclusionMask!=null) ImageOperations.threshold(exclusionSignal, exclusionThreshold, false, true, true, exclusionMask);
+        if (exclusionMask!=null) ImageOperations.threshold(exclusionSignal, exclusionThreshold, !underThreshold, true, true, exclusionMask);
         else exclusionMask = new BlankMask(image);
         double[] res=   ImageOperations.getMeanAndSigma(image, exclusionMask);
         long t1 = System.currentTimeMillis();
-        logger.debug("ScaleHistogram signal exclusion: timePoint: {}, mean sigma: {}, signal exclusion? {}, processing time: {}", timePoint, res, exclusionSignal!=null, t1-t0);
+        //logger.debug("ScaleHistogram signal exclusion: timePoint: {}, mean sigma: {}, signal exclusion? {}, processing time: {}", timePoint, res, exclusionSignal!=null, t1-t0);
         return new Double[]{res[0], res[1]};
     }
     

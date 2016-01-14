@@ -39,10 +39,10 @@ import utils.MorphiumUtils;
  */
 public class TestProcessBacteriaNew {
     public static void main(String[] args) {
-        int time = 0;
-        int microChannel =0;
+        int time = 341;
+        int microChannel =1;
         int field = 0;
-        String dbName = "testSub60";
+        String dbName = "fluo151130_OutputNewScaling";
         testSegBacteriesFromXP(dbName, field, time, microChannel);
     }
     
@@ -55,13 +55,13 @@ public class TestProcessBacteriaNew {
         Image input = mc.getRawImage(1);
         ImageMask parentMask = mc.getMask();
         BacteriaFluo.debug=true;
-        ObjectPopulation pop = BacteriaFluo.run(input, parentMask, 0.03, 100, 10, 3, 40, 2, 1, 2, null);
+        ObjectPopulation pop = BacteriaFluo.run(input, parentMask, 0.03, 100, 10, 3, 40, 4, 1, 2, null);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
         disp.showImage(pop.getLabelImage());
         
         // test split
-        //ObjectPopulation popSplit = testObjectSplitter(input, pop.getChildren().get(0));
+        //ObjectPopulation popSplit = testObjectSplitter(intensityMap, pop.getChildren().get(0));
         //disp.showImage(popSplit.getLabelImage());
     }
 }

@@ -227,7 +227,7 @@ public class TestProcessBacteria {
         ImageDisplayer disp = new IJImageDisplayer();
         Image[][] imageOutputTC = new Image[xp.getMicroscopyField(0).getInputImages().getTimePointNumber()][1];
         for (int t = 0; t<imageOutputTC.length; ++t) imageOutputTC[t][0] = xp.getMicroscopyField(0).getInputImages().getImage(0, t);
-        //disp.showImage5D("input", imageInputTC);
+        //disp.showImage5D("intensityMap", imageInputTC);
         disp.showImage5D("output", imageOutputTC);
     }
     
@@ -305,7 +305,7 @@ public class TestProcessBacteria {
         disp.showImage(pop.getLabelImage());
         
         // test split
-        //ObjectPopulation popSplit = testObjectSplitter(input, pop.getChildren().get(0));
+        //ObjectPopulation popSplit = testObjectSplitter(intensityMap, pop.getChildren().get(0));
         //disp.showImage(popSplit.getLabelImage());
     }
     
