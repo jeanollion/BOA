@@ -51,7 +51,7 @@ public class TestProcessMutations {
     MorphiumMasterDAO db;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        //String dbName = "testFluo60";
+        //String dbName = "testSub60";
         //String dbName = "fluo151130_sub88-118";
         String dbName = "fluo151130_OutputNewScaling";
         TestProcessMutations t = new TestProcessMutations();
@@ -60,7 +60,6 @@ public class TestProcessMutations {
         //t.testSegMutationsFromXP(27);
     }
     public void init(String dbName) {
-        
         db = new MorphiumMasterDAO(dbName);
         logger.info("Experiment: {} retrieved from db: {}", db.getExperiment().getName(), dbName);
     }

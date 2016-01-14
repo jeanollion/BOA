@@ -398,7 +398,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
     }
     
     protected Query<StructureObject> getRootQuery(int timePoint) {
-        if (timePoint<0) return getRootQuery();
+        if (timePoint<0) throw new IllegalArgumentException("TimePoint should be >=0");
         else return getQuery().f("time_point").eq(timePoint).f("structure_idx").eq(-1);
     }
     /*private ObjectId getRootId(String fieldName, int timePoint) {
