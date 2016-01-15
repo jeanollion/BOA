@@ -71,6 +71,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
     
     //segmentation-related attributes (kept for split and merge methods)
     Image hessian;
+    Image rawIntensityMap;
     Image intensityMap;
     ImageByte splitMask;
     
@@ -171,7 +172,8 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
             res.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
         }
         if (instance!=null) {
-            instance.intensityMap=input;
+            instance.rawIntensityMap=input;
+            instance.intensityMap=smoothed;
             instance.hessian=hessian;
         }
         return res;
@@ -212,7 +214,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
     }
 
     @Override public double split(Object3D o, List<Object3D> result) {
-        if (intensityMap==null || hessian==null) throw new Error("Segment method have to be called before split method in order to initialize images");
+        if (intensityMap==null || hessian==null || rawIntensityMap==null) throw new Error("Segment method have to be called before split method in order to initialize images");
         if (splitMask==null) splitMask = new ImageByte("split mask", intensityMap);
         o.draw(splitMask, 1);
         ObjectPopulation pop = WatershedObjectSplitter.split(intensityMap, splitMask, true);
@@ -236,7 +238,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
     }
 
     @Override public double computeMergeCost(List<Object3D> objects) {
-        if (intensityMap==null || hessian==null) throw new Error("Segment method have to be called before merge method in order to initialize images");
+        if (intensityMap==null || hessian==null || rawIntensityMap==null) throw new Error("Segment method have to be called before merge method in order to initialize images");
         if (splitMask==null) splitMask = new ImageByte("split mask", intensityMap);
         if (objects.isEmpty() || objects.size()==1) return 0;
         Iterator<Object3D> it = objects.iterator();
@@ -267,7 +269,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
     }
     private double getInterfaceValue(ArrayList<Voxel> inter) {
         double meanHess = BasicMeasurements.getMeanValue(inter, hessian);
-        double meanDOG = BasicMeasurements.getMeanValue(inter, intensityMap);
+        double meanDOG = BasicMeasurements.getMeanValue(inter, rawIntensityMap);
         return meanHess / meanDOG;
     }
     

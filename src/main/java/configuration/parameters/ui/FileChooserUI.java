@@ -33,6 +33,8 @@ public class FileChooserUI implements ParameterUI {
     ConfigurationTreeModel model;
     public FileChooserUI(FileChooser fc) {
         this.fcParam=fc;
+        String[] fp = fc.getSelectedFilePath();
+        if (fp!=null && fp.length>0) curDir = fp[0];
         this.model= ParameterUtils.getModel(fc);
     }
     @Override
@@ -41,9 +43,7 @@ public class FileChooserUI implements ParameterUI {
         fc.setFileSelectionMode(fcParam.getOption().getOption());
         //fc.setFileHidingEnabled(false);
         fc.setMultiSelectionEnabled(fcParam.getOption().getMultipleSelectionEnabled());
-        if (curDir != null) {
-            fc.setCurrentDirectory(new File(curDir));
-        }
+        if (curDir != null) fc.setCurrentDirectory(new File(curDir));
         fc.setDialogTitle(fcParam.getName());
         int returnval = fc.showOpenDialog(model.getTree());
         logger.debug("file chooser: {}: returned value? {}", fcParam.getName(), returnval == JFileChooser.APPROVE_OPTION);

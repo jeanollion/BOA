@@ -67,22 +67,23 @@ public class MutationSegmenter implements Segmenter {
     public static boolean debug = false;
     public static boolean displayImages = false;
     NumberParameter scale = new BoundedNumberParameter("Scale", 1, 2.5, 1.5, 5);
+    NumberParameter subtractBackgroundScale = new BoundedNumberParameter("Subtract Background Scale", 1, 8, 3, 20);
     NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxels)", 0, 5, 1, null);
-    NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 2, 2.75, 1, null);
-    NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 2, 2, 0, null);
+    NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 2, 2, 1, null);
+    NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 2, 1.5, 0, null);
     
-    Parameter[] parameters = new Parameter[]{scale, minSpotSize, thresholdHigh,  thresholdLow};
+    Parameter[] parameters = new Parameter[]{scale, subtractBackgroundScale, minSpotSize, thresholdHigh,  thresholdLow};
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        return run(input, parent.getMask(), scale.getValue().doubleValue(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), null);
+        return run(input, parent.getMask(), scale.getValue().doubleValue(), subtractBackgroundScale.getValue().doubleValue(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), null);
     }
     
-    public static ObjectPopulation run(Image input, ImageMask mask, double scale, int minSpotSize, double thresholdHigh , double thresholdLow, ArrayList<Image> intermediateImages) {
+    public static ObjectPopulation run(Image input, ImageMask mask, double scale, double subtractBackgroundScale, int minSpotSize, double thresholdHigh , double thresholdLow, ArrayList<Image> intermediateImages) {
         if (input.getSizeZ()>1) {
             // tester sur average, max, ou plan par plan
             ArrayList<Image> planes = input.splitZPlanes();
             ArrayList<ObjectPopulation> populations = new ArrayList<ObjectPopulation>(planes.size());
             for (Image plane : planes) {
-                ObjectPopulation obj = runPlane(plane, mask, scale, minSpotSize, thresholdHigh, thresholdLow, intermediateImages);
+                ObjectPopulation obj = runPlane(plane, mask, scale, subtractBackgroundScale, minSpotSize, thresholdHigh, thresholdLow, intermediateImages);
                 //if (true) return obj;
                 if (obj!=null && !obj.getObjects().isEmpty()) populations.add(obj);
             }
@@ -91,13 +92,13 @@ public class MutationSegmenter implements Segmenter {
             ObjectPopulation pop = populations.remove(populations.size()-1);
             pop.combine(populations);
             return pop;
-        } else return runPlane(input, mask, scale, minSpotSize, thresholdHigh, thresholdLow, intermediateImages);
+        } else return runPlane(input, mask, scale, subtractBackgroundScale, minSpotSize, thresholdHigh, thresholdLow, intermediateImages);
     }
     
-    public static ObjectPopulation runPlane(Image input, ImageMask mask, double scale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
+    public static ObjectPopulation runPlane(Image input, ImageMask mask, double scale, double subtractBackgroundScale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
         if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
         IJImageDisplayer disp = debug?new IJImageDisplayer():null;
-        input = IJSubtractBackground.filter(input.duplicate("sub"), scale+1, false, false, true, false);
+        input = IJSubtractBackground.filter(input.duplicate("sub"), subtractBackgroundScale, false, false, true, false);
         //Image lap = ImageFeatures.getLaplacian(input, scale, true, false).setName("laplacian: "+scale);
         //Image lapSP = ImageFeatures.getScaleSpaceLaplacian(input, new double[]{2, 4, 6, 8, 10});
         //Image hessSP = ImageFeatures.getScaleSpaceHessianDet(input, new double[]{2, 4, 6, 8, 10});

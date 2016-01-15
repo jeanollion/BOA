@@ -980,7 +980,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }//GEN-LAST:event_deleteObjectsButtonActionPerformed
 
     private void duplicateExperimentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_duplicateExperimentActionPerformed
-        String name = JOptionPane.showInputDialog("New DB name:");
+        String name = JOptionPane.showInputDialog("New DB name:", this.dbNames.getSelectedItem());
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
         else if (getDBNames().contains(name)) logger.error("DB name already exists");
         else {
@@ -988,6 +988,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             Experiment xp2 = db.getExperiment().duplicate();
             xp2.setName(name);
             db2.setExperiment(xp2);
+            refreshDBNames();
         }
     }//GEN-LAST:event_duplicateExperimentActionPerformed
 
@@ -1057,6 +1058,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             MongoClient mongoClient = new MongoClient(getHostName(), 27017);
             mongoClient.dropDatabase(name);
             refreshDBNames();
+            unsetXP();
         }
     }//GEN-LAST:event_DeleteXPActionPerformed
     
