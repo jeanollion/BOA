@@ -190,8 +190,8 @@ public class ImageFeatures {
         final imagescience.image.Image is = ImagescienceWrapper.getImagescience(image);
         boolean duplicate = !((image instanceof ImageFloat) && overrideIfFloat);
         ImageFloat res = (ImageFloat)ImagescienceWrapper.wrap(new Laplacian().run(duplicate?is.duplicate():is, s));
-        if (invert) ImageOperations.affineOperation(res, res, -scale, 0);
-        else ImageOperations.affineOperation(res, res, scale, 0);
+        if (invert) ImageOperations.affineOperation(res, res, -scale*scale, 0);
+        else ImageOperations.affineOperation(res, res, scale*scale, 0);
         res.setCalibration(image).resetOffset().addOffset(image).setName(image.getName() + ":laplacian:"+scale);
         return res;
     }
@@ -207,7 +207,7 @@ public class ImageFeatures {
             res[i].setCalibration(image);
             res[i].resetOffset().addOffset(image);
             res[i].setName(image.getName() + ":hessian" + (i + 1));
-            ImageOperations.affineOperation(res[i], res[i], scale, 0);
+            ImageOperations.affineOperation(res[i], res[i], scale*scale, 0);
         }
         return res;
     }

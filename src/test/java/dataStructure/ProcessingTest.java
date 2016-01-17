@@ -266,7 +266,7 @@ public class ProcessingTest {
         dao.clearCache();
 
         StructureObject rootFetch = dao.getRoot(0);
-        assertEquals("root fetch", rootTrack.get(0), rootFetch);
+        assertTrue("root fetch", rootFetch!=null);
         rootTrack = dao.getTrack(rootFetch);
         for (int t = 0; t<rootTrack.size(); ++t) {
             //root[t]=dao.getById(root.get(t).getId());

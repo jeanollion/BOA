@@ -92,7 +92,7 @@ import static utils.Utils.deleteDirectory;
  * @author jollion
  */
 public class TestProcessBacteria {
-    MasterDAO mDAO;
+    /*MasterDAO mDAO;
     Experiment xp;
     
     public static void main(String[] args) {
@@ -116,54 +116,6 @@ public class TestProcessBacteria {
     }
     
     
-    public void setUpXp(boolean preProcessing, String outputDir) {
-        
-        PluginFactory.findPlugins("plugins.plugins");
-        xp = new Experiment("testXP");
-        xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
-        //xp.setImportImageMethod(Experiment.ImportImageMethod.SINGLE_FILE);
-        xp.getChannelImages().insert(new ChannelImage("RFP", "_REF"), new ChannelImage("YFP", ""));
-        xp.setOutputImageDirectory(outputDir);
-        File f =  new File(outputDir); f.mkdirs(); //deleteDirectory(f);
-        Structure mc = new Structure("MicroChannel", -1, 0);
-        Structure bacteria = new Structure("Bacteria", 0, 0);
-        Structure mutation = new Structure("Mutation", 0, 1); // parent structure 1 segParentStructure 0
-        xp.getStructures().insert(mc, bacteria, mutation);
-        /*mc.getProcessingChain().setSegmenter(new MicroChannelFluo2D());
-        bacteria.getProcessingChain().setSegmenter(new BacteriaFluo());
-        mutation.getProcessingChain().setSegmenter(new SpotFluo2D5());
-        mc.setTracker(new ObjectIdxTracker());
-        bacteria.setTracker(new ClosedMicrochannelTracker());
-        bacteria.setTrackCorrector(new MicroChannelBacteriaTrackCorrector());
-        */
-        mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessor()));
-        bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo(), 0.9, 1.1, 1.7, 1, 5)));
-        mutation.setProcessingScheme(new SegmentOnly(new MutationSegmenter()));
-        
-        //xp.addMeasurement(new BacteriaLineageIndex(1));
-        //xp.addMeasurement(new BacteriaMeasurements(1, 2));
-        xp.addMeasurement(new BacteriaMeasurementsWoleMC(1, 2));
-        if (preProcessing) {// preProcessing 
-            xp.getPreProcessingTemplate().addTransformation(0, null, new SuppressCentralHorizontalLine(6)).setActivated(false);
-            xp.getPreProcessingTemplate().addTransformation(1, null, new ScaleHistogramSignalExclusion(106, 7.8, 0, 50)); // to remove blinking
-            xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1, 0)).setActivated(true); // to remove salt and pepper noise
-            xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
-            xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
-            xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(true);
-            xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannels2D());
-            xp.getPreProcessingTemplate().addTransformation(0, null, new SelectBestFocusPlane(3)).setActivated(false); // faster after crop, but previous transformation might be aftected if the first plane is really out of focus
-            xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY());
-        }
-        if (dbName!=null) saveXP(dbName);
-    }
-    
-    public void saveXP(String dbName) {
-        mDAO = new MorphiumMasterDAO(dbName);
-        mDAO.reset();
-        xp.setName(dbName);
-        mDAO.setExperiment(xp);
-        logger.info("Experiment: {} stored in db: {}", xp.getName(), dbName);
-    }
     
     //@Test
     public void testImport(String inputDir) {
@@ -263,10 +215,7 @@ public class TestProcessBacteria {
         
         
         disp.showImage(labels);
-        /*Structure microChannel = new Structure("MicroChannel", -1, 0);
-        xp.getStructures().insert(microChannel);
-        microChannel.getProcessingChain().setSegmenter(new DummySegmenter(true, 2));
-                */
+
     }
     
     public void testSegBacteries() {
@@ -481,4 +430,5 @@ public class TestProcessBacteria {
             logger.error("store xp error: ", ex);
         }
     }
+    */
 }

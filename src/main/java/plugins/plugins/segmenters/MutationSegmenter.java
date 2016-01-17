@@ -118,6 +118,8 @@ public class MutationSegmenter implements Segmenter {
             intermediateImages.add(hessMax);
             //intermediateImages.add(lap);
             intermediateImages.add(input);
+            intermediateImages.add(ImageFeatures.getScaleSpaceHessianDet(input, new double[]{1.5, 2, 2.5, 3, 3.5}).setName("scale space hess det"));
+            intermediateImages.add(ImageFeatures.getScaleSpaceLaplacian(input, new double[]{1.5, 2, 2.5, 3, 3.5}).setName("scale space laplacian"));
         }
         
         ObjectPopulation seedPop = new ObjectPopulation(seeds, false);

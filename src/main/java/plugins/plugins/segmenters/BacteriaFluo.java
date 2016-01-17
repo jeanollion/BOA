@@ -59,9 +59,9 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
     public static boolean debug = false;
     
     // configuration-related attributes
-    NumberParameter splitThreshold = new BoundedNumberParameter("Split Threshold", 4, 0.30, 0, 1); //0.2 dans le cas des grandes variations de fluo
+    NumberParameter splitThreshold = new BoundedNumberParameter("Split Threshold", 4, 0.12, 0, 1);
     NumberParameter minSize = new BoundedNumberParameter("Minimum size", 0, 100, 50, null);
-    NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 5, 0, null);
+    NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 10, 0, null);
     NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 3, 1, 5);
     NumberParameter dogScale = new BoundedNumberParameter("DoG scale", 0, 40, 5, null);
     NumberParameter hessianScale = new BoundedNumberParameter("Hessian scale", 1, 4, 1, 6);
@@ -74,6 +74,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
     Image rawIntensityMap;
     Image intensityMap;
     ImageByte splitMask;
+    double splitThresholdValue; 
     
     public BacteriaFluo setSplitThreshold(double splitThreshold) {
         this.splitThreshold.setValue(splitThreshold);
@@ -101,7 +102,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
     }
     
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        double fusionThreshold = splitThreshold.getValue().doubleValue()/10d;
+        double fusionThreshold = splitThreshold.getValue().doubleValue();
         return run(input, parent.getMask(), fusionThreshold, minSize.getValue().intValue(), contactLimit.getValue().intValue(), smoothScale.getValue().doubleValue(), dogScale.getValue().doubleValue(), hessianScale.getValue().doubleValue(), hessianThresholdFactor.getValue().doubleValue(), thresholdForEmptyChannel.getValue().doubleValue(), this);
     }
     
@@ -112,7 +113,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
     
     public static ObjectPopulation run(Image input, ImageMask mask, double fusionThreshold, int minSize, int contactLimit, double smoothScale, double dogScale, double hessianScale, double hessianThresholdFactor, double thresholdForEmptyChannel, BacteriaFluo instance) {
         ImageDisplayer disp=debug?new IJImageDisplayer():null;
-        double hessianThresholdFacto = 1;
+        //double hessianThresholdFacto = 1;
         
         ImageFloat dog = ImageFeatures.differenceOfGaussians(input, 0, dogScale, 1, false).setName("DoG");
         Image smoothed = Filters.median(dog, dog, Filters.getNeighborhood(smoothScale, smoothScale, input)).setName("DoG+Smoothed");
@@ -152,7 +153,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
             maskObject.draw(watershedMask, 1);
             double[] meanAndSigma = getMeanAndSigma(hessian, watershedMask, 0, false); // mean & sigma < 0
             //logger.debug("hessian mean: {}, sigma: {}, hessian thld: {}", meanAndSigma[0],meanAndSigma[1], sigmaCoeff * meanAndSigma[1]);
-            ImageInteger seedMap = ImageOperations.threshold(hessian, hessianThresholdFacto * meanAndSigma[1], false, false, false, null);
+            ImageInteger seedMap = ImageOperations.threshold(hessian, hessianThresholdFactor * meanAndSigma[1], false, false, false, null);
             seedMap = ImageOperations.and(watershedMask, seedMap, seedMap).setName("seeds");
             //disp.showImage(seedMap);
             ObjectPopulation popWS = WatershedTransform.watershed(hessian, watershedMask, seedMap, false, null, new WatershedTransform.SizeFusionCriterion(minSize));
@@ -175,6 +176,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
             instance.rawIntensityMap=input;
             instance.intensityMap=smoothed;
             instance.hessian=hessian;
+            instance.splitThresholdValue=fusionThreshold;
         }
         return res;
     }
@@ -233,7 +235,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
             Object3D o2 = pop.getObjects().get(1);
             result.add(o1);
             result.add(o2);
-            return getInterfaceValue(getInterface(o1, o2));
+            return splitThresholdValue-getInterfaceValue(getInterface(o1, o2));
         }
     }
 
@@ -265,7 +267,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
             }
         }
         if (maxCost==Double.MIN_VALUE) return Double.NaN;
-        return maxCost;
+        return maxCost-splitThresholdValue;
     }
     private double getInterfaceValue(ArrayList<Voxel> inter) {
         double meanHess = BasicMeasurements.getMeanValue(inter, hessian);
