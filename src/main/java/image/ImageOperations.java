@@ -43,7 +43,7 @@ public class ImageOperations {
                         for (int xy = 0; xy < image.sizeXY; xy++) {
                             if (image.getPixel(xy, z)>threshold) {
                                 dest.setPixel(xy, z, 1);
-                            } dest.setPixel(xy, z, 0);
+                            } else dest.setPixel(xy, z, 0);
                         }
                     }
                 } else {
@@ -51,7 +51,7 @@ public class ImageOperations {
                         for (int xy = 0; xy < image.sizeXY; xy++) {
                             if (image.getPixel(xy, z)>=threshold) {
                                 dest.setPixel(xy, z, 1);
-                            } dest.setPixel(xy, z, 0);
+                            } else dest.setPixel(xy, z, 0);
                         }
                     }
                 }
@@ -61,7 +61,7 @@ public class ImageOperations {
                         for (int xy = 0; xy < image.sizeXY; xy++) {
                             if (image.getPixel(xy, z)<threshold) {
                                 dest.setPixel(xy, z, 1);
-                            } dest.setPixel(xy, z, 0);
+                            } else dest.setPixel(xy, z, 0);
                         }
                     }
                 } else {
@@ -69,7 +69,7 @@ public class ImageOperations {
                         for (int xy = 0; xy < image.sizeXY; xy++) {
                             if (image.getPixel(xy, z)<=threshold) {
                                 dest.setPixel(xy, z, 1);
-                            } dest.setPixel(xy, z, 0);
+                            } else dest.setPixel(xy, z, 0);
                         }
                     }
                 }

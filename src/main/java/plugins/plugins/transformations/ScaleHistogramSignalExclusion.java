@@ -24,6 +24,7 @@ import configuration.parameters.Parameter;
 import dataStructure.containers.InputImages;
 import image.BlankMask;
 import image.Image;
+import image.ImageByte;
 import image.ImageFloat;
 import image.ImageInteger;
 import image.ImageOperations;
@@ -73,6 +74,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
                             ImageInteger exclusionMask = null;
                             if (chExcl>=0) {
                                 signalExclusion = inputImages.getImage(chExcl, idx);
+                                if (exclusionMasks[trIdx]==null) exclusionMasks[trIdx] = new ImageByte("", signalExclusion);
                                 exclusionMask = exclusionMasks[trIdx];
                             }
                             sigmaMu[idx] = computeMeanSigma(inputImages.getImage(channelIdx, idx), signalExclusion, exclThld, underThreshold, exclusionMask, idx);
