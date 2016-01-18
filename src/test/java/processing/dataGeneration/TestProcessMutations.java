@@ -57,16 +57,16 @@ public class TestProcessMutations {
         String dbName = "fluo151130_OutputNewScaling";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
-//        t.testSegMutationsFromXP(8, 0, true, 5, 35);
-        t.testSegMutationsFromXP(8, 1, true, 0, 5);
-//        t.testSegMutationsFromXP(8, 6, true, 0, 14);
+        t.testSegMutationsFromXP(8, 0, true, 5, 35);
+//        t.testSegMutationsFromXP(8, 1, true, 0, 5);
+//        t.testSegMutationsFromXP(8, 6, true, 14, 30);
     }
     
     public void testSegMutation(StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
         Image input = parent.getRawImage(2);
         ImageInteger parentMask = parent.getMask();
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
-        ObjectPopulation pop = MutationSegmenterScaleSpace.runPlane(input.getZPlane(0), parentMask, 2.5, 20, 5, 10, 8, intermediateImages); // 6 -0.18
+        ObjectPopulation pop = MutationSegmenterScaleSpace.runPlane(input.getZPlane(0), parentMask, 2.5, 5, 5, 3.5, intermediateImages); // 6 -0.18
         if (parentMask_!=null) parentMask_.add(parentMask);
         if (input_!=null) input_.add(input);
         if (outputLabel!=null) outputLabel.add(pop.getLabelImage());

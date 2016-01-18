@@ -68,23 +68,22 @@ public class MutationSegmenterScaleSpace implements Segmenter {
     public static boolean debug = false;
     public static boolean displayImages = false;
     NumberParameter scale = new BoundedNumberParameter("Scale", 1, 2.5, 1.5, 5);
-    NumberParameter subtractBackgroundScale = new BoundedNumberParameter("Subtract Background Scale", 1, 4, 3, 20);
     NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxels)", 0, 5, 1, null);
-    NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 2, 10, 1, null);
-    NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 2, 5, 0, null);
+    NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 2, 5, 1, null);
+    NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 2, 3.5, 0, null);
     
-    Parameter[] parameters = new Parameter[]{scale, subtractBackgroundScale, minSpotSize, thresholdHigh,  thresholdLow};
+    Parameter[] parameters = new Parameter[]{scale, minSpotSize, thresholdHigh,  thresholdLow};
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        return run(input, parent.getMask(), scale.getValue().doubleValue(), subtractBackgroundScale.getValue().doubleValue(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), null);
+        return run(input, parent.getMask(), scale.getValue().doubleValue(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), null);
     }
     
-    public static ObjectPopulation run(Image input, ImageMask mask, double scale, double subtractBackgroundScale, int minSpotSize, double thresholdHigh , double thresholdLow, ArrayList<Image> intermediateImages) {
+    public static ObjectPopulation run(Image input, ImageMask mask, double scale, int minSpotSize, double thresholdHigh , double thresholdLow, ArrayList<Image> intermediateImages) {
         if (input.getSizeZ()>1) {
             // tester sur average, max, ou plan par plan
             ArrayList<Image> planes = input.splitZPlanes();
             ArrayList<ObjectPopulation> populations = new ArrayList<ObjectPopulation>(planes.size());
             for (Image plane : planes) {
-                ObjectPopulation obj = runPlane(plane, mask, scale, subtractBackgroundScale, minSpotSize, thresholdHigh, thresholdLow, intermediateImages);
+                ObjectPopulation obj = runPlane(plane, mask, scale, minSpotSize, thresholdHigh, thresholdLow, intermediateImages);
                 //if (true) return obj;
                 if (obj!=null && !obj.getObjects().isEmpty()) populations.add(obj);
             }
@@ -93,28 +92,26 @@ public class MutationSegmenterScaleSpace implements Segmenter {
             ObjectPopulation pop = populations.remove(populations.size()-1);
             pop.combine(populations);
             return pop;
-        } else return runPlane(input, mask, scale, subtractBackgroundScale, minSpotSize, thresholdHigh, thresholdLow, intermediateImages);
+        } else return runPlane(input, mask, scale, minSpotSize, thresholdHigh, thresholdLow, intermediateImages);
     }
     
-    public static ObjectPopulation runPlane(Image input, ImageMask mask, double scale, double subtractBackgroundScale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
+    public static ObjectPopulation runPlane(Image input, ImageMask mask, double scale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
         if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
-        Image lapSP = ImageFeatures.getScaleSpaceLaplacian(input, new double[]{scale-0.5, scale, scale+0.5, scale+1.5, scale+2.5, scale+3.5});
-        Image lap = lapSP.getZPlane(1);
-        ImageByte seedsSP = Filters.localExtrema(lapSP, null, true, thresholdSeeds, Filters.getNeighborhood(scale, 1, lapSP)).setName("seedsSP");
-        // select only seeds from plane 1 2 & 3 (exclude big objects)
-        ImageByte seeds = ImageOperations.maxZProjection(seedsSP, 0, 2).setName("seeds");
+        Image scaleSpace = ImageFeatures.getScaleSpaceHessianMax(input, new double[]{scale-0.5, scale, scale+0.5, scale+1.5, scale+2.5, scale+3.5});
+        Image watershedMap = scaleSpace.getZPlane(1);
+        ImageByte seedsSP = Filters.localExtrema(scaleSpace, null, true, thresholdSeeds, Filters.getNeighborhood(scale, 1, scaleSpace)).setName("seedsSP");
+        ImageByte seeds = ImageOperations.maxZProjection(seedsSP, 0, 3).setName("seeds"); // select only seeds from plane 1 2 & 3 (exclude big objects)
         
         if (intermediateImages!=null) {
             intermediateImages.add(input);
-            intermediateImages.add(lapSP);
+            intermediateImages.add(scaleSpace);
             intermediateImages.add(seedsSP);
             intermediateImages.add(seeds);
+            //intermediateImages.add(ImageFeatures.getScaleSpaceHessianDet(input, new double[]{scale-0.5, scale, scale+0.5, scale+1.5, scale+2.5, scale+3.5}));
         }
         
         ObjectPopulation seedPop = new ObjectPopulation(seeds, false);
-        //seedPop.filter(new Overlap(seedsHess, 1.5));
-        //seedPop.filter(new Or(new ObjectPopulation.GaussianFit(norm, 3, 3, 5, 0.2, 0.010, 6), new MeanIntensity(-0.2, false, hess)));
-        ObjectPopulation pop =  watershed(lap, mask, seedPop.getObjects(), true, new MultiplePropagationCriteria(new ThresholdPropagationOnWatershedMap(thresholdPropagation), new MonotonalPropagation()), new SizeFusionCriterion(minSpotSize));
+        ObjectPopulation pop =  watershed(watershedMap, mask, seedPop.getObjects(), true, new MultiplePropagationCriteria(new ThresholdPropagationOnWatershedMap(thresholdPropagation), new MonotonalPropagation()), new SizeFusionCriterion(minSpotSize));
         pop.filter(new ObjectPopulation.RemoveFlatObjects(input));
         pop.filter(new ObjectPopulation.Size().setMin(minSpotSize));
         return pop;

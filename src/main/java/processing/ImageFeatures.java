@@ -235,14 +235,22 @@ public class ImageFeatures {
         if (plane.getSizeZ()>1) throw new IllegalArgumentException("2D image only");
         ArrayList<ImageFloat> planes = new ArrayList<ImageFloat>(scales.length);
         for (double s : scales) planes.add(ImageFeatures.getHessianMaxAndDeterminant(plane, s, false)[1]);
-        return Image.mergeZPlanes(planes);
+        return Image.mergeZPlanes(planes).setName("Hessian Det. Scale-Space");
+    }
+    
+    public static Image getScaleSpaceHessianMax(Image plane, double[] scales) {
+        if (plane.getSizeZ()>1) throw new IllegalArgumentException("2D image only");
+        ArrayList<ImageFloat> planes = new ArrayList<ImageFloat>(scales.length);
+        for (double s : scales) planes.add(ImageFeatures.getHessian(plane, s, false)[0]);
+        Image res = Image.mergeZPlanes(planes).setName("Hessian Max. Scale-Space");
+        return ImageOperations.affineOperation(res, res, -1, 0);
     }
     
     public static Image getScaleSpaceLaplacian(Image plane, double[] scales) {
         if (plane.getSizeZ()>1) throw new IllegalArgumentException("2D image only");
         ArrayList<ImageFloat> planes = new ArrayList<ImageFloat>(scales.length);
         for (double s : scales) planes.add(ImageFeatures.getLaplacian(plane, s, true, false));
-        return Image.mergeZPlanes(planes);
+        return Image.mergeZPlanes(planes).setName("Laplacian Scale-Space");
     }
     
     private static double sqrt(double number) {
