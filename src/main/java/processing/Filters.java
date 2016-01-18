@@ -34,7 +34,7 @@ import utils.ArrayUtil;
  * @author jollion
  */
 public class Filters {
-    public static Neighborhood getNeighborhood(double scaleXY, double scaleZ, Image image) {return image.getSizeZ()>1 ? new EllipsoidalNeighborhood(scaleXY, scaleZ, false) : new EllipsoidalNeighborhood(scaleXY, false);}
+    public static Neighborhood getNeighborhood(double radiusXY, double radiusZ, Image image) {return image.getSizeZ()>1 ? new EllipsoidalNeighborhood(radiusXY, radiusZ, false) : new EllipsoidalNeighborhood(radiusXY, false);}
       
     public static <T extends Image> T mean(Image image, T output, Neighborhood neighborhood) {
         return applyFilter(image, output, new Mean(), neighborhood);

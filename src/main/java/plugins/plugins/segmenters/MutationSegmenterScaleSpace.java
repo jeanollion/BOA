@@ -28,6 +28,7 @@ import dataStructure.objects.ObjectPopulation.Or;
 import dataStructure.objects.ObjectPopulation.Overlap;
 import dataStructure.objects.StructureObjectProcessing;
 import dataStructure.objects.Voxel;
+import image.BoundingBox;
 import image.Image;
 import image.ImageByte;
 import image.ImageFloat;
@@ -63,7 +64,7 @@ import processing.neighborhood.EllipsoidalSubVoxNeighborhood;
  *
  * @author jollion
  */
-public class MutationSegmenter implements Segmenter {
+public class MutationSegmenterScaleSpace implements Segmenter {
     public static boolean debug = false;
     public static boolean displayImages = false;
     NumberParameter scale = new BoundedNumberParameter("Scale", 1, 2.5, 1.5, 5);
@@ -97,35 +98,23 @@ public class MutationSegmenter implements Segmenter {
     
     public static ObjectPopulation runPlane(Image input, ImageMask mask, double scale, double subtractBackgroundScale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
         if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
-        IJImageDisplayer disp = debug?new IJImageDisplayer():null;
-        input = IJSubtractBackground.filter(input.duplicate("sub"), subtractBackgroundScale, false, false, true, false);
-        //Image lap = ImageFeatures.getLaplacian(input, scale, true, false).setName("laplacian: "+scale);
-        //Image lapSP = ImageFeatures.getScaleSpaceLaplacian(input, new double[]{2, 4, 6, 8, 10});
-        //Image hessSP = ImageFeatures.getScaleSpaceHessianDet(input, new double[]{2, 4, 6, 8, 10});
-        Image[] hess = ImageFeatures.getHessianMaxAndDeterminant(input, scale, false);
-        Image det = hess[1].setName("hessian det");
-        Image hessMax = hess[0].setName("hessian max");
-        if (displayImages) {
-            disp.showImage(input.setName("input"));
-            //disp.showImage(lom.setName("laplacian"));
-            disp.showImage(det);
-            disp.showImage(hessMax);
-        }
-        ImageByte seeds = Filters.localExtrema(det, null, true, thresholdSeeds, Filters.getNeighborhood(scale, scale, input));
+        Image lapSP = ImageFeatures.getScaleSpaceLaplacian(input, new double[]{scale-0.5, scale, scale+0.5, scale+1.5, scale+2.5, scale+3.5});
+        Image lap = lapSP.getZPlane(1);
+        ImageByte seedsSP = Filters.localExtrema(lapSP, null, true, thresholdSeeds, Filters.getNeighborhood(scale, 1, lapSP)).setName("seedsSP");
+        // select only seeds from plane 1 2 & 3 (exclude big objects)
+        ImageByte seeds = ImageOperations.maxZProjection(seedsSP, 0, 2).setName("seeds");
         
         if (intermediateImages!=null) {
-            intermediateImages.add(det);
-            intermediateImages.add(hessMax);
-            //intermediateImages.add(lap);
             intermediateImages.add(input);
-            //intermediateImages.add(ImageFeatures.getScaleSpaceHessianDet(input, new double[]{2.5, 3, 3.5, 4, 4.5, 5, 5.5}).setName("scale space hess det"));
-            intermediateImages.add(ImageFeatures.getScaleSpaceLaplacian(input, new double[]{2, 2.5, 3, 4, 5, 6}).setName("scale space laplacian"));
+            intermediateImages.add(lapSP);
+            intermediateImages.add(seedsSP);
+            intermediateImages.add(seeds);
         }
         
         ObjectPopulation seedPop = new ObjectPopulation(seeds, false);
         //seedPop.filter(new Overlap(seedsHess, 1.5));
         //seedPop.filter(new Or(new ObjectPopulation.GaussianFit(norm, 3, 3, 5, 0.2, 0.010, 6), new MeanIntensity(-0.2, false, hess)));
-        ObjectPopulation pop =  watershed(det, mask, seedPop.getObjects(), true, new MultiplePropagationCriteria(new ThresholdPropagationOnWatershedMap(thresholdPropagation), new MonotonalPropagation(), new ThresholdPropagation(hessMax, 0, false)), new SizeFusionCriterion(minSpotSize));
+        ObjectPopulation pop =  watershed(lap, mask, seedPop.getObjects(), true, new MultiplePropagationCriteria(new ThresholdPropagationOnWatershedMap(thresholdPropagation), new MonotonalPropagation()), new SizeFusionCriterion(minSpotSize));
         pop.filter(new ObjectPopulation.RemoveFlatObjects(input));
         pop.filter(new ObjectPopulation.Size().setMin(minSpotSize));
         return pop;

@@ -39,8 +39,8 @@ import utils.ThreadRunner;
  * @author jollion
  */
 public class ScaleHistogramSignalExclusion implements Transformation {
-    BoundedNumberParameter sigmaTh= new BoundedNumberParameter("Theorical Sigma", 2, 7.83, 1, null);
-    BoundedNumberParameter muTh= new BoundedNumberParameter("Theorical Mean", 2, 106, 1, null);
+    BoundedNumberParameter sigmaTh= new BoundedNumberParameter("Theorical Sigma", 2, 5, 1, null);
+    BoundedNumberParameter muTh= new BoundedNumberParameter("Theorical Mean", 2, 100, 1, null);
     ChannelImageParameter signalExclusion = new ChannelImageParameter("Channel for Signal Exclusion", -1, true);
     BoundedNumberParameter signalExclusionThreshold = new BoundedNumberParameter("Signal Exclusion Threshold", 1, 50, 0, null);
     BooleanParameter underThreshold = new BooleanParameter("Consider only signal under threshold", true);

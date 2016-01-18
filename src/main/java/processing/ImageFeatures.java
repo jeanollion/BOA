@@ -215,12 +215,12 @@ public class ImageFeatures {
         ImageFloat[] hess=getHessian(image, scale, overrideIfFloat);
         ImageFloat det = hess[hess.length-1];
         if (hess.length==2) {
-            for (int xy = 0; xy<hess[0].getSizeXY(); ++xy) det.setPixel(xy, 0, hess[0].getPixel(xy, 0)*hess[1].getPixel(xy, 0)); //sqrt?
+            for (int xy = 0; xy<hess[0].getSizeXY(); ++xy) det.setPixel(xy, 0, hess[0].getPixel(xy, 0)*hess[1].getPixel(xy, 0)); 
         } else if (hess.length==3) {
             //double pow = 1d/3d;
             for (int z = 0; z<hess[0].getSizeZ(); ++z) {
                 for (int xy = 0; xy<hess[0].getSizeXY(); ++xy) {
-                    det.setPixel(xy, z, hess[0].getPixel(xy, z)*hess[1].getPixel(xy, z)*hess[2].getPixel(xy, z)); // pow?
+                    det.setPixel(xy, z, hess[0].getPixel(xy, z)*hess[1].getPixel(xy, z)*hess[2].getPixel(xy, z)); 
                 }
             }
         } else {

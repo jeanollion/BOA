@@ -369,12 +369,32 @@ public class ImageOperations {
     public static <T extends Image> T meanZProjection(Image input, T output) {
         BlankMask properties =  new BlankMask("", input.getSizeX(), input.getSizeY(), 1, input.getOffsetX(), input.getOffsetY(), input.getOffsetZ(), input.getScaleXY(), input.getScaleZ());
         if (output ==null) output = (T)new ImageFloat("mean Z projection", properties);
-        else if (output.sameSize(properties)) output = Image.createEmptyImage("mean Z projection", output, properties);
+        else if (!output.sameSize(properties)) output = Image.createEmptyImage("mean Z projection", output, properties);
         float size = input.getSizeZ();
         for (int xy = 0; xy<input.getSizeXY(); ++xy) {
             float sum = 0;
             for (int z = 0; z<input.getSizeZ(); ++z) sum+=input.getPixel(xy, z);
             output.setPixel(xy, 0, sum/size);
+        }
+        return output;
+    }
+    public static <T extends Image> T maxZProjection(T input, int... zLim) {return maxZProjection(input, null, zLim);}
+    public static <T extends Image> T maxZProjection(T input, T output, int... zLim) {
+        BlankMask properties =  new BlankMask("", input.getSizeX(), input.getSizeY(), 1, input.getOffsetX(), input.getOffsetY(), input.getOffsetZ(), input.getScaleXY(), input.getScaleZ());
+        if (output ==null) output = (T)Image.createEmptyImage("max Z projection", input, properties);
+        else if (!output.sameSize(properties)) output = Image.createEmptyImage("mean Z projection", output, properties);
+        int zMin = 0;
+        int zMax = input.getSizeZ();
+        if (zLim.length>0) zMin = zLim[0];
+        if (zLim.length>1) zMax = zLim[1];
+        for (int xy = 0; xy<input.getSizeXY(); ++xy) {
+            float max = input.getPixel(xy, 0);
+            for (int z = zMin+1; z<zMax; ++z) {
+                if (input.getPixel(xy, z)>max) {
+                    max = input.getPixel(xy, z);
+                }
+            }
+            output.setPixel(xy, 0, max);
         }
         return output;
     }
