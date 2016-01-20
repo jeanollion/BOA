@@ -42,6 +42,8 @@ import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.MutationSegmenter;
 import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
 import plugins.plugins.segmenters.SpotFluo2D5;
+import processing.neighborhood.CylindricalNeighborhood;
+import processing.neighborhood.EllipsoidalNeighborhood;
 import utils.MorphiumUtils;
 
 /**
@@ -53,20 +55,24 @@ public class TestProcessMutations {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         //String dbName = "testSub60";
-        //String dbName = "fluo151130_sub88-118";
         String dbName = "fluo151130_OutputNewScaling";
+        //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
-        t.testSegMutationsFromXP(8, 0, true, 5, 35);
+//        t.testSegMutationsFromXP(8, 0, true, 0, 35);
+//        t.testSegMutationsFromXP(8, 0, true, 151, 170);
+        t.testSegMutationsFromXP(8, 0, true, 322, 324);
 //        t.testSegMutationsFromXP(8, 1, true, 0, 5);
-//        t.testSegMutationsFromXP(8, 6, true, 14, 30);
+//        t.testSegMutationsFromXP(8, 6, true, 0, 30);
     }
     
     public void testSegMutation(StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
         Image input = parent.getRawImage(2);
         ImageInteger parentMask = parent.getMask();
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
-        ObjectPopulation pop = MutationSegmenterScaleSpace.runPlane(input.getZPlane(0), parentMask, 2.5, 5, 5, 3.5, intermediateImages); // 6 -0.18
+        //ObjectPopulation pop = MutationSegmenterScaleSpace.runPlaneMono(input.getZPlane(0), parentMask, 5, 3.5, 0.75, intermediateImages);
+        ObjectPopulation pop = MutationSegmenterScaleSpace.runPlaneHybrid(input.getZPlane(0), parentMask, 5, 4, 0.75, intermediateImages);
+        //ObjectPopulation pop = MutationSegmenterScaleSpace.runPlane(input.getZPlane(0), parentMask, 5, 4, 0.75, intermediateImages);
         if (parentMask_!=null) parentMask_.add(parentMask);
         if (input_!=null) input_.add(input);
         if (outputLabel!=null) outputLabel.add(pop.getLabelImage());

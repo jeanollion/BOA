@@ -185,12 +185,12 @@ public class ProcessingTest {
         Utils.assertImage(images[0][0], TypeConverter.toByte(imageInv, null), 0);
     }
     
-    private static ImageByte getMask(StructureObject root, int[] pathToRoot) {
+    /*private static ImageByte getMask(StructureObject root, int[] pathToRoot) {
         ImageByte mask = new ImageByte("mask", root.getMask());
         int startLabel = 1;
         for (StructureObject o : StructureObjectUtils.getAllObjects(root, pathToRoot)) mask.appendBinaryMasks(startLabel++, o.getMask().addOffset(o.getRelativeBoundingBox(null)));
         return mask;
-    }
+    }*/
     
     @Test
     public void StructureObjectTestStore() {

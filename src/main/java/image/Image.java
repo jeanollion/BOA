@@ -62,9 +62,19 @@ public abstract class Image implements ImageProperties {
     
     public abstract <T extends Image> T getZPlane(int idxZ);
     
-    public <T extends Image> ArrayList<T> splitZPlanes() {
+    /**
+     * 
+     * @param <T> type of Image
+     * @param zLimit array containing minimal Z plane idx (included) and maximal Z-plane idx (included).
+     * @return List of Z planes
+     */
+    public <T extends Image> ArrayList<T> splitZPlanes(int... zLimit) {
+        int zMin = 0;
+        int zMax = this.getSizeZ()-1;
+        if (zLimit.length>0) zMin = Math.max(zMin, zLimit[0]);
+        if (zLimit.length>1) zMax = Math.min(zMax, zLimit[1]);
         ArrayList<T> res = new ArrayList<T>(getSizeZ());
-        for (int i = 0; i<sizeZ; ++i) res.add((T)getZPlane(i));
+        for (int i = zMin; i<=zMax; ++i) res.add((T)getZPlane(i));
         return res;
     }
     

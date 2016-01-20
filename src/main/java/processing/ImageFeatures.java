@@ -51,7 +51,7 @@ public class ImageFeatures {
         thres.hysteresis(is, lowval, highval);
     }
     
-    public static ImageFloat[] structureTransform(Image image, double smoothScale, double integrationScale, boolean overrideIfFloat) {
+    public static ImageFloat[] getStructure(Image image, double smoothScale, double integrationScale, boolean overrideIfFloat) {
         ImageFloat[] res = new ImageFloat[image.getScaleZ()==1?2:3];
         boolean duplicate = !((image instanceof ImageFloat) && overrideIfFloat);
         imagescience.image.Image is = ImagescienceWrapper.getImagescience(image);
@@ -67,8 +67,29 @@ public class ImageFeatures {
             res[i].setName(image.getName() + ":structure:" + (i + 1));
             res[i].setCalibration(image);
             res[i].resetOffset().addOffset(image);
+            ImageOperations.affineOperation(res[i], res[i], smoothScale*smoothScale, 0);
         }
         return res;
+    }
+    
+    public static ImageFloat[] getStructureMaxAndDeterminant(Image image,  double smoothScale, double integrationScale, boolean overrideIfFloat) {
+        ImageFloat[] structure=getStructure(image, smoothScale, integrationScale, overrideIfFloat);
+        ImageFloat det = structure[structure.length-1];
+        if (structure.length==2) {
+            for (int xy = 0; xy<structure[0].getSizeXY(); ++xy) det.setPixel(xy, 0, structure[0].getPixel(xy, 0)*structure[1].getPixel(xy, 0)); 
+        } else if (structure.length==3) {
+            //double pow = 1d/3d;
+            for (int z = 0; z<structure[0].getSizeZ(); ++z) {
+                for (int xy = 0; xy<structure[0].getSizeXY(); ++xy) {
+                    det.setPixel(xy, z, structure[0].getPixel(xy, z)*structure[1].getPixel(xy, z)*structure[2].getPixel(xy, z)); 
+                }
+            }
+        } else {
+            logger.warn("wrong number of dimension {}, structure determient cannot be computed", structure.length);
+            return null;
+        }
+        
+        return new ImageFloat[]{structure[0], det};
     }
     
     public static ImageFloat getDerivative(Image image, double scale, int xOrder, int yOrder, int zOrder, boolean overrideIfFloat) {
@@ -238,6 +259,19 @@ public class ImageFeatures {
         return Image.mergeZPlanes(planes).setName("Hessian Det. Scale-Space");
     }
     
+    public static Image getScaleSpaceHessianDetNorm(Image plane, double[] scales, double... multiplicativeCoefficient) {
+        if (plane.getSizeZ()>1) throw new IllegalArgumentException("2D image only");
+        ArrayList<ImageFloat> planes = new ArrayList<ImageFloat>(scales.length);
+        for (double s : scales) {
+            ImageFloat im = ImageFeatures.getHessianMaxAndDeterminant(plane, s, false)[1];
+            ImageFloat norm = ImageFeatures.gaussianSmooth(plane, s, s, false);
+            ImageOperations.divide(im, norm, im, multiplicativeCoefficient);
+            ImageOperations.divide(im, norm, im, multiplicativeCoefficient);
+            planes.add(im);
+        }
+        return Image.mergeZPlanes(planes).setName("Hessian Det. Norm Scale-Space");
+    }
+    
     public static Image getScaleSpaceHessianMax(Image plane, double[] scales) {
         if (plane.getSizeZ()>1) throw new IllegalArgumentException("2D image only");
         ArrayList<ImageFloat> planes = new ArrayList<ImageFloat>(scales.length);
@@ -246,11 +280,36 @@ public class ImageFeatures {
         return ImageOperations.affineOperation(res, res, -1, 0);
     }
     
+    public static Image getScaleSpaceHessianMaxNorm(Image plane, double[] scales, Image norm, double... multiplicativeCoefficient) {
+        if (plane.getSizeZ()>1) throw new IllegalArgumentException("2D image only");
+        ArrayList<ImageFloat> planes = new ArrayList<ImageFloat>(scales.length);
+        for (double s : scales) {
+            ImageFloat im = ImageFeatures.getHessian(plane, s, false)[0];
+            Image n = norm==null? ImageFeatures.gaussianSmooth(plane, s, s, false) : norm;
+            ImageOperations.divide(im, n, im, multiplicativeCoefficient);
+            planes.add(im);
+        }
+        Image res = Image.mergeZPlanes(planes).setName("Hessian Max. Normed Scale-Space");
+        return ImageOperations.affineOperation(res, res, -1, 0);
+    }
+    
     public static Image getScaleSpaceLaplacian(Image plane, double[] scales) {
         if (plane.getSizeZ()>1) throw new IllegalArgumentException("2D image only");
         ArrayList<ImageFloat> planes = new ArrayList<ImageFloat>(scales.length);
         for (double s : scales) planes.add(ImageFeatures.getLaplacian(plane, s, true, false));
         return Image.mergeZPlanes(planes).setName("Laplacian Scale-Space");
+    }
+    
+    public static Image getScaleSpaceLaplacianNorm(Image plane, double[] scales, double... multiplicativeCoefficient) {
+        if (plane.getSizeZ()>1) throw new IllegalArgumentException("2D image only");
+        ArrayList<ImageFloat> planes = new ArrayList<ImageFloat>(scales.length);
+        for (double s : scales) {
+            ImageFloat im = ImageFeatures.getLaplacian(plane, s, true, false);
+            ImageFloat norm = ImageFeatures.gaussianSmooth(plane, s, s, false);
+            ImageOperations.divide(im, norm, im, multiplicativeCoefficient);
+            planes.add(im);
+        }
+        return Image.mergeZPlanes(planes).setName("Laplacian Norm Scale-Space");
     }
     
     private static double sqrt(double number) {

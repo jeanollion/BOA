@@ -20,6 +20,7 @@ package processing.neighborhood;
 import static core.Processor.logger;
 import dataStructure.objects.Voxel;
 import image.Image;
+import image.ImageByte;
 import image.ImageProperties;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,14 +30,10 @@ import java.util.Comparator;
  *
  * @author jollion
  */
-public class EllipsoidalNeighborhood implements Neighborhood {
+public class EllipsoidalNeighborhood extends DisplacementNeighborhood {
     double radius;
     double radiusZ;
-    boolean is3D;        
-    public final int[] dx, dy, dz;
-    float[] values;
-    float[] distances;
-    int valueCount=0;
+
     /**
      * 3D Elipsoidal Neighbourhood around a voxel
      * @param radius in pixel in the XY-axis
@@ -134,46 +131,13 @@ public class EllipsoidalNeighborhood implements Neighborhood {
             distances[i] = tempDist[indicies[i]];
         }
     }
-    @Override public void setPixels(Voxel v, Image image) {setPixels(v.x, v.y, v.z, image);}
     
-    @Override public void setPixels(int x, int y, int z, Image image) {
-        valueCount=0;
-        int xx, yy;
-        if (is3D) { 
-            int zz;
-            for (int i = 0; i<dx.length; ++i) {
-                xx=x+dx[i];
-                yy=y+dy[i];
-                zz=z+dz[i];
-                if (image.contains(xx, yy, zz)) values[valueCount++]=image.getPixel(xx, yy, zz);
-            }
-        } else {
-            for (int i = 0; i<dx.length; ++i) {
-                xx=x+dx[i];
-                yy=y+dy[i];
-                if (image.contains(xx, yy, 0)) values[valueCount++]=image.getPixel(xx, yy, 0);
-            }
-        }
-    }
-    
-    @Override public int getSize() {return dx.length;}
 
-    @Override public float[] getPixelValues() {
-        return values;
-    }
-
-    @Override public int getValueCount() {
-        return valueCount;
-    }
-    @Override public float[] getDistancesToCenter() {
-        return distances;
-    }
-
-    @Override public double getRadiusXY() {
+    public double getRadiusXY() {
         return radius;
     }
 
-    @Override public double getRadiusZ() {
+    public double getRadiusZ() {
         return radiusZ;
     }
     
@@ -211,6 +175,24 @@ public class EllipsoidalNeighborhood implements Neighborhood {
 
     public boolean is3D() {
         return is3D;
+    }
+    
+    public ImageByte drawNeighborhood(ImageByte output) {
+        int centerXY, centerZ;
+        if (output == null) {
+            int radXY = (int)(this.radius+0.5);
+            int radZ = (int)(this.radiusZ+0.5);
+            centerXY=radXY;
+            centerZ=radZ;
+            if (is3D) output = new ImageByte("3D EllipsoidalNeighborhood: XY:"+this.radius+" Z:"+this.radiusZ, radXY*2+1, radXY*2+1, radZ*2+1);
+            else output = new ImageByte("2D EllipsoidalNeighborhood: XY:"+this.radius, radXY*2+1, radXY*2+1, 1);
+        } else {
+            centerXY = output.getSizeX()/2+1;
+            centerZ = output.getSizeZ()/2+1;
+        }
+        if (is3D) for (int i = 0; i<this.dx.length;++i) output.setPixel(centerXY+dx[i], centerXY+dy[i], centerZ+dz[i], 1);
+        else for (int i = 0; i<this.dx.length;++i) output.setPixel(centerXY+dx[i], centerXY+dy[i], 0, 1);
+        return output;
     }
     
 }

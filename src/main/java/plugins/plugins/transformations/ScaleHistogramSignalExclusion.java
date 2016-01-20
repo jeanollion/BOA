@@ -63,7 +63,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
         final boolean underThreshold = this.underThreshold.getSelected();
         final ThreadRunner tr = new ThreadRunner(0, inputImages.getTimePointNumber());
         final ImageInteger[] exclusionMasks = (chExcl>=0) ?  new ImageInteger[tr.size()] : null;
-        final Double[][] sigmaMu = new Double[inputImages.getTimePointNumber()][];
+        final Double[][] muSigma = new Double[inputImages.getTimePointNumber()][];
         for (int i = 0; i<tr.threads.length; i++) {
             final int trIdx = i;
             tr.threads[i] = new Thread(
@@ -77,19 +77,46 @@ public class ScaleHistogramSignalExclusion implements Transformation {
                                 if (exclusionMasks[trIdx]==null) exclusionMasks[trIdx] = new ImageByte("", signalExclusion);
                                 exclusionMask = exclusionMasks[trIdx];
                             }
-                            sigmaMu[idx] = computeMeanSigma(inputImages.getImage(channelIdx, idx), signalExclusion, exclThld, underThreshold, exclusionMask, idx);
+                            muSigma[idx] = computeMeanSigma(inputImages.getImage(channelIdx, idx), signalExclusion, exclThld, underThreshold, exclusionMask, idx);
                         }
                     }
                 }
             );
         }
         tr.startAndJoin();
-        meanSigmaT=new ArrayList<ArrayList<Double>>(sigmaMu.length);
-        for (Double[] d : sigmaMu) {
-            //logger.debug("sigmaMu: {}", (Object[])d);
+        meanSigmaT=new ArrayList<ArrayList<Double>>(muSigma.length);
+        for (Double[] d : muSigma) {
+            //logger.debug("muSigma: {}", (Object[])d);
             meanSigmaT.add(new ArrayList<Double>(Arrays.asList(d)));
         }
     }
+    
+    /*private Double[][] getTheoricalMuSigma(double blinkMuThld, int windowSize, Double[][] muSigma) {
+        Double[][] res = new Double[muSigma.length][2];
+        int lastUnBlinkIdx, nextUnBlinkIdx;
+        for (int i = 0; i<muSigma.length; ++i) {
+            if (muSigma[i][0]<=blinkMuThld) lastUnBlinkIdx=i;
+            else { // blinking
+                //look for next BlinkIdx
+                nextUnBlinkIdx=i+1;
+                while (nextUnBlinkIdx<muSigma.length && muSigma[nextUnBlinkIdx][0]>blinkMuThld) ++nextUnBlinkIdx;
+                
+                // look for windowSize/2 previous elements 
+                int unBlinkCount=0;
+                int unBlinkPrevIdx;
+                // look for windowSize-unBlinkCount next elements
+                
+                // look for windowSize-unBlinkCount previous elements
+            }
+        }
+    }
+    
+    private double[] getNext(Double[][] muSigma, int startIdx, int length, boolean next) { // actual length, sumMu, sumSigma
+        if (next) {
+            while(startIdx)
+        }
+    }*/
+    
     
     public static Double[] computeMeanSigma(Image image, Image exclusionSignal, double exclusionThreshold, boolean underThreshold, ImageInteger exclusionMask, int timePoint) {
         long t0 = System.currentTimeMillis();
@@ -108,7 +135,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
         double beta = muSig.get(0) - alpha * this.muTh.getValue().doubleValue();
         return ImageOperations.affineOperation(image, image instanceof ImageFloat? image: new ImageFloat("", 0, 0, 0), 1d/alpha, -beta/alpha);
     }
-
+    
     public ArrayList getConfigurationData() {
         return meanSigmaT;
     }

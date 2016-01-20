@@ -35,10 +35,6 @@ public abstract class ImageInteger extends Image implements ImageMask {
     public abstract void setPixelWithOffset(int x, int y, int z, int value);
     public abstract void setPixel(int xy, int z, int value);
     
-    @Override public ImageInteger resetOffset() {return (ImageInteger)super.resetOffset();}
-    @Override public ImageInteger addOffset(BoundingBox bounds) {return (ImageInteger)super.addOffset(bounds);}
-    @Override public ImageInteger addOffset(ImageProperties properties) {return (ImageInteger)super.addOffset(properties);}
-    @Override public ImageInteger addOffset(int offsetX, int offsetY, int offsetZ) {return (ImageInteger)super.addOffset(offsetX, offsetY, offsetZ);}
     /**
      * 
      * @param addBorder

@@ -231,6 +231,27 @@ public class ImageOperations {
         return output;
     }
     
+    public static <T extends Image> T divide(Image source1, Image source2, T output, double... multiplicativeCoefficient) {
+        if (!source1.sameSize(source2)) throw new IllegalArgumentException("cannot multiply images of different sizes");
+        if (output==null) output = (T)new ImageFloat(source1.getName()+" x "+source2.getName(), source1);
+        else if (!output.sameSize(source1)) output = Image.createEmptyImage(source1.getName()+" x "+source2.getName(), output, source1);
+        if (multiplicativeCoefficient.length == 0) {
+            for (int z = 0; z<output.sizeZ; ++z) {
+                for (int xy=0; xy<output.sizeXY; ++xy) {
+                    output.setPixel(xy, z, source1.getPixel(xy, z)/source2.getPixel(xy, z));
+                }
+            }
+        } else {
+            double m = multiplicativeCoefficient[0];
+            for (int z = 0; z<output.sizeZ; ++z) {
+                for (int xy=0; xy<output.sizeXY; ++xy) {
+                    output.setPixel(xy, z, m * source1.getPixel(xy, z)/source2.getPixel(xy, z));
+                }
+            }
+        }
+        return output;
+    }
+    
     public static ImageInteger or(ImageMask source1, ImageMask source2, ImageInteger output) {
         if (output==null) output = new ImageByte("or", source1);
         for (int z = 0; z<source1.getSizeZ(); ++z) {
@@ -384,12 +405,12 @@ public class ImageOperations {
         if (output ==null) output = (T)Image.createEmptyImage("max Z projection", input, properties);
         else if (!output.sameSize(properties)) output = Image.createEmptyImage("mean Z projection", output, properties);
         int zMin = 0;
-        int zMax = input.getSizeZ();
+        int zMax = input.getSizeZ()-1;
         if (zLim.length>0) zMin = zLim[0];
         if (zLim.length>1) zMax = zLim[1];
         for (int xy = 0; xy<input.getSizeXY(); ++xy) {
             float max = input.getPixel(xy, 0);
-            for (int z = zMin+1; z<zMax; ++z) {
+            for (int z = zMin+1; z<=zMax; ++z) {
                 if (input.getPixel(xy, z)>max) {
                     max = input.getPixel(xy, z);
                 }
