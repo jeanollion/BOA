@@ -60,7 +60,7 @@ public abstract class ImageWindowManager<T> {
         imageObjectInterfaces = new HashMap<ImageObjectInterfaceKey, ImageObjectInterface>();
     }
     
-    public ImageDisplayer getDisplayer() {return displayer;}
+    public ImageDisplayer<T> getDisplayer() {return displayer;}
     
     
     public void displayAllObjectsOnCurrentImage() {
@@ -68,7 +68,7 @@ public abstract class ImageWindowManager<T> {
         if (im==null) return;
         Image image = displayer.getImage(im);
         ImageObjectInterface i =  getImageObjectInterface(image);
-        selectObjects(image, false, i.getObjects());
+        displayObjects(image, i, false, i.getObjects());
     }
     
     //protected abstract T getImage(Image image);
@@ -111,6 +111,7 @@ public abstract class ImageWindowManager<T> {
         if (i==null) {
             i = new TrackMask(parentTrack, childStructureIdx);
             imageObjectInterfaces.put(i.getKey(), i);
+            i.setGUIMode(GUI.hasInstance());
         } 
         return i;
     }
@@ -184,10 +185,10 @@ public abstract class ImageWindowManager<T> {
         } else logger.warn("image: {} is not registered for click");
         return null;
     }
-    public void selectObjects(Image image, boolean addToCurrentSelection, StructureObject... selectedObjects) {
-        selectObjects(image, addToCurrentSelection, Arrays.asList(selectedObjects));
+    public void displayObjects(Image image, ImageObjectInterface i, boolean addToCurrentSelection, StructureObject... selectedObjects) {
+        displayObjects(image, i, addToCurrentSelection, Arrays.asList(selectedObjects));
     }
-    public abstract void selectObjects(Image image, boolean addToCurrentSelection, List<StructureObject> selectedObjects);
+    public abstract void displayObjects(Image image, ImageObjectInterface i, boolean addToCurrentSelection, List<StructureObject> selectedObjects);
     public abstract void unselectObjects(Image image);
     public abstract void displayTrack(Image image, boolean addToCurrentSelectedTracks, ArrayList<StructureObject> track, Color color);
     public void displayTrackAllImages(ImageObjectInterface i, boolean addToCurrentSelectedTracks, ArrayList<StructureObject> track, Color color) {

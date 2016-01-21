@@ -104,6 +104,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
      * Creates new form GUI
      */
     public GUI() {
+        logger.debug("Creating GUI instance...");
         this.instance=this;
         initComponents();
         addHorizontalScrollBar(dbNames);
@@ -212,6 +213,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     public static GUI getInstance() {
         if (instance==null) new GUI();
         return instance;
+    }
+    
+    public static boolean hasInstance() {
+        return instance!=null;
     }
     
     // ImageObjectListener implementation

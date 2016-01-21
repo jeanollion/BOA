@@ -61,9 +61,13 @@ public class TestProcessMutations {
         t.init(dbName);
 //        t.testSegMutationsFromXP(8, 0, true, 0, 35);
 //        t.testSegMutationsFromXP(8, 0, true, 151, 170);
-        t.testSegMutationsFromXP(8, 0, true, 322, 324);
+//        t.testSegMutationsFromXP(8, 0, true, 322, 324);
+//        t.testSegMutationsFromXP(8, 8, true, 36, 39);
+//        t.testSegMutationsFromXP(8, 0, true, 230, 251);
 //        t.testSegMutationsFromXP(8, 1, true, 0, 5);
 //        t.testSegMutationsFromXP(8, 6, true, 0, 30);
+//        t.testSegMutationsFromXP(8, 10, true, 341, 343);
+//        t.testSegMutationsFromXP(8, 10, true, 62, 64);
     }
     
     public void testSegMutation(StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {

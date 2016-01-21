@@ -33,6 +33,7 @@ public abstract class ImageObjectInterface {
     final protected StructureObject parent;
     final protected int childStructureIdx;
     final protected boolean is2D;
+    protected boolean guiMode = true;
     public ImageObjectInterface(StructureObject parent, int childStructureIdx) {
         this.parent = parent;
         this.childStructureIdx = childStructureIdx;
@@ -48,7 +49,13 @@ public abstract class ImageObjectInterface {
     public abstract Image generateRawImage(int structureIdx);
     public abstract boolean isTimeImage();
     public abstract ArrayList<StructureObject> getObjects();
-    
+    /**
+     * 
+     * @param guiMode if set to true, display of images and retrieve of objects is done in another thread
+     */
+    public void setGUIMode(boolean guiMode) {
+        this.guiMode=guiMode;
+    }
     @Override
     public boolean equals(Object o) {
         if (o instanceof ImageObjectInterface) return ((ImageObjectInterface)o).parent.equals(parent) && ((ImageObjectInterface)o).childStructureIdx==childStructureIdx;

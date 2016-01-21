@@ -232,8 +232,9 @@ public class TrackNode implements TreeNode, UIContainer {
                             if (logger.isDebugEnabled()) logger.debug("opening track raw image for structure: {} of idx: {}", ae.getActionCommand(), getStructureIdx(ae.getActionCommand(), openRaw));
                             //int[] path = trackNode.trackHead.getExperiment().getPathToStructure(trackNode.trackHead.getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
                             //trackNode.loadAllTrackObjects(path);
-                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, getStructureIdx(ae.getActionCommand(), openRaw));
-                            if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(getStructureIdx(ae.getActionCommand(), openRaw)), i, false, true);
+                            int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
+                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, structureIdx);
+                            if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(structureIdx), i, false, true);
                         }
                     }
                 );

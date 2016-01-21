@@ -30,7 +30,7 @@ public class ImageWindowManagerFactory {
     private final static ImageEnvironnement currentImageDisplayerType = IJ;
     public static ImageWindowManager getImageManager() {
         if (currentImageManager==null) {
-            if (currentImageDisplayerType.equals(IJ)) currentImageManager = new IJImageWindowManager(GUI.getInstance());
+            if (currentImageDisplayerType.equals(IJ)) currentImageManager = new IJImageWindowManager(GUI.hasInstance()?GUI.getInstance():null);
         }
         return currentImageManager;
     }
