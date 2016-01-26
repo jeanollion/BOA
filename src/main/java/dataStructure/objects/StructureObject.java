@@ -489,7 +489,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             return null;
         }
         // first object returned by splitter is updated to current structureObject
-        pop.addOffset(this.getBounds(), false);
+        pop.translate(this.getBounds());
         objectModified=true;
         this.object=pop.getObjects().get(0).setLabel(idx+1);
         flushImages();
@@ -605,7 +605,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (this.equals(stop)) return res.translateToOrigin();
         StructureObject nextParent=this.getParent();
         while(!stop.equals(nextParent)) {
-            res.addOffset(nextParent.getObject().getBounds());
+            res.translate(nextParent.getObject().getBounds());
             nextParent=nextParent.getParent();
             if (nextParent==null) throw new RuntimeException("GetRelativeBoundingBoxError: stop structure object is not in parent tree");
             //if (!stop.equals(nextParent) && nextParent.getId().equals(stop.getId())) logger.error("stop condition cannot be reached: stop ({}) and parent ({}) not equals but same object", stop, nextParent);

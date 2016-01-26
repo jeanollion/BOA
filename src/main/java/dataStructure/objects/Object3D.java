@@ -31,12 +31,11 @@ import processing.neighborhood.Neighborhood;
  */
 public class Object3D {
     public final static Logger logger = LoggerFactory.getLogger(Object3D.class);
-    protected ImageInteger mask; //lazy -> use getter
+    protected ImageInteger mask; //lazy -> use getter // Bounds rapport au root
     protected BoundingBox bounds;
     protected int label;
-    protected ArrayList<Voxel> voxels; //lazy -> use getter // coordonnées des voxel -> par rapport au parent
+    protected ArrayList<Voxel> voxels; //lazy -> use getter // coordonnées des voxel -> par rapport au root
     protected float scaleXY=1, scaleZ=1;
-    protected BoundingBox currentOffset=null;
     /**
      * Voxel
      * @param mask : image containing only the object, and whose bounding box is the same as the one of the object
@@ -125,7 +124,7 @@ public class Object3D {
             //if (!mask_.containsWithOffset(v.x, v.y, v.z)) logger.error("voxel out of bounds: {}", v); // can happen if bounds were not updated before the object was saved
             mask_.setPixelWithOffset(v.x, v.y, v.z, 1);
         }
-        //if (currentOffset!=null) mask_.addOffset(currentOffset);
+        //if (currentOffset!=null) mask_.translate(currentOffset);
         this.mask=mask_;
     }
 
@@ -184,6 +183,10 @@ public class Object3D {
         return voxels;
     }
     
+    public boolean voxelsCreated() {
+        return voxels!=null;
+    }
+    
     public ArrayList<Voxel> getContour() {
         ArrayList<Voxel> res = new ArrayList<Voxel>();
         ImageMask mask = getMask();
@@ -227,20 +230,26 @@ public class Object3D {
         return bounds;
     }
     
-    public Set<Voxel> getIntersection(Object3D other) {
-        if (!this.getBounds().hasIntersection(other.getBounds())) return Collections.emptySet();
-        else return Sets.intersection(Sets.newHashSet(getVoxels()), Sets.newHashSet(other.getVoxels()));
+    public Set<Voxel> getIntersection(Object3D other, BoundingBox offset) {
+        if (offset==null) {
+            if (!this.getBounds().hasIntersection(other.getBounds())) return Collections.emptySet();
+            else return Sets.intersection(Sets.newHashSet(getVoxels()), Sets.newHashSet(other.getVoxels()));
+        } else {
+            
+        }
+        
     }
     
   
-    public int getIntersectionCountMask(Object3D other) {
-        if (!this.getBounds().hasIntersection(other.getBounds())) return 0;
+    public int getIntersectionCountMask(Object3D other, BoundingBox offset) {
+        if (offset==null) offset=new BoundingBox(0, 0, 0);
+        if (!this.getBounds().hasIntersection(other.getBounds().duplicate().translate(offset))) return 0;
         else {
             ImageMask m = other.getMask();
             int count = 0;
-            int offX = m.getOffsetX();
-            int offY = m.getOffsetY();
-            int offZ = m.getOffsetZ();
+            int offX = m.getOffsetX()+offset.getxMin();
+            int offY = m.getOffsetY()+offset.getyMin();
+            int offZ = m.getOffsetZ()+offset.getzMin();
             for (Voxel v : this.getVoxels()) {
                 if (m.insideMask(v.x-offX, v.y-offY, v.z-offZ)) ++count;
             }
@@ -347,29 +356,18 @@ public class Object3D {
         return getBounds().getSizeZ()>1;
     }
     
-    public Object3D addOffset(int offsetX, int offsetY, int offsetZ) {
+    public Object3D translate(int offsetX, int offsetY, int offsetZ) {
         if (offsetX==0 && offsetY==0 && offsetZ==0) return this;
         if (mask!=null) mask.addOffset(offsetX, offsetY, offsetZ);
         if (bounds!=null) bounds.translate(offsetX, offsetY, offsetZ);
         if (voxels!=null) for (Voxel v : voxels) v.translate(offsetX, offsetY, offsetZ);
-        if (currentOffset == null) currentOffset = new BoundingBox(offsetX, offsetY, offsetZ);
-        else {
-            currentOffset.translate(offsetX, offsetX, offsetX);
-            if (currentOffset.isOffsetNull()) currentOffset=null;
-        }
         return this;
     }
-    public Object3D translate(BoundingBox bounds, boolean remove) {
+    public Object3D translate(BoundingBox bounds) {
         if (bounds.isOffsetNull()) return this;
-        if (remove) return addOffset(-bounds.getxMin(), -bounds.getyMin(), -bounds.getzMin()); 
-        else return addOffset(bounds.getxMin(), bounds.getyMin(), bounds.getzMin()); 
+        else return translate(bounds.getxMin(), bounds.getyMin(), bounds.getzMin()); 
     }
-    public void resetOffset() {
-        if (currentOffset!=null) {
-            addOffset(-currentOffset.getxMin(), -currentOffset.getyMin(), -currentOffset.getzMin());
-            currentOffset=null;
-        }
-    }
+
     public Object3D setLabel(int label) {
         this.label=label;
         return this;

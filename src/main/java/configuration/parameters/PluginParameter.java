@@ -50,7 +50,6 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     protected String pluginTypeName;
     protected boolean allowNoSelection;
     protected boolean activated=true;
-    
     public PluginParameter(String name, Class<T> pluginType, boolean allowNoSelection) {
         super(name);
         this.pluginType=pluginType;

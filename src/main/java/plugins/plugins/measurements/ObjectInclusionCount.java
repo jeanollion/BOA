@@ -98,7 +98,8 @@ public class ObjectInclusionCount implements Measurement {
         for (StructureObject o : toCount) {
             if (onlyTrackHeads && !o.isTrackHead()) continue;
             BoundingBox offsetP = o.getParent().getRelativeBoundingBox(commonParent).translate(-offsetC.getxMin(), -offsetC.getyMin(), -offsetC.getzMin());
-            o.getObject().addOffset(offsetP.getxMin(), offsetP.getyMin(), offsetP.getzMin());
+            o.getObject().translate(offsetP.getxMin(), offsetP.getyMin(), offsetP.getzMin());
+            
             //logger.debug("add offset: {}, offsetC: {}, offsetP: {}", offsetP, offsetC, o.getParent().getRelativeBoundingBox(commonParent));
             if (o.getBounds().hasIntersection(containerObject.getBounds())) {
                 if (proportionInclusion==0) ++count;

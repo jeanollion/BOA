@@ -202,7 +202,7 @@ public class BoundingBox {
     }
     
     public BoundingBox translateToOrigin() {
-        return translate(-xMin, -yMin, -zMin);
+        return BoundingBox.this.translate(-xMin, -yMin, -zMin);
     }
     
     public int getxMin() {
@@ -314,8 +314,15 @@ public class BoundingBox {
         return new BoundingBox(xMin, xMax, yMin, yMax, zMin, zMax);
     }
     
-    public BoundingBox addOffset(BoundingBox other) {
+    public BoundingBox translate(BoundingBox other) {
         this.translate(other.xMin, other.yMin, other.zMin);
+        return this;
+    }
+    
+    public BoundingBox reverseOffset() {
+        this.xMin=-xMin;
+        this.yMin=--yMin;
+        this.zMin=-zMin;
         return this;
     }
     

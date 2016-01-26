@@ -68,6 +68,7 @@ public class TestProcessMutations {
 //        t.testSegMutationsFromXP(8, 6, true, 0, 30);
 //        t.testSegMutationsFromXP(8, 10, true, 341, 343);
 //        t.testSegMutationsFromXP(8, 10, true, 62, 64);
+        t.testSegMutationsFromXP(9, 0, true, 0, 10);
     }
     
     public void testSegMutation(StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
@@ -105,8 +106,6 @@ public class TestProcessMutations {
             }
         }
     }
-    
-    
     
     static int intervalX = 5;
     public void testSegMutationsFromXP(int fieldIdx, int mcIdx, boolean parentMC, int tStart, int tEnd) {

@@ -43,6 +43,7 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import measurement.BasicMeasurements;
+import plugins.ObjectFeature;
 import static plugins.plugins.thresholders.IJAutoThresholder.runThresholder;
 import static plugins.plugins.thresholders.IJAutoThresholder.runThresholder;
 import static plugins.plugins.thresholders.IJAutoThresholder.runThresholder;
@@ -217,15 +218,15 @@ public class ObjectPopulation {
         }
     }
     
-    public void addOffset(int offsetX, int offsetY, int offsetZ) {
+    public void translate(int offsetX, int offsetY, int offsetZ) {
         for (Object3D o : objects) {
-            o.addOffset(offsetX, offsetY, offsetZ);
+            o.translate(offsetX, offsetY, offsetZ);
         }
     }
     
-    public void addOffset(BoundingBox bounds, boolean remove) {
+    public void translate(BoundingBox bounds) {
         for (Object3D o : objects) {
-            o.translate(bounds, remove);
+            o.translate(bounds);
         }
     }
 
@@ -394,6 +395,33 @@ public class ObjectPopulation {
         public boolean keepObject(Object3D object);
     }
 
+    public static class Feature implements Filter {
+        boolean keepOverThreshold, strict;
+        ObjectFeature feature;
+        double threshold;
+        public Feature(ObjectFeature feature, double threshold, boolean keepOverThreshold, boolean strict) {
+            this.feature=feature;
+            this.threshold=threshold;
+            this.keepOverThreshold=keepOverThreshold;
+            this.strict=strict;
+        }
+        
+        public void init(ObjectPopulation population) {
+            
+        }
+
+        public boolean keepObject(Object3D object) {
+            double testValue = feature.performMeasurement(object, null);
+            if (keepOverThreshold) {
+                if (strict) return testValue>threshold;
+                else return testValue>=threshold;
+            } else {
+                if (strict) return testValue<threshold;
+                else return testValue<=threshold;
+            }
+        }
+    }
+    
     public static class Thickness implements Filter {
 
         int tX = -1, tY = -1, tZ = -1;

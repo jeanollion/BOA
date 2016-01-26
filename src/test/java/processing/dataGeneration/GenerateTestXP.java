@@ -52,27 +52,27 @@ public class GenerateTestXP {
     public static void main(String[] args) {
         //String dbName = "fluo151130_OutputNewScaling";
         //String outputDir = "/home/jollion/Documents/LJP/DataLJP/Fluo151130/OutputNewScaling/";
-        String dbName = "testSub60";
-        String outputDir = "/home/jollion/Documents/LJP/DataLJP/TestOutput60";
-        String inputDir = "/home/jollion/Documents/LJP/DataLJP/testsub60";
-        boolean performProcessing = true;
+        String dbName = "testSub";
+        String outputDir = "/home/jollion/Documents/LJP/DataLJP/TestOutput";
+        String inputDir = "/home/jollion/Documents/LJP/DataLJP/testsub";        
+        boolean performProcessing = false;
         
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
         mDAO.reset();
         Experiment xp = generateXP(outputDir, true); 
         mDAO.setExperiment(xp);
         
+        Processor.importFiles(xp, inputDir);
         if (performProcessing) {
-            Processor.importFiles(xp, inputDir);
             Processor.preProcessImages(mDAO, true);
             Processor.processAndTrackStructures(mDAO, true, 0);
-            mDAO.updateExperiment(); // save changes
         }
+        mDAO.updateExperiment(); // save changes
     }
     
     
     public static Experiment generateXP(String outputDir, boolean setUpPreProcessing) {
-        PluginFactory.findPlugins("plugins.plugins");
+        
         Experiment xp = new Experiment("testXP");
         xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
         //xp.setImportImageMethod(Experiment.ImportImageMethod.SINGLE_FILE);
@@ -98,7 +98,7 @@ public class GenerateTestXP {
             xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
             xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(true);
             xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannels2D());
-            xp.getPreProcessingTemplate().addTransformation(1, null, new ScaleHistogramSignalExclusion(106, 7.8, 0, 50, true)); // to remove blinking
+            xp.getPreProcessingTemplate().addTransformation(1, null, new ScaleHistogramSignalExclusion(100, 5, 0, 50, true)); // to remove blinking
             xp.getPreProcessingTemplate().addTransformation(0, null, new SelectBestFocusPlane(3)).setActivated(false); // faster after crop, but previous transformation might be aftected if the first plane is really out of focus
             xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY());
         }

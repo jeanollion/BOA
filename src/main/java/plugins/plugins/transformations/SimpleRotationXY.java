@@ -17,6 +17,7 @@
  */
 package plugins.plugins.transformations;
 
+import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
@@ -34,9 +35,19 @@ import utils.Utils;
  * @author jollion
  */
 public class SimpleRotationXY implements TransformationTimeIndependent {
-    NumberParameter angle = new NumberParameter("Angle (degree)", 4, 0);
+    NumberParameter angle = new BoundedNumberParameter("Angle (degree)", 4, 0, -180, 180);
     ChoiceParameter interpolation = new ChoiceParameter("Interpolation", Utils.toStringArray(ImageTransformation.InterpolationScheme.values()), ImageTransformation.InterpolationScheme.LINEAR.toString(), false);
     Parameter[] parameters = new Parameter[]{angle, interpolation};
+    
+    public SimpleRotationXY() {}
+    
+    public SimpleRotationXY(double angle) {
+        if (angle>360) angle=angle%360;
+        else if (angle<-360) angle=angle%-360;
+        if (angle>180) angle=-360+angle;
+        else if (angle<-180) angle = 360-angle;
+        this.angle.setValue(angle);
+    }
     
     public void computeParameters(int structureIdx, StructureObjectPreProcessing structureObject) {
         

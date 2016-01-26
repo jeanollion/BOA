@@ -27,6 +27,7 @@ import image.Image;
 import image.ImageByte;
 import image.ImageFloat;
 import image.ImageInteger;
+import image.ImageMask;
 import image.ImageOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,7 +45,8 @@ public class ScaleHistogramSignalExclusion implements Transformation {
     ChannelImageParameter signalExclusion = new ChannelImageParameter("Channel for Signal Exclusion", -1, true);
     BoundedNumberParameter signalExclusionThreshold = new BoundedNumberParameter("Signal Exclusion Threshold", 1, 50, 0, null);
     BooleanParameter underThreshold = new BooleanParameter("Consider only signal under threshold", true);
-    Parameter[] parameters = new Parameter[]{sigmaTh, muTh, signalExclusion, signalExclusionThreshold, underThreshold};
+    BooleanParameter excludeZero = new BooleanParameter("Exclude Zero Values", true);
+    Parameter[] parameters = new Parameter[]{sigmaTh, muTh, signalExclusion, signalExclusionThreshold, underThreshold, excludeZero};
     ArrayList<ArrayList<Double>> meanSigmaT = new ArrayList<ArrayList<Double>>();;
     
     public ScaleHistogramSignalExclusion() {}
@@ -61,6 +63,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
         final int chExcl = signalExclusion.getSelectedIndex();
         final double exclThld = signalExclusionThreshold.getValue().doubleValue();
         final boolean underThreshold = this.underThreshold.getSelected();
+        final boolean excludeZero = this.excludeZero.getSelected();
         final ThreadRunner tr = new ThreadRunner(0, inputImages.getTimePointNumber());
         final ImageInteger[] exclusionMasks = (chExcl>=0) ?  new ImageInteger[tr.size()] : null;
         final Double[][] muSigma = new Double[inputImages.getTimePointNumber()][];
@@ -77,7 +80,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
                                 if (exclusionMasks[trIdx]==null) exclusionMasks[trIdx] = new ImageByte("", signalExclusion);
                                 exclusionMask = exclusionMasks[trIdx];
                             }
-                            muSigma[idx] = computeMeanSigma(inputImages.getImage(channelIdx, idx), signalExclusion, exclThld, underThreshold, exclusionMask, idx);
+                            muSigma[idx] = computeMeanSigma(inputImages.getImage(channelIdx, idx), signalExclusion, exclThld, underThreshold, excludeZero, exclusionMask, idx);
                         }
                     }
                 }
@@ -118,14 +121,39 @@ public class ScaleHistogramSignalExclusion implements Transformation {
     }*/
     
     
-    public static Double[] computeMeanSigma(Image image, Image exclusionSignal, double exclusionThreshold, boolean underThreshold, ImageInteger exclusionMask, int timePoint) {
+    public static Double[] computeMeanSigma(Image image, Image exclusionSignal, double exclusionThreshold, boolean underThreshold, boolean excludeZero, ImageInteger exclusionMask, int timePoint) {
+        if (exclusionSignal!=null && !image.sameSize(exclusionSignal)) throw new Error("Image and exclusion signal should have same dimensions");
+        if (exclusionMask!=null && !image.sameSize(exclusionMask)) throw new Error("Image and exclusion mask should have same dimensions");
         long t0 = System.currentTimeMillis();
         if (exclusionMask!=null) ImageOperations.threshold(exclusionSignal, exclusionThreshold, !underThreshold, true, true, exclusionMask);
         else exclusionMask = new BlankMask(image);
-        double[] res=   ImageOperations.getMeanAndSigma(image, exclusionMask);
+        double[] res=  excludeZero? getMeanAndSigmaExcludeZero(image, exclusionMask) : ImageOperations.getMeanAndSigma(image, exclusionMask);
         long t1 = System.currentTimeMillis();
         //logger.debug("ScaleHistogram signal exclusion: timePoint: {}, mean sigma: {}, signal exclusion? {}, processing time: {}", timePoint, res, exclusionSignal!=null, t1-t0);
         return new Double[]{res[0], res[1]};
+    }
+    
+    public static double[] getMeanAndSigmaExcludeZero(Image image, ImageMask mask) {
+        if (mask==null) mask = new BlankMask(image);
+        double mean = 0;
+        double count = 0;
+        double values2 = 0;
+        double value;
+        for (int z = 0; z < image.getSizeZ(); ++z) {
+            for (int xy = 0; xy < image.getSizeXY(); ++xy) {
+                if (mask.insideMask(xy, z)) {
+                    value = image.getPixel(xy, z);
+                    if (value!=0) {
+                        mean += value;
+                        count++;
+                        values2 += value * value;
+                    }
+                }
+            }
+        }
+        mean /= count;
+        values2 /= count;
+        return new double[]{mean, Math.sqrt(values2 - mean * mean)};
     }
     
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
