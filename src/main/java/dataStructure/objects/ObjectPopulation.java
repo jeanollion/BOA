@@ -172,6 +172,7 @@ public class ObjectPopulation {
                 labelImage.resetOffset().addOffset(properties);
             }
             labelImage.setCalibration(properties);
+            this.properties=  new BlankMask("", properties); 
         } else {
             this.properties = new BlankMask("", properties); //set aussi la taille de l'image
         }

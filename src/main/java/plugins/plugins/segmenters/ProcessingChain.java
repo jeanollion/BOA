@@ -21,6 +21,7 @@ import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
 import configuration.parameters.SimpleListParameter;
 import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectProcessing;
 import image.Image;
 import plugins.PostFilter;
@@ -69,7 +70,7 @@ public class ProcessingChain implements Segmenter {
             for (PluginParameter<PostFilter> p : postFilters.getActivatedChildren() ) {
                 PostFilter pre = p.instanciatePlugin();
                 if (pre!=null) {
-                    pop = pre.runPostFilter(pop, parent);
+                    pop = pre.runPostFilter((StructureObject)parent, structureIdx, pop);
                 }
             }
         }

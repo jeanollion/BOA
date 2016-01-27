@@ -18,6 +18,7 @@
 package plugins;
 
 import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectProcessing;
 import image.Image;
 import image.ImageInteger;
@@ -27,5 +28,5 @@ import image.ImageInteger;
  * @author jollion
  */
 public interface PostFilter extends ImageProcessingPlugin {
-    public ObjectPopulation runPostFilter(ObjectPopulation objectPopulation, StructureObjectProcessing structureObject);
+    public ObjectPopulation runPostFilter(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation);
 }

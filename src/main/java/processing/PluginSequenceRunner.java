@@ -19,6 +19,7 @@ package processing;
 
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectPreProcessing;
 import dataStructure.objects.StructureObjectProcessing;
 import image.BlankMask;
@@ -49,23 +50,13 @@ public class PluginSequenceRunner {
         }
     }
     
-    /*public static ObjectPopulation segmentImage(Image input, int structureIdx, StructureObjectProcessing structureObject, Segmenter segmenter) {
-        Plugin.logger.debug("segmenting: {} segmenter class: {} segmenter {}", structureObject, (segmenter==null?"null":segmenter.getClass()), segmenter);
-        if (segmenter==null) return new ObjectPopulation(new ArrayList<Object3D>(0), new BlankMask("", input));
-        else {
-            ObjectPopulation pop =  segmenter.runSegmenter(input, structureIdx, structureObject);
-            if (pop!=null) return pop.setProperties(input, true);
-            else return new ObjectPopulation(new ArrayList<Object3D>(0), new BlankMask("", input));
-        }
-    }*/
-    
-    public static ObjectPopulation postFilterImage(ObjectPopulation objectPopulation, StructureObjectProcessing structureObject, ArrayList<PostFilter> postFilters) {
+    public static ObjectPopulation postFilterImage(ObjectPopulation objectPopulation, int structureIdx, StructureObject structureObject, ArrayList<PostFilter> postFilters) {
         if (postFilters==null || postFilters.isEmpty()) return objectPopulation;
         else {
             ImageProperties initialProperites = objectPopulation.getImageProperties();
             ObjectPopulation currentObjectPopulation=objectPopulation;
             for (PostFilter p : postFilters) {
-                currentObjectPopulation = p.runPostFilter(currentObjectPopulation, structureObject);
+                currentObjectPopulation = p.runPostFilter(structureObject, structureIdx, objectPopulation);
                 currentObjectPopulation.setProperties(initialProperites, true);
             }
             return currentObjectPopulation;

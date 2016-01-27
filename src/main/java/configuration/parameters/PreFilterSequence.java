@@ -1,0 +1,50 @@
+/*
+ * Copyright (C) 2016 jollion
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+package configuration.parameters;
+
+import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectPreProcessing;
+import image.Image;
+import image.ImageProperties;
+import plugins.PostFilter;
+import plugins.PreFilter;
+
+/**
+ *
+ * @author jollion
+ */
+public class PreFilterSequence extends SimpleListParameter<PluginParameter<PreFilter>> {
+
+    public PreFilterSequence(String name) {
+        super(name, -1, new PluginParameter<PreFilter>("Pre-Filter", PreFilter.class, false));
+    }
+    
+    public PreFilterSequence addPostFilters(PreFilter... postFilters) {
+        for (PreFilter f : postFilters) super.createChildInstance("Pre-Filter").setPlugin(f);
+        return this;
+    }
+    
+    public Image filter(Image input, StructureObjectPreProcessing parent) {
+        for (PluginParameter<PreFilter> pp : this.getActivatedChildren()) {
+            PreFilter p = pp.instanciatePlugin();
+            if (p!=null) input = p.runPreFilter(input, parent);
+        }
+        return input;
+    }
+}

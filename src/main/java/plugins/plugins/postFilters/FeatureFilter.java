@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 jollion
+ * Copyright (C) 2016 jollion
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,35 +17,39 @@
  */
 package plugins.plugins.postFilters;
 
-import configuration.parameters.BoundedNumberParameter;
+import configuration.parameters.BooleanParameter;
+import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
+import configuration.parameters.PluginParameter;
+import configuration.parameters.SimpleListParameter;
+import configuration.parameters.TextParameter;
 import dataStructure.objects.ObjectPopulation;
-import dataStructure.objects.ObjectPopulation.Filter;
-import dataStructure.objects.ObjectPopulation.Size;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectProcessing;
+import plugins.ObjectFeature;
 import plugins.PostFilter;
 
 /**
  *
  * @author jollion
  */
-public class SizeFilter implements PostFilter {
-    BoundedNumberParameter minSize = new BoundedNumberParameter("Minimum Size", 0, 0, 0, null);
-    BoundedNumberParameter maxSize = new BoundedNumberParameter("Maximum Size", 0, 0, 0, null);
-    Parameter[] parameters = new Parameter[]{minSize, maxSize};
+public class FeatureFilter implements PostFilter {
+    PluginParameter<ObjectFeature> feature = new PluginParameter<ObjectFeature>("Feature", ObjectFeature.class, false);
+    NumberParameter threshold = new NumberParameter("Threshold", 4, 0);
+    BooleanParameter keepOverThreshold = new BooleanParameter("Keep over threshold", true);
+    BooleanParameter strict = new BooleanParameter("strict comparison with threshold", true);
     
-    public SizeFilter(){}
-    public SizeFilter(int min, int max){
-        minSize.setValue(min);
-        maxSize.setValue(max);
+    Parameter[] parameters = new Parameter[]{feature, threshold, keepOverThreshold, strict};
+    
+    public FeatureFilter() {}
+    public FeatureFilter(ObjectFeature feature) {
+        this.feature.setPlugin(feature);
     }
     
     public ObjectPopulation runPostFilter(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation) {
-        Size f = new Size();
-        if (minSize.getValue().intValue()>0) f.setMin(minSize.getValue().intValue());
-        if (maxSize.getValue().intValue()>0) f.setMax(maxSize.getValue().intValue());
-        childPopulation.filter(f);
+        ObjectFeature f = feature.instanciatePlugin();
+        f.setUp(parent, childStructureIdx);
+        childPopulation.filter(new ObjectPopulation.Feature(f, threshold.getValue().doubleValue(), keepOverThreshold.getSelected(), strict.getSelected()));
         return childPopulation;
     }
 

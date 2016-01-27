@@ -21,6 +21,7 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
+import configuration.parameters.PostFilterSequence;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.ObjectPopulation.MeanIntensity;
@@ -44,6 +45,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import jj2000.j2k.util.ArrayUtil;
 import plugins.Segmenter;
+import plugins.plugins.postFilters.FeatureFilter;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.thresholders.BackgroundFit;
 import plugins.plugins.thresholders.KappaSigma;
@@ -76,8 +78,8 @@ public class MutationSegmenterScaleSpace implements Segmenter {
     NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxels)", 0, 5, 1, null);
     NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 2, 5, 1, null);
     NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 2, 3, 0, null);
-    
-    Parameter[] parameters = new Parameter[]{minSpotSize, thresholdHigh,  thresholdLow};
+    PostFilterSequence postFilters = new PostFilterSequence("Post-Filters").addPostFilters(new FeatureFilter())...
+    Parameter[] parameters = new Parameter[]{minSpotSize, thresholdHigh,  thresholdLow, postFilters};
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         return run(input, parent.getMask(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), null);
     }
