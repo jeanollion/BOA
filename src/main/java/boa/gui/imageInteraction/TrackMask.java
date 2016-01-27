@@ -114,7 +114,7 @@ public class TrackMask extends ImageObjectInterface {
         if (iMin<0) iMin=-iMin-2; // element inférieur à x puisqu'on compare les xmin des bounding box
         int iMax = Arrays.binarySearch(trackOffset, new BoundingBox(selection.getxMax(), selection.getxMax(), 0, 0, 0, 0), new bbComparatorX());
         if (iMax<0) iMax=-iMax-2; // element inférieur à x puisqu'on compare les xmin des bounding box
-        logger.debug("looking for objects from time: {} to time: {}", iMin, iMax);
+        //logger.debug("looking for objects from time: {} to time: {}", iMin, iMax);
         for (int i = iMin; i<=iMax; ++i) trackObjects[i].addClickedObjects(selection, list);
     }
     

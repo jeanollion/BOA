@@ -104,7 +104,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                 if (selection!=null) {
                     ArrayList<StructureObject> selectedObjects = new ArrayList<StructureObject>();
                     i.addClickedObjects(selection, selectedObjects);
-                    logger.debug("selection: {}, number of objects: {}", selection, selectedObjects.size());
+                    //logger.debug("selection: {}, number of objects: {}", selection, selectedObjects.size());
                     displayObjects(image, i, ctrl, selectedObjects);
                     if (listener!=null) listener.fireObjectSelected(selectedObjects, ctrl, i.isTimeImage());
                     if (ctrl) ip.deleteRoi();
