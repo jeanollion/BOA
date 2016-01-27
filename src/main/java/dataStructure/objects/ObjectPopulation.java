@@ -551,7 +551,7 @@ public class ObjectPopulation {
         @Override public void init(ObjectPopulation population) {}
         @Override
         public boolean keepObject(Object3D object) {
-            double mean = BasicMeasurements.getMeanValue(object, intensityMap);
+            double mean = BasicMeasurements.getMeanValue(object, intensityMap, false);
             return mean >= threshold == keepOverThreshold;
         }
     }

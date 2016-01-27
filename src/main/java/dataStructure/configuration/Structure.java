@@ -18,6 +18,7 @@ package dataStructure.configuration;
 
 import boa.gui.configuration.ConfigurationTreeModel;
 import configuration.parameters.ChannelImageParameter;
+import configuration.parameters.Parameter;
 import static configuration.parameters.Parameter.logger;
 import configuration.parameters.ParameterListener;
 import configuration.parameters.ParameterUtils;
@@ -66,7 +67,7 @@ public class Structure extends SimpleContainerParameter {
     @Override
     protected void initChildList() {
         parentStructure.addListener(new ParameterListener() {
-            @Override public void fire() {
+            @Override public void fire(Parameter source) {
                 
                 int parentIdx = parentStructure.getSelectedIndex();
                 setParentStructure(parentIdx);

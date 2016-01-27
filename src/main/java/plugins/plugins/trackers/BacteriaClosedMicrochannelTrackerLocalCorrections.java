@@ -41,6 +41,7 @@ import plugins.Segmenter;
 import plugins.SegmenterSplitAndMerge;
 import plugins.Tracker;
 import plugins.TrackerSegmenter;
+import plugins.plugins.segmenters.BacteriaFluo;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
 import utils.Utils;
 
@@ -51,7 +52,7 @@ import utils.Utils;
 public class BacteriaClosedMicrochannelTrackerLocalCorrections implements TrackerSegmenter {
     
     // parametrization-related attributes
-    protected PluginParameter<SegmenterSplitAndMerge> segmenter = new PluginParameter<SegmenterSplitAndMerge>("Segmentation algorithm", SegmenterSplitAndMerge.class, false);
+    protected PluginParameter<SegmenterSplitAndMerge> segmenter = new PluginParameter<SegmenterSplitAndMerge>("Segmentation algorithm", SegmenterSplitAndMerge.class, new BacteriaFluo(), false);
     BoundedNumberParameter maxGrowthRate = new BoundedNumberParameter("Maximum growth rate", 2, 1.7, 1, 2);
     BoundedNumberParameter minGrowthRate = new BoundedNumberParameter("Minimum growth rate", 2, 1.1, 1, 2);
     BoundedNumberParameter divisionCriterion = new BoundedNumberParameter("Division Criterio", 2, 0.9, 0.5, 1.1);
@@ -133,7 +134,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 if (children.size()!=populations[t].size()) logger.error("BCMTLC: error @ parent: {}, children and tracker objects differ in number", parent);
                 else setAttributes(t, children, childrenPrev);
             } else { // creates new structureObjects
-                children = parent.setChildrenObjects(new ObjectPopulation(populations[t], null), structureIdx);
+                children = parent.setChildrenObjects(new ObjectPopulation(populations[t], null), structureIdx); // will translate all voxels
                 setAttributes(t, children, childrenPrev);
             }
             childrenPrev=children;

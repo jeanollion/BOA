@@ -102,7 +102,7 @@ public class BacteriesFluo2D implements Segmenter {
         ArrayList<Object3D> objects = new ArrayList<Object3D>();
         //pop1.keepOnlyLargestObject(); // for testing purpose
         for (Object3D o : pop1.getObjects()) {
-            double normValue = BasicMeasurements.getPercentileValue(o, 0.5, smoothed);
+            double normValue = BasicMeasurements.getPercentileValue(o, 0.5, smoothed, false);
             //if (optimizationParameters!=null) optimizationParameters[10] = BasicMeasurements.getPercentileValue(o, 0.25, smoothed);
             //if (optimizationParameters!=null) optimizationParameters[11] = BasicMeasurements.getPercentileValue(o, 0.5, smoothed);
             //if (optimizationParameters!=null) optimizationParameters[12] = BasicMeasurements.getPercentileValue(o, 0.75, smoothed);

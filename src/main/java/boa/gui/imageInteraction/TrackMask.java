@@ -68,7 +68,7 @@ public class TrackMask extends ImageObjectInterface {
         logger.trace("track mask image object: max parent Y-size: {} z-size: {}", maxParentY, maxParentZ);
         int currentOffsetX=0;
         for (int i = 0; i<parentTrack.size(); ++i) {
-            trackOffset[i] = parentTrack.get(i).getBounds().duplicate().translateToOrigin();
+            trackOffset[i] = parentTrack.get(i).getBounds().duplicate().translateToOrigin(); // translateToOrigin?
             trackOffset[i].translate(currentOffsetX, (int)(maxParentY/2.0-trackOffset[i].getSizeY()/2.0), (int)(maxParentZ/2.0-trackOffset[i].getSizeZ()/2.0));
             trackObjects[i] = new StructureObjectMask(parentTrack.get(i), childStructureIdx, trackOffset[i]);
             currentOffsetX+=intervalX+trackOffset[i].getSizeX();

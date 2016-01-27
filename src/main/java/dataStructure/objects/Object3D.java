@@ -11,6 +11,7 @@ import dataStructure.containers.ObjectContainerIjRoi;
 import dataStructure.containers.ObjectContainerVoxels;
 import image.BlankMask;
 import image.BoundingBox;
+import image.BoundingBox.LoopFunction;
 import image.Image;
 import image.ImageByte;
 import image.ImageInteger;
@@ -230,17 +231,12 @@ public class Object3D {
         return bounds;
     }
     
-    public Set<Voxel> getIntersection(Object3D other, BoundingBox offset) {
-        if (offset==null) {
-            if (!this.getBounds().hasIntersection(other.getBounds())) return Collections.emptySet();
-            else return Sets.intersection(Sets.newHashSet(getVoxels()), Sets.newHashSet(other.getVoxels()));
-        } else {
-            
-        }
-        
+    public Set<Voxel> getIntersection(Object3D other) {
+        if (!this.getBounds().hasIntersection(other.getBounds())) return Collections.emptySet();
+        else return Sets.intersection(Sets.newHashSet(getVoxels()), Sets.newHashSet(other.getVoxels()));
     }
     
-  
+    // TODO faire une methode plus optimisée qui utilise les masques uniquement
     public int getIntersectionCountMask(Object3D other, BoundingBox offset) {
         if (offset==null) offset=new BoundingBox(0, 0, 0);
         if (!this.getBounds().hasIntersection(other.getBounds().duplicate().translate(offset))) return 0;
@@ -253,6 +249,21 @@ public class Object3D {
             for (Voxel v : this.getVoxels()) {
                 if (m.insideMask(v.x-offX, v.y-offY, v.z-offZ)) ++count;
             }
+            return count;
+        }
+    }
+    
+    public int getIntersectionCountMaskMask(Object3D other) {
+        if (!this.getBounds().hasIntersection(other.getBounds())) return 0;
+        else {
+            BoundingBox inter = getBounds().getIntersection(bounds);
+            final ImageMask m = other.getMask();
+            int count = 0;
+            inter.loop(new LoopFunction() {
+                public void loop(int x, int y, int z) {
+                    if (m.insideMaskWithOffset(x, y, z));
+                }
+            });
             return count;
         }
     }
@@ -287,6 +298,14 @@ public class Object3D {
             else if (voxelsSizeOverLimit(true)) return new ObjectContainerVoxelsDB(structureObject);
             else return new ObjectContainerVoxels(structureObject);
         } else return null;*/
+    }
+    
+    public void setVoxelValues(Image image, boolean useOffset) {
+        if (useOffset) {
+            for (Voxel v : getVoxels()) v.value=image.getPixelWithOffset(v.x, v.y, v.z);
+        } else {
+            for (Voxel v : getVoxels()) v.value=image.getPixel(v.x, v.y, v.z);
+        }
     }
     
     public void draw(ImageInteger image, int label) {

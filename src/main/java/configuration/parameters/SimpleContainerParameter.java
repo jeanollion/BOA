@@ -212,7 +212,11 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
         if (listeners != null) listeners.remove(listener);
     }
     public void fireListeners() {
-        if (listeners != null) for (ParameterListener pl : listeners) pl.fire();
+        if (listeners != null) for (ParameterListener pl : listeners) pl.fire(this);
+    }
+    public void setListeners(ArrayList<ParameterListener> listeners) {
+        if (listeners==null) this.listeners=null;
+        else this.listeners=new ArrayList<ParameterListener>(listeners);
     }
     
     // morphium

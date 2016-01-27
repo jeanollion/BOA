@@ -105,10 +105,18 @@ public class ParameterUtils {
     }
 
     public static Parameter[] duplicateArray(Parameter[] parameters) {
+        if (parameters==null) return null;
         Parameter[] res = new Parameter[parameters.length];
         for (int i = 0; i < parameters.length; ++i) {
             res[i] = parameters[i].duplicate();
         }
+        return res;
+    }
+    
+    public static ArrayList<Parameter> duplicateArray(ArrayList<Parameter> parameters) {
+        if (parameters==null) return null;
+        ArrayList<Parameter> res = new ArrayList<Parameter>(parameters.size());
+        for (Parameter p : parameters) res.add(p.duplicate());
         return res;
     }
 

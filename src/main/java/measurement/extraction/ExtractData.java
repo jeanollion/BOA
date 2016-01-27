@@ -106,7 +106,7 @@ public class ExtractData {
         double fluo = 0;
         double count = 0;
         for (StructureObject c : children) {
-            fluo += BasicMeasurements.getMeanValue(c.getObject(), im) * c.getObject().getVoxels().size();
+            fluo += BasicMeasurements.getMeanValue(c.getObject(), im, true) * c.getObject().getVoxels().size();
             count+=c.getObject().getVoxels().size();
         }
         return fluo/count;

@@ -50,6 +50,8 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     protected String pluginTypeName;
     protected boolean allowNoSelection;
     protected boolean activated=true;
+    protected ArrayList<Parameter> additionalParameters;
+    
     public PluginParameter(String name, Class<T> pluginType, boolean allowNoSelection) {
         super(name);
         this.pluginType=pluginType;
@@ -68,6 +70,22 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         setPlugin(pluginInstance);
     }
     
+    public PluginParameter<T> setAdditionalParameters(ArrayList<Parameter> additionalParameters) {
+        if (additionalParameters.isEmpty()) return this;
+        this.additionalParameters=additionalParameters;
+        initChildList();
+        return this;
+    }
+    
+    public PluginParameter<T> setAdditionalParameters(Parameter... additionalParameters) {
+        if (additionalParameters.length==0) return this;
+        return setAdditionalParameters(new ArrayList<Parameter>(Arrays.asList(additionalParameters)));
+    }
+    
+    public ArrayList<Parameter> getAdditionalParameters() {
+        return additionalParameters;
+    }
+    
     public void setPlugin(T pluginInstance) {
         if (pluginInstance==null) setPlugin(NO_SELECTION);
         else {
@@ -75,12 +93,16 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
             initChildList();
             this.pluginName=pluginInstance.getClass().getSimpleName();
         }
-        
     }
     
     @Override
     protected void initChildList() {
-        if (pluginParameters!=null) super.initChildren(pluginParameters);
+        if (pluginParameters!=null && additionalParameters!=null) {
+            ArrayList<Parameter> al = new ArrayList<Parameter>(pluginParameters);
+            al.addAll(additionalParameters);
+            super.initChildren(al); 
+        } else if (pluginParameters!=null) super.initChildren(pluginParameters);
+        else if (additionalParameters!=null) super.initChildren(additionalParameters);
         else super.initChildren();
     }
     
@@ -135,20 +157,24 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
             PluginParameter otherPP = (PluginParameter) other;
             this.activated=otherPP.activated;
             this.allowNoSelection=otherPP.allowNoSelection;
-            
+            boolean toInit = false;
+            if (otherPP.additionalParameters!=null) {
+                this.additionalParameters=ParameterUtils.duplicateArray(otherPP.additionalParameters);
+                toInit=true;
+            }
             if (otherPP.pluginName != null && otherPP.pluginName.equals(this.pluginName) && pluginParameters!=null) {
                 ParameterUtils.setContent(pluginParameters, otherPP.pluginParameters);
             } else {
                 this.pluginName = otherPP.pluginName;
                 if (otherPP.pluginParameters != null) {
-                    this.pluginParameters = new ArrayList<Parameter>(otherPP.pluginParameters.size());
-                    ArrayList<Parameter> pp= otherPP.pluginParameters;
-                    for (Parameter p : pp) pluginParameters.add(p.duplicate());
-                    initChildList();
+                    this.pluginParameters = ParameterUtils.duplicateArray(otherPP.pluginParameters);
+                    toInit=true;
                 } else {
                     this.pluginParameters = null;
                 }
             }
+            if (toInit) initChildList();
+            this.setListeners(otherPP.listeners);
         } else throw new IllegalArgumentException("wrong parameter type");
     }
 

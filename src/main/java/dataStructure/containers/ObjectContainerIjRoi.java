@@ -82,7 +82,7 @@ public class ObjectContainerIjRoi extends ObjectContainer {
             Rectangle bds = r.getBounds();
             r.setLocation(bds.x-bounds.getxMin(), bds.y-bounds.getyMin());
             ImageProcessor mask = r.getMask();
-            if (mask.getWidth()!=stack.getWidth() || mask.getHeight()!=stack.getHeight()) { // need to put image
+            if (mask.getWidth()!=stack.getWidth() || mask.getHeight()!=stack.getHeight()) { // need to paste image
                 ImageByte i = (ImageByte)IJImageWrapper.wrap(new ImagePlus("", mask));
                 ImageByte iOut = new ImageByte("", bounds.getSizeX(), bounds.getSizeY(), 1);
                 ImageOperations.pasteImage(i, iOut, new BoundingBox(bds.x-bounds.getxMin(), bds.y-bounds.getyMin(), 0));

@@ -74,16 +74,31 @@ public class ImageFloat extends Image {
     }
     
     public void setPixelWithOffset(int x, int y, int z, float value) {
-        pixels[z-offsetZ][x-offsetX + (y-offsetY) * sizeX] = value;
+        pixels[z-offsetZ][x-offsetXY + y * sizeX] = value;
     }
     
     @Override
     public void setPixelWithOffset(int x, int y, int z, double value) {
-        pixels[z-offsetZ][x-offsetX + (y-offsetY) * sizeX] = (float)value;
+        pixels[z-offsetZ][x-offsetXY + y * sizeX] = (float)value;
     }
 
     public void setPixel(int xy, int z, float value) {
         pixels[z][xy]=value;
+    }
+    
+    @Override
+    public float getPixelWithOffset(int x, int y, int z) {
+        return pixels[z-offsetZ][x-offsetXY + y * sizeX];
+    }
+
+    @Override
+    public float getPixelWithOffset(int xy, int z) {
+        return pixels[z-offsetZ][xy - offsetXY ];
+    }
+
+    @Override
+    public void setPixelWithOffset(int xy, int z, double value) {
+        pixels[z-offsetZ][xy - offsetXY] = (float)value;
     }
 
     @Override

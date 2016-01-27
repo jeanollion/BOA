@@ -32,29 +32,35 @@ import static plugins.Plugin.logger;
 public class BasicMeasurements {
     public static double getSum(Object3D object, Image image) {
         double value=0;
-        for (Voxel v : object.getVoxels()) value+=image.getPixel(v.x, v.y, v.z);
+        for (Voxel v : object.getVoxels()) value+=image.getPixelWithOffset(v.x, v.y, v.z);
         return value;
     }
-    public static double getMeanValue(Object3D object, Image image) {
-        return getMeanValue(object.getVoxels(), image);
+    public static double getMeanValue(Object3D object, Image image, boolean useOffset) {
+        return getMeanValue(object.getVoxels(), image, useOffset);
     }
-    public static double getMeanValue(List<Voxel> voxels, Image image) {
+    public static double getMeanValue(List<Voxel> voxels, Image image, boolean useOffset) {
         double value=0;
-        for (Voxel v : voxels) {
-            //if (v.x<0 || v.y<0 || v.z<0) logger.debug("negative vox: {}", v);
-            value+=image.getPixel(v.x, v.y, v.z);
-        }
+        if (useOffset) for (Voxel v : voxels) value+=image.getPixelWithOffset(v.x, v.y, v.z);
+        else for (Voxel v : voxels) value+=image.getPixel(v.x, v.y, v.z);
         if (!voxels.isEmpty()) return value/(double)voxels.size();
         else return 0;
     }
-    public static double getSdValue(Object3D object, Image image) {
+    public static double getSdValue(Object3D object, Image image, boolean useOffset) {
         double value=0;
         double value2=0;
         double tmp;
-        for (Voxel v : object.getVoxels()) {
-            tmp=image.getPixel(v.x, v.y, v.z);
-            value+=tmp;
-            value2+=tmp*tmp;
+        if (useOffset) {
+            for (Voxel v : object.getVoxels()) {
+                tmp=image.getPixelWithOffset(v.x, v.y, v.z);
+                value+=tmp;
+                value2+=tmp*tmp;
+            }
+        } else {
+            for (Voxel v : object.getVoxels()) {
+                tmp=image.getPixel(v.x, v.y, v.z);
+                value+=tmp;
+                value2+=tmp*tmp;
+            }
         }
         if (!object.getVoxels().isEmpty()) {
             value/=(double)object.getVoxels().size();
@@ -62,14 +68,22 @@ public class BasicMeasurements {
             return Math.sqrt(value2-value*value);
         } else return 0;
     }
-    public static double[] getMeanSdValue(List<Voxel> voxels, Image image) {
+    public static double[] getMeanSdValue(List<Voxel> voxels, Image image, boolean useOffset) {
         double value=0;
         double value2=0;
         double tmp;
-        for (Voxel v : voxels) {
-            tmp=image.getPixel(v.x, v.y, v.z);
-            value+=tmp;
-            value2+=tmp*tmp;
+        if (useOffset) {
+            for (Voxel v : voxels) {
+                tmp=image.getPixelWithOffset(v.x, v.y, v.z);
+                value+=tmp;
+                value2+=tmp*tmp;
+            }
+        } else {
+            for (Voxel v : voxels) {
+                tmp=image.getPixel(v.x, v.y, v.z);
+                value+=tmp;
+                value2+=tmp*tmp;
+            }
         }
         if (!voxels.isEmpty()) {
             value/=(double)voxels.size();
@@ -84,30 +98,39 @@ public class BasicMeasurements {
      * @param image
      * @return [SNR, Mean ForeGround, Mean BackGround, Sd Background]
      */
-    public static double[] getSNR(List<Voxel> foreground, List<Voxel> background, Image image) { 
+    public static double[] getSNR(List<Voxel> foreground, List<Voxel> background, Image image, boolean useOffset) { 
         if (foreground.isEmpty() || background.isEmpty()) return null;
         List<Voxel> bck = new ArrayList<Voxel> (background);
         bck.removeAll(foreground);
-        double[] sdMeanBack = getMeanSdValue(bck, image);
-        double fore = getMeanValue(foreground, image);
+        double[] sdMeanBack = getMeanSdValue(bck, image, useOffset);
+        double fore = getMeanValue(foreground, image, useOffset);
         return new double[] {(fore - sdMeanBack[0]) / sdMeanBack[1], fore, sdMeanBack[0], sdMeanBack[1]};
         
     }
-    public static double getMaxValue(Object3D object, Image image) {
+    public static double getMaxValue(Object3D object, Image image, boolean useOffset) {
         double max=-Double.MAX_VALUE;
-        for (Voxel v : object.getVoxels()) if (image.getPixel(v.x, v.y, v.z)>max) max = image.getPixel(v.x, v.y, v.z);
+        if (useOffset) {
+            for (Voxel v : object.getVoxels()) if (image.getPixelWithOffset(v.x, v.y, v.z)>max) max = image.getPixelWithOffset(v.x, v.y, v.z);
+        }
+        else {
+            for (Voxel v : object.getVoxels()) if (image.getPixel(v.x, v.y, v.z)>max) max = image.getPixel(v.x, v.y, v.z);
+        }
         return max;
     }
-    public static double getMinValue(Object3D object, Image image) {
+    public static double getMinValue(Object3D object, Image image, boolean useOffset) {
         double min=Double.MAX_VALUE;
-        for (Voxel v : object.getVoxels()) if (image.getPixel(v.x, v.y, v.z)<min) min = image.getPixel(v.x, v.y, v.z);
+        if (useOffset) {
+            for (Voxel v : object.getVoxels()) if (image.getPixelWithOffset(v.x, v.y, v.z)<min) min = image.getPixelWithOffset(v.x, v.y, v.z);
+        } else {
+            for (Voxel v : object.getVoxels()) if (image.getPixel(v.x, v.y, v.z)<min) min = image.getPixelWithOffset(v.x, v.y, v.z);
+        }
         return min;
     }
-    public static double getPercentileValue(Object3D object, double percentile, Image image) {
+    public static double getPercentileValue(Object3D object, double percentile, Image image, boolean useOffset) {
         if (object.getVoxels().isEmpty()) return Double.NaN;
-        if (percentile<=0) return getMinValue(object, image);
-        if (percentile>=1) return getMaxValue(object, image);
-        for (Voxel v : object.getVoxels()) v.value=image.getPixel(v.x, v.y, v.z);
+        if (percentile<=0) return getMinValue(object, image, useOffset);
+        if (percentile>=1) return getMaxValue(object, image, useOffset);
+        object.setVoxelValues(image, useOffset);
         Collections.sort(object.getVoxels());
         double idxD = percentile * object.getVoxels().size();
         int idx = (int) idxD;

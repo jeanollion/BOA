@@ -166,7 +166,7 @@ public abstract class SimpleParameter implements Parameter {
         if (listeners != null) listeners.remove(listener);
     }
     public void fireListeners() {
-        if (listeners != null) for (ParameterListener pl : listeners) pl.fire();
+        if (listeners != null) for (ParameterListener pl : listeners) pl.fire(this);
     }
     
 }

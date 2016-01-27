@@ -272,7 +272,7 @@ public class BoundingBox {
     }
     
     public BoundingBox getIntersection(BoundingBox other) {
-        if (!hasIntersection(other)) return new BoundingBox(0, 0, 0, 0, 0, 0);
+        if (!hasIntersection(other)) return new BoundingBox();
         else return new BoundingBox(Math.max(xMin, other.xMin), Math.min(xMax, other.xMax), Math.max(yMin, other.yMin), Math.min(yMax, other.yMax) , Math.max(zMin, other.zMin), Math.min(zMax, other.zMax));
     }
     
@@ -321,7 +321,7 @@ public class BoundingBox {
     
     public BoundingBox reverseOffset() {
         this.xMin=-xMin;
-        this.yMin=--yMin;
+        this.yMin=-yMin;
         this.zMin=-zMin;
         return this;
     }
@@ -334,4 +334,19 @@ public class BoundingBox {
     public String toString() {
         return "xMin: "+xMin+" xMax: "+xMax+" yMin: "+yMin+" yMax: "+yMax+" zMin: "+zMin+" zMax: "+zMax;
     }
+    
+    public void loop(LoopFunction function) {
+        for (int z = zMin; z<=zMax; ++z) {
+            for (int y = yMin; y<=yMax; ++y) {
+                for (int x=xMin; x<=xMax; ++x) {
+                    function.loop(x, y, z);
+                }
+            }
+        }
+    }
+    
+    public static interface LoopFunction {
+        public void loop(int x, int y, int z);
+    }
+    
 }

@@ -181,20 +181,22 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     @Override public ArrayList<StructureObject> setChildrenObjects(ObjectPopulation population, int structureIdx) {
         population.relabel();
+        if (!isRoot()) population.translate(getBounds());
         ArrayList<StructureObject> res = new ArrayList<StructureObject>(population.getObjects().size());
         childrenSM.set(res, structureIdx);
         for (int i = 0; i<population.getObjects().size(); ++i) res.add(new StructureObject(timePoint, structureIdx, i, population.getObjects().get(i), this));
         return res;
     }
     
-    void setChild(StructureObject o) {
+    /*void setChild(StructureObject o) {
         ArrayList<StructureObject> children = this.childrenSM.get(o.getStructureIdx());
         if (children==null) {
             children=new ArrayList<StructureObject>();
             childrenSM.set(children, o.getStructureIdx());
         }
         children.add(o);
-    }
+    }*/
+    
     public ArrayList<StructureObject> getSiblings() {
         return this.getParent().getChildren(structureIdx);
     }
@@ -600,7 +602,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     public BoundingBox getRelativeBoundingBox(StructureObject stop) throws RuntimeException {
-        if (stop==null) stop=getRoot();
+        /*if (stop==null) stop=getRoot();
         BoundingBox res = getObject().getBounds().duplicate();
         if (this.equals(stop)) return res.translateToOrigin();
         StructureObject nextParent=this.getParent();
@@ -608,9 +610,12 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             res.translate(nextParent.getObject().getBounds());
             nextParent=nextParent.getParent();
             if (nextParent==null) throw new RuntimeException("GetRelativeBoundingBoxError: stop structure object is not in parent tree");
-            //if (!stop.equals(nextParent) && nextParent.getId().equals(stop.getId())) logger.error("stop condition cannot be reached: stop ({}) and parent ({}) not equals but same object", stop, nextParent);
+            
         }
-        return res;
+        return res;*/
+        BoundingBox res = getObject().getBounds().duplicate();
+        if (stop==null || stop == getRoot()) return res;
+        else return res.translate(stop.getBounds().duplicate().reverseOffset());
     }
     
     /*public Image getFilteredImage(int structureIdx) {

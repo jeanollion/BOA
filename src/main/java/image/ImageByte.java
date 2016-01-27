@@ -74,7 +74,7 @@ public class ImageByte extends ImageInteger {
     
     @Override
     public void setPixelWithOffset(int x, int y, int z, int value) {
-        pixels[z-offsetZ][x-offsetX + (y-offsetY) * sizeX] = (byte)value;
+        pixels[z-offsetZ][x-offsetXY + y * sizeX] = (byte)value;
     }
 
     @Override
@@ -89,12 +89,42 @@ public class ImageByte extends ImageInteger {
     
     @Override
     public void setPixelWithOffset(int x, int y, int z, double value) {
-        pixels[z-offsetZ][x-offsetX + (y-offsetY) * sizeX] = value<0?0:(value>255?(byte)255:(byte)value);
+        pixels[z-offsetZ][x-offsetXY + y * sizeX] = value<0?0:(value>255?(byte)255:(byte)value);
     }
 
     @Override
     public void setPixel(int xy, int z, double value) {
         pixels[z][xy] = value<0?0:(value>255?(byte)255:(byte)value);
+    }
+    
+    @Override
+    public int getPixelIntWithOffset(int x, int y, int z) {
+        return pixels[z-offsetZ][x-offsetXY + y * sizeX] & 0xff;
+    }
+
+    @Override
+    public int getPixelIntWithOffset(int xy, int z) {
+        return pixels[z-offsetZ][xy - offsetXY ] & 0xff;
+    }
+
+    @Override
+    public void setPixelWithOffset(int xy, int z, int value) {
+        pixels[z-offsetZ][xy - offsetXY] = value<0?0:(value>255?(byte)255:(byte)value);
+    }
+
+    @Override
+    public float getPixelWithOffset(int x, int y, int z) {
+        return pixels[z-offsetZ][x-offsetXY + y * sizeX];
+    }
+
+    @Override
+    public float getPixelWithOffset(int xy, int z) {
+        return pixels[z-offsetZ][xy - offsetXY ];
+    }
+
+    @Override
+    public void setPixelWithOffset(int xy, int z, double value) {
+        pixels[z-offsetZ][xy - offsetXY] = value<0?0:(value>255?(byte)255:(byte)value);
     }
 
     @Override
@@ -110,6 +140,14 @@ public class ImageByte extends ImageInteger {
 
     public boolean insideMask(int xy, int z) {
         return pixels[z][xy]!=0;
+    }
+    
+    public boolean insideMaskWithOffset(int x, int y, int z) {
+        return pixels[z-offsetZ][x+y*sizeX-offsetXY]!=0;
+    }
+
+    public boolean insideMaskWithOffset(int xy, int z) {
+        return pixels[z-offsetZ][xy-offsetXY]!=0;
     }
     
     @Override
@@ -168,6 +206,10 @@ public class ImageByte extends ImageInteger {
     }
     
     @Override int[] getHisto256(double min, double max, ImageMask mask, BoundingBox limit) {return getHisto256(mask);}
+
+    
+
+    
 
     
 }

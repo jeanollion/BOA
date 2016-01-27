@@ -89,28 +89,28 @@ public class ObjectInclusionCount implements Measurement {
         int count = 0;
         Object3D containerObject = container.getObject();
         // structureToCount coordinates should be expressed in container's reference
-        BoundingBox offsetC;
+        /*BoundingBox offsetC;
         if (commonParent!=container) offsetC = container.getParent().getRelativeBoundingBox(commonParent);
         else {
             offsetC = container.getBounds();
             offsetC = new BoundingBox(-offsetC.getxMin(), -offsetC.getyMin(), -offsetC.getzMin());
-        }
+        }*/
         for (StructureObject o : toCount) {
             if (onlyTrackHeads && !o.isTrackHead()) continue;
-            BoundingBox offsetP = o.getParent().getRelativeBoundingBox(commonParent).translate(-offsetC.getxMin(), -offsetC.getyMin(), -offsetC.getzMin());
-            o.getObject().translate(offsetP.getxMin(), offsetP.getyMin(), offsetP.getzMin());
+            //BoundingBox offsetP = o.getParent().getRelativeBoundingBox(commonParent).translate(-offsetC.getxMin(), -offsetC.getyMin(), -offsetC.getzMin());
+            //o.getObject().translate(offsetP.getxMin(), offsetP.getyMin(), offsetP.getzMin());
             
             //logger.debug("add offset: {}, offsetC: {}, offsetP: {}", offsetP, offsetC, o.getParent().getRelativeBoundingBox(commonParent));
             if (o.getBounds().hasIntersection(containerObject.getBounds())) {
                 if (proportionInclusion==0) ++count;
                 else {
                     if (o.getObject().getVoxels().isEmpty()) continue;
-                    double incl = (double)o.getObject().getIntersection(containerObject).size() / (double)o.getObject().getVoxels().size();
+                    double incl = (double)o.getObject().getIntersectionCountMaskMask(containerObject) / (double)o.getObject().getVoxels().size();
                     //logger.debug("inclusion: {}, threshold: {}, container: {}, parent:{}", incl, percentageInclusion, container, o.getParent());
                     if (incl>=proportionInclusion) ++count;
                 }
             }
-            o.getObject().resetOffset();
+            //o.getObject().resetOffset();
         }
         //logger.debug("inclusion count: commont parent: {} container: {}, toTest: {}, result: {}", commonParent, container, toCount.size(), count);
         return count;

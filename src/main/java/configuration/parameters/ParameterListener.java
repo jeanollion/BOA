@@ -22,5 +22,5 @@ package configuration.parameters;
  * @author jollion
  */
 public interface ParameterListener {
-    public void fire();
+    public void fire(Parameter sourceParameter);
 }

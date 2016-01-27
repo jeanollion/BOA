@@ -34,10 +34,22 @@ public class BlankMask extends ImageInteger implements ImageMask {
     }
 
     public boolean insideMask(int x, int y, int z) {
+        //return (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ);
         return true;
     }
 
     public boolean insideMask(int xy, int z) {
+        return true;
+    }
+    
+    
+    public boolean insideMaskWithOffset(int x, int y, int z) {
+        //x-=offsetX; y-=offsetY; z-=offsetZ;
+        //return (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ);
+        return true;
+    }
+
+    public boolean insideMaskWithOffset(int xy, int z) {
         return true;
     }
     
@@ -49,7 +61,7 @@ public class BlankMask extends ImageInteger implements ImageMask {
     @Override
     public boolean containsWithOffset(int x, int y, int z) {
         x-=offsetX; y-=offsetY; z-=offsetZ;
-        return (x >= 0 && x < sizeX && y >= 0 && y-offsetY < sizeY && z >= 0 && z < sizeZ);
+        return (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ);
     }
 
     @Override
@@ -70,6 +82,35 @@ public class BlankMask extends ImageInteger implements ImageMask {
     @Override
     public void setPixel(int xy, int z, double value) {
         
+    }
+    
+    
+    @Override
+    public int getPixelIntWithOffset(int x, int y, int z) {
+        return 1;
+    }
+
+    @Override
+    public int getPixelIntWithOffset(int xy, int z) {
+        return 1;
+    }
+
+    @Override
+    public void setPixelWithOffset(int xy, int z, int value) {
+    }
+
+    @Override
+    public float getPixelWithOffset(int x, int y, int z) {
+        return 1;
+    }
+
+    @Override
+    public float getPixelWithOffset(int xy, int z) {
+        return 1;
+    }
+
+    @Override
+    public void setPixelWithOffset(int xy, int z, double value) {
     }
 
     @Override

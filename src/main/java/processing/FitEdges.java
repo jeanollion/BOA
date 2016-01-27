@@ -47,8 +47,8 @@ public class FitEdges {
         int count=0;
         while(it.hasNext()) {
             Object3D o = it.next();
-            logger.debug("fit edges: object: {} value: {}, thld: {}", count++, BasicMeasurements.getMeanValue(o, image), regionThreshold);
-            if (BasicMeasurements.getMeanValue(o, image)<regionThreshold) it.remove();
+            logger.debug("fit edges: object: {} value: {}, thld: {}", count++, BasicMeasurements.getMeanValue(o, image, false), regionThreshold);
+            if (BasicMeasurements.getMeanValue(o, image, false)<regionThreshold) it.remove();
         }
         if (pop.getObjects().isEmpty()) return null;
         Object3D o = pop.getObjects().get(0);

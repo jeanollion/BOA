@@ -40,16 +40,16 @@ public class StructureObjectMask extends ImageObjectInterface {
 
     BoundingBox[] offsets;
     ArrayList<StructureObject> objects;
-    BoundingBox offset;
+    BoundingBox additionalOffset;
 
     public StructureObjectMask(StructureObject parent, int childStructureIdx) {
         super(parent, childStructureIdx);
-        this.offset = new BoundingBox(0, 0, 0);
+        this.additionalOffset = new BoundingBox(0, 0, 0);
     }
 
-    public StructureObjectMask(StructureObject parent, int childStructureIdx, BoundingBox offset) {
+    public StructureObjectMask(StructureObject parent, int childStructureIdx, BoundingBox additionalOffset) {
         super(parent, childStructureIdx);
-        this.offset = offset;
+        this.additionalOffset = additionalOffset;
     }
 
     @Override
@@ -67,13 +67,12 @@ public class StructureObjectMask extends ImageObjectInterface {
             objects = new ArrayList<StructureObject>(1);
             objects.add(parent);
             offsets = new BoundingBox[1];
-            offsets[0] = parent.getRelativeBoundingBox(parent).translate(offset.getxMin(), offset.getyMin(), offset.getzMin());
+            offsets[0] = parent.getRelativeBoundingBox(parent).translate(additionalOffset.getxMin(), additionalOffset.getyMin(), additionalOffset.getzMin());
         } else {
-            int[] path = parent.getExperiment().getPathToStructure(parent.getStructureIdx(), childStructureIdx);
-            objects = StructureObjectUtils.getAllObjects(parent, path);
+            objects = parent.getChildren(childStructureIdx);
             offsets = new BoundingBox[objects.size()];
             for (int i = 0; i < offsets.length; ++i) {
-                offsets[i] = objects.get(i).getRelativeBoundingBox(parent).translate(offset.getxMin(), offset.getyMin(), offset.getzMin());
+                offsets[i] = objects.get(i).getRelativeBoundingBox(parent).translate(additionalOffset.getxMin(), additionalOffset.getyMin(), additionalOffset.getzMin());
             }
         }
     }

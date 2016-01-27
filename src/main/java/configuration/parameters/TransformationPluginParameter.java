@@ -98,6 +98,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         p.add(inputChannel);
         if (outputChannel!=null) p.add(outputChannel);
         if (pluginParameters!=null) p.addAll(pluginParameters);
+        if (additionalParameters!=null) p.addAll(additionalParameters);
         //System.out.println("init child list! for: "+toString()+ " number of pp:"+(pluginParameters==null?0:pluginParameters.length)+" number total:"+p.size());
         super.initChildren(p);
     }

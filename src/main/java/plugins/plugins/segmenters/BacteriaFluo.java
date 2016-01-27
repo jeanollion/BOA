@@ -270,8 +270,8 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
         return maxCost-splitThresholdValue;
     }
     private double getInterfaceValue(ArrayList<Voxel> inter) {
-        double meanHess = BasicMeasurements.getMeanValue(inter, hessian);
-        double meanDOG = BasicMeasurements.getMeanValue(inter, rawIntensityMap);
+        double meanHess = BasicMeasurements.getMeanValue(inter, hessian, false);
+        double meanDOG = BasicMeasurements.getMeanValue(inter, rawIntensityMap, false);
         return meanHess / meanDOG;
     }
     

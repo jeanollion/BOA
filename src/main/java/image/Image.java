@@ -9,7 +9,6 @@ import processing.neighborhood.Neighborhood;
 public abstract class Image implements ImageProperties {
     public final static Logger logger = LoggerFactory.getLogger(Image.class);
 
-    
     protected String name;
     protected int sizeX;
     protected int sizeY;
@@ -19,6 +18,7 @@ public abstract class Image implements ImageProperties {
     protected int offsetX;
     protected int offsetY;
     protected int offsetZ;
+    protected int offsetXY;
     protected float scaleXY;
     protected float scaleZ;
     protected LUT lut=LUT.Grays;
@@ -32,6 +32,7 @@ public abstract class Image implements ImageProperties {
         this.sizeXYZ=sizeXY*sizeZ;
         this.offsetX = offsetX;
         this.offsetY = offsetY;
+        this.offsetXY= offsetY * sizeX + offsetX;
         this.offsetZ = offsetZ;
         this.scaleXY = scaleXY;
         this.scaleZ = scaleZ;
@@ -111,6 +112,7 @@ public abstract class Image implements ImageProperties {
     
     //public abstract float getPixel(float x, float y, float z); // interpolation
     public abstract float getPixel(int x, int y, int z);
+    public abstract float getPixelWithOffset(int x, int y, int z);
     public abstract float getPixelLinInterX(int x, int y, int z, float dx);
     public float getPixelLinInterXY(int x, int y, int z, float dx, float dy) {
         return getPixelLinInterX(x, y, z, dx) * (1 - dy) + dy * getPixelLinInterX(x, y+1, z, dx);
@@ -119,9 +121,11 @@ public abstract class Image implements ImageProperties {
         return getPixelLinInterXY(x, y, z, dx, dy) * (1 - dz) + dz * getPixelLinInterXY(x, y, z+1, dx, dy);
     }
     public abstract float getPixel(int xz, int z);
+    public abstract float getPixelWithOffset(int xy, int z);
     public abstract void setPixel(int x, int y, int z, double value);
     public abstract void setPixelWithOffset(int x, int y, int z, double value);
     public abstract void setPixel(int xy, int z, double value);
+    public abstract void setPixelWithOffset(int xy, int z, double value);
     public abstract Object[] getPixelArray();
     public abstract <T extends Image> T duplicate(String name);
     public abstract Image newImage(String name, ImageProperties properties);
@@ -136,7 +140,7 @@ public abstract class Image implements ImageProperties {
     @Override
     public boolean containsWithOffset(int x, int y, int z) {
         x-=offsetX; y-=offsetY; z-=offsetZ;
-        return (x >= 0 && x < sizeX && y >= 0 && y-offsetY < sizeY && z >= 0 && z < sizeZ);
+        return (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ);
     }
     
     public <T extends Image> T resetOffset() {

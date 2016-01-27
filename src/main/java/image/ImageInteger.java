@@ -31,9 +31,12 @@ public abstract class ImageInteger extends Image implements ImageMask {
     @Override public abstract <T extends Image> T duplicate(String name);
     public abstract int getPixelInt(int x, int y, int z);
     public abstract int getPixelInt(int xy, int z);
+    public abstract int getPixelIntWithOffset(int x, int y, int z);
+    public abstract int getPixelIntWithOffset(int xy, int z);
     public abstract void setPixel(int x, int y, int z, int value);
     public abstract void setPixelWithOffset(int x, int y, int z, int value);
     public abstract void setPixel(int xy, int z, int value);
+    public abstract void setPixelWithOffset(int xy, int z, int value);
     
     /**
      * 
