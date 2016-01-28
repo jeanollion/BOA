@@ -20,6 +20,7 @@ package plugins;
 import core.Core;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -43,7 +44,7 @@ public class PluginFactory {
         try {
             for (Class c : getClasses(packageName)) {
                 //Class<?> clazz = Class.forName(c);
-                if (Plugin.class.isAssignableFrom(c)) { // ne check pas l'heritage indirect!!
+                if (Plugin.class.isAssignableFrom(c) && !Modifier.isAbstract( c.getModifiers() )) { // ne check pas l'heritage indirect!!
                     plugins.put(c.getSimpleName(), c);
                     logger.debug("plugin found: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());
                 } else logger.debug("class is no plugin: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());

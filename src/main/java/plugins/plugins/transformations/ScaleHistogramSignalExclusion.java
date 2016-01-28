@@ -111,7 +111,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
                 
                 // look for windowSize-unBlinkCount previous elements
             }
-        }
+        }3
     }
     
     private double[] getNext(Double[][] muSigma, int startIdx, int length, boolean next) { // actual length, sumMu, sumSigma
@@ -156,12 +156,28 @@ public class ScaleHistogramSignalExclusion implements Transformation {
         return new double[]{mean, Math.sqrt(values2 - mean * mean)};
     }
     
-    public Image applyTransformation(int channelIdx, int timePoint, Image image) {
+    public ImageFloat applyTransformation(int channelIdx, int timePoint, Image image) {
         if (meanSigmaT==null || meanSigmaT.isEmpty() || meanSigmaT.size()<timePoint) throw new Error("ScaleHistogram transformation not configured: "+ (meanSigmaT==null?"null":  meanSigmaT.size()));
         ArrayList<Double> muSig = this.meanSigmaT.get(timePoint);
         double alpha = muSig.get(1) / this.sigmaTh.getValue().doubleValue();
         double beta = muSig.get(0) - alpha * this.muTh.getValue().doubleValue();
-        return ImageOperations.affineOperation(image, image instanceof ImageFloat? image: new ImageFloat("", 0, 0, 0), 1d/alpha, -beta/alpha);
+        if (excludeZero.getSelected()) {
+            ImageFloat output;
+            if (image instanceof ImageFloat) output = (ImageFloat) image;
+            else output= new ImageFloat("", image);
+            int sizeZ= output.getSizeZ();
+            int sizeXY = output.getSizeXY();
+            double m = 1d/alpha;
+            double add = -beta/alpha;
+            double value;
+            for (int z = 0; z<sizeZ; ++z) {
+                for (int xy=0; xy<sizeXY; ++xy) {
+                    value = image.getPixel(xy, z);
+                    if (value!=0) output.setPixel(xy, z, image.getPixel(xy, z)*m+add);
+                }
+            }
+            return output;
+        } else return (ImageFloat)ImageOperations.affineOperation(image, image instanceof ImageFloat? image: new ImageFloat("", 0, 0, 0), 1d/alpha, -beta/alpha);
     }
     
     public ArrayList getConfigurationData() {

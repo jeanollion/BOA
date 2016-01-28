@@ -17,6 +17,7 @@
  */
 package plugins.objectFeature;
 
+import static core.Processor.logger;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
@@ -62,7 +63,11 @@ public class IntensityMeasurementCore implements ObjectFeatureCore {
                 if (offset==null) {
                     for (Voxel v : o.getVoxels()) increment(intensityMap.getPixel(v.x, v.y, v.z));
                 } else {
-                    for (Voxel v : o.getVoxels()) increment(intensityMap.getPixel(v.x+offset.getxMin(), v.y+offset.getyMin(), v.z+offset.getzMin()));
+                    int offX=offset.getxMin();
+                    int offY=offset.getyMin();
+                    int offZ=offset.getzMin();
+                    //logger.debug("intensity measurements: offX: {}, offY: {}, offZ: {}", offX, offY, offZ);
+                    for (Voxel v : o.getVoxels()) increment(intensityMap.getPixel(v.x+offX, v.y+offY, v.z+offZ));
                 }
             } else {
                 ImageInteger mask = o.getMask();
@@ -70,8 +75,9 @@ public class IntensityMeasurementCore implements ObjectFeatureCore {
                 
                 int offXY = (offset.getyMin()+mask.getOffsetY()) * intensityMap.getSizeX() + offset.getxMin()+mask.getOffsetX();
                 int offZ = offset.getzMin()+mask.getOffsetZ();
+                //logger.debug("intensity measurements: offXY: {}, offZ: {}", offXY, offZ);
                 for (int z= 0; z<mask.getSizeZ(); ++z) {
-                    for (int xy= 0; z<mask.getSizeXY(); ++xy) {
+                    for (int xy= 0; xy<mask.getSizeXY(); ++xy) {
                         if (mask.insideMask(xy, z)) increment(intensityMap.getPixel(xy+offXY, z+offZ));
                     }
                 }

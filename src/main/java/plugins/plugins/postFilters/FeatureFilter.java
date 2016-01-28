@@ -37,19 +37,25 @@ public class FeatureFilter implements PostFilter {
     PluginParameter<ObjectFeature> feature = new PluginParameter<ObjectFeature>("Feature", ObjectFeature.class, false);
     NumberParameter threshold = new NumberParameter("Threshold", 4, 0);
     BooleanParameter keepOverThreshold = new BooleanParameter("Keep over threshold", true);
-    BooleanParameter strict = new BooleanParameter("strict comparison with threshold", true);
+    BooleanParameter strict = new BooleanParameter("Strict comparison with threshold", true);
     
     Parameter[] parameters = new Parameter[]{feature, threshold, keepOverThreshold, strict};
     
     public FeatureFilter() {}
-    public FeatureFilter(ObjectFeature feature) {
+    public FeatureFilter(ObjectFeature feature, double threshold, boolean keepOverThreshold, boolean strictComparison) {
         this.feature.setPlugin(feature);
+        this.threshold.setValue(threshold);
+        this.keepOverThreshold.setSelected(keepOverThreshold);
+        this.strict.setSelected(strictComparison);
     }
+    public FeatureFilter(ObjectFeature feature, double threshold, boolean keepOverThreshold) {
+        this(feature, threshold, keepOverThreshold, true);
+    } 
     
     public ObjectPopulation runPostFilter(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation) {
         ObjectFeature f = feature.instanciatePlugin();
         f.setUp(parent, childStructureIdx);
-        childPopulation.filter(new ObjectPopulation.Feature(f, threshold.getValue().doubleValue(), keepOverThreshold.getSelected(), strict.getSelected()));
+        childPopulation=childPopulation.filter(new ObjectPopulation.Feature(f, threshold.getValue().doubleValue(), keepOverThreshold.getSelected(), strict.getSelected()));
         return childPopulation;
     }
 

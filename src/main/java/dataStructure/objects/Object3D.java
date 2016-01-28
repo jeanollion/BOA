@@ -328,6 +328,10 @@ public class Object3D {
     }
     
     public void draw(ImageInteger image, int label, BoundingBox offset) {
+        if (offset==null) {
+            draw(image, label);
+            return;
+        }
         if (voxels !=null) {
             //logger.trace("drawing from VOXELS of object: {} with label: {} on image: {} ", this, label, image);
             int offX = -getBounds().getxMin()+offset.getxMin();

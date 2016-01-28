@@ -62,7 +62,7 @@ public class ObjectPopulation {
     private ImageInteger labelImage;
     private ArrayList<Object3D> objects;
     private ImageProperties properties;
-
+    private BoundingBox objectOffset;
     /**
      * Creates an empty ObjectPopulation instance
      * @param properties 
@@ -84,7 +84,7 @@ public class ObjectPopulation {
         labelImage = image;
         if (!isLabeledImage) {
             objects = new ArrayList<Object3D>(ImageLabeller.labelImageList(image));
-            relabel(); // in order to have consistent labels between image & object list
+            relabel(false); // in order to have consistent labels between image & object list
         }
     }
 
@@ -98,6 +98,16 @@ public class ObjectPopulation {
             this.objects = new ArrayList<Object3D>();
         }
         if (properties!=null) this.properties = new BlankMask("", properties);
+    }
+    
+    public ObjectPopulation(ArrayList<Object3D> objects, ImageProperties properties, BoundingBox objectOffset) {
+        if (objects != null) {
+            this.objects = objects;
+        } else {
+            this.objects = new ArrayList<Object3D>();
+        }
+        if (properties!=null) this.properties = new BlankMask("", properties);
+        this.objectOffset=objectOffset;
     }
     
     public ObjectPopulation duplicate() {
@@ -136,6 +146,11 @@ public class ObjectPopulation {
         return objects;
     }
     
+    private void draw(Object3D o, int label) {
+        if (objectOffset == null) o.draw(labelImage, label);
+        else o.draw(labelImage, label, objectOffset.duplicate().translate(o.getBounds()));
+    }
+    
     private void constructLabelImage() {
         if (objects == null || objects.isEmpty()) {
             labelImage = ImageInteger.createEmptyLabelImage("labelImage", 0, getImageProperties());
@@ -143,7 +158,7 @@ public class ObjectPopulation {
             labelImage = ImageInteger.createEmptyLabelImage("labelImage", objects.size(), getImageProperties());
             //logger.debug("creating image: properties: {} imagetype: {} number of objects: {}", properties, labelImage.getClass(), objects.size());
             for (Object3D o : objects) {
-                o.draw(labelImage, o.getLabel());
+                draw(o, o.getLabel());
             }
         }
     }
@@ -155,7 +170,7 @@ public class ObjectPopulation {
     
     public void eraseObject(Object3D o, boolean eraseInList) {
         if (labelImage != null) {
-            o.draw(labelImage, 0);
+            draw(o, 0);
         }
         if (eraseInList && objects != null) {
             objects.remove(o);
@@ -193,29 +208,21 @@ public class ObjectPopulation {
         }
         return properties;
     }
-    
-    public void relabel() {
-        if (objects == null || objects.isEmpty()) {
-            return;
-        }
+    public void relabel() {relabel(true);}
+    public void relabel(boolean fillImage) {
         int idx = 1;
+        for (Object3D o : getObjects()) {
+            o.label = idx++;
+        }
+        if (objects == null || objects.isEmpty()) return;
         if (hasImage()) {
-            for (Object3D o : getObjects()) {
-                o.label = idx++;
-            }
             int maxLabel = getObjects().get(objects.size() - 1).getLabel();
             if (maxLabel > ImageInteger.getMaxValue(labelImage, false)) {
                 labelImage = ImageInteger.createEmptyLabelImage(labelImage.getName(), maxLabel, properties);
             } else {
-                ImageOperations.fill(labelImage, 0, null);
+                if (fillImage) ImageOperations.fill(labelImage, 0, null);
             }
-            for (Object3D o : getObjects()) {
-                o.draw(labelImage, o.label);
-            }
-        } else {
-            for (Object3D o : objects) {
-                o.label = idx++;
-            }
+            for (Object3D o : getObjects()) draw(o, o.getLabel());
         }
     }
     
@@ -276,12 +283,12 @@ public class ObjectPopulation {
         ObjectPopulation pop = WatershedTransform.watershed(edgeMap, mask, seeds, false, null, null);
         this.objects = pop.getObjects();
         objects.remove(0); // remove background object
-        this.labelImage = null;
+        relabel(true);
     }
     
     public void localThreshold(Image intensity, int marginX, int marginY, int marginZ) {
         ImageInteger background = ImageOperations.xor(getLabelImage(), new BlankMask("", properties), null);
-        for (Object3D o : objects) {
+        for (Object3D o : getObjects()) {
             o.draw(background, 1);
             BoundingBox bounds = o.getBounds().duplicate();
             bounds.expandX(bounds.getxMin() - marginX);
@@ -296,6 +303,7 @@ public class ObjectPopulation {
             o.draw(background, 0);
             localThreshold(o, intensity, thld);
         }
+        relabel(false);
     }
     
     protected void localThreshold(Object3D o, Image intensity, double threshold) {
@@ -304,9 +312,7 @@ public class ObjectPopulation {
             Voxel v = it.next();
             if (intensity.getPixel(v.x, v.y, v.z) < threshold) {
                 it.remove();
-                if (hasImage()) {
-                    labelImage.setPixel(v.x, v.y, v.z, 0);
-                }
+                if (hasImage()) labelImage.setPixel(v.x, v.y, v.z, 0);
             }
         }
     }
@@ -323,11 +329,11 @@ public class ObjectPopulation {
             Object3D o = it.next();
             if (!filter.keepObject(o)) {
                 it.remove();
-                if (removedObjects != null) {
-                    removedObjects.add(o);
-                }
+                if (removedObjects != null)removedObjects.add(o);
+                if (this.hasImage()) draw(o, 0);
             }
         }
+        relabel(false);
         //logger.debug("filter: {}, total object number: {}, remaning objects: {}", filter.getClass().getSimpleName(), objectNumber, objects.size());
         return this;
     }
@@ -342,7 +348,7 @@ public class ObjectPopulation {
             pop.filter(new RemoveAndCombineOverlappingObjects(this));
             this.getObjects().addAll(pop.getObjects());
         }
-        relabel();
+        relabel(false);
         return this;
     }
     public void combine(ObjectPopulation... otherPopulations) {
@@ -353,6 +359,11 @@ public class ObjectPopulation {
         if (objects.isEmpty()) {
             return;
         }
+        if (labelImage!=null) {
+            for (Object3D o : getObjects()) {
+                draw(o, 0);
+            }
+        }
         int maxIdx = 0;
         int maxSize = objects.get(0).getVoxels().size();
         for (int i = 1; i < objects.size(); ++i) {
@@ -362,8 +373,11 @@ public class ObjectPopulation {
             }
         }
         ArrayList<Object3D> objectsTemp = new ArrayList<Object3D>(1);
-        objectsTemp.add(objects.get(maxIdx));
+        Object3D o = objects.get(maxIdx);
+        o.setLabel(1);
+        objectsTemp.add(o);
         objects = objectsTemp;
+        if (labelImage!=null) draw(o, o.getLabel());
     }
     
     public void sortBySpatialOrder(final IndexingOrder order) {
@@ -374,7 +388,7 @@ public class ObjectPopulation {
             }
         };
         Collections.sort(objects, comp);
-        relabel();
+        relabel(false);
     }
     
     private static double[] getCenterArray(BoundingBox b) {
@@ -413,6 +427,7 @@ public class ObjectPopulation {
 
         public boolean keepObject(Object3D object) {
             double testValue = feature.performMeasurement(object, null);
+            logger.debug("FeatureFilter: {}, testValue: {}, threshold: {}", feature.getClass().getSimpleName(), testValue, threshold);
             if (keepOverThreshold) {
                 if (strict) return testValue>threshold;
                 else return testValue>=threshold;

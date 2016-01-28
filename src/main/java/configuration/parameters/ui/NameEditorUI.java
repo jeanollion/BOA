@@ -43,7 +43,7 @@ public class NameEditorUI implements ParameterUI {
         this.p=p_;
         this.model= ParameterUtils.getModel(p);
         text = new JTextField();
-        text.setPreferredSize(new Dimension(100, 20));
+        text.setPreferredSize(new Dimension(100, 26));
         if (!allowSpecialCharacters) ((AbstractDocument) text.getDocument()).setDocumentFilter(new DocumentFilterIllegalCharacters());
         this.component=new Component[]{text};
         text.getDocument().addDocumentListener(new DocumentListener() {
@@ -70,7 +70,7 @@ public class NameEditorUI implements ParameterUI {
     public Object[] getDisplayComponent() {
         text.setText(p.getName());
         // resize text area..
-        text.setPreferredSize(new Dimension(p.getName().length()*8+100, 20));
+        text.setPreferredSize(new Dimension(p.getName().length()*8+100, 26));
         return component;
     }
     

@@ -22,6 +22,7 @@ import boa.gui.configuration.ConfigurationTreeModel;
 import boa.gui.configuration.TreeModelContainer;
 import static configuration.parameters.Parameter.logger;
 import dataStructure.configuration.MicroscopyField;
+import dataStructure.configuration.Structure;
 import java.util.ArrayList;
 import utils.Utils;
 
@@ -53,7 +54,6 @@ public class ParameterUtils {
         //logger.trace("getExperiment: {}", p.getName());
         while (root.getParent() != null) {
             root = (Parameter) root.getParent();
-            //logger.trace("getExperiment: {}", root.getName());
             if (root instanceof Experiment) {
                 return (Experiment) root;
             }
@@ -200,5 +200,53 @@ public class ParameterUtils {
         } else {
             return null;
         }
+    }
+    
+    // Configuration by hints
+    public static <T extends Parameter> T getFirstParameterFromParents(Class<T> clazz, Parameter parameter, boolean lookInIndirectParents) {
+        if (parameter==null) return null;
+        Parameter parent=parameter;
+        while (parent.getParent()!=null) {
+            parent = ((Parameter)parent.getParent());
+            // look in siblings/uncles
+            if (lookInIndirectParents && parent instanceof ListParameter) {
+                for (Parameter p : ((ListParameter<Parameter>)parent).getActivatedChildren()) if (clazz.equals(p.getClass())) return (T)p;
+            } else if (lookInIndirectParents && parent instanceof ContainerParameter) {
+                for (Parameter p : ((SimpleContainerParameter)parent).getChildren())  if (clazz.equals(p.getClass())) return (T)p;
+            } else  if (clazz.equals(parent.getClass())) return (T)parent;
+        }
+        return null;
+    }
+    public static void configureStructureParametersFromParent(Parameter parameter) {
+        Structure s = getFirstParameterFromParents(Structure.class, parameter, false);
+        if (s!=null) configureStructureParameters(s.getIndex(), parameter);
+    }
+    public static void configureStructureParameters(final int structureIdxHint, Parameter parameter) {
+        if (structureIdxHint==-1) return;
+        ParameterConfiguration config = new ParameterConfiguration() {
+            public void configure(Parameter p) {
+                if (((StructureParameter)p).getSelectedStructureIdx()==-1) {
+                    ((StructureParameter)p).setSelectedStructureIdx(structureIdxHint);
+                    logger.debug("Configuring: {}, with value: {}", p.getName(), structureIdxHint);
+                }
+            }
+            public boolean isConfigurable(Parameter p) {
+                return p instanceof StructureParameter;
+            }
+        };
+        configureParameter(config, parameter);
+    }
+    
+    public static void configureParameter(final ParameterConfiguration config, Parameter parameter) {       
+        if (config.isConfigurable(parameter)) config.configure(parameter);
+        else if (parameter instanceof ListParameter) {
+            for (Parameter p : ((ListParameter<Parameter>)parameter).getActivatedChildren()) configureParameter(config, p);
+        } else if (parameter instanceof ContainerParameter) {
+            for (Parameter p : ((SimpleContainerParameter)parameter).getChildren()) configureParameter(config, p);
+        }
+    }
+    public interface ParameterConfiguration {
+        public void configure(Parameter p);
+        public boolean isConfigurable(Parameter p);
     }
 }

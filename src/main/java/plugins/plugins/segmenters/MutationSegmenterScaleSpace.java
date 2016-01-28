@@ -27,6 +27,7 @@ import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.ObjectPopulation.MeanIntensity;
 import dataStructure.objects.ObjectPopulation.Or;
 import dataStructure.objects.ObjectPopulation.Overlap;
+import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectProcessing;
 import dataStructure.objects.Voxel;
 import image.BoundingBox;
@@ -39,34 +40,20 @@ import image.ImageMask;
 import image.ImageOperations;
 import image.ImageShort;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import jj2000.j2k.util.ArrayUtil;
 import plugins.Segmenter;
+import plugins.plugins.measurements.objectFeatures.SNR;
 import plugins.plugins.postFilters.FeatureFilter;
-import plugins.plugins.preFilter.IJSubtractBackground;
-import plugins.plugins.thresholders.BackgroundFit;
-import plugins.plugins.thresholders.KappaSigma;
 import processing.Filters;
-import processing.GaussianFit;
-import processing.IJFFTBandPass;
 import processing.ImageFeatures;
-import processing.LoG;
 import processing.MultiScaleWatershedTransform;
-import processing.WatershedTransform;
 import processing.WatershedTransform.MonotonalPropagation;
 import processing.WatershedTransform.MultiplePropagationCriteria;
 import processing.WatershedTransform.SizeFusionCriterion;
-import processing.WatershedTransform.ThresholdPropagation;
 import processing.WatershedTransform.ThresholdPropagationOnWatershedMap;
 import static processing.WatershedTransform.watershed;
-import processing.neighborhood.CircularNeighborhoodPerSlice;
 import processing.neighborhood.ConditionalNeighborhoodZ;
 import processing.neighborhood.CylindricalNeighborhood;
 import processing.neighborhood.EllipsoidalNeighborhood;
-import processing.neighborhood.EllipsoidalSubVoxNeighborhood;
 
 /**
  *
@@ -78,11 +65,14 @@ public class MutationSegmenterScaleSpace implements Segmenter {
     NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxels)", 0, 5, 1, null);
     NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 2, 5, 1, null);
     NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 2, 3, 0, null);
-    PostFilterSequence postFilters = new PostFilterSequence("Post-Filters").addPostFilters(new FeatureFilter())...
+    PostFilterSequence postFilters = new PostFilterSequence("Post-Filters").addPostFilters(new FeatureFilter(new SNR().setBackgroundObjectStructureIdx(1), 2, true, true));
     Parameter[] parameters = new Parameter[]{minSpotSize, thresholdHigh,  thresholdLow, postFilters};
+    
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        return run(input, parent.getMask(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), null);
+        ObjectPopulation res= run(input, parent.getMask(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), null);
+        return postFilters.filter(res, structureIdx, (StructureObject)parent);
     }
+    public PostFilterSequence getPostFilters() {return postFilters;}
     
     public static ObjectPopulation run(Image input, ImageMask mask, int minSpotSize, double thresholdHigh , double thresholdLow, ArrayList<Image> intermediateImages) {
         if (input.getSizeZ()>1) {
@@ -102,7 +92,7 @@ public class MutationSegmenterScaleSpace implements Segmenter {
         } else return runPlaneHybrid(input, mask, minSpotSize, thresholdHigh, thresholdLow, intermediateImages);
     }
     
-    public static ObjectPopulation runPlane(Image input, ImageMask mask, int minSpotSize, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
+    /*public static ObjectPopulation runPlane(Image input, ImageMask mask, int minSpotSize, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
         if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
         double[] radii = new double[]{2, 2.5, 3, 3.5, 4.5, 7};
         int maxScaleIdx=radii.length-1-2;
@@ -123,8 +113,9 @@ public class MutationSegmenterScaleSpace implements Segmenter {
         pop.filter(new ObjectPopulation.RemoveFlatObjects(input));
         pop.filter(new ObjectPopulation.Size().setMin(minSpotSize));
         return pop;
-    }
+    }*/
     
+    /*
     public static ObjectPopulation runPlaneMono(Image input, ImageMask mask, int minSpotSize, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
         if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
         double[] radii = new double[]{2, 2.5, 3, 3.5, 4.5, 7};
@@ -150,7 +141,7 @@ public class MutationSegmenterScaleSpace implements Segmenter {
         pop.filter(new ObjectPopulation.RemoveFlatObjects(input));
         pop.filter(new ObjectPopulation.Size().setMin(minSpotSize));
         return pop;
-    }
+    }*/
     
     public static ObjectPopulation runPlaneHybrid(Image input, ImageMask mask, int minSpotSize, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
         if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
@@ -159,7 +150,6 @@ public class MutationSegmenterScaleSpace implements Segmenter {
         int maxScaleWSIdx=1;
         Image scaleSpace = getScaleSpace(input, radii); 
         ImageByte seedsSP = getSeedsScaleSpace(scaleSpace, thresholdSeeds, 1.5, maxScaleIdx);
-        
         
         Image[] wsMaps = scaleSpace.splitZPlanes(0, maxScaleWSIdx).toArray(new Image[0]);
         ImageByte[] seedMaps = seedsSP.splitZPlanes(0, maxScaleWSIdx).toArray(new ImageByte[0]);

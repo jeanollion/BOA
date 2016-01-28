@@ -21,6 +21,7 @@ import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import image.ImageProperties;
 import plugins.PostFilter;
+import utils.Utils;
 
 /**
  *
@@ -33,20 +34,20 @@ public class PostFilterSequence extends SimpleListParameter<PluginParameter<Post
     }
     
     public PostFilterSequence addPostFilters(PostFilter... postFilters) {
-        for (PostFilter f : postFilters) super.createChildInstance("Post-Filter").setPlugin(f);
+        for (PostFilter f : postFilters) {
+            PluginParameter<PostFilter> pp = super.createChildInstance("Post-Filter").setPlugin(f);
+            super.insert(pp);
+        }
         return this;
     }
     
     public ObjectPopulation filter(ObjectPopulation objectPopulation, int structureIdx, StructureObject structureObject) {
-        ImageProperties initialProperites = objectPopulation.getImageProperties();
-        ObjectPopulation currentObjectPopulation=objectPopulation;
+        ParameterUtils.configureStructureParameters(structureIdx, this);
         for (PluginParameter<PostFilter> pp : this.getActivatedChildren()) {
             PostFilter p = pp.instanciatePlugin();
-            if (p!=null) {
-                currentObjectPopulation = p.runPostFilter(structureObject, structureIdx, objectPopulation);
-                currentObjectPopulation.setProperties(initialProperites, true);
-            }
+            if (p!=null) objectPopulation = p.runPostFilter(structureObject, structureIdx, objectPopulation);
+            else logger.warn("Post Filter could not be instanciated: {} for children of {} of structure: {}", pp.getPluginName(), structureObject, structureIdx);
         }
-        return currentObjectPopulation;
+        return objectPopulation;
     }
 }

@@ -32,6 +32,7 @@ import plugins.plugins.processingScheme.SegmentAndTrack;
 import plugins.plugins.processingScheme.SegmentOnly;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.MutationSegmenter;
+import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
 import plugins.plugins.trackers.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import plugins.plugins.trackers.MicrochannelProcessor;
 import plugins.plugins.transformations.AutoRotationXY;
@@ -50,11 +51,18 @@ import processing.ImageTransformation;
  */
 public class GenerateTestXP {
     public static void main(String[] args) {
-        //String dbName = "fluo151130_OutputNewScaling";
-        //String outputDir = "/home/jollion/Documents/LJP/DataLJP/Fluo151130/OutputNewScaling/";
+        
+        
+        // Ordi LJP
+        String dbName = "fluo151130_OutputNewScaling";
+        String outputDir = "/data/Images/Fluo/films1511/151130/OutputNewScaling";
+        String inputDir = "/data/Images/Fluo/films1511/151130/ME120R63-30112015-lr62r1";
+        
+        /*
+        // Ordi Portable
         String dbName = "testSub";
         String outputDir = "/home/jollion/Documents/LJP/DataLJP/TestOutput";
-        String inputDir = "/home/jollion/Documents/LJP/DataLJP/testsub";        
+        String inputDir = "/home/jollion/Documents/LJP/DataLJP/testsub";  */      
         boolean performProcessing = false;
         
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
@@ -86,7 +94,7 @@ public class GenerateTestXP {
         
         mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessor()));
         bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo(), 0.9, 1.1, 1.7, 1, 5)));
-        mutation.setProcessingScheme(new SegmentOnly(new MutationSegmenter()));
+        mutation.setProcessingScheme(new SegmentOnly(new MutationSegmenterScaleSpace()));
         
         //xp.addMeasurement(new BacteriaLineageIndex(1));
         //xp.addMeasurement(new BacteriaMeasurements(1, 2));

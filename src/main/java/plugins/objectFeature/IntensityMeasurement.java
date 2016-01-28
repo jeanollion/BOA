@@ -35,9 +35,8 @@ import plugins.plugins.measurements.SimpleObjectFeature;
  */
 public abstract class IntensityMeasurement extends SimpleObjectFeature implements ObjectFeatureWithCore {
     protected IntensityMeasurementCore core;
-    protected StructureParameter intensity = new StructureParameter("Intensity");
+    protected StructureParameter intensity = new StructureParameter("Intensity").setAutoConfiguration(true);
     protected Image intensityMap;
-    Parameter[] parameters = new Parameter[]{intensity};
     
     @Override public IntensityMeasurement setUp(StructureObject parent, int childStructureIdx) {
         super.setUp(parent, childStructureIdx);
@@ -46,16 +45,24 @@ public abstract class IntensityMeasurement extends SimpleObjectFeature implement
         return this;
     }
     
-    @Override public Parameter[] getParameters() {return parameters;}
+    @Override public Parameter[] getParameters() {return new Parameter[]{intensity};}
 
     public void setUpOrAddCore(List<ObjectFeatureCore> availableCores) {
-        for (ObjectFeatureCore c : availableCores) {
-            if (c instanceof IntensityMeasurementCore && ((IntensityMeasurementCore)c).getIntensityMap()==intensityMap) core=(IntensityMeasurementCore)c;
-            else {
-                core = new IntensityMeasurementCore();
-                core.setUp(intensityMap);
-                availableCores.add(core);
+        IntensityMeasurementCore newCore = null;
+        if (availableCores!=null) {
+            for (ObjectFeatureCore c : availableCores) {
+                if (c instanceof IntensityMeasurementCore && ((IntensityMeasurementCore)c).getIntensityMap()==intensityMap) {
+                    newCore=(IntensityMeasurementCore)c;
+                    break;
+                }
             }
         }
+        if (newCore==null) {
+            if (core==null) {
+                core = new IntensityMeasurementCore();
+                core.setUp(intensityMap);
+            }
+            if (availableCores!=null) availableCores.add(core);
+        } else core=newCore;
     }    
 }

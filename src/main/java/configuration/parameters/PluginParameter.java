@@ -86,13 +86,14 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         return additionalParameters;
     }
     
-    public void setPlugin(T pluginInstance) {
+    public PluginParameter<T> setPlugin(T pluginInstance) {
         if (pluginInstance==null) setPlugin(NO_SELECTION);
         else {
             this.pluginParameters=new ArrayList<Parameter>(Arrays.asList(pluginInstance.getParameters()));
             initChildList();
             this.pluginName=pluginInstance.getClass().getSimpleName();
         }
+        return this;
     }
     
     @Override
@@ -202,7 +203,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     
     @Override
     public String toString() {
-        String res = name+ ": "+this.getPluginName();
+        String res = ((name!=null && name.length()>0) ? name+ ": " : "")+this.getPluginName();
         if (isActivated()) return res;
         else return "<HTML><S>"+res+"<HTML></S>";
     }

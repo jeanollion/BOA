@@ -52,8 +52,8 @@ public class CropMicroChannels2D implements TransformationTimeIndependent {
     NumberParameter yStart = new BoundedNumberParameter("Y start", 0, 0, 0, null);
     NumberParameter yStop = new BoundedNumberParameter("Y stop (0 for image heigth)", 0, 0, 0, null);
     NumberParameter margin = new BoundedNumberParameter("Margin", 0, 30, 0, null);
-    NumberParameter channelHeight = new BoundedNumberParameter("Channel Height", 0, 350, 0, null);
-    NumberParameter cropMargin = new BoundedNumberParameter("Crop Margin", 0, 30, 0, null);
+    NumberParameter channelHeight = new BoundedNumberParameter("Channel Height", 0, 355, 0, null);
+    NumberParameter cropMargin = new BoundedNumberParameter("Crop Margin", 0, 45, 0, null);
     Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, xStart, xStop, yStart, yStop};
     
     public SelectionMode getOutputChannelSelectionMode() {

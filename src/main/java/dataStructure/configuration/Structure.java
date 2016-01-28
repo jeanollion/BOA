@@ -119,6 +119,10 @@ public class Structure extends SimpleContainerParameter {
         return channelImage.getSelectedIndex();
     }
     
+    public int getIndex() {
+        return this.getParent().getIndex(this);
+    }
+    
     @Override 
     public void setParent(MutableTreeNode newParent) {
         super.setParent(newParent);

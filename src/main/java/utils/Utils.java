@@ -41,12 +41,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.swing.DefaultListModel;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
+import javax.swing.JList;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
+import javax.swing.ListModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
@@ -96,7 +99,7 @@ public class Utils {
         return String.format(Locale.US, "%0" + paddingSize + "d", number);
     }
     
-    public static int[] toArray(ArrayList<Integer> arrayList, boolean reverseOrder) {
+    public static int[] toArray(List<Integer> arrayList, boolean reverseOrder) {
         int[] res=new int[arrayList.size()];
         if (reverseOrder) {
             int idx = res.length-1;
@@ -200,6 +203,18 @@ public class Utils {
         TreePath[] sel = tree.getSelectionPaths();
         if (sel!=null) pathToSelect.addAll(Arrays.asList(sel));
         tree.setSelectionPaths(pathToSelect.toArray(new TreePath[pathToSelect.size()]));
+    }
+    
+    public static void setSelectedValues(List selection, JList list, DefaultListModel model) {
+        List<Integer> selectedIndicies = new ArrayList<Integer>();
+        for (Object s : selection) {
+            int i = model.indexOf(s);
+            if (i!=-1) selectedIndicies.add(i);
+            if (!selectedIndicies.isEmpty()) {
+                int[] res = Utils.toArray(selectedIndicies, false);
+                list.setSelectedIndices(res);
+            }
+        }
     }
     
     private static double incrementColor(double h, double goldenRatioConjugate) {return (h+goldenRatioConjugate)%1;}

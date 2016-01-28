@@ -18,6 +18,7 @@
 package configuration.parameters;
 
 import dataStructure.configuration.Experiment;
+import dataStructure.configuration.Structure;
 import de.caluga.morphium.annotations.Transient;
 
 /**
@@ -26,6 +27,7 @@ import de.caluga.morphium.annotations.Transient;
  */
 public class StructureParameter extends IndexChoiceParameter {
     @Transient protected Experiment xp;
+    boolean autoConfiguration;
     
     public StructureParameter(String name) {
         super(name);
@@ -38,9 +40,38 @@ public class StructureParameter extends IndexChoiceParameter {
         super(name, selectedStructures, allowNoSelection);
     }
     
+    public StructureParameter setAutoConfiguration(boolean autoConfiguration) {
+        this.autoConfiguration=autoConfiguration;
+        return this;
+    }
+    
+    protected void autoConfiguration() {
+        if (getXP()!=null) {
+            Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, this, false);
+            if (s!=null) this.setSelectedStructureIdx(s.getIndex());
+        }
+    }
+    
     protected Experiment getXP() {
         if (xp==null) xp= ParameterUtils.getExperiment(this);
         return xp;
+    }
+    
+    public void setSelectedStructureIdx(int structureIdx) {
+        super.setSelectedIndex(structureIdx);
+    }
+    
+    @Override public int getSelectedIndex() {
+        int idx = super.getSelectedIndex();
+        if (idx==-1 && autoConfiguration) {
+            autoConfiguration();
+            return super.getSelectedIndex();
+        }
+        return idx;
+    }
+    
+    public int getSelectedStructureIdx() {
+        return this.getSelectedIndex();
     }
     
     @Override

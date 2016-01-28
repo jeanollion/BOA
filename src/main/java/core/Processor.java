@@ -82,15 +82,15 @@ public class Processor {
     
     public static void preProcessImages(MicroscopyField field, ObjectDAO dao, boolean deleteObjects, boolean computeConfigurationData) {
         if (!dao.getFieldName().equals(field.getName())) throw new IllegalArgumentException("field name should be equal");
-        setTransformations(field, computeConfigurationData);
         InputImagesImpl images = field.getInputImages();
+        images.deleteFromDAO(); // delete images if existing in imageDAO
+        setTransformations(field, computeConfigurationData);
         images.applyTranformationsSaveAndClose();
         if (deleteObjects) dao.deleteAllObjects();
     }
     
     public static void setTransformations(MicroscopyField field, boolean computeConfigurationData) {
         InputImagesImpl images = field.getInputImages();
-        images.deleteFromDAO(); // delete images if existing in imageDAO
         PreProcessingChain ppc = field.getPreProcessingChain();
         for (TransformationPluginParameter<Transformation> tpp : ppc.getTransformations()) {
             Transformation transfo = tpp.instanciatePlugin();

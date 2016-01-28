@@ -31,6 +31,7 @@ import de.caluga.morphium.Morphium;
 import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
+import image.ImageByte;
 import image.ImageInteger;
 import image.ImageMask;
 import image.ImageOperations;
@@ -62,13 +63,13 @@ public class TestProcessMutations {
 //        t.testSegMutationsFromXP(8, 0, true, 0, 35);
 //        t.testSegMutationsFromXP(8, 0, true, 151, 170);
 //        t.testSegMutationsFromXP(8, 0, true, 322, 324);
-//        t.testSegMutationsFromXP(8, 8, true, 36, 39);
-//        t.testSegMutationsFromXP(8, 0, true, 230, 251);
+        t.testSegMutationsFromXP(8, 8, true, 36, 39);
+//        t.testSegMutationsFromXP(8, 0, true, 230, 251); // beaucoup de spots flous ratés
 //        t.testSegMutationsFromXP(8, 1, true, 0, 5);
-//        t.testSegMutationsFromXP(8, 6, true, 0, 30);
-//        t.testSegMutationsFromXP(8, 10, true, 341, 343);
+//        t.testSegMutationsFromXP(8, 6, true, 0, 30); // cellules avec formes bizares -< faux positifs + spots très petits proche de très intenses
+//        t.testSegMutationsFromXP(8, 10, true, 341, 343); // no spots?
 //        t.testSegMutationsFromXP(8, 10, true, 62, 64);
-        t.testSegMutationsFromXP(9, 0, true, 0, 10);
+//        t.testSegMutationsFromXP(9, 0, true, 0, 10); // bordures de l'image
     }
     
     public void testSegMutation(StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
@@ -77,11 +78,18 @@ public class TestProcessMutations {
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
         //ObjectPopulation pop = MutationSegmenterScaleSpace.runPlaneMono(input.getZPlane(0), parentMask, 5, 3.5, 0.75, intermediateImages);
         ObjectPopulation pop = MutationSegmenterScaleSpace.runPlaneHybrid(input.getZPlane(0), parentMask, 5, 4, 0.75, intermediateImages);
+        Image beforePF = pop.getLabelImage().duplicate("Before PostFilters");
+        ObjectPopulation popPF = new MutationSegmenterScaleSpace().getPostFilters().filter(pop, 2, parent);
+        
         //ObjectPopulation pop = MutationSegmenterScaleSpace.runPlane(input.getZPlane(0), parentMask, 5, 4, 0.75, intermediateImages);
         if (parentMask_!=null) parentMask_.add(parentMask);
         if (input_!=null) input_.add(input);
-        if (outputLabel!=null) outputLabel.add(pop.getLabelImage());
-        if (intermediateImages_!=null) intermediateImages_.add(intermediateImages);
+        if (outputLabel!=null) outputLabel.add(popPF.getLabelImage());
+        if (intermediateImages_!=null) {
+            intermediateImages.add(beforePF);
+            intermediateImages.add(parent.getObjectPopulation(1).getLabelImage().setName("bacteria"));
+            intermediateImages_.add(intermediateImages);
+        }
     }
     
     

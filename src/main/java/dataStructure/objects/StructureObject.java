@@ -656,7 +656,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         else {
             ArrayList<Object3D> objects = new ArrayList<Object3D>(child.size());
             for (StructureObject s : child) objects.add(s.getObject());
-            return new ObjectPopulation(objects, this.getMaskProperties());
+            return new ObjectPopulation(objects, this.getMaskProperties(), this.getMaskProperties().getBoundingBox().reverseOffset());
         }
     }
     

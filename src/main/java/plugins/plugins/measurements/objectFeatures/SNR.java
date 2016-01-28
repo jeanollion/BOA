@@ -17,6 +17,9 @@
  */
 package plugins.plugins.measurements.objectFeatures;
 
+import configuration.parameters.Parameter;
+import configuration.parameters.SiblingStructureParameter;
+import configuration.parameters.StructureParameter;
 import dataStructure.objects.Object3D;
 import image.BoundingBox;
 import plugins.objectFeature.IntensityMeasurement;
@@ -26,11 +29,23 @@ import plugins.objectFeature.IntensityMeasurementCore.IntensityMeasurements;
  *
  * @author jollion
  */
-public class SNR extends IntensityMeasurement{
-
+public class SNR extends IntensityMeasurement {
+    protected SiblingStructureParameter backgroundObject = new SiblingStructureParameter("Background Object", true);
+    
+    @Override public Parameter[] getParameters() {return new Parameter[]{intensity, backgroundObject};}
+    
+    public SNR() {}
+    
+    public SNR setBackgroundObjectStructureIdx(int structureIdx) {
+        backgroundObject.setSelectedStructureIdx(structureIdx);
+        return this;
+    }
+    
     public double performMeasurement(Object3D object, BoundingBox offset) {
+        if (core==null) synchronized(this) {setUpOrAddCore(null);}
         IntensityMeasurements iParent = super.core.getIntensityMeasurements(super.parent.getObject(), super.parent.getBounds().duplicate().reverseOffset());
-        double fore = super.core.getIntensityMeasurements(object, offset).mean;
+        //double fore = super.core.getIntensityMeasurements(object, offset).mean;
+        double fore = super.core.getIntensityMeasurements(object, offset).max;
         return ( fore-iParent.mean ) / iParent.sd;
     }
 

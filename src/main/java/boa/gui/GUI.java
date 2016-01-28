@@ -179,11 +179,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }
     
     public void populateActionStructureList() {
+        List sel = actionStructureList.getSelectedValuesList();
         if (actionStructureModel==null) {
             actionStructureModel = new DefaultListModel();
             this.actionStructureList.setModel(actionStructureModel);
         } else actionStructureModel.removeAllElements();
-        if (db!=null) for (Structure s : db.getExperiment().getStructures().getChildren()) actionStructureModel.addElement(s.getName());
+        if (db!=null) {
+            for (Structure s : db.getExperiment().getStructures().getChildren()) actionStructureModel.addElement(s.getName());
+            Utils.setSelectedValues(sel, actionStructureList, actionStructureModel);
+        }
     }
     public int[] getSelectedStructures(boolean returnAllIfNoneIsSelected) {
         int[] res = actionStructureList.getSelectedIndices();
@@ -195,11 +199,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }
     
     public void populateActionMicroscopyFieldList() {
+        List sel = actionMicroscopyFieldList.getSelectedValuesList();
         if (actionMicroscopyFieldModel==null) {
             actionMicroscopyFieldModel = new DefaultListModel();
             this.actionMicroscopyFieldList.setModel(actionMicroscopyFieldModel);
         } else actionMicroscopyFieldModel.removeAllElements();
-        if (db!=null) for (int i =0; i<db.getExperiment().getMicrocopyFieldCount(); ++i) actionMicroscopyFieldModel.addElement(db.getExperiment().getMicroscopyField(i).getName());
+        if (db!=null) {
+            for (int i =0; i<db.getExperiment().getMicrocopyFieldCount(); ++i) actionMicroscopyFieldModel.addElement(db.getExperiment().getMicroscopyField(i).getName());
+            Utils.setSelectedValues(sel, actionMicroscopyFieldList, actionMicroscopyFieldModel);
+        }
     }
     public int[] getSelectedMicroscopyFields() {
         int[] res = actionMicroscopyFieldList.getSelectedIndices();
@@ -798,12 +806,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (measurements) {
             logger.info("Measurements: Field: {}", fieldName);
             Processor.performMeasurements(db.getDao(fieldName));
-        }
-    }
-    
-    private void preProcess(boolean computeConfigData) {
-        for (int i : this.getSelectedMicroscopyFields()) {
-            
         }
     }
     

@@ -110,4 +110,22 @@ public class InputImagesImpl implements InputImages {
             }
         }
     }
+    /**
+     * Remove all time points excluding time points between {@param tStart} and {@param tEnd}, for testing purposes only
+     * @param tStart
+     * @param tEnd 
+     */
+    public void subSetTimePoints(int tStart, int tEnd) {
+        if (tStart<0) tStart=0; 
+        if (tEnd>=imageTC.length) tEnd = imageTC.length-1;
+        InputImage[][] newImageTC = new InputImage[tEnd-tStart+1][imageTC[0].length];
+        for (int t=tStart; t<=tEnd; ++t) {
+            for (int c=0; c<imageTC[0].length; ++c) {
+                newImageTC[t-tStart][c] = imageTC[t][c];
+            }
+        }
+        if (this.defaultTimePoint<tStart) defaultTimePoint = 0;
+        if (this.defaultTimePoint>tEnd) defaultTimePoint = tEnd-tStart;
+        this.imageTC=newImageTC;
+    }
 }

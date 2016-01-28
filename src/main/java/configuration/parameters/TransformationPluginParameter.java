@@ -53,7 +53,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     }*/
     
     @Override 
-    public void setPlugin(T pluginInstance) {
+    public TransformationPluginParameter<T> setPlugin(T pluginInstance) {
         if (pluginInstance instanceof TransformationTimeIndependent) {  
             SelectionMode oc = ((TransformationTimeIndependent)pluginInstance).getOutputChannelSelectionMode();
             if (SelectionMode.MULTIPLE.equals(oc)) outputChannel = new ChannelImageParameter("Channels on which apply transformation", null);
@@ -62,6 +62,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         }
         super.setPlugin(pluginInstance);
         configurationData = ParameterUtils.duplicateConfigurationDataArrayList(pluginInstance.getConfigurationData());
+        return this;
     }
     
     public void setConfigurationData(ArrayList configurationData) {

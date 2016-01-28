@@ -90,7 +90,7 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
     @Override 
     public String toString(){
         if (!multipleSelection) {
-            if (selectedIndicies[0]>=0 && getChoiceList().length>selectedIndicies[0]) return name+": "+getChoiceList()[selectedIndicies[0]];
+            if (getSelectedIndex()>=0 && getChoiceList().length>getSelectedIndex()) return name+": "+getChoiceList()[getSelectedIndex()];
             else return name+": no selected index";
         } else return name +": "+ Utils.getStringArrayAsStringTrim(50, getSelectedItemsNames());
     }
@@ -140,7 +140,7 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
     public int[] getSelectedItems() {
         if (selectedIndicies==null) {
             String[] list = getChoiceList();
-            if (!allowNoSelection && list!=null) {
+            if (!allowNoSelection && list!=null) { // select all
                 selectedIndicies = new int[list.length];
                 for (int i = 0; i<list.length; ++i) selectedIndicies[i]=i;
             } else {
@@ -149,6 +149,4 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
         }
         return selectedIndicies;
     }
-    
-    
 }

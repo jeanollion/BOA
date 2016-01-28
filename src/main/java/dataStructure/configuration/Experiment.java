@@ -202,8 +202,12 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     public String[] getChildStructuresAsString(int structureIdx) {
         int[] childIdx = getAllChildStructures(structureIdx);
-        String[] res = new String[childIdx.length];
-        for (int i = 0; i<res.length; ++i) res[i] = this.getStructure(childIdx[i]).getName();
+        return getStructureNames(childIdx);
+    }
+    
+    public String[] getStructureNames(int[] structureIndicies) {
+        String[] res = new String[structureIndicies.length];
+        for (int i = 0; i<res.length; ++i) res[i] = this.getStructure(structureIndicies[i]).getName();
         return res;
     }
     
@@ -255,6 +259,11 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
      * @return return the direct or indirect children of the structure of index: {@param structureIdx}
      */
     public int[] getAllChildStructures(int structureIdx) {
+        if (structureIdx==-1) { // all structures
+            int[] res = new int[this.getStructureCount()];
+            for (int i = 1; i<res.length; ++i) res[i] = i;
+            return res;
+        }
         ArrayList<Integer> allChildrenAL = new ArrayList<Integer>(10);
         int[][] orders = getStructuresInHierarchicalOrder();
         int startIdx = this.getHierachicalOrder(structureIdx)+1;

@@ -36,7 +36,8 @@ import plugins.plugins.transformations.SimpleRotationXY;
 public class TestPreProcess {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        testPreProcessing("testSub", 0, 1, 0);
+        //testTransformation("fluo151130_OutputNewScaling", 9, 1, 0);
+        testPreProcessing("fluo151130_OutputNewScaling", 9, 1, 0, 0, 10);
     }
     
     public static void testTransformation(String dbName, int fieldIdx, int channelIdx, int time) {
@@ -52,10 +53,12 @@ public class TestPreProcess {
         disp.showImage(res.setName("rotated5"));
     }
     
-    public static void testPreProcessing(String dbName, int fieldIdx, int channelIdx, int time) {
+    public static void testPreProcessing(String dbName, int fieldIdx, int channelIdx, int time, int tStart, int tEnd) {
         MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
         MicroscopyField f = db.getExperiment().getMicroscopyField(fieldIdx);
         InputImagesImpl images = f.getInputImages();
+        time -=tStart;
+        images.subSetTimePoints(tStart, tEnd);
         Image input = images.getImage(channelIdx, time).duplicate("input");
         Processor.setTransformations(f, true);
         Image output = images.getImage(channelIdx, time).setName("output");
