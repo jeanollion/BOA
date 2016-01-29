@@ -21,7 +21,10 @@ import configuration.parameters.Parameter;
 import configuration.parameters.SiblingStructureParameter;
 import configuration.parameters.StructureParameter;
 import dataStructure.objects.Object3D;
+import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectUtils;
 import image.BoundingBox;
+import java.util.ArrayList;
 import plugins.objectFeature.IntensityMeasurement;
 import plugins.objectFeature.IntensityMeasurementCore.IntensityMeasurements;
 
@@ -30,9 +33,10 @@ import plugins.objectFeature.IntensityMeasurementCore.IntensityMeasurements;
  * @author jollion
  */
 public class SNR extends IntensityMeasurement {
-    protected SiblingStructureParameter backgroundObject = new SiblingStructureParameter("Background Object", true);
+    protected SiblingStructureParameter backgroundObject = new SiblingStructureParameter("Background Object", true).setAutoConfiguration(true);
     
     @Override public Parameter[] getParameters() {return new Parameter[]{intensity, backgroundObject};}
+    ArrayList<Object3D> parents;
     
     public SNR() {}
     
@@ -40,10 +44,21 @@ public class SNR extends IntensityMeasurement {
         backgroundObject.setSelectedStructureIdx(structureIdx);
         return this;
     }
-    
+    @Override public IntensityMeasurement setUp(StructureObject parent, int childStructureIdx) {
+        super.setUp(parent, childStructureIdx);
+        if (backgroundObject.getSelectedStructureIdx()!=super.parent.getStructureIdx()) {
+            parents = parent.getObjectPopulation(backgroundObject.getSelectedStructureIdx()).getObjects();
+            logger.debug("SNR parent: {}, nb objects: {}, SNR: {}",backgroundObject.getSelectedStructureIdx(), parents.size(), this );
+        }
+        return this;
+    }
     public double performMeasurement(Object3D object, BoundingBox offset) {
         if (core==null) synchronized(this) {setUpOrAddCore(null);}
-        IntensityMeasurements iParent = super.core.getIntensityMeasurements(super.parent.getObject(), super.parent.getBounds().duplicate().reverseOffset());
+        Object3D parentObject; 
+        if (parents==null) parentObject = super.parent.getObject();
+        else parentObject=StructureObjectUtils.getInclusionParent(object, parents);
+        if (parentObject==null) return 0;
+        IntensityMeasurements iParent = super.core.getIntensityMeasurements(parentObject, parentObject.getBounds().duplicate().reverseOffset());
         //double fore = super.core.getIntensityMeasurements(object, offset).mean;
         double fore = super.core.getIntensityMeasurements(object, offset).max;
         return ( fore-iParent.mean ) / iParent.sd;

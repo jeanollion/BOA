@@ -24,6 +24,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import utils.Utils;
 
 /**
@@ -87,9 +88,9 @@ public class StructureObjectUtils {
                     if (currentParent==null) {
                         currentParent = p;
                     }
-                    else { // in case of conflict: keep parent that interact most
-                        if (currentIntersection==-1) currentIntersection = c.getObject().getIntersection(currentParent.getObject()).size();
-                        int otherIntersection = c.getObject().getIntersection(p.getObject()).size();
+                    else { // in case of conflict: keep parent that intersect most
+                        if (currentIntersection==-1) currentIntersection = c.getObject().getIntersectionCountMaskMask(p.getObject());
+                        int otherIntersection = c.getObject().getIntersectionCountMaskMask(p.getObject());
                         if (otherIntersection>currentIntersection) {
                             currentIntersection=otherIntersection;
                             currentParent=p;
@@ -101,6 +102,31 @@ public class StructureObjectUtils {
             else logger.warn("{} counld not be assigned to any parent", c);
         }
     }
+    
+    public static Object3D getInclusionParent(Object3D children, ArrayList<Object3D> parents) {
+        if (parents.isEmpty() || children==null) return null;
+        BoundingBox b = children.getBounds();
+        Object3D currentParent=null;
+        int currentIntersection=-1;
+        for (Object3D p : parents) {
+            if (p.getBounds().hasIntersection(b)) {
+                int inter = children.getIntersectionCountMaskMask(p);
+                if (inter==0) continue;
+                else if (currentParent==null) {
+                    currentParent = p;
+                    currentIntersection = inter;
+                } else { // in case of conflict: keep parent that intersect most
+                    int otherIntersection = children.getIntersectionCountMaskMask(p);
+                    if (otherIntersection>currentIntersection) {
+                        currentIntersection=otherIntersection;
+                        currentParent=p;
+                    }
+                }
+            }
+        }
+        return currentParent;
+    }
+    
     public static int[] getIndexTree(StructureObject o) {
         if (o.isRoot()) return new int[0];
         ArrayList<Integer> al = new ArrayList<Integer>();

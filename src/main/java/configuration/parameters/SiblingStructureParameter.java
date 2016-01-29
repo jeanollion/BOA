@@ -18,6 +18,8 @@
 package configuration.parameters;
 
 import dataStructure.configuration.Structure;
+import de.caluga.morphium.annotations.Transient;
+import utils.Utils;
 
 /**
  *
@@ -25,7 +27,7 @@ import dataStructure.configuration.Structure;
  */
 public class SiblingStructureParameter extends StructureParameter {
     int parentStructureIdx=-2;
-    int[] idxStructureMap;
+    @Transient int[] idxStructureMap;
     int selectedStructureIdx=-1;
     boolean includeParent=false;
     
@@ -101,6 +103,29 @@ public class SiblingStructureParameter extends StructureParameter {
                 System.arraycopy(idxStructureMap, 0, idxStructureMap2, 1, idxStructureMap.length);
                 idxStructureMap2[0] = parentStructureIdx;
                 idxStructureMap=idxStructureMap2;
+            }
+        }
+    }
+    @Override public void setContentFrom(Parameter other) {
+        super.setContentFrom(other);
+        if (other instanceof SiblingStructureParameter) {
+            SiblingStructureParameter otherP = (SiblingStructureParameter) other;
+            parentStructureIdx=otherP.parentStructureIdx;
+            selectedStructureIdx = otherP.selectedStructureIdx;
+            includeParent=otherP.includeParent;
+        } else throw new IllegalArgumentException("wrong parameter type");
+    }
+    @Override public SiblingStructureParameter setAutoConfiguration(boolean autoConfiguration) {
+        this.autoConfiguration=autoConfiguration;
+        return this;
+    }
+    
+    @Override protected void autoConfiguration() {
+        if (getXP()!=null) {
+            Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, this, false);
+            if (s!=null) {
+                if (includeParent) this.setSelectedStructureIdx(s.getParentStructure());
+                else this.setSelectedStructureIdx(s.getIndex());
             }
         }
     }

@@ -99,4 +99,12 @@ public class StructureParameter extends IndexChoiceParameter {
         }
         else return getXP().getFirstCommonParentStructureIdx(getSelectedIndex(), otherStructureIdx);
     }
+    
+    @Override public void setContentFrom(Parameter other) {
+        super.setContentFrom(other);
+        if (other instanceof StructureParameter) {
+            StructureParameter otherP = (StructureParameter) other;
+            autoConfiguration = otherP.autoConfiguration;
+        } else throw new IllegalArgumentException("wrong parameter type");
+    }
 }
