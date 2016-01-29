@@ -19,6 +19,7 @@ package plugins;
 
 import configuration.parameters.Parameter;
 import dataStructure.objects.Object3D;
+import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import image.BoundingBox;
 
@@ -28,7 +29,7 @@ import image.BoundingBox;
  */
 public interface ObjectFeature extends Plugin {
     public Parameter[] getParameters();
-    public ObjectFeature setUp(StructureObject parent, int childStructureIdx);
+    public ObjectFeature setUp(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation);
     public double performMeasurement(Object3D object, BoundingBox offset);
     public String getDefaultName();
 }

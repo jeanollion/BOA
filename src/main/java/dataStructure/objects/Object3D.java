@@ -252,19 +252,36 @@ public class Object3D {
             return count;
         }
     }
-    
-    public int getIntersectionCountMaskMask(Object3D other) {
-        if (!this.getBounds().hasIntersection(other.getBounds())) return 0;
+    /**
+     * 
+     * @param other
+     * @param offset added to the bounds of {@param this}
+     * @param offsetOther added to the bounds of {@param other}
+     * @return 
+     */
+    public int getIntersectionCountMaskMask(Object3D other, BoundingBox offset, BoundingBox offsetOther) {
+        BoundingBox otherBounds = offsetOther==null? other.getBounds() : other.getBounds().duplicate().translate(offsetOther);
+        BoundingBox thisBounds = offset==null? getBounds() : getBounds().duplicate().translate(offset);
+        if (!thisBounds.hasIntersection(otherBounds)) return 0;
         else {
-            BoundingBox inter = getBounds().getIntersection(bounds);
+            //logger.debug("off: {}, otherOff: {}", thisBounds, otherBounds);
+            final ImageMask mask = getMask();
+            BoundingBox inter = thisBounds.getIntersection(otherBounds);
             final ImageMask m = other.getMask();
-            int count = 0;
+            final int count[] = new int[1];
+            final int offX = thisBounds.getxMin();
+            final int offY = thisBounds.getyMin();
+            final int offZ = thisBounds.getzMin();
+            final int otherOffX = otherBounds.getxMin();
+            final int otherOffY = otherBounds.getyMin();
+            final int otherOffZ = otherBounds.getzMin();
             inter.loop(new LoopFunction() {
-                public void loop(int x, int y, int z) {
-                    if (m.insideMaskWithOffset(x, y, z));
-                }
+                int c;
+                public void loop(int x, int y, int z) {if (mask.insideMask(x-offX, y-offY, z-offZ) && m.insideMask(x-otherOffX, y-otherOffY, z-otherOffZ)) c++;}
+                public void setUp() {c = 0;}
+                public void tearDown() {count[0]=c;}
             });
-            return count;
+            return count[0];
         }
     }
     
@@ -307,7 +324,11 @@ public class Object3D {
             for (Voxel v : getVoxels()) v.value=image.getPixel(v.x, v.y, v.z);
         }
     }
-    
+    /**
+     * Draws with the offset of the object, without using the offset of the image
+     * @param image
+     * @param label 
+     */
     public void draw(ImageInteger image, int label) {
         if (voxels !=null) {
             //logger.trace("drawing from VOXELS of object: {} with label: {} on image: {} ", this, label, image);
@@ -326,8 +347,44 @@ public class Object3D {
             }
         }
     }
-    
+    /**
+     * Draws with a custom offset 
+     * @param image its offset will be taken into account
+     * @param label 
+     * @param offset will be added to the object absolute position
+     */
     public void draw(ImageInteger image, int label, BoundingBox offset) {
+        if (offset==null) offset = new BoundingBox(0, 0, 0);
+        if (voxels !=null) {
+            //logger.trace("drawing from VOXELS of object: {} with label: {} on image: {} ", this, label, image);
+            int offX = offset.getxMin()-image.getOffsetX();
+            int offY = offset.getyMin()-image.getOffsetY();
+            int offZ = offset.getzMin()-image.getOffsetZ();
+            for (Voxel v : getVoxels()) if (image.contains(v.x+offX, v.y+offY, v.z+offZ)) image.setPixel(v.x+offX, v.y+offY, v.z+offZ, label);
+        }
+        else {
+            int offX = offset.getxMin()+mask.getOffsetX()-image.getOffsetX();
+            int offY = offset.getyMin()+mask.getOffsetY()-image.getOffsetY();
+            int offZ = offset.getzMin()+mask.getOffsetZ()-image.getOffsetZ();
+            //logger.trace("drawing from IMAGE of object: {} with label: {} on image: {} mask offsetX: {} mask offsetY: {} mask offsetZ: {}", this, label, mask, offX, offY, offZ);
+            for (int z = 0; z < mask.getSizeZ(); ++z) {
+                for (int y = 0; y < mask.getSizeY(); ++y) {
+                    for (int x = 0; x < mask.getSizeX(); ++x) {
+                        if (mask.insideMask(x, y, z)) {
+                            if (image.contains(x+offX, y+offY, z+offZ)) image.setPixel(x+offX, y+offY, z+offZ, label);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    /**
+     * Draws with a custom offset (the offset of the object and the image is not taken into account)
+     * @param image
+     * @param label 
+     */
+    public void drawWithoutObjectOffset(ImageInteger image, int label, BoundingBox offset) {
         if (offset==null) {
             draw(image, label);
             return;

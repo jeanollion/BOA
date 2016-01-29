@@ -39,7 +39,7 @@ import plugins.plugins.transformations.AutoRotationXY;
 import plugins.plugins.transformations.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
 import plugins.plugins.transformations.ImageStabilizerXY;
-import plugins.plugins.transformations.ScaleHistogramSignalExclusion;
+import plugins.plugins.transformations.ScaleHistogramSignalExclusionY;
 import plugins.plugins.transformations.SelectBestFocusPlane;
 import plugins.plugins.transformations.SuppressCentralHorizontalLine;
 import processing.ImageTransformation;
@@ -106,7 +106,7 @@ public class GenerateTestXP {
             xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
             xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(true);
             xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannels2D());
-            xp.getPreProcessingTemplate().addTransformation(1, null, new ScaleHistogramSignalExclusion(100, 5, 0, 50, true)); // to remove blinking
+            xp.getPreProcessingTemplate().addTransformation(1, null, new ScaleHistogramSignalExclusionY(100, 5, 0, 50, true)); // to remove blinking
             xp.getPreProcessingTemplate().addTransformation(0, null, new SelectBestFocusPlane(3)).setActivated(false); // faster after crop, but previous transformation might be aftected if the first plane is really out of focus
             xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY());
         }

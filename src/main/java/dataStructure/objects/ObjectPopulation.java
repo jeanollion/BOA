@@ -62,7 +62,7 @@ public class ObjectPopulation {
     private ImageInteger labelImage;
     private ArrayList<Object3D> objects;
     private ImageProperties properties;
-    private BoundingBox objectOffset;
+    private boolean absoluteLandmark=false;
     /**
      * Creates an empty ObjectPopulation instance
      * @param properties 
@@ -100,26 +100,37 @@ public class ObjectPopulation {
         if (properties!=null) this.properties = new BlankMask("", properties);
     }
     
-    public ObjectPopulation(ArrayList<Object3D> objects, ImageProperties properties, BoundingBox objectOffset) {
+    public ObjectPopulation(ArrayList<Object3D> objects, ImageProperties properties, boolean absoluteLandmark) {
         if (objects != null) {
             this.objects = objects;
         } else {
             this.objects = new ArrayList<Object3D>();
         }
         if (properties!=null) this.properties = new BlankMask("", properties);
-        this.objectOffset=objectOffset;
+        this.absoluteLandmark=absoluteLandmark;
     }
     
     public ObjectPopulation duplicate() {
         if (objects!=null) {
             ArrayList<Object3D> ob = new ArrayList<Object3D>(objects.size());
             for (Object3D o : objects) ob.add(o.duplicate());
-            return new ObjectPopulation(objects, properties);
+            return new ObjectPopulation(objects, properties, absoluteLandmark);
         } else if (labelImage!=null) {
             return new ObjectPopulation((ImageInteger)labelImage.duplicate(""), true);
         }
-        return new ObjectPopulation(null , properties);
-        
+        return new ObjectPopulation(null , properties, absoluteLandmark);
+    }
+    
+    /**
+     * 
+     * @return null if the objects offset are directly from the labelImage, or the value of the offset
+     */
+    public BoundingBox getObjectOffset() {
+        return properties.getBoundingBox();
+    }
+    
+    public boolean isAbsoluteLandmark() {
+        return this.absoluteLandmark;
     }
     
     public ObjectPopulation addObjects(Object3D... objects) {
@@ -147,8 +158,8 @@ public class ObjectPopulation {
     }
     
     private void draw(Object3D o, int label) {
-        if (objectOffset == null) o.draw(labelImage, label);
-        else o.draw(labelImage, label, objectOffset.duplicate().translate(o.getBounds()));
+        if (this.absoluteLandmark) o.draw(labelImage, label, new BoundingBox(0, 0, 0)); // in order to remove the offset of the image
+        else o.draw(labelImage, label);
     }
     
     private void constructLabelImage() {
@@ -414,6 +425,7 @@ public class ObjectPopulation {
         boolean keepOverThreshold, strict;
         ObjectFeature feature;
         double threshold;
+        BoundingBox offset;
         public Feature(ObjectFeature feature, double threshold, boolean keepOverThreshold, boolean strict) {
             this.feature=feature;
             this.threshold=threshold;
@@ -422,11 +434,11 @@ public class ObjectPopulation {
         }
         
         public void init(ObjectPopulation population) {
-            
+            this.offset= population.absoluteLandmark ? null : population.getObjectOffset();
         }
 
         public boolean keepObject(Object3D object) {
-            double testValue = feature.performMeasurement(object, null);
+            double testValue = feature.performMeasurement(object, offset);
             logger.debug("FeatureFilter: {}, testValue: {}, threshold: {}", feature.getClass().getSimpleName(), testValue, threshold);
             if (keepOverThreshold) {
                 if (strict) return testValue>threshold;

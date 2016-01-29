@@ -77,7 +77,7 @@ import plugins.plugins.transformations.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
 import plugins.plugins.transformations.ImageStabilizerXY;
 import plugins.plugins.transformations.ScaleHistogram;
-import plugins.plugins.transformations.ScaleHistogramSignalExclusion;
+import plugins.plugins.transformations.ScaleHistogramSignalExclusionY;
 import plugins.plugins.transformations.SelectBestFocusPlane;
 import plugins.plugins.transformations.SuppressCentralHorizontalLine;
 import processing.ImageTransformation;

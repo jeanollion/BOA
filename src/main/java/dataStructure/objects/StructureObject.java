@@ -651,12 +651,12 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     
     public ObjectPopulation getObjectPopulation(int structureIdx) {
-        ArrayList<StructureObject> child = this.childrenSM.get(structureIdx);
+        ArrayList<StructureObject> child = this.getChildren(structureIdx);
         if (child==null || child.size()==0) return new ObjectPopulation(new ArrayList<Object3D>(0), this.getMaskProperties());
         else {
             ArrayList<Object3D> objects = new ArrayList<Object3D>(child.size());
             for (StructureObject s : child) objects.add(s.getObject());
-            return new ObjectPopulation(objects, this.getMaskProperties(), this.getMaskProperties().getBoundingBox().reverseOffset());
+            return new ObjectPopulation(objects, this.getMaskProperties(), true);
         }
     }
     

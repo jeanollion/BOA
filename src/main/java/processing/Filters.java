@@ -79,6 +79,7 @@ public class Filters {
                 }
             }
         }
+        res.resetOffset().addOffset(image);
         return res;
     }
     
@@ -99,6 +100,7 @@ public class Filters {
                 }
             }
         }
+        res.resetOffset().addOffset(image);
         return res;
     }
     /**
@@ -153,6 +155,7 @@ public class Filters {
                 }
             }
         }
+        res.resetOffset().addOffset(image);
         return res;
     }
     

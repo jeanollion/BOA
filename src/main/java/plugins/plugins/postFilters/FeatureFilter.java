@@ -54,7 +54,7 @@ public class FeatureFilter implements PostFilter {
     
     public ObjectPopulation runPostFilter(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation) {
         ObjectFeature f = feature.instanciatePlugin();
-        f.setUp(parent, childStructureIdx);
+        f.setUp(parent, childStructureIdx, childPopulation);
         childPopulation=childPopulation.filter(new ObjectPopulation.Feature(f, threshold.getValue().doubleValue(), keepOverThreshold.getSelected(), strict.getSelected()));
         return childPopulation;
     }

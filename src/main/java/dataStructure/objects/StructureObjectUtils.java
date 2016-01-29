@@ -89,8 +89,8 @@ public class StructureObjectUtils {
                         currentParent = p;
                     }
                     else { // in case of conflict: keep parent that intersect most
-                        if (currentIntersection==-1) currentIntersection = c.getObject().getIntersectionCountMaskMask(p.getObject());
-                        int otherIntersection = c.getObject().getIntersectionCountMaskMask(p.getObject());
+                        if (currentIntersection==-1) currentIntersection = c.getObject().getIntersectionCountMaskMask(p.getObject(),null,  null);
+                        int otherIntersection = c.getObject().getIntersectionCountMaskMask(p.getObject(),null,  null);
                         if (otherIntersection>currentIntersection) {
                             currentIntersection=otherIntersection;
                             currentParent=p;
@@ -103,24 +103,19 @@ public class StructureObjectUtils {
         }
     }
     
-    public static Object3D getInclusionParent(Object3D children, ArrayList<Object3D> parents) {
+    public static Object3D getInclusionParent(Object3D children, ArrayList<Object3D> parents, BoundingBox offset, BoundingBox offsetParent) {
         if (parents.isEmpty() || children==null) return null;
-        BoundingBox b = children.getBounds();
         Object3D currentParent=null;
         int currentIntersection=-1;
         for (Object3D p : parents) {
-            if (p.getBounds().hasIntersection(b)) {
-                int inter = children.getIntersectionCountMaskMask(p);
-                if (inter==0) continue;
-                else if (currentParent==null) {
+            int inter = children.getIntersectionCountMaskMask(p, offset, offsetParent);
+            if (inter>0) {
+                if (currentParent==null) {
                     currentParent = p;
                     currentIntersection = inter;
-                } else { // in case of conflict: keep parent that intersect most
-                    int otherIntersection = children.getIntersectionCountMaskMask(p);
-                    if (otherIntersection>currentIntersection) {
-                        currentIntersection=otherIntersection;
-                        currentParent=p;
-                    }
+                } else if (inter>currentIntersection) { // in case of conflict: keep parent that intersect most
+                    currentIntersection=inter;
+                    currentParent=p;
                 }
             }
         }

@@ -136,7 +136,7 @@ public class StructureObjectMask extends ImageObjectInterface {
     @Override
     public void draw(ImageInteger image) {
         for (int i = 0; i < getOffsets().length; ++i) {
-            getObjects().get(i).getObject().draw(image, objects.get(i).getObject().getLabel(), offsets[i]);
+            getObjects().get(i).getObject().drawWithoutObjectOffset(image, objects.get(i).getObject().getLabel(), offsets[i]);
         }
     }
 

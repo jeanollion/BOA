@@ -336,6 +336,7 @@ public class BoundingBox {
     }
     
     public void loop(LoopFunction function) {
+        function.setUp();
         for (int z = zMin; z<=zMax; ++z) {
             for (int y = yMin; y<=yMax; ++y) {
                 for (int x=xMin; x<=xMax; ++x) {
@@ -343,10 +344,14 @@ public class BoundingBox {
                 }
             }
         }
+        function.tearDown();
     }
     
     public static interface LoopFunction {
+        public void setUp();
+        public void tearDown();
         public void loop(int x, int y, int z);
     }
+
     
 }

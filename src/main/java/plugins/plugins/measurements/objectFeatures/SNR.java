@@ -17,16 +17,24 @@
  */
 package plugins.plugins.measurements.objectFeatures;
 
+import boa.gui.imageInteraction.IJImageDisplayer;
 import configuration.parameters.Parameter;
 import configuration.parameters.SiblingStructureParameter;
 import configuration.parameters.StructureParameter;
 import dataStructure.objects.Object3D;
+import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import image.BoundingBox;
+import image.BoundingBox.LoopFunction;
+import image.ImageByte;
+import image.ImageMask;
+import image.TypeConverter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import plugins.objectFeature.IntensityMeasurement;
 import plugins.objectFeature.IntensityMeasurementCore.IntensityMeasurements;
+import utils.Utils;
 
 /**
  *
@@ -37,18 +45,43 @@ public class SNR extends IntensityMeasurement {
     
     @Override public Parameter[] getParameters() {return new Parameter[]{intensity, backgroundObject};}
     ArrayList<Object3D> parents;
-    
+    ArrayList<ImageByte> parentMasks;
+    HashMap<Object3D, Object3D> childrenParentMap;
+    BoundingBox childrenOffset;
+    BoundingBox parentOffsetRev;
     public SNR() {}
     
     public SNR setBackgroundObjectStructureIdx(int structureIdx) {
         backgroundObject.setSelectedStructureIdx(structureIdx);
         return this;
     }
-    @Override public IntensityMeasurement setUp(StructureObject parent, int childStructureIdx) {
-        super.setUp(parent, childStructureIdx);
+    @Override public IntensityMeasurement setUp(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation) {
+        super.setUp(parent, childStructureIdx, childPopulation);
+        if (childPopulation.getObjects().isEmpty()) return this;
+        if (!childPopulation.isAbsoluteLandmark()) childrenOffset = parent.getBounds(); // the step it still at processing, thus their offset of objects is related to their direct parent
+        else childrenOffset = new BoundingBox(0, 0, 0);
+        parentOffsetRev = parent.getBounds().duplicate().reverseOffset();
         if (backgroundObject.getSelectedStructureIdx()!=super.parent.getStructureIdx()) {
             parents = parent.getObjectPopulation(backgroundObject.getSelectedStructureIdx()).getObjects();
-            logger.debug("SNR parent: {}, nb objects: {}, SNR: {}",backgroundObject.getSelectedStructureIdx(), parents.size(), this );
+        } else {
+            parents = new ArrayList<Object3D>(1);
+            parents.add(parent.getObject());
+        }
+        childrenParentMap = new HashMap<Object3D, Object3D>();
+        for (Object3D o : childPopulation.getObjects()) {
+            Object3D p = StructureObjectUtils.getInclusionParent(o, parents, childrenOffset, null);
+            if (p!=null) childrenParentMap.put(o, p);
+        }
+        parentMasks = new ArrayList<ImageByte>(parents.size());
+        for (Object3D p : parents) {
+            final ImageMask ref = p.getMask();
+            final ImageByte mask  = TypeConverter.toByteMask(ref, null).setName("mask:");
+            parentMasks.add(mask);
+            if (backgroundObject.getSelectedStructureIdx()==super.parent.getStructureIdx()) for (Object3D o : childPopulation.getObjects()) o.draw(mask, 0);
+            else {
+                for (Object3D o : Utils.getKeys(childrenParentMap, p)) o.draw(mask, 0, childrenOffset);
+            }
+            //new IJImageDisplayer().showImage(mask);
         }
         return this;
     }
@@ -56,11 +89,10 @@ public class SNR extends IntensityMeasurement {
         if (core==null) synchronized(this) {setUpOrAddCore(null);}
         Object3D parentObject; 
         if (parents==null) parentObject = super.parent.getObject();
-        else parentObject=StructureObjectUtils.getInclusionParent(object, parents);
+        else parentObject=this.childrenParentMap.get(object);
         if (parentObject==null) return 0;
-        IntensityMeasurements iParent = super.core.getIntensityMeasurements(parentObject, parentObject.getBounds().duplicate().reverseOffset());
-        //double fore = super.core.getIntensityMeasurements(object, offset).mean;
-        double fore = super.core.getIntensityMeasurements(object, offset).max;
+        IntensityMeasurements iParent = super.core.getIntensityMeasurements(parentObject, null);
+        double fore = super.core.getIntensityMeasurements(object, offset).mean;
         return ( fore-iParent.mean ) / iParent.sd;
     }
 

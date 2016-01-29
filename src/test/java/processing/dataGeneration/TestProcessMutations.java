@@ -61,14 +61,13 @@ public class TestProcessMutations {
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
 //        t.testSegMutationsFromXP(8, 0, true, 0, 35);
-//        t.testSegMutationsFromXP(8, 0, true, 151, 170);
+//        t.testSegMutationsFromXP(8, 0, true, 151, 170); //spot intenses et faibles
 //        t.testSegMutationsFromXP(8, 0, true, 322, 324);
-        t.testSegMutationsFromXP(8, 8, true, 36, 39);
-//        t.testSegMutationsFromXP(8, 0, true, 230, 251); // beaucoup de spots flous ratés
-//        t.testSegMutationsFromXP(8, 1, true, 0, 5);
+//        t.testSegMutationsFromXP(8, 8, true, 36, 39);
+        t.testSegMutationsFromXP(8, 0, true, 230, 251); // beaucoup de spots flous ratés
+//        t.testSegMutationsFromXP(8, 1, true, 0, 5); // spot fort dans cellule forte
 //        t.testSegMutationsFromXP(8, 6, true, 0, 30); // cellules avec formes bizares -< faux positifs + spots très petits proche de très intenses
 //        t.testSegMutationsFromXP(8, 10, true, 341, 343); // no spots?
-//        t.testSegMutationsFromXP(8, 10, true, 62, 64);
 //        t.testSegMutationsFromXP(9, 0, true, 0, 10); // bordures de l'image
     }
     
@@ -77,8 +76,8 @@ public class TestProcessMutations {
         ImageInteger parentMask = parent.getMask();
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
         //ObjectPopulation pop = MutationSegmenterScaleSpace.runPlaneMono(input.getZPlane(0), parentMask, 5, 3.5, 0.75, intermediateImages);
-        ObjectPopulation pop = MutationSegmenterScaleSpace.runPlaneHybrid(input.getZPlane(0), parentMask, 5, 4, 0.75, intermediateImages);
-        Image beforePF = pop.getLabelImage().duplicate("Before PostFilters");
+        ObjectPopulation pop = MutationSegmenterScaleSpace.runPlaneHybrid(input.getZPlane(0), parentMask, 5, 2, 0.75, intermediateImages);
+        Image beforePF = pop.getLabelImage().duplicate("Before Post-Filters");
         ObjectPopulation popPF = new MutationSegmenterScaleSpace().getPostFilters().filter(pop, 2, parent);
         
         //ObjectPopulation pop = MutationSegmenterScaleSpace.runPlane(input.getZPlane(0), parentMask, 5, 4, 0.75, intermediateImages);
