@@ -56,7 +56,7 @@ public class TestProcessMutations {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         //String dbName = "testSub60";
-        String dbName = "fluo151130_OutputNewScaling";
+        String dbName = "fluo151130_OutputNewScalingY";
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
@@ -76,7 +76,7 @@ public class TestProcessMutations {
         ImageInteger parentMask = parent.getMask();
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
         //ObjectPopulation pop = MutationSegmenterScaleSpace.runPlaneMono(input.getZPlane(0), parentMask, 5, 3.5, 0.75, intermediateImages);
-        ObjectPopulation pop = MutationSegmenterScaleSpace.runPlaneHybrid(input.getZPlane(0), parentMask, 5, 2, 0.75, intermediateImages);
+        ObjectPopulation pop = MutationSegmenterScaleSpace.runPlaneHybrid(input.getZPlane(0), parentMask, 5, 5, 2, intermediateImages);
         Image beforePF = pop.getLabelImage().duplicate("Before Post-Filters");
         ObjectPopulation popPF = new MutationSegmenterScaleSpace().getPostFilters().filter(pop, 2, parent);
         

@@ -57,7 +57,7 @@ public class ImageTransformation {
     public static Image rotateXY(Image image, double angle, InterpolationScheme interpolation) {
         if (angle%90==0) {
             return turn(image, (int)angle/90, 0, 0);
-        } else return rotate(image, angle, 0, 0, interpolation, false, false);
+        } else return rotate(image, angle, 0, 0, interpolation, false, true);
     }
     
     public static Image rotate(Image image, double zAngle, double yAngle, double xAngle, InterpolationScheme scheme, boolean fit, boolean antialiasing) {

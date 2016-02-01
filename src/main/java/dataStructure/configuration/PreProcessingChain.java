@@ -119,7 +119,8 @@ public class PreProcessingChain extends SimpleContainerParameter {
                     public void actionPerformed(ActionEvent ae) {
                         for (int f : fields.getSelectedItems()) {
                             //logger.debug("override pp on field: {}", f);
-                            xp.fields.getChildAt(f).setPreProcessingChains(ppc);
+                            MicroscopyField field = xp.fields.getChildAt(f);
+                            if (field.getPreProcessingChain()!=ppc) field.setPreProcessingChains(ppc);
                         }
                     }
                 }

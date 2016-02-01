@@ -57,7 +57,7 @@ public class ImageWriter {
             imageTitle = f.getName().substring(0, extIdx);
             ImageFormat e=ImageFormat.getExtension(f.getName().substring(extIdx));
             if (e!=null) extension = e;
-        }else if (extension==null) extension = defExtension;
+        } else if (extension==null) extension = defExtension;
         writeToFile(image, path, imageTitle, extension);
     }
     

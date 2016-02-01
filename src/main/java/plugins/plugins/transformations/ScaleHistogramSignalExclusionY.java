@@ -17,6 +17,7 @@
  */
 package plugins.plugins.transformations;
 
+import boa.gui.imageInteraction.IJImageDisplayer;
 import configuration.parameters.BooleanParameter;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ChannelImageParameter;
@@ -26,9 +27,12 @@ import image.BlankMask;
 import image.Image;
 import image.ImageByte;
 import image.ImageFloat;
+import image.ImageFormat;
 import image.ImageInteger;
 import image.ImageMask;
 import image.ImageOperations;
+import image.ImageWriter;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import static plugins.Plugin.logger;
@@ -42,29 +46,32 @@ import utils.ThreadRunner;
 public class ScaleHistogramSignalExclusionY implements Transformation {
     BoundedNumberParameter sigmaTh= new BoundedNumberParameter("Theorical Sigma", 2, 5, 1, null);
     BoundedNumberParameter muTh= new BoundedNumberParameter("Theorical Mean", 2, 100, 1, null);
-    BoundedNumberParameter slidingWindowSize= new BoundedNumberParameter("Sliding Window Size", 0, 20, 1, 50);
+    BoundedNumberParameter slidingWindowSize= new BoundedNumberParameter("Sliding Window Size", 0, 50, 1, null);
     ChannelImageParameter signalExclusion = new ChannelImageParameter("Channel for Signal Exclusion", -1, true);
     BoundedNumberParameter signalExclusionThreshold = new BoundedNumberParameter("Signal Exclusion Threshold", 1, 50, 0, null);
     BooleanParameter underThreshold = new BooleanParameter("Consider only signal under threshold", true);
     BooleanParameter excludeZero = new BooleanParameter("Exclude Zero Values", true);
-    Parameter[] parameters = new Parameter[]{sigmaTh, muTh, signalExclusion, signalExclusionThreshold, underThreshold, excludeZero, slidingWindowSize};
+    BoundedNumberParameter signalMaxThreshold= new BoundedNumberParameter("Signal Max Threshold", 2, 200, 0, null);
+    Parameter[] parameters = new Parameter[]{sigmaTh, muTh, signalExclusion, signalExclusionThreshold, underThreshold, excludeZero, signalMaxThreshold, slidingWindowSize};
     ArrayList<ArrayList<ArrayList<Double>>> meanSigmaTY = new ArrayList<ArrayList<ArrayList<Double>>>();
     
     public ScaleHistogramSignalExclusionY() {}
     
-    public ScaleHistogramSignalExclusionY(double muTh, double sigmaTh, int signalExclusion, double signalExclusionThreshold, boolean underThreshold) {
+    public ScaleHistogramSignalExclusionY(double muTh, double sigmaTh, int signalExclusion, double signalExclusionThreshold, double signalMaxThreshold, boolean underThreshold) {
         this.sigmaTh.setValue(sigmaTh);
         this.muTh.setValue(muTh);
         if (signalExclusion>=0) this.signalExclusion.setSelectedIndex(signalExclusion);
         this.signalExclusionThreshold.setValue(signalExclusionThreshold);
         this.underThreshold.setSelected(underThreshold);
+        this.signalMaxThreshold.setValue(signalMaxThreshold);
     }
     
     public void computeConfigurationData(final int channelIdx, final InputImages inputImages) {
         final int chExcl = signalExclusion.getSelectedIndex();
         final double exclThld = signalExclusionThreshold.getValue().doubleValue();
+        final double signalMaxThreshold = this.signalMaxThreshold.getValue().doubleValue();
         final boolean underThreshold = this.underThreshold.getSelected();
-        final boolean ex = !this.excludeZero.getSelected();
+        final boolean includeZero = !this.excludeZero.getSelected();
         final int windowSize = this.slidingWindowSize.getValue().intValue();
         final ThreadRunner tr = new ThreadRunner(0, inputImages.getTimePointNumber());
         final ImageInteger[] exclusionMasks = (chExcl>=0) ?  new ImageInteger[tr.size()] : null;
@@ -82,7 +89,7 @@ public class ScaleHistogramSignalExclusionY implements Transformation {
                                 if (exclusionMasks[trIdx]==null) exclusionMasks[trIdx] = new ImageByte("", signalExclusion);
                                 exclusionMask = exclusionMasks[trIdx];
                             }
-                            muSigmaTY[idx] = computeMeanSigmaY(inputImages.getImage(channelIdx, idx), signalExclusion, exclThld, underThreshold, ex, exclusionMask, windowSize, idx);
+                            muSigmaTY[idx] = computeMeanSigmaY(inputImages.getImage(channelIdx, idx), signalExclusion, exclThld, underThreshold, includeZero, signalMaxThreshold, exclusionMask, windowSize, idx);
                         }
                     }
                 }
@@ -124,49 +131,67 @@ public class ScaleHistogramSignalExclusionY implements Transformation {
     }*/
     
     
-    public static Double[][] computeMeanSigmaY(Image image, Image exclusionSignal, double exclusionThreshold, boolean underThreshold, boolean includeZero, ImageInteger exclusionMask, int windowSize, int timePoint) {
+    public static Double[][] computeMeanSigmaY(Image image, Image exclusionSignal, double exclusionThreshold, boolean underThreshold, boolean includeZero, double signalMaxThreshold, ImageInteger exclusionMask, int windowSize, int timePoint) {
         if (exclusionSignal!=null && !image.sameSize(exclusionSignal)) throw new Error("Image and exclusion signal should have same dimensions");
         if (exclusionMask!=null && !image.sameSize(exclusionMask)) throw new Error("Image and exclusion mask should have same dimensions");
         long t0 = System.currentTimeMillis();
-        if (exclusionMask!=null) ImageOperations.threshold(exclusionSignal, exclusionThreshold, !underThreshold, true, true, exclusionMask);
+        if (exclusionMask!=null) {
+            ImageOperations.threshold(exclusionSignal, exclusionThreshold, !underThreshold, true, true, exclusionMask);
+            homogenizeVerticalLines(exclusionMask);
+        }
         else exclusionMask = new BlankMask(image);
-        Double[][] res=  getMeanAndSigmaExcludeZeroY(image, exclusionMask,includeZero, windowSize) ;
+        Double[][] res=  getMeanAndSigmaExcludeZeroY(image, exclusionMask,includeZero, signalMaxThreshold, windowSize) ;
         long t1 = System.currentTimeMillis();
         //logger.debug("ScaleHistogram signal exclusion: timePoint: {}, mean sigma: {}, signal exclusion? {}, processing time: {}", timePoint, res, exclusionSignal!=null, t1-t0);
         return res;
     }
     
-    public static Double[][] getMeanAndSigmaExcludeZeroY(Image image, ImageMask mask, boolean includeZero, int windowSize) {
+    private static void homogenizeVerticalLines(ImageInteger mask) {
+        for (int z = 0; z<mask.getSizeZ(); ++z) {
+            for (int x = 0; x<mask.getSizeX(); ++x) {
+                for (int y = 0; y<mask.getSizeY(); ++y) {
+                    if (!mask.insideMask(x, y, z)) {
+                        for (y = 0; y<mask.getSizeY(); ++y) {mask.setPixel(x, y, z, 0);}
+                    }
+                }
+            }
+        }
+    }
+    
+    public static Double[][] getMeanAndSigmaExcludeZeroY(Image image, ImageMask mask, boolean includeZero, double signalMaxThreshold, int windowSize) {
         if (mask==null) mask = new BlankMask(image);
         double value;
         double[][] sumSum2Count = new double[image.getSizeY()][3];
-        for (int z = 0; z < image.getSizeZ(); ++z) {
-            for (int y = 0; y<image.getSizeY(); ++y) {
-                double sum = 0;
-                double sum2 = 0;
-                double count = 0;
+        
+        for (int y = 0; y<image.getSizeY(); ++y) {
+            double sum = 0;
+            double sum2 = 0;
+            double count = 0;
+            for (int z = 0; z < image.getSizeZ(); ++z) {
                 for (int x = 0; x < image.getSizeX(); ++x) {
                     if (mask.insideMask(x, y, z)) {
                         value = image.getPixel(x, y, z);
-                        if (includeZero || value!=0) {
+                        if ((includeZero || value!=0) && value<signalMaxThreshold) {
                             sum += value;
-                            count++;
+                            ++count;
                             sum2 += value * value;
                         }
                     }
                 }
-                sumSum2Count[y][0]  = sum;
-                sumSum2Count[y][1]  = sum2;
-                sumSum2Count[y][2]  = count;
             }
+            sumSum2Count[y][0]  = sum;
+            sumSum2Count[y][1]  = sum2;
+            sumSum2Count[y][2]  = count;
+            //if (y%100==0) logger.debug("y: {}, count: {}, includeZero: {}, signalMaxThld: {}", y, count, includeZero, signalMaxThreshold);
         }
+        
         Double[][] meanSigma = new Double[image.getSizeY()][2];
-        for (int y = 0; y<image.getSizeY(); y++) {
+        
+        for (int y = 0; y<image.getSizeY(); y++) { // TODO improve speed -> flux entrant et sortant
             int yStart = Math.max(0, y-windowSize/2);
-            int yEnd = Math.min(image.getSizeY()-1, yStart+windowSize);
-            if (yEnd-yStart<windowSize) yStart = Math.max(0, yEnd-windowSize);
+            int yEnd = Math.min(image.getSizeY()-1, y+windowSize/2);
             double mean=0, count=0, sigma=0;
-            for (int yy = yStart; yy<=yEnd; ++yy) {
+            for (int yy = yStart; yy<=yEnd; ++yy) { // sliding smooth
                 mean+=sumSum2Count[yy][0];
                 sigma+=sumSum2Count[yy][1];
                 count+=sumSum2Count[yy][2];

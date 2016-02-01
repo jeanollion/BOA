@@ -63,8 +63,8 @@ public class MutationSegmenterScaleSpace implements Segmenter {
     public static boolean debug = false;
     public static boolean displayImages = false;
     NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxels)", 0, 5, 1, null);
-    NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 2, 5, 1, null);
-    NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 2, 3, 0, null);
+    NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 3, 4, 1, null);
+    NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 3, 0.75, 0, null);
     PostFilterSequence postFilters = new PostFilterSequence("Post-Filters").addPostFilters(new FeatureFilter(new SNR().setBackgroundObjectStructureIdx(1), 2, true, true));
     Parameter[] parameters = new Parameter[]{minSpotSize, thresholdHigh,  thresholdLow, postFilters};
     

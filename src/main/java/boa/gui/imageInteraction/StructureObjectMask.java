@@ -67,12 +67,12 @@ public class StructureObjectMask extends ImageObjectInterface {
             objects = new ArrayList<StructureObject>(1);
             objects.add(parent);
             offsets = new BoundingBox[1];
-            offsets[0] = parent.getRelativeBoundingBox(parent).translate(additionalOffset.getxMin(), additionalOffset.getyMin(), additionalOffset.getzMin());
+            offsets[0] = parent.getRelativeBoundingBox(parent).translate(additionalOffset);
         } else {
             objects = parent.getChildren(childStructureIdx);
             offsets = new BoundingBox[objects.size()];
             for (int i = 0; i < offsets.length; ++i) {
-                offsets[i] = objects.get(i).getRelativeBoundingBox(parent).translate(additionalOffset.getxMin(), additionalOffset.getyMin(), additionalOffset.getzMin());
+                offsets[i] = objects.get(i).getRelativeBoundingBox(parent).translate(additionalOffset);
             }
         }
     }

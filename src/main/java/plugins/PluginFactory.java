@@ -46,8 +46,8 @@ public class PluginFactory {
                 //Class<?> clazz = Class.forName(c);
                 if (Plugin.class.isAssignableFrom(c) && !Modifier.isAbstract( c.getModifiers() )) { // ne check pas l'heritage indirect!!
                     plugins.put(c.getSimpleName(), c);
-                    logger.debug("plugin found: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());
-                } else logger.debug("class is no plugin: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());
+                    //logger.debug("plugin found: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());
+                } //else logger.trace("class is not a plugin: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());
             }
         } catch (ClassNotFoundException ex) {
             logger.warn("find plugins", ex);
