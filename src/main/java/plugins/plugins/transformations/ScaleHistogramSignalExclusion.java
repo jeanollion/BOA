@@ -44,25 +44,26 @@ public class ScaleHistogramSignalExclusion implements Transformation {
     BoundedNumberParameter muTh= new BoundedNumberParameter("Theorical Mean", 2, 100, 1, null);
     ChannelImageParameter signalExclusion = new ChannelImageParameter("Channel for Signal Exclusion", -1, true);
     BoundedNumberParameter signalExclusionThreshold = new BoundedNumberParameter("Signal Exclusion Threshold", 1, 50, 0, null);
-    BooleanParameter underThreshold = new BooleanParameter("Consider only signal under threshold", true);
+    BooleanParameter vertical = new BooleanParameter("Vertical lines of Signal", true);
     BooleanParameter excludeZero = new BooleanParameter("Exclude Zero Values", true);
-    Parameter[] parameters = new Parameter[]{sigmaTh, muTh, signalExclusion, signalExclusionThreshold, underThreshold, excludeZero};
+    Parameter[] parameters = new Parameter[]{sigmaTh, muTh, signalExclusion, signalExclusionThreshold, vertical, excludeZero};
     ArrayList<ArrayList<Double>> meanSigmaT = new ArrayList<ArrayList<Double>>();;
     
     public ScaleHistogramSignalExclusion() {}
     
-    public ScaleHistogramSignalExclusion(double muTh, double sigmaTh, int signalExclusion, double signalExclusionThreshold, boolean underThreshold) {
+    public ScaleHistogramSignalExclusion(double muTh, double sigmaTh, int signalExclusion, double signalExclusionThreshold, boolean verticalSignal) {
         this.sigmaTh.setValue(sigmaTh);
         this.muTh.setValue(muTh);
         if (signalExclusion>=0) this.signalExclusion.setSelectedIndex(signalExclusion);
         this.signalExclusionThreshold.setValue(signalExclusionThreshold);
-        this.underThreshold.setSelected(underThreshold);
+        this.vertical.setSelected(verticalSignal);
     }
     
     public void computeConfigurationData(final int channelIdx, final InputImages inputImages) {
         final int chExcl = signalExclusion.getSelectedIndex();
         final double exclThld = signalExclusionThreshold.getValue().doubleValue();
-        final boolean underThreshold = this.underThreshold.getSelected();
+        final boolean underThreshold = true;
+        final boolean vertical = this.vertical.getSelected();
         final boolean excludeZero = this.excludeZero.getSelected();
         final ThreadRunner tr = new ThreadRunner(0, inputImages.getTimePointNumber());
         final ImageInteger[] exclusionMasks = (chExcl>=0) ?  new ImageInteger[tr.size()] : null;
@@ -80,7 +81,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
                                 if (exclusionMasks[trIdx]==null) exclusionMasks[trIdx] = new ImageByte("", signalExclusion);
                                 exclusionMask = exclusionMasks[trIdx];
                             }
-                            muSigma[idx] = computeMeanSigma(inputImages.getImage(channelIdx, idx), signalExclusion, exclThld, underThreshold, excludeZero, exclusionMask, idx);
+                            muSigma[idx] = computeMeanSigma(inputImages.getImage(channelIdx, idx), signalExclusion, exclThld, vertical, excludeZero, exclusionMask, idx);
                         }
                     }
                 }
@@ -121,16 +122,31 @@ public class ScaleHistogramSignalExclusion implements Transformation {
     }*/
     
     
-    public static Double[] computeMeanSigma(Image image, Image exclusionSignal, double exclusionThreshold, boolean underThreshold, boolean excludeZero, ImageInteger exclusionMask, int timePoint) {
+    public static Double[] computeMeanSigma(Image image, Image exclusionSignal, double exclusionThreshold, boolean vertical, boolean excludeZero, ImageInteger exclusionMask, int timePoint) {
         if (exclusionSignal!=null && !image.sameSize(exclusionSignal)) throw new Error("Image and exclusion signal should have same dimensions");
         if (exclusionMask!=null && !image.sameSize(exclusionMask)) throw new Error("Image and exclusion mask should have same dimensions");
         long t0 = System.currentTimeMillis();
-        if (exclusionMask!=null) ImageOperations.threshold(exclusionSignal, exclusionThreshold, !underThreshold, true, true, exclusionMask);
+        if (exclusionMask!=null) {
+            ImageOperations.threshold(exclusionSignal, exclusionThreshold, false, true, true, exclusionMask);
+            if (vertical) homogenizeVerticalLines(exclusionMask);
+        }
         else exclusionMask = new BlankMask(image);
         double[] res=  excludeZero? getMeanAndSigmaExcludeZero(image, exclusionMask) : ImageOperations.getMeanAndSigma(image, exclusionMask);
         long t1 = System.currentTimeMillis();
         //logger.debug("ScaleHistogram signal exclusion: timePoint: {}, mean sigma: {}, signal exclusion? {}, processing time: {}", timePoint, res, exclusionSignal!=null, t1-t0);
         return new Double[]{res[0], res[1]};
+    }
+    
+    protected static void homogenizeVerticalLines(ImageInteger mask) {
+        for (int z = 0; z<mask.getSizeZ(); ++z) {
+            for (int x = 0; x<mask.getSizeX(); ++x) {
+                for (int y = 0; y<mask.getSizeY(); ++y) {
+                    if (!mask.insideMask(x, y, z)) {
+                        for (y = 0; y<mask.getSizeY(); ++y) {mask.setPixel(x, y, z, 0);}
+                    }
+                }
+            }
+        }
     }
     
     public static double[] getMeanAndSigmaExcludeZero(Image image, ImageMask mask) {

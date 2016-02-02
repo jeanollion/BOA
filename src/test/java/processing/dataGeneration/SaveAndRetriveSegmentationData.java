@@ -42,13 +42,18 @@ import ij.process.ImageProcessor;
 import image.BoundingBox;
 import image.IJImageWrapper;
 import image.Image;
+import image.ImageByte;
 import image.ImageFormat;
 import image.ImageInteger;
+import image.ImageMask;
+import image.ImageOperations;
+import image.ImageProperties;
 import image.ImageReader;
 import image.ImageWriter;
 import java.awt.Frame;
 import java.awt.Polygon;
 import java.awt.Rectangle;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -60,23 +65,23 @@ import java.util.Map.Entry;
  */
 public class SaveAndRetriveSegmentationData {
     public static void main(String[] args) {
-        String dbName = "fluo151130_OutputNewScalingY";
+        String dbName = "fluo151130_OutputNewScaling";
         String baseFileName = "151130_TrackMutation_";
         //String directory = "/home/jollion/Documents/LJP/DataLJP/VerifManuelle/"; // ordi portable
         String directory = "/data/Images/Fluo/films1511/151130/151130_verifManuelleF08_160120/"; // ordi LJP
         int fieldIdx = 8;
         int structureIdx=2;
-        double distanceThreshold = 2;
+        int bacteriaStructureIdx=1; // for insideness
+        double distanceThreshold =2;
                 
         new ImageJ(null, ImageJ.NO_SHOW);
         Interpreter.batchMode = true;
-        
         
         // SAVE TO DISK
         //saveToDisk(dbName, directory, baseFileName, fieldIdx, structureIdx);
         
         // RETRIEVE AND COMPARE TO EXPERIMENT
-        compareField(dbName, directory, baseFileName, fieldIdx, structureIdx, distanceThreshold);
+        compareField(dbName, directory, baseFileName, fieldIdx, structureIdx, bacteriaStructureIdx, distanceThreshold);
         
     }
     
@@ -148,25 +153,40 @@ public class SaveAndRetriveSegmentationData {
         ImageWriter.writeToFile(image, directory, image.getName(), ImageFormat.TIF);
     }
     
-    public static void compareField(String dbName, String directory, String baseFileName, int fieldIdx, int structureIdx, double distanceThreshold) {
+    public static void compareField(String dbName, String directory, String baseFileName, int fieldIdx, int structureIdx, int insideStructureIdx, double distanceThreshold) {
         ArrayList<ArrayList<Object3D>> objectsMC=getObjectsMC(dbName, fieldIdx, structureIdx);
+        ArrayList<ArrayList<Object3D>> bacteriaMC= insideStructureIdx>=0?getObjectsMC(dbName, fieldIdx, insideStructureIdx):null;
+        ImageByte mask=null;
+        
         logger.info("Comparison db: {}, field: {}, structure: {}", dbName, fieldIdx, structureIdx);
-        int[] total = new int[4];
+        int[] total = new int[5];
         for (int mcIdx = 0; mcIdx<objectsMC.size(); ++mcIdx) {
             String name = directory + getName(baseFileName, fieldIdx, mcIdx);
             Image im = ImageReader.openImage(name+".tif");
-            //String corrected = "-corrected";
-            String corrected = "";
-            double[][] reference = getCenters(getObjects(name+corrected+".zip"), im);
-            double[][] observed = getCenters(objectsMC.get(mcIdx), im);
-            int[] comparison = compare(observed, reference, distanceThreshold);
-            total[0]+=comparison[0];
-            total[1]+=comparison[1];
-            total[2]+=comparison[2];
-            total[3]+=observed.length;
-            //logger.info("idx={}: FP: {}, FN: {}, #error: {}, #total: {}", mcIdx, (double)comparison[0]/(double)observed.length, (double)comparison[1]/(double)observed.length, comparison[2], observed.length);
+            if (insideStructureIdx>=0) {
+                if (mask==null) mask=new ImageByte("", im);
+                draw(bacteriaMC.get(mcIdx), mask);
+            }
+            String corrected = "-corrected";
+            //String corrected = "";
+            if (new File(name+corrected+".zip").exists()) {
+                double[][] reference = getCenters(getObjects(name+corrected+".zip"), im, mask);
+                double[][] observed = getCenters(objectsMC.get(mcIdx), im, mask);
+                int[] comparison = compare(observed, reference, distanceThreshold);
+                total[0]+=comparison[0];
+                total[1]+=comparison[1];
+                total[2]+=comparison[2];
+                total[3]+=observed.length;
+                total[4]+=reference.length;
+                logger.info("idx={}: FP: {}, FN: {}, #error: {}, #total: {}, #ref: {}", mcIdx, comparison[0], comparison[1], comparison[2], observed.length, reference.length);
+            }
         }
-        logger.info("FP: {}, FN: {}, #error: {}, #total: {}", (double)total[0]/(double)total[3], (double)total[1]/(double)total[3], total[2], total[3]);
+        logger.info("FP: {}({}), FN: {}({}), #error: {}, #total: {}, #total ref: {}", total[0], (double)total[0]/(double)total[3], total[1], (double)total[1]/(double)total[3], total[2], total[3], total[4]);
+    }
+    
+    public static void draw(ArrayList<Object3D> objects, ImageByte mask) {
+        ImageOperations.fill(mask, 0, null);
+        for (Object3D o : objects) o.draw(mask, 1);
     }
     
     /**
@@ -185,10 +205,16 @@ public class SaveAndRetriveSegmentationData {
             if (c>=0) {
                 if (refMatch[c]>=0) stack++;
                 else refMatch[c] = i; 
-            } else ++falsePositive;
+            } else {
+                logger.debug("false pos, x:{}, y:{}", observed[i][0], observed[i][1]);
+                ++falsePositive;
+            }
         }
         for (int i = 0; i<reference.length; ++i) {
-            if (refMatch[i]<0) ++falseNegative;
+            if (refMatch[i]<0) {
+                logger.debug("false neg, x:{}, y:{}", reference[i][0], reference[i][1]);
+                ++falseNegative;
+            }
         }
         return new int[]{falsePositive, falseNegative, stack};
     }
@@ -210,19 +236,25 @@ public class SaveAndRetriveSegmentationData {
         return min;
     }
     
-    public static double[][] getCenters(String name) {
+    public static double[][] getCenters(String name, ImageMask mask) {
         Image im = ImageReader.openImage(name+".tif");
         ArrayList<Object3D> objects = getObjects(name+".zip");
-        return getCenters(objects, im);
+        return getCenters(objects, im, mask);
     }
     
-    public static double[][] getCenters(ArrayList<Object3D> objects, Image image) {
-        double[][] res=  new double[objects.size()][];
+    public static double[][] getCenters(ArrayList<Object3D> objects, Image image, ImageMask mask) {
+        ArrayList<double[]> res=  new ArrayList<double[]>();
         for (int i = 0; i<objects.size(); ++i) {
             Object3D o = objects.get(i);
-            res[i] = o.getCenter(image);
+            double[] d = o.getCenter(image);
+            Voxel v = getVoxel(d);
+            if (mask==null || (mask.contains(v.x, v.y, v.z) && mask.insideMask(v.x, v.y, v.z))) res.add(d);
         }
-        return res;
+        return res.toArray(new double[0][0]);
+    }
+    
+    private static Voxel getVoxel(double[] coords) {
+        return new Voxel((int)(coords[0]+0.5), (int)(coords[1]+0.5), (int)(coords[2]+0.5));
     }
     
     public static ArrayList<Object3D> getObjects(String roiListDir) {
@@ -234,7 +266,7 @@ public class SaveAndRetriveSegmentationData {
             if (rois[i] instanceof PointRoi) {
                 //if (!points) continue;
                 Polygon p = ((PointRoi)rois[i]).getPolygon();
-                logger.debug("ROI: {}, is point and has: {} points", i, p.npoints);
+                //logger.debug("ROI: {}, is point and has: {} points", i, p.npoints);
                 Voxel v = new Voxel(p.xpoints[0], p.ypoints[0], 0);
                 ArrayList<Voxel> vox = new ArrayList<Voxel>(1);
                 vox.add(v);

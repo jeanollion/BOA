@@ -45,7 +45,7 @@ public class SNR extends IntensityMeasurement {
     
     @Override public Parameter[] getParameters() {return new Parameter[]{intensity, backgroundObject};}
     ArrayList<Object3D> parents;
-    ArrayList<ImageByte> parentMasks;
+    ArrayList<Object3D> parentMasks;
     HashMap<Object3D, Object3D> childrenParentMap;
     BoundingBox childrenOffset;
     BoundingBox parentOffsetRev;
@@ -72,14 +72,22 @@ public class SNR extends IntensityMeasurement {
             Object3D p = StructureObjectUtils.getInclusionParent(o, parents, childrenOffset, null);
             if (p!=null) childrenParentMap.put(o, p);
         }
-        parentMasks = new ArrayList<ImageByte>(parents.size());
+        parentMasks = new ArrayList<Object3D>(parents.size());
         for (Object3D p : parents) {
             final ImageMask ref = p.getMask();
             final ImageByte mask  = TypeConverter.toByteMask(ref, null).setName("mask:");
-            parentMasks.add(mask);
-            if (backgroundObject.getSelectedStructureIdx()==super.parent.getStructureIdx()) for (Object3D o : childPopulation.getObjects()) o.draw(mask, 0);
+            parentMasks.add(new Object3D(mask, 1));
+            if (backgroundObject.getSelectedStructureIdx()==super.parent.getStructureIdx()) {
+                for (Object3D o : childPopulation.getObjects()) {
+                    o.draw(mask, 0);
+                    // dilate
+                }
+            }
             else {
-                for (Object3D o : Utils.getKeys(childrenParentMap, p)) o.draw(mask, 0, childrenOffset);
+                for (Object3D o : Utils.getKeys(childrenParentMap, p)) {
+                    o.draw(mask, 0, childrenOffset);
+                    //dilate
+                }
             }
             //new IJImageDisplayer().showImage(mask);
         }
@@ -93,6 +101,7 @@ public class SNR extends IntensityMeasurement {
         if (parentObject==null) return 0;
         IntensityMeasurements iParent = super.core.getIntensityMeasurements(parentObject, null);
         double fore = super.core.getIntensityMeasurements(object, offset).mean;
+        logger.debug("SNR: fore:{}, back I: {} back SD: {}", fore, iParent.mean, iParent.sd);
         return ( fore-iParent.mean ) / iParent.sd;
     }
 

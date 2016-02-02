@@ -146,7 +146,7 @@ public class ScaleHistogramSignalExclusionY implements Transformation {
         return res;
     }
     
-    private static void homogenizeVerticalLines(ImageInteger mask) {
+    protected static void homogenizeVerticalLines(ImageInteger mask) {
         for (int z = 0; z<mask.getSizeZ(); ++z) {
             for (int x = 0; x<mask.getSizeX(); ++x) {
                 for (int y = 0; y<mask.getSizeY(); ++y) {
