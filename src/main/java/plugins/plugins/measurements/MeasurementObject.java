@@ -76,7 +76,7 @@ public class MeasurementObject implements Measurement {
                 f.setUp(object, structureIdx, object.getObjectPopulation(structureIdx));
                 if (f instanceof ObjectFeatureWithCore) ((ObjectFeatureWithCore)f).setUpOrAddCore(cores);
                 for (StructureObject o : object.getChildren(structureIdx)) {
-                    double m = f.performMeasurement(o.getObject(), null); // no additional offset from object to direct parent
+                    double m = f.performMeasurement(o.getObject(), null); 
                     o.getMeasurements().setValue(((TextParameter)ofp.getAdditionalParameters().get(0)).getValue(), m);
                     modifiedObjects.add(o);
                 }

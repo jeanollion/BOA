@@ -152,6 +152,7 @@ public abstract class Image implements ImageProperties {
         this.offsetX+=properties.getOffsetX();
         this.offsetY+=properties.getOffsetY();
         this.offsetZ+=properties.getOffsetZ();
+        this.offsetXY = offsetX + sizeX * offsetY;
         return (T)this;
     }
     
@@ -159,6 +160,7 @@ public abstract class Image implements ImageProperties {
         this.offsetX+=offsetX;
         this.offsetY+=offsetY;
         this.offsetZ+=offsetZ;
+        this.offsetXY = offsetX + sizeX * offsetY;
         return (T)this;
     }
     
@@ -166,6 +168,7 @@ public abstract class Image implements ImageProperties {
         this.offsetX=bounds.xMin;
         this.offsetY=bounds.yMin;
         this.offsetZ=bounds.zMin;
+        this.offsetXY = offsetX + sizeX * offsetY;
         return (T)this;
     }
 

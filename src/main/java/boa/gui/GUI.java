@@ -108,8 +108,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         this.instance=this;
         initComponents();
         addHorizontalScrollBar(dbNames);
-        refreshDBNames();
         addHorizontalScrollBar(trackStructureJCB);
+        refreshDBNames();
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         PluginFactory.findPlugins("plugins.plugins");
         jTabbedPane1.addChangeListener(new ChangeListener() {

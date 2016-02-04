@@ -19,6 +19,7 @@ package measurement;
 
 import dataStructure.objects.Object3D;
 import dataStructure.objects.Voxel;
+import image.BoundingBox;
 import image.Image;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,8 +43,7 @@ public class BasicMeasurements {
         double value=0;
         if (useOffset) for (Voxel v : voxels) value+=image.getPixelWithOffset(v.x, v.y, v.z);
         else for (Voxel v : voxels) value+=image.getPixel(v.x, v.y, v.z);
-        if (!voxels.isEmpty()) return value/(double)voxels.size();
-        else return 0;
+        return value/(double)voxels.size();
     }
     public static double getSdValue(Object3D object, Image image, boolean useOffset) {
         double value=0;
@@ -66,7 +66,7 @@ public class BasicMeasurements {
             value/=(double)object.getVoxels().size();
             value2/=(double)object.getVoxels().size();
             return Math.sqrt(value2-value*value);
-        } else return 0;
+        } else return Double.NaN;
     }
     public static double[] getMeanSdValue(List<Voxel> voxels, Image image, boolean useOffset) {
         double value=0;

@@ -166,4 +166,15 @@ public class StructureObjectUtils {
             prev = o;
         }
     }
+    
+    public static List<StructureObject> getTrack(StructureObject trackHead) {
+        if (trackHead==null) return Collections.EMPTY_LIST;
+        StructureObject head = trackHead.getTrackHead();
+        ArrayList<StructureObject> track = new ArrayList<StructureObject>();
+        while(trackHead!=null && trackHead.getTrackHead()==head) {
+            track.add(trackHead);
+            trackHead = trackHead.getNext();
+        } 
+        return track;
+    }
 }

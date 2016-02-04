@@ -86,8 +86,8 @@ public class MeasurementsDAO {
     }
     public List<Measurements> getMeasurements(int structureIdx, String... measurements) {
         List<Measurements> res = getQuery(structureIdx, measurements).asList();
-        Collections.sort(res);
         for (Measurements m : res) m.fieldName=fieldName;
+        Collections.sort(res);
         return res;
     }
 }

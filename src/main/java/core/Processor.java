@@ -217,7 +217,6 @@ public class Processor {
                 allModifiedObjectsSync.addAll(modifiedObjects);
                 long t1 = System.currentTimeMillis();
                 logger.debug("measurements on: {}, time elapsed: {}ms", root, t1-t0);
-                //if (dao!=null && !modifiedObjects.isEmpty()) dao.upsertMeasurements(modifiedObjects);
             }
         });
         long t1 = System.currentTimeMillis();

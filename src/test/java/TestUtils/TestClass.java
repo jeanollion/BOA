@@ -18,6 +18,7 @@
 package TestUtils;
 
 import static TestUtils.Utils.logger;
+import java.util.ArrayList;
 import org.junit.Test;
 
 /**
@@ -25,6 +26,7 @@ import org.junit.Test;
  * @author jollion
  */
 public class TestClass {
+    
     @Test
     public void test() {
         Number n = -1d;
@@ -46,7 +48,13 @@ public class TestClass {
         logger.info("[] is array: {}", matrix[0].getClass().isArray());
         
         logger.info("[][] is array: {}", matrix.getClass().isArray());
+        
+        Double d = 3d;
+        logger.info("Double instanceof Number: {}", d instanceof Number);
     }
+    
+    
+    
     @Test
     public void testFor() {
         for (int i : getValues()) logger.debug("value: {}", i);

@@ -69,7 +69,7 @@ public class ObjectInclusionCount implements Measurement {
             ArrayList<StructureObject> containers = object.getChildren(structureContainer.getSelectedIndex());
             ArrayList<StructureObject> toCount = object.getChildren(structureToCount.getSelectedIndex());
             for (StructureObject c : containers) {
-                c.getMeasurements().setValue(inclusionText.getValue(), count(object, c, toCount, p, onlyTrackHeads.getSelected()));
+                c.getMeasurements().setValue(inclusionText.getValue(), count(c, toCount, p, onlyTrackHeads.getSelected()));
                 modifiedObjects.add(c);
             }
         }
@@ -84,23 +84,12 @@ public class ObjectInclusionCount implements Measurement {
         return res;
     }
     
-    public static int count(StructureObject commonParent, StructureObject container, List<StructureObject> toCount, double proportionInclusion, boolean onlyTrackHeads) {
+    public static int count(StructureObject container, List<StructureObject> toCount, double proportionInclusion, boolean onlyTrackHeads) {
         if (toCount==null || toCount.isEmpty()) return 0;
         int count = 0;
         Object3D containerObject = container.getObject();
-        // structureToCount coordinates should be expressed in container's reference
-        /*BoundingBox offsetC;
-        if (commonParent!=container) offsetC = container.getParent().getRelativeBoundingBox(commonParent);
-        else {
-            offsetC = container.getBounds();
-            offsetC = new BoundingBox(-offsetC.getxMin(), -offsetC.getyMin(), -offsetC.getzMin());
-        }*/
         for (StructureObject o : toCount) {
             if (onlyTrackHeads && !o.isTrackHead()) continue;
-            //BoundingBox offsetP = o.getParent().getRelativeBoundingBox(commonParent).translate(-offsetC.getxMin(), -offsetC.getyMin(), -offsetC.getzMin());
-            //o.getObject().translate(offsetP.getxMin(), offsetP.getyMin(), offsetP.getzMin());
-            
-            //logger.debug("add offset: {}, offsetC: {}, offsetP: {}", offsetP, offsetC, o.getParent().getRelativeBoundingBox(commonParent));
             if (o.getBounds().hasIntersection(containerObject.getBounds())) {
                 if (proportionInclusion==0) ++count;
                 else {
@@ -122,7 +111,7 @@ public class ObjectInclusionCount implements Measurement {
         StructureObject commonParent = container.getParent(common);
 
         ArrayList<StructureObject> toCount = commonParent.getChildren(structureToCount);
-        return count(commonParent, container, toCount, proportionInclusion, onlyTrackHeads);
+        return count(container, toCount, proportionInclusion, onlyTrackHeads);
         
     }
     

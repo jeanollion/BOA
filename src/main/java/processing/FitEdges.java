@@ -38,6 +38,7 @@ import processing.mergeRegions.RegionCollection;
 public class FitEdges {
     
     public static Object3D run(Image image, Image fitImage, ImageMask mask, double regionThreshold) { // attention aux offsets de l'object
+        /*
         // run watershed on fit image
         if (mask==null) mask = new BlankMask(image);
         ImageByte seeds = Filters.localExtrema(fitImage, null, false, Filters.getNeighborhood(1, 1, image));
@@ -54,5 +55,8 @@ public class FitEdges {
         Object3D o = pop.getObjects().get(0);
         for (int i = 1; i<pop.getObjects().size(); ++i) o.getVoxels().addAll(pop.getObjects().get(i).getVoxels());
         return o;
+                */
+        return null;
+        
     }
 }

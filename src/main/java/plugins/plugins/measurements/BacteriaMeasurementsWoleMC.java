@@ -89,6 +89,13 @@ public class BacteriaMeasurementsWoleMC implements Measurement {
         long t2 = System.currentTimeMillis();
         //BoundingBox bounds = o.getBounds().duplicate();
         //o.translate(bounds, true);
+        /*logger.debug("mc bb:{}, mask bb: {}, image bb: {}", o.getBounds(), o.getMask().getBoundingBox(), bactImage.getBoundingBox());
+        int xMax=0, yMax=0;
+        for (Voxel v : o.getVoxels()) {
+            if (v.x>xMax) xMax=v.x;
+            if (v.y>yMax) yMax=v.y;
+        }
+        logger.debug("vox xMax: {}, yMax: {}", xMax, yMax);*/
         object.getMeasurements().setValue("BacteriaMeanIntensity", BasicMeasurements.getMeanValue(o, bactImage, true));
         ArrayList<StructureObject> mutList = object.getChildren(mutation.getSelectedIndex());
         if (mutList.isEmpty()) object.getMeasurements().setValue("MutationMeanIntensity", BasicMeasurements.getMeanValue(o, mutImage, true));
@@ -109,7 +116,7 @@ public class BacteriaMeasurementsWoleMC implements Measurement {
         ArrayList<StructureObject> bactList = object.getChildren(bacteria.getSelectedIndex());
         if (!bactList.isEmpty()) {
             StructureObject mm = bactList.get(0);
-            object.getMeasurements().setValue("M_MutationCount", ObjectInclusionCount.count(object, mm, mutList, 0, true));
+            object.getMeasurements().setValue("M_MutationCount", ObjectInclusionCount.count(mm, mutList, 0, true));
             t4 = System.currentTimeMillis();
             object.getMeasurements().setValue("M_FeretMax", GeometricalMeasurements.getFeretMax(mm.getObject()));
             object.getMeasurements().setValue("M_MeanValue", BasicMeasurements.getMeanValue(mm.getObject(), bactImage, true));

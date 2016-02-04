@@ -175,6 +175,7 @@ public class MutationSegmenterScaleSpace implements Segmenter {
     
     private static Image getScaleSpace(Image input, double[] radii) {
         //return ImageFeatures.getScaleSpaceHessianMax(input, radii);
+        //return ImageFeatures.getScaleSpaceHessianMax(input, radii);
         return ImageFeatures.getScaleSpaceHessianMaxNorm(input, radii, ImageFeatures.gaussianSmooth(input, 3, 3, false), 100); // ou 2
     }
     

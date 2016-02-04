@@ -82,7 +82,7 @@ public class TextParameter extends SimpleParameter {
             this.p = p_;
             this.model = ParameterUtils.getModel(p);
             text = new JTextField();
-            text.setPreferredSize(new Dimension(100, 25));
+            text.setPreferredSize(new Dimension(100, 28));
             if (!allowSpecialCharacters) {
                 ((AbstractDocument) text.getDocument()).setDocumentFilter(new DocumentFilterIllegalCharacters());
             }
@@ -111,9 +111,9 @@ public class TextParameter extends SimpleParameter {
         }
 
         public Object[] getDisplayComponent() {
-            text.setText(p.getName());
+            text.setText(p.getValue());
             // resize text area..
-            text.setPreferredSize(new Dimension(p.getName().length() * 8 + 100, 25));
+            text.setPreferredSize(new Dimension(p.getName().length() * 8 + 100, 28));
             return component;
         }
 

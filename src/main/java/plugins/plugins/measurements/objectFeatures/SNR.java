@@ -89,15 +89,18 @@ public class SNR extends IntensityMeasurement {
         for (Object3D p : parents) {
             ImageMask ref = p.getMask();
             ImageByte mask  = TypeConverter.toByteMask(ref, null).setName("mask:");
-            if (backgroundObject.getSelectedStructureIdx()==super.parent.getStructureIdx()) {
-                for (Object3D o : parentChildrenMap.get(p)) o.draw(mask, 0);
-            } else {
-                for (Object3D o : parentChildrenMap.get(p)) o.draw(mask, 0, childrenOffset);
-            }
-            ImageByte maskErode = Filters.min(mask, null, Filters.getNeighborhood(2.5, 2.5, mask)); // erode mask
-            if (maskErode.count()==0) maskErode = mask;
-            for (Object3D o : parentChildrenMap.get(p)) childrenParentMap.put(o, new Object3D(maskErode, 1));
+            ArrayList<Object3D> children = parentChildrenMap.get(p);
+            if (children!=null) {
+                if (backgroundObject.getSelectedStructureIdx()==super.parent.getStructureIdx()) {
+                    for (Object3D o : parentChildrenMap.get(p)) o.draw(mask, 0);
+                } else {
+                    for (Object3D o : parentChildrenMap.get(p)) o.draw(mask, 0, childrenOffset);
+                }
             
+                ImageByte maskErode = Filters.min(mask, null, Filters.getNeighborhood(2.5, 2.5, mask)); // erode mask // TODO dillate objects?
+                if (maskErode.count()==0) maskErode = mask;
+                for (Object3D o : children) childrenParentMap.put(o, new Object3D(maskErode, 1));
+            }
             //new IJImageDisplayer().showImage(maskErode);
         }
         return this;
