@@ -17,6 +17,7 @@
  */
 package utils;
 
+import static boa.gui.GUI.logger;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import configuration.parameters.FileChooser;
 import dataStructure.objects.StructureObject;
@@ -146,11 +147,8 @@ public class Utils {
     }
     
     public static void addHorizontalScrollBar(JComboBox box) {
-        if (box.getItemCount() == 0) return;
         Object comp = box.getUI().getAccessibleChild(box, 0);
-        if (!(comp instanceof JPopupMenu)) {
-            return;
-        }
+        if (!(comp instanceof JPopupMenu)) return;
         JPopupMenu popup = (JPopupMenu) comp;
         int n = popup.getComponentCount();
         int i = 0;
