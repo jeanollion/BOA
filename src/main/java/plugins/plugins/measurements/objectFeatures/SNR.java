@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import plugins.objectFeature.IntensityMeasurement;
 import plugins.objectFeature.IntensityMeasurementCore.IntensityMeasurements;
+import processing.Filters;
 import utils.Utils;
 
 /**
@@ -44,8 +45,6 @@ public class SNR extends IntensityMeasurement {
     protected SiblingStructureParameter backgroundObject = new SiblingStructureParameter("Background Object", true).setAutoConfiguration(true);
     
     @Override public Parameter[] getParameters() {return new Parameter[]{intensity, backgroundObject};}
-    ArrayList<Object3D> parents;
-    ArrayList<Object3D> parentMasks;
     HashMap<Object3D, Object3D> childrenParentMap;
     BoundingBox childrenOffset;
     BoundingBox parentOffsetRev;
@@ -61,42 +60,52 @@ public class SNR extends IntensityMeasurement {
         if (!childPopulation.isAbsoluteLandmark()) childrenOffset = parent.getBounds(); // the step it still at processing, thus their offset of objects is related to their direct parent
         else childrenOffset = new BoundingBox(0, 0, 0);
         parentOffsetRev = parent.getBounds().duplicate().reverseOffset();
+        
+        // get parents
+        ArrayList<Object3D> parents;
         if (backgroundObject.getSelectedStructureIdx()!=super.parent.getStructureIdx()) {
             parents = parent.getObjectPopulation(backgroundObject.getSelectedStructureIdx()).getObjects();
         } else {
             parents = new ArrayList<Object3D>(1);
             parents.add(parent.getObject());
         }
-        childrenParentMap = new HashMap<Object3D, Object3D>();
+        
+        // assign parents to children by inclusion
+        HashMap<Object3D, ArrayList<Object3D>> parentChildrenMap = new HashMap<Object3D, ArrayList<Object3D>>(parents.size());
         for (Object3D o : childPopulation.getObjects()) {
             Object3D p = StructureObjectUtils.getInclusionParent(o, parents, childrenOffset, null);
-            if (p!=null) childrenParentMap.put(o, p);
+            if (p!=null) {
+                ArrayList<Object3D> children = parentChildrenMap.get(p);
+                if (children==null) {
+                    children = new ArrayList<Object3D>();
+                    parentChildrenMap.put(p, children);
+                }
+                children.add(o);
+            }
         }
-        parentMasks = new ArrayList<Object3D>(parents.size());
+        
+        // remove foreground objects from background mask & dilate it
+        childrenParentMap = new HashMap<Object3D, Object3D>();
         for (Object3D p : parents) {
-            final ImageMask ref = p.getMask();
-            final ImageByte mask  = TypeConverter.toByteMask(ref, null).setName("mask:");
-            parentMasks.add(new Object3D(mask, 1));
+            ImageMask ref = p.getMask();
+            ImageByte mask  = TypeConverter.toByteMask(ref, null).setName("mask:");
             if (backgroundObject.getSelectedStructureIdx()==super.parent.getStructureIdx()) {
-                for (Object3D o : childPopulation.getObjects()) {
-                    o.draw(mask, 0);
-                    // dilate
-                }
+                for (Object3D o : parentChildrenMap.get(p)) o.draw(mask, 0);
+            } else {
+                for (Object3D o : parentChildrenMap.get(p)) o.draw(mask, 0, childrenOffset);
             }
-            else {
-                for (Object3D o : Utils.getKeys(childrenParentMap, p)) {
-                    o.draw(mask, 0, childrenOffset);
-                    //dilate
-                }
-            }
-            //new IJImageDisplayer().showImage(mask);
+            ImageByte maskErode = Filters.min(mask, null, Filters.getNeighborhood(2.5, 2.5, mask)); // erode mask
+            if (maskErode.count()==0) maskErode = mask;
+            for (Object3D o : parentChildrenMap.get(p)) childrenParentMap.put(o, new Object3D(maskErode, 1));
+            
+            //new IJImageDisplayer().showImage(maskErode);
         }
         return this;
     }
     public double performMeasurement(Object3D object, BoundingBox offset) {
         if (core==null) synchronized(this) {setUpOrAddCore(null);}
         Object3D parentObject; 
-        if (parents==null) parentObject = super.parent.getObject();
+        if (childrenParentMap==null) parentObject = super.parent.getObject();
         else parentObject=this.childrenParentMap.get(object);
         if (parentObject==null) return 0;
         IntensityMeasurements iParent = super.core.getIntensityMeasurements(parentObject, null);

@@ -53,6 +53,13 @@ public abstract class DisplacementNeighborhood implements Neighborhood{
         }
     }
     public void setPixelsByIndex(Voxel v, Image image) {setPixelsByIndex(v.x, v.y, v.z, image);}
+    /**
+     * The value array is filled according to the index of the displacement array; if a voxel is not in the neighborhood, sets its value to NaN
+     * @param x coord along X-axis
+     * @param y coord along Y-axis
+     * @param z coord along Z-axis
+     * @param image 
+     */
     public void setPixelsByIndex(int x, int y, int z, Image image) {
         valueCount=0;
         int xx, yy;
@@ -91,6 +98,63 @@ public abstract class DisplacementNeighborhood implements Neighborhood{
     @Override public float[] getDistancesToCenter() {
         return distances;
     }
+    
+    @Override public float getMin(int x, int y, int z, Image image) {
+        int xx, yy;
+        float min = Float.MAX_VALUE;
+        float temp;
+        if (is3D) { 
+            int zz;
+            for (int i = 0; i<dx.length; ++i) {
+                xx=x+dx[i];
+                yy=y+dy[i];
+                zz=z+dz[i];
+                if (image.contains(xx, yy, zz)) {
+                    temp=image.getPixel(xx, yy, zz);
+                    if (temp<min) min=temp;
+                }
+            }
+        } else {
+            for (int i = 0; i<dx.length; ++i) {
+                xx=x+dx[i];
+                yy=y+dy[i];
+                if (image.contains(xx, yy, z)) {
+                    temp=image.getPixel(xx, yy, z);
+                    if (temp<min) min=temp;
+                }
+            }
+        }
+        return min;
+    }
+
+    @Override public float getMax(int x, int y, int z, Image image) {
+        int xx, yy;
+        float max = -Float.MAX_VALUE;
+        float temp;
+        if (is3D) { 
+            int zz;
+            for (int i = 0; i<dx.length; ++i) {
+                xx=x+dx[i];
+                yy=y+dy[i];
+                zz=z+dz[i];
+                if (image.contains(xx, yy, zz)) {
+                    temp=image.getPixel(xx, yy, zz);
+                    if (temp>max) max=temp;
+                }
+            }
+        } else {
+            for (int i = 0; i<dx.length; ++i) {
+                xx=x+dx[i];
+                yy=y+dy[i];
+                if (image.contains(xx, yy, z)) {
+                    temp=image.getPixel(xx, yy, z);
+                    if (temp>max) max=temp;
+                }
+            }
+        }
+        return max;
+    }
+    
     public boolean is3D() {
         return is3D;
     }

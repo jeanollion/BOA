@@ -42,6 +42,10 @@ public class BlankMask extends ImageInteger implements ImageMask {
         return true;
     }
     
+    @Override public int count() {
+        return sizeZ * sizeXY;
+    }
+    
     
     public boolean insideMaskWithOffset(int x, int y, int z) {
         //x-=offsetX; y-=offsetY; z-=offsetZ;

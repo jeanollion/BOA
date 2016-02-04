@@ -73,5 +73,13 @@ public class ConditionalNeighborhoodZ implements Neighborhood {
     public boolean is3D() {
         return currentNeighborhood.is3D();
     }
+
+    public float getMin(int x, int y, int z, Image image) {
+        return currentNeighborhood.getMin(x, y, z, image);
+    }
+
+    public float getMax(int x, int y, int z, Image image) {
+        return currentNeighborhood.getMax(x, y, z, image);
+    }
     
 }

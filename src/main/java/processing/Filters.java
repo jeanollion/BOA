@@ -23,6 +23,7 @@ import image.Image;
 import static image.Image.logger;
 import image.ImageByte;
 import image.ImageFloat;
+import image.ImageOperations;
 import java.util.Arrays;
 import java.util.Comparator;
 import processing.neighborhood.EllipsoidalNeighborhood;
@@ -68,18 +69,9 @@ public class Filters {
         String name = "Tophat of: "+image.getName();
         if (output==null) res = (T)new ImageFloat(name, image);
         else res = image.sameSize(output)?output:Image.createEmptyImage(name, output, image);
-        float round=res instanceof ImageFloat ? 0: 0.5f;
-        int sizeX=image.getSizeX();
-        float[][] openPix = open.getPixelArray();
         //1-open
-        for (int z = 0; z < image.getSizeZ(); ++z) { 
-            for (int y = 0; y < image.getSizeY(); ++y) {
-                for (int x = 0; x < sizeX; ++x) {
-                    res.setPixel(x, y, z, image.getPixel(x, y, z)-openPix[z][x+y*sizeX]+round);
-                }
-            }
-        }
-        res.resetOffset().addOffset(image);
+        ImageOperations.addImage(image, open, res, -1);
+        res.resetOffset().addOffset(image).setName(name);
         return res;
     }
     
@@ -89,17 +81,8 @@ public class Filters {
         String name = "Tophat of: "+image.getName();
         if (output==null) res = (T)new ImageFloat(name, image);
         else res = image.sameSize(output)?output:Image.createEmptyImage(name, output, image);
-        float round=res instanceof ImageFloat ? 0: 0.5f;
-        int sizeX=image.getSizeX();
-        float[][] closePix = close.getPixelArray();
-        //1-open
-        for (int z = 0; z < image.getSizeZ(); ++z) { 
-            for (int y = 0; y < image.getSizeY(); ++y) {
-                for (int x = 0; x < sizeX; ++x) {
-                    res.setPixel(x, y, z, image.getPixel(x, y, z)-closePix[z][x+y*sizeX]+round);
-                }
-            }
-        }
+        //1-close
+        ImageOperations.addImage(image, close, res, -1);
         res.resetOffset().addOffset(image);
         return res;
     }
@@ -142,7 +125,7 @@ public class Filters {
         if (neighborhood==null) throw new IllegalArgumentException("Apply Filter ("+filter.getClass().getSimpleName()+") Error: Neighborhood cannot be null");
         T res;
         String name = filter.getClass().getSimpleName()+" of: "+image.getName();
-        if (output==null) res = (T)new ImageFloat(name, image);
+        if (output==null) res = (T)Image.createEmptyImage(name, image, image);
         else if (!output.sameSize(image) || output==image) res = Image.createEmptyImage(name, output, image);
         else res = (T)output.setName(name);
         float round=res instanceof ImageFloat ? 0: 0.5f;
@@ -150,7 +133,6 @@ public class Filters {
         for (int z = 0; z < image.getSizeZ(); ++z) {
             for (int y = 0; y < image.getSizeY(); ++y) {
                 for (int x = 0; x < image.getSizeX(); ++x) {
-                    neighborhood.setPixels(x, y, z, image);
                     res.setPixel(x, y, z, filter.applyFilter(x, y, z)+round);
                 }
             }
@@ -167,6 +149,7 @@ public class Filters {
     }
     private static class Mean extends Filter {
         @Override public float applyFilter(int x, int y, int z) {
+            neighborhood.setPixels(x, y, z, image);
             if (neighborhood.getValueCount()==0) return 0;
             double mean = 0;
             for (int i = 0; i<neighborhood.getValueCount(); ++i) mean+=neighborhood.getPixelValues()[i];
@@ -175,6 +158,7 @@ public class Filters {
     }
     private static class Median extends Filter {
         @Override public float applyFilter(int x, int y, int z) {
+            neighborhood.setPixels(x, y, z, image);
             if (neighborhood.getValueCount()==0) return 0;
             Arrays.sort(neighborhood.getPixelValues(), 0, neighborhood.getValueCount());
             if (neighborhood.getValueCount()%2==0) return (neighborhood.getPixelValues()[neighborhood.getValueCount()/2-1]+neighborhood.getPixelValues()[neighborhood.getValueCount()/2])/2f;
@@ -224,14 +208,12 @@ public class Filters {
     }*/
     private static class Max extends Filter {
         @Override public float applyFilter(int x, int y, int z) {
-            if (neighborhood.getValueCount()==0) return 0;
-            float max = neighborhood.getPixelValues()[0];
-            for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]>max) max=neighborhood.getPixelValues()[i];
-            return max;
+            return neighborhood.getMax(x, y, z, image);
         }
     }
     private static class LocalMax extends Filter {
         @Override public float applyFilter(int x, int y, int z) {
+            neighborhood.setPixels(x, y, z, image);
             if (neighborhood.getValueCount()==0) return 0;
             float max = neighborhood.getPixelValues()[0];
             for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]>max) max=neighborhood.getPixelValues()[i];
@@ -244,6 +226,7 @@ public class Filters {
             this.threshold=threshold;
         }
         @Override public float applyFilter(int x, int y, int z) {
+            neighborhood.setPixels(x, y, z, image);
             if (neighborhood.getValueCount()==0) return 0;
             float max = neighborhood.getPixelValues()[0];
             for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]>max) return 0;
@@ -253,6 +236,7 @@ public class Filters {
     }
     private static class LocalMin extends Filter {
         @Override public float applyFilter(int x, int y, int z) {
+            neighborhood.setPixels(x, y, z, image);
             if (neighborhood.getValueCount()==0) return 0;
             float min = neighborhood.getPixelValues()[0];
             for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]<min) return 0;
@@ -265,6 +249,7 @@ public class Filters {
             this.threshold=threshold;
         }
         @Override public float applyFilter(int x, int y, int z) {
+            neighborhood.setPixels(x, y, z, image);
             if (neighborhood.getValueCount()==0) return 0;
             float min = neighborhood.getPixelValues()[0];
             for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]<min) return 0;
@@ -274,10 +259,7 @@ public class Filters {
     }
     private static class Min extends Filter {
         @Override public float applyFilter(int x, int y, int z) {
-            if (neighborhood.getValueCount()==0) return 0;
-            float min = neighborhood.getPixelValues()[0];
-            for (int i = 1; i<neighborhood.getValueCount(); ++i) if (neighborhood.getPixelValues()[i]<min) min=neighborhood.getPixelValues()[i];
-            return min;
+            return neighborhood.getMin(x, y, z, image);
         }
     }
     //(low + high) >>> 1 <=> (low + high) / 2

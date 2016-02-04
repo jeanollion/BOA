@@ -144,6 +144,15 @@ public class ImageShort extends ImageInteger {
         return pixels[z][xy]!=0;
     }
     
+    @Override public int count() {
+        int count = 0;
+        for (int z = 0; z< sizeZ; ++z) {
+            for (int xy=0; xy<sizeXY; ++xy) {
+                if (pixels[z][xy]!=0) ++count;
+            }
+        }
+        return count;
+    }
     
     public boolean insideMaskWithOffset(int x, int y, int z) {
         return pixels[z-offsetZ][x+y*sizeX-offsetXY]!=0;

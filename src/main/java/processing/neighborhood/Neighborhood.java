@@ -36,6 +36,8 @@ public interface Neighborhood {
     public void setPixels(Voxel v, Image image);
     public int getSize();
     public float[] getPixelValues();
+    public float getMin(int x, int y, int z, Image image);
+    public float getMax(int x, int y, int z, Image image);
     public float[] getDistancesToCenter();
     public int getValueCount();
     public boolean is3D();

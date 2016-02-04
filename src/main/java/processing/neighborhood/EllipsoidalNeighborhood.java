@@ -194,5 +194,7 @@ public class EllipsoidalNeighborhood extends DisplacementNeighborhood {
         else for (int i = 0; i<this.dx.length;++i) output.setPixel(centerXY+dx[i], centerXY+dy[i], 0, 1);
         return output;
     }
+
+    
     
 }
