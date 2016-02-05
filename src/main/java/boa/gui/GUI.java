@@ -41,6 +41,7 @@ import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
+import image.BoundingBox;
 import image.ImageByte;
 import image.ImageFormat;
 import image.ImageWriter;
@@ -74,6 +75,7 @@ import plugins.plugins.trackers.ObjectIdxTracker;
 import plugins.plugins.segmenters.SimpleThresholder;
 import plugins.plugins.thresholders.ConstantValue;
 import utils.MorphiumUtils;
+import utils.Pair;
 import utils.Utils;
 import static utils.Utils.addHorizontalScrollBar;
 
@@ -228,14 +230,16 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }
     
     // ImageObjectListener implementation
-    public void fireObjectSelected(List<StructureObject> selectedObjects, boolean addToSelection, boolean track) {
+    public void fireObjectSelected(List<Pair<StructureObject, BoundingBox>> selectedObjects, boolean addToSelection, boolean track) {
         if (track) {
             // selection de la track
             
         }
         // selection de l'objet dans l'arbre d'objets
         if (!addToSelection ) objectTreeGenerator.selectObject(null, false);
-        for (StructureObject selectedObject : selectedObjects) objectTreeGenerator.selectObject(selectedObject, true);
+        for (Pair<StructureObject, BoundingBox> selectedObject : selectedObjects) {
+            if (selectedObject!=null) objectTreeGenerator.selectObject(selectedObject.key, true);
+        }
         logger.trace("fire object selected");
     }
     

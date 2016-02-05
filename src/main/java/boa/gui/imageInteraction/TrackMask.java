@@ -39,6 +39,7 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
+import utils.Pair;
 
 /**
  *
@@ -98,7 +99,7 @@ public class TrackMask extends ImageObjectInterface {
     }
     
     @Override
-    public StructureObject getClickedObject(int x, int y, int z) {
+    public Pair<StructureObject, BoundingBox> getClickedObject(int x, int y, int z) {
         if (is2D) z=0; //do not take in account z in 2D case.
         // recherche du parent: 
         int i = Arrays.binarySearch(trackOffset, new BoundingBox(x, x, 0, 0, 0, 0), new bbComparatorX());
@@ -108,7 +109,7 @@ public class TrackMask extends ImageObjectInterface {
     }
     
     @Override
-    public void addClickedObjects(BoundingBox selection, List<StructureObject> list) {
+    public void addClickedObjects(BoundingBox selection, List<Pair<StructureObject, BoundingBox>> list) {
         if (is2D && selection.getSizeZ()>0) selection=new BoundingBox(selection.getxMin(), selection.getxMax(), selection.getyMin(), selection.getyMax(), 0, 0);
         int iMin = Arrays.binarySearch(trackOffset, new BoundingBox(selection.getxMin(), selection.getxMin(), 0, 0, 0, 0), new bbComparatorX());
         if (iMin<0) iMin=-iMin-2; // element inférieur à x puisqu'on compare les xmin des bounding box
@@ -127,13 +128,7 @@ public class TrackMask extends ImageObjectInterface {
     @Override
     public BoundingBox getObjectOffset(StructureObject object) {
         if (object==null) return null;
-        return trackObjects[getTrackIndex(getParent(object))].getObjectOffset(object);
-    }
-    
-    private StructureObject getParent(StructureObject object) { // le parent n'est pas forcément direct
-        StructureObject p=object;
-        while(p.getStructureIdx()!=parent.getStructureIdx()) p=p.getParent();
-        return p;
+        return trackObjects[getTrackIndex(object)].getObjectOffset(object);
     }
     
     private int getTrackIndex(StructureObject object) {
@@ -230,8 +225,8 @@ public class TrackMask extends ImageObjectInterface {
     }
 
     @Override
-    public ArrayList<StructureObject> getObjects() {
-        ArrayList<StructureObject> res = new ArrayList<StructureObject>();
+    public ArrayList<Pair<StructureObject, BoundingBox>> getObjects() {
+        ArrayList<Pair<StructureObject, BoundingBox>> res = new ArrayList<Pair<StructureObject, BoundingBox>>();
         for (StructureObjectMask m : trackObjects) res.addAll(m.getObjects());
         return res;
     }

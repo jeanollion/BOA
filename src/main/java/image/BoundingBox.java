@@ -276,6 +276,11 @@ public class BoundingBox {
         else return new BoundingBox(Math.max(xMin, other.xMin), Math.min(xMax, other.xMax), Math.max(yMin, other.yMin), Math.min(yMax, other.yMax) , Math.max(zMin, other.zMin), Math.min(zMax, other.zMax));
     }
     
+    public boolean isIncluded(BoundingBox container) {
+        if (getSizeZ()==container.getSizeZ() && getSizeZ()<=1) return xMin>=container.xMin && xMax<=container.xMax && yMin>=container.yMin && yMax<=container.yMax;
+        else return xMin>=container.xMin && xMax<=container.xMax && yMin>=container.yMin && yMax<=container.yMax && zMin>=container.zMin && zMax<=container.zMax;
+    }
+    
     @Override
     public boolean equals(Object other) {
         if (other instanceof BoundingBox) {

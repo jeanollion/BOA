@@ -24,6 +24,8 @@ import image.ImageInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map.Entry;
+import utils.Pair;
 
 /**
  *
@@ -35,20 +37,21 @@ public abstract class ImageObjectInterface {
     final protected boolean is2D;
     protected boolean guiMode = true;
     public ImageObjectInterface(StructureObject parent, int childStructureIdx) {
+        if (parent.getStructureIdx()>childStructureIdx) throw new IllegalArgumentException("Structure: "+childStructureIdx +" cannot be child of structure: "+parent.getStructureIdx());
         this.parent = parent;
         this.childStructureIdx = childStructureIdx;
         is2D = this.parent.is2D();
     }
     public abstract ImageObjectInterfaceKey getKey();
     public abstract void reloadObjects();
-    public abstract StructureObject getClickedObject(int x, int y, int z);
-    public abstract void addClickedObjects(BoundingBox selection, List<StructureObject> list);
+    public abstract Pair<StructureObject, BoundingBox> getClickedObject(int x, int y, int z);
+    public abstract void addClickedObjects(BoundingBox selection, List<Pair<StructureObject, BoundingBox>> list);
     public abstract BoundingBox getObjectOffset(StructureObject object);
     public abstract ImageInteger generateImage();
     public abstract void draw(ImageInteger image);
     public abstract Image generateRawImage(int structureIdx);
     public abstract boolean isTimeImage();
-    public abstract ArrayList<StructureObject> getObjects();
+    public abstract ArrayList<Pair<StructureObject, BoundingBox>> getObjects();
     /**
      * 
      * @param guiMode if set to true, display of images and retrieve of objects is done in another thread

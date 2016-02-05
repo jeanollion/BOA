@@ -58,6 +58,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import utils.Pair;
 
 /**
  *
@@ -128,11 +129,10 @@ public class SaveAndRetriveSegmentationData {
             ArrayList<StructureObject> track = dao.getTrack(th);
             ImageObjectInterface i = windowManager.getImageTrackObjectInterface(track, structureIdx);
             i.setGUIMode(false);
-            ArrayList<StructureObject> so = i.getObjects();
+            ArrayList<Pair<StructureObject, BoundingBox>> so = i.getObjects();
             ArrayList<Object3D> o3DList = new ArrayList<Object3D>(so.size());
-            for (StructureObject o : so) {
-                BoundingBox b = i.getObjectOffset(o);
-                o3DList.add(o.getObject().translate(o.getBounds().reverseOffset()).translate(b));
+            for (Pair<StructureObject, BoundingBox> o : so) {
+                o3DList.add(o.key.getObject().translate(o.key.getBounds().reverseOffset()).translate(o.value));
             }
             res.add(o3DList);
         }

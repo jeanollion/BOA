@@ -68,7 +68,7 @@ public class TestProcessMutations {
 //        t.testSegMutationsFromXP(8, 8, true, 36, 39); // faux positifs bord des cellules
 
 //        t.testSegMutationsFromXP(8, 1, true, 0, 5); // spot fort dans cellule forte
-//        t.testSegMutationsFromXP(8, 6, true, 0, 30); // cellules avec formes bizares -< faux positifs + spots très petits proche de très intenses
+        t.testSegMutationsFromXP(8, 6, true, 0, 30); // cellules avec formes bizares -< faux positifs + spots très petits proche de très intenses
 //        t.testSegMutationsFromXP(8, 10, true, 341, 343); // no spots?
 //        t.testSegMutationsFromXP(9, 0, true, 0, 10); // bordures de l'image
     }

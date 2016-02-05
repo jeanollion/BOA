@@ -116,6 +116,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public StructureObject getParent(int parentStructureIdx) {
         StructureObject p = this;
         while (p!=null && p.getStructureIdx()!=parentStructureIdx) p = p.getParent();
+        if (p.structureIdx!=parentStructureIdx) {
+            logger.error("Structure: {} is not in parent-tree of structure: {}", parentStructureIdx, this.structureIdx);
+            return null;
+        }
         return p;
     }
     public void setParent(StructureObject parent) {this.parent=parent;}
@@ -147,6 +151,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public boolean isRoot() {return structureIdx==-1;}
     public ArrayList<? extends StructureObject> getChildObjects(int structureIdx) {return getChildren(structureIdx);} // for overriding purpose
     public ArrayList<StructureObject> getChildren(int structureIdx) {
+        if (structureIdx<=this.structureIdx) throw new IllegalArgumentException("Structure: "+structureIdx+" cannot be child of structure: "+this.structureIdx);
         ArrayList<StructureObject> res= this.childrenSM.get(structureIdx);
         if (res==null) {
             if (getExperiment().isDirectChildOf(this.structureIdx, structureIdx)) { // direct child
@@ -160,12 +165,18 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                     }
                     return res; 
                 }
-            }
-            else { // indirect child
+            } else { // indirect child
+                //logger.debug("structure:{} is not direct child of: {}", structureIdx, this.structureIdx);
                 int[] path = getExperiment().getPathToStructure(this.getStructureIdx(), structureIdx);
                 if (path.length == 0) { // structure is not (indirect) child of current structure
-                    logger.error("getChildObjects called on {} but structure: {} is no an (indirect) child of the object's structure", this, structureIdx);
-                    return null;
+                    //logger.error("getChildObjects called on {} but structure: {} is no an (indirect) child of structure {}", this, structureIdx, this.structureIdx);
+                    //return null;
+                    // get included objects from first common parent
+                    int commonParentIdx = getExperiment().getFirstCommonParentStructureIdx(this.structureIdx, structureIdx);
+                    StructureObject commonParent = this.getParent(commonParentIdx);
+                    //logger.debug("structure: {}, child: {}, common parent: {}, object: {}, path: {}", this.structureIdx, structureIdx, commonParentIdx, commonParent, getExperiment().getPathToStructure(commonParentIdx, structureIdx));
+                    ArrayList<StructureObject> candidates = commonParent.getChildren(structureIdx);
+                    return StructureObjectUtils.getIncludedObjects(candidates, this);
                 } else return StructureObjectUtils.getAllObjects(this, path);
             }
         }else return res;

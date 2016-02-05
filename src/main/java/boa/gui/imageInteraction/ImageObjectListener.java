@@ -18,12 +18,14 @@
 package boa.gui.imageInteraction;
 
 import dataStructure.objects.StructureObject;
+import image.BoundingBox;
 import java.util.List;
+import utils.Pair;
 
 /**
  *
  * @author jollion
  */
 public interface ImageObjectListener {
-    public void fireObjectSelected(List<StructureObject> selectedObject, boolean addToSelection, boolean track);
+    public void fireObjectSelected(List<Pair<StructureObject, BoundingBox>> selectedObject, boolean addToSelection, boolean track);
 }

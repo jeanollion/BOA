@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import utils.Utils;
@@ -43,8 +44,7 @@ public class StructureObjectUtils {
         //logger.debug("getAllObjects: path to structure: length: {}, elements: {}", pathToStructure.length, pathToStructure);
         if (pathToStructure.length==0) return new ArrayList<StructureObject>(0);
         ArrayList<StructureObject> currentChildren;
-        currentChildren = new ArrayList<StructureObject>(referenceStructureObject.getChildren(pathToStructure[0]).size());
-        currentChildren.addAll(referenceStructureObject.getChildObjects(pathToStructure[0]));
+        currentChildren = new ArrayList<StructureObject>(referenceStructureObject.getChildren(pathToStructure[0]));
         //logger.debug("getAllObjects: current structure {} current number of objects: {}", pathToStructure[0], currentChildren.size());
         for (int i = 1; i<pathToStructure.length; ++i) {
             currentChildren = getAllChildren(currentChildren, pathToStructure[i]);
@@ -103,6 +103,13 @@ public class StructureObjectUtils {
         }
     }
     
+    public static ArrayList<StructureObject> getIncludedObjects(ArrayList<StructureObject> candidates, StructureObject container) {
+        ArrayList<StructureObject> res = new ArrayList<StructureObject>();
+        BoundingBox containerBox = container.getBounds();
+        for (StructureObject c : candidates) if (c.getBounds().isIncluded(containerBox)) res.add(c);
+        return res;
+    }
+    
     public static Object3D getInclusionParent(Object3D children, ArrayList<Object3D> parents, BoundingBox offset, BoundingBox offsetParent) {
         if (parents.isEmpty() || children==null) return null;
         Object3D currentParent=null;
@@ -121,6 +128,8 @@ public class StructureObjectUtils {
         }
         return currentParent;
     }
+    
+    
     
     public static int[] getIndexTree(StructureObject o) {
         if (o.isRoot()) return new int[0];

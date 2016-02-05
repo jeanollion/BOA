@@ -52,6 +52,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import utils.Pair;
 
 /**
  *
@@ -102,7 +103,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                     if (selection.getSizeX()==0 && selection.getSizeY()==0) selection=null;
                 }
                 if (selection!=null) {
-                    ArrayList<StructureObject> selectedObjects = new ArrayList<StructureObject>();
+                    ArrayList<Pair<StructureObject, BoundingBox>> selectedObjects = new ArrayList<Pair<StructureObject, BoundingBox>>();
                     i.addClickedObjects(selection, selectedObjects);
                     //logger.debug("selection: {}, number of objects: {}", selection, selectedObjects.size());
                     displayObjects(image, i, ctrl, selectedObjects);
@@ -116,11 +117,11 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                     
                     //logger.trace("mousepressed: x={}, y={} ctrl: {}", offscreenX, offscreenY, ctrl);
 
-                    StructureObject o = i.getClickedObject(offscreenX, offscreenY, ip.getSlice()-1);
-                    ArrayList<StructureObject> selectedObjects = new ArrayList<StructureObject>(1);
-                    selectedObjects.add(o);
+                    Pair<StructureObject, BoundingBox> o = i.getClickedObject(offscreenX, offscreenY, ip.getSlice()-1);
+                    ArrayList<Pair<StructureObject, BoundingBox>> selectedObjects = new ArrayList<Pair<StructureObject, BoundingBox>>(1);
+                    if (o!=null) selectedObjects.add(o);
                     displayObjects(image, i, ctrl, selectedObjects);
-                    logger.trace("selected object: "+o);
+                    //logger.trace("selected object: "+o);
                     if (listener!=null) listener.fireObjectSelected(selectedObjects, ctrl, i.isTimeImage());
                     
                 }
@@ -144,7 +145,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
     }*/
 
     @Override
-    public void displayObjects(Image image, ImageObjectInterface i, boolean addToCurrentSelection, List<StructureObject> objectsToDisplay) {
+    public void displayObjects(Image image, ImageObjectInterface i, boolean addToCurrentSelection, List<Pair<StructureObject, BoundingBox>> objectsToDisplay) {
         ImagePlus ip;
         if (image==null) ip = displayer.getCurrentImage();
         else ip = displayer.getImage(image);
@@ -165,10 +166,10 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                 overlay=ip.getOverlay();
                 if (!addToCurrentSelection) removeAllRois(overlay, false);
             } else overlay=new Overlay();
-            for (StructureObject o : objectsToDisplay) {
-                if (o==null) continue;
+            for (Pair<StructureObject, BoundingBox> p : objectsToDisplay) {
+                if (p==null || p.key==null) continue;
                 //logger.debug("getting mask of object: {}", o);
-                for (Roi r : getRoi(o.getMask(), i.getObjectOffset(o), !i.is2D).values()) {
+                for (Roi r : getRoi(p.key.getMask(), p.value, !i.is2D).values()) {
                     overlay.add(r);
                     logger.trace("add roi: "+r+ " of bounds : "+r.getBounds()+" to overlay");
                 }

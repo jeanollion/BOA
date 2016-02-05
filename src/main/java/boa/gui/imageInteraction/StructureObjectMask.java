@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import utils.Pair;
 
 /**
  *
@@ -77,23 +78,24 @@ public class StructureObjectMask extends ImageObjectInterface {
         }
     }
 
-    @Override public ArrayList<StructureObject> getObjects() {
-        if (objects == null) {
-            reloadObjects();
-        }
-        return objects;
+    @Override public ArrayList<Pair<StructureObject, BoundingBox>> getObjects() {
+        if (objects == null) reloadObjects();
+        ArrayList<Pair<StructureObject, BoundingBox>> res = new ArrayList<Pair<StructureObject, BoundingBox>>(objects.size());
+        for (int i = 0; i < offsets.length; ++i) res.add(new Pair(objects.get(i), offsets[i]));
+        return res;
     }
 
     @Override
-    public StructureObject getClickedObject(int x, int y, int z) {
+    public Pair<StructureObject, BoundingBox> getClickedObject(int x, int y, int z) {
+        if (objects == null) reloadObjects();
         if (is2D) {
             z = 0;
         }
         getOffsets();
         for (int i = 0; i < offsets.length; ++i) {
             if (offsets[i].contains(x, y, z)) {
-                if (getObjects().get(i).getMask().insideMask(x - offsets[i].getxMin(), y - offsets[i].getyMin(), z - offsets[i].getzMin())) {
-                    return objects.get(i);
+                if (objects.get(i).getMask().insideMask(x - offsets[i].getxMin(), y - offsets[i].getyMin(), z - offsets[i].getzMin())) {
+                    return new Pair(objects.get(i), offsets[i]);
                 }
             }
         }
@@ -101,10 +103,10 @@ public class StructureObjectMask extends ImageObjectInterface {
     }
     
     @Override
-    public void addClickedObjects(BoundingBox selection, List<StructureObject> list) {
+    public void addClickedObjects(BoundingBox selection, List<Pair<StructureObject, BoundingBox>> list) {
         if (is2D && selection.getSizeZ()>0) selection=new BoundingBox(selection.getxMin(), selection.getxMax(), selection.getyMin(), selection.getyMax(), 0, 0);
         getOffsets();
-        for (int i = 0; i < offsets.length; ++i) if (offsets[i].hasIntersection(selection)) list.add(getObjects().get(i));
+        for (int i = 0; i < offsets.length; ++i) if (offsets[i].hasIntersection(selection)) list.add(new Pair(objects.get(i), offsets[i]));
     }
 
     @Override
@@ -135,14 +137,16 @@ public class StructureObjectMask extends ImageObjectInterface {
 
     @Override
     public void draw(ImageInteger image) {
+        if (objects == null) reloadObjects();
         for (int i = 0; i < getOffsets().length; ++i) {
-            getObjects().get(i).getObject().drawWithoutObjectOffset(image, objects.get(i).getObject().getLabel(), offsets[i]);
+            objects.get(i).getObject().drawWithoutObjectOffset(image, objects.get(i).getObject().getLabel(), offsets[i]);
         }
     }
 
     public int getMaxLabel() {
+        if (objects == null) reloadObjects();
         int maxLabel = 0;
-        for (StructureObject o : getObjects()) {
+        for (StructureObject o : objects) {
             if (o.getObject().getLabel() > maxLabel) {
                 maxLabel = o.getObject().getLabel();
             }
