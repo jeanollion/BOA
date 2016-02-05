@@ -72,6 +72,10 @@ public class PreProcessingChain extends SimpleContainerParameter {
         return constantTransformations.getActivatedChildren();
     }
     
+    public void removeAllTransformations() {
+        constantTransformations.removeAllElements();
+    }
+    
     /**
      * 
      * @param inputChannel channel on which compute transformation parameters

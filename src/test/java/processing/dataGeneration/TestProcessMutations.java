@@ -60,7 +60,7 @@ public class TestProcessMutations {
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
-        t.testSegMutationsFromXP(8, 0, true, 230, 251); // beaucoup de spots flous ratés
+//        t.testSegMutationsFromXP(8, 0, true, 230, 251); // beaucoup de spots flous ratés
 //        t.testSegMutationsFromXP(8, 6, true, 1, 1);
 //        t.testSegMutationsFromXP(8, 0, true, 0, 35);
 //        t.testSegMutationsFromXP(8, 0, true, 151, 170); //spot intenses et faibles

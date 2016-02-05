@@ -35,22 +35,23 @@ import plugins.TransformationTimeIndependent;
 public class InputImage {
     MultipleImageContainer imageSources;
     ImageDAO dao;
-    int channelIdx, timePoint;
+    int channelIdx, timePoint, inputTimePoint;
     String microscopyFieldName;
     Image originalImageType;
     Image image;
-    boolean saveToDAO=true;
+    boolean intermediateImageSavedToDAO=false;
     ArrayList<Transformation> transformationsToApply;
     
-    public InputImage(int channelIdx, int timePoint, String microscopyFieldName, MultipleImageContainer imageSources, ImageDAO dao, boolean saveToDAO) {
+    public InputImage(int channelIdx, int timePoint, String microscopyFieldName, MultipleImageContainer imageSources, ImageDAO dao) {
         this.imageSources = imageSources;
         this.dao = dao;
         this.channelIdx = channelIdx;
         this.timePoint = timePoint;
+        this.inputTimePoint=timePoint;
         this.microscopyFieldName = microscopyFieldName;
-        this.saveToDAO=saveToDAO;
         transformationsToApply=new ArrayList<Transformation>();
     }
+    
     public void addTransformation(Transformation t) {
         transformationsToApply.add(t);
     }
@@ -59,23 +60,25 @@ public class InputImage {
         return imageSources.duplicate();
     }
     
-    public Image getImage(MultipleImageContainer container) {
+    
+    
+    /*public Image getImage(MultipleImageContainer container) {
         if (image == null) {
-            image = dao.openPreProcessedImage(channelIdx, timePoint, microscopyFieldName); //try to open from DAO
+            if (intermediateImageSavedToDAO) image = dao.openPreProcessedImage(channelIdx, timePoint, microscopyFieldName); //try to open from DAO
             if (image==null) {
-                image = container.getImage(timePoint, channelIdx);
+                image = container.getImage(inputTimePoint, channelIdx);
                 originalImageType = Image.createEmptyImage("source Type", image, new BlankMask("", 0, 0, 0));
             }
         }
         applyTransformations();
         return image;
-    } 
+    } */
     
     public Image getImage() {
         if (image == null) {
-            image = dao.openPreProcessedImage(channelIdx, timePoint, microscopyFieldName); //try to open from DAO
+            if (intermediateImageSavedToDAO) image = dao.openPreProcessedImage(channelIdx, timePoint, microscopyFieldName); //try to open from DAO
             if (image==null) {
-                image = imageSources.getImage(timePoint, channelIdx);
+                image = imageSources.getImage(inputTimePoint, channelIdx);
                 originalImageType = Image.createEmptyImage("source Type", image, new BlankMask("", 0, 0, 0));
             }
         }
@@ -98,11 +101,13 @@ public class InputImage {
     }
     
     public void closeImage() {
-        if (saveToDAO) {
-            // cast to initial type
-            if (originalImageType!=null) image = TypeConverter.cast(image, originalImageType);
-            dao.writePreProcessedImage(image, channelIdx, timePoint, microscopyFieldName);
-        }
+        // cast to initial type
+        if (originalImageType!=null) image = TypeConverter.cast(image, originalImageType);
+        dao.writePreProcessedImage(image, channelIdx, timePoint, microscopyFieldName);
         image=null;
+    }
+    
+    void setTimePoint(int timePoint) {
+        this.timePoint=timePoint;
     }
 }

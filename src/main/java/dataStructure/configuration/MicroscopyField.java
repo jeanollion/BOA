@@ -78,7 +78,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
             InputImage[][] res = new InputImage[images.getTimePointNumber()][images.getChannelNumber()];
             for (int t = 0; t<res.length; ++t) {
                for (int c = 0; c<res[0].length; ++c) {
-                   res[t][c] = new InputImage(c, t, name, images, dao, true);
+                   res[t][c] = new InputImage(c, t, name, images, dao);
                 } 
             }
             inputImages = new InputImagesImpl(res, Math.min(defaultTimePoint, images.getTimePointNumber()-1));

@@ -79,7 +79,6 @@ public class InputImagesImpl implements InputImages {
                 //long tStart = System.currentTimeMillis();
                 for (int c = 0; c<cCount; ++c) {
                     imageC[c].getImage();
-                    imageC[c].saveToDAO=true;
                     imageC[c].closeImage();
                 }
                 //long tEnd = System.currentTimeMillis();
@@ -122,10 +121,13 @@ public class InputImagesImpl implements InputImages {
         for (int t=tStart; t<=tEnd; ++t) {
             for (int c=0; c<imageTC[0].length; ++c) {
                 newImageTC[t-tStart][c] = imageTC[t][c];
+                imageTC[t][c].setTimePoint(t-tStart);
             }
         }
         if (this.defaultTimePoint<tStart) defaultTimePoint = 0;
-        if (this.defaultTimePoint>tEnd) defaultTimePoint = tEnd-tStart;
+        if (this.defaultTimePoint>tEnd-tStart) defaultTimePoint = tEnd-tStart;
+        logger.debug("default time Point: {}", defaultTimePoint);
         this.imageTC=newImageTC;
     }
+
 }

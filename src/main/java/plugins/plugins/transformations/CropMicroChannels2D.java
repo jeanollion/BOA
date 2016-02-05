@@ -45,7 +45,7 @@ import static utils.Utils.plotProfile;
  * @author jollion
  */
 public class CropMicroChannels2D implements TransformationTimeIndependent {
-    
+    public static boolean debug = false;
     ArrayList<Integer> configurationData=new ArrayList<Integer>(4); // xMin/xMax/yMin/yMax
     NumberParameter xStart = new NumberParameter("X start", 0, 0);
     NumberParameter xStop = new BoundedNumberParameter("X stop (0 for image width)", 0, 0, 0, null);
@@ -95,11 +95,12 @@ public class CropMicroChannels2D implements TransformationTimeIndependent {
         ImageFloat imProjX = new ImageFloat("proj(X)", image.getSizeX(), new float[][]{xProj});
         float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null);
         ImageFloat imProjY = new ImageFloat("proj(Y)", image.getSizeY(), new float[][]{yProj});
-        //plotProfile(imProjX, 0, 0, true);
-        //plotProfile(imProjY, 0, 0, true);
+        if (debug) plotProfile(imProjX, 0, 0, true);
+        if (debug) plotProfile(imProjY, 0, 0, true);
+        
         // get Y coords
         ImageInteger heightMask = threshold(imProjY, IJAutoThresholder.runThresholder(imProjY, null, AutoThresholder.Method.Triangle), true, false);
-        //plotProfile(heightMask, 0, 0, true);
+        if (debug) plotProfile(heightMask, 0, 0, true);
         Object3D[] objHeight = ImageLabeller.labelImage(heightMask);
         if (objHeight.length==0) return null;
         else if (objHeight.length==1) {
@@ -108,23 +109,23 @@ public class CropMicroChannels2D implements TransformationTimeIndependent {
             int idxMax = 0;
             for (int i = 1; i<objHeight.length;++i) if (objHeight[i].getBounds().getSizeX()>=objHeight[idxMax].getBounds().getSizeX()) idxMax=i;
             yStart = objHeight[idxMax].getBounds().getxMin();
-            //logger.trace("crop microchannels: yStart: {} idx of margin object: {}", yStart, idxMax);
+            if (debug) logger.debug("crop microchannels: yStart: {} idx of margin object: {}", yStart, idxMax);
         }
         // look for derivative maximum around new yStart:
         ImageFloat median = Filters.median(imProjY, new ImageFloat("", 0, 0, 0), new EllipsoidalNeighborhood(3, true));
         ImageFloat projDer = ImageFeatures.getDerivative(median, 1, 1, 0, 0, true);
-        //plotProfile(projDer, 0, 0, true);
+        if (debug) plotProfile(projDer, 0, 0, true);
         yStart = ArrayUtil.max(projDer.getPixelArray()[0], yStart-cropMargin, yStart+cropMargin);
         yStop = Math.min(yStop, yStart+channelHeight);
         yStart = Math.max(yStart-cropMargin, 0);
         
         // get X coords
-        ImageInteger widthMask = threshold(imProjX, IJAutoThresholder.runThresholder(imProjX, null, AutoThresholder.Method.Otsu), true, false);
-        //plotProfile(widthMask, 0, 0, true);
+        ImageInteger widthMask = threshold(imProjX, IJAutoThresholder.runThresholder(imProjX, null, AutoThresholder.Method.Triangle), true, false);
+        if (debug) plotProfile(widthMask, 0, 0, true);
         Object3D[] objWidth = ImageLabeller.labelImage(widthMask);
         median = Filters.median(imProjX, new ImageFloat("", 0, 0, 0), new EllipsoidalNeighborhood(3, true));
         projDer = ImageFeatures.getDerivative(median, 1, 1, 0, 0, true);
-        //plotProfile(projDer, 0, 0, true);
+        if (debug) plotProfile(projDer, 0, 0, true);
         if (objWidth.length==0) return null;
         else { 
             // get first object after xStart & margin
@@ -155,8 +156,8 @@ public class CropMicroChannels2D implements TransformationTimeIndependent {
             
             xStart=Math.max(0, maxDerStart-cropMargin);
             xStop=Math.min(xStop, maxDerStop+cropMargin);
-            logger.trace("crop microchannels: xStart: {} idx of margin object: {}, maxStart: {}, maxDerStart: {}", xStart, startObject, maxStart, maxDerStart);
-            logger.trace("crop microchannels: xStop: {} idx of margin object: {}, maxStop: {}, maxDerStop: {}", xStop, stopObject, maxStop, maxDerStop);
+            if (debug) logger.debug("crop microchannels: xStart: {} idx of margin object: {}, maxStart: {}, maxDerStart: {}", xStart, startObject, maxStart, maxDerStart);
+            if (debug) logger.debug("crop microchannels: xStop: {} idx of margin object: {}, maxStop: {}, maxDerStop: {}", xStop, stopObject, maxStop, maxDerStop);
         }
         return new BoundingBox(xStart, xStop, yStart, yStop, 0, image.getSizeZ()-1);
     }
