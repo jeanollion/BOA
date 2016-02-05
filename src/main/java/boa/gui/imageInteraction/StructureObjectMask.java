@@ -114,7 +114,8 @@ public class StructureObjectMask extends ImageObjectInterface {
         if (object == null) {
             return null;
         }
-        int i = getObjects().indexOf(object);
+        if (objects==null) reloadObjects();
+        int i = objects.indexOf(object);
         if (i >= 0) {
             return offsets[i];
         } else {
