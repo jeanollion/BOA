@@ -81,12 +81,6 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         this.cumCostLimit.setValue(cumulativeCostLimit);
     }
     
-    @Override public void assignPrevious(ArrayList<? extends StructureObjectTracker> previous, ArrayList<? extends StructureObjectTracker> next) {        
-
-    }
-    
-    
-
     public Parameter[] getParameters() {
         return parameters;
     }

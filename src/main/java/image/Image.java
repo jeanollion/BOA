@@ -118,7 +118,16 @@ public abstract class Image implements ImageProperties {
         return getPixelLinInterX(x, y, z, dx) * (1 - dy) + dy * getPixelLinInterX(x, y+1, z, dx);
     }
     public float getPixelLinInter(int x, int y, int z, float dx, float dy, float dz) {
+        if (this.getSizeZ()<=1 || dz==0) return getPixelLinInterXY(x, y, z, dx, dy);
         return getPixelLinInterXY(x, y, z, dx, dy) * (1 - dz) + dz * getPixelLinInterXY(x, y, z+1, dx, dy);
+    }
+    public float getPixel(double x, double y, double z) {
+        //return getPixel((int)x, (int)y, (int)z);
+        return getPixelLinInter((int)x, (int)y, (int)z, (float)(x-(int)x), (float)(y-(int)y), (float)(z-(int)z));
+    }
+    public float getPixelWithOffset(double x, double y, double z) {
+        //return getPixel((int)x, (int)y, (int)z);
+        return getPixelLinInter((int)x-offsetX, (int)y-offsetY, (int)z-offsetZ, (float)(x-(int)x), (float)(y-(int)y), (float)(z-(int)z));
     }
     public abstract float getPixel(int xz, int z);
     public abstract float getPixelWithOffset(int xy, int z);

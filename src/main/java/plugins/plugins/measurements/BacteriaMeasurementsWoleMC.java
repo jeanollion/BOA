@@ -122,6 +122,7 @@ public class BacteriaMeasurementsWoleMC implements Measurement {
             object.getMeasurements().setValue("M_MeanValue", BasicMeasurements.getMeanValue(mm.getObject(), bactImage, true));
             object.getMeasurements().setValue("M_Volume", GeometricalMeasurements.getVolume(mm.getObject()));
             t5 = System.currentTimeMillis();
+            
         }
         
         //o.resetOffset();

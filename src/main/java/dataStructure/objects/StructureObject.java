@@ -51,8 +51,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     // track-related attributes
     protected int timePoint;
+    //boolean isNextStored=false;
+    @Transient protected StructureObject next; //@Reference(lazyLoading=true, automaticStore=false)  
     @Reference(lazyLoading=true, automaticStore=false) protected StructureObject previous;
-    @Transient protected StructureObject next; // only available when whole track is retrieved
     protected ObjectId parentTrackHeadId, trackHeadId;
     @Transient protected StructureObject trackHead;
     protected boolean isTrackHead=true;
@@ -195,7 +196,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (!isRoot()) population.translate(getBounds());
         ArrayList<StructureObject> res = new ArrayList<StructureObject>(population.getObjects().size());
         childrenSM.set(res, structureIdx);
-        for (int i = 0; i<population.getObjects().size(); ++i) res.add(new StructureObject(timePoint, structureIdx, i, population.getObjects().get(i), this));
+        int i = 0;
+        for (Object3D o : population.getObjects()) res.add(new StructureObject(timePoint, structureIdx, i++, o, this));
         return res;
     }
     
@@ -288,6 +290,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             this.trackHeadId=null;
         }
     }
+    //public void setNextInTrack(StructureObject next, )
     @Override
     public void resetTrackLinks() {
         this.previous=null;
@@ -666,6 +669,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (child==null || child.size()==0) return new ObjectPopulation(new ArrayList<Object3D>(0), this.getMaskProperties());
         else {
             ArrayList<Object3D> objects = new ArrayList<Object3D>(child.size());
+            ... ici les children n'arrivent pas a accéder à l'expérience? pas la scale...
+            //logger.debug("getObjectPopulation: parent:: scale: {}, object scale: {}, object:: scale: {}, object scale: {}",  this.getMaskProperties().getScaleXY(), this.getObject().getScaleXY(), child.get(0).getMaskProperties().getScaleXY(), child.get(0).getObject().getScaleXY());
             for (StructureObject s : child) objects.add(s.getObject());
             return new ObjectPopulation(objects, this.getMaskProperties(), true);
         }

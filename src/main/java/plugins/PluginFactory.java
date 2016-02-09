@@ -85,6 +85,7 @@ public class PluginFactory {
                 assert !file.getName().contains(".");
                 classes.addAll(findClasses(file, packageName + "." + file.getName()));
             } else if (file.getName().endsWith(".class")) {
+                //logger.debug("class: {}, from package: {}", file, packageName);
                 classes.add(Class.forName(packageName + '.' + file.getName().substring(0, file.getName().length() - 6)));
             }
         }

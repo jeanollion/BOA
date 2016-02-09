@@ -172,7 +172,7 @@ public class TrackTreeGenerator {
                 Object lastO = p.getLastPathComponent();
                 if (lastO instanceof TrackNode) {
                     //ImageWindowManagerFactory.getImageManager().displayTrack(null, true, ((TrackNode)lastO).track, ImageWindowManager.palette[idx++%ImageWindowManager.palette.length]);
-                    ImageWindowManagerFactory.getImageManager().displayTrackAllImages(i, true, ((TrackNode)lastO).track, ImageWindowManager.palette[idx++%ImageWindowManager.palette.length]);
+                    ImageWindowManagerFactory.getImageManager().displayTrackAllImages(i, true, ((TrackNode)lastO).track, ImageWindowManager.getColor(idx++));
                 }
             }
         }

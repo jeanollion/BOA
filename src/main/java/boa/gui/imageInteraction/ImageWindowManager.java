@@ -44,6 +44,7 @@ import utils.Utils;
  */
 public abstract class ImageWindowManager<T> {
     public final static Color[] palette = new Color[]{new Color(166, 206, 227), new Color(31,120,180), new Color(178,223,138), new Color(51,160,44), new Color(251,154,153), new Color(253,191,111), new Color(255,127,0), new Color(255,255,153), new Color(177,89,40)};
+    public static Color getColor(int idx) {return palette[idx%palette.length];}
     protected final static Color trackErrorColor = new Color(255, 0, 0);
     protected final static Color trackCorrectionColor = new Color(0, 0, 255);
     final static int trackArrowStrokeWidth = 3;
@@ -192,13 +193,13 @@ public abstract class ImageWindowManager<T> {
     }
     public abstract void displayObjects(Image image, ImageObjectInterface i, boolean addToCurrentSelection, List<Pair<StructureObject, BoundingBox>> selectedObjects);
     public abstract void unselectObjects(Image image);
-    public abstract void displayTrack(Image image, boolean addToCurrentSelectedTracks, ArrayList<StructureObject> track, Color color);
+    public abstract void displayTrack(Image image, ImageObjectInterface i, boolean addToCurrentSelectedTracks, ArrayList<StructureObject> track, Color color);
     public void displayTrackAllImages(ImageObjectInterface i, boolean addToCurrentSelectedTracks, ArrayList<StructureObject> track, Color color) {
         if (i==null && track!=null && !track.isEmpty()) i = this.getImageObjectInterface(track.get(0).getTrackHead(), track.get(0).getStructureIdx(), false);
         if (i==null) return;
         ArrayList<Image> images= Utils.getKeys(this.imageObjectInterfaceMap, i.getKey().getKey(-1));
         //logger.debug("display track on {} images", images.size());
-        for (Image image : images) displayTrack(image, addToCurrentSelectedTracks, track, color);
+        for (Image image : images) displayTrack(image, i, addToCurrentSelectedTracks, track, color);
     }
     public void goToNextTrackError(Image trackImage, ArrayList<StructureObject> tracks) {
         //ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(tracks.get(0).getParent().getTrackHead(), tracks.get(0).getStructureIdx(), true));

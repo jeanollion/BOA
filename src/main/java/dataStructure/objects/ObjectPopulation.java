@@ -108,6 +108,7 @@ public class ObjectPopulation {
         }
         if (properties!=null) this.properties = new BlankMask("", properties);
         this.absoluteLandmark=absoluteLandmark;
+        for (Object3D o : objects) o.setIsAbsoluteLandmark(absoluteLandmark);
     }
     
     public ObjectPopulation duplicate() {

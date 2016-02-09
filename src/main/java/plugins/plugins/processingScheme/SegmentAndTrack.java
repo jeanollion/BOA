@@ -31,6 +31,7 @@ import plugins.TrackerSegmenter;
  * @author jollion
  */
 public class SegmentAndTrack implements ProcessingScheme {
+    int nThreads;
     PluginParameter<TrackerSegmenter> tracker = new PluginParameter<TrackerSegmenter>("Tracker", TrackerSegmenter.class, true);
     Parameter[] parameters= new Parameter[]{tracker};
     
@@ -48,17 +49,15 @@ public class SegmentAndTrack implements ProcessingScheme {
     public void trackOnly(int structureIdx, List<StructureObject> parentTrack) {
         TrackerSegmenter t = tracker.instanciatePlugin();
         t.track(structureIdx, parentTrack);
-        /*StructureObject prevParent = parentTrack.get(0);
-        StructureObject currentParent;
-        for (int i = 1; i<parentTrack.size(); ++i) {
-            currentParent = parentTrack.get(i);
-            t.assignPrevious(prevParent.getChildren(structureIdx), currentParent.getChildren(structureIdx));
-            prevParent = currentParent;
-        }*/
     }
 
     public Parameter[] getParameters() {
         return parameters;
     }
+
+    /*public int setThreadNumber(int numThreads) {
+        nThreads = numThreads;
+        return nThreads;
+    }*/
     
 }

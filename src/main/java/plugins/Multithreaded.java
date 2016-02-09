@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 jollion
+ * Copyright (C) 2016 jollion
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,14 +17,15 @@
  */
 package plugins;
 
-import dataStructure.objects.StructureObject;
-import java.util.List;
-
 /**
  *
  * @author jollion
  */
-public interface ProcessingScheme extends Plugin { //Multithreaded
-    public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack);
-    public void trackOnly(int structureIdx, List<StructureObject> parentTrack);
+public interface Multithreaded {
+    /**
+     * 
+     * @param numThreads number of threads available for the object
+     * @return the number of threads that it will actually use
+     */
+    public int setThreadNumber(int numThreads);
 }

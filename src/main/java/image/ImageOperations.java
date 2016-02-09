@@ -122,17 +122,17 @@ public class ImageOperations {
         if (source.getSizeX()+offset.xMin>dest.sizeX || source.getSizeY()+offset.yMin>dest.sizeY || source.getSizeZ()+offset.zMin>dest.sizeZ) throw new IllegalArgumentException("Paste Image: source does not fit in destination");
         Object[] sourceP = source.getPixelArray();
         Object[] destP = dest.getPixelArray();
-        final int offFinal = dest.sizeX*offset.yMin+offset.xMin;
-        int off=offFinal;
+        final int offDestFinal = dest.sizeX*offset.yMin+offset.xMin;
+        int offDest=offDestFinal;
         int offSource = 0;
         for (int z = 0; z<source.sizeZ; ++z) {
             for (int y = 0 ; y<source.sizeY; ++y) {
                 //logger.debug("paste imate: z source: {}, z dest: {}, y source: {} y dest: {} off source: {} off dest: {} size source: {} size dest: {}", z, z+offset.zMin, y, y+offset.yMin, offSource, off, ((byte[])sourceP[z]).length, ((byte[])destP[z+offset.zMin]).length);
-                System.arraycopy(sourceP[z], offSource, destP[z+offset.zMin], off, source.sizeX);
-                off+=dest.sizeX;
+                System.arraycopy(sourceP[z], offSource, destP[z+offset.zMin], offDest, source.sizeX);
+                offDest+=dest.sizeX;
                 offSource+=source.sizeX;
             }
-            off=offFinal;
+            offDest=offDestFinal;
             offSource=0;
         }
     }

@@ -179,7 +179,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
     }
     
     @Override
-    public void displayTrack(Image image, boolean addToCurrentSelectedTracks, ArrayList<StructureObject> track, Color color) {
+    public void displayTrack(Image image, ImageObjectInterface i, boolean addToCurrentSelectedTracks, ArrayList<StructureObject> track, Color color) {
         //logger.debug("display selected track: image: {}, addToCurrentTracks: {}, track length: {} color: {}", image,addToCurrentSelectedTracks, track==null?"null":track.size(), color);
         ImagePlus ip;
         if (image==null) {
@@ -199,8 +199,15 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
             }
             return;
         }
-        ImageObjectInterface i = getImageObjectInterface(image);
-        if (i instanceof TrackMask && ((TrackMask)i).parent.getTrackHead().equals(track.get(0).getParent().getTrackHead())) {
+        if (i==null) i = getImageObjectInterface(image);
+        boolean canDisplayTrack = i instanceof TrackMask;
+        if (canDisplayTrack) canDisplayTrack = ((TrackMask)i).parent.getTrackHead().equals(track.get(0).getParent().getTrackHead()); // same track head
+        if (canDisplayTrack) {
+            TrackMask tm = (TrackMask)i;
+            canDisplayTrack = track.get(0).getTimePoint()>=tm.parentTrack.get(0).getTimePoint() 
+                    && track.get(track.size()-1).getTimePoint()<=tm.parentTrack.get(tm.parentTrack.size()-1).getTimePoint();
+        }
+        if (canDisplayTrack) { 
             if (i.getKey().childStructureIdx!=track.get(0).getStructureIdx()) i = super.imageObjectInterfaces.get(i.getKey().getKey(track.get(0).getStructureIdx()));
             TrackMask tm = (TrackMask)i;
             Overlay overlay;
@@ -229,7 +236,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                 if (zMin==zMax) {
                     if (!i.is2D) arrow.setPosition(zMin+1);
                     overlay.add(arrow);
-                    logger.trace("add arrow: {}", arrow);
+                    //logger.debug("add arrow: {}", arrow);
                 } else {
                     // TODO debug
                     //logger.error("Display Track error. objects: {} & {} bounds: {} & {}, image bounds: {} & {}", o1, o2, o1.getBounds(), o2.getBounds(), b1, b2);
@@ -243,7 +250,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                         Arrow dup = (Arrow)arrow.clone();
                         dup.setPosition(z+1);
                         overlay.add(dup);
-                        logger.debug("add arrow (z): {}", arrow);
+                        //logger.debug("add arrow (z): {}", arrow);
                     }
                 }
             }

@@ -46,16 +46,9 @@ public class SegmentThenTrack implements ProcessingScheme {
     public Tracker getTracker() {return tracker.instanciatePlugin();}
     
     public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack) {
-        StructureObject prevParent = parentTrack.get(0);
-        StructureObject currentParent;
-        segment(prevParent, structureIdx);
+        for (StructureObject parent : parentTrack) segment(parent, structureIdx);
         Tracker t = tracker.instanciatePlugin();
-        for (int i = 1; i<parentTrack.size(); ++i) {
-            currentParent = parentTrack.get(i);
-            segment(currentParent, structureIdx);
-            t.assignPrevious(prevParent.getChildren(structureIdx), currentParent.getChildren(structureIdx));
-            prevParent = currentParent;
-        }
+        t.track(structureIdx, parentTrack);
     }
     
     private void segment(StructureObject parent, int structureIdx) {
@@ -66,13 +59,7 @@ public class SegmentThenTrack implements ProcessingScheme {
 
     public void trackOnly(final int structureIdx, List<StructureObject> parentTrack) {
         Tracker t = tracker.instanciatePlugin();
-        StructureObject prevParent = parentTrack.get(0);
-        StructureObject currentParent;
-        for (int i = 1; i<parentTrack.size(); ++i) {
-            currentParent = parentTrack.get(i);
-            t.assignPrevious(prevParent.getChildren(structureIdx), currentParent.getChildren(structureIdx));
-            prevParent = currentParent;
-        }
+        t.track(structureIdx, parentTrack);
     }
 
     public Parameter[] getParameters() {

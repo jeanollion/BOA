@@ -49,7 +49,7 @@ public class ClosedMicrochannelTracker implements Tracker {
         divCriterion.setValue(divisionCriterion);
     } 
     
-    @Override public void assignPrevious(ArrayList<? extends StructureObjectTracker> previous, ArrayList<? extends StructureObjectTracker> next) {        
+    private void assignPrevious(ArrayList<? extends StructureObjectTracker> previous, ArrayList<? extends StructureObjectTracker> next) {        
         // sort by y order
         Collections.sort(previous, getComparator(ObjectIdxTracker.IndexingOrder.YXZ));
         Collections.sort(next, getComparator(ObjectIdxTracker.IndexingOrder.YXZ));
@@ -113,7 +113,11 @@ public class ClosedMicrochannelTracker implements Tracker {
     }
 
     public void track(int structureIdx, List<StructureObject> parentTrack) {
-        
+        StructureObject prevParent = null;
+        for (StructureObject parent : parentTrack) {
+            if (prevParent!=null) assignPrevious(prevParent.getChildObjects(structureIdx), parent.getChildObjects(structureIdx));
+            prevParent=parent;
+        }
     }
 
     

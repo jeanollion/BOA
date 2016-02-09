@@ -28,10 +28,4 @@ import java.util.List;
  */
 public interface Tracker extends Plugin {
     public void track(int structureIdx, List<StructureObject> parentTrack);
-    /**
-     * assign {@param previous} to {@param next} using the method {@link StructureObjectAbstract#setParentTrack(dataStructure.objects.Track, boolean) }
-     * @param previous objects that share a given parent object
-     * @param next objects that share a given parent object that is the next object of the parent of the {@param previous} objects
-     */
-    public void assignPrevious(ArrayList<? extends StructureObjectTracker> previous, ArrayList<? extends StructureObjectTracker> next);
 }

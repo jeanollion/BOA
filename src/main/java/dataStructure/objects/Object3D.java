@@ -37,6 +37,7 @@ public class Object3D {
     protected int label;
     protected ArrayList<Voxel> voxels; //lazy -> use getter // coordonnées des voxel -> par rapport au root
     protected float scaleXY=1, scaleZ=1;
+    protected boolean absoluteLandmark=false;
     /**
      * Voxel
      * @param mask : image containing only the object, and whose bounding box is the same as the one of the object
@@ -58,6 +59,15 @@ public class Object3D {
         this.voxels=voxels;
         this.label=label;
         this.bounds=bounds;
+    }
+    
+    public Object3D setIsAbsoluteLandmark(boolean absoluteLandmark) {
+        this.absoluteLandmark = absoluteLandmark;
+        return this;
+    }
+    
+    public boolean isAbsoluteLandMark() {
+        return absoluteLandmark;
     }
     
     public Object3D duplicate() {
@@ -83,6 +93,11 @@ public class Object3D {
         return scaleZ;
     }
     
+    public int getSize() {
+        if (this.voxelsCreated()) return voxels.size();
+        else return mask.count();
+    }
+    
     public double[] getCenter() {
         double[] center = new double[3];
         for (Voxel v : getVoxels()) {
@@ -101,7 +116,7 @@ public class Object3D {
         double count = 0;
         double value;
         for (Voxel v : getVoxels()) {
-            value = image.getPixel(v.x, v.y, v.z);
+            value = this.absoluteLandmark ? image.getPixelWithOffset(v.x, v.y, v.z) : image.getPixel(v.x, v.y, v.z);
             center[0] += v.x * value;
             center[1] += v.y * value;
             center[2] += v.z * value;
@@ -235,7 +250,7 @@ public class Object3D {
         if (!this.getBounds().hasIntersection(other.getBounds())) return Collections.emptySet();
         else return Sets.intersection(Sets.newHashSet(getVoxels()), Sets.newHashSet(other.getVoxels()));
     }
-    
+    /*
     // TODO faire une methode plus optimisée qui utilise les masques uniquement
     public int getIntersectionCountMask(Object3D other, BoundingBox offset) {
         if (offset==null) offset=new BoundingBox(0, 0, 0);
@@ -251,7 +266,7 @@ public class Object3D {
             }
             return count;
         }
-    }
+    }*/
     /**
      * 
      * @param other
