@@ -31,10 +31,11 @@ import plugins.plugins.trackers.trackMate.SpotWrapper;
  * @author jollion
  */
 public class LAPTracker implements Tracker {
+    static int compartimentStructureIdx = 1;
     public void track(int structureIdx, List<StructureObject> parentTrack) {
         SpotWrapper spotCollection = new SpotWrapper();
         for (StructureObject p : parentTrack) {
-            spotCollection.addSpots(p.getObjectPopulation(structureIdx), p.getRawImage(structureIdx), p.getTimePoint(), p.getBounds());
+            spotCollection.addSpots(p, structureIdx, compartimentStructureIdx);
         }
         LAPTrackerCore core = new LAPTrackerCore(spotCollection.getSpotCollection());
         boolean processOk = core.process();

@@ -129,6 +129,25 @@ public class StructureObjectUtils {
         return currentParent;
     }
     
+    public static StructureObject getInclusionParent(Object3D children, ArrayList<StructureObject> parents, BoundingBox offset) {
+        if (parents.isEmpty() || children==null) return null;
+        StructureObject currentParent=null;
+        int currentIntersection=-1;
+        for (StructureObject p : parents) {
+            int inter = children.getIntersectionCountMaskMask(p.getObject(), offset, null);
+            if (inter>0) {
+                if (currentParent==null) {
+                    currentParent = p;
+                    currentIntersection = inter;
+                } else if (inter>currentIntersection) { // in case of conflict: keep parent that intersect most
+                    currentIntersection=inter;
+                    currentParent=p;
+                }
+            }
+        }
+        return currentParent;
+    }
+    
     
     
     public static int[] getIndexTree(StructureObject o) {

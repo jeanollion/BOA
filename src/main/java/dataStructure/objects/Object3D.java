@@ -37,7 +37,7 @@ public class Object3D {
     protected int label;
     protected ArrayList<Voxel> voxels; //lazy -> use getter // coordonnées des voxel -> par rapport au root
     protected float scaleXY=1, scaleZ=1;
-    protected boolean absoluteLandmark=false;
+    protected boolean absoluteLandmark=false; // flase = coordinates relative to the direct parent
     /**
      * Voxel
      * @param mask : image containing only the object, and whose bounding box is the same as the one of the object
@@ -53,11 +53,12 @@ public class Object3D {
     public Object3D(ArrayList<Voxel> voxels, int label, float scaleXY, float scaleZ) {
         this.voxels=voxels;
         this.label=label;
+        this.scaleXY=scaleXY;
+        this.scaleZ=scaleXY;
     }
     
     public Object3D(ArrayList<Voxel> voxels, int label, BoundingBox bounds, float scaleXY, float scaleZ) {
-        this.voxels=voxels;
-        this.label=label;
+        this(voxels, label, scaleXY, scaleZ);
         this.bounds=bounds;
     }
     
@@ -98,7 +99,7 @@ public class Object3D {
         else return mask.count();
     }
     
-    public double[] getCenter() {
+    public double[] getCenter(boolean scaled) {
         double[] center = new double[3];
         for (Voxel v : getVoxels()) {
             center[0] += v.x;
@@ -109,9 +110,14 @@ public class Object3D {
         center[0]/=count;
         center[1]/=count;
         center[2]/=count;
+        if (scaled) {
+            center[0] *=this.getScaleXY();
+            center[1] *=this.getScaleXY();
+            center[2] *=this.getScaleZ();
+        }
         return center;
     }
-    public double[] getCenter(Image image) {
+    public double[] getCenter(Image image, boolean scaled) {
         double[] center = new double[3];
         double count = 0;
         double value;
@@ -125,6 +131,11 @@ public class Object3D {
         center[0]/=count;
         center[1]/=count;
         center[2]/=count;
+        if (scaled) {
+            center[0] *=this.getScaleXY();
+            center[1] *=this.getScaleXY();
+            center[2] *=this.getScaleZ();
+        }
         return center;
     }
     

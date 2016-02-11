@@ -48,8 +48,8 @@ public class MicroChannelBacteriaTrackCorrector implements TrackCorrector {
     }
 
     public static StructureObjectTrackCorrection performCorrection(StructureObjectTrackCorrection error, ObjectSplitter splitter, boolean correctAmbiguousCases, boolean overSegmentationInAmbiguousCases, ArrayList<StructureObjectTrackCorrection> modifiedObjects) {
-        ArrayList<StructureObjectTrackCorrection> prevSiblings = error.getPreviousDivisionSiblings();
-            ArrayList<StructureObjectTrackCorrection> nextSiblings = error.getNextDivisionSiblings();
+        ArrayList<StructureObject> prevSiblings = error.getPreviousDivisionSiblings();
+            ArrayList<StructureObject> nextSiblings = error.getNextDivisionSiblings();
             int tDivPrev = prevSiblings!=null? prevSiblings.get(0).getTimePoint() : 0;
             int tDivNext = nextSiblings!=null?nextSiblings.get(0).getTimePoint() : getMaxTimePoint(error)+1;
             int tError = error.getTimePoint();

@@ -54,8 +54,8 @@ public class LAPTrackerCore {
     long processingTime;
     
     // FTF settings
-    double linkingMaxDistance = 20;
-    double alternativeLinkingCostFactor = 10;
+    double linkingMaxDistance = 1.5;
+    double alternativeLinkingCostFactor = 1.05;
     //double linkingFeaturesPenalities;
     
     public LAPTrackerCore(SpotCollection spots) {

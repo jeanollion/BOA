@@ -18,6 +18,7 @@
 package dataStructure.containers;
 
 import dataStructure.objects.Object3D;
+import static dataStructure.objects.Object3D.logger;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
 import de.caluga.morphium.annotations.Embedded;
@@ -94,6 +95,7 @@ public class ObjectContainerVoxels extends ObjectContainer {
     }
 
     public Object3D getObject() {
+        //logger.debug("creating object for: {}, scale: {}", structureObject, structureObject.getScaleXY());
         return new Object3D(getVoxels(), structureObject.getIdx() + 1, bounds, structureObject.getScaleXY(), structureObject.getScaleZ());
     }
 

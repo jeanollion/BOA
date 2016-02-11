@@ -50,7 +50,6 @@ import java.util.TreeMap;
  */
 @Embedded(polymorph = true)
 public class ObjectContainerIjRoi extends ObjectContainer {
-    //@Transient HashMap<Integer, Roi> roiZTemp;
     ArrayList<byte[]> roiZ;
     
     public ObjectContainerIjRoi(StructureObject structureObject) {
@@ -93,6 +92,7 @@ public class ObjectContainerIjRoi extends ObjectContainer {
             ++z;
         }
         ImageByte res = (ImageByte) IJImageWrapper.wrap(new ImagePlus("MASK", stack));
+        //logger.debug("creating object for: {}, scale: {}", structureObject, structureObject.getScaleXY());
         res.setCalibration(bounds.getImageProperties(structureObject.getScaleXY(), structureObject.getScaleZ())).addOffset(bounds);
         return res;
     }

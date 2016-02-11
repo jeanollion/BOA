@@ -48,10 +48,10 @@ public class GeometricalMeasurements {
     }
     
     public static double getDistance(Object3D o1, Object3D o2) {
-        return getDistance(o1.getCenter(), o2.getCenter(), o1.getScaleXY(), o1.getScaleZ());
+        return getDistance(o1.getCenter(false), o2.getCenter(false), o1.getScaleXY(), o1.getScaleZ());
     }
     public static double getDistance(Object3D o1, Object3D o2, Image im1, Image im2) {
-        return getDistance(o1.getCenter(im1), o2.getCenter(im2), o1.getScaleXY(), o1.getScaleZ());
+        return getDistance(o1.getCenter(im1, false), o2.getCenter(im2, false), o1.getScaleXY(), o1.getScaleZ());
     }
     
     public static double getDistance(double[] c1, double[] c2, double scaleXY, double scaleZ) {

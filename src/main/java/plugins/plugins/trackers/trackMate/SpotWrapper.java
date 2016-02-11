@@ -20,6 +20,7 @@ package plugins.plugins.trackers.trackMate;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectUtils;
 import fiji.plugin.trackmate.Spot;
 import fiji.plugin.trackmate.SpotCollection;
 import image.BoundingBox;
@@ -42,52 +43,24 @@ import static plugins.Plugin.logger;
  * @author jollion
  */
 public class SpotWrapper {
-    private final HashMap<Spot, Object3D>  spotObjectMap = new HashMap<Spot, Object3D>();
-    private final HashMap<Object3D, Spot>  objectSpotMap = new HashMap<Object3D, Spot>();
+    private final HashMap<StructureObject, SpotWithinCompartment>  objectSpotMap = new HashMap<StructureObject, SpotWithinCompartment>();
     private final SpotCollection collection = new SpotCollection();
-    /**
-     * 
-     * @param segmentedRegion
-     * @param center in voxels number
-     * @param quality
-     * @param timePoint
-     * @param centerOffset
-     * @return 
-     */
-    public Spot wrap(Object3D segmentedRegion, double[] center, double quality, int timePoint, BoundingBox centerOffset) {
-        if (centerOffset!=null) {
-            center[0]-=centerOffset.getxMin();
-            center[1]-=centerOffset.getyMin();
-            center[2]-=centerOffset.getzMin();
-        }
-        center[0] *= segmentedRegion.getScaleXY();
-        center[1] *= segmentedRegion.getScaleXY();
-        center[2] *= segmentedRegion.getScaleZ();
-        double radius = segmentedRegion.is3D() ? Math.pow(3 * segmentedRegion.getSize() / (4 * Math.PI) , 1d/3d) : Math.sqrt(segmentedRegion.getSize() / (2 * Math.PI)) ;
-        Spot s = new Spot(center[0], center[1], center[2], radius, quality);
-        s.getFeatures().put(Spot.FRAME, (double)timePoint);
-        spotObjectMap.put(s, segmentedRegion);
-        objectSpotMap.put(segmentedRegion, s);
-        logger.debug("adding: spot: center: {}, radius: {}, quality: {}, timePoint:{}", center, radius, quality, timePoint);
-        return s;
-    }
-    public Spot wrap(Object3D segmentedRegion, int timePoint, Image intensityMap, BoundingBox centerOffset) {
-        double[] center = intensityMap!=null ? segmentedRegion.getCenter(intensityMap) : segmentedRegion.getCenter();
-        double quality = intensityMap!=null ? segmentedRegion.isAbsoluteLandMark() ? intensityMap.getPixelWithOffset(center[0], center[1], center[2]) : intensityMap.getPixel(center[0], center[1], center[2]) : 1;
-        return wrap(segmentedRegion, center, quality, timePoint, centerOffset);
-    }
-    public Object3D get(Spot spot) {
-        return spotObjectMap.get(spot);
-    }
-    
+        
     public SpotCollection getSpotCollection() {
         return this.collection;
     }
     
-    public void addSpots(ObjectPopulation population, Image intensityMap, int timePoint, BoundingBox centerOffset) {
-        logger.debug("adding: {} spots from timePoint: {}", population.getObjects().size(), timePoint);
-        for (Object3D s : population.getObjects()) {
-            collection.add(this.wrap(s, timePoint, intensityMap, centerOffset), timePoint);
+    public void addSpots(StructureObject container, int spotSturctureIdx, int compartmentStructureIdx) {
+        ObjectPopulation population = container.getObjectPopulation(spotSturctureIdx);
+        ArrayList<StructureObject> compartments = container.getChildren(compartmentStructureIdx);
+        Image intensityMap = container.getRawImage(spotSturctureIdx);
+        logger.debug("adding: {} spots from timePoint: {}", population.getObjects().size(), container.getTimePoint());
+        for (StructureObject o : container.getChildObjects(spotSturctureIdx)) {
+            StructureObject parent = StructureObjectUtils.getInclusionParent(o.getObject(), compartments, null);
+            double[] center = intensityMap!=null ? o.getObject().getCenter(intensityMap, true) : o.getObject().getCenter(true);
+            SpotWithinCompartment s = new SpotWithinCompartment(o, parent, center);
+            collection.add(s, container.getTimePoint());
+            objectSpotMap.put(o, s);
         }
     }
     
@@ -101,12 +74,12 @@ public class SpotWrapper {
         for (StructureObject parent : parentTrack) {
             for (StructureObject child : parent.getChildren(structureIdx)) {
                 logger.debug("settings links for: {}", child);
-                Spot s = objectSpotMap.get(child.getObject());
+                SpotWithinCompartment s = objectSpotMap.get(child);
                 TreeSet<DefaultWeightedEdge> nextEdges = getSortedEdgesOf(s, graph, false);
                 if (nextEdges!=null && !nextEdges.isEmpty()) {
                     DefaultWeightedEdge nextEdge = nextEdges.last();
                     for (DefaultWeightedEdge e : nextEdges) {
-                        Spot nextSpot = getOtherSpot(e, s, graph);
+                        SpotWithinCompartment nextSpot = getOtherSpot(e, s, graph);
                         StructureObject nextSo = getStructureObject(parentT.get(nextSpot.getFeature(Spot.FRAME).intValue()), structureIdx, nextSpot);
                         if (nextSo.getPrevious()==null) nextSo.setPreviousInTrack(child, e!=nextEdge);
                         else logger.warn("SpotWrapper: next: {}, next of {}, has already a previous assigned: {}", nextSo, child, nextSo.getPrevious());
@@ -116,7 +89,7 @@ public class SpotWrapper {
         }
     }
     
-    private static TreeSet<DefaultWeightedEdge> getSortedEdgesOf(Spot spot, final SimpleWeightedGraph< Spot, DefaultWeightedEdge > graph, boolean backward) {
+    private static TreeSet<DefaultWeightedEdge> getSortedEdgesOf(SpotWithinCompartment spot, final SimpleWeightedGraph< Spot, DefaultWeightedEdge > graph, boolean backward) {
         if (!graph.containsVertex(spot)) return null;
         Set<DefaultWeightedEdge> set = graph.edgesOf(spot);
         if (set.isEmpty()) return null;
@@ -139,12 +112,12 @@ public class SpotWrapper {
         }
         return res;
     }
-    private static Spot getMaxLinkedSpot(Spot spot, final SimpleWeightedGraph< Spot, DefaultWeightedEdge > graph, boolean backward) {
+    private static SpotWithinCompartment getMaxLinkedSpot(SpotWithinCompartment spot, final SimpleWeightedGraph< Spot, DefaultWeightedEdge > graph, boolean backward) {
         Set<DefaultWeightedEdge> set = graph.edgesOf(spot);
         if (set.isEmpty()) return null;
         double max = -Double.MAX_VALUE;
-        Spot maxSpot = null;
-        Spot temp;
+        SpotWithinCompartment maxSpot = null;
+        SpotWithinCompartment temp;
         double tempT, tempV;
         // remove backward or foreward links
         double tp = spot.getFeature(Spot.FRAME);
@@ -164,15 +137,15 @@ public class SpotWrapper {
         return maxSpot;
     }
     
-    private static Spot getOtherSpot(DefaultWeightedEdge e, Spot spot, SimpleWeightedGraph< Spot, DefaultWeightedEdge > graph ) {
-        Spot s = graph.getEdgeTarget(e);
-        if (s==spot) return graph.getEdgeSource(e);
+    private static SpotWithinCompartment getOtherSpot(DefaultWeightedEdge e, SpotWithinCompartment spot, SimpleWeightedGraph< Spot, DefaultWeightedEdge > graph ) {
+        SpotWithinCompartment s = (SpotWithinCompartment)graph.getEdgeTarget(e);
+        if (s==spot) return (SpotWithinCompartment)graph.getEdgeSource(e);
         else return s;
     }
     
-    private StructureObject getStructureObject(StructureObject parent, int structureIdx, Spot s) {
+    private StructureObject getStructureObject(StructureObject parent, int structureIdx, SpotWithinCompartment s) {
         ArrayList<StructureObject> children = parent.getChildren(structureIdx);
-        Object3D o = this.spotObjectMap.get(s);
+        Object3D o = s.object.getObject();
         for (StructureObject c : children) if (c.getObject() == o) return c;
         return null;
     }

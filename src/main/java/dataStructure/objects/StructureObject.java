@@ -276,7 +276,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
      * @param flag flag, can be null
      */
     @Override public void setPreviousInTrack(StructureObjectTracker previous, boolean isTrackHead, TrackFlag flag) {
-        if (((StructureObject)previous).getTimePoint()!=this.getTimePoint()-1) throw new RuntimeException("setPrevious in track should be of time: "+(timePoint-1) +" but is: "+((StructureObject)previous).getTimePoint());
+        if (((StructureObject)previous).getTimePoint()>=this.getTimePoint()) throw new RuntimeException("setPrevious in track should be of time: "+(timePoint-1) +" but is: "+((StructureObject)previous).getTimePoint());
         this.previous=(StructureObject)previous;
         if (flag!=null) this.flag=flag;
         if (!isTrackHead) {
@@ -397,8 +397,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
      * 
      * @return a list containing the sibling (structureObjects that have the same previous object) at the next division, null if there are no siblings. If there are siblings, the first object of the list is contained in the track.
      */
-    public ArrayList<StructureObjectTrackCorrection> getNextDivisionSiblings() {
-        ArrayList<StructureObjectTrackCorrection> res= null;
+    public ArrayList<StructureObject> getNextDivisionSiblings() {
+        ArrayList<StructureObject> res= null;
         StructureObject nextDiv = this;
         while(nextDiv.getNext()!=null && res==null) {
             nextDiv = nextDiv.getNext();
@@ -412,8 +412,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
      * 
      * @return a list containing the sibling (structureObjects that have the same previous object) at the previous division, null if there are no siblings. If there are siblings, the first object of the list is contained in the track.
      */
-    public ArrayList<StructureObjectTrackCorrection> getPreviousDivisionSiblings() {
-        ArrayList<StructureObjectTrackCorrection> res= null;
+    public ArrayList<StructureObject> getPreviousDivisionSiblings() {
+        ArrayList<StructureObject> res= null;
         StructureObject prevDiv = this;
         while(prevDiv.getPrevious()!=null && res==null) {
             prevDiv = prevDiv.getPrevious();
@@ -423,15 +423,15 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return res;
     }
     
-    private ArrayList<StructureObjectTrackCorrection> getDivisionSiblings() {
-        ArrayList<StructureObjectTrackCorrection> res=null;
-        ArrayList<? extends StructureObject> siblings = getSiblings();
+    public ArrayList<StructureObject> getDivisionSiblings() {
+        ArrayList<StructureObject> res=null;
+        ArrayList<StructureObject> siblings = getSiblings();
         //logger.trace("get div siblings: timePoint: {}, number of siblings: {}", this.getTimePoint(), siblings.size());
         if (this.getPrevious()!=null) {
             for (StructureObject o : siblings) {
                 if (o!=this) {
                     if (o.getPrevious()==this.getPrevious()) {
-                        if (res==null) res = new ArrayList<StructureObjectTrackCorrection>(siblings.size());
+                        if (res==null) res = new ArrayList<StructureObject>(siblings.size());
                         res.add(o);
                     }
                 } 
@@ -450,7 +450,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 }
             }
             if (min!=null) {
-                res = new ArrayList<StructureObjectTrackCorrection>(2);
+                res = new ArrayList<StructureObject>(2);
                 res.add(min);
             }
             //logger.trace("get div siblings: previous null, get spatially closest, divSiblings: {}", res==null?"null":res.size());
@@ -669,8 +669,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (child==null || child.size()==0) return new ObjectPopulation(new ArrayList<Object3D>(0), this.getMaskProperties());
         else {
             ArrayList<Object3D> objects = new ArrayList<Object3D>(child.size());
-            ... ici les children n'arrivent pas a accéder à l'expérience? pas la scale...
-            //logger.debug("getObjectPopulation: parent:: scale: {}, object scale: {}, object:: scale: {}, object scale: {}",  this.getMaskProperties().getScaleXY(), this.getObject().getScaleXY(), child.get(0).getMaskProperties().getScaleXY(), child.get(0).getObject().getScaleXY());
             for (StructureObject s : child) objects.add(s.getObject());
             return new ObjectPopulation(objects, this.getMaskProperties(), true);
         }

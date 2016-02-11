@@ -152,7 +152,7 @@ public class GaussianFit {
                 ar = sx / sy; 
         }
         //logger.debug("gaussian fit on seed: {}; center: {}, x: {}, y: {}, I: {}, sigmaX: {}, sigmaY: {}, error: {}", o.getLabel(), o.getCenter(),x, y, Ar, sx, sy, error);
-        logger.debug("gaussian fit on seed: {}; center: {}, sigmaX: {}, error: {}", o.getLabel(), o.getCenter(), sx, error);
+        logger.debug("gaussian fit on seed: {}; center: {}, sigmaX: {}, error: {}", o.getLabel(), o.getCenter(false), sx, error);
         return new EllipseRoi(x1, y1, x2, y2, ar);
     }
 }

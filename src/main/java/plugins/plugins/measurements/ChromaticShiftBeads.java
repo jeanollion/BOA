@@ -77,8 +77,8 @@ public class ChromaticShiftBeads implements Measurement{
                 }
             }
             if (closest !=null) {
-                double[] c1 = o1.getObject().getCenter(object.getRawImage(structure.getSelectedIndex()));
-                double[] c2 = closest.getObject().getCenter(object.getRawImage(structure2.getSelectedIndex()));
+                double[] c1 = o1.getObject().getCenter(object.getRawImage(structure.getSelectedIndex()), false);
+                double[] c2 = closest.getObject().getCenter(object.getRawImage(structure2.getSelectedIndex()), false);
                 o1.getMeasurements().setValue("dX", c2[0]-c1[0]);
                 o1.getMeasurements().setValue("dY", c2[1]-c1[1]);
                 o1.getMeasurements().setValue("dZ", c2[2]-c1[2]);
