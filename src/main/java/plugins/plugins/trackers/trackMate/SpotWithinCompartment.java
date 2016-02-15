@@ -21,7 +21,11 @@ import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
 import fiji.plugin.trackmate.Spot;
 import image.Image;
+import image.ImageMask;
 import java.util.ArrayList;
+import java.util.Collections;
+import plugins.plugins.trackers.ObjectIdxTracker;
+import static plugins.plugins.trackers.ObjectIdxTracker.getComparator;
 
 /**
  *
@@ -29,18 +33,17 @@ import java.util.ArrayList;
  */
 public class SpotWithinCompartment extends Spot {
     protected StructureObject object;
-    protected StructureObject compartiment;
-    double[] compartimentOffset;
-    double[] compartimentOffsetDivision;
+    protected SpotCompartiment compartiment;
     
-    public SpotWithinCompartment(StructureObject object, StructureObject compartiment, double[] scaledCenter) {
+    
+    public SpotWithinCompartment(StructureObject object, SpotCompartiment compartiment, double[] scaledCenter) {
         super(scaledCenter[0], scaledCenter[1], scaledCenter[2], 1, 1);
-        getFeatures().put(Spot.FRAME, (double)compartiment.getTimePoint());
+        getFeatures().put(Spot.FRAME, (double)compartiment.object.getTimePoint());
         this.compartiment=compartiment;
         this.object=object;
-        compartimentOffset = new double[]{compartiment.getBounds().getxMin() * object.getScaleXY(), compartiment.getBounds().getyMin() * object.getScaleXY(), compartiment.getBounds().getzMin() * object.getScaleZ()};
     }
     
+   
     public void setRadius() {
         double radius = object.getObject().is3D() ? Math.pow(3 * object.getObject().getSize() / (4 * Math.PI) , 1d/3d) : Math.sqrt(object.getObject().getSize() / (2 * Math.PI)) ;
         getFeatures().put(Spot.RADIUS, radius);
@@ -72,38 +75,47 @@ public class SpotWithinCompartment extends Spot {
     public double squareDistanceTo( final Spot s ) {
         if (s instanceof SpotWithinCompartment) {
             SpotWithinCompartment ss = (SpotWithinCompartment)s;
-            if (ss.compartiment.getTrackHead()==compartiment.getTrackHead()) { //distance is relative to the compartment for spots within the same compartiment track
-                return getSquareDistanceCompartiments(ss);
-            } else if (ss.compartiment.getTrackHead().getPrevious()==compartiment) { //distance is relative to the compartment for spots within the same compartiment track
-                return getSquareDistanceNextCompartiments(ss);
-            } else if (compartiment.getTrackHead().getPrevious()==ss.compartiment) {
-                return ss.getSquareDistanceNextCompartiments(this);
-            } else return Double.POSITIVE_INFINITY; // spots in different tracks -> no link possible -> mettre max value? ou la valeur de distance maxi? 
+            if (this.compartiment.object.getTimePoint()>ss.compartiment.object.getTimePoint()) return ss.squareDistanceTo(this);
+            else {
+                if (compartiment.sameTrackOrDirectChildren(ss.compartiment)) { // spot in the same track or separated by one division at max
+                    //if (ss.compartiment.previousDivisionTime>=compartiment.object.getTimePoint()) return getSquareDistanceDivision(ss);
+                    if (this.compartiment.nextDivisionTimePoint<=ss.compartiment.object.getTimePoint()) return getSquareDistanceDivision(ss);
+                    else return getSquareDistanceCompartiments(ss);
+                } else return Double.POSITIVE_INFINITY; // spots in different tracks -> no link possible
+            }
         } else return super.squareDistanceTo(s);
     }
-    protected double[] getOffsetDivision() {
-        if (compartimentOffsetDivision==null) {
-            // get previous division sibling @ same timePoint
-            StructureObject sibling = compartiment.getTrackHead().getPrevious();
-            while(sibling!=null && sibling.getTimePoint()!=compartiment.getTimePoint()) sibling = sibling.getNext();
-            if (sibling!=null) {
-                compartimentOffsetDivision = new double[]{sibling.getBounds().getxMin() * object.getScaleXY(), sibling.getBounds().getyMin() * object.getScaleXY(), sibling.getBounds().getzMin() * object.getScaleZ()};
-            } else {
-                throw new Error("SpotWithinCompartment :: no offset Found: "+compartiment.toString());
-                //compartimentOffsetDivision = new double[]{}; // to signal no sibling was found
-            }
-        }
-        return compartimentOffsetDivision;
-    }
+    
     protected double getSquareDistanceCompartiments(SpotWithinCompartment s) {
-        return Math.pow((getFeature(POSITION_X)-compartimentOffset[0] - s.getFeature(POSITION_X)+s.compartimentOffset[0]), 2) +
-            Math.pow((getFeature(POSITION_Y)-compartimentOffset[1] - s.getFeature(POSITION_Y)+s.compartimentOffset[1]), 2) + 
-            Math.pow((getFeature(POSITION_Z)-compartimentOffset[2] - s.getFeature(POSITION_Z)+s.compartimentOffset[2]), 2);
+        double d1 = getSquareDistance(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp);
+        double d2 = getSquareDistance(this, this.compartiment.offsetDown, s, s.compartiment.offsetDown);
+        if (this.object.getTimePoint()==33 && s.object.getTimePoint()==35) {
+                LAPTrackerCore.logger.debug("distance: {} to {}, d1: {}, d2: {}, this offUp: {}, this offDown: {}, offUp: {}, offDown: {}", this.object.getBounds(), s.object.getBounds(), d1, d2, this.compartiment.offsetUp, this.compartiment.offsetDown, s.compartiment.offsetUp, s.compartiment.offsetDown );
+        }
+        return Math.min(d1, d2);
     }
-    protected double getSquareDistanceNextCompartiments(SpotWithinCompartment sFromNextCompartiment) {
-        double[] nextOffset = sFromNextCompartiment.getOffsetDivision();
-        return Math.pow((getFeature(POSITION_X)-compartimentOffset[0] - sFromNextCompartiment.getFeature(POSITION_X)+nextOffset[0]), 2) +
-            Math.pow((getFeature(POSITION_Y)-compartimentOffset[1] - sFromNextCompartiment.getFeature(POSITION_Y)+nextOffset[1]), 2) + 
-            Math.pow((getFeature(POSITION_Z)-compartimentOffset[2] - sFromNextCompartiment.getFeature(POSITION_Z)+nextOffset[2]), 2);
+    protected double getSquareDistanceDivision(SpotWithinCompartment sAfterDivision) {
+        //double d1 = getSquareDistance(this, this.compartiment.offsetUp, sAfterDivision, sAfterDivision.compartiment.offsetDivisionUp);
+        //double d2 = getSquareDistance(this, this.compartiment.offsetDown, sAfterDivision, sAfterDivision.compartiment.offsetDivisionDown);
+        double d1, d2;
+        if (sAfterDivision.compartiment.object.getTrackHead()==this.compartiment.object.getTrackHead()) { // this test is only valid for increasing Y-coords when growing
+            d1 = getSquareDistance(this, this.compartiment.offsetUp, sAfterDivision, sAfterDivision.compartiment.offsetUp);
+            d2 = getSquareDistance(this, this.compartiment.offsetDivisionMiddle, sAfterDivision, sAfterDivision.compartiment.offsetDown);
+        } else {
+            d1 = getSquareDistance(this, this.compartiment.offsetDivisionMiddle, sAfterDivision, sAfterDivision.compartiment.offsetUp);
+            d2 = getSquareDistance(this, this.compartiment.offsetDown, sAfterDivision, sAfterDivision.compartiment.offsetDown);
+        }
+        
+        if (this.object.getTimePoint()==33 && sAfterDivision.object.getTimePoint()==35) {
+                LAPTrackerCore.logger.debug("distance (DIV): {} to {}, d1: {}, d2: {}, this offMiddle: {}, offUp: {}, offDown: {}", this.object.getBounds(), sAfterDivision.object.getBounds(), d1, d2, this.compartiment.offsetDivisionMiddle, sAfterDivision.compartiment.offsetUp, sAfterDivision.compartiment.offsetDown);
+        }
+        return Math.min(d1, d2);
+    }
+    protected static double getSquareDistance(Spot s1, double[] offset1, Spot s2, double[] offset2) {
+        if (offset1==null || offset2==null) return Double.POSITIVE_INFINITY; //TODO fix bug -> when reach test's limit timePoint, offset are null
+        
+        return Math.pow((s1.getFeature(POSITION_X)-offset1[0] - s2.getFeature(POSITION_X)+offset2[0]), 2) +
+            Math.pow((s1.getFeature(POSITION_Y)-offset1[1] - s2.getFeature(POSITION_Y)+offset2[1]), 2) + 
+            Math.pow((s1.getFeature(POSITION_Z)-offset1[2] - s2.getFeature(POSITION_Z)+offset2[2]), 2);
     }
 }

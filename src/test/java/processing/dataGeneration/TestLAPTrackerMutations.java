@@ -41,13 +41,14 @@ import plugins.plugins.trackers.LAPTracker;
 public class TestLAPTrackerMutations {
     MorphiumMasterDAO db;
     static final int microchannelIdx = 0;
+    static final int bacteriaIdx = 1;
     static final int mutationIdx = 2;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         String dbName = "fluo151127";
         TestLAPTrackerMutations t = new TestLAPTrackerMutations();
         t.init(dbName);
-        t.testLAPTracking(0, 0, 50, 200);
+        t.testLAPTracking(0, 0, 0, 100);
     }
     
     public void testLAPTracking(int fieldIdx, int mcIdx, int tStart, int tEnd) {
@@ -67,11 +68,13 @@ public class TestLAPTrackerMutations {
 
         IJImageWindowManager windowManager = new IJImageWindowManager(null);
         ImageObjectInterface i = windowManager.getImageTrackObjectInterface(parentTrack, mutationIdx);
+        ImageObjectInterface iB = windowManager.getImageTrackObjectInterface(parentTrack, bacteriaIdx);
         i.setGUIMode(false);
         int colorIdx=0;
         Image im = i.generateRawImage(mutationIdx);
         windowManager.getDisplayer().showImage(im);
         for (ArrayList<StructureObject> track : allTracks.values()) windowManager.displayTrack(im, i, true, track, ImageWindowManager.getColor(colorIdx++));
+        windowManager.displayObjects(im, i, true, iB.getObjects());
         windowManager.displayObjects(im, i, true, i.getObjects());
     }
     

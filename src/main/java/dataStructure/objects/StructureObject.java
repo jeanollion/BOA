@@ -330,6 +330,19 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return next;
     }
     
+    public StructureObject getInTrack(int timePoint) {
+        StructureObject current;
+        if (timePoint>this.getTimePoint()) {
+            current = this;
+            while(current!=null && current.getTimePoint()<timePoint) current=current.getNext();
+        } else {
+            current = this.getPrevious();
+            while(current!=null && current.getTimePoint()>timePoint) current=current.getPrevious();
+        }
+        if (current!=null && current.getTimePoint()==timePoint) return current;
+        return null;
+    }
+    
     public StructureObject getTrackHead() {
         if (trackHead==null) {
             if (isTrackHead) {
@@ -384,6 +397,32 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     // track correction-related methods 
+    public boolean divisionAtNextTimePoint() {
+        int count = 0;
+        if (getParent()==null || this.getParent().getNext()==null) return false;
+        ArrayList<StructureObject> candidates = this.getParent().getNext().getChildren(structureIdx);
+        for (StructureObject o : candidates) {
+            if (o.getPrevious()==this) ++count;
+            if (count>1) return true;
+        }
+        return false;
+    }
+    public int getPreviousDivisionTimePoint() {
+        StructureObject p = this.getPrevious();
+        while (p!=null) {
+            if (p.divisionAtNextTimePoint()) return p.getTimePoint()+1;
+            p=p.getPrevious();
+        }
+        return -1;
+    }
+    public int getNextDivisionTimePoint() {
+        StructureObject p = this;
+        while (p!=null) {
+            if (p.divisionAtNextTimePoint()) return p.getTimePoint()+1;
+            p=p.getNext();
+        }
+        return -1;
+    }
     /**
      * 
      * @return the next element of the track that contains a track link error, as defined by the tracker; null is there are no next track error;
@@ -402,7 +441,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         StructureObject nextDiv = this;
         while(nextDiv.getNext()!=null && res==null) {
             nextDiv = nextDiv.getNext();
-            res = nextDiv.getDivisionSiblings();
+            res = nextDiv.getDivisionSiblings(false);
         }
         if (res!=null) res.add(0, nextDiv);
         return res;
@@ -417,13 +456,17 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         StructureObject prevDiv = this;
         while(prevDiv.getPrevious()!=null && res==null) {
             prevDiv = prevDiv.getPrevious();
-            res = prevDiv.getDivisionSiblings();
+            res = prevDiv.getDivisionSiblings(false);
         }
         if (res!=null) res.add(0, prevDiv);
         return res;
     }
-    
-    public ArrayList<StructureObject> getDivisionSiblings() {
+    /**
+     * 
+     * @param includeCurrentObject if true, current instance will be included at first position of the list
+     * @return a list containing the sibling (structureObjects that have the same previous object) at the previous division, null if there are no siblings and {@param includeCurrentObject} is false.
+     */
+    public ArrayList<StructureObject> getDivisionSiblings(boolean includeCurrentObject) {
         ArrayList<StructureObject> res=null;
         ArrayList<StructureObject> siblings = getSiblings();
         //logger.trace("get div siblings: timePoint: {}, number of siblings: {}", this.getTimePoint(), siblings.size());
@@ -437,7 +480,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 } 
             }
             //logger.trace("get div siblings: previous non null, divSiblings: {}", res==null?"null":res.size());
-        } else { // get thespatially closest sibling
+        } /*else { // get thespatially closest sibling
             double distance = Double.MAX_VALUE;
             StructureObject min = null;
             for (StructureObject o : siblings) {
@@ -454,8 +497,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 res.add(min);
             }
             //logger.trace("get div siblings: previous null, get spatially closest, divSiblings: {}", res==null?"null":res.size());
+        }*/
+        if (includeCurrentObject) {
+            if (res==null) {
+                res = new ArrayList<StructureObject>(1);
+                res.add(this);
+            } else res.add(0, this);
         }
-        
         return res;
     }
     

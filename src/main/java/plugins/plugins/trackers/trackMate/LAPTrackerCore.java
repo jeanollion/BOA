@@ -17,6 +17,7 @@
  */
 package plugins.plugins.trackers.trackMate;
 
+import dataStructure.objects.StructureObject;
 import fiji.plugin.trackmate.Logger;
 import fiji.plugin.trackmate.Spot;
 import fiji.plugin.trackmate.SpotCollection;
@@ -40,6 +41,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -47,17 +49,22 @@ import org.jgrapht.graph.SimpleWeightedGraph;
  */
 public class LAPTrackerCore {
     private SimpleWeightedGraph< Spot, DefaultWeightedEdge > graph;
-    private Logger logger = Logger.VOID_LOGGER;
+    public final static org.slf4j.Logger logger = LoggerFactory.getLogger(LAPTrackerCore.class);
+    private Logger internalLogger = Logger.VOID_LOGGER;
     final private SpotCollection spots;
     int numThreads=1;
     String errorMessage;
     long processingTime;
     
     // FTF settings
-    double linkingMaxDistance = 1.5;
+    double linkingMaxDistance = 0.75;
     double alternativeLinkingCostFactor = 1.05;
     //double linkingFeaturesPenalities;
     
+    // SparseLinker settings
+    int gcMaxFrame = 3;
+    double gapCLosingMaxDistance = 0.75;
+    double gcAlternativeLinkingCostFactor = alternativeLinkingCostFactor;
     public LAPTrackerCore(SpotCollection spots) {
         this.spots=spots;
     }
@@ -99,7 +106,7 @@ public class LAPTrackerCore {
 
 		final SparseLAPFrameToFrameTracker frameToFrameLinker = new SparseLAPFrameToFrameTracker( spots, ftfSettings );
 		frameToFrameLinker.setNumThreads( numThreads );
-		final Logger.SlaveLogger ftfLogger = new Logger.SlaveLogger( logger, 0, 0.5 );
+		final Logger.SlaveLogger ftfLogger = new Logger.SlaveLogger( internalLogger, 0, 0.5 );
 		frameToFrameLinker.setLogger( ftfLogger );
 
 		if ( !frameToFrameLinker.checkInput() || !frameToFrameLinker.process() )
@@ -113,39 +120,39 @@ public class LAPTrackerCore {
 		/*
 		 * 2. Gap-closing, merging and splitting.
 		 */
-                /*
+                
 		// Prepare settings object
 		final Map< String, Object > slSettings = new HashMap< String, Object >();
 
-		slSettings.put( KEY_ALLOW_GAP_CLOSING, settings.get( KEY_ALLOW_GAP_CLOSING ) );
-		slSettings.put( KEY_GAP_CLOSING_FEATURE_PENALTIES, settings.get( KEY_GAP_CLOSING_FEATURE_PENALTIES ) );
-		slSettings.put( KEY_GAP_CLOSING_MAX_DISTANCE, settings.get( KEY_GAP_CLOSING_MAX_DISTANCE ) );
-		slSettings.put( KEY_GAP_CLOSING_MAX_FRAME_GAP, settings.get( KEY_GAP_CLOSING_MAX_FRAME_GAP ) );
+		slSettings.put( KEY_ALLOW_GAP_CLOSING, gcMaxFrame>0 );
+		//slSettings.put( KEY_GAP_CLOSING_FEATURE_PENALTIES, settings.get( KEY_GAP_CLOSING_FEATURE_PENALTIES ) );
+		slSettings.put( KEY_GAP_CLOSING_MAX_DISTANCE, gapCLosingMaxDistance );
+		slSettings.put( KEY_GAP_CLOSING_MAX_FRAME_GAP, gcMaxFrame );
 
-		slSettings.put( KEY_ALLOW_TRACK_SPLITTING, settings.get( KEY_ALLOW_TRACK_SPLITTING ) );
-		slSettings.put( KEY_SPLITTING_FEATURE_PENALTIES, settings.get( KEY_SPLITTING_FEATURE_PENALTIES ) );
-		slSettings.put( KEY_SPLITTING_MAX_DISTANCE, settings.get( KEY_SPLITTING_MAX_DISTANCE ) );
+		slSettings.put( KEY_ALLOW_TRACK_SPLITTING, false );
+		//slSettings.put( KEY_SPLITTING_FEATURE_PENALTIES, settings.get( KEY_SPLITTING_FEATURE_PENALTIES ) );
+		slSettings.put( KEY_SPLITTING_MAX_DISTANCE, gapCLosingMaxDistance );
 
-		slSettings.put( KEY_ALLOW_TRACK_MERGING, settings.get( KEY_ALLOW_TRACK_MERGING ) );
-		slSettings.put( KEY_MERGING_FEATURE_PENALTIES, settings.get( KEY_MERGING_FEATURE_PENALTIES ) );
-		slSettings.put( KEY_MERGING_MAX_DISTANCE, settings.get( KEY_MERGING_MAX_DISTANCE ) );
+		slSettings.put( KEY_ALLOW_TRACK_MERGING, false );
+		//slSettings.put( KEY_MERGING_FEATURE_PENALTIES, settings.get( KEY_MERGING_FEATURE_PENALTIES ) );
+		slSettings.put( KEY_MERGING_MAX_DISTANCE, gapCLosingMaxDistance );
 
-		slSettings.put( KEY_ALTERNATIVE_LINKING_COST_FACTOR, settings.get( KEY_ALTERNATIVE_LINKING_COST_FACTOR ) );
-		slSettings.put( KEY_CUTOFF_PERCENTILE, settings.get( KEY_CUTOFF_PERCENTILE ) );
+		slSettings.put( KEY_ALTERNATIVE_LINKING_COST_FACTOR, gcAlternativeLinkingCostFactor );
+		slSettings.put( KEY_CUTOFF_PERCENTILE, 1d );
 
 		// Solve.
 		final SparseLAPSegmentTracker segmentLinker = new SparseLAPSegmentTracker( graph, slSettings );
-		final Logger.SlaveLogger slLogger = new Logger.SlaveLogger( logger, 0.5, 0.5 );
+		final Logger.SlaveLogger slLogger = new Logger.SlaveLogger( internalLogger, 0.5, 0.5 );
 		segmentLinker.setLogger( slLogger );
-
+                segmentLinker.setNumThreads( numThreads );
 		if ( !segmentLinker.checkInput() || !segmentLinker.process() )
 		{
 			errorMessage = segmentLinker.getErrorMessage();
 			return false;
 		}
-                        */
-		logger.setStatus( "" );
-		logger.setProgress( 1d );
+                graph = segmentLinker.getResult();
+		internalLogger.setStatus( "" );
+		internalLogger.setProgress( 1d );
 		final long end = System.currentTimeMillis();
 		processingTime = end - start;
                 return true;

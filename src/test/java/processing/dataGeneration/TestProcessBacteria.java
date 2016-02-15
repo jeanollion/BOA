@@ -67,7 +67,6 @@ import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.segmenters.MutationSegmenter;
 import plugins.plugins.segmenters.SpotFluo2D5;
 import plugins.plugins.thresholders.IJAutoThresholder;
-import plugins.plugins.trackCorrector.MicroChannelBacteriaTrackCorrector;
 import plugins.plugins.trackers.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import plugins.plugins.trackers.ClosedMicrochannelTracker;
 import plugins.plugins.trackers.MicrochannelProcessor;

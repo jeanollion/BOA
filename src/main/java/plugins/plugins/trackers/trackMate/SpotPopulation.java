@@ -37,15 +37,15 @@ import java.util.TreeSet;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 import static plugins.Plugin.logger;
+import utils.Pair;
 
 /**
  *
  * @author jollion
  */
-public class SpotWrapper {
+public class SpotPopulation {
     private final HashMap<StructureObject, SpotWithinCompartment>  objectSpotMap = new HashMap<StructureObject, SpotWithinCompartment>();
     private final SpotCollection collection = new SpotCollection();
-        
     public SpotCollection getSpotCollection() {
         return this.collection;
     }
@@ -55,10 +55,16 @@ public class SpotWrapper {
         ArrayList<StructureObject> compartments = container.getChildren(compartmentStructureIdx);
         Image intensityMap = container.getRawImage(spotSturctureIdx);
         logger.debug("adding: {} spots from timePoint: {}", population.getObjects().size(), container.getTimePoint());
+        HashMap<StructureObject, SpotCompartiment> compartimentMap = new HashMap<StructureObject, SpotCompartiment>();
         for (StructureObject o : container.getChildObjects(spotSturctureIdx)) {
             StructureObject parent = StructureObjectUtils.getInclusionParent(o.getObject(), compartments, null);
+            SpotCompartiment compartiment = compartimentMap.get(parent);
+            if (compartiment ==null) {
+                compartiment = new SpotCompartiment(parent);
+                compartimentMap.put(parent, compartiment);
+            }
             double[] center = intensityMap!=null ? o.getObject().getCenter(intensityMap, true) : o.getObject().getCenter(true);
-            SpotWithinCompartment s = new SpotWithinCompartment(o, parent, center);
+            SpotWithinCompartment s = new SpotWithinCompartment(o, compartiment, center);
             collection.add(s, container.getTimePoint());
             objectSpotMap.put(o, s);
         }
@@ -73,7 +79,7 @@ public class SpotWrapper {
         }
         for (StructureObject parent : parentTrack) {
             for (StructureObject child : parent.getChildren(structureIdx)) {
-                logger.debug("settings links for: {}", child);
+                //logger.debug("settings links for: {}", child);
                 SpotWithinCompartment s = objectSpotMap.get(child);
                 TreeSet<DefaultWeightedEdge> nextEdges = getSortedEdgesOf(s, graph, false);
                 if (nextEdges!=null && !nextEdges.isEmpty()) {

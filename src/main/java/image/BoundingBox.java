@@ -254,6 +254,7 @@ public class BoundingBox {
     }
     
     public double getZMean() {
+        if (getSizeZ()<=1) return zMin;
         return zMin+getSizeZ()/2.0;
     }
     

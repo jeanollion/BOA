@@ -24,7 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import plugins.Tracker;
 import plugins.plugins.trackers.trackMate.LAPTrackerCore;
-import plugins.plugins.trackers.trackMate.SpotWrapper;
+import plugins.plugins.trackers.trackMate.SpotPopulation;
 
 /**
  *
@@ -33,7 +33,7 @@ import plugins.plugins.trackers.trackMate.SpotWrapper;
 public class LAPTracker implements Tracker {
     static int compartimentStructureIdx = 1;
     public void track(int structureIdx, List<StructureObject> parentTrack) {
-        SpotWrapper spotCollection = new SpotWrapper();
+        SpotPopulation spotCollection = new SpotPopulation();
         for (StructureObject p : parentTrack) {
             spotCollection.addSpots(p, structureIdx, compartimentStructureIdx);
         }
