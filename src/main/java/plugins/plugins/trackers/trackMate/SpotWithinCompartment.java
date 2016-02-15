@@ -106,6 +106,7 @@ public class SpotWithinCompartment extends Spot {
             d2 = getSquareDistance(this, this.compartiment.offsetDown, sAfterDivision, sAfterDivision.compartiment.offsetDown);
         }
         
+        
         if (this.object.getTimePoint()==33 && sAfterDivision.object.getTimePoint()==35) {
                 LAPTrackerCore.logger.debug("distance (DIV): {} to {}, d1: {}, d2: {}, this offMiddle: {}, offUp: {}, offDown: {}", this.object.getBounds(), sAfterDivision.object.getBounds(), d1, d2, this.compartiment.offsetDivisionMiddle, sAfterDivision.compartiment.offsetUp, sAfterDivision.compartiment.offsetDown);
         }
