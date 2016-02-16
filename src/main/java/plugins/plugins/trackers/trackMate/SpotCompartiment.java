@@ -40,19 +40,21 @@ public class SpotCompartiment {
     static final int poleMargin = 3;
     public SpotCompartiment(StructureObject o) {
         object = o;
-        offsetUp = getPole(object.getObject(), poleMargin, true);
-        offsetDown = getPole(object.getObject(), poleMargin, false);
+        double[][] poles = getPoles(object.getObject(), 0.5);
+        offsetUp = poles[0];
+        offsetDown = poles[1];
         computeDivisionOffset();
-        if (object.getTimePoint()==0) {
-            LAPTrackerCore.logger.debug("object: {}, bds: {}, pole up: {},  pole donw: {}", object.getIdx(), o.getBounds(),offsetUp, offsetDown );
+        if (true || object.getTimePoint()==0) {
+            LAPTrackerCore.logger.debug("object: {}, bds: {}, pole up: {},  pole donw: {}, pole mid: {}", object.getIdx(), o.getBounds(),offsetUp, offsetDown, offsetDivisionMiddle );
         }
         //if (object.getNext()!=null && object.getNext().getDivisionSiblings(false)!=null) divisionAtNextTimePoint = true;
         //previousDivisionTime = object.getPreviousDivisionTimePoint();
         nextDivisionTimePoint = object.getNextDivisionTimePoint();
+        
     }
     
-    private static double[] getPole(Object3D o, int margin, boolean upper) {
-        int y = upper ? o.getBounds().getyMin()+margin : o.getBounds().getyMax() - margin;
+    private static double[] getPole(Object3D o, int margin) {
+        int y =  o.getBounds().getyMin()+margin;
         double xMean = 0, zMean = 0, count=0;
         ImageMask mask = o.getMask();
         BoundingBox bds = o.getBounds();
@@ -74,6 +76,34 @@ public class SpotCompartiment {
         }
         return new double[]{xMean * o.getScaleXY(), y * o.getScaleXY(), zMean * o.getScaleZ()};
     }
+    
+    private static double[][] getPoles(Object3D o, double proportionOfWidth) {
+        int[] ySize = new int[o.getBounds().getSizeY()];
+        double meanYSize = 0;
+        ImageMask mask = o.getMask();
+        BoundingBox bds = o.getBounds();
+        int yMin = bds.getyMin();
+        for (int y = yMin; y<=bds.getyMax(); ++y) {
+            for (int z = bds.getzMin(); z<=bds.getzMax(); ++z) {
+                for (int x = bds.getxMin(); x<=bds.getxMax(); ++x) {
+                    if (mask.insideMaskWithOffset(x, y, z)) {
+                        ySize[y-yMin]++;
+                    }
+                }
+            }
+            meanYSize +=ySize[y-yMin];
+        }
+        meanYSize /= (double)ySize.length;
+        double minYSize = proportionOfWidth * meanYSize;
+        int yUp = 0;
+        while(ySize[yUp]<minYSize) yUp++;
+        double[] poleUp = getPole(o, yUp);
+        int yDown = ySize.length-1;
+        while(ySize[yDown]<minYSize) yDown--;
+        double[] poleDown = getPole(o, yDown);
+        return new double[][]{poleUp, poleDown};
+    }
+    
     private static double[] getMiddle(Object3D o, int limit) {
         int count=0;
         ImageMask mask = o.getMask();
@@ -83,7 +113,7 @@ public class SpotCompartiment {
                 for (int x = bds.getxMin(); x<=bds.getxMax(); ++x) {
                     if (mask.insideMaskWithOffset(x, y, z)) {
                         count++;
-                        if (count == limit) return getPole(o, y, true);
+                        if (count == limit) return getPole(o, y-bds.getyMin());
                     }
                 }
             }
@@ -141,13 +171,10 @@ public class SpotCompartiment {
                 double c2 = (double) siblings.get(1).getMask().count();
                 double p = c1 / (c1+c2);
                 int limit = (int)(p * this.object.getMask().count()+0.5);
-                this.offsetDivisionMiddle = getMiddle(object.getObject(), limit);
-                
-            } else { // cut in the middle
-                offsetDivisionMiddle = new double[]{object.getBounds().getXMean(), object.getBounds().getYMean(), object.getBounds().getZMean()};
-            }
+                this.offsetDivisionMiddle = getMiddle(object.getObject(), limit); 
+            } 
         } 
-        
+        if (offsetDivisionMiddle==null) offsetDivisionMiddle = object.getObject().getCenter(true);
     }
     public boolean sameTrackOrDirectChildren(SpotCompartiment nextCompartiment) {
         return (object.getTrackHead()==nextCompartiment.object.getTrackHead() || // same track

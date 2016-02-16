@@ -32,15 +32,38 @@ import static plugins.plugins.trackers.ObjectIdxTracker.getComparator;
  * @author jollion
  */
 public class SpotWithinCompartment extends Spot {
+    public static enum Localization {
+        UP, MIDDLE, DOWN;
+        public Localization getOffsetType(Localization other) {
+            if (UP.equals(this)) {
+                if (UP.equals(other)) return UP;
+                else if (MIDDLE.equals(other)) return UP;
+                else if (DOWN.equals(other)) return null;
+            } else if (MIDDLE.equals(this)) {
+                if (UP.equals(other)) return UP;
+                else if (MIDDLE.equals(other)) return MIDDLE;
+                else if (DOWN.equals(other)) return DOWN;
+            } else if (DOWN.equals(this)) {
+                if (UP.equals(other)) return null;
+                else if (MIDDLE.equals(other)) return DOWN;
+                else if (DOWN.equals(other)) return DOWN;
+            } 
+            return null;
+        }
+    }; 
     protected StructureObject object;
     protected SpotCompartiment compartiment;
-    
+    protected final Localization localization;
+    public static double middleAreaRadius = 1;
     
     public SpotWithinCompartment(StructureObject object, SpotCompartiment compartiment, double[] scaledCenter) {
         super(scaledCenter[0], scaledCenter[1], scaledCenter[2], 1, 1);
         getFeatures().put(Spot.FRAME, (double)compartiment.object.getTimePoint());
         this.compartiment=compartiment;
         this.object=object;
+        if (scaledCenter[1]<(compartiment.offsetDivisionMiddle[1]-middleAreaRadius)) localization = Localization.UP;
+        else if (scaledCenter[1]>(compartiment.offsetDivisionMiddle[1]+middleAreaRadius)) localization = Localization.DOWN;
+        else localization = Localization.MIDDLE;
     }
     
    
@@ -87,30 +110,54 @@ public class SpotWithinCompartment extends Spot {
     }
     
     protected double getSquareDistanceCompartiments(SpotWithinCompartment s) {
-        double d1 = getSquareDistance(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp);
-        double d2 = getSquareDistance(this, this.compartiment.offsetDown, s, s.compartiment.offsetDown);
-        if (this.object.getTimePoint()==33 && s.object.getTimePoint()==35) {
-                LAPTrackerCore.logger.debug("distance: {} to {}, d1: {}, d2: {}, this offUp: {}, this offDown: {}, offUp: {}, offDown: {}", this.object.getBounds(), s.object.getBounds(), d1, d2, this.compartiment.offsetUp, this.compartiment.offsetDown, s.compartiment.offsetUp, s.compartiment.offsetDown );
+        Localization offsetType = this.localization.getOffsetType(s.localization);
+        if (offsetType==null) return Double.POSITIVE_INFINITY;
+        else if (Localization.UP.equals(offsetType)) {
+            return getSquareDistance(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp);
+        } else if (Localization.DOWN.equals(offsetType)) {
+            return getSquareDistance(this, this.compartiment.offsetDown, s, s.compartiment.offsetDown);
+        } else {
+            double d1 = getSquareDistance(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp);
+            double d2 = getSquareDistance(this, this.compartiment.offsetDown, s, s.compartiment.offsetDown);
+            if (true || this.object.getTimePoint()==33 && s.object.getTimePoint()==35) {
+                    LAPTrackerCore.logger.debug("distance: {} to {}, d1: {}, d2: {}, this offUp: {}, this offDown: {}, offUp: {}, offDown: {}", this.object.getBounds(), s.object.getBounds(), d1, d2, this.compartiment.offsetUp, this.compartiment.offsetDown, s.compartiment.offsetUp, s.compartiment.offsetDown );
+            }
+            return Math.min(d1, d2);
         }
-        return Math.min(d1, d2);
     }
     protected double getSquareDistanceDivision(SpotWithinCompartment sAfterDivision) {
         //double d1 = getSquareDistance(this, this.compartiment.offsetUp, sAfterDivision, sAfterDivision.compartiment.offsetDivisionUp);
         //double d2 = getSquareDistance(this, this.compartiment.offsetDown, sAfterDivision, sAfterDivision.compartiment.offsetDivisionDown);
         double d1, d2;
-        if (sAfterDivision.compartiment.object.getTrackHead()==this.compartiment.object.getTrackHead()) { // this test is only valid for increasing Y-coords when growing
-            d1 = getSquareDistance(this, this.compartiment.offsetUp, sAfterDivision, sAfterDivision.compartiment.offsetUp);
-            d2 = getSquareDistance(this, this.compartiment.offsetDivisionMiddle, sAfterDivision, sAfterDivision.compartiment.offsetDown);
+        if (sAfterDivision.compartiment.object.getTrackHead()==this.compartiment.object.getTrackHead()) { // daughter cell is in the upper part. TODO change test :: this test is only valid for increasing Y-coords when growing
+            if (Localization.DOWN.equals(localization)) return Double.POSITIVE_INFINITY;
+            else if (Localization.MIDDLE.equals(localization)) {
+                if (Localization.DOWN.equals(sAfterDivision.localization)) return getSquareDistance(this, this.compartiment.offsetDivisionMiddle, sAfterDivision, sAfterDivision.compartiment.offsetDown);
+                else return Double.POSITIVE_INFINITY;
+            } else {
+                if (Localization.UP.equals(sAfterDivision.localization)) return getSquareDistance(this, this.compartiment.offsetUp, sAfterDivision, sAfterDivision.compartiment.offsetUp);
+                else if (Localization.DOWN.equals(sAfterDivision.localization)) return getSquareDistance(this, this.compartiment.offsetDivisionMiddle, sAfterDivision, sAfterDivision.compartiment.offsetDown);
+                else {
+                    d1 = getSquareDistance(this, this.compartiment.offsetUp, sAfterDivision, sAfterDivision.compartiment.offsetUp);
+                    d2 = getSquareDistance(this, this.compartiment.offsetDivisionMiddle, sAfterDivision, sAfterDivision.compartiment.offsetDown);
+                    return Math.min(d1, d2);
+                }
+            }
         } else {
-            d1 = getSquareDistance(this, this.compartiment.offsetDivisionMiddle, sAfterDivision, sAfterDivision.compartiment.offsetUp);
-            d2 = getSquareDistance(this, this.compartiment.offsetDown, sAfterDivision, sAfterDivision.compartiment.offsetDown);
+            if (Localization.UP.equals(localization)) return Double.POSITIVE_INFINITY;
+            else if (Localization.MIDDLE.equals(localization)) {
+                if (Localization.UP.equals(sAfterDivision.localization)) return getSquareDistance(this, this.compartiment.offsetDivisionMiddle, sAfterDivision, sAfterDivision.compartiment.offsetUp);
+                else return Double.POSITIVE_INFINITY;
+            } else {
+                if (Localization.UP.equals(sAfterDivision.localization)) return getSquareDistance(this, this.compartiment.offsetDivisionMiddle, sAfterDivision, sAfterDivision.compartiment.offsetUp);
+                else if (Localization.DOWN.equals(sAfterDivision.localization)) return getSquareDistance(this, this.compartiment.offsetDown, sAfterDivision, sAfterDivision.compartiment.offsetDown);
+                else {
+                    d1 = getSquareDistance(this, this.compartiment.offsetDivisionMiddle, sAfterDivision, sAfterDivision.compartiment.offsetUp);
+                    d2 = getSquareDistance(this, this.compartiment.offsetDown, sAfterDivision, sAfterDivision.compartiment.offsetDown);
+                    return Math.min(d1, d2);
+                }
+            }   
         }
-        
-        
-        if (this.object.getTimePoint()==33 && sAfterDivision.object.getTimePoint()==35) {
-                LAPTrackerCore.logger.debug("distance (DIV): {} to {}, d1: {}, d2: {}, this offMiddle: {}, offUp: {}, offDown: {}", this.object.getBounds(), sAfterDivision.object.getBounds(), d1, d2, this.compartiment.offsetDivisionMiddle, sAfterDivision.compartiment.offsetUp, sAfterDivision.compartiment.offsetDown);
-        }
-        return Math.min(d1, d2);
     }
     protected static double getSquareDistance(Spot s1, double[] offset1, Spot s2, double[] offset2) {
         if (offset1==null || offset2==null) return Double.POSITIVE_INFINITY; //TODO fix bug -> when reach test's limit timePoint, offset are null

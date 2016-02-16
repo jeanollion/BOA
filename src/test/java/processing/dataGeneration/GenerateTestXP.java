@@ -59,15 +59,19 @@ public class GenerateTestXP {
         String outputDir = "/data/Images/Fluo/films1511/151130/OutputNewScaling";
         String inputDir = "/data/Images/Fluo/films1511/151130/ME120R63-30112015-lr62r1";*/
         
-        String dbName = "fluo151127";
+        /*String dbName = "fluo151127";
         String outputDir = "/data/Images/Fluo/films1511/151127/Output";
-        String inputDir = "/data/Images/Fluo/films1511/151127/ME121R-27112015-laser";
+        String inputDir = "/data/Images/Fluo/films1511/151127/ME121R-27112015-laser";*/
         
         /*
         // Ordi Portable
         String dbName = "testSub";
         String outputDir = "/home/jollion/Documents/LJP/DataLJP/TestOutput";
-        String inputDir = "/home/jollion/Documents/LJP/DataLJP/testsub";  */      
+        String inputDir = "/home/jollion/Documents/LJP/DataLJP/testsub";  */     
+        
+        String dbName = "fluo151127";
+        String outputDir = "/home/jollion/Documents/LJP/DataLJP/Fluo151127/Output";
+        String inputDir = "/media/jollion/4336E5641DA22135/LJP/films1511/151127/ME121R-27112015-laser";
         boolean performProcessing = false;
         
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);

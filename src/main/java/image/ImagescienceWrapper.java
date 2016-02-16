@@ -19,6 +19,8 @@ package image;
 
 import ij.ImagePlus;
 
+
+
 /**
  *
  * @author jollion
@@ -30,6 +32,7 @@ public class ImagescienceWrapper {
     }
     
     public static Image wrap(imagescience.image.Image image) {
+        
         return IJImageWrapper.wrap(image.imageplus());
     }
     

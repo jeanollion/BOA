@@ -48,7 +48,7 @@ public class TestLAPTrackerMutations {
         String dbName = "fluo151127";
         TestLAPTrackerMutations t = new TestLAPTrackerMutations();
         t.init(dbName);
-        t.testLAPTracking(0, 0, 0, 100);
+        t.testLAPTracking(0, 0, 18, 21);
     }
     
     public void testLAPTracking(int fieldIdx, int mcIdx, int tStart, int tEnd) {
