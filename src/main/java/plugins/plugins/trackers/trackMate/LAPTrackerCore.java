@@ -116,7 +116,7 @@ public class LAPTrackerCore {
 		}
                 
 		graph = frameToFrameLinker.getResult();
-
+                ... ajouter les spots non linkés, soit un spot avec un lien sur lui-meme, soit en les duplicant et en mettant un lien entre les deux
 		/*
 		 * 2. Gap-closing, merging and splitting.
 		 */
