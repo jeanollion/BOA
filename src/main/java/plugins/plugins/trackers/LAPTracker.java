@@ -17,6 +17,7 @@
  */
 package plugins.plugins.trackers;
 
+import boa.gui.imageInteraction.ImageObjectInterface;
 import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectTracker;
@@ -37,7 +38,7 @@ public class LAPTracker implements Tracker {
         for (StructureObject p : parentTrack) {
             spotCollection.addSpots(p, structureIdx, compartimentStructureIdx);
         }
-        LAPTrackerCore core = new LAPTrackerCore(spotCollection.getSpotCollection());
+        LAPTrackerCore core = new LAPTrackerCore(spotCollection);
         boolean processOk = core.process();
         if (!processOk) logger.error("LAPTracker error : {}", core.getErrorMessage());
         else spotCollection.setTrackLinks(parentTrack, structureIdx, core.getEdges());

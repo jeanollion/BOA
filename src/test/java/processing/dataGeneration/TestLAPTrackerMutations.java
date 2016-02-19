@@ -26,13 +26,18 @@ import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
+import ij.ImagePlus;
+import ij.gui.Overlay;
+import ij.gui.TextRoi;
 import image.Image;
 import java.awt.Color;
+import java.awt.Font;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import plugins.PluginFactory;
 import plugins.plugins.trackers.LAPTracker;
+import plugins.plugins.trackers.trackMate.SpotWithinCompartment;
 
 /**
  *
@@ -48,7 +53,7 @@ public class TestLAPTrackerMutations {
         String dbName = "fluo151127";
         TestLAPTrackerMutations t = new TestLAPTrackerMutations();
         t.init(dbName);
-        t.testLAPTracking(0, 0, 18, 21);
+        t.testLAPTracking(0, 0, 0, 100);
     }
     
     public void testLAPTracking(int fieldIdx, int mcIdx, int tStart, int tEnd) {
@@ -60,19 +65,25 @@ public class TestLAPTrackerMutations {
             parentTrack.add(mc);
         }
         
+        IJImageWindowManager windowManager = new IJImageWindowManager(null);
+        ImageObjectInterface i = windowManager.getImageTrackObjectInterface(parentTrack, mutationIdx);
+        ImageObjectInterface iB = windowManager.getImageTrackObjectInterface(parentTrack, bacteriaIdx);
+        i.setGUIMode(false);
+        iB.setGUIMode(false);
+        Image im = i.generateRawImage(mutationIdx);
+        ImagePlus ip = windowManager.getDisplayer().showImage(im);
+        Overlay o = new Overlay(); ip.setOverlay(o);
+        SpotWithinCompartment.bacteria=iB;
+        SpotWithinCompartment.testOverlay=o;
+        TextRoi.setFont("SansSerif", 10, Font.PLAIN);
+        
         LAPTracker tracker = new LAPTracker();
         tracker.track(mutationIdx, parentTrack);
         
         HashMap<StructureObject, ArrayList<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, mutationIdx);
         logger.info("LAP tracker number of tracks: {}", allTracks.size());
-
-        IJImageWindowManager windowManager = new IJImageWindowManager(null);
-        ImageObjectInterface i = windowManager.getImageTrackObjectInterface(parentTrack, mutationIdx);
-        ImageObjectInterface iB = windowManager.getImageTrackObjectInterface(parentTrack, bacteriaIdx);
-        i.setGUIMode(false);
+        
         int colorIdx=0;
-        Image im = i.generateRawImage(mutationIdx);
-        windowManager.getDisplayer().showImage(im);
         for (ArrayList<StructureObject> track : allTracks.values()) windowManager.displayTrack(im, i, true, track, ImageWindowManager.getColor(colorIdx++));
         windowManager.displayObjects(im, i, true, iB.getObjects());
         windowManager.displayObjects(im, i, true, i.getObjects());

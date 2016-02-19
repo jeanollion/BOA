@@ -29,6 +29,7 @@ import image.ImageProperties;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -45,11 +46,20 @@ import utils.Pair;
  */
 public class SpotPopulation {
     private final HashMap<StructureObject, SpotWithinCompartment>  objectSpotMap = new HashMap<StructureObject, SpotWithinCompartment>();
+    private final HashMap<StructureObject, SpotWithinCompartment>  objectSpotMap2 = new HashMap<StructureObject, SpotWithinCompartment>();
     private final SpotCollection collection = new SpotCollection();
+    
     public SpotCollection getSpotCollection() {
         return this.collection;
     }
-    
+    public Set<Spot> getSpotSet() {
+        return new HashSet<Spot>(objectSpotMap.values());
+    }
+    public SpotWithinCompartment duplicateSpot(SpotWithinCompartment s) {
+        SpotWithinCompartment dup = s.duplicate();
+        objectSpotMap2.put(dup.object, dup);
+        return dup;
+    }
     public void addSpots(StructureObject container, int spotSturctureIdx, int compartmentStructureIdx) {
         ObjectPopulation population = container.getObjectPopulation(spotSturctureIdx);
         ArrayList<StructureObject> compartments = container.getChildren(compartmentStructureIdx);
@@ -82,6 +92,13 @@ public class SpotPopulation {
                 //logger.debug("settings links for: {}", child);
                 SpotWithinCompartment s = objectSpotMap.get(child);
                 TreeSet<DefaultWeightedEdge> nextEdges = getSortedEdgesOf(s, graph, false);
+                SpotWithinCompartment s2 = objectSpotMap2.get(child);
+                if (s2!=null) {
+                    TreeSet<DefaultWeightedEdge> nextEdges2 = getSortedEdgesOf(s2, graph, false);
+                    if (nextEdges!=null) {
+                        if (nextEdges2!=null) nextEdges.addAll(nextEdges2);
+                    } else nextEdges=nextEdges2;
+                }
                 if (nextEdges!=null && !nextEdges.isEmpty()) {
                     DefaultWeightedEdge nextEdge = nextEdges.last();
                     for (DefaultWeightedEdge e : nextEdges) {

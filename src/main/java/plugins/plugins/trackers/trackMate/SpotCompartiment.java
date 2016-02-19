@@ -36,17 +36,14 @@ public class SpotCompartiment {
     //double[] offsetDivisionUp, offsetDivisionDown;
     //int previousDivisionTime;
     int nextDivisionTimePoint;
-    double[] offsetDivisionMiddle;
-    static final int poleMargin = 3;
+    double[] offsetDivisionMiddle, offsetDivisionMiddleUp, offsetDivisionMiddleLow;
+    public static double middleAreaProportion = 0.2;
     public SpotCompartiment(StructureObject o) {
         object = o;
         double[][] poles = getPoles(object.getObject(), 0.5);
         offsetUp = poles[0];
         offsetDown = poles[1];
         computeDivisionOffset();
-        if (true || object.getTimePoint()==0) {
-            LAPTrackerCore.logger.debug("object: {}, bds: {}, pole up: {},  pole donw: {}, pole mid: {}", object.getIdx(), o.getBounds(),offsetUp, offsetDown, offsetDivisionMiddle );
-        }
         //if (object.getNext()!=null && object.getNext().getDivisionSiblings(false)!=null) divisionAtNextTimePoint = true;
         //previousDivisionTime = object.getPreviousDivisionTimePoint();
         nextDivisionTimePoint = object.getNextDivisionTimePoint();
@@ -104,7 +101,7 @@ public class SpotCompartiment {
         return new double[][]{poleUp, poleDown};
     }
     
-    private static double[] getMiddle(Object3D o, int limit) {
+    private static double[] getPositionWithinCompartimentByCount(Object3D o, int limit) {
         int count=0;
         ImageMask mask = o.getMask();
         BoundingBox bds = o.getBounds();
@@ -162,6 +159,8 @@ public class SpotCompartiment {
             offsetDivisionUp = offsetUp;
             offsetDivisionDown = offsetDown;
         }*/
+        int count = this.object.getMask().count();
+        int limit = count/2;
         if (this.nextDivisionTimePoint>0) {
             StructureObject parent = this.object.getInTrack(nextDivisionTimePoint);
             ArrayList<StructureObject> siblings = getDivisionSiblings(parent);
@@ -170,11 +169,17 @@ public class SpotCompartiment {
                 double c1 = (double) siblings.get(0).getMask().count();
                 double c2 = (double) siblings.get(1).getMask().count();
                 double p = c1 / (c1+c2);
-                int limit = (int)(p * this.object.getMask().count()+0.5);
-                this.offsetDivisionMiddle = getMiddle(object.getObject(), limit); 
+                limit = (int)(p * count +0.5);
+                this.offsetDivisionMiddle = getPositionWithinCompartimentByCount(object.getObject(), limit); 
             } 
         } 
         if (offsetDivisionMiddle==null) offsetDivisionMiddle = object.getObject().getCenter(true);
+        // upper and lower bounds for the middle area
+        int upperLimit = limit - (int)((middleAreaProportion/2d) * count+0.5); 
+        this.offsetDivisionMiddleUp = getPositionWithinCompartimentByCount(object.getObject(), upperLimit); 
+        int lowerLimit = limit + (int)((middleAreaProportion/2d) * count+0.5); 
+        this.offsetDivisionMiddleLow = getPositionWithinCompartimentByCount(object.getObject(), lowerLimit); 
+        
     }
     public boolean sameTrackOrDirectChildren(SpotCompartiment nextCompartiment) {
         return (object.getTrackHead()==nextCompartiment.object.getTrackHead() || // same track

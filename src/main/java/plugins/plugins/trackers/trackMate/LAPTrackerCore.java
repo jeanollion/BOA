@@ -17,6 +17,8 @@
  */
 package plugins.plugins.trackers.trackMate;
 
+import boa.gui.imageInteraction.ImageObjectInterface;
+import com.google.common.collect.Sets;
 import dataStructure.objects.StructureObject;
 import fiji.plugin.trackmate.Logger;
 import fiji.plugin.trackmate.Spot;
@@ -37,8 +39,13 @@ import static fiji.plugin.trackmate.tracking.TrackerKeys.KEY_SPLITTING_FEATURE_P
 import static fiji.plugin.trackmate.tracking.TrackerKeys.KEY_SPLITTING_MAX_DISTANCE;
 import fiji.plugin.trackmate.tracking.sparselap.SparseLAPFrameToFrameTracker;
 import fiji.plugin.trackmate.tracking.sparselap.SparseLAPSegmentTracker;
+import ij.gui.Overlay;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 import org.slf4j.LoggerFactory;
@@ -49,6 +56,7 @@ import org.slf4j.LoggerFactory;
  */
 public class LAPTrackerCore {
     private SimpleWeightedGraph< Spot, DefaultWeightedEdge > graph;
+    SpotPopulation spotPopulation;
     public final static org.slf4j.Logger logger = LoggerFactory.getLogger(LAPTrackerCore.class);
     private Logger internalLogger = Logger.VOID_LOGGER;
     final private SpotCollection spots;
@@ -65,8 +73,9 @@ public class LAPTrackerCore {
     int gcMaxFrame = 3;
     double gapCLosingMaxDistance = 0.75;
     double gcAlternativeLinkingCostFactor = alternativeLinkingCostFactor;
-    public LAPTrackerCore(SpotCollection spots) {
-        this.spots=spots;
+    public LAPTrackerCore(SpotPopulation spotPopulation) {
+        this.spots=spotPopulation.getSpotCollection();
+        this.spotPopulation=spotPopulation;
     }
     
     public LAPTrackerCore setLinkingMaxDistance(double maxDist) {
@@ -97,7 +106,11 @@ public class LAPTrackerCore {
 		 * 1. Frame to frame linking.
 		 */
 
-
+                ImageObjectInterface bacteria  =SpotWithinCompartment.bacteria;
+                Overlay testOverlay = SpotWithinCompartment.testOverlay;
+                SpotWithinCompartment.bacteria=null;
+                SpotWithinCompartment.testOverlay=null;
+                
 		// Prepare settings object
 		final Map< String, Object > ftfSettings = new HashMap< String, Object >();
 		ftfSettings.put( KEY_LINKING_MAX_DISTANCE, linkingMaxDistance );
@@ -116,10 +129,22 @@ public class LAPTrackerCore {
 		}
                 
 		graph = frameToFrameLinker.getResult();
-                ... ajouter les spots non linkés, soit un spot avec un lien sur lui-meme, soit en les duplicant et en mettant un lien entre les deux
-		/*
+                Set<Spot> linkedSpots = graph.vertexSet();
+                Set<Spot> unlinkedSpots = new HashSet<Spot>(Sets.difference(spotPopulation.getSpotSet(), linkedSpots));
+                List<DefaultWeightedEdge> edgesToRemove = new ArrayList<DefaultWeightedEdge>(unlinkedSpots.size());
+                logger.debug("uninked spots: {}", unlinkedSpots.size());
+                for (Spot s : unlinkedSpots) {
+                    SpotWithinCompartment clone = spotPopulation.duplicateSpot((SpotWithinCompartment)s);
+                    graph.addVertex(s);
+                    graph.addVertex(clone);
+                    edgesToRemove.add(graph.addEdge(s,clone));
+                }
+                /*
 		 * 2. Gap-closing, merging and splitting.
 		 */
+                
+                //SpotWithinCompartment.bacteria=bacteria;
+                //SpotWithinCompartment.testOverlay = testOverlay;
                 
 		// Prepare settings object
 		final Map< String, Object > slSettings = new HashMap< String, Object >();
@@ -141,7 +166,8 @@ public class LAPTrackerCore {
 		slSettings.put( KEY_CUTOFF_PERCENTILE, 1d );
 
 		// Solve.
-		final SparseLAPSegmentTracker segmentLinker = new SparseLAPSegmentTracker( graph, slSettings );
+		//final SparseLAPSegmentTrackerIncludingUnlinkedSpots segmentLinker = new SparseLAPSegmentTrackerIncludingUnlinkedSpots( graph, slSettings, unlinkedSpots, unlinkedSpots2 );
+                final SparseLAPSegmentTracker segmentLinker = new SparseLAPSegmentTracker( graph, slSettings);
 		final Logger.SlaveLogger slLogger = new Logger.SlaveLogger( internalLogger, 0.5, 0.5 );
 		segmentLinker.setLogger( slLogger );
                 segmentLinker.setNumThreads( numThreads );
@@ -151,6 +177,7 @@ public class LAPTrackerCore {
 			return false;
 		}
                 graph = segmentLinker.getResult();
+                for (DefaultWeightedEdge e : edgesToRemove) graph.removeEdge(e);
 		internalLogger.setStatus( "" );
 		internalLogger.setProgress( 1d );
 		final long end = System.currentTimeMillis();
