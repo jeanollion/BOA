@@ -53,7 +53,7 @@ public class TestLAPTrackerMutations {
         String dbName = "fluo151127";
         TestLAPTrackerMutations t = new TestLAPTrackerMutations();
         t.init(dbName);
-        t.testLAPTracking(0, 0, 0, 100);
+        t.testLAPTracking(0, 0, 0, 200);
     }
     
     public void testLAPTracking(int fieldIdx, int mcIdx, int tStart, int tEnd) {
@@ -75,7 +75,7 @@ public class TestLAPTrackerMutations {
         Overlay o = new Overlay(); ip.setOverlay(o);
         SpotWithinCompartment.bacteria=iB;
         SpotWithinCompartment.testOverlay=o;
-        TextRoi.setFont("SansSerif", 10, Font.PLAIN);
+        TextRoi.setFont("SansSerif", 6, Font.PLAIN);
         
         LAPTracker tracker = new LAPTracker();
         tracker.track(mutationIdx, parentTrack);

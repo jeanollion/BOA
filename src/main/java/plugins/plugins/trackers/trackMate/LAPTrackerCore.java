@@ -106,10 +106,7 @@ public class LAPTrackerCore {
 		 * 1. Frame to frame linking.
 		 */
 
-                ImageObjectInterface bacteria  =SpotWithinCompartment.bacteria;
-                Overlay testOverlay = SpotWithinCompartment.testOverlay;
-                SpotWithinCompartment.bacteria=null;
-                SpotWithinCompartment.testOverlay=null;
+                
                 
 		// Prepare settings object
 		final Map< String, Object > ftfSettings = new HashMap< String, Object >();
@@ -143,8 +140,8 @@ public class LAPTrackerCore {
 		 * 2. Gap-closing, merging and splitting.
 		 */
                 
-                //SpotWithinCompartment.bacteria=bacteria;
-                //SpotWithinCompartment.testOverlay = testOverlay;
+                //SpotWithinCompartment.displayPoles=false;
+                
                 
 		// Prepare settings object
 		final Map< String, Object > slSettings = new HashMap< String, Object >();
