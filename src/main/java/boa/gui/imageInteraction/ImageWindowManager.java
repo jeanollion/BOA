@@ -43,11 +43,12 @@ import utils.Utils;
  * @param <T> image class
  */
 public abstract class ImageWindowManager<T> {
-    public final static Color[] palette = new Color[]{new Color(166, 206, 227), new Color(31,120,180), new Color(178,223,138), new Color(51,160,44), new Color(251,154,153), new Color(253,191,111), new Color(255,127,0), new Color(255,255,153), new Color(177,89,40)};
+    public final static Color[] palette = new Color[]{new Color(166, 206, 227, 150), new Color(31,120,180, 150), new Color(178,223,138, 150), new Color(51,160,44, 150), new Color(251,154,153, 150), new Color(253,191,111, 150), new Color(255,127,0, 150), new Color(255,255,153, 150), new Color(177,89,40, 150)};
+    public final static Color defaultRoiColor = new Color(255, 0, 255, 150);
     public static Color getColor(int idx) {return palette[idx%palette.length];}
     protected final static Color trackErrorColor = new Color(255, 0, 0);
     protected final static Color trackCorrectionColor = new Color(0, 0, 255);
-    final static int trackArrowStrokeWidth = 3;
+    final static int trackArrowStrokeWidth = 2;
     protected final HashMap<ImageObjectInterfaceKey, ImageObjectInterface> imageObjectInterfaces;
     protected final HashMap<Image, ImageObjectInterfaceKey> imageObjectInterfaceMap;
     protected final HashMap<Image, Boolean> isLabelImage;

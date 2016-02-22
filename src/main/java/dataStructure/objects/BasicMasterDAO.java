@@ -68,5 +68,9 @@ public class BasicMasterDAO implements MasterDAO {
     public void setExperiment(Experiment xp) {
         this.xp=xp;
     }
+
+    public SelectionDAO getSelectionDAO() {
+        throw new UnsupportedOperationException("No selection DAO with BasicMaster DAO"); 
+    }
     
 }

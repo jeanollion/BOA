@@ -28,6 +28,9 @@ import boa.gui.objects.StructureObjectTreeGenerator;
 import boa.gui.objects.TrackNode;
 import boa.gui.objects.TrackTreeController;
 import boa.gui.objects.TrackTreeGenerator;
+import boa.gui.selection.SelectionGUI;
+import static boa.gui.selection.SelectionMouseAdapterUtil.setMouseAdapter;
+import boa.gui.selection.SelectionRenderer;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoIterable;
 import configuration.parameters.FileChooser;
@@ -37,6 +40,8 @@ import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.MasterDAO;
+import dataStructure.objects.Selection;
+import dataStructure.objects.SelectionDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import de.caluga.morphium.Morphium;
@@ -102,6 +107,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     StructureObjectTreeGenerator objectTreeGenerator;
     DefaultListModel actionStructureModel;
     DefaultListModel actionMicroscopyFieldModel;
+    DefaultListModel<SelectionGUI> selectionModel;
+    
     /**
      * Creates new form GUI
      */
@@ -109,11 +116,17 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         logger.debug("Creating GUI instance...");
         this.instance=this;
         initComponents();
+        PluginFactory.findPlugins("plugins.plugins");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        // selections
+        selectionModel = new DefaultListModel<SelectionGUI>();
+        this.selectionList.setModel(selectionModel);
+        //this.selectionList.setCellRenderer(new SelectionRenderer());
+        setMouseAdapter(selectionList);
         addHorizontalScrollBar(dbNames);
         addHorizontalScrollBar(trackStructureJCB);
         refreshDBNames();
-        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        PluginFactory.findPlugins("plugins.plugins");
+        
         jTabbedPane1.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
                 if (reloadTree && jTabbedPane1.getSelectedComponent()==DataPanel) {
@@ -161,6 +174,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         populateActionStructureList();
         populateActionMicroscopyFieldList();
         reloadTree=true;
+        loadSelections();
     }
     
     private void unsetXP() {
@@ -168,6 +182,18 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         reloadTree=true;
         populateActionStructureList();
         populateActionMicroscopyFieldList();
+    }
+    
+    protected void loadSelections() {
+        this.selectionModel.removeAllElements();
+        if (!checkConnection()) return;
+        SelectionDAO dao = this.db.getSelectionDAO();
+        List<Selection> sels = dao.getSelections();
+        
+        for (Selection sel : sels) {
+            SelectionGUI gui = new SelectionGUI(sel);
+            selectionModel.addElement(gui);
+        }
     }
     
     protected void loadObjectTrees() {
@@ -408,9 +434,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         ObjectTreeJSP = new javax.swing.JSplitPane();
         StructurePanel = new javax.swing.JPanel();
         structureJSP = new javax.swing.JScrollPane();
-        TimePanel = new javax.swing.JPanel();
+        trackPanel = new javax.swing.JPanel();
         TimeJSP = new javax.swing.JScrollPane();
         trackSubPanel = new javax.swing.JPanel();
+        selectionPanel = new javax.swing.JPanel();
+        selectionJSP = new javax.swing.JScrollPane();
+        selectionList = new javax.swing.JList();
+        createSelectionButton = new javax.swing.JButton();
+        reloadSelectionsButton = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -532,7 +563,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(actionStructureJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 155, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addGap(18, 18, 18)
-                        .addComponent(actionMicroscopyFieldJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 191, Short.MAX_VALUE))
+                        .addComponent(actionMicroscopyFieldJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 201, Short.MAX_VALUE))
                     .addGroup(actionPanelLayout.createSequentialGroup()
                         .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(runActions)
@@ -580,7 +611,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                         .addComponent(extractMeasurements)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(runActions)
-                .addContainerGap(56, Short.MAX_VALUE))
+                .addContainerGap(66, Short.MAX_VALUE))
         );
 
         jTabbedPane1.addTab("Actions", actionPanel);
@@ -589,11 +620,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         ConfigurationPanel.setLayout(ConfigurationPanelLayout);
         ConfigurationPanelLayout.setHorizontalGroup(
             ConfigurationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 641, Short.MAX_VALUE)
+            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 651, Short.MAX_VALUE)
         );
         ConfigurationPanelLayout.setVerticalGroup(
             ConfigurationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 458, Short.MAX_VALUE)
+            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 468, Short.MAX_VALUE)
         );
 
         jTabbedPane1.addTab("Configuration", ConfigurationPanel);
@@ -727,29 +758,65 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         StructurePanelLayout.setVerticalGroup(
             StructurePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(structureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 410, Short.MAX_VALUE)
+            .addComponent(structureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 420, Short.MAX_VALUE)
         );
 
         ObjectTreeJSP.setLeftComponent(StructurePanel);
         StructurePanel.getAccessibleContext().setAccessibleName("Segmented Objects");
 
-        TimePanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Tracks"));
+        trackPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Tracks"));
 
         trackSubPanel.setLayout(new javax.swing.BoxLayout(trackSubPanel, javax.swing.BoxLayout.LINE_AXIS));
         TimeJSP.setViewportView(trackSubPanel);
 
-        javax.swing.GroupLayout TimePanelLayout = new javax.swing.GroupLayout(TimePanel);
-        TimePanel.setLayout(TimePanelLayout);
-        TimePanelLayout.setHorizontalGroup(
-            TimePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 325, Short.MAX_VALUE)
+        javax.swing.GroupLayout trackPanelLayout = new javax.swing.GroupLayout(trackPanel);
+        trackPanel.setLayout(trackPanelLayout);
+        trackPanelLayout.setHorizontalGroup(
+            trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 209, Short.MAX_VALUE)
         );
-        TimePanelLayout.setVerticalGroup(
-            TimePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 410, Short.MAX_VALUE)
+        trackPanelLayout.setVerticalGroup(
+            trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 420, Short.MAX_VALUE)
         );
 
-        ObjectTreeJSP.setRightComponent(TimePanel);
+        ObjectTreeJSP.setRightComponent(trackPanel);
+
+        selectionPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Selections"));
+
+        selectionJSP.setViewportView(selectionList);
+
+        createSelectionButton.setText("Create Selection");
+        createSelectionButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                createSelectionButtonActionPerformed(evt);
+            }
+        });
+
+        reloadSelectionsButton.setText("Reload Selections");
+        reloadSelectionsButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                reloadSelectionsButtonActionPerformed(evt);
+            }
+        });
+
+        javax.swing.GroupLayout selectionPanelLayout = new javax.swing.GroupLayout(selectionPanel);
+        selectionPanel.setLayout(selectionPanelLayout);
+        selectionPanelLayout.setHorizontalGroup(
+            selectionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addComponent(createSelectionButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(reloadSelectionsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(selectionJSP, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+        );
+        selectionPanelLayout.setVerticalGroup(
+            selectionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, selectionPanelLayout.createSequentialGroup()
+                .addComponent(createSelectionButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(reloadSelectionsButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(selectionJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 370, javax.swing.GroupLayout.PREFERRED_SIZE))
+        );
 
         javax.swing.GroupLayout DataPanelLayout = new javax.swing.GroupLayout(DataPanel);
         DataPanel.setLayout(DataPanelLayout);
@@ -758,7 +825,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             .addGroup(DataPanelLayout.createSequentialGroup()
                 .addComponent(ControlPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(ObjectTreeJSP)
+                .addComponent(selectionPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(ObjectTreeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 335, Short.MAX_VALUE)
                 .addContainerGap())
         );
         DataPanelLayout.setVerticalGroup(
@@ -767,7 +836,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addContainerGap()
                 .addGroup(DataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(ControlPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                    .addComponent(ObjectTreeJSP))
+                    .addComponent(ObjectTreeJSP)
+                    .addComponent(selectionPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
                 .addContainerGap())
         );
 
@@ -777,7 +847,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jTabbedPane1)
+            .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 663, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1072,6 +1142,27 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             unsetXP();
         }
     }//GEN-LAST:event_DeleteXPActionPerformed
+
+    private void reloadSelectionsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_reloadSelectionsButtonActionPerformed
+        loadSelections();
+    }//GEN-LAST:event_reloadSelectionsButtonActionPerformed
+
+    private void createSelectionButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_createSelectionButtonActionPerformed
+        String name = JOptionPane.showInputDialog("New Selection name:");
+        if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
+        else {
+            for (int i = 0; i<selectionModel.size(); ++i) if (selectionModel.get(i).selection.getName().equals(name)) {
+                logger.error("Selection name already exists");
+                return;
+            }
+            Selection sel = new Selection(name);
+            this.db.getSelectionDAO().store(sel);
+            SelectionGUI gui = new SelectionGUI(sel);
+            this.selectionModel.addElement(gui);
+        }
+    }//GEN-LAST:event_createSelectionButtonActionPerformed
+    
+    
     
     private void updateConnectButton() {
         String s = Utils.getSelectedString(dbNames);
@@ -1152,7 +1243,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JSplitPane ObjectTreeJSP;
     private javax.swing.JPanel StructurePanel;
     private javax.swing.JScrollPane TimeJSP;
-    private javax.swing.JPanel TimePanel;
     private javax.swing.JScrollPane actionJSP;
     private javax.swing.JScrollPane actionMicroscopyFieldJSP;
     private javax.swing.JList actionMicroscopyFieldList;
@@ -1162,6 +1252,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JButton collapseAllObjectButton;
     private javax.swing.JScrollPane configurationJSP;
     private javax.swing.JButton connectButton;
+    private javax.swing.JButton createSelectionButton;
     private javax.swing.JComboBox dbNames;
     private javax.swing.JButton deleteObjectsButton;
     private javax.swing.JButton duplicateExperiment;
@@ -1175,14 +1266,19 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JButton nextTrackErrorButton;
     private javax.swing.JButton previousTrackErrorButton;
     private javax.swing.JButton refreshDBNames;
+    private javax.swing.JButton reloadSelectionsButton;
     private javax.swing.JList runActionList;
     private javax.swing.JButton runActions;
     private javax.swing.JButton saveExperiment;
     private javax.swing.JButton selectAllObjects;
     private javax.swing.JButton selectAllTracksButton;
     private javax.swing.JToggleButton selectContainingTrackToggleButton;
+    private javax.swing.JScrollPane selectionJSP;
+    private javax.swing.JList selectionList;
+    private javax.swing.JPanel selectionPanel;
     private javax.swing.JButton splitObjectButton;
     private javax.swing.JScrollPane structureJSP;
+    private javax.swing.JPanel trackPanel;
     private javax.swing.JComboBox trackStructureJCB;
     private javax.swing.JPanel trackSubPanel;
     // End of variables declaration//GEN-END:variables

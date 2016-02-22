@@ -22,6 +22,7 @@ import dataStructure.configuration.ExperimentDAO;
 import de.caluga.morphium.DereferencingListener;
 import de.caluga.morphium.Morphium;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Set;
 import utils.MorphiumUtils;
 
@@ -32,11 +33,13 @@ import utils.MorphiumUtils;
 public class MorphiumMasterDAO implements MasterDAO {
     final Morphium m;
     final ExperimentDAO xpDAO;
+    final MorphiumSelectionDAO selectionDAO;
     DereferencingListener dl;
     final HashMap<String, MorphiumObjectDAO> DAOs;
     public MorphiumMasterDAO(Morphium m) {
         this.m=m;
         this.xpDAO=new ExperimentDAO(m);
+        this.selectionDAO=new MorphiumSelectionDAO(this);
         this.DAOs=new HashMap<String, MorphiumObjectDAO>();
         if (dl!=null) m.removeDerrferencingListener(dl);
         dl=MorphiumUtils.addDereferencingListeners(m, xpDAO);
@@ -93,4 +96,10 @@ public class MorphiumMasterDAO implements MasterDAO {
     }
     
     public ExperimentDAO getXpDAO() {return this.xpDAO;}
+
+    public SelectionDAO getSelectionDAO() {
+        return this.selectionDAO;
+    }
+
+
 }

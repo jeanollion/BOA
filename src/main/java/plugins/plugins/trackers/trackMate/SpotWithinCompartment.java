@@ -34,7 +34,7 @@ import image.Image;
 public class SpotWithinCompartment extends Spot {
     public static ImageObjectInterface bacteria;
     public static Overlay testOverlay;
-    public static boolean displayPoles=false;
+    public static boolean displayPoles=true;
     public static double poleDistanceFactor = 0.25;
     public static enum Localization {
         UP, UPPER_MIDDLE, MIDDLE, LOWER_MIDDLE, LOW;
@@ -43,7 +43,7 @@ public class SpotWithinCompartment extends Spot {
                 if (UP.equals(other) || UPPER_MIDDLE.equals(other) || MIDDLE.equals(other)) return UP;
                 else return null;
             } else if (MIDDLE.equals(this)) {
-                if (MIDDLE.equals(other) || UPPER_MIDDLE.equals(other) || UPPER_MIDDLE.equals(other)) return MIDDLE;
+                if (MIDDLE.equals(other) || UPPER_MIDDLE.equals(other) || LOWER_MIDDLE.equals(other)) return MIDDLE;
                 else if (UP.equals(other)) return UP;
                 else if (LOW.equals(other)) return LOW;
                 else return null;
@@ -171,7 +171,6 @@ public class SpotWithinCompartment extends Spot {
     
     protected double getSquareDistanceCompartiments(SpotWithinCompartment s) {
         Localization offsetType = this.localization.getOffsetType(s.localization);
-        LAPTrackerCore.logger.debug("s1: {}, comp: {}, tp: {}, s2: {}, comp: {}, tp: {}, offsetType: {}", this.object.getIdx(), this.compartiment.object.getIdx(), this.object.getTimePoint(), s.object.getIdx(), s.compartiment.object.getIdx(), s.object.getTimePoint(), offsetType);
         if (offsetType==null) return Double.POSITIVE_INFINITY;
         else if (Localization.UP.equals(offsetType)) {
             if (displayPoles) displayOffsets(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 jollion
+ * Copyright (C) 2016 jollion
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -15,27 +15,20 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.objects;
+package boa.gui.selection;
 
-import dataStructure.configuration.Experiment;
-import java.util.HashMap;
-import java.util.List;
+import dataStructure.objects.Selection;
 
 /**
  *
  * @author jollion
  */
-public interface MasterDAO {
-    public ObjectDAO getDao(String fieldName);
-    public String getDBName();
-    public void deleteAllObjects();
-    public void reset();
-    
-    // experiments
-    public Experiment getExperiment();
-    public void updateExperiment();
-    public void setExperiment(Experiment xp);
-    
-    // selections
-    public SelectionDAO getSelectionDAO();
+public class SelectionGUI {
+    public final Selection selection;
+    public SelectionGUI(Selection selection) {
+        this.selection=selection;
+    }
+    @Override public String toString() {
+        return selection.toString();
+    }
 }

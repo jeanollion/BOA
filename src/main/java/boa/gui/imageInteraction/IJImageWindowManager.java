@@ -170,6 +170,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                 if (p==null || p.key==null) continue;
                 //logger.debug("getting mask of object: {}", o);
                 for (Roi r : getRoi(p.key.getMask(), p.value, !i.is2D).values()) {
+                    r.setStrokeColor(defaultRoiColor);
                     overlay.add(r);
                     logger.trace("add roi: "+r+ " of bounds : "+r.getBounds()+" to overlay");
                 }
@@ -229,6 +230,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                 arrow.setStrokeColor(o2.hasTrackLinkError()?ImageWindowManager.trackErrorColor: o2.hasTrackLinkCorrection() ?ImageWindowManager.trackCorrectionColor : color);
                 arrow.setStrokeWidth(trackArrowStrokeWidth);
                 arrow.setHeadSize(trackArrowStrokeWidth*1.5);
+                
                 //if (o1.getNext()==o2) arrow.setDoubleHeaded(true);
                 
                 int zMin = Math.max(b1.getzMin(), b2.getzMin());
