@@ -17,7 +17,10 @@
  */
 package boa.gui.selection;
 
+import boa.gui.GUI;
+import boa.gui.imageInteraction.ImageWindowManager;
 import dataStructure.objects.Selection;
+import java.awt.Color;
 
 /**
  *
@@ -25,8 +28,10 @@ import dataStructure.objects.Selection;
  */
 public class SelectionGUI {
     public final Selection selection;
+    public Color color = ImageWindowManager.defaultRoiColor;
     public SelectionGUI(Selection selection) {
         this.selection=selection;
+        selection.setMasterDAO(GUI.getDBConnection());
     }
     @Override public String toString() {
         return selection.toString();

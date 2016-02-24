@@ -107,7 +107,7 @@ public class SaveAndRetriveSegmentationData {
             ImageObjectInterface i = windowManager.getImageTrackObjectInterface(track, structureIdx);
             i.setGUIMode(false);
             Image im = i.generateRawImage(structureIdx);
-            windowManager.displayObjects(im, i, false, i.getObjects());
+            windowManager.displayObjects(im, i, false, i.getObjects(), null);
             res.put(im, windowManager.getDisplayer().getImage(im).getOverlay());
             im.setName(getName(baseFileName, fieldIdx, count++));
         }

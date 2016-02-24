@@ -34,8 +34,8 @@ import image.Image;
 public class SpotWithinCompartment extends Spot {
     public static ImageObjectInterface bacteria;
     public static Overlay testOverlay;
-    public static boolean displayPoles=true;
-    public static double poleDistanceFactor = 0.25;
+    public static boolean displayPoles=false;
+    public static double poleDistanceFactor = 0;
     public static enum Localization {
         UP, UPPER_MIDDLE, MIDDLE, LOWER_MIDDLE, LOW;
         public Localization getOffsetType(Localization other) {

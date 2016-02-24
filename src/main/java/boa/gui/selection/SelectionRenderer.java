@@ -17,7 +17,9 @@
  */
 package boa.gui.selection;
 
+import static boa.gui.GUI.logger;
 import dataStructure.objects.Selection;
+import java.awt.Color;
 import java.awt.Component;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
@@ -33,11 +35,11 @@ public class SelectionRenderer extends JLabel implements ListCellRenderer<Select
     @Override
     public Component getListCellRendererComponent(JList<? extends SelectionGUI> list, SelectionGUI selection, int index,
         boolean isSelected, boolean cellHasFocus) {
-          
-        //ImageIcon imageIcon = new ImageIcon(getClass().getResource("/images/" + code + ".png"));
-        //setIcon(imageIcon);
         setText(selection.toString());
-        // todo selection fore & background color
+        setForeground(isSelected ? list.getSelectionForeground() : selection.color);
+        setBackground(isSelected ? selection.color : list.getBackground());
+        this.setOpaque(true);
+        //57/105/138
         return this;
     }
      

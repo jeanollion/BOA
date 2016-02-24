@@ -113,7 +113,7 @@ public class SNR extends IntensityMeasurement {
         if (parentObject==null) return 0;
         IntensityMeasurements iParent = super.core.getIntensityMeasurements(parentObject, null);
         double fore = super.core.getIntensityMeasurements(object, offset).mean;
-        logger.debug("SNR: fore:{}, back I: {} back SD: {}", fore, iParent.mean, iParent.sd);
+        //logger.debug("SNR: fore:{}, back I: {} back SD: {}", fore, iParent.mean, iParent.sd);
         return ( fore-iParent.mean ) / iParent.sd;
     }
 

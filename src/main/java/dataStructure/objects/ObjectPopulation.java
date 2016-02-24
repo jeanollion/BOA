@@ -440,7 +440,7 @@ public class ObjectPopulation {
 
         public boolean keepObject(Object3D object) {
             double testValue = feature.performMeasurement(object, offset);
-            logger.debug("FeatureFilter: {}, testValue: {}, threshold: {}", feature.getClass().getSimpleName(), testValue, threshold);
+            //logger.debug("FeatureFilter: {}, testValue: {}, threshold: {}", feature.getClass().getSimpleName(), testValue, threshold);
             if (keepOverThreshold) {
                 if (strict) return testValue>threshold;
                 else return testValue>=threshold;

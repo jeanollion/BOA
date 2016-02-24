@@ -48,7 +48,7 @@ public abstract class ImageWindowManager<T> {
     public static Color getColor(int idx) {return palette[idx%palette.length];}
     protected final static Color trackErrorColor = new Color(255, 0, 0);
     protected final static Color trackCorrectionColor = new Color(0, 0, 255);
-    final static int trackArrowStrokeWidth = 2;
+    final static int trackArrowStrokeWidth = 3;
     protected final HashMap<ImageObjectInterfaceKey, ImageObjectInterface> imageObjectInterfaces;
     protected final HashMap<Image, ImageObjectInterfaceKey> imageObjectInterfaceMap;
     protected final HashMap<Image, Boolean> isLabelImage;
@@ -71,7 +71,7 @@ public abstract class ImageWindowManager<T> {
         if (im==null) return;
         Image image = displayer.getImage(im);
         ImageObjectInterface i =  getImageObjectInterface(image);
-        displayObjects(image, i, false, i.getObjects());
+        displayObjects(image, i, false, i.getObjects(), defaultRoiColor);
     }
     
     //protected abstract T getImage(Image image);
@@ -151,6 +151,17 @@ public abstract class ImageWindowManager<T> {
         if (parent.getParent()!=null) reloadObjects(parent.getParent(), childStructureIdx, wholeTrack);
     } 
     
+    public ImageObjectInterface getCurrentImageObjectInterface() {
+        T current = getDisplayer().getCurrentImage();
+        if (current!=null) {
+            Image im = getDisplayer().getImage(current);
+            if (im!=null) {
+                return getImageObjectInterface(im);
+            }
+        }
+        return null;
+    }
+    
     protected ImageObjectInterface getImageObjectInterface(Image image) {
         ImageObjectInterfaceKey key = imageObjectInterfaceMap.get(image);
         if (key==null) return null;
@@ -189,12 +200,13 @@ public abstract class ImageWindowManager<T> {
         } else logger.warn("image: {} is not registered for click");
         return null;
     }
-    public void displayObjects(Image image, ImageObjectInterface i, boolean addToCurrentSelection, Pair<StructureObject, BoundingBox>... selectedObjects) {
-        displayObjects(image, i, addToCurrentSelection, Arrays.asList(selectedObjects));
+    public void displayObjects(Image image, ImageObjectInterface i, boolean addToCurrentSelection, Color color, Pair<StructureObject, BoundingBox>... selectedObjects) {
+        displayObjects(image, i, addToCurrentSelection, Arrays.asList(selectedObjects), color);
     }
-    public abstract void displayObjects(Image image, ImageObjectInterface i, boolean addToCurrentSelection, List<Pair<StructureObject, BoundingBox>> selectedObjects);
+    public abstract void displayObjects(Image image, ImageObjectInterface i, boolean addToCurrentSelection, List<Pair<StructureObject, BoundingBox>> selectedObjects, Color color);
+    public abstract void unDisplayObjects(Image image, ImageObjectInterface i, List<Pair<StructureObject, BoundingBox>> objects);
     public abstract void unselectObjects(Image image);
-    public abstract void displayTrack(Image image, ImageObjectInterface i, boolean addToCurrentSelectedTracks, ArrayList<StructureObject> track, Color color);
+    public abstract void displayTrack(Image image, ImageObjectInterface i, boolean addToCurrentSelectedTracks, List<StructureObject> track, Color color);
     public void displayTrackAllImages(ImageObjectInterface i, boolean addToCurrentSelectedTracks, ArrayList<StructureObject> track, Color color) {
         if (i==null && track!=null && !track.isEmpty()) i = this.getImageObjectInterface(track.get(0).getTrackHead(), track.get(0).getStructureIdx(), false);
         if (i==null) return;
@@ -318,5 +330,5 @@ public abstract class ImageWindowManager<T> {
         
         return null;
     }
-
+    
 }

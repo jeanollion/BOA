@@ -21,6 +21,8 @@ import static dataStructure.objects.StructureObject.logger;
 import de.caluga.morphium.annotations.Entity;
 import de.caluga.morphium.annotations.Id;
 import de.caluga.morphium.annotations.Transient;
+import de.caluga.morphium.annotations.lifecycle.Lifecycle;
+import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,16 +40,31 @@ public class Selection implements Comparable<Selection> {
     @Id String id;
     int structureIdx;
     Map<String, List<int[]>> elements;
-    @Transient Map<String, List<StructureObject>> retrievedElements = new HashMap<String, List<StructureObject>>();
+    @Transient Map<String, List<StructureObject>> retrievedElements;
     @Transient MasterDAO mDAO;
-    public Selection() {}
+    
     public Selection(String name) {
         this.id=name;
+        this.structureIdx=-1;
+        retrievedElements = new HashMap<String, List<StructureObject>>();
+        elements = new HashMap<String, List<int[]>>();
     }
     public void setMasterDAO(MasterDAO mDAO) {
         this.mDAO=mDAO;
     }
-    public List<StructureObject> retrieveElements(String fieldName) {
+    
+    public int getStructureIdx() {
+        return structureIdx;
+    }
+    
+    public List<StructureObject> getElements(String fieldName) {
+        if (retrievedElements==null) retrievedElements = new HashMap<String, List<StructureObject>>(elements.size());
+        List<StructureObject> res =  retrievedElements.get(fieldName);
+        if (res==null && elements.containsKey(fieldName)) return retrieveElements(fieldName);
+        return res;
+    }
+    
+    protected List<StructureObject> retrieveElements(String fieldName) {
         if (fieldName==null) throw new IllegalArgumentException("FieldName cannot be null");
         List<int[]> indiciesList = elements.get(fieldName);
         if (indiciesList==null) {
@@ -65,7 +82,7 @@ public class Selection implements Comparable<Selection> {
             StructureObject elem = dao.getRoot(indicies[0]);
             for (int i= 1; i<indicies.length; ++i) {
                 if (elem.getChildren(pathToRoot[i-1]).size()>=indicies[i]) {
-                    logger.warn("Object: {} was not found", indicies, pathToRoot.length);
+                    logger.warn("Object: {} was not found {}", indicies, pathToRoot.length);
                     continue;
                 }
                 elem = elem.getChildren(pathToRoot[i-1]).get(indicies[i]);
@@ -92,28 +109,51 @@ public class Selection implements Comparable<Selection> {
     }
     
     public void addElement(StructureObject elementToAdd) {
-        List<StructureObject> list = this.retrievedElements.get(elementToAdd.getFieldName());
+        if (this.structureIdx==-1) structureIdx=elementToAdd.getStructureIdx();
+        else if (structureIdx!=elementToAdd.getStructureIdx()) return;
+        List<StructureObject> list = getElements(elementToAdd.getFieldName());
         if (list==null) {
             list=new ArrayList<StructureObject>();
             retrievedElements.put(elementToAdd.getFieldName(), list);
         }
-        if (!list.contains(elementToAdd)) list.add(elementToAdd);
+        if (!list.contains(elementToAdd)) {
+            list.add(elementToAdd);
+            List<int[]> els = elements.get(elementToAdd.getFieldName());
+            if (els==null) {
+                els = new ArrayList<int[]>();
+                elements.put(elementToAdd.getFieldName(), els);
+            }
+            els.add(StructureObjectUtils.getIndexTree(elementToAdd));
+            if (els.size()!=list.size()) logger.error("unconsitancy in selection: {}, {} vs: {}", this.toString(), list.size(), els.size());
+        }
     }
-    public void addElements(ArrayList<StructureObject> elementsToAdd) {
+    public void addElements(List<StructureObject> elementsToAdd) {
         for (StructureObject o : elementsToAdd) addElement(o);
     }
+    
     public boolean removeElement(StructureObject elementToRemove) {
-        List<StructureObject> list = this.retrievedElements.get(elementToRemove.getFieldName());
-        if (list!=null) return list.remove(elementToRemove);
+        List<StructureObject> list = getElements(elementToRemove.getFieldName());
+        if (list!=null) {
+            int idx = list.indexOf(elementToRemove);
+            if (idx>=0) {
+                list.remove(idx);
+                List<int[]> els = elements.get(elementToRemove.getFieldName());
+                els.remove(idx);
+                if (els.size()!=list.size()) logger.error("unconsitancy in selection: {}, {} vs: {}", this.toString(), list.size(), els.size());
+            }
+        }
         return false;
     }
-    public void removeElements(ArrayList<StructureObject> elementsToRemove) {
+    public void removeElements(List<StructureObject> elementsToRemove) {
         for (StructureObject o : elementsToRemove) removeElement(o);
     }
-    
+    public void clear() {
+        elements.clear();
+        if (retrievedElements!=null) retrievedElements.clear();
+    }
     @Override 
     public String toString() {
-        return id;
+        return id+" (s:"+structureIdx+")";
     }
     public String getName() {
         return id;
@@ -122,4 +162,8 @@ public class Selection implements Comparable<Selection> {
     public int compareTo(Selection o) {
         return this.id.compareTo(o.id);
     }
+    
+    // morphium
+    public Selection() {}
+
 }

@@ -169,19 +169,20 @@ public class StructureObjectTreeGenerator {
         return this.treeModel;
     }
     
-    public ArrayList<StructureObject> getSelectedObjects(boolean onlyFromSameStructureIdx) {
+    public ArrayList<StructureObject> getSelectedObjects(boolean onlyFromSameStructureIdx, int... structureIdx) {
         
         ArrayList<StructureObject> res = new ArrayList<StructureObject>(tree.getSelectionCount());
         if (tree.getSelectionCount()==0) return res;
-        int structureIdx = -1;
+        int stIdx = -1;
+        if (structureIdx.length>0) stIdx = structureIdx[0];
         for (TreePath p : tree.getSelectionPaths()) {
             if (p.getLastPathComponent() instanceof ObjectNode) {
                 StructureObject o = ((ObjectNode)p.getLastPathComponent()).data;
                 if (onlyFromSameStructureIdx) {
-                    if (structureIdx==-1) {
-                        structureIdx = o.getStructureIdx();
+                    if (stIdx==-1) {
+                        stIdx = o.getStructureIdx();
                         res.add(o);
-                    } else if (o.getStructureIdx()==structureIdx) res.add(o);
+                    } else if (o.getStructureIdx()==stIdx) res.add(o);
                 } else res.add(o);
             }
         }

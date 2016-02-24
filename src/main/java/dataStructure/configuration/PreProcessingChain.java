@@ -53,11 +53,11 @@ import utils.Utils;
  */
 public class PreProcessingChain extends SimpleContainerParameter {
     
-    SimpleListParameter<TransformationPluginParameter<Transformation>> constantTransformations;
+    SimpleListParameter<TransformationPluginParameter<Transformation>> transformations;
     
     public PreProcessingChain(String name) {
         super(name);
-        constantTransformations = new SimpleListParameter<TransformationPluginParameter<Transformation>>("Transformations", new TransformationPluginParameter<Transformation>("Transformation", Transformation.class, false));
+        transformations = new SimpleListParameter<TransformationPluginParameter<Transformation>>("Transformations", new TransformationPluginParameter<Transformation>("Transformation", Transformation.class, false));
         //logger.debug("new PPC: {}", name);
         initChildList();
     }
@@ -65,15 +65,15 @@ public class PreProcessingChain extends SimpleContainerParameter {
     @Override
     protected void initChildList() {
         //logger.debug("PreProc chain: {}, init list..", name);
-        super.initChildren(constantTransformations);
+        super.initChildren(transformations);
     }
     
     public List<TransformationPluginParameter<Transformation>> getTransformations() {
-        return constantTransformations.getActivatedChildren();
+        return transformations.getActivatedChildren();
     }
     
     public void removeAllTransformations() {
-        constantTransformations.removeAllElements();
+        transformations.removeAllElements();
     }
     
     /**
@@ -84,7 +84,7 @@ public class PreProcessingChain extends SimpleContainerParameter {
      */
     public TransformationPluginParameter<Transformation> addTransformation(int inputChannel, int[] outputChannel, Transformation transformation) {
         TransformationPluginParameter<Transformation> tpp= new TransformationPluginParameter<Transformation>("Transformation", Transformation.class, false);
-        constantTransformations.insert(tpp);
+        transformations.insert(tpp);
         tpp.setPlugin(transformation);
         tpp.setInputChannel(inputChannel);
         tpp.setOutputChannel(outputChannel);

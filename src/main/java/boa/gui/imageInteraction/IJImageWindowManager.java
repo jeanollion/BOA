@@ -51,6 +51,7 @@ import java.awt.event.MouseWheelListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import utils.Pair;
 
@@ -59,7 +60,7 @@ import utils.Pair;
  * @author nasique
  */
 public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
-    
+    Map<Pair<StructureObject, BoundingBox>, Map<Integer, Roi>> objectRoiMap = new HashMap<Pair<StructureObject, BoundingBox>, Map<Integer, Roi>> ();
     public IJImageWindowManager(ImageObjectListener listener) {
         super(listener, new IJImageDisplayer());
     }
@@ -106,7 +107,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                     ArrayList<Pair<StructureObject, BoundingBox>> selectedObjects = new ArrayList<Pair<StructureObject, BoundingBox>>();
                     i.addClickedObjects(selection, selectedObjects);
                     //logger.debug("selection: {}, number of objects: {}", selection, selectedObjects.size());
-                    displayObjects(image, i, ctrl, selectedObjects);
+                    displayObjects(image, i, ctrl, selectedObjects, null);
                     if (listener!=null) listener.fireObjectSelected(selectedObjects, ctrl, i.isTimeImage());
                     if (ctrl) ip.deleteRoi();
                 } else {
@@ -120,7 +121,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                     Pair<StructureObject, BoundingBox> o = i.getClickedObject(offscreenX, offscreenY, ip.getSlice()-1);
                     ArrayList<Pair<StructureObject, BoundingBox>> selectedObjects = new ArrayList<Pair<StructureObject, BoundingBox>>(1);
                     if (o!=null) selectedObjects.add(o);
-                    displayObjects(image, i, ctrl, selectedObjects);
+                    displayObjects(image, i, ctrl, selectedObjects, null);
                     //logger.trace("selected object: "+o);
                     if (listener!=null) listener.fireObjectSelected(selectedObjects, ctrl, i.isTimeImage());
                     
@@ -145,7 +146,8 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
     }*/
 
     @Override
-    public void displayObjects(Image image, ImageObjectInterface i, boolean addToCurrentSelection, List<Pair<StructureObject, BoundingBox>> objectsToDisplay) {
+    public void displayObjects(Image image, ImageObjectInterface i, boolean addToCurrentSelection, List<Pair<StructureObject, BoundingBox>> objectsToDisplay, Color color) {
+        if (color==null) color = ImageWindowManager.defaultRoiColor;
         ImagePlus ip;
         if (image==null) ip = displayer.getCurrentImage();
         else ip = displayer.getImage(image);
@@ -169,8 +171,13 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
             for (Pair<StructureObject, BoundingBox> p : objectsToDisplay) {
                 if (p==null || p.key==null) continue;
                 //logger.debug("getting mask of object: {}", o);
-                for (Roi r : getRoi(p.key.getMask(), p.value, !i.is2D).values()) {
-                    r.setStrokeColor(defaultRoiColor);
+                Map<Integer, Roi> roiZ=objectRoiMap.get(p);
+                if (roiZ==null) {
+                    roiZ = getRoi(p.key.getMask(), p.value, !i.is2D);
+                    objectRoiMap.put(p, roiZ);
+                }
+                for (Roi r : roiZ.values()) {
+                    r.setStrokeColor(color);
                     overlay.add(r);
                     logger.trace("add roi: "+r+ " of bounds : "+r.getBounds()+" to overlay");
                 }
@@ -179,8 +186,34 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
         }
     }
     
+    public void unDisplayObjects(Image image, ImageObjectInterface i, List<Pair<StructureObject, BoundingBox>> objects) {
+        ImagePlus im;
+        if (image==null) {
+            im = getDisplayer().getCurrentImage();
+            if (im==null) return;
+            image = getDisplayer().getImage(im);
+        } else im = getDisplayer().getImage(image);
+        if (i==null) {
+            if (image==null) return;
+            i=this.getImageObjectInterface(image);
+            if (i==null) return;
+        }
+        Overlay o = im.getOverlay();
+        if (o!=null) {
+            for (Pair<StructureObject, BoundingBox> p : objects) {
+                Map<Integer, Roi> roiZ=objectRoiMap.get(p);
+                if (roiZ!=null) {
+                    for (Roi r : roiZ.values()) {
+                        o.remove(r);
+                    }
+                }
+            }
+        }
+        im.setOverlay(o);
+    }
+    
     @Override
-    public void displayTrack(Image image, ImageObjectInterface i, boolean addToCurrentSelectedTracks, ArrayList<StructureObject> track, Color color) {
+    public void displayTrack(Image image, ImageObjectInterface i, boolean addToCurrentSelectedTracks, List<StructureObject> track, Color color) {
         //logger.debug("display selected track: image: {}, addToCurrentTracks: {}, track length: {} color: {}", image,addToCurrentSelectedTracks, track==null?"null":track.size(), color);
         ImagePlus ip;
         if (image==null) {

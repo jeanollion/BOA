@@ -121,7 +121,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         // selections
         selectionModel = new DefaultListModel<SelectionGUI>();
         this.selectionList.setModel(selectionModel);
-        //this.selectionList.setCellRenderer(new SelectionRenderer());
+        this.selectionList.setCellRenderer(new SelectionRenderer());
         setMouseAdapter(selectionList);
         addHorizontalScrollBar(dbNames);
         addHorizontalScrollBar(trackStructureJCB);
@@ -141,6 +141,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         });
         
     }
+    
+    public StructureObjectTreeGenerator getObjectTree() {return this.objectTreeGenerator;}
+    public TrackTreeController getTrackTrees() {return this.trackTreeController;}
     
     public void setDBConnection(String dbName, String hostname) {
         long t0 = System.currentTimeMillis();
@@ -784,6 +787,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
         selectionPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Selections"));
 
+        selectionList.setBackground(new java.awt.Color(214, 214, 214));
         selectionJSP.setViewportView(selectionList);
 
         createSelectionButton.setText("Create Selection");
@@ -815,7 +819,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(reloadSelectionsButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(selectionJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 370, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(selectionJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 345, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(25, 25, 25))
         );
 
         javax.swing.GroupLayout DataPanelLayout = new javax.swing.GroupLayout(DataPanel);
@@ -827,7 +832,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(selectionPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(ObjectTreeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 335, Short.MAX_VALUE)
+                .addComponent(ObjectTreeJSP)
                 .addContainerGap())
         );
         DataPanelLayout.setVerticalGroup(
@@ -847,7 +852,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jTabbedPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 663, Short.MAX_VALUE)
+            .addComponent(jTabbedPane1)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
