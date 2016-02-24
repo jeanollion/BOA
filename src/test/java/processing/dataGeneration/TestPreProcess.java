@@ -19,6 +19,7 @@ package processing.dataGeneration;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import core.Processor;
+import static core.Processor.setTransformations;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.containers.InputImagesImpl;
 import dataStructure.objects.MorphiumMasterDAO;
@@ -31,6 +32,8 @@ import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.transformations.AutoRotationXY;
 import plugins.plugins.transformations.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
+import static plugins.plugins.transformations.ImageStabilizerXY.testTranslate;
+import plugins.plugins.transformations.SaturateHistogram;
 import plugins.plugins.transformations.SimpleRotationXY;
 import processing.ImageTransformation;
 
@@ -41,10 +44,11 @@ import processing.ImageTransformation;
 public class TestPreProcess {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        String dbName= "fluo151130_OutputNewScaling";
+        String dbName= "fluo160218";
         //testTransformation("fluo151130_OutputNewScaling", 9, 1, 0);
         //testPreProcessing(, 24, 0, 0, 50, 70);
-        testCrop(dbName, 24, 50, true);
+        //testCrop(dbName, 0, 0, false);
+        testStabilizer("fluo160218", 0, 0, 50, 159, false);
     }
     
     public static void testTransformation(String dbName, int fieldIdx, int channelIdx, int time) {
@@ -91,5 +95,26 @@ public class TestPreProcess {
         IJImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
         disp.showImage(output);
+    }
+    
+    public static void testStabilizer(String dbName, int fieldIdx, int channelIdx, int tRef, int t, boolean flip) {
+        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+        MicroscopyField f = db.getExperiment().getMicroscopyField(fieldIdx);
+        f.getPreProcessingChain().removeAllTransformations();
+        f.getPreProcessingChain().addTransformation(0, null, new SaturateHistogram(350, 450));
+        f.getPreProcessingChain().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
+        f.getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
+        if (flip) f.getPreProcessingChain().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
+        f.getPreProcessingChain().addTransformation(0, null, new CropMicroChannels2D());
+        setTransformations(f, true);
+        
+        InputImagesImpl images = f.getInputImages();
+        Image ref = images.getImage(channelIdx, tRef).setName("tRef");
+        Image im = images.getImage(channelIdx, t).setName("to translate");
+        Image trans = testTranslate(ref, im, 1000, 1e-7, 1).setName("translated");
+        IJImageDisplayer disp = new IJImageDisplayer();
+        disp.showImage(ref);
+        disp.showImage(im);
+        disp.showImage(trans);
     }
 }

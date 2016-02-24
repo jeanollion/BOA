@@ -30,14 +30,14 @@ import javax.swing.ListCellRenderer;
  *
  * @author jollion
  */
-public class SelectionRenderer extends JLabel implements ListCellRenderer<SelectionGUI> {
+public class SelectionRenderer extends JLabel implements ListCellRenderer<Selection> {
  
     @Override
-    public Component getListCellRendererComponent(JList<? extends SelectionGUI> list, SelectionGUI selection, int index,
+    public Component getListCellRendererComponent(JList<? extends Selection> list, Selection selection, int index,
         boolean isSelected, boolean cellHasFocus) {
         setText(selection.toString());
-        setForeground(isSelected ? list.getSelectionForeground() : selection.color);
-        setBackground(isSelected ? selection.color : list.getBackground());
+        setForeground(isSelected ? list.getSelectionForeground() : selection.getColor());
+        setBackground(isSelected ? selection.getColor() : list.getBackground());
         this.setOpaque(true);
         //57/105/138
         return this;

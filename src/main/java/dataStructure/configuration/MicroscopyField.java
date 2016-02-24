@@ -26,6 +26,7 @@ import configuration.parameters.PluginParameter;
 import configuration.parameters.SimpleContainerParameter;
 import configuration.parameters.SimpleListParameter;
 import configuration.parameters.StructureParameter;
+import configuration.parameters.TimePointParameter;
 import core.Processor;
 import dataStructure.containers.ImageDAO;
 import dataStructure.containers.InputImage;
@@ -48,20 +49,22 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     
     MultipleImageContainer images;
     PreProcessingChain preProcessingChain;
+    TimePointParameter defaultTimePoint;
     @Transient InputImagesImpl inputImages;
-    @Transient public static final int defaultTimePoint = 50;
+    @Transient public static final int defaultTP = 100;
     //ui: bouton droit = selectionner un champ?
     
     public MicroscopyField(String name) {
         super(name);
         preProcessingChain=new PreProcessingChain("Pre-Processing chain");
+        defaultTimePoint = new TimePointParameter("Default TimePoint", defaultTP);
         initChildList();
     }
     
     @Override
     protected void initChildList() {
         //logger.debug("MF: {}, init list..", name);
-        initChildren(preProcessingChain);
+        initChildren(preProcessingChain, defaultTimePoint);
     }
     
     public void setPreProcessingChains(PreProcessingChain ppc) {
@@ -81,7 +84,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
                    res[t][c] = new InputImage(c, t, name, images, dao);
                 } 
             }
-            inputImages = new InputImagesImpl(res, Math.min(defaultTimePoint, images.getTimePointNumber()-1));
+            inputImages = new InputImagesImpl(res, Math.min(defaultTimePoint.getSelectedTimePoint(), images.getTimePointNumber()-1));
         }
         return inputImages;
     }

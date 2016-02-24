@@ -17,12 +17,14 @@
  */
 package dataStructure.objects;
 
+import static boa.gui.selection.SelectionMouseAdapterUtil.colors;
 import static dataStructure.objects.StructureObject.logger;
 import de.caluga.morphium.annotations.Entity;
 import de.caluga.morphium.annotations.Id;
 import de.caluga.morphium.annotations.Transient;
 import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import de.caluga.morphium.annotations.lifecycle.PostLoad;
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -40,8 +42,11 @@ public class Selection implements Comparable<Selection> {
     @Id String id;
     int structureIdx;
     Map<String, List<int[]>> elements;
+    String color="magenta";
+    
     @Transient Map<String, List<StructureObject>> retrievedElements;
     @Transient MasterDAO mDAO;
+    @Transient Color col;
     
     public Selection(String name) {
         this.id=name;
@@ -49,6 +54,17 @@ public class Selection implements Comparable<Selection> {
         retrievedElements = new HashMap<String, List<StructureObject>>();
         elements = new HashMap<String, List<int[]>>();
     }
+    
+    public Color getColor() {
+        if (col ==null) col = colors.get(color);
+        return col;
+    }
+    
+    public void setColor(String color) {
+        this.color=color;
+        col = colors.get(color);
+    }
+    
     public void setMasterDAO(MasterDAO mDAO) {
         this.mDAO=mDAO;
     }

@@ -43,7 +43,8 @@ public class ThreadRunner {
                 }
             }
         );
-    }
+    } 
+    tr.startAndJoin();
 
      * 
      */

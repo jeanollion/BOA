@@ -28,7 +28,6 @@ import boa.gui.objects.StructureObjectTreeGenerator;
 import boa.gui.objects.TrackNode;
 import boa.gui.objects.TrackTreeController;
 import boa.gui.objects.TrackTreeGenerator;
-import boa.gui.selection.SelectionGUI;
 import static boa.gui.selection.SelectionMouseAdapterUtil.setMouseAdapter;
 import boa.gui.selection.SelectionRenderer;
 import com.mongodb.MongoClient;
@@ -107,7 +106,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     StructureObjectTreeGenerator objectTreeGenerator;
     DefaultListModel actionStructureModel;
     DefaultListModel actionMicroscopyFieldModel;
-    DefaultListModel<SelectionGUI> selectionModel;
+    DefaultListModel<Selection> selectionModel;
     
     /**
      * Creates new form GUI
@@ -119,7 +118,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         PluginFactory.findPlugins("plugins.plugins");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         // selections
-        selectionModel = new DefaultListModel<SelectionGUI>();
+        selectionModel = new DefaultListModel<Selection>();
         this.selectionList.setModel(selectionModel);
         this.selectionList.setCellRenderer(new SelectionRenderer());
         setMouseAdapter(selectionList);
@@ -194,8 +193,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         List<Selection> sels = dao.getSelections();
         
         for (Selection sel : sels) {
-            SelectionGUI gui = new SelectionGUI(sel);
-            selectionModel.addElement(gui);
+            selectionModel.addElement(sel);
+            sel.setMasterDAO(db);
         }
     }
     
@@ -1156,14 +1155,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         String name = JOptionPane.showInputDialog("New Selection name:");
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
         else {
-            for (int i = 0; i<selectionModel.size(); ++i) if (selectionModel.get(i).selection.getName().equals(name)) {
+            for (int i = 0; i<selectionModel.size(); ++i) if (selectionModel.get(i).getName().equals(name)) {
                 logger.error("Selection name already exists");
                 return;
             }
             Selection sel = new Selection(name);
             this.db.getSelectionDAO().store(sel);
-            SelectionGUI gui = new SelectionGUI(sel);
-            this.selectionModel.addElement(gui);
+            sel.setMasterDAO(db);
+            this.selectionModel.addElement(sel);
         }
     }//GEN-LAST:event_createSelectionButtonActionPerformed
     

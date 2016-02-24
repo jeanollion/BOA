@@ -72,11 +72,12 @@ import ij.process.*;
 import ij.plugin.filter.*;
 import ij.plugin.frame.Editor;
 import ij.io.*;
+import static plugins.Plugin.logger;
 
 
 
 public class ImageStabilizerCore {
-
+    public static boolean debug=false;
     static final int TRANSLATION = 0;
     static final int AFFINE = 1;
 
@@ -140,10 +141,12 @@ public class ImageStabilizerCore {
                                    ImageProcessor[] ipPyramid,
                                    ImageProcessor[] ipRefPyramid, boolean computeGradientForRef, 
                                    int              maxIter,
-                                   double           tol)
+                                   double           tol, Double[] estimateShift)
     {
-        double[][] wp = { {0.0}, {0.0} };
-
+        double[][] wp = {{0.0}, {0.0}};
+        
+        if (estimateShift!=null) wp = new double[][]{{estimateShift[0]}, {estimateShift[1]}} ;
+        
         // We operate on the gradient magnitude of the image
         //   rather than on the original pixel intensity.
         gradient(ipPyramid[0], ip); 
@@ -225,8 +228,9 @@ public class ImageStabilizerCore {
 
         double oldRmse = Double.MAX_VALUE;
         double minRmse = Double.MAX_VALUE;
+        int iter=0;
 
-        for (int iter = 0; iter < maxIter; ++iter) {
+        for (iter = 0; iter < maxIter; ++iter) {
 
             warpTranslation(ipOut, ip, wp);
 
@@ -240,9 +244,10 @@ public class ImageStabilizerCore {
                     bestWp[1][0] = wp[1][0];
                     minRmse      = rmse;
                 }
-                if (Math.abs((oldRmse - rmse) /
-                        (oldRmse + Double.MIN_VALUE)) < tol)
+                if (Math.abs((oldRmse - rmse) / (oldRmse + Double.MIN_VALUE)) < tol) {
                     break;
+                }
+                    
             }
             oldRmse = rmse;
 
@@ -266,7 +271,9 @@ public class ImageStabilizerCore {
             wp[0][0] = w[0][2];
             wp[1][0] = w[1][2];
         }
-
+        if (debug) {
+            logger.debug("ImageStabilizer: iteration number: {}, rmse: {}, dX: {}, dY: {}", iter, minRmse, bestWp[0][0], bestWp[1][0]);
+        }
         return bestWp;
     }
     

@@ -57,36 +57,42 @@ public class GenerateTestXP {
         // Ordi LJP
         /*String dbName = "fluo151130_OutputNewScaling";
         String outputDir = "/data/Images/Fluo/films1511/151130/OutputNewScaling";
-        String inputDir = "/data/Images/Fluo/films1511/151130/ME120R63-30112015-lr62r1";*/
+        String inputDir = "/data/Images/Fluo/films1511/151130/ME120R63-30112015-lr62r1";
+        boolean flip = true;
+        */
         
-        String dbName = "fluo151127";
+        /*String dbName = "fluo151127";
         String outputDir = "/data/Images/Fluo/films1511/151127/Output";
         String inputDir = "/data/Images/Fluo/films1511/151127/ME121R-27112015-laser";
+        boolean flip = true; */
         
-        /*String dbName = "fluo160218";
+        String dbName = "fluo160218";
         String inputDir = "/data/Images/Fluo/film160218/ME120R63-18022016-LR62r";
         String outputDir = "/data/Images/Fluo/film160218/Output";
-        */
+        boolean flip = false;
         
         /*
         // Ordi Portable
         String dbName = "testSub";
         String outputDir = "/home/jollion/Documents/LJP/DataLJP/TestOutput";
-        String inputDir = "/home/jollion/Documents/LJP/DataLJP/testsub";  */     
+        String inputDir = "/home/jollion/Documents/LJP/DataLJP/testsub"; 
+        boolean flip = true;
+        */     
         
         /*String dbName = "fluo151127";
         String outputDir = "/home/jollion/Documents/LJP/DataLJP/Fluo151127/Output";
         String inputDir = "/media/jollion/4336E5641DA22135/LJP/films1511/151127/ME121R-27112015-laser";
+        boolean flip = true;
         */
         
         boolean performProcessing = false;
         
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
         mDAO.reset();
-        Experiment xp = generateXP(outputDir, true); 
+        Experiment xp = generateXP(outputDir, true, flip); 
         mDAO.setExperiment(xp);
         
-        Processor.importFiles(xp, inputDir);
+        //Processor.importFiles(xp, inputDir);
         
         if (performProcessing) {
             Processor.preProcessImages(mDAO, true);
@@ -96,7 +102,7 @@ public class GenerateTestXP {
     }
     
     
-    public static Experiment generateXP(String outputDir, boolean setUpPreProcessing) {
+    public static Experiment generateXP(String outputDir, boolean setUpPreProcessing, boolean flip) {
         
         Experiment xp = new Experiment("testXP");
         xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
@@ -121,7 +127,7 @@ public class GenerateTestXP {
             xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1, 0)).setActivated(true); // to remove salt and pepper noise
             xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
             xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
-            xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(true);
+            xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
             xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannels2D());
             xp.getPreProcessingTemplate().addTransformation(1, null, new ScaleHistogramSignalExclusion(100, 5, 0, 50, true)); // to remove blinking
             xp.getPreProcessingTemplate().addTransformation(0, null, new SelectBestFocusPlane(3)).setActivated(false); // faster after crop, but previous transformation might be aftected if the first plane is really out of focus

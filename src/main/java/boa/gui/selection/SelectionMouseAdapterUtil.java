@@ -23,6 +23,7 @@ import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.gui.objects.StructureObjectTreeGenerator;
+import dataStructure.objects.Selection;
 import dataStructure.objects.SelectionDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
@@ -52,10 +53,10 @@ import utils.Utils;
  */
 public class SelectionMouseAdapterUtil {
     public static Map<String, Color> colors = new HashMap<String, Color>() {{
-        put("Magenta", new Color(255, 0, 255, 120));
-        put("Blue", new Color(0, 0, 255, 120));
-        put("Cyan", new Color(0, 255, 255, 120));
-        put("Green", new Color(0, 255, 0, 120));
+        put("magenta", new Color(255, 0, 255, 120));
+        put("blue", new Color(0, 0, 255, 120));
+        put("cyan", new Color(0, 255, 255, 120));
+        put("green", new Color(0, 255, 0, 120));
     }};
     
     public static void setMouseAdapter(final JList list) {
@@ -65,17 +66,17 @@ public class SelectionMouseAdapterUtil {
         final JMenuItem displayObjects = new JMenuItem("Display Objects");
         displayObjects.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                List<SelectionGUI> sel = list.getSelectedValuesList();
+                List<Selection> sel = list.getSelectedValuesList();
                 if (sel.isEmpty()) return;
                 
-                for (SelectionGUI s : sel ) {
+                for (Selection s : sel ) {
                     ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
                     ImageObjectInterface i = iwm.getCurrentImageObjectInterface();
                     if (i!=null) {
                         String fieldName = i.getParent().getFieldName();
-                        List<StructureObject> objects = s.selection.getElements(fieldName);
+                        List<StructureObject> objects = s.getElements(fieldName);
                         if (objects!=null) {
-                            iwm.displayObjects(null, i, true, i.pairWithOffset(objects), s.color);
+                            iwm.displayObjects(null, i, true, i.pairWithOffset(objects), s.getColor());
                         }
                     }
                 }
@@ -85,15 +86,15 @@ public class SelectionMouseAdapterUtil {
         final JMenuItem hideObjects = new JMenuItem("Hide Objects");
         hideObjects.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                List<SelectionGUI> sel = list.getSelectedValuesList();
+                List<Selection> sel = list.getSelectedValuesList();
                 if (sel.isEmpty()) return;
                 
-                for (SelectionGUI s : sel ) {
+                for (Selection s : sel ) {
                     ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
                     ImageObjectInterface i = iwm.getCurrentImageObjectInterface();
                     if (i!=null) {
                         String fieldName = i.getParent().getFieldName();
-                        List<StructureObject> objects = s.selection.getElements(fieldName);
+                        List<StructureObject> objects = s.getElements(fieldName);
                         if (objects!=null) {
                             iwm.unDisplayObjects(null, i, i.pairWithOffset(objects));
                         }
@@ -107,22 +108,22 @@ public class SelectionMouseAdapterUtil {
         final JMenuItem displayTracks = new JMenuItem("Display Tracks");
         displayTracks.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                List<SelectionGUI> sel = list.getSelectedValuesList();
+                List<Selection> sel = list.getSelectedValuesList();
                 if (sel.isEmpty()) return;
                 
-                for (SelectionGUI s : sel ) {
+                for (Selection s : sel ) {
                     ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
                     ImageObjectInterface i = iwm.getCurrentImageObjectInterface();
                     if (i!=null) {
                         String fieldName = i.getParent().getFieldName();
-                        List<StructureObject> objects = s.selection.getElements(fieldName);
+                        List<StructureObject> objects = s.getElements(fieldName);
                         if (objects==null) return;
                         List<StructureObject> tracks = new ArrayList<StructureObject>(objects.size());
                         for (StructureObject o : objects) tracks.add(o.getTrackHead());
                         Utils.removeDuplicates(tracks, false);
                         for (StructureObject trackHead : tracks) {
                             List<StructureObject> track = StructureObjectUtils.getTrack(trackHead);
-                            iwm.displayTrack(null, i, true, track, s.color);
+                            iwm.displayTrack(null, i, true, track, s.getColor());
                         }
                     }
                 }
@@ -133,14 +134,14 @@ public class SelectionMouseAdapterUtil {
         menu.add(new JSeparator());
         JMenu colorMenu = new JMenu("Set Color");
         for (String s : colors.keySet()) {
-            final Color c = colors.get(s);
+            final String colorName = s;
             JMenuItem color = new JMenuItem(s);
             colorMenu.add(color);
             color.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    List<SelectionGUI> sel = list.getSelectedValuesList();
+                    List<Selection> sel = list.getSelectedValuesList();
                     if (sel.isEmpty()) return;
-                    for (SelectionGUI s : sel ) s.color=c;
+                    for (Selection s : sel ) s.setColor(colorName);
                     list.updateUI();
                 }
             });
@@ -150,14 +151,14 @@ public class SelectionMouseAdapterUtil {
         JMenuItem add = new JMenuItem("Add to Selection");
         add.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                List<SelectionGUI> sel = list.getSelectedValuesList();
+                List<Selection> sel = list.getSelectedValuesList();
                 if (sel.isEmpty()) return;
                 SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
                 StructureObjectTreeGenerator sotg = GUI.getInstance().getObjectTree();
-                for (SelectionGUI s : sel ) {
-                    List<StructureObject> objects = sotg.getSelectedObjects(true, s.selection.getStructureIdx());
-                    s.selection.addElements(objects);
-                    dao.store(s.selection);
+                for (Selection s : sel ) {
+                    List<StructureObject> objects = sotg.getSelectedObjects(true, s.getStructureIdx());
+                    s.addElements(objects);
+                    dao.store(s);
                 }
             }
         });
@@ -166,14 +167,14 @@ public class SelectionMouseAdapterUtil {
         JMenuItem remove = new JMenuItem("Remove from Selection");
         remove.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                List<SelectionGUI> sel = list.getSelectedValuesList();
+                List<Selection> sel = list.getSelectedValuesList();
                 if (sel.isEmpty()) return;
                 SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
                 StructureObjectTreeGenerator sotg = GUI.getInstance().getObjectTree();
-                for (SelectionGUI s : sel ) {
-                    List<StructureObject> objects = sotg.getSelectedObjects(true, s.selection.getStructureIdx());
-                    s.selection.removeElements(objects);
-                    dao.store(s.selection);
+                for (Selection s : sel ) {
+                    List<StructureObject> objects = sotg.getSelectedObjects(true, s.getStructureIdx());
+                    s.removeElements(objects);
+                    dao.store(s);
                 }
             }
         });
@@ -183,12 +184,12 @@ public class SelectionMouseAdapterUtil {
         JMenuItem clear = new JMenuItem("Clear");
         clear.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                List<SelectionGUI> sel = list.getSelectedValuesList();
+                List<Selection> sel = list.getSelectedValuesList();
                 if (sel.isEmpty()) return;
                 SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
-                for (SelectionGUI s : sel ) {
-                    s.selection.clear();
-                    dao.store(s.selection);
+                for (Selection s : sel ) {
+                    s.clear();
+                    dao.store(s);
                 }
             }
         });
@@ -197,11 +198,11 @@ public class SelectionMouseAdapterUtil {
         JMenuItem delete = new JMenuItem("Delete Selection");
         delete.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                List<SelectionGUI> sel = list.getSelectedValuesList();
+                List<Selection> sel = list.getSelectedValuesList();
                 if (sel.isEmpty()) return;
-                DefaultListModel<SelectionGUI> model = (DefaultListModel<SelectionGUI>)list.getModel();
+                DefaultListModel<Selection> model = (DefaultListModel<Selection>)list.getModel();
                 SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
-                for (SelectionGUI s : sel ) dao.delete(s.selection);
+                for (Selection s : sel ) dao.delete(s);
                 for (int i : list.getSelectedIndices()) model.removeElementAt(i);
             }
         });
