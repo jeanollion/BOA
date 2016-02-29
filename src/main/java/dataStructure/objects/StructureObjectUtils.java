@@ -196,14 +196,16 @@ public class StructureObjectUtils {
         }
     }
     
-    public static List<StructureObject> getTrack(StructureObject trackHead) {
+    public static List<StructureObject> getTrack(StructureObject trackHead, boolean extend) {
         if (trackHead==null) return Collections.EMPTY_LIST;
         StructureObject head = trackHead.getTrackHead();
         ArrayList<StructureObject> track = new ArrayList<StructureObject>();
+        if (extend && head.getPrevious()!=null) track.add(head.getPrevious());
         while(trackHead!=null && trackHead.getTrackHead()==head) {
             track.add(trackHead);
             trackHead = trackHead.getNext();
         } 
+        if (extend && track.get(track.size()-1).getNext()!=null) track.add(track.get(track.size()-1).getNext());
         return track;
     }
 }

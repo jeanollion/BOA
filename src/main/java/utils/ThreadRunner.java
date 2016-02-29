@@ -104,8 +104,12 @@ public class ThreadRunner {
     public static int getMaxCPUs() {
         return Runtime.getRuntime().availableProcessors();
     }
-
+    
     public static <T> void execute(final T[] array, final boolean setToNull, final ThreadAction<T> action) {
+        execute(array, setToNull, 0, action);
+    }
+    
+    public static <T> void execute(final T[] array, final boolean setToNull, final int nThreadLimit, final ThreadAction<T> action) {
         if (array==null) return;
         if (array.length==0) return;
         if (array.length==1) {
@@ -114,7 +118,7 @@ public class ThreadRunner {
             if (action instanceof ThreadAction2) ((ThreadAction2)action).tearDown();
             return;
         }
-        final ThreadRunner tr = new ThreadRunner(0, array.length, 0);
+        final ThreadRunner tr = new ThreadRunner(0, array.length, nThreadLimit);
         for (int i = 0; i<tr.threads.length; i++) {
             //final ThreadAction<T> localAction = action
             tr.threads[i] = new Thread(

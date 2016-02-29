@@ -66,7 +66,7 @@ public class ObjectContainerIjRoi extends ObjectContainer {
     }
 
     private void createRoi(Object3D object) {
-        Map<Integer, Roi> roiZTemp = IJImageWindowManager.getRoi(object.getMask(), object.getBounds(), object.is3D());
+        Map<Integer, Roi> roiZTemp = IJImageWindowManager.createRoi(object.getMask(), object.getBounds(), object.is3D());
         roiZ = new ArrayList<byte[]>(roiZTemp.size());
         roiZTemp = new TreeMap<Integer, Roi>(roiZTemp);
         for (Entry<Integer, Roi> e : roiZTemp.entrySet()) roiZ.add(RoiEncoder.saveAsByteArray(e.getValue()));

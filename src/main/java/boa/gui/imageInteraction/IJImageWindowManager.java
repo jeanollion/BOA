@@ -18,8 +18,11 @@
 package boa.gui.imageInteraction;
 
 import static boa.gui.GUI.logger;
+import boa.gui.imageInteraction.IJImageWindowManager.Roi3D;
+import boa.gui.imageInteraction.IJImageWindowManager.TrackRoi;
 import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectUtils;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.WindowManager;
@@ -54,13 +57,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import utils.Pair;
+import utils.Utils;
 
 /**
  *
  * @author nasique
  */
-public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
-    Map<Pair<StructureObject, BoundingBox>, Map<Integer, Roi>> objectRoiMap = new HashMap<Pair<StructureObject, BoundingBox>, Map<Integer, Roi>> ();
+public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, TrackRoi> {
+    
+           
     public IJImageWindowManager(ImageObjectListener listener) {
         super(listener, new IJImageDisplayer());
     }
@@ -91,10 +96,16 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
             public void mouseReleased(MouseEvent e) {
                 if (IJ.getToolName().equals("zoom") || IJ.getToolName().equals("hand")) return;
                 boolean ctrl = (e.getModifiers() & ActionEvent.CTRL_MASK) == ActionEvent.CTRL_MASK;
+                boolean alt = (e.getModifiers() & ActionEvent.ALT_MASK) == ActionEvent.ALT_MASK;
+                
                 ImageObjectInterface i = getImageObjectInterface(image);
                 if (i==null) {
                     logger.trace("no image interface found");
                     return;
+                }
+                if (!ctrl) {
+                    if (!alt) hideLabileObjects(image);
+                    else hideLabileTracks(image);
                 }
                 Roi r = ip.getRoi();
                 BoundingBox selection = null;
@@ -107,7 +118,17 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                     ArrayList<Pair<StructureObject, BoundingBox>> selectedObjects = new ArrayList<Pair<StructureObject, BoundingBox>>();
                     i.addClickedObjects(selection, selectedObjects);
                     //logger.debug("selection: {}, number of objects: {}", selection, selectedObjects.size());
-                    displayObjects(image, i, ctrl, selectedObjects, null);
+                    if (!alt) {
+                        displayObjects(image, i, selectedObjects, null, true);
+                    } else {
+                        List<StructureObject> trackHeads = new ArrayList<StructureObject>();
+                        for (Pair<StructureObject, BoundingBox> p : selectedObjects) trackHeads.add(p.key.getTrackHead());
+                        Utils.removeDuplicates(trackHeads, false);
+                        for (StructureObject th : trackHeads) {
+                            List<StructureObject> track = StructureObjectUtils.getTrack(th, true);
+                            displayTrack(image, i, i.pairWithOffset(track), null, true);
+                        }
+                    }
                     if (listener!=null) listener.fireObjectSelected(selectedObjects, ctrl, i.isTimeImage());
                     if (ctrl) ip.deleteRoi();
                 } else {
@@ -115,13 +136,19 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
                     int y = e.getY();
                     int offscreenX = canvas.offScreenX(x);
                     int offscreenY = canvas.offScreenY(y);
-                    
-                    //logger.trace("mousepressed: x={}, y={} ctrl: {}", offscreenX, offscreenY, ctrl);
-
                     Pair<StructureObject, BoundingBox> o = i.getClickedObject(offscreenX, offscreenY, ip.getSlice()-1);
                     ArrayList<Pair<StructureObject, BoundingBox>> selectedObjects = new ArrayList<Pair<StructureObject, BoundingBox>>(1);
                     if (o!=null) selectedObjects.add(o);
-                    displayObjects(image, i, ctrl, selectedObjects, null);
+                    if (!alt) displayObjects(image, i, selectedObjects, null, true);
+                    else {
+                        List<StructureObject> trackHeads = new ArrayList<StructureObject>();
+                        for (Pair<StructureObject, BoundingBox> p : selectedObjects) trackHeads.add(p.key.getTrackHead());
+                        Utils.removeDuplicates(trackHeads, false);
+                        for (StructureObject th : trackHeads) {
+                            List<StructureObject> track = StructureObjectUtils.getTrack(th, true);
+                            displayTrack(image, i, i.pairWithOffset(track), null, true);
+                        }
+                    }
                     //logger.trace("selected object: "+o);
                     if (listener!=null) listener.fireObjectSelected(selectedObjects, ctrl, i.isTimeImage());
                     
@@ -139,178 +166,29 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
         });
     }
 
-    /*@Override
-    public void removeClickListener(Image image) {
-        ImageCanvas canvas = image.getWindow().getCanvas();
-        for (MouseListener l : canvas.getMouseListeners()) canvas.removeMouseListener(l);
-    }*/
+    @Override
+    public void displayObject(ImagePlus image, Roi3D roi) {
+        Overlay o = image.getOverlay();
+        if (o==null) {
+            o=new Overlay();
+            image.setOverlay(o);
+        }
+        for (Roi r : roi.values()) o.add(r);
+    }
 
     @Override
-    public void displayObjects(Image image, ImageObjectInterface i, boolean addToCurrentSelection, List<Pair<StructureObject, BoundingBox>> objectsToDisplay, Color color) {
-        if (color==null) color = ImageWindowManager.defaultRoiColor;
-        ImagePlus ip;
-        if (image==null) ip = displayer.getCurrentImage();
-        else ip = displayer.getImage(image);
-        if (ip==null) return;
-        if (i==null) i = getImageObjectInterface(image);
-        if (objectsToDisplay.isEmpty() || (objectsToDisplay.get(0)==null)) {
-            if (!addToCurrentSelection) {
-                if (ip.getOverlay()!=null) {
-                    removeAllRois(ip.getOverlay(), false);
-                    ip.updateAndDraw();
-                }
-            }
-            return;
-        }
-        if (i!=null) {
-            Overlay overlay;
-            if (ip.getOverlay()!=null) {
-                overlay=ip.getOverlay();
-                if (!addToCurrentSelection) removeAllRois(overlay, false);
-            } else overlay=new Overlay();
-            for (Pair<StructureObject, BoundingBox> p : objectsToDisplay) {
-                if (p==null || p.key==null) continue;
-                //logger.debug("getting mask of object: {}", o);
-                Map<Integer, Roi> roiZ=objectRoiMap.get(p);
-                if (roiZ==null) {
-                    roiZ = getRoi(p.key.getMask(), p.value, !i.is2D);
-                    objectRoiMap.put(p, roiZ);
-                }
-                for (Roi r : roiZ.values()) {
-                    r.setStrokeColor(color);
-                    overlay.add(r);
-                    logger.trace("add roi: "+r+ " of bounds : "+r.getBounds()+" to overlay");
-                }
-            }
-            ip.setOverlay(overlay);
-        }
-    }
-    
-    public void unDisplayObjects(Image image, ImageObjectInterface i, List<Pair<StructureObject, BoundingBox>> objects) {
-        ImagePlus im;
-        if (image==null) {
-            im = getDisplayer().getCurrentImage();
-            if (im==null) return;
-            image = getDisplayer().getImage(im);
-        } else im = getDisplayer().getImage(image);
-        if (i==null) {
-            if (image==null) return;
-            i=this.getImageObjectInterface(image);
-            if (i==null) return;
-        }
-        Overlay o = im.getOverlay();
+    public void hideObject(ImagePlus image, Roi3D roi) {
+        Overlay o = image.getOverlay();
         if (o!=null) {
-            for (Pair<StructureObject, BoundingBox> p : objects) {
-                Map<Integer, Roi> roiZ=objectRoiMap.get(p);
-                if (roiZ!=null) {
-                    for (Roi r : roiZ.values()) {
-                        o.remove(r);
-                    }
-                }
-            }
-        }
-        im.setOverlay(o);
-    }
-    
-    @Override
-    public void displayTrack(Image image, ImageObjectInterface i, boolean addToCurrentSelectedTracks, List<StructureObject> track, Color color) {
-        //logger.debug("display selected track: image: {}, addToCurrentTracks: {}, track length: {} color: {}", image,addToCurrentSelectedTracks, track==null?"null":track.size(), color);
-        ImagePlus ip;
-        if (image==null) {
-            ip = displayer.getCurrentImage();
-            image = displayer.getImage(ip);
-        } else ip = displayer.getImage(image);
-        if (ip==null || image==null) {
-            logger.warn("no displayed track image found");
-            return;
-        }
-        if (track==null) {
-            if (!addToCurrentSelectedTracks) {
-                if (ip.getOverlay()!=null) {
-                    removeAllRois(ip.getOverlay(), true);
-                    ip.updateAndDraw();
-                }
-            }
-            return;
-        }
-        if (i==null) i = getImageObjectInterface(image);
-        boolean canDisplayTrack = i instanceof TrackMask;
-        if (canDisplayTrack) canDisplayTrack = ((TrackMask)i).parent.getTrackHead().equals(track.get(0).getParent().getTrackHead()); // same track head
-        if (canDisplayTrack) {
-            TrackMask tm = (TrackMask)i;
-            canDisplayTrack = track.get(0).getTimePoint()>=tm.parentTrack.get(0).getTimePoint() 
-                    && track.get(track.size()-1).getTimePoint()<=tm.parentTrack.get(tm.parentTrack.size()-1).getTimePoint();
-        }
-        if (canDisplayTrack) { 
-            if (i.getKey().childStructureIdx!=track.get(0).getStructureIdx()) i = super.imageObjectInterfaces.get(i.getKey().getKey(track.get(0).getStructureIdx()));
-            TrackMask tm = (TrackMask)i;
-            Overlay overlay;
-            if (ip.getOverlay()!=null) {
-                overlay=ip.getOverlay();
-                if (!addToCurrentSelectedTracks) removeAllRois(overlay, true);
-            } else overlay=new Overlay();
-            for (int idx = 0; idx<=track.size(); ++idx) {
-                StructureObject o1 = idx==0?track.get(0).getPrevious() : track.get(idx-1);
-                if (o1==null) continue;
-                StructureObject o2 = idx<track.size() ? track.get(idx) : o1.getNext();
-                if (o2==null) continue;
-                BoundingBox b1 = tm.getObjectOffset(o1);
-                BoundingBox b2 = tm.getObjectOffset(o2);
-                if (b1 ==null) logger.error("object not found: {}", o1);
-                if (b2 ==null) logger.error("object not found: {}", o2);
-                if (b1==null || b2==null) continue;
-                Arrow arrow = new Arrow(b1.getXMean(), b1.getYMean(), b2.getXMean()-1, b2.getYMean());
-                arrow.setStrokeColor(o2.hasTrackLinkError()?ImageWindowManager.trackErrorColor: o2.hasTrackLinkCorrection() ?ImageWindowManager.trackCorrectionColor : color);
-                arrow.setStrokeWidth(trackArrowStrokeWidth);
-                arrow.setHeadSize(trackArrowStrokeWidth*1.5);
-                
-                //if (o1.getNext()==o2) arrow.setDoubleHeaded(true);
-                
-                int zMin = Math.max(b1.getzMin(), b2.getzMin());
-                int zMax = Math.min(b1.getzMax(), b2.getzMax());
-                if (zMin==zMax) {
-                    if (!i.is2D) arrow.setPosition(zMin+1);
-                    overlay.add(arrow);
-                    //logger.debug("add arrow: {}", arrow);
-                } else {
-                    // TODO debug
-                    //logger.error("Display Track error. objects: {} & {} bounds: {} & {}, image bounds: {} & {}", o1, o2, o1.getBounds(), o2.getBounds(), b1, b2);
-                    //if (true) return;
-                    if (zMin>zMax) {
-                        int tmp = zMax;
-                        zMax=zMin<(ip.getNSlices()-1)?zMin+1:zMin;
-                        zMin=tmp>0?tmp-1:tmp;
-                    }
-                    for (int z = zMin; z <= zMax; ++z) {
-                        Arrow dup = (Arrow)arrow.clone();
-                        dup.setPosition(z+1);
-                        overlay.add(dup);
-                        //logger.debug("add arrow (z): {}", arrow);
-                    }
-                }
-            }
-            ip.setOverlay(overlay);
-            ip.updateAndDraw();
-        } else logger.warn("image cannot display selected track: ImageObjectInterface null? {}, is Track? {}", i==null, i instanceof TrackMask);
-    } 
-    
-    private static void removeAllRois(Overlay overlay, boolean arrows) {
-        if (overlay==null) return;
-        logger.trace("remove all rois.. arrows? {}", arrows);
-        if (arrows) {
-            for (Roi r : overlay.toArray()) if (r instanceof Arrow) overlay.remove(r);
-        }
-        else {
-            for (Roi r : overlay.toArray()) if (!(r instanceof Arrow)) overlay.remove(r);
+            for (Roi r : roi.values()) o.remove(r);
         }
     }
 
     @Override
-    public void unselectObjects(Image image) {
-        //removeScrollListeners(image);
-        ImagePlus ip = displayer.getImage(image);
-        if (ip!=null) ip.setOverlay(null);
+    public Roi3D generateObjectRoi(Pair<StructureObject, BoundingBox> object, boolean image2D, Color color) {
+        return createRoi(object.key.getMask(), object.value, !image2D);
     }
+
     /**
      * 
      * @param mask
@@ -318,8 +196,8 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
      * @param is3D
      * @return maping of Roi to Z-slice (taking into account the provided offset)
      */
-    public static HashMap<Integer, Roi> getRoi(ImageInteger mask, BoundingBox offset, boolean is3D) {
-        HashMap<Integer, Roi> res = new HashMap<Integer, Roi>(mask.getSizeZ());
+    public static Roi3D createRoi(ImageInteger mask, BoundingBox offset, boolean is3D) {
+        Roi3D res = new Roi3D(mask.getSizeZ());
         ThresholdToSelection tts = new ThresholdToSelection();
         ImagePlus maskPlus = IJImageWrapper.getImagePlus(mask);
         tts.setup("", maskPlus);
@@ -340,48 +218,95 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus> {
         return res;
     }
     
-    
-    private static void addScrollListener(final ImagePlus img, final HashMap<Integer, Overlay> overlays) {
-        AdjustmentListener al = new AdjustmentListener() {
-            @Override
-            public void adjustmentValueChanged(AdjustmentEvent e) {
-                img.setOverlay(overlays.get(img.getSlice() - 1));
-                img.updateAndDraw();
-            }
-        };
-        for (Component c : img.getWindow().getComponents()) {
-            if (c instanceof Scrollbar) ((Scrollbar)c).addAdjustmentListener(al);
-            else if (c instanceof Container) {
-                for (Component c2 : ((Container)c).getComponents()) {
-                    if (c2 instanceof Scrollbar) ((Scrollbar)c2).addAdjustmentListener(al);
-                }
-            }
+    // track-related methods
+    @Override
+    public void displayTrack(ImagePlus image, TrackRoi roi) {
+        Overlay o = image.getOverlay();
+        if (o==null) {
+            o=new Overlay();
+            image.setOverlay(o);
         }
-        img.getWindow().addMouseWheelListener(new MouseWheelListener() {
-            @Override
-            public void mouseWheelMoved(MouseWheelEvent e) {
-                img.setOverlay(overlays.get(img.getSlice() - 1));
-                img.updateAndDraw();
-            }
-        });
+        for (Roi r : roi) o.add(r);
     }
 
-    private static void removeScrollListeners(ImagePlus img) {
-        for (Component c : img.getWindow().getComponents()) {
-            if (c instanceof Scrollbar) removeAdjustmentListener(((Scrollbar)c));
-            else if (c instanceof Container) {
-                for (Component c2 : ((Container)c).getComponents()) {
-                    if (c2 instanceof Scrollbar) removeAdjustmentListener(((Scrollbar)c2));
-                }
-            }
+    @Override
+    public void hideTrack(ImagePlus image, TrackRoi roi) {
+        Overlay o = image.getOverlay();
+        if (o!=null) {
+            for (Roi r : roi) o.remove(r);
         }
-        removeMouseWheelListener(img.getWindow());
+    }
+
+    @Override
+    public TrackRoi generateTrackRoi(List<Pair<StructureObject, BoundingBox>> track, boolean image2D, Color color) {
+        return createTrackRoi(track, color, image2D);
     }
     
-    private static void removeAdjustmentListener(Scrollbar s) {for (AdjustmentListener l : s.getAdjustmentListeners()) s.removeAdjustmentListener(l);}
-    private static void removeMouseWheelListener(ImageWindow w) {for (MouseWheelListener l : w.getMouseWheelListeners()) w.removeMouseWheelListener(l);}
+    protected static TrackRoi createTrackRoi(List<Pair<StructureObject, BoundingBox>> track, Color color, boolean is2D) {
+        TrackRoi trackRoi= new TrackRoi();
+        Pair<StructureObject, BoundingBox> o1 = track.get(0);
+        Pair<StructureObject, BoundingBox> o2;
+        for (int idx = 1; idx<=track.size(); ++idx) {
+            o2 = track.get(idx);
+            if (o1==null || o2==null) continue;
+            Arrow arrow = new Arrow(o1.value.getXMean(), o1.value.getYMean(), o2.value.getXMean()-1, o2.value.getYMean());
+            arrow.setStrokeColor(o2.key.hasTrackLinkError()?ImageWindowManager.trackErrorColor: o2.key.hasTrackLinkCorrection() ?ImageWindowManager.trackCorrectionColor : color);
+            arrow.setStrokeWidth(trackArrowStrokeWidth);
+            arrow.setHeadSize(trackArrowStrokeWidth*1.5);
+
+            //if (o1.getNext()==o2) arrow.setDoubleHeaded(true);
+
+            int zMin = Math.max(o1.value.getzMin(), o2.value.getzMin());
+            int zMax = Math.min(o1.value.getzMax(), o2.value.getzMax());
+            if (zMin==zMax) {
+                if (!is2D) arrow.setPosition(zMin+1);
+                trackRoi.add(arrow);
+                //logger.debug("add arrow: {}", arrow);
+            } else {
+                // TODO debug
+                //logger.error("Display Track error. objects: {} & {} bounds: {} & {}, image bounds: {} & {}", o1, o2, o1.getBounds(), o2.getBounds(), b1, b2);
+                //if (true) return;
+                if (zMin>zMax) {
+                    /*int tmp = zMax;
+                    zMax=zMin<(ip.getNSlices()-1)?zMin+1:zMin;
+                    zMin=tmp>0?tmp-1:tmp;*/
+                    logger.error("DisplayTrack error: Zmin>Zmax: o1: {}, o2: {}", o1.key, o2.key);
+                }
+                for (int z = zMin; z <= zMax; ++z) {
+                    Arrow dup = (Arrow)arrow.clone();
+                    dup.setPosition(z+1);
+                    trackRoi.add(dup);
+                    //logger.debug("add arrow (z): {}", arrow);
+                }
+            }
+            o1=o2;
+        }
+        return trackRoi;
+    }
+    
+    @Override
+    protected void hideAllObjects(ImagePlus image) {
+        Overlay o = image.getOverlay();
+        if (o!=null) {
+            for (Roi r : o.toArray()) if (r instanceof Arrow) o.remove(r);
+        }
+    }
+
+    @Override
+    protected void hideAllTracks(ImagePlus image) {
+        Overlay o = image.getOverlay();
+        if (o!=null) {
+            for (Roi r : o.toArray()) if (!(r instanceof Arrow)) o.remove(r);
+        }
+    }
 
     
-    
-    
+    public static class Roi3D extends HashMap<Integer, Roi> {
+        public Roi3D(int bucketSize) {
+            super(bucketSize);
+        }
+    }
+    public static class TrackRoi extends ArrayList<Roi> {
+        
+    }
 }

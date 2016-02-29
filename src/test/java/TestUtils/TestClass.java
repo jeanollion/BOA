@@ -26,8 +26,13 @@ import org.junit.Test;
  * @author jollion
  */
 public class TestClass {
-    
-    @Test
+    @Test 
+    public void testMath() {
+        int a = 200;
+        int b = 20;
+        logger.info("200/20 {}, ceil(200/20)  {}" , (double)a/(double)b, Math.ceil((double)a/(double)b));
+    }
+    //@Test
     public void test() {
         Number n = -1d;
         logger.info("bytevalue of -1: {} " , n.byteValue()& 0xff);
@@ -39,7 +44,7 @@ public class TestClass {
         logger.info("(byte)0: {}" , ((byte)0)& 0xff);
         logger.info("7+8/2: {}" , (7+8)/2);
     }
-    @Test
+    //@Test
     public void testInstance() {
         double[][] matrix = new double[2][2];
         logger.info("[] instanceof []: {}", (Object)matrix[0] instanceof double[]);
@@ -55,7 +60,7 @@ public class TestClass {
     
     
     
-    @Test
+    //@Test
     public void testFor() {
         for (int i : getValues()) logger.debug("value: {}", i);
         int[] array = getValues();

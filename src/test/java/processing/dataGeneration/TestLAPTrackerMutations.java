@@ -22,6 +22,7 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.IJImageWindowManager;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManager;
+import static boa.gui.imageInteraction.ImageWindowManager.extendTrack;
 import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.StructureObject;
@@ -84,9 +85,10 @@ public class TestLAPTrackerMutations {
         logger.info("LAP tracker number of tracks: {}", allTracks.size());
         
         int colorIdx=0;
-        for (ArrayList<StructureObject> track : allTracks.values()) windowManager.displayTrack(im, i, true, track, ImageWindowManager.getColor(colorIdx++));
-        windowManager.displayObjects(im, i, true, iB.getObjects(), null);
-        windowManager.displayObjects(im, i, true, i.getObjects(), null);
+        
+        for (ArrayList<StructureObject> track : allTracks.values()) windowManager.displayTrack(im, i, i.pairWithOffset(extendTrack(track)), ImageWindowManager.getColor(colorIdx++), false);
+        windowManager.displayObjects(im, i, iB.getObjects(), null, false);
+        windowManager.displayObjects(im, i, i.getObjects(), null, false);
     }
     
     

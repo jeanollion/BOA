@@ -164,7 +164,7 @@ public class TrackTreeGenerator {
         logger.debug("display: {} selected tracks", tree.getSelectionCount());
         ImageObjectInterface i = getImageObjectInterface();
         logger.debug("image object interface found? {}", i!=null);
-        if (i!=null) ImageWindowManagerFactory.getImageManager().displayTrackAllImages(i, false, null, null); // unselect tracks
+        if (i!=null) ImageWindowManagerFactory.getImageManager().displayTrackAllImages(i, false, null, null, false); // unselect tracks
         if (tree.getSelectionCount()>0 && i!=null) {
             //Color[] palette = Utils.generatePalette(tree.getSelectionCount(), true);
             int idx=0;
@@ -172,7 +172,7 @@ public class TrackTreeGenerator {
                 Object lastO = p.getLastPathComponent();
                 if (lastO instanceof TrackNode) {
                     //ImageWindowManagerFactory.getImageManager().displayTrack(null, true, ((TrackNode)lastO).track, ImageWindowManager.palette[idx++%ImageWindowManager.palette.length]);
-                    ImageWindowManagerFactory.getImageManager().displayTrackAllImages(i, true, ((TrackNode)lastO).track, ImageWindowManager.getColor(idx++));
+                    ImageWindowManagerFactory.getImageManager().displayTrackAllImages(i, true, ((TrackNode)lastO).track, ImageWindowManager.getColor(idx++), false);
                 }
             }
         }

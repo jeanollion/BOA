@@ -1,6 +1,7 @@
 package image;
 
 import java.util.ArrayList;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import processing.neighborhood.Neighborhood;
@@ -79,7 +80,7 @@ public abstract class Image implements ImageProperties {
         return res;
     }
     
-    public static <T extends Image> T mergeZPlanes(ArrayList<T> planes) {
+    public static <T extends Image> T mergeZPlanes(List<T> planes) {
         if (planes==null || planes.isEmpty()) return null;
         String title = "merged planes";
         T plane0 = planes.get(0);

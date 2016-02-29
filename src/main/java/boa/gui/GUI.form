@@ -140,7 +140,7 @@
                       </Group>
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="runActions" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace pref="66" max="32767" attributes="0"/>
+                      <EmptySpace pref="70" max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -335,7 +335,7 @@
             </DimensionLayout>
             <DimensionLayout dim="1">
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="configurationJSP" alignment="0" pref="468" max="32767" attributes="0"/>
+                  <Component id="configurationJSP" alignment="0" pref="472" max="32767" attributes="0"/>
               </Group>
             </DimensionLayout>
           </Layout>
@@ -375,7 +375,7 @@
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Component id="ControlPanel" max="32767" attributes="0"/>
                           <Component id="ObjectTreeJSP" max="32767" attributes="0"/>
-                          <Component id="selectionPanel" alignment="0" pref="0" max="32767" attributes="0"/>
+                          <Component id="selectionPanel" alignment="0" pref="448" max="32767" attributes="0"/>
                       </Group>
                       <EmptySpace max="-2" attributes="0"/>
                   </Group>
@@ -410,6 +410,7 @@
                       <Component id="interactiveStructure" alignment="0" max="32767" attributes="0"/>
                       <Component id="selectAllObjects" alignment="0" max="32767" attributes="0"/>
                       <Component id="deleteObjectsButton" alignment="0" max="32767" attributes="0"/>
+                      <Component id="updateRoiDisplayButton" alignment="0" max="32767" attributes="0"/>
                   </Group>
                 </DimensionLayout>
                 <DimensionLayout dim="1">
@@ -418,6 +419,8 @@
                           <Component id="trackStructureJCB" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="interactiveStructure" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace max="-2" attributes="0"/>
+                          <Component id="updateRoiDisplayButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="32767" attributes="0"/>
                           <Component id="selectAllObjects" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
@@ -533,6 +536,14 @@
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="deleteObjectsButtonActionPerformed"/>
                   </Events>
                 </Component>
+                <Component class="javax.swing.JButton" name="updateRoiDisplayButton">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" value="Update ROI Display"/>
+                  </Properties>
+                  <Events>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="updateRoiDisplayButtonActionPerformed"/>
+                  </Events>
+                </Component>
               </SubComponents>
             </Container>
             <Container class="javax.swing.JSplitPane" name="ObjectTreeJSP">
@@ -564,7 +575,7 @@
                     </DimensionLayout>
                     <DimensionLayout dim="1">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="structureJSP" alignment="0" pref="420" max="32767" attributes="0"/>
+                          <Component id="structureJSP" alignment="0" pref="424" max="32767" attributes="0"/>
                       </Group>
                     </DimensionLayout>
                   </Layout>
@@ -597,7 +608,7 @@
                     </DimensionLayout>
                     <DimensionLayout dim="1">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="TimeJSP" alignment="0" pref="420" max="32767" attributes="0"/>
+                          <Component id="TimeJSP" alignment="0" pref="424" max="32767" attributes="0"/>
                       </Group>
                     </DimensionLayout>
                   </Layout>

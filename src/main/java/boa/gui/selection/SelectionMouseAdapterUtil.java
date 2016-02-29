@@ -76,7 +76,7 @@ public class SelectionMouseAdapterUtil {
                         String fieldName = i.getParent().getFieldName();
                         List<StructureObject> objects = s.getElements(fieldName);
                         if (objects!=null) {
-                            iwm.displayObjects(null, i, true, i.pairWithOffset(objects), s.getColor());
+                            iwm.displayObjects(null, i, i.pairWithOffset(objects), s.getColor(), false);
                         }
                     }
                 }
@@ -96,7 +96,7 @@ public class SelectionMouseAdapterUtil {
                         String fieldName = i.getParent().getFieldName();
                         List<StructureObject> objects = s.getElements(fieldName);
                         if (objects!=null) {
-                            iwm.unDisplayObjects(null, i, i.pairWithOffset(objects));
+                            iwm.hideObjects(null, i, i.pairWithOffset(objects));
                         }
                     }
                 }
@@ -116,20 +116,36 @@ public class SelectionMouseAdapterUtil {
                     ImageObjectInterface i = iwm.getCurrentImageObjectInterface();
                     if (i!=null) {
                         String fieldName = i.getParent().getFieldName();
-                        List<StructureObject> objects = s.getElements(fieldName);
-                        if (objects==null) return;
-                        List<StructureObject> tracks = new ArrayList<StructureObject>(objects.size());
-                        for (StructureObject o : objects) tracks.add(o.getTrackHead());
-                        Utils.removeDuplicates(tracks, false);
+                        List<StructureObject> tracks = s.getTrackHeads(fieldName);
+                        if (tracks==null) return;
                         for (StructureObject trackHead : tracks) {
-                            List<StructureObject> track = StructureObjectUtils.getTrack(trackHead);
-                            iwm.displayTrack(null, i, true, track, s.getColor());
+                            List<StructureObject> track = StructureObjectUtils.getTrack(trackHead, true);
+                            iwm.displayTrack(null, i, track, s.getColor(), false);
                         }
                     }
                 }
             }
         });
         menu.add(displayTracks);
+        
+        final JMenuItem hideTracks = new JMenuItem("Hide Tracks");
+        hideTracks.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                List<Selection> sel = list.getSelectedValuesList();
+                if (sel.isEmpty()) return;
+                for (Selection s : sel ) {
+                    ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
+                    ImageObjectInterface i = iwm.getCurrentImageObjectInterface();
+                    if (i!=null) {
+                        String fieldName = i.getParent().getFieldName();
+                        List<StructureObject> tracks = s.getTrackHeads(fieldName);
+                        if (tracks==null) return;
+                        iwm.hideTracks(null, i, tracks);
+                    }
+                }
+            }
+        });
+        menu.add(hideTracks);
         
         menu.add(new JSeparator());
         JMenu colorMenu = new JMenu("Set Color");

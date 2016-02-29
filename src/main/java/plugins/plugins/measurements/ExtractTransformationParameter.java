@@ -69,7 +69,7 @@ public class ExtractTransformationParameter implements Measurement{
             }
         }
         if (data!=null) {
-            List<StructureObject> rootTrack = StructureObjectUtils.getTrack(root);
+            List<StructureObject> rootTrack = StructureObjectUtils.getTrack(root, false);
             if (data.size()==rootTrack.size()) {
                 for (int i = 0 ;i<rootTrack.size(); ++i) assignData(t, data.get(i), rootTrack.get(i), structure.getSelectedStructureIdx(), keyName.getValue(), modifiedObjects);
             } else if (data.size()==1) assignData(t, data.get(0), root, structure.getSelectedStructureIdx(), keyName.getValue(), modifiedObjects);

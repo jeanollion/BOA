@@ -39,6 +39,7 @@ import plugins.plugins.transformations.AutoRotationXY;
 import plugins.plugins.transformations.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
 import plugins.plugins.transformations.ImageStabilizerXY;
+import plugins.plugins.transformations.SaturateHistogram;
 import plugins.plugins.transformations.ScaleHistogramSignalExclusion;
 import plugins.plugins.transformations.ScaleHistogramSignalExclusionY;
 import plugins.plugins.transformations.SelectBestFocusPlane;
@@ -66,10 +67,11 @@ public class GenerateTestXP {
         String inputDir = "/data/Images/Fluo/films1511/151127/ME121R-27112015-laser";
         boolean flip = true; */
         
-        String dbName = "fluo160218";
+        /*String dbName = "fluo160218";
         String inputDir = "/data/Images/Fluo/film160218/ME120R63-18022016-LR62r";
         String outputDir = "/data/Images/Fluo/film160218/Output";
         boolean flip = false;
+        */
         
         /*
         // Ordi Portable
@@ -79,11 +81,11 @@ public class GenerateTestXP {
         boolean flip = true;
         */     
         
-        /*String dbName = "fluo151127";
+        String dbName = "fluo151127";
         String outputDir = "/home/jollion/Documents/LJP/DataLJP/Fluo151127/Output";
         String inputDir = "/media/jollion/4336E5641DA22135/LJP/films1511/151127/ME121R-27112015-laser";
         boolean flip = true;
-        */
+        
         
         boolean performProcessing = false;
         
@@ -92,7 +94,7 @@ public class GenerateTestXP {
         Experiment xp = generateXP(outputDir, true, flip); 
         mDAO.setExperiment(xp);
         
-        //Processor.importFiles(xp, inputDir);
+        Processor.importFiles(xp, inputDir);
         
         if (performProcessing) {
             Processor.preProcessImages(mDAO, true);
@@ -123,7 +125,8 @@ public class GenerateTestXP {
         //xp.addMeasurement(new BacteriaMeasurements(1, 2));
         xp.addMeasurement(new BacteriaMeasurementsWoleMC(1, 2));
         if (setUpPreProcessing) {// preProcessing 
-            xp.getPreProcessingTemplate().addTransformation(0, null, new SuppressCentralHorizontalLine(6)).setActivated(false);
+            //xp.getPreProcessingTemplate().addTransformation(0, null, new SuppressCentralHorizontalLine(6)).setActivated(false);
+            xp.getPreProcessingTemplate().addTransformation(0, null, new SaturateHistogram(350, 450));
             xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1, 0)).setActivated(true); // to remove salt and pepper noise
             xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
             xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));

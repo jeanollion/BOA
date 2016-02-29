@@ -24,6 +24,7 @@ import dataStructure.objects.MasterDAO;
 import dataStructure.objects.Measurements;
 import dataStructure.objects.MeasurementsDAO;
 import dataStructure.objects.ObjectDAO;
+import dataStructure.objects.Selection;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -45,7 +46,7 @@ import utils.Utils;
 public class DataExtractor {
     
     final static char separator =';';
-    final static char indexSeparator ='-';
+    
     final static String NaN = "NaN";
 
     protected static String getBaseHeader() { //TODO split Indicies column ...
@@ -55,7 +56,7 @@ public class DataExtractor {
         String line = m.getFieldName();
         int[] idx = m.getIndicies();
         if (idx.length==0) line+=separator+-1;
-        else line+=Utils.toStringArray(idx, String.valueOf(separator), "", String.valueOf(indexSeparator));
+        else line+=Utils.toStringArray(idx, String.valueOf(separator), "", Selection.indexSeparator);
         return line+separator+m.getTimePoint();
     }
     protected static String getHeader(ArrayList<String> measurements) {
