@@ -17,6 +17,7 @@
  */
 package boa.gui.objects;
 
+import boa.gui.GUI;
 import static boa.gui.configuration.ConfigurationTreeGenerator.addToMenu;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.StructureObject;
@@ -44,6 +45,7 @@ import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.ObjectDAO;
 import java.util.ArrayList;
+import java.util.List;
 import utils.Utils;
 /**
  *
@@ -149,7 +151,7 @@ public class TrackTreeGenerator {
                         Utils.addToSelectionPaths(tree, pathToSelect);
                     } else Utils.addToSelectionPaths(tree, path);
                 }
-                displaySelectedTracks();
+                GUI.updateRoiDisplay(null);
             }
         });
     }
@@ -163,7 +165,6 @@ public class TrackTreeGenerator {
     public void displaySelectedTracks() {
         logger.debug("display: {} selected tracks", tree.getSelectionCount());
         ImageObjectInterface i = getImageObjectInterface();
-        logger.debug("image object interface found? {}", i!=null);
         if (i!=null) ImageWindowManagerFactory.getImageManager().displayTrackAllImages(i, false, null, null, false); // unselect tracks
         if (tree.getSelectionCount()>0 && i!=null) {
             //Color[] palette = Utils.generatePalette(tree.getSelectionCount(), true);
@@ -171,8 +172,8 @@ public class TrackTreeGenerator {
             for (TreePath p : tree.getSelectionPaths()) {
                 Object lastO = p.getLastPathComponent();
                 if (lastO instanceof TrackNode) {
-                    //ImageWindowManagerFactory.getImageManager().displayTrack(null, true, ((TrackNode)lastO).track, ImageWindowManager.palette[idx++%ImageWindowManager.palette.length]);
-                    ImageWindowManagerFactory.getImageManager().displayTrackAllImages(i, true, ((TrackNode)lastO).track, ImageWindowManager.getColor(idx++), false);
+                    ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
+                    iwm.displayTrackAllImages(i, true, i.pairWithOffset(ImageWindowManager.extendTrack(((TrackNode)lastO).track)), ImageWindowManager.getColor(idx++), false);
                 }
             }
         }
@@ -220,6 +221,7 @@ public class TrackTreeGenerator {
         return res;
     }
     
+    
     public ArrayList<TrackNode> getSelectedTrackNodes() {
         ArrayList<TrackNode> res = new ArrayList<TrackNode>(tree.getSelectionCount());
         for (TreePath p : tree.getSelectionPaths()) {
@@ -228,6 +230,16 @@ public class TrackTreeGenerator {
             }
         }
         logger.debug("getSelectedTrackNodes: count: {}", res.size());
+        return res;
+    }
+    
+    public List<List<StructureObject>> getSelectedTracks(boolean extended) {
+        List<TrackNode> nodes = getSelectedTrackNodes();
+        List<List<StructureObject>> res = new ArrayList<List<StructureObject>>(nodes.size());
+        for (TrackNode n : nodes) {
+            if (extended) res.add(ImageWindowManager.extendTrack(n.track));
+            else res.add(n.track); 
+        }
         return res;
     }
 }

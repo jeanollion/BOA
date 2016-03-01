@@ -87,8 +87,8 @@ public class TestLAPTrackerMutations {
         int colorIdx=0;
         
         for (ArrayList<StructureObject> track : allTracks.values()) windowManager.displayTrack(im, i, i.pairWithOffset(extendTrack(track)), ImageWindowManager.getColor(colorIdx++), false);
-        windowManager.displayObjects(im, i, iB.getObjects(), null, false);
-        windowManager.displayObjects(im, i, i.getObjects(), null, false);
+        windowManager.displayObjects(im, iB.getObjects(), null, false);
+        windowManager.displayObjects(im, i.getObjects(), null, false);
     }
     
     

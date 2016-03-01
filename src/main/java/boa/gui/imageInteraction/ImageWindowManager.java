@@ -209,16 +209,16 @@ public abstract class ImageWindowManager<T, U, V> {
         if (im==null) return;
         Image image = displayer.getImage(im);
         ImageObjectInterface i =  getImageObjectInterface(image);
-        displayObjects(image, i, i.getObjects(), defaultRoiColor, true);
+        displayObjects(image, i.getObjects(), defaultRoiColor, true);
     }
     
     
     protected abstract void displayObject(T image, U roi);
     protected abstract void hideObject(T image, U roi);
-    
     protected abstract U generateObjectRoi(Pair<StructureObject, BoundingBox> object, boolean image2D, Color color);
+    protected abstract void setObjectColor(U roi, Color color);
     
-    public void displayObjects(Image image, ImageObjectInterface i, List<Pair<StructureObject, BoundingBox>> objectsToDisplay, Color color, boolean labileObjects) {
+    public void displayObjects(Image image, List<Pair<StructureObject, BoundingBox>> objectsToDisplay, Color color, boolean labileObjects) {
         if (objectsToDisplay.isEmpty() || (objectsToDisplay.get(0)==null)) return;
         if (color==null) color = ImageWindowManager.defaultRoiColor;
         T dispImage;
@@ -229,10 +229,6 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         else dispImage = displayer.getImage(image);
         if (dispImage==null || image==null) return;
-        if (i==null) {
-            i = getImageObjectInterface(image);
-            if (i==null) return;
-        }
         Set<U> disp = null;
         if (labileObjects) {
             disp = this.displayedLabileObjectRois.get(image);
@@ -246,16 +242,18 @@ public abstract class ImageWindowManager<T, U, V> {
             //logger.debug("getting mask of object: {}", o);
             U roi=objectRoiMap.get(p);
             if (roi==null) {
-                roi = generateObjectRoi(p, i.is2D, color);
+                roi = generateObjectRoi(p, image.getSizeZ()<=1, color);
                 objectRoiMap.put(p, roi);
+            } else {
+                setObjectColor(roi, color);
             }
-            displayObject(dispImage, roi);
+            if (disp==null || !disp.contains(roi)) displayObject(dispImage, roi);
             if (disp!=null) disp.add(roi);
         }
         displayer.updateImageDisplay(image);
     }
     
-    public void hideObjects(Image image, ImageObjectInterface i, List<Pair<StructureObject, BoundingBox>> objects) {
+    public void hideObjects(Image image, List<Pair<StructureObject, BoundingBox>> objects) {
         T dispImage;
         if (image==null) {
             dispImage = getDisplayer().getCurrentImage();
@@ -263,10 +261,6 @@ public abstract class ImageWindowManager<T, U, V> {
             image = getDisplayer().getImage(dispImage);
         } else dispImage = getDisplayer().getImage(image);
         if (dispImage==null || image==null) return;
-        if (i==null) {
-            i=this.getImageObjectInterface(image);
-            if (i==null) return;
-        }
         Set<U> disp = this.displayedLabileObjectRois.get(image);
         for (Pair<StructureObject, BoundingBox> p : objects) {
             U roi=objectRoiMap.get(p);
@@ -295,7 +289,18 @@ public abstract class ImageWindowManager<T, U, V> {
         displayer.updateImageDisplay(image);
     }
     protected abstract void hideAllObjects(T image);
+    public void displayLabileObjects(Image image) {
+        if (image==null) return;
+        Set<U> rois = this.displayedLabileObjectRois.get(image);
+        if (rois!=null) {
+            T dispImage = displayer.getImage(image);
+            if (dispImage==null) return;
+            for (U t: rois) displayObject(dispImage, t);
+            displayer.updateImageDisplay(image);
+        }
+    }
     public void hideLabileObjects(Image image) {
+        if (image==null) return;
         Set<U> rois = this.displayedLabileObjectRois.remove(image);
         if (rois!=null) {
             T dispImage = displayer.getImage(image);
@@ -305,11 +310,13 @@ public abstract class ImageWindowManager<T, U, V> {
         }
     }
     
+    
     /// track-related methods
 
     protected abstract void displayTrack(T image, V roi);
     protected abstract void hideTrack(T image, V roi);
     protected abstract V generateTrackRoi(List<Pair<StructureObject, BoundingBox>> track, boolean image2D, Color color);
+    protected abstract void setTrackColor(V roi, Color color);
     
     public void displayTrack(Image image, ImageObjectInterface i, List<Pair<StructureObject, BoundingBox>> track, Color color, boolean labile) {
         //logger.debug("display selected track: image: {}, addToCurrentTracks: {}, track length: {} color: {}", image,addToCurrentSelectedTracks, track==null?"null":track.size(), color);
@@ -328,6 +335,7 @@ public abstract class ImageWindowManager<T, U, V> {
         StructureObject trackHead = track.get(track.size()>1 ? 1 : 0).key.getTrackHead(); // idx = 1 because track might begin with previous object
         boolean canDisplayTrack = i instanceof TrackMask;
         //canDisplayTrack = canDisplayTrack && ((TrackMask)i).parent.getTrackHead().equals(trackHead.getParent().getTrackHead()); // same track head
+        canDisplayTrack = canDisplayTrack && i.getParent().getStructureIdx()<trackHead.getStructureIdx();
         if (canDisplayTrack) {
             TrackMask tm = (TrackMask)i;
             canDisplayTrack = track.get(0).key.getTimePoint()>=tm.parentTrack.get(0).getTimePoint() 
@@ -335,23 +343,25 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         if (canDisplayTrack) { 
             if (i.getKey().childStructureIdx!=track.get(0).key.getStructureIdx()) i = imageObjectInterfaces.get(i.getKey().getKey(trackHead.getStructureIdx()));
-            Pair<StructureObject, StructureObject> key = new Pair(((TrackMask)i).parent.getTrackHead(), trackHead);
-            V roi = this.parentTrackHeadTrackRoiMap.get(key);
-            if (roi==null) {
-                roi = generateTrackRoi(track, i.is2D, color);
-                parentTrackHeadTrackRoiMap.put(key, roi);
-            }
-            displayTrack(dispImage, roi);
-            displayer.updateImageDisplay(image);
-            
+            if (((TrackMask)i).getParent()==null) logger.error("Track mask parent null!!!");
+            else if (((TrackMask)i).getParent().getTrackHead()==null) logger.error("Track mask parent trackHead null!!!");
+            Pair<StructureObject, StructureObject> key = new Pair(((TrackMask)i).getParent().getTrackHead(), trackHead);
+            Set<V> disp = null;
             if (labile) {
-                Set<V> disp = displayedLabileTrackRois.get(image);
+                disp = displayedLabileTrackRois.get(image);
                 if (disp==null) {
                     disp = new HashSet<V>();
                     displayedLabileTrackRois.put(image, disp);
                 }
-                disp.add(roi);
             }
+            V roi = this.parentTrackHeadTrackRoiMap.get(key);
+            if (roi==null) {
+                roi = generateTrackRoi(track, i.is2D, color);
+                parentTrackHeadTrackRoiMap.put(key, roi);
+            } else setTrackColor(roi, color);
+            if (disp==null || !disp.contains(roi)) displayTrack(dispImage, roi);
+            if (disp!=null) disp.add(roi);
+            displayer.updateImageDisplay(image);
         } else logger.warn("image cannot display selected track: ImageObjectInterface null? {}, is Track? {}", i==null, i instanceof TrackMask);
     }
     public void hideTracks(Image image, ImageObjectInterface i, List<StructureObject> trackHeads) {
@@ -396,7 +406,18 @@ public abstract class ImageWindowManager<T, U, V> {
         displayer.updateImageDisplay(image);
     }
     protected abstract void hideAllTracks(T image);
+    public void displayLabileTracks(Image image) {
+        if (image==null) return;
+        Set<V> tracks = this.displayedLabileTrackRois.get(image);
+        if (tracks!=null) {
+            T dispImage = displayer.getImage(image);
+            if (dispImage==null) return;
+            for (V t: tracks) displayTrack(dispImage, t);
+            displayer.updateImageDisplay(image);
+        }
+    }
     public void hideLabileTracks(Image image) {
+        if (image==null) return;
         Set<V> tracks = this.displayedLabileTrackRois.remove(image);
         if (tracks!=null) {
             T dispImage = displayer.getImage(image);

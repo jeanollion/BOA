@@ -17,7 +17,7 @@
  */
 package dataStructure.objects;
 
-import static boa.gui.selection.SelectionMouseAdapterUtil.colors;
+import static boa.gui.selection.SelectionUtils.colors;
 import static dataStructure.objects.StructureObject.logger;
 import de.caluga.morphium.annotations.Entity;
 import de.caluga.morphium.annotations.Id;
@@ -43,9 +43,10 @@ public class Selection implements Comparable<Selection> {
     @Id String id;
     int structureIdx;
     Map<String, List<String>> elements;
-    String color="magenta";
+    String color="Magenta";
     boolean displayingTracks=false;
     boolean displayingObjects=false;
+    
     @Transient public final static String indexSeparator ="-";
     @Transient Map<String, List<StructureObject>> retrievedElements= new HashMap<String, List<StructureObject>>();
     @Transient Map<String, List<StructureObject>> retrievedTrackHeads = new HashMap<String, List<StructureObject>>();
@@ -130,10 +131,10 @@ public class Selection implements Comparable<Selection> {
                 continue;
             }
             StructureObject elem = dao.getRoot(indicies[0]);
-            for (int i= 1; i<indicies.length; ++i) {
-                if (elem.getChildren(pathToRoot[i-1]).size()>=indicies[i]) {
+            IndexLoop : for (int i= 1; i<indicies.length; ++i) {
+                if (elem.getChildren(pathToRoot[i-1]).size()<=indicies[i]) {
                     logger.warn("Object: {} was not found {}", indicies, pathToRoot.length);
-                    continue;
+                    break IndexLoop;
                 }
                 elem = elem.getChildren(pathToRoot[i-1]).get(indicies[i]);
             }

@@ -373,9 +373,9 @@
                   <Group type="102" alignment="0" attributes="0">
                       <EmptySpace max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="ControlPanel" max="32767" attributes="0"/>
+                          <Component id="ControlPanel" pref="0" max="32767" attributes="0"/>
                           <Component id="ObjectTreeJSP" max="32767" attributes="0"/>
-                          <Component id="selectionPanel" alignment="0" pref="448" max="32767" attributes="0"/>
+                          <Component id="selectionPanel" alignment="0" pref="0" max="32767" attributes="0"/>
                       </Group>
                       <EmptySpace max="-2" attributes="0"/>
                   </Group>
@@ -419,7 +419,7 @@
                           <Component id="trackStructureJCB" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="interactiveStructure" min="-2" max="-2" attributes="0"/>
-                          <EmptySpace max="-2" attributes="0"/>
+                          <EmptySpace type="unrelated" max="-2" attributes="0"/>
                           <Component id="updateRoiDisplayButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="32767" attributes="0"/>
                           <Component id="selectAllObjects" min="-2" max="-2" attributes="0"/>

@@ -29,7 +29,8 @@ import boa.gui.objects.StructureObjectTreeGenerator;
 import boa.gui.objects.TrackNode;
 import boa.gui.objects.TrackTreeController;
 import boa.gui.objects.TrackTreeGenerator;
-import static boa.gui.selection.SelectionMouseAdapterUtil.setMouseAdapter;
+import boa.gui.selection.SelectionUtils;
+import static boa.gui.selection.SelectionUtils.setMouseAdapter;
 import boa.gui.selection.SelectionRenderer;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoIterable;
@@ -48,26 +49,16 @@ import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
 import image.BoundingBox;
 import image.Image;
-import image.ImageByte;
-import image.ImageFormat;
-import image.ImageWriter;
-import java.awt.Color;
-import java.awt.Dimension;
 import java.io.File;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.logging.Level;
-import javax.swing.ComboBoxModel;
 import javax.swing.DefaultListModel;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -79,9 +70,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plugins.ObjectSplitter;
 import plugins.PluginFactory;
-import plugins.plugins.trackers.ObjectIdxTracker;
-import plugins.plugins.segmenters.SimpleThresholder;
-import plugins.plugins.thresholders.ConstantValue;
 import utils.MorphiumUtils;
 import utils.Pair;
 import utils.Utils;
@@ -184,48 +172,46 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         }
     }*/
     
-    public static void updateRoiDisplay(Image image) {
-        if (image==null) return;
+    public static void updateRoiDisplay(ImageObjectInterface i) {
         if (instance==null) return;
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (iwm==null) return;
+        Image image=null;
+        if (i==null) {
+            Object im = iwm.getDisplayer().getCurrentImage();
+            if (im!=null) image = iwm.getDisplayer().getImage(im);
+            if (image==null) return;
+            else i = iwm.getImageObjectInterface(image);
+        }
+        if (image==null) {
+            return; // todo -> actions on all images?
+        }
         iwm.hideAllObjects(image, false);
         iwm.hideAllTracks(image, false);
-        ImageObjectInterface i = iwm.getImageObjectInterface(image);
         if (i==null) return;
-        String fieldName = i.getParent().getFieldName();
         // look in selections
         Enumeration<Selection> sels = instance.selectionModel.elements();
         while (sels.hasMoreElements()) {
             Selection s = sels.nextElement();
-            if (s.isDisplayingTracks()) {
-                List<StructureObject> ths = s.getTrackHeads(fieldName);
-                if (ths!=null) {
-                    for (StructureObject th : ths) {
-                        iwm.displayTrack(image, i, i.pairWithOffset(StructureObjectUtils.getTrack(th, true)), s.getColor(), false);
-                    }
-                }
-            } 
-            if (s.isDisplayingObjects()) {
-                List<StructureObject> obs = s.getElements(fieldName);
-                if (obs!=null) {
-                    iwm.displayObjects(image, i, obs, s.getColor(), false);
-                }
-            }
+            logger.debug("selection: {}", s);
+            if (s.isDisplayingTracks()) SelectionUtils.displayTracks(s, i);
+            if (s.isDisplayingObjects()) SelectionUtils.displayObjects(s, i);
         }
 
         // look in track list
         TrackTreeGenerator gen = instance.trackTreeController.getLastTreeGenerator();
         if (gen!=null) {
-            List<StructureObject> ths = gen.getSelectedTrackHeads();
+            List<List<StructureObject>> tracks = gen.getSelectedTracks(true);
             int idx = 0;
-            for (StructureObject th : ths) {
-                iwm.displayTrack(image, i, i.pairWithOffset(StructureObjectUtils.getTrack(th, true)), ImageWindowManager.getColor(idx++), false);
+            for (List<StructureObject> track : tracks) {
+                iwm.displayTrack(image, i, i.pairWithOffset(track), ImageWindowManager.getColor(idx++), false);
             }
         }
         
+        // labile objects
+        iwm.displayLabileObjects(image);
+        iwm.displayLabileTracks(image);
     }
-    
     
     public void setDBConnection(String dbName, String hostname) {
         long t0 = System.currentTimeMillis();
@@ -822,7 +808,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addComponent(trackStructureJCB, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(interactiveStructure, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(updateRoiDisplayButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(selectAllObjects)
@@ -933,9 +919,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             .addGroup(DataPanelLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(DataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(ControlPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(ControlPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                     .addComponent(ObjectTreeJSP)
-                    .addComponent(selectionPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 448, Short.MAX_VALUE))
+                    .addComponent(selectionPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
                 .addContainerGap())
         );
 
@@ -1030,7 +1016,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         } else {
             Utils.expandTree(t.getTree());
             t.getTree().setSelectionInterval(0, t.getTree().getRowCount());
-            t.displaySelectedTracks();
+            GUI.updateRoiDisplay(null);
         }
         
     }//GEN-LAST:event_selectAllTracksButtonActionPerformed
@@ -1261,11 +1247,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }//GEN-LAST:event_createSelectionButtonActionPerformed
 
     private void updateRoiDisplayButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_updateRoiDisplayButtonActionPerformed
-        Object im = ImageWindowManagerFactory.getImageManager().getDisplayer().getCurrentImage();
-        if (im!=null) {
-            GUI.updateRoiDisplay(ImageWindowManagerFactory.getImageManager().getDisplayer().getImage(im));
-        } else logger.warn("No active image");
-        
+        GUI.updateRoiDisplay(null);
     }//GEN-LAST:event_updateRoiDisplayButtonActionPerformed
     
     

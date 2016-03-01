@@ -97,19 +97,19 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 if (IJ.getToolName().equals("zoom") || IJ.getToolName().equals("hand")) return;
                 boolean ctrl = (e.getModifiers() & ActionEvent.CTRL_MASK) == ActionEvent.CTRL_MASK;
                 boolean alt = (e.getModifiers() & ActionEvent.ALT_MASK) == ActionEvent.ALT_MASK;
-                
+                logger.debug("ctrl: {} alt: {}", ctrl, alt);
                 ImageObjectInterface i = getImageObjectInterface(image);
                 if (i==null) {
                     logger.trace("no image interface found");
                     return;
                 }
                 if (!ctrl) {
-                    if (!alt) hideLabileObjects(image);
-                    else hideLabileTracks(image);
+                    hideLabileObjects(image);
+                    hideLabileTracks(image);
                 }
                 Roi r = ip.getRoi();
                 BoundingBox selection = null;
-                if (r!=null) {
+                if (r!=null && r.getType()==Roi.RECTANGLE) {
                     Rectangle rect = r.getBounds();
                     selection = new BoundingBox(rect.x, rect.x+rect.width, rect.y, rect.y+rect.height, ip.getSlice()-1, ip.getSlice());
                     if (selection.getSizeX()==0 && selection.getSizeY()==0) selection=null;
@@ -117,16 +117,16 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 if (selection!=null) {
                     ArrayList<Pair<StructureObject, BoundingBox>> selectedObjects = new ArrayList<Pair<StructureObject, BoundingBox>>();
                     i.addClickedObjects(selection, selectedObjects);
-                    //logger.debug("selection: {}, number of objects: {}", selection, selectedObjects.size());
+                    logger.debug("selection: {}, number of objects: {}", selection, selectedObjects.size());
                     if (!alt) {
-                        displayObjects(image, i, selectedObjects, null, true);
+                        displayObjects(image, selectedObjects, ImageWindowManager.defaultRoiColor, true);
                     } else {
                         List<StructureObject> trackHeads = new ArrayList<StructureObject>();
                         for (Pair<StructureObject, BoundingBox> p : selectedObjects) trackHeads.add(p.key.getTrackHead());
                         Utils.removeDuplicates(trackHeads, false);
                         for (StructureObject th : trackHeads) {
                             List<StructureObject> track = StructureObjectUtils.getTrack(th, true);
-                            displayTrack(image, i, i.pairWithOffset(track), null, true);
+                            displayTrack(image, i, i.pairWithOffset(track), ImageWindowManager.defaultRoiColor, true);
                         }
                     }
                     if (listener!=null) listener.fireObjectSelected(selectedObjects, ctrl, i.isTimeImage());
@@ -137,19 +137,23 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                     int offscreenX = canvas.offScreenX(x);
                     int offscreenY = canvas.offScreenY(y);
                     Pair<StructureObject, BoundingBox> o = i.getClickedObject(offscreenX, offscreenY, ip.getSlice()-1);
+                    logger.debug("click {}, {}, object: {}, ctlr:{}", x, y, o, ctrl);
                     ArrayList<Pair<StructureObject, BoundingBox>> selectedObjects = new ArrayList<Pair<StructureObject, BoundingBox>>(1);
-                    if (o!=null) selectedObjects.add(o);
-                    if (!alt) displayObjects(image, i, selectedObjects, null, true);
+                    if (o!=null) {
+                        selectedObjects.add(o);
+                        logger.debug("selected object: "+o.key);
+                    } else return;
+                    if (!alt) displayObjects(image, selectedObjects, ImageWindowManager.defaultRoiColor, true);
                     else {
                         List<StructureObject> trackHeads = new ArrayList<StructureObject>();
                         for (Pair<StructureObject, BoundingBox> p : selectedObjects) trackHeads.add(p.key.getTrackHead());
                         Utils.removeDuplicates(trackHeads, false);
                         for (StructureObject th : trackHeads) {
                             List<StructureObject> track = StructureObjectUtils.getTrack(th, true);
-                            displayTrack(image, i, i.pairWithOffset(track), null, true);
+                            displayTrack(image, i, i.pairWithOffset(track), ImageWindowManager.defaultRoiColor, true);
                         }
                     }
-                    //logger.trace("selected object: "+o);
+                    
                     if (listener!=null) listener.fireObjectSelected(selectedObjects, ctrl, i.isTimeImage());
                     
                 }
@@ -186,7 +190,14 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
 
     @Override
     public Roi3D generateObjectRoi(Pair<StructureObject, BoundingBox> object, boolean image2D, Color color) {
-        return createRoi(object.key.getMask(), object.value, !image2D);
+        Roi3D r =  createRoi(object.key.getMask(), object.value, !image2D);
+        setObjectColor(r, color);
+        return r;
+    }
+    
+    @Override
+    protected void setObjectColor(Roi3D roi, Color color) {
+        for (Roi r : roi.values()) r.setStrokeColor(color);
     }
 
     /**
@@ -242,11 +253,16 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         return createTrackRoi(track, color, image2D);
     }
     
+    @Override
+    protected void setTrackColor(TrackRoi roi, Color color) {
+        for (Roi r : roi) r.setStrokeColor(color);
+    }
+    
     protected static TrackRoi createTrackRoi(List<Pair<StructureObject, BoundingBox>> track, Color color, boolean is2D) {
         TrackRoi trackRoi= new TrackRoi();
         Pair<StructureObject, BoundingBox> o1 = track.get(0);
         Pair<StructureObject, BoundingBox> o2;
-        for (int idx = 1; idx<=track.size(); ++idx) {
+        for (int idx = 1; idx<track.size(); ++idx) {
             o2 = track.get(idx);
             if (o1==null || o2==null) continue;
             Arrow arrow = new Arrow(o1.value.getXMean(), o1.value.getYMean(), o2.value.getXMean()-1, o2.value.getYMean());
@@ -299,6 +315,8 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             for (Roi r : o.toArray()) if (!(r instanceof Arrow)) o.remove(r);
         }
     }
+
+    
 
     
     public static class Roi3D extends HashMap<Integer, Roi> {

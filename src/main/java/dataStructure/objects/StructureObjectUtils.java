@@ -153,12 +153,12 @@ public class StructureObjectUtils {
     public static int[] getIndexTree(StructureObject o) {
         if (o.isRoot()) return new int[]{o.getTimePoint()};
         ArrayList<Integer> al = new ArrayList<Integer>();
-        al.add(o.getTimePoint());
         al.add(o.getIdx());
         while(!o.getParent().isRoot()) {
             o=o.getParent();
             al.add(o.getIdx());
         }
+        al.add(o.getTimePoint());
         return Utils.toArray(al, true);
     }
     public static HashMap<StructureObject, ArrayList<StructureObject>> getAllTracks(List<StructureObject> parentTrack, int structureIdx) {
