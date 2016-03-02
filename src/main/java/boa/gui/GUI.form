@@ -411,6 +411,7 @@
                       <Component id="selectAllObjects" alignment="0" max="32767" attributes="0"/>
                       <Component id="deleteObjectsButton" alignment="0" max="32767" attributes="0"/>
                       <Component id="updateRoiDisplayButton" alignment="0" max="32767" attributes="0"/>
+                      <Component id="manualSegmentButton" alignment="0" max="32767" attributes="0"/>
                   </Group>
                 </DimensionLayout>
                 <DimensionLayout dim="1">
@@ -429,6 +430,8 @@
                           <Component id="nextTrackErrorButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="previousTrackErrorButton" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace max="-2" attributes="0"/>
+                          <Component id="manualSegmentButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="splitObjectButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
@@ -542,6 +545,14 @@
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="updateRoiDisplayButtonActionPerformed"/>
+                  </Events>
+                </Component>
+                <Component class="javax.swing.JButton" name="manualSegmentButton">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" value="Segment Objects"/>
+                  </Properties>
+                  <Events>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="manualSegmentButtonActionPerformed"/>
                   </Events>
                 </Component>
               </SubComponents>

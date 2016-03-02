@@ -47,7 +47,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import plugins.PluginFactory;
-import plugins.plugins.ObjectSplitter.WatershedObjectSplitter;
+import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
 import plugins.plugins.processingScheme.SegmentAndTrack;
 import plugins.plugins.trackers.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import plugins.plugins.trackers.ClosedMicrochannelTracker;

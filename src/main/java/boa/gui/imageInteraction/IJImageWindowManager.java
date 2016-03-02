@@ -30,6 +30,7 @@ import ij.gui.Arrow;
 import ij.gui.ImageCanvas;
 import ij.gui.ImageWindow;
 import ij.gui.Overlay;
+import ij.gui.PointRoi;
 import ij.gui.Roi;
 import ij.plugin.OverlayLabels;
 import ij.plugin.filter.ThresholdToSelection;
@@ -42,6 +43,7 @@ import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Scrollbar;
 import java.awt.event.ActionEvent;
@@ -52,6 +54,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -169,7 +172,22 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             }
         });
     }
-
+    
+    @Override
+    protected List<int[]> getSelectedPointsOnImage(ImagePlus image) {
+        Roi r = image.getRoi();
+        if (r instanceof PointRoi) {
+            PointRoi pRoi = (PointRoi)r;
+            Polygon p = r.getPolygon();
+            
+            List<int[]> res = new ArrayList<int[]>(p.npoints);
+            for (int i = 0; i<p.npoints; ++i) {
+                res.add(new int[]{p.xpoints[i], p.ypoints[i], Math.max(0, pRoi.getPointPosition(i)-1)});
+            }
+            return res;
+        } else return Collections.emptyList();
+    }
+    
     @Override
     public void displayObject(ImagePlus image, Roi3D roi) {
         Overlay o = image.getOverlay();

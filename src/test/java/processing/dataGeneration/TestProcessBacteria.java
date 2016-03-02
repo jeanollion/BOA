@@ -53,7 +53,7 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import plugins.PluginFactory;
 import plugins.Segmenter;
-import plugins.plugins.ObjectSplitter.WatershedObjectSplitter;
+import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
 import plugins.plugins.measurements.BacteriaLineageIndex;
 import plugins.plugins.measurements.BacteriaMeasurements;
 import plugins.plugins.measurements.BacteriaMeasurementsWoleMC;

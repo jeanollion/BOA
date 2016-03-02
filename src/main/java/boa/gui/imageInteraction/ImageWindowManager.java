@@ -164,27 +164,30 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         return null;
     }
-    
+    public ImageObjectInterfaceKey getImageObjectInterfaceKey(Image image) {
+        return imageObjectInterfaceMap.get(image);
+    }
     public ImageObjectInterface getImageObjectInterface(Image image) {
         ImageObjectInterfaceKey key = imageObjectInterfaceMap.get(image);
         if (key==null) return null;
         if (isLabelImage.get(image)) return this.imageObjectInterfaces.get(key);
         else { // for raw image, use the childStructureIdx set by the GUI. Creates the ImageObjectInterface if necessary 
-            if (key.parent.getStructureIdx()>interactiveStructureIdx) return null;
-            ImageObjectInterface i = this.imageObjectInterfaces.get(key.getKey(interactiveStructureIdx));
-            if (i==null) {
-                ImageObjectInterface ref = this.imageObjectInterfaces.get(key);
-                // create imageObjectInterface
-                if (ref.isTimeImage()) {
-                    i = this.getImageTrackObjectInterface(((TrackMask)ref).parentTrack, interactiveStructureIdx);
-                }
-                else {
-                    i = this.getImageObjectInterface(ref.parent, interactiveStructureIdx, true);
-                }
-                this.imageObjectInterfaces.put(i.getKey(), i);
-            }
-            return i;
+            return getImageObjectInterface(image, interactiveStructureIdx);
         }
+    }
+    public ImageObjectInterface getImageObjectInterface(Image image, int structureIdx) {
+        ImageObjectInterfaceKey key = imageObjectInterfaceMap.get(image);
+        if (key==null) return null;
+        if (key.parent.getStructureIdx()>structureIdx) return null;
+        ImageObjectInterface i = this.imageObjectInterfaces.get(key.getKey(structureIdx));
+        if (i==null) {
+            ImageObjectInterface ref = this.imageObjectInterfaces.get(key);
+            // create imageObjectInterface
+            if (ref.isTimeImage()) i = this.getImageTrackObjectInterface(((TrackMask)ref).parentTrack, structureIdx);
+            else i = this.getImageObjectInterface(ref.parent, structureIdx, true);
+            this.imageObjectInterfaces.put(i.getKey(), i);
+        }
+        return i;
     }
     
     public void removeImage(Image image) {
@@ -193,7 +196,48 @@ public abstract class ImageWindowManager<T, U, V> {
     }
     
     public abstract void addMouseListener(Image image);
-    
+    /**
+     * 
+     * @param image
+     * @return list of coordinates (x, y, z starting from 0) within the image, in voxel unit
+     */
+    protected abstract List<int[]> getSelectedPointsOnImage(T image);
+    /**
+     * 
+     * @param image
+     * @return mapping of containing objects (parents) to relative (to the parent) coordinated of selected point 
+     */
+    public Map<StructureObject, List<int[]>> getParentSelectedPointsMap(Image image, int parentStructureIdx) {
+        T dispImage;
+        if (image==null) {
+            dispImage = displayer.getCurrentImage();
+            if (dispImage==null) return null;
+            image = displayer.getImage(dispImage);
+        } else dispImage = displayer.getImage(image);
+        if (dispImage==null) return null;
+        ImageObjectInterface i = this.getImageObjectInterface(image, parentStructureIdx);
+        if (i==null) return null;
+        
+        List<int[]> rawCoordinates = getSelectedPointsOnImage(dispImage);
+        Map<StructureObject, List<int[]>> map = new HashMap<StructureObject, List<int[]>>();
+        for (int[] c : rawCoordinates) {
+            Pair<StructureObject, BoundingBox> parent = i.getClickedObject(c[0], c[1], c[2]);
+            if (parent!=null) {
+                c[0]-=parent.value.getxMin();
+                c[1]-=parent.value.getyMin();
+                c[2]-=parent.value.getzMin();
+                List<int[]> children = map.get(parent.key);
+                if (children==null) {
+                    children = new ArrayList<int[]>();
+                    map.put(parent.key, children);
+                }
+                children.add(c);
+                logger.debug("adding point: {} to parent: {} located: {}", c, parent.key, parent.value);
+            }
+        }
+        return map;
+        
+    }
     //public abstract void removeClickListener(Image image);
     
     public Pair<StructureObject, BoundingBox> getClickedObject(Image image, int x, int y, int z) {

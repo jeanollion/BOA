@@ -28,12 +28,15 @@ import configuration.parameters.PluginParameter;
 import configuration.parameters.ui.NameEditorUI;
 import configuration.parameters.ui.ParameterUI;
 import de.caluga.morphium.annotations.Transient;
+import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import javax.swing.tree.MutableTreeNode;
+import plugins.ManualSegmenter;
 import plugins.ObjectSplitter;
 import plugins.ProcessingScheme;
 import plugins.TrackCorrector;
 import plugins.Tracker;
-import plugins.plugins.ObjectSplitter.WatershedObjectSplitter;
+import plugins.plugins.manualSegmentation.WatershedManualSegmenter;
+import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
 
 /**
  *
@@ -45,6 +48,7 @@ public class Structure extends SimpleContainerParameter {
     ParentStructureParameter segmentationParent;
     ChannelImageParameter channelImage;
     PluginParameter<ObjectSplitter> objectSplitter;
+    PluginParameter<ManualSegmenter> manualSegmenter;
     PluginParameter<ProcessingScheme> processingScheme;
     
     @Transient NameEditorUI ui;
@@ -57,6 +61,7 @@ public class Structure extends SimpleContainerParameter {
         this.channelImage = new ChannelImageParameter("Channel Image", channelImage);
         objectSplitter = new PluginParameter<ObjectSplitter>("Object Splitter", ObjectSplitter.class, new WatershedObjectSplitter(), false);
         processingScheme = new PluginParameter<ProcessingScheme>("Processing Scheme", ProcessingScheme.class, true);
+        manualSegmenter = new PluginParameter<ManualSegmenter>("Manual Segmenter", ManualSegmenter.class, new WatershedManualSegmenter(), false);
         initChildList();
     }
     
@@ -80,7 +85,8 @@ public class Structure extends SimpleContainerParameter {
         });
         // for retro-compatibility only, to remove later
         if (processingScheme==null) processingScheme = new PluginParameter<ProcessingScheme>("Processing Scheme", ProcessingScheme.class, true); // for retro-compatibility only, to remove later
-        initChildren(parentStructure, channelImage, processingScheme, objectSplitter); //segmentationParent
+        if (manualSegmenter==null) manualSegmenter = new PluginParameter<ManualSegmenter>("Manual Segmenter", ManualSegmenter.class, new WatershedManualSegmenter(), false);
+        initChildren(parentStructure, channelImage, processingScheme, objectSplitter, manualSegmenter); //segmentationParent
     }
     
     public ProcessingScheme getProcessingScheme() {
@@ -93,6 +99,10 @@ public class Structure extends SimpleContainerParameter {
     
     public ObjectSplitter getObjectSplitter() {
         return this.objectSplitter.instanciatePlugin();
+    }
+    
+    public ManualSegmenter getManualSegmenter() {
+        return this.manualSegmenter.instanciatePlugin();
     }
     
     public void setObjectSplitter(ObjectSplitter objectSplitter) {
@@ -138,5 +148,4 @@ public class Structure extends SimpleContainerParameter {
         if (ui==null) ui=new NameEditorUI(this, false);
         return ui;
     }
-    
 }

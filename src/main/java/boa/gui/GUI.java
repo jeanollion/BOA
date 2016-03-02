@@ -19,6 +19,7 @@ package boa.gui;
 
 import boa.gui.configuration.ConfigurationTreeGenerator;
 import boa.gui.imageInteraction.ImageObjectInterface;
+import boa.gui.imageInteraction.ImageObjectInterfaceKey;
 import boa.gui.imageInteraction.ImageObjectListener;
 import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
@@ -41,6 +42,7 @@ import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.MasterDAO;
+import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.Selection;
 import dataStructure.objects.SelectionDAO;
 import dataStructure.objects.StructureObject;
@@ -49,6 +51,7 @@ import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
 import image.BoundingBox;
 import image.Image;
+import image.ImageInteger;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -68,6 +71,7 @@ import measurement.MeasurementKeyObject;
 import measurement.extraction.DataExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import plugins.ManualSegmenter;
 import plugins.ObjectSplitter;
 import plugins.PluginFactory;
 import utils.MorphiumUtils;
@@ -503,6 +507,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         selectAllObjects = new javax.swing.JButton();
         deleteObjectsButton = new javax.swing.JButton();
         updateRoiDisplayButton = new javax.swing.JButton();
+        manualSegmentButton = new javax.swing.JButton();
         ObjectTreeJSP = new javax.swing.JSplitPane();
         StructurePanel = new javax.swing.JPanel();
         structureJSP = new javax.swing.JScrollPane();
@@ -785,6 +790,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
+        manualSegmentButton.setText("Segment Objects");
+        manualSegmentButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                manualSegmentButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout ControlPanelLayout = new javax.swing.GroupLayout(ControlPanel);
         ControlPanel.setLayout(ControlPanelLayout);
         ControlPanelLayout.setHorizontalGroup(
@@ -801,6 +813,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             .addComponent(selectAllObjects, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(deleteObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(updateRoiDisplayButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(manualSegmentButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         ControlPanelLayout.setVerticalGroup(
             ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -818,6 +831,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addComponent(nextTrackErrorButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(previousTrackErrorButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(manualSegmentButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(splitObjectButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -1249,6 +1264,56 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void updateRoiDisplayButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_updateRoiDisplayButtonActionPerformed
         GUI.updateRoiDisplay(null);
     }//GEN-LAST:event_updateRoiDisplayButtonActionPerformed
+
+    private void manualSegmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_manualSegmentButtonActionPerformed
+        ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
+        Object im = iwm.getDisplayer().getCurrentImage();
+        Image image=null;
+        if (im!=null) image = iwm.getDisplayer().getImage(im);
+        if (image==null) {
+            logger.warn("No image found");
+            return;
+        }
+        ImageObjectInterfaceKey key =  iwm.getImageObjectInterfaceKey(image);
+        int structureIdx = key.childStructureIdx;
+        int parentStructureIdx = this.db.getExperiment().getStructure(structureIdx).getParentStructure();
+        ManualSegmenter segmenter = this.db.getExperiment().getStructure(structureIdx).getManualSegmenter();
+        if (segmenter==null) {
+            logger.warn("No manual segmenter found for structure: {}", structureIdx);
+            return;
+        }
+        
+        Map<StructureObject, List<int[]>> points = iwm.getParentSelectedPointsMap(image, parentStructureIdx);
+        if (points!=null) {
+            logger.debug("manual segment: {} distinct parents. Segmentation structure: {}, parent structure: {}", points.size(), structureIdx, parentStructureIdx);
+            for (Entry<StructureObject, List<int[]>> e : points.entrySet()) {
+                Image segImage = e.getKey().getRawImage(structureIdx);
+                // generate image mask without old objects
+                ImageInteger mask = e.getKey().getMask().duplicate("manual seg mask");
+                ArrayList<StructureObject> oldChildren = e.getKey().getChildren(structureIdx);
+                for (StructureObject c : oldChildren) c.getObject().draw(mask, 0, new BoundingBox(0, 0, 0));
+                iwm.getDisplayer().showImage(mask, 0);
+                ObjectPopulation seg = segmenter.manualSegment(segImage, e.getKey(), mask, structureIdx, e.getValue());
+                logger.debug("{} children segmented in parent: {}", seg.getObjects().size(), e.getKey());
+                if (!seg.getObjects().isEmpty()) {
+                    ArrayList<StructureObject> newChildren = e.getKey().setChildrenObjects(seg, structureIdx);
+                    newChildren.addAll(oldChildren);
+                    ArrayList<StructureObject> modified = new ArrayList<StructureObject>();
+                    e.getKey().relabelChildren(structureIdx, modified);
+                    modified.addAll(newChildren);
+                    Utils.removeDuplicates(modified, false);
+
+                    db.getDao(e.getKey().getFieldName()).store(modified, false);
+                    //Update tree
+                    ObjectNode node = objectTreeGenerator.getObjectNode(e.getKey());
+                    node.getParent().createChildren();
+                    objectTreeGenerator.reload(node.getParent());
+                    //Update all opened images & objectImageInteraction
+                    ImageWindowManagerFactory.getImageManager().reloadObjects(e.getKey(), structureIdx, false);
+                }
+            }
+        }
+    }//GEN-LAST:event_manualSegmentButtonActionPerformed
     
     
     private void updateConnectButton() {
@@ -1348,6 +1413,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JButton importImageButton;
     private javax.swing.JComboBox interactiveStructure;
     private javax.swing.JTabbedPane jTabbedPane1;
+    private javax.swing.JButton manualSegmentButton;
     private javax.swing.JButton mergeObjectsButton;
     private javax.swing.JButton newXP;
     private javax.swing.JButton nextTrackErrorButton;
