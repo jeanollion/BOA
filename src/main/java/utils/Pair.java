@@ -17,11 +17,40 @@
  */
 package utils;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  * @author jollion
  */
 public class Pair<K, V> {
+
+    public static <K, V> List<V> unpair2(List<Pair<K, V>> list) {
+        if (list == null) {
+            return null;
+        }
+        List<V> res = new ArrayList<V>(list.size());
+        for (Pair<K, V> p : list) {
+            if (p.value != null) {
+                res.add(p.value);
+            }
+        }
+        return res;
+    }
+
+    public static <K, V> List<K> unpair(List<Pair<K, V>> list) {
+        if (list == null) {
+            return null;
+        }
+        List<K> res = new ArrayList<K>(list.size());
+        for (Pair<K, V> p : list) {
+            if (p.key != null) {
+                res.add(p.key);
+            }
+        }
+        return res;
+    }
     public K key;
     public V value;
     public Pair(K key, V value) {

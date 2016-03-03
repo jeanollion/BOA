@@ -223,6 +223,12 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
             ip.updateAndDraw();
         }
     }
+    @Override public void updateImageRoiDisplay(Image image) {
+        if (this.displayedImages.containsKey(image)) {
+            ImagePlus ip = displayedImages.get(image);
+            ip.updateAndDraw();
+        }
+    }
 
     /*public BoundingBox getImageDisplay(Image image) {
         ImagePlus im = image!=null ? this.getImage(image) : WindowManager.getCurrentImage();

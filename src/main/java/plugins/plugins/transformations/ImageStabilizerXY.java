@@ -37,6 +37,7 @@ import java.util.Arrays;
 import static plugins.Plugin.logger;
 import plugins.Transformation;
 import static plugins.plugins.transformations.ImageStabilizerCore.combine;
+import static plugins.plugins.transformations.ImageStabilizerCore.copy;
 import static plugins.plugins.transformations.ImageStabilizerCore.gradient;
 import processing.ImageTransformation;
 import utils.ThreadRunner;
@@ -51,18 +52,20 @@ public class ImageStabilizerXY implements Transformation {
     ChoiceParameter pyramidLevel = new ChoiceParameter("Pyramid Level", new String[]{"0", "1", "2", "3", "4"}, "0", false);
     BoundedNumberParameter alpha = new BoundedNumberParameter("Template Update Coefficient", 2, 1, 0, 1);
     BoundedNumberParameter maxIter = new BoundedNumberParameter("Maximum Iterations", 0, 600, 1, null);
+    BoundedNumberParameter segmentLength = new BoundedNumberParameter("Segment length", 0, 20, 2, null);
     NumberParameter tol = new BoundedNumberParameter("Error Tolerance", 8, 1e-7, 0, null);
-    Parameter[] parameters = new Parameter[]{maxIter, tol, pyramidLevel}; //alpha, pyramidLevel
+    Parameter[] parameters = new Parameter[]{maxIter, tol, pyramidLevel, segmentLength}; //alpha
     ArrayList<ArrayList<Double>> translationTXY = new ArrayList<ArrayList<Double>>();
     
     public ImageStabilizerXY(){}
     
-    public ImageStabilizerXY(int transformationType, int pyramidLevel, double templateUpdateCoeff, int maxIterations, double tolerance) {
+    public ImageStabilizerXY(int transformationType, int pyramidLevel, double templateUpdateCoeff, int maxIterations, double tolerance, int segmentLength) {
         this.transformationType.setSelectedIndex(transformationType);
         this.pyramidLevel.setSelectedIndex(pyramidLevel);
         this.alpha.setValue(templateUpdateCoeff);
         this.tol.setValue(tolerance);
         this.maxIter.setValue(maxIterations);
+        this.segmentLength.setValue(segmentLength);
     }
     
     /*public void computeConfigurationData2(int channelIdx, InputImages inputImages) {
@@ -95,7 +98,7 @@ public class ImageStabilizerXY implements Transformation {
         //if (true) return;
         final Double[][] translationTXYArray = new Double[inputImages.getTimePointNumber()][];
       
-        ccdSegments(channelIdx, inputImages, 20, tRef, translationTXYArray, maxIterations, tolerance);
+        ccdSegments(channelIdx, inputImages, segmentLength.getValue().intValue(), tRef, translationTXYArray, maxIterations, tolerance);
         
         translationTXY = new ArrayList<ArrayList<Double>>(translationTXYArray.length);
         for (Double[] d : translationTXYArray) translationTXY.add(new ArrayList<Double>(Arrays.asList(d)));
@@ -105,28 +108,37 @@ public class ImageStabilizerXY implements Transformation {
     
     protected void ccdSegments(final int channelIdx, final InputImages inputImages, int segmentLength, int tRef, final Double[][] translationTXYArray, final int maxIterations, final double tolerance) {
         if (segmentLength<2) segmentLength = 2;
-        int nSegments = (int)((double)  (0.5 + inputImages.getTimePointNumber()-1) / (double)segmentLength) ;
-        int[][] segments = new int[nSegments][3]; // tStart, tEnd, tRef
+        int nSegments = (int)(0.5 +(double)(inputImages.getTimePointNumber()-1) / (double)segmentLength) ;
+        int[][] segments = new int[nSegments][4]; // tStart, tEnd, tRef, nThreads
         for (int i = 0; i<nSegments; ++i) {
             segments[i][0] = i==0 ? 0 : segments[i-1][1]+1;
-            segments[i][1] = i==segments.length-1 ? inputImages.getTimePointNumber()-1 : segments[i][0]+segmentLength;
+            segments[i][1] = i==segments.length-1 ? inputImages.getTimePointNumber()-1 : segments[i][0]+segmentLength-1;
             segments[i][2] = i==0 ? Math.min(Math.max(0, tRef), segments[i][1]) : segments[i-1][1]; 
             //logger.debug("segment: {}, {}", i, segments[i]);
         }
         // process each segment
-        int nThreads = ThreadRunner.getMaxCPUs();
-        final int nParalleleSegments, nThreadPerSegment;
-        if (segmentLength<=nThreads*2) {
-            nParalleleSegments = nThreads;
-            nThreadPerSegment = 1;
-        } else {
-            nParalleleSegments = 1;
-            nThreadPerSegment = nThreads;
-        }
+        int nCPUs = ThreadRunner.getMaxCPUs();
+        final int[] nParalleleSegments;
+        if (segments.length>=nCPUs) { 
+            if (segmentLength<=10) { // 1 thread per segment 
+                nParalleleSegments = new int[nCPUs];
+                Arrays.fill(nParalleleSegments, 1);
+            } else { // 2 thread per segment
+                if (nCPUs%2==1) {
+                    nParalleleSegments = new int[nCPUs/2+1];
+                    Arrays.fill(nParalleleSegments, 2);
+                    nParalleleSegments[nParalleleSegments.length-1] = 1;
+                } else {
+                    nParalleleSegments = new int[nCPUs/2];
+                    Arrays.fill(nParalleleSegments, 2);
+                }
+            }
+        } else nParalleleSegments = new int[]{nCPUs};
+
         //logger.debug("Parallele seg: {}, thread per seg: {}", nParalleleSegments, nThreadPerSegment);
-        ThreadRunner.execute(segments, false, nParalleleSegments, new ThreadAction<int[]>() {
-            public void run(int[] seg, int idx) {
-                ccdSegment(channelIdx, inputImages, seg[0], seg[1], seg[2], nThreadPerSegment, translationTXYArray, maxIterations, tolerance);
+        ThreadRunner.execute(segments, false, nParalleleSegments.length, new ThreadAction<int[]>() {
+            public void run(int[] seg, int idx, int threadIdx) {
+                ccdSegment(channelIdx, inputImages, seg[0], seg[1], seg[2], nParalleleSegments[threadIdx], translationTXYArray, maxIterations, tolerance);
             }
         });
         for (int i = 1; i<segments.length; ++i) {
@@ -140,14 +152,16 @@ public class ImageStabilizerXY implements Transformation {
     }
     
     protected void ccdSegment(final int channelIdx, final InputImages inputImages, final int tStart, final int tEnd, final int tRef, final int nThreads, final Double[][] translationTXYArray, final int maxIterations, final double tolerance) {
-        logger.debug("start: {}, stop: {}, ref: {}", tStart, tEnd, tRef);
+        //logger.debug("start: {}, stop: {}, ref: {}, nThreads: {}", tStart, tEnd, tRef, nThreads);
         final Image imageRef = inputImages.getImage(channelIdx, tRef);
         final FloatProcessor ipFloatRef = getFloatProcessor(imageRef, false);
         final ThreadRunner tr = new ThreadRunner(tStart, tEnd+1, nThreads);
         final ImageProcessor[][][] pyramids = new ImageProcessor[tr.threads.length][][];
-        for (int i = 0; i<tr.threads.length; ++i) {
+        pyramids[0] = ImageStabilizerCore.initWorkspace(imageRef.getSizeX(), imageRef.getSizeY(), pyramidLevel.getSelectedIndex());
+        gradient(pyramids[0][1][0], ipFloatRef);
+        for (int i = 1; i<tr.threads.length; ++i) {
             pyramids[i] = ImageStabilizerCore.initWorkspace(imageRef.getSizeX(), imageRef.getSizeY(), pyramidLevel.getSelectedIndex());
-            gradient(pyramids[i][1][0], ipFloatRef);
+            copy(pyramids[i][1][0], pyramids[0][1][0]);
         }
         for (int i = 0; i<tr.threads.length; i++) {
             final int trIdx = i;
@@ -226,7 +240,7 @@ public class ImageStabilizerXY implements Transformation {
             //logger.debug("segment: {}, {}", i, segments[i]);
         }
         ThreadRunner.execute(segments, false, new ThreadAction<int[]>() {
-            public void run(int[] tp, int idx) {
+            public void run(int[] tp, int idx, int threadIdx) {
                 Image imageRef = inputImages.getImage(channelIdx, tp[0]);
                 FloatProcessor ipFloatRef = getFloatProcessor(imageRef, false);
                 ImageProcessor[][] pyramids = ImageStabilizerCore.initWorkspace(imageRef.getSizeX(), imageRef.getSizeY(), pyramidLevel.getSelectedIndex());

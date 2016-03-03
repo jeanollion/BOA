@@ -168,7 +168,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             
             // look in track list
             TrackTreeGenerator gen = instance.trackTreeController.getGeneratorS().get(trackHead.getStructureIdx());
-            if (gen!=null) {
+            if (gen!=null) {list
                 List<StructureObject> s = gen.getSelectedTrackHeads();
                 return s.contains(trackHead);
             }
@@ -331,17 +331,20 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }
     
     // ImageObjectListener implementation
-    public void fireObjectSelected(List<Pair<StructureObject, BoundingBox>> selectedObjects, boolean addToSelection, boolean track) {
-        if (track) {
-            // selection de la track
-            
-        }
-        // selection de l'objet dans l'arbre d'objets
-        if (!addToSelection ) objectTreeGenerator.selectObject(null, false);
-        for (Pair<StructureObject, BoundingBox> selectedObject : selectedObjects) {
-            if (selectedObject!=null) objectTreeGenerator.selectObject(selectedObject.key, true);
-        }
-        logger.trace("fire object selected");
+    @Override public void fireObjectSelected(List<StructureObject> selectedObjects, boolean addToSelection) {
+        objectTreeGenerator.selectObjects(selectedObjects, addToSelection);       
+    }
+    
+    @Override public void fireObjectDeselected(List<StructureObject> deselectedObject) {
+        objectTreeGenerator.unSelectObjects(deselectedObject);
+    }
+    
+    @Override public void fireTracksSelected(List<StructureObject> selectedTrackHeads, boolean addToSelection) {
+        trackTreeController.selectTracks(selectedTrackHeads, addToSelection);
+    }
+    
+    @Override public void fireTracksDeselected(List<StructureObject> deselectedTrackHeads) {
+        trackTreeController.deselectTracks(deselectedTrackHeads);
     }
     
     private void setTrackTreeStructures(String[] structureNames) {

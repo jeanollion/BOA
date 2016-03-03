@@ -43,7 +43,7 @@ public class SegmentOnly implements ProcessingScheme {
     
     @Override public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack) {
         ThreadAction<StructureObject> ta = new ThreadAction<StructureObject>() {
-            @Override public void run(StructureObject parent, int idx) {
+            @Override public void run(StructureObject parent, int idx, int threadIdx) {
                 Segmenter s = segmenter.instanciatePlugin();
                 ObjectPopulation pop = s.runSegmenter(parent.getRawImage(structureIdx), structureIdx, parent);
                 parent.setChildrenObjects(pop, structureIdx);

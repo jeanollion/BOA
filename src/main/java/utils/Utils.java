@@ -146,6 +146,12 @@ public class Utils {
         return res;
     }
     
+    public static <K, V> ArrayList<K> getKeys(Map<K, V> map, List<V> values) {
+        ArrayList<K> res = new ArrayList<K>();
+        for (Entry<K, V> e : map.entrySet()) if (values.contains(e.getValue())) res.add(e.getKey());
+        return res;
+    }
+    
     public static void addHorizontalScrollBar(JComboBox box) {
         Object comp = box.getUI().getAccessibleChild(box, 0);
         if (!(comp instanceof JPopupMenu)) return;
@@ -182,12 +188,28 @@ public class Utils {
     }
     
     public static void addToSelectionPaths(JTree tree, TreePath... pathToSelect) {
+        addToSelectionPaths(tree, Arrays.asList(pathToSelect));
+    }
+    public static void addToSelectionPaths(JTree tree, List<TreePath> pathToSelect) {
         TreePath[] sel = tree.getSelectionPaths();
-        if (sel==null) tree.setSelectionPaths(pathToSelect);
+        if (sel==null) tree.setSelectionPaths(pathToSelect.toArray(new TreePath[pathToSelect.size()]));
         else {
-            ArrayList<TreePath> list = new ArrayList<TreePath>(pathToSelect.length+sel.length);
+            ArrayList<TreePath> list = new ArrayList<TreePath>(pathToSelect.size()+sel.length);
             list.addAll(Arrays.asList(sel));
-            list.addAll(Arrays.asList(pathToSelect));
+            list.addAll(pathToSelect);
+            tree.setSelectionPaths(list.toArray(new TreePath[list.size()]));
+        }
+    }
+    
+    public static void removeFromSelectionPaths(JTree tree, TreePath... pathToDeSelect) {
+        removeFromSelectionPaths(tree, Arrays.asList(pathToDeSelect));
+    }
+    public static void removeFromSelectionPaths(JTree tree, List<TreePath> pathToDeSelect) {
+        TreePath[] sel = tree.getSelectionPaths();
+        if (sel==null) return;
+        else {
+            ArrayList<TreePath> list = new ArrayList<TreePath>(sel.length);
+            for (TreePath p : sel) if (!pathToDeSelect.contains(p)) list.add(p);
             tree.setSelectionPaths(list.toArray(new TreePath[list.size()]));
         }
     }
@@ -197,11 +219,7 @@ public class Utils {
         else return false;
     }
     
-    public static void addToSelectionPaths(JTree tree, ArrayList<TreePath> pathToSelect) {
-        TreePath[] sel = tree.getSelectionPaths();
-        if (sel!=null) pathToSelect.addAll(Arrays.asList(sel));
-        tree.setSelectionPaths(pathToSelect.toArray(new TreePath[pathToSelect.size()]));
-    }
+    
     
     public static void setSelectedValues(List selection, JList list, DefaultListModel model) {
         List<Integer> selectedIndicies = new ArrayList<Integer>();

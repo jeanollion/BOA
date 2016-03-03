@@ -119,19 +119,20 @@ public class ThreadRunner {
         if (array.length==0) return;
         if (array.length==1) {
             if (action instanceof ThreadAction2) ((ThreadAction2)action).setUp();
-            action.run(array[0], 0);
+            action.run(array[0], 0, 0);
             if (action instanceof ThreadAction2) ((ThreadAction2)action).tearDown();
             return;
         }
         final ThreadRunner tr = new ThreadRunner(0, array.length, nThreadLimit);
         for (int i = 0; i<tr.threads.length; i++) {
+            final int threadIdx = i;
             //final ThreadAction<T> localAction = action
             tr.threads[i] = new Thread(
                 new Runnable() {
                     public void run() { 
                         if (action instanceof ThreadAction2) ((ThreadAction2)action).setUp();
                         for (int idx = tr.ai.getAndIncrement(); idx<tr.end; idx = tr.ai.getAndIncrement()) {
-                            action.run(array[idx], idx);
+                            action.run(array[idx], idx,threadIdx );
                             if (setToNull) array[idx]=null;
                         }
                         if (action instanceof ThreadAction2) ((ThreadAction2)action).tearDown();
@@ -146,19 +147,20 @@ public class ThreadRunner {
         if (array.isEmpty()) return;
         if (array.size()==1) {
             if (action instanceof ThreadAction2) ((ThreadAction2)action).setUp();
-            action.run(array.get(0), 0);
+            action.run(array.get(0), 0, 0);
             if (action instanceof ThreadAction2) ((ThreadAction2)action).tearDown();
             return;
         }
         final ThreadRunner tr = new ThreadRunner(0, array.size(), 0);
         for (int i = 0; i<tr.threads.length; i++) {
+            final int threadIdx = i;
             //final ThreadAction<T> localAction = action
             tr.threads[i] = new Thread(
                 new Runnable() {
                     public void run() { 
                         if (action instanceof ThreadAction2) ((ThreadAction2)action).setUp();
                         for (int idx = tr.ai.getAndIncrement(); idx<tr.end; idx = tr.ai.getAndIncrement()) {
-                            action.run(array.get(idx), idx);
+                            action.run(array.get(idx), idx, threadIdx);
                         }
                         if (action instanceof ThreadAction2) ((ThreadAction2)action).tearDown();
                     }
@@ -169,7 +171,7 @@ public class ThreadRunner {
     }
     
     public static interface ThreadAction<T> {
-        public void run(T object, int idx);
+        public void run(T object, int idx, int threadIdx);
     }
     public static interface ThreadAction2<T> extends ThreadAction<T> {
         public void setUp();

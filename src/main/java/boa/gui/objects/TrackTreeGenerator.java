@@ -179,22 +179,47 @@ public class TrackTreeGenerator {
         }
     }
     
-    public void selectObject(StructureObject object) {
-        if (object==null) {
-            tree.setSelectionRow(-1);
-            return;
+    public void selectTracks(List<StructureObject> trackHeads, boolean addToSelection) {
+        if (!addToSelection) tree.setSelectionRow(-1);
+        if (trackHeads==null) return;
+        List<TreePath> list = new ArrayList<TreePath>(trackHeads.size());
+        for (StructureObject o : trackHeads) {
+            TreePath  p = getTreePath(o);
+            if (p!=null) list.add(p);
         }
+        Utils.addToSelectionPaths(tree, list);
+    }
+    
+    public void deselectTracks(List<StructureObject> trackHeads) {
+        if (trackHeads==null) return;
+        List<TreePath> list = new ArrayList<TreePath>(trackHeads.size());
+        for (StructureObject o : trackHeads) {
+            TreePath  p = getTreePath(o);
+            if (p!=null) list.add(p);
+        }
+        Utils.removeFromSelectionPaths(tree, list);
+    }
+
+    public TreePath getTreePath(StructureObject object) {
         ArrayList<TreeNode> path = new ArrayList<TreeNode>(); 
         RootTrackNode root = (RootTrackNode)treeModel.getRoot();
         path.add(root);
         ArrayList<StructureObject> objectPath = getObjectPath(object);
         TrackNode t = root.getChild(objectPath.get(objectPath.size()-1));
+        if (t==null) {
+            logger.debug("object: {} was not found in tree, last element found: {}", object, null);
+            return null;
+        }
         path.add(t);
         for (int i = objectPath.size()-2; i>=0; --i) {
             t=t.getChild(objectPath.get(i));
+            if (t==null) {
+                logger.debug("object: {} was not found in tree, last element found: {}", object, objectPath.get(i+1));
+                return null;
+            }
             path.add(t);
         }
-        tree.setSelectionPath(new TreePath(path.toArray(new TreeNode[path.size()])));
+        return new TreePath(path.toArray(new TreeNode[path.size()]));
     }
     
     private ArrayList<StructureObject> getObjectPath(StructureObject o) {

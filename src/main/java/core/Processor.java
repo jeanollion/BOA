@@ -153,7 +153,7 @@ public class Processor {
             logger.debug("ex ps: structure: {}, allParentTracks: {}", structureIdx, allParentTracks.size());
             // one thread per track
             ThreadAction<ArrayList<StructureObject>> ta = new ThreadAction<ArrayList<StructureObject>>() {
-                public void run(ArrayList<StructureObject> pt, int idx) {execute(ps, structureIdx, pt, trackOnly, deleteChildren, dao);}
+                public void run(ArrayList<StructureObject> pt, int idx, int threadIdx) {execute(ps, structureIdx, pt, trackOnly, deleteChildren, dao);}
             };
             ThreadRunner.execute(new ArrayList<ArrayList<StructureObject>> (allParentTracks.values()), ta);
         }
@@ -199,7 +199,7 @@ public class Processor {
         
         ThreadRunner.execute(rootArray, true, new ThreadAction<StructureObject>() {
             @Override
-            public void run(StructureObject root, int idx) {
+            public void run(StructureObject root, int idx, int threadIdx) {
                 long t0 = System.currentTimeMillis();
                 //logger.debug("running measurements on: {}", root);
                 List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();

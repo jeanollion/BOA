@@ -133,7 +133,7 @@ public class Selection implements Comparable<Selection> {
             StructureObject elem = dao.getRoot(indicies[0]);
             IndexLoop : for (int i= 1; i<indicies.length; ++i) {
                 if (elem.getChildren(pathToRoot[i-1]).size()<=indicies[i]) {
-                    logger.warn("Object: {} was not found {}", indicies, pathToRoot.length);
+                    logger.warn("Object: {} was not found @ idx {}, last parent: {}", indicies, i, elem);
                     break IndexLoop;
                 }
                 elem = elem.getChildren(pathToRoot[i-1]).get(indicies[i]);

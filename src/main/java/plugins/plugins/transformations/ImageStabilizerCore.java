@@ -315,6 +315,14 @@ public class ImageStabilizerCore {
             }
         }
     }
+    
+    public static void copy(ImageProcessor ipOut, ImageProcessor ip) {
+        if (ip.getWidth() != ipOut.getWidth()) throw new IllegalArgumentException("Images do not have same witdh");
+        if (ip.getHeight() != ipOut.getHeight()) throw new IllegalArgumentException("Images do not have same height");
+        float[] pixels = (float[])ip.getPixels();
+        float[] outPixels = (float[])ipOut.getPixels();
+        System.arraycopy(pixels, 0, outPixels, 0, outPixels.length);
+    }
 
 
     public static void resize(ImageProcessor ipOut, ImageProcessor ip) {

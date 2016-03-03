@@ -29,6 +29,7 @@ import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.List;
 import javax.swing.Icon;
 import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
@@ -115,6 +116,26 @@ public class StructureObjectTreeGenerator {
             else tree.setSelectionPath(getObjectTreePath(object));
         }
     }
+    public void selectObjects(List<StructureObject> objects, boolean addToSelection) {
+        if (objects==null) {
+            if (!addToSelection) tree.setSelectionRow(-1);
+            return;
+        }
+        List<TreePath> list = new ArrayList<TreePath>(objects.size());
+        for (StructureObject o : objects) list.add(getObjectTreePath(o));
+        if (!addToSelection) tree.setSelectionRow(-1);
+        Utils.addToSelectionPaths(tree, list);
+    }
+    
+    public void unSelectObject(StructureObject object) {
+        if (object==null) return;
+        Utils.addToSelectionPaths(tree, getObjectTreePath(object));
+    }
+    public void unSelectObjects(List<StructureObject> objects) {
+        List<TreePath> list = new ArrayList<TreePath>(objects.size());
+        for (StructureObject o : objects) list.add(getObjectTreePath(o));
+        Utils.removeFromSelectionPaths(tree, list);
+    }
     
     public TreePath getObjectTreePath(StructureObject object) {
         ArrayList<TreeNode> path = new ArrayList<TreeNode>(); 
@@ -128,6 +149,7 @@ public class StructureObjectTreeGenerator {
         for (StructureObject o : objectPath) {
             StructureNode s = lastStructureContainer.getStructureNode(o.getStructureIdx());
             path.add(s);
+            if (s.getChildren().size()<=o.getIdx()) logger.error("getObjectTreePath error:: object idx too hight: object to find: {}, current parent: {}, current child: {}", object, s, o);
             ObjectNode on = s.getChildren().get(o.getIdx());
             path.add(on);
             lastStructureContainer=on;

@@ -123,6 +123,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                     logger.debug("selection: {}, number of objects: {}", selection, selectedObjects.size());
                     if (!alt) {
                         displayObjects(image, selectedObjects, ImageWindowManager.defaultRoiColor, true);
+                        if (listener!=null) listener.fireObjectSelected(Pair.unpair(selectedObjects), true);
                     } else {
                         List<StructureObject> trackHeads = new ArrayList<StructureObject>();
                         for (Pair<StructureObject, BoundingBox> p : selectedObjects) trackHeads.add(p.key.getTrackHead());
@@ -131,8 +132,8 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                             List<StructureObject> track = StructureObjectUtils.getTrack(th, true);
                             displayTrack(image, i, i.pairWithOffset(track), ImageWindowManager.defaultRoiColor, true);
                         }
+                        if (listener!=null) listener.fireTracksSelected(trackHeads, true);
                     }
-                    if (listener!=null) listener.fireObjectSelected(selectedObjects, ctrl, i.isTimeImage());
                     if (ctrl) ip.deleteRoi();
                 } else {
                     int x = e.getX();
@@ -146,7 +147,10 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                         selectedObjects.add(o);
                         logger.debug("selected object: "+o.key);
                     } else return;
-                    if (!alt) displayObjects(image, selectedObjects, ImageWindowManager.defaultRoiColor, true);
+                    if (!alt) {
+                        displayObjects(image, selectedObjects, ImageWindowManager.defaultRoiColor, true);
+                        if (listener!=null) listener.fireObjectSelected(Pair.unpair(selectedObjects), true);
+                    }
                     else {
                         List<StructureObject> trackHeads = new ArrayList<StructureObject>();
                         for (Pair<StructureObject, BoundingBox> p : selectedObjects) trackHeads.add(p.key.getTrackHead());
@@ -157,7 +161,6 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                         }
                     }
                     
-                    if (listener!=null) listener.fireObjectSelected(selectedObjects, ctrl, i.isTimeImage());
                     
                 }
                 
@@ -239,6 +242,8 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             if (roi!=null) {
                 //roi.setPosition(z+1+mask.getOffsetZ());
                 Rectangle bds = roi.getBounds();
+                if (offset==null) logger.error("ROI creation : offset null for mask: {}", mask.getName());
+                if (bds==null) logger.error("ROI creation : bounds null for mask: {}", mask.getName());
                 roi.setLocation(bds.x+offset.getxMin(), bds.y+offset.getyMin());
                 if (is3D) roi.setPosition(z+1+offset.getzMin());
                 res.put(z+mask.getOffsetZ(), roi);

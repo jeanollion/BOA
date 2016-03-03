@@ -24,8 +24,10 @@ import dataStructure.configuration.ExperimentDAO;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 import javax.swing.JTree;
 
@@ -117,8 +119,22 @@ public class TrackTreeController {
         return generatorS;
     }
     
-    public void selectTrack(StructureObject object) {
-        for (Entry<Integer, TrackTreeGenerator> e : generatorS.entrySet()) if (e.getKey()!=object.getStructureIdx()) e.getValue().selectObject(null);
-        if (generatorS.containsKey(object.getStructureIdx())) generatorS.get(object.getStructureIdx()).selectObject(object);
+    public void selectTracks(List<StructureObject> trackHeads, boolean addToCurrentSelection) {
+        if (trackHeads==null) {
+            if (!addToCurrentSelection) this.getLastTreeGenerator().selectTracks(null, addToCurrentSelection);
+            return;
+        } else if (trackHeads.isEmpty()) return;
+        int structureIdx = StructureObjectUtils.getStructureIdx(trackHeads);
+        if (structureIdx == -2) throw new IllegalArgumentException("TrackHeads have different structure indicies");
+        // TODO : select parent tracks in previous trees
+        if (generatorS.containsKey(structureIdx)) generatorS.get(structureIdx).selectTracks(trackHeads, addToCurrentSelection);
+    }
+    public void deselectTracks(List<StructureObject> trackHeads) {
+        if (trackHeads==null) return;
+        else if (trackHeads.isEmpty()) return;
+        int structureIdx = StructureObjectUtils.getStructureIdx(trackHeads);
+        logger.debug("unselect : {} tracks from structure: {}", trackHeads.size(), structureIdx);
+        if (structureIdx == -2) throw new IllegalArgumentException("TrackHeads have different structure indicies");
+        if (generatorS.containsKey(structureIdx)) generatorS.get(structureIdx).deselectTracks(trackHeads);
     }
 }

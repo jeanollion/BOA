@@ -138,7 +138,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
         }
         if (children!=null) {
             ThreadRunner.execute(children, new ThreadAction<StructureObject>() {
-                public void run(StructureObject o, int idx) {
+                public void run(StructureObject o, int idx, int threadIdx) {
                     masterDAO.m.delete(o, collectionName, null);
                     //logger.debug("delete {}", o.getId());
                     if (o.measurementsId!=null) measurementsDAO.delete(o.measurementsId);
@@ -217,7 +217,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
     
     public void delete(List<StructureObject> list, final boolean deleteChildren) {
         ThreadRunner.execute(list, new ThreadAction<StructureObject>() {
-            public void run(StructureObject o, int idx) {
+            public void run(StructureObject o, int idx, int threadIdx) {
                 delete(o, deleteChildren);
             }
         });
@@ -245,7 +245,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
     
     public void store(final List<StructureObject> objects, final boolean updateTrackAttributes) {
         ThreadRunner.execute(objects, new ThreadAction<StructureObject>() {
-            public void run(StructureObject object, int idx) {
+            public void run(StructureObject object, int idx, int threadIdx) {
                 store(object, updateTrackAttributes);
             }
         });
@@ -423,7 +423,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
         Utils.removeDuplicates(objects, false);
         //this.agent.upsertMeasurements(objects);
         ThreadRunner.execute(objects, new ThreadRunner.ThreadAction<StructureObject>() {
-            public void run(StructureObject object, int idx) {
+            public void run(StructureObject object, int idx, int threadIdx) {
                 upsertMeasurement(object);
             }
         });

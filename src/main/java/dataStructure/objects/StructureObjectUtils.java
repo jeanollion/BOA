@@ -208,4 +208,23 @@ public class StructureObjectUtils {
         if (extend && track.get(track.size()-1).getNext()!=null) track.add(track.get(track.size()-1).getNext());
         return track;
     }
+    
+    /*public static Map<Integer, List<StructureObject>> mapByStructureIdx(List<StructureObject> objects) {
+        Map<Integer, List<StructureObject>> res = new HashMap<Integer, List<StructureObject>>();
+        
+    }*/
+    
+    /**
+     * 
+     * @param objects
+     * @return return the common structureIdx if all objects from {@param objects} or -2 if at least 2 objects have a different structureIdx or {@param objects} is emplty
+     */
+    public static int getStructureIdx(List<StructureObject> objects) {
+        int structureIdx = -2; 
+        for (StructureObject o : objects) {
+            if (structureIdx == -2 ) structureIdx = o.getStructureIdx();
+            else if (structureIdx!=o.getStructureIdx()) return -2;
+        }
+        return structureIdx;
+    }
 }

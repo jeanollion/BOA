@@ -90,14 +90,19 @@ public class InputImage {
     
     
     private void applyTransformations() {
-        Iterator<Transformation> it = transformationsToApply.iterator();
-        //new IJImageDisplayer().showImage(image);
-        while(it.hasNext()) {
-            Transformation t = it.next();
-            image =t.applyTransformation(channelIdx, timePoint, image);
-            it.remove();
-            //new IJImageDisplayer().showImage(image.setName("after: "+t.getClass().getSimpleName()));
+        if (transformationsToApply!=null && !transformationsToApply.isEmpty()) {
+            synchronized(transformationsToApply) {
+                Iterator<Transformation> it = transformationsToApply.iterator();
+                //new IJImageDisplayer().showImage(image);
+                while(it.hasNext()) {
+                    Transformation t = it.next();
+                    image =t.applyTransformation(channelIdx, timePoint, image);
+                    it.remove();
+                    //new IJImageDisplayer().showImage(image.setName("after: "+t.getClass().getSimpleName()));
+                }
+            }
         }
+        
     }
     
     public void closeImage() {

@@ -75,7 +75,7 @@ public class InputImagesImpl implements InputImages {
                 //container.close();
             };
             @Override
-            public void run(InputImage[] imageC, int idx) {
+            public void run(InputImage[] imageC, int idx, int threadIdx) {
                 //long tStart = System.currentTimeMillis();
                 for (int c = 0; c<cCount; ++c) {
                     imageC[c].getImage();
