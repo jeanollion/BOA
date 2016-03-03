@@ -51,7 +51,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     PreProcessingChain preProcessingChain;
     TimePointParameter defaultTimePoint;
     @Transient InputImagesImpl inputImages;
-    @Transient public static final int defaultTP = 100;
+    @Transient public static final int defaultTP = 50;
     //ui: bouton droit = selectionner un champ?
     
     public MicroscopyField(String name) {

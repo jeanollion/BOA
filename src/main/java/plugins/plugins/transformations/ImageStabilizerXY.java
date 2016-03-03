@@ -52,7 +52,7 @@ public class ImageStabilizerXY implements Transformation {
     BoundedNumberParameter alpha = new BoundedNumberParameter("Template Update Coefficient", 2, 1, 0, 1);
     BoundedNumberParameter maxIter = new BoundedNumberParameter("Maximum Iterations", 0, 600, 1, null);
     NumberParameter tol = new BoundedNumberParameter("Error Tolerance", 8, 1e-7, 0, null);
-    Parameter[] parameters = new Parameter[]{maxIter, tol, pyramidLevel, alpha}; //alpha, pyramidLevel
+    Parameter[] parameters = new Parameter[]{maxIter, tol, pyramidLevel}; //alpha, pyramidLevel
     ArrayList<ArrayList<Double>> translationTXY = new ArrayList<ArrayList<Double>>();
     
     public ImageStabilizerXY(){}
@@ -144,7 +144,6 @@ public class ImageStabilizerXY implements Transformation {
         for (int i = 0; i<nThreads; ++i) {
             segments[i][0] = i==0 ? 0 : segments[i-1][1]+1;
             segments[i][1] = i==segments.length-1 ? inputImages.getTimePointNumber()-1 : segments[i][0]+length;
-            logger.debug("segment: {}, {}", i, segments[i]);
         }
         ThreadRunner.execute(segments, false, new ThreadAction<int[]>() {
             public void run(int[] tp, int idx) {
