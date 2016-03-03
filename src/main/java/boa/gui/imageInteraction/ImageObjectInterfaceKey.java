@@ -24,9 +24,9 @@ import dataStructure.objects.StructureObject;
  * @author jollion
  */
 public class ImageObjectInterfaceKey {
-    final boolean timeImage;
-    final protected StructureObject parent;
-    final protected int childStructureIdx;
+    public final boolean timeImage;
+    public final StructureObject parent;
+    public final int childStructureIdx;
 
     public ImageObjectInterfaceKey(StructureObject parent, int childStructureIdx, boolean timeImage) {
         this.timeImage = timeImage;

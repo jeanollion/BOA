@@ -27,11 +27,13 @@ import dataStructure.objects.StructureObject;
 import image.Image;
 import image.ImageInteger;
 import java.util.ArrayList;
+import java.util.List;
 import plugins.PluginFactory;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.transformations.AutoRotationXY;
 import plugins.plugins.transformations.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
+import plugins.plugins.transformations.ImageStabilizerCore;
 import static plugins.plugins.transformations.ImageStabilizerXY.testTranslate;
 import plugins.plugins.transformations.SaturateHistogram;
 import plugins.plugins.transformations.SimpleRotationXY;
@@ -44,11 +46,13 @@ import processing.ImageTransformation;
 public class TestPreProcess {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        String dbName= "fluo160218";
+        //String dbName= "fluo160218";
+        String dbName= "fluo151127";
+        boolean flip = true;
         //testTransformation("fluo151130_OutputNewScaling", 9, 1, 0);
-        //testPreProcessing(, 24, 0, 0, 50, 70);
-        //testCrop(dbName, 0, 0, false);
-        testStabilizer("fluo160218", 0, 0, 50, 159, false);
+        testPreProcessing(dbName, 0, 0, -1, 0, 200);
+        //testCrop(dbName, 0, 600, flip);
+        //testStabilizer(dbName, 0, 0, 50, 159, flip);
     }
     
     public static void testTransformation(String dbName, int fieldIdx, int channelIdx, int time) {
@@ -84,17 +88,30 @@ public class TestPreProcess {
     
     
     public static void testPreProcessing(String dbName, int fieldIdx, int channelIdx, int time, int tStart, int tEnd) {
+        ImageStabilizerCore.debug=true;
         MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
         MicroscopyField f = db.getExperiment().getMicroscopyField(fieldIdx);
         InputImagesImpl images = f.getInputImages();
         if (time>=tStart) time -=tStart;
         images.subSetTimePoints(tStart, tEnd);
-        Image input = images.getImage(channelIdx, time).duplicate("input");
-        Processor.setTransformations(f, true);
-        Image output = images.getImage(channelIdx, time).setName("output");
         IJImageDisplayer disp = new IJImageDisplayer();
-        disp.showImage(input);
-        disp.showImage(output);
+        if (time>=0) {
+            Image input = images.getImage(channelIdx, time).duplicate("input");
+            Processor.setTransformations(f, true);
+            Image output = images.getImage(channelIdx, time).setName("output");
+            disp.showImage(input);
+            disp.showImage(output);
+        } else { // display all
+            List<Image> input = new ArrayList<Image>(tEnd-tStart+1);
+            for (int t = 0; t<=(tEnd-tStart); ++t) input.add(images.getImage(channelIdx, t).duplicate("input"+t));
+            Processor.setTransformations(f, true);
+            List<Image> output = new ArrayList<Image>(tEnd-tStart+1);
+            for (int t = 0; t<=(tEnd-tStart); ++t) output.add(images.getImage(channelIdx, t).duplicate("output"+t));
+            disp.showImage(Image.mergeZPlanes(input).setName("input"));
+            disp.showImage(Image.mergeZPlanes(output).setName("output"));
+        }
+        
+        
     }
     
     public static void testStabilizer(String dbName, int fieldIdx, int channelIdx, int tRef, int t, boolean flip) {

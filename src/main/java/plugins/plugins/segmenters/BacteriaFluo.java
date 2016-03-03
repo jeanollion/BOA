@@ -41,7 +41,7 @@ import java.util.List;
 import measurement.BasicMeasurements;
 import plugins.Segmenter;
 import plugins.SegmenterSplitAndMerge;
-import plugins.plugins.ObjectSplitter.WatershedObjectSplitter;
+import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import processing.Filters;

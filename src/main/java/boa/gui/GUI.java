@@ -19,7 +19,9 @@ package boa.gui;
 
 import boa.gui.configuration.ConfigurationTreeGenerator;
 import boa.gui.imageInteraction.ImageObjectInterface;
+import boa.gui.imageInteraction.ImageObjectInterfaceKey;
 import boa.gui.imageInteraction.ImageObjectListener;
+import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import static boa.gui.imageInteraction.ImageWindowManagerFactory.getImageManager;
 import boa.gui.objects.ObjectNode;
@@ -28,7 +30,8 @@ import boa.gui.objects.StructureObjectTreeGenerator;
 import boa.gui.objects.TrackNode;
 import boa.gui.objects.TrackTreeController;
 import boa.gui.objects.TrackTreeGenerator;
-import static boa.gui.selection.SelectionMouseAdapterUtil.setMouseAdapter;
+import boa.gui.selection.SelectionUtils;
+import static boa.gui.selection.SelectionUtils.setMouseAdapter;
 import boa.gui.selection.SelectionRenderer;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoIterable;
@@ -39,6 +42,7 @@ import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.MasterDAO;
+import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.Selection;
 import dataStructure.objects.SelectionDAO;
 import dataStructure.objects.StructureObject;
@@ -46,24 +50,18 @@ import dataStructure.objects.StructureObjectUtils;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
 import image.BoundingBox;
-import image.ImageByte;
-import image.ImageFormat;
-import image.ImageWriter;
-import java.awt.Dimension;
+import image.Image;
+import image.ImageInteger;
 import java.io.File;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.logging.Level;
-import javax.swing.ComboBoxModel;
 import javax.swing.DefaultListModel;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -73,11 +71,9 @@ import measurement.MeasurementKeyObject;
 import measurement.extraction.DataExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import plugins.ManualSegmenter;
 import plugins.ObjectSplitter;
 import plugins.PluginFactory;
-import plugins.plugins.trackers.ObjectIdxTracker;
-import plugins.plugins.segmenters.SimpleThresholder;
-import plugins.plugins.thresholders.ConstantValue;
 import utils.MorphiumUtils;
 import utils.Pair;
 import utils.Utils;
@@ -143,6 +139,83 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     
     public StructureObjectTreeGenerator getObjectTree() {return this.objectTreeGenerator;}
     public TrackTreeController getTrackTrees() {return this.trackTreeController;}
+    
+    /*public static boolean isDisplayingObject(StructureObject object) {
+        if (object==null) return false;
+        if (instance==null) return false;
+        else {
+            Enumeration<Selection> sels = instance.selectionModel.elements();
+            while (sels.hasMoreElements()) {
+                Selection s = sels.nextElement();
+                if (!s.isDisplayingObjects() || s.getStructureIdx()!=object.getStructureIdx()) continue;
+                if (s.getElements(object.getFieldName()).contains(object)) return true;
+            }
+            return false;
+        }
+    }
+    
+    public static boolean isDisplayingTrack(StructureObject trackHead) {
+        if (trackHead==null) return false;
+        if (instance==null) return false;
+        else {
+            // look in selections
+            Enumeration<Selection> sels = instance.selectionModel.elements();
+            while (sels.hasMoreElements()) {
+                Selection s = sels.nextElement();
+                if (!s.isDisplayingTracks() || s.getStructureIdx()!=trackHead.getStructureIdx()) continue;
+                if (s.getTrackHeads(trackHead.getFieldName()).contains(trackHead)) return true;
+            }
+            
+            // look in track list
+            TrackTreeGenerator gen = instance.trackTreeController.getGeneratorS().get(trackHead.getStructureIdx());
+            if (gen!=null) {
+                List<StructureObject> s = gen.getSelectedTrackHeads();
+                return s.contains(trackHead);
+            }
+            return false;
+        }
+    }*/
+    
+    public static void updateRoiDisplay(ImageObjectInterface i) {
+        if (instance==null) return;
+        ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
+        if (iwm==null) return;
+        Image image=null;
+        if (i==null) {
+            Object im = iwm.getDisplayer().getCurrentImage();
+            if (im!=null) image = iwm.getDisplayer().getImage(im);
+            if (image==null) return;
+            else i = iwm.getImageObjectInterface(image);
+        }
+        if (image==null) {
+            return; // todo -> actions on all images?
+        }
+        iwm.hideAllObjects(image, false);
+        iwm.hideAllTracks(image, false);
+        if (i==null) return;
+        // look in selections
+        Enumeration<Selection> sels = instance.selectionModel.elements();
+        while (sels.hasMoreElements()) {
+            Selection s = sels.nextElement();
+            logger.debug("selection: {}", s);
+            if (s.isDisplayingTracks()) SelectionUtils.displayTracks(s, i);
+            if (s.isDisplayingObjects()) SelectionUtils.displayObjects(s, i);
+        }
+
+        // look in track list
+        TrackTreeGenerator gen = instance.trackTreeController.getLastTreeGenerator();
+        if (gen!=null) {
+            List<List<StructureObject>> tracks = gen.getSelectedTracks(true);
+            int idx = 0;
+            for (List<StructureObject> track : tracks) {
+                iwm.displayTrack(image, i, i.pairWithOffset(track), ImageWindowManager.getColor(idx++), false);
+            }
+        }
+        
+        // labile objects
+        iwm.displayLabileObjects(image);
+        iwm.displayLabileTracks(image);
+    }
     
     public void setDBConnection(String dbName, String hostname) {
         long t0 = System.currentTimeMillis();
@@ -433,6 +506,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         interactiveStructure = new javax.swing.JComboBox();
         selectAllObjects = new javax.swing.JButton();
         deleteObjectsButton = new javax.swing.JButton();
+        updateRoiDisplayButton = new javax.swing.JButton();
+        manualSegmentButton = new javax.swing.JButton();
         ObjectTreeJSP = new javax.swing.JSplitPane();
         StructurePanel = new javax.swing.JPanel();
         structureJSP = new javax.swing.JScrollPane();
@@ -613,7 +688,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                         .addComponent(extractMeasurements)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(runActions)
-                .addContainerGap(66, Short.MAX_VALUE))
+                .addContainerGap(70, Short.MAX_VALUE))
         );
 
         jTabbedPane1.addTab("Actions", actionPanel);
@@ -626,7 +701,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         ConfigurationPanelLayout.setVerticalGroup(
             ConfigurationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 468, Short.MAX_VALUE)
+            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 472, Short.MAX_VALUE)
         );
 
         jTabbedPane1.addTab("Configuration", ConfigurationPanel);
@@ -708,6 +783,20 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
+        updateRoiDisplayButton.setText("Update ROI Display");
+        updateRoiDisplayButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                updateRoiDisplayButtonActionPerformed(evt);
+            }
+        });
+
+        manualSegmentButton.setText("Segment Objects");
+        manualSegmentButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                manualSegmentButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout ControlPanelLayout = new javax.swing.GroupLayout(ControlPanel);
         ControlPanel.setLayout(ControlPanelLayout);
         ControlPanelLayout.setHorizontalGroup(
@@ -723,6 +812,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             .addComponent(interactiveStructure, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(selectAllObjects, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(deleteObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(updateRoiDisplayButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(manualSegmentButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         ControlPanelLayout.setVerticalGroup(
             ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -730,6 +821,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addComponent(trackStructureJCB, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(interactiveStructure, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(updateRoiDisplayButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addComponent(selectAllObjects)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -738,6 +831,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addComponent(nextTrackErrorButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(previousTrackErrorButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(manualSegmentButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(splitObjectButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -760,7 +855,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         StructurePanelLayout.setVerticalGroup(
             StructurePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(structureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 420, Short.MAX_VALUE)
+            .addComponent(structureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 424, Short.MAX_VALUE)
         );
 
         ObjectTreeJSP.setLeftComponent(StructurePanel);
@@ -779,7 +874,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         trackPanelLayout.setVerticalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 420, Short.MAX_VALUE)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 424, Short.MAX_VALUE)
         );
 
         ObjectTreeJSP.setRightComponent(trackPanel);
@@ -839,7 +934,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             .addGroup(DataPanelLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(DataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(ControlPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(ControlPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
                     .addComponent(ObjectTreeJSP)
                     .addComponent(selectionPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
                 .addContainerGap())
@@ -936,7 +1031,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         } else {
             Utils.expandTree(t.getTree());
             t.getTree().setSelectionInterval(0, t.getTree().getRowCount());
-            t.displaySelectedTracks();
+            GUI.updateRoiDisplay(null);
         }
         
     }//GEN-LAST:event_selectAllTracksButtonActionPerformed
@@ -1165,7 +1260,60 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             this.selectionModel.addElement(sel);
         }
     }//GEN-LAST:event_createSelectionButtonActionPerformed
-    
+
+    private void updateRoiDisplayButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_updateRoiDisplayButtonActionPerformed
+        GUI.updateRoiDisplay(null);
+    }//GEN-LAST:event_updateRoiDisplayButtonActionPerformed
+
+    private void manualSegmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_manualSegmentButtonActionPerformed
+        ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
+        Object im = iwm.getDisplayer().getCurrentImage();
+        Image image=null;
+        if (im!=null) image = iwm.getDisplayer().getImage(im);
+        if (image==null) {
+            logger.warn("No image found");
+            return;
+        }
+        ImageObjectInterfaceKey key =  iwm.getImageObjectInterfaceKey(image);
+        int structureIdx = key.childStructureIdx;
+        int parentStructureIdx = this.db.getExperiment().getStructure(structureIdx).getParentStructure();
+        ManualSegmenter segmenter = this.db.getExperiment().getStructure(structureIdx).getManualSegmenter();
+        if (segmenter==null) {
+            logger.warn("No manual segmenter found for structure: {}", structureIdx);
+            return;
+        }
+        
+        Map<StructureObject, List<int[]>> points = iwm.getParentSelectedPointsMap(image, parentStructureIdx);
+        if (points!=null) {
+            logger.debug("manual segment: {} distinct parents. Segmentation structure: {}, parent structure: {}", points.size(), structureIdx, parentStructureIdx);
+            for (Entry<StructureObject, List<int[]>> e : points.entrySet()) {
+                Image segImage = e.getKey().getRawImage(structureIdx);
+                // generate image mask without old objects
+                ImageInteger mask = e.getKey().getMask().duplicate("manual seg mask");
+                ArrayList<StructureObject> oldChildren = e.getKey().getChildren(structureIdx);
+                for (StructureObject c : oldChildren) c.getObject().draw(mask, 0, new BoundingBox(0, 0, 0));
+                iwm.getDisplayer().showImage(mask, 0);
+                ObjectPopulation seg = segmenter.manualSegment(segImage, e.getKey(), mask, structureIdx, e.getValue());
+                logger.debug("{} children segmented in parent: {}", seg.getObjects().size(), e.getKey());
+                if (!seg.getObjects().isEmpty()) {
+                    ArrayList<StructureObject> newChildren = e.getKey().setChildrenObjects(seg, structureIdx);
+                    newChildren.addAll(oldChildren);
+                    ArrayList<StructureObject> modified = new ArrayList<StructureObject>();
+                    e.getKey().relabelChildren(structureIdx, modified);
+                    modified.addAll(newChildren);
+                    Utils.removeDuplicates(modified, false);
+
+                    db.getDao(e.getKey().getFieldName()).store(modified, false);
+                    //Update tree
+                    ObjectNode node = objectTreeGenerator.getObjectNode(e.getKey());
+                    node.getParent().createChildren();
+                    objectTreeGenerator.reload(node.getParent());
+                    //Update all opened images & objectImageInteraction
+                    ImageWindowManagerFactory.getImageManager().reloadObjects(e.getKey(), structureIdx, false);
+                }
+            }
+        }
+    }//GEN-LAST:event_manualSegmentButtonActionPerformed
     
     
     private void updateConnectButton() {
@@ -1265,6 +1413,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JButton importImageButton;
     private javax.swing.JComboBox interactiveStructure;
     private javax.swing.JTabbedPane jTabbedPane1;
+    private javax.swing.JButton manualSegmentButton;
     private javax.swing.JButton mergeObjectsButton;
     private javax.swing.JButton newXP;
     private javax.swing.JButton nextTrackErrorButton;
@@ -1285,6 +1434,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JPanel trackPanel;
     private javax.swing.JComboBox trackStructureJCB;
     private javax.swing.JPanel trackSubPanel;
+    private javax.swing.JButton updateRoiDisplayButton;
     // End of variables declaration//GEN-END:variables
 
     

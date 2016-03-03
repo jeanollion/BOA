@@ -153,12 +153,12 @@ public class StructureObjectUtils {
     public static int[] getIndexTree(StructureObject o) {
         if (o.isRoot()) return new int[]{o.getTimePoint()};
         ArrayList<Integer> al = new ArrayList<Integer>();
-        al.add(o.getTimePoint());
         al.add(o.getIdx());
         while(!o.getParent().isRoot()) {
             o=o.getParent();
             al.add(o.getIdx());
         }
+        al.add(o.getTimePoint());
         return Utils.toArray(al, true);
     }
     public static HashMap<StructureObject, ArrayList<StructureObject>> getAllTracks(List<StructureObject> parentTrack, int structureIdx) {
@@ -196,14 +196,16 @@ public class StructureObjectUtils {
         }
     }
     
-    public static List<StructureObject> getTrack(StructureObject trackHead) {
+    public static List<StructureObject> getTrack(StructureObject trackHead, boolean extend) {
         if (trackHead==null) return Collections.EMPTY_LIST;
         StructureObject head = trackHead.getTrackHead();
         ArrayList<StructureObject> track = new ArrayList<StructureObject>();
+        if (extend && head.getPrevious()!=null) track.add(head.getPrevious());
         while(trackHead!=null && trackHead.getTrackHead()==head) {
             track.add(trackHead);
             trackHead = trackHead.getNext();
         } 
+        if (extend && track.get(track.size()-1).getNext()!=null) track.add(track.get(track.size()-1).getNext());
         return track;
     }
 }

@@ -31,25 +31,30 @@ import de.caluga.morphium.annotations.Transient;
 public class ConditionalParameter extends SimpleContainerParameter {
     ActionableParameter action;
     HashMap<Object, Parameter[]> parameters;
+    Parameter[] defaultParameters;
     Object currentValue;
     
     public ConditionalParameter(ActionableParameter action) {
-        this(action, new HashMap<Object, Parameter[]>(4));
+        this(action, new HashMap<Object, Parameter[]>(), null);
     }
     
-    public ConditionalParameter(ActionableParameter action, HashMap<Object, Parameter[]> parameters) {
+    public ConditionalParameter(ActionableParameter action, HashMap<Object, Parameter[]> parameters, Parameter[] defaultParameters) {
         super(action.getName());
         this.action=action;
         this.parameters=parameters;
+        this.defaultParameters=defaultParameters;
         action.setConditionalParameter(this);
         setActionValue(action.getValue());
     }
     
-    public void setAction(Object actionValue, Parameter[] parameters) {
+    public ConditionalParameter setAction(Object actionValue, Parameter[] parameters) {
         this.parameters.put(actionValue, parameters);
         if (actionValue.equals(action.getValue())) setActionValue(action.getValue());
+        return this;
     }
-    
+    public void setDefaultParameters(Parameter[] defaultParameters) {
+        this.defaultParameters=defaultParameters;
+    } 
 
     @Override
     public void setContentFrom(Parameter other) {
@@ -58,7 +63,8 @@ public class ConditionalParameter extends SimpleContainerParameter {
             action=(ActionableParameter)otherC.action.duplicate();
             action.setConditionalParameter(this);
             parameters=new HashMap<Object, Parameter[]>(otherC.parameters.size());
-            for (Entry<Object, Parameter[]> e : otherC.parameters.entrySet()) setAction(e.getKey(), e.getValue());
+            for (Entry<Object, Parameter[]> e : otherC.parameters.entrySet()) setAction(e.getKey(), ParameterUtils.duplicateArray(e.getValue()));
+            defaultParameters = ParameterUtils.duplicateArray(otherC.defaultParameters);
         } else throw new IllegalArgumentException("wrong parameter type");
     }
     
@@ -73,7 +79,7 @@ public class ConditionalParameter extends SimpleContainerParameter {
     
     public Parameter[] getCurrentParameters() {
         if (parameters.containsKey(currentValue)) return parameters.get(currentValue);
-        else return null;
+        else return defaultParameters;
     }
     
     @Override
