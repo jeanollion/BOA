@@ -47,9 +47,10 @@ public class ConditionalParameter extends SimpleContainerParameter {
         setActionValue(action.getValue());
     }
     
-    public void setAction(Object actionValue, Parameter[] parameters) {
+    public ConditionalParameter setAction(Object actionValue, Parameter[] parameters) {
         this.parameters.put(actionValue, parameters);
         if (actionValue.equals(action.getValue())) setActionValue(action.getValue());
+        return this;
     }
     public void setDefaultParameters(Parameter[] defaultParameters) {
         this.defaultParameters=defaultParameters;
