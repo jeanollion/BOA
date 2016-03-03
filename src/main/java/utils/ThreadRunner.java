@@ -59,7 +59,12 @@ public class ThreadRunner {
     public int size() {
         return this.threads.length;
     }
-    
+    /**
+     * 
+     * @param start inclusive
+     * @param end exclusive 
+     * @param cpulimit 
+     */
     public ThreadRunner(int start, int end, int cpulimit) {
         this.start=start;
         this.end=end;

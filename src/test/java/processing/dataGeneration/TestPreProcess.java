@@ -46,8 +46,8 @@ import processing.ImageTransformation;
 public class TestPreProcess {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        //String dbName= "fluo160218";
-        String dbName= "fluo151127";
+        String dbName= "fluo160218";
+        //String dbName= "fluo151127";
         boolean flip = true;
         //testTransformation("fluo151130_OutputNewScaling", 9, 1, 0);
         testPreProcessing(dbName, 0, 0, -1, 0, 200);
