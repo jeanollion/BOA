@@ -151,7 +151,7 @@ public class TrackTreeGenerator {
                         Utils.addToSelectionPaths(tree, pathToSelect);
                     } else Utils.addToSelectionPaths(tree, path);
                 }
-                GUI.updateRoiDisplay(null);
+                if (controller.isUpdateRoiDisplayWhenSelectionChange()) GUI.updateRoiDisplay(null);
             }
         });
     }

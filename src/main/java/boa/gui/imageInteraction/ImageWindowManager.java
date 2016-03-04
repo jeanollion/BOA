@@ -276,12 +276,12 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         else dispImage = displayer.getImage(image);
         if (dispImage==null || image==null) return;
-        Set<U> disp = null;
+        Set<U> labiles = null;
         if (labileObjects) {
-            disp = this.displayedLabileObjectRois.get(image);
-            if (disp==null) {
-                disp = new HashSet<U>();
-                displayedLabileObjectRois.put(image, disp);
+            labiles = this.displayedLabileObjectRois.get(image);
+            if (labiles==null) {
+                labiles = new HashSet<U>();
+                displayedLabileObjectRois.put(image, labiles);
             }
         }
         for (Pair<StructureObject, BoundingBox> p : objectsToDisplay) {
@@ -294,8 +294,8 @@ public abstract class ImageWindowManager<T, U, V> {
             } else {
                 setObjectColor(roi, color);
             }
-            if (disp==null || !disp.contains(roi)) displayObject(dispImage, roi);
-            if (disp!=null) disp.add(roi);
+            if (labiles==null || !labiles.contains(roi)) displayObject(dispImage, roi);
+            if (labiles!=null) labiles.add(roi);
         }
         displayer.updateImageRoiDisplay(image);
     }
@@ -317,7 +317,7 @@ public abstract class ImageWindowManager<T, U, V> {
             }
         }
         displayer.updateImageRoiDisplay(image);
-        if (listener!=null) listener.fireObjectDeselected(Pair.unpair(objects));
+        //if (listener!=null) listener.fireObjectDeselected(Pair.unpair(objects));
     }
     public void hideAllObjects(Image image, boolean labileObjects) {
         T dispImage;
@@ -335,10 +335,10 @@ public abstract class ImageWindowManager<T, U, V> {
             if (rois!=null) for (U r : rois) displayObject(dispImage, r);
         }
         displayer.updateImageRoiDisplay(image);
-        if (listener!=null) {
+        /*if (listener!=null) {
             if (!labileObjects) listener.fireObjectSelected(Pair.unpair(getLabileObjects(image)), false);
             else listener.fireObjectSelected(null, false);
-        }
+        }*/
     }
     protected abstract void hideAllObjects(T image);
     public void displayLabileObjects(Image image) {
@@ -350,7 +350,7 @@ public abstract class ImageWindowManager<T, U, V> {
             for (U t: rois) displayObject(dispImage, t);
             displayer.updateImageRoiDisplay(image);
         }
-        if (listener!=null) listener.fireObjectSelected(Pair.unpair(getLabileObjects(image)), true);
+        //if (listener!=null) listener.fireObjectSelected(Pair.unpair(getLabileObjects(image)), true);
     }
 
     
@@ -362,7 +362,7 @@ public abstract class ImageWindowManager<T, U, V> {
             if (dispImage==null) return;
             for (U roi: rois) hideObject(dispImage, roi);
             displayer.updateImageRoiDisplay(image);
-            if (listener!=null) listener.fireObjectDeselected(Pair.unpair(getLabileObjects(image)));
+            //if (listener!=null) listener.fireObjectDeselected(Pair.unpair(getLabileObjects(image)));
         }
     }
     
@@ -450,7 +450,7 @@ public abstract class ImageWindowManager<T, U, V> {
             }
         }
         displayer.updateImageRoiDisplay(image);
-        if (listener!=null) listener.fireTracksDeselected(trackHeads);
+        
     }
     
     public void hideAllTracks(Image image, boolean labileTracks) {
@@ -469,11 +469,13 @@ public abstract class ImageWindowManager<T, U, V> {
             if (tracks!=null) for (V t : tracks) displayTrack(dispImage, t);
         }
         displayer.updateImageRoiDisplay(image);
-        if (listener!=null) {
+        /*if (listener!=null) {
             if (!labileTracks) listener.fireTracksSelected(getLabileTrackHeads(image), false);
             else listener.fireTracksSelected(null, false);
-        }
+        }*/
     }
+
+    
     protected abstract void hideAllTracks(T image);
     public void displayLabileTracks(Image image) {
         if (image==null) return;
@@ -483,7 +485,7 @@ public abstract class ImageWindowManager<T, U, V> {
             if (dispImage==null) return;
             for (V t: tracks) displayTrack(dispImage, t);
             displayer.updateImageRoiDisplay(image);
-            if (listener!=null) listener.fireTracksDeselected(getLabileTrackHeads(image));
+            //if (listener!=null) listener.fireTracksDeselected(getLabileTrackHeads(image));
         }
     }
     public void hideLabileTracks(Image image) {
@@ -494,7 +496,7 @@ public abstract class ImageWindowManager<T, U, V> {
             if (dispImage==null) return;
             for (V t: tracks) hideTrack(dispImage, t);
             displayer.updateImageRoiDisplay(image);
-            if (listener!=null) listener.fireTracksDeselected(getLabileTrackHeads(image));
+            //if (listener!=null) listener.fireTracksDeselected(getLabileTrackHeads(image));
         }
     }
     
@@ -541,7 +543,6 @@ public abstract class ImageWindowManager<T, U, V> {
         StructureObject nextError = getNextError(maxTimePoint, tracks);
         if (nextError==null) logger.info("No errors detected after timepoint: {}", maxTimePoint);
         else {
-            
             BoundingBox off = tm.getObjectOffset(nextError);
             int mid = (int)off.getXMean();
             if (mid+currentDisplayRange.getSizeX()/2>=trackImage.getSizeX()) mid = trackImage.getSizeX()-currentDisplayRange.getSizeX()/2;

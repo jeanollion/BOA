@@ -52,11 +52,20 @@ public class StructureObjectTreeGenerator {
     protected StructureObjectTreeModel treeModel;
     protected JTree tree;
     protected ExperimentNode experimentNode;
+    boolean updateRoiDisplayWhenSelectionChange = true;
     
     public StructureObjectTreeGenerator(MasterDAO db) {
         this.db = db;
         this.experimentNode=new ExperimentNode(this);
         
+    }
+    
+    public boolean isUpdateRoiDisplayWhenSelectionChange() {
+        return updateRoiDisplayWhenSelectionChange;
+    }
+
+    public void setUpdateRoiDisplayWhenSelectionChange(boolean updateRoiDisplayWhenSelectionChange) {
+        this.updateRoiDisplayWhenSelectionChange = updateRoiDisplayWhenSelectionChange;
     }
     
     private void generateTree() {
@@ -132,9 +141,11 @@ public class StructureObjectTreeGenerator {
         Utils.addToSelectionPaths(tree, getObjectTreePath(object));
     }
     public void unSelectObjects(List<StructureObject> objects) {
+        logger.debug("unselect {} objects, sel before: {}", objects.size(), tree.getSelectionCount());
         List<TreePath> list = new ArrayList<TreePath>(objects.size());
         for (StructureObject o : objects) list.add(getObjectTreePath(o));
         Utils.removeFromSelectionPaths(tree, list);
+        logger.debug("unselect {} objects, sel after: {}", objects.size(), tree.getSelectionCount());
     }
     
     public TreePath getObjectTreePath(StructureObject object) {

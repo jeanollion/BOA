@@ -332,19 +332,27 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     
     // ImageObjectListener implementation
     @Override public void fireObjectSelected(List<StructureObject> selectedObjects, boolean addToSelection) {
-        objectTreeGenerator.selectObjects(selectedObjects, addToSelection);       
+        objectTreeGenerator.setUpdateRoiDisplayWhenSelectionChange(false);
+        objectTreeGenerator.selectObjects(selectedObjects, addToSelection);    
+        objectTreeGenerator.setUpdateRoiDisplayWhenSelectionChange(true);
     }
     
     @Override public void fireObjectDeselected(List<StructureObject> deselectedObject) {
+        objectTreeGenerator.setUpdateRoiDisplayWhenSelectionChange(false);
         objectTreeGenerator.unSelectObjects(deselectedObject);
+        objectTreeGenerator.setUpdateRoiDisplayWhenSelectionChange(true);
     }
     
     @Override public void fireTracksSelected(List<StructureObject> selectedTrackHeads, boolean addToSelection) {
+        trackTreeController.setUpdateRoiDisplayWhenSelectionChange(false);
         trackTreeController.selectTracks(selectedTrackHeads, addToSelection);
+        trackTreeController.setUpdateRoiDisplayWhenSelectionChange(true);
     }
     
     @Override public void fireTracksDeselected(List<StructureObject> deselectedTrackHeads) {
+        trackTreeController.setUpdateRoiDisplayWhenSelectionChange(false);
         trackTreeController.deselectTracks(deselectedTrackHeads);
+        trackTreeController.setUpdateRoiDisplayWhenSelectionChange(true);
     }
     
     private void setTrackTreeStructures(String[] structureNames) {

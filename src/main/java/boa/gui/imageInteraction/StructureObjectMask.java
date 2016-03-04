@@ -119,7 +119,10 @@ public class StructureObjectMask extends ImageObjectInterface {
         if (i >= 0) {
             return offsets[i];
         } else {
-            return object.getRelativeBoundingBox(parent).translate(additionalOffset);
+            StructureObject p = object.getFirstCommonParent(parent);
+            //logger.debug("getOBjectOffset: {}, parent: {}, common parent: {}", object, parent, p);
+            if (p!=null && !p.isRoot()) return object.getRelativeBoundingBox(parent).translate(additionalOffset);
+            else return null;
         }
     }
 

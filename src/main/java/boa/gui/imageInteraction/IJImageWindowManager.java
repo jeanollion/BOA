@@ -107,6 +107,10 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                     return;
                 }
                 if (!ctrl) {
+                    if (listener!=null) {
+                        listener.fireObjectDeselected(Pair.unpair(getLabileObjects(image)));
+                        listener.fireTracksDeselected(getLabileTrackHeads(image));
+                    }
                     hideLabileObjects(image);
                     hideLabileTracks(image);
                 }
@@ -148,8 +152,14 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                         logger.debug("selected object: "+o.key);
                     } else return;
                     if (!alt) {
-                        displayObjects(image, selectedObjects, ImageWindowManager.defaultRoiColor, true);
-                        if (listener!=null) listener.fireObjectSelected(Pair.unpair(selectedObjects), true);
+                        List<Pair<StructureObject, BoundingBox>> labiles = getLabileObjects(image);
+                        if (labiles.contains(o)) {
+                            hideObjects(image, selectedObjects);
+                            if (listener!=null) listener.fireObjectDeselected(Pair.unpair(selectedObjects));
+                        } else {
+                            displayObjects(image, selectedObjects, ImageWindowManager.defaultRoiColor, true);
+                            if (listener!=null) listener.fireObjectSelected(Pair.unpair(selectedObjects), true);
+                        }
                     }
                     else {
                         List<StructureObject> trackHeads = new ArrayList<StructureObject>();
@@ -346,8 +356,15 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         public Roi3D(int bucketSize) {
             super(bucketSize);
         }
+        public boolean contained(Overlay o) {
+            for (Roi r : values()) if (o.contains(r)) return true;
+            return false;
+        }
     }
     public static class TrackRoi extends ArrayList<Roi> {
-        
+        public boolean contained(Overlay o) {
+            for (Roi r : this) if (o.contains(r)) return true;
+            return false;
+        }
     }
 }

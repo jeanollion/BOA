@@ -679,6 +679,18 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (stop==null || stop == getRoot()) return res;
         else return res.translate(stop.getBounds().duplicate().reverseOffset());
     }
+    public StructureObject getFirstCommonParent(StructureObject other) {
+        if (other==null) return null;
+        StructureObject object1 = this;
+        
+        while (object1.getStructureIdx()>=0 && other.getStructureIdx()>=0) {
+            if (object1.getStructureIdx()>other.getStructureIdx()) object1 = object1.getParent();
+            else if (object1.getStructureIdx()<other.getStructureIdx()) other = other.getParent();
+            else if (object1==other) return object1;
+            else return null;
+        }
+        return null;
+    }
     
     /*public Image getFilteredImage(int structureIdx) {
         if (preProcessedImageS.get(structureIdx)==null) createPreFilterImage(structureIdx);

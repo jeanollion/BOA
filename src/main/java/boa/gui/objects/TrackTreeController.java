@@ -40,10 +40,19 @@ public class TrackTreeController {
     HashMap<Integer, TrackTreeGenerator> generatorS;
     int[] structurePathToRoot;
     StructureObjectTreeGenerator objectGenerator;
+    boolean updateRoiDisplayWhenSelectionChange = true;
     
     public TrackTreeController(MasterDAO db, StructureObjectTreeGenerator objectGenerator) {
         this.db = db;
         this.objectGenerator=objectGenerator;
+    }
+
+    public boolean isUpdateRoiDisplayWhenSelectionChange() {
+        return updateRoiDisplayWhenSelectionChange;
+    }
+
+    public void setUpdateRoiDisplayWhenSelectionChange(boolean updateRoiDisplayWhenSelectionChange) {
+        this.updateRoiDisplayWhenSelectionChange = updateRoiDisplayWhenSelectionChange;
     }
     
     public void setStructure(int structureIdx) {

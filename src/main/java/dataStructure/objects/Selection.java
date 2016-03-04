@@ -223,7 +223,12 @@ public class Selection implements Comparable<Selection> {
     }
     @Override 
     public String toString() {
-        return id+" (s:"+structureIdx+")";
+        return id+" (s:"+structureIdx+"; n="+count()+")";
+    }
+    public int count() {
+        int c = 0;
+        for (List<String> l : elements.values()) c+=l.size();
+        return c;
     }
     public String getName() {
         return id;
