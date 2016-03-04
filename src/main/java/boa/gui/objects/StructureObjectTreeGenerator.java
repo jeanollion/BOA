@@ -141,11 +141,11 @@ public class StructureObjectTreeGenerator {
         Utils.addToSelectionPaths(tree, getObjectTreePath(object));
     }
     public void unSelectObjects(List<StructureObject> objects) {
-        logger.debug("unselect {} objects, sel before: {}", objects.size(), tree.getSelectionCount());
+        //logger.debug("unselect {} objects, sel before: {}", objects.size(), tree.getSelectionCount());
         List<TreePath> list = new ArrayList<TreePath>(objects.size());
         for (StructureObject o : objects) list.add(getObjectTreePath(o));
         Utils.removeFromSelectionPaths(tree, list);
-        logger.debug("unselect {} objects, sel after: {}", objects.size(), tree.getSelectionCount());
+        //logger.debug("unselect {} objects, sel after: {}", objects.size(), tree.getSelectionCount());
     }
     
     public TreePath getObjectTreePath(StructureObject object) {

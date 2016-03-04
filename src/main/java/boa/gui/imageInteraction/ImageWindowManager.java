@@ -308,12 +308,14 @@ public abstract class ImageWindowManager<T, U, V> {
             image = getDisplayer().getImage(dispImage);
         } else dispImage = getDisplayer().getImage(image);
         if (dispImage==null || image==null) return;
-        Set<U> disp = this.displayedLabileObjectRois.get(image);
+        Set<U> labiles = this.displayedLabileObjectRois.get(image);
         for (Pair<StructureObject, BoundingBox> p : objects) {
+            //logger.debug("hiding: {}", p.key);
             U roi=objectRoiMap.get(p);
             if (roi!=null) {
                 hideObject(dispImage, roi);
-                if (disp!=null) disp.remove(roi);
+                //logger.debug("roi found, present in labiles? {}", labiles!=null?labiles.contains(roi):false);
+                if (labiles!=null) labiles.remove(roi);
             }
         }
         displayer.updateImageRoiDisplay(image);

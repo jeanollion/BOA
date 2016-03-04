@@ -197,7 +197,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         Enumeration<Selection> sels = instance.selectionModel.elements();
         while (sels.hasMoreElements()) {
             Selection s = sels.nextElement();
-            logger.debug("selection: {}", s);
+            //logger.debug("selection: {}", s);
             if (s.isDisplayingTracks()) SelectionUtils.displayTracks(s, i);
             if (s.isDisplayingObjects()) SelectionUtils.displayObjects(s, i);
         }

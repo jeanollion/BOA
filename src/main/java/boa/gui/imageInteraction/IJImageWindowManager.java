@@ -154,8 +154,8 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                     if (!alt) {
                         List<Pair<StructureObject, BoundingBox>> labiles = getLabileObjects(image);
                         if (labiles.contains(o)) {
-                            hideObjects(image, selectedObjects);
                             if (listener!=null) listener.fireObjectDeselected(Pair.unpair(selectedObjects));
+                            hideObjects(image, selectedObjects);
                         } else {
                             displayObjects(image, selectedObjects, ImageWindowManager.defaultRoiColor, true);
                             if (listener!=null) listener.fireObjectSelected(Pair.unpair(selectedObjects), true);
