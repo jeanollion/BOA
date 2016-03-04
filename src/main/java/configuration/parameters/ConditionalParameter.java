@@ -46,25 +46,54 @@ public class ConditionalParameter extends SimpleContainerParameter {
         action.setConditionalParameter(this);
         setActionValue(action.getValue());
     }
-    
     public ConditionalParameter setAction(Object actionValue, Parameter[] parameters) {
+        return setAction(actionValue, parameters, false);
+    }
+    
+    public ConditionalParameter setAction(Object actionValue, Parameter[] parameters, boolean setContentFromAlreadyPresent) {
+        if (setContentFromAlreadyPresent) {
+            Parameter[] p = this.parameters.get(actionValue);
+            if (p!=null && p.length==parameters.length) ParameterUtils.setContent(parameters, p);
+        }
         this.parameters.put(actionValue, parameters);
         if (actionValue.equals(action.getValue())) setActionValue(action.getValue());
         return this;
     }
-    public void setDefaultParameters(Parameter[] defaultParameters) {
+    void replaceActionParameter(ActionableParameter action) {
+        action.setContentFrom(this.action);
+        action.setValue(this.action.getValue());
+        this.action=action;
+        action.setConditionalParameter(this);
+    }
+
+    
+    public ConditionalParameter setDefaultParameters(Parameter[] defaultParameters) {
         this.defaultParameters=defaultParameters;
+        return this;
     } 
 
     @Override
     public void setContentFrom(Parameter other) {
         if (other instanceof ConditionalParameter) {
             ConditionalParameter otherC = (ConditionalParameter)other;
-            action=(ActionableParameter)otherC.action.duplicate();
+            action.setContentFrom(otherC.action);
             action.setConditionalParameter(this);
+            HashMap<Object, Parameter[]> oldParam = parameters;
             parameters=new HashMap<Object, Parameter[]>(otherC.parameters.size());
-            for (Entry<Object, Parameter[]> e : otherC.parameters.entrySet()) setAction(e.getKey(), ParameterUtils.duplicateArray(e.getValue()));
-            defaultParameters = ParameterUtils.duplicateArray(otherC.defaultParameters);
+            for (Entry<Object, Parameter[]> e : otherC.parameters.entrySet()) {
+                Parameter[] oldArray = oldParam.get(e.getKey());
+                if (oldArray!=null && oldArray.length==e.getValue().length) {
+                    ParameterUtils.setContent(oldArray, e.getValue());
+                    parameters.put(e.getKey(), oldArray);
+                } else {
+                    this.parameters.put(e.getKey(), ParameterUtils.duplicateArray(e.getValue()));
+                }
+            }
+            if (otherC.defaultParameters!=null) {
+                if (this.defaultParameters!=null && this.defaultParameters.length==otherC.defaultParameters.length) ParameterUtils.setContent(defaultParameters, otherC.defaultParameters);
+                else this.defaultParameters = ParameterUtils.duplicateArray(otherC.defaultParameters);
+            } else this.defaultParameters=null;
+            setActionValue(action.getValue());
         } else throw new IllegalArgumentException("wrong parameter type");
     }
     

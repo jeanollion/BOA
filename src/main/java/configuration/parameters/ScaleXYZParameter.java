@@ -18,6 +18,7 @@
 package configuration.parameters;
 
 import dataStructure.configuration.MicroscopyField;
+import de.caluga.morphium.annotations.lifecycle.PostLoad;
 
 /**
  *
@@ -31,21 +32,21 @@ public class ScaleXYZParameter extends SimpleContainerParameter {
     
     public ScaleXYZParameter() {
         super();
-        init();
     }
+    
     public ScaleXYZParameter(String name) {
         super(name);
-        init();
+        init(false);
     }
     public ScaleXYZParameter(String name, double scaleXY, double scaleZ, boolean useCalibration) {
         super(name);
-        init();
+        init(false);
         this.scaleXY.setValue(scaleXY);
         this.scaleZ.setValue(scaleZ);
         useImageCalibration.setSelected(useCalibration);
     }
-    private void init() {
-        cond.setAction("false", new Parameter[]{scaleZ});
+    private void init(boolean setContent) {
+        cond.setAction("false", new Parameter[]{scaleZ}, setContent);
     }
     @Override
     protected void initChildList() {
@@ -60,5 +61,12 @@ public class ScaleXYZParameter extends SimpleContainerParameter {
             if (f==null) throw new Error("ScaleXYZParameter: no scale found in xp tree");
             return getScaleXY() * f.getScaleXY() / f.getScaleZ();
         } else return scaleZ.getValue().doubleValue();
+    }
+    @Override @PostLoad public void postLoad() {
+        if (!postLoaded) {
+            super.postLoad();
+            init(true);
+            cond.replaceActionParameter(useImageCalibration);
+        }
     }
 }

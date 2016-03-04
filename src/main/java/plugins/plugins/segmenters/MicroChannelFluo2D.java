@@ -78,7 +78,8 @@ public class MicroChannelFluo2D implements Segmenter {
         // get yStart
         float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null);
         ImageFloat imProjY = new ImageFloat("proj(Y)", image.getSizeY(), new float[][]{yProj});
-        ImageInteger heightMask = threshold(imProjY, IJAutoThresholder.runThresholder(imProjY, null, AutoThresholder.Method.IsoData), true, false); //TODO ISODATA 63ME120r141018_04 -> Otsu ne convient pas. Peut etre ne pas mettre subtract background?
+        double thldY =  IJAutoThresholder.runThresholder(imProjY, null, AutoThresholder.Method.Triangle); // ISODATA ou Triangle?
+        ImageInteger heightMask = threshold(imProjY, thldY, true, false); 
         Object3D[] objHeight = ImageLabeller.labelImage(heightMask);
         int yStart;
         if (objHeight.length == 0) {
@@ -99,9 +100,10 @@ public class MicroChannelFluo2D implements Segmenter {
             yStart = objHeight[idxMax].getBounds().getxMin();
             logger.trace("crop microchannels: yStart: {} idx of margin object: {}", yStart, idxMax);
         }
+        int yStart0 = yStart;
         // refine by searching max of derivative near yStart
         ImageFloat median = Filters.median(imProjY, new ImageFloat("", 0, 0, 0), new EllipsoidalNeighborhood(3, true));
-        ImageFloat projDer = ImageFeatures.getDerivative(median, 1, 1, 0, 0, false);
+        ImageFloat projDer = ImageFeatures.getDerivative(median, 1, 1, 0, 0, false).setName("Y proj, derivative");
         yStart = ArrayUtil.max(projDer.getPixelArray()[0], yStart - 10, yStart + 10);
         logger.trace("MicroChannelFluo: Y search: max of 1st derivate:{}", yStart);
         //refine by searching 2nd derivate maximum
@@ -111,10 +113,16 @@ public class MicroChannelFluo2D implements Segmenter {
         logger.trace("MicroChannelFluo: Y search: max of 2st derivate:{}", yStart);
         yStart = Math.max(0, yStart - yMargin);
 
+        if (debug) {
+            logger.debug("Y search: thld: {}, yStart: {}, yStart2: {}", thldY, yStart0, yStart);
+            plotProfile("Y proj", yProj);
+            plotProfile(projDer, 0, 0, true);
+        }
+        
         // get all XCenters
         float[] xProj = ImageOperations.meanProjection(image, ImageOperations.Axis.X, null);
         ImageFloat imProjX = new ImageFloat("proj(X)", image.getSizeX(), new float[][]{xProj});
-        ImageInteger widthMask = threshold(imProjX, IJAutoThresholder.runThresholder(imProjX, null, AutoThresholder.Method.IsoData), true, false);
+        ImageInteger widthMask = threshold(imProjX, IJAutoThresholder.runThresholder(imProjX, null, AutoThresholder.Method.Triangle), true, false);
         Object3D[] objWidth = ImageLabeller.labelImage(widthMask);
 
         ArrayList<Object3D> res = new ArrayList<Object3D>(objWidth.length);

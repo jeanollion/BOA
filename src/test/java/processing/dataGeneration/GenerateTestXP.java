@@ -73,6 +73,13 @@ public class GenerateTestXP {
         boolean flip = false;
         */
         
+        
+        String dbName = "fluo160217";
+        String inputDir = "/data/Images/Fluo/film160217/ME120R63-17022016-LR62r";
+        String outputDir = "/data/Images/Fluo/film160217/Output";
+        boolean flip = false;
+        // ATTENTION 10 champ pour lesquels 115TP pour le fichier mutation et 114TP pour le fichier REF
+        
         /*
         // Ordi Portable
         String dbName = "testSub";
@@ -81,11 +88,11 @@ public class GenerateTestXP {
         boolean flip = true;
         */     
         
-        String dbName = "fluo151127";
+        /*String dbName = "fluo151127";
         String outputDir = "/home/jollion/Documents/LJP/DataLJP/Fluo151127/Output";
         String inputDir = "/media/jollion/4336E5641DA22135/LJP/films1511/151127/ME121R-27112015-laser";
         boolean flip = true;
-        
+        */
         
         boolean performProcessing = false;
         
