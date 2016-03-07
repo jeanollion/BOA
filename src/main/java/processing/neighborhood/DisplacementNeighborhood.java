@@ -124,6 +124,7 @@ public abstract class DisplacementNeighborhood implements Neighborhood{
                 }
             }
         }
+        if (min==Float.MAX_VALUE) min = Float.NaN;
         return min;
     }
 
@@ -152,7 +153,46 @@ public abstract class DisplacementNeighborhood implements Neighborhood{
                 }
             }
         }
+        if (max==Float.MIN_VALUE) max = Float.NaN;
         return max;
+    }
+    @Override public boolean hasNonNullValue(int x, int y, int z, Image image) {
+        int xx, yy;
+        if (is3D) { 
+            int zz;
+            for (int i = 0; i<dx.length; ++i) {
+                xx=x+dx[i];
+                yy=y+dy[i];
+                zz=z+dz[i];
+                if (image.contains(xx, yy, zz) && image.getPixel(xx, yy, zz)!=0) return true;
+            }
+        } else {
+            for (int i = 0; i<dx.length; ++i) {
+                xx=x+dx[i];
+                yy=y+dy[i];
+                if (image.contains(xx, yy, z) && image.getPixel(xx, yy, z)!=0) return true;
+            }
+        }
+        return false;
+    }
+    @Override public boolean hasNullValue(int x, int y, int z, Image image) {
+        int xx, yy;
+        if (is3D) { 
+            int zz;
+            for (int i = 0; i<dx.length; ++i) {
+                xx=x+dx[i];
+                yy=y+dy[i];
+                zz=z+dz[i];
+                if (image.contains(xx, yy, zz) && image.getPixel(xx, yy, zz)==0) return true;
+            }
+        } else {
+            for (int i = 0; i<dx.length; ++i) {
+                xx=x+dx[i];
+                yy=y+dy[i];
+                if (image.contains(xx, yy, z) && image.getPixel(xx, yy, z)==0) return true;
+            }
+        }
+        return false;
     }
     
     public boolean is3D() {

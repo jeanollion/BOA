@@ -81,5 +81,13 @@ public class ConditionalNeighborhoodZ implements Neighborhood {
     public float getMax(int x, int y, int z, Image image) {
         return currentNeighborhood.getMax(x, y, z, image);
     }
+
+    public boolean hasNonNullValue(int x, int y, int z, Image image) {
+        return currentNeighborhood.hasNonNullValue(x, y, z, image);
+    }
+
+    public boolean hasNullValue(int x, int y, int z, Image image) {
+        return currentNeighborhood.hasNullValue(x, y, z, image);
+    }
     
 }

@@ -36,7 +36,7 @@ import processing.ImageFeatures;
 public class ImageFeature implements PreFilter {
     ChoiceParameter feature = new ChoiceParameter("Feature", new String[]{"Gaussian Smooth", "Gradient", "Laplacian", "Hessian Det", "Hessian Max", "Normalized Hessian Max"}, "Gaussian Smooth", false);
     ScaleXYZParameter scale = new ScaleXYZParameter("Scale", 2, 1, true);
-    BoundedNumberParameter normScale = new BoundedNumberParameter("ScaleXY (pix)", 2, 1, 1, null);
+    BoundedNumberParameter normScale = new BoundedNumberParameter("Normalization Scale (pix)", 2, 3, 1, null);
     ConditionalParameter cond = new ConditionalParameter(feature).setDefaultParameters(new Parameter[]{scale}).setAction("Normalized Hessian Max", new Parameter[]{scale, normScale});
     
     
@@ -58,7 +58,7 @@ public class ImageFeature implements PreFilter {
     }
 
     public Parameter[] getParameters() {
-        return new Parameter[]{cond, scale};
+        return new Parameter[]{cond};
     }
     
 }

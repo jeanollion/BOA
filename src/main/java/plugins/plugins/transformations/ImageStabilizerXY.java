@@ -49,11 +49,11 @@ import utils.ThreadRunner.ThreadAction;
  */
 public class ImageStabilizerXY implements Transformation {
     ChoiceParameter transformationType = new ChoiceParameter("Transformation", new String[]{"Translation"}, "Translation", false); //, "Affine"
-    ChoiceParameter pyramidLevel = new ChoiceParameter("Pyramid Level", new String[]{"0", "1", "2", "3", "4"}, "0", false);
+    ChoiceParameter pyramidLevel = new ChoiceParameter("Pyramid Level", new String[]{"0", "1", "2", "3", "4"}, "1", false);
     BoundedNumberParameter alpha = new BoundedNumberParameter("Template Update Coefficient", 2, 1, 0, 1);
     BoundedNumberParameter maxIter = new BoundedNumberParameter("Maximum Iterations", 0, 600, 1, null);
     BoundedNumberParameter segmentLength = new BoundedNumberParameter("Segment length", 0, 20, 2, null);
-    NumberParameter tol = new BoundedNumberParameter("Error Tolerance", 8, 1e-7, 0, null);
+    NumberParameter tol = new BoundedNumberParameter("Error Tolerance", 8, 5e-8, 0, null);
     Parameter[] parameters = new Parameter[]{maxIter, tol, pyramidLevel, segmentLength}; //alpha
     ArrayList<ArrayList<Double>> translationTXY = new ArrayList<ArrayList<Double>>();
     
@@ -147,7 +147,7 @@ public class ImageStabilizerXY implements Transformation {
                 translationTXYArray[t][0]+=ref[0];
                 translationTXYArray[t][1]+=ref[1];
             }
-            //logger.debug("ref: {}, tp: {}, trans: {}", i,segments[i][2], ref);
+            logger.debug("ref: {}, tp: {}, trans: {}", i,segments[i][2], ref);
         }
     }
     
@@ -171,7 +171,7 @@ public class ImageStabilizerXY implements Transformation {
                         for (int t = tr.ai.getAndIncrement(); t<tr.end; t = tr.ai.getAndIncrement()) {
                             if (t==tRef) translationTXYArray[t] = new Double[]{0d, 0d};
                             else translationTXYArray[t] = performCorrection(channelIdx, inputImages, t, pyramids[trIdx]);
-                            //logger.debug("t: {}, tRef: {}, dX: {}, dY: {}", t, tRef, translationTXYArray[t][0], translationTXYArray[t][1]);
+                            logger.debug("t: {}, tRef: {}, dX: {}, dY: {}", t, tRef, translationTXYArray[t][0], translationTXYArray[t][1]);
                         }
                     }
                 }

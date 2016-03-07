@@ -245,6 +245,14 @@ public class BoundingBox {
         return zMax-zMin+1;
     }
     
+    public int getSizeXY() {
+        return (xMax-xMin+1) * (yMax-yMin+1);
+    }
+    
+    public int getSizeXYZ() {
+        return (xMax-xMin+1) * (yMax-yMin+1) * (zMax-zMin+1);
+    }
+    
     public double getXMean() {
         return xMin+getSizeX()/2.0;
     }
@@ -271,10 +279,13 @@ public class BoundingBox {
         if (getSizeZ()<=1 && other.getSizeZ()<=1) return Math.max(xMin, other.xMin)<Math.min(xMax, other.xMax)+tolerance && Math.max(yMin, other.yMin)<Math.min(yMax, other.yMax)+tolerance;
         else return Math.max(xMin, other.xMin)<Math.min(xMax, other.xMax)+tolerance && Math.max(yMin, other.yMin)<Math.min(yMax, other.yMax)+tolerance && Math.max(zMin, other.zMin)<Math.min(zMax, other.zMax)+tolerance;
     }
-    
+    /**
+     * 
+     * @param other
+     * @return intersection bounding box. If the size in one direction is negative => there are no intersection in this direction
+     */
     public BoundingBox getIntersection(BoundingBox other) {
-        if (!hasIntersection(other)) return new BoundingBox();
-        else return new BoundingBox(Math.max(xMin, other.xMin), Math.min(xMax, other.xMax), Math.max(yMin, other.yMin), Math.min(yMax, other.yMax) , Math.max(zMin, other.zMin), Math.min(zMax, other.zMax));
+        return new BoundingBox(Math.max(xMin, other.xMin), Math.min(xMax, other.xMax), Math.max(yMin, other.yMin), Math.min(yMax, other.yMax) , Math.max(zMin, other.zMin), Math.min(zMax, other.zMax));
     }
     
     public boolean isIncluded(BoundingBox container) {

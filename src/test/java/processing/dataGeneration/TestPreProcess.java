@@ -31,6 +31,7 @@ import java.util.List;
 import plugins.PluginFactory;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.transformations.AutoRotationXY;
+import plugins.plugins.transformations.CropMicroChannelFluo2D;
 import plugins.plugins.transformations.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
 import plugins.plugins.transformations.ImageStabilizerCore;
@@ -46,13 +47,14 @@ import processing.ImageTransformation;
 public class TestPreProcess {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        String dbName= "fluo160218";
+        String dbName= "fluo160217";
         //String dbName= "fluo151127";
         boolean flip = true;
+        int field = 0;
         //testTransformation("fluo151130_OutputNewScaling", 9, 1, 0);
-        testPreProcessing(dbName, 0, 0, -1, 0, 200);
-        //testCrop(dbName, 0, 600, flip);
-        //testStabilizer(dbName, 0, 0, 50, 159, flip);
+        //testPreProcessing(dbName, field, 0, -1, 0, 50);
+        //testCrop(dbName, field, 0, flip);
+        testStabilizer(dbName, field, 0, 19, 0, flip);
     }
     
     public static void testTransformation(String dbName, int fieldIdx, int channelIdx, int time) {
@@ -75,15 +77,17 @@ public class TestPreProcess {
         f.getPreProcessingChain().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
         f.getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
         if (flip) f.getPreProcessingChain().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
-        f.getPreProcessingChain().addTransformation(0, null, new CropMicroChannels2D());
-        CropMicroChannels2D.debug=true;
+        /*f.getPreProcessingChain().addTransformation(0, null, new CropMicroChannels2D());
+        CropMicroChannels2D.debug=true;*/
+        f.getPreProcessingChain().addTransformation(0, null, new CropMicroChannelFluo2D().setTimePointNumber(5));
+        CropMicroChannelFluo2D.debug=true;
         //Image[][] imageInputTC = new Image[xp.getMicroscopyField(0).getInputImages().getTimePointNumber()][1];
         //for (int t = 0; t<imageInputTC.length; ++t) imageInputTC[t][0] = xp.getMicroscopyField(0).getInputImages().getImage(0, t);
         
         IJImageDisplayer disp = new IJImageDisplayer();
-        disp.showImage(f.getInputImages().getImage(0, time).duplicate("input:"+fieldIdx));
+        disp.showImage(f.getInputImages().getImage(0, time).duplicate("input: f="+fieldIdx));
         Processor.setTransformations(f, true);
-        disp.showImage(f.getInputImages().getImage(0, time).duplicate("output:"+fieldIdx));
+        disp.showImage(f.getInputImages().getImage(0, time).duplicate("output: f="+fieldIdx));
     }
     
     

@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.tree.MutableTreeNode;
@@ -37,16 +38,16 @@ import javax.swing.tree.TreeNode;
  */
 @Lifecycle
 @Embedded(polymorph = true)
-public abstract class SimpleContainerParameter implements ContainerParameter {
+public abstract class SimpleContainerParameter implements ContainerParameter, PostLoadable {
     protected String name;
     @Transient protected ContainerParameter parent;
-    @Transient protected ArrayList<Parameter> children;
+    @Transient protected List<Parameter> children;
     @Transient protected boolean postLoaded=false;
     public SimpleContainerParameter(String name) {
         this.name=name;
     }
     
-    protected void initChildren(ArrayList<Parameter> parameters) {
+    protected void initChildren(List<Parameter> parameters) {
         if (parameters==null) {
             children = new ArrayList<Parameter>(0);
         } else {
@@ -56,7 +57,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
             for (Parameter p : parameters) {
                 if (p==null) logger.warn("SCP initChildren error: param null: {}, name: {}, type: {}", idx, name, getClass().getSimpleName());
                 p.setParent(this);
-                if (p instanceof SimpleContainerParameter) ((SimpleContainerParameter)p).initChildList();
+                //if (p instanceof SimpleContainerParameter) ((SimpleContainerParameter)p).initChildList(); -> cf postLoad
                 idx++;
             }
         }
@@ -197,7 +198,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
         return Collections.enumeration(getChildren());
     }
     
-    protected ArrayList<Parameter> getChildren() {
+    protected List<Parameter> getChildren() {
         if (children==null) this.initChildList();
         return children;
     }
@@ -228,6 +229,9 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
         //logger.debug("post load on : {}, of class: {}, alreadyPostLoaded: {}, parent: {}", name, this.getClass().getSimpleName(), postLoaded, parent!=null? parent.getName():null);
         if (postLoaded) return;
         initChildList();
+        for (Parameter p : children) {
+            if (p instanceof PostLoadable) ((PostLoadable)p).postLoad();
+        }
         postLoaded=true;
     }
 }

@@ -51,9 +51,9 @@ public class TrackMask extends ImageObjectInterface {
     int maxParentY, maxParentZ;
     static final int updateImageFrequency=10;
     static final int intervalX=5;
-    ArrayList<StructureObject> parentTrack;
+    List<StructureObject> parentTrack;
     
-    public TrackMask(ArrayList<StructureObject> parentTrack, int childStructureIdx) {
+    public TrackMask(List<StructureObject> parentTrack, int childStructureIdx) {
         super(parentTrack.get(0), childStructureIdx);
         //logger.debug("creating track mask from head: {}, size: {}", parentTrack.get(0), parentTrack.size());
         this.parentTrack=parentTrack;

@@ -38,6 +38,8 @@ public interface Neighborhood {
     public float[] getPixelValues();
     public float getMin(int x, int y, int z, Image image);
     public float getMax(int x, int y, int z, Image image);
+    public boolean hasNonNullValue(int x, int y, int z, Image image);
+    public boolean hasNullValue(int x, int y, int z, Image image);
     public float[] getDistancesToCenter();
     public int getValueCount();
     public boolean is3D();

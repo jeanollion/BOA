@@ -127,6 +127,17 @@ public class ArrayUtil {
         for (int i = start+1; i<stop; ++i) if (array[i]<array[idxMin]) idxMin=i;
         return idxMin;
     }
+    public static int min(int[] array) {
+        return min(array, 0, array.length);
+    }
+    public static int min(int[] array, int start, int stop) {
+        if (start<0) start=0;
+        if (stop>array.length) stop=array.length;
+        if (stop<start) {int temp = start; start=stop; stop=temp;}
+        int idxMin = start;
+        for (int i = start+1; i<stop; ++i) if (array[i]<array[idxMin]) idxMin=i;
+        return idxMin;
+    }
     
     public static int getFirstOccurence(float[] array, int start, int stop, float value, boolean inferior, boolean strict) {
         if (start<0) start=0;

@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import de.caluga.morphium.annotations.Transient;
+import java.util.List;
 
 /**
  *
@@ -30,15 +31,15 @@ import de.caluga.morphium.annotations.Transient;
  */
 public class ConditionalParameter extends SimpleContainerParameter {
     ActionableParameter action;
-    HashMap<Object, Parameter[]> parameters;
-    Parameter[] defaultParameters;
+    HashMap<Object, List<Parameter>> parameters;
+    List<Parameter> defaultParameters;
     Object currentValue;
     
     public ConditionalParameter(ActionableParameter action) {
-        this(action, new HashMap<Object, Parameter[]>(), null);
+        this(action, new HashMap<Object, List<Parameter>>(), null);
     }
     
-    public ConditionalParameter(ActionableParameter action, HashMap<Object, Parameter[]> parameters, Parameter[] defaultParameters) {
+    public ConditionalParameter(ActionableParameter action, HashMap<Object, List<Parameter>> parameters, List<Parameter> defaultParameters) {
         super(action.getName());
         this.action=action;
         this.parameters=parameters;
@@ -51,24 +52,29 @@ public class ConditionalParameter extends SimpleContainerParameter {
     }
     
     public ConditionalParameter setAction(Object actionValue, Parameter[] parameters, boolean setContentFromAlreadyPresent) {
+        List<Parameter> paramToSet = Arrays.asList(parameters);
         if (setContentFromAlreadyPresent) {
-            Parameter[] p = this.parameters.get(actionValue);
-            if (p!=null && p.length==parameters.length) ParameterUtils.setContent(parameters, p);
+            List<Parameter> p = this.parameters.get(actionValue);
+            if (p!=null && p.size()==parameters.length) ParameterUtils.setContent(paramToSet, p);
         }
-        this.parameters.put(actionValue, parameters);
+        this.parameters.put(actionValue, paramToSet);
         if (actionValue.equals(action.getValue())) setActionValue(action.getValue());
+        //logger.debug("setActionValue: {}, nParams: {}, allActions: {}", actionValue, parameters.length, this.parameters.keySet());
         return this;
     }
     void replaceActionParameter(ActionableParameter action) {
+        logger.debug("replace ap: toReplace: {}; old: {}", action.getValue(), this.action.getValue());
         action.setContentFrom(this.action);
         action.setValue(this.action.getValue());
         this.action=action;
         action.setConditionalParameter(this);
+        logger.debug("after replace ap: toReplace: {}; old: {}", action.getValue(), this.action.getValue());
     }
 
     
     public ConditionalParameter setDefaultParameters(Parameter[] defaultParameters) {
-        this.defaultParameters=defaultParameters;
+        this.defaultParameters=Arrays.asList(defaultParameters);
+        initChildList();
         return this;
     } 
 
@@ -78,11 +84,11 @@ public class ConditionalParameter extends SimpleContainerParameter {
             ConditionalParameter otherC = (ConditionalParameter)other;
             action.setContentFrom(otherC.action);
             action.setConditionalParameter(this);
-            HashMap<Object, Parameter[]> oldParam = parameters;
-            parameters=new HashMap<Object, Parameter[]>(otherC.parameters.size());
-            for (Entry<Object, Parameter[]> e : otherC.parameters.entrySet()) {
-                Parameter[] oldArray = oldParam.get(e.getKey());
-                if (oldArray!=null && oldArray.length==e.getValue().length) {
+            HashMap<Object, List<Parameter>> oldParam = parameters;
+            parameters=new HashMap<Object, List<Parameter>>(otherC.parameters.size());
+            for (Entry<Object, List<Parameter>> e : otherC.parameters.entrySet()) {
+                List<Parameter> oldArray = oldParam.get(e.getKey());
+                if (oldArray!=null && oldArray.size()==e.getValue().size()) {
                     ParameterUtils.setContent(oldArray, e.getValue());
                     parameters.put(e.getKey(), oldArray);
                 } else {
@@ -90,7 +96,7 @@ public class ConditionalParameter extends SimpleContainerParameter {
                 }
             }
             if (otherC.defaultParameters!=null) {
-                if (this.defaultParameters!=null && this.defaultParameters.length==otherC.defaultParameters.length) ParameterUtils.setContent(defaultParameters, otherC.defaultParameters);
+                if (this.defaultParameters!=null && this.defaultParameters.size()==otherC.defaultParameters.size()) ParameterUtils.setContent(defaultParameters, otherC.defaultParameters);
                 else this.defaultParameters = ParameterUtils.duplicateArray(otherC.defaultParameters);
             } else this.defaultParameters=null;
             setActionValue(action.getValue());
@@ -104,9 +110,16 @@ public class ConditionalParameter extends SimpleContainerParameter {
         currentValue = actionValue;
         if (!action.getValue().equals(actionValue)) this.action.setValue(actionValue); // avoid loop
         initChildList();
+        logger.debug("setAction value: {}, children: {}", actionValue, getCurrentParameters()==null ? "null" : getCurrentParameters().size());
     }
     
-    public Parameter[] getCurrentParameters() {
+    public List<Parameter> getParameters(Object actionValue) {
+        List<Parameter> p = this.parameters.get(actionValue);
+        if (p==null) return defaultParameters;
+        else return p;
+    }
+    
+    public List<Parameter> getCurrentParameters() {
         if (parameters.containsKey(currentValue)) return parameters.get(currentValue);
         else return defaultParameters;
     }
@@ -130,8 +143,7 @@ public class ConditionalParameter extends SimpleContainerParameter {
     
     @Override
     protected void initChildList() {
-        if (!parameters.containsKey(currentValue)) super.initChildren();
-        else super.initChildren(getCurrentParameters());
+        super.initChildren(getCurrentParameters());
     }
     @Override public ConditionalParameter duplicate() {
         ConditionalParameter res = new ConditionalParameter(action); // action will be duplicated in setContent method

@@ -18,17 +18,20 @@
 package configuration.parameters;
 
 import dataStructure.configuration.MicroscopyField;
+import de.caluga.morphium.annotations.Transient;
+import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import de.caluga.morphium.annotations.lifecycle.PostLoad;
 
 /**
  *
  * @author jollion
  */
+@Lifecycle
 public class ScaleXYZParameter extends SimpleContainerParameter {
     BoundedNumberParameter scaleXY = new BoundedNumberParameter("ScaleXY (pix)", 2, 1, 1, null);
     BoundedNumberParameter scaleZ = new BoundedNumberParameter("ScaleZ (pix)", 2, 1, 1, null);
     BooleanParameter useImageCalibration = new BooleanParameter("Use image calibration for Z-scale", true);
-    ConditionalParameter cond = new ConditionalParameter(useImageCalibration);
+    @Transient ConditionalParameter cond; // init occurs after postLoad
     
     public ScaleXYZParameter() {
         super();
@@ -36,17 +39,18 @@ public class ScaleXYZParameter extends SimpleContainerParameter {
     
     public ScaleXYZParameter(String name) {
         super(name);
-        init(false);
+        init();
     }
     public ScaleXYZParameter(String name, double scaleXY, double scaleZ, boolean useCalibration) {
         super(name);
-        init(false);
+        init();
         this.scaleXY.setValue(scaleXY);
         this.scaleZ.setValue(scaleZ);
         useImageCalibration.setSelected(useCalibration);
     }
-    private void init(boolean setContent) {
-        cond.setAction("false", new Parameter[]{scaleZ}, setContent);
+    private void init() { 
+        cond = new ConditionalParameter(useImageCalibration);
+        cond.setAction("false", new Parameter[]{scaleZ}, false);
     }
     @Override
     protected void initChildList() {
@@ -62,11 +66,14 @@ public class ScaleXYZParameter extends SimpleContainerParameter {
             return getScaleXY() * f.getScaleXY() / f.getScaleZ();
         } else return scaleZ.getValue().doubleValue();
     }
-    @Override @PostLoad public void postLoad() {
+    @Override 
+    @PostLoad 
+    public void postLoad() {
+        //logger.debug("postload on scaleXYZ: {}, postLoaded? : {}", name, postLoaded);
         if (!postLoaded) {
-            super.postLoad();
-            init(true);
-            cond.replaceActionParameter(useImageCalibration);
+            init();
+            initChildList();
+            postLoaded=true;
         }
     }
 }

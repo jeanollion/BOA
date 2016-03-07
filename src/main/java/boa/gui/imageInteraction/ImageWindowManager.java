@@ -109,7 +109,7 @@ public abstract class ImageWindowManager<T, U, V> {
         return i;
     }
     
-    public ImageObjectInterface getImageTrackObjectInterface(ArrayList<StructureObject> parentTrack, int childStructureIdx) {
+    public ImageObjectInterface getImageTrackObjectInterface(List<StructureObject> parentTrack, int childStructureIdx) {
         if (parentTrack.isEmpty()) {
             logger.warn("cannot open track image of length == 0" );
             return null;

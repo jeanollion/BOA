@@ -32,6 +32,7 @@ import de.caluga.morphium.annotations.Transient;
 import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Logger;
 import plugins.Plugin;
 import plugins.PluginFactory;
@@ -44,13 +45,13 @@ import plugins.PluginFactory;
 public class PluginParameter<T extends Plugin> extends SimpleContainerParameter implements Deactivatable, ChoosableParameter {
     
     @Transient private static HashMap<Class<? extends Plugin>, ArrayList<String>> pluginNames=new HashMap<Class<? extends Plugin>, ArrayList<String>>();
-    protected ArrayList<Parameter> pluginParameters;
+    protected List<Parameter> pluginParameters;
     protected String pluginName=NO_SELECTION;
     @Transient private Class<T> pluginType;
     protected String pluginTypeName;
     protected boolean allowNoSelection;
     protected boolean activated=true;
-    protected ArrayList<Parameter> additionalParameters;
+    protected List<Parameter> additionalParameters;
     
     public PluginParameter(String name, Class<T> pluginType, boolean allowNoSelection) {
         super(name);
@@ -82,7 +83,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         return setAdditionalParameters(new ArrayList<Parameter>(Arrays.asList(additionalParameters)));
     }
     
-    public ArrayList<Parameter> getAdditionalParameters() {
+    public List<Parameter> getAdditionalParameters() {
         return additionalParameters;
     }
     

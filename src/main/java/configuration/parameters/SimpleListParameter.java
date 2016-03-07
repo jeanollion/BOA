@@ -37,9 +37,9 @@ import javax.swing.tree.TreeNode;
  * @author jollion
  */
 
-@Embedded(polymorph = true)
 @Lifecycle
-public class SimpleListParameter<T extends Parameter> implements ListParameter<T> {
+@Embedded(polymorph = true)
+public class SimpleListParameter<T extends Parameter> implements ListParameter<T>, PostLoadable {
 
     protected String name;
     protected ArrayList<T> children;
@@ -338,12 +338,12 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     // morphium
 
     @PostLoad public void postLoad() {
-        //logger.debug("post load on : {}, of class: {}, alreadyPostLoaded: {}, parent: {}", name, this.getClass().getSimpleName(), postLoaded, parent!=null? parent.getName():null);
+        //logger.debug("LIST post load on : {}, of class: {}, alreadyPostLoaded: {}, parent: {}", name, this.getClass().getSimpleName(), postLoaded, parent!=null? parent.getName():null);
         if (postLoaded) return;
         for (Parameter p : children) {
             if (p!=null) {
                 p.setParent(this);
-                if (p instanceof SimpleContainerParameter) ((SimpleContainerParameter)p).initChildList();
+                if (p instanceof PostLoadable) ((PostLoadable)p).postLoad();
             }
             else logger.error("postload parameter null: {}", getName());
         }

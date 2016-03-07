@@ -30,12 +30,13 @@ public class ImageOperations {
     
     public static enum Axis {X, Y, Z;}
     
-    public static ImageInteger threshold(Image image, double threshold, boolean overThreshold, boolean strict) {
-        return threshold(image, threshold, overThreshold, strict, false, null);
+    public static ImageByte threshold(Image image, double threshold, boolean overThreshold, boolean strict) {
+        return (ImageByte)threshold(image, threshold, overThreshold, strict, false, null);
     }
     
     public static ImageInteger threshold(Image image, double threshold, boolean overThreshold, boolean strict, boolean setBackground, ImageInteger dest) {
         if (dest==null) dest=new ImageByte("", image);
+        else if (!dest.sameSize(image)) dest = Image.createEmptyImage(dest.getName(), dest, image);
         if (setBackground) {
             if (overThreshold) {
                 if (strict) {

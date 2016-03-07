@@ -28,12 +28,10 @@ import org.junit.Test;
 public class TestClass {
     @Test 
     public void testMath() {
-        int a = 200;
-        int b = 20;
-        logger.info("200/20 {}, ceil(200/20)  {}" , (double)a/(double)b, Math.ceil((double)a/(double)b));
         int aa = 5;
         int bb = 2;
-        logger.info("div 5/2 {}" , aa / bb);
+        logger.info("div 5/2= {}" , aa / bb);
+
     }
     //@Test
     public void test() {

@@ -24,6 +24,7 @@ import static configuration.parameters.Parameter.logger;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
 import java.util.ArrayList;
+import java.util.List;
 import utils.Utils;
 
 /**
@@ -98,7 +99,7 @@ public class ParameterUtils {
         }
     }
     
-    public static void setContent(ArrayList<Parameter> recieve, ArrayList<Parameter> give) {
+    public static void setContent(List<Parameter> recieve, List<Parameter> give) {
         for (int i = 0; i < recieve.size(); i++) {
             recieve.get(i).setContentFrom(give.get(i));
         }
@@ -113,7 +114,7 @@ public class ParameterUtils {
         return res;
     }
     
-    public static ArrayList<Parameter> duplicateArray(ArrayList<Parameter> parameters) {
+    public static List<Parameter> duplicateArray(List<Parameter> parameters) {
         if (parameters==null) return null;
         ArrayList<Parameter> res = new ArrayList<Parameter>(parameters.size());
         for (Parameter p : parameters) res.add(p.duplicate());
@@ -199,6 +200,15 @@ public class ParameterUtils {
             return res;
         } else {
             return null;
+        }
+    }
+    public static Parameter[] aggregate(Parameter[] array, Parameter... parameters) {
+        if (parameters.length==0) return array;
+        else {
+            Parameter[] res = new Parameter[array.length+parameters.length];
+            System.arraycopy(array, 0, res, 0, array.length);
+            System.arraycopy(parameters, 0, res, array.length, parameters.length);
+            return res;
         }
     }
     

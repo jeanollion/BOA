@@ -27,6 +27,7 @@ import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectProcessing;
 import ij.process.AutoThresholder;
 import image.BlankMask;
+import image.BoundingBox;
 import image.Image;
 import image.ImageFloat;
 import image.ImageInteger;
@@ -34,11 +35,17 @@ import image.ImageLabeller;
 import image.ImageOperations;
 import static image.ImageOperations.threshold;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import plugins.Segmenter;
 import plugins.plugins.thresholders.IJAutoThresholder;
+import plugins.plugins.trackers.ObjectIdxTracker;
+import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
+import plugins.plugins.transformations.CropMicroChannelFluo2D;
+import static plugins.plugins.transformations.CropMicroChannelFluo2D.segmentMicroChannels;
 import processing.Filters;
 import processing.ImageFeatures;
 import processing.neighborhood.EllipsoidalNeighborhood;
@@ -54,27 +61,44 @@ public class MicroChannelFluo2D implements Segmenter {
     NumberParameter channelHeight = new BoundedNumberParameter("MicroChannel Height (pixels)", 0, 355, 5, null);
     NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Width (pixels)", 0, 40, 5, null);
     NumberParameter yMargin = new BoundedNumberParameter("y-margin", 0, 20, 0, null);
-    BoundedNumberParameter refTimePoint = new BoundedNumberParameter("Reference time point", 0, 50, 0, null);
-    Parameter[] parameters = new Parameter[]{channelHeight, channelWidth, yMargin, refTimePoint};
+    NumberParameter fillingProportion = new BoundedNumberParameter("Microchannel filling proportion", 2, 0.5, 0.05, 1);
+    NumberParameter minObjectSize = new BoundedNumberParameter("Min. Object Size", 0, 100, 1, null);
+    Parameter[] parameters = new Parameter[]{channelHeight, channelWidth, yMargin, fillingProportion, minObjectSize};
     public static boolean debug = false;
 
     public MicroChannelFluo2D() {
     }
 
-    public MicroChannelFluo2D(int channelHeight, int channelWidth, int yMargin, int refTimePoint) {
+    public MicroChannelFluo2D(int channelHeight, int channelWidth, int yMargin, double fillingProportion, int minObjectSize) {
         this.channelHeight.setValue(channelHeight);
         this.channelWidth.setValue(channelWidth);
         this.yMargin.setValue(yMargin);
-        this.refTimePoint.setValue(refTimePoint);
+        this.fillingProportion.setValue(fillingProportion);
+        this.minObjectSize.setValue(minObjectSize);
     }
 
     @Override
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        ObjectPopulation objects = run(input, channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), yMargin.getValue().intValue());
+        ObjectPopulation objects = run(input, channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), yMargin.getValue().intValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue());
         return objects;
     }
 
-    public static ObjectPopulation run(Image image, int channelHeight, int channelWidth, int yMargin) {
+    public static ObjectPopulation run(Image image, int channelHeight, int channelWidth, int yMargin, double fillingProportion, int minObjectSize) {
+        CropMicroChannelFluo2D.debug=debug;
+        CropMicroChannelFluo2D.Result r = segmentMicroChannels(image, 0, channelHeight, fillingProportion, minObjectSize);
+        if (r==null) return null;
+        ArrayList<Object3D> res = new ArrayList<Object3D>(r.xMax.length);
+        int yMin = Math.max(r.yMin - yMargin, 0);
+        for (int i = 0; i < r.xMax.length; ++i) {
+            int xMin = Math.max((int) (r.getXMean(i) - channelWidth / 2.0), 0);
+            res.add(new Object3D(new BlankMask("mask of microchannel:" + (i + 1), channelWidth, Math.min(channelHeight, image.getSizeY()-yMin), image.getSizeZ(), xMin, yMin, 0, image.getScaleXY(), image.getScaleZ()), i + 1));
+        }
+        return new ObjectPopulation(res, image);
+    }
+    
+    
+    
+    public static ObjectPopulation run2(Image image, int channelHeight, int channelWidth, int yMargin) {
         // get yStart
         float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null);
         ImageFloat imProjY = new ImageFloat("proj(Y)", image.getSizeY(), new float[][]{yProj});
@@ -141,5 +165,6 @@ public class MicroChannelFluo2D implements Segmenter {
     public Parameter[] getParameters() {
         return parameters;
     }
+    
 
 }

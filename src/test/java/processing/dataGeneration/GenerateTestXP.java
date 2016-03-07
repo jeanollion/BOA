@@ -36,6 +36,7 @@ import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
 import plugins.plugins.trackers.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import plugins.plugins.trackers.MicrochannelProcessor;
 import plugins.plugins.transformations.AutoRotationXY;
+import plugins.plugins.transformations.CropMicroChannelFluo2D;
 import plugins.plugins.transformations.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
 import plugins.plugins.transformations.ImageStabilizerXY;
@@ -138,7 +139,7 @@ public class GenerateTestXP {
             xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
             xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
             xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
-            xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannels2D());
+            xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannelFluo2D(30, 45, 200, 0.6, 5));
             xp.getPreProcessingTemplate().addTransformation(1, null, new ScaleHistogramSignalExclusion(100, 5, 0, 50, true)); // to remove blinking
             xp.getPreProcessingTemplate().addTransformation(0, null, new SelectBestFocusPlane(3)).setActivated(false); // faster after crop, but previous transformation might be aftected if the first plane is really out of focus
             xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY());
