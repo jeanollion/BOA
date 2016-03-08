@@ -39,8 +39,8 @@ public class ImageFeature implements PreFilter {
     BoundedNumberParameter normScale = new BoundedNumberParameter("Normalization Scale (pix)", 2, 3, 1, null);
     ConditionalParameter cond = new ConditionalParameter(feature).setDefaultParameters(new Parameter[]{scale}).setAction("Normalized Hessian Max", new Parameter[]{scale, normScale});
     
-    
     public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
+        logger.debug("ImageFeature: feature equlas: {}, scale equals: {}", feature==cond.getActionableParameter(), scale == cond.getCurrentParameters().get(0));
         String f = feature.getSelectedItem();
         double scaleXY = scale.getScaleXY();
         double scaleZ = scale.getScaleZ();

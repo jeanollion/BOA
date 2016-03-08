@@ -59,16 +59,14 @@ public class ConditionalParameter extends SimpleContainerParameter {
         }
         this.parameters.put(actionValue, paramToSet);
         if (actionValue.equals(action.getValue())) setActionValue(action.getValue());
-        //logger.debug("setActionValue: {}, nParams: {}, allActions: {}", actionValue, parameters.length, this.parameters.keySet());
+        //logger.debug("setActionValue: {}, class: {}, nParams: {}, allActions: {}", actionValue, actionValue.getClass().getSimpleName(), parameters.length, this.parameters.keySet());
         return this;
     }
     void replaceActionParameter(ActionableParameter action) {
-        logger.debug("replace ap: toReplace: {}; old: {}", action.getValue(), this.action.getValue());
         action.setContentFrom(this.action);
         action.setValue(this.action.getValue());
         this.action=action;
         action.setConditionalParameter(this);
-        logger.debug("after replace ap: toReplace: {}; old: {}", action.getValue(), this.action.getValue());
     }
 
     
@@ -110,7 +108,7 @@ public class ConditionalParameter extends SimpleContainerParameter {
         currentValue = actionValue;
         if (!action.getValue().equals(actionValue)) this.action.setValue(actionValue); // avoid loop
         initChildList();
-        logger.debug("setAction value: {}, children: {}", actionValue, getCurrentParameters()==null ? "null" : getCurrentParameters().size());
+        //logger.debug("setAction value: {}, class: {}, children: {}, allActions: {}", actionValue, actionValue.getClass().getSimpleName(), getCurrentParameters()==null ? "null" : getCurrentParameters().size(), this.parameters.keySet());
     }
     
     public List<Parameter> getParameters(Object actionValue) {

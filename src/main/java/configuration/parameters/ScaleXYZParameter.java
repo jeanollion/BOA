@@ -31,12 +31,8 @@ public class ScaleXYZParameter extends SimpleContainerParameter {
     BoundedNumberParameter scaleXY = new BoundedNumberParameter("ScaleXY (pix)", 2, 1, 1, null);
     BoundedNumberParameter scaleZ = new BoundedNumberParameter("ScaleZ (pix)", 2, 1, 1, null);
     BooleanParameter useImageCalibration = new BooleanParameter("Use image calibration for Z-scale", true);
-    @Transient ConditionalParameter cond; // init occurs after postLoad
-    
-    public ScaleXYZParameter() {
-        super();
-    }
-    
+    @Transient ConditionalParameter cond; // init occurs @ construction or @ postLoad
+        
     public ScaleXYZParameter(String name) {
         super(name);
         init();
@@ -50,7 +46,7 @@ public class ScaleXYZParameter extends SimpleContainerParameter {
     }
     private void init() { 
         cond = new ConditionalParameter(useImageCalibration);
-        cond.setAction("false", new Parameter[]{scaleZ}, false);
+        cond.setAction(false, new Parameter[]{scaleZ}, false);
     }
     @Override
     protected void initChildList() {
@@ -69,11 +65,14 @@ public class ScaleXYZParameter extends SimpleContainerParameter {
     @Override 
     @PostLoad 
     public void postLoad() {
-        //logger.debug("postload on scaleXYZ: {}, postLoaded? : {}", name, postLoaded);
         if (!postLoaded) {
             init();
             initChildList();
             postLoaded=true;
         }
+    }
+    public ScaleXYZParameter() {
+        super(); 
+        // init of conditional parameter will occur @ postLoad
     }
 }
