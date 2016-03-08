@@ -270,4 +270,9 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         //logger.trace("get current image: {}", WindowManager.getCurrentImage());
         return WindowManager.getCurrentImage();
     }
+
+    public Image getCurrentImage2() {
+       ImagePlus curr = getCurrentImage();
+       return this.getImage(curr);
+    }
 }

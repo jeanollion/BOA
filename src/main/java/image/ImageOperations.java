@@ -120,6 +120,7 @@ public class ImageOperations {
 
     public static void pasteImage(Image source, Image dest, BoundingBox offset) {
         if (source.getClass()!=dest.getClass()) throw new IllegalArgumentException("Paste Image: source and destination should be of the same type (source: "+source.getClass().getSimpleName()+ " destination: "+dest.getClass().getSimpleName()+")");
+        if (offset == null) offset = new BoundingBox(0, 0, 0);
         if (source.getSizeX()+offset.xMin>dest.sizeX || source.getSizeY()+offset.yMin>dest.sizeY || source.getSizeZ()+offset.zMin>dest.sizeZ) throw new IllegalArgumentException("Paste Image: source does not fit in destination");
         Object[] sourceP = source.getPixelArray();
         Object[] destP = dest.getPixelArray();
@@ -140,6 +141,8 @@ public class ImageOperations {
     
     public static void pasteImage(Image source, Image dest, BoundingBox destinationOffset, BoundingBox sourceView) {
         if (source.getClass()!=dest.getClass()) throw new IllegalArgumentException("Paste Image: source and destination should be of the same type (source: "+source.getClass().getSimpleName()+ " destination: "+dest.getClass().getSimpleName()+")");
+        if (destinationOffset == null) destinationOffset = new BoundingBox(0, 0, 0);
+        if (sourceView ==null) sourceView = source.getBoundingBox();
         if (sourceView.getSizeX()+destinationOffset.xMin>dest.sizeX || sourceView.getSizeY()+destinationOffset.yMin>dest.sizeY || sourceView.getSizeZ()+destinationOffset.zMin>dest.sizeZ) throw new IllegalArgumentException("Paste Image: source does not fit in destination");
         if (sourceView.getSizeX()==0 || sourceView.getSizeY()==0 || sourceView.getSizeZ()==0) throw new IllegalArgumentException("Source view volume null: sizeX:"+sourceView.getSizeX()+" sizeY:"+sourceView.getSizeY()+ " sizeZ:"+sourceView.getSizeZ());
         Object[] sourceP = source.getPixelArray();

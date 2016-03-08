@@ -51,7 +51,10 @@ import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
 import image.BoundingBox;
 import image.Image;
+import image.ImageByte;
 import image.ImageInteger;
+import image.TypeConverter;
+import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -1089,12 +1092,22 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                     modified.add(sel);
                     sel.getParent().relabelChildren(sel.getStructureIdx(), modified);
                     db.getDao(fieldName).store(modified, false);
+                    // unselect
+                    ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
                     //Update tree
                     ObjectNode node = objectTreeGenerator.getObjectNode(sel);
                     node.getParent().createChildren();
                     objectTreeGenerator.reload(node.getParent());
                     //Update all opened images & objectImageInteraction
                     ImageWindowManagerFactory.getImageManager().reloadObjects(sel.getParent(), sel.getStructureIdx(), false);
+                    // update selection
+                    ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null, sel.getStructureIdx());
+                    if (i!=null) {
+                        List<StructureObject> toDisp = new ArrayList<StructureObject>(2);
+                        toDisp.add(sel);
+                        toDisp.add(newObject);
+                        ImageWindowManagerFactory.getImageManager().displayObjects(null, i.pairWithOffset(toDisp), Color.orange, true);
+                    }
                 }
             }
         }
@@ -1117,12 +1130,20 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             modified.add(res);
             res.getParent().relabelChildren(res.getStructureIdx(), modified);
             db.getDao(fieldName).store(modified, false);
+            ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
             //Update object tree
             ObjectNode node = objectTreeGenerator.getObjectNode(res);
             node.getParent().createChildren();
             objectTreeGenerator.reload(node.getParent());
             //Update all opened images & objectImageInteraction
             ImageWindowManagerFactory.getImageManager().reloadObjects(res.getParent(), res.getStructureIdx(), false);
+            // update selection
+            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null, res.getStructureIdx());
+            if (i!=null) {
+                List<StructureObject> toDisp = new ArrayList<StructureObject>(1);
+                toDisp.add(res);
+                ImageWindowManagerFactory.getImageManager().displayObjects(null, i.pairWithOffset(toDisp), Color.orange, true);
+            }
         }
     }//GEN-LAST:event_mergeObjectsButtonActionPerformed
 
@@ -1172,6 +1193,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             ArrayList<StructureObject> modified = new ArrayList<StructureObject>();
             for (StructureObject p : parents) p.relabelChildren(structureIdx, modified);
             db.getDao(fieldName).store(modified, false);
+            //Update selection on opened image
+            ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
             //Update object tree
             for (StructureObject s : parents) {
                 ObjectNode node = objectTreeGenerator.getObjectNode(s);
@@ -1180,6 +1203,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
             //Update all opened images & objectImageInteraction
             for (StructureObject p : parents) ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
+            
+            
         }
     }//GEN-LAST:event_deleteObjectsButtonActionPerformed
 
@@ -1308,6 +1333,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         }
         ImageObjectInterfaceKey key =  iwm.getImageObjectInterfaceKey(image);
+        if (key==null) {
+            logger.warn("Current image is not registered");
+            return;
+        }
         int structureIdx = key.childStructureIdx;
         int parentStructureIdx = this.db.getExperiment().getStructure(structureIdx).getParentStructure();
         ManualSegmenter segmenter = this.db.getExperiment().getStructure(structureIdx).getManualSegmenter();
@@ -1320,17 +1349,22 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         Map<StructureObject, List<int[]>> points = iwm.getParentSelectedPointsMap(image, parentStructureIdx);
         if (points!=null) {
             logger.debug("manual segment: {} distinct parents. Segmentation structure: {}, parent structure: {}", points.size(), structureIdx, parentStructureIdx);
+            List<StructureObject> segmentedObjects = new ArrayList<StructureObject>();
             for (Entry<StructureObject, List<int[]>> e : points.entrySet()) {
                 Image segImage = e.getKey().getRawImage(structureIdx);
+                
                 // generate image mask without old objects
-                ImageInteger mask = e.getKey().getMask().duplicate("manual seg mask");
+                ImageByte mask = TypeConverter.cast(e.getKey().getMask(), new ImageByte("", 0, 0, 0));
                 ArrayList<StructureObject> oldChildren = e.getKey().getChildren(structureIdx);
                 for (StructureObject c : oldChildren) c.getObject().draw(mask, 0, new BoundingBox(0, 0, 0));
-                if (test) iwm.getDisplayer().showImage(mask, 0);
+                if (test) iwm.getDisplayer().showImage(mask, 0, 1);
+                
                 ObjectPopulation seg = segmenter.manualSegment(segImage, e.getKey(), mask, structureIdx, e.getValue());
+                seg.filter(new ObjectPopulation.Size().setMin(2)); // remove seeds
                 logger.debug("{} children segmented in parent: {}", seg.getObjects().size(), e.getKey());
                 if (!test && !seg.getObjects().isEmpty()) {
                     ArrayList<StructureObject> newChildren = e.getKey().setChildrenObjects(seg, structureIdx);
+                    segmentedObjects.addAll(newChildren);
                     newChildren.addAll(oldChildren);
                     ArrayList<StructureObject> modified = new ArrayList<StructureObject>();
                     e.getKey().relabelChildren(structureIdx, modified);
@@ -1342,10 +1376,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                     ObjectNode node = objectTreeGenerator.getObjectNode(e.getKey());
                     node.getParent().createChildren();
                     objectTreeGenerator.reload(node.getParent());
+                    
                     //Update all opened images & objectImageInteraction
                     ImageWindowManagerFactory.getImageManager().reloadObjects(e.getKey(), structureIdx, false);
                 }
             }
+            // selected newly segmented objects on image
+            ImageObjectInterface i = iwm.getImageObjectInterface(image);
+            if (i!=null) iwm.displayObjects(image, i.pairWithOffset(segmentedObjects), Color.ORANGE, true);
         }
     }
     

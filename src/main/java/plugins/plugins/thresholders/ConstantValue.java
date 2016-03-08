@@ -28,7 +28,7 @@ import plugins.Thresholder;
  * @author jollion
  */
 public class ConstantValue implements Thresholder {
-    NumberParameter value = new NumberParameter("Value:", 2, 1);
+    NumberParameter value = new NumberParameter("Value:", 8, 1);
     
     public ConstantValue() {}
     public ConstantValue(double value) {

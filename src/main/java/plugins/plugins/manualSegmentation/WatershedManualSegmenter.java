@@ -53,7 +53,7 @@ public class WatershedManualSegmenter implements ManualSegmenter {
         ImageByte mask = new ImageByte("seeds mask", input);
         int label = 1;
         for (int[] p : points) {
-            if (segmentationMask.contains(p[0], p[1], p[2])) mask.setPixel(p[0], p[1], p[2], label++);
+            if (segmentationMask.insideMask(p[0], p[1], p[2])) mask.setPixel(p[0], p[1], p[2], label++);
         }
         ObjectPopulation pop =  WatershedTransform.watershed(input, segmentationMask, mask, decreasingIntensities.getSelected(), new WatershedTransform.ThresholdPropagationOnWatershedMap(threshold), null);
         if (verbose) {

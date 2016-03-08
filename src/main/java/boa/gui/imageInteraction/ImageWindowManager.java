@@ -170,6 +170,10 @@ public abstract class ImageWindowManager<T, U, V> {
         return imageObjectInterfaceMap.get(image);
     }
     public ImageObjectInterface getImageObjectInterface(Image image) {
+        if (image==null) {
+            image = getDisplayer().getCurrentImage2();
+            if (image==null) return null;
+        }
         ImageObjectInterfaceKey key = imageObjectInterfaceMap.get(image);
         if (key==null) return null;
         if (isLabelImage.get(image)) return this.imageObjectInterfaces.get(key);
@@ -178,6 +182,10 @@ public abstract class ImageWindowManager<T, U, V> {
         }
     }
     public ImageObjectInterface getImageObjectInterface(Image image, int structureIdx) {
+        if (image==null) {
+            image = getDisplayer().getCurrentImage2();
+            if (image==null) return null;
+        }
         ImageObjectInterfaceKey key = imageObjectInterfaceMap.get(image);
         if (key==null) return null;
         if (key.parent.getStructureIdx()>structureIdx) return null;
@@ -348,7 +356,10 @@ public abstract class ImageWindowManager<T, U, V> {
     }
     protected abstract void hideAllObjects(T image);
     public void displayLabileObjects(Image image) {
-        if (image==null) return;
+        if (image==null) {
+            image = getDisplayer().getCurrentImage2();
+            if (image==null) return;
+        }
         Set<U> rois = this.displayedLabileObjectRois.get(image);
         if (rois!=null) {
             T dispImage = displayer.getImage(image);
@@ -361,7 +372,10 @@ public abstract class ImageWindowManager<T, U, V> {
 
     
     public void hideLabileObjects(Image image) {
-        if (image==null) return;
+        if (image==null) {
+            image = getDisplayer().getCurrentImage2();
+            if (image==null) return;
+        }
         Set<U> rois = this.displayedLabileObjectRois.remove(image);
         if (rois!=null) {
             T dispImage = displayer.getImage(image);
@@ -484,7 +498,10 @@ public abstract class ImageWindowManager<T, U, V> {
     
     protected abstract void hideAllTracks(T image);
     public void displayLabileTracks(Image image) {
-        if (image==null) return;
+        if (image==null) {
+            image = getDisplayer().getCurrentImage2();
+            if (image==null) return;
+        }
         Set<V> tracks = this.displayedLabileTrackRois.get(image);
         if (tracks!=null) {
             T dispImage = displayer.getImage(image);
@@ -495,7 +512,10 @@ public abstract class ImageWindowManager<T, U, V> {
         }
     }
     public void hideLabileTracks(Image image) {
-        if (image==null) return;
+        if (image==null) {
+            image = getDisplayer().getCurrentImage2();
+            if (image==null) return;
+        }
         Set<V> tracks = this.displayedLabileTrackRois.remove(image);
         if (tracks!=null) {
             T dispImage = displayer.getImage(image);

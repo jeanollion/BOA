@@ -31,10 +31,13 @@ public class TypeConverter {
      */
     public static ImageFloat toFloat(Image image, ImageFloat output) {
         if (output==null || !output.sameSize(image)) output = new ImageFloat(image.getName(), image);
-        float[][] newPixels = output.getPixelArray();
-        for (int z = 0; z<image.getSizeZ(); ++z) {
-            for (int xy = 0; xy<image.getSizeXY(); ++xy) {
-                newPixels[z][xy]=image.getPixel(xy, z);
+        if (image instanceof ImageFloat) ImageOperations.pasteImage(image, output, null);
+        else {
+            float[][] newPixels = output.getPixelArray();
+            for (int z = 0; z<image.getSizeZ(); ++z) {
+                for (int xy = 0; xy<image.getSizeXY(); ++xy) {
+                    newPixels[z][xy]=image.getPixel(xy, z);
+                }
             }
         }
         return output;
@@ -48,9 +51,12 @@ public class TypeConverter {
      */
     public static ImageShort toShort(Image image, ImageShort output) {
         if (output==null || !output.sameSize(image)) output = new ImageShort(image.getName(), image);
-        for (int z = 0; z<image.getSizeZ(); ++z) {
-            for (int xy = 0; xy<image.getSizeXY(); ++xy) {
-                output.setPixel(xy, z, image.getPixel(xy, z)+0.5);
+        if (image instanceof ImageShort) ImageOperations.pasteImage(image, output, null);
+        else {
+            for (int z = 0; z<image.getSizeZ(); ++z) {
+                for (int xy = 0; xy<image.getSizeXY(); ++xy) {
+                    output.setPixel(xy, z, image.getPixel(xy, z)+0.5);
+                }
             }
         }
         return output;
@@ -64,9 +70,12 @@ public class TypeConverter {
      */
     public static ImageByte toByte(Image image, ImageByte output) {
         if (output==null || !output.sameSize(image)) output = new ImageByte(image.getName(), image);
-        for (int z = 0; z<image.getSizeZ(); ++z) {
-            for (int xy = 0; xy<image.getSizeXY(); ++xy) {
-                output.setPixel(xy, z, image.getPixel(xy, z)+0.5);
+        if (image instanceof ImageByte) ImageOperations.pasteImage(image, output, null);
+        else {
+            for (int z = 0; z<image.getSizeZ(); ++z) {
+                for (int xy = 0; xy<image.getSizeXY(); ++xy) {
+                    output.setPixel(xy, z, image.getPixel(xy, z)+0.5);
+                }
             }
         }
         return output;
@@ -89,13 +98,19 @@ public class TypeConverter {
         }
         return output;
     }
+    public static boolean isCommonImageType(Image image) {
+        return (image instanceof ImageByte || image instanceof ImageShort || image instanceof ImageFloat);
+    }
+    public static boolean isNumeric(Image image) {
+        return (image instanceof ImageByte || image instanceof ImageShort || image instanceof ImageFloat || image instanceof ImageInt);
+    }
     /**
      * 
      * @param image input image
      * @return an image of type ImageByte, ImageShort or ImageFloat. If {@param image} is of type ImageByte, ImageShort or ImageFloat {@Return}={@param image}. If {@param image} is of type ImageInt, it is cast as a ShortImage {@link TypeConverter#toShort(image.Image) } if its maximum value is inferior to 65535 or a FloatImage {@link TypeConverter#toFloat(image.Image) }. If {@param image} is a mask if will be converted to a mask: {@link TypeConverter#toByteMask(image.ImageMask) }
      */
     public static Image toCommonImageType(Image image) {
-        if (image instanceof ImageByte || image instanceof ImageShort || image instanceof ImageFloat) return image;
+        if (isCommonImageType(image)) return image;
         else if (image instanceof ImageInt) {
             float[] mm = image.getMinAndMax(null);
             if (mm[1]>(65535)) return toFloat(image, null);
