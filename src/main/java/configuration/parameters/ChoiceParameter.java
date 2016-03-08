@@ -19,19 +19,23 @@ import configuration.parameters.ui.ParameterUI;
 import configuration.parameters.ui.ChoiceParameterUI;
 import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
+import de.caluga.morphium.annotations.lifecycle.Lifecycle;
+import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import utils.Utils;
 
 /**
  *
  * @author jollion
  */
-public class ChoiceParameter extends SimpleParameter implements ActionableParameter, ChoosableParameter {
+@Lifecycle
+public class ChoiceParameter extends SimpleParameter implements ActionableParameter, ChoosableParameter, PostLoadable {
     String[] listChoice;
     String selectedItem;
     boolean allowNoSelection;
-    @Transient int selectedIndex;
+    @Transient private int selectedIndex=-2;
     @Transient ChoiceParameterUI gui;
     @Transient ConditionalParameter cond;
+    @Transient boolean postLoaded = false;
     
     public ChoiceParameter(String name, String[] listChoice, String selectedItem, boolean allowNoSelection) {
         super(name);
@@ -41,7 +45,9 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
     }
     
     public String getSelectedItem() {return selectedItem;}
-    public int getSelectedIndex() {return selectedIndex;}
+    public int getSelectedIndex() {
+        return selectedIndex;
+    }
     
     public void setSelectedItem(String selectedItem) {
         this.selectedIndex=Utils.getIndex(listChoice, selectedItem);
@@ -58,6 +64,7 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
             selectedIndex=-1;
             selectedItem="no item selected";
         }
+        setCondValue();
     }
     
     @Override
@@ -70,7 +77,7 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
     }
     public boolean sameContent(Parameter other) {
         if (other instanceof ChoiceParameter) {
-            return this.getSelectedItem().equals((ChoiceParameter)other);
+            return this.getSelectedItem().equals(((ChoiceParameter)other).getSelectedItem());
         }
         else return false;
         
@@ -82,9 +89,8 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
             ChoiceParameter otherC = (ChoiceParameter)other;
             this.listChoice=otherC.listChoice;
             this.allowNoSelection=otherC.allowNoSelection;
-            this.selectedItem=otherC.selectedItem;
-            this.selectedIndex=otherC.selectedIndex;
-            if (otherC.cond!=null) this.cond=(ConditionalParameter)otherC.cond.duplicate();
+            setSelectedItem(otherC.getSelectedItem());
+            //logger.debug("choice {} set content from: {} current item: {}, current idx {}, other item: {}, other idx : {}", this.hashCode(), otherC.hashCode(), this.getSelectedItem(), this.getSelectedIndex(), otherC.getSelectedItem(), otherC.getSelectedIndex());
         } else throw new IllegalArgumentException("wrong parameter type");
     }
     
@@ -125,6 +131,14 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
     
     @Override public ChoiceParameter duplicate() {
         return new ChoiceParameter(name, listChoice, selectedItem, allowNoSelection);
+    }
+    
+    @PostLoad
+    public void postLoad() {
+        if (!postLoaded) {
+            selectedIndex=Utils.getIndex(listChoice, selectedItem); 
+            postLoaded = true;
+        }
     }
     
 }

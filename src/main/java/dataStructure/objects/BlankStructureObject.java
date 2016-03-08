@@ -70,5 +70,13 @@ public class BlankStructureObject implements StructureObjectProcessing {
     public ArrayList<StructureObject> setChildrenObjects(ObjectPopulation children, int structureIdx) {
         return null;
     }
+
+    public float getScaleXY() {
+        return mask.getScaleXY();
+    }
+
+    public float getScaleZ() {
+        return mask.getScaleZ();
+    }
     
 }

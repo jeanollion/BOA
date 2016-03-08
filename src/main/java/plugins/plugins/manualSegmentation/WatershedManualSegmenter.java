@@ -17,6 +17,8 @@
  */
 package plugins.plugins.manualSegmentation;
 
+import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.imageInteraction.ImageDisplayer;
 import configuration.parameters.BooleanParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
@@ -43,19 +45,31 @@ public class WatershedManualSegmenter implements ManualSegmenter {
     PreFilterSequence prefilters = new PreFilterSequence("PreFilters");
     PluginParameter<Thresholder> stopThreshold = new PluginParameter<Thresholder>("Stop threshold", Thresholder.class, false);
     Parameter[] parameters=  new Parameter[]{prefilters, decreasingIntensities, stopThreshold};
-    
+    boolean verbose;
     public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> points) {
-        input = prefilters.filter(input, parent);
+        input = prefilters.filter(input, parent).setName("preFilteredImage");
         Thresholder t = stopThreshold.instanciatePlugin();
         double threshold = t.runThresholder(input, parent);
         ImageByte mask = new ImageByte("seeds mask", input);
         int label = 1;
-        for (int[] p : points) mask.setPixel(p[0], p[1], p[2], label++);
-        return WatershedTransform.watershed(input, segmentationMask, mask, decreasingIntensities.getSelected(), new WatershedTransform.ThresholdPropagationOnWatershedMap(threshold), null);
+        for (int[] p : points) {
+            if (segmentationMask.contains(p[0], p[1], p[2])) mask.setPixel(p[0], p[1], p[2], label++);
+        }
+        ObjectPopulation pop =  WatershedTransform.watershed(input, segmentationMask, mask, decreasingIntensities.getSelected(), new WatershedTransform.ThresholdPropagationOnWatershedMap(threshold), null);
+        if (verbose) {
+            ImageDisplayer disp = new IJImageDisplayer();
+            disp.showImage(input);
+            disp.showImage(pop.getLabelImage());
+        }
+        return pop;
     }
 
     public Parameter[] getParameters() {
         return parameters;
+    }
+
+    public void setVerboseMode(boolean verbose) {
+        this.verbose=verbose;
     }
     
 }

@@ -23,6 +23,7 @@ import configuration.parameters.ChoiceParameter;
 import configuration.parameters.ConditionalParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.ScaleXYZParameter;
+import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
 import image.ImageOperations;
@@ -35,15 +36,16 @@ import processing.ImageFeatures;
  */
 public class ImageFeature implements PreFilter {
     ChoiceParameter feature = new ChoiceParameter("Feature", new String[]{"Gaussian Smooth", "Gradient", "Laplacian", "Hessian Det", "Hessian Max", "Normalized Hessian Max"}, "Gaussian Smooth", false);
-    ScaleXYZParameter scale = new ScaleXYZParameter("Scale", 2, 1, true);
+    ScaleXYZParameter scale = new ScaleXYZParameter("Scale", 2.5, 1, true);
     BoundedNumberParameter normScale = new BoundedNumberParameter("Normalization Scale (pix)", 2, 3, 1, null);
-    ConditionalParameter cond = new ConditionalParameter(feature).setDefaultParameters(new Parameter[]{scale}).setAction("Normalized Hessian Max", new Parameter[]{scale, normScale});
-    
+    ConditionalParameter cond = new ConditionalParameter(feature).setDefaultParameters(new Parameter[]{scale}).setActionParameters("Normalized Hessian Max", new Parameter[]{scale, normScale});
+
     public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
-        logger.debug("ImageFeature: feature equlas: {}, scale equals: {}", feature==cond.getActionableParameter(), scale == cond.getCurrentParameters().get(0));
+        logger.debug("ImageFeature: feature equasl: {}, scale equals: {}, normScale equals: {}", feature==cond.getActionableParameter(), scale == cond.getCurrentParameters().get(0), normScale == cond.getParameters("Normalized Hessian Max").get(1));
+        logger.debug("ImageFeauture: feature: {}, scale: {}, scaleZ: {} normScale: {}", feature.getSelectedItem(), scale.getScaleXY(), scale.getScaleZ(structureObject), normScale.getValue());
         String f = feature.getSelectedItem();
         double scaleXY = scale.getScaleXY();
-        double scaleZ = scale.getScaleZ();
+        double scaleZ = scale.getScaleZ(structureObject);
         if ("Gaussian Smooth".equals(f)) return ImageFeatures.gaussianSmoothScaled(input, scaleXY, scaleZ, true);
         else if ("Gradient".equals(f)) return ImageFeatures.getGradientMagnitude(input, scaleXY, true);
         else if ("Laplacian".equals(f)) return ImageFeatures.getLaplacian(input, scaleXY, true, true);

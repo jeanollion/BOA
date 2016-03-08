@@ -338,8 +338,8 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     // morphium
 
     @PostLoad public void postLoad() {
-        //logger.debug("LIST post load on : {}, of class: {}, alreadyPostLoaded: {}, parent: {}", name, this.getClass().getSimpleName(), postLoaded, parent!=null? parent.getName():null);
         if (postLoaded) return;
+        //logger.debug("LIST post load on : {}, of class: {}, alreadyPostLoaded: {}, parent: {}", name, this.getClass().getSimpleName(), postLoaded, parent!=null? parent.getName():null);
         for (Parameter p : children) {
             if (p!=null) {
                 p.setParent(this);

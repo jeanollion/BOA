@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 jollion
+ * Copyright (C) 2016 jollion
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -15,17 +15,26 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package dataStructure.objects;
+package processing.dataGeneration;
+
+import dataStructure.objects.MorphiumMasterDAO;
+import plugins.ManualSegmenter;
+import plugins.PluginFactory;
 
 /**
  *
  * @author jollion
  */
-public interface Track {
-    public int getTimePoint();
-    public StructureObjectPreProcessing getParent();
-    public StructureObjectPreProcessing getPrevious();
-    public StructureObjectPreProcessing getNext();
-    public float getScaleXY();
-    public float getScaleZ();
+public class TestManualSegmentation {
+    public static void main(String[] args) {
+        PluginFactory.findPlugins("plugins.plugins");
+        String dbName= "fluo151127";
+        int field = 0;
+        testManualSegmentation(dbName);
+    }
+    public static void testManualSegmentation(String dbName) {
+        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+        ManualSegmenter m = db.getExperiment().getStructure(2).getManualSegmenter();
+        m.manualSegment(null, null, null, 2, null);
+    }
 }

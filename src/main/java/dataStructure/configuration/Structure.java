@@ -25,6 +25,7 @@ import configuration.parameters.ParameterUtils;
 import configuration.parameters.SimpleContainerParameter;
 import configuration.parameters.ParentStructureParameter;
 import configuration.parameters.PluginParameter;
+import configuration.parameters.PreFilterSequence;
 import configuration.parameters.ui.NameEditorUI;
 import configuration.parameters.ui.ParameterUI;
 import de.caluga.morphium.annotations.Transient;
@@ -32,11 +33,13 @@ import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import javax.swing.tree.MutableTreeNode;
 import plugins.ManualSegmenter;
 import plugins.ObjectSplitter;
+import plugins.PreFilter;
 import plugins.ProcessingScheme;
 import plugins.TrackCorrector;
 import plugins.Tracker;
 import plugins.plugins.manualSegmentation.WatershedManualSegmenter;
 import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
+import plugins.plugins.preFilter.ImageFeature;
 
 /**
  *

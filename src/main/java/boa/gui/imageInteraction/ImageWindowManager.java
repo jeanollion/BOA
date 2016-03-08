@@ -255,6 +255,10 @@ public abstract class ImageWindowManager<T, U, V> {
         if (im==null) return;
         Image image = displayer.getImage(im);
         ImageObjectInterface i =  getImageObjectInterface(image, interactiveStructureIdx);
+        if (i==null) {
+            logger.error("no image object interface found for image: {} and structure: {}", image.getName(), interactiveStructureIdx);
+            return;
+        }
         displayObjects(image, i.getObjects(), defaultRoiColor, true);
         listener.fireObjectSelected(Pair.unpair(i.getObjects()), true);
     }

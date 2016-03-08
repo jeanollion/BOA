@@ -87,6 +87,10 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         return additionalParameters;
     }
     
+    public List<Parameter> getParameters() {
+        return this.pluginParameters;
+    }
+    
     public PluginParameter<T> setPlugin(T pluginInstance) {
         if (pluginInstance==null) setPlugin(NO_SELECTION);
         else {
@@ -140,16 +144,11 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     public T instanciatePlugin() {
         if (!isOnePluginSet()) return null;
         T instance = PluginFactory.getPlugin(getPluginType(), pluginName);
-        //if (Parameter.logger.isTraceEnabled()) Parameter.logger.trace("instanciating plugin: type {}, name {} instance==null? {} current parameters {}", pluginType, pluginName, instance==null, pluginParameters.size());
+        //Parameter.logger.debug("instanciating plugin: type {}, name {} instance==null? {} current parameters {}", pluginType, pluginName, instance==null, pluginParameters.size());
         if (instance==null) return null;
         Parameter[] params = instance.getParameters();
-        //Parameter.logger.debug("Parametrizing plugin: {}", pluginName);
-        for (int i = 0; i<Math.min(params.length, pluginParameters.size()); i++) {
-            //if (Parameter.logger.isTraceEnabled()) Parameter.logger.trace("before set content from: reference: {} target: {}, children: {}", pluginParameters.get(i), params[i], children.get(i));
-            params[i].setContentFrom(pluginParameters.get(i));
-            params[i].setParent(this);
-            //if (Parameter.logger.isTraceEnabled()) Parameter.logger.trace("set content from: reference: {} target: {}, children: {}", pluginParameters.get(i), params[i], children.get(i));
-        }
+        ParameterUtils.setContent(Arrays.asList(params), pluginParameters);
+        for (Parameter p : params) p.setParent(this);
         return instance;
     }
     
@@ -157,23 +156,25 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     public void setContentFrom(Parameter other) {
         if (other instanceof PluginParameter && ((PluginParameter)other).getPluginType().equals(getPluginType())) {
             PluginParameter otherPP = (PluginParameter) other;
+            logger.debug("set content PP: type: {} current: {} other: {}",this.pluginTypeName, this.pluginName, otherPP.pluginName);
             this.activated=otherPP.activated;
             this.allowNoSelection=otherPP.allowNoSelection;
             boolean toInit = false;
             if (otherPP.additionalParameters!=null) {
-                this.additionalParameters=ParameterUtils.duplicateArray(otherPP.additionalParameters);
-                toInit=true;
+                if (!ParameterUtils.setContent(additionalParameters, otherPP.additionalParameters)) {
+                    additionalParameters=ParameterUtils.duplicateArray(otherPP.additionalParameters);
+                    toInit=true;
+                }
             }
             if (otherPP.pluginName != null && otherPP.pluginName.equals(this.pluginName) && pluginParameters!=null) {
-                ParameterUtils.setContent(pluginParameters, otherPP.pluginParameters);
-            } else {
-                this.pluginName = otherPP.pluginName;
-                if (otherPP.pluginParameters != null) {
-                    this.pluginParameters = ParameterUtils.duplicateArray(otherPP.pluginParameters);
+                if (!ParameterUtils.setContent(pluginParameters, otherPP.pluginParameters)) {
+                    pluginParameters=ParameterUtils.duplicateArray(otherPP.pluginParameters);
                     toInit=true;
-                } else {
-                    this.pluginParameters = null;
                 }
+            } else {
+                toInit = true;
+                this.pluginName = otherPP.pluginName;
+                this.pluginParameters = ParameterUtils.duplicateArray(otherPP.pluginParameters);
             }
             if (toInit) initChildList();
             this.setListeners(otherPP.listeners);
@@ -255,4 +256,5 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         }
         return pluginType;
     }
+    
 }

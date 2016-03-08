@@ -18,6 +18,9 @@
 package configuration.parameters;
 
 import dataStructure.configuration.MicroscopyField;
+import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectPreProcessing;
+import dataStructure.objects.Track;
 import de.caluga.morphium.annotations.Transient;
 import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import de.caluga.morphium.annotations.lifecycle.PostLoad;
@@ -39,14 +42,15 @@ public class ScaleXYZParameter extends SimpleContainerParameter {
     }
     public ScaleXYZParameter(String name, double scaleXY, double scaleZ, boolean useCalibration) {
         super(name);
-        init();
         this.scaleXY.setValue(scaleXY);
         this.scaleZ.setValue(scaleZ);
         useImageCalibration.setSelected(useCalibration);
+        init();
     }
-    private void init() { 
+    protected void init() { 
         cond = new ConditionalParameter(useImageCalibration);
-        cond.setAction(false, new Parameter[]{scaleZ}, false);
+        cond.setActionParameters(false, new Parameter[]{scaleZ}, false);
+        //logger.debug("init scaleXYZParameter:{} XY:{}, Z:{}, use: {}", this.hashCode(), scaleXY.getValue(), scaleZ.getValue(), useImageCalibration.getValue());
     }
     @Override
     protected void initChildList() {
@@ -55,16 +59,29 @@ public class ScaleXYZParameter extends SimpleContainerParameter {
     public double getScaleXY() {
         return scaleXY.getValue().doubleValue();
     }
-    public double getScaleZ() {
+    public double getScaleZ(Track o) {
         if (useImageCalibration.getSelected()) {
-            MicroscopyField f = ParameterUtils.getMicroscopyFiedl(this);
-            if (f==null) throw new Error("ScaleXYZParameter: no scale found in xp tree");
-            return getScaleXY() * f.getScaleXY() / f.getScaleZ();
+            //MicroscopyField f = ParameterUtils.getMicroscopyFiedl(this);
+            //if (f==null) throw new Error("ScaleXYZParameter: no scale found in xp tree");
+            if (o==null) return scaleZ.getValue().doubleValue();
+            return getScaleXY() * o.getScaleXY() / o.getScaleZ();
         } else return scaleZ.getValue().doubleValue();
     }
+    
+    @Override public void setContentFrom(Parameter other) { // need to override because the super class's method only set the content from children parameters (children parameter = transient conditional parameter)
+        if (other instanceof ScaleXYZParameter) {
+            ScaleXYZParameter otherP = (ScaleXYZParameter) other;
+            scaleXY.setContentFrom(otherP.scaleXY);
+            scaleZ.setContentFrom(otherP.scaleZ);
+            useImageCalibration.setContentFrom(useImageCalibration);
+        } else {
+            throw new IllegalArgumentException("wrong parameter type");
+        }
+    }
+    
     @Override 
-    @PostLoad 
-    public void postLoad() {
+    @PostLoad  public void postLoad() {
+        //logger.debug("ScaleXXY postLoad call for : {}", this.hashCode());
         if (!postLoaded) {
             init();
             initChildList();
@@ -73,6 +90,7 @@ public class ScaleXYZParameter extends SimpleContainerParameter {
     }
     public ScaleXYZParameter() {
         super(); 
+        //logger.debug("init null constructor scaleXYZParameter:{} XY:{}, Z:{}, use: {}", this.hashCode(), scaleXY.getValue(), scaleZ.getValue(), useImageCalibration.getValue());
         // init of conditional parameter will occur @ postLoad
     }
 }

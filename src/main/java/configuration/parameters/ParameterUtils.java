@@ -93,16 +93,30 @@ public class ParameterUtils {
         }
     }
 
-    public static void setContent(Parameter[] recieve, Parameter[] give) {
+    public static boolean setContent(Parameter[] recieve, Parameter[] give) {
+        if (recieve==null || give== null || recieve.length!=give.length) return false;
         for (int i = 0; i < recieve.length; i++) {
-            recieve[i].setContentFrom(give[i]);
+            try {
+                recieve[i].setContentFrom(give[i]);
+            } catch (Error e) {
+                logger.error("set content error : {}", e);
+                return false;
+            }
         }
+        return true;
     }
     
-    public static void setContent(List<Parameter> recieve, List<Parameter> give) {
+    public static boolean setContent(List<Parameter> recieve, List<Parameter> give) {
+        if (recieve==null || give== null || recieve.size()!=give.size()) return false;
         for (int i = 0; i < recieve.size(); i++) {
-            recieve.get(i).setContentFrom(give.get(i));
+            try {
+                recieve.get(i).setContentFrom(give.get(i));
+            } catch (IllegalArgumentException e) {
+                logger.error("set content error : {}", e);
+                return false;
+            }
         }
+        return true;
     }
 
     public static Parameter[] duplicateArray(Parameter[] parameters) {
