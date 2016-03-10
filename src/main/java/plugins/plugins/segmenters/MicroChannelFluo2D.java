@@ -58,7 +58,7 @@ import static utils.Utils.plotProfile;
  */
 public class MicroChannelFluo2D implements Segmenter {
 
-    NumberParameter channelHeight = new BoundedNumberParameter("MicroChannel Height (pixels)", 0, 355, 5, null);
+    NumberParameter channelHeight = new BoundedNumberParameter("MicroChannel Height (pixels)", 0, 375, 5, null);
     NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Width (pixels)", 0, 40, 5, null);
     NumberParameter yMargin = new BoundedNumberParameter("y-margin", 0, 20, 0, null);
     NumberParameter fillingProportion = new BoundedNumberParameter("Microchannel filling proportion", 2, 0.5, 0.05, 1);

@@ -156,7 +156,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     public void setContentFrom(Parameter other) {
         if (other instanceof PluginParameter && ((PluginParameter)other).getPluginType().equals(getPluginType())) {
             PluginParameter otherPP = (PluginParameter) other;
-            logger.debug("set content PP: type: {} current: {} other: {}",this.pluginTypeName, this.pluginName, otherPP.pluginName);
+            //logger.debug("set content PP: type: {} current: {} other: {}",this.pluginTypeName, this.pluginName, otherPP.pluginName);
             this.activated=otherPP.activated;
             this.allowNoSelection=otherPP.allowNoSelection;
             boolean toInit = false;

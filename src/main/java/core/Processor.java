@@ -68,7 +68,7 @@ public class Processor {
                 logger.warn("Image: {} already present in fields was no added", c.getName());
             }
         }
-        logger.info("{} fields found int files: {}", count, selectedFiles);
+        logger.info("{} fields found in files: {}", count, selectedFiles);
     }
     
     // preProcessing-related methods

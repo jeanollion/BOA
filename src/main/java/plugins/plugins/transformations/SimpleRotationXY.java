@@ -17,6 +17,7 @@
  */
 package plugins.plugins.transformations;
 
+import configuration.parameters.BooleanParameter;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.NumberParameter;
@@ -37,7 +38,8 @@ import utils.Utils;
 public class SimpleRotationXY implements TransformationTimeIndependent {
     NumberParameter angle = new BoundedNumberParameter("Angle (degree)", 4, 0, -180, 180);
     ChoiceParameter interpolation = new ChoiceParameter("Interpolation", Utils.toStringArray(ImageTransformation.InterpolationScheme.values()), ImageTransformation.InterpolationScheme.LINEAR.toString(), false);
-    Parameter[] parameters = new Parameter[]{angle, interpolation};
+    BooleanParameter removeIncomplete = new BooleanParameter("Remove incomplete rows and columns", false);
+    Parameter[] parameters = new Parameter[]{angle, interpolation, removeIncomplete};
     
     public SimpleRotationXY() {}
     
@@ -54,7 +56,7 @@ public class SimpleRotationXY implements TransformationTimeIndependent {
     }
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), angle.getValue().floatValue(), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()));
+        return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), angle.getValue().floatValue(), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), removeIncomplete.getSelected());
     }
 
     public boolean isTimeDependent() {

@@ -17,7 +17,10 @@
  */
 package processing;
 
+import boa.gui.imageInteraction.IJImageDisplayer;
+import image.BoundingBox;
 import image.Image;
+import static image.Image.logger;
 import image.ImageProperties;
 import image.ImagescienceWrapper;
 import imagescience.image.Axes;
@@ -54,11 +57,31 @@ public class ImageTransformation {
         public int getValue(){return value;};
     }
     
-    public static Image rotateXY(Image image, double angle, InterpolationScheme interpolation) {
+    public static Image rotateXY(Image image, double angle, InterpolationScheme interpolation, boolean removeIncompleteRowsAndColumns) {
         if (angle%90==0) {
             return turn(image, (int)angle/90, 0, 0);
-        } else return rotate(image, angle, 0, 0, interpolation, false, true);
+        } else {
+            Image im =  rotate(image, angle, 0, 0, interpolation, false, true);
+            if (removeIncompleteRowsAndColumns) {
+                //int delta = (int)(Math.abs(Math.sin(angle*Math.PI/180d))*Math.max(im.getSizeX(), im.getSizeY()))+1; // cf Geages Debregas 
+                double[] deltas = new double[2];
+                double tanAbs = Math.abs(Math.tan(angle * Math.PI/180d));
+                //logger.debug("angle: {}, tan: {}", angle, tanAbs);
+                for (int i = 0; i<5; ++i) computeDeltas(tanAbs, image.getSizeX()/2, image.getSizeY()/2, deltas);
+                int dX = (int)Math.ceil(deltas[0]);
+                int dY = (int)Math.ceil(deltas[1]);
+                Image crop =  im.crop(new BoundingBox(dX, im.getSizeX()-dX, dY, im.getSizeY()-dY, 0, image.getSizeZ()-1));
+                return crop;
+            } else return im;
+        }
     }
+    private static void computeDeltas(double tanAbs, int sX, int sY, double[] deltas) {
+        double dX = tanAbs * (sY-deltas[1]);
+        double dY = tanAbs * (sX-deltas[0]);
+        deltas[0] = dX;
+        deltas[1] = dY;
+        //logger.debug("dX: {}, dY: {}", dX, dY);
+    } 
     
     public static Image rotate(Image image, double zAngle, double yAngle, double xAngle, InterpolationScheme scheme, boolean fit, boolean antialiasing) {
         return ImagescienceWrapper.wrap((new  Rotate()).run(ImagescienceWrapper.getImagescience(image), zAngle, yAngle, xAngle, scheme.getValue(), fit, false, antialiasing));

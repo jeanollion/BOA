@@ -55,31 +55,44 @@ import processing.ImageTransformation;
 public class GenerateTestXP {
     public static void main(String[] args) {
         
-        
+        //////// FLUO
         // Ordi LJP
         /*String dbName = "fluo151130_OutputNewScaling";
         String outputDir = "/data/Images/Fluo/films1511/151130/OutputNewScaling";
         String inputDir = "/data/Images/Fluo/films1511/151130/ME120R63-30112015-lr62r1";
         boolean flip = true;
+        boolean fluo = true;
         */
         
         /*String dbName = "fluo151127";
         String outputDir = "/data/Images/Fluo/films1511/151127/Output";
         String inputDir = "/data/Images/Fluo/films1511/151127/ME121R-27112015-laser";
-        boolean flip = true; */
+        boolean flip = true; 
+        boolean fluo = true;
+        */
         
         /*String dbName = "fluo160218";
         String inputDir = "/data/Images/Fluo/film160218/ME120R63-18022016-LR62r";
         String outputDir = "/data/Images/Fluo/film160218/Output";
         boolean flip = false;
+        boolean fluo = true;
         */
         
-        
+        /*
         String dbName = "fluo160217";
         String inputDir = "/data/Images/Fluo/film160217/ME120R63-17022016-LR62r";
         String outputDir = "/data/Images/Fluo/film160217/Output";
         boolean flip = false;
+        boolean fluo = true;
         // ATTENTION 10 champ pour lesquels 115TP pour le fichier mutation et 114TP pour le fichier REF
+        */
+        
+        //////////// BF
+        String dbName = "testBF";
+        String inputDir = "/data/Images/Lydia/testJeanFilm";
+        String outputDir = "/data/Images/Lydia/Output";
+        boolean flip = true;
+        boolean fluo = false;
         
         /*
         // Ordi Portable
@@ -87,19 +100,21 @@ public class GenerateTestXP {
         String outputDir = "/home/jollion/Documents/LJP/DataLJP/TestOutput";
         String inputDir = "/home/jollion/Documents/LJP/DataLJP/testsub"; 
         boolean flip = true;
+        boolean fluo = true;
         */     
         
         /*String dbName = "fluo151127";
         String outputDir = "/home/jollion/Documents/LJP/DataLJP/Fluo151127/Output";
         String inputDir = "/media/jollion/4336E5641DA22135/LJP/films1511/151127/ME121R-27112015-laser";
         boolean flip = true;
+        boolean fluo = true;
         */
         
         boolean performProcessing = false;
         
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
         mDAO.reset();
-        Experiment xp = generateXP(outputDir, true, flip); 
+        Experiment xp = fluo ? generateXPFluo(outputDir, true, flip) : generateXPBF(outputDir, true, flip); 
         mDAO.setExperiment(xp);
         
         Processor.importFiles(xp, inputDir);
@@ -112,7 +127,7 @@ public class GenerateTestXP {
     }
     
     
-    public static Experiment generateXP(String outputDir, boolean setUpPreProcessing, boolean flip) {
+    public static Experiment generateXPFluo(String outputDir, boolean setUpPreProcessing, boolean flip) {
         
         Experiment xp = new Experiment("testXP");
         xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
@@ -143,6 +158,32 @@ public class GenerateTestXP {
             xp.getPreProcessingTemplate().addTransformation(1, null, new ScaleHistogramSignalExclusion(100, 5, 0, 50, true)); // to remove blinking
             xp.getPreProcessingTemplate().addTransformation(0, null, new SelectBestFocusPlane(3)).setActivated(false); // faster after crop, but previous transformation might be aftected if the first plane is really out of focus
             xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY());
+        }
+        return xp;
+    }
+    
+    public static Experiment generateXPBF(String outputDir, boolean setUpPreProcessing, boolean flip) {
+        
+        Experiment xp = new Experiment("testXP");
+        xp.setImportImageMethod(Experiment.ImportImageMethod.SINGLE_FILE);
+        xp.getChannelImages().insert(new ChannelImage("BF"));
+        xp.setOutputImageDirectory(outputDir);
+        File f =  new File(outputDir); f.mkdirs(); //deleteDirectory(f);
+        Structure mc = new Structure("MicroChannel", -1, 0);
+        Structure bacteria = new Structure("Bacteria", 0, 0);
+        xp.getStructures().insert(mc, bacteria);
+        
+        mc.setProcessingScheme(new SegmentAndTrack()); // mettre l'algo de segmentation ici
+        bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo(), 0.9, 1.1, 1.7, 1, 5))); // modifier l'algo ici
+        
+        //xp.addMeasurement(new BacteriaLineageIndex(1));
+        //xp.addMeasurement(new BacteriaMeasurements(1, 2));
+        xp.addMeasurement(new BacteriaMeasurementsWoleMC(1, 2));
+        if (setUpPreProcessing) {// preProcessing 
+            xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT, 0));
+            xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
+            //xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannelFluo2D(30, 45, 200, 0.6, 5));
+            //xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY());
         }
         return xp;
     }

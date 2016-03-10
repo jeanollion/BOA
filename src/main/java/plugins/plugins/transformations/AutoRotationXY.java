@@ -107,7 +107,7 @@ public class AutoRotationXY implements TransformationTimeIndependent {
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         if (internalParams==null || internalParams.isEmpty()) throw new Error("Autorotation not configured");
-        return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), internalParams.get(0), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()));
+        return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), internalParams.get(0), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), true);
     }
     
     public static double computeRotationAngleXY(Image image, int z, int backgroundSubtractionRadius, double ang1, double ang2, double stepsize, float[] proj, boolean var, double filterScale) {

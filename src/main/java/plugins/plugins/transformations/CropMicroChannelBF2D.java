@@ -53,7 +53,7 @@ import static utils.Utils.plotProfile;
  *
  * @author jollion
  */
-public class CropMicroChannelFluo2D implements TransformationTimeIndependent {
+public class CropMicroChannelBF2D implements TransformationTimeIndependent {
     public static boolean debug = false;
     ArrayList<Integer> configurationData=new ArrayList<Integer>(4); // xMin/xMax/yMin/yMax
     NumberParameter xStart = new BoundedNumberParameter("X start", 0, 0, 0, null);
@@ -64,26 +64,26 @@ public class CropMicroChannelFluo2D implements TransformationTimeIndependent {
     NumberParameter channelHeight = new BoundedNumberParameter("Channel Height", 0, 375, 0, null);
     NumberParameter cropMargin = new BoundedNumberParameter("Crop Margin", 0, 45, 0, null);
     NumberParameter minObjectSize = new BoundedNumberParameter("Object Size Filter", 0, 200, 1, null);
-    NumberParameter fillingProportion = new BoundedNumberParameter("Filling proportion of Microchannel", 2, 0.6, 0.05, 1);
+    NumberParameter microChannelWidth = new BoundedNumberParameter("Microchannel Width (pix)", 0, 26, 5, null);
     NumberParameter number = new BoundedNumberParameter("Number of TimePoints", 0, 5, 1, null);
-    Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, minObjectSize, fillingProportion, xStart, xStop, yStart, yStop, number};
+    Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, minObjectSize, microChannelWidth, xStart, xStop, yStart, yStop, number};
     
     public SelectionMode getOutputChannelSelectionMode() {
         return SelectionMode.ALL;
     }
-    public CropMicroChannelFluo2D(int margin, int cropMargin, int minObjectSize, double fillingProportion, int timePointNumber) {
+    public CropMicroChannelBF2D(int margin, int cropMargin, int minObjectSize, int microChannelWidth, int timePointNumber) {
         this.margin.setValue(margin);
         this.cropMargin.setValue(cropMargin);
         this.minObjectSize.setValue(minObjectSize);
-        this.fillingProportion.setValue(fillingProportion);
+        this.microChannelWidth.setValue(microChannelWidth);
         this.number.setValue(timePointNumber);
     }
     
-    public CropMicroChannelFluo2D() {
+    public CropMicroChannelBF2D() {
         
     }
     
-    public CropMicroChannelFluo2D setTimePointNumber(int timePointNumber) {
+    public CropMicroChannelBF2D setTimePointNumber(int timePointNumber) {
         this.number.setValue(timePointNumber);
         return this;
     }
@@ -113,13 +113,13 @@ public class CropMicroChannelFluo2D implements TransformationTimeIndependent {
             for (int i = 1; i<=numb; ++i) {
                 int time = (int)(i * delta);
                 image = inputImages.getImage(channelIdx, time);
-                BoundingBox bb = getBoundingBox(image, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue());
+                BoundingBox bb = getBoundingBox(image, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), microChannelWidth.getValue().intValue(), minObjectSize.getValue().intValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue());
                 if (b==null) b = bb;
                 else b.expand(bb);
                 if (debug) logger.debug("time: {}, bounds: {}, max bounds: {}", time, bb, b);
             }
         } else {
-            b = getBoundingBox(image, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue());
+            b = getBoundingBox(image, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), microChannelWidth.getValue().intValue(), minObjectSize.getValue().intValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue());
         }
         
         
@@ -157,8 +157,8 @@ public class CropMicroChannelFluo2D implements TransformationTimeIndependent {
         configurationData.add(b.getyMin());
         configurationData.add(b.getyMax());
     }
-    public static BoundingBox getBoundingBox(Image image, int cropMargin, int margin, int channelHeight, double fillingProportion, int minObjectSize, int xStart, int xStop, int yStart, int yStop) {
-        Result r = segmentMicroChannels(image, margin, channelHeight, fillingProportion, minObjectSize);
+    public static BoundingBox getBoundingBox(Image image, int cropMargin, int margin, int channelHeight, int channelWidth, int minObjectSize, int xStart, int xStop, int yStart, int yStop) {
+        Result r = segmentMicroChannels(image, margin, channelHeight, channelWidth, minObjectSize);
         int yMin = Math.max(yStart, r.yMin);
         yStop = Math.min(yStop, yMin+channelHeight);
         yStart = Math.max(yMin-cropMargin, yStart);
@@ -169,14 +169,18 @@ public class CropMicroChannelFluo2D implements TransformationTimeIndependent {
         return new BoundingBox(xStart, xStop, yStart, yStop, 0, image.getSizeZ()-1);
         
     }
-    public static Result segmentMicroChannels(Image image, int margin, int channelHeight, double fillingProportion, int minObjectSize) {
-        double thldX = channelHeight * fillingProportion; // only take into account roughly filled channels
+    public static Result segmentMicroChannels(Image image, int margin, int channelHeight, int channelWidth, int minObjectSize) {
+        double thldX = channelHeight * 0.9;
         thldX /= (double) (image.getSizeY() * image.getSizeZ() ); // mean X projection
         /*
+        1) search for optical aberation
         1) rough segmentation of cells with autothreshold
         2) selection of filled channels using X-projection & threshold on length
         3) computation of Y start using the minimal Y of objects within the selected channels from step 2 (median value of yMins)
         */
+        
+        int microchannelEnd = searchAberration(image, 0.25, 0.05);
+        if (true) return null;
         
         double thld = IJAutoThresholder.runThresholder(image, null, AutoThresholder.Method.Triangle); // OTSU / TRIANGLE / YEN 
         ImageByte mask = ImageOperations.threshold(image, thld, true, true);
@@ -226,6 +230,36 @@ public class CropMicroChannelFluo2D implements TransformationTimeIndependent {
         
     }
     
+    public static int searchAberration(Image image, double peakProportion, double sigmaThreshold) {
+        int slidingSigmaWindow = 20;
+        // aberation is @ higher Y coord that microchannels
+        /*
+        1) Search for global max : yMax
+        2) seach for  min after yMax -> get peak hight = h = I(yMax) - I(yMin)
+        3) search for first y | y<yMax & I(y) < peakProportion * h & sliding variance < threshold
+        */
+        float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null);
+        int maxIdx = ArrayUtil.max(yProj);
+        int minIdx = ArrayUtil.min(yProj, maxIdx+1, yProj.length);
+        double peakHeight = yProj[maxIdx] - yProj[minIdx];
+        float thld = (float)(peakHeight * peakProportion + yProj[minIdx] );
+        int endOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, maxIdx, 0, thld, true, true);
+        
+        float[] slidingSigma = new float[debug ? yProj.length : endOfPeakIdx]; // endOfPeakIdx
+        double[] meanSigma = new double[2];
+        for (int i = slidingSigmaWindow; i<slidingSigma.length; ++i) {
+            ArrayUtil.meanSigma(yProj, i-slidingSigmaWindow, i, meanSigma);
+            slidingSigma[i-1] = (float)(meanSigma[1] / meanSigma[0] );
+        }
+        int startOfMicroChannel = ArrayUtil.getFirstOccurence(slidingSigma, endOfPeakIdx-1, slidingSigmaWindow-1, (float)sigmaThreshold, true, true);
+        if (debug) {
+            new IJImageDisplayer().showImage(image);
+            Utils.plotProfile("yProj", yProj);
+            Utils.plotProfile("Sliding sigma", slidingSigma);
+            logger.debug("minIdx: {}, maxIdx: {}, peakHeightThld: {}, enfOfPeak: {}, startofMc: {}", minIdx, maxIdx, thld, endOfPeakIdx, startOfMicroChannel);
+        }
+        return startOfMicroChannel;
+    }
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         BoundingBox bounds = new BoundingBox(configurationData.get(0), configurationData.get(1), configurationData.get(2), configurationData.get(3), 0, image.getSizeZ()-1);

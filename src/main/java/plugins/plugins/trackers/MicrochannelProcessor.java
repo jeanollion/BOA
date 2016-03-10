@@ -21,6 +21,7 @@ import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.ParameterUtils;
+import configuration.parameters.PluginParameter;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
@@ -33,6 +34,7 @@ import java.util.Iterator;
 import java.util.List;
 import plugins.Plugin;
 import static plugins.Plugin.logger;
+import plugins.Segmenter;
 import plugins.TrackerSegmenter;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparator;
@@ -44,15 +46,15 @@ import static plugins.plugins.transformations.CropMicroChannelFluo2D.getBounding
  * @author jollion
  */
 public class MicrochannelProcessor implements TrackerSegmenter {
-    MicroChannelFluo2D segmenter;
+    protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, new MicroChannelFluo2D(), false);
     NumberParameter number = new BoundedNumberParameter("Number of TimePoints", 0, 5, 1, null);
+    Parameter[] parameters = new Parameter[]{segmenter, number};
     public static boolean debug;
     public MicrochannelProcessor(){
-        segmenter = new MicroChannelFluo2D();
     }
     
-    public MicrochannelProcessor(MicroChannelFluo2D segmenter){
-        this.segmenter=segmenter;
+    public MicrochannelProcessor(Segmenter segmenter){
+        this.segmenter.setPlugin(segmenter);
     }
     
     public MicrochannelProcessor setTimePointNumber(int timePointNumber){
@@ -63,7 +65,8 @@ public class MicrochannelProcessor implements TrackerSegmenter {
     public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack) {
         if (debug) MicroChannelFluo2D.debug=true;
         int refTimePoint = 50;
-        
+        Segmenter segAlgo = segmenter.instanciatePlugin();
+        if (segAlgo==null) throw new Error("Segmentation algorithm not found");
         ObjectPopulation pop=null;
         int numb = Math.min(number.getValue().intValue(), parentTrack.size()-2);
         double delta = (double)parentTrack.size() / (double)(numb+2);
@@ -72,14 +75,14 @@ public class MicrochannelProcessor implements TrackerSegmenter {
             for (int i = 1; i<=numb; ++i) {
                 int idx = (int) (i * delta);
                 StructureObject parent = parentTrack.get(idx);
-                ObjectPopulation popTemp = segmenter.runSegmenter(parent.getRawImage(structureIdx), structureIdx, parent);
+                ObjectPopulation popTemp = segAlgo.runSegmenter(parent.getRawImage(structureIdx), structureIdx, parent);
                 if (pop==null) pop = popTemp;
                 else pop = combine(pop, popTemp);
                 if (debug) logger.debug("time: {}, object number: {}",idx,  pop.getObjects().size());
             }
         } else {
             StructureObject ref = getRefTimePoint(refTimePoint, parentTrack);
-            pop = segmenter.runSegmenter(ref.getRawImage(structureIdx), structureIdx, ref);
+            pop = segAlgo.runSegmenter(ref.getRawImage(structureIdx), structureIdx, ref);
         }
         
         
@@ -120,7 +123,7 @@ public class MicrochannelProcessor implements TrackerSegmenter {
     }
 
     public Parameter[] getParameters() {
-        return ParameterUtils.aggregate(segmenter.getParameters(), number);
+        return parameters;
     }
 
     /**
