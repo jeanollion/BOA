@@ -32,20 +32,10 @@ import image.ImageInteger;
 import image.ImageLabeller;
 import image.ImageOperations;
 import static image.ImageOperations.threshold;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.ArrayList;;
 import java.util.List;
-import plugins.TransformationTimeIndependent;
-import plugins.plugins.thresholders.IJAutoThresholder;
-import processing.Filters;
 import processing.ImageFeatures;
-import processing.RadonProjection;
-import processing.neighborhood.EllipsoidalNeighborhood;
 import utils.ArrayUtil;
-import utils.HashMapGetCreate;
 import utils.Utils;
 import static utils.Utils.plotProfile;
 
@@ -53,28 +43,14 @@ import static utils.Utils.plotProfile;
  *
  * @author jollion
  */
-public class CropMicroChannelBF2D implements TransformationTimeIndependent {
+public class CropMicroChannelBF2D extends CropMicroChannels {
     public static boolean debug = false;
-    ArrayList<Integer> configurationData=new ArrayList<Integer>(4); // xMin/xMax/yMin/yMax
-    NumberParameter xStart = new BoundedNumberParameter("X start", 0, 0, 0, null);
-    NumberParameter xStop = new BoundedNumberParameter("X stop (0 for image width)", 0, 0, 0, null);
-    NumberParameter yStart = new BoundedNumberParameter("Y start", 0, 0, 0, null);
-    NumberParameter yStop = new BoundedNumberParameter("Y stop (0 for image heigth)", 0, 0, 0, null);
-    NumberParameter margin = new BoundedNumberParameter("X-Margin", 0, 30, 0, null);
-    NumberParameter channelHeight = new BoundedNumberParameter("Channel Height", 0, 375, 0, null);
-    NumberParameter cropMargin = new BoundedNumberParameter("Crop Margin", 0, 45, 0, null);
-    NumberParameter minObjectSize = new BoundedNumberParameter("Object Size Filter", 0, 200, 1, null);
     NumberParameter microChannelWidth = new BoundedNumberParameter("Microchannel Width (pix)", 0, 26, 5, null);
-    NumberParameter number = new BoundedNumberParameter("Number of TimePoints", 0, 5, 1, null);
-    Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, minObjectSize, microChannelWidth, xStart, xStop, yStart, yStop, number};
+    Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, microChannelWidth, xStart, xStop, yStart, yStop, number};
     
-    public SelectionMode getOutputChannelSelectionMode() {
-        return SelectionMode.ALL;
-    }
     public CropMicroChannelBF2D(int margin, int cropMargin, int minObjectSize, int microChannelWidth, int timePointNumber) {
         this.margin.setValue(margin);
         this.cropMargin.setValue(cropMargin);
-        this.minObjectSize.setValue(minObjectSize);
         this.microChannelWidth.setValue(microChannelWidth);
         this.number.setValue(timePointNumber);
     }
@@ -87,80 +63,16 @@ public class CropMicroChannelBF2D implements TransformationTimeIndependent {
         this.number.setValue(timePointNumber);
         return this;
     }
-
-    public void computeConfigurationData(int channelIdx, InputImages inputImages) {
-        int tp = inputImages.getDefaultTimePoint();
-        Image image = inputImages.getImage(channelIdx, tp);
-        // check configuration validity
-        if (xStop.getValue().intValue()==0 || xStop.getValue().intValue()>=image.getSizeX()) xStop.setValue(image.getSizeX()-1);
-        if (xStart.getValue().intValue()>=xStop.getValue().intValue()) {
-            logger.warn("CropMicroChannels2D: illegal configuration: xStart>=xStop, set to default values");
-            xStart.setValue(0);
-            xStop.setValue(image.getSizeX()-1);
-        }
-        if (yStop.getValue().intValue()==0 || yStop.getValue().intValue()>=image.getSizeY()) yStop.setValue(image.getSizeY()-1);
-        if (yStart.getValue().intValue()>=yStop.getValue().intValue()) {
-            logger.warn("CropMicroChannels2D: illegal configuration: yStart>=yStop, set to default values");
-            yStart.setValue(0);
-            yStop.setValue(image.getSizeY()-1);
-        }
-        
-        if (channelHeight.getValue().intValue()>image.getSizeY()) throw new IllegalArgumentException("channel height > image height");
-        BoundingBox b=null;
-        int numb = Math.min(number.getValue().intValue(), inputImages.getTimePointNumber()-2);
-        if (numb>1) {
-            double delta = (double)inputImages.getTimePointNumber() / (double)(numb+2);
-            for (int i = 1; i<=numb; ++i) {
-                int time = (int)(i * delta);
-                image = inputImages.getImage(channelIdx, time);
-                BoundingBox bb = getBoundingBox(image, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), microChannelWidth.getValue().intValue(), minObjectSize.getValue().intValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue());
-                if (b==null) b = bb;
-                else b.expand(bb);
-                if (debug) logger.debug("time: {}, bounds: {}, max bounds: {}", time, bb, b);
-            }
-        } else {
-            b = getBoundingBox(image, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), microChannelWidth.getValue().intValue(), minObjectSize.getValue().intValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue());
-        }
-        
-        
-        
-        
-        /*if (b==null) {
-            int delta = Math.max(1, inputImages.getTimePointNumber() / 100);
-            int n = 1;
-            int sign = 1;
-            boolean minReached = false, maxReached = false;
-            while (b==null) {
-                int newTp = tp + sign * n * delta;
-                if (newTp<0) {
-                    minReached = true;
-                    if (maxReached) throw new Error("No microchannel found ");
-                    continue;
-                }
-                if (newTp >=  inputImages.getTimePointNumber()) {
-                    maxReached = true;
-                    if (minReached) throw new Error("No microchannel found ");
-                    continue;
-                }
-                image = inputImages.getImage(channelIdx, newTp);
-                z = image.getSizeZ()/2;
-                b = getBoundingBox(image, z, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue());
-                if (sign==-1) ++n;
-                sign *=-1;
-            }
-        }*/
-
-        logger.debug("Crop Microp Channel: image: {} timepoint: {} boundingBox: {}", image.getName(), inputImages.getDefaultTimePoint(), b);
-        configurationData=new ArrayList<Integer>(4);
-        configurationData.add(b.getxMin());
-        configurationData.add(b.getxMax());
-        configurationData.add(b.getyMin());
-        configurationData.add(b.getyMax());
+    
+    @Override public BoundingBox getBoundingBox(Image image) {
+        return getBoundingBox(image, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), microChannelWidth.getValue().intValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue());
     }
-    public static BoundingBox getBoundingBox(Image image, int cropMargin, int margin, int channelHeight, int channelWidth, int minObjectSize, int xStart, int xStop, int yStart, int yStop) {
-        Result r = segmentMicroChannels(image, margin, channelHeight, channelWidth, minObjectSize);
+    
+    public static BoundingBox getBoundingBox(Image image, int cropMargin, int margin, int channelHeight, int channelWidth, int xStart, int xStop, int yStart, int yStop) {
+        Result r = segmentMicroChannelsWithAberration(image, margin, channelWidth);
         int yMin = Math.max(yStart, r.yMin);
-        yStop = Math.min(yStop, yMin+channelHeight);
+        int yMax = Math.min(r.yMin+channelHeight, r.yMax);
+        yStop = Math.min(yStop, yMax);
         yStart = Math.max(yMin-cropMargin, yStart);
         
         xStart = Math.max(xStart, r.getXMin()-cropMargin);
@@ -169,68 +81,74 @@ public class CropMicroChannelBF2D implements TransformationTimeIndependent {
         return new BoundingBox(xStart, xStop, yStart, yStop, 0, image.getSizeZ()-1);
         
     }
-    public static Result segmentMicroChannels(Image image, int margin, int channelHeight, int channelWidth, int minObjectSize) {
-        double thldX = channelHeight * 0.9;
-        thldX /= (double) (image.getSizeY() * image.getSizeZ() ); // mean X projection
+    public static Result segmentMicroChannelsWithAberration(Image image, int margin, int channelWidth) {
+        double derScale = 2;
+        double widthError = 0.15;
+        int widthMin = (int)((1-widthError) * channelWidth + 0.5);
+        int widthMax = (int)((1+widthError) * channelWidth + 0.5);
+        double localExtremaThld = 0.01d;
         /*
         1) search for optical aberation
-        1) rough segmentation of cells with autothreshold
-        2) selection of filled channels using X-projection & threshold on length
-        3) computation of Y start using the minimal Y of objects within the selected channels from step 2 (median value of yMins)
+        2) search for y-start of MC using Y-proj of d/dy image global max (projection from yE[0; y-aberation]
+        3) search of xpositions of microchannels using X-projection (yE[y-start; y-aberration]) of d/dx & peak detection (detection of positive peak & negative peak @ distance of channel weight) 
         */
         
-        int microchannelEnd = searchAberration(image, 0.25, 0.05);
-        if (true) return null;
+        int aberrationStart = searchOpticalAberration(image, 0.25, 0.05);
+        Image imCrop = image.crop(new BoundingBox(0, image.getSizeX()-1, 0, aberrationStart, 0, image.getSizeZ()-1));
+        Image imDer = ImageFeatures.getDerivative(imCrop, derScale, 0, 1, 0, true);
+        float[] yProj = ImageOperations.meanProjection(imDer, ImageOperations.Axis.Y, null);
+        int channelStartIdx = ArrayUtil.max(yProj); // ou min?
         
-        double thld = IJAutoThresholder.runThresholder(image, null, AutoThresholder.Method.Triangle); // OTSU / TRIANGLE / YEN 
-        ImageByte mask = ImageOperations.threshold(image, thld, true, true);
-        //mask = Filters.binaryClose(mask, new ImageByte("segmentation mask::closed", mask), Filters.getNeighborhood(4, 4, mask));
-        float[] xProj = ImageOperations.meanProjection(mask, ImageOperations.Axis.X, null);
-        ImageFloat imProjX = new ImageFloat("proj(X)", mask.getSizeX(), new float[][]{xProj});
-        ImageByte projXThlded = ImageOperations.threshold(imProjX, thldX, true, false).setName("proj(X) thlded: "+thldX);
+        imCrop = image.crop(new BoundingBox(0, image.getSizeX()-1, channelStartIdx, aberrationStart, 0, image.getSizeZ()-1));
+        float[] xProj = ImageOperations.meanProjection(imCrop, ImageOperations.Axis.X, null); 
+        ArrayUtil.gaussianSmooth(xProj, derScale);
+        imDer = ImageFeatures.getDerivative(imCrop, derScale, 1, 0, 0, true);
+        float[] xProjDer = ImageOperations.meanProjection(imDer, ImageOperations.Axis.X, null);
         if (debug) {
-            new IJImageDisplayer().showImage(mask);
-            Utils.plotProfile(imProjX, 0, 0, true);
-            Utils.plotProfile(projXThlded, 0, 0, true);
+            plotProfile("XProjDer", xProjDer);
+            plotProfile("XProj smoothed", xProj);
+            float[] norm = new float[xProjDer.length];
+            for (int i = 0; i<norm.length; ++i) norm[i] = xProjDer[i] / xProj[i];
+            plotProfile("xProjNorm", norm);
         }
-        List<Object3D> xObjectList = new ArrayList<Object3D>(ImageLabeller.labelImageList(projXThlded));
-        Iterator<Object3D> it = xObjectList.iterator();
-        int rightLimit = image.getSizeX() - margin;
-        while(it.hasNext()) {
-            BoundingBox b = it.next().getBounds();
-            if (b.getxMin()<margin || b.getxMax()>rightLimit) it.remove();
+        int[] localMax = ArrayUtil.getRegionalExtrema(xProjDer, (int)(derScale+0.5), true);
+        int[] localMin = ArrayUtil.getRegionalExtrema(xProjDer, (int)(derScale+0.5), false);
+        if (debug) {
+            logger.debug("{} max found, {} min found", localMax.length, localMin.length);
         }
-        Object3D[] xObjects = xObjectList.toArray(new Object3D[xObjectList.size()]);
-        if (xObjects.length==0) return null;
-        Object3D[] objects = ImageLabeller.labelImage(mask);
-        if (objects.length==0) return null;
-        int[] yMins = new int[xObjects.length];
-        Arrays.fill(yMins, Integer.MAX_VALUE);
-        for (Object3D o : objects) {
-            BoundingBox b = o.getBounds();
-            if (o.getSize()<minObjectSize) continue;
-            X_SEARCH : for (int i = 0; i<xObjects.length; ++i) {
-                BoundingBox inter = b.getIntersection(xObjects[i].getBounds());
-                if (inter.getSizeX() >= xObjects[i].getBounds().getSizeX() / 2 ) {
-                    if (b.getyMin()<yMins[i]) yMins[i] = b.getyMin();
-                    break X_SEARCH;
+        List<int[]> peaks = new ArrayList<int[]>();
+        int lastMinIdx = -1;
+        int leftMargin = image.getSizeX()-margin;
+        FOR_LOOP : for (int maxIdx = 0; maxIdx<localMax.length; ++maxIdx) {
+            if (isExtremaValid(localMax[maxIdx], localExtremaThld, xProjDer, xProj) && localMax[maxIdx]>margin && localMax[maxIdx]<leftMargin) {
+                MIN_LOOP : while(lastMinIdx<localMin.length) {
+                    lastMinIdx++;
+                    if (isExtremaValid(localMin[lastMinIdx], localExtremaThld, xProjDer, xProj)) {
+                        int d = localMin[lastMinIdx] - localMax[maxIdx];
+                        if (d>=widthMin && d<=widthMax) {
+                            if (debug) {
+                                int x1 = localMax[maxIdx];
+                                int x2 = localMin[lastMinIdx];
+                                logger.debug("Peak found X: [{};{}], value: [{};{}], normedValue: [{};{}]", x1, x2, xProjDer[x1], xProjDer[x2], xProjDer[x1]/xProj[x1], xProjDer[x2]/xProj[x2]);
+                            }
+                            peaks.add(new int[]{localMax[maxIdx], localMin[lastMinIdx]});
+                            lastMinIdx++;
+                            break MIN_LOOP;
+                        }
+                    }
+                    break FOR_LOOP;
                 }
             }
         }
-        // get median value of yMins
-        List<Integer> yMinsList = new ArrayList<Integer>(yMins.length);
-        for (int yMin : yMins) if (yMin!=Integer.MAX_VALUE) yMinsList.add(yMin);
-        if (yMinsList.isEmpty()) return null;
-        Collections.sort(yMinsList);
-        int s = yMinsList.size();
-        int yMin =  (s%2 == 0) ? (int) (0.5d + (double)(yMinsList.get(s/2-1)+yMinsList.get(s/2)) /2d) : yMinsList.get(s/2);
-        if (debug) logger.debug("Ymin: {}, among: {} values : {}", yMin, yMinsList.size(), yMins);
-        
-        return new Result(xObjects, yMin);
+        return new Result(peaks, channelStartIdx, aberrationStart);
         
     }
     
-    public static int searchAberration(Image image, double peakProportion, double sigmaThreshold) {
+    private static boolean isExtremaValid(int extrema, double thld, float[] values, float[] normValues) {
+        return Math.abs(values[extrema] / normValues[extrema]) > thld;
+    }
+    
+    public static int searchOpticalAberration(Image image, double peakProportion, double sigmaThreshold) {
         int slidingSigmaWindow = 20;
         // aberation is @ higher Y coord that microchannels
         /*
@@ -261,39 +179,7 @@ public class CropMicroChannelBF2D implements TransformationTimeIndependent {
         return startOfMicroChannel;
     }
 
-    public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        BoundingBox bounds = new BoundingBox(configurationData.get(0), configurationData.get(1), configurationData.get(2), configurationData.get(3), 0, image.getSizeZ()-1);
-        return image.crop(bounds);
-    }
-
-    public ArrayList getConfigurationData() {
-        return configurationData;
-    }
-
     public Parameter[] getParameters() {
         return parameters;
-    }
-    public static class Result {
-        public final int[] xMax;
-        public final int[] xMin;
-        public final int yMin;
-        public Result(Object3D[] xObjects, int yMin) {
-            this.yMin = yMin;
-            this.xMax= new int[xObjects.length];
-            this.xMin=new int[xObjects.length];
-            for (int i = 0; i<xObjects.length; ++i) {
-                xMax[i] = xObjects[i].getBounds().getxMax();
-                xMin[i] = xObjects[i].getBounds().getxMin();
-            }
-        }
-        public int getXMin() {
-            return xMin[ArrayUtil.min(xMin)];
-        }
-        public int getXMax() {
-            return xMax[ArrayUtil.max(xMax)];
-        }
-        public double getXMean(int idx) {
-            return (xMax[idx]+xMin[idx]) / 2d ;
-        }
     }
 }

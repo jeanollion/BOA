@@ -178,6 +178,7 @@ public class ArrayUtil {
     }
     
     public static int[] getRegionalExtrema(float[] array, int scale, boolean max) {
+        if (scale<1) scale = 1;
         ArrayList<Integer> localExtrema = new ArrayList<Integer>();
         // get local extrema
         if (max) for (int i = 0; i<array.length; ++i) {if (isLocalMax(array, scale, i)) localExtrema.add(i);}
@@ -238,6 +239,18 @@ public class ArrayUtil {
         values2 /= (double)data.length;
         return new double[]{mean, Math.sqrt(values2 - mean * mean)};
     }
+    
+    public static void gaussianSmooth(float[] array, double scale) {
+        ImageFloat im = new ImageFloat("array", array.length, new float[][]{array});
+        ImageFeatures.gaussianSmooth(im, scale, scale, true);
+    }
+    
+    public static float[] duplicate(float[] array) {
+        float[] res = new float[array.length];
+        System.arraycopy(array, 0, res, 0, array.length);
+        return res;
+    }
+    
     public static double[] gaussianFit(int[] data) {
         double[] data2 = new double[data.length];
         for (int i = 0; i<data.length; ++i) data2[i] = data[i];
