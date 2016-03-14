@@ -19,9 +19,14 @@ package plugins.plugins.processingScheme;
 
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
+import configuration.parameters.PostFilterSequence;
+import configuration.parameters.PreFilterSequence;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
+import image.Image;
 import java.util.List;
+import plugins.PostFilter;
+import plugins.PreFilter;
 import plugins.ProcessingScheme;
 import plugins.Segmenter;
 import utils.ThreadRunner;
@@ -32,20 +37,35 @@ import utils.ThreadRunner.ThreadAction;
  * @author jollion
  */
 public class SegmentOnly implements ProcessingScheme {
+    protected PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters");
+    protected PostFilterSequence postFilters = new PostFilterSequence("Post-Filters");
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, false);
-    Parameter[] parameters= new Parameter[]{segmenter};
+    Parameter[] parameters= new Parameter[]{preFilters, segmenter, postFilters};
     
     public SegmentOnly() {}
     
     public SegmentOnly(Segmenter segmenter) {
         this.segmenter.setPlugin(segmenter);
     }
-    
+    public SegmentOnly addPreFilters(PreFilter... preFilter) {
+        preFilters.addPreFilters(preFilter);
+        return this;
+    }
+    public SegmentOnly addPostFilters(PostFilter... postFilter) {
+        postFilters.addPostFilters(postFilter);
+        return this;
+    }
     @Override public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack) {
+        if (!segmenter.isOnePluginSet()) {
+            logger.info("No segmenter set for structure: {}", structureIdx);
+            return;
+        }
         ThreadAction<StructureObject> ta = new ThreadAction<StructureObject>() {
             @Override public void run(StructureObject parent, int idx, int threadIdx) {
                 Segmenter s = segmenter.instanciatePlugin();
-                ObjectPopulation pop = s.runSegmenter(parent.getRawImage(structureIdx), structureIdx, parent);
+                Image input = preFilters.filter(parent.getRawImage(structureIdx), parent);
+                ObjectPopulation pop = s.runSegmenter(input, structureIdx, parent);
+                pop = postFilters.filter(pop, structureIdx, parent);
                 parent.setChildrenObjects(pop, structureIdx);
             }
         };

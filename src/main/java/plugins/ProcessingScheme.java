@@ -25,6 +25,8 @@ import java.util.List;
  * @author jollion
  */
 public interface ProcessingScheme extends Plugin { //Multithreaded
+    public ProcessingScheme addPreFilters(PreFilter... preFilters);
+    public ProcessingScheme addPostFilters(PostFilter... postFilters);
     public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack);
     public void trackOnly(int structureIdx, List<StructureObject> parentTrack);
 }

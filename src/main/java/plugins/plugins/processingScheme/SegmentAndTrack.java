@@ -19,8 +19,12 @@ package plugins.plugins.processingScheme;
 
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
+import configuration.parameters.PostFilterSequence;
+import configuration.parameters.PreFilterSequence;
 import dataStructure.objects.StructureObject;
 import java.util.List;
+import plugins.PostFilter;
+import plugins.PreFilter;
 import plugins.ProcessingScheme;
 import plugins.Segmenter;
 import plugins.Tracker;
@@ -32,21 +36,38 @@ import plugins.TrackerSegmenter;
  */
 public class SegmentAndTrack implements ProcessingScheme {
     int nThreads;
+    protected PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters");
+    protected PostFilterSequence postFilters = new PostFilterSequence("Post-Filters");
     PluginParameter<TrackerSegmenter> tracker = new PluginParameter<TrackerSegmenter>("Tracker", TrackerSegmenter.class, true);
-    Parameter[] parameters= new Parameter[]{tracker};
+    Parameter[] parameters= new Parameter[]{tracker, preFilters, postFilters};
     
     public SegmentAndTrack(){}
     
     public SegmentAndTrack(TrackerSegmenter tracker){
         this.tracker.setPlugin(tracker);
     }
-    
+    public SegmentAndTrack addPreFilters(PreFilter... preFilter) {
+        preFilters.addPreFilters(preFilter);
+        return this;
+    }
+    public SegmentAndTrack addPostFilters(PostFilter... postFilter) {
+        postFilters.addPostFilters(postFilter);
+        return this;
+    }
     public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack) {
+        if (!tracker.isOnePluginSet()) {
+            logger.info("No tracker set for structure: {}", structureIdx);
+            return;
+        }
         TrackerSegmenter t = tracker.instanciatePlugin();
-        t.segmentAndTrack(structureIdx, parentTrack);
+        t.segmentAndTrack(structureIdx, parentTrack, preFilters, postFilters);
     }
 
     public void trackOnly(int structureIdx, List<StructureObject> parentTrack) {
+        if (!tracker.isOnePluginSet()) {
+            logger.info("No tracker set for structure: {}", structureIdx);
+            return;
+        }
         TrackerSegmenter t = tracker.instanciatePlugin();
         t.track(structureIdx, parentTrack);
     }

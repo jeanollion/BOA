@@ -15,36 +15,27 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package configuration.parameters;
+package plugins.plugins.preFilter;
 
-import dataStructure.objects.ObjectPopulation;
-import dataStructure.objects.StructureObject;
+import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
-import image.ImageProperties;
-import plugins.PostFilter;
 import plugins.PreFilter;
 
 /**
  *
  * @author jollion
  */
-public class PreFilterSequence extends SimpleListParameter<PluginParameter<PreFilter>> {
+public class Invert implements PreFilter {
 
-    public PreFilterSequence(String name) {
-        super(name, -1, new PluginParameter<PreFilter>("Pre-Filter", PreFilter.class, false));
-    }
-    
-    public PreFilterSequence addPreFilters(PreFilter... preFilters) {
-        for (PreFilter f : preFilters) super.createChildInstance("Pre-Filter").setPlugin(f);
-        return this;
-    }
-    
-    public Image filter(Image input, StructureObjectPreProcessing parent) {
-        for (PluginParameter<PreFilter> pp : this.getActivatedChildren()) {
-            PreFilter p = pp.instanciatePlugin();
-            if (p!=null) input = p.runPreFilter(input, parent);
-        }
+    public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
+        input = input.duplicate("inverted");
+        input.invert();
         return input;
     }
+
+    public Parameter[] getParameters() {
+        return new Parameter[0];
+    }
+    
 }

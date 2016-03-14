@@ -30,6 +30,7 @@ import dataStructure.objects.StructureObject;
 import de.caluga.morphium.Morphium;
 import image.Image;
 import image.ImageMask;
+import plugins.plugins.segmenters.BacteriaBF;
 import plugins.plugins.segmenters.BacteriaFluo;
 import utils.MorphiumUtils;
 
@@ -37,12 +38,12 @@ import utils.MorphiumUtils;
  *
  * @author jollion
  */
-public class TestProcessBacteriaNew {
+public class TestProcessBacteriaBF {
     public static void main(String[] args) {
-        int time =15;
+        int time =30;
         int microChannel =0;
-        int field = 8;
-        String dbName = "fluo151130_OutputNewScaling";
+        int field = 0;
+        String dbName = "testBF";
         testSegBacteriesFromXP(dbName, field, time, microChannel);
     }
     
@@ -53,15 +54,13 @@ public class TestProcessBacteriaNew {
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(microChannel);
         Image input = mc.getRawImage(1);
+        input.invert();
         ImageMask parentMask = mc.getMask();
-        BacteriaFluo.debug=true;
-        ObjectPopulation pop = BacteriaFluo.run(input, parentMask, 0.12, 100, 10, 3, 40, 4, 1, 2, 0, null);
+        BacteriaBF.debug=true;
+        ObjectPopulation pop = BacteriaBF.run(input, parentMask, 0.12, 100, 10, 3, 40, 4, 1, 2, 4, null);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
         disp.showImage(pop.getLabelImage());
         
-        // test split
-        //ObjectPopulation popSplit = testObjectSplitter(intensityMap, pop.getChildren().get(0));
-        //disp.showImage(popSplit.getLabelImage());
     }
 }

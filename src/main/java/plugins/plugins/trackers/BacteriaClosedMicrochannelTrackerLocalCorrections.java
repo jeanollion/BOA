@@ -21,6 +21,8 @@ import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
+import configuration.parameters.PostFilterSequence;
+import configuration.parameters.PreFilterSequence;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
@@ -28,6 +30,7 @@ import dataStructure.objects.StructureObject.TrackFlag;
 import dataStructure.objects.StructureObjectPreProcessing;
 import dataStructure.objects.StructureObjectTracker;
 import dataStructure.objects.Voxel;
+import image.Image;
 import image.ImageMask;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,6 +71,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     List<StructureObject> parents;
     int structureIdx;
     double maxGR, minGR, div, costLim, cumCostLim;
+    
+    PreFilterSequence preFilters; 
+    PostFilterSequence postFilters;
+    
     static int loopLimit=10;
     public static boolean debug=false;
     public BacteriaClosedMicrochannelTrackerLocalCorrections() {}
@@ -90,8 +97,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         segmentAndTrack(false);
     }
 
-    @Override public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack) {
+    @Override public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
         init(parentTrack, structureIdx, true);
+        this.preFilters=preFilters;
+        this.postFilters=postFilters;
         segmentAndTrack(true);
     }
     
@@ -202,7 +211,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 } else populations[timePoint] = new ArrayList<Object3D>(0);
             } else {
                 //logger.debug("tp: {}, seg null? {} image null ? {}", timePoint, getSegmenter(timePoint)==null, parent.getRawImage(structureIdx)==null);
-                ObjectPopulation pop= getSegmenter(timePoint).runSegmenter(parent.getRawImage(structureIdx), structureIdx, parent);
+                Image input = preFilters.filter(parent.getRawImage(structureIdx), parent);
+                ObjectPopulation pop= getSegmenter(timePoint).runSegmenter(input, structureIdx, parent);
+                pop = postFilters.filter(pop, structureIdx, parent);
                 if (pop!=null) populations[timePoint] = pop.getObjects();
                 else populations[timePoint] = new ArrayList<Object3D>(0);
             }

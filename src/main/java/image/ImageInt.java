@@ -172,8 +172,19 @@ public class ImageInt extends ImageInteger {
     }
     
     @Override
-    public ImageShort crop(BoundingBox bounds) {
-        return (ImageShort) cropI(bounds);
+    public ImageInt crop(BoundingBox bounds) {
+        return (ImageInt) cropI(bounds);
+    }
+    
+    @Override
+    public void invert() {
+        float[] minAndMax = this.getMinAndMax(null);
+        int off = (int) (minAndMax[1] + minAndMax[0]);
+        for (int z = 0; z < sizeZ; z++) {
+            for (int xy = 0; xy<sizeXY; ++xy) {
+                pixels[z][xy] = off - pixels[z][xy];
+            }
+        }
     }
     
     public void appendBinaryMasks(int startLabel, ImageMask... masks) {

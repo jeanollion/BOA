@@ -55,7 +55,7 @@ import utils.Utils;
  *
  * @author jollion
  */
-public class BacteriaFluo implements SegmenterSplitAndMerge {
+public class BacteriaBF implements SegmenterSplitAndMerge {
     public static boolean debug = false;
     
     // configuration-related attributes
@@ -77,31 +77,31 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
     ImageByte splitMask;
     double splitThresholdValue; 
     
-    public BacteriaFluo setSplitThreshold(double splitThreshold) {
+    public BacteriaBF setSplitThreshold(double splitThreshold) {
         this.splitThreshold.setValue(splitThreshold);
         return this;
     }
-    public BacteriaFluo setMinSize(int minSize) {
+    public BacteriaBF setMinSize(int minSize) {
         this.minSize.setValue(minSize);
         return this;
     }
-    public BacteriaFluo setSmoothScale(double smoothScale) {
+    public BacteriaBF setSmoothScale(double smoothScale) {
         this.smoothScale.setValue(smoothScale);
         return this;
     }
-    public BacteriaFluo setDogScale(int dogScale) {
+    public BacteriaBF setDogScale(int dogScale) {
         this.dogScale.setValue(dogScale);
         return this;
     }
-    public BacteriaFluo setHessianScale(double hessianScale) {
+    public BacteriaBF setHessianScale(double hessianScale) {
         this.hessianScale.setValue(hessianScale);
         return this;
     }
-    public BacteriaFluo setHessianThresholdFactor(double hessianThresholdFactor) {
+    public BacteriaBF setHessianThresholdFactor(double hessianThresholdFactor) {
         this.hessianThresholdFactor.setValue(hessianThresholdFactor);
         return this;
     }
-    public BacteriaFluo setOpenRadius(double openRadius) {
+    public BacteriaBF setOpenRadius(double openRadius) {
         this.openRadius.setValue(openRadius);
         return this;
     }
@@ -116,25 +116,26 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
         return "Bacteria Fluo: " + Utils.toStringArray(parameters);
     }   
     
-    public static ObjectPopulation run(Image input, ImageMask mask, double fusionThreshold, int minSize, int contactLimit, double smoothScale, double dogScale, double hessianScale, double hessianThresholdFactor, double thresholdForEmptyChannel, double openRadius, BacteriaFluo instance) {
+    public static ObjectPopulation run(Image input, ImageMask mask, double fusionThreshold, int minSize, int contactLimit, double smoothScale, double dogScale, double hessianScale, double hessianThresholdFactor, double thresholdForEmptyChannel, double openRadius, BacteriaBF instance) {
         ImageDisplayer disp=debug?new IJImageDisplayer():null;
         //double hessianThresholdFacto = 1;
         
-        ImageFloat dog = ImageFeatures.differenceOfGaussians(input, 0, dogScale, 1, false).setName("DoG");
-        Image smoothed = Filters.median(dog, dog, Filters.getNeighborhood(smoothScale, smoothScale, input)).setName("DoG+Smoothed");
+        //ImageFloat dog = ImageFeatures.differenceOfGaussians(input, 0, dogScale, 1, false).setName("DoG");
+        //Image smoothed = Filters.median(input, input, Filters.getNeighborhood(1.5, 1.5, input)).setName("Smoothed");
+        Image smoothed = input;
         //Image hessian = ImageFeatures.getHessian(intensityMap, hessianScale, false)[0].setName("hessian");
 
         //double t0 = IJAutoThresholder.runThresholder(intensityMap, mask, null, AutoThresholder.Method.Otsu, 0);
         double threshold = IJAutoThresholder.runThresholder(smoothed, mask, null, AutoThresholder.Method.Otsu, 0);
         
         // criterion for empty channel: 
-        double[] musigmaOver = getMeanAndSigma(smoothed, mask, 0, true);
-        double[] musigmaUnder = getMeanAndSigma(smoothed, mask, 0, false);
+        double[] musigmaOver = getMeanAndSigma(smoothed, mask, threshold, true);
+        double[] musigmaUnder = getMeanAndSigma(smoothed, mask, threshold, false);
         if (musigmaOver[2]==0 || musigmaUnder[2]==0) return new ObjectPopulation(input);
         else {            
             if (musigmaOver[0] - musigmaUnder[0]<thresholdForEmptyChannel) return new ObjectPopulation(input);
         }
-        ObjectPopulation pop1 = SimpleThresholder.run(smoothed, 0);
+        ObjectPopulation pop1 = SimpleThresholder.run(smoothed, threshold);
         if (openRadius>=1) {
             for (Object3D o : pop1.getObjects()) {
                 ImageInteger m = Filters.binaryOpen(o.getMask(), null, Filters.getNeighborhood(openRadius, openRadius, o.getMask()));

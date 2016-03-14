@@ -22,6 +22,8 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.IJImageWindowManager;
 import boa.gui.imageInteraction.ImageDisplayer;
 import boa.gui.imageInteraction.ImageObjectInterface;
+import configuration.parameters.PostFilterSequence;
+import configuration.parameters.PreFilterSequence;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;
@@ -88,7 +90,7 @@ public class TestProcessMicrochannelsBF {
         }
         MicrochannelProcessor.debug=true;
         MicrochannelProcessor mp = new MicrochannelProcessor(new MicroChannelBF2D()).setTimePointNumber(5);
-        mp.segmentAndTrack(0, rootTrack);
+        mp.segmentAndTrack(0, rootTrack, new PreFilterSequence(""), new PostFilterSequence(""));
         
         ObjectPopulation pop  = rootTrack.get(0).getObjectPopulation(0);
         new IJImageDisplayer().showImage(pop.getLabelImage());

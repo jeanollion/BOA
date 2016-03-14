@@ -140,7 +140,7 @@ public abstract class Image implements ImageProperties {
     public abstract <T extends Image> T duplicate(String name);
     public abstract Image newImage(String name, ImageProperties properties);
     public abstract <T extends Image> T crop(BoundingBox bounds);
-    
+    public abstract void invert();
     
     @Override
     public boolean contains(int x, int y, int z) {

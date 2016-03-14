@@ -80,12 +80,12 @@ public class BlankMask extends ImageInteger implements ImageMask {
 
     @Override
     public void setPixel(int x, int y, int z, double value) {
-        
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public void setPixel(int xy, int z, double value) {
-        
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
     
@@ -149,19 +149,27 @@ public class BlankMask extends ImageInteger implements ImageMask {
     }
 
     @Override
-    public void setPixel(int x, int y, int z, int value) {}
+    public void setPixel(int x, int y, int z, int value) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 
     @Override
-    public void setPixel(int xy, int z, int value) {}
+    public void setPixel(int xy, int z, int value) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
     
-    public void appendBinaryMasks(int startLabel, ImageMask... masks){}
+    public void appendBinaryMasks(int startLabel, ImageMask... masks){
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 
     @Override
     public void setPixelWithOffset(int x, int y, int z, int value) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public void setPixelWithOffset(int x, int y, int z, double value) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
     
     @Override
@@ -173,5 +181,10 @@ public class BlankMask extends ImageInteger implements ImageMask {
     @Override
     public float getPixelLinInterX(int x, int y, int z, float dx) {
         return 1;
+    }
+
+    @Override
+    public void invert() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

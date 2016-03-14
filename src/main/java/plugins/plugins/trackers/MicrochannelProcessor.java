@@ -22,12 +22,15 @@ import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.ParameterUtils;
 import configuration.parameters.PluginParameter;
+import configuration.parameters.PostFilterSequence;
+import configuration.parameters.PreFilterSequence;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectTracker;
 import image.BlankMask;
 import image.BoundingBox;
+import image.Image;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -63,7 +66,7 @@ public class MicrochannelProcessor implements TrackerSegmenter {
         return this;
     }
     
-    public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack) {
+    public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
         if (debug) {
             MicroChannelFluo2D.debug=true;
             MicroChannelBF2D.debug=true;
@@ -79,14 +82,18 @@ public class MicrochannelProcessor implements TrackerSegmenter {
             for (int i = 1; i<=numb; ++i) {
                 int idx = (int) (i * delta);
                 StructureObject parent = parentTrack.get(idx);
-                ObjectPopulation popTemp = segAlgo.runSegmenter(parent.getRawImage(structureIdx), structureIdx, parent);
+                Image input = preFilters.filter(parent.getRawImage(structureIdx), parent);
+                ObjectPopulation popTemp = segAlgo.runSegmenter(input, structureIdx, parent);
+                popTemp = postFilters.filter(popTemp, structureIdx, parent);
                 if (pop==null) pop = popTemp;
                 else pop = combine(pop, popTemp);
                 if (debug) logger.debug("time: {}, object number: {}",idx,  pop.getObjects().size());
             }
         } else {
             StructureObject ref = getRefTimePoint(refTimePoint, parentTrack);
-            pop = segAlgo.runSegmenter(ref.getRawImage(structureIdx), structureIdx, ref);
+            Image input = preFilters.filter(ref.getRawImage(structureIdx), ref);
+            pop = segAlgo.runSegmenter(input, structureIdx, ref);
+            pop = postFilters.filter(pop, structureIdx, ref);
         }
         
         

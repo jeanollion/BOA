@@ -62,7 +62,6 @@ import plugins.plugins.preFilter.Median;
 import plugins.plugins.processingScheme.SegmentAndTrack;
 import plugins.plugins.processingScheme.SegmentOnly;
 import plugins.plugins.segmenters.BacteriaFluo;
-import plugins.plugins.segmenters.BacteriesFluo2D;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.segmenters.MutationSegmenter;
 import plugins.plugins.segmenters.SpotFluo2D5;

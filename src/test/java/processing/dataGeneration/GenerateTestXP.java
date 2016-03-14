@@ -183,7 +183,7 @@ public class GenerateTestXP {
         ));
         bacteria.setProcessingScheme(new SegmentAndTrack(
                 new BacteriaClosedMicrochannelTrackerLocalCorrections(
-                        new BacteriaFluo(), 0.9, 1.1, 1.7, 1, 5))
+                        new BacteriaFluo().setOpenRadius(3), 0.9, 1.1, 1.7, 1, 5))
         );
         
         //xp.addMeasurement(new BacteriaLineageIndex(1));

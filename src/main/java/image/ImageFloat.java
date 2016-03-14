@@ -122,6 +122,17 @@ public class ImageFloat extends Image {
     public ImageFloat crop(BoundingBox bounds) {
         return (ImageFloat) cropI(bounds);
     }
+    
+    @Override
+    public void invert() {
+        float[] minAndMax = this.getMinAndMax(null);
+        float off = minAndMax[1] + minAndMax[0];
+        for (int z = 0; z < sizeZ; z++) {
+            for (int xy = 0; xy<sizeXY; ++xy) {
+                pixels[z][xy] = off - pixels[z][xy];
+            }
+        }
+    }
 
     @Override
     public int[] getHisto256(ImageMask mask, BoundingBox limit) {

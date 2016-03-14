@@ -17,6 +17,8 @@
  */
 package plugins;
 
+import configuration.parameters.PostFilterSequence;
+import configuration.parameters.PreFilterSequence;
 import dataStructure.objects.StructureObject;
 import java.util.List;
 
@@ -29,6 +31,8 @@ public interface TrackerSegmenter extends Tracker {
      * This method segment & assign the children of each element of the {@param parentTrack}, and sets the track links for each child
      * @param structureIdx index of child structure to be segmented and tracked
      * @param parentTrack parent track, sorted in the order of increasing timePoint
+     * @param preFilters filters to apply before segmentation
+     * @param postFilters filters to apply after segmentation
      */
-    public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack);
+    public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters);
 }

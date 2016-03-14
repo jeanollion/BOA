@@ -85,6 +85,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
     }
     public static Result segmentMicroChannels(Image image, boolean opticalAberration, int margin, int channelWidth, double channelWidthError) {
         double derScale = 2;
+        int xErode = Math.max(1, (int)(derScale/2d + 0.5+Double.MIN_VALUE));
         double widthMin = (1-channelWidthError) * channelWidth;
         double widthMax = (1+channelWidthError) * channelWidth;
         double localExtremaThld = 0.05d;
@@ -135,7 +136,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
                                 int x2 = localMin[minIdx];
                                 logger.debug("Peak found X: [{};{}], distance: {}, value: [{};{}], normedValue: [{};{}]", x1, x2, d, xProjDer[x1], xProjDer[x2], xProjDer[x1]/xProj[x1], xProjDer[x2]/xProj[x2]);
                             }
-                            peaks.add(new int[]{localMax[maxIdx], localMin[minIdx]});
+                            peaks.add(new int[]{localMax[maxIdx]+xErode, localMin[minIdx]-xErode});
                             lastMinIdx = minIdx;
                             break MIN_LOOP;
                         } else if (d>widthMax) break MIN_LOOP;

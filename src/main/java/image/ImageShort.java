@@ -177,6 +177,17 @@ public class ImageShort extends ImageInteger {
         return (ImageShort) cropI(bounds);
     }
     
+    @Override
+    public void invert() {
+        float[] minAndMax = this.getMinAndMax(null);
+        int off = (int) (minAndMax[1] + minAndMax[0]);
+        for (int z = 0; z < sizeZ; z++) {
+            for (int xy = 0; xy<sizeXY; ++xy) {
+                pixels[z][xy] = (short) (off - pixels[z][xy]&0xffff);
+            }
+        }
+    }
+    
     public void appendBinaryMasks(int startLabel, ImageMask... masks) {
         if (masks == null || masks.length==0) return;
         if (startLabel==-1) startLabel = (int)this.getMinAndMax(null)[1]+1;

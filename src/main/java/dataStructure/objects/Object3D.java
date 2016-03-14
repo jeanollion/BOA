@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import processing.Filters;
 import processing.neighborhood.EllipsoidalNeighborhood;
 import processing.neighborhood.Neighborhood;
 /**
@@ -255,6 +256,14 @@ public class Object3D {
             }
         }
         return bounds;
+    }
+    
+    public void setMask(ImageInteger mask) {
+        synchronized(this) {
+            this.mask= mask;
+            this.bounds=null;
+            this.voxels=null;
+        }
     }
     
     public Set<Voxel> getIntersection(Object3D other) {

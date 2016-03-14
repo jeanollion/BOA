@@ -176,6 +176,15 @@ public class ImageByte extends ImageInteger {
     }
     
     @Override
+    public void invert() {
+        for (int z = 0; z < sizeZ; z++) {
+            for (int xy = 0; xy<sizeXY; ++xy) {
+                pixels[z][xy] = (byte)(255 - pixels[z][xy]& 0xff);
+            }
+        }
+    }
+    
+    @Override
     public void appendBinaryMasks(int startLabel, ImageMask... masks) {
         if (masks == null || masks.length==0) return;
         if (startLabel==-1) startLabel = (int)this.getMinAndMax(null)[1]+1;

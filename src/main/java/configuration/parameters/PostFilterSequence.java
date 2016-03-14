@@ -28,7 +28,7 @@ import utils.Utils;
  * @author jollion
  */
 public class PostFilterSequence extends SimpleListParameter<PluginParameter<PostFilter>> {
-
+    Boolean configured = false;
     public PostFilterSequence(String name) {
         super(name, -1, new PluginParameter<PostFilter>("Post-Filter", PostFilter.class, false));
     }
@@ -42,7 +42,12 @@ public class PostFilterSequence extends SimpleListParameter<PluginParameter<Post
     }
     
     public ObjectPopulation filter(ObjectPopulation objectPopulation, int structureIdx, StructureObject structureObject) {
-        ParameterUtils.configureStructureParameters(structureIdx, this);
+        if (objectPopulation == null) return null;
+        if (!configured) {
+            synchronized(configured) {
+                if (!configured) ParameterUtils.configureStructureParameters(structureIdx, this);
+            }
+        }
         for (PluginParameter<PostFilter> pp : this.getActivatedChildren()) {
             PostFilter p = pp.instanciatePlugin();
             if (p!=null) objectPopulation = p.runPostFilter(structureObject, structureIdx, objectPopulation);
