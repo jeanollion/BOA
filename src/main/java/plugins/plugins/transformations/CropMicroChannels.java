@@ -138,5 +138,8 @@ public abstract class CropMicroChannels implements Transformation {
         public double getXMean(int idx) {
             return (xMax[idx]+xMin[idx]) / 2d ;
         }
+        public BoundingBox getBounds(int idx) {
+            return new BoundingBox(xMin[idx], xMax[idx], yMin, yMax, 0, 0);
+        }
     }
 }

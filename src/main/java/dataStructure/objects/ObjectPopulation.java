@@ -180,6 +180,7 @@ public class ObjectPopulation {
         objects = new ArrayList<Object3D>(Arrays.asList(obs));
     }
     
+    
     public void eraseObject(Object3D o, boolean eraseInList) {
         if (labelImage != null) {
             draw(o, 0);
@@ -286,7 +287,7 @@ public class ObjectPopulation {
                     if (mask.insideMask(xy, z)) {
                         seedMap.setPixel(xy, z, labelImage.getPixelInt(xy, z) + 1);
                     } else {
-                        seedMap.setPixel(xy, z, 0);
+                        seedMap.setPixel(xy, z, 1);
                     }
                 }
             }
