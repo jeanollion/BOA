@@ -50,6 +50,7 @@ public abstract class CropMicroChannels implements Transformation {
     NumberParameter number = new BoundedNumberParameter("Number of TimePoints", 0, 5, 1, null);
     
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
+        if (channelIdx<0) throw new IllegalArgumentException("Channel no configured");
         int tp = inputImages.getDefaultTimePoint();
         Image image = inputImages.getImage(channelIdx, tp);
         // check configuration validity
@@ -125,8 +126,8 @@ public abstract class CropMicroChannels implements Transformation {
             this.xMin=new int[sortedMinMaxList.size()];
             int idx = 0;
             for (int[] minMax : sortedMinMaxList) {
-                xMax[idx] = minMax[0];
-                xMin[idx++] = minMax[1];
+                xMin[idx] = minMax[0];
+                xMax[idx++] = minMax[1];
             }
         }
         public int getXMin() {

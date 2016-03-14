@@ -92,7 +92,6 @@ public class TestPreProcess {
     
     
     public static void testPreProcessing(String dbName, int fieldIdx, int channelIdx, int time, int tStart, int tEnd) {
-        ImageStabilizerCore.debug=true;
         MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
         MicroscopyField f = db.getExperiment().getMicroscopyField(fieldIdx);
         InputImagesImpl images = f.getInputImages();

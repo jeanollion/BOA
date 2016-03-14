@@ -49,8 +49,9 @@ import static utils.Utils.plotProfile;
  */
 public class MicroChannelBF2D implements Segmenter {
 
-    NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Width (pixels)", 0, 20, 5, null);
-    Parameter[] parameters = new Parameter[]{channelWidth};
+    NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Width (pixels)", 0, 26, 5, null);
+    NumberParameter microChannelWidthError = new BoundedNumberParameter("Microchannel Width error proportion", 2, 0.15, 0, 1);
+    Parameter[] parameters = new Parameter[]{channelWidth, microChannelWidthError};
     public static boolean debug = false;
 
     public MicroChannelBF2D() {
@@ -62,35 +63,38 @@ public class MicroChannelBF2D implements Segmenter {
 
     @Override
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        ObjectPopulation objects = run(input, channelWidth.getValue().intValue(), 2, 3, 3);
+        ObjectPopulation objects = run(input, channelWidth.getValue().intValue(), microChannelWidthError.getValue().doubleValue(), 2, 3, 3);
         return objects;
     }
 
-    public static ObjectPopulation run(Image image, int channelWidth, double gradientScale, int erodeSize, int dilateSize) {
-        CropMicroChannelBF2D.debug=debug;
-        CropMicroChannelBF2D.Result r = CropMicroChannelBF2D.segmentMicroChannelsWithAberration(image, 0, channelWidth);
+    public static ObjectPopulation run(Image image, int channelWidth, double channelWIdthError, double gradientScale, int erodeSize, int dilateSize) {
+        //CropMicroChannelBF2D.debug=debug;
+        CropMicroChannelBF2D.Result r = CropMicroChannelBF2D.segmentMicroChannels(image, false, 0, channelWidth, channelWIdthError);
         if (r==null) return null;
-        erodeSize = 2 * erodeSize;
+        ArrayList<Object3D> objects = new ArrayList<Object3D>(r.xMax.length);
+        for (int i = 0; i < r.xMax.length; ++i) objects.add(new Object3D(new BlankMask("mask of microchannel:" + (i + 1), r.xMax[i]-r.xMin[i], r.yMax-r.yMin, image.getSizeZ(), r.xMin[i], r.yMin, 0, image.getScaleXY(), image.getScaleZ()), i + 1));
+        return new ObjectPopulation(objects, image);
+        /*erodeSize = 2 * erodeSize;
         dilateSize = 2 * dilateSize;
         ArrayList<Object3D> seedObjects = new ArrayList<Object3D>(r.xMax.length);
         int ySize = r.yMax-r.yMin;
         int yOff= r.yMin;
         if (ySize <= erodeSize+3) {
             ySize= 3;
-            yOff += ySize - (r.yMax-r.yMin);
+            yOff += (ySize - (r.yMax-r.yMin))/2;
         } else {
             ySize-=erodeSize;
-            yOff += erodeSize;
+            yOff += erodeSize/2;
         }
         for (int i = 0; i < r.xMax.length; ++i) {
             int xSize = r.xMax[i]-r.xMin[i];
             int xOff= r.xMin[i];
             if (xSize<=erodeSize+3) {
                 xSize= 3;
-                xOff += xSize - (r.xMax[i]-r.xMin[i]);
+                xOff += (xSize - (r.xMax[i]-r.xMin[i]))/2;
             } else {
                 xSize-=erodeSize;
-                xOff += erodeSize;
+                xOff += erodeSize/2;
             }
             seedObjects.add(new Object3D(new BlankMask("mask of microchannel:" + (i + 1), xSize, ySize, image.getSizeZ(), xOff, yOff, 0, image.getScaleXY(), image.getScaleZ()), i + 1));
         }
@@ -102,30 +106,40 @@ public class MicroChannelBF2D implements Segmenter {
         yOff= r.yMin;
         if (yOff < dilateSize) {
             yOff = 0;
-            ySize = r.yMax;
+            ySize = r.yMax+dilateSize/2;
         } else {
-            ySize+=dilateSize;
-            yOff -= erodeSize;
+            yOff -= dilateSize/2;
+            ySize +=dilateSize;
         }
+        if (ySize+yOff>=image.getSizeY()) ySize-= ySize+yOff - image.getSizeY()+1;
         for (int i = 0; i < r.xMax.length; ++i) {
             int xSize = r.xMax[i]-r.xMin[i];
             int xOff= r.xMin[i];
             if (xSize<dilateSize) {
-                xSize= r.xMax[i];
                 xOff =0;
+                xSize = r.xMax[i]+dilateSize/2;
             } else {
-                xSize+=dilateSize;
-                xOff -= dilateSize;
+                xOff -= dilateSize/2;
+                xSize = xSize+dilateSize;
             }
-            seedObjects.add(new Object3D(new BlankMask("mask of microchannel:" + (i + 1), xSize, ySize, image.getSizeZ(), xOff, yOff, 0, image.getScaleXY(), image.getScaleZ()), i + 1));
+            if (xSize+xOff>=image.getSizeX()) xSize-= xSize+xOff - image.getSizeX()+1;
+            maskObjects.add(new Object3D(new BlankMask("mask of microchannel:" + (i + 1), xSize, ySize, image.getSizeZ(), xOff, yOff, 0, image.getScaleXY(), image.getScaleZ()), i + 1));
         }
         ObjectPopulation maskPop = new ObjectPopulation(maskObjects, image);
-        ImageInteger mask = maskPop.getLabelImage();
-        
+        ImageInteger mask = maskPop.getLabelImage().setName("Dilated objects");
         Image gradient = ImageFeatures.getGradientMagnitude(image, gradientScale, false);
-        pop.fitToEdges(gradient, mask);
-        modifier fitToEdges : les seeds comptées comme foreground ont une intensité comparable aux pixels dans l'objet érodé, les autres sont background
+        if (debug) {
+            new IJImageDisplayer().showImage(mask);
+            new IJImageDisplayer().showImage(pop.getLabelImage().setName("erodedObjects"));
+            
+            new IJImageDisplayer().showImage(pop2.getLabelImage().setName("objects"));
+            new IJImageDisplayer().showImage(gradient);
+        }
+        
+        //pop.fitToEdges(gradient, mask);
+        //modifier fitToEdges : les seeds comptées comme foreground ont une intensité comparable aux pixels dans l'objet érodé, les autres sont background
         return pop;
+                */
     }
     
     

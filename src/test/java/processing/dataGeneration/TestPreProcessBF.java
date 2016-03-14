@@ -53,9 +53,9 @@ public class TestPreProcessBF {
         boolean flip = true;
         int field = 0;
         //testTransformation(dbName, 0, 0, 0);
-        //testPreProcessing(dbName, field, 0, -1, 0, 50);
-        testCrop(dbName, field, 0, flip);
-        //testStabilizer(dbName, field, 0, 19, 0, flip);
+        testPreProcessing(dbName, field, 0, -1, 0, 54);
+        //testCrop(dbName, field, 0, flip);
+        //testStabilizer(dbName, field, 0, 20, 19, flip);
     }
     
     public static void testTransformation(String dbName, int fieldIdx, int channelIdx, int time) {
@@ -78,7 +78,7 @@ public class TestPreProcessBF {
         f.getPreProcessingChain().removeAllTransformations();
         f.getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT, 0));
         if (flip) f.getPreProcessingChain().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
-        f.getPreProcessingChain().addTransformation(0, null, new CropMicroChannelBF2D().setTimePointNumber(5));
+        f.getPreProcessingChain().addTransformation(0, null, new CropMicroChannelBF2D().setTimePointNumber(1));
         CropMicroChannelBF2D.debug=true;
         //Image[][] imageInputTC = new Image[xp.getMicroscopyField(0).getInputImages().getTimePointNumber()][1];
         //for (int t = 0; t<imageInputTC.length; ++t) imageInputTC[t][0] = xp.getMicroscopyField(0).getInputImages().getImage(0, t);
@@ -91,7 +91,6 @@ public class TestPreProcessBF {
     
     
     public static void testPreProcessing(String dbName, int fieldIdx, int channelIdx, int time, int tStart, int tEnd) {
-        ImageStabilizerCore.debug=true;
         MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
         MicroscopyField f = db.getExperiment().getMicroscopyField(fieldIdx);
         InputImagesImpl images = f.getInputImages();
@@ -121,17 +120,15 @@ public class TestPreProcessBF {
         MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
         MicroscopyField f = db.getExperiment().getMicroscopyField(fieldIdx);
         f.getPreProcessingChain().removeAllTransformations();
-        f.getPreProcessingChain().addTransformation(0, null, new SaturateHistogram(350, 450));
-        f.getPreProcessingChain().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
-        f.getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
+        f.getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT, 0));
         if (flip) f.getPreProcessingChain().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
-        f.getPreProcessingChain().addTransformation(0, null, new CropMicroChannels2D());
+        f.getPreProcessingChain().addTransformation(0, null, new CropMicroChannelBF2D().setTimePointNumber(5));
         setTransformations(f, true);
         
         InputImagesImpl images = f.getInputImages();
         Image ref = images.getImage(channelIdx, tRef).setName("tRef");
         Image im = images.getImage(channelIdx, t).setName("to translate");
-        Image trans = testTranslate(ref, im, 1000, 1e-7, 1).setName("translated");
+        Image trans = testTranslate(ref, im, 1000, 5e-8, 0).setName("translated");
         IJImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(ref);
         disp.showImage(im);

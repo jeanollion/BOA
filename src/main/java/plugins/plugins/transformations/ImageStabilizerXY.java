@@ -53,16 +53,14 @@ public class ImageStabilizerXY implements Transformation {
     BoundedNumberParameter alpha = new BoundedNumberParameter("Template Update Coefficient", 2, 1, 0, 1);
     BoundedNumberParameter maxIter = new BoundedNumberParameter("Maximum Iterations", 0, 600, 1, null);
     BoundedNumberParameter segmentLength = new BoundedNumberParameter("Segment length", 0, 20, 2, null);
-    NumberParameter tol = new BoundedNumberParameter("Error Tolerance", 8, 5e-8, 0, null);
+    NumberParameter tol = new BoundedNumberParameter("Error Tolerance", 10, 5e-8, 0, null);
     Parameter[] parameters = new Parameter[]{maxIter, tol, pyramidLevel, segmentLength}; //alpha
     ArrayList<ArrayList<Double>> translationTXY = new ArrayList<ArrayList<Double>>();
     
     public ImageStabilizerXY(){}
     
-    public ImageStabilizerXY(int transformationType, int pyramidLevel, double templateUpdateCoeff, int maxIterations, double tolerance, int segmentLength) {
-        this.transformationType.setSelectedIndex(transformationType);
+    public ImageStabilizerXY(int pyramidLevel, int maxIterations, double tolerance, int segmentLength) {
         this.pyramidLevel.setSelectedIndex(pyramidLevel);
-        this.alpha.setValue(templateUpdateCoeff);
         this.tol.setValue(tolerance);
         this.maxIter.setValue(maxIterations);
         this.segmentLength.setValue(segmentLength);
@@ -114,7 +112,7 @@ public class ImageStabilizerXY implements Transformation {
             segments[i][0] = i==0 ? 0 : segments[i-1][1]+1;
             segments[i][1] = i==segments.length-1 ? inputImages.getTimePointNumber()-1 : segments[i][0]+segmentLength-1;
             segments[i][2] = i==0 ? Math.min(Math.max(0, tRef), segments[i][1]) : segments[i-1][1]; 
-            //logger.debug("segment: {}, {}", i, segments[i]);
+            logger.debug("segment: {}, {}", i, segments[i]);
         }
         // process each segment
         int nCPUs = ThreadRunner.getMaxCPUs();
@@ -169,9 +167,10 @@ public class ImageStabilizerXY implements Transformation {
                 new Runnable() {
                     public void run() {
                         for (int t = tr.ai.getAndIncrement(); t<tr.end; t = tr.ai.getAndIncrement()) {
+                            double[] outParams = new double[2];
                             if (t==tRef) translationTXYArray[t] = new Double[]{0d, 0d};
-                            else translationTXYArray[t] = performCorrection(channelIdx, inputImages, t, pyramids[trIdx]);
-                            logger.debug("t: {}, tRef: {}, dX: {}, dY: {}", t, tRef, translationTXYArray[t][0], translationTXYArray[t][1]);
+                            else translationTXYArray[t] = performCorrection(channelIdx, inputImages, t, pyramids[trIdx], outParams);
+                            logger.debug("t: {}, tRef: {}, dX: {}, dY: {}, rmse: {}, iterations: {}", t, tRef, translationTXYArray[t][0], translationTXYArray[t][1], outParams[0], outParams[1]);
                         }
                     }
                 }
@@ -249,9 +248,10 @@ public class ImageStabilizerXY implements Transformation {
                 ImageProcessor[] pyrCurrent = pyramids[0];
                 ImageProcessor[] temp;
                 gradient(pyrRef[0], ipFloatRef);
+                double[] outParam = new double[2];
                 for (int t = tp[0]+1; t<=tp[1]; ++t) {
                     FloatProcessor ipFloat = getFloatProcessor(inputImages.getImage(channelIdx, t), false);
-                    double[][] wp = ImageStabilizerCore.estimateTranslation(ipFloat, null, pyrCurrent, pyrRef, false, maxIterations, tolerance, null);
+                    double[][] wp = ImageStabilizerCore.estimateTranslation(ipFloat, null, pyrCurrent, pyrRef, false, maxIterations, tolerance, null, outParam);
                     logger.debug("Stab: t1: {}, t2: {}, dX: {} dY: {}", t-1, t, wp[0][0], wp[1][0]);
                     translationTXYArray[t] = new Double[]{wp[0][0], wp[1][0]};
                     // exchange pyr -> in next timepoint, the ref will be the current
@@ -279,18 +279,18 @@ public class ImageStabilizerXY implements Transformation {
         FloatProcessor ipFloat1 = getFloatProcessor(imageRef, true);
         FloatProcessor ipFloat2 = getFloatProcessor(imageToTranslate, true);
         
-        ImageStabilizerCore.debug=true;
         ImageProcessor[][] pyramids = ImageStabilizerCore.initWorkspace(imageRef.getSizeX(), imageRef.getSizeY(), pyramidLevel);
-        double[][] wp = ImageStabilizerCore.estimateTranslation(ipFloat2, ipFloat1, pyramids[0], pyramids[1], true, maxIterations, maxTolerance, null);
-        
+        double[] outParam = new double[2];
+        double[][] wp = ImageStabilizerCore.estimateTranslation(ipFloat2, ipFloat1, pyramids[0], pyramids[1], true, maxIterations, maxTolerance, null, outParam);
+        logger.debug("dX: {}, dY: {}, rmse: {}, iterations: {}", wp[0][0], wp[1][0], outParam[0], outParam[1]);
         return ImageTransformation.translate(imageToTranslate, -wp[0][0], -wp[1][0], 0, ImageTransformation.InterpolationScheme.BSPLINE5);
     }
     
-    private Double[] performCorrection(int channelIdx, InputImages inputImages, int t, ImageProcessor[][] pyramids) {
+    private Double[] performCorrection(int channelIdx, InputImages inputImages, int t, ImageProcessor[][] pyramids, double[] outParameters) {
         long t0 = System.currentTimeMillis();
         FloatProcessor currentTime = getFloatProcessor(inputImages.getImage(channelIdx, t), false);
         long tStart = System.currentTimeMillis();
-        double[][] wp = ImageStabilizerCore.estimateTranslation(currentTime, null, pyramids[0], pyramids[1], false, maxIter.getValue().intValue(), tol.getValue().doubleValue(), null);
+        double[][] wp = ImageStabilizerCore.estimateTranslation(currentTime, null, pyramids[0], pyramids[1], false, maxIter.getValue().intValue(), tol.getValue().doubleValue(), null, outParameters);
         long tEnd = System.currentTimeMillis();
         Double[] res =  new Double[]{wp[0][0], wp[1][0]};
         //logger.debug("ImageStabilizerXY: timepoint: {} dX: {} dY: {}, open & preProcess time: {}, estimate translation time: {}", t, res[0], res[1], tStart-t0, tEnd-tStart);
@@ -301,7 +301,8 @@ public class ImageStabilizerXY implements Transformation {
         long t0 = System.currentTimeMillis();
         FloatProcessor currentTime = getFloatProcessor(inputImages.getImage(channelIdx, t), false);
         long tStart = System.currentTimeMillis();
-        double[][] wp = ImageStabilizerCore.estimateTranslation(currentTime, ipFloatRef, pyramids[0], pyramids[1], true, maxIterations, tolerance, estimateShift);
+        double[] outParam = new double[2];
+        double[][] wp = ImageStabilizerCore.estimateTranslation(currentTime, ipFloatRef, pyramids[0], pyramids[1], true, maxIterations, tolerance, estimateShift, outParam);
         long tEnd = System.currentTimeMillis();
         Double[] res =  new Double[]{wp[0][0], wp[1][0]};
         logger.debug("ImageStabilizerXY: timepoint: {} dX: {} dY: {}, open & preProcess time: {}, estimate translation time: {}", t, res[0], res[1], tStart-t0, tEnd-tStart);

@@ -85,6 +85,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
                 } 
             }
             inputImages = new InputImagesImpl(res, Math.min(defaultTimePoint.getSelectedTimePoint(), images.getTimePointNumber()-1));
+            //logger.debug("creation input images: def tp: {}, total: {}, tp: {}",defaultTimePoint.getSelectedTimePoint(),images.getTimePointNumber(), inputImages.getDefaultTimePoint());
         }
         return inputImages;
     }

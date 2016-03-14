@@ -30,12 +30,16 @@ import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.preFilter.Median;
 import plugins.plugins.processingScheme.SegmentAndTrack;
 import plugins.plugins.processingScheme.SegmentOnly;
+import plugins.plugins.processingScheme.SegmentThenTrack;
 import plugins.plugins.segmenters.BacteriaFluo;
+import plugins.plugins.segmenters.MicroChannelBF2D;
 import plugins.plugins.segmenters.MutationSegmenter;
 import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
 import plugins.plugins.trackers.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import plugins.plugins.trackers.MicrochannelProcessor;
+import plugins.plugins.trackers.ObjectIdxTracker;
 import plugins.plugins.transformations.AutoRotationXY;
+import plugins.plugins.transformations.CropMicroChannelBF2D;
 import plugins.plugins.transformations.CropMicroChannelFluo2D;
 import plugins.plugins.transformations.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
@@ -157,7 +161,7 @@ public class GenerateTestXP {
             xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannelFluo2D(30, 45, 200, 0.6, 5));
             xp.getPreProcessingTemplate().addTransformation(1, null, new ScaleHistogramSignalExclusion(100, 5, 0, 50, true)); // to remove blinking
             xp.getPreProcessingTemplate().addTransformation(0, null, new SelectBestFocusPlane(3)).setActivated(false); // faster after crop, but previous transformation might be aftected if the first plane is really out of focus
-            xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY());
+            xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY(0, 1000, 5e-8, 20));
         }
         return xp;
     }
@@ -173,8 +177,14 @@ public class GenerateTestXP {
         Structure bacteria = new Structure("Bacteria", 0, 0);
         xp.getStructures().insert(mc, bacteria);
         
-        mc.setProcessingScheme(new SegmentAndTrack()); // mettre l'algo de segmentation ici
-        bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo(), 0.9, 1.1, 1.7, 1, 5))); // modifier l'algo ici
+        mc.setProcessingScheme(new SegmentThenTrack(
+                new MicroChannelBF2D(), 
+                new ObjectIdxTracker()
+        ));
+        bacteria.setProcessingScheme(new SegmentAndTrack(
+                new BacteriaClosedMicrochannelTrackerLocalCorrections(
+                        new BacteriaFluo(), 0.9, 1.1, 1.7, 1, 5))
+        );
         
         //xp.addMeasurement(new BacteriaLineageIndex(1));
         //xp.addMeasurement(new BacteriaMeasurements(1, 2));
@@ -182,8 +192,7 @@ public class GenerateTestXP {
         if (setUpPreProcessing) {// preProcessing 
             xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT, 0));
             xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
-            //xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannelFluo2D(30, 45, 200, 0.6, 5));
-            //xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY());
+            xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannelBF2D());
         }
         return xp;
     }

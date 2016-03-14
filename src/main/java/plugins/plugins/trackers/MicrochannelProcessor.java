@@ -36,6 +36,7 @@ import plugins.Plugin;
 import static plugins.Plugin.logger;
 import plugins.Segmenter;
 import plugins.TrackerSegmenter;
+import plugins.plugins.segmenters.MicroChannelBF2D;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparator;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
@@ -63,7 +64,10 @@ public class MicrochannelProcessor implements TrackerSegmenter {
     }
     
     public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack) {
-        if (debug) MicroChannelFluo2D.debug=true;
+        if (debug) {
+            MicroChannelFluo2D.debug=true;
+            MicroChannelBF2D.debug=true;
+        }
         int refTimePoint = 50;
         Segmenter segAlgo = segmenter.instanciatePlugin();
         if (segAlgo==null) throw new Error("Segmentation algorithm not found");

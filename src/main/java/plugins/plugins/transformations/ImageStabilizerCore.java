@@ -77,7 +77,6 @@ import static plugins.Plugin.logger;
 
 
 public class ImageStabilizerCore {
-    public static boolean debug=false;
     static final int TRANSLATION = 0;
     static final int AFFINE = 1;
 
@@ -141,7 +140,9 @@ public class ImageStabilizerCore {
                                    ImageProcessor[] ipPyramid,
                                    ImageProcessor[] ipRefPyramid, boolean computeGradientForRef, 
                                    int              maxIter,
-                                   double           tol, Double[] estimateShift)
+                                   double           tol, 
+                                   Double[] estimateShift, 
+                                   double[] outParameters)
     {
         double[][] wp = {{0.0}, {0.0}};
         
@@ -155,8 +156,7 @@ public class ImageStabilizerCore {
         if (ipPyramid[4] != null && ipRefPyramid[4] != null) {
             resize(ipPyramid[4], ipPyramid[0]);
             resize(ipRefPyramid[4], ipRefPyramid[0]);
-            wp = estimateTranslation(
-                wp, ipPyramid[4], ipRefPyramid[4], maxIter, tol);
+            wp = estimateTranslation(wp, ipPyramid[4], ipRefPyramid[4], maxIter, tol, outParameters);
             wp[0][0] *= 16;
             wp[1][0] *= 16;
         }
@@ -164,8 +164,7 @@ public class ImageStabilizerCore {
         if (ipPyramid[3] != null && ipRefPyramid[3] != null) {
             resize(ipPyramid[3], ipPyramid[0]);
             resize(ipRefPyramid[3], ipRefPyramid[0]);
-            wp = estimateTranslation(
-                wp, ipPyramid[3], ipRefPyramid[3], maxIter, tol);
+            wp = estimateTranslation( wp, ipPyramid[3], ipRefPyramid[3], maxIter, tol, outParameters);
             wp[0][0] *=  8;
             wp[1][0] *=  8;
         }
@@ -173,8 +172,7 @@ public class ImageStabilizerCore {
         if (ipPyramid[2] != null && ipRefPyramid[2] != null) {
             resize(ipPyramid[2], ipPyramid[0]);
             resize(ipRefPyramid[2], ipRefPyramid[0]);
-            wp = estimateTranslation(
-                wp, ipPyramid[2], ipRefPyramid[2], maxIter, tol);
+            wp = estimateTranslation(wp, ipPyramid[2], ipRefPyramid[2], maxIter, tol, outParameters);
             wp[0][0] *=  4;
             wp[1][0] *=  4;
         }
@@ -182,13 +180,12 @@ public class ImageStabilizerCore {
         if (ipPyramid[1] != null && ipRefPyramid[1] != null) {
             resize(ipPyramid[1], ipPyramid[0]);
             resize(ipRefPyramid[1], ipRefPyramid[0]);
-            wp = estimateTranslation(
-                wp, ipPyramid[1], ipRefPyramid[1], maxIter, tol);
+            wp = estimateTranslation(wp, ipPyramid[1], ipRefPyramid[1], maxIter, tol, outParameters);
             wp[0][0] *=  2;
             wp[1][0] *=  2;
         }
 
-        wp = estimateTranslation(wp, ipPyramid[0], ipRefPyramid[0], maxIter, tol);
+        wp = estimateTranslation(wp, ipPyramid[0], ipRefPyramid[0], maxIter, tol, outParameters);
 
         return wp;
     }
@@ -198,7 +195,8 @@ public class ImageStabilizerCore {
                                    ImageProcessor ip,
                                    ImageProcessor ipRef,
                                    int            maxIter,
-                                   double         tol)
+                                   double         tol, 
+                                   double[] outParam)
     {
         float[] dxRef = dx(ipRef);
         float[] dyRef = dy(ipRef);
@@ -271,8 +269,9 @@ public class ImageStabilizerCore {
             wp[0][0] = w[0][2];
             wp[1][0] = w[1][2];
         }
-        if (debug) {
-            logger.debug("ImageStabilizer: iteration number: {}, rmse: {}, dX: {}, dY: {}", iter, minRmse, bestWp[0][0], bestWp[1][0]);
+        if (outParam!=null) {
+            outParam[0] = minRmse;
+            outParam[1] = iter;
         }
         return bestWp;
     }
