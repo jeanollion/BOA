@@ -51,10 +51,10 @@ public class TestPreProcess {
         //String dbName= "fluo151127";
         boolean flip = true;
         int field = 0;
-        //testTransformation("fluo151130_OutputNewScaling", 9, 1, 0);
-        //testPreProcessing(dbName, field, 0, -1, 0, 50);
+        //testTransformation(dbName, 0, 0, 0);
+        testPreProcessing(dbName, field, 0, -1, 0, 50);
         //testCrop(dbName, field, 0, flip);
-        testStabilizer(dbName, field, 0, 19, 0, flip);
+        //testStabilizer(dbName, field, 0, 19, 0, flip);
     }
     
     public static void testTransformation(String dbName, int fieldIdx, int channelIdx, int time) {
@@ -63,7 +63,8 @@ public class TestPreProcess {
         //Processor.setTransformations(f, true);
         InputImagesImpl images = f.getInputImages();
         Image im = images.getImage(channelIdx, time);
-        SimpleRotationXY rot = new SimpleRotationXY(5);
+        AutoRotationXY rot = new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0);
+        
         Image res = rot.applyTransformation(channelIdx, time, im);
         IJImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(im.setName("input"));

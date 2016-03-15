@@ -85,6 +85,11 @@ public class SimpleThresholder implements Segmenter {
         Object3D[] objects = ImageLabeller.labelImage(mask);
         return new ObjectPopulation(new ArrayList<Object3D>(Arrays.asList(objects)), input);
     }
+    public static ObjectPopulation runUnder(Image input, double threhsold) {
+        ImageInteger mask = ImageOperations.threshold(input, threhsold, false, false, false, null);
+        Object3D[] objects = ImageLabeller.labelImage(mask);
+        return new ObjectPopulation(new ArrayList<Object3D>(Arrays.asList(objects)), input);
+    }
 
     public Parameter[] getParameters() {
         return new Parameter[]{threshold};

@@ -74,20 +74,20 @@ public class ConditionalNeighborhoodZ implements Neighborhood {
         return currentNeighborhood.is3D();
     }
 
-    public float getMin(int x, int y, int z, Image image) {
-        return currentNeighborhood.getMin(x, y, z, image);
+    public float getMin(int x, int y, int z, Image image, float... outOfBoundValue) {
+        return currentNeighborhood.getMin(x, y, z, image, outOfBoundValue);
     }
 
     public float getMax(int x, int y, int z, Image image) {
         return currentNeighborhood.getMax(x, y, z, image);
     }
 
-    public boolean hasNonNullValue(int x, int y, int z, Image image) {
-        return currentNeighborhood.hasNonNullValue(x, y, z, image);
+    public boolean hasNonNullValue(int x, int y, int z, Image image, boolean outOfBoundIsNonNull) {
+        return currentNeighborhood.hasNonNullValue(x, y, z, image, outOfBoundIsNonNull);
     }
 
-    public boolean hasNullValue(int x, int y, int z, Image image) {
-        return currentNeighborhood.hasNullValue(x, y, z, image);
+    public boolean hasNullValue(int x, int y, int z, Image image, boolean outOfBoundIsNull) {
+        return currentNeighborhood.hasNullValue(x, y, z, image, outOfBoundIsNull);
     }
     
 }

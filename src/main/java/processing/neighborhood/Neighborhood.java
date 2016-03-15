@@ -36,10 +36,10 @@ public interface Neighborhood {
     public void setPixels(Voxel v, Image image);
     public int getSize();
     public float[] getPixelValues();
-    public float getMin(int x, int y, int z, Image image);
+    public float getMin(int x, int y, int z, Image image, float... outOfBoundValue);
     public float getMax(int x, int y, int z, Image image);
-    public boolean hasNonNullValue(int x, int y, int z, Image image);
-    public boolean hasNullValue(int x, int y, int z, Image image);
+    public boolean hasNonNullValue(int x, int y, int z, Image image, boolean outOfBoundIsNonNull);
+    public boolean hasNullValue(int x, int y, int z, Image image, boolean outOfBoundIsNull);
     public float[] getDistancesToCenter();
     public int getValueCount();
     public boolean is3D();

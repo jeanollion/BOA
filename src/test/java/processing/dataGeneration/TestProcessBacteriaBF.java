@@ -40,7 +40,7 @@ import utils.MorphiumUtils;
  */
 public class TestProcessBacteriaBF {
     public static void main(String[] args) {
-        int time =30;
+        int time =20;
         int microChannel =0;
         int field = 0;
         String dbName = "testBF";
@@ -54,10 +54,16 @@ public class TestProcessBacteriaBF {
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(microChannel);
         Image input = mc.getRawImage(1);
-        input.invert();
+        //input.invert();
         ImageMask parentMask = mc.getMask();
         BacteriaBF.debug=true;
-        ObjectPopulation pop = BacteriaBF.run(input, parentMask, 0.12, 100, 10, 3, 40, 4, 1, 2, 4, null);
+        ObjectPopulation pop = BacteriaBF.run(input, parentMask, 0.06, 
+                100, // minSize
+                10, 3, 
+                10, // dog
+                5, // hessian 
+                1, 2, 5, // open
+                null);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
         disp.showImage(pop.getLabelImage());

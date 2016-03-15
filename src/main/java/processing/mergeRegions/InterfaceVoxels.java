@@ -129,11 +129,16 @@ public class InterfaceVoxels extends Interface {
             if (hess<r1.mergeCriterionValue[0] && hess<r2.mergeCriterionValue[0]) return new double[]{hess};
             else return null;
         } else if (col.fusionMethod==2) { // compare mean value to treshold
-            double meanIntensity = getMean(col.regions.inputGray);
-            double stat = -this.strength/(meanIntensity); // meanintensity sur les 2 spots?
-            if (col.verbose) logger.debug("Interface: {}, stat: {} threshold: {}, fusion: {}", this, stat, col.fusionThreshold, stat<=col.fusionThreshold);
+            double meanIntensity=0;
+            double stat = -this.strength;
+            if (col.normalizeFusionCriterion) {
+                meanIntensity = getMean(col.regions.inputGray);
+                stat/=meanIntensity;
+            }
+            if (col.verbose) logger.debug("Interface: {}, mean: {}, stat: {} threshold: {}, fusion: {}", this, meanIntensity, stat, col.fusionThreshold, stat<=col.fusionThreshold);
             if (stat<=col.fusionThreshold) return new double[0]; //strenght = -mean(hessian@interface)
             else return null;
+            
             /*double[] musigma = getMeanAndSigma();
             double sum = r1.mergeCriterionValue[0]+r2.mergeCriterionValue[0];
             double sum2 = r1.mergeCriterionValue[1]+r2.mergeCriterionValue[1];
@@ -180,6 +185,10 @@ public class InterfaceVoxels extends Interface {
         double mean = 0;
         double count = 0;
         for (Voxel v : this.r1Voxels) {
+            mean+=image.getPixel(v.x, v.y, v.z);
+            count++;
+        }
+        for (Voxel v : this.r2Voxels) {
             mean+=image.getPixel(v.x, v.y, v.z);
             count++;
         }

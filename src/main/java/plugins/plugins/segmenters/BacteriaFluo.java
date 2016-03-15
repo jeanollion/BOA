@@ -174,7 +174,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
             //popWS.localThreshold(dogNoTrim, 0, localThresholdMargin, 0);
             //if (debug) disp.showImage(popWS.getLabelImage().duplicate("after local threhsold / before merging"));
             RegionCollection.verbose=debug;
-            ObjectPopulation localPop= RegionCollection.mergeHessianBacteria(popWS, input, hessian, fusionThreshold);
+            ObjectPopulation localPop= RegionCollection.mergeHessianBacteria(popWS, input, hessian, fusionThreshold, false);
             if (res==null) res= localPop;
             else res.addObjects(localPop.getObjects());
             //if (debug) disp.showImage(localPop.getLabelImage().setName("after merging"));

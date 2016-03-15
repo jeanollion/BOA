@@ -118,10 +118,10 @@ public class RegionCollection {
         }
     }
     
-    public static ObjectPopulation mergeHessianBacteria(ObjectPopulation pop, Image intensities, Image hessian, double fusionThreshold) {
+    public static ObjectPopulation mergeHessianBacteria(ObjectPopulation pop, Image intensities, Image hessian, double fusionThreshold, boolean normalize) {
         RegionCollection r = new RegionCollection(pop, intensities, verbose, 1);
         r.initInterfaces(hessian);
-        r.mergeSortHessianCondBacteria(hessian, fusionThreshold);
+        r.mergeSortHessianCondBacteria(hessian, fusionThreshold, normalize);
         return r.getObjectPopulation();
     }
     
@@ -150,10 +150,10 @@ public class RegionCollection {
         interfaces.mergeSortHessianSpots(hess, erode);
     }
     
-    public void mergeSortHessianCondBacteria(Image hessian, double fustionThreshold) {
+    public void mergeSortHessianCondBacteria(Image hessian, double fustionThreshold, boolean normalize) {
         if (interfaces==null) initInterfaces(hessian);
-        for (Region r : regions.values()) {
-            /*r.setVoxelValues(hessian);
+        /*for (Region r : regions.values()) {
+            r.setVoxelValues(hessian);
             // voxel interface with background -> value set to NaN
             if (r.interfaceBackground!=null) {
                 for (Voxel v : ((InterfaceVoxels)r.interfaceBackground).r2Voxels) {
@@ -161,9 +161,9 @@ public class RegionCollection {
                     if (i>=0) r.voxels.get(i).value=Float.NaN;
                 }
             }
-            r.mergeCriterionValue=r.getSums();*/
-        }
-        interfaces.mergeSortHessianBacteria(hessian, fustionThreshold);
+            r.mergeCriterionValue=r.getSums();
+        }*/
+        interfaces.mergeSortHessianBacteria(hessian, fustionThreshold, normalize);
     }
     
     public void mergeSortCorrelation() {

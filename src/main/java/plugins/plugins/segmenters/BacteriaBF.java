@@ -26,6 +26,7 @@ import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObjectProcessing;
 import dataStructure.objects.Voxel;
+import ij.IJ;
 import ij.process.AutoThresholder;
 import image.BlankMask;
 import image.Image;
@@ -42,6 +43,7 @@ import measurement.BasicMeasurements;
 import plugins.Segmenter;
 import plugins.SegmenterSplitAndMerge;
 import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
+import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import processing.Filters;
@@ -120,22 +122,26 @@ public class BacteriaBF implements SegmenterSplitAndMerge {
         ImageDisplayer disp=debug?new IJImageDisplayer():null;
         //double hessianThresholdFacto = 1;
         
-        //ImageFloat dog = ImageFeatures.differenceOfGaussians(input, 0, dogScale, 1, false).setName("DoG");
-        //Image smoothed = Filters.median(input, input, Filters.getNeighborhood(1.5, 1.5, input)).setName("Smoothed");
-        Image smoothed = input;
-        //Image hessian = ImageFeatures.getHessian(intensityMap, hessianScale, false)[0].setName("hessian");
-
-        //double t0 = IJAutoThresholder.runThresholder(intensityMap, mask, null, AutoThresholder.Method.Otsu, 0);
-        double threshold = IJAutoThresholder.runThresholder(smoothed, mask, null, AutoThresholder.Method.Otsu, 0);
+        ImageFloat dog = ImageFeatures.differenceOfGaussians(input, 0, dogScale, 1, false).setName("DoG");
+        double threshold = IJAutoThresholder.runThresholder(dog, mask, null, AutoThresholder.Method.Otsu, 0);
+        if (debug) logger.debug("threshold: {}", threshold);
+        //ImageOperations.affineOperation(dog, dog, -1, threshold);
         
+        //Image smoothed = Filters.median(input, input, Filters.getNeighborhood(1.5, 1.5, input)).setName("Smoothed");
+        //Image smoothed = ImageFeatures.gaussianSmooth(input, 1.5, 1.5, false);
+        
+        //double t0 = IJAutoThresholder.runThresholder(intensityMap, mask, null, AutoThresholder.Method.Otsu, 0);
+        
+        
+        //threshold=0;
         // criterion for empty channel: 
-        double[] musigmaOver = getMeanAndSigma(smoothed, mask, threshold, true);
-        double[] musigmaUnder = getMeanAndSigma(smoothed, mask, threshold, false);
+        double[] musigmaOver = getMeanAndSigma(dog, mask, threshold, true);
+        double[] musigmaUnder = getMeanAndSigma(dog, mask, threshold, false);
         if (musigmaOver[2]==0 || musigmaUnder[2]==0) return new ObjectPopulation(input);
         else {            
             if (musigmaOver[0] - musigmaUnder[0]<thresholdForEmptyChannel) return new ObjectPopulation(input);
         }
-        ObjectPopulation pop1 = SimpleThresholder.run(smoothed, threshold);
+        ObjectPopulation pop1 = SimpleThresholder.runUnder(dog, threshold);
         if (openRadius>=1) {
             for (Object3D o : pop1.getObjects()) {
                 ImageInteger m = Filters.binaryOpen(o.getMask(), null, Filters.getNeighborhood(openRadius, openRadius, o.getMask()));
@@ -148,34 +154,47 @@ public class BacteriaBF implements SegmenterSplitAndMerge {
         pop1.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
         
         
-        if (debug) logger.debug("threhsold: {}", threshold);
-        pop1.filter(new ObjectPopulation.MeanIntensity(threshold, true, smoothed));
-        if (debug) disp.showImage(pop1.getLabelImage().duplicate("first seg"));
-        
-        Image hessian = ImageFeatures.getHessian(input, hessianScale, false)[0].setName("hessian");
-        
+        //if (debug) logger.debug("threhsold: {}", threshold);
+        //pop1.filter(new ObjectPopulation.MeanIntensity(threshold, true, smoothed));
         if (debug) {
-            disp.showImage(smoothed);
+            disp.showImage(pop1.getLabelImage().duplicate("first seg"));
+        }
+        Image hessImage = input.duplicate("invert");
+        //hessImage.invert();
+        boolean norm = false;
+        //Image hessian = ImageFeatures.getHessian(hessImage, hessianScale, false)[0].setName("hessian");
+        Image hessian = ImageFeatures.getHessian(hessImage, hessianScale, false)[1].setName("hessian");
+        ImageOperations.affineOperation(hessian, hessian, -1, 0);
+        if (!norm) {
+            Image normMap = ImageFeatures.gaussianSmooth(input, 3, 3, false);
+            ImageOperations.divide(hessian, normMap, hessian);
+        }
+        //ImageOperations.affineOperation(hessWS, hessWS, -1, 0);
+        if (debug) {
+            disp.showImage(dog);
             //disp.showImage(log);
             disp.showImage(hessian);
         }
-        //pop1.keepOnlyLargestObject(); // for testing purpose -> TODO = loop
+        
         ObjectPopulation res=null;
+        if (debug) pop1.mergeAll();
         ImageByte watershedMask = new ImageByte("", input);
         for (Object3D maskObject : pop1.getObjects()) {
             maskObject.draw(watershedMask, 1);
             double[] meanAndSigma = getMeanAndSigma(hessian, watershedMask, 0, false); // mean & sigma < 0
-            //logger.debug("hessian mean: {}, sigma: {}, hessian thld: {}", meanAndSigma[0],meanAndSigma[1], sigmaCoeff * meanAndSigma[1]);
-            ImageInteger seedMap = ImageOperations.threshold(hessian, hessianThresholdFactor * meanAndSigma[1], false, false, false, null);
+            double thldHess= hessianThresholdFactor * meanAndSigma[1];
+            logger.debug("hessian mean: {}, sigma: {}, hessian thld: {}", meanAndSigma[0],meanAndSigma[1], thldHess);
+            ImageInteger seedMap = ImageOperations.threshold(hessian, thldHess, false, false, false, null);
             seedMap = ImageOperations.and(watershedMask, seedMap, seedMap).setName("seeds");
-            //disp.showImage(seedMap);
+            disp.showImage(seedMap);
             ObjectPopulation popWS = WatershedTransform.watershed(hessian, watershedMask, seedMap, false, null, new WatershedTransform.SizeFusionCriterion(minSize));
+            
             popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
-            if (debug) disp.showImage(popWS.getLabelImage().duplicate("before local threshold & merging"));
+            if (debug) disp.showImage(popWS.getLabelImage().duplicate("before merging"));
             //popWS.localThreshold(dogNoTrim, 0, localThresholdMargin, 0);
             //if (debug) disp.showImage(popWS.getLabelImage().duplicate("after local threhsold / before merging"));
             RegionCollection.verbose=debug;
-            ObjectPopulation localPop= RegionCollection.mergeHessianBacteria(popWS, input, hessian, fusionThreshold);
+            ObjectPopulation localPop= RegionCollection.mergeHessianBacteria(popWS, hessImage, hessian, fusionThreshold, norm);
             if (res==null) res= localPop;
             else res.addObjects(localPop.getObjects());
             //if (debug) disp.showImage(localPop.getLabelImage().setName("after merging"));
@@ -187,7 +206,7 @@ public class BacteriaBF implements SegmenterSplitAndMerge {
         }
         if (instance!=null) {
             instance.rawIntensityMap=input;
-            instance.intensityMap=smoothed;
+            instance.intensityMap=dog;
             instance.hessian=hessian;
             instance.splitThresholdValue=fusionThreshold;
         }

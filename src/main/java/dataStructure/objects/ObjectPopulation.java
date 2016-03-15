@@ -393,6 +393,18 @@ public class ObjectPopulation {
         if (labelImage!=null) draw(o, o.getLabel());
     }
     
+    public void mergeAll() {
+        if (objects.isEmpty()) return;
+        if (labelImage!=null) {
+            for (Object3D o : getObjects()) draw(o, 1);
+        }
+        for (Object3D o : getObjects()) o.setLabel(1);
+        Object3D o = new Object3D(getLabelImage(), 1);
+        if (!this.absoluteLandmark) o.translate(o.getBounds().reverseOffset());
+        objects.clear();
+        objects.add(o);
+    }
+    
     public void sortBySpatialOrder(final IndexingOrder order) {
         Comparator<Object3D> comp = new Comparator<Object3D>() {
             @Override

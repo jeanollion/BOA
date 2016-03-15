@@ -49,7 +49,7 @@ public class InterfaceCollection {
     boolean verbose;
     Image hessian;
     double fusionThreshold;
-    
+    boolean normalizeFusionCriterion=false;
     public InterfaceCollection(RegionCollection regions, boolean verbose) {
         this.regions = regions;
         this.verbose=verbose;
@@ -166,7 +166,7 @@ public class InterfaceCollection {
             size+=ivs.r2Voxels.size();
         }
         ImageFloat f = new ImageFloat("Interfaces", size, 1, 1);
-        int offset = 0;
+        int offset = 0;meanIntensity
         for (Interface i : interfaces) {
             InterfaceVoxSet ivs = (InterfaceVoxSet)i;
             for (Vox3D v : ivs.r1Voxels) f.pixels[0][offset++]=v.value;
@@ -287,11 +287,12 @@ public class InterfaceCollection {
         mergeSortCluster();
     }
     
-    protected void mergeSortHessianBacteria(Image hess, double fusionThreshold) {
+    protected void mergeSortHessianBacteria(Image hess, double fusionThreshold, boolean normalizeFusionCriterion) {
         this.sortMethod=4; //mean of hessian value @ interface / ascending order
         this.fusionMethod=2; // comparison of values inside region with value @ interface
         this.hessian=hess;
         this.fusionThreshold=fusionThreshold;
+        this.normalizeFusionCriterion=normalizeFusionCriterion;
         mergeSortCluster();
     }
     

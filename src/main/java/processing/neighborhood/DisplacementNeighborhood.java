@@ -99,9 +99,11 @@ public abstract class DisplacementNeighborhood implements Neighborhood{
         return distances;
     }
     
-    @Override public float getMin(int x, int y, int z, Image image) {
+    @Override public float getMin(int x, int y, int z, Image image, float... outOfBoundValue) {
         int xx, yy;
         float min = Float.MAX_VALUE;
+        boolean returnOutOfBoundValue = outOfBoundValue.length>=1;
+        float ofbv = returnOutOfBoundValue? outOfBoundValue[0] : 0;
         float temp;
         if (is3D) { 
             int zz;
@@ -112,7 +114,7 @@ public abstract class DisplacementNeighborhood implements Neighborhood{
                 if (image.contains(xx, yy, zz)) {
                     temp=image.getPixel(xx, yy, zz);
                     if (temp<min) min=temp;
-                }
+                } else if (returnOutOfBoundValue) return ofbv;
             }
         } else {
             for (int i = 0; i<dx.length; ++i) {
@@ -121,7 +123,7 @@ public abstract class DisplacementNeighborhood implements Neighborhood{
                 if (image.contains(xx, yy, z)) {
                     temp=image.getPixel(xx, yy, z);
                     if (temp<min) min=temp;
-                }
+                } else if (returnOutOfBoundValue) return ofbv;
             }
         }
         if (min==Float.MAX_VALUE) min = Float.NaN;
@@ -156,7 +158,7 @@ public abstract class DisplacementNeighborhood implements Neighborhood{
         if (max==Float.MIN_VALUE) max = Float.NaN;
         return max;
     }
-    @Override public boolean hasNonNullValue(int x, int y, int z, Image image) {
+    @Override public boolean hasNonNullValue(int x, int y, int z, Image image, boolean outOfBoundIsNonNull) {
         int xx, yy;
         if (is3D) { 
             int zz;
@@ -164,18 +166,22 @@ public abstract class DisplacementNeighborhood implements Neighborhood{
                 xx=x+dx[i];
                 yy=y+dy[i];
                 zz=z+dz[i];
-                if (image.contains(xx, yy, zz) && image.getPixel(xx, yy, zz)!=0) return true;
+                if (image.contains(xx, yy, zz)) {
+                    if (image.getPixel(xx, yy, zz)!=0) return true;
+                } else if (outOfBoundIsNonNull) return true;
             }
         } else {
             for (int i = 0; i<dx.length; ++i) {
                 xx=x+dx[i];
                 yy=y+dy[i];
-                if (image.contains(xx, yy, z) && image.getPixel(xx, yy, z)!=0) return true;
+                if (image.contains(xx, yy, z)) {
+                    if (image.getPixel(xx, yy, z)!=0) return true;
+                } else if (outOfBoundIsNonNull) return true;
             }
         }
         return false;
     }
-    @Override public boolean hasNullValue(int x, int y, int z, Image image) {
+    @Override public boolean hasNullValue(int x, int y, int z, Image image, boolean outOfBoundIsNull) {
         int xx, yy;
         if (is3D) { 
             int zz;
@@ -183,13 +189,17 @@ public abstract class DisplacementNeighborhood implements Neighborhood{
                 xx=x+dx[i];
                 yy=y+dy[i];
                 zz=z+dz[i];
-                if (image.contains(xx, yy, zz) && image.getPixel(xx, yy, zz)==0) return true;
+                if (image.contains(xx, yy, zz)) {
+                    if (image.getPixel(xx, yy, zz)==0) return true;
+                } else if (outOfBoundIsNull) return true;
             }
         } else {
             for (int i = 0; i<dx.length; ++i) {
                 xx=x+dx[i];
                 yy=y+dy[i];
-                if (image.contains(xx, yy, z) && image.getPixel(xx, yy, z)==0) return true;
+                if (image.contains(xx, yy, z)) {
+                    if (image.getPixel(xx, yy, z)==0) return true;
+                } else if (outOfBoundIsNull) return true;
             }
         }
         return false;

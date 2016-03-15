@@ -64,46 +64,40 @@ public class Filters {
     
     public static <T extends Image> T open(Image image, T output, Neighborhood neighborhood) {
         ImageFloat min = applyFilter(image, new ImageFloat("", 0, 0, 0), new Min(), neighborhood);
+        if (output == image) output = Image.createEmptyImage("open", output, output);
         return applyFilter(min, output, new Max(), neighborhood);
     }
     
     public static <T extends Image> T close(Image image, T output, Neighborhood neighborhood) {
         ImageFloat max = applyFilter(image, new ImageFloat("", 0, 0, 0), new Max(), neighborhood);
+        if (output == image) output = Image.createEmptyImage("close", output, output);
         return applyFilter(max, output, new Min(), neighborhood);
     }
     
     public static <T extends ImageInteger> T binaryOpen(ImageInteger image, T output, Neighborhood neighborhood) {
         ImageByte min = applyFilter(image, new ImageByte("", 0, 0, 0), new BinaryMin(), neighborhood);
+        if (output == image) output = Image.createEmptyImage("binary open", output, output);
         return applyFilter(min, output, new BinaryMax(), neighborhood);
     }
     
     public static <T extends ImageInteger> T binaryClose(ImageInteger image, T output, Neighborhood neighborhood) {
         ImageByte max = applyFilter(image, new ImageByte("", 0, 0, 0), new BinaryMax(), neighborhood);
+        if (output == image) output = Image.createEmptyImage("binary close", output, output);
         return applyFilter(max, output, new BinaryMin(), neighborhood);
     }
     
     public static <T extends Image> T tophat(Image image, T output, Neighborhood neighborhood) {
-        ImageFloat open =open(image, new ImageFloat("", 0, 0, 0), neighborhood);
-        T res;
-        String name = "Tophat of: "+image.getName();
-        if (output==null) res = (T)new ImageFloat(name, image);
-        else res = image.sameSize(output)?output:Image.createEmptyImage(name, output, image);
-        //1-open
-        ImageOperations.addImage(image, open, res, -1);
-        res.resetOffset().addOffset(image).setName(name);
-        return res;
+        T open =open(image, output, neighborhood).setName("Tophat of: "+image.getName());
+        ImageOperations.addImage(image, open, open, -1); //1-open
+        open.resetOffset().addOffset(image);
+        return open;
     }
     
     public static <T extends Image> T tophatInv(Image image, T output, Neighborhood neighborhood) {
-        ImageFloat close =close(image, new ImageFloat("", 0, 0, 0), neighborhood);
-        T res;
-        String name = "Tophat of: "+image.getName();
-        if (output==null) res = (T)new ImageFloat(name, image);
-        else res = image.sameSize(output)?output:Image.createEmptyImage(name, output, image);
-        //1-close
-        ImageOperations.addImage(image, close, res, -1);
-        res.resetOffset().addOffset(image);
-        return res;
+        T close =close(image, output, neighborhood).setName("Tophat of: "+image.getName());
+        ImageOperations.addImage(image, close, close, -1); //1-close
+        close.resetOffset().addOffset(image);
+        return close;
     }
     /**
      * ATTENTION: bug en dimension 1 !!
@@ -283,12 +277,12 @@ public class Filters {
     }
     private static class BinaryMin extends Filter {
         @Override public float applyFilter(int x, int y, int z) {
-            return neighborhood.hasNullValue(x, y, z, image) ? 0 :1;
+            return neighborhood.hasNullValue(x, y, z, image, true) ? 0 :1;
         }
     }
     private static class BinaryMax extends Filter {
         @Override public float applyFilter(int x, int y, int z) {
-            return neighborhood.hasNonNullValue(x, y, z, image) ? 1 : 0;
+            return neighborhood.hasNonNullValue(x, y, z, image, false) ? 1 : 0;
         }
     }
     //(low + high) >>> 1 <=> (low + high) / 2
