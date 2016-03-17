@@ -46,12 +46,18 @@ import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.trackers.ObjectIdxTracker;
+import processing.EDT;
 import processing.Filters;
+import processing.FitEllipse;
 import processing.ImageFeatures;
 import processing.WatershedTransform;
+import processing.localthickness.LocalThickness;
 import processing.mergeRegions.InterfaceCollection;
 import processing.mergeRegions.RegionCollection;
+import utils.ArrayUtil;
+import utils.ThreadRunner;
 import utils.Utils;
+import static utils.Utils.plotProfile;
 
 /**
  *
@@ -119,6 +125,7 @@ public class BacteriaBF implements SegmenterSplitAndMerge {
     }   
     
     public static ObjectPopulation run(Image input, ImageMask mask, double fusionThreshold, int minSize, int contactLimit, double smoothScale, double dogScale, double hessianScale, double hessianThresholdFactor, double thresholdForEmptyChannel, double openRadius, BacteriaBF instance) {
+        double thicknessThreshold = 5;
         ImageDisplayer disp=debug?new IJImageDisplayer():null;
         //double hessianThresholdFacto = 1;
         
@@ -152,13 +159,43 @@ public class BacteriaBF implements SegmenterSplitAndMerge {
         }
         pop1.filter(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
         pop1.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
+        if (debug) {
+            disp.showImage(pop1.getLabelImage().duplicate("first seg"));
+            
+        }
         
+        /*
+        segmentation based on thickness threshold
+        1) analyse Y profil of max|X values of distance map -> search for means under threshold
+        2) watershed on distance map with one seed at each segment (max)
+        */
+        ImageFloat edm = EDT.transform(pop1.getLabelImage(), true, 1, input.getScaleZ()/input.getScaleXY(), 1);
+        ObjectPopulation split = WatershedTransform.watershed(edm, pop1.getLabelImage(), true, null, null); //new WatershedTransform.ThresholdFusionOnWatershedMap(thicknessThreshold)
+        if (debug) {
+            disp.showImage(edm);
+            disp.showImage(split.getLabelImage().setName("watershed EDM"));
+            FitEllipse.fitEllipse2D(pop1.getObjects().get(0));
+            FitEllipse.fitEllipse2D(pop1.getObjects().get(1));
+        }
+        
+        float[] edmYProfile = ImageOperations.maxProjection(edm, ImageOperations.Axis.Y, null);
+        plotProfile("before smooth", edmYProfile);
+        ArrayUtil.gaussianSmooth(edmYProfile, 1.5);
+        plotProfile("after smooth", edmYProfile);
+        if (true) return null;
+        /* normalize image
+        1) dilate image & compute mean & sigma outside
+        2) compute mean & sigma inside
+        3) Histogram transformation: mean outside = 0 / mean inside = 1
+        */
+        
+        /*
+        add thickness information:  * border size / mean thickness of the 2 objects -> transformation of the Hessian map
+        */
         
         //if (debug) logger.debug("threhsold: {}", threshold);
         //pop1.filter(new ObjectPopulation.MeanIntensity(threshold, true, smoothed));
-        if (debug) {
-            disp.showImage(pop1.getLabelImage().duplicate("first seg"));
-        }
+        
         Image hessImage = input.duplicate("invert");
         //hessImage.invert();
         boolean norm = false;

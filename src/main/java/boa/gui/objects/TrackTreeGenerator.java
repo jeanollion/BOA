@@ -44,7 +44,9 @@ import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.ObjectDAO;
+import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import utils.Utils;
 /**
@@ -173,7 +175,7 @@ public class TrackTreeGenerator {
                 Object lastO = p.getLastPathComponent();
                 if (lastO instanceof TrackNode) {
                     ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
-                    iwm.displayTrackAllImages(i, true, i.pairWithOffset(ImageWindowManager.extendTrack(((TrackNode)lastO).track)), ImageWindowManager.getColor(idx++), false);
+                    iwm.displayTrackAllImages(i, true, i.pairWithOffset(StructureObjectUtils.extendTrack(((TrackNode)lastO).track)), ImageWindowManager.getColor(idx++), false);
                 }
             }
         }
@@ -247,8 +249,10 @@ public class TrackTreeGenerator {
     }
     
     
-    public ArrayList<TrackNode> getSelectedTrackNodes() {
-        ArrayList<TrackNode> res = new ArrayList<TrackNode>(tree.getSelectionCount());
+    public List<TrackNode> getSelectedTrackNodes() {
+        int sel = tree.getSelectionCount();
+        if (sel==0) return Collections.EMPTY_LIST;
+        ArrayList<TrackNode> res = new ArrayList<TrackNode>(sel);
         for (TreePath p : tree.getSelectionPaths()) {
             if (p.getLastPathComponent() instanceof TrackNode) {
                 res.add(((TrackNode)p.getLastPathComponent()));
@@ -262,7 +266,7 @@ public class TrackTreeGenerator {
         List<TrackNode> nodes = getSelectedTrackNodes();
         List<List<StructureObject>> res = new ArrayList<List<StructureObject>>(nodes.size());
         for (TrackNode n : nodes) {
-            if (extended) res.add(ImageWindowManager.extendTrack(n.track));
+            if (extended) res.add(StructureObjectUtils.extendTrack(n.track));
             else res.add(n.track); 
         }
         return res;

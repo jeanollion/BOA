@@ -662,13 +662,4 @@ public abstract class ImageWindowManager<T, U, V> {
         return null;
     }
     
-    public static List<StructureObject> extendTrack(List<StructureObject> track) {
-        ArrayList<StructureObject> res = new ArrayList<StructureObject>(track.size()+2);
-        StructureObject prev = track.get(0).getPrevious();
-        if (prev!=null) res.add(prev);
-        res.addAll(track);
-        StructureObject next = track.get(track.size()-1).getNext();
-        if (next!=null) res.add(next);
-        return res;
-    }
 }

@@ -21,11 +21,13 @@ import static TestUtils.Utils.logger;
 import boa.gui.GUI;
 import boa.gui.imageInteraction.IJImageWindowManager;
 import boa.gui.imageInteraction.ImageObjectInterface;
+import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectUtils;
 import dataStructure.objects.Voxel;
 import ij.IJ;
 import ij.ImageJ;
@@ -50,6 +52,7 @@ import image.ImageOperations;
 import image.ImageProperties;
 import image.ImageReader;
 import image.ImageWriter;
+import java.awt.Color;
 import java.awt.Frame;
 import java.awt.Polygon;
 import java.awt.Rectangle;
@@ -57,6 +60,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 import utils.Pair;
 
@@ -66,11 +70,10 @@ import utils.Pair;
  */
 public class SaveAndRetriveSegmentationData {
     public static void main(String[] args) {
-        String dbName = "fluo151130_OutputNewScaling";
-        String baseFileName = "151130_TrackMutation_";
-        //String directory = "/home/jollion/Documents/LJP/DataLJP/VerifManuelle/"; // ordi portable
-        String directory = "/data/Images/Fluo/films1511/151130/151130_verifManuelleF08_160120/"; // ordi LJP
-        int fieldIdx = 8;
+        String dbName = "fluo151127";
+        String baseFileName = "151127_TrackMutation_";
+        String directory = "/data/Images/Fluo/films1511/151127/151127_verifManuelleF00_160317/"; // ordi LJP
+        int fieldIdx = 0;
         int structureIdx=2;
         int bacteriaStructureIdx=1; // for insideness
         double distanceThreshold =2;
@@ -80,20 +83,25 @@ public class SaveAndRetriveSegmentationData {
         
         // SAVE TO DISK
         //saveToDisk(dbName, directory, baseFileName, fieldIdx, structureIdx);
-        
+        saveToDisk(dbName, directory, baseFileName, fieldIdx, 2, new int[]{1, 2}, new int[]{2});
         // RETRIEVE AND COMPARE TO EXPERIMENT
-        compareField(dbName, directory, baseFileName, fieldIdx, structureIdx, bacteriaStructureIdx, distanceThreshold);
+        //compareField(dbName, directory, baseFileName, fieldIdx, structureIdx, bacteriaStructureIdx, distanceThreshold);
         
     }
     
-    public static void saveToDisk(String dbName, String directory, String baseFileName, int fieldIdx, int structureIdx) {
-        HashMap<Image, Overlay> res = getImagesWithOverlay(dbName, baseFileName, fieldIdx, structureIdx);
+    public static void saveToDisk(String dbName, String directory, String baseFileName, int fieldIdx, int structureIdx, int[] roiStructureIdx, int[] trackStructureIdx) {
+        if (directory.endsWith(File.separator)) directory+=File.separator;
+        HashMap<Image, Overlay> res = getImagesWithOverlay(dbName, baseFileName, fieldIdx, structureIdx, roiStructureIdx, trackStructureIdx);
         for (Entry<Image, Overlay> e : res.entrySet()) {
             saveImageAndOverlay(directory, e.getKey(), e.getValue());
         }
     }
     
-    public static HashMap<Image, Overlay> getImagesWithOverlay(String dbName, String baseFileName, int fieldIdx, int structureIdx) {
+    public static void saveToDisk(String dbName, String directory, String baseFileName, int fieldIdx, int structureIdx) {
+        saveToDisk(dbName, directory, baseFileName, fieldIdx, structureIdx, new int[]{structureIdx}, null);
+    }
+    
+    public static HashMap<Image, Overlay> getImagesWithOverlay(String dbName, String baseFileName, int fieldIdx, int structureIdx, int[] roiStructureIdx, int[] trackStructureIdx) {
         MorphiumMasterDAO m = new MorphiumMasterDAO(dbName);
         MorphiumObjectDAO dao = m.getDao(m.getExperiment().getMicroscopyField(fieldIdx).getName());
         StructureObject root = dao.getRoot(0);
@@ -104,10 +112,26 @@ public class SaveAndRetriveSegmentationData {
         int count = 0;
         for (StructureObject th : mcTH) {
             ArrayList<StructureObject> track = dao.getTrack(th);
+            logger.debug("processing: {}", th);
             ImageObjectInterface i = windowManager.getImageTrackObjectInterface(track, structureIdx);
             i.setGUIMode(false);
             Image im = i.generateRawImage(structureIdx);
-            windowManager.displayObjects(im, i.getObjects(), null, false);
+            if (roiStructureIdx!=null) {
+                for (int roiS : roiStructureIdx) {
+                    i = windowManager.getImageTrackObjectInterface(track, roiS);
+                    windowManager.displayObjects(im, i.getObjects(), null, false);
+                }
+            }
+            if (trackStructureIdx!=null) {
+                for (int roiS : trackStructureIdx) {
+                    i = windowManager.getImageTrackObjectInterface(track, roiS);
+                    HashMap<StructureObject, ArrayList<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(track, roiS);
+                    int colorCount=0;
+                    for (List<StructureObject> t : allTracks.values()) {
+                        windowManager.displayTrack(im, i, i.pairWithOffset(StructureObjectUtils.extendTrack(t)), IJImageWindowManager.getColor(colorCount++), false);
+                    }
+                }
+            }
             res.put(im, windowManager.getDisplayer().getImage(im).getOverlay());
             im.setName(getName(baseFileName, fieldIdx, count++));
         }
@@ -140,15 +164,13 @@ public class SaveAndRetriveSegmentationData {
     }
     
     public static void saveImageAndOverlay(String directory, Image image, Overlay overlay) {
-        ImageWriter.writeToFile(image, directory, image.getName(), ImageFormat.TIF);
         if (overlay==null) throw new Error("overlay required");
         RoiManager rm = getRM();
         if (rm==null) throw new Error("RoiManager could not be instanciated");
         if (overlay.size()>=4 && overlay.get(3).getPosition()!=0) Prefs.showAllSliceOnly = true;
         rm.runCommand("reset");
         rm.setEditMode(null, false);
-        ImagePlus imp = null;
-        for (int i=0; i<overlay.size(); i++) rm.add(imp, overlay.get(i), i+1);
+        for (int i=0; i<overlay.size(); i++) rm.addRoi(overlay.get(i));
         rm.runCommand("save", directory+image.getName()+".zip");
         ImageWriter.writeToFile(image, directory, image.getName(), ImageFormat.TIF);
     }

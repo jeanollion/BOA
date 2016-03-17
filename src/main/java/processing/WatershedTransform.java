@@ -24,9 +24,11 @@ import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.Voxel;
 import image.BlankMask;
 import image.Image;
+import image.ImageByte;
 import image.ImageInteger;
 import image.ImageLabeller;
 import image.ImageMask;
+import image.ImageOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -52,6 +54,12 @@ public class WatershedTransform {
     final boolean decreasingPropagation;
     PropagationCriterion propagationCriterion;
     FusionCriterion fusionCriterion;
+    
+    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
+        ImageByte seeds = Filters.localExtrema(watershedMap, null, decreasingPropagation, Filters.getNeighborhood(1.5, 1, watershedMap));
+        if (mask!=null) ImageOperations.and(seeds, mask, seeds);
+        return watershed(watershedMap, mask, ImageLabeller.labelImageList(seeds), decreasingPropagation, propagationCriterion,fusionCriterion);
+    }
     
     public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, List<Object3D> regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
         WatershedTransform wt = new WatershedTransform(watershedMap, mask, regionalExtrema, decreasingPropagation, propagationCriterion, fusionCriterion);
@@ -237,11 +245,7 @@ public class WatershedTransform {
         boolean stopWhenInferior;
         double threshold;
         @Override public void setUp(WatershedTransform instance) {
-            setStopWhenInferior(instance.decreasingPropagation);
-        }
-        public ThresholdPropagationOnWatershedMap setStopWhenInferior(boolean stopWhenInferior) {
-            this.stopWhenInferior=stopWhenInferior;
-            return this;
+            stopWhenInferior = instance.decreasingPropagation;
         }
         public ThresholdPropagationOnWatershedMap(double threshold) {
             this.threshold=threshold;
@@ -283,6 +287,17 @@ public class WatershedTransform {
         @Override public void setUp(WatershedTransform instance) {}
         @Override public boolean checkFusionCriteria(Spot s1, Spot s2, Voxel currentVoxel) {
             return s1.voxels.size()<minimumSize || s2.voxels.size()<minimumSize;
+        }
+    }
+    public static class ThresholdFusionOnWatershedMap implements FusionCriterion {
+        double threshold;
+        WatershedTransform instance;
+        public ThresholdFusionOnWatershedMap(double threshold) {
+            this.threshold=threshold;
+        }
+        @Override public void setUp(WatershedTransform instance) {this.instance=instance;}
+        @Override public boolean checkFusionCriteria(Spot s1, Spot s2, Voxel currentVoxel) {
+            return instance.decreasingPropagation ? currentVoxel.value>threshold : currentVoxel.value<threshold;
         }
     }
     public static class NumberFusionCriterion implements FusionCriterion {

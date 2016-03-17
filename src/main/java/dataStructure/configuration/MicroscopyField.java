@@ -64,6 +64,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     @Override
     protected void initChildList() {
         //logger.debug("MF: {}, init list..", name);
+        if (defaultTimePoint==null) defaultTimePoint = new TimePointParameter("Default TimePoint", defaultTP);
         initChildren(preProcessingChain, defaultTimePoint);
     }
     

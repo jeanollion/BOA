@@ -40,7 +40,7 @@ import utils.MorphiumUtils;
  */
 public class TestProcessBacteriaBF {
     public static void main(String[] args) {
-        int time =20;
+        int time =26;
         int microChannel =0;
         int field = 0;
         String dbName = "testBF";
