@@ -63,8 +63,14 @@ public class Voxel implements Comparable<Voxel> {
                     return 1;
                 } else if (voxel.value > other.value) {
                     return -1;
-                } else {
-                    return 0;
+                } else { // consistancy with equals method
+                    if (voxel.x<other.x) return 1;
+                    else if (voxel.x>other.x) return -1;
+                    else if (voxel.y<other.y) return 1;
+                    else if (voxel.y>other.y) return -1;
+                    else if (voxel.z<other.z) return 1;
+                    else if (voxel.z>other.z) return -1;
+                    else return 0;
                 }
             }
         };
@@ -77,8 +83,14 @@ public class Voxel implements Comparable<Voxel> {
                     return -1;
                 } else if (voxel.value > other.value) {
                     return 1;
-                } else {
-                    return 0;
+                } else {// consistancy with equals method
+                    if (voxel.x<other.x) return -1;
+                    else if (voxel.x>other.x) return 1;
+                    else if (voxel.y<other.y) return -1;
+                    else if (voxel.y>other.y) return 1;
+                    else if (voxel.z<other.z) return -1;
+                    else if (voxel.z>other.z) return 1;
+                    else return 0;
                 }
             }
         };
@@ -89,13 +101,23 @@ public class Voxel implements Comparable<Voxel> {
             return -1;
         } else if (value > other.value) {
             return 1;
-        } else {
-            return 0;
+        } else {// consistancy with equals method
+            if (x<other.x) return -1;
+            else if (x>other.x) return 1;
+            else if (y<other.y) return -1;
+            else if (y>other.y) return 1;
+            else if (z<other.z) return -1;
+            else if (z>other.z) return 1;
+            else return 0;
         }
     }
     
     public double getDistanceSquare(Voxel other, double scaleXY, double scaleZ) {
         return Math.pow((x-other.x) * scaleXY, 2) + Math.pow((y-other.y) * scaleXY, 2) + Math.pow((z-other.z) * scaleZ, 2);
+    }
+    
+    public double getDistanceSquare(Voxel other) {
+        return Math.pow((x-other.x), 2) + Math.pow((y-other.y), 2) + Math.pow((z-other.z) , 2);
     }
     
 }
