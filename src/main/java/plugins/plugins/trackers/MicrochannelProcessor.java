@@ -85,6 +85,7 @@ public class MicrochannelProcessor implements TrackerSegmenter {
                 Image input = preFilters.filter(parent.getRawImage(structureIdx), parent);
                 ObjectPopulation popTemp = segAlgo.runSegmenter(input, structureIdx, parent);
                 popTemp = postFilters.filter(popTemp, structureIdx, parent);
+                Collections.sort(popTemp.getObjects(), getComparatorObject3D(ObjectIdxTracker.IndexingOrder.XZY));
                 if (pop==null) pop = popTemp;
                 else pop = combine(pop, popTemp);
                 if (debug) logger.debug("time: {}, object number: {}",idx,  pop.getObjects().size());
@@ -146,9 +147,11 @@ public class MicrochannelProcessor implements TrackerSegmenter {
     public static ObjectPopulation combine(ObjectPopulation pop1, ObjectPopulation pop2) {
         if (pop2==null) return pop1;
         else if (pop1==null) return pop2;
-        ArrayList<Object3D> res = new ArrayList<Object3D>(Math.max(pop1.getObjects().size(), pop2.getObjects().size()));
+        int s1 = pop1.getObjects().size();
+        int s2 = pop2.getObjects().size();
+        ArrayList<Object3D> res = new ArrayList<Object3D>(Math.max(s1, s2));
         Iterator<Object3D> it1 = pop1.getObjects().iterator();
-        Iterator<Object3D> it2 = pop2.getObjects().iterator();
+        Iterator<Object3D> it2;
         int yMin = Integer.MAX_VALUE;
         for (Object3D o : pop1.getObjects()) if (o.getBounds().getyMin()<yMin) yMin = o.getBounds().getyMin();
         for (Object3D o : pop2.getObjects()) if (o.getBounds().getyMin()<yMin) yMin = o.getBounds().getyMin();
@@ -156,6 +159,7 @@ public class MicrochannelProcessor implements TrackerSegmenter {
         while(it1.hasNext()) {
             Object3D o1 = it1.next();
             BoundingBox b1 = o1.getBounds();
+            it2 = pop2.getObjects().iterator();
             L2 : while(it2.hasNext()) {
                 BoundingBox b2 = it2.next().getBounds();
                 if (b1.hasIntersection(b2)) {
@@ -167,10 +171,13 @@ public class MicrochannelProcessor implements TrackerSegmenter {
                 }
             }
         }
+        int overLapCount = res.size();
+        // add remaining non-overlapping objects
         res.addAll(pop1.getObjects());
         res.addAll(pop2.getObjects());
         Collections.sort(res, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.XZY));
         for (int i = 0; i<res.size(); ++i) res.get(i).setLabel(i+1);
+        if (debug) logger.debug("combine: {} & {}: result: {}, overlapping: {}", s1, s2, res.size(), overLapCount);
         return new ObjectPopulation(res, pop1.getImageProperties());
     }
     

@@ -57,7 +57,6 @@ import static utils.Utils.plotProfile;
  * @author jollion
  */
 public class CropMicroChannelFluo2D extends CropMicroChannels {
-    public static boolean debug = false;
     
     NumberParameter minObjectSize = new BoundedNumberParameter("Object Size Filter", 0, 200, 1, null);
     NumberParameter fillingProportion = new BoundedNumberParameter("Filling proportion of Microchannel", 2, 0.6, 0.05, 1);
@@ -99,6 +98,13 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         
     }
     public static Result segmentMicroChannels(Image image, int margin, int channelHeight, double fillingProportion, int minObjectSize) {
+        return segmentMicroChannels(image, margin, channelHeight, fillingProportion, minObjectSize, Double.NaN);
+    }
+    public static Result segmentMicroChannels(Image image, int margin, int channelHeight, double fillingProportion, int minObjectSize, AutoThresholder.Method thresholdingMethod) {
+        double thld = IJAutoThresholder.runThresholder(image, null, thresholdingMethod);
+        return segmentMicroChannels(image, margin, channelHeight, fillingProportion, minObjectSize, thld);
+    }
+    public static Result segmentMicroChannels(Image image, int margin, int channelHeight, double fillingProportion, int minObjectSize, double thld) {
         double thldX = channelHeight * fillingProportion; // only take into account roughly filled channels
         thldX /= (double) (image.getSizeY() * image.getSizeZ() ); // mean X projection
         /*
@@ -107,7 +113,7 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         3) computation of Y start using the minimal Y of objects within the selected channels from step 2 (median value of yMins)
         */
         
-        double thld = IJAutoThresholder.runThresholder(image, null, AutoThresholder.Method.Triangle); // OTSU / TRIANGLE / YEN 
+        if (Double.isNaN(thld)) thld = IJAutoThresholder.runThresholder(image, null, AutoThresholder.Method.Triangle); // OTSU / TRIANGLE / YEN 
         ImageByte mask = ImageOperations.threshold(image, thld, true, true);
         //mask = Filters.binaryClose(mask, new ImageByte("segmentation mask::closed", mask), Filters.getNeighborhood(4, 4, mask));
         float[] xProj = ImageOperations.meanProjection(mask, ImageOperations.Axis.X, null);

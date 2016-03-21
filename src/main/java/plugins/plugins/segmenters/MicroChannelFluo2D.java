@@ -85,7 +85,7 @@ public class MicroChannelFluo2D implements Segmenter {
 
     public static ObjectPopulation run(Image image, int channelHeight, int channelWidth, int yMargin, double fillingProportion, int minObjectSize) {
         CropMicroChannelFluo2D.debug=debug;
-        CropMicroChannelFluo2D.Result r = segmentMicroChannels(image, 0, channelHeight, fillingProportion, minObjectSize);
+        CropMicroChannelFluo2D.Result r = segmentMicroChannels(image, 0, channelHeight, fillingProportion, minObjectSize, AutoThresholder.Method.Otsu);
         if (r==null) return null;
         ArrayList<Object3D> res = new ArrayList<Object3D>(r.xMax.length);
         int yMin = Math.max(r.yMin - yMargin, 0);

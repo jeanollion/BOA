@@ -31,7 +31,6 @@ import plugins.Transformation;
 import plugins.TransformationTimeIndependent;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
-import static plugins.plugins.transformations.CropMicroChannelFluo2D.debug;
 import static plugins.plugins.transformations.CropMicroChannelFluo2D.getBoundingBox;
 
 /**
@@ -39,12 +38,13 @@ import static plugins.plugins.transformations.CropMicroChannelFluo2D.getBounding
  * @author jollion
  */
 public abstract class CropMicroChannels implements Transformation {
+    public static boolean debug = false;
     protected ArrayList<Integer> configurationData=new ArrayList<Integer>(4); // xMin/xMax/yMin/yMax
     protected NumberParameter xStart = new BoundedNumberParameter("X start", 0, 0, 0, null);
     protected NumberParameter xStop = new BoundedNumberParameter("X stop (0 for image width)", 0, 0, 0, null);
     protected NumberParameter yStart = new BoundedNumberParameter("Y start", 0, 0, 0, null);
     protected NumberParameter yStop = new BoundedNumberParameter("Y stop (0 for image heigth)", 0, 0, 0, null);
-    protected NumberParameter margin = new BoundedNumberParameter("X-Margin", 0, 30, 0, null);
+    protected NumberParameter margin = new BoundedNumberParameter("X-Margin", 0, 10, 0, null);
     protected NumberParameter channelHeight = new BoundedNumberParameter("Channel Height", 0, 375, 0, null);
     protected NumberParameter cropMargin = new BoundedNumberParameter("Crop Margin", 0, 45, 0, null);
     NumberParameter number = new BoundedNumberParameter("Number of TimePoints", 0, 5, 1, null);

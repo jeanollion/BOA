@@ -37,6 +37,7 @@ import image.ImageMask;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import plugins.PluginFactory;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.trackers.MicrochannelProcessor;
@@ -49,11 +50,12 @@ import utils.MorphiumUtils;
  */
 public class TestProcessMicrochannels {
     public static void main(String[] args) {
-        int time =100;
-        int field = 30;
-        String dbName = "fluo160217";
+        PluginFactory.findPlugins("plugins.plugins");
+        int time =36;
+        int field = 0;
+        String dbName = "fluo160212";
         //testSegMicrochannelsFromXP(dbName, field, time);
-        testSegAndTrackMicrochannelsFromXP(dbName, field, 0, 200);
+        testSegAndTrackMicrochannelsFromXP(dbName, field, 0, 300);
     }
     
     public static void testSegMicrochannelsFromXP(String dbName, int fieldNumber, int timePoint) {
@@ -63,7 +65,7 @@ public class TestProcessMicrochannels {
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         Image input = root.getRawImage(0);
         MicroChannelFluo2D.debug=true;
-        ObjectPopulation pop = MicroChannelFluo2D.run(input, 355, 40, 20, 0.5d, 100);
+        ObjectPopulation pop = MicroChannelFluo2D.run(input, 355, 40, 20, 0.6d, 100);
         //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);

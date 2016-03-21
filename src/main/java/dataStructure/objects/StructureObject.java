@@ -169,10 +169,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             } else { // indirect child
                 //logger.debug("structure:{} is not direct child of: {}", structureIdx, this.structureIdx);
                 int[] path = getExperiment().getPathToStructure(this.getStructureIdx(), structureIdx);
-                if (path.length == 0) { // structure is not (indirect) child of current structure
-                    //logger.error("getChildObjects called on {} but structure: {} is no an (indirect) child of structure {}", this, structureIdx, this.structureIdx);
-                    //return null;
-                    // get included objects from first common parent
+                if (path.length == 0) { // structure is not (indirect) child of current structure -> get included objects from first common parent
                     int commonParentIdx = getExperiment().getFirstCommonParentStructureIdx(this.structureIdx, structureIdx);
                     StructureObject commonParent = this.getParent(commonParentIdx);
                     //logger.debug("structure: {}, child: {}, common parent: {}, object: {}, path: {}", this.structureIdx, structureIdx, commonParentIdx, commonParent, getExperiment().getPathToStructure(commonParentIdx, structureIdx));

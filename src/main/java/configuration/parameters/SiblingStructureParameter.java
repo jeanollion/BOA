@@ -89,6 +89,7 @@ public class SiblingStructureParameter extends StructureParameter {
     }
     
     protected void setIndexStructureMap() {
+        logger.debug("sibling structure parameter: setIndexStructureMap getXP null: {}", getXP()==null);
         if (parentStructureIdx==-2) { //not configured -> look for a Structure in parents
             Structure s= ParameterUtils.getFirstParameterFromParents(Structure.class, this, false);
             if (s!=null) parentStructureIdx = s.getParentStructure();
@@ -98,7 +99,7 @@ public class SiblingStructureParameter extends StructureParameter {
         if (getXP()==null && idxStructureMap==null) idxStructureMap=new int[]{-1};
         else {
             idxStructureMap =  getXP().getAllChildStructures(parentStructureIdx);
-            if (includeParent && parentStructureIdx!=1) { // add Parent before
+            if (includeParent && parentStructureIdx!=-1) { // add Parent before
                 int[] idxStructureMap2 = new int[idxStructureMap.length+1];
                 System.arraycopy(idxStructureMap, 0, idxStructureMap2, 1, idxStructureMap.length);
                 idxStructureMap2[0] = parentStructureIdx;

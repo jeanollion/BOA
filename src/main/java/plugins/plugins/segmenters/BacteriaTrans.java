@@ -189,8 +189,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge {
         if (debug) {
             disp.showImage(edm);
             disp.showImage(split.getLabelImage().setName("watershed EDM"));
-            FitEllipse.fitEllipse2D(pop1.getObjects().get(0));
-            FitEllipse.fitEllipse2D(pop1.getObjects().get(1));
+            //FitEllipse.fitEllipse2D(pop1.getObjects().get(0));
+            //FitEllipse.fitEllipse2D(pop1.getObjects().get(1));
         }
         
         if (true) return null;

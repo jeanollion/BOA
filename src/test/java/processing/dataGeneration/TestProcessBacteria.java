@@ -55,7 +55,6 @@ import plugins.PluginFactory;
 import plugins.Segmenter;
 import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
 import plugins.plugins.measurements.BacteriaLineageIndex;
-import plugins.plugins.measurements.BacteriaMeasurements;
 import plugins.plugins.measurements.BacteriaMeasurementsWoleMC;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.preFilter.Median;

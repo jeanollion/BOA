@@ -30,14 +30,15 @@ import java.io.FilenameFilter;
  *
  * @author jollion
  */
-public class MergeTimelapseFilms {
+public class RearrangeFilms {
     public static void main(String[] args) {
-        String in = "/media/jollion/TOSHIBA EXT/ME120R63-18022016-LR62r";
-        //String in = "/data/Images/Fluo/film160218/Champ1";
-        String out = "/data/Images/Fluo/film160218/ME120R63-18022016-LR62r";
-        String replace1 = "2016_";
+        //String in = "/media/jollion/TOSHIBA EXT/ME120R63-18022016-LR62r";
+        String in = "/data/Images/Fluo/film160212/ME120R63-120220166LR62r";
+        String out = "/data/Images/Fluo/film160212/ImagesSubset0-120";
+        /*String replace1 = "2016_";
         String replace2 = "2017_";
-        mergeFilms(in, out, replace1, replace2);
+        mergeFilms(in, out, replace1, replace2);*/
+        subsetTimePoints(in, out, 0, 121);
     }
     public static void mergeFilms(String inputDir, String outputDir, final String stringFirstTimepoints, final String stringLastTimePoints) {
         File in = new File(inputDir);
@@ -74,5 +75,34 @@ public class MergeTimelapseFilms {
             ++processed;
         }
         logger.info("Total Files: {}, processed: {}, failed: {}", firstTimePoints.length, processed, failed);
+    }
+    // tEndExcluded
+    public static void subsetTimePoints(String inputDir, String outputDir, int tStart, int tEnd) {
+        
+        File in = new File(inputDir);
+        File out = new File(outputDir);
+        if (!in.exists()) throw new IllegalArgumentException("input dir does not exists");
+        if (!out.exists()) throw new IllegalArgumentException("output dir does not exists");
+        File[] allFiles = in.listFiles(new FilenameFilter() {
+            public boolean accept(File arg0, String arg1) {
+                return !arg1.endsWith(".log");
+            }
+        });
+        logger.info("Total Files: {}", allFiles.length);
+        for (File f : allFiles) {
+            logger.debug("Processing File: {}, exists: {}", f.getAbsolutePath(), f.exists());
+            ImageReader r = new ImageReader(f.getAbsolutePath());
+            int nTimePointIn = r.getSTCXYZNumbers()[0][0];
+            int tEndTemp = tEnd;
+            if (tEnd>nTimePointIn) tEndTemp = nTimePointIn;
+            logger.debug("file: {}, tp count: {}", f.getAbsoluteFile(), nTimePointIn);
+            int nTimePointsOut = tEndTemp - tStart;
+            Image[][] imagesTC = new Image[nTimePointsOut][1];
+            int count = 0;
+            for (int t = tStart; t<tEndTemp; ++t) imagesTC[count++][0] = r.openImage(new ImageIOCoordinates(0, 0, t));
+            ImageWriter.writeToFile(outputDir, r.getImageTitle(), ImageFormat.OMETIF, imagesTC);
+            r.closeReader();
+        }
+        
     }
 }

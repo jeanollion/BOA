@@ -36,7 +36,7 @@ import plugins.Measurement;
  * @author jollion
  */
 public class BacteriaLineageIndex implements Measurement {
-    protected StructureParameter structure = new StructureParameter("Bacteria Structure", -1, false, false);
+    protected StructureParameter structure = new StructureParameter("Bacteria Structure", 1, false, false);
     protected TextParameter keyName = new TextParameter("Lineage Index Name", "LineageIndex", false);
     protected Parameter[] parameters = new Parameter[]{structure, keyName};
     public static char[] lineageName = new char[]{'H', 'T'};

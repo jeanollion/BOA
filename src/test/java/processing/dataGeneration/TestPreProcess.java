@@ -47,12 +47,12 @@ import processing.ImageTransformation;
 public class TestPreProcess {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        String dbName= "fluo160217";
+        String dbName= "fluo160212";
         //String dbName= "fluo151127";
         boolean flip = true;
         int field = 0;
         //testTransformation(dbName, 0, 0, 0);
-        testPreProcessing(dbName, field, 0, -1, 0, 50);
+        testPreProcessing(dbName, field, 0, -1, 0, 150);
         //testCrop(dbName, field, 0, flip);
         //testStabilizer(dbName, field, 0, 19, 0, flip);
     }
@@ -64,7 +64,7 @@ public class TestPreProcess {
         InputImagesImpl images = f.getInputImages();
         Image im = images.getImage(channelIdx, time);
         AutoRotationXY rot = new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0);
-        
+        rot.computeConfigurationData(channelIdx, images);
         Image res = rot.applyTransformation(channelIdx, time, im);
         IJImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(im.setName("input"));
@@ -75,6 +75,7 @@ public class TestPreProcess {
         MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
         MicroscopyField f = db.getExperiment().getMicroscopyField(fieldIdx);
         f.getPreProcessingChain().removeAllTransformations();
+        f.getPreProcessingChain().addTransformation(0, null, new SaturateHistogram(350, 450));
         f.getPreProcessingChain().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
         f.getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
         if (flip) f.getPreProcessingChain().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
@@ -114,8 +115,6 @@ public class TestPreProcess {
             disp.showImage(Image.mergeZPlanes(input).setName("input"));
             disp.showImage(Image.mergeZPlanes(output).setName("output"));
         }
-        
-        
     }
     
     public static void testStabilizer(String dbName, int fieldIdx, int channelIdx, int tRef, int t, boolean flip) {

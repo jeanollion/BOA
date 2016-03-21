@@ -53,6 +53,22 @@ public class MeasurementObject implements Measurement {
             }
         });
     }
+    public MeasurementObject(int structureIdx) {
+        this();
+        this.structure.setSelectedIndex(structureIdx);
+    }
+    public MeasurementObject addFeatures(ObjectFeature... features) {
+        if (features==null) return this;
+        for (ObjectFeature f : features) this.features.insert(def.duplicate().setPlugin(f));
+        return this;
+    }
+    public MeasurementObject addFeature(ObjectFeature feature, String key) {
+        PluginParameter<ObjectFeature> f = def.duplicate().setPlugin(feature);
+        ((TextParameter)f.getAdditionalParameters().get(0)).setValue(key);
+        this.features.insert(f);
+        return this;
+    }
+    
     public int getCallStructure() {
         return structure.getParentStructureIdx();
     }
