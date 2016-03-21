@@ -126,6 +126,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge {
     
     public static ObjectPopulation run(Image input, ImageMask mask, double fusionThreshold, int minSize, int contactLimit, double smoothScale, double dogScale, double hessianScale, double hessianThresholdFactor, double thresholdForEmptyChannel, double openRadius, BacteriaTrans instance) {
         double thicknessThreshold = 5;
+        final double relativeThicknessThreshold = 0.6;
         ImageDisplayer disp=debug?new IJImageDisplayer():null;
         //double hessianThresholdFacto = 1;
         
@@ -170,8 +171,21 @@ public class BacteriaTrans implements SegmenterSplitAndMerge {
         2) watershed on distance map with one seed at each segment (max)
         */
         ImageFloat edm = EDT.transform(pop1.getLabelImage(), true, 1, input.getScaleZ()/input.getScaleXY(), 1);
-        ObjectPopulation split = WatershedTransform.watershed(edm, pop1.getLabelImage(), true, null, null); //new WatershedTransform.ThresholdFusionOnWatershedMap(thicknessThreshold)
-        // pourquoi ne fonctionne pas? 
+        
+        WatershedTransform.FusionCriterion relativeThickness = new WatershedTransform.FusionCriterion() {
+            WatershedTransform instance;
+            public void setUp(WatershedTransform instance) {this.instance=instance;}
+            public boolean checkFusionCriteria(WatershedTransform.Spot s1, WatershedTransform.Spot s2, Voxel currentVoxel) {
+                double max = -Double.MAX_VALUE;
+                for (Voxel v : s1.voxels) if (v.value>max) max = v.value;
+                for (Voxel v : s2.voxels) if (v.value>max) max = v.value;
+                return currentVoxel.value/max>relativeThicknessThreshold;
+            }
+        };
+        ObjectPopulation split = WatershedTransform.watershed(edm, pop1.getLabelImage(), true, null, new WatershedTransform.MultipleFusionCriteria(new WatershedTransform.SizeFusionCriterion(minSize), relativeThickness)); //new WatershedTransform.ThresholdFusionOnWatershedMap(thicknessThreshold)
+        
+        
+        
         if (debug) {
             disp.showImage(edm);
             disp.showImage(split.getLabelImage().setName("watershed EDM"));
@@ -179,10 +193,6 @@ public class BacteriaTrans implements SegmenterSplitAndMerge {
             FitEllipse.fitEllipse2D(pop1.getObjects().get(1));
         }
         
-        float[] edmYProfile = ImageOperations.maxProjection(edm, ImageOperations.Axis.Y, null);
-        plotProfile("before smooth", edmYProfile);
-        ArrayUtil.gaussianSmooth(edmYProfile, 1.5);
-        plotProfile("after smooth", edmYProfile);
         if (true) return null;
         /* normalize image
         1) dilate image & compute mean & sigma outside

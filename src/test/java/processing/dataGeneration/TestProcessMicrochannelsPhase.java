@@ -49,7 +49,7 @@ import utils.MorphiumUtils;
  *
  * @author jollion
  */
-public class TestProcessMicrochannelsBF {
+public class TestProcessMicrochannelsPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         int time =0;

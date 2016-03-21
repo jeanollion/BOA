@@ -51,7 +51,7 @@ public class WatershedTransform {
     final protected ImageInteger segmentedMap;
     final protected ImageMask mask;
     final boolean is3D;
-    final boolean decreasingPropagation;
+    public final boolean decreasingPropagation;
     PropagationCriterion propagationCriterion;
     FusionCriterion fusionCriterion;
     
@@ -150,7 +150,7 @@ public class WatershedTransform {
         return currentSpot;
     }
     
-    protected class Spot {
+    public class Spot {
         public ArrayList<Voxel> voxels;
         int label;
         //Voxel seed;
