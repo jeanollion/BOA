@@ -32,7 +32,7 @@ import plugins.plugins.processingScheme.SegmentAndTrack;
 import plugins.plugins.processingScheme.SegmentOnly;
 import plugins.plugins.processingScheme.SegmentThenTrack;
 import plugins.plugins.segmenters.BacteriaFluo;
-import plugins.plugins.segmenters.MicroChannelBF2D;
+import plugins.plugins.segmenters.MicroChannelPhase2D;
 import plugins.plugins.segmenters.MutationSegmenter;
 import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
 import plugins.plugins.trackers.BacteriaClosedMicrochannelTrackerLocalCorrections;
@@ -178,7 +178,7 @@ public class GenerateTestXP {
         xp.getStructures().insert(mc, bacteria);
         
         mc.setProcessingScheme(new SegmentThenTrack(
-                new MicroChannelBF2D(), 
+                new MicroChannelPhase2D(), 
                 new ObjectIdxTracker()
         ));
         bacteria.setProcessingScheme(new SegmentAndTrack(

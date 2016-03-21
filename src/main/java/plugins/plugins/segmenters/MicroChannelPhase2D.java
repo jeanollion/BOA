@@ -47,17 +47,17 @@ import static utils.Utils.plotProfile;
  *
  * @author jollion
  */
-public class MicroChannelBF2D implements Segmenter {
+public class MicroChannelPhase2D implements Segmenter {
 
     NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Width (pixels)", 0, 26, 5, null);
     NumberParameter microChannelWidthError = new BoundedNumberParameter("Microchannel Width error proportion", 2, 0.15, 0, 1);
     Parameter[] parameters = new Parameter[]{channelWidth, microChannelWidthError};
     public static boolean debug = false;
 
-    public MicroChannelBF2D() {
+    public MicroChannelPhase2D() {
     }
 
-    public MicroChannelBF2D(int channelWidth) {
+    public MicroChannelPhase2D(int channelWidth) {
         this.channelWidth.setValue(channelWidth);
     }
 

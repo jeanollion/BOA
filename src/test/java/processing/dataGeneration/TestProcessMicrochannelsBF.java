@@ -39,7 +39,7 @@ import java.util.Iterator;
 import java.util.List;
 import plugins.PluginFactory;
 import plugins.plugins.segmenters.BacteriaFluo;
-import plugins.plugins.segmenters.MicroChannelBF2D;
+import plugins.plugins.segmenters.MicroChannelPhase2D;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.trackers.MicrochannelProcessor;
 import static processing.dataGeneration.TestLAPTrackerMutations.mutationIdx;
@@ -66,8 +66,8 @@ public class TestProcessMicrochannelsBF {
         if (root==null) root = f.createRootObjects(mDAO.getDao(f.getName())).get(timePoint);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         Image input = root.getRawImage(0);
-        MicroChannelBF2D.debug=true;
-        ObjectPopulation pop = MicroChannelBF2D.run(input, 26, 0.15, 2, 6, 6);
+        MicroChannelPhase2D.debug=true;
+        ObjectPopulation pop = MicroChannelPhase2D.run(input, 26, 0.15, 2, 6, 6);
         //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
@@ -89,7 +89,7 @@ public class TestProcessMicrochannelsBF {
             if (o.getTimePoint()>timePointMax) it.remove();
         }
         MicrochannelProcessor.debug=true;
-        MicrochannelProcessor mp = new MicrochannelProcessor(new MicroChannelBF2D()).setTimePointNumber(5);
+        MicrochannelProcessor mp = new MicrochannelProcessor(new MicroChannelPhase2D()).setTimePointNumber(5);
         mp.segmentAndTrack(0, rootTrack, new PreFilterSequence(""), new PostFilterSequence(""));
         
         ObjectPopulation pop  = rootTrack.get(0).getObjectPopulation(0);

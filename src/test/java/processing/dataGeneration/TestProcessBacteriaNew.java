@@ -42,7 +42,7 @@ public class TestProcessBacteriaNew {
         int time =15;
         int microChannel =0;
         int field = 8;
-        String dbName = "fluo151130_OutputNewScaling";
+        String dbName = "fluo160217";
         testSegBacteriesFromXP(dbName, field, time, microChannel);
     }
     

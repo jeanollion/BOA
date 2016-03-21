@@ -30,7 +30,7 @@ import dataStructure.objects.StructureObject;
 import de.caluga.morphium.Morphium;
 import image.Image;
 import image.ImageMask;
-import plugins.plugins.segmenters.BacteriaBF;
+import plugins.plugins.segmenters.BacteriaTrans;
 import plugins.plugins.segmenters.BacteriaFluo;
 import utils.MorphiumUtils;
 
@@ -38,7 +38,7 @@ import utils.MorphiumUtils;
  *
  * @author jollion
  */
-public class TestProcessBacteriaBF {
+public class TestProcessBacteriaPhase {
     public static void main(String[] args) {
         int time =26;
         int microChannel =0;
@@ -56,8 +56,8 @@ public class TestProcessBacteriaBF {
         Image input = mc.getRawImage(1);
         //input.invert();
         ImageMask parentMask = mc.getMask();
-        BacteriaBF.debug=true;
-        ObjectPopulation pop = BacteriaBF.run(input, parentMask, 0.06, 
+        BacteriaTrans.debug=true;
+        ObjectPopulation pop = BacteriaTrans.run(input, parentMask, 0.06, 
                 100, // minSize
                 10, 3, 
                 10, // dog

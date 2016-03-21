@@ -63,7 +63,7 @@ import static utils.Utils.plotProfile;
  *
  * @author jollion
  */
-public class BacteriaBF implements SegmenterSplitAndMerge {
+public class BacteriaTrans implements SegmenterSplitAndMerge {
     public static boolean debug = false;
     
     // configuration-related attributes
@@ -85,31 +85,31 @@ public class BacteriaBF implements SegmenterSplitAndMerge {
     ImageByte splitMask;
     double splitThresholdValue; 
     
-    public BacteriaBF setSplitThreshold(double splitThreshold) {
+    public BacteriaTrans setSplitThreshold(double splitThreshold) {
         this.splitThreshold.setValue(splitThreshold);
         return this;
     }
-    public BacteriaBF setMinSize(int minSize) {
+    public BacteriaTrans setMinSize(int minSize) {
         this.minSize.setValue(minSize);
         return this;
     }
-    public BacteriaBF setSmoothScale(double smoothScale) {
+    public BacteriaTrans setSmoothScale(double smoothScale) {
         this.smoothScale.setValue(smoothScale);
         return this;
     }
-    public BacteriaBF setDogScale(int dogScale) {
+    public BacteriaTrans setDogScale(int dogScale) {
         this.dogScale.setValue(dogScale);
         return this;
     }
-    public BacteriaBF setHessianScale(double hessianScale) {
+    public BacteriaTrans setHessianScale(double hessianScale) {
         this.hessianScale.setValue(hessianScale);
         return this;
     }
-    public BacteriaBF setHessianThresholdFactor(double hessianThresholdFactor) {
+    public BacteriaTrans setHessianThresholdFactor(double hessianThresholdFactor) {
         this.hessianThresholdFactor.setValue(hessianThresholdFactor);
         return this;
     }
-    public BacteriaBF setOpenRadius(double openRadius) {
+    public BacteriaTrans setOpenRadius(double openRadius) {
         this.openRadius.setValue(openRadius);
         return this;
     }
@@ -124,7 +124,7 @@ public class BacteriaBF implements SegmenterSplitAndMerge {
         return "Bacteria Fluo: " + Utils.toStringArray(parameters);
     }   
     
-    public static ObjectPopulation run(Image input, ImageMask mask, double fusionThreshold, int minSize, int contactLimit, double smoothScale, double dogScale, double hessianScale, double hessianThresholdFactor, double thresholdForEmptyChannel, double openRadius, BacteriaBF instance) {
+    public static ObjectPopulation run(Image input, ImageMask mask, double fusionThreshold, int minSize, int contactLimit, double smoothScale, double dogScale, double hessianScale, double hessianThresholdFactor, double thresholdForEmptyChannel, double openRadius, BacteriaTrans instance) {
         double thicknessThreshold = 5;
         ImageDisplayer disp=debug?new IJImageDisplayer():null;
         //double hessianThresholdFacto = 1;
@@ -171,6 +171,7 @@ public class BacteriaBF implements SegmenterSplitAndMerge {
         */
         ImageFloat edm = EDT.transform(pop1.getLabelImage(), true, 1, input.getScaleZ()/input.getScaleXY(), 1);
         ObjectPopulation split = WatershedTransform.watershed(edm, pop1.getLabelImage(), true, null, null); //new WatershedTransform.ThresholdFusionOnWatershedMap(thicknessThreshold)
+        // pourquoi ne fonctionne pas? 
         if (debug) {
             disp.showImage(edm);
             disp.showImage(split.getLabelImage().setName("watershed EDM"));

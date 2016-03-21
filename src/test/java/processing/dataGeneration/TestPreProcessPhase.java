@@ -46,7 +46,7 @@ import processing.ImageTransformation;
  *
  * @author jollion
  */
-public class TestPreProcessBF {
+public class TestPreProcessPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         String dbName= "testBF";
