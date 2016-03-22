@@ -71,7 +71,7 @@ public class Measurements implements Comparable<Measurements>{
         return structureIdx;
     }
 
-    public int[] getIndicies() {
+    public int[] getIndices() {
         return indicies;
     }
         
@@ -129,8 +129,6 @@ public class Measurements implements Comparable<Measurements>{
         if (f!=0) return f;
         if (structureIdx<o.structureIdx) return -1;
         else if (structureIdx>o.structureIdx) return 1;
-        if (timePoint<o.timePoint) return -1;
-        else if (timePoint>o.timePoint) return 1;
         else {
             for (int i  = 0; i<indicies.length; ++i) {
                 if (indicies[i]<o.indicies[i]) return -1;
@@ -170,7 +168,10 @@ public class Measurements implements Comparable<Measurements>{
     
     public Measurements getParentMeasurementKey(int parentOrder) {
         if (indicies.length==0) return this;
-        if (parentOrder<=0 || parentOrder> indicies.length) throw new IllegalArgumentException("parent order should be >0 & <="+indicies.length+ "current value: "+parentOrder); 
+        if (parentOrder<=0 || parentOrder> indicies.length) {
+            return null;
+            //throw new IllegalArgumentException("parent order should be >0 & <="+indicies.length+ "current value: "+parentOrder);
+        } 
         return new Measurements(fieldName, timePoint, structureIdx, Arrays.copyOfRange(indicies, 0, indicies.length-parentOrder));
     }
     

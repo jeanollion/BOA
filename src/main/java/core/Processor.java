@@ -200,7 +200,7 @@ public class Processor {
         ThreadRunner.execute(rootArray, true, new ThreadAction<StructureObject>() {
             @Override
             public void run(StructureObject root, int idx, int threadIdx) {
-                long t0 = System.currentTimeMillis();
+                //long t0 = System.currentTimeMillis();
                 //logger.debug("running measurements on: {}", root);
                 List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
                 for(Entry<Integer, List<Measurement>> e : measurements.entrySet()) {
@@ -215,15 +215,14 @@ public class Processor {
                     }
                 }
                 allModifiedObjectsSync.addAll(modifiedObjects);
-                long t1 = System.currentTimeMillis();
-                logger.debug("measurements on: {}, time elapsed: {}ms", root, t1-t0);
+                //long t1 = System.currentTimeMillis();
+                //logger.debug("measurements on: {}, time elapsed: {}ms", root, t1-t0);
             }
         });
         long t1 = System.currentTimeMillis();
-        
         if (dao!=null && !allModifiedObjects.isEmpty()) dao.upsertMeasurements(allModifiedObjects);
         long t2 = System.currentTimeMillis();
-        logger.debug("measurements on field: {}: time: {}, upsert time: {} ({} objects)", dao.getFieldName(), t1-t0, t2-t1, allModifiedObjects.size());
+        logger.debug("measurements on field: {}: computation time: {}, upsert time: {} ({} objects)", dao.getFieldName(), t1-t0, t2-t1, allModifiedObjects.size());
         
     }
 }

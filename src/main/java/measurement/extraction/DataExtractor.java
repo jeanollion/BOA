@@ -45,21 +45,30 @@ import utils.Utils;
  */
 public class DataExtractor {
     
-    final static char separator =';';
-    
+    final static String separator =";";
     final static String NaN = "NaN";
-
-    protected static String getBaseHeader() { //TODO split Indicies column ...
-        return "FieldName"+separator+"Indicies"+separator+"TimePoint";
+    int structureIdx;
+    MasterDAO db;
+    public DataExtractor(MasterDAO db, int structureIdx) {
+        this.db=db;
+        this.structureIdx=structureIdx;
     }
-    protected static String getBaseLine(Measurements m) {
+    protected String getBaseHeader() { //TODO split Indicies column ...
+        int[] path = db.getExperiment().getPathToRoot(structureIdx);
+        String[] structureNames = db.getExperiment().getStructureNames(path);
+        String res =  "FieldName"+separator+"Indices"+separator+"TimePoint";
+        for (String s : structureNames) res+=separator+s+"Idx";
+        return res;
+    }
+    protected String getBaseLine(Measurements m) {
         String line = m.getFieldName();
-        int[] idx = m.getIndicies();
-        if (idx.length==0) line+=separator+-1;
-        else line+=Utils.toStringArray(idx, String.valueOf(separator), "", Selection.indexSeparator);
-        return line+separator+m.getTimePoint();
+        int[] idx = m.getIndices();
+        if (idx.length==1) line+=separator+-1; // only time point
+        else line+=Utils.toStringArray(idx, separator, "", Selection.indexSeparator);
+        for (int i : idx) line+=separator+i;
+        return line;
     }
-    protected static String getHeader(ArrayList<String> measurements) {
+    protected String getHeader(ArrayList<String> measurements) {
         String header = getBaseHeader();
         for (String m : measurements) header+=separator+m;
         //logger.debug("extract data: header: {}", header);
@@ -71,12 +80,17 @@ public class DataExtractor {
         return l;
     }
     public static void extractMeasurementObjects(MorphiumMasterDAO db, String outputFile, int structureIdx, String... measurements) {
-        HashMap<Integer, String[]> map = new HashMap<Integer, String[]>(1);
+        Map<Integer, String[]> map = new HashMap<Integer, String[]>(1);
         map.put(structureIdx, measurements);
-        extractMeasurementObjects(db, outputFile, map);
+        DataExtractor de= new DataExtractor(db, structureIdx);
+        de.extractMeasurementObjects(outputFile, map);
     }
-    
     public static void extractMeasurementObjects(MasterDAO db, String outputFile, Map<Integer, String[]> allMeasurements) {
+        TreeMap<Integer, String[]> allMeasurementsSort = new TreeMap<Integer, String[]>(allMeasurements);
+        DataExtractor de= new DataExtractor(db, allMeasurementsSort.lastKey());
+        de.extractMeasurementObjects(outputFile, allMeasurementsSort);
+    }
+    protected void extractMeasurementObjects(String outputFile, Map<Integer, String[]> allMeasurements) {
         Experiment xp = db.getExperiment();
         long t0 = System.currentTimeMillis();
         FileWriter fstream;
@@ -107,7 +121,6 @@ public class DataExtractor {
                     String line = getBaseLine(m);
                     // add measurements from parents of the the current structure
                     for (Entry<Integer, List<Measurements>> e : parentMeasurements.entrySet()) {
-                        if (parentOrder[e.getKey()] == 0) continue; // structure is not in parent tree
                         Measurements key = m.getParentMeasurementKey(parentOrder[e.getKey()]);
                         int pIdx = e.getValue().indexOf(key);
                         if (pIdx==-1) for (String pMeasName : allMeasurementsSort.get(e.getKey())) line+=separator+NaN; // parent not found, adds only NaN
