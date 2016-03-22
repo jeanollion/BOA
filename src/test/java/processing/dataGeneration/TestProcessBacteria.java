@@ -39,10 +39,10 @@ import utils.MorphiumUtils;
  */
 public class TestProcessBacteria {
     public static void main(String[] args) {
-        int time =17;
+        int time =50;
         int microChannel =0;
         int field = 0;
-        String dbName = "fluo160212";
+        String dbName = "fluo160210";
         testSegBacteriesFromXP(dbName, field, time, microChannel);
     }
     

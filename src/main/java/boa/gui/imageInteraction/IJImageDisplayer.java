@@ -140,21 +140,28 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         image.show();
     }*/
     
-    public void showImage5D(String title, Image[][] imageTC) {
+    @Override public void showImage5D(String title, Image[][] imageTC) {
         if (IJ.getInstance()==null) new ImageJ();
-        Image5D res = new Image5D(title, getImageStack(imageTC), imageTC[0].length, imageTC[0][0].getSizeZ(), imageTC.length);
+        /*Image5D res = new Image5D(title, getImageStack(imageTC), imageTC[0].length, imageTC[0][0].getSizeZ(), imageTC.length);
         for (int i = 0; i < imageTC[0].length; i++) {
             float[] minAndMax = imageTC[0][i].getMinAndMax(null);
             res.setChannelMinMax(i + 1, minAndMax[0], minAndMax[1]);
             res.setDefaultChannelNames();
-        }
+        }*/
         /*for (int i = 0; i < images.length; i++) { // set colors of channels
             Color c = tango.gui.util.Colors.colors.get(tango.gui.util.Colors.colorNames[i + 1]);
             ColorModel cm = ChannelDisplayProperties.createModelFromColor(c);
             res.setChannelColorModel(i + 1, cm);
         }*/
-        res.setDisplayMode(ChannelControl.OVERLAY);
-        res.show();
+        //res.setDisplayMode(ChannelControl.OVERLAY);
+        //res.show();
+        ImageStack stack = getImageStack(imageTC);
+        ImagePlus ip = new ImagePlus();
+        ip.setTitle(title);
+        ip.setStack(stack, imageTC[0].length, imageTC[0][0].getSizeZ(), imageTC.length);
+        ip.setOpenAsHyperStack(true);
+        ip.show();
+        logger.debug("image: {}, isDisplayedAsHyperStack: {}, is HP: {}, dim: {}", title, ip.isDisplayedHyperStack(), ip.isHyperStack(), ip.getDimensions());
     }
     
     protected static ImageStack getImageStack(Image[][] imageTC) { // suppose same number of channel & sizeZ for all channels & times
@@ -164,8 +171,8 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         ImageStack is = new ImageStack(imageTC[0][0].getSizeX(), imageTC[0][0].getSizeY(), sizeZ * imageTC.length * sizeC);
         int count = 1;
         for (int z = 0; z < sizeZ; ++z) {
-            for (int c = 0; c < imageTC[0].length; ++c) {
-                for (int t = 0; t < imageTC.length; ++t) {
+            for (int t = 0; t < imageTC.length; ++t) {
+                for (int c = 0; c < imageTC[0].length; ++c) {
                     is.setPixels(imageTC[t][c].getPixelArray()[z], count++);
                 }
             }

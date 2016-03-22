@@ -316,5 +316,14 @@ public class ArrayUtil {
         </dependency>
         */
     }
-    
+    public static int[] generateIntegerArray(int start, int stop) {
+        int[] res = new int[stop-start];
+        for (int i = start; i<stop; ++i) res[i-start]=i;
+        return res;
+    }
+    public static int[] generateIntegerArray(int size) {
+        int[] res = new int[size];
+        for (int i = 0; i<size; ++i) res[i]=i;
+        return res;
+    }
 }

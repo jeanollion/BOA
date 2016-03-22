@@ -46,7 +46,7 @@ import utils.Utils;
  * @author jollion
  */
 public class AutoRotationXY implements TransformationTimeIndependent {
-    NumberParameter backgroundSubtractionRadius = new BoundedNumberParameter("Background Subtraction Radius", 0, 20, 0, null);
+    NumberParameter backgroundSubtractionRadius = new BoundedNumberParameter("Background Subtraction Radius", 0, 0, 0, null);
     NumberParameter minAngle = new BoundedNumberParameter("Minimal Angle for search", 2, -10, -90, 90);
     NumberParameter maxAngle = new BoundedNumberParameter("Maximal Angle for search", 2, 10, -90, 90);
     NumberParameter precision1 = new BoundedNumberParameter("Angular Precision of first seach", 2, 1, 0, null);

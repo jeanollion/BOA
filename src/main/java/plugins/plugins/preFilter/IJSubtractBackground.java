@@ -61,7 +61,7 @@ public class IJSubtractBackground implements PreFilter, TransformationTimeIndepe
     }
     /**
      * IJ's subtrract background {@link ij.plugin.filter.BackgroundSubtracter#rollingBallBackground(ij.process.ImageProcessor, double, boolean, boolean, boolean, boolean, boolean) }
-     * @param input will be overriden
+     * @param input will be modified
      * @param radius
      * @param doSlidingParaboloid
      * @param lightBackground

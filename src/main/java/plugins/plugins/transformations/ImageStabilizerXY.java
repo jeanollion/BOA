@@ -51,7 +51,7 @@ public class ImageStabilizerXY implements Transformation {
     ChoiceParameter transformationType = new ChoiceParameter("Transformation", new String[]{"Translation"}, "Translation", false); //, "Affine"
     ChoiceParameter pyramidLevel = new ChoiceParameter("Pyramid Level", new String[]{"0", "1", "2", "3", "4"}, "1", false);
     BoundedNumberParameter alpha = new BoundedNumberParameter("Template Update Coefficient", 2, 1, 0, 1);
-    BoundedNumberParameter maxIter = new BoundedNumberParameter("Maximum Iterations", 0, 600, 1, null);
+    BoundedNumberParameter maxIter = new BoundedNumberParameter("Maximum Iterations", 0, 1000, 1, null);
     BoundedNumberParameter segmentLength = new BoundedNumberParameter("Segment length", 0, 20, 2, null);
     NumberParameter tol = new BoundedNumberParameter("Error Tolerance", 10, 5e-8, 0, null);
     Parameter[] parameters = new Parameter[]{maxIter, tol, pyramidLevel, segmentLength}; //alpha
@@ -112,7 +112,7 @@ public class ImageStabilizerXY implements Transformation {
             segments[i][0] = i==0 ? 0 : segments[i-1][1]+1;
             segments[i][1] = i==segments.length-1 ? inputImages.getTimePointNumber()-1 : segments[i][0]+segmentLength-1;
             segments[i][2] = i==0 ? Math.min(Math.max(0, tRef), segments[i][1]) : segments[i-1][1]; 
-            logger.debug("segment: {}, {}", i, segments[i]);
+            //logger.debug("segment: {}, {}", i, segments[i]);
         }
         // process each segment
         int nCPUs = ThreadRunner.getMaxCPUs();
@@ -145,7 +145,7 @@ public class ImageStabilizerXY implements Transformation {
                 translationTXYArray[t][0]+=ref[0];
                 translationTXYArray[t][1]+=ref[1];
             }
-            logger.debug("ref: {}, tp: {}, trans: {}", i,segments[i][2], ref);
+            //logger.debug("ref: {}, tp: {}, trans: {}", i,segments[i][2], ref);
         }
     }
     
@@ -170,7 +170,7 @@ public class ImageStabilizerXY implements Transformation {
                             double[] outParams = new double[2];
                             if (t==tRef) translationTXYArray[t] = new Double[]{0d, 0d};
                             else translationTXYArray[t] = performCorrection(channelIdx, inputImages, t, pyramids[trIdx], outParams);
-                            logger.debug("t: {}, tRef: {}, dX: {}, dY: {}, rmse: {}, iterations: {}", t, tRef, translationTXYArray[t][0], translationTXYArray[t][1], outParams[0], outParams[1]);
+                            //logger.debug("t: {}, tRef: {}, dX: {}, dY: {}, rmse: {}, iterations: {}", t, tRef, translationTXYArray[t][0], translationTXYArray[t][1], outParams[0], outParams[1]);
                         }
                     }
                 }
