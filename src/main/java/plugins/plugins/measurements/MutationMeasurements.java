@@ -52,7 +52,7 @@ public class MutationMeasurements implements Measurement {
     }
     
     public int getCallStructure() {
-        return mutation.getParentStructureIdx();
+        return mutation.getSelectedStructureIdx();
     }
 
     public boolean callOnlyOnTrackHeads() {
@@ -74,10 +74,12 @@ public class MutationMeasurements implements Measurement {
         
         Object3D mutObject = object.getObject();
         Image mutImage = object.getRawImage(mutation.getSelectedIndex());
-        double[] center = mutObject.getCenter(mutImage, true);
         BoundingBox parentOffset = object.getParent().getBounds();
-        object.getMeasurements().setValue("MutationCenterX", center[0]-parentOffset.getxMin());
-        object.getMeasurements().setValue("MutationCenterY", center[1]-parentOffset.getyMin());
+        double[] center = mutObject.getCenter(mutImage, true);
+        center[0]-=parentOffset.getxMin()*object.getScaleXY();
+        center[1]-=parentOffset.getyMin()*object.getScaleXY();
+        object.getMeasurements().setValue("MutationCenterX", center[0]);
+        object.getMeasurements().setValue("MutationCenterY", center[1]);
         object.getMeasurements().setValue("MeanYFPInMutation", BasicMeasurements.getMeanValue(mutObject, mutImage, true));
         object.getMeasurements().setValue("MutationArea", GeometricalMeasurements.getVolume(mutObject));
         

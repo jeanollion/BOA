@@ -116,12 +116,12 @@ public class ImageShort extends ImageInteger {
 
     @Override
     public float getPixelWithOffset(int x, int y, int z) {
-        return pixels[z-offsetZ][x-offsetXY + y * sizeX];
+        return pixels[z-offsetZ][x-offsetXY + y * sizeX] & 0xffff;
     }
 
     @Override
     public float getPixelWithOffset(int xy, int z) {
-        return pixels[z-offsetZ][xy - offsetXY ];
+        return pixels[z-offsetZ][xy - offsetXY ] & 0xffff;
     }
 
     @Override

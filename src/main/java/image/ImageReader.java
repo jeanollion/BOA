@@ -184,7 +184,7 @@ public class ImageReader {
                     bounds.zMax=res.sizeZ-1;
                     res=res.crop(bounds);
                 }
-                if (coords.getBounds()!=null) res.resetOffset().addOffset(coords.getBounds().getxMin(), coords.getBounds().getyMin(), coords.getBounds().getzMin());
+                if (coords.getBounds()!=null) res.resetOffset().addOffset(coords.getBounds());
                 if (meta != null) {
                     Length lxy = meta.getPixelsPhysicalSizeX(0);
                     Length lz = meta.getPixelsPhysicalSizeZ(0);

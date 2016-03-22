@@ -106,7 +106,7 @@ public class StructureObjectUtils {
     public static ArrayList<StructureObject> getIncludedObjects(ArrayList<StructureObject> candidates, StructureObject container) {
         ArrayList<StructureObject> res = new ArrayList<StructureObject>();
         BoundingBox containerBox = container.getBounds();
-        for (StructureObject c : candidates) if (c.getBounds().isIncluded(containerBox)) res.add(c);
+        for (StructureObject c : candidates) if (c.getBounds().hasIntersection(containerBox)) res.add(c); // strict inclusion?
         return res;
     }
     

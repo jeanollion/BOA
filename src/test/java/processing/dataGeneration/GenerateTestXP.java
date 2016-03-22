@@ -63,6 +63,11 @@ import processing.ImageTransformation;
  */
 public class GenerateTestXP {
     public static void main(String[] args) {
+        String dbName = "dummyXP";
+        String inputDir = "!!not a directory";
+        String outputDir = "!!not a directory";
+        boolean flip = true;
+        boolean fluo = true;
         
         //////// FLUO
         // Ordi LJP
@@ -97,12 +102,12 @@ public class GenerateTestXP {
         */
         
         
-        String dbName = "fluo160212";
+        /*String dbName = "fluo160212";
         String inputDir = "/data/Images/Fluo/film160212/ImagesSubset0-120/";
         String outputDir = "/data/Images/Fluo/film160212/Output";
         boolean flip = true;
         boolean fluo = true;
-        
+        */
         
         //////////// Trans
         /*String dbName = "testBF";

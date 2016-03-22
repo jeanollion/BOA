@@ -35,7 +35,7 @@ public class HashMapGetCreate<K, V> extends HashMap<K, V> {
         super(initialCapacity);
         this.factory=factory;
     }
-    public V getAndCreate(K key) {
+    public V getAndCreateIfNecessary(K key) {
         V v = super.get(key);
         if (v==null) {
             v = factory.create();

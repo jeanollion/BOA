@@ -33,10 +33,10 @@ import processing.neighborhood.Neighborhood;
  */
 public class Object3D {
     public final static Logger logger = LoggerFactory.getLogger(Object3D.class);
-    protected ImageInteger mask; //lazy -> use getter // Bounds rapport au root
+    protected ImageInteger mask; //lazy -> use getter // bounds par rapport au root si absoluteLandMark==true, au parent sinon
     protected BoundingBox bounds;
     protected int label;
-    protected ArrayList<Voxel> voxels; //lazy -> use getter // coordonnées des voxel -> par rapport au root
+    protected ArrayList<Voxel> voxels; //lazy -> use getter // coordonnées des voxel = coord dans l'image mask + offset du masque.  
     protected float scaleXY=1, scaleZ=1;
     protected boolean absoluteLandmark=false; // flase = coordinates relative to the direct parent
     /**

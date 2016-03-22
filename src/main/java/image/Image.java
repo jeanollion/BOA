@@ -154,7 +154,7 @@ public abstract class Image implements ImageProperties {
     }
     
     public <T extends Image> T resetOffset() {
-        offsetX=offsetY=offsetZ=0;
+        offsetX=offsetY=offsetZ=offsetXY=0;
         return (T)this;
     }
     
@@ -175,9 +175,9 @@ public abstract class Image implements ImageProperties {
     }
     
     public <T extends Image> T addOffset(BoundingBox bounds) {
-        this.offsetX=bounds.xMin;
-        this.offsetY=bounds.yMin;
-        this.offsetZ=bounds.zMin;
+        this.offsetX+=bounds.xMin;
+        this.offsetY+=bounds.yMin;
+        this.offsetZ+=bounds.zMin;
         this.offsetXY = offsetX + sizeX * offsetY;
         return (T)this;
     }
@@ -236,7 +236,7 @@ public abstract class Image implements ImageProperties {
         //bounds.trimToImage(this);
         Image res = newImage(name, bounds.getImageProperties("", scaleXY, scaleZ));
         res.setCalibration(this);
-        res.resetOffset().addOffset(bounds);
+        res.addOffset(this);
         int x_min = bounds.getxMin();
         int y_min = bounds.getyMin();
         int z_min = bounds.getzMin();

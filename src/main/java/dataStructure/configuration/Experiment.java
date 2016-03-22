@@ -43,8 +43,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import measurement.MeasurementKey;
 import measurement.MeasurementKeyObject;
+import org.apache.commons.lang.ArrayUtils;
 import org.bson.types.ObjectId;
 import plugins.Measurement;
+import utils.HashMapGetCreate;
 import utils.Utils;
 import static utils.Utils.toArray;
 
@@ -381,16 +383,11 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     public Map<Integer, String[]> getAllMeasurementNamesByStructureIdx(Class<? extends MeasurementKey> classFilter, int... structures) {
-        Map<Integer, ArrayList<String>> map = new HashMap<Integer, ArrayList<String>>(this.getStructureCount());
+        HashMapGetCreate<Integer, ArrayList<String>> map = new HashMapGetCreate<Integer, ArrayList<String>>(this.getStructureCount(), new HashMapGetCreate.ArrayListFactory<String>());
         List<MeasurementKey> allKeys = getAllMeasurementKeys();
         for (MeasurementKey k : allKeys) {
             if (classFilter==null || classFilter.equals(k.getClass())) {
-                ArrayList<String> l = map.get(k.getStoreStructureIdx());
-                if (l==null) {
-                    l=new ArrayList<String>();
-                    map.put(k.getStoreStructureIdx(), l);
-                }
-                l.add(k.getKey());
+                if (structures.length==0 || ArrayUtils.contains(structures, k.getStoreStructureIdx())) map.getAndCreateIfNecessary(k.getStoreStructureIdx()).add(k.getKey());
             }
         }
         Map<Integer, String[]> mapRes = new HashMap<Integer, String[]>(map.size());
@@ -401,17 +398,12 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     public Map<Integer, List<Measurement>> getMeasurementsByCallStructureIdx(int... structureIdx) {
         if (this.measurements.getChildCount()==0) return Collections.emptyMap();
         else {
-            Map<Integer, List<Measurement>> res = new HashMap<Integer, List<Measurement>>(structureIdx.length>0?structureIdx.length : this.getStructureCount());
+            HashMapGetCreate<Integer, List<Measurement>> res = new HashMapGetCreate<Integer, List<Measurement>>(structureIdx.length>0?structureIdx.length : this.getStructureCount(), new HashMapGetCreate.ListFactory<Measurement>());
             for (PluginParameter<Measurement> p : measurements.getActivatedChildren()) {
                 Measurement m = p.instanciatePlugin();
                 if (m!=null) {
                     if (structureIdx.length==0 || contains(structureIdx, m.getCallStructure())) {
-                        List<Measurement> l = res.get(m.getCallStructure());
-                        if (l==null) {
-                            l = new ArrayList<Measurement>();
-                            res.put(m.getCallStructure(), l);
-                        }
-                        l.add(m);
+                        res.getAndCreateIfNecessary(m.getCallStructure()).add(m);
                     }
                 }
             }

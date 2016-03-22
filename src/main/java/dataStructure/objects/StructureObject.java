@@ -172,8 +172,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 if (path.length == 0) { // structure is not (indirect) child of current structure -> get included objects from first common parent
                     int commonParentIdx = getExperiment().getFirstCommonParentStructureIdx(this.structureIdx, structureIdx);
                     StructureObject commonParent = this.getParent(commonParentIdx);
-                    //logger.debug("structure: {}, child: {}, common parent: {}, object: {}, path: {}", this.structureIdx, structureIdx, commonParentIdx, commonParent, getExperiment().getPathToStructure(commonParentIdx, structureIdx));
                     ArrayList<StructureObject> candidates = commonParent.getChildren(structureIdx);
+                    //if (this.timePoint==0) logger.debug("structure: {}, child: {}, commonParentIdx: {}, object: {}, path: {}, candidates: {}", this.structureIdx, structureIdx, commonParentIdx, commonParent, getExperiment().getPathToStructure(commonParentIdx, structureIdx), candidates.size());
                     return StructureObjectUtils.getIncludedObjects(candidates, this);
                 } else return StructureObjectUtils.getAllObjects(this, path);
             }
@@ -581,6 +581,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             synchronized(this) {
                 if (object==null) {
                     object=objectContainer.getObject();
+                    object.setIsAbsoluteLandmark(true);
                 }
             }
         }
@@ -618,7 +619,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                         if (parentWithImage!=null) {
                             BoundingBox bb=getRelativeBoundingBox(parentWithImage);
                             extendBoundsInZIfNecessary(channelIdx, bb);
-                            rawImagesC.set(parentWithImage.getRawImage(structureIdx).crop(bb), channelIdx);
+                            rawImagesC.set(parentWithImage.getRawImage(structureIdx).crop(bb), channelIdx);    
                         } else { // opens only the bb of the object from the root objects
                             StructureObject root = getRoot();
                             BoundingBox bb=getRelativeBoundingBox(root);
@@ -647,8 +648,16 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public Image openRawImage(int structureIdx, BoundingBox bounds) {
         int channelIdx = getExperiment().getChannelImageIdx(structureIdx);
-        if (rawImagesC.get(channelIdx)==null) return getExperiment().getImageDAO().openPreProcessedImage(channelIdx, timePoint, getFieldName(), bounds); //opens only within bounds
-        else return rawImagesC.get(channelIdx).crop(bounds);
+        Image res;
+        if (rawImagesC.get(channelIdx)==null) {//opens only within bounds
+            res =  getExperiment().getImageDAO().openPreProcessedImage(channelIdx, timePoint, getFieldName(), bounds);
+            //if (this.timePoint==0) logger.debug("open from: {} within bounds: {}, resultBounds: {}", this, bounds, res.getBoundingBox());
+        } 
+        else {
+            res = rawImagesC.get(channelIdx).crop(bounds);
+            //if (this.timePoint==0) logger.debug("crom from: {} within bounds: {}, input bounds: {}, resultBounds: {}", this, bounds, rawImagesC.get(channelIdx).getBoundingBox(), res.getBoundingBox());
+        }
+        return res;
     }
     
     public StructureObject getFirstParentWithOpenedRawImage(int structureIdx) {

@@ -51,7 +51,7 @@ public class BacteriaFluoMeasurements implements Measurement {
     }
     
     public int getCallStructure() {
-        return bacteria.getParentStructureIdx();
+        return bacteria.getSelectedStructureIdx();
     }
 
     public boolean callOnlyOnTrackHeads() {
@@ -61,13 +61,13 @@ public class BacteriaFluoMeasurements implements Measurement {
     public List<MeasurementKey> getMeasurementKeys() {
         int structureIdx = bacteria.getSelectedStructureIdx();
         ArrayList<MeasurementKey> res = new ArrayList<MeasurementKey>();
-        res.add(new MeasurementKeyObject("CenterX", structureIdx));
-        res.add(new MeasurementKeyObject("CenterY", structureIdx));
+        res.add(new MeasurementKeyObject("BacteriaCenterX", structureIdx));
+        res.add(new MeasurementKeyObject("BacteriaCenterY", structureIdx));
         res.add(new MeasurementKeyObject("MeanRFPInBacteria", structureIdx));
         res.add(new MeasurementKeyObject("MeanYFPInBacteria", structureIdx));
-        res.add(new MeasurementKeyObject("Length", structureIdx));
-        res.add(new MeasurementKeyObject("Area", structureIdx));
-        res.add(new MeasurementKeyObject("MutationCount", structureIdx));
+        res.add(new MeasurementKeyObject("BacteriaLength", structureIdx));
+        res.add(new MeasurementKeyObject("BacteriaArea", structureIdx));
+        res.add(new MeasurementKeyObject("MutationCountInBacteria", structureIdx));
         
         return res;
     }
@@ -76,10 +76,13 @@ public class BacteriaFluoMeasurements implements Measurement {
         Object3D bactObject = object.getObject();
         Image bactImage = object.getRawImage(bacteria.getSelectedIndex());
         Image mutImage = object.getRawImage(mutation.getSelectedIndex());
-        double[] center = bactObject.getCenter(bactImage, true);
         BoundingBox parentOffset = object.getParent().getBounds();
-        object.getMeasurements().setValue("BacteriaCenterX", center[0]-parentOffset.getxMin());
-        object.getMeasurements().setValue("BacteriaCenterY", center[1]-parentOffset.getyMin());
+        double[] center=bactObject.getCenter(bactImage, true);
+        center[0]-=parentOffset.getxMin()*object.getScaleXY();
+        center[1]-=parentOffset.getyMin()*object.getScaleXY();
+        //if (object.getTimePoint()==0) logger.debug("object: {} center: {}, parentOffset: {}, objectoffset: {} bactImageOffset: {}, mutImageOffset: {}", object, center, parentOffset, object.getBounds(), bactImage.getBoundingBox(), mutImage.getBoundingBox());
+        object.getMeasurements().setValue("BacteriaCenterX", center[0]);
+        object.getMeasurements().setValue("BacteriaCenterY", center[1]);
         object.getMeasurements().setValue("MeanRFPInBacteria", BasicMeasurements.getMeanValue(bactObject, bactImage, true));
         object.getMeasurements().setValue("MeanYFPInBacteria", BasicMeasurements.getMeanValue(bactObject, mutImage, true));
         object.getMeasurements().setValue("BacteriaLength", GeometricalMeasurements.getFeretMax(bactObject));
@@ -88,7 +91,7 @@ public class BacteriaFluoMeasurements implements Measurement {
         object.getMeasurements().setValue("MutationCountInBacteria", includedMutations);
         
         ArrayList<StructureObject> mutList = object.getChildren(mutation.getSelectedIndex()); // return included mutations
-        if (includedMutations!=mutList.size()) logger.warn("Mutation count in: {}: {} vs: {}", object, includedMutations, mutList.size());
+        if (includedMutations!=mutList.size()) logger.warn("Error Mutation count in: {}: {} vs: {}", object, includedMutations, mutList.size());
         
         modifiedObjects.add(object);
     }

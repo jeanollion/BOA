@@ -107,6 +107,7 @@ public class DataExtractor {
                     String line = getBaseLine(m);
                     // add measurements from parents of the the current structure
                     for (Entry<Integer, List<Measurements>> e : parentMeasurements.entrySet()) {
+                        if (parentOrder[e.getKey()] == 0) continue; // structure is not in parent tree
                         Measurements key = m.getParentMeasurementKey(parentOrder[e.getKey()]);
                         int pIdx = e.getValue().indexOf(key);
                         if (pIdx==-1) for (String pMeasName : allMeasurementsSort.get(e.getKey())) line+=separator+NaN; // parent not found, adds only NaN
