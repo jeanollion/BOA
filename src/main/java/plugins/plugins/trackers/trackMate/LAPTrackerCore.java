@@ -40,9 +40,11 @@ import static fiji.plugin.trackmate.tracking.TrackerKeys.KEY_SPLITTING_MAX_DISTA
 import fiji.plugin.trackmate.tracking.sparselap.SparseLAPFrameToFrameTracker;
 import fiji.plugin.trackmate.tracking.sparselap.SparseLAPSegmentTracker;
 import ij.gui.Overlay;
+import image.BoundingBox;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -65,7 +67,7 @@ public class LAPTrackerCore {
     long processingTime;
     
     // FTF settings
-    double linkingMaxDistance = 0.75;
+    double linkingMaxDistance = Double.MIN_VALUE;
     double alternativeLinkingCostFactor = 1.05;
     //double linkingFeaturesPenalities;
     
@@ -105,7 +107,36 @@ public class LAPTrackerCore {
 		/*
 		 * 1. Frame to frame linking.
 		 */
-
+                Iterator<SpotWithinCompartment> it = spotPopulation.getSpotSet().iterator();
+                SpotWithinCompartment s1;
+                SpotWithinCompartment s2;
+                boolean log = true;
+                while (it.hasNext()) {
+                    s1 = it.next();
+                    if (log) {
+                        log=false;
+                        double[] center = s1.object.getObject().getCenter(false);
+                        BoundingBox po = s1.object.getParent().getBounds();
+                        center[0] -= po.getxMin();
+                        center[1] -=po.getyMin();
+                        center[0] *=s1.object.getScaleXY();
+                        center[1] *=s1.object.getScaleXY();
+                        logger.debug("spot: {}, center: {}, is absolute: {}", s1.object, center, s1.object.getObject().isAbsoluteLandMark());
+                    }
+                    Iterator<SpotWithinCompartment> it2 = spotPopulation.getSpotSet().iterator();
+                    while (it2.hasNext()) {
+                        s2 = it2.next();
+                        if (s2.object.getTimePoint()<=s1.object.getTimePoint()) continue;
+                        double d = s2.squareDistanceTo(s2);
+                        if (!Double.isInfinite(d) && d>0.0001) {
+                            logger.debug("distance: {} to {} = {}", s1.object, s2.object, d);
+                            break;
+                        }
+                    }
+                }
+                
+                
+                
                 
                 
 		// Prepare settings object

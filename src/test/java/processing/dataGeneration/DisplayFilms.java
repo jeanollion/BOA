@@ -43,13 +43,13 @@ import utils.ArrayUtil;
 public class DisplayFilms {
     public static void main(String[] args) {
         // WT
-        String dbName = "fluo160218";
+        /*String dbName = "fluo160218";
         int[] fields = ArrayUtil.generateIntegerArray(8, 9);
         int tStart = 14;
         int tEnd = 70;
         BoundingBox cropBB = new BoundingBox(18, 936, 26, 396, 0, 0);
         float saturateChannel1 = 0.4f;
-        
+        */
         
         // mutH
         /*String dbName = "fluo151127";
@@ -59,6 +59,14 @@ public class DisplayFilms {
         BoundingBox cropBB = new BoundingBox(29, 673, 33, 388, 0, 0);
         float saturateChannel1 = 0.6f;
         */
+        
+        String dbName = "fluo160218";
+        int[] fields = ArrayUtil.generateIntegerArray(8, 9);
+        int tStart = 14;
+        int tEnd = 70;
+        BoundingBox cropBB = new BoundingBox(18, 936, 26, 396, 0, 0);
+        float saturateChannel1 = 0.4f;
+        
         
         ImageDisplayer disp = new IJImageDisplayer();
         //Image[][] raw = getRawImagesAsFilmTF(dbName, 100, 200, 0, fields);

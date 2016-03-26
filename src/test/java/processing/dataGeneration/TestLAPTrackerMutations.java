@@ -51,9 +51,10 @@ public class TestLAPTrackerMutations {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         String dbName = "fluo151127";
+        int fieldIdx = 28;
         TestLAPTrackerMutations t = new TestLAPTrackerMutations();
         t.init(dbName);
-        t.testLAPTracking(0, 0, 0, 200);
+        t.testLAPTracking(fieldIdx, 0, 0, 49);
     }
     
     public void testLAPTracking(int fieldIdx, int mcIdx, int tStart, int tEnd) {

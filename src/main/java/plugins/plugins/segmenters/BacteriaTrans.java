@@ -79,9 +79,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge {
     Parameter[] parameters = new Parameter[]{splitThreshold, minSize, contactLimit, smoothScale, dogScale, hessianScale, hessianThresholdFactor, thresholdForEmptyChannel, openRadius};
     
     //segmentation-related attributes (kept for split and merge methods)
-    Image hessian;
-    Image rawIntensityMap;
-    Image intensityMap;
+    Image distanceMap;
     ImageByte splitMask;
     double splitThresholdValue; 
     
@@ -176,24 +174,25 @@ public class BacteriaTrans implements SegmenterSplitAndMerge {
             WatershedTransform instance;
             public void setUp(WatershedTransform instance) {this.instance=instance;}
             public boolean checkFusionCriteria(WatershedTransform.Spot s1, WatershedTransform.Spot s2, Voxel currentVoxel) {
-                double max = -Double.MAX_VALUE;
-                for (Voxel v : s1.voxels) if (v.value>max) max = v.value;
-                for (Voxel v : s2.voxels) if (v.value>max) max = v.value;
-                return currentVoxel.value/max>relativeThicknessThreshold;
+                double max1 = -Double.MAX_VALUE;
+                double max2 = -Double.MAX_VALUE;
+                for (Voxel v : s1.voxels) if (v.value>max1) max1 = v.value;
+                for (Voxel v : s2.voxels) if (v.value>max2) max2 = v.value;
+                double norm = Math.min(max1, max2);
+                return currentVoxel.value/norm>relativeThicknessThreshold;
             }
         };
-        ObjectPopulation split = WatershedTransform.watershed(edm, pop1.getLabelImage(), true, null, new WatershedTransform.MultipleFusionCriteria(new WatershedTransform.SizeFusionCriterion(minSize), relativeThickness)); //new WatershedTransform.ThresholdFusionOnWatershedMap(thicknessThreshold)
+        ObjectPopulation res = WatershedTransform.watershed(edm, pop1.getLabelImage(), true, null, new WatershedTransform.MultipleFusionCriteria(new WatershedTransform.SizeFusionCriterion(minSize), relativeThickness)); //new WatershedTransform.ThresholdFusionOnWatershedMap(thicknessThreshold)
         
         
         
         if (debug) {
             disp.showImage(edm);
-            disp.showImage(split.getLabelImage().setName("watershed EDM"));
+            disp.showImage(res.getLabelImage().setName("watershed EDM"));
             //FitEllipse.fitEllipse2D(pop1.getObjects().get(0));
             //FitEllipse.fitEllipse2D(pop1.getObjects().get(1));
         }
-        
-        if (true) return null;
+        // OTHER IDEAS TO TAKE INTO ACCOUNT INTENSITY WITHIN BACTERIA
         /* normalize image
         1) dilate image & compute mean & sigma outside
         2) compute mean & sigma inside
@@ -204,61 +203,25 @@ public class BacteriaTrans implements SegmenterSplitAndMerge {
         add thickness information:  * border size / mean thickness of the 2 objects -> transformation of the Hessian map
         */
         
-        //if (debug) logger.debug("threhsold: {}", threshold);
-        //pop1.filter(new ObjectPopulation.MeanIntensity(threshold, true, smoothed));
-        
-        Image hessImage = input.duplicate("invert");
-        //hessImage.invert();
-        boolean norm = false;
-        //Image hessian = ImageFeatures.getHessian(hessImage, hessianScale, false)[0].setName("hessian");
-        Image hessian = ImageFeatures.getHessian(hessImage, hessianScale, false)[1].setName("hessian");
-        ImageOperations.affineOperation(hessian, hessian, -1, 0);
-        if (!norm) {
-            Image normMap = ImageFeatures.gaussianSmooth(input, 3, 3, false);
-            ImageOperations.divide(hessian, normMap, hessian);
-        }
-        //ImageOperations.affineOperation(hessWS, hessWS, -1, 0);
-        if (debug) {
-            disp.showImage(dog);
-            //disp.showImage(log);
-            disp.showImage(hessian);
-        }
-        
-        ObjectPopulation res=null;
-        if (debug) pop1.mergeAll();
-        ImageByte watershedMask = new ImageByte("", input);
-        for (Object3D maskObject : pop1.getObjects()) {
-            maskObject.draw(watershedMask, 1);
-            double[] meanAndSigma = getMeanAndSigma(hessian, watershedMask, 0, false); // mean & sigma < 0
-            double thldHess= hessianThresholdFactor * meanAndSigma[1];
-            logger.debug("hessian mean: {}, sigma: {}, hessian thld: {}", meanAndSigma[0],meanAndSigma[1], thldHess);
-            ImageInteger seedMap = ImageOperations.threshold(hessian, thldHess, false, false, false, null);
-            seedMap = ImageOperations.and(watershedMask, seedMap, seedMap).setName("seeds");
-            disp.showImage(seedMap);
-            ObjectPopulation popWS = WatershedTransform.watershed(hessian, watershedMask, seedMap, false, null, new WatershedTransform.SizeFusionCriterion(minSize));
-            
-            popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
-            if (debug) disp.showImage(popWS.getLabelImage().duplicate("before merging"));
-            //popWS.localThreshold(dogNoTrim, 0, localThresholdMargin, 0);
-            //if (debug) disp.showImage(popWS.getLabelImage().duplicate("after local threhsold / before merging"));
-            RegionCollection.verbose=debug;
-            ObjectPopulation localPop= RegionCollection.mergeHessianBacteria(popWS, hessImage, hessian, fusionThreshold, norm);
-            if (res==null) res= localPop;
-            else res.addObjects(localPop.getObjects());
-            //if (debug) disp.showImage(localPop.getLabelImage().setName("after merging"));
-            maskObject.draw(watershedMask, 0);
-        }
-        if (res!=null) {
-            if (contactLimit>0) res.filter(new ObjectPopulation.ContactBorder(contactLimit, mask, ObjectPopulation.ContactBorder.Border.YDown));
-            res.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
-        }
         if (instance!=null) {
-            instance.rawIntensityMap=input;
-            instance.intensityMap=dog;
-            instance.hessian=hessian;
-            instance.splitThresholdValue=fusionThreshold;
+            instance.distanceMap=edm;
+            instance.splitThresholdValue=relativeThicknessThreshold;
         }
         return res;
+    }
+    
+    public static double getNomalizationValue(Image edm, List<Voxel> v1, List<Voxel> v2) {
+        double max1 = -Double.MAX_VALUE;
+        double max2 = -Double.MAX_VALUE;
+        for (Voxel v : v1) {
+            double val = edm.getPixel(v.x, v.y, v.z);
+            if (val>max1) max1 = v.value;
+        }
+        for (Voxel v : v2) {
+            double val = edm.getPixel(v.x, v.y, v.z);
+            if (val>max2) max2 = v.value;
+        }
+        return Math.min(max1, max2);
     }
     
     public static double[] getMeanAndSigma(Image image, ImageMask mask, double thld, boolean overThreshold) {
@@ -296,10 +259,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge {
     }
 
     @Override public double split(Object3D o, List<Object3D> result) {
-        if (intensityMap==null || hessian==null || rawIntensityMap==null) throw new Error("Segment method have to be called before split method in order to initialize images");
-        if (splitMask==null) splitMask = new ImageByte("split mask", intensityMap);
+        if (distanceMap==null) throw new Error("Segment method have to be called before split method in order to initialize images");
+        if (splitMask==null) splitMask = new ImageByte("split mask", distanceMap);
         o.draw(splitMask, 1);
-        ObjectPopulation pop = WatershedObjectSplitter.split(intensityMap, splitMask, true);
+        ObjectPopulation pop = WatershedObjectSplitter.split(distanceMap, splitMask, true);
         o.draw(splitMask, 0);
         if (pop==null || pop.getObjects().isEmpty() || pop.getObjects().size()==1) return Double.NaN;
         ArrayList<Object3D> remove = new ArrayList<Object3D>(pop.getObjects().size());
@@ -309,19 +272,21 @@ public class BacteriaTrans implements SegmenterSplitAndMerge {
         else {
             if (!remove.isEmpty()) {
                 logger.warn("BacteriaFluo split: small objects removed need to merge them");
+                //return Double.NaN;
             }
             
             Object3D o1 = pop.getObjects().get(0);
             Object3D o2 = pop.getObjects().get(1);
             result.add(o1);
             result.add(o2);
-            return splitThresholdValue-getInterfaceValue(getInterface(o1, o2));
+            
+            return splitThresholdValue-getInterfaceValue(getInterface(o1, o2))/getNomalizationValue(distanceMap, o1.getVoxels(), o2.getVoxels());
         }
     }
 
     @Override public double computeMergeCost(List<Object3D> objects) {
-        if (intensityMap==null || hessian==null || rawIntensityMap==null) throw new Error("Segment method have to be called before merge method in order to initialize images");
-        if (splitMask==null) splitMask = new ImageByte("split mask", intensityMap);
+        if (distanceMap==null) throw new Error("Segment method have to be called before merge method in order to initialize images");
+        if (splitMask==null) splitMask = new ImageByte("split mask", distanceMap);
         if (objects.isEmpty() || objects.size()==1) return 0;
         Iterator<Object3D> it = objects.iterator();
         Object3D ref  = objects.get(0);
@@ -332,7 +297,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge {
                 ArrayList<Voxel> inter = getInterface(ref, n);
                 if (inter.isEmpty()) it.remove();
                 else {
-                    double c = getInterfaceValue(inter);
+                    double c = getInterfaceValue(inter) / getNomalizationValue(distanceMap, ref.getVoxels(), n.getVoxels());
                     if (c>maxCost) maxCost = c;
                 }
             }
@@ -341,7 +306,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge {
             for (int j = i+1; j<objects.size(); ++j) {
                 ArrayList<Voxel> inter = getInterface(objects.get(i), objects.get(j));
                 if (!inter.isEmpty()) {
-                    double c = getInterfaceValue(inter);
+                    double c = getInterfaceValue(inter) / getNomalizationValue(distanceMap, objects.get(i).getVoxels(), objects.get(j).getVoxels());
                     if (c>maxCost) maxCost = c;
                 }
             }
@@ -350,9 +315,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge {
         return maxCost-splitThresholdValue;
     }
     private double getInterfaceValue(ArrayList<Voxel> inter) {
-        double meanHess = BasicMeasurements.getMeanValue(inter, hessian, false);
-        double meanDOG = BasicMeasurements.getMeanValue(inter, rawIntensityMap, false);
-        return meanHess / meanDOG;
+        return BasicMeasurements.getMeanValue(inter, distanceMap, false);
     }
     
     private ArrayList<Voxel> getInterface(Object3D o1, Object3D o2) {

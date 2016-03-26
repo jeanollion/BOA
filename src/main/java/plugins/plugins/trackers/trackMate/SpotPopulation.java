@@ -52,8 +52,8 @@ public class SpotPopulation {
     public SpotCollection getSpotCollection() {
         return this.collection;
     }
-    public Set<Spot> getSpotSet() {
-        return new HashSet<Spot>(objectSpotMap.values());
+    public Set<SpotWithinCompartment> getSpotSet() {
+        return new HashSet<SpotWithinCompartment>(objectSpotMap.values());
     }
     public SpotWithinCompartment duplicateSpot(SpotWithinCompartment s) {
         SpotWithinCompartment dup = s.duplicate();
@@ -61,12 +61,12 @@ public class SpotPopulation {
         return dup;
     }
     public void addSpots(StructureObject container, int spotSturctureIdx, int compartmentStructureIdx) {
-        ObjectPopulation population = container.getObjectPopulation(spotSturctureIdx);
+        //ObjectPopulation population = container.getObjectPopulation(spotSturctureIdx);
         ArrayList<StructureObject> compartments = container.getChildren(compartmentStructureIdx);
         Image intensityMap = container.getRawImage(spotSturctureIdx);
-        logger.debug("adding: {} spots from timePoint: {}", population.getObjects().size(), container.getTimePoint());
+        //logger.debug("adding: {} spots from timePoint: {}", population.getObjects().size(), container.getTimePoint());
         HashMap<StructureObject, SpotCompartiment> compartimentMap = new HashMap<StructureObject, SpotCompartiment>();
-        for (StructureObject o : container.getChildObjects(spotSturctureIdx)) {
+        for (StructureObject o : container.getChildren(spotSturctureIdx)) {
             StructureObject parent = StructureObjectUtils.getInclusionParent(o.getObject(), compartments, null);
             SpotCompartiment compartiment = compartimentMap.get(parent);
             if (compartiment ==null) {

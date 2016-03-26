@@ -26,6 +26,9 @@ import ij.gui.Overlay;
 import ij.gui.TextRoi;
 import image.BoundingBox;
 import image.Image;
+import java.util.Locale;
+import static plugins.Plugin.logger;
+import utils.Utils;
 
 /**
  *
@@ -114,8 +117,7 @@ public class SpotWithinCompartment extends Spot {
             c1[1]+=off1.getyMin();
             TextRoi position  = new TextRoi(c1[0], c1[1], localization.toString());
             testOverlay.add(position);
-        }
-            
+        }   
     }
     
     public SpotWithinCompartment duplicate() {
@@ -173,28 +175,31 @@ public class SpotWithinCompartment extends Spot {
         Localization offsetType = this.localization.getOffsetType(s.localization);
         if (offsetType==null) return Double.POSITIVE_INFINITY;
         else if (Localization.UP.equals(offsetType)) {
-            if (displayPoles) displayOffsets(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp);
-            return getSquareDistance(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp);
+            double d=  getSquareDistance(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp);
+            if (displayPoles) displayOffsets(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp, d);
+            return d;
         } else if (Localization.LOW.equals(offsetType)) {
-            if (displayPoles) displayOffsets(this, this.compartiment.offsetDown, s, s.compartiment.offsetDown);
-            return getSquareDistance(this, this.compartiment.offsetDown, s, s.compartiment.offsetDown);
+            double d =  getSquareDistance(this, this.compartiment.offsetDown, s, s.compartiment.offsetDown);
+            if (displayPoles) displayOffsets(this, this.compartiment.offsetDown, s, s.compartiment.offsetDown, d);
+            return d;
         } else if (Localization.MIDDLE.equals(offsetType)) {
-            if (displayPoles) displayOffsets(this, this.compartiment.offsetDivisionMiddle, s, s.compartiment.offsetDivisionMiddle);
-            return getSquareDistance(this, this.compartiment.offsetDivisionMiddle, s, s.compartiment.offsetDivisionMiddle);
+           double d=  getSquareDistance(this, this.compartiment.offsetDivisionMiddle, s, s.compartiment.offsetDivisionMiddle);
+            if (displayPoles) displayOffsets(this, this.compartiment.offsetDivisionMiddle, s, s.compartiment.offsetDivisionMiddle, d);
+            return d;
         }  else if (Localization.UPPER_MIDDLE.equals(offsetType)) {
             double d1 = getSquareDistance(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp);
             double d2 = getSquareDistance(this, this.compartiment.offsetDivisionMiddle, s, s.compartiment.offsetDivisionMiddle);
             if (displayPoles) {
-                if (d1>d2) displayOffsets(this, this.compartiment.offsetDivisionMiddle, s, s.compartiment.offsetDivisionMiddle);
-                else displayOffsets(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp);
+                if (d1>d2) displayOffsets(this, this.compartiment.offsetDivisionMiddle, s, s.compartiment.offsetDivisionMiddle, d2);
+                else displayOffsets(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp, d1);
             }
             return Math.min(d1, d2);
         } else { // LOWER_MIDDLE
             double d1 = getSquareDistance(this, this.compartiment.offsetDown, s, s.compartiment.offsetDown);
             double d2 = getSquareDistance(this, this.compartiment.offsetDivisionMiddle, s, s.compartiment.offsetDivisionMiddle);
             if (displayPoles) {
-                if (d1>d2) displayOffsets(this, this.compartiment.offsetDivisionMiddle, s, s.compartiment.offsetDivisionMiddle);
-                else displayOffsets(this, this.compartiment.offsetDown, s, s.compartiment.offsetDown);
+                if (d1>d2) displayOffsets(this, this.compartiment.offsetDivisionMiddle, s, s.compartiment.offsetDivisionMiddle, d2);
+                else displayOffsets(this, this.compartiment.offsetDown, s, s.compartiment.offsetDown, d1);
             }
             return Math.min(d1, d2);
         }
@@ -206,21 +211,20 @@ public class SpotWithinCompartment extends Spot {
         if (offsetType.length==2) {
             double[] off1  = this.compartiment.getOffset(offsetType[0]);
             double[] off2  = sAfterDivision.compartiment.getOffset(offsetType[1]);
-            if (displayPoles) displayOffsets(this, off1, sAfterDivision, off2);
+            if (displayPoles) displayOffsets(this, off1, sAfterDivision, off2, getSquareDistance(this, off1, sAfterDivision, off2));
             return getSquareDistance(this, off1, sAfterDivision, off2);
         } else {
             double[] off1  = this.compartiment.getOffset(offsetType[0]);
             double[] off2  = sAfterDivision.compartiment.getOffset(offsetType[1]);
-            if (displayPoles) displayOffsets(this, off1, sAfterDivision, off2);
             double d1 = getSquareDistance(this, off1, sAfterDivision, off2);
             double[] off12  = this.compartiment.getOffset(offsetType[2]);
             double[] off22  = sAfterDivision.compartiment.getOffset(offsetType[3]);
             double d2 = getSquareDistance(this, off12, sAfterDivision, off22);
             if (d1>d2) {
-                if (displayPoles) displayOffsets(this, off12, sAfterDivision, off22);
+                if (displayPoles) displayOffsets(this, off12, sAfterDivision, off22, d2);
                 return d2;
             } else {
-                if (displayPoles) displayOffsets(this, off1, sAfterDivision, off2);
+                if (displayPoles) displayOffsets(this, off1, sAfterDivision, off2, d1);
                 return d1;
             }
         }
@@ -242,16 +246,17 @@ public class SpotWithinCompartment extends Spot {
         double z1 = s1.getFeature(POSITION_Z);
         double z2 = s2.getFeature(POSITION_Z);
         double d = Math.pow((x1-offset1[0] - x2+offset2[0]), 2) + Math.pow((y1-offset1[1] - y2+offset2[1]), 2) +  Math.pow((z1-offset1[2] - z2+offset2[2]), 2);
+        // correction to favorize a specific direction towards a pole
         //double dPole1 = Math.pow((x1-offset1[0]), 2) + Math.pow((y1-offset1[1]), 2) +  Math.pow((z1-offset1[2]), 2);
         //double dPole2 = Math.pow((x2-offset2[0]), 2) + Math.pow((y2-offset2[1]), 2) +  Math.pow((z2-offset2[2]), 2);
         //if (dPole2>dPole1) d+=poleDistanceFactor*(Math.pow(Math.sqrt(dPole2)-Math.sqrt(dPole1), 2));
-        double dPole1 = Math.abs(y1-offset1[1]);
+        /*double dPole1 = Math.abs(y1-offset1[1]);
         double dPole2 = Math.abs(y2-offset2[1]);
-        if (dPole2>dPole1) d+=poleDistanceFactor * (dPole2-dPole1);
+        if (dPole2>dPole1) d+=poleDistanceFactor * (dPole2-dPole1);*/
         return d;
     }
     
-    private static void displayOffsets(SpotWithinCompartment s1, double[] offset1, SpotWithinCompartment s2, double[] offset2 ) {
+    private static void displayOffsets(SpotWithinCompartment s1, double[] offset1, SpotWithinCompartment s2, double[] offset2, double distance ) {
         if (bacteria!=null && testOverlay!=null) {
             BoundingBox off1 = bacteria.getObjectOffset(s1.compartiment.object).duplicate().translate(s1.compartiment.object.getBounds().duplicate().reverseOffset());
             BoundingBox off2 = bacteria.getObjectOffset(s2.compartiment.object).duplicate().translate(s2.compartiment.object.getBounds().duplicate().reverseOffset());
@@ -275,6 +280,8 @@ public class SpotWithinCompartment extends Spot {
             testOverlay.add(l1);
             testOverlay.add(l2);
             testOverlay.add(l12);
+            TextRoi position  = new TextRoi((c1[0]+cOff1[0]+c2[0]+cOff2[0])/4d, (c1[1]+cOff1[1]+c2[1]+cOff2[1])/4d, Utils.formatDouble(2, distance*100));
+            testOverlay.add(position);
         }
     }
     

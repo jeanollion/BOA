@@ -100,6 +100,12 @@ public class Utils {
         return String.format(Locale.US, "%0" + paddingSize + "d", number);
     }
     
+    public static String formatDouble(int paddingSize, double number) {
+        int dec = (int)Math.pow(10, paddingSize);
+        return String.valueOf((double)((int)number*dec)/(double)dec);
+        // TODO utiliser les fonction format de java..
+    }
+    
     public static int[] toArray(List<Integer> arrayList, boolean reverseOrder) {
         int[] res=new int[arrayList.size()];
         if (reverseOrder) {
