@@ -38,73 +38,21 @@ public class SpotWithinCompartment extends Spot {
     public static ImageObjectInterface bacteria;
     public static Overlay testOverlay;
     public static boolean displayPoles=false;
-    public static double poleDistanceFactor = 0;
-    public static enum Localization {
-        UP, UPPER_MIDDLE, MIDDLE, LOWER_MIDDLE, LOW;
-        public Localization getOffsetType(Localization other) {
-            if (UP.equals(this)) {
-                if (UP.equals(other) || UPPER_MIDDLE.equals(other) || MIDDLE.equals(other)) return UP;
-                else return null;
-            } else if (MIDDLE.equals(this)) {
-                if (MIDDLE.equals(other) || UPPER_MIDDLE.equals(other) || LOWER_MIDDLE.equals(other)) return MIDDLE;
-                else if (UP.equals(other)) return UP;
-                else if (LOW.equals(other)) return LOW;
-                else return null;
-            } else if (LOW.equals(this)) {
-                if (LOW.equals(other) || LOWER_MIDDLE.equals(other) || MIDDLE.equals(other)) return LOW;
-                else return null;
-            } else if (UPPER_MIDDLE.equals(this)) {
-                if (UP.equals(other)) return UP;
-                else if (MIDDLE.equals(other)) return MIDDLE;
-                else if (UPPER_MIDDLE.equals(other)) return UPPER_MIDDLE;
-                else return null;
-            } else if (LOWER_MIDDLE.equals(this)) {
-                if (LOW.equals(other)) return LOW;
-                else if (MIDDLE.equals(other)) return MIDDLE;
-                else if (LOWER_MIDDLE.equals(other)) return LOWER_MIDDLE;
-                else return null;
-            }
-            return null;
-        }
-        public Localization[] getOffsetTypeDivision(Localization otherAfterDivision, boolean upperDaughterCell) {
-            if (upperDaughterCell) {
-                if (MIDDLE.equals(this)) {
-                    if (LOW.equals(otherAfterDivision) || LOWER_MIDDLE.equals(otherAfterDivision) || MIDDLE.equals(otherAfterDivision)) return new Localization[]{MIDDLE, LOW};
-                    else return null;
-                } else if (UPPER_MIDDLE.equals(this)) {
-                    if (MIDDLE.equals(otherAfterDivision)) return new Localization[]{UP, UP, MIDDLE, LOW};
-                    if (UPPER_MIDDLE.equals(otherAfterDivision)) return new Localization[]{UP, UP};
-                    if (LOWER_MIDDLE.equals(otherAfterDivision)) return new Localization[]{MIDDLE, LOW};
-                    else return null;
-                } else if (UP.equals(this)) {
-                    if (UP.equals(otherAfterDivision) || UPPER_MIDDLE.equals(otherAfterDivision) || MIDDLE.equals(otherAfterDivision)) return new Localization[]{UP, UP};
-                    else return null;
-                } else return null;
-            } else {
-                if (MIDDLE.equals(this)) {
-                    if (UP.equals(otherAfterDivision) || UPPER_MIDDLE.equals(otherAfterDivision) || MIDDLE.equals(otherAfterDivision)) return new Localization[]{MIDDLE, UP};
-                    else return null;
-                } else if (LOWER_MIDDLE.equals(this)) {
-                    if (MIDDLE.equals(otherAfterDivision)) return new Localization[]{MIDDLE, UP, LOW, LOW};
-                    if (UPPER_MIDDLE.equals(otherAfterDivision)) return new Localization[]{MIDDLE, UP};
-                    if (LOWER_MIDDLE.equals(otherAfterDivision)) return new Localization[]{LOW, LOW};
-                    else return null;
-                } else if (LOW.equals(this)) {
-                    if (LOW.equals(otherAfterDivision) || LOWER_MIDDLE.equals(otherAfterDivision) || MIDDLE.equals(otherAfterDivision)) return new Localization[]{LOW, LOW};
-                    else return null;
-                } else return null;
-            }
-        }
-    }; 
-    protected StructureObject object;
+    public static double poleDistanceFactor = 0; 
+    protected Object3D object;
     protected SpotCompartiment compartiment;
     protected final Localization localization;
+    int timePoint;
+    boolean isLinkable=true;
+    boolean lowQuality=false;
     
-    public SpotWithinCompartment(StructureObject object, SpotCompartiment compartiment, double[] scaledCenter) {
+    public SpotWithinCompartment(Object3D object, int timePoint, SpotCompartiment compartiment, double[] scaledCenter) {
         super(scaledCenter[0], scaledCenter[1], scaledCenter[2], 1, 1);
         getFeatures().put(Spot.FRAME, (double)compartiment.object.getTimePoint());
+        getFeatures().put(Spot.QUALITY, object.getQuality());
         this.compartiment=compartiment;
         this.object=object;
+        this.timePoint=timePoint;
         if (scaledCenter[1]<(compartiment.middleYLimits[0])) localization = Localization.UP;
         else if (scaledCenter[1]>=compartiment.middleYLimits[0] && scaledCenter[1]<=compartiment.middleYLimits[1]) localization = Localization.UPPER_MIDDLE;
         else if (scaledCenter[1]>compartiment.middleYLimits[1] && scaledCenter[1]<compartiment.middleYLimits[2]) localization = Localization.MIDDLE;
@@ -120,9 +68,15 @@ public class SpotWithinCompartment extends Spot {
         }   
     }
     
+    public SpotWithinCompartment setQualityThreshold(double qualityThreshold) {
+        this.isLinkable=object.getQuality()>=qualityThreshold;
+        this.lowQuality=!isLinkable;
+        return this;
+    } 
+    
     public SpotWithinCompartment duplicate() {
         double[] scaledCenter =  new double[]{getFeature(Spot.POSITION_X), getFeature(Spot.POSITION_Y), getFeature(Spot.POSITION_Z)};
-        SpotWithinCompartment res = new SpotWithinCompartment(object, compartiment, scaledCenter);
+        SpotWithinCompartment res = new SpotWithinCompartment(object, timePoint, compartiment, scaledCenter);
         res.getFeatures().put(Spot.QUALITY, getFeature(Spot.QUALITY));
         res.getFeatures().put(Spot.RADIUS, getFeature(Spot.RADIUS));
         return res;
@@ -130,14 +84,8 @@ public class SpotWithinCompartment extends Spot {
     
    
     public void setRadius() {
-        double radius = object.getObject().is3D() ? Math.pow(3 * object.getObject().getSize() / (4 * Math.PI) , 1d/3d) : Math.sqrt(object.getObject().getSize() / (2 * Math.PI)) ;
+        double radius = object.is3D() ? Math.pow(3 * object.getSize() / (4 * Math.PI) , 1d/3d) : Math.sqrt(object.getSize() / (2 * Math.PI)) ;
         getFeatures().put(Spot.RADIUS, radius);
-    }
-    
-    public void setQuality(Image intensityMap) {
-        int[] center = getCenterInVoxels();
-        double quality = intensityMap!=null ? object.getObject().isAbsoluteLandMark() ? intensityMap.getPixelWithOffset(center[0], center[1], center[2]) : intensityMap.getPixel(center[0], center[1], center[2]) : 1;
-        getFeatures().put(Spot.QUALITY, quality);
     }
     
     private int[] getCenterInVoxels() {
@@ -160,6 +108,7 @@ public class SpotWithinCompartment extends Spot {
     public double squareDistanceTo( final Spot s ) {
         if (s instanceof SpotWithinCompartment) {
             SpotWithinCompartment ss = (SpotWithinCompartment)s;
+            if (!isLinkable && !ss.isLinkable) return Double.POSITIVE_INFINITY; // no link allowed between to spots that are not linkable
             if (this.compartiment.object.getTimePoint()>ss.compartiment.object.getTimePoint()) return ss.squareDistanceTo(this);
             else {
                 if (compartiment.sameTrackOrDirectChildren(ss.compartiment)) { // spot in the same track or separated by one division at max
@@ -284,5 +233,61 @@ public class SpotWithinCompartment extends Spot {
             testOverlay.add(position);
         }
     }
-    
+    public static enum Localization {
+        UP, UPPER_MIDDLE, MIDDLE, LOWER_MIDDLE, LOW;
+        public Localization getOffsetType(Localization other) {
+            if (UP.equals(this)) {
+                if (UP.equals(other) || UPPER_MIDDLE.equals(other) || MIDDLE.equals(other)) return UP;
+                else return null;
+            } else if (MIDDLE.equals(this)) {
+                if (MIDDLE.equals(other) || UPPER_MIDDLE.equals(other) || LOWER_MIDDLE.equals(other)) return MIDDLE;
+                else if (UP.equals(other)) return UP;
+                else if (LOW.equals(other)) return LOW;
+                else return null;
+            } else if (LOW.equals(this)) {
+                if (LOW.equals(other) || LOWER_MIDDLE.equals(other) || MIDDLE.equals(other)) return LOW;
+                else return null;
+            } else if (UPPER_MIDDLE.equals(this)) {
+                if (UP.equals(other)) return UP;
+                else if (MIDDLE.equals(other)) return MIDDLE;
+                else if (UPPER_MIDDLE.equals(other)) return UPPER_MIDDLE;
+                else return null;
+            } else if (LOWER_MIDDLE.equals(this)) {
+                if (LOW.equals(other)) return LOW;
+                else if (MIDDLE.equals(other)) return MIDDLE;
+                else if (LOWER_MIDDLE.equals(other)) return LOWER_MIDDLE;
+                else return null;
+            }
+            return null;
+        }
+        public Localization[] getOffsetTypeDivision(Localization otherAfterDivision, boolean upperDaughterCell) {
+            if (upperDaughterCell) {
+                if (MIDDLE.equals(this)) {
+                    if (LOW.equals(otherAfterDivision) || LOWER_MIDDLE.equals(otherAfterDivision) || MIDDLE.equals(otherAfterDivision)) return new Localization[]{MIDDLE, LOW};
+                    else return null;
+                } else if (UPPER_MIDDLE.equals(this)) {
+                    if (MIDDLE.equals(otherAfterDivision)) return new Localization[]{UP, UP, MIDDLE, LOW};
+                    if (UPPER_MIDDLE.equals(otherAfterDivision)) return new Localization[]{UP, UP};
+                    if (LOWER_MIDDLE.equals(otherAfterDivision)) return new Localization[]{MIDDLE, LOW};
+                    else return null;
+                } else if (UP.equals(this)) {
+                    if (UP.equals(otherAfterDivision) || UPPER_MIDDLE.equals(otherAfterDivision) || MIDDLE.equals(otherAfterDivision)) return new Localization[]{UP, UP};
+                    else return null;
+                } else return null;
+            } else {
+                if (MIDDLE.equals(this)) {
+                    if (UP.equals(otherAfterDivision) || UPPER_MIDDLE.equals(otherAfterDivision) || MIDDLE.equals(otherAfterDivision)) return new Localization[]{MIDDLE, UP};
+                    else return null;
+                } else if (LOWER_MIDDLE.equals(this)) {
+                    if (MIDDLE.equals(otherAfterDivision)) return new Localization[]{MIDDLE, UP, LOW, LOW};
+                    if (UPPER_MIDDLE.equals(otherAfterDivision)) return new Localization[]{MIDDLE, UP};
+                    if (LOWER_MIDDLE.equals(otherAfterDivision)) return new Localization[]{LOW, LOW};
+                    else return null;
+                } else if (LOW.equals(this)) {
+                    if (LOW.equals(otherAfterDivision) || LOWER_MIDDLE.equals(otherAfterDivision) || MIDDLE.equals(otherAfterDivision)) return new Localization[]{LOW, LOW};
+                    else return null;
+                } else return null;
+            }
+        }
+    };
 }

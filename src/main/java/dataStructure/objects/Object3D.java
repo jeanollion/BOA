@@ -39,6 +39,8 @@ public class Object3D {
     protected ArrayList<Voxel> voxels; //lazy -> use getter // coordonnées des voxel = coord dans l'image mask + offset du masque.  
     protected float scaleXY=1, scaleZ=1;
     protected boolean absoluteLandmark=false; // flase = coordinates relative to the direct parent
+    protected double quality;
+    
     /**
      * Voxel
      * @param mask : image containing only the object, and whose bounding box is the same as the one of the object
@@ -70,6 +72,13 @@ public class Object3D {
     
     public boolean isAbsoluteLandMark() {
         return absoluteLandmark;
+    }
+    public Object3D setQuality(double quality) {
+        this.quality=quality;
+        return this;
+    }
+    public double getQuality() {
+        return quality;
     }
     
     public Object3D duplicate() {

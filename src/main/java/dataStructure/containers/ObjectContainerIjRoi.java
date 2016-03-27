@@ -98,7 +98,7 @@ public class ObjectContainerIjRoi extends ObjectContainer {
     }
 
     public Object3D getObject() {
-        return new Object3D(getMask(), structureObject.getIdx() + 1);
+        return new Object3D(getMask(), structureObject.getIdx() + 1).setQuality(quality);
     }
 
     @Override

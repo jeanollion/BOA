@@ -45,37 +45,47 @@ import utils.Pair;
  * @author jollion
  */
 public class SpotPopulation {
-    private final HashMap<StructureObject, SpotWithinCompartment>  objectSpotMap = new HashMap<StructureObject, SpotWithinCompartment>();
-    private final HashMap<StructureObject, SpotWithinCompartment>  objectSpotMap2 = new HashMap<StructureObject, SpotWithinCompartment>();
+    private final HashMap<Object3D, SpotWithinCompartment>  objectSpotMap = new HashMap<Object3D, SpotWithinCompartment>();
+    private final HashMap<Object3D, SpotWithinCompartment>  duplicatedObjectSpotMap = new HashMap<Object3D, SpotWithinCompartment>();
+    private final SpotCollection collectionHQ = new SpotCollection();
     private final SpotCollection collection = new SpotCollection();
-    
-    public SpotCollection getSpotCollection() {
-        return this.collection;
+    private double qualityThreshold;
+    public SpotCollection getSpotCollection(boolean onlyHighQuality) {
+        return onlyHighQuality ? this.collectionHQ : this.collection;
     }
-    public Set<SpotWithinCompartment> getSpotSet() {
-        return new HashSet<SpotWithinCompartment>(objectSpotMap.values());
+    public Set<SpotWithinCompartment> getSpotSet(boolean includehighQuality, boolean includelowQuality) {
+        Set<SpotWithinCompartment> res =  new HashSet<SpotWithinCompartment>();
+        for (SpotWithinCompartment s : objectSpotMap.values()) {
+            if ((includelowQuality&&s.lowQuality) || (includehighQuality&&!s.lowQuality)) res.add(s);
+        }
+        return res;
+    }
+    public HashMap<Object3D, SpotWithinCompartment> getObjectSpotMap() {
+        return objectSpotMap;
     }
     public SpotWithinCompartment duplicateSpot(SpotWithinCompartment s) {
         SpotWithinCompartment dup = s.duplicate();
-        objectSpotMap2.put(dup.object, dup);
+        duplicatedObjectSpotMap.put(dup.object, dup);
         return dup;
     }
-    public void addSpots(StructureObject container, int spotSturctureIdx, int compartmentStructureIdx) {
+    public void addSpots(StructureObject container, int spotSturctureIdx, List<Object3D> objects, int compartmentStructureIdx, double qualityThreshold) {
         //ObjectPopulation population = container.getObjectPopulation(spotSturctureIdx);
+        this.qualityThreshold=qualityThreshold;
         ArrayList<StructureObject> compartments = container.getChildren(compartmentStructureIdx);
         Image intensityMap = container.getRawImage(spotSturctureIdx);
         //logger.debug("adding: {} spots from timePoint: {}", population.getObjects().size(), container.getTimePoint());
         HashMap<StructureObject, SpotCompartiment> compartimentMap = new HashMap<StructureObject, SpotCompartiment>();
-        for (StructureObject o : container.getChildren(spotSturctureIdx)) {
-            StructureObject parent = StructureObjectUtils.getInclusionParent(o.getObject(), compartments, null);
+        for (Object3D o : objects) {
+            StructureObject parent = StructureObjectUtils.getInclusionParent(o, compartments, null);
             SpotCompartiment compartiment = compartimentMap.get(parent);
             if (compartiment ==null) {
                 compartiment = new SpotCompartiment(parent);
                 compartimentMap.put(parent, compartiment);
             }
-            double[] center = intensityMap!=null ? o.getObject().getCenter(intensityMap, true) : o.getObject().getCenter(true);
-            SpotWithinCompartment s = new SpotWithinCompartment(o, compartiment, center);
+            double[] center = intensityMap!=null ? o.getCenter(intensityMap, true) : o.getCenter(true);
+            SpotWithinCompartment s = new SpotWithinCompartment(o, container.getTimePoint(), compartiment, center).setQualityThreshold(qualityThreshold);
             collection.add(s, container.getTimePoint());
+            if (!s.lowQuality) collectionHQ.add(s, container.getTimePoint());
             objectSpotMap.put(o, s);
         }
     }
@@ -90,9 +100,9 @@ public class SpotPopulation {
         for (StructureObject parent : parentTrack) {
             for (StructureObject child : parent.getChildren(structureIdx)) {
                 //logger.debug("settings links for: {}", child);
-                SpotWithinCompartment s = objectSpotMap.get(child);
+                SpotWithinCompartment s = objectSpotMap.get(child.getObject());
                 TreeSet<DefaultWeightedEdge> nextEdges = getSortedEdgesOf(s, graph, false);
-                SpotWithinCompartment s2 = objectSpotMap2.get(child);
+                SpotWithinCompartment s2 = duplicatedObjectSpotMap.get(child.getObject());
                 if (s2!=null) {
                     TreeSet<DefaultWeightedEdge> nextEdges2 = getSortedEdgesOf(s2, graph, false);
                     if (nextEdges!=null) {
@@ -168,7 +178,7 @@ public class SpotPopulation {
     
     private StructureObject getStructureObject(StructureObject parent, int structureIdx, SpotWithinCompartment s) {
         ArrayList<StructureObject> children = parent.getChildren(structureIdx);
-        Object3D o = s.object.getObject();
+        Object3D o = s.object;
         for (StructureObject c : children) if (c.getObject() == o) return c;
         return null;
     }

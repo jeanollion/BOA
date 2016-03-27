@@ -40,7 +40,7 @@ public class ObjectContainerBlankMask extends ObjectContainer {
     
     @Override
     public Object3D getObject() {
-        return new Object3D(getImage(), structureObject.getIdx()+1);
+        return new Object3D(getImage(), structureObject.getIdx()+1).setQuality(quality);
     }
     
     @Override
