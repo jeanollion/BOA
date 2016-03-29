@@ -22,6 +22,7 @@ import image.BoundingBox;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -240,5 +241,52 @@ public class StructureObjectUtils {
             res.add(next);
         }
         return res;
+    }
+
+    public static Comparator<StructureObject> getStructureObjectComparator() {
+        return new Comparator<StructureObject>() {
+            public int compare(StructureObject arg0, StructureObject arg1) {
+                int comp = Integer.compare(arg0.getTimePoint(), arg1.getTimePoint());
+                if (comp == 0) {
+                    comp = Integer.compare(arg0.getStructureIdx(), arg1.getStructureIdx());
+                    if (comp == 0) {
+                        if (arg0.getParent() != null && arg1.getParent() != null) {
+                            comp = compare(arg0.getParent(), arg1.getParent());
+                            if (comp != 0) {
+                                return comp;
+                            }
+                        }
+                        return Integer.compare(arg0.getIdx(), arg1.getIdx());
+                    } else {
+                        return comp;
+                    }
+                } else {
+                    return comp;
+                }
+            }
+        };
+    }
+    public static Comparator<StructureObject> getStructureObjectTimePointComparator() {
+        return new Comparator<StructureObject>() {
+            public int compare(StructureObject arg0, StructureObject arg1) {
+                int comp = Integer.compare(arg0.getTimePoint(), arg1.getTimePoint());
+                if (comp == 0) {
+                    comp = Integer.compare(arg0.getStructureIdx(), arg1.getStructureIdx());
+                    if (comp == 0) {
+                        if (arg0.getParent() != null && arg1.getParent() != null) {
+                            comp = compare(arg0.getParent(), arg1.getParent());
+                            if (comp != 0) {
+                                return comp;
+                            }
+                        }
+                        return Integer.compare(arg0.getIdx(), arg1.getIdx());
+                    } else {
+                        return comp;
+                    }
+                } else {
+                    return comp;
+                }
+            }
+        };
     }
 }

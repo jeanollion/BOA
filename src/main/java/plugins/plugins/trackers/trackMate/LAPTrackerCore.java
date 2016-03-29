@@ -213,7 +213,6 @@ public class LAPTrackerCore {
                     return false;
             }
         }
-        
         internalLogger.setStatus( "" );
         internalLogger.setProgress( 1d );
         final long end = System.currentTimeMillis();

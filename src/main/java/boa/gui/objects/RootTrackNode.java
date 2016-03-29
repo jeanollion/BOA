@@ -87,8 +87,8 @@ public class RootTrackNode implements TreeNode {
     public TreeMap<Integer, List<StructureObject>> getRemainingTrackHeads() {
         if (remainingTrackHeadsTM==null) {
             ArrayList<StructureObject> trackHeads = generator.getObjectDAO(fieldName).getTrackHeads(getParentTrackHead(), structureIdx);
-            remainingTrackHeadsTM = new TreeMap<Integer, List<StructureObject>>();
             if (trackHeads.isEmpty()) {
+                remainingTrackHeadsTM = new TreeMap<Integer, List<StructureObject>>();
                 logger.debug("structure: {} no trackHeads found", structureIdx);
             } else {
                 //logger.debug("structure: {} nb trackHeads found: {}", structureIdx, trackHeads.size());

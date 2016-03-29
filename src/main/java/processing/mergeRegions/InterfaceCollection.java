@@ -146,7 +146,7 @@ public class InterfaceCollection {
     }
     
     protected void initializeRegionInterfaces() {
-        for (Region r : regions.regions.values()) r.interfaces=new ArrayList<Interface>(5);
+        for (Region r : regions.regions.values()) r.interfaces=new ArrayList<Interface>();
         for (Interface i : interfaces) {
             i.r1.interfaces.add(i);
             i.r2.interfaces.add(i);
