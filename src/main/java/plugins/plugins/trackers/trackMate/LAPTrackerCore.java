@@ -151,6 +151,7 @@ public class LAPTrackerCore {
 
         /*
          * 2. Gap-closing, merging and splitting / excluding spots of lowQuality
+         * IDéE: ajouter une pénalité sur les spots de lowQuality et les inclure dans la procédure globale....
          */
         if (doGC) {
             // duplicate unlinked spots to include them in the gap-closing part

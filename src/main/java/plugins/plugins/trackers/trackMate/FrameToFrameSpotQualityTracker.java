@@ -143,6 +143,9 @@ public class FrameToFrameSpotQualityTracker  extends MultiThreadedBenchmarkAlgor
 
 		final long start = System.currentTimeMillis();
 
+                //avant la procédure : supprimer les liens gap-filled, et les stocker, à la fin, les remettre seulement si les trous n'ont pas été bouchés par des spots de low Quality
+                
+                
 		// Prepare frame pairs in order, not necessarily separated by 1.
 		final ArrayList< int[] > framePairs = new ArrayList< int[] >( (spots.keySet().size() - 1)*2 );
 		Iterator< Integer > frameIterator = spots.keySet().iterator();
@@ -222,6 +225,8 @@ public class FrameToFrameSpotQualityTracker  extends MultiThreadedBenchmarkAlgor
                                                         Spot target = graph.getEdgeTarget(e);
                                                         if (target==source) target = graph.getEdgeSource(e);
                                                         if (targets.remove(target)) sources.remove(source);
+                                                        ... will no remove gap-filled links... 
+                                                        
                                                     }
                                                 }
                                                 
