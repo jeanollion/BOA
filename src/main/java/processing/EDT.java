@@ -323,7 +323,7 @@ public class EDT {
                         for (int k = 0; k < d; k++) {
                             //Limit to the non-background to save time,
                             if (insideMask==mask.insideMask(i+w*j, k)) { //!xor
-                                if (insideMask) {min=Math.min(k+1, k-d); min *= min * scaleZ;} //&& d>1
+                                if (insideMask) {min=Math.min(k+1, d-k); min *= min * scaleZ;} //&& d>1
                                 else min = noResult;
                                 zBegin = zStart;
                                 zEnd = zStop;
