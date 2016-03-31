@@ -39,7 +39,7 @@ public class SpotCompartiment {
     int nextDivisionTimePoint;
     double[] offsetDivisionMiddle;
     double[] middleYLimits;
-    public static double middleAreaProportion = 0.2;
+    public static double middleAreaProportion = 0.5;
     public SpotCompartiment(StructureObject o) {
         object = o;
         double[][] poles = getPoles(object.getObject(), 0.5);

@@ -41,12 +41,21 @@ public class LAPTracker implements Tracker {
     NumberParameter maxLinkingDistance = new BoundedNumberParameter("FTF Maximum Linking Distance (0=skip)", 2, 0.75, 0, null);
     NumberParameter maxLinkingDistanceGC = new BoundedNumberParameter("Gap-closing Maximum Linking Distance (0=skip)", 2, 0.75, 0, null);
     NumberParameter maxLinkingDistanceLQ = new BoundedNumberParameter("Low quality spots Maximum Linking distance (0=skip)", 2, 0.75, 0, null);
+    Parameter[] parameters = new Parameter[]{maxLinkingDistance, maxLinkingDistanceGC, maxGap, maxLinkingDistanceLQ, spotQualityThreshold};
+    
+    public LAPTracker setLinkingMaxDistance(double maxDist, double maxDistGapClosing, double maxDistLowQuality) {
+        maxLinkingDistance.setValue(maxDist);
+        maxLinkingDistanceGC.setValue(maxDistGapClosing);
+        maxLinkingDistanceLQ.setValue(maxDistLowQuality);
+        return this;
+    }
     
     public void track(int structureIdx, List<StructureObject> parentTrack) {
         SpotPopulation spotCollection = new SpotPopulation();
         for (StructureObject p : parentTrack) {
             spotCollection.addSpots(p, structureIdx, p.getObjectPopulation(structureIdx).getObjects(), compartimentStructureIdx, spotQualityThreshold.getValue().doubleValue());
         }
+        logger.debug("LAP Tracker: {}, spot HQ: {}, #spots LQ: {}", parentTrack.get(0), spotCollection.getSpotSet(false, true).size(), spotCollection.getSpotSet(true, false).size());
         LAPTrackerCore core = new LAPTrackerCore(spotCollection).setLinkingMaxDistance(maxLinkingDistance.getValue().doubleValue(), maxLinkingDistanceGC.getValue().doubleValue(), maxLinkingDistanceLQ.getValue().doubleValue());
         boolean processOk = core.process();
         if (!processOk) logger.error("LAPTracker error : {}", core.getErrorMessage());
@@ -54,7 +63,7 @@ public class LAPTracker implements Tracker {
     }
 
     public Parameter[] getParameters() {
-        return new Parameter[0];
+        return parameters;
     }
     
 }

@@ -207,7 +207,19 @@ public class MultiScaleWatershedTransform {
         }
         
         public Object3D toObject3D(int label) {
-            return new Object3D(voxels, label, watershedMaps[scale].getScaleXY(), watershedMaps[scale].getScaleZ());
+            return new Object3D(voxels, label, watershedMaps[scale].getScaleXY(), watershedMaps[scale].getScaleZ()).setQuality(getQuality());
+        }
+        
+        public double getQuality() {
+            if (decreasingPropagation) {
+                double max = Double.NEGATIVE_INFINITY;
+                for (Voxel v: voxels) if (v.value>max) max = v.value;
+                return max;
+            } else {
+                double min = Double.POSITIVE_INFINITY;
+                for (Voxel v: voxels) if (v.value<min) min = v.value;
+                return -min;
+            }
         }
         
     }

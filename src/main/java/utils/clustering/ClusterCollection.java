@@ -65,20 +65,20 @@ public class ClusterCollection<E, I> {
         i.e2.interfaces.add(i);
     }
     
-    public List<Set<Interface>> getClusters() {
-        ArrayList<Set<Interface>> clusters = new ArrayList<Set<Interface>>();
-        Set<Interface> currentCluster;
+    public List<Set<Interface<E, I>>> getClusters() {
+        ArrayList<Set<Interface<E, I>>> clusters = new ArrayList<Set<Interface<E, I>>>();
+        Set<Interface<E, I>> currentCluster;
         for (Interface i : interfaces) {
             currentCluster = null;
             if (clusters.isEmpty()) {
-                currentCluster = new HashSet<Interface>(i.e1.interfaces.size()+ i.e2.interfaces.size()-1);
+                currentCluster = new HashSet<Interface<E, I>>(i.e1.interfaces.size()+ i.e2.interfaces.size()-1);
                 currentCluster.addAll(i.e1.interfaces);
                 currentCluster.addAll(i.e2.interfaces);
                 clusters.add(currentCluster);
             } else {
-                Iterator<Set<Interface>> it = clusters.iterator();
+                Iterator<Set<Interface<E, I>>> it = clusters.iterator();
                 while(it.hasNext()) {
-                    Set<Interface> cluster = it.next();
+                    Set<Interface<E, I>> cluster = it.next();
                     if (cluster.contains(i)) {
                         cluster.addAll(i.e1.interfaces);
                         cluster.addAll(i.e2.interfaces);
@@ -89,7 +89,7 @@ public class ClusterCollection<E, I> {
                     }
                 }
                 if (currentCluster==null) {
-                    currentCluster = new HashSet<Interface>(i.e1.interfaces.size()+ i.e2.interfaces.size()-1);
+                    currentCluster = new HashSet<Interface<E, I>>(i.e1.interfaces.size()+ i.e2.interfaces.size()-1);
                     currentCluster.addAll(i.e1.interfaces);
                     currentCluster.addAll(i.e2.interfaces);
                     clusters.add(currentCluster);

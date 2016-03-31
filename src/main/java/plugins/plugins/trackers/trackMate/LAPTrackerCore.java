@@ -39,7 +39,6 @@ import static fiji.plugin.trackmate.tracking.TrackerKeys.KEY_MERGING_MAX_DISTANC
 import static fiji.plugin.trackmate.tracking.TrackerKeys.KEY_SPLITTING_FEATURE_PENALTIES;
 import static fiji.plugin.trackmate.tracking.TrackerKeys.KEY_SPLITTING_MAX_DISTANCE;
 import fiji.plugin.trackmate.tracking.sparselap.SparseLAPFrameToFrameTracker;
-import fiji.plugin.trackmate.tracking.sparselap.SparseLAPSegmentTracker;
 import ij.gui.Overlay;
 import image.BoundingBox;
 import java.util.ArrayList;
@@ -69,7 +68,7 @@ public class LAPTrackerCore {
     
     // FTF settings
     double linkingMaxDistance = 0;
-    double alternativeLinkingCostFactor = 1.05;
+    double alternativeLinkingCostFactor = 2;
     //double linkingFeaturesPenalities;
     
     // SparseLinker settings
@@ -161,7 +160,7 @@ public class LAPTrackerCore {
                 graph.addVertex(clone);
                 edgesToRemove.add(graph.addEdge(s,clone));
             }
-            //SpotWithinCompartment.displayPoles=false;
+            SpotWithinCompartment.displayPoles=false;
 
 
             // Prepare settings object
@@ -186,6 +185,7 @@ public class LAPTrackerCore {
             // Solve.
             //final SparseLAPSegmentTrackerIncludingUnlinkedSpots segmentLinker = new SparseLAPSegmentTrackerIncludingUnlinkedSpots( graph, slSettings, unlinkedSpots, unlinkedSpots2 );
             final SparseLAPSegmentTracker segmentLinker = new SparseLAPSegmentTracker( graph, slSettings);
+            segmentLinker.setNumThreads(1);
             final Logger.SlaveLogger slLogger = new Logger.SlaveLogger( internalLogger, 0.5, 0.5 );
             segmentLinker.setLogger( slLogger );
             segmentLinker.setNumThreads( numThreads );

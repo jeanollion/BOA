@@ -29,6 +29,8 @@ import java.awt.Component;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -100,10 +102,17 @@ public class Utils {
         return String.format(Locale.US, "%0" + paddingSize + "d", number);
     }
     
-    public static String formatDouble(int paddingSize, double number) {
-        int dec = (int)Math.pow(10, paddingSize);
-        return String.valueOf((double)((int)number*dec)/(double)dec);
-        // TODO utiliser les fonction format de java..
+    public static String formatDoubleScientific(int significantDigits, double number) {
+        String f = "0.";
+        for (int i = 0; i<significantDigits; ++i) f+="#";
+        f+="E0";
+        NumberFormat formatter = new DecimalFormat(f);
+        return formatter.format(number);
+    }
+    
+    public static String formatDoubleScientific(double number) {
+        NumberFormat formatter = new DecimalFormat("0.##E0");
+        return formatter.format(number);
     }
     
     public static int[] toArray(List<Integer> arrayList, boolean reverseOrder) {

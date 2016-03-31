@@ -38,6 +38,7 @@ public class SpotWithinCompartment extends Spot {
     public static ImageObjectInterface bacteria;
     public static Overlay testOverlay;
     public static boolean displayPoles=false;
+    public static double displayDistanceThreshold = 1; 
     public static double poleDistanceFactor = 0; 
     protected Object3D object;
     protected SpotCompartiment compartiment;
@@ -207,6 +208,7 @@ public class SpotWithinCompartment extends Spot {
     
     private static void displayOffsets(SpotWithinCompartment s1, double[] offset1, SpotWithinCompartment s2, double[] offset2, double distance ) {
         if (bacteria!=null && testOverlay!=null) {
+            if (distance>displayDistanceThreshold) return;
             BoundingBox off1 = bacteria.getObjectOffset(s1.compartiment.object).duplicate().translate(s1.compartiment.object.getBounds().duplicate().reverseOffset());
             BoundingBox off2 = bacteria.getObjectOffset(s2.compartiment.object).duplicate().translate(s2.compartiment.object.getBounds().duplicate().reverseOffset());
             
@@ -229,7 +231,7 @@ public class SpotWithinCompartment extends Spot {
             testOverlay.add(l1);
             testOverlay.add(l2);
             testOverlay.add(l12);
-            TextRoi position  = new TextRoi((c1[0]+cOff1[0]+c2[0]+cOff2[0])/4d, (c1[1]+cOff1[1]+c2[1]+cOff2[1])/4d, Utils.formatDouble(2, distance*100));
+            TextRoi position  = new TextRoi((c1[0]+cOff1[0]+c2[0]+cOff2[0])/4d, (c1[1]+cOff1[1]+c2[1]+cOff2[1])/4d, Utils.formatDoubleScientific(1, distance));
             testOverlay.add(position);
         }
     }

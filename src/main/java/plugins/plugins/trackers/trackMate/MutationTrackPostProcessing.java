@@ -32,7 +32,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import utils.Pair;
 import utils.clustering.ClusterCollection;
-import utils.clustering.ClusterCollection.Interface;
+import utils.clustering.Interface;
 
 /**
  *
@@ -58,7 +58,7 @@ public class MutationTrackPostProcessing {
         1) compute interactions track to track
         2) group interacting tracks
         */
-        ClusterCollection<StructureObject, TrackExchangeTimePoints> clusterCollection = new ClusterCollection<StructureObject, TrackExchangeTimePoints>(trackHeadTrackMap.keySet(), interactions, trackHeadTrackMap.comparator());
+        ClusterCollection<StructureObject, TrackExchangeTimePoints> clusterCollection = new ClusterCollection<StructureObject, TrackExchangeTimePoints>(trackHeadTrackMap.keySet(), trackHeadTrackMap.comparator());
         Iterator<Entry<StructureObject, List<StructureObject>>> it1 = trackHeadTrackMap.entrySet().iterator();
         while(it1.hasNext()) {
             Entry<StructureObject, List<StructureObject>> e1 = it1.next();
@@ -84,10 +84,11 @@ public class MutationTrackPostProcessing {
     }
     // return null if no exchange possible
     private TrackExchangeTimePoints getExchangeTimePoints(List<StructureObject> track1, List<StructureObject> track2) {
-        
-        List<Integer> exchangeTimePoints = new ArrayList<Integer>();
+        throw new UnsupportedOperationException("Not supported yet.");
+        //List<Integer> exchangeTimePoints = new ArrayList<Integer>();
         
     }
+    
     private static boolean overlappingInTime(List<StructureObject> track1, List<StructureObject> track2) {
         if (track1.isEmpty() || track2.isEmpty()) return false;
         if (track1.get(0).getTimePoint()>track2.get(0).getTimePoint()) return overlappingInTime(track2, track1);
