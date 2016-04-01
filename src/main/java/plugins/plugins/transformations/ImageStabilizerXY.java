@@ -19,9 +19,13 @@ package plugins.plugins.transformations;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import configuration.parameters.BoundedNumberParameter;
+import configuration.parameters.ChannelImageParameter;
 import configuration.parameters.ChoiceParameter;
+import configuration.parameters.GroupParameter;
+import configuration.parameters.ListParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
+import configuration.parameters.SimpleListParameter;
 import configuration.parameters.TimePointParameter;
 import dataStructure.containers.InputImages;
 import ij.ImagePlus;
@@ -34,6 +38,7 @@ import image.ImageFloat;
 import image.TypeConverter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import static plugins.Plugin.logger;
 import plugins.Transformation;
 import static plugins.plugins.transformations.ImageStabilizerCore.combine;
@@ -54,7 +59,8 @@ public class ImageStabilizerXY implements Transformation {
     BoundedNumberParameter maxIter = new BoundedNumberParameter("Maximum Iterations", 0, 1000, 1, null);
     BoundedNumberParameter segmentLength = new BoundedNumberParameter("Segment length", 0, 20, 2, null);
     NumberParameter tol = new BoundedNumberParameter("Error Tolerance", 10, 5e-8, 0, null);
-    Parameter[] parameters = new Parameter[]{maxIter, tol, pyramidLevel, segmentLength}; //alpha
+    SimpleListParameter<GroupParameter> additionalTranslation = new SimpleListParameter<GroupParameter>("Additional Translation", new GroupParameter("Channel Translation", new ChannelImageParameter("Channel"), new NumberParameter("dX", 3, 0), new NumberParameter("dY", 3, 0), new NumberParameter("dZ", 3, 0)));
+    Parameter[] parameters = new Parameter[]{maxIter, tol, pyramidLevel, segmentLength, additionalTranslation}; //alpha
     ArrayList<ArrayList<Double>> translationTXY = new ArrayList<ArrayList<Double>>();
     
     public ImageStabilizerXY(){}
@@ -64,6 +70,14 @@ public class ImageStabilizerXY implements Transformation {
         this.tol.setValue(tolerance);
         this.maxIter.setValue(maxIterations);
         this.segmentLength.setValue(segmentLength);
+    }
+    
+    public ImageStabilizerXY setAdditionalTranslation(int channelIdx, double... deltas) {
+        if (getAdditionalTranslationParameter(channelIdx, false)!=null) throw new IllegalArgumentException("Translation already set for channel: "+channelIdx);
+        GroupParameter g = additionalTranslation.createChildInstance();
+        additionalTranslation.insert(g);
+        for (int i = 0; i<Math.min(3, deltas.length); ++i) ((NumberParameter)g.getChildAt(i+ 1)).setValue(deltas[i]);
+        return this;
     }
     
     /*public void computeConfigurationData2(int channelIdx, InputImages inputImages) {
@@ -327,18 +341,24 @@ public class ImageStabilizerXY implements Transformation {
         //logger.debug("stabilization time: {}, channel: {}, X:{}, Y:{}", timePoint, channelIdx, trans.get(0), trans.get(1));
         if (trans.get(0)==0 && trans.get(1)==0) return image;
         if (!(image instanceof ImageFloat)) image = TypeConverter.toFloat(image, null);
-        /*ImagePlus impRef = IJImageWrapper.getImagePlus(image);
-        ImageStack is = impRef.getImageStack();
-        float[][] outPixels = new float[image.getSizeZ()][];
-        FloatProcessor temp = new FloatProcessor(image.getSizeX(), image.getSizeY());
-        double[][] wp = new double[][]{{translationTXY[0][timePoint][0]}, {translationTXY[0][timePoint][1]}};
-        for (int z = 0; z<image.getSizeZ(); ++z) {
-            ImageStabilizerCore.warpTranslation(temp, is.getProcessor(z+1), wp);
-            outPixels[z]=(float[])temp.getPixels();
-            temp = (FloatProcessor)is.getProcessor(z+1);
+        double[] additionalTranslationValue = getAdditionalTranslation(channelIdx);
+        //if (timePoint<=0) logger.debug("add trans for channel: {} = {}", channelIdx, additionalTranslationValue);
+        return ImageTransformation.translate(image, -trans.get(0)+additionalTranslationValue[0], -trans.get(1)+additionalTranslationValue[1], +additionalTranslationValue[2], ImageTransformation.InterpolationScheme.BSPLINE5);
+    }
+    private GroupParameter getAdditionalTranslationParameter(int channelIdx, boolean onlyActivated) {
+        List<GroupParameter> list = onlyActivated ? additionalTranslation.getActivatedChildren() : additionalTranslation.getChildren();
+        for (GroupParameter g : list) {
+            if (((ChannelImageParameter)g.getChildAt(0)).getSelectedIndex()==channelIdx) return g;
         }
-        return new ImageFloat(image.getName(), image.getSizeX(), outPixels);*/
-        return ImageTransformation.translate(image, -trans.get(0), -trans.get(1), 0, ImageTransformation.InterpolationScheme.BSPLINE5);
+        return null;
+    }
+    private double[] getAdditionalTranslation(int channelIdx) {
+        double[] res = new double[3];
+        GroupParameter g = getAdditionalTranslationParameter(channelIdx, true);
+        if (g!=null) {
+            for (int i = 0; i<3; ++i) res[i] = ((NumberParameter)g.getChildAt(i+1)).getValue().doubleValue();
+        }
+        return res;
     }
 
     public ArrayList getConfigurationData() {

@@ -63,12 +63,12 @@ import processing.ImageTransformation;
  */
 public class GenerateTestXP {
     public static void main(String[] args) {
-        String dbName = "dummyXP";
+        /*String dbName = "dummyXP";
         String inputDir = "!!not a directory";
         String outputDir = "!!not a directory";
         boolean flip = true;
         boolean fluo = true;
-        
+        */
         //////// FLUO
         // Ordi LJP
         /*String dbName = "fluo151130_OutputNewScaling";
@@ -108,6 +108,13 @@ public class GenerateTestXP {
         boolean flip = true;
         boolean fluo = true;
         */
+        
+        String dbName = "fluo160311";
+        String inputDir = "/data/Images/Fluo/film160311/ME121R-11032016-lr62r2/";
+        String outputDir = "/data/Images/Fluo/film160311/Output/";
+        boolean flip = true;
+        boolean fluo = true;
+        
         
         //////////// Trans
         /*String dbName = "testBF";
@@ -181,7 +188,7 @@ public class GenerateTestXP {
             xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannelFluo2D(30, 45, 200, 0.6, 5));
             xp.getPreProcessingTemplate().addTransformation(1, null, new ScaleHistogramSignalExclusion(100, 5, 0, 50, true)); // to remove blinking
             xp.getPreProcessingTemplate().addTransformation(0, null, new SelectBestFocusPlane(3)).setActivated(false); // faster after crop, but previous transformation might be aftected if the first plane is really out of focus
-            xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY(0, 1000, 5e-8, 20));
+            xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY(0, 1000, 5e-8, 20).setAdditionalTranslation(1, -0.477, -0.362)); // additional translation to correct chromatic shift
         }
         return xp;
     }
