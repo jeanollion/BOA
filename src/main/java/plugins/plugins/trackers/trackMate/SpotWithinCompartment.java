@@ -43,11 +43,12 @@ public class SpotWithinCompartment extends Spot {
     protected Object3D object;
     protected SpotCompartiment compartiment;
     protected final Localization localization;
-    int timePoint;
+    final int timePoint;
     boolean isLinkable=true;
     boolean lowQuality=false;
+    protected final DistanceComputationParameters distanceParameters;
     
-    public SpotWithinCompartment(Object3D object, int timePoint, SpotCompartiment compartiment, double[] scaledCenter) {
+    public SpotWithinCompartment(Object3D object, int timePoint, SpotCompartiment compartiment, double[] scaledCenter, DistanceComputationParameters distanceParameters) {
         super(scaledCenter[0], scaledCenter[1], scaledCenter[2], 1, 1);
         getFeatures().put(Spot.FRAME, (double)compartiment.object.getTimePoint());
         getFeatures().put(Spot.QUALITY, object.getQuality());
@@ -66,18 +67,16 @@ public class SpotWithinCompartment extends Spot {
             c1[1]+=off1.getyMin();
             TextRoi position  = new TextRoi(c1[0], c1[1], localization.toString());
             testOverlay.add(position);
-        }   
+        }
+        this.distanceParameters=distanceParameters;
+        this.isLinkable=object.getQuality()>=distanceParameters.qualityThreshold;
+        this.lowQuality=!isLinkable;
     }
     
-    public SpotWithinCompartment setQualityThreshold(double qualityThreshold) {
-        this.isLinkable=object.getQuality()>=qualityThreshold;
-        this.lowQuality=!isLinkable;
-        return this;
-    } 
     
     public SpotWithinCompartment duplicate() {
         double[] scaledCenter =  new double[]{getFeature(Spot.POSITION_X), getFeature(Spot.POSITION_Y), getFeature(Spot.POSITION_Z)};
-        SpotWithinCompartment res = new SpotWithinCompartment(object, timePoint, compartiment, scaledCenter);
+        SpotWithinCompartment res = new SpotWithinCompartment(object, timePoint, compartiment, scaledCenter, distanceParameters);
         res.getFeatures().put(Spot.QUALITY, getFeature(Spot.QUALITY));
         res.getFeatures().put(Spot.RADIUS, getFeature(Spot.RADIUS));
         return res;
@@ -187,7 +186,11 @@ public class SpotWithinCompartment extends Spot {
             Math.pow((s1.getFeature(POSITION_Z)-offset1[2] - s2.getFeature(POSITION_Z)+offset2[2]), 2);
     }*/
     
-    protected static double getSquareDistance(Spot s1, double[] offset1, Spot s2, double[] offset2) {
+    @Override public String toString() {
+        return "spot:"+this.object.getLabel()+"t="+timePoint;
+    }
+    
+    protected static double getSquareDistance(SpotWithinCompartment s1, double[] offset1, SpotWithinCompartment s2, double[] offset2) {
         if (offset1==null || offset2==null) return Double.POSITIVE_INFINITY; //TODO fix bug -> when reach test's limit timePoint, offset are null
         double x1 = s1.getFeature(POSITION_X);
         double x2 = s2.getFeature(POSITION_X);
@@ -203,6 +206,8 @@ public class SpotWithinCompartment extends Spot {
         /*double dPole1 = Math.abs(y1-offset1[1]);
         double dPole2 = Math.abs(y2-offset2[1]);
         if (dPole2>dPole1) d+=poleDistanceFactor * (dPole2-dPole1);*/
+        // additional gap penalty
+        d+= (s2.timePoint - s1.timePoint-1) * s1.distanceParameters.gapDistancePenalty;
         return d;
     }
     
@@ -292,4 +297,16 @@ public class SpotWithinCompartment extends Spot {
             }
         }
     };
+    public static class DistanceComputationParameters {
+        public double qualityThreshold = 0;
+        public double gapDistancePenalty = 0;
+        public DistanceComputationParameters setQualityThreshold(double qualityThreshold) {
+            this.qualityThreshold=qualityThreshold;
+            return this;
+        }
+        public DistanceComputationParameters setGapDistancePenalty(double gapDistancePenalty) {
+            this.gapDistancePenalty=gapDistancePenalty;
+            return this;
+        } 
+    }
 }

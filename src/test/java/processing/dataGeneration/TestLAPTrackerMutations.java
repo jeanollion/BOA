@@ -55,7 +55,7 @@ public class TestLAPTrackerMutations {
         int fieldIdx = 0;
         TestLAPTrackerMutations t = new TestLAPTrackerMutations();
         t.init(dbName);
-        t.testLAPTracking(fieldIdx, 0, 0, 600);
+        t.testLAPTracking(fieldIdx, 0, 0, 50);
     }
     
     public void testLAPTracking(int fieldIdx, int mcIdx, int tStart, int tEnd) {
@@ -79,7 +79,7 @@ public class TestLAPTrackerMutations {
         SpotWithinCompartment.testOverlay=o;
         TextRoi.setFont("SansSerif", 6, Font.PLAIN);
         
-        LAPTracker tracker = new LAPTracker().setLinkingMaxDistance(0, 0.75, 0);
+        LAPTracker tracker = new LAPTracker().setLinkingMaxDistance(0, 0.75, 0.75);
         tracker.track(mutationIdx, parentTrack);
         
         HashMap<StructureObject, ArrayList<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, mutationIdx);

@@ -38,6 +38,7 @@ import java.util.TreeSet;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 import static plugins.Plugin.logger;
+import plugins.plugins.trackers.trackMate.SpotWithinCompartment.DistanceComputationParameters;
 import utils.Pair;
 
 /**
@@ -46,10 +47,12 @@ import utils.Pair;
  */
 public class SpotPopulation {
     private final HashMap<Object3D, SpotWithinCompartment>  objectSpotMap = new HashMap<Object3D, SpotWithinCompartment>();
-    private final HashMap<Object3D, SpotWithinCompartment>  duplicatedObjectSpotMap = new HashMap<Object3D, SpotWithinCompartment>();
     private final SpotCollection collectionHQ = new SpotCollection();
     private final SpotCollection collection = new SpotCollection();
-    private double qualityThreshold;
+    private final DistanceComputationParameters distanceParameters;
+    public SpotPopulation(DistanceComputationParameters distanceParameters) {
+        this.distanceParameters=distanceParameters;
+    }
     public SpotCollection getSpotCollection(boolean onlyHighQuality) {
         return onlyHighQuality ? this.collectionHQ : this.collection;
     }
@@ -63,14 +66,8 @@ public class SpotPopulation {
     public HashMap<Object3D, SpotWithinCompartment> getObjectSpotMap() {
         return objectSpotMap;
     }
-    public SpotWithinCompartment duplicateSpot(SpotWithinCompartment s) {
-        SpotWithinCompartment dup = s.duplicate();
-        duplicatedObjectSpotMap.put(dup.object, dup);
-        return dup;
-    }
-    public void addSpots(StructureObject container, int spotSturctureIdx, List<Object3D> objects, int compartmentStructureIdx, double qualityThreshold) {
+    public void addSpots(StructureObject container, int spotSturctureIdx, List<Object3D> objects, int compartmentStructureIdx) {
         //ObjectPopulation population = container.getObjectPopulation(spotSturctureIdx);
-        this.qualityThreshold=qualityThreshold;
         ArrayList<StructureObject> compartments = container.getChildren(compartmentStructureIdx);
         Image intensityMap = container.getRawImage(spotSturctureIdx);
         //logger.debug("adding: {} spots from timePoint: {}", population.getObjects().size(), container.getTimePoint());
@@ -83,7 +80,7 @@ public class SpotPopulation {
                 compartimentMap.put(parent, compartiment);
             }
             double[] center = intensityMap!=null ? o.getCenter(intensityMap, true) : o.getCenter(true);
-            SpotWithinCompartment s = new SpotWithinCompartment(o, container.getTimePoint(), compartiment, center).setQualityThreshold(qualityThreshold);
+            SpotWithinCompartment s = new SpotWithinCompartment(o, container.getTimePoint(), compartiment, center, distanceParameters);
             collection.add(s, container.getTimePoint());
             if (!s.lowQuality) collectionHQ.add(s, container.getTimePoint());
             objectSpotMap.put(o, s);
@@ -102,13 +99,6 @@ public class SpotPopulation {
                 //logger.debug("settings links for: {}", child);
                 SpotWithinCompartment s = objectSpotMap.get(child.getObject());
                 TreeSet<DefaultWeightedEdge> nextEdges = getSortedEdgesOf(s, graph, false);
-                SpotWithinCompartment s2 = duplicatedObjectSpotMap.get(child.getObject());
-                if (s2!=null) {
-                    TreeSet<DefaultWeightedEdge> nextEdges2 = getSortedEdgesOf(s2, graph, false);
-                    if (nextEdges!=null) {
-                        if (nextEdges2!=null) nextEdges.addAll(nextEdges2);
-                    } else nextEdges=nextEdges2;
-                }
                 if (nextEdges!=null && !nextEdges.isEmpty()) {
                     DefaultWeightedEdge nextEdge = nextEdges.last();
                     for (DefaultWeightedEdge e : nextEdges) {

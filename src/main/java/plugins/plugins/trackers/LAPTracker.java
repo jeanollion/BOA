@@ -28,6 +28,7 @@ import java.util.List;
 import plugins.Tracker;
 import plugins.plugins.trackers.trackMate.LAPTrackerCore;
 import plugins.plugins.trackers.trackMate.SpotPopulation;
+import plugins.plugins.trackers.trackMate.SpotWithinCompartment.DistanceComputationParameters;
 
 /**
  *
@@ -51,9 +52,9 @@ public class LAPTracker implements Tracker {
     }
     
     public void track(int structureIdx, List<StructureObject> parentTrack) {
-        SpotPopulation spotCollection = new SpotPopulation();
+        SpotPopulation spotCollection = new SpotPopulation(new DistanceComputationParameters().setQualityThreshold(spotQualityThreshold.getValue().doubleValue()).setGapDistancePenalty(Math.pow(maxLinkingDistanceGC.getValue().doubleValue(), 2)/3));
         for (StructureObject p : parentTrack) {
-            spotCollection.addSpots(p, structureIdx, p.getObjectPopulation(structureIdx).getObjects(), compartimentStructureIdx, spotQualityThreshold.getValue().doubleValue());
+            spotCollection.addSpots(p, structureIdx, p.getObjectPopulation(structureIdx).getObjects(), compartimentStructureIdx);
         }
         logger.debug("LAP Tracker: {}, spot HQ: {}, #spots LQ: {}", parentTrack.get(0), spotCollection.getSpotSet(false, true).size(), spotCollection.getSpotSet(true, false).size());
         LAPTrackerCore core = new LAPTrackerCore(spotCollection).setLinkingMaxDistance(maxLinkingDistance.getValue().doubleValue(), maxLinkingDistanceGC.getValue().doubleValue(), maxLinkingDistanceLQ.getValue().doubleValue());

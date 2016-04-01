@@ -53,6 +53,7 @@ import utils.Pair;
  * @author jollion
  */
 public class FrameToFrameSpotQualityTracker  extends MultiThreadedBenchmarkAlgorithm {
+        public final static String KEY_MAX_FRAME_GAP_LQ = "MAX FRAME GAP LQ";
 
 	private final static String BASE_ERROR_MESSAGE = "FrameToFrameSpotQualityTracker ";
 
@@ -63,16 +64,20 @@ public class FrameToFrameSpotQualityTracker  extends MultiThreadedBenchmarkAlgor
 	private final SpotCollection spots;
 
 	private final Map< String, Object > settings;
-
+        private final int maxFrameGap;
+        private final int minFrame, maxFrame;
 	/*
 	 * CONSTRUCTOR
 	 */
 
-	public FrameToFrameSpotQualityTracker( final SpotCollection spots, SimpleWeightedGraph< Spot, DefaultWeightedEdge > graph, final Map< String, Object > settings )
+	public FrameToFrameSpotQualityTracker( final SpotCollection spots, SimpleWeightedGraph< Spot, DefaultWeightedEdge > graph, final Map< String, Object > settings, int minFrame, int maxFrame)
 	{
 		this.spots = spots;
 		this.settings = settings;
                 this.graph=graph;
+                this.maxFrameGap = (int)Math.max(1, ((Number)settings.getOrDefault(KEY_MAX_FRAME_GAP_LQ, 1)).intValue());
+                this.minFrame=minFrame;
+                this.maxFrame=maxFrame;
 	}
 
 	/*
@@ -148,25 +153,31 @@ public class FrameToFrameSpotQualityTracker  extends MultiThreadedBenchmarkAlgor
 
             //avant la procédure : supprimer les liens gap-filled, et les stocker, à la fin, les remettre seulement si les trous n'ont pas été bouchés par des spots de low Quality
             Map<Pair<SpotWithinCompartment, SpotWithinCompartment>, DefaultWeightedEdge> gaps = new HashMap<Pair<SpotWithinCompartment, SpotWithinCompartment>, DefaultWeightedEdge>();
-
+            for (Spot source : graph.vertexSet()) {
+                List<DefaultWeightedEdge> edgeList = new ArrayList<DefaultWeightedEdge>(graph.edgesOf(source));
+                for (DefaultWeightedEdge e : edgeList) {
+                    Spot target = graph.getEdgeTarget(e);
+                    if (target==source) target = graph.getEdgeSource(e);
+                    int tt = ((SpotWithinCompartment)target).timePoint ;
+                    int ts = ((SpotWithinCompartment)source).timePoint;
+                    int dt = tt - ts;
+                    if (dt>1) { // case of gap : remove link
+                        SpotWithinCompartment s = dt>0 ? (SpotWithinCompartment)source : (SpotWithinCompartment)target;
+                        SpotWithinCompartment t = dt>0 ? (SpotWithinCompartment)target : (SpotWithinCompartment)source;
+                        graph.removeEdge(e);
+                        gaps.put(new Pair(s, t), e);
+                        Processor.logger.debug("remove gap from graph source: {}, target: {}", source, target);
+                    }
+                }
+            }
+            
             // Prepare frame pairs in order, not necessarily separated by 1.
-            final ArrayList< int[] > framePairs = new ArrayList< int[] >( (spots.keySet().size() - 1)*2 );
-            Iterator< Integer > frameIterator = spots.keySet().iterator();
-            int frame0 = frameIterator.next();
-            int frame1;
-            while ( frameIterator.hasNext() ) { // ascending order
-                    frame1 = frameIterator.next();
-                    framePairs.add( new int[] { frame0, frame1 } );
-                    frame0 = frame1;
+            final ArrayList< int[] > framePairs = new ArrayList< int[] >();
+            for (int gap = 1; gap<=maxFrameGap; ++gap) {
+                for (int frame = minFrame; frame<=maxFrame-gap; ++frame) framePairs.add(new int[]{frame, frame+gap}); // fwd
+                for (int frame = maxFrame; frame>=minFrame+gap; --frame) framePairs.add(new int[]{frame, frame-gap}); // reverse
             }
-            frameIterator = spots.keySet().descendingIterator();
-            frame0 = frameIterator.next();
-            while ( frameIterator.hasNext() ) { // descending order
-                    frame1 = frameIterator.next();
-                    framePairs.add( new int[] { frame0, frame1 } );
-                    frame0 = frame1;
-            }
-
+            
             // Prepare cost function
             @SuppressWarnings( "unchecked" )
             final Map< String, Double > featurePenalties = ( Map< String, Double > ) settings.get( KEY_LINKING_FEATURE_PENALTIES );
@@ -188,8 +199,8 @@ public class FrameToFrameSpotQualityTracker  extends MultiThreadedBenchmarkAlgor
             for ( int i = 0; i < framePairs.size(); i++ ) {
 
                 // Get frame pairs
-                frame0 = framePairs.get( i )[ 0 ];
-                frame1 = framePairs.get( i )[ 1 ];
+                int frame0 = framePairs.get( i )[ 0 ];
+                int frame1 = framePairs.get( i )[ 1 ];
 
                 // Get spots - we have to create a list from each
                 // content.
@@ -205,24 +216,24 @@ public class FrameToFrameSpotQualityTracker  extends MultiThreadedBenchmarkAlgor
                         targets.add( iterator.next() );
                 }
 
-                // remove spots that have already been linked between the two time points or remove gap edge
+                // remove spots that have already been linked between the two time points or remove gap edge from the graph
                 Iterator<Spot> it = sources.iterator();
                 while(it.hasNext()) {
                     Spot source = it.next();
-                    for (DefaultWeightedEdge e : graph.edgesOf(source)) {
+                    if (!graph.containsVertex(source)) continue;
+                    List<DefaultWeightedEdge> edgeList = new ArrayList<DefaultWeightedEdge>(graph.edgesOf(source));
+                    Processor.logger.debug("source: {}, f0: {}, f1: {}, edges: {}", source, frame0, frame1, edgeList.size());
+                    for (DefaultWeightedEdge e : edgeList) {
                         Spot target = graph.getEdgeTarget(e);
                         if (target==source) target = graph.getEdgeSource(e);
                         int tt = ((SpotWithinCompartment)target).timePoint ;
                         int ts = ((SpotWithinCompartment)source).timePoint;
                         int dt = tt - ts;
-                        if (dt>1) { // case of gap : remove link
-                            SpotWithinCompartment s = dt>0 ? (SpotWithinCompartment)source : (SpotWithinCompartment)target;
-                            SpotWithinCompartment t = dt>0 ? (SpotWithinCompartment)target : (SpotWithinCompartment)source;
-                            graph.removeEdge(e);
-                            gaps.put(new Pair(s, t), e);
-                        } else if (tt == frame1) {
+                        Processor.logger.debug("source: {}, target: {}, dt {}", source, target, dt);
+                        if (tt == frame1) {
                             targets.remove(target);
                             it.remove();
+                            Processor.logger.debug("remove source: {}, target: {}", source, target);
                         }
                     }
                 }
@@ -264,7 +275,7 @@ public class FrameToFrameSpotQualityTracker  extends MultiThreadedBenchmarkAlgor
 
             }
 
-            // gap-processing: if spots are not linked through low quality spots remove and put the link
+            // gap-processing: if spots are not linked through low quality spots remove those spots and put the old link
             List<Spot> linkers = new ArrayList<Spot>();
             for (Entry<Pair<SpotWithinCompartment, SpotWithinCompartment>, DefaultWeightedEdge> e : gaps.entrySet()) {
                 if (!spotLinked(e.getKey().key, e.getKey().value, linkers)) {
@@ -292,6 +303,15 @@ public class FrameToFrameSpotQualityTracker  extends MultiThreadedBenchmarkAlgor
                     n = getNext(n);
                 }
             }
+            // no link can be done, add also previous spots of target
+            n = getPrev(target);
+            while (n!=null) {
+                if (n==source) throw new Error("error with linkers between: "+source.toString()+" and "+target.toString());
+                else {
+                    linkers.add(n);
+                    n = getPrev(n);
+                }
+            }
             return false;
         }
         private Spot getNext(Spot source) { // based on the assumption: one spot is linked to maximum one other spot
@@ -299,7 +319,16 @@ public class FrameToFrameSpotQualityTracker  extends MultiThreadedBenchmarkAlgor
                 Spot target = graph.getEdgeTarget(e);
                 if (target==source) target = graph.getEdgeSource(e);
                 int dt = ((SpotWithinCompartment)target).timePoint - ((SpotWithinCompartment)source).timePoint;
-                if (dt==1) return target;
+                if (dt>0) return target;
+            }
+            return null;
+        }
+        private Spot getPrev(Spot source) { // based on the assumption: one spot is linked to maximum one other spot
+            for (DefaultWeightedEdge e : graph.edgesOf(source)) {
+                Spot target = graph.getEdgeTarget(e);
+                if (target==source) target = graph.getEdgeSource(e);
+                int dt = ((SpotWithinCompartment)target).timePoint - ((SpotWithinCompartment)source).timePoint;
+                if (dt<0) return target;
             }
             return null;
         }
@@ -325,6 +354,7 @@ public class FrameToFrameSpotQualityTracker  extends MultiThreadedBenchmarkAlgor
 		mandatoryKeys.add( KEY_ALTERNATIVE_LINKING_COST_FACTOR );
 		final List< String > optionalKeys = new ArrayList< String >();
 		optionalKeys.add( KEY_LINKING_FEATURE_PENALTIES );
+                optionalKeys.add( KEY_MAX_FRAME_GAP_LQ );
 		ok = ok & checkMapKeys( settings, mandatoryKeys, optionalKeys, str );
 
 		return ok;
