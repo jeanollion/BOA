@@ -34,6 +34,7 @@ import fiji.plugin.trackmate.tracking.sparselap.linker.JaqamanLinker;
 import static fiji.plugin.trackmate.util.TMUtils.checkMapKeys;
 import static fiji.plugin.trackmate.util.TMUtils.checkParameter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -66,6 +67,7 @@ public class FrameToFrameSpotQualityTracker  extends MultiThreadedBenchmarkAlgor
 	private final Map< String, Object > settings;
         private final int maxFrameGap;
         private final int minFrame, maxFrame;
+        private double maxDist;
 	/*
 	 * CONSTRUCTOR
 	 */
@@ -144,32 +146,29 @@ public class FrameToFrameSpotQualityTracker  extends MultiThreadedBenchmarkAlgor
                     errorMessage = BASE_ERROR_MESSAGE + errorHolder.toString();
                     return false;
             }
-
+            maxDist = (( Double ) settings.get( KEY_LINKING_MAX_DISTANCE ));
+            final double costThreshold = maxDist * maxDist;
+            
             /*
              * Process.
              */
 
             final long start = System.currentTimeMillis();
 
-            //avant la procédure : supprimer les liens gap-filled, et les stocker, à la fin, les remettre seulement si les trous n'ont pas été bouchés par des spots de low Quality
-            Map<Pair<SpotWithinCompartment, SpotWithinCompartment>, DefaultWeightedEdge> gaps = new HashMap<Pair<SpotWithinCompartment, SpotWithinCompartment>, DefaultWeightedEdge>();
-            for (Spot source : graph.vertexSet()) {
-                List<DefaultWeightedEdge> edgeList = new ArrayList<DefaultWeightedEdge>(graph.edgesOf(source));
-                for (DefaultWeightedEdge e : edgeList) {
-                    Spot target = graph.getEdgeTarget(e);
-                    if (target==source) target = graph.getEdgeSource(e);
-                    int tt = ((SpotWithinCompartment)target).timePoint ;
-                    int ts = ((SpotWithinCompartment)source).timePoint;
-                    int dt = tt - ts;
-                    if (dt>1) { // case of gap : remove link
-                        SpotWithinCompartment s = dt>0 ? (SpotWithinCompartment)source : (SpotWithinCompartment)target;
-                        SpotWithinCompartment t = dt>0 ? (SpotWithinCompartment)target : (SpotWithinCompartment)source;
-                        graph.removeEdge(e);
-                        gaps.put(new Pair(s, t), e);
-                        Processor.logger.debug("remove gap from graph source: {}, target: {}", source, target);
-                    }
+            // step 1: fill gaps
+            List<Gap> gaps = new ArrayList<Gap>();
+            List<DefaultWeightedEdge> edgeList = new ArrayList<DefaultWeightedEdge>(graph.edgeSet());
+            for (DefaultWeightedEdge e : edgeList) {
+                SpotWithinCompartment target = (SpotWithinCompartment)graph.getEdgeTarget(e);
+                SpotWithinCompartment source = (SpotWithinCompartment)graph.getEdgeSource(e);
+                if (Math.abs(target.timePoint - source.timePoint)>1) {
+                    graph.removeEdge(e);
+                    gaps.add(new Gap(source, target, e));
+                    Processor.logger.debug("remove gap from graph source: {}, target: {}", source, target);
                 }
             }
+            Collections.sort(gaps); // start with smaller gaps
+            
             
             // Prepare frame pairs in order, not necessarily separated by 1.
             final ArrayList< int[] > framePairs = new ArrayList< int[] >();
@@ -190,8 +189,7 @@ public class FrameToFrameSpotQualityTracker  extends MultiThreadedBenchmarkAlgor
             {
                     costFunction = new FeaturePenaltyCostFunction( featurePenalties );
             }
-            final Double maxDist = ( Double ) settings.get( KEY_LINKING_MAX_DISTANCE );
-            final double costThreshold = maxDist * maxDist;
+            
             final double alternativeCostFactor = ( Double ) settings.get( KEY_ALTERNATIVE_LINKING_COST_FACTOR );
 
             logger.setStatus( "Frame to frame linking..." );
@@ -359,4 +357,63 @@ public class FrameToFrameSpotQualityTracker  extends MultiThreadedBenchmarkAlgor
 
 		return ok;
 	}
+        
+        private class Gap implements Comparable<Gap> {
+            SpotWithinCompartment s1, s2;
+            DefaultWeightedEdge e;
+            int dt;
+            
+            public Gap(SpotWithinCompartment s1, SpotWithinCompartment s2, DefaultWeightedEdge e) {
+                if (s2.timePoint<s1.timePoint) init(s2, s1, e);
+                else init(s1, s2, e);
+                
+            }
+            private void init(SpotWithinCompartment s1, SpotWithinCompartment s2, DefaultWeightedEdge e) {
+                this.s1 = s1;
+                this.s2 = s2;
+                this.e = e;
+                this.dt= s2.timePoint - s1.timePoint;
+            }
+            public boolean fillGap(List<SpotWithinCompartment> linkers) {
+                linkers.clear();
+                SpotWithinCompartment sL=s1, sR=s2;
+                int countLeft = 0;
+                int countRight = 0;
+                double lim = maxDist * maxDist;
+                for (int delta = 1; delta<=(dt/2+1); ++delta) {
+                    int tpLeft = s1.timePoint+delta;
+                    int tpRight = s2.timePoint-delta;
+                    Spot sLT = spots.getClosestSpot(sL, tpLeft, false);
+                    Spot sRT = spots.getClosestSpot(sR, tpRight, false);
+                    if (tpLeft<tpRight) {    
+                        if (sLT!=null && sL.squareDistanceTo(sLT)<lim) {
+                            sL = (SpotWithinCompartment)sLT;
+                            linkers.add(countLeft++, sL);
+                        }
+                        if (sRT!=null && sR.squareDistanceTo(sRT)<lim) {
+                            sR = (SpotWithinCompartment)sRT;
+                            linkers.add(linkers.size() - ++countRight, sR);
+                        }
+                    } else if (sLT!=null && sLT.equals(sRT)) { // same spot
+                        if (sL.squareDistanceTo(sLT)<lim && sR.squareDistanceTo(sLT)<lim) linkers.add(countLeft++, (SpotWithinCompartment)sLT);
+                    } else { // same tp, different spots
+                        double dL = sLT!=null ? sL.squareDistanceTo(sLT) : Double.POSITIVE_INFINITY;
+                        double dR = sRT!=null ? sR.squareDistanceTo(sRT) : Double.POSITIVE_INFINITY;
+                        if (dL<lim && dR<lim) { // minimize sum
+                            double sumL = dL + sLT.squareDistanceTo(sR);
+                            double sumR = dR + sRT.squareDistanceTo(sL);
+                            if (sumL<sumR) linkers.add(countLeft++, (SpotWithinCompartment)sLT);
+                            else linkers.add(linkers.size() - ++countRight, (SpotWithinCompartment)sRT);
+                        } else if (dL<lim) linkers.add(countLeft++, (SpotWithinCompartment)sLT);
+                        else if (dR<lim) linkers.add(linkers.size() - ++countRight, (SpotWithinCompartment)sRT);
+                    }
+                    
+                }
+                return !linkers.isEmpty();
+            }
+
+        public int compareTo(Gap t) {
+            return Integer.compare(dt, t.dt);
+        }
+        }
 }

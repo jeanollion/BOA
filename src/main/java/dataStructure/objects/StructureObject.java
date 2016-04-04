@@ -26,6 +26,7 @@ import image.ObjectFactory;
 import static image.ObjectFactory.getBounds;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.TreeMap;
 import measurement.MeasurementKey;
 import org.bson.types.ObjectId;
@@ -211,8 +212,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public ArrayList<StructureObject> getSiblings() {
         return this.getParent().getChildren(structureIdx);
     }
-    
-    public void relabelChildren(int structureIdx, ArrayList<StructureObject> modifiedObjects) {
+    public void relabelChildren(int structureIdx) {relabelChildren(structureIdx, null);}
+    public void relabelChildren(int structureIdx, List<StructureObject> modifiedObjects) {
         //logger.debug("relabeling: {} number of children: {}", this, getChildren(structureIdx).size());
         // in order to avoid overriding some images, the algorithm is in two passes: ascending and descending indices
         ArrayList<StructureObject> c = getChildren(structureIdx);

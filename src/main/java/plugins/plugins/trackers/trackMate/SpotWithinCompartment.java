@@ -108,7 +108,7 @@ public class SpotWithinCompartment extends Spot {
     public double squareDistanceTo( final Spot s ) {
         if (s instanceof SpotWithinCompartment) {
             SpotWithinCompartment ss = (SpotWithinCompartment)s;
-            if (!isLinkable && !ss.isLinkable) return Double.POSITIVE_INFINITY; // no link allowed between to spots that are not linkable
+            //if (!isLinkable && !ss.isLinkable) return Double.POSITIVE_INFINITY; // no link allowed between to spots that are not linkable
             if (this.compartiment.object.getTimePoint()>ss.compartiment.object.getTimePoint()) return ss.squareDistanceTo(this);
             else {
                 if (compartiment.sameTrackOrDirectChildren(ss.compartiment)) { // spot in the same track or separated by one division at max

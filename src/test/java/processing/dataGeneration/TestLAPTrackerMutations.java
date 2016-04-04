@@ -35,6 +35,7 @@ import java.awt.Font;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import plugins.PluginFactory;
 import plugins.plugins.trackers.LAPTracker;
 import plugins.plugins.trackers.trackMate.SpotWithinCompartment;
@@ -51,11 +52,11 @@ public class TestLAPTrackerMutations {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         String dbName = "fluo151127";
-        //int fieldIdx = 28; // lapTop
-        int fieldIdx = 0;
+        int fieldIdx = 28; // lapTop
+        //int fieldIdx = 0;
         TestLAPTrackerMutations t = new TestLAPTrackerMutations();
         t.init(dbName);
-        t.testLAPTracking(fieldIdx, 0, 0, 50);
+        t.testLAPTracking(fieldIdx, 0, 0, 49);
     }
     
     public void testLAPTracking(int fieldIdx, int mcIdx, int tStart, int tEnd) {
@@ -68,11 +69,9 @@ public class TestLAPTrackerMutations {
         }
         
         IJImageWindowManager windowManager = new IJImageWindowManager(null);
-        ImageObjectInterface i = windowManager.getImageTrackObjectInterface(parentTrack, mutationIdx);
         ImageObjectInterface iB = windowManager.getImageTrackObjectInterface(parentTrack, bacteriaIdx);
-        i.setGUIMode(false);
         iB.setGUIMode(false);
-        Image im = i.generateRawImage(mutationIdx);
+        Image im = iB.generateRawImage(mutationIdx);
         ImagePlus ip = windowManager.getDisplayer().showImage(im);
         Overlay o = new Overlay(); ip.setOverlay(o);
         SpotWithinCompartment.bacteria=iB;
@@ -82,10 +81,12 @@ public class TestLAPTrackerMutations {
         LAPTracker tracker = new LAPTracker().setLinkingMaxDistance(0, 0.75, 0.75);
         tracker.track(mutationIdx, parentTrack);
         
-        HashMap<StructureObject, ArrayList<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, mutationIdx);
+        Map<StructureObject, ArrayList<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, mutationIdx);
         logger.info("LAP tracker number of tracks: {}", allTracks.size());
         
         int colorIdx=0;
+        ImageObjectInterface i = windowManager.getImageTrackObjectInterface(parentTrack, mutationIdx);
+        i.setGUIMode(false);
         
         for (ArrayList<StructureObject> track : allTracks.values()) windowManager.displayTrack(im, i, i.pairWithOffset(StructureObjectUtils.extendTrack(track)), ImageWindowManager.getColor(colorIdx++), false);
         windowManager.displayObjects(im, iB.getObjects(), null, false);

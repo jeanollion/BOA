@@ -162,7 +162,7 @@ public class StructureObjectUtils {
         al.add(o.getTimePoint());
         return Utils.toArray(al, true);
     }
-    public static HashMap<StructureObject, ArrayList<StructureObject>> getAllTracks(List<StructureObject> parentTrack, int structureIdx) {
+    public static Map<StructureObject, ArrayList<StructureObject>> getAllTracks(List<StructureObject> parentTrack, int structureIdx) {
         HashMap<StructureObject, ArrayList<StructureObject>>  res = new HashMap<StructureObject, ArrayList<StructureObject>>();
         for (StructureObject p : parentTrack) {
             ArrayList<StructureObject> children = p.getChildren(structureIdx);

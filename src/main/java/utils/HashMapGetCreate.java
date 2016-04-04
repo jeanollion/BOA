@@ -26,33 +26,33 @@ import java.util.List;
  * @author jollion
  */
 public class HashMapGetCreate<K, V> extends HashMap<K, V> {
-    Factory<V> factory;
-    public HashMapGetCreate(Factory<V> factory) {
+    Factory<K, V> factory;
+    public HashMapGetCreate(Factory<K, V> factory) {
         super();
         this.factory=factory;
     }
-    public HashMapGetCreate(int initialCapacity, Factory<V> factory) {
+    public HashMapGetCreate(int initialCapacity, Factory<K, V> factory) {
         super(initialCapacity);
         this.factory=factory;
     }
     public V getAndCreateIfNecessary(K key) {
         V v = super.get(key);
         if (v==null) {
-            v = factory.create();
+            v = factory.create(key);
             super.put(key, v);
         }
         return v;
     }
-    public static interface Factory<V> {
-        public V create();
+    public static interface Factory<K, V> {
+        public V create(K key);
     }
-    public static class ArrayListFactory<V> implements Factory<ArrayList<V>>{
-        @Override public ArrayList<V> create() {
+    public static class ArrayListFactory<K, V> implements Factory<K, ArrayList<V>>{
+        @Override public ArrayList<V> create(K key) {
             return new ArrayList<V>();
         }
     }
-    public static class ListFactory<V> implements Factory<List<V>>{
-        @Override public List<V> create() {
+    public static class ListFactory<K, V> implements Factory<K, List<V>>{
+        @Override public List<V> create(K key) {
             return new ArrayList<V>();
         }
     }

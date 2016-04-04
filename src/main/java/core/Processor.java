@@ -149,7 +149,7 @@ public class Processor {
         if (parentStructure==-1 || parentTrack.get(0).getStructureIdx()==parentStructure) { // parents = roots
             execute(ps, structureIdx, parentTrack, trackOnly, deleteChildren, dao);
         } else {
-            HashMap<StructureObject, ArrayList<StructureObject>> allParentTracks = StructureObjectUtils.getAllTracks(parentTrack, parentStructure);
+            Map<StructureObject, ArrayList<StructureObject>> allParentTracks = StructureObjectUtils.getAllTracks(parentTrack, parentStructure);
             logger.debug("ex ps: structure: {}, allParentTracks: {}", structureIdx, allParentTracks.size());
             // one thread per track
             ThreadAction<ArrayList<StructureObject>> ta = new ThreadAction<ArrayList<StructureObject>>() {

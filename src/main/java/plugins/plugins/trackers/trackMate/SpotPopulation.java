@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -39,6 +40,8 @@ import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 import static plugins.Plugin.logger;
 import plugins.plugins.trackers.trackMate.SpotWithinCompartment.DistanceComputationParameters;
+import utils.HashMapGetCreate;
+import utils.HashMapGetCreate.Factory;
 import utils.Pair;
 
 /**
@@ -63,6 +66,15 @@ public class SpotPopulation {
         }
         return res;
     }
+    public int[] getMinMaxFrame() {
+        int max = 0;
+        int min = Integer.MAX_VALUE;
+        for (SpotWithinCompartment s : objectSpotMap.values()) {
+            if (s.timePoint>max) max = s.timePoint;
+            if (s.timePoint<min) min = s.timePoint;
+        }
+        return new int[]{min, max};
+    }
     public HashMap<Object3D, SpotWithinCompartment> getObjectSpotMap() {
         return objectSpotMap;
     }
@@ -71,14 +83,13 @@ public class SpotPopulation {
         ArrayList<StructureObject> compartments = container.getChildren(compartmentStructureIdx);
         Image intensityMap = container.getRawImage(spotSturctureIdx);
         //logger.debug("adding: {} spots from timePoint: {}", population.getObjects().size(), container.getTimePoint());
-        HashMap<StructureObject, SpotCompartiment> compartimentMap = new HashMap<StructureObject, SpotCompartiment>();
+        HashMapGetCreate<StructureObject, SpotCompartiment> compartimentMap = new HashMapGetCreate<StructureObject, SpotCompartiment>(new Factory<StructureObject, SpotCompartiment>() {
+            @Override public SpotCompartiment create(StructureObject s) {return new SpotCompartiment(s);}
+        });
         for (Object3D o : objects) {
             StructureObject parent = StructureObjectUtils.getInclusionParent(o, compartments, null);
-            SpotCompartiment compartiment = compartimentMap.get(parent);
-            if (compartiment ==null) {
-                compartiment = new SpotCompartiment(parent);
-                compartimentMap.put(parent, compartiment);
-            }
+            SpotCompartiment compartiment = compartimentMap.getAndCreateIfNecessary(parent);
+            compartimentMap.put(parent, compartiment);
             double[] center = intensityMap!=null ? o.getCenter(intensityMap, true) : o.getCenter(true);
             SpotWithinCompartment s = new SpotWithinCompartment(o, container.getTimePoint(), compartiment, center, distanceParameters);
             collection.add(s, container.getTimePoint());
@@ -86,20 +97,24 @@ public class SpotPopulation {
             objectSpotMap.put(o, s);
         }
     }
-    
-    public void setTrackLinks(List<StructureObject> parentTrack, int structureIdx, SimpleWeightedGraph< Spot, DefaultWeightedEdge > graph) {
+    public void setTrackLinks(List<StructureObject> parentTrack, int structureIdx, final SimpleWeightedGraph< Spot, DefaultWeightedEdge > graph) {
         logger.debug("number of links: {}", graph.edgeSet().size());
         HashMap<Integer, StructureObject> parentT = new HashMap<Integer, StructureObject>(parentTrack.size());
         for (StructureObject p : parentTrack) {
             parentT.put(p.getTimePoint(), p);
             for (StructureObject s : p.getChildren(structureIdx)) s.resetTrackLinks();
         }
+        TreeSet<DefaultWeightedEdge> nextEdges = new TreeSet(new Comparator<DefaultWeightedEdge>() {
+            public int compare(DefaultWeightedEdge arg0, DefaultWeightedEdge arg1) {
+                return Double.compare(graph.getEdgeWeight(arg0), graph.getEdgeWeight(arg1));
+            }
+        });
         for (StructureObject parent : parentTrack) {
             for (StructureObject child : parent.getChildren(structureIdx)) {
                 //logger.debug("settings links for: {}", child);
                 SpotWithinCompartment s = objectSpotMap.get(child.getObject());
-                TreeSet<DefaultWeightedEdge> nextEdges = getSortedEdgesOf(s, graph, false);
-                if (nextEdges!=null && !nextEdges.isEmpty()) {
+                getSortedEdgesOf(s, graph, false, nextEdges);
+                if (!nextEdges.isEmpty()) {
                     DefaultWeightedEdge nextEdge = nextEdges.last();
                     for (DefaultWeightedEdge e : nextEdges) {
                         SpotWithinCompartment nextSpot = getOtherSpot(e, s, graph);
@@ -107,21 +122,44 @@ public class SpotPopulation {
                         if (nextSo.getPrevious()==null) nextSo.setPreviousInTrack(child, e!=nextEdge);
                         else logger.warn("SpotWrapper: next: {}, next of {}, has already a previous assigned: {}", nextSo, child, nextSo.getPrevious());
                     }
-                }
+                } 
+                nextEdges.clear();
             }
         }
     }
     
-    private static TreeSet<DefaultWeightedEdge> getSortedEdgesOf(SpotWithinCompartment spot, final SimpleWeightedGraph< Spot, DefaultWeightedEdge > graph, boolean backward) {
-        if (!graph.containsVertex(spot)) return null;
-        Set<DefaultWeightedEdge> set = graph.edgesOf(spot);
-        if (set.isEmpty()) return null;
-        Comparator<DefaultWeightedEdge> comp = new Comparator<DefaultWeightedEdge>() {
-            public int compare(DefaultWeightedEdge arg0, DefaultWeightedEdge arg1) {
-                return Double.compare(graph.getEdgeWeight(arg0), graph.getEdgeWeight(arg1));
+    public void removeLQSpotsUnlinkedToHQSpots(List<StructureObject> parentTrack, int structureIdx, boolean removeFromSpotPopulation) { // PERFORM AFTER LINKS HAVE BEEN SET
+        Map<StructureObject, ArrayList<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
+        Set<StructureObject> parentsToRelabel = new HashSet<StructureObject>();
+        int eraseCount = 0;
+        for (ArrayList<StructureObject> list : allTracks.values()) {
+            boolean hQ = false;
+            for (StructureObject o : list) {
+                if (o.getObject().getQuality()>this.distanceParameters.qualityThreshold) {
+                    hQ = true;
+                    break;
+                }
             }
-        };
-        TreeSet<DefaultWeightedEdge> res = new TreeSet(comp);
+            if (!hQ) { // erase track
+                for (StructureObject o : list) {
+                    o.getParent().getChildren(structureIdx).remove(o);
+                    if (removeFromSpotPopulation) {
+                        Spot s = objectSpotMap.remove(o.getObject());
+                        if (s!=null) collection.remove(s, o.getTimePoint());
+                    }
+                    parentsToRelabel.add(o.getParent());
+                    eraseCount++;
+                }
+            }
+        }
+        for (StructureObject p : parentsToRelabel) p.relabelChildren(structureIdx);
+        logger.debug("# of tracks before LQ filter: {}, after: {}, nb of removed spots: {}", allTracks.size(), StructureObjectUtils.getAllTracks(parentTrack, structureIdx).size(), eraseCount);
+    }
+    
+    private static void getSortedEdgesOf(SpotWithinCompartment spot, final SimpleWeightedGraph< Spot, DefaultWeightedEdge > graph, boolean backward, TreeSet<DefaultWeightedEdge> res) {
+        if (!graph.containsVertex(spot)) return;
+        Set<DefaultWeightedEdge> set = graph.edgesOf(spot);
+        if (set.isEmpty()) return;
         // remove backward or foreward links
         double tp = spot.getFeature(Spot.FRAME);
         if (backward) {
@@ -133,7 +171,6 @@ public class SpotPopulation {
                 if (getOtherSpot(e, spot, graph).getFeature(Spot.FRAME)>tp) res.add(e);
             }
         }
-        return res;
     }
     private static SpotWithinCompartment getMaxLinkedSpot(SpotWithinCompartment spot, final SimpleWeightedGraph< Spot, DefaultWeightedEdge > graph, boolean backward) {
         Set<DefaultWeightedEdge> set = graph.edgesOf(spot);

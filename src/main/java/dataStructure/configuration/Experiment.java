@@ -383,7 +383,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     public Map<Integer, String[]> getAllMeasurementNamesByStructureIdx(Class<? extends MeasurementKey> classFilter, int... structures) {
-        HashMapGetCreate<Integer, ArrayList<String>> map = new HashMapGetCreate<Integer, ArrayList<String>>(this.getStructureCount(), new HashMapGetCreate.ArrayListFactory<String>());
+        HashMapGetCreate<Integer, ArrayList<String>> map = new HashMapGetCreate<Integer, ArrayList<String>>(this.getStructureCount(), new HashMapGetCreate.ArrayListFactory<Integer, String>());
         List<MeasurementKey> allKeys = getAllMeasurementKeys();
         for (MeasurementKey k : allKeys) {
             if (classFilter==null || classFilter.equals(k.getClass())) {
@@ -398,7 +398,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     public Map<Integer, List<Measurement>> getMeasurementsByCallStructureIdx(int... structureIdx) {
         if (this.measurements.getChildCount()==0) return Collections.emptyMap();
         else {
-            HashMapGetCreate<Integer, List<Measurement>> res = new HashMapGetCreate<Integer, List<Measurement>>(structureIdx.length>0?structureIdx.length : this.getStructureCount(), new HashMapGetCreate.ListFactory<Measurement>());
+            HashMapGetCreate<Integer, List<Measurement>> res = new HashMapGetCreate<Integer, List<Measurement>>(structureIdx.length>0?structureIdx.length : this.getStructureCount(), new HashMapGetCreate.ListFactory<Integer, Measurement>());
             for (PluginParameter<Measurement> p : measurements.getActivatedChildren()) {
                 Measurement m = p.instanciatePlugin();
                 if (m!=null) {

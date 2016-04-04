@@ -61,6 +61,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import utils.Pair;
 
@@ -125,7 +126,7 @@ public class SaveAndRetriveSegmentationData {
             if (trackStructureIdx!=null) {
                 for (int roiS : trackStructureIdx) {
                     i = windowManager.getImageTrackObjectInterface(track, roiS);
-                    HashMap<StructureObject, ArrayList<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(track, roiS);
+                    Map<StructureObject, ArrayList<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(track, roiS);
                     int colorCount=0;
                     for (List<StructureObject> t : allTracks.values()) {
                         windowManager.displayTrack(im, i, i.pairWithOffset(StructureObjectUtils.extendTrack(t)), IJImageWindowManager.getColor(colorCount++), false);
