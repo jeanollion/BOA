@@ -51,13 +51,17 @@ import utils.Pair;
 public class SpotPopulation {
     private final HashMap<Object3D, SpotWithinCompartment>  objectSpotMap = new HashMap<Object3D, SpotWithinCompartment>();
     private final SpotCollection collectionHQ = new SpotCollection();
+    private final SpotCollection collectionLQ = new SpotCollection();
     private final SpotCollection collection = new SpotCollection();
-    private final DistanceComputationParameters distanceParameters;
+    public final DistanceComputationParameters distanceParameters;
     public SpotPopulation(DistanceComputationParameters distanceParameters) {
         this.distanceParameters=distanceParameters;
     }
-    public SpotCollection getSpotCollection(boolean onlyHighQuality) {
-        return onlyHighQuality ? this.collectionHQ : this.collection;
+    public SpotCollection getSpotCollection(boolean includeHighQuality, boolean includeLowQuality) {
+        if (includeHighQuality && includeLowQuality) return collection;
+        else if (includeHighQuality) return  collectionHQ;
+        else if (includeLowQuality) return collectionLQ;
+        else throw new IllegalArgumentException("No spots included");
     }
     public Set<SpotWithinCompartment> getSpotSet(boolean includehighQuality, boolean includelowQuality) {
         Set<SpotWithinCompartment> res =  new HashSet<SpotWithinCompartment>();
@@ -94,6 +98,7 @@ public class SpotPopulation {
             SpotWithinCompartment s = new SpotWithinCompartment(o, container.getTimePoint(), compartiment, center, distanceParameters);
             collection.add(s, container.getTimePoint());
             if (!s.lowQuality) collectionHQ.add(s, container.getTimePoint());
+            else collectionLQ.add(s, container.getTimePoint());
             objectSpotMap.put(o, s);
         }
     }

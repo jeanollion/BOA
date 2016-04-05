@@ -38,7 +38,8 @@ import static fiji.plugin.trackmate.tracking.TrackerKeys.KEY_MERGING_FEATURE_PEN
 import static fiji.plugin.trackmate.tracking.TrackerKeys.KEY_MERGING_MAX_DISTANCE;
 import static fiji.plugin.trackmate.tracking.TrackerKeys.KEY_SPLITTING_FEATURE_PENALTIES;
 import static fiji.plugin.trackmate.tracking.TrackerKeys.KEY_SPLITTING_MAX_DISTANCE;
-import fiji.plugin.trackmate.tracking.sparselap.SparseLAPFrameToFrameTracker;
+//import fiji.plugin.trackmate.tracking.sparselap.SparseLAPFrameToFrameTracker;
+//import fiji.plugin.trackmate.tracking.sparselap.SparseLAPSegmentTracker;
 import ij.gui.Overlay;
 import image.BoundingBox;
 import java.util.ArrayList;
@@ -53,6 +54,7 @@ import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 import org.slf4j.LoggerFactory;
 import static plugins.plugins.trackers.trackMate.FrameToFrameSpotQualityTracker.KEY_MAX_FRAME_GAP_LQ;
+import utils.ThreadRunner;
 
 /**
  *
@@ -67,209 +69,122 @@ public class LAPTrackerCore {
     String errorMessage;
     long processingTime;
     
-    // FTF settings
-    double linkingMaxDistance = 0;
-    double alternativeLinkingCostFactor = 10;
-    //double linkingFeaturesPenalities;
-    
-    // SparseLinker settings
-    int gcMaxFrame = 3;
-    double gapCLosingMaxDistance = 0.75;
-    double gcAlternativeLinkingCostFactor = alternativeLinkingCostFactor;
-    double additionalGapDistanceCost = gapCLosingMaxDistance*gapCLosingMaxDistance / 3;
-    
-    // FTF low quality settings
-    double linkingMaxDistanceLQ = 0.75;
-    double alternativeLinkingCostFactorLQ = 1.05;
     
     public LAPTrackerCore(SpotPopulation spotPopulation) {
         this.spotPopulation=spotPopulation;
     }
     
-    public LAPTrackerCore setLinkingMaxDistance(double maxDist, double maxDistGapClosing, double maxDistLowQuality) {
-        linkingMaxDistance = maxDist;
-        gapCLosingMaxDistance = maxDistGapClosing;
-        linkingMaxDistanceLQ = maxDistLowQuality;
-        return this;
-    }
-    
-    public LAPTrackerCore setAlternativeLinkingCostFactor(double cost) {
-        alternativeLinkingCostFactor = cost;
-        return this;
-    }
-    
     public SimpleWeightedGraph< Spot, DefaultWeightedEdge > getEdges() {
         return graph;
+    }
+    
+    public void resetEdges() {
+        graph = null;
     }
 
     public String getErrorMessage() {
         return errorMessage;
     }
-    
-    
-    
-    public boolean process(boolean includeLQAtFTF, boolean includeLQAtGC) {
-        double linkingMaxDistance = this.linkingMaxDistance;
-        final long start = System.currentTimeMillis();
-        boolean doFTF = linkingMaxDistance>0;
-        boolean doGC = gapCLosingMaxDistance>0 && gcMaxFrame>0;
-        boolean doLQ = linkingMaxDistanceLQ>0;
-        if (gcMaxFrame==0 && gapCLosingMaxDistance>0) { // do not perform GC but FTF instead, with the maximum linkingDistance
-            linkingMaxDistance = Math.max(linkingMaxDistance, gapCLosingMaxDistance);
-            doFTF = true;
+    /**
+     * Do not take into accound previously created graph
+     * @param distanceThreshold
+     * @param alternativeDistance
+     * @param includeLQ
+     * @param includeHQ
+     * @return 
+     */
+    public boolean processFTF(double distanceThreshold, boolean includeHQ, boolean includeLQ) {
+        long t0 = System.currentTimeMillis();
+        // Prepare settings object
+        final Map< String, Object > ftfSettings = new HashMap< String, Object >();
+        ftfSettings.put( KEY_LINKING_MAX_DISTANCE, distanceThreshold );
+        ftfSettings.put( KEY_ALTERNATIVE_LINKING_COST_FACTOR, 1.05 );
+        //ftfSettings.put( KEY_LINKING_FEATURE_PENALTIES, settings.get( KEY_LINKING_FEATURE_PENALTIES ) );
+
+        final SparseLAPFrameToFrameTrackerFromExistingGraph frameToFrameLinker = new SparseLAPFrameToFrameTrackerFromExistingGraph( this.spotPopulation.getSpotCollection(includeLQ, includeHQ), ftfSettings, graph );
+        frameToFrameLinker.setNumThreads( numThreads );
+        final Logger.SlaveLogger ftfLogger = new Logger.SlaveLogger( internalLogger, 0, 0.5 );
+        frameToFrameLinker.setLogger( ftfLogger );
+
+        if ( !frameToFrameLinker.checkInput() || !frameToFrameLinker.process()) {
+                errorMessage = frameToFrameLinker.getErrorMessage();
+                return false;
         }
-        
-        Set<Spot> unlinkedSpots;
-        
-        /*
-        * 1. Frame to frame linking. / excluding spots of lowQuality
-        */
-        if (doFTF) {    
-            // Prepare settings object
-            final Map< String, Object > ftfSettings = new HashMap< String, Object >();
-            ftfSettings.put( KEY_LINKING_MAX_DISTANCE, linkingMaxDistance );
-            ftfSettings.put( KEY_ALTERNATIVE_LINKING_COST_FACTOR, alternativeLinkingCostFactor );
-            //ftfSettings.put( KEY_LINKING_FEATURE_PENALTIES, settings.get( KEY_LINKING_FEATURE_PENALTIES ) );
-
-            final SparseLAPFrameToFrameTracker frameToFrameLinker = new SparseLAPFrameToFrameTracker( this.spotPopulation.getSpotCollection(!includeLQAtFTF), ftfSettings );
-            frameToFrameLinker.setNumThreads( numThreads );
-            final Logger.SlaveLogger ftfLogger = new Logger.SlaveLogger( internalLogger, 0, 0.5 );
-            frameToFrameLinker.setLogger( ftfLogger );
-
-            if ( !frameToFrameLinker.checkInput() || !frameToFrameLinker.process()) {
-                    errorMessage = frameToFrameLinker.getErrorMessage();
-                    return false;
-            }
-            graph = frameToFrameLinker.getResult();
-            
-            Set<Spot> linkedSpots = graph.vertexSet();
-            unlinkedSpots = new HashSet<Spot>(Sets.difference(spotPopulation.getSpotSet(true, includeLQAtGC), linkedSpots));
-            logger.debug("unlinked spots after FTF step: {}", unlinkedSpots.size());
-        } else {
-            graph = new SimpleWeightedGraph< Spot, DefaultWeightedEdge >( DefaultWeightedEdge.class );
-            unlinkedSpots = new HashSet<Spot>(this.spotPopulation.getSpotSet(true, includeLQAtGC)); 
-        }
-
-        /*
-         * 2. Gap-closing, merging and splitting / excluding spots of lowQuality
-         * IDéE: ajouter une pénalité sur les spots de lowQuality et les inclure dans la procédure globale....
-         */
-        if (doGC) {
-            Map<Spot, Spot> clonedSpots = new HashMap<Spot, Spot>();
-            // duplicate unlinked spots to include them in the gap-closing part
-            for (Spot s : unlinkedSpots) {
-                SpotWithinCompartment clone = ((SpotWithinCompartment)s).duplicate();
-                graph.addVertex(s);
-                graph.addVertex(clone);
-                clonedSpots.put(clone, s);
-                graph.addEdge(s,clone);
-            }
-            SpotWithinCompartment.displayPoles=false;
-
-
-            // Prepare settings object
-            final Map< String, Object > slSettings = new HashMap< String, Object >();
-
-            slSettings.put( KEY_ALLOW_GAP_CLOSING, gcMaxFrame>1 );
-            //slSettings.put( KEY_GAP_CLOSING_FEATURE_PENALTIES, settings.get( KEY_GAP_CLOSING_FEATURE_PENALTIES ) );
-            slSettings.put( KEY_GAP_CLOSING_MAX_DISTANCE, gapCLosingMaxDistance );
-            slSettings.put( KEY_GAP_CLOSING_MAX_FRAME_GAP, gcMaxFrame );
-
-            slSettings.put( KEY_ALLOW_TRACK_SPLITTING, false );
-            //slSettings.put( KEY_SPLITTING_FEATURE_PENALTIES, settings.get( KEY_SPLITTING_FEATURE_PENALTIES ) );
-            slSettings.put( KEY_SPLITTING_MAX_DISTANCE, gapCLosingMaxDistance );
-
-            slSettings.put( KEY_ALLOW_TRACK_MERGING, false );
-            //slSettings.put( KEY_MERGING_FEATURE_PENALTIES, settings.get( KEY_MERGING_FEATURE_PENALTIES ) );
-            slSettings.put( KEY_MERGING_MAX_DISTANCE, gapCLosingMaxDistance );
-
-            slSettings.put( KEY_ALTERNATIVE_LINKING_COST_FACTOR, gcAlternativeLinkingCostFactor );
-            slSettings.put( KEY_CUTOFF_PERCENTILE, 1d );
-
-            // Solve.
-            //final SparseLAPSegmentTrackerIncludingUnlinkedSpots segmentLinker = new SparseLAPSegmentTrackerIncludingUnlinkedSpots( graph, slSettings, unlinkedSpots, unlinkedSpots2 );
-            final SparseLAPSegmentTracker segmentLinker = new SparseLAPSegmentTracker( graph, slSettings);
-            segmentLinker.setNumThreads(1);
-            final Logger.SlaveLogger slLogger = new Logger.SlaveLogger( internalLogger, 0.5, 0.5 );
-            segmentLinker.setLogger( slLogger );
-            if ( !segmentLinker.checkInput() || !segmentLinker.process() )
-            {
-                    errorMessage = segmentLinker.getErrorMessage();
-                    return false;
-            }
-            for (Entry<Spot, Spot> e : clonedSpots.entrySet()) transferLinks(e.getKey(), e.getValue());
-            core.Processor.logger.debug("number of edges after GC step: {}, nb of vertices: {}", graph.edgeSet().size(), graph.vertexSet().size());
-        }
-        /*
-         * 3. Forward & reverse frame-to-frame linking including spots of lowQuality
-        */
-        if (doLQ) {
-            // remove gaps in case they can be filled with LQ spots
-            List<DefaultWeightedEdge> edgeList = new ArrayList<DefaultWeightedEdge>(graph.edgeSet());
-            for (DefaultWeightedEdge e : edgeList) {
-                SpotWithinCompartment target = (SpotWithinCompartment)graph.getEdgeTarget(e);
-                SpotWithinCompartment source = (SpotWithinCompartment)graph.getEdgeSource(e);
-                if (Math.abs(target.timePoint - source.timePoint)>1) {
-                    graph.removeEdge(e);
-                }
-                // if vertices become unlined, remove them from graph so that they will be taken into account @ next step
-                if (graph.edgesOf(target).isEmpty()) graph.removeVertex(target);
-                if (graph.edgesOf(source).isEmpty()) graph.removeVertex(source);
-            }
-            
-            Set<Spot> linkedSpots = graph.vertexSet();
-            unlinkedSpots = new HashSet<Spot>(Sets.difference(spotPopulation.getSpotSet(true, true), linkedSpots));
-            Map<Spot, Spot> clonedSpots = new HashMap<Spot, Spot>();
-            // duplicate unlinked spots to include them in the gap-closing part
-            for (Spot s : unlinkedSpots) {
-                SpotWithinCompartment clone = ((SpotWithinCompartment)s).duplicate();
-                graph.addVertex(s);
-                graph.addVertex(clone);
-                clonedSpots.put(clone, s);
-                graph.addEdge(s,clone);
-            }
-            SpotWithinCompartment.displayPoles=false;
-
-
-            // Prepare settings object
-            final Map< String, Object > slSettings = new HashMap< String, Object >();
-
-            slSettings.put( KEY_ALLOW_GAP_CLOSING, gcMaxFrame>1 );
-            //slSettings.put( KEY_GAP_CLOSING_FEATURE_PENALTIES, settings.get( KEY_GAP_CLOSING_FEATURE_PENALTIES ) );
-            slSettings.put( KEY_GAP_CLOSING_MAX_DISTANCE, gapCLosingMaxDistance );
-            slSettings.put( KEY_GAP_CLOSING_MAX_FRAME_GAP, gcMaxFrame );
-
-            slSettings.put( KEY_ALLOW_TRACK_SPLITTING, false );
-            //slSettings.put( KEY_SPLITTING_FEATURE_PENALTIES, settings.get( KEY_SPLITTING_FEATURE_PENALTIES ) );
-            slSettings.put( KEY_SPLITTING_MAX_DISTANCE, gapCLosingMaxDistance );
-
-            slSettings.put( KEY_ALLOW_TRACK_MERGING, false );
-            //slSettings.put( KEY_MERGING_FEATURE_PENALTIES, settings.get( KEY_MERGING_FEATURE_PENALTIES ) );
-            slSettings.put( KEY_MERGING_MAX_DISTANCE, gapCLosingMaxDistance );
-
-            slSettings.put( KEY_ALTERNATIVE_LINKING_COST_FACTOR, gcAlternativeLinkingCostFactor );
-            slSettings.put( KEY_CUTOFF_PERCENTILE, 1d );
-
-            // Solve.
-            //final SparseLAPSegmentTrackerIncludingUnlinkedSpots segmentLinker = new SparseLAPSegmentTrackerIncludingUnlinkedSpots( graph, slSettings, unlinkedSpots, unlinkedSpots2 );
-            final SparseLAPSegmentTracker segmentLinker = new SparseLAPSegmentTracker( graph, slSettings);
-            segmentLinker.setNumThreads(1);
-            final Logger.SlaveLogger slLogger = new Logger.SlaveLogger( internalLogger, 0.5, 0.5 );
-            segmentLinker.setLogger( slLogger );
-            if ( !segmentLinker.checkInput() || !segmentLinker.process() )
-            {
-                    errorMessage = segmentLinker.getErrorMessage();
-                    return false;
-            }
-            for (Entry<Spot, Spot> e : clonedSpots.entrySet()) transferLinks(e.getKey(), e.getValue());
-            core.Processor.logger.debug("number of edges after LQ step: {}, nb of vertices: {}", graph.edgeSet().size(), graph.vertexSet().size());
-        }
-        internalLogger.setStatus( "" );
-        internalLogger.setProgress( 1d );
-        final long end = System.currentTimeMillis();
-        processingTime = end - start;
+        graph = frameToFrameLinker.getResult();
+        long t1 = System.currentTimeMillis();
+        core.Processor.logger.debug("number of edges after FTF step: {}, nb of vertices: {}, processing time: {}", graph.edgeSet().size(), graph.vertexSet().size(), t1-t0);
         return true;
     }
+    public void removeGaps() {
+        if (graph==null) throw new Error("Graph not initialized");
+        List<DefaultWeightedEdge> edgeList = new ArrayList<DefaultWeightedEdge>(graph.edgeSet());
+        for (DefaultWeightedEdge e : edgeList) {
+            SpotWithinCompartment target = (SpotWithinCompartment)graph.getEdgeTarget(e);
+            SpotWithinCompartment source = (SpotWithinCompartment)graph.getEdgeSource(e);
+            if (Math.abs(target.timePoint - source.timePoint)>1) {
+                graph.removeEdge(e);
+            }
+            // if vertices become unlinked, remove them from graph
+            if (graph.edgesOf(target).isEmpty()) graph.removeVertex(target);
+            if (graph.edgesOf(source).isEmpty()) graph.removeVertex(source);
+        }
+    }
+    public boolean processGC(double distanceThreshold, int maxFrameGap, boolean includeHQ, boolean includeLQ) {
+        long t0 = System.currentTimeMillis();
+        Set<Spot> unlinkedSpots;
+        if (graph == null) {
+            graph = new SimpleWeightedGraph< Spot, DefaultWeightedEdge >( DefaultWeightedEdge.class );
+            unlinkedSpots = new HashSet<Spot>(this.spotPopulation.getSpotSet(includeHQ, includeLQ)); 
+        } else {
+            Set<Spot> linkedSpots = graph.vertexSet();
+            unlinkedSpots = new HashSet<Spot>(Sets.difference(spotPopulation.getSpotSet(includeHQ, includeLQ), linkedSpots));
+        }
+        Map<Spot, Spot> clonedSpots = new HashMap<Spot, Spot>();
+        // duplicate unlinked spots to include them in the gap-closing part
+        for (Spot s : unlinkedSpots) {
+            SpotWithinCompartment clone = ((SpotWithinCompartment)s).duplicate();
+            graph.addVertex(s);
+            graph.addVertex(clone);
+            clonedSpots.put(clone, s);
+            graph.addEdge(s,clone);
+        }
+        SpotWithinCompartment.displayPoles=false;
+        
+        // Prepare settings object
+        final Map< String, Object > slSettings = new HashMap< String, Object >();
+
+        slSettings.put( KEY_ALLOW_GAP_CLOSING, maxFrameGap>1 );
+        //slSettings.put( KEY_GAP_CLOSING_FEATURE_PENALTIES, settings.get( KEY_GAP_CLOSING_FEATURE_PENALTIES ) );
+        slSettings.put( KEY_GAP_CLOSING_MAX_DISTANCE, distanceThreshold );
+        slSettings.put( KEY_GAP_CLOSING_MAX_FRAME_GAP, maxFrameGap );
+
+        slSettings.put( KEY_ALLOW_TRACK_SPLITTING, false );
+        //slSettings.put( KEY_SPLITTING_FEATURE_PENALTIES, settings.get( KEY_SPLITTING_FEATURE_PENALTIES ) );
+        slSettings.put( KEY_SPLITTING_MAX_DISTANCE, distanceThreshold );
+
+        slSettings.put( KEY_ALLOW_TRACK_MERGING, false );
+        //slSettings.put( KEY_MERGING_FEATURE_PENALTIES, settings.get( KEY_MERGING_FEATURE_PENALTIES ) );
+        slSettings.put( KEY_MERGING_MAX_DISTANCE, distanceThreshold );
+
+        slSettings.put( KEY_ALTERNATIVE_LINKING_COST_FACTOR, 1.05 );
+        slSettings.put( KEY_CUTOFF_PERCENTILE, 1d );
+
+        // Solve.
+        final SparseLAPSegmentTracker segmentLinker = new SparseLAPSegmentTracker( graph, slSettings, spotPopulation.distanceParameters);
+        //final fiji.plugin.trackmate.tracking.sparselap.SparseLAPSegmentTracker segmentLinker = new fiji.plugin.trackmate.tracking.sparselap.SparseLAPSegmentTracker( graph, slSettings);
+        segmentLinker.setNumThreads(numThreads);
+        final Logger.SlaveLogger slLogger = new Logger.SlaveLogger( internalLogger, 0.5, 0.5 );
+        segmentLinker.setLogger( slLogger );
+        if ( !segmentLinker.checkInput() || !segmentLinker.process() ) {
+            errorMessage = segmentLinker.getErrorMessage();
+            return false;
+        }
+        for (Entry<Spot, Spot> e : clonedSpots.entrySet()) transferLinks(e.getKey(), e.getValue());
+        long t1 = System.currentTimeMillis();
+        core.Processor.logger.debug("number of edges after GC step: {}, nb of vertices: {}, processing time: {}", graph.edgeSet().size(), graph.vertexSet().size(), t1-t0);
+        return true;
+    }
+    
     private void transferLinks(Spot from, Spot to) {
         List<DefaultWeightedEdge> edgeList = new ArrayList<DefaultWeightedEdge>(graph.edgesOf(from));
         for (DefaultWeightedEdge e : edgeList) {

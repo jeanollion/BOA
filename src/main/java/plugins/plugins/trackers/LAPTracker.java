@@ -56,32 +56,38 @@ public class LAPTracker implements Tracker {
     }
     
     public void track(int structureIdx, List<StructureObject> parentTrack) {
+        int maxGap = this.maxGap.getValue().intValue();
         double spotQualityThreshold = this.spotQualityThreshold.getValue().doubleValue();
         double maxLinkingDistance = this.maxLinkingDistance.getValue().doubleValue();
         double maxLinkingDistanceGC = this.maxLinkingDistanceGC.getValue().doubleValue();
         double maxLinkingDistanceLQ = this.maxLinkingDistanceLQ.getValue().doubleValue();
-        double gapPenalty = Math.pow(maxLinkingDistanceGC, 2)/3;
-        SpotPopulation spotCollection = new SpotPopulation(new DistanceComputationParameters().setQualityThreshold(spotQualityThreshold).setGapDistancePenalty(gapPenalty));
+        double gapPenalty = Math.pow(maxLinkingDistanceGC, 2)/6;
+        double alternativeDistance = 0.7;
+        DistanceComputationParameters distParams = new DistanceComputationParameters(alternativeDistance).setQualityThreshold(spotQualityThreshold).setGapDistancePenalty(gapPenalty);
+        SpotPopulation spotCollection = new SpotPopulation(distParams);
         for (StructureObject p : parentTrack) spotCollection.addSpots(p, structureIdx, p.getObjectPopulation(structureIdx).getObjects(), compartimentStructureIdx);
         logger.debug("LAP Tracker: {}, spot HQ: {}, #spots LQ: {}", parentTrack.get(0), spotCollection.getSpotSet(true, false).size(), spotCollection.getSpotSet(false, true).size());
         LAPTrackerCore core = new LAPTrackerCore(spotCollection);
         
         // first run to select linked LQ spots
         double maxD = Math.max(maxLinkingDistanceGC, maxLinkingDistance);
-        core.setLinkingMaxDistance(maxD, maxD, 0);
-        boolean processOk = core.process(true, true);
+        boolean processOk = true;
+        processOk = processOk && core.processFTF(maxD, true, false);
+        processOk = processOk && core.processFTF(maxD, true, true);
+        processOk = processOk && core.processGC(maxD, maxGap, true, false);
+        processOk = processOk && core.processGC(maxD, maxGap, true, true);
         if (!processOk) logger.error("LAPTracker error : {}", core.getErrorMessage());
         else {
             spotCollection.setTrackLinks(parentTrack, structureIdx, core.getEdges());
             spotCollection.removeLQSpotsUnlinkedToHQSpots(parentTrack, structureIdx, true);
         }
         
-        // second run with all spots
-        core.setLinkingMaxDistance(maxLinkingDistance, maxLinkingDistanceGC, 0);
-        processOk = core.process(true, true);
+        // second run with all spots at the same time
+        core.resetEdges();
+        processOk = core.processGC(maxLinkingDistanceGC, maxGap, true, true);
         if (!processOk) logger.error("LAPTracker error : {}", core.getErrorMessage());
         else spotCollection.setTrackLinks(parentTrack, structureIdx, core.getEdges());
-            
+        
     }
 
     public Parameter[] getParameters() {

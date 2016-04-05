@@ -207,7 +207,7 @@ public class SpotWithinCompartment extends Spot {
         double dPole2 = Math.abs(y2-offset2[1]);
         if (dPole2>dPole1) d+=poleDistanceFactor * (dPole2-dPole1);*/
         // additional gap penalty
-        d+= (s2.timePoint - s1.timePoint-1) * s1.distanceParameters.gapDistancePenalty;
+        d+= s1.distanceParameters.getDistancePenalty(s1.timePoint, s2.timePoint);
         return d;
     }
     
@@ -300,6 +300,10 @@ public class SpotWithinCompartment extends Spot {
     public static class DistanceComputationParameters {
         public double qualityThreshold = 0;
         public double gapDistancePenalty = 0;
+        public double alternativeDistance;
+        public DistanceComputationParameters(double alternativeDistance) {
+            this.alternativeDistance=alternativeDistance;
+        }
         public DistanceComputationParameters setQualityThreshold(double qualityThreshold) {
             this.qualityThreshold=qualityThreshold;
             return this;
@@ -307,6 +311,13 @@ public class SpotWithinCompartment extends Spot {
         public DistanceComputationParameters setGapDistancePenalty(double gapDistancePenalty) {
             this.gapDistancePenalty=gapDistancePenalty;
             return this;
-        } 
+        }
+        public DistanceComputationParameters setAlternativeDistance(double alternativeDistance) {
+            this.alternativeDistance=alternativeDistance;
+            return this;
+        }
+        public double getDistancePenalty(int tSource, int tTarget) {
+            return (tTarget - tSource-1) * gapDistancePenalty;
+        }
     }
 }
