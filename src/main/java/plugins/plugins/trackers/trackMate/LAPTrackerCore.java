@@ -54,7 +54,9 @@ import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 import org.slf4j.LoggerFactory;
 import static plugins.plugins.trackers.trackMate.FrameToFrameSpotQualityTracker.KEY_MAX_FRAME_GAP_LQ;
+import utils.ArrayUtil;
 import utils.ThreadRunner;
+import utils.Utils;
 
 /**
  *
@@ -88,7 +90,6 @@ public class LAPTrackerCore {
     /**
      * Do not take into accound previously created graph
      * @param distanceThreshold
-     * @param alternativeDistance
      * @param includeLQ
      * @param includeHQ
      * @return 
@@ -198,5 +199,17 @@ public class LAPTrackerCore {
             if (target!=to) graph.addEdge(isSource?to : target, isSource ? target : to, e);          
         }
         graph.removeVertex(from);
+    }
+    
+    public float[] extractDistanceDistribution(boolean onlyHQHQ) {
+        if (graph==null) throw new IllegalArgumentException("Graph not initialized");
+        double gp = spotPopulation.distanceParameters.gapDistancePenalty;
+        List<Double> distances = new ArrayList<Double>();
+        for (DefaultWeightedEdge e : graph.edgeSet()) {
+            SpotWithinCompartment s1 = (SpotWithinCompartment)graph.getEdgeSource(e);
+            SpotWithinCompartment s2 = (SpotWithinCompartment)graph.getEdgeTarget(e);
+            if ( (Math.abs(s1.timePoint-s2.timePoint)==1) && (!onlyHQHQ || (!s1.lowQuality && !s2.lowQuality)) ) distances.add(s1.squareDistanceTo(s2) );
+        }
+        return Utils.toFloatArray(distances, false);
     }
 }

@@ -124,6 +124,23 @@ public class Utils {
         return res;
     }
     
+    public static double[] toDoubleArray(List<? extends Number> arrayList, boolean reverseOrder) {
+        double[] res=new double[arrayList.size()];
+        if (reverseOrder) {
+            int idx = res.length-1;
+            for (Number s : arrayList) res[idx--] = s.doubleValue();
+        } else for (int i = 0; i<res.length; ++i) res[i] = arrayList.get(i).doubleValue();
+        return res;
+    }
+    public static float[] toFloatArray(List<? extends Number> arrayList, boolean reverseOrder) {
+        float[] res=new float[arrayList.size()];
+        if (reverseOrder) {
+            int idx = res.length-1;
+            for (Number s : arrayList) res[idx--] = s.floatValue();
+        } else for (int i = 0; i<res.length; ++i) res[i] = arrayList.get(i).floatValue();
+        return res;
+    }
+    
     public static String[] toStringArray(Enum[] array) {
         String[] res = new String[array.length];
         for (int i = 0;i<res.length;++i) res[i]=array[i].toString();

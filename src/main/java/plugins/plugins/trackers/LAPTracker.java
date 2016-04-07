@@ -17,6 +17,7 @@
  */
 package plugins.plugins.trackers;
 
+import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
@@ -24,6 +25,8 @@ import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectTracker;
 import dataStructure.objects.StructureObjectUtils;
+import image.Image;
+import image.ImageFloat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -33,6 +36,7 @@ import plugins.Tracker;
 import plugins.plugins.trackers.trackMate.LAPTrackerCore;
 import plugins.plugins.trackers.trackMate.SpotPopulation;
 import plugins.plugins.trackers.trackMate.SpotWithinCompartment.DistanceComputationParameters;
+import utils.ArrayFileWriter;
 
 /**
  *
@@ -69,13 +73,13 @@ public class LAPTracker implements Tracker {
         logger.debug("LAP Tracker: {}, spot HQ: {}, #spots LQ: {}", parentTrack.get(0), spotCollection.getSpotSet(true, false).size(), spotCollection.getSpotSet(false, true).size());
         LAPTrackerCore core = new LAPTrackerCore(spotCollection);
         
-        // first run to select linked LQ spots
+        // first run to select  LQ spots linked to HQ spots
         double maxD = Math.max(maxLinkingDistanceGC, maxLinkingDistance);
         boolean processOk = true;
-        processOk = processOk && core.processFTF(maxD, true, false);
-        processOk = processOk && core.processFTF(maxD, true, true);
-        processOk = processOk && core.processGC(maxD, maxGap, true, false);
-        processOk = processOk && core.processGC(maxD, maxGap, true, true);
+        processOk = processOk && core.processFTF(maxD, true, false); //FTF only with HQ
+        processOk = processOk && core.processFTF(maxD, true, true); // FTF HQ+LQ
+        processOk = processOk && core.processGC(maxD, maxGap, true, false); // GC HQ
+        processOk = processOk && core.processGC(maxD, maxGap, true, true); // GC HQ + LQ
         if (!processOk) logger.error("LAPTracker error : {}", core.getErrorMessage());
         else {
             spotCollection.setTrackLinks(parentTrack, structureIdx, core.getEdges());
@@ -88,6 +92,10 @@ public class LAPTracker implements Tracker {
         if (!processOk) logger.error("LAPTracker error : {}", core.getErrorMessage());
         else spotCollection.setTrackLinks(parentTrack, structureIdx, core.getEdges());
         
+        // plot distance distribution
+        float[] dHQ= core.extractDistanceDistribution(true);
+        float[] dHQLQ = core.extractDistanceDistribution(false);
+        new ArrayFileWriter().addArray("HQ", dHQ).addArray("HQLQ", dHQLQ).writeToFile("/home/jollion/Documents/LJP/Analyse/SpotDistanceDistribution/SpotDistanceDistribution.csv");
     }
 
     public Parameter[] getParameters() {

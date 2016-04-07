@@ -94,4 +94,6 @@ public class MutationTrackPostProcessing {
         if (track1.get(0).getTimePoint()>track2.get(0).getTimePoint()) return overlappingInTime(track2, track1);
         return track1.get(track1.size()-1).getTimePoint()>=track2.get(0).getTimePoint();
     }
+    
+    private double getMaximumLikelyHood()
 }

@@ -56,7 +56,7 @@ public class TestLAPTrackerMutations {
         int fieldIdx = 0;
         TestLAPTrackerMutations t = new TestLAPTrackerMutations();
         t.init(dbName);
-        t.testLAPTracking(fieldIdx, 0, 0, 60);
+        t.testLAPTracking(fieldIdx, 0, 0, 600);
     }
     
     public void testLAPTracking(int fieldIdx, int mcIdx, int tStart, int tEnd) {
