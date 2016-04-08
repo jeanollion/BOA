@@ -299,7 +299,7 @@ public class SpotWithinCompartment extends Spot {
     };
     public static class DistanceComputationParameters {
         public double qualityThreshold = 0;
-        public double gapDistancePenalty = 0;
+        public double gapSquareDistancePenalty = 0;
         public double alternativeDistance;
         public DistanceComputationParameters(double alternativeDistance) {
             this.alternativeDistance=alternativeDistance;
@@ -308,8 +308,8 @@ public class SpotWithinCompartment extends Spot {
             this.qualityThreshold=qualityThreshold;
             return this;
         }
-        public DistanceComputationParameters setGapDistancePenalty(double gapDistancePenalty) {
-            this.gapDistancePenalty=gapDistancePenalty;
+        public DistanceComputationParameters setGapSquareDistancePenalty(double gapDistancePenalty) {
+            this.gapSquareDistancePenalty=gapDistancePenalty;
             return this;
         }
         public DistanceComputationParameters setAlternativeDistance(double alternativeDistance) {
@@ -317,7 +317,7 @@ public class SpotWithinCompartment extends Spot {
             return this;
         }
         public double getDistancePenalty(int tSource, int tTarget) {
-            return (tTarget - tSource-1) * gapDistancePenalty;
+            return (tTarget - tSource-1) * gapSquareDistancePenalty;
         }
     }
 }

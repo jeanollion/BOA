@@ -203,7 +203,6 @@ public class LAPTrackerCore {
     
     public float[] extractDistanceDistribution(boolean onlyHQHQ) {
         if (graph==null) throw new IllegalArgumentException("Graph not initialized");
-        double gp = spotPopulation.distanceParameters.gapDistancePenalty;
         List<Double> distances = new ArrayList<Double>();
         for (DefaultWeightedEdge e : graph.edgeSet()) {
             SpotWithinCompartment s1 = (SpotWithinCompartment)graph.getEdgeSource(e);
@@ -212,4 +211,14 @@ public class LAPTrackerCore {
         }
         return Utils.toFloatArray(distances, false);
     }
+    /*public float[] extractDeltaYDistribution(boolean onlyHQHQ) {
+        if (graph==null) throw new IllegalArgumentException("Graph not initialized");
+        List<Double> distances = new ArrayList<Double>();
+        for (DefaultWeightedEdge e : graph.edgeSet()) {
+            SpotWithinCompartment s1 = (SpotWithinCompartment)graph.getEdgeSource(e);
+            SpotWithinCompartment s2 = (SpotWithinCompartment)graph.getEdgeTarget(e);
+            if ( (Math.abs(s1.timePoint-s2.timePoint)==1) && (!onlyHQHQ || (!s1.lowQuality && !s2.lowQuality)) ) distances.add(s1.squareDistanceTo(s2) );
+        }
+        return Utils.toFloatArray(distances, false);
+    }*/
 }

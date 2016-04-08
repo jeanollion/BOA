@@ -23,6 +23,7 @@ import image.BoundingBox;
 import image.ImageMask;
 import java.util.ArrayList;
 import java.util.Collections;
+import static plugins.Plugin.logger;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparator;
 import plugins.plugins.trackers.trackMate.SpotWithinCompartment.Localization;
@@ -41,6 +42,7 @@ public class SpotCompartiment {
     double[] middleYLimits;
     public static double middleAreaProportion = 0.5;
     public SpotCompartiment(StructureObject o) {
+        long t0 = System.currentTimeMillis();
         object = o;
         double[][] poles = getPoles(object.getObject(), 0.5);
         offsetUp = poles[0];
@@ -49,6 +51,8 @@ public class SpotCompartiment {
         //if (object.getNext()!=null && object.getNext().getDivisionSiblings(false)!=null) divisionAtNextTimePoint = true;
         //previousDivisionTime = object.getPreviousDivisionTimePoint();
         nextDivisionTimePoint = object.getNextDivisionTimePoint();
+        long t1 = System.currentTimeMillis();
+        //if (o.getTimePoint()<=10) logger.debug("spotCompartimentCreation time: {}", t0-t1);
     }
     
     public double[] getOffset(Localization localization) {

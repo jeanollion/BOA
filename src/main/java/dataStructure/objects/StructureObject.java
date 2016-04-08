@@ -39,7 +39,9 @@ import utils.SmallArray;
 @Lifecycle
 @Entity
 @Index(value={"structure_idx, parent"})
-public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker, StructureObjectTrackCorrection {
+public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker, StructureObjectTrackCorrection, Comparable<StructureObject> {
+
+    
     public enum TrackFlag{trackError, correctionMerge, correctionMergeToErase, correctionSplit, correctionSplitNew, correctionSplitError};
     public final static Logger logger = LoggerFactory.getLogger(StructureObject.class);
     //structure-related attributes
@@ -265,6 +267,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
 
     
     // track-related methods
+    
+    
+    
     @Override public void setPreviousInTrack(StructureObjectTracker previous, boolean isTrackHead) {
         setPreviousInTrack(previous, isTrackHead, null);
     }
@@ -393,6 +398,16 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             n.trackHeadId=null;
             n.trackHead=trackHead;
         }
+    }
+    
+    public void setTrackHead(StructureObject trackHead, boolean resetPreviousIfTrackHead) {
+        if (resetPreviousIfTrackHead && this==trackHead) {
+            if (previous!=null && previous.next==this) previous.next=null;
+            this.previous=null;
+        }
+        this.isTrackHead=this==trackHead;
+        this.trackHead=trackHead;
+        this.trackHeadId=id;
     }
     
     // track correction-related methods 
@@ -780,6 +795,26 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected String toStringShort() {
         if (isRoot()) return "Root";
         else return "S:"+structureIdx+ ",Idx:"+idx+ ",P:["+getParent().toStringShort()+"]" ;
+    }
+    
+    public int compareTo(StructureObject other) {
+        int comp = Integer.compare(getTimePoint(), other.getTimePoint());
+        if (comp == 0) {
+            comp = Integer.compare(getStructureIdx(), other.getStructureIdx());
+            if (comp == 0) {
+                if (getParent() != null && other.getParent() != null) {
+                    comp = getParent().compareTo(other.getParent());
+                    if (comp != 0) {
+                        return comp;
+                    }
+                }
+                return Integer.compare(getIdx(), other.getIdx());
+            } else {
+                return comp;
+            }
+        } else {
+            return comp;
+        }
     }
     
     // morphium-related methods

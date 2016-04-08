@@ -47,30 +47,33 @@ public class LAPTracker implements Tracker {
     static int compartimentStructureIdx = 1;
     NumberParameter spotQualityThreshold = new NumberParameter("Spot Quality Threshold", 3, 3.5);
     NumberParameter maxGap = new BoundedNumberParameter("Maximum frame gap", 0, 2, 0, null);
-    NumberParameter maxLinkingDistance = new BoundedNumberParameter("FTF Maximum Linking Distance (0=skip)", 2, 0.75, 0, null);
-    NumberParameter maxLinkingDistanceGC = new BoundedNumberParameter("Gap-closing Maximum Linking Distance (0=skip)", 2, 0.75, 0, null);
-    NumberParameter maxLinkingDistanceLQ = new BoundedNumberParameter("Low quality spots Maximum Linking distance (0=skip)", 2, 0.75, 0, null);
-    Parameter[] parameters = new Parameter[]{maxLinkingDistance, maxLinkingDistanceGC, maxGap, maxLinkingDistanceLQ, spotQualityThreshold};
+    NumberParameter maxLinkingDistance = new BoundedNumberParameter("FTF Maximum Linking Distance (0=skip)", 2, 0.5, 0, null);
+    NumberParameter maxLinkingDistanceGC = new BoundedNumberParameter("Gap-closing Maximum Linking Distance (0=skip)", 2, 0.5, 0, null);
+    NumberParameter gapPenalty = new BoundedNumberParameter("Gap Distance Penalty", 2, 0.25, 0, null);
+    NumberParameter alternativeDistance = new BoundedNumberParameter("Alternative Distance", 2, 0.55, 0, null);
+    //NumberParameter maxLinkingDistanceLQ = new BoundedNumberParameter("Low quality spots Maximum Linking distance (0=skip)", 2, 0.75, 0, null);
+    Parameter[] parameters = new Parameter[]{maxLinkingDistance, maxLinkingDistanceGC, maxGap, gapPenalty, alternativeDistance, spotQualityThreshold};
     
     public LAPTracker setLinkingMaxDistance(double maxDist, double maxDistGapClosing, double maxDistLowQuality) {
         maxLinkingDistance.setValue(maxDist);
         maxLinkingDistanceGC.setValue(maxDistGapClosing);
-        maxLinkingDistanceLQ.setValue(maxDistLowQuality);
+        //maxLinkingDistanceLQ.setValue(maxDistLowQuality);
         return this;
     }
     
     public void track(int structureIdx, List<StructureObject> parentTrack) {
-        int maxGap = this.maxGap.getValue().intValue();
+        int maxGap = this.maxGap.getValue().intValue()+1; // parameter = count only the frames where the spot is invisible
         double spotQualityThreshold = this.spotQualityThreshold.getValue().doubleValue();
         double maxLinkingDistance = this.maxLinkingDistance.getValue().doubleValue();
         double maxLinkingDistanceGC = this.maxLinkingDistanceGC.getValue().doubleValue();
-        double maxLinkingDistanceLQ = this.maxLinkingDistanceLQ.getValue().doubleValue();
-        double gapPenalty = Math.pow(maxLinkingDistanceGC, 2)/6;
-        double alternativeDistance = 0.7;
-        DistanceComputationParameters distParams = new DistanceComputationParameters(alternativeDistance).setQualityThreshold(spotQualityThreshold).setGapDistancePenalty(gapPenalty);
+        double gapPenalty = Math.pow(this.gapPenalty.getValue().doubleValue(), 2);
+        double alternativeDistance = this.alternativeDistance.getValue().doubleValue();
+        DistanceComputationParameters distParams = new DistanceComputationParameters(alternativeDistance).setQualityThreshold(spotQualityThreshold).setGapSquareDistancePenalty(gapPenalty);
         SpotPopulation spotCollection = new SpotPopulation(distParams);
+        long t0 = System.currentTimeMillis();
         for (StructureObject p : parentTrack) spotCollection.addSpots(p, structureIdx, p.getObjectPopulation(structureIdx).getObjects(), compartimentStructureIdx);
-        logger.debug("LAP Tracker: {}, spot HQ: {}, #spots LQ: {}", parentTrack.get(0), spotCollection.getSpotSet(true, false).size(), spotCollection.getSpotSet(false, true).size());
+        long t1 = System.currentTimeMillis();
+        logger.debug("LAP Tracker: {}, spot HQ: {}, #spots LQ: {}, time: {}", parentTrack.get(0), spotCollection.getSpotSet(true, false).size(), spotCollection.getSpotSet(false, true).size(), t1-t0);
         LAPTrackerCore core = new LAPTrackerCore(spotCollection);
         
         // first run to select  LQ spots linked to HQ spots
@@ -92,10 +95,15 @@ public class LAPTracker implements Tracker {
         if (!processOk) logger.error("LAPTracker error : {}", core.getErrorMessage());
         else spotCollection.setTrackLinks(parentTrack, structureIdx, core.getEdges());
         
-        // plot distance distribution
+        // ETUDIER LES DEPLACEMENTS EN Y
+        /*
+        // get distance distribution
         float[] dHQ= core.extractDistanceDistribution(true);
         float[] dHQLQ = core.extractDistanceDistribution(false);
         new ArrayFileWriter().addArray("HQ", dHQ).addArray("HQLQ", dHQLQ).writeToFile("/home/jollion/Documents/LJP/Analyse/SpotDistanceDistribution/SpotDistanceDistribution.csv");
+        */
+        long t2 = System.currentTimeMillis();
+        logger.debug("LAP Tracker: {}, total processing time: {}", parentTrack.get(0), t2-t1);
     }
 
     public Parameter[] getParameters() {

@@ -117,7 +117,8 @@ public class SparseLAPSegmentTracker implements SpotTracker, Benchmark
                 final CostThreshold<Spot, Spot> gcCostThreshold = new CostThreshold<Spot, Spot>() {
                     final double threshold = gcmd * gcmd;
                     public double linkingCostThreshold(Spot source, Spot target) {
-                        return threshold + distanceParameters.getDistancePenalty(source.getFeature(Spot.FRAME).intValue(), target.getFeature(Spot.FRAME).intValue());
+                        return threshold;
+                        //return threshold + distanceParameters.getDistancePenalty(source.getFeature(Spot.FRAME).intValue(), target.getFeature(Spot.FRAME).intValue());
                     }
                 };
                 final JaqamanSegmentCostMatrixCreator costMatrixCreator = new JaqamanSegmentCostMatrixCreator( graph, settings, gcCostThreshold, distanceParameters.alternativeDistance * distanceParameters.alternativeDistance );

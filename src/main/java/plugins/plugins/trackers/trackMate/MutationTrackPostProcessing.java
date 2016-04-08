@@ -30,6 +30,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import org.apache.commons.math3.distribution.BetaDistribution;
+import org.apache.commons.math3.distribution.NormalDistribution;
+import plugins.plugins.trackers.trackMate.TrackLikelyhoodEstimator.SplitScenario;
+import plugins.plugins.trackers.trackMate.TrackLikelyhoodEstimator.Track;
+import utils.HashMapGetCreate;
+import utils.HashMapGetCreate.Factory;
 import utils.Pair;
 import utils.clustering.ClusterCollection;
 import utils.clustering.Interface;
@@ -42,15 +48,51 @@ public class MutationTrackPostProcessing {
     final TreeMap<StructureObject, List<StructureObject>> trackHeadTrackMap; // sorted by timePoint
     List<List<StructureObject>> trackHeadGroups;
     final HashMap<Object3D, SpotWithinCompartment>  objectSpotMap;
+    final Map<StructureObject, List<SpotWithinCompartment>> trackHeadSpotMap;
+    final HashMapGetCreate<List<SpotWithinCompartment>, Track> spotTrackMap;
     final double maxExchangeDistance;
+    TrackLikelyhoodEstimator estimator;
     
     public MutationTrackPostProcessing(int structureIdx, List<StructureObject> parentTrack, SpotPopulation pop, double maxExchangeDistance) {
         trackHeadTrackMap = new TreeMap<StructureObject, List<StructureObject>>(getStructureObjectComparator());
         trackHeadTrackMap.putAll(StructureObjectUtils.getAllTracks(parentTrack, structureIdx));
         objectSpotMap = pop.getObjectSpotMap();
+        trackHeadSpotMap = new HashMap<StructureObject, List<SpotWithinCompartment>>(trackHeadTrackMap.size());
+        for (Entry<StructureObject, List<StructureObject>> e : trackHeadTrackMap.entrySet()) {
+            List<SpotWithinCompartment> l = new ArrayList<SpotWithinCompartment>(e.getValue().size());
+            trackHeadSpotMap.put(e.getKey(), l);
+            for (StructureObject o : e.getValue()) l.add(objectSpotMap.get(o.getObject()));
+        }
+        spotTrackMap = new HashMapGetCreate<List<SpotWithinCompartment>, Track>(new Factory<List<SpotWithinCompartment>, Track>() {
+            public Track create(List<SpotWithinCompartment> key) {return new Track(key);}
+        });
         this.maxExchangeDistance=maxExchangeDistance;
+        estimator = new TrackLikelyhoodEstimator(new NormalDistribution(11.97, 1.76), new BetaDistribution(0.735, 12.69), 6);
     }
-
+    
+    public void connectShortTracksByDeletingLQSpot() {
+        //
+    }
+    public void splitLongTracks() {
+        Map<StructureObject, List<SpotWithinCompartment>> trackHeadSpotMapTemp = new HashMap<StructureObject, List<SpotWithinCompartment>>();
+        for (Entry<StructureObject, List<SpotWithinCompartment>> e : trackHeadSpotMap.entrySet()) {
+            List<StructureObject> track = trackHeadTrackMap.get(e.getKey());
+            SplitScenario s = estimator.splitTrack(spotTrackMap.getAndCreateIfNecessary(e.getValue()));
+            List<List<StructureObject>> tracks = s.splitTrack(track);
+            List<List<SpotWithinCompartment>> spotTracks = s.splitTrack(e.getValue());
+            if (tracks!=null) {
+                for (int i = 0; i<tracks.size(); ++i) {
+                    List<StructureObject> subTrack = tracks.get(i);
+                    StructureObject th = subTrack.get(0);
+                    trackHeadTrackMap.put(th, subTrack);
+                    trackHeadSpotMapTemp.put(th, spotTracks.get(i));
+                    for (StructureObject o : subTrack) o.setTrackHead(th, true);
+                }
+            } else trackHeadSpotMapTemp.put(track.get(0), e.getValue());
+        }
+        trackHeadSpotMap.clear();
+        trackHeadSpotMap.putAll(trackHeadSpotMapTemp);
+    }
     
     public void groupTracks() {
         trackHeadGroups = new ArrayList<List<StructureObject>>();
@@ -95,5 +137,5 @@ public class MutationTrackPostProcessing {
         return track1.get(track1.size()-1).getTimePoint()>=track2.get(0).getTimePoint();
     }
     
-    private double getMaximumLikelyHood()
+    
 }
