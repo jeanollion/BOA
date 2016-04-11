@@ -49,7 +49,7 @@ import utils.Pair;
  * @author jollion
  */
 public class SpotPopulation {
-    private final HashMap<Object3D, SpotWithinCompartment>  objectSpotMap = new HashMap<Object3D, SpotWithinCompartment>();
+    public final HashMap<Object3D, SpotWithinCompartment>  objectSpotMap = new HashMap<Object3D, SpotWithinCompartment>();
     private final SpotCollection collectionHQ = new SpotCollection();
     private final SpotCollection collectionLQ = new SpotCollection();
     private final SpotCollection collection = new SpotCollection();

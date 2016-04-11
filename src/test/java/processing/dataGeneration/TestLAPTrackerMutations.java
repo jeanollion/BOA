@@ -65,15 +65,16 @@ public class TestLAPTrackerMutations {
             tests[i].init(dbName, fieldIdx, 0, 0, 600);
             long t01 = System.currentTimeMillis();
             logger.debug("retrieve time: {}", t01-t00);
+            tests[i].testLAPTracking();
         }
-        long t1 = System.currentTimeMillis();
+        /*long t1 = System.currentTimeMillis();
         ThreadRunner.execute(tests, false, new ThreadAction<TestLAPTrackerMutations>() {
             public void run(TestLAPTrackerMutations object, int idx, int threadIdx) {
                 object.testLAPTracking();
             }
         });
         long t2 = System.currentTimeMillis();
-        logger.debug("total processing time: {}, retrieve time: {}", t2-t1, t1-t0);
+        logger.debug("total processing time: {}, retrieve time: {}", t2-t1, t1-t0);*/
     }
     
     public void testLAPTracking() {
