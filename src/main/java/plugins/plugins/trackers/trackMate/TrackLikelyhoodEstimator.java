@@ -33,12 +33,12 @@ public class TrackLikelyhoodEstimator {
     RealDistribution distanceDistribution;
     double minLength, maxLength; // minimal length for a track
     double theoricalLength;
-    double distanceDXHalf;
-    public TrackLikelyhoodEstimator(RealDistribution lengthDistribution, RealDistribution distanceDistribution, double distanceDX, int minimalTrackLength) {
+    //double distanceDXHalf;
+    public TrackLikelyhoodEstimator(RealDistribution lengthDistribution, RealDistribution distanceDistribution, int minimalTrackLength) {
         this.lengthDistribution=lengthDistribution;
         this.distanceDistribution=distanceDistribution;
         this.minLength=minimalTrackLength;
-        this.distanceDXHalf=distanceDX/2d;
+        //this.distanceDXHalf=0.1/2d;
         this.theoricalLength = getModalXValue(lengthDistribution, minLength, 0.5d, 0.01);
         maxLength = getMaxXValue(lengthDistribution, theoricalLength, lengthDistribution.density(minLength), 0.5d, 0.01);
         //logger.debug("minLength: {}/D:{}, theorical length: {}/D:{}, maximalLength: {}/D:{}", minLength, lengthDistribution.density(minLength), theoricalLength, lengthDistribution.density(theoricalLength), maxLength, lengthDistribution.density(maxLength));
@@ -103,10 +103,10 @@ public class TrackLikelyhoodEstimator {
      */
     public double getLikelyhood(Track track, int[] divisionIndices, double distanceProduct) {
         if (divisionIndices.length==0) return lengthDistribution.density(track.getLength()) * distanceProduct;
-        double res = lengthDistribution.density(track.getLengthFromStart(divisionIndices[0])) * lengthDistribution.density(track.getLengthToEnd(divisionIndices[divisionIndices.length-1]+1)) * distanceProduct / distanceDistribution.probability(track.squareDistances[divisionIndices[0]]-distanceDXHalf, track.squareDistances[divisionIndices[0]]+distanceDXHalf); // divide to remove the displacement contribution from the product
+        double res = lengthDistribution.density(track.getLengthFromStart(divisionIndices[0])) * lengthDistribution.density(track.getLengthToEnd(divisionIndices[divisionIndices.length-1]+1)) * distanceProduct / distanceDistribution.probability(track.squareDistances[divisionIndices[0]]); // divide to remove the displacement contribution from the product
         for (int i = 1; i<divisionIndices.length; ++i) res*=lengthDistribution.density(track.getLength(divisionIndices[i-1]+1, divisionIndices[i])) / distanceDistribution.density(track.squareDistances[divisionIndices[i]]); 
         return res;
-        distanceDistribution.
+
     }
     
     public RealDistribution getLengthDistribution() {
@@ -185,8 +185,8 @@ public class TrackLikelyhoodEstimator {
         double score, distanceProduct;
         private SplitScenario(Track track) { // no division case
             this.distanceProduct = getDistanceProduct(track.squareDistances);
-            this.score=lengthDistribution.density(track.getLength()) * distanceProduct ;
             this.splitIndices=new int[0];
+            this.score=getLikelyhood(track, splitIndices, distanceProduct);
         }
         public SplitScenario(Track track, int divisionNumber) {
             this.distanceProduct = getDistanceProduct(track.squareDistances);

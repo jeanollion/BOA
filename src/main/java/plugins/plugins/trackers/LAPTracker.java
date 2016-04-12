@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import plugins.Tracker;
 import plugins.plugins.trackers.trackMate.LAPTrackerCore;
+import plugins.plugins.trackers.trackMate.MutationTrackPostProcessing;
 import plugins.plugins.trackers.trackMate.SpotPopulation;
 import plugins.plugins.trackers.trackMate.SpotWithinCompartment.DistanceComputationParameters;
 import utils.ArrayFileWriter;
@@ -94,6 +95,10 @@ public class LAPTracker implements Tracker {
         processOk = core.processGC(maxLinkingDistanceGC, maxGap, true, true);
         if (!processOk) logger.error("LAPTracker error : {}", core.getErrorMessage());
         else spotCollection.setTrackLinks(parentTrack, structureIdx, core.getEdges());
+        
+        // post-processing
+        MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, spotCollection);
+        postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC, 8);
         
         // ETUDIER LES DEPLACEMENTS EN Y
         /*

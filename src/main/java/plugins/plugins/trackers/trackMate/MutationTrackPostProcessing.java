@@ -25,6 +25,7 @@ import fiji.plugin.trackmate.Spot;
 import fiji.plugin.trackmate.SpotCollection;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.commons.math3.distribution.NormalDistribution;
+import static plugins.Plugin.logger;
 import plugins.plugins.trackers.trackMate.TrackLikelyhoodEstimator.SplitScenario;
 import plugins.plugins.trackers.trackMate.TrackLikelyhoodEstimator.Track;
 import utils.HashMapGetCreate;
@@ -52,11 +54,12 @@ public class MutationTrackPostProcessing {
     final HashMap<Object3D, SpotWithinCompartment>  objectSpotMap;
     final Map<StructureObject, List<SpotWithinCompartment>> trackHeadSpotTrackMap;
     final HashMapGetCreate<List<SpotWithinCompartment>, Track> spotTrackMap;
-    final double maxExchangeDistance;
     TrackLikelyhoodEstimator estimator;
-    final SpotPopulation population;
-    public MutationTrackPostProcessing(int structureIdx, List<StructureObject> parentTrack, SpotPopulation pop, double maxExchangeDistance) {
-        this.population=pop;
+    final SpotPopulation pop;
+    final int spotStructureIdx;
+    public MutationTrackPostProcessing(int structureIdx, List<StructureObject> parentTrack, SpotPopulation pop) {
+        this.pop=pop;
+        this.spotStructureIdx=structureIdx;
         trackHeadTrackMap = new TreeMap<StructureObject, List<StructureObject>>(getStructureObjectComparator());
         trackHeadTrackMap.putAll(StructureObjectUtils.getAllTracks(parentTrack, structureIdx));
         objectSpotMap = pop.getObjectSpotMap();
@@ -69,87 +72,97 @@ public class MutationTrackPostProcessing {
         spotTrackMap = new HashMapGetCreate<List<SpotWithinCompartment>, Track>(new Factory<List<SpotWithinCompartment>, Track>() {
             public Track create(List<SpotWithinCompartment> key) {return new Track(key);}
         });
-        this.maxExchangeDistance=maxExchangeDistance;
         estimator = new TrackLikelyhoodEstimator(new NormalDistribution(11.97, 1.76), new BetaDistribution(0.735, 12.69), 6);
     }
     
-    public void connectShortTracksByDeletingLQSpot(double maxDist, List<StructureObject> objectsToRemove) {
+    public void connectShortTracksByDeletingLQSpot(double maxDist, int maxTrackSize) {
+        Set<StructureObject> parentsToRelabel = new HashSet<StructureObject>();
         double maxSqDist = maxDist * maxDist;
         Iterator<List<StructureObject>> it = trackHeadTrackMap.values().iterator();
         while (it.hasNext()) {
-            List<StructureObject> track = it.next();
+            List<StructureObject> tailTrack = it.next();
+            //if (tailTrack.size()>=maxTrackSize) continue;
             // cherche un spot s proche dans la même bactérie tq LQ(s) ou LQ(trackHead(track))
-            if (track.size()==1) continue;
-            StructureObject o1 = track.get(0);
-            SpotWithinCompartment s1  = objectSpotMap.get(o1.getObject());
-            SpotWithinCompartment s1Next  = objectSpotMap.get(track.get(1).getObject());
+            if (tailTrack.size()==1) continue;
+            StructureObject tailTrackHead = tailTrack.get(0);
+            SpotWithinCompartment sTailTrackHead  = objectSpotMap.get(tailTrackHead.getObject());
+            SpotWithinCompartment sTailTrackNext  = objectSpotMap.get(tailTrack.get(1).getObject());
+            
             double minDist = Double.POSITIVE_INFINITY;
             StructureObject bestCandidate=null;
+            boolean deleteTailTrackHead=false;
             
-            boolean deleteS1=false;
-            
-            for (StructureObject o2 : s1.compartiment.object.getChildObjects(o1.getStructureIdx())) { // look in spots within same compartiment
-                if (o2.getNext()!=null) continue; // look only within track ends
-                if (o2.getPrevious()==null) continue; // look only wihtin tracks with >=1 element
-                SpotWithinCompartment s2  = (SpotWithinCompartment)objectSpotMap.get(o2.getObject());
-                SpotWithinCompartment s2Prev = (SpotWithinCompartment)objectSpotMap.get(o2.getPrevious().getObject());
-                double dS2S1Next = s2.squareDistanceTo(s1Next);
-                double dS2PrevS1 = s2Prev.squareDistanceTo(s1);
-                if (dS2S1Next>maxSqDist && dS2PrevS1>maxSqDist) continue;
-                if (s1.lowQuality==s2.lowQuality) { // compare distances
-                    if (dS2S1Next<dS2PrevS1) {
-                        if (bestCandidate==null || minDist>dS2S1Next) {
-                            minDist = dS2S1Next;
-                            deleteS1 = true;
-                            bestCandidate = o2;
+            for (StructureObject headTrackTail : sTailTrackHead.compartiment.object.getChildObjects(spotStructureIdx)) { // look in spots within same compartiment
+                if (headTrackTail.getNext()!=null) continue; // look only within track ends
+                if (headTrackTail.getPrevious()==null) continue; // look only wihtin tracks with >=1 element
+                //if (trackHeadTrackMap.get(headTrackTail.getTrackHead()).size()>=maxTrackSize) continue;
+                SpotWithinCompartment sHeadTrackTail  = (SpotWithinCompartment)objectSpotMap.get(headTrackTail.getObject());
+                SpotWithinCompartment sHeadTrackPrev = (SpotWithinCompartment)objectSpotMap.get(headTrackTail.getPrevious().getObject());
+                double dTailToHeadNext = sHeadTrackTail.squareDistanceTo(sTailTrackNext);
+                double dTailPrevToHead = sHeadTrackPrev.squareDistanceTo(sTailTrackHead);
+                if (dTailToHeadNext>maxSqDist && dTailPrevToHead>maxSqDist) continue;
+                if (!sTailTrackHead.lowQuality && !sHeadTrackTail.lowQuality) continue;
+                if (sTailTrackHead.lowQuality && sHeadTrackTail.lowQuality) { // 2 LQ spots: compare distances
+                    if (dTailToHeadNext<dTailPrevToHead) {
+                        if (bestCandidate==null || minDist>dTailToHeadNext) {
+                            minDist = dTailToHeadNext;
+                            deleteTailTrackHead = true;
+                            bestCandidate = headTrackTail;
                         }
                     } else {
-                        if (bestCandidate==null || minDist>dS2PrevS1) {
-                            minDist = dS2PrevS1;
-                            deleteS1 = false;
-                            bestCandidate = o2;
+                        if (bestCandidate==null || minDist>dTailPrevToHead) {
+                            minDist = dTailPrevToHead;
+                            deleteTailTrackHead = false;
+                            bestCandidate = headTrackTail;
                         }
                     }
-                } else if (!s1.lowQuality && dS2PrevS1<=maxSqDist) {
-                    if (bestCandidate==null || minDist>dS2PrevS1) {
-                        minDist = dS2PrevS1;
-                        deleteS1 = false;
-                        bestCandidate = o2;
+                } else if (!sTailTrackHead.lowQuality && dTailPrevToHead<=maxSqDist) { // keep the high quality spot
+                    if (bestCandidate==null || minDist>dTailPrevToHead) {
+                        minDist = dTailPrevToHead;
+                        deleteTailTrackHead = false;
+                        bestCandidate = headTrackTail;
                     }
-                } else if (!s2.lowQuality && dS2S1Next<=maxSqDist) {
-                    if (bestCandidate==null || minDist>dS2S1Next) {
-                            minDist = dS2S1Next;
-                            deleteS1 = true;
-                            bestCandidate = o2;
-                        }
+                } else if (!sHeadTrackTail.lowQuality && dTailToHeadNext<=maxSqDist) { // keep the high quality spot
+                    if (bestCandidate==null || minDist>dTailToHeadNext) {
+                        minDist = dTailToHeadNext;
+                        deleteTailTrackHead = true;
+                        bestCandidate = headTrackTail;
+                    }
                 }
             }
             if (bestCandidate!=null) { // link the 2 tracks
                 StructureObject objectToRemove = null;
                 it.remove();
-                StructureObject trackHeadHead = bestCandidate.getTrackHead();
-                List<SpotWithinCompartment> spotTrackHead = trackHeadSpotTrackMap.get(trackHeadHead);
-                List<SpotWithinCompartment> spotTrackTail = trackHeadSpotTrackMap.remove(o1);
-                spotTrackMap.remove(spotTrackHead);
-                spotTrackMap.remove(spotTrackTail);
-                List<StructureObject> trackHead = this.trackHeadTrackMap.get(trackHeadHead);
-                List<StructureObject> trackTail = this.trackHeadTrackMap.get(o1);
-                StructureObject trackHeadTail = null;
-                if (deleteS1) {
-                    spotTrackTail.remove(0);
-                    objectToRemove = trackTail.remove(0);
-                    trackHeadTail = bestCandidate;
+                StructureObject headTrackHead = bestCandidate.getTrackHead();
+                List<StructureObject> headTrack = this.trackHeadTrackMap.get(headTrackHead);
+                List<SpotWithinCompartment> spotHeadTrack = trackHeadSpotTrackMap.get(headTrackHead);
+                List<SpotWithinCompartment> spotTailTrack = trackHeadSpotTrackMap.remove(tailTrackHead);
+                spotTrackMap.remove(spotHeadTrack);
+                spotTrackMap.remove(spotTailTrack);
+                StructureObject headTrackTail = null;
+                if (deleteTailTrackHead) {
+                    spotTailTrack.remove(0);
+                    objectToRemove = tailTrack.remove(0);
+                    headTrackTail = bestCandidate;
                 } else {
-                    spotTrackHead.remove(spotTrackHead.size()-1);
-                    objectToRemove =  trackHead.remove(spotTrackHead.size()-1);
-                    trackHeadTail = bestCandidate.getPrevious();
+                    spotHeadTrack.remove(spotHeadTrack.size()-1);
+                    objectToRemove =  headTrack.remove(headTrack.size()-1);
+                    headTrackTail = bestCandidate.getPrevious();
                 }
-                trackTail.get(0).setPreviousInTrack(trackHeadTail, false, StructureObject.TrackFlag.correctionMerge);
-                for (StructureObject o : trackTail) o.setTrackHead(trackHeadHead, false);
-                spotTrackHead.addAll(spotTrackTail);
-                objectsToRemove.add(objectToRemove);
+                logger.debug("link Tracks: delete: {}, minDist: {}, delete tailTrackHead? {}", objectToRemove, minDist, deleteTailTrackHead);
+                tailTrack.get(0).setPreviousInTrack(headTrackTail, false, StructureObject.TrackFlag.correctionMerge);
+                for (StructureObject o : tailTrack) o.setTrackHead(headTrackHead, false);
+                spotHeadTrack.addAll(spotTailTrack);
+                headTrack.addAll(tailTrack);
+                
+                // remove object
+                parentsToRelabel.add(objectToRemove.getParent());
+                objectToRemove.resetTrackLinks();
+                //pop.removeSpot(objectToRemove);
+                //objectToRemove.getParent().getChildren(spotStructureIdx).remove(objectToRemove);
             }
         }
+        for (StructureObject p : parentsToRelabel) p.relabelChildren(spotStructureIdx);
     }
     public void splitLongTracks() {
         Map<StructureObject, List<SpotWithinCompartment>> trackHeadSpotMapTemp = new HashMap<StructureObject, List<SpotWithinCompartment>>();

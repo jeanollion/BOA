@@ -150,7 +150,10 @@ public class SpotPopulation {
                     o.getParent().getChildren(structureIdx).remove(o);
                     if (removeFromSpotPopulation) {
                         Spot s = objectSpotMap.remove(o.getObject());
-                        if (s!=null) collection.remove(s, o.getTimePoint());
+                        if (s!=null) {
+                            collection.remove(s, o.getTimePoint());
+                            collectionLQ.remove(s, o.getTimePoint());
+                        }
                     }
                     parentsToRelabel.add(o.getParent());
                     eraseCount++;
@@ -159,6 +162,15 @@ public class SpotPopulation {
         }
         for (StructureObject p : parentsToRelabel) p.relabelChildren(structureIdx);
         logger.debug("# of tracks before LQ filter: {}, after: {}, nb of removed spots: {}", allTracks.size(), StructureObjectUtils.getAllTracks(parentTrack, structureIdx).size(), eraseCount);
+    }
+    
+    public void removeSpot(StructureObject o) {
+        SpotWithinCompartment s = this.objectSpotMap.remove(o.getObject());
+        if (s!=null) {
+            collection.remove(s, o.getTimePoint());
+            if (s.lowQuality) collectionLQ.remove(s, o.getTimePoint());
+            else collectionHQ.remove(s, o.getTimePoint());
+        }
     }
     
     private static void getSortedEdgesOf(SpotWithinCompartment spot, final SimpleWeightedGraph< Spot, DefaultWeightedEdge > graph, boolean backward, TreeSet<DefaultWeightedEdge> res) {
