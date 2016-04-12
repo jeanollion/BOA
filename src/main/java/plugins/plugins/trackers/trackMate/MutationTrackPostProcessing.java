@@ -50,7 +50,6 @@ import utils.clustering.Interface;
  */
 public class MutationTrackPostProcessing {
     final TreeMap<StructureObject, List<StructureObject>> trackHeadTrackMap; // sorted by timePoint
-    List<List<StructureObject>> trackHeadGroups;
     final HashMap<Object3D, SpotWithinCompartment>  objectSpotMap;
     final Map<StructureObject, List<SpotWithinCompartment>> trackHeadSpotTrackMap;
     final HashMapGetCreate<List<SpotWithinCompartment>, Track> spotTrackMap;
@@ -72,10 +71,11 @@ public class MutationTrackPostProcessing {
         spotTrackMap = new HashMapGetCreate<List<SpotWithinCompartment>, Track>(new Factory<List<SpotWithinCompartment>, Track>() {
             public Track create(List<SpotWithinCompartment> key) {return new Track(key);}
         });
-        estimator = new TrackLikelyhoodEstimator(new NormalDistribution(11.97, 1.76), new BetaDistribution(0.735, 12.69), 6);
+        TrackLikelyhoodEstimator.ScoreFunction sf = new TrackLikelyhoodEstimator.HarmonicScoreFunction(new TrackLikelyhoodEstimator.DistributionFunction(new NormalDistribution(11.97, 1.76)).setNormalization(0.22667175022808675d), new TrackLikelyhoodEstimator.LinearTrimmedFunction(0.3, 0.7, 0.2, 1));
+        estimator = new TrackLikelyhoodEstimator(sf, 7);
     }
     
-    public void connectShortTracksByDeletingLQSpot(double maxDist, int maxTrackSize) {
+    public void connectShortTracksByDeletingLQSpot(double maxDist) {
         Set<StructureObject> parentsToRelabel = new HashSet<StructureObject>();
         double maxSqDist = maxDist * maxDist;
         Iterator<List<StructureObject>> it = trackHeadTrackMap.values().iterator();
@@ -175,9 +175,15 @@ public class MutationTrackPostProcessing {
             for (int i = 0; i<tracks.size(); ++i) {
                 List<StructureObject> subTrack = tracks.get(i);
                 StructureObject th = subTrack.get(0);
-                if (modif) trackHeadTrackMap.put(th, subTrack);
+                if (modif) {
+                    trackHeadTrackMap.put(th, subTrack);
+                    if (i!=tracks.size()-1) subTrack.get(subTrack.size()-1).setTrackFlag(StructureObject.TrackFlag.correctionSplit); // correction flag @ end
+                }
                 trackHeadSpotMapTemp.put(th, spotTracks.get(i));
-                if (i!=0) for (StructureObject o : subTrack) o.setTrackHead(th, true);
+                if (i!=0) {
+                    //if (th.getNext()!=null) th.getNext().setTrackFlag(StructureObject.TrackFlag.correctionSplit); // correction flag @ start
+                    for (StructureObject o : subTrack) o.setTrackHead(th, true);
+                }
             }
         }
         trackHeadSpotTrackMap.clear();
@@ -185,7 +191,7 @@ public class MutationTrackPostProcessing {
     }
     
     public void groupTracks() {
-        trackHeadGroups = new ArrayList<List<StructureObject>>();
+        List<List<StructureObject>> trackHeadGroups = new ArrayList<List<StructureObject>>();
         /*
         1) compute interactions track to track
         2) group interacting tracks

@@ -48,11 +48,10 @@ public class LAPTracker implements Tracker {
     static int compartimentStructureIdx = 1;
     NumberParameter spotQualityThreshold = new NumberParameter("Spot Quality Threshold", 3, 3.5);
     NumberParameter maxGap = new BoundedNumberParameter("Maximum frame gap", 0, 2, 0, null);
-    NumberParameter maxLinkingDistance = new BoundedNumberParameter("FTF Maximum Linking Distance (0=skip)", 2, 0.5, 0, null);
-    NumberParameter maxLinkingDistanceGC = new BoundedNumberParameter("Gap-closing Maximum Linking Distance (0=skip)", 2, 0.5, 0, null);
+    NumberParameter maxLinkingDistance = new BoundedNumberParameter("FTF Maximum Linking Distance (0=skip)", 2, 0.65, 0, null);
+    NumberParameter maxLinkingDistanceGC = new BoundedNumberParameter("Gap-closing Maximum Linking Distance (0=skip)", 2, 0.65, 0, null);
     NumberParameter gapPenalty = new BoundedNumberParameter("Gap Distance Penalty", 2, 0.25, 0, null);
-    NumberParameter alternativeDistance = new BoundedNumberParameter("Alternative Distance", 2, 0.55, 0, null);
-    //NumberParameter maxLinkingDistanceLQ = new BoundedNumberParameter("Low quality spots Maximum Linking distance (0=skip)", 2, 0.75, 0, null);
+    NumberParameter alternativeDistance = new BoundedNumberParameter("Alternative Distance (>maxLinkinDistance)", 2, 0.7, 0, null);
     Parameter[] parameters = new Parameter[]{maxLinkingDistance, maxLinkingDistanceGC, maxGap, gapPenalty, alternativeDistance, spotQualityThreshold};
     
     public LAPTracker setLinkingMaxDistance(double maxDist, double maxDistGapClosing, double maxDistLowQuality) {
@@ -98,7 +97,8 @@ public class LAPTracker implements Tracker {
         
         // post-processing
         MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, spotCollection);
-        postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC, 8);
+        postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC);
+        postProcessor.splitLongTracks();
         
         // ETUDIER LES DEPLACEMENTS EN Y
         /*

@@ -29,100 +29,86 @@ import static plugins.Plugin.logger;
  * @author jollion
  */
 public class TrackLikelyhoodEstimator {
-    RealDistribution lengthDistribution;
-    RealDistribution distanceDistribution;
     double minLength, maxLength; // minimal length for a track
     double theoricalLength;
-    //double distanceDXHalf;
+    final ScoreFunction scoreFunction;
+    
     public TrackLikelyhoodEstimator(RealDistribution lengthDistribution, RealDistribution distanceDistribution, int minimalTrackLength) {
-        this.lengthDistribution=lengthDistribution;
-        this.distanceDistribution=distanceDistribution;
-        this.minLength=minimalTrackLength;
-        //this.distanceDXHalf=0.1/2d;
-        this.theoricalLength = getModalXValue(lengthDistribution, minLength, 0.5d, 0.01);
-        maxLength = getMaxXValue(lengthDistribution, theoricalLength, lengthDistribution.density(minLength), 0.5d, 0.01);
+        this.scoreFunction = new HarmonicScoreFunction(new DistributionFunction(lengthDistribution), new DistributionFunction(distanceDistribution));
+        this.minLength = minimalTrackLength;
+        init();
         //logger.debug("minLength: {}/D:{}, theorical length: {}/D:{}, maximalLength: {}/D:{}", minLength, lengthDistribution.density(minLength), theoricalLength, lengthDistribution.density(theoricalLength), maxLength, lengthDistribution.density(maxLength));
     }
     
-    private static double getMaxXValue(RealDistribution distribution, double minX, double y, double precision1, double precision2) {
-        double tempY = distribution.density(minX);
+    public TrackLikelyhoodEstimator(ScoreFunction scoreFunction, double minimalTrackLength) {
+        this.scoreFunction = scoreFunction;
+        this.minLength=minimalTrackLength;
+        init();
+    }
+    
+    private void init() {
+        this.theoricalLength = getModalXValue(scoreFunction.getLengthFunction(), minLength, 0.5d, 0.01d);
+        maxLength = getMaxXValue(scoreFunction.getLengthFunction(), theoricalLength, scoreFunction.getLengthFunction().y(minLength), 0.5d, 0.01d);
+        //logger.debug("th length: {}/D={}, max length: {}", theoricalLength, scoreFunction.getLengthFunction().y(theoricalLength), maxLength);
+    }
+    
+    private static double getMaxXValue(Function f, double minX, double y, double precision1, double precision2) {
+        double tempY = f.y(minX);
         while(tempY>y) {
             minX+=precision1;
-            tempY=distribution.density(minX);
+            tempY=f.y(minX);
         }
         minX-=precision1;
-        tempY=distribution.density(minX);
+        tempY=f.y(minX);
         while(tempY>y) {
             minX+=precision2;
-            tempY=distribution.density(minX);
+            tempY=f.y(minX);
         }
         return minX;
     }
     
-    private static double getModalXValue(RealDistribution distribution, double minX, double precision1, double precision2) { 
-        double minProbability = distribution.density(minX);
+    private static double getModalXValue(Function f, double minX, double precision1, double precision2) { 
+        double minProbability = f.y(minX);
         double maxX = minX;
         double maxP = minProbability;
         double tempP = maxP;
         double tempX = minX;
         while(tempP>=minProbability) {
             tempX+=precision1;
-            tempP = distribution.density(tempX);
+            tempP = f.y(tempX);
             if (tempP>maxP) {
                 maxP = tempP;
                 maxX = tempX;
             }
         }
         if (precision2 * 10 < precision1) {
-            maxX = getModalXValue_(distribution, maxX-precision1, maxX+precision1, precision2*10);
-            return getModalXValue_(distribution, maxX-precision2*10, maxX+precision2*10, precision2);
-        } else return getModalXValue_(distribution, maxX-precision1, maxX+precision1, precision2);
+            maxX = getModalXValue_(f, maxX-precision1, maxX+precision1, precision2*10);
+            return getModalXValue_(f, maxX-precision2*10, maxX+precision2*10, precision2);
+        } else return getModalXValue_(f, maxX-precision1, maxX+precision1, precision2);
     }
     
-    private static double getModalXValue_(RealDistribution distribution, double lowerXBound, double upperXBound, double precision) { 
+    private static double getModalXValue_(Function f, double lowerXBound, double upperXBound, double precision) { 
         double maxX = upperXBound;
-        double maxP = distribution.density(maxX);
+        double maxP = f.y(maxX);
         double tempP;
         for (double x = lowerXBound; x<upperXBound; x+=precision) {
-            tempP = distribution.density(x);
+            tempP = f.y(x);
             if (tempP>maxP) {
                 maxP = tempP;
                 maxX = x;
             }
         }
-        //logger.debug("modal value search: lb: {}, hb: {}, precision: {}, X: {}, p(X): {}", lowerXBound, upperXBound, precision, maxX, maxP);
+        logger.debug("modal value search: lb: {}, hb: {}, precision: {}, X: {}, p(X): {}", lowerXBound, upperXBound, precision, maxX, maxP);
         return maxX;
-    }
-    
-    /**
-     * 
-     * @param track
-     * @param divisionIndices array of indices of the {@param frames} array of division, one element = division
-     * @param distanceProduct product of probabilities of all displacements
-     * @return 
-     */
-    public double getLikelyhood(Track track, int[] divisionIndices, double distanceProduct) {
-        if (divisionIndices.length==0) return lengthDistribution.density(track.getLength()) * distanceProduct;
-        double res = lengthDistribution.density(track.getLengthFromStart(divisionIndices[0])) * lengthDistribution.density(track.getLengthToEnd(divisionIndices[divisionIndices.length-1]+1)) * distanceProduct / distanceDistribution.probability(track.squareDistances[divisionIndices[0]]); // divide to remove the displacement contribution from the product
-        for (int i = 1; i<divisionIndices.length; ++i) res*=lengthDistribution.density(track.getLength(divisionIndices[i-1]+1, divisionIndices[i])) / distanceDistribution.density(track.squareDistances[divisionIndices[i]]); 
-        return res;
-
-    }
-    
-    public RealDistribution getLengthDistribution() {
-        return lengthDistribution;
-    }
-    
-    public RealDistribution getDistanceDistribution() {
-        return distanceDistribution;
     }
     
     public SplitScenario splitTrack(Track track) {
         // get number of divisions
         int[] splitNumbers = getSplitNumber(track);
-        logger.debug("split track: divisions Indices: {}", splitNumbers);
+        logger.debug("split track: number of divisions: {}", splitNumbers);
         SplitScenario s1 = splitTrack(track, splitNumbers[0]);
         for (int i =1; i<splitNumbers.length; ++i) splitTrack(track, splitNumbers[i], s1);
+        //logger.debug("split track: best scenario {}", s1);
         return s1;
     }
     
@@ -133,11 +119,21 @@ public class TrackLikelyhoodEstimator {
         double rMax = (double) (track.getLength()-minLength) / (minLength+meanGap);
         double rMin = (double) (track.getLength()-maxLength) / (maxLength+meanGap);
         logger.debug("split track: length: {}, rMin {}, rTh: {}, rMax: {}, meanGap: {}",track.getLength(), rMin, rTh, rMax, meanGap);
-        int nMin = (int)Math.floor(rMin);
+        int nMin = (int)Math.ceil(rMin);
         int nMax = (int)rMax;
         if (nMin==nMax) return new int[]{nMin};
         else if (nMax-nMin==1) return new int[]{nMin, nMax};
-        else return new int[]{(int)rTh, 1+(int)rTh};
+        else {
+            int nThSup = (int) (rTh+0.5);
+            int nThInf = (int) rTh;
+            if (nThSup==nThInf) {
+                if (nThSup==nMin) return new int[]{nThSup};
+                else return new int[]{nThSup-1, nThSup};
+            } else {
+                if (nThSup<=nMax) return new int[]{nThInf, nThSup};
+                else return new int[]{nThInf};
+            }
+        }
     }
     
     private void splitTrack(Track track, int divisionNumber, SplitScenario best) {
@@ -174,22 +170,16 @@ public class TrackLikelyhoodEstimator {
         return best;
     }
     
-    private double getDistanceProduct(double[] distances) {
-        double res = 1;
-        for (double d : distances) res*=distanceDistribution.density(d);
-        return res;
-    }
+    
     
     public class SplitScenario implements Comparable<SplitScenario> {
         int[] splitIndices;
-        double score, distanceProduct;
+        double score;
         private SplitScenario(Track track) { // no division case
-            this.distanceProduct = getDistanceProduct(track.squareDistances);
             this.splitIndices=new int[0];
-            this.score=getLikelyhood(track, splitIndices, distanceProduct);
+            this.score=scoreFunction.getScore(track, splitIndices);
         }
         public SplitScenario(Track track, int divisionNumber) {
-            this.distanceProduct = getDistanceProduct(track.squareDistances);
             this.score=Double.NEGATIVE_INFINITY;
             this.splitIndices= new int[divisionNumber];
         }
@@ -199,9 +189,12 @@ public class TrackLikelyhoodEstimator {
             for (int frameIdx = splitIndices[dIdx]; frameIdx<track.frames.length; ++frameIdx) {
                 if (track.getLengthToEnd(frameIdx+1) < minLength) break;
                 ++splitIndices[dIdx];
-                score=getLikelyhood(track, splitIndices, distanceProduct);
-                if (this.compareTo(best)>0) best.transferFrom(this);
-                logger.debug("new best: {} (last test: {})", best, this);
+                score=scoreFunction.getScore(track, splitIndices);
+                if (this.compareTo(best)>0) {
+                    best.transferFrom(this);
+                    logger.debug("new best: {} (last test: {})", best, this);
+                }
+                
             }
             
         }
@@ -234,7 +227,6 @@ public class TrackLikelyhoodEstimator {
             if (other.splitIndices.length!=splitIndices.length) splitIndices = new int[other.splitIndices.length];
             System.arraycopy(other.splitIndices, 0, this.splitIndices, 0, splitIndices.length);
             this.score=other.score;
-            this.distanceProduct = other.distanceProduct;
         }
         
         public <T> List<List<T>> splitTrack(List<T> track) {
@@ -258,7 +250,7 @@ public class TrackLikelyhoodEstimator {
     }
     public static class Track {
         int[] frames;
-        double[] squareDistances;
+        double[] distances;
         /**
          * 
          * @param frames array of frames of the track length n
@@ -266,11 +258,11 @@ public class TrackLikelyhoodEstimator {
          */
         public Track( int[] frames, double[] squareDistances) {
             this.frames=frames;
-            this.squareDistances=squareDistances;
+            this.distances=squareDistances;
         }
         public Track(List<SpotWithinCompartment> track) {
             frames = new int[track.size()];
-            squareDistances = new double[frames.length-1];
+            distances = new double[frames.length-1];
             int lim = track.size();
             SpotWithinCompartment prev = track.get(0);
             SpotWithinCompartment cur;
@@ -278,7 +270,7 @@ public class TrackLikelyhoodEstimator {
             for (int i = 1; i<lim; ++i) {
                 cur = track.get(i);
                 frames[i] = cur.timePoint;
-                squareDistances[i-1] = prev.squareDistanceTo(cur);
+                distances[i-1] = Math.sqrt(prev.squareDistanceTo(cur));
             }
         }
         public int getLength(int startIdx, int stopIdx) {
@@ -301,5 +293,90 @@ public class TrackLikelyhoodEstimator {
         @Override public String toString() {
             return "Track: "+Arrays.toString(frames);
         }
+    }
+    public static interface ScoreFunction {
+        public Function getLengthFunction();
+        public Function getDistanceFunction();
+        public double getScore(Track track, int[] splitIndices);
+    }
+    public static abstract class AbstractScoreFunction implements ScoreFunction {
+        protected Function lengthFunction, distanceFunction;
+        public AbstractScoreFunction(Function lengthFunction, Function distanceFunction) {
+            this.lengthFunction=lengthFunction;
+            this.distanceFunction=distanceFunction;
+        }
+        public Function getLengthFunction() {return lengthFunction;}
+        public Function getDistanceFunction() {return distanceFunction;}
+    }
+    public static class HarmonicScoreFunction extends AbstractScoreFunction {
+
+        public HarmonicScoreFunction(Function lengthFunction, Function distanceFunction) {
+            super(lengthFunction, distanceFunction);
+        }
+        public double getScore(Track track, int[] divisionIndices) {
+            if (divisionIndices.length==0) return lengthFunction.y(track.getLength());
+            double lengthProduct = lengthFunction.y(track.getLengthFromStart(divisionIndices[0])) * lengthFunction.y(track.getLengthToEnd(divisionIndices[divisionIndices.length-1]+1));
+            double distanceProduct = distanceFunction.y(track.distances[divisionIndices[0]]);
+            for (int i = 1; i<divisionIndices.length; ++i) {
+                lengthProduct *= lengthFunction.y(track.getLength(divisionIndices[i-1]+1, divisionIndices[i]));
+                distanceProduct*=distanceFunction.y(track.distances[divisionIndices[i]]);
+            }
+            return Math.pow(lengthProduct, 1.0/(divisionIndices.length+1.0)) / Math.pow(distanceProduct, 1.0/(divisionIndices.length));
+        }
+    }
+    
+    public static interface Function {
+        public double y(double x);
+    }
+    public static class DistributionFunction implements Function {
+        RealDistribution distribution;
+        boolean trimX=false, normalize=false;
+        double maxX, maxY, normalizationValue=Double.NaN;
+
+        public DistributionFunction(RealDistribution distribution) {
+            this.distribution=distribution;
+        }
+        
+        public DistributionFunction setTrimAndNormalize(boolean normalizeByModalValue, boolean trimX, double minSearch, double maxSearch, double precision1, double precision2) {
+            this.maxX=getModalXValue_(this, minSearch, maxSearch, precision1);
+            if (precision2 * 10 < precision1) {
+                maxX = getModalXValue_(this, maxX-precision1, maxX+precision1, precision2*10);
+                maxX =  getModalXValue_(this, maxX-precision2*10, maxX+precision2*10, precision2);
+            } else maxX = getModalXValue_(this, maxX-precision1, maxX+precision1, precision2);
+            maxY= y(maxX);
+            if (normalizeByModalValue) this.normalizationValue = maxY;
+            this.normalize=normalizeByModalValue;
+            this.trimX=trimX;
+            return this;
+        }
+        public DistributionFunction setNormalization(double nomalizationValue) {
+            this.normalizationValue= nomalizationValue;
+            this.normalize=true;
+            return this;
+        }
+        public double y(double x) {
+            double res = (trimX && x<=maxX) ? maxY : distribution.density(x);
+            if (normalize) return res/normalizationValue;
+            else return res;
+        }
+    }
+    public static class LinearTrimmedFunction implements Function {
+        double minX, maxX, minY, maxY, m, a;
+
+        public LinearTrimmedFunction(double minX, double maxX, double minY, double maxY) {
+            this.minX = minX;
+            this.maxX = maxX;
+            this.minY = minY;
+            this.maxY = maxY;
+            this.m = -(maxY-minY) / (maxX-minX);
+            this.a = maxY - m * minX;
+        }
+        
+        public double y(double x) {
+            if (x<=minX) return maxY;
+            if (x>=maxX) return minY;
+            return a + m * x;
+        }
+
     }
 }

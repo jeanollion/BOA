@@ -31,7 +31,7 @@ public class TestClass {
         int aa = 5;
         int bb = 2;
         logger.info("div 5/2= {}" , aa / bb);
-
+        logger.info("floor (1.0066889632106963) = {} ", Math.ceil(1.0066889632106963));
     }
     //@Test
     public void test() {
