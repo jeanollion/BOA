@@ -108,8 +108,10 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 }
                 if (!ctrl) {
                     if (listener!=null) {
-                        listener.fireObjectDeselected(Pair.unpair(getLabileObjects(image)));
-                        listener.fireTracksDeselected(getLabileTrackHeads(image));
+                        //listener.fireObjectDeselected(Pair.unpair(getLabileObjects(image)));
+                        //listener.fireTracksDeselected(getLabileTrackHeads(image));
+                        listener.fireDeselectAllObjects(i.childStructureIdx);
+                        listener.fireDeselectAllTracks(i.childStructureIdx);
                     }
                     hideLabileObjects(image);
                     hideLabileTracks(image);

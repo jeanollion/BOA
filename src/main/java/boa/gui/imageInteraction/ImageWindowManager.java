@@ -396,12 +396,17 @@ public abstract class ImageWindowManager<T, U, V> {
     }
     
     /// track-related methods
-
+    
     protected abstract void displayTrack(T image, V roi);
     protected abstract void hideTrack(T image, V roi);
     protected abstract V generateTrackRoi(List<Pair<StructureObject, BoundingBox>> track, boolean image2D, Color color);
     protected abstract void setTrackColor(V roi, Color color);
-    
+    public void displayTracks(Image image, ImageObjectInterface i, List<List<StructureObject>> tracks, boolean labile) {
+        int idx = 0;
+        for (List<StructureObject> track : tracks) {
+            displayTrack(image, i, i.pairWithOffset(track), ImageWindowManager.getColor(idx++), labile);
+        }
+    }
     public void displayTrack(Image image, ImageObjectInterface i, List<Pair<StructureObject, BoundingBox>> track, Color color, boolean labile) {
         //logger.debug("display selected track: image: {}, addToCurrentTracks: {}, track length: {} color: {}", image,addToCurrentSelectedTracks, track==null?"null":track.size(), color);
         if (track==null || track.isEmpty()) return;
@@ -547,7 +552,7 @@ public abstract class ImageWindowManager<T, U, V> {
         } else return Collections.emptyList();
     }
     
-    public void goToNextTrackError(Image trackImage, ArrayList<StructureObject> tracks) {
+    public void goToNextTrackError(Image trackImage, List<StructureObject> tracks) {
         //ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(rois.get(0).getParent().getTrackHead(), rois.get(0).getStructureIdx(), true));
         if (tracks==null || tracks.isEmpty()) return;
         if (trackImage==null) {
@@ -578,7 +583,7 @@ public abstract class ImageWindowManager<T, U, V> {
             displayer.setDisplayRange(nextDisplayRange, trackImage);
         }
     }
-    public void goToPreviousTrackError(Image trackImage, ArrayList<StructureObject> tracks) {
+    public void goToPreviousTrackError(Image trackImage, List<StructureObject> tracks) {
         //ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(rois.get(0).getParent().getTrackHead(), rois.get(0).getStructureIdx(), true));
         if (tracks==null || tracks.isEmpty()) return;
         if (trackImage==null) {
@@ -609,7 +614,7 @@ public abstract class ImageWindowManager<T, U, V> {
             displayer.setDisplayRange(nextDisplayRange, trackImage);
         }
     }
-    private static StructureObject getNextError(int maxTimePoint, ArrayList<StructureObject> tracks) {
+    private static StructureObject getNextError(int maxTimePoint, List<StructureObject> tracks) {
         StructureObject[] trackArray = tracks.toArray(new StructureObject[tracks.size()]);
         boolean change = true;
         boolean remainTrack = true;
@@ -632,7 +637,7 @@ public abstract class ImageWindowManager<T, U, V> {
         
         return null;
     }
-    private static StructureObject getPreviousError(int minTimePoint, ArrayList<StructureObject> tracks) {
+    private static StructureObject getPreviousError(int minTimePoint, List<StructureObject> tracks) {
         StructureObject[] trackArray = tracks.toArray(new StructureObject[tracks.size()]);
         // get all rois to maximal value < errorTimePoint
         for (int trackIdx = 0; trackIdx<trackArray.length; ++trackIdx) {

@@ -146,4 +146,7 @@ public class TrackTreeController {
         if (structureIdx == -2) throw new IllegalArgumentException("TrackHeads have different structure indicies");
         if (generatorS.containsKey(structureIdx)) generatorS.get(structureIdx).deselectTracks(trackHeads);
     }
+    public void deselectAllTracks(int structureIdx) {
+        if (generatorS.containsKey(structureIdx)) generatorS.get(structureIdx).deselectAllTracks();
+    }
 }

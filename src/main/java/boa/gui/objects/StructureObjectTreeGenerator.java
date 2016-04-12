@@ -147,6 +147,9 @@ public class StructureObjectTreeGenerator {
         Utils.removeFromSelectionPaths(tree, list);
         //logger.debug("unselect {} objects, sel after: {}", objects.size(), tree.getSelectionCount());
     }
+    public void unselectAllObjects() {
+        tree.setSelectionRow(-1);
+    }
     
     public TreePath getObjectTreePath(StructureObject object) {
         ArrayList<TreeNode> path = new ArrayList<TreeNode>(); 

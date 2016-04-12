@@ -113,7 +113,7 @@ public class TrackTreeGenerator {
         //logger.debug("get parent trackhead: root: {}", root.getClass().getSimpleName());
         if (root instanceof RootTrackNode) return ((RootTrackNode)root).getParentTrackHead();
         else if (root instanceof TrackExperimentNode && tree.getSelectionCount()==1) {
-            ArrayList<StructureObject> al = getSelectedTrackHeads();
+            List<StructureObject> al = getSelectedTrackHeads();
             if (!al.isEmpty()) return getSelectedTrackHeads().get(0);
             else return null;
         }
@@ -201,6 +201,10 @@ public class TrackTreeGenerator {
         }
         Utils.removeFromSelectionPaths(tree, list);
     }
+    
+    public void deselectAllTracks () {
+        tree.setSelectionRow(-1);
+    }
 
     public TreePath getTreePath(StructureObject object) {
         ArrayList<TreeNode> path = new ArrayList<TreeNode>(); 
@@ -229,7 +233,7 @@ public class TrackTreeGenerator {
         //o = db.getDao(o.getFieldName()).getById(o.getTrackHeadId());
         o = o.getTrackHead();
         res.add(o);
-        while(o.getTimePoint()>0) {
+        while(o.getTimePoint()>0 && o.getPrevious()!=null) {
             //o = db.getDao(o.getFieldName()).getById(o.getPrevious().getTrackHeadId());
             o = o.getPrevious().getTrackHead();
             res.add(o);
@@ -237,8 +241,10 @@ public class TrackTreeGenerator {
         return res;
     }
     
-    public ArrayList<StructureObject> getSelectedTrackHeads() {
-        ArrayList<StructureObject> res = new ArrayList<StructureObject>(tree.getSelectionCount());
+    public List<StructureObject> getSelectedTrackHeads() {
+        int count = tree.getSelectionCount();
+        ArrayList<StructureObject> res = new ArrayList<StructureObject>(count);
+        if (count==0) return res;
         for (TreePath p : tree.getSelectionPaths()) {
             if (p.getLastPathComponent() instanceof TrackNode) {
                 res.add(((TrackNode)p.getLastPathComponent()).trackHead);

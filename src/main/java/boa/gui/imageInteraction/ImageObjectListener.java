@@ -31,4 +31,6 @@ public interface ImageObjectListener {
     public void fireObjectDeselected(List<StructureObject> deselectedObject);
     public void fireTracksSelected(List<StructureObject> selectedTrackHeads, boolean addToSelection);
     public void fireTracksDeselected(List<StructureObject> deselectedTrackHeads);
+    public void fireDeselectAllTracks(int structureIdx);
+    public void fireDeselectAllObjects(int structureIdx);
 }

@@ -140,7 +140,7 @@
                       </Group>
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="runActions" min="-2" max="-2" attributes="0"/>
-                      <EmptySpace pref="70" max="32767" attributes="0"/>
+                      <EmptySpace pref="108" max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -335,7 +335,7 @@
             </DimensionLayout>
             <DimensionLayout dim="1">
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="configurationJSP" alignment="0" pref="472" max="32767" attributes="0"/>
+                  <Component id="configurationJSP" alignment="0" pref="510" max="32767" attributes="0"/>
               </Group>
             </DimensionLayout>
           </Layout>
@@ -373,11 +373,15 @@
                   <Group type="102" alignment="0" attributes="0">
                       <EmptySpace max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="ControlPanel" pref="0" max="32767" attributes="0"/>
-                          <Component id="ObjectTreeJSP" max="32767" attributes="0"/>
-                          <Component id="selectionPanel" alignment="0" pref="0" max="32767" attributes="0"/>
+                          <Component id="ControlPanel" max="32767" attributes="0"/>
+                          <Group type="102" attributes="0">
+                              <Group type="103" groupAlignment="0" attributes="0">
+                                  <Component id="ObjectTreeJSP" max="32767" attributes="0"/>
+                                  <Component id="selectionPanel" alignment="0" max="32767" attributes="0"/>
+                              </Group>
+                              <EmptySpace max="-2" attributes="0"/>
+                          </Group>
                       </Group>
-                      <EmptySpace max="-2" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -403,7 +407,6 @@
                       <Component id="collapseAllObjectButton" alignment="0" max="32767" attributes="0"/>
                       <Component id="selectAllTracksButton" alignment="0" max="32767" attributes="0"/>
                       <Component id="nextTrackErrorButton" max="32767" attributes="0"/>
-                      <Component id="selectContainingTrackToggleButton" alignment="0" max="32767" attributes="0"/>
                       <Component id="splitObjectButton" max="32767" attributes="0"/>
                       <Component id="mergeObjectsButton" alignment="0" max="32767" attributes="0"/>
                       <Component id="previousTrackErrorButton" alignment="0" max="32767" attributes="0"/>
@@ -416,6 +419,7 @@
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="testManualSegmentationButton" min="-2" pref="59" max="-2" attributes="0"/>
                       </Group>
+                      <Component id="linkObjectsButton" alignment="0" max="32767" attributes="0"/>
                   </Group>
                 </DimensionLayout>
                 <DimensionLayout dim="1">
@@ -445,8 +449,8 @@
                           <Component id="mergeObjectsButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace min="-2" pref="2" max="-2" attributes="0"/>
                           <Component id="deleteObjectsButton" min="-2" max="-2" attributes="0"/>
-                          <EmptySpace max="-2" attributes="0"/>
-                          <Component id="selectContainingTrackToggleButton" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace min="-2" pref="4" max="-2" attributes="0"/>
+                          <Component id="linkObjectsButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="collapseAllObjectButton" min="-2" max="-2" attributes="0"/>
                       </Group>
@@ -486,14 +490,6 @@
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="nextTrackErrorButtonActionPerformed"/>
-                  </Events>
-                </Component>
-                <Component class="javax.swing.JToggleButton" name="selectContainingTrackToggleButton">
-                  <Properties>
-                    <Property name="text" type="java.lang.String" value="Select Containing Track"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="selectContainingTrackToggleButtonActionPerformed"/>
                   </Events>
                 </Component>
                 <Component class="javax.swing.JButton" name="splitObjectButton">
@@ -570,6 +566,14 @@
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="testManualSegmentationButtonActionPerformed"/>
                   </Events>
                 </Component>
+                <Component class="javax.swing.JButton" name="linkObjectsButton">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" value="Link/Unlink Objects"/>
+                  </Properties>
+                  <Events>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="linkObjectsButtonActionPerformed"/>
+                  </Events>
+                </Component>
               </SubComponents>
             </Container>
             <Container class="javax.swing.JSplitPane" name="ObjectTreeJSP">
@@ -601,7 +605,7 @@
                     </DimensionLayout>
                     <DimensionLayout dim="1">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="structureJSP" alignment="0" pref="424" max="32767" attributes="0"/>
+                          <Component id="structureJSP" alignment="0" pref="462" max="32767" attributes="0"/>
                       </Group>
                     </DimensionLayout>
                   </Layout>
@@ -634,7 +638,7 @@
                     </DimensionLayout>
                     <DimensionLayout dim="1">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="TimeJSP" alignment="0" pref="424" max="32767" attributes="0"/>
+                          <Component id="TimeJSP" alignment="0" pref="462" max="32767" attributes="0"/>
                       </Group>
                     </DimensionLayout>
                   </Layout>

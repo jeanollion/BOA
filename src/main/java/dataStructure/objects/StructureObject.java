@@ -294,6 +294,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             this.trackHeadId=null;
         }
     }
+    
+    
+    
     //public void setNextInTrack(StructureObject next, )
     @Override
     public void resetTrackLinks() {
@@ -400,7 +403,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
     }
     
-    public void setTrackHead(StructureObject trackHead, boolean resetPreviousIfTrackHead) {
+    public void setTrackHead(StructureObject trackHead, boolean resetPreviousIfTrackHead, boolean propagateToNextObjects) {
         if (resetPreviousIfTrackHead && this==trackHead) {
             if (previous!=null && previous.next==this) previous.next=null;
             this.previous=null;
@@ -408,6 +411,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.isTrackHead=this==trackHead;
         this.trackHead=trackHead;
         this.trackHeadId=id;
+        if (propagateToNextObjects && getNext()!=null) getNext().setTrackHead(trackHead, resetPreviousIfTrackHead, propagateToNextObjects);
     }
     
     // track correction-related methods 

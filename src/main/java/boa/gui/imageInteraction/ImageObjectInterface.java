@@ -52,6 +52,7 @@ public abstract class ImageObjectInterface {
     public abstract void draw(ImageInteger image);
     public abstract Image generateRawImage(int structureIdx);
     public abstract boolean isTimeImage();
+    public int getChildStructureIdx() {return childStructureIdx;}
     public abstract ArrayList<Pair<StructureObject, BoundingBox>> getObjects();
     public List<Pair<StructureObject, BoundingBox>> pairWithOffset(List<StructureObject> objects) {
         List<Pair<StructureObject, BoundingBox>> res = new ArrayList<Pair<StructureObject, BoundingBox>>(objects.size());

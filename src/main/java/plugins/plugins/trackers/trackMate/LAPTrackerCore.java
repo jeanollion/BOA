@@ -53,9 +53,6 @@ import java.util.Set;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 import org.slf4j.LoggerFactory;
-import static plugins.plugins.trackers.trackMate.FrameToFrameSpotQualityTracker.KEY_MAX_FRAME_GAP_LQ;
-import utils.ArrayUtil;
-import utils.ThreadRunner;
 import utils.Utils;
 
 /**

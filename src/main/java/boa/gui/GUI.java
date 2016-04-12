@@ -57,6 +57,7 @@ import image.TypeConverter;
 import java.awt.Color;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -193,8 +194,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (image==null) {
             return; // todo -> actions on all images?
         }
-        iwm.hideAllObjects(image, false);
-        iwm.hideAllTracks(image, false);
+        iwm.hideAllObjects(image, true);
+        iwm.hideAllTracks(image, true);
         if (i==null) return;
         // look in selections
         Enumeration<Selection> sels = instance.selectionModel.elements();
@@ -209,15 +210,20 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         TrackTreeGenerator gen = instance.trackTreeController.getLastTreeGenerator();
         if (gen!=null) {
             List<List<StructureObject>> tracks = gen.getSelectedTracks(true);
-            int idx = 0;
+            iwm.displayTracks(image, i, tracks, true);
+            /*int idx = 0;
             for (List<StructureObject> track : tracks) {
-                iwm.displayTrack(image, i, i.pairWithOffset(track), ImageWindowManager.getColor(idx++), false);
-            }
+                iwm.displayTrack(image, i, i.pairWithOffset(track), ImageWindowManager.getColor(idx++), true);
+            }*/
         }
+        // look in object list
+        List<StructureObject> selectedObjects = instance.objectTreeGenerator.getSelectedObjects(true, i.getChildStructureIdx());
+        iwm.displayObjects(image, i.pairWithOffset(selectedObjects), null, true);
+        // unselect objects that cannot be selected ?
         
         // labile objects
-        iwm.displayLabileObjects(image);
-        iwm.displayLabileTracks(image);
+        //iwm.displayLabileObjects(image);
+        //iwm.displayLabileTracks(image);
     }
     
     public void setDBConnection(String dbName, String hostname) {
@@ -356,6 +362,18 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         trackTreeController.setUpdateRoiDisplayWhenSelectionChange(false);
         trackTreeController.deselectTracks(deselectedTrackHeads);
         trackTreeController.setUpdateRoiDisplayWhenSelectionChange(true);
+    }
+    
+    public void fireDeselectAllTracks(int structureIdx) {
+        trackTreeController.setUpdateRoiDisplayWhenSelectionChange(false);
+        trackTreeController.deselectAllTracks(structureIdx);
+        trackTreeController.setUpdateRoiDisplayWhenSelectionChange(true);
+    }
+
+    public void fireDeselectAllObjects(int structureIdx) {
+        objectTreeGenerator.setUpdateRoiDisplayWhenSelectionChange(false);
+        objectTreeGenerator.unselectAllObjects();
+        objectTreeGenerator.setUpdateRoiDisplayWhenSelectionChange(true);
     }
     
     private void setTrackTreeStructures(String[] structureNames) {
@@ -513,7 +531,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         selectAllTracksButton = new javax.swing.JButton();
         collapseAllObjectButton = new javax.swing.JButton();
         nextTrackErrorButton = new javax.swing.JButton();
-        selectContainingTrackToggleButton = new javax.swing.JToggleButton();
         splitObjectButton = new javax.swing.JButton();
         mergeObjectsButton = new javax.swing.JButton();
         previousTrackErrorButton = new javax.swing.JButton();
@@ -523,6 +540,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         updateRoiDisplayButton = new javax.swing.JButton();
         manualSegmentButton = new javax.swing.JButton();
         testManualSegmentationButton = new javax.swing.JButton();
+        linkObjectsButton = new javax.swing.JButton();
         ObjectTreeJSP = new javax.swing.JSplitPane();
         StructurePanel = new javax.swing.JPanel();
         structureJSP = new javax.swing.JScrollPane();
@@ -703,7 +721,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                         .addComponent(extractMeasurements)))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(runActions)
-                .addContainerGap(70, Short.MAX_VALUE))
+                .addContainerGap(108, Short.MAX_VALUE))
         );
 
         jTabbedPane1.addTab("Actions", actionPanel);
@@ -716,7 +734,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         ConfigurationPanelLayout.setVerticalGroup(
             ConfigurationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 472, Short.MAX_VALUE)
+            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 510, Short.MAX_VALUE)
         );
 
         jTabbedPane1.addTab("Configuration", ConfigurationPanel);
@@ -747,13 +765,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         nextTrackErrorButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 nextTrackErrorButtonActionPerformed(evt);
-            }
-        });
-
-        selectContainingTrackToggleButton.setText("Select Containing Track");
-        selectContainingTrackToggleButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                selectContainingTrackToggleButtonActionPerformed(evt);
             }
         });
 
@@ -819,6 +830,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
+        linkObjectsButton.setText("Link/Unlink Objects");
+        linkObjectsButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                linkObjectsButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout ControlPanelLayout = new javax.swing.GroupLayout(ControlPanel);
         ControlPanel.setLayout(ControlPanelLayout);
         ControlPanelLayout.setHorizontalGroup(
@@ -827,7 +845,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             .addComponent(collapseAllObjectButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(selectAllTracksButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(nextTrackErrorButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(selectContainingTrackToggleButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(splitObjectButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(mergeObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(previousTrackErrorButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -839,6 +856,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addComponent(manualSegmentButton, javax.swing.GroupLayout.PREFERRED_SIZE, 1, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(testManualSegmentationButton, javax.swing.GroupLayout.PREFERRED_SIZE, 59, javax.swing.GroupLayout.PREFERRED_SIZE))
+            .addComponent(linkObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         ControlPanelLayout.setVerticalGroup(
             ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -866,8 +884,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addComponent(mergeObjectsButton)
                 .addGap(2, 2, 2)
                 .addComponent(deleteObjectsButton)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(selectContainingTrackToggleButton)
+                .addGap(4, 4, 4)
+                .addComponent(linkObjectsButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(collapseAllObjectButton))
         );
@@ -882,7 +900,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         StructurePanelLayout.setVerticalGroup(
             StructurePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(structureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 424, Short.MAX_VALUE)
+            .addComponent(structureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 462, Short.MAX_VALUE)
         );
 
         ObjectTreeJSP.setLeftComponent(StructurePanel);
@@ -901,7 +919,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         trackPanelLayout.setVerticalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 424, Short.MAX_VALUE)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 462, Short.MAX_VALUE)
         );
 
         ObjectTreeJSP.setRightComponent(trackPanel);
@@ -961,10 +979,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             .addGroup(DataPanelLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(DataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(ControlPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                    .addComponent(ObjectTreeJSP)
-                    .addComponent(selectionPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
-                .addContainerGap())
+                    .addComponent(ControlPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addGroup(DataPanelLayout.createSequentialGroup()
+                        .addGroup(DataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(ObjectTreeJSP)
+                            .addComponent(selectionPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addContainerGap())))
         );
 
         jTabbedPane1.addTab("Data Browsing", DataPanel);
@@ -1067,10 +1087,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (!checkConnection()) return;
         ImageWindowManagerFactory.getImageManager().goToNextTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads());
     }//GEN-LAST:event_nextTrackErrorButtonActionPerformed
-
-    private void selectContainingTrackToggleButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectContainingTrackToggleButtonActionPerformed
-        logger.info("not implemented yet!");
-    }//GEN-LAST:event_selectContainingTrackToggleButtonActionPerformed
 
     private void splitObjectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_splitObjectButtonActionPerformed
         if (!checkConnection()) return;
@@ -1321,6 +1337,52 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void testManualSegmentationButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_testManualSegmentationButtonActionPerformed
         manualSegmentation(null, true);
     }//GEN-LAST:event_testManualSegmentationButtonActionPerformed
+
+    private void linkObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_linkObjectsButtonActionPerformed
+        if (!checkConnection()) return;
+        ArrayList<StructureObject> sel = objectTreeGenerator.getSelectedObjects(true);
+        if (sel.size()!=2 && sel.size()!=1) {
+            logger.warn("Only 1 or 2 objects should be selected");
+            return;
+        }
+        int structureIdx = sel.get(0).getStructureIdx();
+        logger.debug("selected objects: {}, structureIdx: {}", sel.size(), structureIdx);
+        List<StructureObject> trackHeadList = trackTreeController.getGeneratorS().get(structureIdx).getSelectedTrackHeads();
+        if (sel.size()==1) { // unlink spot
+            StructureObject next = sel.get(0).getNext();
+            if (next!=null) next.setTrackHead(next, false, true);
+            sel.get(0).resetTrackLinks();
+            logger.debug("unlinkin: {}", sel.get(0));
+        } else { // link / unlink the 2 spots
+            Collections.sort(sel); // sorted by time point
+            if (sel.get(1).getPrevious()==sel.get(0)) { //unlink the 2 spots
+                sel.get(1).setTrackHead(sel.get(1), true, true);
+                sel.get(0).setTrackFlag(StructureObject.TrackFlag.correctionSplit);
+                trackHeadList.add(sel.get(1));
+                logger.debug("unlinking: {} to {}", sel.get(0), sel.get(1));
+            } else { // link the 2 spots
+                sel.get(1).setPreviousInTrack(sel.get(0), false);
+                sel.get(1).setTrackFlag(StructureObject.TrackFlag.correctionMerge);
+                trackHeadList.remove(sel.get(1));
+                logger.debug("linking: {} to {}", sel.get(0), sel.get(1));
+            }
+        }
+        db.getDao(sel.get(0).getFieldName()).store(sel, false);
+        
+        // reload track-tree and update selection list
+        int parentStructureIdx = sel.get(0).getParent().getStructureIdx();
+        trackTreeController.updateParentTracks(trackTreeController.getTreeIdx(structureIdx));
+        this.trackTreeController.getGeneratorS().get(structureIdx).selectTracks(trackHeadList, false);
+        //List<List<StructureObject>> tracks = this.trackTreeController.getGeneratorS().get(structureIdx).getSelectedTracks(true);
+        
+        // update current image
+        ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
+        if (iwm==null) return;
+        Image image=iwm.getDisplayer().getCurrentImage2();
+        if (image ==null) return;
+        iwm.hideLabileTracks(image);
+        GUI.updateRoiDisplay(null);
+    }//GEN-LAST:event_linkObjectsButtonActionPerformed
     
     public void manualSegmentation(Image image, boolean test) {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
@@ -1484,6 +1546,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JButton importImageButton;
     private javax.swing.JComboBox interactiveStructure;
     private javax.swing.JTabbedPane jTabbedPane1;
+    private javax.swing.JButton linkObjectsButton;
     private javax.swing.JButton manualSegmentButton;
     private javax.swing.JButton mergeObjectsButton;
     private javax.swing.JButton newXP;
@@ -1496,7 +1559,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JButton saveExperiment;
     private javax.swing.JButton selectAllObjects;
     private javax.swing.JButton selectAllTracksButton;
-    private javax.swing.JToggleButton selectContainingTrackToggleButton;
     private javax.swing.JScrollPane selectionJSP;
     private javax.swing.JList selectionList;
     private javax.swing.JPanel selectionPanel;
@@ -1508,6 +1570,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JPanel trackSubPanel;
     private javax.swing.JButton updateRoiDisplayButton;
     // End of variables declaration//GEN-END:variables
+
+    
 
     
 }

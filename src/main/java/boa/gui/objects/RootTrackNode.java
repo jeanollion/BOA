@@ -19,6 +19,7 @@ package boa.gui.objects;
 
 import static boa.gui.GUI.logger;
 import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -78,15 +79,20 @@ public class RootTrackNode implements TreeNode {
                 logger.warn("No track head or fieldName defined for RootTrackNode instance");
                 return null;
             }
-            parentTrackHead = parent.generator.getObjectDAO(fieldName).getRoot(0);
+            parentTrackHead = generator.getObjectDAO(fieldName).getRoot(0);
             if (parentTrackHead!=null) logger.trace("parentTrackHead id:"+parentTrackHead.getId());
         }
         return parentTrackHead;
+    }
+    private List<StructureObject> getParentTrack() {
+        return generator.getObjectDAO(fieldName).getRoots();
     }
     
     public TreeMap<Integer, List<StructureObject>> getRemainingTrackHeads() {
         if (remainingTrackHeadsTM==null) {
             ArrayList<StructureObject> trackHeads = generator.getObjectDAO(fieldName).getTrackHeads(getParentTrackHead(), structureIdx);
+            //List<StructureObject> trackHeads = new ArrayList<StructureObject> (StructureObjectUtils.getAllTracks(getParentTrack(), structureIdx).keySet());
+            //Collections.sort(trackHeads);
             if (trackHeads.isEmpty()) {
                 remainingTrackHeadsTM = new TreeMap<Integer, List<StructureObject>>();
                 logger.debug("structure: {} no trackHeads found", structureIdx);
