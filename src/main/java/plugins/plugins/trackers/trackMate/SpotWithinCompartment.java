@@ -41,11 +41,11 @@ public class SpotWithinCompartment extends Spot {
     public static double displayDistanceThreshold = 1; 
     public static double poleDistanceFactor = 0; 
     protected Object3D object;
-    protected SpotCompartiment compartiment;
+    public final SpotCompartiment compartiment;
     protected final Localization localization;
-    final int timePoint;
+    public final int timePoint;
     boolean isLinkable=true;
-    boolean lowQuality=false;
+    public boolean lowQuality=false;
     protected final DistanceComputationParameters distanceParameters;
     
     public SpotWithinCompartment(Object3D object, int timePoint, SpotCompartiment compartiment, double[] scaledCenter, DistanceComputationParameters distanceParameters) {

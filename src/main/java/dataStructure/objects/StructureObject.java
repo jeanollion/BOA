@@ -55,7 +55,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     // track-related attributes
     protected int timePoint;
     //boolean isNextStored=false;
-    @Transient protected StructureObject next; //@Reference(lazyLoading=true, automaticStore=false)  
+    @Reference(lazyLoading=true, automaticStore=false) protected StructureObject next; //@Transient //@Reference(lazyLoading=true, automaticStore=false)
     @Reference(lazyLoading=true, automaticStore=false) protected StructureObject previous;
     protected ObjectId parentTrackHeadId, trackHeadId;
     @Transient protected StructureObject trackHead;
@@ -74,6 +74,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     @Transient Measurements measurements;
     
     public StructureObject(int timePoint, int structureIdx, int idx, Object3D object, StructureObject parent) {
+        this.id= new ObjectId();
         this.timePoint = timePoint;
         this.object=object;
         if (object!=null) this.object.label=idx+1;
@@ -84,12 +85,11 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     /**
      * Constructor for root objects only.
-     * @param fieldName
      * @param timePoint
      * @param mask
-     * @param xp 
      */
     public StructureObject(int timePoint, BlankMask mask, ObjectDAO dao) {
+        this.id= new ObjectId();
         this.timePoint=timePoint;
         if (mask!=null) this.object=new Object3D(mask, 1);
         this.structureIdx = -1;
@@ -280,7 +280,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
      * @param flag flag, can be null
      */
     @Override public void setPreviousInTrack(StructureObjectTracker previous, boolean isTrackHead, TrackFlag flag) {
-        if (((StructureObject)previous).getTimePoint()>=this.getTimePoint()) throw new RuntimeException("setPrevious in track should be of time: "+(timePoint-1) +" but is: "+((StructureObject)previous).getTimePoint());
+        if (((StructureObject)previous).getTimePoint()>=this.getTimePoint()) throw new RuntimeException("setPrevious in track should be of time<= "+(timePoint-1) +" but is: "+((StructureObject)previous).getTimePoint()+ " current: "+this+", prev: "+previous);
         this.previous=(StructureObject)previous;
         if (flag!=null) this.flag=flag;
         if (!isTrackHead) {
@@ -317,7 +317,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     public StructureObject getNext() {
-        if (next==null) {
+        /*if (next==null) {
             synchronized(this) {
                 if (next==null) {
                     if (isRoot()) {
@@ -334,6 +334,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 }
             }
         }
+        return next;*/
+        if (next==null) return null;
+        next.callLazyLoading();
         return next;
     }
     

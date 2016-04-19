@@ -33,7 +33,7 @@ import plugins.plugins.trackers.trackMate.SpotWithinCompartment.Localization;
  * @author jollion
  */
 public class SpotCompartiment {
-    StructureObject object;
+    public final StructureObject object;
     double[] offsetUp, offsetDown;
     //double[] offsetDivisionUp, offsetDivisionDown;
     //int previousDivisionTime;

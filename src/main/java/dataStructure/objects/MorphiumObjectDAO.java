@@ -360,7 +360,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
     public ArrayList<StructureObject> getTrack(StructureObject trackHead) {
         List<StructureObject> list =  getQuery().f("structure_idx").eq(trackHead.getStructureIdx()).f("track_head_id").eq(trackHead.getTrackHeadId()).sort("time_point").asList();
         if (list.isEmpty()) list.add(trackHead);
-        else if (list.get(0)!=trackHead) list.add(0, trackHead); // track_head_id is not updated for trackHead
+        //else if (list.get(0).id!=trackHead.id) list.add(0, trackHead); // track_head_id is not updated for trackHead
         ArrayList<StructureObject> res  = checkAgainstCache(list);
         setTrackLinks(res);
         //logger.debug("get track: from head: {}, number of objects {}", trackHead, res.size());

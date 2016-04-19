@@ -97,7 +97,7 @@ public class RootTrackNode implements TreeNode {
                 remainingTrackHeadsTM = new TreeMap<Integer, List<StructureObject>>();
                 logger.debug("structure: {} no trackHeads found", structureIdx);
             } else {
-                //logger.debug("structure: {} nb trackHeads found: {}", structureIdx, trackHeads.size());
+                logger.debug("structure: {} nb trackHeads found: {}", structureIdx, trackHeads.size());
                 HashMap<Integer, List<StructureObject>> map  = new HashMap<Integer, List<StructureObject>> (trackHeads.get(trackHeads.size()-1).getTimePoint()-trackHeads.get(0).getTimePoint()+1);
                 int currentTimePoint = trackHeads.get(0).getTimePoint();
                 int lastIdx = 0;
@@ -129,7 +129,9 @@ public class RootTrackNode implements TreeNode {
     public ArrayList<TrackNode> getChildren() {
         if (children==null) {
             children = new ArrayList<TrackNode>();
+            
             Iterator<Entry<Integer, List<StructureObject>>> it = getRemainingTrackHeads().entrySet().iterator();
+            logger.debug("get track nodes from root: remaining: {}",remainingTrackHeadsTM.size());
             while (it.hasNext()) {
                 Entry<Integer, List<StructureObject>> entry = it.next();
                 Iterator<StructureObject> subIt = entry.getValue().iterator();
@@ -144,6 +146,7 @@ public class RootTrackNode implements TreeNode {
                     it.remove();
                 }
             }
+            logger.debug("get track nodes from root: {}, remaining: {}", children.size(), remainingTrackHeadsTM.size());
         }
         return children;
     }

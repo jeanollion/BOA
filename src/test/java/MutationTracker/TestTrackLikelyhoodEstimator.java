@@ -27,12 +27,13 @@ import org.apache.commons.math3.distribution.NormalDistribution;
 import static org.junit.Assert.assertArrayEquals;
 import org.junit.Before;
 import org.junit.Test;
-import plugins.plugins.trackers.trackMate.TrackLikelyhoodEstimator;
-import plugins.plugins.trackers.trackMate.TrackLikelyhoodEstimator.DistributionFunction;
-import plugins.plugins.trackers.trackMate.TrackLikelyhoodEstimator.HarmonicScoreFunction;
-import plugins.plugins.trackers.trackMate.TrackLikelyhoodEstimator.LinearTrimmedFunction;
-import plugins.plugins.trackers.trackMate.TrackLikelyhoodEstimator.ScoreFunction;
-import plugins.plugins.trackers.trackMate.TrackLikelyhoodEstimator.Track;
+import plugins.plugins.trackers.trackMate.postProcessing.DistancePenaltyScoreFunction;
+import plugins.plugins.trackers.trackMate.postProcessing.TrackLikelyhoodEstimator;
+import plugins.plugins.trackers.trackMate.postProcessing.TrackLikelyhoodEstimator.DistributionFunction;
+import plugins.plugins.trackers.trackMate.postProcessing.TrackLikelyhoodEstimator.HarmonicScoreFunction;
+import plugins.plugins.trackers.trackMate.postProcessing.TrackLikelyhoodEstimator.LinearTrimmedFunction;
+import plugins.plugins.trackers.trackMate.postProcessing.TrackLikelyhoodEstimator.ScoreFunction;
+import plugins.plugins.trackers.trackMate.postProcessing.TrackLikelyhoodEstimator.Track;
 
 /**
  *
@@ -45,9 +46,9 @@ public class TestTrackLikelyhoodEstimator {
     public void setUp() {
         //estimator = new TrackLikelyhoodEstimator(new NormalDistribution(11.97, 1.76), new BetaDistribution(0.735, 12.69), 7); squareDistance
         //estimator = new TrackLikelyhoodEstimator(new NormalDistribution(11.97, 1.76), new BetaDistribution(1.94, 7.66), 7);
-        ScoreFunction sf = new HarmonicScoreFunction(new DistributionFunction(new NormalDistribution(11.97, 1.76)).setNormalization(0.22667175022808675d), new LinearTrimmedFunction(0.3, 0.7, 0.2, 1));
-        logger.debug("distance function: 0={} 0.3={}, 0.5={}, 0.7={}, 1={}", sf.getDistanceFunction().y(0), sf.getDistanceFunction().y(0.3), sf.getDistanceFunction().y(0.5), sf.getDistanceFunction().y(0.7), sf.getDistanceFunction().y(1));
-        estimator = new TrackLikelyhoodEstimator(sf, 7);
+        ScoreFunction sf = new DistancePenaltyScoreFunction(new NormalDistribution(11.97, 1.76), new BetaDistribution(1.94, 7.66), 0.3, 0.5);
+        logger.debug("distance function: 0={} 0.3={}, 0.4={}, 0.5={}, 0.6={}, 0.7={}, 1={}", sf.getDistanceFunction().y(0), sf.getDistanceFunction().y(0.3), sf.getDistanceFunction().y(0.4), sf.getDistanceFunction().y(0.5), sf.getDistanceFunction().y(0.6), sf.getDistanceFunction().y(0.7), sf.getDistanceFunction().y(1));
+        estimator = new TrackLikelyhoodEstimator(sf, 6);
     }
 
     //@Test
@@ -84,9 +85,9 @@ public class TestTrackLikelyhoodEstimator {
     public void test1SplitAsymetricalDistance() {
         int[] frames = new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21};
         double[] distances = getDistanceArray(distance, frames.length);
-        distances[9]=0.5d;
-        distances[10]=0.42d;
-        int[][] expected = new int[][]{new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, new int[]{10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21}};
+        distances[11]=0.5d;
+        distances[10]=0.4d;
+        int[][] expected = new int[][]{new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11}, new int[]{12, 13, 14, 15, 16, 17, 18, 19, 20, 21}};
         assertMatrix(frames, distances, expected);
     }
     

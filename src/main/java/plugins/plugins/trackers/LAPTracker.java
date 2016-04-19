@@ -34,7 +34,7 @@ import java.util.Map;
 import java.util.Set;
 import plugins.Tracker;
 import plugins.plugins.trackers.trackMate.LAPTrackerCore;
-import plugins.plugins.trackers.trackMate.MutationTrackPostProcessing;
+import plugins.plugins.trackers.trackMate.postProcessing.MutationTrackPostProcessing;
 import plugins.plugins.trackers.trackMate.SpotPopulation;
 import plugins.plugins.trackers.trackMate.SpotWithinCompartment.DistanceComputationParameters;
 import utils.ArrayFileWriter;

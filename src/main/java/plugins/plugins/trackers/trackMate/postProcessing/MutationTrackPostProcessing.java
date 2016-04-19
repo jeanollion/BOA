@@ -15,8 +15,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugins.plugins.trackers.trackMate;
+package plugins.plugins.trackers.trackMate.postProcessing;
 
+import plugins.plugins.trackers.trackMate.postProcessing.TrackLikelyhoodEstimator;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
@@ -35,9 +36,11 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import org.apache.commons.math3.distribution.BetaDistribution;
 import org.apache.commons.math3.distribution.NormalDistribution;
+import plugins.plugins.trackers.trackMate.SpotPopulation;
+import plugins.plugins.trackers.trackMate.SpotWithinCompartment;
 import static plugins.Plugin.logger;
-import plugins.plugins.trackers.trackMate.TrackLikelyhoodEstimator.SplitScenario;
-import plugins.plugins.trackers.trackMate.TrackLikelyhoodEstimator.Track;
+import plugins.plugins.trackers.trackMate.postProcessing.TrackLikelyhoodEstimator.SplitScenario;
+import plugins.plugins.trackers.trackMate.postProcessing.TrackLikelyhoodEstimator.Track;
 import utils.HashMapGetCreate;
 import utils.HashMapGetCreate.Factory;
 import utils.Pair;
@@ -71,8 +74,9 @@ public class MutationTrackPostProcessing {
         spotTrackMap = new HashMapGetCreate<List<SpotWithinCompartment>, Track>(new Factory<List<SpotWithinCompartment>, Track>() {
             public Track create(List<SpotWithinCompartment> key) {return new Track(key);}
         });
-        TrackLikelyhoodEstimator.ScoreFunction sf = new TrackLikelyhoodEstimator.HarmonicScoreFunction(new TrackLikelyhoodEstimator.DistributionFunction(new NormalDistribution(11.97, 1.76)).setNormalization(0.22667175022808675d), new TrackLikelyhoodEstimator.LinearTrimmedFunction(0.3, 0.7, 0.2, 1));
-        estimator = new TrackLikelyhoodEstimator(sf, 7);
+        TrackLikelyhoodEstimator.ScoreFunction sf = new DistancePenaltyScoreFunction(new NormalDistribution(11.97, 1.76), new BetaDistribution(1.94, 7.66), 0.3, 0.25);
+        //TrackLikelyhoodEstimator.ScoreFunction sf = new TrackLikelyhoodEstimator.HarmonicScoreFunction(new TrackLikelyhoodEstimator.DistributionFunction(new NormalDistribution(11.97, 1.76)).setNormalization(0.22667175022808675d), new TrackLikelyhoodEstimator.LinearTrimmedFunction(0.3, 0.7, 0.2, 1));
+        estimator = new TrackLikelyhoodEstimator(sf, 6);
     }
     
     public void connectShortTracksByDeletingLQSpot(double maxDist) {

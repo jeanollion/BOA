@@ -15,13 +15,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package plugins.plugins.trackers.trackMate;
+package plugins.plugins.trackers.trackMate.postProcessing;
 
 import dataStructure.objects.StructureObject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.apache.commons.math3.distribution.RealDistribution;
+import plugins.plugins.trackers.trackMate.SpotWithinCompartment;
 import static plugins.Plugin.logger;
 
 /**
@@ -106,10 +107,13 @@ public class TrackLikelyhoodEstimator {
         // get number of divisions
         int[] splitNumbers = getSplitNumber(track);
         logger.debug("split track: number of divisions: {}", splitNumbers);
-        SplitScenario s1 = splitTrack(track, splitNumbers[0]);
-        for (int i =1; i<splitNumbers.length; ++i) splitTrack(track, splitNumbers[i], s1);
+        SplitScenario best=null;
+        for (int i =0; i<splitNumbers.length; ++i) {
+            SplitScenario si = splitTrack(track, splitNumbers[i]);
+            if (best==null || si.scoreSum>best.scoreSum) best = si;
+        }
         //logger.debug("split track: best scenario {}", s1);
-        return s1;
+        return best;
     }
     
     public int[] getSplitNumber(Track track) {
@@ -136,19 +140,28 @@ public class TrackLikelyhoodEstimator {
         }
     }
     
-    private void splitTrack(Track track, int divisionNumber, SplitScenario best) {
+    public SplitScenario splitTrack(Track track, int divisionNumber) {
+        if (divisionNumber==0) return new SplitScenario(track);
+        SplitScenario best = new SplitScenario(track, divisionNumber);
+        double scoreSum = splitTrack(track, divisionNumber, best);
+        best.scoreSum=scoreSum;
+        return best;
+    }
+    
+    private double splitTrack(Track track, int divisionNumber, SplitScenario best) {
         if (divisionNumber==0) {
             SplitScenario cur = new SplitScenario(track);
             if (cur.compareTo(best)>0) best.transferFrom(cur);
-            return;
+            return cur.score;
         }
+        double scoreSum = 0;
         SplitScenario current = new SplitScenario(track, divisionNumber);
         logger.debug("split in: {}, best: {}, current: {}", divisionNumber, best, current);
-        if (!current.increment(track, 0)) return;
-        current.testLastDivisions(track, best);
+        if (!current.increment(track, 0)) return 0;
+        scoreSum+=current.testLastDivisions(track, best);
         if (divisionNumber == 1) {
-            logger.debug("split in: {}, new best: {}", divisionNumber, best);
-            return;
+            logger.debug("split in: {}, new best: {}, scoreSum: {}", divisionNumber, best, scoreSum);
+            return scoreSum;
         }
         final int lastSplitIdx = divisionNumber-2;
         int splitIdx = lastSplitIdx; // index of the split site currently incremented
@@ -157,24 +170,16 @@ public class TrackLikelyhoodEstimator {
             inc = current.increment(track, splitIdx);
             if (inc) {
                 splitIdx = lastSplitIdx;
-                current.testLastDivisions(track, best);
+                scoreSum += current.testLastDivisions(track, best);
             } else --splitIdx;
         }
-        logger.debug("split in: {}, new best: {}", divisionNumber, best);
+        logger.debug("split in: {}, new best: {}, scoreSum: {}", divisionNumber, best, scoreSum);
+        return scoreSum;
     }
-    
-    public SplitScenario splitTrack(Track track, int divisionNumber) {
-        if (divisionNumber==0) return new SplitScenario(track);
-        SplitScenario best = new SplitScenario(track, divisionNumber);
-        TrackLikelyhoodEstimator.this.splitTrack(track, divisionNumber, best);
-        return best;
-    }
-    
-    
     
     public class SplitScenario implements Comparable<SplitScenario> {
         int[] splitIndices;
-        double score;
+        double score, scoreSum;
         private SplitScenario(Track track) { // no division case
             this.splitIndices=new int[0];
             this.score=scoreFunction.getScore(track, splitIndices);
@@ -184,19 +189,20 @@ public class TrackLikelyhoodEstimator {
             this.splitIndices= new int[divisionNumber];
         }
         
-        public void testLastDivisions(Track track, SplitScenario best) {
+        public double testLastDivisions(Track track, SplitScenario best) {
+            double scoreSum = 0;
             int dIdx = splitIndices.length-1;
             for (int frameIdx = splitIndices[dIdx]; frameIdx<track.frames.length; ++frameIdx) {
                 if (track.getLengthToEnd(frameIdx+1) < minLength) break;
-                ++splitIndices[dIdx];
                 score=scoreFunction.getScore(track, splitIndices);
+                scoreSum+=score;
                 if (this.compareTo(best)>0) {
                     best.transferFrom(this);
                     logger.debug("new best: {} (last test: {})", best, this);
                 }
-                
+                ++splitIndices[dIdx];
             }
-            
+            return scoreSum;
         }
         public boolean increment(Track track, int divisionIdx) { // sets the frameDivision index at divisionIdx and forward, return true if there is at leat one acceptable scenario
             ++splitIndices[divisionIdx];
@@ -308,6 +314,7 @@ public class TrackLikelyhoodEstimator {
         public Function getLengthFunction() {return lengthFunction;}
         public Function getDistanceFunction() {return distanceFunction;}
     }
+    
     public static class HarmonicScoreFunction extends AbstractScoreFunction {
 
         public HarmonicScoreFunction(Function lengthFunction, Function distanceFunction) {

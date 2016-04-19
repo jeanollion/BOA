@@ -203,7 +203,7 @@ public class TrackTreeGenerator {
     }
     
     public void deselectAllTracks () {
-        tree.setSelectionRow(-1);
+        if (tree!=null) tree.setSelectionRow(-1);
     }
 
     public TreePath getTreePath(StructureObject object) {
