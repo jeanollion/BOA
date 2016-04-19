@@ -109,12 +109,17 @@ public class GenerateTestXP {
         boolean fluo = true;
         */
         
-        String dbName = "fluo160311";
+        /*String dbName = "fluo160311";
         String inputDir = "/data/Images/Fluo/film160311/ME121R-11032016-lr62r2/";
         String outputDir = "/data/Images/Fluo/film160311/Output/";
         boolean flip = true;
-        boolean fluo = true;
+        boolean fluo = true;*/
         
+        String dbName = "fluo160407";
+        String inputDir = "/data/Images/Fluo/film160407/me121r-lr62r2-07042016";
+        String outputDir = "/data/Images/Fluo/film160407/Output/";
+        boolean flip = false;
+        boolean fluo = true;
         
         //////////// Trans
         /*String dbName = "testBF";

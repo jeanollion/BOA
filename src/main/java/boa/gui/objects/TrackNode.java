@@ -46,10 +46,10 @@ import utils.ThreadRunner.ThreadAction;
  */
 public class TrackNode implements TreeNode, UIContainer {
     StructureObject trackHead;
-    ArrayList<StructureObject> track;
+    List<StructureObject> track;
     TreeNode parent;
     RootTrackNode root;
-    ArrayList<TrackNode> children;
+    List<TrackNode> children;
     Boolean containsErrors;
     public TrackNode(TreeNode parent, RootTrackNode root, StructureObject trackHead) {
         this.parent=parent;
@@ -61,7 +61,7 @@ public class TrackNode implements TreeNode, UIContainer {
         this.containsErrors = containsErrors;
     }
 
-    public ArrayList<StructureObject> getTrack() {
+    public List<StructureObject> getTrack() {
         if (track==null) track=root.generator.getObjectDAO(this.trackHead.getFieldName()).getTrack(trackHead);
         if (track==null) logger.error("Could not retrieve track from trackHead: {}", trackHead);
         return track;
@@ -88,7 +88,7 @@ public class TrackNode implements TreeNode, UIContainer {
         return containsErrors;
     }
     
-    public ArrayList<TrackNode> getChildren() {
+    public List<TrackNode> getChildren() {
         if (children==null) {
             if (getTrack()==null || getTrack().size()<=1) children=new ArrayList<TrackNode>(0);
             else {

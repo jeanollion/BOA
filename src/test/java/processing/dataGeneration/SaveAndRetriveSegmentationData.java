@@ -112,7 +112,7 @@ public class SaveAndRetriveSegmentationData {
         IJImageWindowManager windowManager = new IJImageWindowManager(null);
         int count = 0;
         for (StructureObject th : mcTH) {
-            ArrayList<StructureObject> track = dao.getTrack(th);
+            List<StructureObject> track = dao.getTrack(th);
             logger.debug("processing: {}", th);
             ImageObjectInterface i = windowManager.getImageTrackObjectInterface(track, structureIdx);
             i.setGUIMode(false);
@@ -151,7 +151,7 @@ public class SaveAndRetriveSegmentationData {
         ArrayList<ArrayList<Object3D>> res = new ArrayList<ArrayList<Object3D>>();
         IJImageWindowManager windowManager = new IJImageWindowManager(null);
         for (StructureObject th : mcTH) {
-            ArrayList<StructureObject> track = dao.getTrack(th);
+            List<StructureObject> track = dao.getTrack(th);
             ImageObjectInterface i = windowManager.getImageTrackObjectInterface(track, structureIdx);
             i.setGUIMode(false);
             ArrayList<Pair<StructureObject, BoundingBox>> so = i.getObjects();

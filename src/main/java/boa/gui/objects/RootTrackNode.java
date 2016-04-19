@@ -90,7 +90,7 @@ public class RootTrackNode implements TreeNode {
     
     public TreeMap<Integer, List<StructureObject>> getRemainingTrackHeads() {
         if (remainingTrackHeadsTM==null) {
-            ArrayList<StructureObject> trackHeads = generator.getObjectDAO(fieldName).getTrackHeads(getParentTrackHead(), structureIdx);
+            List<StructureObject> trackHeads = generator.getObjectDAO(fieldName).getTrackHeads(getParentTrackHead(), structureIdx);
             //List<StructureObject> trackHeads = new ArrayList<StructureObject> (StructureObjectUtils.getAllTracks(getParentTrack(), structureIdx).keySet());
             //Collections.sort(trackHeads);
             if (trackHeads.isEmpty()) {

@@ -189,7 +189,7 @@ public class Processor {
     
     public static void performMeasurements(final ObjectDAO dao) {
         long t0 = System.currentTimeMillis();
-        ArrayList<StructureObject> roots = dao.getRoots();
+        List<StructureObject> roots = dao.getRoots();
         final StructureObject[] rootArray = roots.toArray(new StructureObject[roots.size()]);
         roots=null; // saves memory
         logger.debug("{} number of roots: {}", dao.getFieldName(), rootArray.length);

@@ -41,6 +41,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Rule;
@@ -175,7 +176,7 @@ public class DeleteFromDAOTest {
         } else if (db instanceof BasicMasterDAO) {
             ArrayList<StructureObject> allObjects = new ArrayList<StructureObject>();
             for (String f : db.getExperiment().getFieldsAsString()) {
-                ArrayList<StructureObject> rootTrack = db.getDao(f).getRoots();
+                List<StructureObject> rootTrack = db.getDao(f).getRoots();
                 allObjects.addAll(rootTrack);
                 for (int s = 0; s<db.getExperiment().getStructureCount(); ++s) {
                     for (StructureObject r : rootTrack) {

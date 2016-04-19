@@ -47,6 +47,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -260,7 +261,7 @@ public class ProcessingTest {
         MorphiumObjectDAO dao = db.getDao(fieldName);
         
         Processor.preProcessImages(db, true);
-        ArrayList<StructureObject> rootTrack = xp.getMicroscopyField(0).createRootObjects(dao);
+        List<StructureObject> rootTrack = xp.getMicroscopyField(0).createRootObjects(dao);
         assertEquals("root object creation: number of objects", 3, rootTrack.size());
         Processor.processAndTrackStructures(db, true);
         dao.clearCache();
