@@ -21,6 +21,7 @@ import static dataStructure.objects.StructureObject.logger;
 import image.BoundingBox;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -228,6 +229,13 @@ public class StructureObjectUtils {
         }
         return structureIdx;
     }
+    
+    public static List<StructureObject> getTrackHeads(Collection<StructureObject> objects) {
+        List<StructureObject> res = new ArrayList<StructureObject>(objects.size());
+        for (StructureObject o : objects) res.add(o.getTrackHead());
+        Utils.removeDuplicates(res, false);
+        return res;
+    }
 
     public static List<StructureObject> extendTrack(List<StructureObject> track) {
         ArrayList<StructureObject> res = new ArrayList<StructureObject>(track.size() + 2);
@@ -243,6 +251,23 @@ public class StructureObjectUtils {
         return res;
     }
 
+    public static void keepOnlyObjectsFromSameParent(List<StructureObject> list, StructureObject... parent) {
+        if (list.isEmpty()) return;
+        StructureObject p = parent.length>=1 ? parent[0] : list.get(0).getParent();
+        Iterator<StructureObject> it = list.iterator();
+        while(it.hasNext()) {
+            if (it.next().getParent()!=p) it.remove();
+        }
+    }
+    public static void keepOnlyObjectsFromSameStructureIdx(List<StructureObject> list, int... structureIdx) {
+        if (list.isEmpty()) return;
+        int sIdx = structureIdx.length>=1 ? structureIdx[0] : list.get(0).getStructureIdx();
+        Iterator<StructureObject> it = list.iterator();
+        while(it.hasNext()) {
+            if (it.next().getStructureIdx()!=sIdx) it.remove();
+        }
+    }
+    
     public static Comparator<StructureObject> getStructureObjectComparator() {
         return new Comparator<StructureObject>() {
             public int compare(StructureObject arg0, StructureObject arg1) {

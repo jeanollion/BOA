@@ -18,7 +18,10 @@
 package utils;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -26,31 +29,8 @@ import java.util.List;
  */
 public class Pair<K, V> {
 
-    public static <K, V> List<V> unpair2(List<Pair<K, V>> list) {
-        if (list == null) {
-            return null;
-        }
-        List<V> res = new ArrayList<V>(list.size());
-        for (Pair<K, V> p : list) {
-            if (p.value != null) {
-                res.add(p.value);
-            }
-        }
-        return res;
-    }
-
-    public static <K, V> List<K> unpair(List<Pair<K, V>> list) {
-        if (list == null) {
-            return null;
-        }
-        List<K> res = new ArrayList<K>(list.size());
-        for (Pair<K, V> p : list) {
-            if (p.key != null) {
-                res.add(p.key);
-            }
-        }
-        return res;
-    }
+    
+    
     public K key;
     public V value;
     public Pair(K key, V value) {
@@ -68,20 +48,53 @@ public class Pair<K, V> {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        final Pair<?, ?> other = (Pair<?, ?>) obj;
-        if (this.key != other.key && (this.key == null || !this.key.equals(other.key))) {
-            return false;
-        }
-        if (this.value != other.value && (this.value == null || !this.value.equals(other.value))) {
-            return false;
-        }
-        return true;
+        if (obj == null) return false;
+        if (getClass() == obj.getClass()) {
+            final Pair<?, ?> other = (Pair<?, ?>) obj;
+            if (key!=null && other.key!=null && !other.key.equals(key)) return false;
+            if (value!=null && other.value!=null && !other.value.equals(value)) return false;
+            return true;
+        } else return false;
     }
-    
+    public static <K, V> List<V> unpairValues(Collection<Pair<K, V>> list) {
+        if (list == null) {
+            return null;
+        }
+        List<V> res = new ArrayList<V>(list.size());
+        for (Pair<K, V> p : list) {
+            if (p.value != null) {
+                res.add(p.value);
+            }
+        }
+        return res;
+    }
+
+    public static <K, V> List<K> unpairKeys(Collection<Pair<K, V>> list) {
+        if (list == null) {
+            return null;
+        }
+        List<K> res = new ArrayList<K>(list.size());
+        for (Pair<K, V> p : list) {
+            if (p.key != null) {
+                res.add(p.key);
+            }
+        }
+        return res;
+    }
+    public static <K> List<Pair<K, ?>> pairAsKeys(Collection<K> list) {
+        if (list == null) {
+            return null;
+        }
+        List<Pair<K, ?>> res = new ArrayList<Pair<K, ?>>(list.size());
+        for (K k : list) res.add(new Pair(k, null));
+        return res;
+    }
+    public static <V> List<Pair<?, V>> pairAsValues(Collection<V> list) {
+        if (list == null) {
+            return null;
+        }
+        List<Pair<?, V>> res = new ArrayList<Pair<?, V>>(list.size());
+        for (V v : list) res.add(new Pair(null, v));
+        return res;
+    }
 }

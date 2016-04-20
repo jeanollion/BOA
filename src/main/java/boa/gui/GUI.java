@@ -218,7 +218,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         }
         // look in object list
         List<StructureObject> selectedObjects = instance.objectTreeGenerator.getSelectedObjects(true, i.getChildStructureIdx());
-        iwm.displayObjects(image, i.pairWithOffset(selectedObjects), null, true);
+        iwm.displayObjects(image, i.pairWithOffset(selectedObjects), null, true, false);
         // unselect objects that cannot be selected ?
         
         // labile objects
@@ -1090,10 +1090,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void splitObjectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_splitObjectButtonActionPerformed
         if (!checkConnection()) return;
-        StructureObject sel = objectTreeGenerator.getFisrtSelectedObject();
-        String fieldName = sel.getFieldName();
-        if (sel==null) logger.warn("Select an object to Split first!");
+        List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        if (selList.isEmpty()) logger.warn("Select an object to Split first!");
         else {
+            StructureObject sel = selList.get(0);
+            String fieldName = sel.getFieldName();
             ObjectSplitter splitter = this.db.getExperiment().getStructure(sel.getStructureIdx()).getObjectSplitter();
             if (splitter==null) logger.warn("No ObjectSplitter defined for structure: "+db.getExperiment().getStructure(sel.getStructureIdx()).getName());
             else {
@@ -1110,6 +1111,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                     db.getDao(fieldName).store(modified, false);
                     // unselect
                     ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
+                    ImageWindowManagerFactory.getImageManager().removeObjects(modified, true);
                     //Update tree
                     ObjectNode node = objectTreeGenerator.getObjectNode(sel);
                     node.getParent().createChildren();
@@ -1122,7 +1124,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                         List<StructureObject> toDisp = new ArrayList<StructureObject>(2);
                         toDisp.add(sel);
                         toDisp.add(newObject);
-                        ImageWindowManagerFactory.getImageManager().displayObjects(null, i.pairWithOffset(toDisp), Color.orange, true);
+                        ImageWindowManagerFactory.getImageManager().displayObjects(null, i.pairWithOffset(toDisp), Color.orange, true, false);
                     }
                 }
             }
@@ -1131,8 +1133,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void mergeObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mergeObjectsButtonActionPerformed
         if (!checkConnection()) return;
-        ArrayList<StructureObject> sel = objectTreeGenerator.getSelectedObjectsFromSameParent();
-        if (sel.isEmpty()) logger.warn("Merge Objects: select several objects from same parent first!");
+        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        StructureObjectUtils.keepOnlyObjectsFromSameParent(sel);
+        StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(sel);
+        if (sel.size()<=1) logger.warn("Merge Objects: select several objects from same parent first!");
         else {
             StructureObject res = sel.remove(0);
             String fieldName = res.getFieldName();
@@ -1142,11 +1146,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 siblings.remove(toMerge);
             }
             db.getDao(fieldName).delete(sel, false);
+            
             ArrayList<StructureObject> modified = new ArrayList<StructureObject>(siblings.size());
             modified.add(res);
             res.getParent().relabelChildren(res.getStructureIdx(), modified);
             db.getDao(fieldName).store(modified, false);
             ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
+            sel.add(res);
+            ImageWindowManagerFactory.getImageManager().removeObjects(sel, true);
             //Update object tree
             ObjectNode node = objectTreeGenerator.getObjectNode(res);
             node.getParent().createChildren();
@@ -1158,7 +1165,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             if (i!=null) {
                 List<StructureObject> toDisp = new ArrayList<StructureObject>(1);
                 toDisp.add(res);
-                ImageWindowManagerFactory.getImageManager().displayObjects(null, i.pairWithOffset(toDisp), Color.orange, true);
+                ImageWindowManagerFactory.getImageManager().displayObjects(null, i.pairWithOffset(toDisp), Color.orange, true, false);
             }
         }
     }//GEN-LAST:event_mergeObjectsButtonActionPerformed
@@ -1193,7 +1200,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void deleteObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteObjectsButtonActionPerformed
         if (!checkConnection()) return;
-        ArrayList<StructureObject> sel = objectTreeGenerator.getSelectedObjects(true);
+        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(sel);
         if (sel.isEmpty()) logger.warn("Delete Objects: select one or several objects to delete first!");
         else {
             int structureIdx = sel.get(0).getStructureIdx();
@@ -1211,6 +1219,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             db.getDao(fieldName).store(modified, false);
             //Update selection on opened image
             ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
+            ImageWindowManagerFactory.getImageManager().removeObjects(sel, true);
             //Update object tree
             for (StructureObject s : parents) {
                 ObjectNode node = objectTreeGenerator.getObjectNode(s);
@@ -1219,8 +1228,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
             //Update all opened images & objectImageInteraction
             for (StructureObject p : parents) ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
-            
-            
         }
     }//GEN-LAST:event_deleteObjectsButtonActionPerformed
 
@@ -1340,30 +1347,38 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void linkObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_linkObjectsButtonActionPerformed
         if (!checkConnection()) return;
-        ArrayList<StructureObject> sel = objectTreeGenerator.getSelectedObjects(true);
+        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(sel);
         if (sel.size()!=2 && sel.size()!=1) {
             logger.warn("Only 1 or 2 objects should be selected");
             return;
         }
+        ImageWindowManagerFactory.getImageManager().removeTracks(StructureObjectUtils.getTrackHeads(sel));
+        List<List<StructureObject>> thToDisp = new ArrayList<List<StructureObject>>(2);
         int structureIdx = sel.get(0).getStructureIdx();
         logger.debug("selected objects: {}, structureIdx: {}", sel.size(), structureIdx);
-        List<StructureObject> trackHeadList = trackTreeController.getGeneratorS().get(structureIdx).getSelectedTrackHeads();
         if (sel.size()==1) { // unlink spot
             StructureObject next = sel.get(0).getNext();
-            if (next!=null) next.setTrackHead(next, false, true);
+            StructureObject prev = sel.get(0).getPrevious();
+            if (next!=null) next.setTrackHead(next, true, true);
+            sel.get(0).setPreviousInTrack(null, true);
             sel.get(0).resetTrackLinks();
             logger.debug("unlinkin: {}", sel.get(0));
-        } else { // link / unlink the 2 spots
+        } else { 
             Collections.sort(sel); // sorted by time point
             if (sel.get(1).getPrevious()==sel.get(0)) { //unlink the 2 spots
                 sel.get(1).setTrackHead(sel.get(1), true, true);
+                logger.debug("unlinking.. previous: {}, previous's next: {}", sel.get(1).getPrevious(), sel.get(0).getNext());
                 sel.get(0).setTrackFlag(StructureObject.TrackFlag.correctionSplit);
-                trackHeadList.add(sel.get(1));
+                sel.get(1).setTrackFlag(StructureObject.TrackFlag.correctionSplit);
+                thToDisp.add(StructureObjectUtils.getTrack(sel.get(0).getTrackHead(), true));
+                thToDisp.add(StructureObjectUtils.getTrack(sel.get(1), true));
                 logger.debug("unlinking: {} to {}", sel.get(0), sel.get(1));
             } else { // link the 2 spots
                 sel.get(1).setPreviousInTrack(sel.get(0), false);
+                sel.get(1).setTrackHead(sel.get(0).getTrackHead(), false, true);
                 sel.get(1).setTrackFlag(StructureObject.TrackFlag.correctionMerge);
-                trackHeadList.remove(sel.get(1));
+                thToDisp.add(StructureObjectUtils.getTrack(sel.get(0).getTrackHead(), true));
                 logger.debug("linking: {} to {}", sel.get(0), sel.get(1));
             }
         }
@@ -1371,17 +1386,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         
         // reload track-tree and update selection list
         int parentStructureIdx = sel.get(0).getParent().getStructureIdx();
-        trackTreeController.updateParentTracks(trackTreeController.getTreeIdx(structureIdx));
-        this.trackTreeController.getGeneratorS().get(structureIdx).selectTracks(trackHeadList, false);
+        trackTreeController.updateParentTracks(trackTreeController.getTreeIdx(parentStructureIdx));
         //List<List<StructureObject>> tracks = this.trackTreeController.getGeneratorS().get(structureIdx).getSelectedTracks(true);
         
         // update current image
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
-        if (iwm==null) return;
-        Image image=iwm.getDisplayer().getCurrentImage2();
-        if (image ==null) return;
-        iwm.hideLabileTracks(image);
-        GUI.updateRoiDisplay(null);
+        iwm.displayTracks(null, null, thToDisp, true);
     }//GEN-LAST:event_linkObjectsButtonActionPerformed
     
     public void manualSegmentation(Image image, boolean test) {
@@ -1445,7 +1455,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
             // selected newly segmented objects on image
             ImageObjectInterface i = iwm.getImageObjectInterface(image);
-            if (i!=null) iwm.displayObjects(image, i.pairWithOffset(segmentedObjects), Color.ORANGE, true);
+            if (i!=null) iwm.displayObjects(image, i.pairWithOffset(segmentedObjects), Color.ORANGE, true, false);
         }
     }
     
@@ -1483,6 +1493,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         logger.debug("set interactive structure: {}", structureIdx);
         getInstance().interactiveStructure.setSelectedIndex(structureIdx);
         getInstance().interactiveStructureActionPerformed(null);
+    }
+    
+    public static void setTrackStructureIdx(int structureIdx) {
+        if (getInstance()==null) return;
+        logger.debug("set track structure: {}", structureIdx);
+        getInstance().trackStructureJCB.setSelectedIndex(structureIdx);
+        getInstance().trackStructureJCBActionPerformed(null);
     }
     
     /**

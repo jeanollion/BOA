@@ -37,6 +37,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -178,7 +179,7 @@ public class Utils {
         return res;
     }
     
-    public static <K, V> ArrayList<K> getKeys(Map<K, V> map, List<V> values) {
+    public static <K, V> ArrayList<K> getKeys(Map<K, V> map, Collection<V> values) {
         ArrayList<K> res = new ArrayList<K>();
         for (Entry<K, V> e : map.entrySet()) if (values.contains(e.getValue())) res.add(e.getKey());
         return res;
@@ -385,5 +386,31 @@ public class Utils {
         list.addAll(set);
     }
     
-
+    public static <K, V> Entry<K, V> removeFromMap(Map<K, V> map, K key) {
+        Iterator<Entry<K, V>> it = map.entrySet().iterator();
+        while(it.hasNext()) {
+            Entry<K, V> e = it.next();
+            if (e.getKey().equals(key)) {
+                it.remove();
+                return e;
+            }
+        }
+        return null;
+    }
+    public static <K, V> Entry<K, V> getFromMap(Map<K, V> map, K key) {
+        Iterator<Entry<K, V>> it = map.entrySet().iterator();
+        while(it.hasNext()) {
+            Entry<K, V> e = it.next();
+            if (e.getKey().equals(key)) return e;
+        }
+        return null;
+    }
+    public static <K, V> boolean mapContains(Map<K, V> map, K key) {
+        Iterator<Entry<K, V>> it = map.entrySet().iterator();
+        while(it.hasNext()) {
+            Entry<K, V> e = it.next();
+            if (e.getKey().equals(key)) return true;
+        }
+        return false;
+    }
 }

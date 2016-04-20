@@ -45,8 +45,8 @@ import utils.ThreadRunner;
  */
 public class ScaleHistogramSignalExclusionY implements Transformation {
     BoundedNumberParameter sigmaTh= new BoundedNumberParameter("Theorical Sigma", 2, 5, 1, null);
-    BoundedNumberParameter muTh= new BoundedNumberParameter("Theorical Mean", 2, 100, 1, null);
-    BoundedNumberParameter slidingWindowSize= new BoundedNumberParameter("Sliding Window Size", 0, 50, 1, null);
+    BoundedNumberParameter muTh= new BoundedNumberParameter("Theorical Mean", 2, 105, 1, null);
+    BoundedNumberParameter slidingWindowSize= new BoundedNumberParameter("Sliding Window Size", 0, 75, 1, null);
     ChannelImageParameter signalExclusion = new ChannelImageParameter("Channel for Signal Exclusion", -1, true);
     BoundedNumberParameter signalExclusionThreshold = new BoundedNumberParameter("Signal Exclusion Threshold", 1, 50, 0, null);
     BooleanParameter underThreshold = new BooleanParameter("Consider only signal under threshold", true);
@@ -65,7 +65,10 @@ public class ScaleHistogramSignalExclusionY implements Transformation {
         this.underThreshold.setSelected(underThreshold);
         this.signalMaxThreshold.setValue(signalMaxThreshold);
     }
-    
+    public ScaleHistogramSignalExclusionY setExclusionChannel(int exclusionChannelIdx) {
+        this.signalExclusion.setSelectedIndex(exclusionChannelIdx);
+        return this;
+    }
     public void computeConfigurationData(final int channelIdx, final InputImages inputImages) {
         final int chExcl = signalExclusion.getSelectedIndex();
         final double exclThld = signalExclusionThreshold.getValue().doubleValue();

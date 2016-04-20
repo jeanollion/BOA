@@ -22,6 +22,7 @@ import image.BoundingBox;
 import image.Image;
 import image.ImageInteger;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -54,7 +55,7 @@ public abstract class ImageObjectInterface {
     public abstract boolean isTimeImage();
     public int getChildStructureIdx() {return childStructureIdx;}
     public abstract ArrayList<Pair<StructureObject, BoundingBox>> getObjects();
-    public List<Pair<StructureObject, BoundingBox>> pairWithOffset(List<StructureObject> objects) {
+    public List<Pair<StructureObject, BoundingBox>> pairWithOffset(Collection<StructureObject> objects) {
         List<Pair<StructureObject, BoundingBox>> res = new ArrayList<Pair<StructureObject, BoundingBox>>(objects.size());
         for (StructureObject o : objects) {
             BoundingBox b = this.getObjectOffset(o);

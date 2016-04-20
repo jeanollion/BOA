@@ -120,7 +120,7 @@ public class SaveAndRetriveSegmentationData {
             if (roiStructureIdx!=null) {
                 for (int roiS : roiStructureIdx) {
                     i = windowManager.getImageTrackObjectInterface(track, roiS);
-                    windowManager.displayObjects(im, i.getObjects(), null, false);
+                    windowManager.displayObjects(im, i.getObjects(), null, false, false);
                 }
             }
             if (trackStructureIdx!=null) {

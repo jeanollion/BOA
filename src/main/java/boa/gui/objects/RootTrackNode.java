@@ -131,7 +131,7 @@ public class RootTrackNode implements TreeNode {
             children = new ArrayList<TrackNode>();
             
             Iterator<Entry<Integer, List<StructureObject>>> it = getRemainingTrackHeads().entrySet().iterator();
-            logger.debug("get track nodes from root: remaining: {}",remainingTrackHeadsTM.size());
+            //logger.debug("get track nodes from root: remaining: {}",remainingTrackHeadsTM.size());
             while (it.hasNext()) {
                 Entry<Integer, List<StructureObject>> entry = it.next();
                 Iterator<StructureObject> subIt = entry.getValue().iterator();
@@ -146,7 +146,7 @@ public class RootTrackNode implements TreeNode {
                     it.remove();
                 }
             }
-            logger.debug("get track nodes from root: {}, remaining: {}", children.size(), remainingTrackHeadsTM.size());
+            //logger.debug("get track nodes from root: {}, remaining: {}", children.size(), remainingTrackHeadsTM.size());
         }
         return children;
     }

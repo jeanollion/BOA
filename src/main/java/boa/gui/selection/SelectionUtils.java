@@ -45,6 +45,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.SwingUtilities;
+import utils.Pair;
 import utils.Utils;
 
 /**
@@ -65,7 +66,7 @@ public class SelectionUtils {
             String fieldName = i.getParent().getFieldName();
             List<StructureObject> objects = s.getElements(fieldName);
             if (objects!=null) {
-                iwm.displayObjects(null, i.pairWithOffset(objects), s.getColor(), false);
+                iwm.displayObjects(null, i.pairWithOffset(objects), s.getColor(), false, false);
             }
         }
     }
@@ -77,7 +78,7 @@ public class SelectionUtils {
             String fieldName = i.getParent().getFieldName();
             List<StructureObject> objects = s.getElements(fieldName);
             if (objects!=null) {
-                iwm.hideObjects(null, i.pairWithOffset(objects));
+                iwm.hideObjects(null, i.pairWithOffset(objects), false);
             }
         }
     }
@@ -101,7 +102,7 @@ public class SelectionUtils {
             String fieldName = i.getParent().getFieldName();
             List<StructureObject> tracks = s.getTrackHeads(fieldName);
             if (tracks==null) return;
-            iwm.hideTracks(null, i, tracks);
+            iwm.hideTracks(null, i, tracks, false);
         }
     }
     
@@ -185,12 +186,15 @@ public class SelectionUtils {
             public void actionPerformed(ActionEvent e) {
                 if (selectedValues.isEmpty()) return;
                 SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
-                StructureObjectTreeGenerator sotg = GUI.getInstance().getObjectTree();
+                List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
                 for (Selection s : selectedValues ) {
-                    List<StructureObject> objects = sotg.getSelectedObjects(true, s.getStructureIdx());
+                    int[] structureIdx = s.getStructureIdx()==-1 ? new int[0] : new int[]{s.getStructureIdx()};
+                    List<StructureObject> objects = new ArrayList<StructureObject>(sel);
+                    StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(sel, structureIdx);
                     s.addElements(objects);
                     dao.store(s);
                 }
+                list.updateUI();
             }
         });
         menu.add(add);
@@ -200,12 +204,14 @@ public class SelectionUtils {
             public void actionPerformed(ActionEvent e) {
                 if (selectedValues.isEmpty()) return;
                 SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
-                StructureObjectTreeGenerator sotg = GUI.getInstance().getObjectTree();
+                List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
                 for (Selection s : selectedValues ) {
-                    List<StructureObject> objects = sotg.getSelectedObjects(true, s.getStructureIdx());
-                    s.removeElements(objects);
+                    s.removeElements(sel);
                     dao.store(s);
                 }
+                ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getCurrentImageObjectInterface();
+                ImageWindowManagerFactory.getImageManager().hideObjects(null, i.pairWithOffset(sel), false);
+                list.updateUI();
             }
         });
         menu.add(remove);
@@ -220,6 +226,7 @@ public class SelectionUtils {
                     s.clear();
                     dao.store(s);
                 }
+                list.updateUI();
             }
         });
         menu.add(clear);
@@ -232,6 +239,7 @@ public class SelectionUtils {
                 SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
                 for (Selection s : selectedValues ) dao.delete(s);
                 for (int i : list.getSelectedIndices()) model.removeElementAt(i);
+                list.updateUI();
             }
         });
         menu.add(delete);

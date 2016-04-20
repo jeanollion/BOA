@@ -108,6 +108,10 @@ public class Structure extends SimpleContainerParameter {
         return this.manualSegmenter.instanciatePlugin();
     }
     
+    public void setManualSegmenter(ManualSegmenter manualSegmenter) {
+        this.manualSegmenter.setPlugin(manualSegmenter);
+    }
+    
     public void setObjectSplitter(ObjectSplitter objectSplitter) {
         this.objectSplitter.setPlugin(objectSplitter);
     }

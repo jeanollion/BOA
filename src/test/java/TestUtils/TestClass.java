@@ -19,14 +19,45 @@ package TestUtils;
 
 import static TestUtils.Utils.logger;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+import utils.Pair;
+import static utils.Utils.removeFromMap;
 
 /**
  *
  * @author jollion
  */
 public class TestClass {
-    @Test 
+    @Test
+    public void testPair() {
+        List<Pair<Integer, Double>> l = new ArrayList<Pair<Integer, Double>>();
+        Pair<Integer, Double> p1 = new Pair(1, 1.0);
+        Pair<Integer, Double> p2 = new Pair(2, 3.0);
+        l.add(p1);
+        l.add(p2);
+        Pair k = new Pair(1, null);
+        Pair v = new Pair(null, 3.0);
+        Map<Pair<Integer, Double>, Integer> map = new HashMap<Pair<Integer, Double>, Integer>();
+        map.put(p1, 5);
+        map.put(p2, 6);
+        assertTrue("pair with key only", k.equals(p1));
+        assertTrue("pair with key only 2", !p2.equals(k));
+        assertTrue("pair with value only", l.get(1).equals(v));
+        assertTrue("pair with value only 2", !p1.equals(v));
+        assertEquals("get within list with key", 0, l.indexOf(k)); 
+        assertEquals("get within list with value", 1, l.indexOf(v));
+        assertTrue("get within map p1", map.containsKey(p1));
+        Integer d = (Integer)utils.Utils.removeFromMap(map, k).getValue();
+        assertTrue("get within map using iterator", 5==d);
+        assertTrue("removed from map", map.size()==1);
+        
+    }
+    //@Test 
     public void testMath() {
         int aa = 5;
         int bb = 2;

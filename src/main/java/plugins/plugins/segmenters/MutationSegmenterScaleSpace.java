@@ -64,7 +64,7 @@ public class MutationSegmenterScaleSpace implements Segmenter {
     public static boolean debug = false;
     public static boolean displayImages = false;
     NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxels)", 0, 5, 1, null);
-    NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 3, 4, 1, null);
+    NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 3, 2, 1, null);
     NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 3, 0.75, 0, null);
     PostFilterSequence postFilters = new PostFilterSequence("Post-Filters").addPostFilters(new FeatureFilter(new SNR().setBackgroundObjectStructureIdx(1), 0.75, true, true));
     Parameter[] parameters = new Parameter[]{minSpotSize, thresholdHigh,  thresholdLow, postFilters};
@@ -74,6 +74,11 @@ public class MutationSegmenterScaleSpace implements Segmenter {
         return postFilters.filter(res, structureIdx, (StructureObject)parent);
     }
     public PostFilterSequence getPostFilters() {return postFilters;}
+    
+    public MutationSegmenterScaleSpace setThresholdSeeds(double threshold) {
+        this.thresholdHigh.setValue(threshold);
+        return this;
+    }
     
     public static ObjectPopulation run(Image input, ImageMask mask, int minSpotSize, double thresholdHigh , double thresholdLow, ArrayList<Image> intermediateImages) {
         if (input.getSizeZ()>1) {

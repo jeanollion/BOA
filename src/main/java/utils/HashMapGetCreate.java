@@ -19,7 +19,9 @@ package utils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  *
@@ -54,6 +56,11 @@ public class HashMapGetCreate<K, V> extends HashMap<K, V> {
     public static class ListFactory<K, V> implements Factory<K, List<V>>{
         @Override public List<V> create(K key) {
             return new ArrayList<V>();
+        }
+    }
+    public static class SetFactory<K, V> implements Factory<K, Set<V>>{
+        @Override public Set<V> create(K key) {
+            return new HashSet<V>();
         }
     }
 }

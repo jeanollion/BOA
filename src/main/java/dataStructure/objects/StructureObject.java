@@ -280,13 +280,19 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
      * @param flag flag, can be null
      */
     @Override public void setPreviousInTrack(StructureObjectTracker previous, boolean isTrackHead, TrackFlag flag) {
-        if (((StructureObject)previous).getTimePoint()>=this.getTimePoint()) throw new RuntimeException("setPrevious in track should be of time<= "+(timePoint-1) +" but is: "+((StructureObject)previous).getTimePoint()+ " current: "+this+", prev: "+previous);
-        this.previous=(StructureObject)previous;
+        if (previous==null) {
+            if (this.previous!=null && this.previous.next==this) this.previous.next=null;
+        } else {
+            if (((StructureObject)previous).getTimePoint()>=this.getTimePoint()) throw new RuntimeException("setPrevious in track should be of time<= "+(timePoint-1) +" but is: "+((StructureObject)previous).getTimePoint()+ " current: "+this+", prev: "+previous);
+            this.previous=(StructureObject)previous;
+        }
         if (flag!=null) this.flag=flag;
         if (!isTrackHead) {
-            this.previous.next=this;
+            if (this.previous!=null) {
+                this.previous.next=this;
+                this.trackHead= this.previous.getTrackHead();
+            }
             this.isTrackHead=false;
-            this.trackHead= this.previous.getTrackHead();
             this.trackHeadId=null;
         } else {
             this.isTrackHead=true;
@@ -300,7 +306,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     //public void setNextInTrack(StructureObject next, )
     @Override
     public void resetTrackLinks() {
+        if (this.previous!=null && this.previous.next==this) this.previous.next=null;
         this.previous=null;
+        if (this.next!=null && this.next.previous==this) this.next.previous=null;
         this.next=null;
         this.trackHead=null;
         this.trackHeadId=null;
@@ -317,24 +325,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     public StructureObject getNext() {
-        /*if (next==null) {
-            synchronized(this) {
-                if (next==null) {
-                    if (isRoot()) {
-                        next = dao.getRoot(timePoint+1);
-                    } else {
-                        StructureObject nextParent = getParent().getNext();
-                        if (nextParent==null) return null;
-                        ArrayList<StructureObject> nextSiblings = nextParent.getChildren(structureIdx);
-                        for (StructureObject o : nextSiblings) if (o.getPrevious()==this) {
-                            next = o;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-        return next;*/
         if (next==null) return null;
         next.callLazyLoading();
         return next;

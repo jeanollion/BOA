@@ -96,6 +96,9 @@ public class TrackTreeGenerator {
     
     public void setParentTrack(StructureObject parentTrack, int structureIdx) {
         generateTree(new RootTrackNode(this, parentTrack, structureIdx));
+        if (tree!=null) {
+            tree.updateUI();
+        }
     }
     
     

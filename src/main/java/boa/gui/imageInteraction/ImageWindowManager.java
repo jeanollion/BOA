@@ -30,6 +30,7 @@ import image.ImageOperations;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,8 +38,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import utils.HashMapGetCreate;
+import utils.HashMapGetCreate.Factory;
+import utils.HashMapGetCreate.SetFactory;
 import utils.Pair;
-import static utils.Pair.unpair2;
+import static utils.Pair.unpairKeys;
+import static utils.Pair.unpairValues;
 import utils.Utils;
 
 /**
@@ -65,11 +70,13 @@ public abstract class ImageWindowManager<T, U, V> {
     // displayed objects 
     protected final Map<Pair<StructureObject, BoundingBox>, U> objectRoiMap = new HashMap<Pair<StructureObject, BoundingBox>, U>();
     protected final Map<Pair<StructureObject, StructureObject>, V> parentTrackHeadTrackRoiMap=new HashMap<Pair<StructureObject, StructureObject>, V>();
-    protected final Map<Image, Set<U>> displayedLabileObjectRois = new HashMap<Image, Set<U>>();
-    protected final Map<Image, Set<V>> displayedLabileTrackRois = new HashMap<Image, Set<V>>();
+    protected final Map<Pair<StructureObject, BoundingBox>, U> labileObjectRoiMap = new HashMap<Pair<StructureObject, BoundingBox>, U>();
+    protected final Map<Pair<StructureObject, StructureObject>, V> labileParentTrackHeadTrackRoiMap=new HashMap<Pair<StructureObject, StructureObject>, V>();
+    protected final HashMapGetCreate<Image, Set<U>> displayedLabileObjectRois = new HashMapGetCreate<Image, Set<U>>(new SetFactory<Image, U>());
+    protected final HashMapGetCreate<Image, Set<V>> displayedLabileTrackRois = new HashMapGetCreate<Image, Set<V>>(new SetFactory<Image, V>());
     
     public ImageWindowManager(ImageObjectListener listener, ImageDisplayer displayer) {
-        this.listener=listener;
+        this.listener=null;
         this.displayer=displayer;
         imageObjectInterfaceMap = new HashMap<Image, ImageObjectInterfaceKey>();
         isLabelImage = new HashMap<Image, Boolean>();
@@ -139,6 +146,8 @@ public abstract class ImageWindowManager<T, U, V> {
                     ImageOperations.fill(((ImageInteger)e.getKey()), 0, null);
                     i.draw((ImageInteger)e.getKey());
                 }
+                hideAllObjects(e.getKey(), true);
+                hideAllTracks(e.getKey(), true);
                 if (!track) getDisplayer().updateImageDisplay(e.getKey());
             }
         }
@@ -154,6 +163,7 @@ public abstract class ImageWindowManager<T, U, V> {
             }
         } else reloadObjects_(parent, childStructureIdx, false);
         if (parent.getParent()!=null) reloadObjects(parent.getParent(), childStructureIdx, wholeTrack);
+        this.resetObjectsAndTracksRoi();
     } 
     
     public ImageObjectInterface getCurrentImageObjectInterface() {
@@ -267,8 +277,8 @@ public abstract class ImageWindowManager<T, U, V> {
             logger.error("no image object interface found for image: {} and structure: {}", image.getName(), interactiveStructureIdx);
             return;
         }
-        displayObjects(image, i.getObjects(), defaultRoiColor, true);
-        listener.fireObjectSelected(Pair.unpair(i.getObjects()), true);
+        displayObjects(image, i.getObjects(), defaultRoiColor, true, false);
+        listener.fireObjectSelected(Pair.unpairKeys(i.getObjects()), true);
     }
     
     
@@ -277,7 +287,7 @@ public abstract class ImageWindowManager<T, U, V> {
     protected abstract U generateObjectRoi(Pair<StructureObject, BoundingBox> object, boolean image2D, Color color);
     protected abstract void setObjectColor(U roi, Color color);
     
-    public void displayObjects(Image image, List<Pair<StructureObject, BoundingBox>> objectsToDisplay, Color color, boolean labileObjects) {
+    public void displayObjects(Image image, List<Pair<StructureObject, BoundingBox>> objectsToDisplay, Color color, boolean labileObjects, boolean hideIfAlreadyDisplayed) {
         if (objectsToDisplay.isEmpty() || (objectsToDisplay.get(0)==null)) return;
         if (color==null) color = ImageWindowManager.defaultRoiColor;
         T dispImage;
@@ -288,50 +298,55 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         else dispImage = displayer.getImage(image);
         if (dispImage==null || image==null) return;
-        Set<U> labiles = null;
-        if (labileObjects) {
-            labiles = this.displayedLabileObjectRois.get(image);
-            if (labiles==null) {
-                labiles = new HashSet<U>();
-                displayedLabileObjectRois.put(image, labiles);
-            }
-        }
+        Set<U> labiles = labileObjects ? this.displayedLabileObjectRois.getAndCreateIfNecessary(image) : null;
+        Map<Pair<StructureObject, BoundingBox>, U> map = labileObjects ? this.labileObjectRoiMap : objectRoiMap;
         for (Pair<StructureObject, BoundingBox> p : objectsToDisplay) {
             if (p==null || p.key==null) continue;
             //logger.debug("getting mask of object: {}", o);
-            U roi=objectRoiMap.get(p);
+            U roi=map.get(p);
             if (roi==null) {
                 roi = generateObjectRoi(p, image.getSizeZ()<=1, color);
-                objectRoiMap.put(p, roi);
+                map.put(p, roi);
+                if (!labileObjects) logger.debug("add non labile object: {}, found by keyonly? {}", p.key, map.containsKey(new Pair(p.key, null)));
             } else {
                 setObjectColor(roi, color);
             }
-            if (labiles==null || !labiles.contains(roi)) displayObject(dispImage, roi);
-            if (labiles!=null) labiles.add(roi);
+            if (labileObjects) {
+                if (labiles.contains(roi)) {
+                    if (hideIfAlreadyDisplayed) {
+                        hideObject(dispImage, roi);
+                        labiles.remove(roi);
+                        logger.debug("display -> inverse state: hide: {}", p.key);
+                    }
+                } else {
+                    displayObject(dispImage, roi);
+                    labiles.add(roi);
+                }
+            } else displayObject(dispImage, roi);
         }
         displayer.updateImageRoiDisplay(image);
     }
     
-    public void hideObjects(Image image, List<Pair<StructureObject, BoundingBox>> objects) {
+    public void hideObjects(Image image, List<Pair<StructureObject, BoundingBox>> objects, boolean labileObjects) {
         T dispImage;
         if (image==null) {
-            dispImage = getDisplayer().getCurrentImage();
-            if (dispImage==null) return;
-            image = getDisplayer().getImage(dispImage);
-        } else dispImage = getDisplayer().getImage(image);
-        if (dispImage==null || image==null) return;
-        Set<U> labiles = this.displayedLabileObjectRois.get(image);
-        for (Pair<StructureObject, BoundingBox> p : objects) {
+            image = getDisplayer().getCurrentImage2();
+            if (image==null) return;
+        } 
+        dispImage = getDisplayer().getImage(image);
+        if (dispImage==null) return;
+        Set<U> selectedObjects = labileObjects ? this.displayedLabileObjectRois.get(image) : null;
+        Map<Pair<StructureObject, BoundingBox>, U> map = labileObjects ? labileObjectRoiMap : objectRoiMap;
+        for (Pair<StructureObject, ?> p : objects) {
             //logger.debug("hiding: {}", p.key);
-            U roi=objectRoiMap.get(p);
+            U roi=map.get(p);
             if (roi!=null) {
                 hideObject(dispImage, roi);
-                //logger.debug("roi found, present in labiles? {}", labiles!=null?labiles.contains(roi):false);
-                if (labiles!=null) labiles.remove(roi);
+                if (selectedObjects!=null) selectedObjects.remove(roi);
             }
+            logger.debug("hide object: {} found? {}", p.key, roi!=null);
         }
         displayer.updateImageRoiDisplay(image);
-        //if (listener!=null) listener.fireObjectDeselected(Pair.unpair(objects));
     }
     public void hideAllObjects(Image image, boolean labileObjects) {
         T dispImage;
@@ -342,11 +357,11 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         else dispImage = displayer.getImage(image);
         if (dispImage==null) return;
-        if (!labileObjects) this.displayedLabileObjectRois.remove(image);
+        if (labileObjects) this.displayedLabileObjectRois.remove(image);
         hideAllObjects(dispImage);
-        if (!labileObjects) {
+        if (!labileObjects) { // re-display labile objects
             Set<U> rois = displayedLabileObjectRois.get(image);
-            if (rois!=null) for (U r : rois) displayObject(dispImage, r);
+            if (rois!=null) for (U roi : rois) displayObject(dispImage, roi);
         }
         displayer.updateImageRoiDisplay(image);
         /*if (listener!=null) {
@@ -364,7 +379,7 @@ public abstract class ImageWindowManager<T, U, V> {
         if (rois!=null) {
             T dispImage = displayer.getImage(image);
             if (dispImage==null) return;
-            for (U t: rois) displayObject(dispImage, t);
+            for (U roi: rois) displayObject(dispImage, roi);
             displayer.updateImageRoiDisplay(image);
         }
         //if (listener!=null) listener.fireObjectSelected(Pair.unpair(getLabileObjects(image)), true);
@@ -386,12 +401,17 @@ public abstract class ImageWindowManager<T, U, V> {
         }
     }
     
-    protected List<Pair<StructureObject, BoundingBox>> getLabileObjects(Image image) {
+    public List<StructureObject> getSelectedLabileObjects(Image image) {
+        if (image==null) {
+            image = getDisplayer().getCurrentImage2();
+            if (image==null) return Collections.emptyList();
+        }
         Set<U> rois = displayedLabileObjectRois.get(image);
         if (rois!=null) {
-            List<Pair<StructureObject, BoundingBox>> pairs = Utils.getKeys(this.objectRoiMap, new ArrayList<U>(rois));
-            Utils.removeDuplicates(pairs, false);
-            return pairs;
+            List<Pair<StructureObject, BoundingBox>> pairs = Utils.getKeys(labileObjectRoiMap, rois);
+            List<StructureObject> res = Pair.unpairKeys(pairs);
+            Utils.removeDuplicates(res, false);
+            return res;
         } else return Collections.emptyList();
     }
     
@@ -402,6 +422,11 @@ public abstract class ImageWindowManager<T, U, V> {
     protected abstract V generateTrackRoi(List<Pair<StructureObject, BoundingBox>> track, boolean image2D, Color color);
     protected abstract void setTrackColor(V roi, Color color);
     public void displayTracks(Image image, ImageObjectInterface i, List<List<StructureObject>> tracks, boolean labile) {
+        if (image==null) {
+            image = displayer.getCurrentImage2();
+            if (image==null) return;
+        }
+        if (i ==null) i = this.getImageObjectInterface(image);
         int idx = 0;
         for (List<StructureObject> track : tracks) {
             displayTrack(image, i, i.pairWithOffset(track), ImageWindowManager.getColor(idx++), labile);
@@ -430,30 +455,26 @@ public abstract class ImageWindowManager<T, U, V> {
             canDisplayTrack = track.get(0).key.getTimePoint()>=tm.parentTrack.get(0).getTimePoint() 
                     && track.get(track.size()-1).key.getTimePoint()<=tm.parentTrack.get(tm.parentTrack.size()-1).getTimePoint();
         }
+        Map<Pair<StructureObject, StructureObject>, V> map = labile ? labileParentTrackHeadTrackRoiMap : parentTrackHeadTrackRoiMap;
         if (canDisplayTrack) { 
             if (i.getKey().childStructureIdx!=track.get(0).key.getStructureIdx()) i = imageObjectInterfaces.get(i.getKey().getKey(trackHead.getStructureIdx()));
             if (((TrackMask)i).getParent()==null) logger.error("Track mask parent null!!!");
             else if (((TrackMask)i).getParent().getTrackHead()==null) logger.error("Track mask parent trackHead null!!!");
             Pair<StructureObject, StructureObject> key = new Pair(((TrackMask)i).getParent().getTrackHead(), trackHead);
-            Set<V> disp = null;
-            if (labile) {
-                disp = displayedLabileTrackRois.get(image);
-                if (disp==null) {
-                    disp = new HashSet<V>();
-                    displayedLabileTrackRois.put(image, disp);
-                }
-            }
-            V roi = this.parentTrackHeadTrackRoiMap.get(key);
+            Set<V>  disp = null;
+            if (labile) disp = displayedLabileTrackRois.getAndCreateIfNecessary(image);
+            V roi = map.get(key);
             if (roi==null) {
                 roi = generateTrackRoi(track, i.is2D, color);
-                parentTrackHeadTrackRoiMap.put(key, roi);
+                map.put(key, roi);
             } else setTrackColor(roi, color);
             if (disp==null || !disp.contains(roi)) displayTrack(dispImage, roi);
             if (disp!=null) disp.add(roi);
             displayer.updateImageRoiDisplay(image);
         } else logger.warn("image cannot display selected track: ImageObjectInterface null? {}, is Track? {}", i==null, i instanceof TrackMask);
     }
-    public void hideTracks(Image image, ImageObjectInterface i, List<StructureObject> trackHeads) {
+    
+    public void hideTracks(Image image, ImageObjectInterface i, Collection<StructureObject> trackHeads, boolean labile) {
         T dispImage;
         if (image==null) {
             dispImage = getDisplayer().getCurrentImage();
@@ -467,8 +488,9 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         Set<V> disp = this.displayedLabileTrackRois.get(image);
         StructureObject parentTrackHead = i.getParent().getTrackHead();
+        Map<Pair<StructureObject, StructureObject>, V> map = labile ? labileParentTrackHeadTrackRoiMap : parentTrackHeadTrackRoiMap;
         for (StructureObject th : trackHeads) {
-            V roi=this.parentTrackHeadTrackRoiMap.get(new Pair(parentTrackHead, th));
+            V roi=map.get(new Pair(parentTrackHead, th));
             if (roi!=null) {
                 hideTrack(dispImage, roi);
                 if (disp!=null) disp.remove(roi);
@@ -491,13 +513,9 @@ public abstract class ImageWindowManager<T, U, V> {
         hideAllTracks(dispImage);
         if (!labileTracks) {
             Set<V> tracks = displayedLabileTrackRois.get(image);
-            if (tracks!=null) for (V t : tracks) displayTrack(dispImage, t);
+            if (tracks!=null) for (V roi: tracks) displayTrack(dispImage, roi);
         }
         displayer.updateImageRoiDisplay(image);
-        /*if (listener!=null) {
-            if (!labileTracks) listener.fireTracksSelected(getLabileTrackHeads(image), false);
-            else listener.fireTracksSelected(null, false);
-        }*/
     }
 
     
@@ -511,9 +529,8 @@ public abstract class ImageWindowManager<T, U, V> {
         if (tracks!=null) {
             T dispImage = displayer.getImage(image);
             if (dispImage==null) return;
-            for (V t: tracks) displayTrack(dispImage, t);
+            for (V roi: tracks) displayTrack(dispImage, roi);
             displayer.updateImageRoiDisplay(image);
-            //if (listener!=null) listener.fireTracksDeselected(getLabileTrackHeads(image));
         }
     }
     public void hideLabileTracks(Image image) {
@@ -525,7 +542,7 @@ public abstract class ImageWindowManager<T, U, V> {
         if (tracks!=null) {
             T dispImage = displayer.getImage(image);
             if (dispImage==null) return;
-            for (V t: tracks) hideTrack(dispImage, t);
+            for (V roi: tracks) hideTrack(dispImage, roi);
             displayer.updateImageRoiDisplay(image);
             //if (listener!=null) listener.fireTracksDeselected(getLabileTrackHeads(image));
         }
@@ -542,14 +559,51 @@ public abstract class ImageWindowManager<T, U, V> {
         }
     }
     
-    protected List<StructureObject> getLabileTrackHeads(Image image) {
+    public List<StructureObject> getSelectedLabileTrackHeads(Image image) {
+        if (image==null) {
+            image = getDisplayer().getCurrentImage2();
+            if (image==null) return Collections.emptyList();
+        }
         Set<V> rois = this.displayedLabileTrackRois.get(image);
         if (rois!=null) {
-            List<Pair<StructureObject, StructureObject>> pairs = Utils.getKeys(this.parentTrackHeadTrackRoiMap, new ArrayList<V>(rois));
-            List<StructureObject> res = unpair2(pairs);
+            List<Pair<StructureObject, StructureObject>> pairs = Utils.getKeys(labileParentTrackHeadTrackRoiMap, rois);
+            List<StructureObject> res = unpairValues(pairs);
             Utils.removeDuplicates(res, false);
             return res;
         } else return Collections.emptyList();
+    }
+    
+    public void removeObjects(Collection<StructureObject> objects, boolean removeTrack) {
+        for (Image image : this.displayedLabileObjectRois.keySet()) {
+            ImageObjectInterface i = this.getImageObjectInterface(image);
+            if (i!=null) hideObjects(image, i.pairWithOffset(objects), true);
+        }
+        for (StructureObject object : objects) {
+            Pair k = new Pair(object, null);
+            Utils.removeFromMap(objectRoiMap, k);
+            Utils.removeFromMap(labileObjectRoiMap, k);
+        }
+        if (removeTrack) removeTracks(StructureObjectUtils.getTrackHeads(objects));
+    }
+    
+    public void removeTracks(Collection<StructureObject> trackHeads) {
+        for (Image image : this.displayedLabileTrackRois.keySet()) hideTracks(image, null, trackHeads, true);
+        for (StructureObject trackHead : trackHeads) {
+            Pair k = new Pair(null, trackHead);
+            Utils.removeFromMap(labileParentTrackHeadTrackRoiMap, k);
+            Utils.removeFromMap(parentTrackHeadTrackRoiMap, k);
+        }
+    }
+    
+    public void resetObjectsAndTracksRoi() {
+        for (Image image : imageObjectInterfaceMap.keySet()) {
+            hideAllObjects(image, true);
+            hideAllTracks(image, true);
+        }
+        objectRoiMap.clear();
+        labileObjectRoiMap.clear();
+        labileParentTrackHeadTrackRoiMap.clear();
+        parentTrackHeadTrackRoiMap.clear();
     }
     
     public void goToNextTrackError(Image trackImage, List<StructureObject> tracks) {

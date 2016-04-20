@@ -84,6 +84,9 @@ public class SegmentThenTrack implements ProcessingScheme {
             logger.info("No tracker set for structure: {}", structureIdx);
             return;
         }
+        for (StructureObject parent : parentTrack) {
+            for (StructureObject c : parent.getChildren(structureIdx)) c.resetTrackLinks();
+        }
         Tracker t = tracker.instanciatePlugin();
         t.track(structureIdx, parentTrack);
     }
