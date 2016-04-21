@@ -56,7 +56,6 @@ public class MutationTrackPostProcessing {
     final HashMap<Object3D, SpotWithinCompartment>  objectSpotMap;
     final Map<StructureObject, List<SpotWithinCompartment>> trackHeadSpotTrackMap;
     final HashMapGetCreate<List<SpotWithinCompartment>, Track> spotTrackMap;
-    TrackLikelyhoodEstimator estimator;
     final SpotPopulation pop;
     final int spotStructureIdx;
     public MutationTrackPostProcessing(int structureIdx, List<StructureObject> parentTrack, SpotPopulation pop) {
@@ -74,9 +73,7 @@ public class MutationTrackPostProcessing {
         spotTrackMap = new HashMapGetCreate<List<SpotWithinCompartment>, Track>(new Factory<List<SpotWithinCompartment>, Track>() {
             public Track create(List<SpotWithinCompartment> key) {return new Track(key);}
         });
-        TrackLikelyhoodEstimator.ScoreFunction sf = new DistancePenaltyScoreFunction(new NormalDistribution(11.97, 1.76), new BetaDistribution(1.94, 7.66), 0.3, 0.25);
-        //TrackLikelyhoodEstimator.ScoreFunction sf = new TrackLikelyhoodEstimator.HarmonicScoreFunction(new TrackLikelyhoodEstimator.DistributionFunction(new NormalDistribution(11.97, 1.76)).setNormalization(0.22667175022808675d), new TrackLikelyhoodEstimator.LinearTrimmedFunction(0.3, 0.7, 0.2, 1));
-        estimator = new TrackLikelyhoodEstimator(sf, 6);
+        
     }
     
     public void connectShortTracksByDeletingLQSpot(double maxDist) {
@@ -153,7 +150,7 @@ public class MutationTrackPostProcessing {
                     objectToRemove =  headTrack.remove(headTrack.size()-1);
                     headTrackTail = bestCandidate.getPrevious();
                 }
-                logger.debug("link Tracks: delete: {}, minDist: {}, delete tailTrackHead? {}", objectToRemove, minDist, deleteTailTrackHead);
+                //logger.debug("link Tracks: delete: {}, minDist: {}, delete tailTrackHead? {}", objectToRemove, minDist, deleteTailTrackHead);
                 tailTrack.get(0).setPreviousInTrack(headTrackTail, false, StructureObject.TrackFlag.correctionMerge);
                 for (StructureObject o : tailTrack) o.setTrackHead(headTrackHead, false, false);
                 spotHeadTrack.addAll(spotTailTrack);
@@ -168,7 +165,13 @@ public class MutationTrackPostProcessing {
         }
         for (StructureObject p : parentsToRelabel) p.relabelChildren(spotStructureIdx);
     }
-    public void splitLongTracks() {
+    public void splitLongTracks(int minimalTrackLength, double distanceThreshold, double maxDistance, double maximalPenalty) {
+        if (minimalTrackLength<1)minimalTrackLength=1;
+        
+        TrackLikelyhoodEstimator.ScoreFunction sf = new DistancePenaltyScoreFunction(new NormalDistribution(11.97, 1.76), new BetaDistribution(1.94, 7.66), distanceThreshold, maximalPenalty);
+        TrackLikelyhoodEstimator estimator = new TrackLikelyhoodEstimator(sf, minimalTrackLength);
+        logger.debug("distance function: 0={} 0.3={}, 0.4={}, 0.5={}, 0.6={}, 0.7={}, 1={}", sf.getDistanceFunction().y(0), sf.getDistanceFunction().y(0.3), sf.getDistanceFunction().y(0.4), sf.getDistanceFunction().y(0.5), sf.getDistanceFunction().y(0.6), sf.getDistanceFunction().y(0.7), sf.getDistanceFunction().y(1));
+        
         Map<StructureObject, List<SpotWithinCompartment>> trackHeadSpotMapTemp = new HashMap<StructureObject, List<SpotWithinCompartment>>();
         for (Entry<StructureObject, List<SpotWithinCompartment>> e : trackHeadSpotTrackMap.entrySet()) {
             List<StructureObject> track = trackHeadTrackMap.get(e.getKey());
@@ -182,7 +185,7 @@ public class MutationTrackPostProcessing {
                 if (modif) {
                     trackHeadTrackMap.put(th, subTrack);
                     if (i!=tracks.size()-1) subTrack.get(subTrack.size()-1).setTrackFlag(StructureObject.TrackFlag.correctionSplit); // correction flag @ end
-                    if (i!=0) subTrack.get(0).setTrackFlag(StructureObject.TrackFlag.correctionSplit); // correction flag @ start
+                    if (i!=0 ) subTrack.get(0).setTrackFlag(StructureObject.TrackFlag.correctionSplit); // correction flag @ start
                 }
                 trackHeadSpotMapTemp.put(th, spotTracks.get(i));
                 if (i!=0) {
@@ -193,6 +196,24 @@ public class MutationTrackPostProcessing {
         }
         trackHeadSpotTrackMap.clear();
         trackHeadSpotTrackMap.putAll(trackHeadSpotMapTemp);
+    }
+    public void flagShortAndLongTracks(int shortTrackThreshold, int longTrackTreshold) {
+        for (List<StructureObject> track : trackHeadTrackMap.values()) {
+            int trackLength = track.get(track.size()-1).getTimePoint()-track.get(0).getTimePoint();
+            if (trackLength<shortTrackThreshold || trackLength>longTrackTreshold) {
+                for (StructureObject o : track) o.setTrackFlag(StructureObject.TrackFlag.trackError);
+            }
+        }
+    }
+    public void printDistancesOnOverlay() {
+        SpotWithinCompartment.displayPoles=true;
+        if (SpotWithinCompartment.testOverlay==null) throw new RuntimeException("No overlay set: Cannot print distances on overlay");
+        for (List<SpotWithinCompartment> track : this.trackHeadSpotTrackMap.values()) {
+            for (int i = 1; i<track.size(); ++i) {
+                track.get(i-1).squareDistanceTo(track.get(i));
+            }
+        }
+        SpotWithinCompartment.displayPoles=false;
     }
     
     public void groupTracks() {

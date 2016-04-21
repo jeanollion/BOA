@@ -99,18 +99,20 @@ public class TrackLikelyhoodEstimator {
                 maxX = x;
             }
         }
-        logger.debug("modal value search: lb: {}, hb: {}, precision: {}, X: {}, p(X): {}", lowerXBound, upperXBound, precision, maxX, maxP);
+        //logger.debug("modal value search: lb: {}, hb: {}, precision: {}, X: {}, p(X): {}", lowerXBound, upperXBound, precision, maxX, maxP);
         return maxX;
     }
     
     public SplitScenario splitTrack(Track track) {
         // get number of divisions
         int[] splitNumbers = getSplitNumber(track);
-        logger.debug("split track: number of divisions: {}", splitNumbers);
+        //if (splitNumbers.length>0) logger.debug("split track: number of divisions: {}", splitNumbers);
+        //logger.debug("frames: {}", track.frames);
+        //logger.debug("distances: {}", track.distances);
         SplitScenario best=null;
         for (int i =0; i<splitNumbers.length; ++i) {
             SplitScenario si = splitTrack(track, splitNumbers[i]);
-            if (best==null || si.scoreSum>best.scoreSum) best = si;
+            if (best==null || (si!=null && si.scoreSum>best.scoreSum)) best = si;
         }
         //logger.debug("split track: best scenario {}", s1);
         return best;
@@ -122,7 +124,7 @@ public class TrackLikelyhoodEstimator {
         double rTh = (double) (track.getLength()-theoricalLength) / (theoricalLength+meanGap);
         double rMax = (double) (track.getLength()-minLength) / (minLength+meanGap);
         double rMin = (double) (track.getLength()-maxLength) / (maxLength+meanGap);
-        logger.debug("split track: length: {}, rMin {}, rTh: {}, rMax: {}, meanGap: {}",track.getLength(), rMin, rTh, rMax, meanGap);
+        //logger.debug("split track: length: {}, rMin {}, rTh: {}, rMax: {}, meanGap: {}",track.getLength(), rMin, rTh, rMax, meanGap);
         int nMin = (int)Math.ceil(rMin);
         int nMax = (int)rMax;
         if (nMin==nMax) return new int[]{nMin};
@@ -141,27 +143,18 @@ public class TrackLikelyhoodEstimator {
     }
     
     public SplitScenario splitTrack(Track track, int divisionNumber) {
-        if (divisionNumber==0) return new SplitScenario(track);
-        SplitScenario best = new SplitScenario(track, divisionNumber);
-        double scoreSum = splitTrack(track, divisionNumber, best);
-        best.scoreSum=scoreSum;
-        return best;
-    }
-    
-    private double splitTrack(Track track, int divisionNumber, SplitScenario best) {
         if (divisionNumber==0) {
-            SplitScenario cur = new SplitScenario(track);
-            if (cur.compareTo(best)>0) best.transferFrom(cur);
-            return cur.score;
+            SplitScenario cur =  new SplitScenario(track);
+            return cur;
         }
-        double scoreSum = 0;
         SplitScenario current = new SplitScenario(track, divisionNumber);
-        logger.debug("split in: {}, best: {}, current: {}", divisionNumber, best, current);
-        if (!current.increment(track, 0)) return 0;
-        scoreSum+=current.testLastDivisions(track, best);
+        SplitScenario best = new SplitScenario(track, divisionNumber);
+        //logger.debug("split in: {}, best: {}, current: {}", divisionNumber, best, current);
+        if (!current.increment(track, 0)) return null;
+        current.testLastDivisions(track, best);
         if (divisionNumber == 1) {
-            logger.debug("split in: {}, new best: {}, scoreSum: {}", divisionNumber, best, scoreSum);
-            return scoreSum;
+            //logger.debug("split in: {}, new best: {}, scoreSum: {}", divisionNumber, best, scoreSum);
+            return best;
         }
         final int lastSplitIdx = divisionNumber-2;
         int splitIdx = lastSplitIdx; // index of the split site currently incremented
@@ -170,27 +163,27 @@ public class TrackLikelyhoodEstimator {
             inc = current.increment(track, splitIdx);
             if (inc) {
                 splitIdx = lastSplitIdx;
-                scoreSum += current.testLastDivisions(track, best);
+                current.testLastDivisions(track, best);
             } else --splitIdx;
         }
-        logger.debug("split in: {}, new best: {}, scoreSum: {}", divisionNumber, best, scoreSum);
-        return scoreSum;
+        //logger.debug("split in: {}, new best: {}, scoreSum: {}", divisionNumber, best, scoreSum);
+        return best;
     }
     
     public class SplitScenario implements Comparable<SplitScenario> {
         int[] splitIndices;
-        double score, scoreSum;
+        double score, scoreSum=0;
         private SplitScenario(Track track) { // no division case
             this.splitIndices=new int[0];
             this.score=scoreFunction.getScore(track, splitIndices);
+            this.score+=scoreSum;
         }
         public SplitScenario(Track track, int divisionNumber) {
             this.score=Double.NEGATIVE_INFINITY;
             this.splitIndices= new int[divisionNumber];
         }
         
-        public double testLastDivisions(Track track, SplitScenario best) {
-            double scoreSum = 0;
+        public void testLastDivisions(Track track, SplitScenario best) {
             int dIdx = splitIndices.length-1;
             for (int frameIdx = splitIndices[dIdx]; frameIdx<track.frames.length; ++frameIdx) {
                 if (track.getLengthToEnd(frameIdx+1) < minLength) break;
@@ -198,18 +191,17 @@ public class TrackLikelyhoodEstimator {
                 scoreSum+=score;
                 if (this.compareTo(best)>0) {
                     best.transferFrom(this);
-                    logger.debug("new best: {} (last test: {})", best, this);
+                    //logger.debug("new best: {} (last test: {})", best, this);
                 }
                 ++splitIndices[dIdx];
             }
-            return scoreSum;
         }
         public boolean increment(Track track, int divisionIdx) { // sets the frameDivision index at divisionIdx and forward, return true if there is at leat one acceptable scenario
             ++splitIndices[divisionIdx];
             if (divisionIdx==0) {
                 while(track.getLengthFromStart(splitIndices[0])<minLength) ++splitIndices[0];
                 if (splitIndices[0]>=track.frames.length) {
-                    logger.debug("increment: no solution @ idx: {}, scenario: {}", 0, this);
+                    //logger.debug("increment: no solution @ idx: {}, scenario: {}", 0, this);
                     return false;
                 }
             }
@@ -218,14 +210,14 @@ public class TrackLikelyhoodEstimator {
                 while(track.getLength(splitIndices[dIdx-1]+1, splitIndices[dIdx])<minLength) {
                     ++splitIndices[dIdx];
                     if (splitIndices[dIdx]>=track.frames.length-1) {
-                        logger.debug("increment: no solution @ idx: {}, scenario: {}", dIdx, this);
+                        //logger.debug("increment: no solution @ idx: {}, scenario: {}", dIdx, this);
                         return false;
                     }
                 }
             }
             if (track.getLengthToEnd(splitIndices[splitIndices.length-1])>=minLength) return true;
             else {
-                logger.debug("increment: no solution @ idx: {}, scenario: {}", splitIndices.length-1, this);
+                //logger.debug("increment: no solution @ idx: {}, scenario: {}", splitIndices.length-1, this);
                 return false;
             }
         }
@@ -233,6 +225,7 @@ public class TrackLikelyhoodEstimator {
             if (other.splitIndices.length!=splitIndices.length) splitIndices = new int[other.splitIndices.length];
             System.arraycopy(other.splitIndices, 0, this.splitIndices, 0, splitIndices.length);
             this.score=other.score;
+            this.scoreSum=other.scoreSum;
         }
         
         public <T> List<List<T>> splitTrack(List<T> track) {
@@ -270,13 +263,10 @@ public class TrackLikelyhoodEstimator {
             frames = new int[track.size()];
             distances = new double[frames.length-1];
             int lim = track.size();
-            SpotWithinCompartment prev = track.get(0);
-            SpotWithinCompartment cur;
-            frames[0] = prev.timePoint;
+            frames[0] = track.get(0).timePoint;
             for (int i = 1; i<lim; ++i) {
-                cur = track.get(i);
-                frames[i] = cur.timePoint;
-                distances[i-1] = Math.sqrt(prev.squareDistanceTo(cur));
+                frames[i] = track.get(i).timePoint;
+                distances[i-1] = Math.sqrt(track.get(i-1).squareDistanceTo(track.get(i)));
             }
         }
         public int getLength(int startIdx, int stopIdx) {
@@ -368,20 +358,21 @@ public class TrackLikelyhoodEstimator {
         }
     }
     public static class LinearTrimmedFunction implements Function {
-        double minX, maxX, minY, maxY, m, a;
-
-        public LinearTrimmedFunction(double minX, double maxX, double minY, double maxY) {
+        final double minX, maxX, minY, maxY, m, a;
+        final boolean trimOnMax;
+        public LinearTrimmedFunction(double minX, double minY, double maxX, double maxY, boolean trimOnMax) {
             this.minX = minX;
             this.maxX = maxX;
             this.minY = minY;
             this.maxY = maxY;
-            this.m = -(maxY-minY) / (maxX-minX);
-            this.a = maxY - m * minX;
+            this.m = (maxY-minY) / (maxX-minX);
+            this.a = minY - m * minX;
+            this.trimOnMax=trimOnMax;
         }
         
         public double y(double x) {
-            if (x<=minX) return maxY;
-            if (x>=maxX) return minY;
+            if (x<=minX) return minY;
+            if (trimOnMax && x>=maxX) return maxY;
             return a + m * x;
         }
 

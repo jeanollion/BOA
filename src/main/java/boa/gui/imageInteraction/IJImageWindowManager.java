@@ -277,12 +277,13 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
     protected static TrackRoi createTrackRoi(List<Pair<StructureObject, BoundingBox>> track, Color color, boolean is2D) {
         TrackRoi trackRoi= new TrackRoi();
         Pair<StructureObject, BoundingBox> o1 = track.get(0);
+        int idxMin = track.size()==1 ? 0 : 1; // display tracks with only 1 object as arrow head
         Pair<StructureObject, BoundingBox> o2;
-        for (int idx = 1; idx<track.size(); ++idx) {
+        for (int idx = idxMin; idx<track.size(); ++idx) {
             o2 = track.get(idx);
             if (o1==null || o2==null) continue;
             Arrow arrow = new Arrow(o1.value.getXMean(), o1.value.getYMean(), o2.value.getXMean()-1, o2.value.getYMean());
-            arrow.setStrokeColor(o2.key.hasTrackLinkError()?ImageWindowManager.trackErrorColor: o2.key.hasTrackLinkCorrection() ?ImageWindowManager.trackCorrectionColor : color);
+            arrow.setStrokeColor( (o2.key.hasTrackLinkError() || (o1.key.hasTrackLinkError()&&o1.key.isTrackHead()) )?ImageWindowManager.trackErrorColor: (o2.key.hasTrackLinkCorrection()||(o1.key.hasTrackLinkCorrection()&&o1.key.isTrackHead())) ?ImageWindowManager.trackCorrectionColor : color);
             arrow.setStrokeWidth(trackArrowStrokeWidth);
             arrow.setHeadSize(trackArrowStrokeWidth*1.5);
 

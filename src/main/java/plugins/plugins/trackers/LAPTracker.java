@@ -20,6 +20,7 @@ package plugins.plugins.trackers;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import configuration.parameters.BoundedNumberParameter;
+import configuration.parameters.GroupParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObject;
@@ -49,11 +50,16 @@ public class LAPTracker implements Tracker {
     static int compartimentStructureIdx = 1;
     NumberParameter spotQualityThreshold = new NumberParameter("Spot Quality Threshold", 3, 3.5);
     NumberParameter maxGap = new BoundedNumberParameter("Maximum frame gap", 0, 2, 0, null);
-    NumberParameter maxLinkingDistance = new BoundedNumberParameter("FTF Maximum Linking Distance (0=skip)", 2, 0.65, 0, null);
-    NumberParameter maxLinkingDistanceGC = new BoundedNumberParameter("Gap-closing Maximum Linking Distance (0=skip)", 2, 0.65, 0, null);
+    NumberParameter maxLinkingDistance = new BoundedNumberParameter("FTF Maximum Linking Distance (0=skip)", 2, 0.75, 0, null);
+    NumberParameter maxLinkingDistanceGC = new BoundedNumberParameter("Gap-closing Maximum Linking Distance (0=skip)", 2, 0.75, 0, null);
     NumberParameter gapPenalty = new BoundedNumberParameter("Gap Distance Penalty", 2, 0.25, 0, null);
-    NumberParameter alternativeDistance = new BoundedNumberParameter("Alternative Distance (>maxLinkinDistance)", 2, 0.7, 0, null);
-    Parameter[] parameters = new Parameter[]{maxLinkingDistance, maxLinkingDistanceGC, maxGap, gapPenalty, alternativeDistance, spotQualityThreshold};
+    NumberParameter alternativeDistance = new BoundedNumberParameter("Alternative Distance (>maxLinkinDistance)", 2, 0.8, 0, null);
+    NumberParameter minimalDistanceForTrackSplittingPenalty = new BoundedNumberParameter("Minimal Distance For Track Splitting Penalty", 2, 0.2, 0, null);
+    NumberParameter maximalTrackSplittingPenalty = new BoundedNumberParameter("Maximal Track Splitting Penalty", 5, 0.00001, 0.01, 1);
+    NumberParameter minimalTrackFrameNumber = new BoundedNumberParameter("Minimal Track Frame Number", 0, 6, 1, null);
+    NumberParameter maximalTrackFrameNumber = new BoundedNumberParameter("Maximal Track Frame Number", 0, 15, 1, null);
+    GroupParameter trackSplittingParameters = new GroupParameter("Track Post-Processing", minimalTrackFrameNumber, maximalTrackFrameNumber, maximalTrackSplittingPenalty, minimalDistanceForTrackSplittingPenalty);
+    Parameter[] parameters = new Parameter[]{maxLinkingDistance, maxLinkingDistanceGC, maxGap, gapPenalty, alternativeDistance, spotQualityThreshold, trackSplittingParameters};
     
     public LAPTracker setLinkingMaxDistance(double maxDist, double maxDistGapClosing) {
         maxLinkingDistance.setValue(maxDist);
@@ -68,6 +74,7 @@ public class LAPTracker implements Tracker {
         double maxLinkingDistanceGC = this.maxLinkingDistanceGC.getValue().doubleValue();
         double gapPenalty = Math.pow(this.gapPenalty.getValue().doubleValue(), 2);
         double alternativeDistance = this.alternativeDistance.getValue().doubleValue();
+        
         DistanceComputationParameters distParams = new DistanceComputationParameters(alternativeDistance).setQualityThreshold(spotQualityThreshold).setGapSquareDistancePenalty(gapPenalty);
         SpotPopulation spotCollection = new SpotPopulation(distParams);
         long t0 = System.currentTimeMillis();
@@ -82,7 +89,7 @@ public class LAPTracker implements Tracker {
         processOk = processOk && core.processFTF(maxD, true, false); //FTF only with HQ
         processOk = processOk && core.processFTF(maxD, true, true); // FTF HQ+LQ
         processOk = processOk && core.processGC(maxD, maxGap, true, false); // GC HQ
-        processOk = processOk && core.processGC(maxD, maxGap, true, true); // GC HQ + LQ
+        processOk = processOk && core.processGC(maxD, 2, true, true); // GC HQ + LQ // only one gap for LQ spots
         if (!processOk) logger.error("LAPTracker error : {}", core.getErrorMessage());
         else {
             spotCollection.setTrackLinks(parentTrack, structureIdx, core.getEdges());
@@ -91,7 +98,7 @@ public class LAPTracker implements Tracker {
         
         // second run with all spots at the same time
         core.resetEdges();
-        SpotWithinCompartment.displayPoles=true;
+        //SpotWithinCompartment.displayPoles=true;
         processOk = core.processGC(maxLinkingDistanceGC, maxGap, true, true);
         if (!processOk) logger.error("LAPTracker error : {}", core.getErrorMessage());
         else spotCollection.setTrackLinks(parentTrack, structureIdx, core.getEdges());
@@ -99,8 +106,10 @@ public class LAPTracker implements Tracker {
         // post-processing
         MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, spotCollection);
         postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC);
-        postProcessor.splitLongTracks();
-        
+        distParams.setGapSquareDistancePenalty(gapPenalty*4); // double penalty (square distance) 
+        //postProcessor.printDistancesOnOverlay();
+        postProcessor.splitLongTracks(minimalTrackFrameNumber.getValue().intValue()-1, minimalDistanceForTrackSplittingPenalty.getValue().doubleValue(), maxLinkingDistanceGC, maximalTrackSplittingPenalty.getValue().doubleValue());
+        postProcessor.flagShortAndLongTracks(minimalTrackFrameNumber.getValue().intValue(), maximalTrackFrameNumber.getValue().intValue());
         // ETUDIER LES DEPLACEMENTS EN Y
         /*
         // get distance distribution

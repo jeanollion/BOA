@@ -21,6 +21,7 @@ import org.apache.commons.math3.distribution.RealDistribution;
 import plugins.plugins.trackers.trackMate.postProcessing.TrackLikelyhoodEstimator.AbstractScoreFunction;
 import plugins.plugins.trackers.trackMate.postProcessing.TrackLikelyhoodEstimator.DistributionFunction;
 import plugins.plugins.trackers.trackMate.postProcessing.TrackLikelyhoodEstimator.Function;
+import plugins.plugins.trackers.trackMate.postProcessing.TrackLikelyhoodEstimator.LinearTrimmedFunction;
 import plugins.plugins.trackers.trackMate.postProcessing.TrackLikelyhoodEstimator.ScoreFunction;
 
 /**
@@ -29,11 +30,12 @@ import plugins.plugins.trackers.trackMate.postProcessing.TrackLikelyhoodEstimato
  */
 public class DistancePenaltyScoreFunction implements ScoreFunction {
     DistributionFunction lengthFunction;
-    DistanceFunction distanceFunction;
-    public DistancePenaltyScoreFunction(RealDistribution lengthDistribution,  RealDistribution distanceDistribution, double distanceThreshold, double minimalPenalty) {
+    Function distanceFunction;
+    public DistancePenaltyScoreFunction(RealDistribution lengthDistribution,  RealDistribution distanceDistribution, double distanceThreshold, double maximalPenalty) {
         lengthFunction = new DistributionFunction(lengthDistribution);
-        distanceFunction = new DistanceFunction(distanceDistribution, distanceThreshold, minimalPenalty);
+        distanceFunction = new DistanceFunction(distanceDistribution, distanceThreshold, maximalPenalty);
     }
+
 
     public double getScore(TrackLikelyhoodEstimator.Track track, int[] splitIndices) {
         if (splitIndices.length==0) return lengthFunction.y(track.getLength());
@@ -44,6 +46,7 @@ public class DistancePenaltyScoreFunction implements ScoreFunction {
             distancePenalty+=distanceFunction.y(track.distances[splitIndices[i]]);
         }
         distancePenalty /= splitIndices.length;//Math.pow(distanceSum, 1.0/(splitIndices.length));
+        
         return lengthProduct / distancePenalty; 
     }
 

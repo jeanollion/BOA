@@ -64,13 +64,14 @@ public class MutationSegmenterScaleSpace implements Segmenter {
     public static boolean debug = false;
     public static boolean displayImages = false;
     NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxels)", 0, 5, 1, null);
-    NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 3, 2, 1, null);
+    NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 3, 2.5, 1, null);
     NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 3, 0.75, 0, null);
+    NumberParameter intensityThreshold = new BoundedNumberParameter("Intensity Threshold for Seeds", 2, 125, 0, null);
     PostFilterSequence postFilters = new PostFilterSequence("Post-Filters").addPostFilters(new FeatureFilter(new SNR().setBackgroundObjectStructureIdx(1), 0.75, true, true));
-    Parameter[] parameters = new Parameter[]{minSpotSize, thresholdHigh,  thresholdLow, postFilters};
+    Parameter[] parameters = new Parameter[]{minSpotSize, thresholdHigh,  thresholdLow, intensityThreshold, postFilters};
     
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        ObjectPopulation res= run(input, parent.getMask(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), null);
+        ObjectPopulation res= run(input, parent.getMask(), minSpotSize.getValue().intValue(), intensityThreshold.getValue().doubleValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), null);
         return postFilters.filter(res, structureIdx, (StructureObject)parent);
     }
     public PostFilterSequence getPostFilters() {return postFilters;}
@@ -80,7 +81,7 @@ public class MutationSegmenterScaleSpace implements Segmenter {
         return this;
     }
     
-    public static ObjectPopulation run(Image input, ImageMask mask, int minSpotSize, double thresholdHigh , double thresholdLow, ArrayList<Image> intermediateImages) {
+    public static ObjectPopulation run(Image input, ImageMask mask, int minSpotSize, double thresholdSeedsIntensity, double thresholdHigh , double thresholdLow, ArrayList<Image> intermediateImages) {
         if (input.getSizeZ()>1) {
             /*
             // tester sur average, max, ou plan par plan
@@ -98,7 +99,7 @@ public class MutationSegmenterScaleSpace implements Segmenter {
             return pop;
             */
             throw new Error("MutationSegmenter: should be run on a 2D image");
-        } else return runPlaneHybrid(input, mask, minSpotSize, thresholdHigh, thresholdLow, intermediateImages);
+        } else return runPlaneHybrid(input, mask, minSpotSize, thresholdSeedsIntensity, thresholdHigh, thresholdLow, intermediateImages);
     }
     
     /*public static ObjectPopulation runPlane(Image input, ImageMask mask, int minSpotSize, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
@@ -152,16 +153,23 @@ public class MutationSegmenterScaleSpace implements Segmenter {
         return pop;
     }*/
     
-    public static ObjectPopulation runPlaneHybrid(Image input, ImageMask mask, int minSpotSize, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
+    public static ObjectPopulation runPlaneHybrid(Image input, ImageMask mask, int minSpotSize, double thresholdSeedsIntensity, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
         if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
         double[] radii = new double[]{2, 2.5, 3, 3.5, 5, 7};
         int maxScaleIdx=radii.length-1-2;
         int maxScaleWSIdx=1;
         Image scaleSpace = getScaleSpace(input, radii); 
         ImageByte seedsSP = getSeedsScaleSpace(scaleSpace, thresholdSeeds, 1.5, maxScaleIdx);
-        
+        // filter by intensity
+        for (int z = 0; z<seedsSP.getSizeZ(); ++z) {
+            for (int xy = 0; xy<seedsSP.getSizeXY(); ++xy) {
+                if (seedsSP.insideMask(xy, z) && input.getPixel(xy, 0)<thresholdSeedsIntensity) seedsSP.setPixel(xy, z, 0);
+            }
+        }
         Image[] wsMaps = scaleSpace.splitZPlanes(0, maxScaleWSIdx).toArray(new Image[0]);
         ImageByte[] seedMaps = seedsSP.splitZPlanes(0, maxScaleWSIdx).toArray(new ImageByte[0]);
+        
+        
         for (int i = maxScaleWSIdx+1; i<=maxScaleIdx; ++i) combineSeeds(seedsSP.getZPlane(i), seedMaps[maxScaleWSIdx], wsMaps[maxScaleWSIdx], radii[i]);
         //for (int i = 0; i<maxScaleWSIdx; ++i) removeSeeds(seedMaps[maxScaleWSIdx], seedMaps[i], 1.5);
         if (intermediateImages!=null) {
@@ -181,7 +189,7 @@ public class MutationSegmenterScaleSpace implements Segmenter {
     private static Image getScaleSpace(Image input, double[] radii) {
         //return ImageFeatures.getScaleSpaceHessianMax(input, radii);
         //return ImageFeatures.getScaleSpaceHessianMax(input, radii);
-        return ImageFeatures.getScaleSpaceHessianMaxNorm(input, radii, ImageFeatures.gaussianSmooth(input, 3, 3, false), 100); // ou 2
+        return ImageFeatures.getScaleSpaceHessianMaxNorm(input, radii, ImageFeatures.gaussianSmooth(input, 2, 2, false), 100); // ou 3
     }
     
     private static ImageByte getSeedsScaleSpace(Image scaleSpace, double thresholdSeeds, double radius, int maxScaleIdx) {

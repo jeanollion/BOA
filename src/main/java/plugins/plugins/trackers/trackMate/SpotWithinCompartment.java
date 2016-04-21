@@ -38,7 +38,7 @@ public class SpotWithinCompartment extends Spot {
     public static ImageObjectInterface bacteria;
     public static Overlay testOverlay;
     public static boolean displayPoles=false;
-    public static double displayDistanceThreshold = 1; 
+    public static double displayDistanceThreshold = 2; 
     public static double poleDistanceFactor = 0; 
     protected Object3D object;
     public final SpotCompartiment compartiment;
@@ -207,7 +207,7 @@ public class SpotWithinCompartment extends Spot {
         double dPole2 = Math.abs(y2-offset2[1]);
         if (dPole2>dPole1) d+=poleDistanceFactor * (dPole2-dPole1);*/
         // additional gap penalty
-        d+= s1.distanceParameters.getDistancePenalty(s1.timePoint, s2.timePoint);
+        d+= s1.distanceParameters.getSquareDistancePenalty(s1.timePoint, s2.timePoint);
         return d;
     }
     
@@ -236,7 +236,7 @@ public class SpotWithinCompartment extends Spot {
             testOverlay.add(l1);
             testOverlay.add(l2);
             testOverlay.add(l12);
-            TextRoi position  = new TextRoi((c1[0]+cOff1[0]+c2[0]+cOff2[0])/4d, (c1[1]+cOff1[1]+c2[1]+cOff2[1])/4d, Utils.formatDoubleScientific(1, distance));
+            TextRoi position  = new TextRoi((c1[0]+cOff1[0]+c2[0]+cOff2[0])/4d, (c1[1]+cOff1[1]+c2[1]+cOff2[1])/4d, Utils.formatDoubleScientific(1, Math.sqrt(distance)));
             testOverlay.add(position);
         }
     }
@@ -316,8 +316,8 @@ public class SpotWithinCompartment extends Spot {
             this.alternativeDistance=alternativeDistance;
             return this;
         }
-        public double getDistancePenalty(int tSource, int tTarget) {
-            return (tTarget - tSource-1) * gapSquareDistancePenalty;
+        public double getSquareDistancePenalty(int tSource, int tTarget) {
+            return (tTarget - tSource-1) * (tTarget - tSource-1) * gapSquareDistancePenalty; // pow* -> working on square distances
         }
     }
 }

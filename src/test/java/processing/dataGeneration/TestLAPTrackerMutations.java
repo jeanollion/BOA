@@ -57,9 +57,9 @@ public class TestLAPTrackerMutations {
         final String dbName = "fluo160407";
         //int fieldIdx = 28; // lapTop
         final int fieldIdx = 0;
-        
+        final int mcIdx = 0;
         TestLAPTrackerMutations t = new TestLAPTrackerMutations();
-        t.init(dbName, fieldIdx, 0, 85, 92);
+        t.init(dbName, fieldIdx, mcIdx, 0, 529);
         t.testLAPTracking();
         
         // multithread version testing
@@ -118,6 +118,7 @@ public class TestLAPTrackerMutations {
         parentTrack = new ArrayList<StructureObject>(tEnd-tStart+1);
         for (int t = tStart; t<=tEnd; ++t) {
             StructureObject root = dao.getRoot(t);
+            if (root==null) continue;
             StructureObject mc = root.getChildren(microchannelIdx).get(mcIdx);
             parentTrack.add(mc);
             // load all the data
