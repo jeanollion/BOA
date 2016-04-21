@@ -163,12 +163,12 @@ public class StructureObjectUtils {
         al.add(o.getTimePoint());
         return Utils.toArray(al, true);
     }
-    public static Map<StructureObject, ArrayList<StructureObject>> getAllTracks(List<StructureObject> parentTrack, int structureIdx) {
-        HashMap<StructureObject, ArrayList<StructureObject>>  res = new HashMap<StructureObject, ArrayList<StructureObject>>();
+    public static Map<StructureObject, List<StructureObject>> getAllTracks(List<StructureObject> parentTrack, int structureIdx) {
+        HashMap<StructureObject, List<StructureObject>>  res = new HashMap<StructureObject, List<StructureObject>>();
         for (StructureObject p : parentTrack) {
             ArrayList<StructureObject> children = p.getChildren(structureIdx);
             for (StructureObject c : children) {
-                ArrayList<StructureObject> l;
+                List<StructureObject> l;
                 if (c.isTrackHead()) {
                     l = new ArrayList<StructureObject>();
                     l.add(c);
@@ -180,11 +180,11 @@ public class StructureObjectUtils {
                 }
             }
         }
-        for (ArrayList<StructureObject> l : res.values()) setTrackLinks(l);
+        for (List<StructureObject> l : res.values()) setTrackLinks(l);
         return res;
     }
     
-    protected static void setTrackLinks(ArrayList<StructureObject> track) {
+    protected static void setTrackLinks(List<StructureObject> track) {
         if (track.isEmpty()) return;
         StructureObject trackHead = track.get(0).getTrackHead();
         StructureObject prev = null;

@@ -149,13 +149,13 @@ public class Processor {
         if (parentStructure==-1 || parentTrack.get(0).getStructureIdx()==parentStructure) { // parents = roots
             execute(ps, structureIdx, parentTrack, trackOnly, deleteChildren, dao);
         } else {
-            Map<StructureObject, ArrayList<StructureObject>> allParentTracks = StructureObjectUtils.getAllTracks(parentTrack, parentStructure);
+            Map<StructureObject, List<StructureObject>> allParentTracks = StructureObjectUtils.getAllTracks(parentTrack, parentStructure);
             logger.debug("ex ps: structure: {}, allParentTracks: {}", structureIdx, allParentTracks.size());
             // one thread per track
-            ThreadAction<ArrayList<StructureObject>> ta = new ThreadAction<ArrayList<StructureObject>>() {
-                public void run(ArrayList<StructureObject> pt, int idx, int threadIdx) {execute(ps, structureIdx, pt, trackOnly, deleteChildren, dao);}
+            ThreadAction<List<StructureObject>> ta = new ThreadAction<List<StructureObject>>() {
+                public void run(List<StructureObject> pt, int idx, int threadIdx) {execute(ps, structureIdx, pt, trackOnly, deleteChildren, dao);}
             };
-            ThreadRunner.execute(new ArrayList<ArrayList<StructureObject>> (allParentTracks.values()), ta);
+            ThreadRunner.execute(new ArrayList<List<StructureObject>> (allParentTracks.values()), ta);
         }
         if (ps instanceof SegmentOnly) { // gather all objects and store
             ArrayList<StructureObject> children = new ArrayList<StructureObject>();

@@ -300,9 +300,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             this.trackHeadId=null;
         }
     }
-    
-    
-    
+        
     //public void setNextInTrack(StructureObject next, )
     @Override
     public void resetTrackLinks() {

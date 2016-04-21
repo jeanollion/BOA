@@ -146,7 +146,7 @@ public class LAPTrackerCore {
             clonedSpots.put(clone, s);
             graph.addEdge(s,clone);
         }
-        SpotWithinCompartment.displayPoles=false;
+        //SpotWithinCompartment.displayPoles=true;
         
         // Prepare settings object
         final Map< String, Object > slSettings = new HashMap< String, Object >();
@@ -167,6 +167,8 @@ public class LAPTrackerCore {
         slSettings.put( KEY_ALTERNATIVE_LINKING_COST_FACTOR, 1.05 );
         slSettings.put( KEY_CUTOFF_PERCENTILE, 1d );
 
+        
+        
         // Solve.
         final SparseLAPSegmentTracker segmentLinker = new SparseLAPSegmentTracker( graph, slSettings, spotPopulation.distanceParameters);
         //final fiji.plugin.trackmate.tracking.sparselap.SparseLAPSegmentTracker segmentLinker = new fiji.plugin.trackmate.tracking.sparselap.SparseLAPSegmentTracker( graph, slSettings);

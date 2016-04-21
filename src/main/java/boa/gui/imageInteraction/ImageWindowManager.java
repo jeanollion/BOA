@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Set;
 import utils.HashMapGetCreate;
 import utils.HashMapGetCreate.Factory;
@@ -44,6 +45,7 @@ import utils.HashMapGetCreate.SetFactory;
 import utils.Pair;
 import static utils.Pair.unpairKeys;
 import static utils.Pair.unpairValues;
+import utils.Palette;
 import utils.Utils;
 
 /**
@@ -59,6 +61,9 @@ public abstract class ImageWindowManager<T, U, V> {
     public static Color getColor(int idx) {return palette[idx%palette.length];}
     protected final static Color trackErrorColor = new Color(255, 0, 0);
     protected final static Color trackCorrectionColor = new Color(0, 0, 255);
+    public static Color getColor() {
+        return Palette.getColor(150, trackErrorColor, trackCorrectionColor);
+    }
     final static int trackArrowStrokeWidth = 3;
     protected final HashMap<ImageObjectInterfaceKey, ImageObjectInterface> imageObjectInterfaces;
     protected final HashMap<Image, ImageObjectInterfaceKey> imageObjectInterfaceMap;
@@ -421,7 +426,7 @@ public abstract class ImageWindowManager<T, U, V> {
     protected abstract void hideTrack(T image, V roi);
     protected abstract V generateTrackRoi(List<Pair<StructureObject, BoundingBox>> track, boolean image2D, Color color);
     protected abstract void setTrackColor(V roi, Color color);
-    public void displayTracks(Image image, ImageObjectInterface i, List<List<StructureObject>> tracks, boolean labile) {
+    public void displayTracks(Image image, ImageObjectInterface i, Collection<List<StructureObject>> tracks, boolean labile) {
         if (image==null) {
             image = displayer.getCurrentImage2();
             if (image==null) return;
@@ -429,7 +434,7 @@ public abstract class ImageWindowManager<T, U, V> {
         if (i ==null) i = this.getImageObjectInterface(image);
         int idx = 0;
         for (List<StructureObject> track : tracks) {
-            displayTrack(image, i, i.pairWithOffset(track), ImageWindowManager.getColor(idx++), labile);
+            displayTrack(image, i, i.pairWithOffset(track), getColor() , labile);
         }
     }
     public void displayTrack(Image image, ImageObjectInterface i, List<Pair<StructureObject, BoundingBox>> track, Color color, boolean labile) {

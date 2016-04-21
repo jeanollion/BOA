@@ -182,6 +182,7 @@ public class MutationTrackPostProcessing {
                 if (modif) {
                     trackHeadTrackMap.put(th, subTrack);
                     if (i!=tracks.size()-1) subTrack.get(subTrack.size()-1).setTrackFlag(StructureObject.TrackFlag.correctionSplit); // correction flag @ end
+                    if (i!=0) subTrack.get(0).setTrackFlag(StructureObject.TrackFlag.correctionSplit); // correction flag @ start
                 }
                 trackHeadSpotMapTemp.put(th, spotTracks.get(i));
                 if (i!=0) {

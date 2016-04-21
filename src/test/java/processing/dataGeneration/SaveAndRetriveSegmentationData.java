@@ -126,11 +126,8 @@ public class SaveAndRetriveSegmentationData {
             if (trackStructureIdx!=null) {
                 for (int roiS : trackStructureIdx) {
                     i = windowManager.getImageTrackObjectInterface(track, roiS);
-                    Map<StructureObject, ArrayList<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(track, roiS);
-                    int colorCount=0;
-                    for (List<StructureObject> t : allTracks.values()) {
-                        windowManager.displayTrack(im, i, i.pairWithOffset(StructureObjectUtils.extendTrack(t)), IJImageWindowManager.getColor(colorCount++), false);
-                    }
+                    Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(track, roiS);
+                    windowManager.displayTracks(im, i, allTracks.values(), false);
                 }
             }
             res.put(im, windowManager.getDisplayer().getImage(im).getOverlay());

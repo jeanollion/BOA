@@ -54,10 +54,16 @@ public class TestLAPTrackerMutations {
     static final int mutationIdx = 2;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        final String dbName = "fluo151127";
+        final String dbName = "fluo160407";
         //int fieldIdx = 28; // lapTop
         final int fieldIdx = 0;
-        final TestLAPTrackerMutations[] tests = new TestLAPTrackerMutations[1];
+        
+        TestLAPTrackerMutations t = new TestLAPTrackerMutations();
+        t.init(dbName, fieldIdx, 0, 85, 92);
+        t.testLAPTracking();
+        
+        // multithread version testing
+        /*final TestLAPTrackerMutations[] tests = new TestLAPTrackerMutations[1];
         long t0 = System.currentTimeMillis();
         for (int i = 0; i<tests.length; ++i) {
             tests[i] = new TestLAPTrackerMutations();
@@ -66,7 +72,7 @@ public class TestLAPTrackerMutations {
             long t01 = System.currentTimeMillis();
             logger.debug("retrieve time: {}", t01-t00);
             tests[i].testLAPTracking();
-        }
+        }*/
         /*long t1 = System.currentTimeMillis();
         ThreadRunner.execute(tests, false, new ThreadAction<TestLAPTrackerMutations>() {
             public void run(TestLAPTrackerMutations object, int idx, int threadIdx) {
@@ -90,17 +96,15 @@ public class TestLAPTrackerMutations {
         SpotWithinCompartment.testOverlay=o;
         TextRoi.setFont("SansSerif", 6, Font.PLAIN);
         
-        LAPTracker tracker = new LAPTracker().setLinkingMaxDistance(0, 0.75, 0.75);
+        LAPTracker tracker = new LAPTracker();
         tracker.track(mutationIdx, parentTrack);
         
-        Map<StructureObject, ArrayList<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, mutationIdx);
+        Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, mutationIdx);
         logger.info("LAP tracker number of tracks: {}", allTracks.size());
         
-        int colorIdx=0;
         ImageObjectInterface i = windowManager.getImageTrackObjectInterface(parentTrack, mutationIdx);
         i.setGUIMode(false);
-        
-        for (ArrayList<StructureObject> track : allTracks.values()) windowManager.displayTrack(im, i, i.pairWithOffset(StructureObjectUtils.extendTrack(track)), ImageWindowManager.getColor(colorIdx++), false);
+        windowManager.displayTracks(im, i, allTracks.values(), false);
         windowManager.displayObjects(im, iB.getObjects(), null, true, false);
         windowManager.displayObjects(im, i.getObjects(), null, true, false);
                 

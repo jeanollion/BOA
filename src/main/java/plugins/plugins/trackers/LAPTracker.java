@@ -36,6 +36,7 @@ import plugins.Tracker;
 import plugins.plugins.trackers.trackMate.LAPTrackerCore;
 import plugins.plugins.trackers.trackMate.postProcessing.MutationTrackPostProcessing;
 import plugins.plugins.trackers.trackMate.SpotPopulation;
+import plugins.plugins.trackers.trackMate.SpotWithinCompartment;
 import plugins.plugins.trackers.trackMate.SpotWithinCompartment.DistanceComputationParameters;
 import utils.ArrayFileWriter;
 
@@ -54,10 +55,9 @@ public class LAPTracker implements Tracker {
     NumberParameter alternativeDistance = new BoundedNumberParameter("Alternative Distance (>maxLinkinDistance)", 2, 0.7, 0, null);
     Parameter[] parameters = new Parameter[]{maxLinkingDistance, maxLinkingDistanceGC, maxGap, gapPenalty, alternativeDistance, spotQualityThreshold};
     
-    public LAPTracker setLinkingMaxDistance(double maxDist, double maxDistGapClosing, double maxDistLowQuality) {
+    public LAPTracker setLinkingMaxDistance(double maxDist, double maxDistGapClosing) {
         maxLinkingDistance.setValue(maxDist);
         maxLinkingDistanceGC.setValue(maxDistGapClosing);
-        //maxLinkingDistanceLQ.setValue(maxDistLowQuality);
         return this;
     }
     
@@ -91,6 +91,7 @@ public class LAPTracker implements Tracker {
         
         // second run with all spots at the same time
         core.resetEdges();
+        SpotWithinCompartment.displayPoles=true;
         processOk = core.processGC(maxLinkingDistanceGC, maxGap, true, true);
         if (!processOk) logger.error("LAPTracker error : {}", core.getErrorMessage());
         else spotCollection.setTrackLinks(parentTrack, structureIdx, core.getEdges());

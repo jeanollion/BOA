@@ -1139,6 +1139,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (sel.size()<=1) logger.warn("Merge Objects: select several objects from same parent first!");
         else {
             StructureObject res = sel.remove(0);
+            for (StructureObject o : sel) ManualCorrection.unlinkObject(o);
             String fieldName = res.getFieldName();
             ArrayList<StructureObject> siblings = res.getParent().getChildren(res.getStructureIdx());
             for (StructureObject toMerge : sel) {
@@ -1202,8 +1203,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (!checkConnection()) return;
         List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
         StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(sel);
-        if (sel.isEmpty()) logger.warn("Delete Objects: select one or several objects to delete first!");
+        if (sel.isEmpty()) logger.warn("Delete Objects: select one or several objects from same structure to delete first!");
         else {
+            for (StructureObject o : sel) ManualCorrection.unlinkObject(o);
             int structureIdx = sel.get(0).getStructureIdx();
             String fieldName = sel.get(0).getFieldName();
             ArrayList<StructureObject> parents = new ArrayList<StructureObject>();
@@ -1338,11 +1340,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }//GEN-LAST:event_updateRoiDisplayButtonActionPerformed
 
     private void manualSegmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_manualSegmentButtonActionPerformed
-        manualSegmentation(null, false);
+        ManualCorrection.manualSegmentation(db, null, false);
     }//GEN-LAST:event_manualSegmentButtonActionPerformed
 
     private void testManualSegmentationButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_testManualSegmentationButtonActionPerformed
-        manualSegmentation(null, true);
+        ManualCorrection.manualSegmentation(db, null, true);
     }//GEN-LAST:event_testManualSegmentationButtonActionPerformed
 
     private void linkObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_linkObjectsButtonActionPerformed
@@ -1358,28 +1360,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         int structureIdx = sel.get(0).getStructureIdx();
         logger.debug("selected objects: {}, structureIdx: {}", sel.size(), structureIdx);
         if (sel.size()==1) { // unlink spot
-            StructureObject next = sel.get(0).getNext();
-            StructureObject prev = sel.get(0).getPrevious();
-            if (next!=null) next.setTrackHead(next, true, true);
-            sel.get(0).setPreviousInTrack(null, true);
-            sel.get(0).resetTrackLinks();
-            logger.debug("unlinkin: {}", sel.get(0));
+            ManualCorrection.unlinkObject(sel.get(0));
         } else { 
             Collections.sort(sel); // sorted by time point
             if (sel.get(1).getPrevious()==sel.get(0)) { //unlink the 2 spots
-                sel.get(1).setTrackHead(sel.get(1), true, true);
-                logger.debug("unlinking.. previous: {}, previous's next: {}", sel.get(1).getPrevious(), sel.get(0).getNext());
-                sel.get(0).setTrackFlag(StructureObject.TrackFlag.correctionSplit);
-                sel.get(1).setTrackFlag(StructureObject.TrackFlag.correctionSplit);
-                thToDisp.add(StructureObjectUtils.getTrack(sel.get(0).getTrackHead(), true));
-                thToDisp.add(StructureObjectUtils.getTrack(sel.get(1), true));
-                logger.debug("unlinking: {} to {}", sel.get(0), sel.get(1));
+                ManualCorrection.unlinkObjects(sel.get(0), sel.get(1), thToDisp);
             } else { // link the 2 spots
-                sel.get(1).setPreviousInTrack(sel.get(0), false);
-                sel.get(1).setTrackHead(sel.get(0).getTrackHead(), false, true);
-                sel.get(1).setTrackFlag(StructureObject.TrackFlag.correctionMerge);
-                thToDisp.add(StructureObjectUtils.getTrack(sel.get(0).getTrackHead(), true));
-                logger.debug("linking: {} to {}", sel.get(0), sel.get(1));
+                ManualCorrection.linkObjects(sel.get(0), sel.get(1), thToDisp);
             }
         }
         db.getDao(sel.get(0).getFieldName()).store(sel, false);
@@ -1394,70 +1381,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         iwm.displayTracks(null, null, thToDisp, true);
     }//GEN-LAST:event_linkObjectsButtonActionPerformed
     
-    public void manualSegmentation(Image image, boolean test) {
-        ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
-        if (image==null) {
-            Object im = iwm.getDisplayer().getCurrentImage();
-            if (im!=null) image = iwm.getDisplayer().getImage(im);
-            if (image==null) {
-                logger.warn("No image found");
-                return;
-            }
-        }
-        ImageObjectInterfaceKey key =  iwm.getImageObjectInterfaceKey(image);
-        if (key==null) {
-            logger.warn("Current image is not registered");
-            return;
-        }
-        int structureIdx = key.childStructureIdx;
-        int parentStructureIdx = this.db.getExperiment().getStructure(structureIdx).getParentStructure();
-        ManualSegmenter segmenter = this.db.getExperiment().getStructure(structureIdx).getManualSegmenter();
-        segmenter.setVerboseMode(test);
-        if (segmenter==null) {
-            logger.warn("No manual segmenter found for structure: {}", structureIdx);
-            return;
-        }
-        
-        Map<StructureObject, List<int[]>> points = iwm.getParentSelectedPointsMap(image, parentStructureIdx);
-        if (points!=null) {
-            logger.debug("manual segment: {} distinct parents. Segmentation structure: {}, parent structure: {}", points.size(), structureIdx, parentStructureIdx);
-            List<StructureObject> segmentedObjects = new ArrayList<StructureObject>();
-            for (Entry<StructureObject, List<int[]>> e : points.entrySet()) {
-                Image segImage = e.getKey().getRawImage(structureIdx);
-                
-                // generate image mask without old objects
-                ImageByte mask = TypeConverter.cast(e.getKey().getMask(), new ImageByte("", 0, 0, 0));
-                ArrayList<StructureObject> oldChildren = e.getKey().getChildren(structureIdx);
-                for (StructureObject c : oldChildren) c.getObject().draw(mask, 0, new BoundingBox(0, 0, 0));
-                if (test) iwm.getDisplayer().showImage(mask, 0, 1);
-                
-                ObjectPopulation seg = segmenter.manualSegment(segImage, e.getKey(), mask, structureIdx, e.getValue());
-                seg.filter(new ObjectPopulation.Size().setMin(2)); // remove seeds
-                logger.debug("{} children segmented in parent: {}", seg.getObjects().size(), e.getKey());
-                if (!test && !seg.getObjects().isEmpty()) {
-                    ArrayList<StructureObject> newChildren = e.getKey().setChildrenObjects(seg, structureIdx);
-                    segmentedObjects.addAll(newChildren);
-                    newChildren.addAll(oldChildren);
-                    ArrayList<StructureObject> modified = new ArrayList<StructureObject>();
-                    e.getKey().relabelChildren(structureIdx, modified);
-                    modified.addAll(newChildren);
-                    Utils.removeDuplicates(modified, false);
-                    db.getDao(e.getKey().getFieldName()).store(modified, false);
-                    
-                    //Update tree
-                    ObjectNode node = objectTreeGenerator.getObjectNode(e.getKey());
-                    node.getParent().createChildren();
-                    objectTreeGenerator.reload(node.getParent());
-                    
-                    //Update all opened images & objectImageInteraction
-                    ImageWindowManagerFactory.getImageManager().reloadObjects(e.getKey(), structureIdx, false);
-                }
-            }
-            // selected newly segmented objects on image
-            ImageObjectInterface i = iwm.getImageObjectInterface(image);
-            if (i!=null) iwm.displayObjects(image, i.pairWithOffset(segmentedObjects), Color.ORANGE, true, false);
-        }
-    }
+    
     
     private void updateConnectButton() {
         String s = Utils.getSelectedString(dbNames);

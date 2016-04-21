@@ -134,10 +134,10 @@ public class SpotPopulation {
     }
     
     public void removeLQSpotsUnlinkedToHQSpots(List<StructureObject> parentTrack, int structureIdx, boolean removeFromSpotPopulation) { // PERFORM AFTER LINKS HAVE BEEN SET
-        Map<StructureObject, ArrayList<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
+        Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         Set<StructureObject> parentsToRelabel = new HashSet<StructureObject>();
         int eraseCount = 0;
-        for (ArrayList<StructureObject> list : allTracks.values()) {
+        for (List<StructureObject> list : allTracks.values()) {
             boolean hQ = false;
             for (StructureObject o : list) {
                 if (o.getObject().getQuality()>this.distanceParameters.qualityThreshold) {
