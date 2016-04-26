@@ -153,15 +153,14 @@ public class TrackTreeGenerator {
                     if (tree.isCollapsed(path)) { // expand & select all children
                         ArrayList<TreePath> pathToSelect = new ArrayList<TreePath>();
                         Utils.expandAll(tree, path, pathToSelect);
-                        Utils.addToSelectionPaths(tree, pathToSelect);
-                    } else Utils.addToSelectionPaths(tree, path);
+                        //Utils.addToSelectionPaths(tree, pathToSelect);
+                    } //else Utils.addToSelectionPaths(tree, path);
                 }
-                if (controller.isUpdateRoiDisplayWhenSelectionChange()) GUI.updateRoiDisplay(null);
             }
         });
     }
     
-    private ImageObjectInterface getImageObjectInterface() {
+    /*private ImageObjectInterface getImageObjectInterface() {
         StructureObject parentTrackHead = getParentTrackHead();
         if (parentTrackHead==null) return null;
         return ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterfaceIfExisting(parentTrackHead, getStructureIdx());
@@ -182,7 +181,7 @@ public class TrackTreeGenerator {
                 }
             }
         }
-    }
+    }*/
     
     public void selectTracks(List<StructureObject> trackHeads, boolean addToSelection) {
         if (!addToSelection) tree.setSelectionRow(-1);

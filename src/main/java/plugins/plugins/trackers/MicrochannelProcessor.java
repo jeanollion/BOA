@@ -51,7 +51,7 @@ import static plugins.plugins.transformations.CropMicroChannelFluo2D.getBounding
  */
 public class MicrochannelProcessor implements TrackerSegmenter {
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, new MicroChannelFluo2D(), false);
-    NumberParameter number = new BoundedNumberParameter("Number of TimePoints", 0, 5, 1, null);
+    NumberParameter number = new BoundedNumberParameter("Number of TimePoints", 0, 10, 1, null);
     Parameter[] parameters = new Parameter[]{segmenter, number};
     public static boolean debug;
     public MicrochannelProcessor(){
@@ -79,11 +79,12 @@ public class MicrochannelProcessor implements TrackerSegmenter {
         double delta = (double)parentTrack.size() / (double)(numb+2);
         if (debug) logger.debug("n: {}, track: {} delta: {}", numb, parentTrack.size(), delta);
         if (numb>1) {
-            for (int i = 1; i<=numb; ++i) {
+            for (int i = 0; i<=numb; ++i) {
                 int idx = (int) (i * delta);
                 StructureObject parent = parentTrack.get(idx);
                 Image input = preFilters.filter(parent.getRawImage(structureIdx), parent);
                 ObjectPopulation popTemp = segAlgo.runSegmenter(input, structureIdx, parent);
+                if (popTemp==null) continue;
                 popTemp = postFilters.filter(popTemp, structureIdx, parent);
                 Collections.sort(popTemp.getObjects(), getComparatorObject3D(ObjectIdxTracker.IndexingOrder.XZY));
                 if (pop==null) pop = popTemp;
@@ -96,7 +97,7 @@ public class MicrochannelProcessor implements TrackerSegmenter {
             pop = segAlgo.runSegmenter(input, structureIdx, ref);
             pop = postFilters.filter(pop, structureIdx, ref);
         }
-        
+        if (pop==null) return;
         
         StructureObject prev=null;
         for (StructureObject s : parentTrack) {

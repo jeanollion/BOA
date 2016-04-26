@@ -25,9 +25,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import utils.HashMapGetCreate;
 import utils.Utils;
 
 /**
@@ -236,7 +239,7 @@ public class StructureObjectUtils {
         Utils.removeDuplicates(res, false);
         return res;
     }
-
+    
     public static List<StructureObject> extendTrack(List<StructureObject> track) {
         ArrayList<StructureObject> res = new ArrayList<StructureObject>(track.size() + 2);
         StructureObject prev = track.get(0).getPrevious();
@@ -251,21 +254,59 @@ public class StructureObjectUtils {
         return res;
     }
 
-    public static void keepOnlyObjectsFromSameParent(List<StructureObject> list, StructureObject... parent) {
-        if (list.isEmpty()) return;
-        StructureObject p = parent.length>=1 ? parent[0] : list.get(0).getParent();
+    public static Map<StructureObject, List<StructureObject>> splitByParent(Collection<StructureObject> list) {
+        if (list.isEmpty()) return Collections.EMPTY_MAP;
+        HashMapGetCreate<StructureObject, List<StructureObject>> res = new HashMapGetCreate<StructureObject, List<StructureObject>>(new HashMapGetCreate.ListFactory<StructureObject, StructureObject>());
+        for (StructureObject o : list) res.getAndCreateIfNecessary(o.getParent()).add(o);
+        return res;
+    }
+    
+    public static Map<Integer, List<StructureObject>> splitByStructureIdx(Collection<StructureObject> list) {
+        if (list.isEmpty()) return Collections.EMPTY_MAP;
+        HashMapGetCreate<Integer, List<StructureObject>> res = new HashMapGetCreate<Integer, List<StructureObject>>(new HashMapGetCreate.ListFactory<Integer, StructureObject>());
+        for (StructureObject o : list) res.getAndCreateIfNecessary(o.getStructureIdx()).add(o);
+        return res;
+    }
+    
+    public static Map<String, List<StructureObject>> splitByFieldName(Collection<StructureObject> list) {
+        if (list.isEmpty()) return Collections.EMPTY_MAP;
+        HashMapGetCreate<String, List<StructureObject>> res = new HashMapGetCreate<String, List<StructureObject>>(new HashMapGetCreate.ListFactory<String, StructureObject>());
+        for (StructureObject o : list) res.getAndCreateIfNecessary(o.getFieldName()).add(o);
+        return res;
+    }
+    
+    public static StructureObject keepOnlyObjectsFromSameParent(Collection<StructureObject> list, StructureObject... parent) {
+        if (list.isEmpty()) return null;
         Iterator<StructureObject> it = list.iterator();
+        StructureObject p = parent.length>=1 ? parent[0] : it.next().getParent();
         while(it.hasNext()) {
             if (it.next().getParent()!=p) it.remove();
         }
+        return p;
     }
-    public static void keepOnlyObjectsFromSameStructureIdx(List<StructureObject> list, int... structureIdx) {
-        if (list.isEmpty()) return;
-        int sIdx = structureIdx.length>=1 ? structureIdx[0] : list.get(0).getStructureIdx();
+    public static int keepOnlyObjectsFromSameStructureIdx(Collection<StructureObject> list, int... structureIdx) {
+        if (list.isEmpty()) return -2;
         Iterator<StructureObject> it = list.iterator();
+        int sIdx = structureIdx.length>=1 ? structureIdx[0] : it.next().getStructureIdx();
         while(it.hasNext()) {
             if (it.next().getStructureIdx()!=sIdx) it.remove();
         }
+        return sIdx;
+    }
+    public static String keepOnlyObjectsFromSameMicroscopyField(Collection<StructureObject> list, String... fieldName) {
+        if (list.isEmpty()) return null;
+        Iterator<StructureObject> it = list.iterator();
+        String fName = fieldName.length>=1 ? fieldName[0] : it.next().getFieldName();
+        while(it.hasNext()) {
+            if (!it.next().getFieldName().equals(fName)) it.remove();
+        }
+        return fName;
+    }
+    
+    public static Set<StructureObject> getParents(Collection<StructureObject> objects) {
+        Set<StructureObject> res = new HashSet<StructureObject>();
+        for (StructureObject o : objects) res.add(o.getParent());
+        return res;
     }
     
     public static Comparator<StructureObject> getStructureObjectComparator() {

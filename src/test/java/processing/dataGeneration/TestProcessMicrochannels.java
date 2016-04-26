@@ -52,10 +52,10 @@ public class TestProcessMicrochannels {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         int time =36;
-        int field = 0;
-        String dbName = "fluo160212";
+        int field = 2;
+        String dbName = "fluo160408";
         //testSegMicrochannelsFromXP(dbName, field, time);
-        testSegAndTrackMicrochannelsFromXP(dbName, field, 0, 300);
+        testSegAndTrackMicrochannelsFromXP(dbName, field, 0, 700);
     }
     
     public static void testSegMicrochannelsFromXP(String dbName, int fieldNumber, int timePoint) {
@@ -65,7 +65,7 @@ public class TestProcessMicrochannels {
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         Image input = root.getRawImage(0);
         MicroChannelFluo2D.debug=true;
-        ObjectPopulation pop = MicroChannelFluo2D.run(input, 355, 40, 20, 0.6d, 100);
+        ObjectPopulation pop = MicroChannelFluo2D.run(input, 355, 40, 20, 50, 0.6d, 100);
         //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
@@ -87,7 +87,7 @@ public class TestProcessMicrochannels {
             if (o.getTimePoint()>timePointMax) it.remove();
         }
         MicrochannelProcessor.debug=true;
-        MicrochannelProcessor mp = new MicrochannelProcessor(new MicroChannelFluo2D()).setTimePointNumber(5);
+        MicrochannelProcessor mp = new MicrochannelProcessor(new MicroChannelFluo2D());
         mp.segmentAndTrack(0, rootTrack, new PreFilterSequence(""), new PostFilterSequence(""));
         
         ObjectPopulation pop  = rootTrack.get(0).getObjectPopulation(0);

@@ -61,15 +61,17 @@ public class MicroChannelFluo2D implements Segmenter {
     NumberParameter channelHeight = new BoundedNumberParameter("MicroChannel Height (pixels)", 0, 375, 5, null);
     NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Width (pixels)", 0, 40, 5, null);
     NumberParameter yMargin = new BoundedNumberParameter("y-margin", 0, 20, 0, null);
+    NumberParameter threshold = new BoundedNumberParameter("Intensity Threshold", 2, 50, 0, null);
     NumberParameter fillingProportion = new BoundedNumberParameter("Microchannel filling proportion", 2, 0.5, 0.05, 1);
     NumberParameter minObjectSize = new BoundedNumberParameter("Min. Object Size", 0, 100, 1, null);
-    Parameter[] parameters = new Parameter[]{channelHeight, channelWidth, yMargin, fillingProportion, minObjectSize};
+    Parameter[] parameters = new Parameter[]{channelHeight, channelWidth, yMargin, threshold, fillingProportion, minObjectSize};
     public static boolean debug = false;
 
     public MicroChannelFluo2D() {
     }
 
-    public MicroChannelFluo2D(int channelHeight, int channelWidth, int yMargin, double fillingProportion, int minObjectSize) {
+    public MicroChannelFluo2D(int channelHeight, int channelWidth, int yMargin, double intensityThreshold, double fillingProportion, int minObjectSize) {
+        this.threshold.setValue(intensityThreshold);
         this.channelHeight.setValue(channelHeight);
         this.channelWidth.setValue(channelWidth);
         this.yMargin.setValue(yMargin);
@@ -79,13 +81,13 @@ public class MicroChannelFluo2D implements Segmenter {
 
     @Override
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        ObjectPopulation objects = run(input, channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), yMargin.getValue().intValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue());
+        ObjectPopulation objects = run(input, channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), yMargin.getValue().intValue(), threshold.getValue().doubleValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue());
         return objects;
     }
 
-    public static ObjectPopulation run(Image image, int channelHeight, int channelWidth, int yMargin, double fillingProportion, int minObjectSize) {
+    public static ObjectPopulation run(Image image, int channelHeight, int channelWidth, int yMargin, double threshold, double fillingProportion, int minObjectSize) {
         CropMicroChannelFluo2D.debug=debug;
-        CropMicroChannelFluo2D.Result r = segmentMicroChannels(image, 0, channelHeight, fillingProportion, minObjectSize, AutoThresholder.Method.Otsu);
+        CropMicroChannelFluo2D.Result r = segmentMicroChannels(image, 0, channelHeight, fillingProportion, minObjectSize, threshold);
         if (r==null) return null;
         ArrayList<Object3D> res = new ArrayList<Object3D>(r.xMax.length);
         int yMin = Math.max(r.yMin - yMargin, 0);

@@ -21,6 +21,7 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
+import configuration.parameters.PluginParameter;
 import dataStructure.containers.InputImages;
 import dataStructure.objects.Object3D;
 import ij.process.AutoThresholder;
@@ -38,7 +39,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import plugins.Thresholder;
 import plugins.TransformationTimeIndependent;
+import plugins.plugins.thresholders.ConstantValue;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import plugins.plugins.trackers.ObjectIdxTracker.IndexingOrder;
@@ -60,8 +63,9 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
     
     NumberParameter minObjectSize = new BoundedNumberParameter("Object Size Filter", 0, 200, 1, null);
     NumberParameter fillingProportion = new BoundedNumberParameter("Filling proportion of Microchannel", 2, 0.6, 0.05, 1);
-    
-    Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, minObjectSize, fillingProportion, xStart, xStop, yStart, yStop, number};
+    NumberParameter threshold = new BoundedNumberParameter("Intensity Threshold", 2, 50, 0, null);
+    //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Intensity Threshold", Thresholder.class, new ConstantValue(50), false);
+    Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, minObjectSize, threshold, fillingProportion, xStart, xStop, yStart, yStop, number};
     
     
     public CropMicroChannelFluo2D(int margin, int cropMargin, int minObjectSize, double fillingProportion, int timePointNumber) {
@@ -82,11 +86,12 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
     }
 
     protected BoundingBox getBoundingBox(Image image) {
-        return getBoundingBox(image, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue());
+        return getBoundingBox(image, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), threshold.getValue().doubleValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue());
     }
     
-    public static BoundingBox getBoundingBox(Image image, int cropMargin, int margin, int channelHeight, double fillingProportion, int minObjectSize, int xStart, int xStop, int yStart, int yStop) {
-        Result r = segmentMicroChannels(image, margin, channelHeight, fillingProportion, minObjectSize);
+    public static BoundingBox getBoundingBox(Image image, int cropMargin, int margin, int channelHeight, double threshold, double fillingProportion, int minObjectSize, int xStart, int xStop, int yStart, int yStop) {
+        Result r = segmentMicroChannels(image, margin, channelHeight, fillingProportion, minObjectSize, threshold);
+        if (r == null) return null;
         int yMin = Math.max(yStart, r.yMin);
         yStop = Math.min(yStop, yMin+channelHeight);
         yStart = Math.max(yMin-cropMargin, yStart);

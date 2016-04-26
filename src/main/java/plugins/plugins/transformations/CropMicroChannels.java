@@ -72,10 +72,11 @@ public abstract class CropMicroChannels implements Transformation {
         int numb = Math.min(number.getValue().intValue(), inputImages.getTimePointNumber()-2);
         if (numb>1) {
             double delta = (double)inputImages.getTimePointNumber() / (double)(numb+2);
-            for (int i = 1; i<=numb; ++i) {
+            for (int i = 0; i<=numb; ++i) {
                 int time = (int)(i * delta);
                 image = inputImages.getImage(channelIdx, time);
                 BoundingBox bb = getBoundingBox(image);
+                if (bb==null) continue;
                 if (b==null) b = bb;
                 else b.expand(bb);
                 if (debug) logger.debug("time: {}, bounds: {}, max bounds: {}", time, bb, b);

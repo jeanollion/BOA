@@ -23,7 +23,9 @@ import boa.gui.imageInteraction.ImageObjectInterfaceKey;
 import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.gui.objects.ObjectNode;
+import boa.gui.objects.StructureNode;
 import dataStructure.objects.MasterDAO;
+import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
@@ -33,9 +35,12 @@ import image.ImageByte;
 import image.TypeConverter;
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import plugins.ManualSegmenter;
+import plugins.ObjectSplitter;
 import utils.Utils;
 
 /**
@@ -46,7 +51,7 @@ public class ManualCorrection {
     public static void unlinkObject(StructureObject o) {
         if (o.getNext()!=null) o.getNext().setTrackHead(o.getNext(), true, true);
         o.resetTrackLinks();
-        logger.debug("unlinking: {}", o);
+        //logger.debug("unlinking: {}", o);
     }
     public static void unlinkObjects(StructureObject prev, StructureObject next, List<List<StructureObject>> modifiedTracks) {
         if (next.getTimePoint()<prev.getTimePoint()) unlinkObjects(next, prev, modifiedTracks);
@@ -146,5 +151,135 @@ public class ManualCorrection {
             if (i!=null) iwm.displayObjects(image, i.pairWithOffset(segmentedObjects), Color.ORANGE, true, false);
         }
     }
-    
+    public static void splitObjects(MasterDAO db, Collection<StructureObject> objects, boolean updateDisplay) {
+        int structureIdx = StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(objects);
+        if (objects.isEmpty()) return;
+        ObjectSplitter splitter = db.getExperiment().getStructure(structureIdx).getObjectSplitter();
+        Map<String, List<StructureObject>> objectsByFieldName = StructureObjectUtils.splitByFieldName(objects);
+        for (String f : objectsByFieldName.keySet()) {
+            ObjectDAO dao = db.getDao(f);
+            List<StructureObject> objectsToStore = new ArrayList<StructureObject>();
+            List<StructureObject> newObjects = new ArrayList<StructureObject>();
+            for (StructureObject objectToSplit : objectsByFieldName.get(f)) {
+                StructureObject newObject = objectToSplit.split(splitter);
+                if (newObject==null) logger.warn("Object could not be splitted!");
+                else {
+                    newObjects.add(newObject);
+                    objectToSplit.getParent().relabelChildren(objectToSplit.getStructureIdx(), objectsToStore);
+                    objectsToStore.add(newObject);
+                    objectsToStore.add(objectToSplit);
+                }
+            }
+            
+            Utils.removeDuplicates(objectsToStore, false);
+            dao.store(objectsToStore, false);
+            if (updateDisplay) {
+                // unselect
+                ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
+                ImageWindowManagerFactory.getImageManager().removeObjects(objects, true);
+                
+                Set<StructureObject> parents = StructureObjectUtils.getParents(newObjects);
+                for (StructureObject p : parents) {
+                    //Update tree
+                    StructureNode node = GUI.getInstance().objectTreeGenerator.getObjectNode(p).getStructureNode(structureIdx);
+                    node.createChildren();
+                    GUI.getInstance().objectTreeGenerator.reload(node);
+                    //Update all opened images & objectImageInteraction
+                    ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
+                }
+                // update selection
+                ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null, structureIdx);
+                if (i!=null) {
+                    newObjects.addAll(objects);
+                    ImageWindowManagerFactory.getImageManager().displayObjects(null, i.pairWithOffset(newObjects), Color.orange, true, false);
+                }
+                // update trackTree
+                GUI.getInstance().trackTreeController.updateParentTracks();
+            }
+        }
+    }
+    public static void mergeObjects(MasterDAO db, Collection<StructureObject> objects, boolean updateDisplay) {
+        int structureIdx = StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(objects);
+        String fieldName = StructureObjectUtils.keepOnlyObjectsFromSameMicroscopyField(objects);
+        if (objects.isEmpty()) return;
+        ObjectDAO dao = db.getDao(fieldName);
+        Map<StructureObject, List<StructureObject>> objectsByParent = StructureObjectUtils.splitByParent(objects);
+        List<StructureObject> newObjects = new ArrayList<StructureObject>();
+        List<StructureObject> objectsToRemove = new ArrayList<StructureObject>();
+        for (StructureObject parent : objectsByParent.keySet()) {
+            List<StructureObject> objectsToMerge = objectsByParent.get(parent);
+            if (objectsToMerge.size()<=1) logger.warn("Merge Objects: select several objects from same parent!");
+            else {
+                StructureObject res = objectsToMerge.remove(0);
+                objectsToRemove.addAll(objectsToMerge);
+                for (StructureObject o : objectsToMerge) unlinkObject(o);
+                ArrayList<StructureObject> siblings = res.getParent().getChildren(res.getStructureIdx());
+                List<StructureObject> modified = new ArrayList<StructureObject>(siblings.size());
+                for (StructureObject toMerge : objectsToMerge) {
+                    res.merge(toMerge);
+                    siblings.remove(toMerge);
+                    unlinkObject(toMerge);
+                }
+                newObjects.add(res);
+                modified.add(res);
+                res.getParent().relabelChildren(structureIdx, modified);
+                dao.delete(objectsToMerge, false);
+                dao.store(modified, false);
+            }
+        }
+        if (updateDisplay) {
+            ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
+            ImageWindowManagerFactory.getImageManager().removeObjects(objects, true);
+            for (StructureObject newObject: newObjects) {
+                //Update object tree
+                ObjectNode node = GUI.getInstance().objectTreeGenerator.getObjectNode(newObject);
+                node.getParent().createChildren();
+                GUI.getInstance().objectTreeGenerator.reload(node.getParent());
+            }
+            Set<StructureObject> parents = StructureObjectUtils.getParents(newObjects);
+            //Update all opened images & objectImageInteraction
+            for (StructureObject p : parents) ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
+            // update selection
+            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null, structureIdx);
+            if (i!=null) {
+                ImageWindowManagerFactory.getImageManager().displayObjects(null, i.pairWithOffset(newObjects), Color.orange, true, false);
+            }
+            // update trackTree
+            GUI.getInstance().trackTreeController.updateParentTracks();
+        }
+    }
+    public static void deleteObjects(MasterDAO db, Collection<StructureObject> objects, boolean updateDisplay) {
+        String fieldName = StructureObjectUtils.keepOnlyObjectsFromSameMicroscopyField(objects);
+        ObjectDAO dao = db.getDao(fieldName);
+        Map<Integer, List<StructureObject>> objectsByStructureIdx = StructureObjectUtils.splitByStructureIdx(objects);
+        for (int structureIdx : objectsByStructureIdx.keySet()) {
+            List<StructureObject> list = objectsByStructureIdx.get(structureIdx);
+            for (StructureObject o : list) {
+                unlinkObject(o);
+                o.getParent().getChildren(o.getStructureIdx()).remove(o);
+            }
+            Set<StructureObject> parents = StructureObjectUtils.getParents(list);
+            logger.info("Deleting {} objects, from {} parents", list.size(), parents.size());
+            dao.delete(list, true);
+            ArrayList<StructureObject> modified = new ArrayList<StructureObject>();
+            for (StructureObject p : parents) p.relabelChildren(structureIdx, modified);
+            dao.store(modified, false);
+            
+            if (updateDisplay) {
+                //Update selection on opened image
+                ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
+                ImageWindowManagerFactory.getImageManager().removeObjects(list, true);
+                //Update object tree
+                for (StructureObject s : parents) {
+                    StructureNode node = GUI.getInstance().objectTreeGenerator.getObjectNode(s).getStructureNode(structureIdx);
+                    node.createChildren();
+                    GUI.getInstance().objectTreeGenerator.reload(node);
+                }
+                //Update all opened images & objectImageInteraction
+                for (StructureObject p : parents) ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
+                // update trackTree
+                GUI.getInstance().trackTreeController.updateParentTracks();
+            }
+        }
+    }
 }

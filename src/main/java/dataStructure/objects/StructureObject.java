@@ -401,8 +401,14 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
         this.isTrackHead=this==trackHead;
         this.trackHead=trackHead;
-        this.trackHeadId=id;
-        if (propagateToNextObjects && getNext()!=null) getNext().setTrackHead(trackHead, resetPreviousIfTrackHead, propagateToNextObjects);
+        this.trackHeadId=trackHead.id;
+        if (propagateToNextObjects) {
+            StructureObject n = getNext();
+            while(n!=null) {
+                n.setTrackHead(trackHead, false, false);
+                n = n.getNext();
+            }
+        }
     }
     
     // track correction-related methods 

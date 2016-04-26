@@ -153,7 +153,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                     Utils.removeDuplicates(trackHeads, false);
                     for (StructureObject th : trackHeads) {
                         List<StructureObject> track = StructureObjectUtils.getTrack(th, true);
-                        displayTrack(image, i, i.pairWithOffset(track), ImageWindowManager.defaultRoiColor, true);
+                        displayTrack(image, i, i.pairWithOffset(track), ImageWindowManager.getColor(), true);
                     }
                     if (listener!=null) listener.fireTracksSelected(trackHeads, true);
                 }

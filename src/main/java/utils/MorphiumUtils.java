@@ -68,7 +68,7 @@ public class MorphiumUtils {
 
             @Override
             public Object didDereference(StructureObject entitiyIncludingReference, String fieldInEntity, Object referencedObject, boolean lazy) {
-                logger.error("did dereference: {} entityIncludingRef: {}", referencedObject, entitiyIncludingReference);
+                logger.error("did dereference: {} entityIncludingRef: {}, fieldInEntity: {}, lazy: {}", referencedObject, entitiyIncludingReference, fieldInEntity, lazy);
                 return referencedObject;
             }
         };

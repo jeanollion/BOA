@@ -74,7 +74,7 @@ public class TrackTreeController {
         return -1;
     }
     
-    private void updateParentTracks() {
+    public void updateParentTracks() {
         int lastTreeIdx = getLastTreeIdxWithSelection();
         if (lastTreeIdx+1<structurePathToRoot.length && !generatorS.get(structurePathToRoot[lastTreeIdx+1]).hasSelection()) {
             updateParentTracks(lastTreeIdx);

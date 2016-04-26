@@ -45,7 +45,7 @@ import utils.ThreadRunner;
  */
 public class ScaleHistogramSignalExclusionY implements Transformation {
     BoundedNumberParameter sigmaTh= new BoundedNumberParameter("Theorical Sigma", 2, 5, 1, null);
-    BoundedNumberParameter muTh= new BoundedNumberParameter("Theorical Mean", 2, 105, 1, null);
+    BoundedNumberParameter muTh= new BoundedNumberParameter("Theorical Mean", 2, 100, 1, null);
     BoundedNumberParameter slidingWindowSize= new BoundedNumberParameter("Sliding Window Size", 0, 75, 1, null);
     ChannelImageParameter signalExclusion = new ChannelImageParameter("Channel for Signal Exclusion", -1, true);
     BoundedNumberParameter signalExclusionThreshold = new BoundedNumberParameter("Signal Exclusion Threshold", 1, 50, 0, null);
@@ -189,8 +189,7 @@ public class ScaleHistogramSignalExclusionY implements Transformation {
         }
         
         Double[][] meanSigma = new Double[image.getSizeY()][2];
-        
-        for (int y = 0; y<image.getSizeY(); y++) { // TODO improve speed -> flux entrant et sortant
+        for (int y = 0; y<image.getSizeY(); y++) {
             int yStart = Math.max(0, y-windowSize/2);
             int yEnd = Math.min(image.getSizeY()-1, y+windowSize/2);
             double mean=0, count=0, sigma=0;

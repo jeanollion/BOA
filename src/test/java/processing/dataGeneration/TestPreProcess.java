@@ -47,14 +47,14 @@ import processing.ImageTransformation;
 public class TestPreProcess {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        String dbName= "fluo160218";
+        String dbName= "fluo160408";
         //String dbName= "fluo151127";
         // 12 -> flip = true
-        boolean flip = false;
-        int field = 0;
-        testTransformation(dbName, 0, 0, 0);
+        boolean flip = true;
+        int field = 1;
+        //testTransformation(dbName, 0, 0, 0);
         //testPreProcessing(dbName, field, 0, -1, 0, 150);
-        //testCrop(dbName, field, 0, flip);
+        testCrop(dbName, field, 0, flip);
         //testStabilizer(dbName, field, 0, 19, 0, flip);
     }
     

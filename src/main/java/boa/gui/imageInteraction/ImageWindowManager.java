@@ -273,17 +273,36 @@ public abstract class ImageWindowManager<T, U, V> {
         return null;
     }
 
-    public void displayAllObjectsOnCurrentImage() {
-        T im= displayer.getCurrentImage();
-        if (im==null) return;
-        Image image = displayer.getImage(im);
+    public void selectAllObjects(Image image) {
+        if (image==null) {
+            image = getDisplayer().getCurrentImage2();
+            if (image==null) return;
+        }
         ImageObjectInterface i =  getImageObjectInterface(image, interactiveStructureIdx);
         if (i==null) {
             logger.error("no image object interface found for image: {} and structure: {}", image.getName(), interactiveStructureIdx);
             return;
         }
         displayObjects(image, i.getObjects(), defaultRoiColor, true, false);
-        listener.fireObjectSelected(Pair.unpairKeys(i.getObjects()), true);
+        if (listener!=null) listener.fireObjectSelected(Pair.unpairKeys(i.getObjects()), true);
+    }
+    
+    public void selectAllTracks(Image image) {
+        if (image==null) {
+            image = getDisplayer().getCurrentImage2();
+            if (image==null) return;
+        }
+        ImageObjectInterface i =  getImageObjectInterface(image, interactiveStructureIdx);
+        if (i==null) {
+            logger.error("no image object interface found for image: {} and structure: {}", image.getName(), interactiveStructureIdx);
+            return;
+        }
+        List<StructureObject> objects = Pair.unpairKeys(i.getObjects());
+        objects = StructureObjectUtils.getTrackHeads(objects);
+        List<List<StructureObject>> tracks = new ArrayList<List<StructureObject>>();
+        for (StructureObject th : objects) tracks.add(StructureObjectUtils.getTrack(th, true));
+        displayTracks(image, i, tracks, true);
+        //if (listener!=null) 
     }
     
     
@@ -432,7 +451,6 @@ public abstract class ImageWindowManager<T, U, V> {
             if (image==null) return;
         }
         if (i ==null) i = this.getImageObjectInterface(image);
-        int idx = 0;
         for (List<StructureObject> track : tracks) {
             displayTrack(image, i, i.pairWithOffset(track), getColor() , labile);
         }

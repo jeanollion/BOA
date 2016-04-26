@@ -419,6 +419,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                                 trackTreeController.clearTreesFromIdx(trackTreeController.getTreeIdx(entry.getKey()) + 1);
                             }
                             instance.displayTrackTrees();
+                            if (trackTreeController.isUpdateRoiDisplayWhenSelectionChange()) {
+                                logger.debug("updating display: number of selected tracks: {}", tree.getSelectionCount());
+                                GUI.updateRoiDisplay(null);
+                            }
                         }
                     });
                     //tree.setPreferredSize(new Dimension(200, 400));
@@ -1040,6 +1044,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         File[] selectedFiles = Utils.chooseFiles("Choose images/directories to import", null, FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, this);
         if (selectedFiles!=null) Processor.importFiles(this.db.getExperiment(), Utils.convertFilesToString(selectedFiles));
         db.updateExperiment(); //stores imported fields
+        this.populateActionMicroscopyFieldList();
     }//GEN-LAST:event_importImageButtonActionPerformed
 
     private void connectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connectButtonActionPerformed
@@ -1077,8 +1082,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             return;
         } else {
             Utils.expandTree(t.getTree());
-            t.getTree().setSelectionInterval(0, t.getTree().getRowCount());
-            GUI.updateRoiDisplay(null);
+            //t.getTree().setSelectionInterval(1, t.getTree().getRowCount());
+            //GUI.updateRoiDisplay(null);
+            ImageWindowManagerFactory.getImageManager().selectAllTracks(null);
         }
         
     }//GEN-LAST:event_selectAllTracksButtonActionPerformed
@@ -1091,84 +1097,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void splitObjectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_splitObjectButtonActionPerformed
         if (!checkConnection()) return;
         List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        if (selList.isEmpty()) logger.warn("Select an object to Split first!");
-        else {
-            StructureObject sel = selList.get(0);
-            String fieldName = sel.getFieldName();
-            ObjectSplitter splitter = this.db.getExperiment().getStructure(sel.getStructureIdx()).getObjectSplitter();
-            if (splitter==null) logger.warn("No ObjectSplitter defined for structure: "+db.getExperiment().getStructure(sel.getStructureIdx()).getName());
-            else {
-                StructureObject newObject = sel.split(splitter);
-                if (newObject==null) logger.warn("Object could not be splitted!");
-                else {
-                    ArrayList<StructureObject> siblings = sel.getParent().getChildren(sel.getStructureIdx());
-                    int idx = siblings.indexOf(sel);
-                    siblings.add(idx+1, newObject);
-                    ArrayList<StructureObject> modified = new ArrayList<StructureObject>(siblings.size());
-                    modified.add(newObject);
-                    modified.add(sel);
-                    sel.getParent().relabelChildren(sel.getStructureIdx(), modified);
-                    db.getDao(fieldName).store(modified, false);
-                    // unselect
-                    ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
-                    ImageWindowManagerFactory.getImageManager().removeObjects(modified, true);
-                    //Update tree
-                    ObjectNode node = objectTreeGenerator.getObjectNode(sel);
-                    node.getParent().createChildren();
-                    objectTreeGenerator.reload(node.getParent());
-                    //Update all opened images & objectImageInteraction
-                    ImageWindowManagerFactory.getImageManager().reloadObjects(sel.getParent(), sel.getStructureIdx(), false);
-                    // update selection
-                    ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null, sel.getStructureIdx());
-                    if (i!=null) {
-                        List<StructureObject> toDisp = new ArrayList<StructureObject>(2);
-                        toDisp.add(sel);
-                        toDisp.add(newObject);
-                        ImageWindowManagerFactory.getImageManager().displayObjects(null, i.pairWithOffset(toDisp), Color.orange, true, false);
-                    }
-                }
-            }
-        }
+        if (selList.isEmpty()) logger.warn("Select at least one object to Split first!");
+        else ManualCorrection.splitObjects(db, selList, true);
     }//GEN-LAST:event_splitObjectButtonActionPerformed
 
     private void mergeObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mergeObjectsButtonActionPerformed
         if (!checkConnection()) return;
-        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        StructureObjectUtils.keepOnlyObjectsFromSameParent(sel);
-        StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(sel);
-        if (sel.size()<=1) logger.warn("Merge Objects: select several objects from same parent first!");
-        else {
-            StructureObject res = sel.remove(0);
-            for (StructureObject o : sel) ManualCorrection.unlinkObject(o);
-            String fieldName = res.getFieldName();
-            ArrayList<StructureObject> siblings = res.getParent().getChildren(res.getStructureIdx());
-            for (StructureObject toMerge : sel) {
-                res.merge(toMerge);
-                siblings.remove(toMerge);
-            }
-            db.getDao(fieldName).delete(sel, false);
-            
-            ArrayList<StructureObject> modified = new ArrayList<StructureObject>(siblings.size());
-            modified.add(res);
-            res.getParent().relabelChildren(res.getStructureIdx(), modified);
-            db.getDao(fieldName).store(modified, false);
-            ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
-            sel.add(res);
-            ImageWindowManagerFactory.getImageManager().removeObjects(sel, true);
-            //Update object tree
-            ObjectNode node = objectTreeGenerator.getObjectNode(res);
-            node.getParent().createChildren();
-            objectTreeGenerator.reload(node.getParent());
-            //Update all opened images & objectImageInteraction
-            ImageWindowManagerFactory.getImageManager().reloadObjects(res.getParent(), res.getStructureIdx(), false);
-            // update selection
-            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null, res.getStructureIdx());
-            if (i!=null) {
-                List<StructureObject> toDisp = new ArrayList<StructureObject>(1);
-                toDisp.add(res);
-                ImageWindowManagerFactory.getImageManager().displayObjects(null, i.pairWithOffset(toDisp), Color.orange, true, false);
-            }
-        }
+        List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        if (selList.isEmpty()) logger.warn("Select at least two objects to Merge first!");
+        else ManualCorrection.mergeObjects(db, selList, true);
     }//GEN-LAST:event_mergeObjectsButtonActionPerformed
 
     private void previousTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_previousTrackErrorButtonActionPerformed
@@ -1183,7 +1120,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void selectAllObjectsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllObjectsActionPerformed
         if (!checkConnection()) return;
-        getImageManager().displayAllObjectsOnCurrentImage();
+        getImageManager().selectAllObjects(null);
         
     }//GEN-LAST:event_selectAllObjectsActionPerformed
 
@@ -1202,35 +1139,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void deleteObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteObjectsButtonActionPerformed
         if (!checkConnection()) return;
         List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(sel);
-        if (sel.isEmpty()) logger.warn("Delete Objects: select one or several objects from same structure to delete first!");
-        else {
-            for (StructureObject o : sel) ManualCorrection.unlinkObject(o);
-            int structureIdx = sel.get(0).getStructureIdx();
-            String fieldName = sel.get(0).getFieldName();
-            ArrayList<StructureObject> parents = new ArrayList<StructureObject>();
-            for (StructureObject o : sel) {
-                parents.add(o.getParent());
-                o.getParent().getChildren(o.getStructureIdx()).remove(o);
-            }
-            Utils.removeDuplicates(parents, false);
-            logger.info("Deleting {} objects, from {} parents", sel.size(), parents.size());
-            db.getDao(fieldName).delete(sel, true);
-            ArrayList<StructureObject> modified = new ArrayList<StructureObject>();
-            for (StructureObject p : parents) p.relabelChildren(structureIdx, modified);
-            db.getDao(fieldName).store(modified, false);
-            //Update selection on opened image
-            ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
-            ImageWindowManagerFactory.getImageManager().removeObjects(sel, true);
-            //Update object tree
-            for (StructureObject s : parents) {
-                ObjectNode node = objectTreeGenerator.getObjectNode(s);
-                node.getParent().createChildren();
-                objectTreeGenerator.reload(node.getParent());
-            }
-            //Update all opened images & objectImageInteraction
-            for (StructureObject p : parents) ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
-        }
+        ManualCorrection.deleteObjects(db, sel, true);
     }//GEN-LAST:event_deleteObjectsButtonActionPerformed
 
     private void duplicateExperimentActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_duplicateExperimentActionPerformed
