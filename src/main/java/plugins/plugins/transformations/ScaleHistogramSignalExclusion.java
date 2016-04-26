@@ -207,4 +207,8 @@ public class ScaleHistogramSignalExclusion implements Transformation {
     public Parameter[] getParameters() {
         return parameters;
     }
+    
+    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
+        return meanSigmaT!=null && meanSigmaT.size()==totalTimePointNumber;
+    }
 }

@@ -70,6 +70,10 @@ public class SimpleRotationXY implements TransformationTimeIndependent {
     public ArrayList getConfigurationData() {
         return null;
     }
+    
+    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
+        return true;
+    }
 
     public boolean does3D() {
         return true;

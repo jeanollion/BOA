@@ -63,10 +63,10 @@ public class Median implements PreFilter, TransformationTimeIndependent {
         return SelectionMode.SAME;
     }
 
-    public void computeConfigurationData(int channelIdx, InputImages inputImages) {
-        
+    public void computeConfigurationData(int channelIdx, InputImages inputImages) { }
+    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
+        return true;
     }
-
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         return filter(image, radiusXY.getValue().doubleValue(), radiusZ.getValue().doubleValue());
     }

@@ -241,8 +241,13 @@ public class ScaleHistogramSignalExclusionY implements Transformation {
         
     }
     
+     // configuration data is not stored because too heavy -> always computed
+    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
+        return false;
+    }
+    
     public ArrayList getConfigurationData() {
-        return meanSigmaTY;
+        return null;
     }
 
     public Transformation.SelectionMode getOutputChannelSelectionMode() {

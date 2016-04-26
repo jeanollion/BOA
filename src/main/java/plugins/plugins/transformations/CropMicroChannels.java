@@ -90,6 +90,10 @@ public abstract class CropMicroChannels implements Transformation {
         configurationData.add(b.getyMax());
     }
     
+    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
+        return configurationData!=null && configurationData.size()==4;
+    }
+    
     public SelectionMode getOutputChannelSelectionMode() {
         return SelectionMode.ALL;
     }

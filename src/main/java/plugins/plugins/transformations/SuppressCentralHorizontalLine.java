@@ -54,6 +54,10 @@ public class SuppressCentralHorizontalLine implements Transformation {
     public ArrayList getConfigurationData() {
         return null;
     }
+    
+    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
+        return true;
+    }
 
     public SelectionMode getOutputChannelSelectionMode() {
         return SelectionMode.ALL;

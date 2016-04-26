@@ -167,6 +167,10 @@ public class CropMicroChannels2D implements TransformationTimeIndependent {
         BoundingBox bounds = new BoundingBox(configurationData.get(0), configurationData.get(1), configurationData.get(2), configurationData.get(3), 0, image.getSizeZ()-1);
         return image.crop(bounds);
     }
+    
+    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
+        return true;
+    }
 
     public ArrayList getConfigurationData() {
         return configurationData;

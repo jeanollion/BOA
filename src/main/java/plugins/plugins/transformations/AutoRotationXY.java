@@ -110,6 +110,10 @@ public class AutoRotationXY implements TransformationTimeIndependent {
         return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), internalParams.get(0), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), true);
     }
     
+    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
+        return internalParams!=null && !internalParams.isEmpty();
+    }
+    
     public static double computeRotationAngleXY(Image image, int z, int backgroundSubtractionRadius, double ang1, double ang2, double stepsize, float[] proj, boolean var, double filterScale) {
         // subtract background
         if (backgroundSubtractionRadius>0) {

@@ -364,6 +364,10 @@ public class ImageStabilizerXY implements Transformation {
     public ArrayList getConfigurationData() {
         return this.translationTXY;
     }
+    
+    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
+        return translationTXY!=null && translationTXY.size()==totalTimePointNumber;
+    } 
 
     public boolean isTimeDependent() {
         return true;

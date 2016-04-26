@@ -33,6 +33,7 @@ public interface Transformation extends ImageProcessingPlugin {
      * @param inputImages 
      */
     public void computeConfigurationData(int channelIdx, InputImages inputImages);
+    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber);
     public Image applyTransformation(int channelIdx, int timePoint, Image image);
     /**
      * 

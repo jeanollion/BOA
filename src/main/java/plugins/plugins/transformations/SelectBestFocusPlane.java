@@ -35,7 +35,7 @@ import utils.ThreadRunner;
  * @author jollion
  */
 public class SelectBestFocusPlane implements Transformation {
-    ArrayList<Integer> configurationData = new ArrayList<Integer>();
+    ArrayList<Integer> bestFocusPlaneIdxT = new ArrayList<Integer>();
     NumberParameter gradientScale = new BoundedNumberParameter("Gradient Scale", 0, 3, 1, 10);
     Parameter[] parameters = new Parameter[]{gradientScale};
     
@@ -79,7 +79,7 @@ public class SelectBestFocusPlane implements Transformation {
             }
             tr.startAndJoin();
         }
-        configurationData.addAll(Arrays.asList(conf));
+        bestFocusPlaneIdxT.addAll(Arrays.asList(conf));
     }
     
     
@@ -89,12 +89,13 @@ public class SelectBestFocusPlane implements Transformation {
     }
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        if (image.getSizeZ()>1) return image.getZPlane(configurationData.get(timePoint));
+        if (bestFocusPlaneIdxT==null || timePoint>=bestFocusPlaneIdxT.size()) throw new RuntimeException("SelectBestFocusPlane transformation is not configured");
+        if (image.getSizeZ()>1) return image.getZPlane(bestFocusPlaneIdxT.get(timePoint));
         else return image;
     }
 
     public ArrayList getConfigurationData() {
-        return configurationData;
+        return bestFocusPlaneIdxT;
     }
 
     public Parameter[] getParameters() {
@@ -103,6 +104,10 @@ public class SelectBestFocusPlane implements Transformation {
 
     public boolean does3D() {
         return true;
+    }
+    
+    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
+        return bestFocusPlaneIdxT !=null && bestFocusPlaneIdxT.size() == totalTimePointNumber;
     }
     
 }

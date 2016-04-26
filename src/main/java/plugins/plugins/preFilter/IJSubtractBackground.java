@@ -93,6 +93,10 @@ public class IJSubtractBackground implements PreFilter, TransformationTimeIndepe
         filter(image, radius.getValue().doubleValue(), !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), corners.getSelected());
         return image;
     }
+    
+    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
+        return true;
+    }
 
     public ArrayList getConfigurationData() {
         return null;
