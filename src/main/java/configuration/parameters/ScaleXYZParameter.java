@@ -31,8 +31,8 @@ import de.caluga.morphium.annotations.lifecycle.PostLoad;
  */
 @Lifecycle
 public class ScaleXYZParameter extends SimpleContainerParameter {
-    BoundedNumberParameter scaleXY = new BoundedNumberParameter("ScaleXY (pix)", 2, 1, 1, null);
-    BoundedNumberParameter scaleZ = new BoundedNumberParameter("ScaleZ (pix)", 2, 1, 1, null);
+    BoundedNumberParameter scaleXY = new BoundedNumberParameter("ScaleXY (pix)", 3, 1, 0, null);
+    BoundedNumberParameter scaleZ = new BoundedNumberParameter("ScaleZ (pix)", 3, 1, 0, null);
     BooleanParameter useImageCalibration = new BooleanParameter("Use image calibration for Z-scale", true);
     @Transient ConditionalParameter cond; // init occurs @ construction or @ postLoad
         
@@ -49,7 +49,8 @@ public class ScaleXYZParameter extends SimpleContainerParameter {
     }
     protected void init() { 
         cond = new ConditionalParameter(useImageCalibration);
-        cond.setActionParameters(false, new Parameter[]{scaleZ}, false);
+        cond.setParent(this);
+        cond.setActionParameters("false", new Parameter[]{scaleZ}, false);
         //logger.debug("init scaleXYZParameter:{} XY:{}, Z:{}, use: {}", this.hashCode(), scaleXY.getValue(), scaleZ.getValue(), useImageCalibration.getValue());
     }
     @Override

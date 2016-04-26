@@ -22,8 +22,8 @@ package configuration.parameters;
  * @author jollion
  */
 public interface ActionableParameter extends Parameter {
-    public Object getValue();
-    public void setValue(Object value);
+    public String getValue();
+    public void setValue(String value);
     public void setConditionalParameter(ConditionalParameter cond);
     public ConditionalParameter getConditionalParameter();
 }

@@ -110,12 +110,12 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
         if (cond!=null) cond.setActionValue(selectedItem);
     }
     
-    public Object getValue() {
+    public String getValue() {
         return getSelectedItem();
     }
 
-    public void setValue(Object value) {
-        this.setSelectedItem(value.toString());
+    public void setValue(String value) {
+        this.setSelectedItem(value);
     }
     
     public void setConditionalParameter(ConditionalParameter cond) {

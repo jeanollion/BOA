@@ -19,10 +19,14 @@ package dataStructure.configuration;
 
 import boa.gui.GUI;
 import com.mongodb.MongoClient;
+import configuration.parameters.BooleanParameter;
+import configuration.parameters.BoundedNumberParameter;
+import configuration.parameters.ConditionalParameter;
 import configuration.parameters.ListElementRemovable;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
+import configuration.parameters.PostLoadable;
 import configuration.parameters.SimpleContainerParameter;
 import configuration.parameters.SimpleListParameter;
 import configuration.parameters.StructureParameter;
@@ -50,6 +54,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     MultipleImageContainer images;
     PreProcessingChain preProcessingChain;
     TimePointParameter defaultTimePoint;
+    
     @Transient InputImagesImpl inputImages;
     @Transient public static final int defaultTP = 50;
     //ui: bouton droit = selectionner un champ?
@@ -60,6 +65,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         defaultTimePoint = new TimePointParameter("Default TimePoint", defaultTP);
         initChildList();
     }
+    
     
     @Override
     protected void initChildList() {
@@ -120,12 +126,17 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     }
     
     public float getScaleXY(){
-        if (images!=null && images.getScaleXY()!=0) return images.getScaleXY();
-        else return 1;
+        if (preProcessingChain.useImageScale()) {
+            if (images!=null && images.getScaleXY()!=0) return images.getScaleXY();
+            else return 1;
+        } else return (float)preProcessingChain.getScaleXY();
+        
     }
     public float getScaleZ(){
-        if (images!=null && images.getScaleZ()!=0) return images.getScaleZ();
-        else return 1;
+        if (preProcessingChain.useImageScale()) {
+            if (images!=null && images.getScaleZ()!=0) return images.getScaleZ();
+            else return 1;
+        } else return (float)preProcessingChain.getScaleZ();
     }
     
     public int getTimePointNumber() {
@@ -175,4 +186,6 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         this.getInputImages().deleteFromDAO();
         return true;
     }
+    
+    
 }

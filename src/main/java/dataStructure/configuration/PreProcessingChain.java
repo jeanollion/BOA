@@ -17,7 +17,11 @@
  */
 package dataStructure.configuration;
 
+import configuration.parameters.BooleanParameter;
+import configuration.parameters.BoundedNumberParameter;
+import configuration.parameters.ConditionalParameter;
 import configuration.parameters.MultipleChoiceParameter;
+import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.ParameterUtils;
 import configuration.parameters.PluginParameter;
@@ -52,20 +56,44 @@ import utils.Utils;
  * @author jollion
  */
 public class PreProcessingChain extends SimpleContainerParameter {
-    
+    BooleanParameter useImageScale;
+    BoundedNumberParameter scaleXY;
+    BoundedNumberParameter scaleZ;
+    @Transient ConditionalParameter imageScaleCond;
     SimpleListParameter<TransformationPluginParameter<Transformation>> transformations;
     
     public PreProcessingChain(String name) {
         super(name);
         transformations = new SimpleListParameter<TransformationPluginParameter<Transformation>>("Transformations", new TransformationPluginParameter<Transformation>("Transformation", Transformation.class, false));
         //logger.debug("new PPC: {}", name);
+        initScaleParam(true, true);
         initChildList();
     }
+    
+    private void initScaleParam(boolean initParams, boolean initCond) {
+        if (initParams) {
+            useImageScale = new BooleanParameter("Voxel Calibration", "Use Image Calibration", "Custom Calibration", true);
+            scaleXY = new BoundedNumberParameter("Scale XY", 5, 1, 0.00001, null);
+            scaleZ = new BoundedNumberParameter("Scale Z", 5, 1, 0.00001, null);
+            scaleXY.setParent(this);
+            scaleZ.setParent(this);
+            useImageScale.setParent(this);
+        }
+        if (initCond) {
+            imageScaleCond = new ConditionalParameter(useImageScale).setActionParameters("Custom Calibration", new Parameter[]{scaleXY, scaleZ});
+            imageScaleCond.setParent(this);
+        }
+    }
+    
+    public boolean useImageScale() {return useImageScale.getSelected();}
+    public double getScaleXY() {return scaleXY.getValue().doubleValue();}
+    public double getScaleZ() {return scaleZ.getValue().doubleValue();}
     
     @Override
     protected void initChildList() {
         //logger.debug("PreProc chain: {}, init list..", name);
-        super.initChildren(transformations);
+        initScaleParam(useImageScale==null, imageScaleCond==null); //TODO for retrocompatibility
+        super.initChildren(imageScaleCond, transformations);
     }
     
     public List<TransformationPluginParameter<Transformation>> getTransformations() {
@@ -89,6 +117,15 @@ public class PreProcessingChain extends SimpleContainerParameter {
         tpp.setInputChannel(inputChannel);
         tpp.setOutputChannel(outputChannel);
         return tpp;
+    }
+    
+    @Override 
+    public void postLoad() {
+        if (!postLoaded) {
+            initScaleParam(useImageScale==null, true);
+            useImageScale.postLoad();
+            super.postLoad();
+        }
     }
     
     @Override public ParameterUI getUI() {

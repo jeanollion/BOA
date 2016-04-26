@@ -55,11 +55,10 @@ public class TestLAPTrackerMutations {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         final String dbName = "fluo160407";
-        //int fieldIdx = 28; // lapTop
-        final int fieldIdx = 0;
+        final int fieldIdx = 24;
         final int mcIdx = 0;
         TestLAPTrackerMutations t = new TestLAPTrackerMutations();
-        t.init(dbName, fieldIdx, mcIdx, 0, 529);
+        t.init(dbName, fieldIdx, mcIdx, 0, 49);
         t.testLAPTracking();
         
         // multithread version testing

@@ -33,8 +33,8 @@ public class BooleanParameter extends ChoiceParameter {
         super(name, new String[]{"true", "false"}, defaultValue?"true":"false", false);
     }
     
-    public BooleanParameter(String name, String choice1, String choice2, boolean defaultValue) {
-        super(name, new String[]{choice1, choice2}, defaultValue?choice1:choice2, false);
+    public BooleanParameter(String name, String trueLabel, String falseLabel, boolean defaultValue) {
+        super(name, new String[]{trueLabel, falseLabel}, defaultValue?trueLabel:falseLabel, false);
         //if (listChoice.length!=2) throw new IllegalArgumentException("List choice should be of length 2");
     }
     
@@ -45,22 +45,6 @@ public class BooleanParameter extends ChoiceParameter {
     public void setSelected(boolean selected){
         if (selected) super.setSelectedIndex(0);
         else super.setSelectedIndex(1);
-    }
-    
-    @Override
-    public void setCondValue() {
-        if (cond!=null) cond.setActionValue(getSelected());
-    }
-    
-    @Override
-    public Boolean getValue() {
-        return getSelected();
-    }
-    
-    @Override 
-    public void setValue(Object value){
-        if (value instanceof Boolean) setSelected((Boolean)value);
-        if (value instanceof String) super.setValue(value);
     }
     
 }
