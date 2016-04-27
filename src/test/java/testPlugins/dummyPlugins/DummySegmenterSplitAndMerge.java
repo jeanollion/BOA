@@ -34,7 +34,7 @@ public class DummySegmenterSplitAndMerge extends SimpleThresholder implements Se
         super(new ConstantValue(1));
     }
     public double split(Object3D o, List<Object3D> result) {
-        result.addAll(s.splitObject(null, o, true).getObjects());
+        result.addAll(s.splitObject(null, o).getObjects());
         return 1;
     }
 

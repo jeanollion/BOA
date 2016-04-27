@@ -63,6 +63,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     BoundedNumberParameter cumCostLimit = new BoundedNumberParameter("Correction: cumulative cost limit", 3, 5, 0, null);
     Parameter[] parameters = new Parameter[]{segmenter, maxGrowthRate, minGrowthRate, divisionCriterion, costLimit, cumCostLimit};
 
+    public Segmenter getSegmenter() {
+        return segmenter.instanciatePlugin();
+    }
+
     // tracking-related attributes
     private enum Flag {error, correctionMerge, correctionSplit;}
     ArrayList<Object3D>[] populations;

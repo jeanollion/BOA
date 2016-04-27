@@ -77,5 +77,5 @@ public class SegmentOnly implements ProcessingScheme {
     public Parameter[] getParameters() {
         return parameters;
     }
-    
+    @Override public Segmenter getSegmenter() {return segmenter.instanciatePlugin();}
 }

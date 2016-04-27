@@ -262,7 +262,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge {
         if (distanceMap==null) throw new Error("Segment method have to be called before split method in order to initialize images");
         if (splitMask==null) splitMask = new ImageByte("split mask", distanceMap);
         o.draw(splitMask, 1);
-        ObjectPopulation pop = WatershedObjectSplitter.split(distanceMap, splitMask, true);
+        ObjectPopulation pop = WatershedObjectSplitter.splitInTwo(distanceMap, splitMask, true);
         o.draw(splitMask, 0);
         if (pop==null || pop.getObjects().isEmpty() || pop.getObjects().size()==1) return Double.NaN;
         ArrayList<Object3D> remove = new ArrayList<Object3D>(pop.getObjects().size());

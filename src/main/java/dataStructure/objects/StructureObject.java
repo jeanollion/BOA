@@ -560,8 +560,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public StructureObject split(ObjectSplitter splitter) { // in 2 objects
         // get cropped image
-        Image image = ImageFeatures.gaussianSmooth(getRawImage(structureIdx), 2, 2, false);
-        ObjectPopulation pop = splitter.splitObject(image,  getObject(), false);
+        ObjectPopulation pop = splitter.splitObject(getRawImage(structureIdx),  getObject());
         if (pop==null) {
             this.flag=TrackFlag.correctionSplitError;
             logger.warn("split error: {}", this);

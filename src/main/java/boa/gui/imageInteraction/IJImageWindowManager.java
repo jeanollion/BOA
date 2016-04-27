@@ -127,7 +127,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 if (selection!=null) {
                     i.addClickedObjects(selection, selectedObjects);
                     logger.debug("selection: {}, number of objects: {}", selection, selectedObjects.size());
-                    if (ctrl) ip.deleteRoi();
+                    ip.deleteRoi();
                 } else {
                     int x = e.getX();
                     int y = e.getY();

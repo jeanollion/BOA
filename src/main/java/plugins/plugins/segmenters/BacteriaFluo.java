@@ -19,11 +19,13 @@ package plugins.plugins.segmenters;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectProcessing;
 import dataStructure.objects.Voxel;
 import ij.process.AutoThresholder;
@@ -34,11 +36,14 @@ import image.ImageFloat;
 import image.ImageInteger;
 import image.ImageMask;
 import image.ImageOperations;
+import image.ObjectFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import measurement.BasicMeasurements;
+import plugins.ManualSegmenter;
+import plugins.ObjectSplitter;
 import plugins.Segmenter;
 import plugins.SegmenterSplitAndMerge;
 import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
@@ -55,7 +60,7 @@ import utils.Utils;
  *
  * @author jollion
  */
-public class BacteriaFluo implements SegmenterSplitAndMerge {
+public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter {
     public static boolean debug = false;
     
     // configuration-related attributes
@@ -68,14 +73,11 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
     NumberParameter hessianScale = new BoundedNumberParameter("Hessian scale", 1, 4, 1, 6);
     NumberParameter hessianThresholdFactor = new BoundedNumberParameter("Hessian threshold factor", 1, 1, 0, 5);
     NumberParameter thresholdForEmptyChannel = new BoundedNumberParameter("Threshold for empty channel", 1, 2, 0, null);
-    Parameter[] parameters = new Parameter[]{splitThreshold, minSize, contactLimit, smoothScale, dogScale, hessianScale, hessianThresholdFactor, thresholdForEmptyChannel, openRadius};
+    NumberParameter manualSegPropagationHessianThreshold = new BoundedNumberParameter("Manual Segmentation: Propagation NormedHessian Threshold", 3, 0.2, 0, null);
+    Parameter[] parameters = new Parameter[]{splitThreshold, minSize, contactLimit, smoothScale, dogScale, hessianScale, hessianThresholdFactor, thresholdForEmptyChannel, openRadius, manualSegPropagationHessianThreshold};
     
     //segmentation-related attributes (kept for split and merge methods)
-    Image hessian;
-    Image rawIntensityMap;
-    Image intensityMap;
-    ImageByte splitMask;
-    double splitThresholdValue; 
+    ProcessingMaps maps;
     
     public BacteriaFluo setSplitThreshold(double splitThreshold) {
         this.splitThreshold.setValue(splitThreshold);
@@ -115,13 +117,17 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
     public String toString() {
         return "Bacteria Fluo: " + Utils.toStringArray(parameters);
     }   
+    private void initializeMaps(Image input) {
+        maps = new ProcessingMaps(input, this.splitThreshold.getValue().doubleValue(), dogScale.getValue().doubleValue(), smoothScale.getValue().doubleValue(), hessianScale.getValue().doubleValue());
+    }
+    
     
     public static ObjectPopulation run(Image input, ImageMask mask, double fusionThreshold, int minSize, int contactLimit, double smoothScale, double dogScale, double hessianScale, double hessianThresholdFactor, double thresholdForEmptyChannel, double openRadius, BacteriaFluo instance) {
         ImageDisplayer disp=debug?new IJImageDisplayer():null;
         //double hessianThresholdFacto = 1;
-        
-        ImageFloat dog = ImageFeatures.differenceOfGaussians(input, 0, dogScale, 1, false).setName("DoG");
-        Image smoothed = Filters.median(dog, dog, Filters.getNeighborhood(smoothScale, smoothScale, input)).setName("DoG+Smoothed");
+        ProcessingMaps maps = new ProcessingMaps(input, fusionThreshold, dogScale, smoothScale, hessianScale);
+        if (instance!=null) instance.maps=maps;
+        Image smoothed = maps.intensityMap;
         //Image hessian = ImageFeatures.getHessian(intensityMap, hessianScale, false)[0].setName("hessian");
 
         //double t0 = IJAutoThresholder.runThresholder(intensityMap, mask, null, AutoThresholder.Method.Otsu, 0);
@@ -151,7 +157,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
         pop1.filter(new ObjectPopulation.MeanIntensity(threshold, true, smoothed));
         if (debug) disp.showImage(pop1.getLabelImage().duplicate("first seg"));
         
-        Image hessian = ImageFeatures.getHessian(input, hessianScale, false)[0].setName("hessian");
+        Image hessian = maps.hessian;
         
         if (debug) {
             disp.showImage(smoothed);
@@ -183,12 +189,6 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
         if (res!=null) {
             if (contactLimit>0) res.filter(new ObjectPopulation.ContactBorder(contactLimit, mask, ObjectPopulation.ContactBorder.Border.YDown));
             res.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
-        }
-        if (instance!=null) {
-            instance.rawIntensityMap=input;
-            instance.intensityMap=smoothed;
-            instance.hessian=hessian;
-            instance.splitThresholdValue=fusionThreshold;
         }
         return res;
     }
@@ -228,11 +228,11 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
     }
 
     @Override public double split(Object3D o, List<Object3D> result) {
-        if (intensityMap==null || hessian==null || rawIntensityMap==null) throw new Error("Segment method have to be called before split method in order to initialize images");
-        if (splitMask==null) splitMask = new ImageByte("split mask", intensityMap);
-        o.draw(splitMask, 1);
-        ObjectPopulation pop = WatershedObjectSplitter.split(intensityMap, splitMask, true);
-        o.draw(splitMask, 0);
+        if (maps==null) throw new Error("Segment method have to be called before split method in order to initialize maps");
+        if (maps.splitMask==null) maps.splitMask = new ImageByte("split mask", maps.intensityMap);
+        o.draw(maps.splitMask, 1);
+        ObjectPopulation pop = WatershedObjectSplitter.splitInTwo(maps.intensityMap, maps.splitMask, true);
+        o.draw(maps.splitMask, 0);
         if (pop==null || pop.getObjects().isEmpty() || pop.getObjects().size()==1) return Double.NaN;
         ArrayList<Object3D> remove = new ArrayList<Object3D>(pop.getObjects().size());
         pop.filter(new ObjectPopulation.Thickness().setX(2).setY(2), remove); // remove thin objects
@@ -247,13 +247,13 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
             Object3D o2 = pop.getObjects().get(1);
             result.add(o1);
             result.add(o2);
-            return splitThresholdValue-getInterfaceValue(getInterface(o1, o2));
+            return maps.splitThresholdValue-getInterfaceValue(getInterface(o1, o2));
         }
     }
 
     @Override public double computeMergeCost(List<Object3D> objects) {
-        if (intensityMap==null || hessian==null || rawIntensityMap==null) throw new Error("Segment method have to be called before merge method in order to initialize images");
-        if (splitMask==null) splitMask = new ImageByte("split mask", intensityMap);
+        if (maps==null || maps.intensityMap==null || maps.hessian==null || maps.rawIntensityMap==null) throw new Error("Segment method have to be called before merge method in order to initialize images");
+        if (maps.splitMask==null) maps.splitMask = new ImageByte("split mask", maps.intensityMap);
         if (objects.isEmpty() || objects.size()==1) return 0;
         Iterator<Object3D> it = objects.iterator();
         Object3D ref  = objects.get(0);
@@ -279,20 +279,72 @@ public class BacteriaFluo implements SegmenterSplitAndMerge {
             }
         }
         if (maxCost==Double.MIN_VALUE) return Double.NaN;
-        return maxCost-splitThresholdValue;
+        return maxCost-maps.splitThresholdValue;
     }
     private double getInterfaceValue(ArrayList<Voxel> inter) {
-        double meanHess = BasicMeasurements.getMeanValue(inter, hessian, false);
-        double meanDOG = BasicMeasurements.getMeanValue(inter, rawIntensityMap, false);
+        double meanHess = BasicMeasurements.getMeanValue(inter, maps.hessian, false);
+        double meanDOG = BasicMeasurements.getMeanValue(inter, maps.rawIntensityMap, false);
         return meanHess / meanDOG;
     }
     
     private ArrayList<Voxel> getInterface(Object3D o1, Object3D o2) {
-        o1.draw(splitMask, o1.getLabel());
-        o2.draw(splitMask, o2.getLabel());
-        ArrayList<Voxel> inter = InterfaceCollection.getInteface(o1, o2, splitMask);
-        o1.draw(splitMask, 0);
-        o2.draw(splitMask, 0);
+        o1.draw(maps.splitMask, o1.getLabel());
+        o2.draw(maps.splitMask, o2.getLabel());
+        ArrayList<Voxel> inter = InterfaceCollection.getInteface(o1, o2, maps.splitMask);
+        o1.draw(maps.splitMask, 0);
+        o2.draw(maps.splitMask, 0);
         return inter;
+    }
+    
+    // manual correction implementations
+    private boolean verboseManualSeg;
+    public void setManualSegmentationVerboseMode(boolean verbose) {
+        this.verboseManualSeg=verbose;
+    }
+
+    public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
+        if (maps==null) initializeMaps(input);
+        List<Object3D> seedObjects = ObjectFactory.createObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());
+        ObjectPopulation pop =  WatershedTransform.watershed(maps.hessian, segmentationMask, seedObjects, false, new WatershedTransform.ThresholdPropagation(maps.getNormalizedHessian(), this.manualSegPropagationHessianThreshold.getValue().doubleValue(), false), new WatershedTransform.SizeFusionCriterion(this.minSize.getValue().intValue()));
+        
+        if (verboseManualSeg) {
+            Image seedMap = new ImageByte("seeds from: "+input.getName(), input);
+            for (int[] seed : seedsXYZ) seedMap.setPixelWithOffset(seed[0], seed[1], seed[2], 1);
+            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(seedMap);
+            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(maps.hessian);
+            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(maps.getNormalizedHessian().setName("NormalizedHessian: for propagation limit"));
+            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pop.getLabelImage().setName("segmented from: "+input.getName()));
+        }
+        
+        return pop;
+    }
+
+    public ObjectPopulation splitObject(Image input, Object3D object) {
+        Image hessian=ImageFeatures.getHessian(input, hessianScale.getValue().doubleValue(), false)[0].setName("hessian");
+        return WatershedObjectSplitter.splitInTwo(hessian, object.getMask(), true);
+    }
+    private static class ProcessingMaps {
+        Image hessian;
+        Image rawIntensityMap;
+        Image intensityMap;
+        Image normalizedHessian;
+        ImageByte splitMask;
+        double splitThresholdValue, smoothScale;
+        private ProcessingMaps(Image input, double splitThreshold, double dogScale, double smoothScale, double hessianScale) {
+            rawIntensityMap=input;
+            splitThresholdValue=splitThreshold;
+            this.smoothScale=smoothScale;
+            ImageFloat dog = ImageFeatures.differenceOfGaussians(input, 0, dogScale, 1, false).setName("DoG");
+            intensityMap= Filters.median(dog, dog, Filters.getNeighborhood(smoothScale, smoothScale, input)).setName("DoG+Smoothed");
+            hessian=ImageFeatures.getHessian(input, hessianScale, false)[0].setName("hessian");
+        }
+        
+        private Image getNormalizedHessian() {
+            if (normalizedHessian==null) {
+                Image gauss = ImageFeatures.gaussianSmooth(rawIntensityMap, smoothScale, smoothScale*rawIntensityMap.getScaleXY()/rawIntensityMap.getScaleZ(), false);
+                normalizedHessian=ImageOperations.divide(hessian, gauss, null).setName("NormalizedHessian");
+            } 
+            return normalizedHessian;
+        }
     }
 }

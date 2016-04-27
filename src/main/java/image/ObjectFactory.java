@@ -21,6 +21,7 @@ import dataStructure.objects.Object3D;
 import dataStructure.objects.Voxel;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
@@ -116,6 +117,12 @@ public class ObjectFactory {
             }
             ++newLabel;
         }
+    }
+    public static List<Object3D> createObjectsFromSeeds(List<int[]> seedsXYZ, double scaleXY, double scaleZ) {
+        List<Object3D> seedObjects = new ArrayList<Object3D>(seedsXYZ.size());
+        int label = 0;
+        for (int[] seed : seedsXYZ) seedObjects.add(new Object3D(new Voxel(seed), ++label, (float)scaleXY, (float)scaleZ));
+        return seedObjects;
     }
     
 }

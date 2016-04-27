@@ -19,6 +19,7 @@ package plugins.plugins.manualSegmentation;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import configuration.parameters.BoundedNumberParameter;
+import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
@@ -40,13 +41,17 @@ import processing.WatershedTransform;
 public class WatershedObjectSplitter implements ObjectSplitter {
     static final boolean debug = false;
     //BoundedNumberParameter numberOfObjects = new BoundedNumberParameter("Maximum growth rate", 2, 1.5, 1, 2);
-    public ObjectPopulation splitObject(Image input, Object3D object, boolean invertedIntensities) {
-        return split(input, object.getMask(), invertedIntensities);
+    NumberParameter smoothScale = new BoundedNumberParameter("Smooth Scale (0=no smooth)", 1, 2, 0, null);
+    
+    public ObjectPopulation splitObject(Image input, Object3D object) {
+        double sScale = smoothScale.getValue().doubleValue();
+        if (sScale>0) input = ImageFeatures.gaussianSmooth(input, sScale, sScale * input.getScaleXY() / input.getScaleZ(), false);
+        return splitInTwo(input, object.getMask(), true);
     }
     
-    public static ObjectPopulation split(Image input, ImageMask mask, boolean invertedIntensities) {
+    public static ObjectPopulation splitInTwo(Image input, ImageMask mask, boolean decreasingPropagation) {
         
-        ImageByte localMax = Filters.localExtrema(input, null, !invertedIntensities, Filters.getNeighborhood(1, 1, input));
+        ImageByte localMax = Filters.localExtrema(input, null, decreasingPropagation, Filters.getNeighborhood(1, 1, input));
         ImageOperations.and(localMax, mask, localMax); // limit @ seeds within mask
         List<Object3D> seeds = ImageLabeller.labelImageList(localMax);
         if (seeds.size()<2) {
@@ -56,14 +61,14 @@ public class WatershedObjectSplitter implements ObjectSplitter {
             return null;
         }
         else {
-            ObjectPopulation pop =  WatershedTransform.watershed(input, mask, seeds, !invertedIntensities, null, new WatershedTransform.NumberFusionCriterion(2));
+            ObjectPopulation pop =  WatershedTransform.watershed(input, mask, seeds, decreasingPropagation, null, new WatershedTransform.NumberFusionCriterion(2));
             if (debug) new IJImageDisplayer().showImage(pop.getLabelImage());
             return pop;
         }
     }
 
     public Parameter[] getParameters() {
-        return new Parameter[0];
+        return new Parameter[]{smoothScale};
     }
 
     public boolean does3D() {

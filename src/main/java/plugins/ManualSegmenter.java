@@ -29,6 +29,6 @@ import java.util.List;
  * @author jollion
  */
 public interface ManualSegmenter extends ImageProcessingPlugin {
-    public void setVerboseMode(boolean verbose);
-    public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seeds);
+    public void setManualSegmentationVerboseMode(boolean verbose);
+    public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ);
 }

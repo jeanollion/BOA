@@ -35,6 +35,7 @@ import plugins.ManualSegmenter;
 import plugins.ObjectSplitter;
 import plugins.PreFilter;
 import plugins.ProcessingScheme;
+import plugins.Segmenter;
 import plugins.TrackCorrector;
 import plugins.Tracker;
 import plugins.plugins.manualSegmentation.WatershedManualSegmenter;
@@ -62,9 +63,9 @@ public class Structure extends SimpleContainerParameter {
         this.parentStructure =  new ParentStructureParameter("Parent Structure", parentStructure, -1);
         segmentationParent =  new ParentStructureParameter("Segmentation Parent", -1, -1);
         this.channelImage = new ChannelImageParameter("Channel Image", channelImage);
-        objectSplitter = new PluginParameter<ObjectSplitter>("Object Splitter", ObjectSplitter.class, new WatershedObjectSplitter(), false);
+        objectSplitter = new PluginParameter<ObjectSplitter>("Object Splitter", ObjectSplitter.class, true);
         processingScheme = new PluginParameter<ProcessingScheme>("Processing Scheme", ProcessingScheme.class, true);
-        manualSegmenter = new PluginParameter<ManualSegmenter>("Manual Segmenter", ManualSegmenter.class, new WatershedManualSegmenter(), false);
+        manualSegmenter = new PluginParameter<ManualSegmenter>("Manual Segmenter", ManualSegmenter.class, true);
         initChildList();
     }
     
@@ -101,11 +102,27 @@ public class Structure extends SimpleContainerParameter {
     }
     
     public ObjectSplitter getObjectSplitter() {
-        return this.objectSplitter.instanciatePlugin();
+        ObjectSplitter res = objectSplitter.instanciatePlugin();
+        if (res == null) {
+            ProcessingScheme ps = this.processingScheme.instanciatePlugin();
+            if (ps!=null) {
+                Segmenter s = ps.getSegmenter();
+                if (s instanceof ObjectSplitter) return (ObjectSplitter)s;
+            }
+        }
+        return res;
     }
     
     public ManualSegmenter getManualSegmenter() {
-        return this.manualSegmenter.instanciatePlugin();
+        ManualSegmenter res= manualSegmenter.instanciatePlugin();
+        if (res == null) {
+            ProcessingScheme ps = this.processingScheme.instanciatePlugin();
+            if (ps!=null) {
+                Segmenter s = ps.getSegmenter();
+                if (s instanceof ManualSegmenter) return (ManualSegmenter)s;
+            }
+        }
+        return res;
     }
     
     public void setManualSegmenter(ManualSegmenter manualSegmenter) {

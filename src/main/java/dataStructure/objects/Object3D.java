@@ -59,6 +59,9 @@ public class Object3D {
         this.scaleXY=scaleXY;
         this.scaleZ=scaleXY;
     }
+    public Object3D(final Voxel voxel, int label, float scaleXY, float scaleZ) {
+        this(new ArrayList<Voxel>(){{add(voxel);}}, label, scaleXY, scaleZ);
+    }
     
     public Object3D(ArrayList<Voxel> voxels, int label, BoundingBox bounds, float scaleXY, float scaleZ) {
         this(voxels, label, scaleXY, scaleZ);

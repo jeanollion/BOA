@@ -226,19 +226,24 @@ public class MorphiumObjectDAO implements ObjectDAO {
     public void store(StructureObject object, boolean updateTrackAttributes) {
         object.updateObjectContainer();
         object.updateMeasurementsIfNecessary();
+        if (updateTrackAttributes) {
+            object.getParentTrackHeadId();
+            object.getTrackHeadId();
+            object.getPrevious();
+            object.getNext();
+        }
         if (object.getParent()!=null && object.getParent().id==null) {
             logger.error("parent unstored for object: {}, parent: {}", object, object.getParent());
             throw new Error("Parent unstored object");                
         }
-        if (updateTrackAttributes) {
-            object.getParentTrackHeadId();
-            object.getTrackHeadId();
-            if (object.getPrevious()!=null && object.getPrevious().id==null) {
-                logger.error("previous unstored for object: {}, previous: {}", object, object.getPrevious());
-                throw new Error("Previous unstored object");
-            }
+        if (object.previous!=null && object.previous.id==null) {
+            logger.error("previous unstored for object: {}, previous: {}", object, object.previous);
+            throw new Error("Previous unstored object");
         }
-        
+        if (object.next!=null && object.next.id==null) {
+            logger.error("next unstored for object: {}, next: {}", object, object.next);
+            throw new Error("next unstored object");
+        }
         masterDAO.m.storeNoCache(object, collectionName, null);
         idCache.put(object.getId(), object); //thread-safe??
     }

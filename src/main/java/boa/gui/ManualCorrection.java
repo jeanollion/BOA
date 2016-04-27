@@ -105,12 +105,12 @@ public class ManualCorrection {
         int structureIdx = key.childStructureIdx;
         int parentStructureIdx = db.getExperiment().getStructure(structureIdx).getParentStructure();
         ManualSegmenter segmenter = db.getExperiment().getStructure(structureIdx).getManualSegmenter();
-        segmenter.setVerboseMode(test);
+        
         if (segmenter==null) {
             logger.warn("No manual segmenter found for structure: {}", structureIdx);
             return;
         }
-        
+        segmenter.setManualSegmentationVerboseMode(test);
         Map<StructureObject, List<int[]>> points = iwm.getParentSelectedPointsMap(image, parentStructureIdx);
         if (points!=null) {
             logger.debug("manual segment: {} distinct parents. Segmentation structure: {}, parent structure: {}", points.size(), structureIdx, parentStructureIdx);
@@ -119,7 +119,7 @@ public class ManualCorrection {
                 Image segImage = e.getKey().getRawImage(structureIdx);
                 
                 // generate image mask without old objects
-                ImageByte mask = TypeConverter.cast(e.getKey().getMask(), new ImageByte("", 0, 0, 0));
+                ImageByte mask = TypeConverter.cast(e.getKey().getMask(), new ImageByte("Manual Segmentation Mask", 0, 0, 0));
                 ArrayList<StructureObject> oldChildren = e.getKey().getChildren(structureIdx);
                 for (StructureObject c : oldChildren) c.getObject().draw(mask, 0, new BoundingBox(0, 0, 0));
                 if (test) iwm.getDisplayer().showImage(mask, 0, 1);
@@ -135,7 +135,7 @@ public class ManualCorrection {
                     e.getKey().relabelChildren(structureIdx, modified);
                     modified.addAll(newChildren);
                     Utils.removeDuplicates(modified, false);
-                    db.getDao(e.getKey().getFieldName()).store(modified, false);
+                    db.getDao(e.getKey().getFieldName()).store(modified, true);
                     
                     //Update tree
                     ObjectNode node = GUI.getInstance().objectTreeGenerator.getObjectNode(e.getKey());
@@ -172,7 +172,7 @@ public class ManualCorrection {
             }
             
             Utils.removeDuplicates(objectsToStore, false);
-            dao.store(objectsToStore, false);
+            dao.store(objectsToStore, true);
             if (updateDisplay) {
                 // unselect
                 ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
@@ -224,7 +224,7 @@ public class ManualCorrection {
                 modified.add(res);
                 res.getParent().relabelChildren(structureIdx, modified);
                 dao.delete(objectsToMerge, false);
-                dao.store(modified, false);
+                dao.store(modified, true);
             }
         }
         if (updateDisplay) {
@@ -263,7 +263,7 @@ public class ManualCorrection {
             dao.delete(list, true);
             ArrayList<StructureObject> modified = new ArrayList<StructureObject>();
             for (StructureObject p : parents) p.relabelChildren(structureIdx, modified);
-            dao.store(modified, false);
+            dao.store(modified, true);
             
             if (updateDisplay) {
                 //Update selection on opened image

@@ -68,7 +68,7 @@ public class WatershedManualSegmenter implements ManualSegmenter {
         return parameters;
     }
 
-    public void setVerboseMode(boolean verbose) {
+    public void setManualSegmentationVerboseMode(boolean verbose) {
         this.verbose=verbose;
     }
     

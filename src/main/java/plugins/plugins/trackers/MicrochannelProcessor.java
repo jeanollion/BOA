@@ -181,5 +181,9 @@ public class MicrochannelProcessor implements TrackerSegmenter {
         if (debug) logger.debug("combine: {} & {}: result: {}, overlapping: {}", s1, s2, res.size(), overLapCount);
         return new ObjectPopulation(res, pop1.getImageProperties());
     }
+
+    public Segmenter getSegmenter() {
+        return segmenter.instanciatePlugin();
+    }
     
 }

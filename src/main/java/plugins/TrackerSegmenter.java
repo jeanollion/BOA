@@ -35,4 +35,9 @@ public interface TrackerSegmenter extends Tracker {
      * @param postFilters filters to apply after segmentation
      */
     public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters);
+    /**
+     * Optional method, can return null
+     * @return the segmenter used for the tracking process
+     */
+    public Segmenter getSegmenter();
 }

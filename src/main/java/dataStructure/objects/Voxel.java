@@ -14,6 +14,11 @@ public class Voxel implements Comparable<Voxel> {
         this.y = y;
         this.z = z;
     }
+    public Voxel(int[] xyz) {
+        this.x = xyz[0];
+        this.y = xyz[1];
+        if (xyz.length>2) this.z = xyz[2];
+    }
 
     public Voxel(int x, int y, int z, float value) {
         this(x, y, z);

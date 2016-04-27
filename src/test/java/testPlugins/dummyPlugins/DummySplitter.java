@@ -31,7 +31,7 @@ import plugins.ObjectSplitter;
  */
 public class DummySplitter implements ObjectSplitter {
 
-    public ObjectPopulation splitObject(Image input, Object3D object, boolean invert) {
+    public ObjectPopulation splitObject(Image input, Object3D object) {
         double yMid  = object.getBounds().getYMean();
         ArrayList<Voxel> v1 = new ArrayList<Voxel>(object.getVoxels().size()/2+1);
         ArrayList<Voxel> v2 = new ArrayList<Voxel>(object.getVoxels().size()/2+1);

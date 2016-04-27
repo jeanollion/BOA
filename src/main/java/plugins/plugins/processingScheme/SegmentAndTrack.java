@@ -83,5 +83,9 @@ public class SegmentAndTrack implements ProcessingScheme {
         nThreads = numThreads;
         return nThreads;
     }*/
-    
+    @Override public Segmenter getSegmenter() {
+        TrackerSegmenter t = tracker.instanciatePlugin();
+        if (t!=null) return t.getSegmenter();
+        else return null;
+    }
 }
