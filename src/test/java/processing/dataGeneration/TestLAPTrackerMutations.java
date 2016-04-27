@@ -96,7 +96,7 @@ public class TestLAPTrackerMutations {
         TextRoi.setFont("SansSerif", 6, Font.PLAIN);
         
         LAPTracker tracker = new LAPTracker().setCompartimentStructure(bacteriaIdx);
-        tracker.track(mutationIdx, parentTrack, true);
+        tracker.track(mutationIdx, parentTrack, false);
         
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, mutationIdx);
         logger.info("LAP tracker number of tracks: {}", allTracks.size());
@@ -120,10 +120,11 @@ public class TestLAPTrackerMutations {
             if (root==null) continue;
             StructureObject mc = root.getChildren(microchannelIdx).get(mcIdx);
             parentTrack.add(mc);
-            // load all the data
-            mc.getChildren(mutationIdx);
-            mc.getChildren(bacteriaIdx);
-            mc.getRawImage(mutationIdx);
+            
+            // load all the data (for perf evalutation)
+            //mc.getChildren(mutationIdx);
+            //mc.getChildren(bacteriaIdx);
+            //mc.getRawImage(mutationIdx);
         }
     }
 }

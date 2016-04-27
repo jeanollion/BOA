@@ -66,7 +66,6 @@ public class LAPTrackerCore {
     private Logger internalLogger = Logger.VOID_LOGGER;
     int numThreads=1;
     String errorMessage;
-    long processingTime;
     
     
     public LAPTrackerCore(SpotPopulation spotPopulation) {

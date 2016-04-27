@@ -30,6 +30,7 @@ import configuration.parameters.StructureParameter;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectTracker;
 import dataStructure.objects.StructureObjectUtils;
+import fiji.plugin.trackmate.Spot;
 import image.Image;
 import image.ImageFloat;
 import java.util.ArrayList;
@@ -108,6 +109,9 @@ public class LAPTracker implements TrackerSegmenter {
         SpotPopulation spotCollection = new SpotPopulation(distParams);
         long t0 = System.currentTimeMillis();
         for (StructureObject p : parentTrack) spotCollection.addSpots(p, structureIdx, p.getObjectPopulation(structureIdx).getObjects(), compartirmentStructure);
+        Spot s1 = spotCollection.getSpotCollection(true, false).iterator(1, false).next();
+        Spot s2 = spotCollection.getSpotCollection(true, false).iterator(2, false).next();
+        logger.debug("distance 1-2: {}", s1.squareDistanceTo(s2));
         
         long t1 = System.currentTimeMillis();
         logger.debug("LAP Tracker: {}, spot HQ: {}, #spots LQ: {}, time: {}", parentTrack.get(0), spotCollection.getSpotSet(true, false).size(), spotCollection.getSpotSet(false, true).size(), t1-t0);
@@ -128,7 +132,6 @@ public class LAPTracker implements TrackerSegmenter {
             core.resetEdges();
         }
         // second run with all spots at the same time
-        
         //SpotWithinCompartment.displayPoles=true;
         processOk = core.processGC(maxLinkingDistanceGC, maxGap, true, true);
         if (!processOk) logger.error("LAPTracker error : {}", core.getErrorMessage());
@@ -137,11 +140,12 @@ public class LAPTracker implements TrackerSegmenter {
         // post-processing
         MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, spotCollection);
         postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC);
-        distParams.setGapSquareDistancePenalty(gapPenalty*4); // double penalty (square distance) 
+        distParams.setGapSquareDistancePenalty(gapPenalty*4); // double penalty (square distance=>*4) 
         //postProcessor.printDistancesOnOverlay();
         postProcessor.splitLongTracks(minimalTrackFrameNumber.getValue().intValue()-1, minimalDistanceForTrackSplittingPenalty.getValue().doubleValue(), maxLinkingDistanceGC, maximalTrackSplittingPenalty.getValue().doubleValue());
         postProcessor.flagShortAndLongTracks(minimalTrackFrameNumber.getValue().intValue(), maximalTrackFrameNumber.getValue().intValue());
-        // ETUDIER LES DEPLACEMENTS EN Y
+        
+        // ETUDE DES DEPLACEMENTS EN Y
         /*
         // get distance distribution
         float[] dHQ= core.extractDistanceDistribution(true);
