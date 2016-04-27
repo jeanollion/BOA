@@ -18,6 +18,7 @@
 package plugins;
 
 import dataStructure.objects.StructureObject;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -27,6 +28,8 @@ import java.util.List;
 public interface ProcessingScheme extends Plugin { //Multithreaded
     public ProcessingScheme addPreFilters(PreFilter... preFilters);
     public ProcessingScheme addPostFilters(PostFilter... postFilters);
+    public ProcessingScheme addPreFilters(Collection<PreFilter> preFilters);
+    public ProcessingScheme addPostFilters(Collection<PostFilter> postFilters);
     public Segmenter getSegmenter();
     public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack);
     public void trackOnly(int structureIdx, List<StructureObject> parentTrack);

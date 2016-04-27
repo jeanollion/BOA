@@ -17,38 +17,41 @@
  */
 package configuration.parameters;
 
-import dataStructure.objects.ObjectPopulation;
-import dataStructure.objects.StructureObject;
-import dataStructure.objects.StructureObjectPreProcessing;
-import image.Image;
-import image.ImageProperties;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import plugins.PostFilter;
+import plugins.Plugin;
 import plugins.PreFilter;
 
 /**
  *
  * @author jollion
  */
-public class PreFilterSequence extends PluginParameterList<PreFilter> {
+public class PluginParameterList<T extends Plugin> extends SimpleListParameter<PluginParameter<T>> {
+    String childLabel;
+    public PluginParameterList(String name, String childLabel, Class<T> childClass) {
+        super(name, -1, new PluginParameter<T>(childLabel, childClass, false));
+    }
+    private void add(T instance) {
+        super.insert(super.createChildInstance(childLabel).setPlugin(instance));
+    } 
+    public PluginParameterList<T> add(T... instances) {
+        for (T t : instances) add(t);
+        return this;
+    }
+    
+    public PluginParameterList<T> add(Collection<T> instances) {
+        for (T t : instances) add(t);
+        return this;
+    }
+    
+    public List<T> get() {
+        List<T> res = new ArrayList<T>(this.getChildCount());
+        for (PluginParameter<T> pp : this.getActivatedChildren()) {
+            T p = pp.instanciatePlugin();
+            if (p!=null) res.add(p);
+        }
+        return res;
+    }
 
-    public PreFilterSequence(String name) {
-        super(name, "Pre-Filter", PreFilter.class);
-    }
-    
-    public Image filter(Image input, StructureObjectPreProcessing parent) {
-        for (PreFilter p : get()) input = p.runPreFilter(input, parent);
-        return input;
-    }
-    @Override public PreFilterSequence add(PreFilter... instances) {
-        super.add(instances);
-        return this;
-    }
-    
-    @Override public PreFilterSequence add(Collection<PreFilter> instances) {
-        super.add(instances);
-        return this;
-    }
 }

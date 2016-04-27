@@ -19,26 +19,22 @@ package configuration.parameters;
 
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
+import de.caluga.morphium.annotations.Transient;
 import image.ImageProperties;
+import java.util.Collection;
 import plugins.PostFilter;
+import plugins.PreFilter;
 import utils.Utils;
 
 /**
  *
  * @author jollion
  */
-public class PostFilterSequence extends SimpleListParameter<PluginParameter<PostFilter>> {
-    Boolean configured = false;
-    public PostFilterSequence(String name) {
-        super(name, -1, new PluginParameter<PostFilter>("Post-Filter", PostFilter.class, false));
-    }
+public class PostFilterSequence extends PluginParameterList<PostFilter> {
+    @Transient Boolean configured = false;
     
-    public PostFilterSequence addPostFilters(PostFilter... postFilters) {
-        for (PostFilter f : postFilters) {
-            PluginParameter<PostFilter> pp = super.createChildInstance("Post-Filter").setPlugin(f);
-            super.insert(pp);
-        }
-        return this;
+    public PostFilterSequence(String name) {
+        super(name, "Pre-Filter", PostFilter.class);
     }
     
     public ObjectPopulation filter(ObjectPopulation objectPopulation, int structureIdx, StructureObject structureObject) {
@@ -48,11 +44,16 @@ public class PostFilterSequence extends SimpleListParameter<PluginParameter<Post
                 if (!configured) ParameterUtils.configureStructureParameters(structureIdx, this);
             }
         }
-        for (PluginParameter<PostFilter> pp : this.getActivatedChildren()) {
-            PostFilter p = pp.instanciatePlugin();
-            if (p!=null) objectPopulation = p.runPostFilter(structureObject, structureIdx, objectPopulation);
-            else logger.warn("Post Filter could not be instanciated: {} for children of {} of structure: {}", pp.getPluginName(), structureObject, structureIdx);
-        }
+        for (PostFilter p : this.get()) objectPopulation = p.runPostFilter(structureObject, structureIdx, objectPopulation);
         return objectPopulation;
+    }
+    @Override public PostFilterSequence add(PostFilter... instances) {
+        super.add(instances);
+        return this;
+    }
+    
+    @Override public PostFilterSequence add(Collection<PostFilter> instances) {
+        super.add(instances);
+        return this;
     }
 }

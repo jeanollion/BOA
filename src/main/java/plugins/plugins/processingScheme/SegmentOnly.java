@@ -24,6 +24,7 @@ import configuration.parameters.PreFilterSequence;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import image.Image;
+import java.util.Collection;
 import java.util.List;
 import plugins.PostFilter;
 import plugins.PreFilter;
@@ -47,12 +48,20 @@ public class SegmentOnly implements ProcessingScheme {
     public SegmentOnly(Segmenter segmenter) {
         this.segmenter.setPlugin(segmenter);
     }
-    public SegmentOnly addPreFilters(PreFilter... preFilter) {
-        preFilters.addPreFilters(preFilter);
+    @Override public SegmentOnly addPreFilters(PreFilter... preFilter) {
+        preFilters.add(preFilter);
         return this;
     }
-    public SegmentOnly addPostFilters(PostFilter... postFilter) {
-        postFilters.addPostFilters(postFilter);
+    @Override public SegmentOnly addPostFilters(PostFilter... postFilter) {
+        postFilters.add(postFilter);
+        return this;
+    }
+    @Override public SegmentOnly addPreFilters(Collection<PreFilter> preFilter) {
+        preFilters.add(preFilter);
+        return this;
+    }
+    @Override public SegmentOnly addPostFilters(Collection<PostFilter> postFilter){
+        postFilters.add(postFilter);
         return this;
     }
     @Override public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack) {

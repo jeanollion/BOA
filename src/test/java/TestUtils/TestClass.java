@@ -25,6 +25,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
+import testPlugins.dummyPlugins.DummySegmenter;
 import utils.Pair;
 import static utils.Utils.removeFromMap;
 
@@ -33,7 +34,8 @@ import static utils.Utils.removeFromMap;
  * @author jollion
  */
 public class TestClass {
-    @Test
+    
+    //@Test
     public void testPair() {
         List<Pair<Integer, Double>> l = new ArrayList<Pair<Integer, Double>>();
         Pair<Integer, Double> p1 = new Pair(1, 1.0);

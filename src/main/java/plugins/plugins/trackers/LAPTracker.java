@@ -23,6 +23,10 @@ import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.GroupParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
+import configuration.parameters.PluginParameter;
+import configuration.parameters.PostFilterSequence;
+import configuration.parameters.PreFilterSequence;
+import configuration.parameters.StructureParameter;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectTracker;
 import dataStructure.objects.StructureObjectUtils;
@@ -33,7 +37,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import plugins.Segmenter;
+import plugins.SegmenterSplitAndMerge;
 import plugins.Tracker;
+import plugins.TrackerSegmenter;
+import plugins.plugins.processingScheme.SegmentThenTrack;
+import plugins.plugins.segmenters.BacteriaFluo;
+import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
 import plugins.plugins.trackers.trackMate.LAPTrackerCore;
 import plugins.plugins.trackers.trackMate.postProcessing.MutationTrackPostProcessing;
 import plugins.plugins.trackers.trackMate.SpotPopulation;
@@ -45,9 +55,9 @@ import utils.ArrayFileWriter;
  *
  * @author jollion
  */
-public class LAPTracker implements Tracker {
-    
-    static int compartimentStructureIdx = 1;
+public class LAPTracker implements TrackerSegmenter {
+    protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, new MutationSegmenterScaleSpace(), false);
+    StructureParameter compartirmentStructure = new StructureParameter("Compartiment Structure");
     NumberParameter spotQualityThreshold = new NumberParameter("Spot Quality Threshold", 3, 3.5);
     NumberParameter maxGap = new BoundedNumberParameter("Maximum frame gap", 0, 2, 0, null);
     NumberParameter maxLinkingDistance = new BoundedNumberParameter("FTF Maximum Linking Distance (0=skip)", 2, 0.75, 0, null);
@@ -59,45 +69,66 @@ public class LAPTracker implements Tracker {
     NumberParameter minimalTrackFrameNumber = new BoundedNumberParameter("Minimal Track Frame Number", 0, 6, 1, null);
     NumberParameter maximalTrackFrameNumber = new BoundedNumberParameter("Maximal Track Frame Number", 0, 15, 1, null);
     GroupParameter trackSplittingParameters = new GroupParameter("Track Post-Processing", minimalTrackFrameNumber, maximalTrackFrameNumber, maximalTrackSplittingPenalty, minimalDistanceForTrackSplittingPenalty);
-    Parameter[] parameters = new Parameter[]{maxLinkingDistance, maxLinkingDistanceGC, maxGap, gapPenalty, alternativeDistance, spotQualityThreshold, trackSplittingParameters};
+    Parameter[] parameters = new Parameter[]{segmenter, compartirmentStructure, maxLinkingDistance, maxLinkingDistanceGC, maxGap, gapPenalty, alternativeDistance, spotQualityThreshold, trackSplittingParameters};
     
+    public LAPTracker setCompartimentStructure(int compartimentStructureIdx) {
+        this.compartirmentStructure.setSelectedStructureIdx(compartimentStructureIdx);
+        return this;
+    }
     public LAPTracker setLinkingMaxDistance(double maxDist, double maxDistGapClosing) {
         maxLinkingDistance.setValue(maxDist);
         maxLinkingDistanceGC.setValue(maxDistGapClosing);
         return this;
     }
     
-    public void track(int structureIdx, List<StructureObject> parentTrack) {
-        int maxGap = this.maxGap.getValue().intValue()+1; // parameter = count only the frames where the spot is invisible
-        double spotQualityThreshold = this.spotQualityThreshold.getValue().doubleValue();
+    @Override public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
+        SegmentThenTrack stt = new SegmentThenTrack(segmenter.instanciatePlugin(), this).addPostFilters(postFilters.get()).addPreFilters(preFilters.get());
+        stt.segmentOnly(structureIdx, parentTrack);
+        track(structureIdx, parentTrack, true);
+    }
+
+    @Override public Segmenter getSegmenter() {
+        return segmenter.instanciatePlugin();
+    }
+    @Override public void track(int structureIdx, List<StructureObject> parentTrack) {
+        track(structureIdx, parentTrack, false);
+    }
+    
+    public void track(int structureIdx, List<StructureObject> parentTrack, boolean LQSpots) {
+        for (StructureObject p : parentTrack) logger.debug("parent: {}, #bact: {}, #mut: {}", p, p.getChildren(1).size(), p.getChildren(2).size());
+        
+        int compartirmentStructure=this.compartirmentStructure.getSelectedIndex();
+        int maxGap = this.maxGap.getValue().intValue()+1; // parameter = count only the frames where the spot is missing
+        double spotQualityThreshold = LQSpots ? this.spotQualityThreshold.getValue().doubleValue() : Double.NEGATIVE_INFINITY;
         double maxLinkingDistance = this.maxLinkingDistance.getValue().doubleValue();
         double maxLinkingDistanceGC = this.maxLinkingDistanceGC.getValue().doubleValue();
         double gapPenalty = Math.pow(this.gapPenalty.getValue().doubleValue(), 2);
         double alternativeDistance = this.alternativeDistance.getValue().doubleValue();
-        
         DistanceComputationParameters distParams = new DistanceComputationParameters(alternativeDistance).setQualityThreshold(spotQualityThreshold).setGapSquareDistancePenalty(gapPenalty);
         SpotPopulation spotCollection = new SpotPopulation(distParams);
         long t0 = System.currentTimeMillis();
-        for (StructureObject p : parentTrack) spotCollection.addSpots(p, structureIdx, p.getObjectPopulation(structureIdx).getObjects(), compartimentStructureIdx);
+        for (StructureObject p : parentTrack) spotCollection.addSpots(p, structureIdx, p.getObjectPopulation(structureIdx).getObjects(), compartirmentStructure);
+        
         long t1 = System.currentTimeMillis();
         logger.debug("LAP Tracker: {}, spot HQ: {}, #spots LQ: {}, time: {}", parentTrack.get(0), spotCollection.getSpotSet(true, false).size(), spotCollection.getSpotSet(false, true).size(), t1-t0);
         LAPTrackerCore core = new LAPTrackerCore(spotCollection);
-        
-        // first run to select  LQ spots linked to HQ spots
-        double maxD = Math.max(maxLinkingDistanceGC, maxLinkingDistance);
         boolean processOk = true;
-        processOk = processOk && core.processFTF(maxD, true, false); //FTF only with HQ
-        processOk = processOk && core.processFTF(maxD, true, true); // FTF HQ+LQ
-        processOk = processOk && core.processGC(maxD, maxGap, true, false); // GC HQ
-        processOk = processOk && core.processGC(maxD, 2, true, true); // GC HQ + LQ // only one gap for LQ spots
-        if (!processOk) logger.error("LAPTracker error : {}", core.getErrorMessage());
-        else {
-            spotCollection.setTrackLinks(parentTrack, structureIdx, core.getEdges());
-            spotCollection.removeLQSpotsUnlinkedToHQSpots(parentTrack, structureIdx, true);
+        if (LQSpots) {
+            // first run to select  LQ spots linked to HQ spots
+            double maxD = Math.max(maxLinkingDistanceGC, maxLinkingDistance);
+            processOk = processOk && core.processFTF(maxD, true, false); //FTF only with HQ
+            processOk = processOk && core.processFTF(maxD, true, true); // FTF HQ+LQ
+            processOk = processOk && core.processGC(maxD, maxGap, true, false); // GC HQ
+            processOk = processOk && core.processGC(maxD, 2, true, true); // GC HQ + LQ // only one gap for LQ spots
+            if (!processOk) logger.error("LAPTracker error : {}", core.getErrorMessage());
+            else {
+                spotCollection.setTrackLinks(parentTrack, structureIdx, core.getEdges());
+                spotCollection.removeLQSpotsUnlinkedToHQSpots(parentTrack, structureIdx, true);
+            }
+            core.resetEdges();
         }
-        
         // second run with all spots at the same time
-        core.resetEdges();
+        
         //SpotWithinCompartment.displayPoles=true;
         processOk = core.processGC(maxLinkingDistanceGC, maxGap, true, true);
         if (!processOk) logger.error("LAPTracker error : {}", core.getErrorMessage());
@@ -124,5 +155,7 @@ public class LAPTracker implements Tracker {
     public Parameter[] getParameters() {
         return parameters;
     }
+
+    
     
 }

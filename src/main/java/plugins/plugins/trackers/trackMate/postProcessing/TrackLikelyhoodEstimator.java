@@ -261,13 +261,15 @@ public class TrackLikelyhoodEstimator {
         }
         public Track(List<SpotWithinCompartment> track) {
             frames = new int[track.size()];
-            distances = new double[frames.length-1];
-            int lim = track.size();
-            frames[0] = track.get(0).timePoint;
-            for (int i = 1; i<lim; ++i) {
-                frames[i] = track.get(i).timePoint;
-                distances[i-1] = Math.sqrt(track.get(i-1).squareDistanceTo(track.get(i)));
-            }
+            if (track.size()>1) { 
+                distances = new double[frames.length-1];
+                int lim = track.size();
+                frames[0] = track.get(0).timePoint;
+                for (int i = 1; i<lim; ++i) {
+                    frames[i] = track.get(i).timePoint;
+                    distances[i-1] = Math.sqrt(track.get(i-1).squareDistanceTo(track.get(i)));
+                }
+            } else distances = new double[0];
         }
         public int getLength(int startIdx, int stopIdx) {
             return frames[stopIdx] - frames[startIdx];

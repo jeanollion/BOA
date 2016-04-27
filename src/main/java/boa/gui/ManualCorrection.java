@@ -36,9 +36,11 @@ import image.TypeConverter;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import plugins.ManualSegmenter;
 import plugins.ObjectSplitter;
 import utils.Utils;
@@ -53,38 +55,90 @@ public class ManualCorrection {
         o.resetTrackLinks();
         //logger.debug("unlinking: {}", o);
     }
-    public static void unlinkObjects(StructureObject prev, StructureObject next, List<List<StructureObject>> modifiedTracks) {
-        if (next.getTimePoint()<prev.getTimePoint()) unlinkObjects(next, prev, modifiedTracks);
+    public static void unlinkObjects(StructureObject prev, StructureObject next, List<StructureObject> modifiedTrackHeads) {
+        if (next.getTimePoint()<prev.getTimePoint()) unlinkObjects(next, prev, modifiedTrackHeads);
         else {
             next.setTrackHead(next, true, true);
             //logger.debug("unlinking.. previous: {}, previous's next: {}", sel.get(1).getPrevious(), sel.get(0).getNext());
             prev.setTrackFlag(StructureObject.TrackFlag.correctionSplit);
             next.setTrackFlag(StructureObject.TrackFlag.correctionSplit);
-            if (modifiedTracks!=null) {
-                modifiedTracks.add(StructureObjectUtils.getTrack(prev.getTrackHead(), true));
-                modifiedTracks.add(StructureObjectUtils.getTrack(next, true));
+            if (modifiedTrackHeads!=null) {
+                modifiedTrackHeads.add(prev.getTrackHead());
+                modifiedTrackHeads.add(next);
             }
             //logger.debug("unlinking: {} to {}", sel.get(0), sel.get(1));
         }
         
     }
-    public static void linkObjects(StructureObject prev, StructureObject next, List<List<StructureObject>> modifiedTracks) {
-        if (next.getTimePoint()<prev.getTimePoint()) linkObjects(next, prev, modifiedTracks);
+    public static void linkObjects(StructureObject prev, StructureObject next, List<StructureObject> modifiedTrackHeads) {
+        if (next.getTimePoint()<prev.getTimePoint()) linkObjects(next, prev, modifiedTrackHeads);
         else {
             if (prev.getNext()==next || next.getPrevious()==prev) {
                 logger.warn("spots are already linked");
                 return;
             }
             // unlinking each of the two spots
-            if (next.getPrevious()!=null) unlinkObjects(next.getPrevious(), next, modifiedTracks);
-            if (prev.getNext()!=null) unlinkObjects(prev, prev.getNext(), modifiedTracks);
+            if (next.getPrevious()!=null) unlinkObjects(next.getPrevious(), next, modifiedTrackHeads);
+            if (prev.getNext()!=null) unlinkObjects(prev, prev.getNext(), modifiedTrackHeads);
             next.setPreviousInTrack(prev, false);
             next.setTrackHead(prev.getTrackHead(), false, true);
             next.setTrackFlag(StructureObject.TrackFlag.correctionMerge);
-            modifiedTracks.add(StructureObjectUtils.getTrack(prev.getTrackHead(), true));
+            modifiedTrackHeads.add(prev.getTrackHead());
             //logger.debug("linking: {} to {}", prev, next);
         }
         
+    }
+    
+    public static void linkObjects(MasterDAO db, List<StructureObject> objects, boolean updateDisplay) {
+        StructureObjectUtils.keepOnlyObjectsFromSameMicroscopyField(objects);
+        StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(objects);
+        if (objects.isEmpty()) return;
+        
+        if (updateDisplay) ImageWindowManagerFactory.getImageManager().removeTracks(StructureObjectUtils.getTrackHeads(objects));
+        
+        List<StructureObject> thToDisp = new ArrayList<StructureObject>();
+        if (objects.size()==1) { // unlink spot
+            ManualCorrection.unlinkObject(objects.get(0));
+        } else { 
+            TreeMap<StructureObject, List<StructureObject>> objectsByParent = new TreeMap(StructureObjectUtils.splitByParent(objects)); // sorted by time point
+            StructureObject prevParent = null;
+            StructureObject prev = null;
+            for (StructureObject currentParent : objectsByParent.keySet()) {
+                List<StructureObject> l = objectsByParent.get(currentParent);
+                if (l.size()==1 && (prevParent==null || prevParent.getTimePoint()<currentParent.getTimePoint())) {
+                    if (prevParent!=null && prev!=null) {
+                        StructureObject current = l.get(0);
+                        if (current.getPrevious()==prev) { //unlink the 2 spots
+                            ManualCorrection.unlinkObjects(prev, current, thToDisp);
+                        } else { // link the 2 spots
+                            ManualCorrection.linkObjects(prev, current, thToDisp);
+                        }
+                    }
+                    prevParent=currentParent;
+                    prev = l.get(0);
+                } else {
+                    prev=null;
+                    prevParent=null;
+                }
+                
+            }
+            
+        }
+        db.getDao(objects.get(0).getFieldName()).store(objects, true);
+        if (updateDisplay) {
+            // reload track-tree and update selection list
+            int parentStructureIdx = objects.get(0).getParent().getStructureIdx();
+            GUI.getInstance().trackTreeController.updateParentTracks(GUI.getInstance().trackTreeController.getTreeIdx(parentStructureIdx));
+            //List<List<StructureObject>> tracks = this.trackTreeController.getGeneratorS().get(structureIdx).getSelectedTracks(true);
+            // get unique tracks to display
+            Set<StructureObject> uniqueTh = new HashSet<StructureObject>();
+            for (StructureObject o : thToDisp) uniqueTh.add(o.getTrackHead());
+            List<List<StructureObject>> trackToDisp = new ArrayList<List<StructureObject>>();
+            for (StructureObject o : uniqueTh) trackToDisp.add(StructureObjectUtils.getTrack(o, true));
+            // update current image
+            ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
+            iwm.displayTracks(null, null, trackToDisp, true);
+        }
     }
     
     public static void manualSegmentation(MasterDAO db, Image image, boolean test) {

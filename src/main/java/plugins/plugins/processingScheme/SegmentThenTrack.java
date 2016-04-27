@@ -24,6 +24,7 @@ import configuration.parameters.PreFilterSequence;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import image.Image;
+import java.util.Collection;
 import java.util.List;
 import plugins.PostFilter;
 import plugins.PreFilter;
@@ -47,11 +48,19 @@ public class SegmentThenTrack implements ProcessingScheme {
         this.tracker.setPlugin(tracker);
     }
     public SegmentThenTrack addPreFilters(PreFilter... preFilter) {
-        preFilters.addPreFilters(preFilter);
+        preFilters.add(preFilter);
         return this;
     }
     public SegmentThenTrack addPostFilters(PostFilter... postFilter) {
-        postFilters.addPostFilters(postFilter);
+        postFilters.add(postFilter);
+        return this;
+    }
+    @Override public SegmentThenTrack addPreFilters(Collection<PreFilter> preFilter) {
+        preFilters.add(preFilter);
+        return this;
+    }
+    @Override public SegmentThenTrack addPostFilters(Collection<PostFilter> postFilter){
+        postFilters.add(postFilter);
         return this;
     }
     public Segmenter getSegmenter() {return segmenter.instanciatePlugin();}
@@ -70,8 +79,15 @@ public class SegmentThenTrack implements ProcessingScheme {
         Tracker t = tracker.instanciatePlugin();
         t.track(structureIdx, parentTrack);
     }
+    public void segmentOnly(final int structureIdx, final List<StructureObject> parentTrack) {
+        if (!segmenter.isOnePluginSet()) {
+            logger.info("No segmenter set for structure: {}", structureIdx);
+            return;
+        }
+        for (StructureObject parent : parentTrack) segment(parent, structureIdx);
+    }
     
-    private void segment(StructureObject parent, int structureIdx) {
+    public void segment(StructureObject parent, int structureIdx) {
         Segmenter s = segmenter.instanciatePlugin();
         Image input = preFilters.filter(parent.getRawImage(structureIdx), parent);
         ObjectPopulation pop = s.runSegmenter(input, structureIdx, parent);

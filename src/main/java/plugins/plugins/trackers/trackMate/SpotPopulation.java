@@ -92,6 +92,10 @@ public class SpotPopulation {
         });
         for (Object3D o : objects) {
             StructureObject parent = StructureObjectUtils.getInclusionParent(o, compartments, null);
+            if (parent==null) {
+                logger.warn("no parent found for object @ center {}", o.getCenter(true));
+                continue;
+            }
             SpotCompartiment compartiment = compartimentMap.getAndCreateIfNecessary(parent);
             compartimentMap.put(parent, compartiment);
             double[] center = intensityMap!=null ? o.getCenter(intensityMap, true) : o.getCenter(true);

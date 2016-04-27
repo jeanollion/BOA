@@ -22,6 +22,7 @@ import configuration.parameters.PluginParameter;
 import configuration.parameters.PostFilterSequence;
 import configuration.parameters.PreFilterSequence;
 import dataStructure.objects.StructureObject;
+import java.util.Collection;
 import java.util.List;
 import plugins.PostFilter;
 import plugins.PreFilter;
@@ -47,11 +48,19 @@ public class SegmentAndTrack implements ProcessingScheme {
         this.tracker.setPlugin(tracker);
     }
     public SegmentAndTrack addPreFilters(PreFilter... preFilter) {
-        preFilters.addPreFilters(preFilter);
+        preFilters.add(preFilter);
         return this;
     }
     public SegmentAndTrack addPostFilters(PostFilter... postFilter) {
-        postFilters.addPostFilters(postFilter);
+        postFilters.add(postFilter);
+        return this;
+    }
+    @Override public SegmentAndTrack addPreFilters(Collection<PreFilter> preFilter) {
+        preFilters.add(preFilter);
+        return this;
+    }
+    @Override public SegmentAndTrack addPostFilters(Collection<PostFilter> postFilter){
+        postFilters.add(postFilter);
         return this;
     }
     public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack) {

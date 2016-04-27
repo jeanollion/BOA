@@ -407,7 +407,7 @@
                       <Component id="collapseAllObjectButton" alignment="0" max="32767" attributes="0"/>
                       <Component id="selectAllTracksButton" alignment="0" max="32767" attributes="0"/>
                       <Component id="nextTrackErrorButton" max="32767" attributes="0"/>
-                      <Component id="splitObjectButton" max="32767" attributes="0"/>
+                      <Component id="splitObjectsButton" max="32767" attributes="0"/>
                       <Component id="mergeObjectsButton" alignment="0" max="32767" attributes="0"/>
                       <Component id="previousTrackErrorButton" alignment="0" max="32767" attributes="0"/>
                       <Component id="interactiveStructure" alignment="0" max="32767" attributes="0"/>
@@ -444,7 +444,7 @@
                               <Component id="testManualSegmentationButton" alignment="3" min="-2" max="-2" attributes="0"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
-                          <Component id="splitObjectButton" min="-2" max="-2" attributes="0"/>
+                          <Component id="splitObjectsButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="mergeObjectsButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace min="-2" pref="2" max="-2" attributes="0"/>
@@ -492,17 +492,17 @@
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="nextTrackErrorButtonActionPerformed"/>
                   </Events>
                 </Component>
-                <Component class="javax.swing.JButton" name="splitObjectButton">
+                <Component class="javax.swing.JButton" name="splitObjectsButton">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Split Object"/>
+                    <Property name="text" type="java.lang.String" value="Split Objects (S)"/>
                   </Properties>
                   <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="splitObjectButtonActionPerformed"/>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="splitObjectsButtonActionPerformed"/>
                   </Events>
                 </Component>
                 <Component class="javax.swing.JButton" name="mergeObjectsButton">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Merge Objects"/>
+                    <Property name="text" type="java.lang.String" value="Merge Objects (M)"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="mergeObjectsButtonActionPerformed"/>
@@ -536,7 +536,7 @@
                 </Component>
                 <Component class="javax.swing.JButton" name="deleteObjectsButton">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Delete Objects"/>
+                    <Property name="text" type="java.lang.String" value="Delete Objects (D)"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="deleteObjectsButtonActionPerformed"/>
@@ -552,7 +552,7 @@
                 </Component>
                 <Component class="javax.swing.JButton" name="manualSegmentButton">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Segment Objects"/>
+                    <Property name="text" type="java.lang.String" value="Segment (C)"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="manualSegmentButtonActionPerformed"/>
@@ -568,7 +568,7 @@
                 </Component>
                 <Component class="javax.swing.JButton" name="linkObjectsButton">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Link/Unlink Objects"/>
+                    <Property name="text" type="java.lang.String" value="Link/Unlink Objects (U)"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="linkObjectsButtonActionPerformed"/>

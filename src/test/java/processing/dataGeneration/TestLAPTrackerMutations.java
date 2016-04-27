@@ -95,8 +95,8 @@ public class TestLAPTrackerMutations {
         SpotWithinCompartment.testOverlay=o;
         TextRoi.setFont("SansSerif", 6, Font.PLAIN);
         
-        LAPTracker tracker = new LAPTracker();
-        tracker.track(mutationIdx, parentTrack);
+        LAPTracker tracker = new LAPTracker().setCompartimentStructure(bacteriaIdx);
+        tracker.track(mutationIdx, parentTrack, true);
         
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, mutationIdx);
         logger.info("LAP tracker number of tracks: {}", allTracks.size());

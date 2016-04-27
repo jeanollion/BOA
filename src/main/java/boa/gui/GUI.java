@@ -55,18 +55,29 @@ import image.ImageByte;
 import image.ImageInteger;
 import image.TypeConverter;
 import java.awt.Color;
+import java.awt.KeyEventDispatcher;
+import java.awt.KeyboardFocusManager;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.DefaultListModel;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JTree;
+import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.TreeSelectionEvent;
@@ -97,17 +108,22 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     // xp tree-related attributes
     ConfigurationTreeGenerator configurationTreeGenerator;
     
-    //Object Tree related attributes
-    boolean reloadTree=false;
     // track-related attributes
     TrackTreeController trackTreeController;
     private HashMap<Integer, JTree> currentTrees;
+    
+    //Object Tree related attributes
+    boolean reloadTree=false;
+    
     // structure-related attributes
     StructureObjectTreeGenerator objectTreeGenerator;
     DefaultListModel actionStructureModel;
     DefaultListModel actionMicroscopyFieldModel;
     DefaultListModel<Selection> selectionModel;
     
+    // shortcuts
+    private HashMap<KeyStroke, Action> actionMap = new HashMap<KeyStroke, Action>();
+    KeyboardFocusManager kfm;
     /**
      * Creates new form GUI
      */
@@ -138,7 +154,62 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 }
             }
         });
-        
+        // shortcuts
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_L, 0), new AbstractAction("Link/Unlink") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                linkObjectsButtonActionPerformed(e);
+                logger.debug("L pressed: " + e);
+            }
+        });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, 0), new AbstractAction("Delete") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                deleteObjectsButtonActionPerformed(e);
+                logger.debug("D pressed: " + e);
+            }
+        });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_M, 0), new AbstractAction("Merge") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                mergeObjectsButtonActionPerformed(e);
+                logger.debug("M pressed: " + e);
+            }
+        });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, 0), new AbstractAction("Split") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                splitObjectsButtonActionPerformed(e);
+                logger.debug("S pressed: " + e);
+            }
+        });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, 0), new AbstractAction("Create") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                manualSegmentButtonActionPerformed(e);
+                logger.debug("C pressed: " + e);
+            }
+        });
+        kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+        kfm.addKeyEventDispatcher( new KeyEventDispatcher() {
+            @Override
+            public boolean dispatchKeyEvent(KeyEvent e) {
+                KeyStroke keyStroke = KeyStroke.getKeyStrokeForEvent(e);
+                if ( actionMap.containsKey(keyStroke) ) {
+                    final Action a = actionMap.get(keyStroke);
+                    final ActionEvent ae = new ActionEvent(e.getSource(), e.getID(), null );
+                    /*SwingUtilities.invokeLater( new Runnable() {
+                        @Override
+                        public void run() {
+                            a.actionPerformed(ae);
+                        }
+                    });*/
+                    a.actionPerformed(ae);
+                    return true;
+                }
+                return false;
+            }
+          });
     }
     
     public StructureObjectTreeGenerator getObjectTree() {return this.objectTreeGenerator;}
@@ -535,7 +606,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         selectAllTracksButton = new javax.swing.JButton();
         collapseAllObjectButton = new javax.swing.JButton();
         nextTrackErrorButton = new javax.swing.JButton();
-        splitObjectButton = new javax.swing.JButton();
+        splitObjectsButton = new javax.swing.JButton();
         mergeObjectsButton = new javax.swing.JButton();
         previousTrackErrorButton = new javax.swing.JButton();
         interactiveStructure = new javax.swing.JComboBox();
@@ -772,14 +843,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
-        splitObjectButton.setText("Split Object");
-        splitObjectButton.addActionListener(new java.awt.event.ActionListener() {
+        splitObjectsButton.setText("Split Objects (S)");
+        splitObjectsButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                splitObjectButtonActionPerformed(evt);
+                splitObjectsButtonActionPerformed(evt);
             }
         });
 
-        mergeObjectsButton.setText("Merge Objects");
+        mergeObjectsButton.setText("Merge Objects (M)");
         mergeObjectsButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 mergeObjectsButtonActionPerformed(evt);
@@ -806,7 +877,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
-        deleteObjectsButton.setText("Delete Objects");
+        deleteObjectsButton.setText("Delete Objects (D)");
         deleteObjectsButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 deleteObjectsButtonActionPerformed(evt);
@@ -820,7 +891,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
-        manualSegmentButton.setText("Segment Objects");
+        manualSegmentButton.setText("Segment (C)");
         manualSegmentButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 manualSegmentButtonActionPerformed(evt);
@@ -834,7 +905,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
-        linkObjectsButton.setText("Link/Unlink Objects");
+        linkObjectsButton.setText("Link/Unlink Objects (U)");
         linkObjectsButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 linkObjectsButtonActionPerformed(evt);
@@ -849,7 +920,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             .addComponent(collapseAllObjectButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(selectAllTracksButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(nextTrackErrorButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(splitObjectButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(splitObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(mergeObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(previousTrackErrorButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(interactiveStructure, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -883,7 +954,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                     .addComponent(manualSegmentButton)
                     .addComponent(testManualSegmentationButton))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(splitObjectButton)
+                .addComponent(splitObjectsButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(mergeObjectsButton)
                 .addGap(2, 2, 2)
@@ -1094,12 +1165,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         ImageWindowManagerFactory.getImageManager().goToNextTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads());
     }//GEN-LAST:event_nextTrackErrorButtonActionPerformed
 
-    private void splitObjectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_splitObjectButtonActionPerformed
+    private void splitObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_splitObjectsButtonActionPerformed
         if (!checkConnection()) return;
         List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
         if (selList.isEmpty()) logger.warn("Select at least one object to Split first!");
         else ManualCorrection.splitObjects(db, selList, true);
-    }//GEN-LAST:event_splitObjectButtonActionPerformed
+    }//GEN-LAST:event_splitObjectsButtonActionPerformed
 
     private void mergeObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mergeObjectsButtonActionPerformed
         if (!checkConnection()) return;
@@ -1259,35 +1330,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void linkObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_linkObjectsButtonActionPerformed
         if (!checkConnection()) return;
         List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(sel);
-        if (sel.size()!=2 && sel.size()!=1) {
-            logger.warn("Only 1 or 2 objects should be selected");
+        if (sel.isEmpty()) {
+            logger.warn("Select at least one object to modify its links");
             return;
         }
-        ImageWindowManagerFactory.getImageManager().removeTracks(StructureObjectUtils.getTrackHeads(sel));
-        List<List<StructureObject>> thToDisp = new ArrayList<List<StructureObject>>(2);
-        int structureIdx = sel.get(0).getStructureIdx();
-        logger.debug("selected objects: {}, structureIdx: {}", sel.size(), structureIdx);
-        if (sel.size()==1) { // unlink spot
-            ManualCorrection.unlinkObject(sel.get(0));
-        } else { 
-            Collections.sort(sel); // sorted by time point
-            if (sel.get(1).getPrevious()==sel.get(0)) { //unlink the 2 spots
-                ManualCorrection.unlinkObjects(sel.get(0), sel.get(1), thToDisp);
-            } else { // link the 2 spots
-                ManualCorrection.linkObjects(sel.get(0), sel.get(1), thToDisp);
-            }
-        }
-        db.getDao(sel.get(0).getFieldName()).store(sel, false);
-        
-        // reload track-tree and update selection list
-        int parentStructureIdx = sel.get(0).getParent().getStructureIdx();
-        trackTreeController.updateParentTracks(trackTreeController.getTreeIdx(parentStructureIdx));
-        //List<List<StructureObject>> tracks = this.trackTreeController.getGeneratorS().get(structureIdx).getSelectedTracks(true);
-        
-        // update current image
-        ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
-        iwm.displayTracks(null, null, thToDisp, true);
+        ManualCorrection.linkObjects(db, sel, true);
     }//GEN-LAST:event_linkObjectsButtonActionPerformed
     
     
@@ -1412,7 +1459,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JScrollPane selectionJSP;
     private javax.swing.JList selectionList;
     private javax.swing.JPanel selectionPanel;
-    private javax.swing.JButton splitObjectButton;
+    private javax.swing.JButton splitObjectsButton;
     private javax.swing.JScrollPane structureJSP;
     private javax.swing.JButton testManualSegmentationButton;
     private javax.swing.JPanel trackPanel;

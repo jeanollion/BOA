@@ -99,7 +99,7 @@ public class LAPTrackerCore {
         ftfSettings.put( KEY_ALTERNATIVE_LINKING_COST_FACTOR, 1.05 );
         //ftfSettings.put( KEY_LINKING_FEATURE_PENALTIES, settings.get( KEY_LINKING_FEATURE_PENALTIES ) );
 
-        final SparseLAPFrameToFrameTrackerFromExistingGraph frameToFrameLinker = new SparseLAPFrameToFrameTrackerFromExistingGraph( this.spotPopulation.getSpotCollection(includeLQ, includeHQ), ftfSettings, graph );
+        final SparseLAPFrameToFrameTrackerFromExistingGraph frameToFrameLinker = new SparseLAPFrameToFrameTrackerFromExistingGraph( this.spotPopulation.getSpotCollection(includeHQ, includeLQ), ftfSettings, graph );
         frameToFrameLinker.setNumThreads( numThreads );
         final Logger.SlaveLogger ftfLogger = new Logger.SlaveLogger( internalLogger, 0, 0.5 );
         frameToFrameLinker.setLogger( ftfLogger );
