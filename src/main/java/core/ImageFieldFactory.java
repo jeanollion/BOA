@@ -90,7 +90,7 @@ public class ImageFieldFactory {
             for (int[] tc:stc) {
                 if (stc.length>1) end = seriesSeparator+Utils.formatInteger(digits, s);
                 if (tc[1]==xp.getChannelImageCount()) {
-                    containersTC.add(new MultipleImageContainerSingleFile(removeExtension(image.getName())+end, image.getAbsolutePath(),s, tc[0], tc[1], tc[4]));
+                    containersTC.add(new MultipleImageContainerSingleFile(Utils.removeExtension(image.getName())+end, image.getAbsolutePath(),s, tc[0], tc[1], tc[4]));
                     logger.info("image {} imported successfully", image.getAbsolutePath());
                 } else {
                     logger.warn("Invalid Image: {} has: {} channels instead of: {}", image.getAbsolutePath(), tc[1], xp.getChannelImageCount());
@@ -121,7 +121,7 @@ public class ImageFieldFactory {
                 } else allChannels[c] = name;
             }
             if (allFiles) {
-                String name = removeExtension(f.getName().replace(keyWords[0], ""));
+                String name = Utils.removeExtension(f.getName().replace(keyWords[0], ""));
                 addContainerChannel(allChannels, name, xp, containersTC);
             }
             
@@ -160,12 +160,6 @@ public class ImageFieldFactory {
     }
     
     
-    private static String removeExtension(String s) {
-        int idx = s.indexOf(".");
-        if (idx>0) return s.substring(0, idx); // removes the extension
-        //s=s.replaceAll(".", "_"); // removes all "."
-        return s;
-    }
     
     private static boolean isIgnoredExtension(String s) {
         for (int i =s.length()-1; i>=0; --i) {

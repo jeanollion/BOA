@@ -29,6 +29,8 @@ import java.awt.Component;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -43,6 +45,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.DefaultListModel;
@@ -413,4 +416,13 @@ public class Utils {
         }
         return false;
     }
+
+    public static String removeExtension(String s) {
+        int idx = s.indexOf(".");
+        if (idx > 0) {
+            return s.substring(0, idx);
+        }
+        return s;
+    }
+    
 }

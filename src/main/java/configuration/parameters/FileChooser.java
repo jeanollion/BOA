@@ -89,7 +89,8 @@ public class FileChooser extends SimpleParameter {
     public enum FileChooserOption {
         DIRECTORIES_ONLY(JFileChooser.DIRECTORIES_ONLY, false), 
         FILES_ONLY(JFileChooser.FILES_ONLY, true),
-        FILES_AND_DIRECTORIES(JFileChooser.FILES_AND_DIRECTORIES, true);
+        FILES_AND_DIRECTORIES(JFileChooser.FILES_AND_DIRECTORIES, true),
+        FILE_OR_DIRECTORY(JFileChooser.FILES_AND_DIRECTORIES, false);
         private final int option;
         private final boolean multipleSelection;
         FileChooserOption(int option, boolean multipleSelection) {
