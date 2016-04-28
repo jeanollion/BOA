@@ -128,12 +128,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
      * Creates new form GUI
      */
     public GUI() {
-        logger.debug("Creating GUI instance...");
+        logger.info("Creating GUI instance...");
         this.instance=this;
         initComponents();
         PluginFactory.findPlugins("plugins.plugins");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        //setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        toFront();
         // selections
+        
         selectionModel = new DefaultListModel<Selection>();
         this.selectionList.setModel(selectionModel);
         this.selectionList.setCellRenderer(new SelectionRenderer());
@@ -1408,7 +1411,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             java.util.logging.Logger.getLogger(GUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
-
+        
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {

@@ -89,12 +89,14 @@ public class TestTrackStructure {
         dao.clearCache();
         // retrive tracks head for microChannels
         ArrayList<StructureObject> mcHeads = dao.getTrackHeads(rootT[0], 0);
+        
         assertEquals("number of heads for microChannels", 1, mcHeads.size());
+        assertEquals("head is in idCache", mcHeads.get(0), dao.getFromCache(mcHeads.get(0).getId()));
         assertEquals("head for microChannel", mcT[0].getId(), mcHeads.get(0).getId());
         assertEquals("head for microChannel (unique instanciation)", dao.getById(mcT[0].getId()), mcHeads.get(0));
 
         // retrieve microChannel track
-        List<StructureObject> mcTrack = dao.getTrack(mcT[0]);
+        List<StructureObject> mcTrack = dao.getTrack(mcHeads.get(0));
         assertEquals("number of elements in microChannel track", 5, mcTrack.size());
         for (int i = 0; i<mcTrack.size(); ++i) assertEquals("microChannel track element: "+i, mcT[i].getId(), mcTrack.get(i).getId());
         assertEquals("head of microChannel track (unique instanciation)", mcHeads.get(0), mcTrack.get(0));
@@ -114,7 +116,7 @@ public class TestTrackStructure {
         List<StructureObject> bTrack0 = dao.getTrack(bHeads.get(0));
         assertEquals("number of elements in bacteries track (0)", 5, bTrack0.size());
         for (int i = 0; i<mcTrack.size(); ++i) assertEquals("bacteries track element: "+i, bTM[i][0].getId(), bTrack0.get(i).getId());
-        assertEquals("head of microChannel track (unique instanciation)", bHeads.get(0), bTrack0.get(0));
+        assertEquals("head of bacteria track (unique instanciation)", bHeads.get(0), bTrack0.get(0));
         for (int i = 0; i<mcTrack.size(); ++i) assertEquals("bacteries track element: "+i+ " unique instanciation", dao.getById(bTM[i][0].getId()), bTrack0.get(i));
 
         
