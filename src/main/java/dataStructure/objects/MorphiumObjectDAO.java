@@ -53,10 +53,14 @@ public class MorphiumObjectDAO implements ObjectDAO {
     public MorphiumObjectDAO(MorphiumMasterDAO masterDAO, String fieldName) {
         this.masterDAO=masterDAO;
         this.fieldName=fieldName;
-        this.collectionName="objects_"+fieldName;
+        this.collectionName=getCollectionName(fieldName);
         masterDAO.m.ensureIndicesFor(StructureObject.class, collectionName);
         idCache = new ConcurrentHashMap<ObjectId, StructureObject>();
         measurementsDAO = new MeasurementsDAO(masterDAO, fieldName);
+    }
+    
+    public static String getCollectionName(String name) {
+        return "objects_"+name;
     }
     
     public String getFieldName() {

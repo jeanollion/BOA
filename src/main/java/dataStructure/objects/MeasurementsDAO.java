@@ -35,9 +35,13 @@ public class MeasurementsDAO {
     public final String fieldName, collectionName;
     public MeasurementsDAO(MorphiumMasterDAO masterDAO, String fieldName) {
         this.fieldName=fieldName;
-        this.collectionName="measurements_"+fieldName;
+        this.collectionName=getCollectionName(fieldName);
         this.masterDAO=masterDAO;
         masterDAO.m.ensureIndicesFor(Measurements.class, collectionName);
+    }
+    
+    public static String getCollectionName(String name) {
+        return "measurements_"+name;
     }
     
     protected Query<Measurements> getQuery() {

@@ -19,6 +19,7 @@ package boa.gui;
 
 import static boa.gui.GUI.logger;
 import com.mongodb.MongoClient;
+import com.mongodb.MongoClientOptions;
 import com.mongodb.client.MongoIterable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,7 +33,15 @@ public class DBUtil {
     public static ArrayList<String> getDBNames(String hostName) {
         try {
             long t0 = System.currentTimeMillis();
-            MongoClient c = new MongoClient(hostName);
+            MongoClientOptions.Builder optionsBuilder = new MongoClientOptions.Builder(); // TODO Timeout not taken into acount
+            optionsBuilder.connectTimeout(5000);
+            optionsBuilder.socketTimeout(5000);
+            optionsBuilder.maxConnectionIdleTime(5000);
+            optionsBuilder.maxConnectionLifeTime(5000);
+            optionsBuilder.maxWaitTime(5000);
+            
+            MongoClient c = new MongoClient(hostName, optionsBuilder.build());
+            
             MongoIterable<String> dbs = c.listDatabaseNames();
             ArrayList<String> res = new ArrayList<String>();
             for (String s : dbs) res.add(s);
