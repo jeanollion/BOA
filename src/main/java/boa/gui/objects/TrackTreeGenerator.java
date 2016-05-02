@@ -189,14 +189,8 @@ public class TrackTreeGenerator {
         for (StructureObject s : selectedTrackHeads) deleteTrack(s);
     }
     public void deleteTrack(StructureObject trackHead) {
-        logger.debug("will delete track: {}",trackHead);
         List<StructureObject> track = trackHead.getDAO().getTrack(trackHead);
-        logger.debug("track length: {}", track.size());
-        logger.debug("before delete, getObject {}, #siblings: {}", ((MorphiumObjectDAO)trackHead.getDAO()).getById(trackHead.getId()), trackHead.getParent().getChildren(trackHead.getStructureIdx()).size());
         trackHead.getDAO().delete(track, true, true, true);
-        logger.debug("after delete, getObject {}, #siblings: {}", ((MorphiumObjectDAO)trackHead.getDAO()).getById(trackHead.getId()), trackHead.getParent().getChildren(trackHead.getStructureIdx()).size());
-
-        
         
         TreePath  p = getTreePath(trackHead);
         if (p!=null) {

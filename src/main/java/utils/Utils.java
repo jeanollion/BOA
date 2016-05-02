@@ -31,6 +31,7 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -425,4 +426,37 @@ public class Utils {
         return s;
     }
     
+    public static String getVersion(Object o) {
+        String version = null;
+
+        // try to load from maven properties first
+        try {
+            Properties p = new Properties();
+            InputStream is = o.getClass().getResourceAsStream("/META-INF/maven/ljp/functional-bioimage-core/pom.properties");
+            if (is != null) {
+                p.load(is);
+                version = p.getProperty("version", "");
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+
+        // fallback to using Java API
+        if (version == null) {
+            Package aPackage = o.getClass().getPackage();
+            if (aPackage != null) {
+                version = aPackage.getImplementationVersion();
+                if (version == null) {
+                    version = aPackage.getSpecificationVersion();
+                }
+            }
+        }
+
+        if (version == null) {
+            // we could not compute the version so use a blank
+            version = "";
+        }
+
+        return version;
+    } 
 }

@@ -22,12 +22,17 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.Vector;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,11 +46,12 @@ public class PluginFactory {
     private final static Logger logger = LoggerFactory.getLogger(PluginFactory.class);
     
     public static void findPlugins(String packageName) {
+        logger.info("looking for plugin in package: {}", packageName);
         try {
             for (Class c : getClasses(packageName)) {
                 //Class<?> clazz = Class.forName(c);
                 if (Plugin.class.isAssignableFrom(c) && !Modifier.isAbstract( c.getModifiers() )) { // ne check pas l'heritage indirect!!
-                    plugins.put(c.getSimpleName(), c);
+                    if (!plugins.containsKey(c.getSimpleName())) plugins.put(c.getSimpleName(), c);
                     //logger.debug("plugin found: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());
                 } //else logger.trace("class is not a plugin: "+c.getCanonicalName()+ " simple name:"+c.getSimpleName());
             }
@@ -55,35 +61,67 @@ public class PluginFactory {
             logger.warn("find plugins", ex);
         }            
     }
-    
-    // from : http://www.dzone.com/snippets/get-all-classes-within-package
-    private static Class[] getClasses(String packageName) throws ClassNotFoundException, IOException {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        assert classLoader != null;
-        String path = packageName.replace('.', '/');
-        Enumeration<URL> resources = classLoader.getResources(path);
-        List<File> dirs = new ArrayList<File>();
-        while (resources.hasMoreElements()) {
-            URL resource = resources.nextElement();
-            dirs.add(new File(resource.getFile()));
+    private static Iterator list(ClassLoader CL) throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+        Class CL_class = CL.getClass();
+        while (CL_class != java.lang.ClassLoader.class) {
+            CL_class = CL_class.getSuperclass();
         }
-        ArrayList<Class> classes = new ArrayList<Class>();
-        for (File directory : dirs) {
-            classes.addAll(findClasses(directory, packageName));
-        }
-        return classes.toArray(new Class[classes.size()]);
+        java.lang.reflect.Field ClassLoader_classes_field = CL_class
+                .getDeclaredField("classes");
+        ClassLoader_classes_field.setAccessible(true);
+        Vector classes = (Vector) ClassLoader_classes_field.get(CL);
+        return classes.iterator();
     }
     
-    private static List<Class> findClasses(File directory, String packageName) throws ClassNotFoundException {
-        List<Class> classes = new ArrayList<Class>();
-        if (!directory.exists()) {
+    // from : http://www.dzone.com/snippets/get-all-classes-within-package
+    private static List<Class> getClasses(String packageName) throws ClassNotFoundException, IOException {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        assert classLoader != null;
+        
+        if (packageName==null) { //look in classes that are already loaded
+            List<Class> classes = new ArrayList<Class>();
+            while (classLoader != null) {
+                System.out.println("ClassLoader: " + classLoader);
+                try {
+                    for (Iterator iter = list(classLoader); iter.hasNext();) {
+                        classes.add((Class)iter.next());
+                    }
+                } catch (Exception ex) {
+                    logger.error("error while loading plugins", ex);
+                }
+                classLoader = classLoader.getParent();
+                //logger.info("loaded classes : {}", classes.size());
+            }
+            return classes;
+        } else {
+        
+            String path = packageName.replace('.', '/');
+
+            Enumeration<URL> resources = classLoader.getResources(path);
+
+            List<File> dirs = new ArrayList<File>();
+            List<String> pathToJars = new ArrayList<String>();
+            while (resources.hasMoreElements()) {
+                URL resource = resources.nextElement();
+                String p = resource.getPath();
+                if (p.contains("!")) pathToJars.add(p.substring(p.indexOf("file:")+5, p.indexOf("!")));
+                else dirs.add(new File(resource.getFile()));
+            }
+            ArrayList<Class> classes = new ArrayList<Class>();
+            for (File directory : dirs) findClasses(directory, packageName, classes);
+            for (String pathToJar : pathToJars) findClassesFromJar(pathToJar, classes);
+            //logger.info("looking for plugin in package: {}, path: {}, #dirs: {}, dir0: {}, #classes: {}", packageName, path, dirs.size(), !dirs.isEmpty()?dirs.get(0).getAbsolutePath():"", classes.size());
             return classes;
         }
+    }
+    
+    private static void findClasses(File directory, String packageName, List<Class> classes) throws ClassNotFoundException {
+        if (!directory.exists()) return;
         File[] files = directory.listFiles();
         for (File file : files) {
             if (file.isDirectory()) {
                 assert !file.getName().contains(".");
-                classes.addAll(findClasses(file, packageName + "." + file.getName()));
+                findClasses(file, packageName + "." + file.getName(), classes);
             } else if (file.getName().endsWith(".class")) {
                 //logger.debug("class: {}, from package: {}", file, packageName);
                 Class c = null;
@@ -93,7 +131,34 @@ public class PluginFactory {
                 if (c!=null) classes.add(c);
             }
         }
-        return classes;
+    }
+    
+    private static void findClassesFromJar(String pathToJar, List<Class> list) {
+        try {
+            //logger.info("loading classed from jar: {}", pathToJar);
+            JarFile jarFile = new JarFile(pathToJar);
+            Enumeration<JarEntry> e = jarFile.entries();
+            URL[] urls = { new URL("jar:file:" + pathToJar+"!/") };
+            URLClassLoader cl = URLClassLoader.newInstance(urls);
+            while (e.hasMoreElements()) {
+                try {
+                    JarEntry je = e.nextElement();
+                    if(je.isDirectory() || !je.getName().endsWith(".class")){
+                        continue;
+                    }
+                    // -6 because of .class
+                    String className = je.getName().substring(0,je.getName().length()-6);
+                    className = className.replace('/', '.');
+                    Class c = cl.loadClass(className);
+                    list.add(c);
+                } catch (ClassNotFoundException ex) {
+                    logger.error("Error while loading classes from jar", ex);
+                }
+
+            }
+        } catch (IOException ex) {
+            logger.error("Error while loading classes from jar", ex);
+        }
     }
 
     public static void findPluginsIJ() { // a tester...

@@ -106,6 +106,7 @@ import utils.PropertyUtils;
 import utils.Utils;
 import static utils.Utils.addHorizontalScrollBar;
 
+
 /**
  *
  * @author jollion
@@ -151,7 +152,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importFieldsToCurrentExperimentMenuItem);add(importConfigToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(runMenu);}};
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         toFront();
-
         PluginFactory.findPlugins("plugins.plugins");
         
         // selections
@@ -364,8 +364,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     
     private void updateDisplayRelatedToXPSet() {
         final boolean enable = db!=null;
-        if (db==null) setTitle("No Selected Experiment");
-        else setTitle("Experiment: "+db.getDBName());
+        String title = db==null ? "No Selected Experiment" : "Experiment: "+db.getDBName();
+        String v = Utils.getVersion(this);
+        if (v!=null && v.length()>0) title = "Version: "+v+" - "+title;
+        setTitle(title);
         for (Component c: relatedToXPSet) c.setEnabled(enable);
         this.tabs.setEnabledAt(1, enable); // configuration
         this.tabs.setEnabledAt(2, enable); // data browsing
@@ -656,6 +658,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         manualSegmentButton = new javax.swing.JButton();
         testManualSegmentationButton = new javax.swing.JButton();
         linkObjectsButton = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+        jLabel2 = new javax.swing.JLabel();
         ObjectTreeJSP = new javax.swing.JSplitPane();
         StructurePanel = new javax.swing.JPanel();
         structureJSP = new javax.swing.JScrollPane();
@@ -748,7 +752,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(actionMicroscopyFieldJSP)
                     .addGroup(actionPanelLayout.createSequentialGroup()
-                        .addComponent(actionStructureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 310, Short.MAX_VALUE)
+                        .addComponent(actionStructureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 368, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(actionJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 163, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(actionPanelLayout.createSequentialGroup()
@@ -768,7 +772,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         configurationPanelLayout.setVerticalGroup(
             configurationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 503, Short.MAX_VALUE)
+            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 561, Short.MAX_VALUE)
         );
 
         tabs.addTab("Configuration", configurationPanel);
@@ -871,6 +875,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
+        jLabel1.setText("Interactive Structure:");
+
+        jLabel2.setText("Track-tree Structure:");
+
         javax.swing.GroupLayout ControlPanelLayout = new javax.swing.GroupLayout(ControlPanel);
         ControlPanel.setLayout(ControlPanelLayout);
         ControlPanelLayout.setHorizontalGroup(
@@ -891,16 +899,25 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(testManualSegmentationButton, javax.swing.GroupLayout.PREFERRED_SIZE, 59, javax.swing.GroupLayout.PREFERRED_SIZE))
             .addComponent(linkObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addGroup(ControlPanelLayout.createSequentialGroup()
+                .addGroup(ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel1)
+                    .addComponent(jLabel2))
+                .addGap(0, 0, Short.MAX_VALUE))
         );
         ControlPanelLayout.setVerticalGroup(
             ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(ControlPanelLayout.createSequentialGroup()
-                .addComponent(trackStructureJCB, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(interactiveStructure, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel2)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(trackStructureJCB, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(updateRoiDisplayButton)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(selectAllObjects)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(selectAllTracksButton)
@@ -916,12 +933,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addComponent(splitObjectsButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(mergeObjectsButton)
-                .addGap(2, 2, 2)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(deleteObjectsButton)
-                .addGap(4, 4, 4)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(linkObjectsButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(collapseAllObjectButton))
+                .addComponent(collapseAllObjectButton)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         StructurePanel.setBorder(javax.swing.BorderFactory.createTitledBorder("SegmentedObjects"));
@@ -934,7 +952,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         StructurePanelLayout.setVerticalGroup(
             StructurePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(structureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 455, Short.MAX_VALUE)
+            .addComponent(structureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 513, Short.MAX_VALUE)
         );
 
         ObjectTreeJSP.setLeftComponent(StructurePanel);
@@ -953,7 +971,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         trackPanelLayout.setVerticalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 455, Short.MAX_VALUE)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 513, Short.MAX_VALUE)
         );
 
         ObjectTreeJSP.setRightComponent(trackPanel);
@@ -991,9 +1009,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addComponent(createSelectionButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(reloadSelectionsButton)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(selectionJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 345, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(25, 25, 25))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(selectionJSP))
         );
 
         javax.swing.GroupLayout dataPanelLayout = new javax.swing.GroupLayout(dataPanel);
@@ -1200,7 +1217,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(tabs)
+            .addComponent(tabs, javax.swing.GroupLayout.DEFAULT_SIZE, 604, Short.MAX_VALUE)
         );
 
         pack();
@@ -1729,6 +1746,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JMenuItem importNewExperimentMenuItem;
     private javax.swing.JMenu importSubMenu;
     private javax.swing.JComboBox interactiveStructure;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JPopupMenu.Separator jSeparator1;
