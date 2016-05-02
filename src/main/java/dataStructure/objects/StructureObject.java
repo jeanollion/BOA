@@ -55,7 +55,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     // track-related attributes
     protected int timePoint;
-    //boolean isNextStored=false;
     @Transient protected StructureObject previous, next; 
     private ObjectId nextId, previousId;
     private ObjectId parentTrackHeadId, trackHeadId;

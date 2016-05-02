@@ -199,7 +199,7 @@ public class WatershedTransform {
         }
         
         public Object3D toObject3D(int label) {
-            return new Object3D(voxels, label, watershedMap.getScaleXY(), watershedMap.getScaleZ()).setQuality(getQuality());
+            return new Object3D(voxels, label, mask.getScaleXY(), mask.getScaleZ()).setQuality(getQuality());
         }
         
         public double getQuality() {

@@ -148,7 +148,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         this.instance=this;
         initComponents();
         experimentList.setModel(experimentModel);
-        relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(dataPanel);add(configurationPanel);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importFieldsToCurrentExperimentMenuItem);add(importConfigToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(runMenu);}};
+        relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importFieldsToCurrentExperimentMenuItem);add(importConfigToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(runMenu);}};
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         toFront();
 
@@ -366,6 +366,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (db==null) setTitle("No Selected Experiment");
         else setTitle("Experiment: "+db.getDBName());
         for (Component c: relatedToXPSet) c.setEnabled(enable);
+        this.jTabbedPane.setEnabledAt(1, enable); // configuration
+        this.jTabbedPane.setEnabledAt(2, enable); // data browsing
     }
     
     protected void loadSelections() {

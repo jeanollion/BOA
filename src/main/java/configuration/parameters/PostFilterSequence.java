@@ -44,7 +44,9 @@ public class PostFilterSequence extends PluginParameterList<PostFilter> {
                 if (!configured) ParameterUtils.configureStructureParameters(structureIdx, this);
             }
         }
+        ImageProperties prop = objectPopulation.getImageProperties().getProperties();
         for (PostFilter p : this.get()) objectPopulation = p.runPostFilter(structureObject, structureIdx, objectPopulation);
+        objectPopulation.setProperties(prop, true);
         return objectPopulation;
     }
     @Override public PostFilterSequence add(PostFilter... instances) {

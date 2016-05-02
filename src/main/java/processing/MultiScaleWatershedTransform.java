@@ -207,7 +207,7 @@ public class MultiScaleWatershedTransform {
         }
         
         public Object3D toObject3D(int label) {
-            return new Object3D(voxels, label, watershedMaps[scale].getScaleXY(), watershedMaps[scale].getScaleZ()).setQuality(getQuality());
+            return new Object3D(voxels, label, mask.getScaleXY(), mask.getScaleZ()).setQuality(getQuality());
         }
         
         public double getQuality() {

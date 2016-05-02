@@ -138,6 +138,7 @@ public abstract class Image implements ImageProperties {
     public abstract void setPixelWithOffset(int xy, int z, double value);
     public abstract Object[] getPixelArray();
     public abstract <T extends Image> T duplicate(String name);
+    public <T extends Image> T duplicate() {return duplicate(name);}
     public abstract Image newImage(String name, ImageProperties properties);
     public abstract <T extends Image> T crop(BoundingBox bounds);
     public abstract void invert();

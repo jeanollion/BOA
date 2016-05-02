@@ -126,7 +126,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 List<Pair<StructureObject, BoundingBox>> selectedObjects = new ArrayList<Pair<StructureObject, BoundingBox>>();
                 if (selection!=null) {
                     i.addClickedObjects(selection, selectedObjects);
-                    logger.debug("selection: {}, number of objects: {}", selection, selectedObjects.size());
+                    //logger.debug("selection: {}, number of objects: {}", selection, selectedObjects.size());
                     ip.deleteRoi();
                 } else {
                     int x = e.getX();
@@ -134,10 +134,10 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                     int offscreenX = canvas.offScreenX(x);
                     int offscreenY = canvas.offScreenY(y);
                     Pair<StructureObject, BoundingBox> o = i.getClickedObject(offscreenX, offscreenY, ip.getSlice()-1);
-                    logger.debug("click {}, {}, object: {}, ctlr:{}", x, y, o, ctrl);
+                    //logger.debug("click {}, {}, object: {}, ctlr:{}", x, y, o, ctrl);
                     if (o!=null) {
                         selectedObjects.add(o);
-                        logger.debug("selected object: "+o.key);
+                        //logger.debug("selected object: "+o.key);
                     } else return;
                 }
                 if (!shift) {

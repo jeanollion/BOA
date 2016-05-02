@@ -113,7 +113,7 @@ public class TestLAPTrackerMutations {
     public void init(String dbName, int fieldIdx, int mcIdx, int tStart, int tEnd) {
         db = new MorphiumMasterDAO(dbName);
         logger.info("Experiment: {} retrieved from db: {}", db.getExperiment().getName(), dbName);
-        logger.debug("PositionName: {}", db.getExperiment().getMicroscopyField(fieldIdx).getName());
+        //logger.debug("PositionName: {}", db.getExperiment().getMicroscopyField(fieldIdx).getName());
         MorphiumObjectDAO dao = db.getDao(db.getExperiment().getMicroscopyField(fieldIdx).getName());
         parentTrack = new ArrayList<StructureObject>(tEnd-tStart+1);
         for (int t = tStart; t<=tEnd; ++t) {

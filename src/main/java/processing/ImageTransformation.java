@@ -84,21 +84,21 @@ public class ImageTransformation {
     } 
     
     public static Image rotate(Image image, double zAngle, double yAngle, double xAngle, InterpolationScheme scheme, boolean fit, boolean antialiasing) {
-        return ImagescienceWrapper.wrap((new  Rotate()).run(ImagescienceWrapper.getImagescience(image), zAngle, yAngle, xAngle, scheme.getValue(), fit, false, antialiasing));
+        return ImagescienceWrapper.wrap((new  Rotate()).run(ImagescienceWrapper.getImagescience(image), zAngle, yAngle, xAngle, scheme.getValue(), fit, false, antialiasing)).setCalibration(image);
     }
     
     public static Image turn(Image image, int times90z, int times90y, int times90x) {
-        return ImagescienceWrapper.wrap((new Turn()).run(ImagescienceWrapper.getImagescience(image), times90z, times90y, times90x));
+        return ImagescienceWrapper.wrap((new Turn()).run(ImagescienceWrapper.getImagescience(image), times90z, times90y, times90x)).setCalibration(image);
     }
     
     public static Image translate(Image image, double xTrans, double yTrans, double zTrans, InterpolationScheme scheme) {
-        return ImagescienceWrapper.wrap((new  Translate()).run(ImagescienceWrapper.getImagescience(image), xTrans*image.getScaleXY(), yTrans*image.getScaleXY(), zTrans*image.getScaleZ(), scheme.getValue()));
+        return ImagescienceWrapper.wrap((new  Translate()).run(ImagescienceWrapper.getImagescience(image), xTrans*image.getScaleXY(), yTrans*image.getScaleXY(), zTrans*image.getScaleZ(), scheme.getValue())).setCalibration(image);
     }
     
     public static Image resize(Image image, ImageProperties newImage, int posX, int posY, int posZ) {
         Dimensions dim = new Dimensions(newImage.getSizeX(), newImage.getSizeY(), newImage.getSizeZ(), 1, 1);
         Coordinates pos = new Coordinates(posX, posY, posZ);
-        return ImagescienceWrapper.wrap((new Embed()).run(ImagescienceWrapper.getImagescience(image), dim, pos, 0));
+        return ImagescienceWrapper.wrap((new Embed()).run(ImagescienceWrapper.getImagescience(image), dim, pos, 0)).setCalibration(image);
     }
     
     public static void flip(Image image, Axis axis) {

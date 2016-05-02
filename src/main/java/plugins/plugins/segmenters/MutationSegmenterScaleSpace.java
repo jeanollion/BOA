@@ -77,6 +77,7 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter {
     
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         ObjectPopulation res= run(input, parent.getMask(), minSpotSize.getValue().intValue(), intensityThreshold.getValue().doubleValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), null);
+        if (parent.getTimePoint()==0) logger.debug("mut seg ss: res scale: {}, parent scale: {}, input scale: {}", res.getImageProperties().getScaleXY(), parent.getMask().getScaleXY(), input.getScaleXY());
         return postFilters.filter(res, structureIdx, (StructureObject)parent);
     }
     public PostFilterSequence getPostFilters() {return postFilters;}

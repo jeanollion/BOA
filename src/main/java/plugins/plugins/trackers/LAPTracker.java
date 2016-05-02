@@ -96,8 +96,6 @@ public class LAPTracker implements TrackerSegmenter {
     }
     
     public void track(int structureIdx, List<StructureObject> parentTrack, boolean LQSpots) {
-        for (StructureObject p : parentTrack) logger.debug("parent: {}, #bact: {}, #mut: {}", p, p.getChildren(1).size(), p.getChildren(2).size());
-        
         int compartirmentStructure=this.compartirmentStructure.getSelectedIndex();
         int maxGap = this.maxGap.getValue().intValue()+1; // parameter = count only the frames where the spot is missing
         double spotQualityThreshold = LQSpots ? this.spotQualityThreshold.getValue().doubleValue() : Double.NEGATIVE_INFINITY;
@@ -109,9 +107,9 @@ public class LAPTracker implements TrackerSegmenter {
         SpotPopulation spotCollection = new SpotPopulation(distParams);
         long t0 = System.currentTimeMillis();
         for (StructureObject p : parentTrack) spotCollection.addSpots(p, structureIdx, p.getObjectPopulation(structureIdx).getObjects(), compartirmentStructure);
-        SpotWithinCompartment s1 = (SpotWithinCompartment)spotCollection.getSpotCollection(true, false).iterator(1, false).next();
-        SpotWithinCompartment s2 = (SpotWithinCompartment)spotCollection.getSpotCollection(true, false).iterator(2, false).next();
-        logger.debug("distance 1-2: {}, scale 1: {}, 1 isAbsolute: {}, cent1: {}, cent2: {}", s1.squareDistanceTo(s2), s1.getObject().getScaleXY(), s1.getObject().isAbsoluteLandMark(), s1.getObject().getCenter(true), s2.getObject().getCenter(true));
+        //SpotWithinCompartment s1 = (SpotWithinCompartment)spotCollection.getSpotCollection(true, false).iterator(1, false).next();
+        //SpotWithinCompartment s2 = (SpotWithinCompartment)spotCollection.getSpotCollection(true, false).iterator(2, false).next();
+        //if (s1!=null &&  s2!=null) logger.debug("distance 1-2: {}, scale 1: {}, 1 isAbsolute: {}, cent1: {}, cent2: {}", s1.squareDistanceTo(s2), s1.getObject().getScaleXY(), s1.getObject().isAbsoluteLandMark(), s1.getObject().getCenter(true), s2.getObject().getCenter(true));
         
         long t1 = System.currentTimeMillis();
         logger.debug("LAP Tracker: {}, spot HQ: {}, #spots LQ: {}, time: {}", parentTrack.get(0), spotCollection.getSpotSet(true, false).size(), spotCollection.getSpotSet(false, true).size(), t1-t0);

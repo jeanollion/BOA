@@ -97,6 +97,7 @@ public class InputImage {
                 while(it.hasNext()) {
                     Transformation t = it.next();
                     image =t.applyTransformation(channelIdx, timePoint, image);
+                    //if (this.timePoint==0) logger.debug("after trans: {}, scale: {}", t.getClass().getSimpleName(), image.getScaleXY());
                     it.remove();
                     //new IJImageDisplayer().showImage(image.setName("after: "+t.getClass().getSimpleName()));
                 }
