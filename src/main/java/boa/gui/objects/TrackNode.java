@@ -36,6 +36,7 @@ import java.util.Map.Entry;
 import javax.swing.AbstractAction;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import org.bson.types.ObjectId;
 import utils.ThreadRunner;
@@ -45,19 +46,19 @@ import utils.ThreadRunner.ThreadAction;
  *
  * @author nasique
  */
-public class TrackNode implements TreeNode, UIContainer {
+public class TrackNode implements TrackNodeInterface, UIContainer {
     StructureObject trackHead;
     List<StructureObject> track;
-    TreeNode parent;
+    TrackNodeInterface parent;
     RootTrackNode root;
     List<TrackNode> children;
     Boolean containsErrors;
-    public TrackNode(TreeNode parent, RootTrackNode root, StructureObject trackHead) {
+    public TrackNode(TrackNodeInterface parent, RootTrackNode root, StructureObject trackHead) {
         this.parent=parent;
         this.trackHead=trackHead;
         this.root=root;
     }
-    public TrackNode(TreeNode parent, RootTrackNode root, StructureObject trackHead, boolean containsErrors) {
+    public TrackNode(TrackNodeInterface parent, RootTrackNode root, StructureObject trackHead, boolean containsErrors) {
         this(parent, root, trackHead);
         this.containsErrors = containsErrors;
     }
@@ -154,7 +155,7 @@ public class TrackNode implements TreeNode, UIContainer {
         return getChildren().size();
     }
 
-    public TreeNode getParent() {
+    public TrackNodeInterface getParent() {
         return parent;
     }
 
@@ -181,6 +182,31 @@ public class TrackNode implements TreeNode, UIContainer {
     public void loadAllTrackObjects(int[] pathToChildStructureIdx) {
         for (StructureObject o : track) loadAllObjects(o, pathToChildStructureIdx);
     }
+
+    // mutable tree node interface
+    public void insert(MutableTreeNode child, int index) {
+        getChildren().add(index, (TrackNode)child);
+    }
+
+    public void remove(int index) {
+        getChildren().remove(index);
+    }
+
+    public void remove(MutableTreeNode node) {
+        getChildren().remove(node);
+    }
+
+    public void setUserObject(Object object) {
+        
+    }
+
+    public void removeFromParent() {
+        parent.remove(this);
+    }
+
+    public void setParent(MutableTreeNode newParent) {
+        this.parent=(TrackNodeInterface)newParent;
+    }
     
     class TrackNodeUI {
         TrackNode trackNode;
@@ -189,9 +215,10 @@ public class TrackNode implements TreeNode, UIContainer {
         JMenuItem[] openSeg;
         JMenuItem[] runSegAndTracking;
         JMenuItem[] runTracking;
+        JMenuItem delete;
         public TrackNodeUI(TrackNode tn) {
             this.trackNode=tn;
-            this.actions = new JMenuItem[4];
+            this.actions = new JMenuItem[5];
             JMenu segSubMenu = new JMenu("Open Segmented Track Image");
             actions[0] = segSubMenu;
             JMenu rawSubMenu = new JMenu("Open Raw Track Image");
@@ -202,7 +229,16 @@ public class TrackNode implements TreeNode, UIContainer {
             JMenu runTrackingSubMenu = new JMenu("Run tracking");
             actions[3] = runTrackingSubMenu;
             String[] childStructureNames = trackNode.trackHead.getExperiment().getChildStructuresAsString(trackNode.trackHead.getStructureIdx());
-            
+            delete = new JMenuItem("Delete");
+            actions[4] = delete;
+            //delete.setEnabled(false);
+            delete.setAction(new AbstractAction("Delete") {
+                @Override public void actionPerformed(ActionEvent e) {
+                    //trackNode.trackHead.getDAO().delete(track, true);
+                    //trackNode.getParent().getChildren().remove(trackNode);
+                    trackNode.root.generator.controller.getGeneratorS().get(trackHead.getStructureIdx()).deleteSelectedTracks();
+                }
+            });
             
             openSeg=new JMenuItem[structureNames.length];
             for (int i = 0; i < openSeg.length; i++) {
@@ -303,7 +339,7 @@ public class TrackNode implements TreeNode, UIContainer {
         }
         public Object[] getDisplayComponent(boolean multipleSelection) {
             if (multipleSelection) {
-                return new JMenuItem[]{actions[2], actions[3]};
+                return new JMenuItem[]{actions[2], actions[3], actions[4]};
             } else return actions;
         }
         private int getStructureIdx(String name, JMenuItem[] actions) {

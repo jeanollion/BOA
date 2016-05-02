@@ -157,7 +157,7 @@ public class GenerateTestXP {
         Experiment xp = fluo ? generateXPFluo(outputDir, true, flip) : generateXPBF(outputDir, true, flip); 
         mDAO.setExperiment(xp);
         
-        Processor.importFiles(xp, inputDir);
+        Processor.importFiles(xp, true, inputDir);
         
         if (performProcessing) {
             Processor.preProcessImages(mDAO, true);

@@ -44,9 +44,11 @@ import utils.Utils;
 public class ImageFieldFactory {
     private final static String seriesSeparator = "_xy";
     private final static List<String> ignoredExtensions = Arrays.asList(new String[]{".log"});
-    public static ArrayList<MultipleImageContainer> importImages(String[] path, Experiment xp) {
+    public static List<MultipleImageContainer> importImages(String[] path, Experiment xp) {
         ArrayList<MultipleImageContainer> res = new ArrayList<MultipleImageContainer>();
-        if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.SINGLE_FILE)) for (String p : path) ImageFieldFactory.importImagesSingleFile(new File(p), xp, res);
+        if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.SINGLE_FILE)) {
+            for (String p : path) ImageFieldFactory.importImagesSingleFile(new File(p), xp, res);
+        }
         else if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD)) {
             // get keywords
             int nb = xp.getChannelImages().getChildCount();

@@ -206,7 +206,7 @@ public class TestTrackCorrectionNew {
         ImageWriter.writeToFile(input.getAbsolutePath(), "field1", ImageFormat.OMETIF, testImage);
         Experiment xp = generateXP(output.getAbsolutePath());
         db.setExperiment(xp);
-        Processor.importFiles(xp, input.getAbsolutePath());
+        Processor.importFiles(xp, true, input.getAbsolutePath());
         Processor.preProcessImages(db, true);
         MicroscopyField f= xp.getMicroscopyField(0);
         List<StructureObject> root = Processor.getOrCreateRootTrack(db.getDao(f.getName()));

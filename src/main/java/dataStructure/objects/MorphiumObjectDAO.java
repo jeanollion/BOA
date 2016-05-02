@@ -30,9 +30,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.SwingUtilities;
 import org.bson.types.ObjectId;
@@ -132,7 +135,10 @@ public class MorphiumObjectDAO implements ObjectDAO {
         // delete measurements
         List<StructureObject> children=null;
         Query<StructureObject> q=null;
-        if (parent.hasChildren(structureIdx)) children = parent.getChildren(structureIdx);
+        if (parent.hasChildren(structureIdx)) {
+            children = parent.getChildren(structureIdx);
+            parent.setChildren(null, structureIdx);
+        }
         else if (parent.getId()!=null) { // get only minimal information
             q = getChildrenQuery(parent, structureIdx);
             q.addReturnedField("measurements_id");
@@ -207,24 +213,61 @@ public class MorphiumObjectDAO implements ObjectDAO {
         measurementsDAO.deleteAllObjects();
     }
     
-    public void delete(StructureObject o, boolean deleteChildren) {
+    public void delete(StructureObject o, boolean deleteChildren, boolean deleteFromParent, boolean relabelSiblings) {
         if (o==null) return;
-        if (o.getId()==null) return;
         if (deleteChildren) for (int s : o.getExperiment().getAllDirectChildStructures(o.getStructureIdx())) deleteChildren(o, s);
         if (o.getId()!=null) {
             masterDAO.m.delete(o, collectionName, null);
             idCache.remove(o.getId());
         }
-        measurementsDAO.delete(o.getMeasurements());
+        measurementsDAO.delete(o.measurementsId);
+        if (deleteFromParent) {
+            if (o.getParent().getChildren(o.getStructureIdx()).remove(o) && relabelSiblings) {
+                List<StructureObject> modified = new ArrayList<StructureObject>(o.getParent().getChildren(o.getStructureIdx()).size());
+                o.getParent().relabelChildren(o.getStructureIdx(), modified);
+                Utils.removeDuplicates(modified, false);
+                for (StructureObject m : modified) set(m, "idx", m.getIdx());
+                //store(modified, true);
+            }
+        }
         //o.deleteMask();
     }
     
-    public void delete(List<StructureObject> list, final boolean deleteChildren) {
+    protected void set(StructureObject o, String field, Object value) {
+        masterDAO.m.set(o, collectionName, "idx", value, false, false, null);
+    }
+    
+    public void delete(List<StructureObject> list, final boolean deleteChildren, boolean deleteFromParent, boolean relabelSiblings) {
         ThreadRunner.execute(list, new ThreadAction<StructureObject>() {
             public void run(StructureObject o, int idx, int threadIdx) {
-                delete(o, deleteChildren);
+                delete(o, deleteChildren, false, false);
             }
         });
+        if (deleteFromParent && relabelSiblings) {
+            Map<Integer, List<StructureObject>> objectsByStructure = StructureObjectUtils.splitByStructureIdx(list);
+            for (int sIdx : objectsByStructure.keySet()) {
+                if (sIdx==-1) continue; // no parents
+                List<StructureObject> l = objectsByStructure.get(sIdx);
+                Set<StructureObject> parents = new HashSet<StructureObject>();
+                for (StructureObject o : l) {
+                    if (o.getParent().getChildren(sIdx).remove(o)) {
+                        parents.add(o.getParent());
+                    }
+                }
+                //logger.debug("number of parents with delete object from structure: {} = {}", sIdx, parents.size());
+                List<StructureObject> modified = new ArrayList<StructureObject>();
+                for (StructureObject p : parents) {
+                    p.relabelChildren(sIdx, modified);
+                }
+                Utils.removeDuplicates(modified, false);
+                for (StructureObject o : modified) set(o, "idx", o.getIdx());
+                //store(modified, true);
+            }
+        } else if (deleteFromParent) {
+            for (StructureObject o : list) {
+                if (o.getParent()!=null) o.getParent().getChildren(o.getStructureIdx()).remove(o);
+            }
+        }
     }
     
     public void store(StructureObject object, boolean updateTrackAttributes) {

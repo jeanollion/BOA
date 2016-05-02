@@ -52,7 +52,7 @@ public class MeasurementsDAO {
     
     public Measurements getObject(ObjectId id) {
         Measurements m =  getQuery().getById(id);
-        m.fieldName=fieldName;
+        if (m!=null) m.fieldName=fieldName;
         return m;
     }
     
@@ -61,6 +61,7 @@ public class MeasurementsDAO {
     }
     
     public void delete(ObjectId id) {
+        if (id==null) return;
         //masterDAO.m.delete(getQuery().f("id").eq(id));
         BasicDBObject db = new BasicDBObject().append("_id", id);
         //logger.debug("delete meas by id: {}, from colleciton: {}", db, collectionName);

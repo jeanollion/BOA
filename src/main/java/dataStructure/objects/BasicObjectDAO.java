@@ -93,13 +93,16 @@ public class BasicObjectDAO implements ObjectDAO {
      * @param o
      * @param deleteChildren not used in this DAO, chilren are always deleted
      */
-    public void delete(StructureObject o, boolean deleteChildren) {
+    public void delete(StructureObject o, boolean deleteChildren, boolean deleteFromParent, boolean relabelSiblings) {
         if (o.getStructureIdx()==-1) rootTrack.set(null, o.getTimePoint());
-        else o.getParent().getChildren(o.getStructureIdx()).remove(o);
+        else {
+            if (o.getParent()!=null) o.getParent().getChildren(o.getStructureIdx()).remove(o);
+            if (relabelSiblings && o.getParent()!=null) o.getParent().relabelChildren(o.getStructureIdx());
+        }
     }
 
-    public void delete(List<StructureObject> list, boolean deleteChildren) {
-        for (StructureObject o : list) delete(o, deleteChildren);
+    public void delete(List<StructureObject> list, boolean deleteChildren, boolean deleteFromParent, boolean relabelSiblings) {
+        for (StructureObject o : list) delete(o, deleteChildren, deleteFromParent, relabelSiblings);
     }
 
     public void store(StructureObject object, boolean updateTrackAttributes) {

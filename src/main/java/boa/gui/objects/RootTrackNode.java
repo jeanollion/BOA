@@ -29,13 +29,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 
 /**
  *
  * @author nasique
  */
-public class RootTrackNode implements TreeNode {
+public class RootTrackNode implements TrackNodeInterface {
     TrackTreeGenerator generator;
     private ArrayList<TrackNode> children;
     private TreeMap<Integer, List<StructureObject>> remainingTrackHeadsTM;
@@ -126,7 +127,7 @@ public class RootTrackNode implements TreeNode {
         return remainingTrackHeadsTM;
     }
     
-    public ArrayList<TrackNode> getChildren() {
+    public List<TrackNode> getChildren() {
         if (children==null) {
             children = new ArrayList<TrackNode>();
             
@@ -187,5 +188,30 @@ public class RootTrackNode implements TreeNode {
     @Override
     public Enumeration children() {
         return Collections.enumeration(getChildren());
+    }
+    
+    // mutable tree node interface
+    public void insert(MutableTreeNode child, int index) {
+        getChildren().add(index, (TrackNode)child);
+    }
+
+    public void remove(int index) {
+        getChildren().remove(index);
+    }
+
+    public void remove(MutableTreeNode node) {
+        getChildren().remove(node);
+    }
+
+    public void setUserObject(Object object) {
+        
+    }
+
+    public void removeFromParent() {
+        parent.getChildren().remove(this);
+    }
+
+    public void setParent(MutableTreeNode newParent) {
+        this.parent=(TrackExperimentNode)newParent;
     }
 }

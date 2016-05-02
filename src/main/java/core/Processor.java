@@ -56,19 +56,22 @@ public class Processor {
     /*public static int getRemainingMemory() {
         
     }*/
-    public static void importFiles(Experiment xp, String... selectedFiles) {
-        ArrayList<MultipleImageContainer> images = ImageFieldFactory.importImages(selectedFiles, xp);
-        int count=0;
+    public static void importFiles(Experiment xp, boolean relink, String... selectedFiles) {
+        List<MultipleImageContainer> images = ImageFieldFactory.importImages(selectedFiles, xp);
+        int count=0, relinkCount=0;
         for (MultipleImageContainer c : images) {
             MicroscopyField f = xp.createMicroscopyField(c.getName());
             if (f!=null) {
                 f.setImages(c);
                 count++;
+            } else if (relink) {
+                xp.getMicroscopyField(c.getName()).setImages(c);
+                ++relinkCount;
             } else {
                 logger.warn("Image: {} already present in fields was no added", c.getName());
             }
         }
-        logger.info("{} fields found in files: {}", count, selectedFiles);
+        logger.info("#{} fields found, #{} created, #{} relinked. From files: {}", images.size(), count, relinkCount, selectedFiles);
     }
     
     // preProcessing-related methods

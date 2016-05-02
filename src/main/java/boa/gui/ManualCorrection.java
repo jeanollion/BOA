@@ -259,26 +259,19 @@ public class ManualCorrection {
         ObjectDAO dao = db.getDao(fieldName);
         Map<StructureObject, List<StructureObject>> objectsByParent = StructureObjectUtils.splitByParent(objects);
         List<StructureObject> newObjects = new ArrayList<StructureObject>();
-        List<StructureObject> objectsToRemove = new ArrayList<StructureObject>();
         for (StructureObject parent : objectsByParent.keySet()) {
             List<StructureObject> objectsToMerge = objectsByParent.get(parent);
             if (objectsToMerge.size()<=1) logger.warn("Merge Objects: select several objects from same parent!");
             else {
                 StructureObject res = objectsToMerge.remove(0);
-                objectsToRemove.addAll(objectsToMerge);
                 for (StructureObject o : objectsToMerge) unlinkObject(o);
-                ArrayList<StructureObject> siblings = res.getParent().getChildren(res.getStructureIdx());
-                List<StructureObject> modified = new ArrayList<StructureObject>(siblings.size());
                 for (StructureObject toMerge : objectsToMerge) {
                     res.merge(toMerge);
-                    siblings.remove(toMerge);
                     unlinkObject(toMerge);
                 }
                 newObjects.add(res);
-                modified.add(res);
-                res.getParent().relabelChildren(structureIdx, modified);
-                dao.delete(objectsToMerge, false);
-                dao.store(modified, true);
+                dao.delete(objectsToMerge, true, true, true);
+                dao.store(res, true);
             }
         }
         if (updateDisplay) {
@@ -314,10 +307,7 @@ public class ManualCorrection {
             }
             Set<StructureObject> parents = StructureObjectUtils.getParents(list);
             logger.info("Deleting {} objects, from {} parents", list.size(), parents.size());
-            dao.delete(list, true);
-            ArrayList<StructureObject> modified = new ArrayList<StructureObject>();
-            for (StructureObject p : parents) p.relabelChildren(structureIdx, modified);
-            dao.store(modified, true);
+            dao.delete(list, true, true, true);
             
             if (updateDisplay) {
                 //Update selection on opened image

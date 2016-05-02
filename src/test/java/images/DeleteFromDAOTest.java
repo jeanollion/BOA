@@ -31,12 +31,14 @@ import dataStructure.objects.BasicMasterDAO;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.Measurements;
 import dataStructure.objects.MorphiumObjectDAO;
+import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
 import de.caluga.morphium.query.Query;
+import image.BlankMask;
 import java.io.File;
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -109,7 +111,7 @@ public class DeleteFromDAOTest {
         generateImages("field2", inputImage.getAbsolutePath(), 1, 2, 1);
         generateImages("field3", inputImage.getAbsolutePath(), 1, 2, 1);
         generateImages("field4", inputImage.getAbsolutePath(), 1, 2, 1);
-        Processor.importFiles(xp, inputImage.getAbsolutePath());
+        Processor.importFiles(xp, true, inputImage.getAbsolutePath());
         assertEquals("number fields", 5, xp.getMicrocopyFieldCount());
         xp.setOutputImageDirectory(testFolder.newFolder().getAbsolutePath());
         //xp.setOutputImageDirectory("/tmp/test"); new File(xp.getOutputImageDirectory()).mkdirs();
@@ -136,7 +138,7 @@ public class DeleteFromDAOTest {
         assertEquals(prefix+"number of objects after delete children", 14, countObjects(masterDAO, StructureObject.class));
         assertEquals(prefix+"number of measurements after delete children", 4, countObjects(masterDAO, Measurements.class));
         logger.debug("before delete ");
-        dao.delete(root, true);
+        dao.delete(root, true, false, false);
         assertEquals(prefix+"number of objects after delete root", 12, countObjects(masterDAO, StructureObject.class));
         assertEquals(prefix+"number of measurements after delete root", 4, countObjects(masterDAO, Measurements.class));
         logger.debug("before delete children2");
@@ -159,6 +161,49 @@ public class DeleteFromDAOTest {
         assertEquals(prefix+"number of files after delete all", 0, countObjects(masterDAO, StructureObject.class));
         assertEquals(prefix+"number of measurements after delete all", 0, countObjects(masterDAO, Measurements.class));
         long t2 = System.currentTimeMillis();
+    }
+    
+    @Test
+    public void testDeleteAndRelabel() {
+        MasterDAO db = new MorphiumMasterDAO("testImageDAO");
+        db.reset();
+        String f = "testField";
+        
+        Experiment xp = new Experiment("");
+        xp.getStructures().insert(new Structure("MicroChannel", -1, 0));
+        db.setExperiment(xp);
+        
+        ObjectDAO dao = db.getDao(f);
+        StructureObject root = new StructureObject(0, new BlankMask("", 1, 1, 1), dao);
+        Object3D o = new Object3D(new BlankMask("", 1, 1, 1), 1);
+        final StructureObject c1 = new StructureObject(0, 0, 0, o, root);
+        final StructureObject c2 = new StructureObject(0, 0, 1, o, root);
+        final StructureObject c3 = new StructureObject(0, 0, 2, o, root);
+        final StructureObject c4 = new StructureObject(0, 0, 3, o, root);
+        final StructureObject c5 = new StructureObject(0, 0, 4, o, root);
+        ArrayList<StructureObject> children = new ArrayList<StructureObject>(){{add(c1);add(c2);add(c3);add(c4);add(c5);}};
+        
+        dao.store(root, true);
+        dao.store(children, true);
+        dao.clearCache();
+        root = dao.getRoot(0);
+        children = root.getChildren(0);
+        assertEquals("retrieve children", 5, children.size());
+        List<StructureObject> toDelete = children.subList(1, 3);
+        dao.delete(toDelete, true, true, true);
+        assertEquals("delete list, from parent", 3, root.getChildren(0).size());
+        assertEquals("delete list, relabel", true, root.getChildren(0).get(1).getIdx()==1);
+        dao.clearCache();
+        root = dao.getRoot(0);
+        assertEquals("delete list, relabel stored", true, root.getChildren(0).get(1).getIdx()==1);
+        
+        // test with single object
+        dao.delete(root.getChildren(0).get(0), true, true, true);
+        assertEquals("delete single, from parent", 2, root.getChildren(0).size());
+        assertEquals("delete single, relabel", true, root.getChildren(0).get(0).getIdx()==0);
+        dao.clearCache();
+        root = dao.getRoot(0);
+        assertEquals("delete single, relabel stored", true, root.getChildren(0).get(0).getIdx()==0);
     }
     
     private static int countObjects(MasterDAO db, Class clazz) {

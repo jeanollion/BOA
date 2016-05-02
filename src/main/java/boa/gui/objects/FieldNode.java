@@ -17,6 +17,7 @@
  */
 package boa.gui.objects;
 
+import static boa.gui.GUI.logger;
 import dataStructure.configuration.MicroscopyField;
 import java.util.Arrays;
 import java.util.Collections;
@@ -42,7 +43,11 @@ public class FieldNode implements TreeNode, UIContainer {
             int timePointNb;
             MicroscopyField f = getGenerator().getExperiment().getMicroscopyField(fieldName);
             if (f!=null) timePointNb = f.getTimePointNumber();
-            else timePointNb=0;
+            else {
+                timePointNb=0;
+                logger.error("MF not found : {}", fieldName);
+            }
+            //logger.debug("field: {} #tp: {}", fieldName, timePointNb);
             children = new TimePointNode[timePointNb];
             for (int i = 0; i<timePointNb; ++i) children[i]=new TimePointNode(this, i);
         }
