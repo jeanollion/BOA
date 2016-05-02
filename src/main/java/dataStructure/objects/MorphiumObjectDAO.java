@@ -79,7 +79,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
     
     protected Query<StructureObject> getChildrenQuery(StructureObject parent, int structureIdx) {
         // voir si la query est optimisée pour index composé
-        return getQuery().f("parent").eq(parent.getId()).f("structure_idx").eq(structureIdx);
+        return getQuery().f("parent_id").eq(parent.getId()).f("structure_idx").eq(structureIdx);
     }
     
     public StructureObject getById(ObjectId id) {
@@ -389,8 +389,8 @@ public class MorphiumObjectDAO implements ObjectDAO {
         for (StructureObject o : track) {
             o.trackHead=trackHead;
             if (prev!=null) {
-                o.previous=prev;
-                prev.next=o;
+                o.setPrevious(prev);
+                prev.setNext(o);
             }
             prev = o;
         }

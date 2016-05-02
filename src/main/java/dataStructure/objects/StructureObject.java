@@ -38,7 +38,7 @@ import utils.SmallArray;
 
 @Lifecycle
 @Entity
-@Index(value={"structure_idx, parent"})
+@Index(value={"structure_idx, parent_id"})
 public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker, StructureObjectTrackCorrection, Comparable<StructureObject> {
 
     
@@ -46,7 +46,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public final static Logger logger = LoggerFactory.getLogger(StructureObject.class);
     //structure-related attributes
     @Id protected ObjectId id;
-    @Reference(lazyLoading=true, automaticStore=false) protected StructureObject parent;
+    protected ObjectId parentId;
+    @Transient protected StructureObject parent;
     protected int structureIdx;
     protected int idx;
     @Transient protected final SmallArray<ArrayList<StructureObject>> childrenSM=new SmallArray<ArrayList<StructureObject>>(); //maps structureIdx to Children (equivalent to hashMap)
@@ -55,9 +56,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     // track-related attributes
     protected int timePoint;
     //boolean isNextStored=false;
-    @Reference(lazyLoading=true, automaticStore=false) protected StructureObject next; //@Transient //@Reference(lazyLoading=true, automaticStore=false)
-    @Reference(lazyLoading=true, automaticStore=false) protected StructureObject previous;
-    protected ObjectId parentTrackHeadId, trackHeadId;
+    @Transient protected StructureObject previous, next; 
+    private ObjectId nextId, previousId;
+    private ObjectId parentTrackHeadId, trackHeadId;
     @Transient protected StructureObject trackHead;
     protected boolean isTrackHead=true;
     protected TrackFlag flag=null;
@@ -81,6 +82,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.structureIdx = structureIdx;
         this.idx = idx;
         this.parent=parent;
+        this.parentId=parent.getId();
         if (this.parent!=null) this.dao=parent.dao;
     }
     /**
@@ -113,8 +115,11 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public float getScaleXY() {return getMicroscopyField()!=null?getMicroscopyField().getScaleXY():1;}
     public float getScaleZ() {return getMicroscopyField()!=null?getMicroscopyField().getScaleZ():1;}
     public StructureObject getParent() {
-        if (parent==null) return null;
-        parent.callLazyLoading();
+        if (parent==null) {
+            if (parentId!=null && dao instanceof MorphiumObjectDAO) {
+                parent = ((MorphiumObjectDAO)dao).getById(parentId);
+            }
+        }
         return parent;
     }
     public StructureObject getParent(int parentStructureIdx) {
@@ -126,7 +131,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
         return p;
     }
-    public void setParent(StructureObject parent) {this.parent=parent;}
+    public void setParent(StructureObject parent) {
+        this.parent=parent;
+        this.parentId=parent.getId();
+    }
     public StructureObject getRoot() {
         if (isRoot()) return this;
         if (getParent()!=null) {
@@ -281,15 +289,15 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
      */
     @Override public void setPreviousInTrack(StructureObjectTracker previous, boolean isTrackHead, TrackFlag flag) {
         if (previous==null) {
-            if (this.previous!=null && this.previous.next==this) this.previous.next=null;
+            if (this.previous!=null && this.previous.next==this) this.previous.setNext(null);
         } else {
             if (((StructureObject)previous).getTimePoint()>=this.getTimePoint()) throw new RuntimeException("setPrevious in track should be of time<= "+(timePoint-1) +" but is: "+((StructureObject)previous).getTimePoint()+ " current: "+this+", prev: "+previous);
-            this.previous=(StructureObject)previous;
+            this.setPrevious((StructureObject)previous);
         }
         if (flag!=null) this.flag=flag;
         if (!isTrackHead) {
             if (this.previous!=null) {
-                this.previous.next=this;
+                this.previous.setNext(this);
                 this.trackHead= this.previous.getTrackHead();
             }
             this.isTrackHead=false;
@@ -304,10 +312,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     //public void setNextInTrack(StructureObject next, )
     @Override
     public void resetTrackLinks() {
-        if (this.previous!=null && this.previous.next==this) this.previous.next=null;
-        this.previous=null;
-        if (this.next!=null && this.next.previous==this) this.next.previous=null;
-        this.next=null;
+        if (this.previous!=null && this.previous.next==this) this.previous.setNext(null);
+        this.setPrevious(null);
+        if (this.next!=null && this.next.previous==this) this.next.setPrevious(null);
+        this.setNext(null);
         this.trackHead=null;
         this.trackHeadId=null;
         this.isTrackHead=true;
@@ -317,15 +325,33 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public TrackFlag getTrackFlag() {return this.flag;}
     
     public StructureObject getPrevious() {
-        if (previous==null) return null;
-        previous.callLazyLoading();
+        if (previous==null) {
+            if (previousId!=null && dao instanceof MorphiumObjectDAO) {
+                previous = ((MorphiumObjectDAO)dao).getById(previousId);
+            }
+        }
         return previous;
     }
-    
+
     public StructureObject getNext() {
-        if (next==null) return null;
-        next.callLazyLoading();
+        if (next==null) {
+            if (nextId!=null && dao instanceof MorphiumObjectDAO) {
+                next = ((MorphiumObjectDAO)dao).getById(nextId);
+            }
+        }
         return next;
+    }
+    
+    protected void setNext(StructureObject next) {
+        this.next=next;
+        if (next!=null) this.nextId=next.getId();
+        else this.nextId=null;
+    }
+    
+    protected void setPrevious(StructureObject previous) {
+        this.previous=previous;
+        if (previous!=null) this.previousId=previous.getId();
+        else this.previousId=null;
     }
     
     public StructureObject getInTrack(int timePoint) {
@@ -396,8 +422,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public void setTrackHead(StructureObject trackHead, boolean resetPreviousIfTrackHead, boolean propagateToNextObjects) {
         if (resetPreviousIfTrackHead && this==trackHead) {
-            if (previous!=null && previous.next==this) previous.next=null;
-            this.previous=null;
+            if (previous!=null && previous.next==this) previous.setNext(null);
+            this.setPrevious(null);
         }
         this.isTrackHead=this==trackHead;
         this.trackHead=trackHead;
@@ -534,11 +560,12 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         objectModified = true;
         // update links
         StructureObject prev = otherO.getPrevious();
-        if (prev !=null && prev.getNext()!=null && prev.next==otherO) prev.next=this;
-        StructureObject next = otherO.getNext(); if (next==null) next = getNext();
+        if (prev !=null && prev.getNext()!=null && prev.next==otherO) prev.setNext(this);
+        StructureObject next = otherO.getNext(); 
+        if (next==null) next = getNext();
         if (next!=null) {
             ArrayList<StructureObject> siblings = next.getSiblings();
-            for (StructureObject o : siblings) if (o.getPrevious()==otherO) o.previous=this;
+            for (StructureObject o : siblings) if (o.getPrevious()==otherO) o.setPrevious(this);
         }
         this.getParent().getChildObjects(structureIdx).remove(otherO); // concurent modification..
         // set flags

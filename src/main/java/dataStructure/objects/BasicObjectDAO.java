@@ -144,7 +144,7 @@ public class BasicObjectDAO implements ObjectDAO {
                 StructureObject next = null;
                 for (StructureObject c : candidates) {
                     if (c.getPrevious()==trackHead) {
-                        trackHead.next = c;
+                        trackHead.setNext(c);
                         next = c;
                         break;
                     }

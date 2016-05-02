@@ -94,6 +94,8 @@ public class SpotWithinCompartment extends Spot {
         return center;
     }
     
+    public Object3D getObject() {return object;}
+    
     @Override
     public double normalizeDiffTo( final Spot s, final String feature ) {
         if (s instanceof SpotWithinCompartment) {
