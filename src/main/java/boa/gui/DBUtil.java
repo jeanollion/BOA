@@ -20,6 +20,7 @@ package boa.gui;
 import static boa.gui.GUI.logger;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,6 +32,17 @@ import java.util.List;
  * @author jollion
  */
 public class DBUtil {
+    public static void dropDatabase(String dbName, String hostName) {
+        MongoClient mongoClient = new MongoClient(hostName, 27017);
+        mongoClient.dropDatabase(dbName);
+    }
+    public static List<String> listCollections(String dbName, String hostName) {
+        MongoClient mongoClient = new MongoClient(hostName, 27017);
+        MongoDatabase db = mongoClient.getDatabase(dbName);
+        List<String> res = new ArrayList<String>();
+        for (String s : db.listCollectionNames()) if (!s.equals("system.indexes")) res.add(s);
+        return res;
+    }
     public static List<String> getDBNames(String hostName, String filterPrefix) {
         try {
             long t0 = System.currentTimeMillis();

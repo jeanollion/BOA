@@ -153,6 +153,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importFieldsToCurrentExperimentMenuItem);add(importConfigToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(runMenu);}};
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         toFront();
+        // format button
+        this.bsonFormatMenuItem.setSelected(false);
+        this.jsonFormatMenuItem.setSelected(true);
+        ButtonGroup group = new ButtonGroup();
+        group.add(bsonFormatMenuItem);
+        group.add(jsonFormatMenuItem);
+        
         PluginFactory.findPlugins("plugins.plugins");
         
         // selections
@@ -685,8 +692,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         runSelectedActionsMenuItem = new javax.swing.JMenuItem();
         extractMeasurementMenuItem = new javax.swing.JMenuItem();
         importExportMenu = new javax.swing.JMenu();
-        setMongoBinDirectoryMenu = new javax.swing.JMenuItem();
-        jSeparator1 = new javax.swing.JPopupMenu.Separator();
         exportSubMenu = new javax.swing.JMenu();
         exportSelectedFieldsMenuItem = new javax.swing.JMenuItem();
         exportXPConfigMenuItem = new javax.swing.JMenuItem();
@@ -697,6 +702,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         importConfigurationForSelectedPositionsMenuItem = new javax.swing.JMenuItem();
         importConfigurationForSelectedStructuresMenuItem = new javax.swing.JMenuItem();
         importNewExperimentMenuItem = new javax.swing.JMenuItem();
+        setMongoBinDirectoryMenu = new javax.swing.JMenuItem();
+        jMenu1 = new javax.swing.JMenu();
+        jsonFormatMenuItem = new javax.swing.JRadioButtonMenuItem();
+        bsonFormatMenuItem = new javax.swing.JRadioButtonMenuItem();
+        jSeparator1 = new javax.swing.JPopupMenu.Separator();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -1123,15 +1133,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
         importExportMenu.setText("Import/Export");
 
-        setMongoBinDirectoryMenu.setText("Set MongoDB Bin Directory");
-        setMongoBinDirectoryMenu.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                setMongoBinDirectoryMenuActionPerformed(evt);
-            }
-        });
-        importExportMenu.add(setMongoBinDirectoryMenu);
-        importExportMenu.add(jSeparator1);
-
         exportSubMenu.setText("Export");
 
         exportSelectedFieldsMenuItem.setText("Selected Fields");
@@ -1206,6 +1207,27 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
         importExportMenu.add(importSubMenu);
 
+        setMongoBinDirectoryMenu.setText("Set MongoDB Bin Directory");
+        setMongoBinDirectoryMenu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                setMongoBinDirectoryMenuActionPerformed(evt);
+            }
+        });
+        importExportMenu.add(setMongoBinDirectoryMenu);
+
+        jMenu1.setText("Set Export Format");
+
+        jsonFormatMenuItem.setSelected(true);
+        jsonFormatMenuItem.setText("JSON (human readable)");
+        jMenu1.add(jsonFormatMenuItem);
+
+        bsonFormatMenuItem.setSelected(true);
+        bsonFormatMenuItem.setText("BSON (faster)");
+        jMenu1.add(bsonFormatMenuItem);
+
+        importExportMenu.add(jMenu1);
+        importExportMenu.add(jSeparator1);
+
         jMenuBar1.add(importExportMenu);
 
         setJMenuBar(jMenuBar1);
@@ -1218,7 +1240,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(tabs, javax.swing.GroupLayout.DEFAULT_SIZE, 604, Short.MAX_VALUE)
+            .addComponent(tabs)
         );
 
         pack();
@@ -1407,10 +1429,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (response == JOptionPane.NO_OPTION || response == JOptionPane.CLOSED_OPTION) {
         } else if (response == JOptionPane.YES_OPTION) {
-            for (String xpName : xps) {
-                MongoClient mongoClient = new MongoClient(getHostName(), 27017);
-                mongoClient.dropDatabase(xpName);
-            }
+            for (String xpName : xps) DBUtil.dropDatabase(xpName, getHostName());
             populateExperimentList();
             if (db!=null && xps.contains(db.getDBName())) unsetXP();
         }
@@ -1449,7 +1468,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         int count=0;
         for (String xp : xpToExport) {
             logger.info("Exporting whole XP : {}/{}", ++count, xpToExport.size());
-            CommandExecuter.dumpDB(getHostName(), xp, dir);
+            CommandExecuter.dumpDB(getHostName(), xp, dir, jsonFormatMenuItem.isSelected());
         }
     }//GEN-LAST:event_exportWholeXPMenuItemActionPerformed
 
@@ -1465,7 +1484,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         for (int f : sel) {
             String cName = MorphiumObjectDAO.getCollectionName(fNames[f]);
             logger.info("Exporting: {}/{}", ++count, sel.length);
-            CommandExecuter.dump(hostname, dbName, cName, dir);
+            CommandExecuter.dump(hostname, dbName, cName, dir, jsonFormatMenuItem.isSelected());
         }
     }//GEN-LAST:event_exportSelectedFieldsMenuItemActionPerformed
 
@@ -1473,7 +1492,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (!checkConnection()) return;
         String dir = promptDir("Choose output directory");
         if (dir==null) return;
-        CommandExecuter.dump(getHostName(), db.getDBName(), "experiment", dir);
+        CommandExecuter.dump(getHostName(), db.getDBName(), "experiment", dir, jsonFormatMenuItem.isSelected());
         
     }//GEN-LAST:event_exportXPConfigMenuItemActionPerformed
 
@@ -1537,20 +1556,22 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (dir==null) return;
         File directory = new File(dir);
         // whole xp are located in sub directories
-        List<File> subDirs = new ArrayList<File>(Arrays.asList(directory.listFiles(new FileFilter() {
+        FileFilter filter = new FileFilter() {
             @Override public boolean accept(File file) {
                 if (file.isDirectory()) { // contains at least experiment collection
                     for (String fName : file.list()) {
-                        if (fName.startsWith("experiment") &&  (fName.endsWith(CommandExecuter.IO_BSON) || (fName.endsWith(CommandExecuter.IO_JSON) && !fName.endsWith(".metadata.json")))) return true;
+                        if (fName.equals("Experiment.bson") || fName.equals("Experiment.json")) return true;
                     }
                 } 
                 return false;
             }
-        })));
+        };
+        List<File> subDirs = new ArrayList<File>(Arrays.asList(directory.listFiles(filter)));
+        if (filter.accept(directory)) subDirs.add(directory);
         List<String> dbNames = getDBNames();
         boolean someDBAlreadyExist = false;
         for (File f : subDirs) {
-            if (dbNames.contains(f.getName())) {
+            if (dbNames.contains(DBUtil.addPrefix(f.getName(), DBprefix))) {
                 someDBAlreadyExist=true;
                 break;
             }
@@ -1569,12 +1590,20 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         int count = 0;
         for (File f : subDirs) {
             logger.info("Importing XP: {}/{}", ++count, subDirs.size());
-            CommandExecuter.restoreDB(hostname, f.getName(), f.getAbsolutePath());
+            CommandExecuter.restoreDB(hostname, DBUtil.addPrefix(f.getName(), DBprefix), f.getAbsolutePath());
         }
+        populateExperimentList();
     }//GEN-LAST:event_importNewExperimentMenuItemActionPerformed
 
     private void importConfigToCurrentExperimentMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importConfigToCurrentExperimentMenuItemActionPerformed
-        // TODO add your handling code here:
+        if (!checkConnection()) return;
+        File outputFile = Utils.chooseFile("Select Experiment.bson of Experiment.json file (WARNING: current configuration will be lost)", null, FileChooser.FileChooserOption.FILE_OR_DIRECTORY, this);
+        if (outputFile.getName().equals("Experiment.bson") || outputFile.getName().equals("Experiment.json")) {
+            CommandExecuter.restore(getHostName(), db.getDBName(), "Experiment", outputFile.getAbsolutePath(), true);
+            String dbName = db.getDBName();
+            unsetXP();
+            setDBConnection(dbName, getHostName());
+        }
     }//GEN-LAST:event_importConfigToCurrentExperimentMenuItemActionPerformed
 
     private void runSelectedActionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runSelectedActionsMenuItemActionPerformed
@@ -1729,6 +1758,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JScrollPane actionMicroscopyFieldJSP;
     private javax.swing.JPanel actionPanel;
     private javax.swing.JScrollPane actionStructureJSP;
+    private javax.swing.JRadioButtonMenuItem bsonFormatMenuItem;
     private javax.swing.JButton collapseAllObjectButton;
     private javax.swing.JScrollPane configurationJSP;
     private javax.swing.JPanel configurationPanel;
@@ -1756,9 +1786,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JComboBox interactiveStructure;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
+    private javax.swing.JMenu jMenu1;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JPopupMenu.Separator jSeparator1;
+    private javax.swing.JRadioButtonMenuItem jsonFormatMenuItem;
     private javax.swing.JButton linkObjectsButton;
     private javax.swing.JButton manualSegmentButton;
     private javax.swing.JButton mergeObjectsButton;

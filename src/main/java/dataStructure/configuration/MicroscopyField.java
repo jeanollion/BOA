@@ -85,6 +85,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     public InputImagesImpl getInputImages() {
         if (inputImages==null) {
             ImageDAO dao = getExperiment().getImageDAO();
+            if (dao==null || images==null) return null;
             InputImage[][] res = new InputImage[images.getTimePointNumber()][images.getChannelNumber()];
             for (int t = 0; t<res.length; ++t) {
                for (int c = 0; c<res[0].length; ++c) {
@@ -183,7 +184,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
             if (response != JOptionPane.YES_OPTION) return false;
         }
         GUI.getDBConnection().getDao(name).deleteAllObjects();
-        this.getInputImages().deleteFromDAO();
+        if (getInputImages()!=null) getInputImages().deleteFromDAO();
         return true;
     }
     
