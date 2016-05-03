@@ -59,6 +59,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import org.scijava.vecmath.Vector2d;
 import utils.Pair;
 import utils.Utils;
 
@@ -283,10 +284,13 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             o2 = track.get(idx);
             if (o1==null || o2==null) continue;
             Arrow arrow = new Arrow(o1.value.getXMean(), o1.value.getYMean(), o2.value.getXMean()-1, o2.value.getYMean());
-            arrow.setStrokeColor( (o2.key.hasTrackLinkError() || (o1.key.hasTrackLinkError()&&o1.key.isTrackHead()) )?ImageWindowManager.trackErrorColor: (o2.key.hasTrackLinkCorrection()||(o1.key.hasTrackLinkCorrection()&&o1.key.isTrackHead())) ?ImageWindowManager.trackCorrectionColor : color);
+            boolean error = o2.key.hasTrackLinkError() || (o1.key.hasTrackLinkError()&&o1.key.isTrackHead());
+            boolean correction = o2.key.hasTrackLinkCorrection()||(o1.key.hasTrackLinkCorrection()&&o1.key.isTrackHead());
+            //arrow.setStrokeColor( (o2.key.hasTrackLinkError() || (o1.key.hasTrackLinkError()&&o1.key.isTrackHead()) )?ImageWindowManager.trackErrorColor: (o2.key.hasTrackLinkCorrection()||(o1.key.hasTrackLinkCorrection()&&o1.key.isTrackHead())) ?ImageWindowManager.trackCorrectionColor : color);
+            arrow.setStrokeColor(color);
             arrow.setStrokeWidth(trackArrowStrokeWidth);
             arrow.setHeadSize(trackArrowStrokeWidth*1.5);
-
+            
             //if (o1.getNext()==o2) arrow.setDoubleHeaded(true);
 
             int zMin = Math.max(o1.value.getzMin(), o2.value.getzMin());
@@ -312,9 +316,29 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                     //logger.debug("add arrow (z): {}", arrow);
                 }
             }
+            
+            // 2D only errors -> TODO 3D also
+            if (error || correction) {
+                Color c = error ? ImageWindowManager.trackErrorColor : ImageWindowManager.trackCorrectionColor;
+                trackRoi.add(getErrorArrow(arrow.x1, arrow.y1, arrow.x2, arrow.y2, c));
+            }   
             o1=o2;
         }
         return trackRoi;
+    }
+    private static Arrow getErrorArrow(double x1, double y1, double x2, double y2, Color c) {
+        double arrowSize = trackArrowStrokeWidth*2;
+        double norm = Math.sqrt(Math.pow(x1-x2, 2)+Math.pow(y1-y2, 2));
+        double[] vNorm = new double[]{(x2-x1)/norm, (y2-y1)/norm};
+        double startLength = norm-2*arrowSize;
+        double endLength = norm-arrowSize;
+        double[] start = startLength>0 ? new double[]{x1+vNorm[0]*startLength, y1+vNorm[1]*startLength} : new double[]{x1, y1};
+        double[] end = startLength>0 ? new double[]{x1+vNorm[0]*endLength, y1+vNorm[1]*endLength} : new double[]{x2, y2};
+        Arrow res =  new Arrow(start[0], start[1], end[0], end[1]);
+        res.setStrokeColor(c);
+        res.setStrokeWidth(trackArrowStrokeWidth);
+        res.setHeadSize(trackArrowStrokeWidth*1.5);
+        return res;
     }
     
     @Override

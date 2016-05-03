@@ -113,6 +113,7 @@ import static utils.Utils.addHorizontalScrollBar;
  */
 public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     public static final Logger logger = LoggerFactory.getLogger(GUI.class);
+    public final static String DBprefix = "boa_";
     private static GUI instance;
     
     // db-related attributes
@@ -1385,6 +1386,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void newXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newXPMenuItemActionPerformed
         String name = JOptionPane.showInputDialog("New XP name:");
+        name = DBUtil.addPrefix(name, DBprefix);
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
         else if (getDBNames().contains(name)) logger.error("XP name already exists");
         else {
@@ -1399,26 +1401,30 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }//GEN-LAST:event_newXPMenuItemActionPerformed
 
     private void deleteXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteXPMenuItemActionPerformed
-        String name = getSelectedExperiment();
-        if (name==null || name.length()==0) return;
-        int response = JOptionPane.showConfirmDialog(this, "Delete Experiment (all data will be lost)", "Confirm",
+        List<String> xps = getSelectedExperiments();
+        if (xps==null || xps.isEmpty()) return;
+        int response = JOptionPane.showConfirmDialog(this, "Delete Selected Experiment"+(xps.size()>1?"s":"")+" (all data will be lost)", "Confirm",
             JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (response == JOptionPane.NO_OPTION || response == JOptionPane.CLOSED_OPTION) {
         } else if (response == JOptionPane.YES_OPTION) {
-            MongoClient mongoClient = new MongoClient(getHostName(), 27017);
-            mongoClient.dropDatabase(name);
+            for (String xpName : xps) {
+                MongoClient mongoClient = new MongoClient(getHostName(), 27017);
+                mongoClient.dropDatabase(xpName);
+            }
             populateExperimentList();
-            unsetXP();
+            if (db!=null && xps.contains(db.getDBName())) unsetXP();
         }
     }//GEN-LAST:event_deleteXPMenuItemActionPerformed
 
     private void duplicateXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_duplicateXPMenuItemActionPerformed
         String name = JOptionPane.showInputDialog("New DB name:", getSelectedExperiment());
+        name = DBUtil.addPrefix(name, DBprefix);
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
         else if (getDBNames().contains(name)) logger.error("DB name already exists");
         else {
+            MorphiumMasterDAO db1 = new MorphiumMasterDAO(getSelectedExperiment());
             MorphiumMasterDAO db2 = new MorphiumMasterDAO(name);
-            Experiment xp2 = db.getExperiment().duplicate();
+            Experiment xp2 = db1.getExperiment().duplicate();
             xp2.setName(name);
             db2.setExperiment(xp2);
             populateExperimentList();
@@ -1439,9 +1445,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void exportWholeXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exportWholeXPMenuItemActionPerformed
         String dir = promptDir("Choose output directory");
         if (dir==null) return;
-        List<String> xpToExport = new ArrayList<String>();
-        xpToExport.add(this.getSelectedExperiment());
-        // TODO allow multiple selection for XP..
+        List<String> xpToExport = this.getSelectedExperiments();
         int count=0;
         for (String xp : xpToExport) {
             logger.info("Exporting whole XP : {}/{}", ++count, xpToExport.size());
@@ -1649,12 +1653,16 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (sel!=null) return (String) sel;
         else return null;
     }
+    private List<String> getSelectedExperiments() {
+        List res = experimentList.getSelectedValuesList();
+        return res;
+    }
     private void setSelectedExperiment(String xpName) {
         experimentList.setSelectedValue(xpName, true);
     }
     
     public List<String> getDBNames() {
-        return DBUtil.getDBNames(getHostName());
+        return DBUtil.getDBNames(getHostName(), DBprefix);
     }
     
     

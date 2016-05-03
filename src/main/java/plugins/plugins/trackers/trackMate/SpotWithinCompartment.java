@@ -209,7 +209,7 @@ public class SpotWithinCompartment extends Spot {
         double dPole2 = Math.abs(y2-offset2[1]);
         if (dPole2>dPole1) d+=poleDistanceFactor * (dPole2-dPole1);*/
         // additional gap penalty
-        d+= s1.distanceParameters.getSquareDistancePenalty(s1.timePoint, s2.timePoint);
+        d+= s1.distanceParameters.getSquareDistancePenalty(d, s1.timePoint, s2.timePoint);
         return d;
     }
     
@@ -301,7 +301,8 @@ public class SpotWithinCompartment extends Spot {
     };
     public static class DistanceComputationParameters {
         public double qualityThreshold = 0;
-        public double gapSquareDistancePenalty = 0;
+        public double gapDistancePenalty = 0;
+        private double gapSquareDistancePenalty;
         public double alternativeDistance;
         public DistanceComputationParameters(double alternativeDistance) {
             this.alternativeDistance=alternativeDistance;
@@ -310,16 +311,17 @@ public class SpotWithinCompartment extends Spot {
             this.qualityThreshold=qualityThreshold;
             return this;
         }
-        public DistanceComputationParameters setGapSquareDistancePenalty(double gapDistancePenalty) {
-            this.gapSquareDistancePenalty=gapDistancePenalty;
+        public DistanceComputationParameters setGapDistancePenalty(double gapDistancePenalty) {
+            this.gapSquareDistancePenalty=gapDistancePenalty*gapDistancePenalty;
+            this.gapDistancePenalty=gapDistancePenalty;
             return this;
         }
         public DistanceComputationParameters setAlternativeDistance(double alternativeDistance) {
             this.alternativeDistance=alternativeDistance;
             return this;
         }
-        public double getSquareDistancePenalty(int tSource, int tTarget) {
-            return (tTarget - tSource-1) * (tTarget - tSource-1) * gapSquareDistancePenalty; // pow* -> working on square distances
+        public double getSquareDistancePenalty(double distance, int tSource, int tTarget) {
+            return Math.pow(tTarget - tSource-1, 2) * (gapSquareDistancePenalty + 2*gapDistancePenalty*distance); // pow* -> working on square distances
         }
     }
 }

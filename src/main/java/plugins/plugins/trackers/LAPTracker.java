@@ -101,9 +101,9 @@ public class LAPTracker implements TrackerSegmenter {
         double spotQualityThreshold = LQSpots ? this.spotQualityThreshold.getValue().doubleValue() : Double.NEGATIVE_INFINITY;
         double maxLinkingDistance = this.maxLinkingDistance.getValue().doubleValue();
         double maxLinkingDistanceGC = this.maxLinkingDistanceGC.getValue().doubleValue();
-        double gapPenalty = Math.pow(this.gapPenalty.getValue().doubleValue(), 2);
+        double gapPenalty = this.gapPenalty.getValue().doubleValue();
         double alternativeDistance = this.alternativeDistance.getValue().doubleValue();
-        DistanceComputationParameters distParams = new DistanceComputationParameters(alternativeDistance).setQualityThreshold(spotQualityThreshold).setGapSquareDistancePenalty(gapPenalty);
+        DistanceComputationParameters distParams = new DistanceComputationParameters(alternativeDistance).setQualityThreshold(spotQualityThreshold).setGapDistancePenalty(gapPenalty);
         SpotPopulation spotCollection = new SpotPopulation(distParams);
         long t0 = System.currentTimeMillis();
         for (StructureObject p : parentTrack) spotCollection.addSpots(p, structureIdx, p.getObjectPopulation(structureIdx).getObjects(), compartirmentStructure);
@@ -138,7 +138,7 @@ public class LAPTracker implements TrackerSegmenter {
         // post-processing
         MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, spotCollection);
         postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC);
-        distParams.setGapSquareDistancePenalty(gapPenalty*4); // double penalty (square distance=>*4) 
+        distParams.setGapDistancePenalty(gapPenalty*2); // double penalty  
         //postProcessor.printDistancesOnOverlay();
         postProcessor.splitLongTracks(minimalTrackFrameNumber.getValue().intValue()-1, minimalDistanceForTrackSplittingPenalty.getValue().doubleValue(), maxLinkingDistanceGC, maximalTrackSplittingPenalty.getValue().doubleValue());
         postProcessor.flagShortAndLongTracks(minimalTrackFrameNumber.getValue().intValue(), maximalTrackFrameNumber.getValue().intValue());
