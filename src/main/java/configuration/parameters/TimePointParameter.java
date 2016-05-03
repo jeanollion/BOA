@@ -27,23 +27,28 @@ import de.caluga.morphium.annotations.Transient;
  */
 public class TimePointParameter extends BoundedNumberParameter {
     @Transient private int timePointNumber=-1;
+    boolean afterTrim;
     
-    public TimePointParameter(String name, int defaultTimePoint) {
+    public TimePointParameter(String name, int defaultTimePoint, boolean afterTrim) {
         super(name, 0, defaultTimePoint, 0, null);
+        this.afterTrim=afterTrim;
     }
-    
+    public TimePointParameter(String name, int defaultTimePoint) {
+        this(name, defaultTimePoint, true);
+    }
     public TimePointParameter(String name) {
-        this(name, 0);
+        this(name, 0, true);
     }
     public TimePointParameter() {this("");}
     
     
     public int getMaxTimePoint() {
         if (timePointNumber==-1) {
-            timePointNumber = ParameterUtils.getTimePointNumber(this);
-            super.upperBound=timePointNumber;
+            timePointNumber = ParameterUtils.getTimePointNumber(this, afterTrim);
+            logger.debug("tp param: {} after trim: {} tpnb: {}", name, afterTrim, timePointNumber);
+            if (timePointNumber>0) super.upperBound=timePointNumber-1;
         }
-        return timePointNumber;
+        return Math.max(0, timePointNumber-1);
     }
     
     public void setTimePoint(int timePoint) {
@@ -53,7 +58,7 @@ public class TimePointParameter extends BoundedNumberParameter {
     private int checkWithBounds(int timePoint) {
         int max = getMaxTimePoint();
         if (max>=0) {
-            if (timePoint>=max) return Math.max(0, max-1);
+            if (timePoint>max) return Math.max(0, max);
             else return Math.max(0, timePoint);
         } else return 0;
     }

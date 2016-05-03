@@ -1537,8 +1537,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 }
             }
         }
-        if (fieldsCreated) db.updateExperiment();
-        loadObjectTrees();
+        if (fieldsCreated) {
+            db.updateExperiment();
+            loadObjectTrees();
+            populateActionMicroscopyFieldList();
+        }
+        
     }//GEN-LAST:event_importFieldsToCurrentExperimentMenuItemActionPerformed
 
     private void importConfigurationForSelectedPositionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importConfigurationForSelectedPositionsMenuItemActionPerformed
@@ -1598,7 +1602,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void importConfigToCurrentExperimentMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importConfigToCurrentExperimentMenuItemActionPerformed
         if (!checkConnection()) return;
         File outputFile = Utils.chooseFile("Select Experiment.bson of Experiment.json file (WARNING: current configuration will be lost)", null, FileChooser.FileChooserOption.FILE_OR_DIRECTORY, this);
-        if (outputFile.getName().equals("Experiment.bson") || outputFile.getName().equals("Experiment.json")) {
+        if (outputFile!=null && outputFile.getName().equals("Experiment.bson") || outputFile.getName().equals("Experiment.json")) {
             CommandExecuter.restore(getHostName(), db.getDBName(), "Experiment", outputFile.getAbsolutePath(), true);
             String dbName = db.getDBName();
             unsetXP();
