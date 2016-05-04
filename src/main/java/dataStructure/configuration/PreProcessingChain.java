@@ -96,7 +96,9 @@ public class PreProcessingChain extends SimpleContainerParameter {
         //logger.debug("PreProc chain: {}, init list..", name);
         initScaleParam(useImageScale==null, imageScaleCond==null); //TODO for retrocompatibility
         if (trimFramesStart==null) trimFramesStart = new TimePointParameter("Trim Frames Start Position", 0, false);
+        else trimFramesStart.setUseRawInputFrames(true); //TODO for retrocompatibility
         if (trimFramesEnd==null) trimFramesEnd = new TimePointParameter("Trim Frames Stop Position (0=no trimming)", 0, false);
+        else trimFramesEnd.setUseRawInputFrames(true); //TODO for retrocompatibility
         super.initChildren(imageScaleCond, transformations, trimFramesStart, trimFramesEnd);
     }
     
@@ -106,6 +108,11 @@ public class PreProcessingChain extends SimpleContainerParameter {
     
     public void removeAllTransformations() {
         transformations.removeAllElements();
+    }
+    
+    public void setTrimFrames(int startFrame, int endFrame) {
+        this.trimFramesStart.setTimePoint(startFrame);
+        this.trimFramesEnd.setTimePoint(endFrame);
     }
     
     /**

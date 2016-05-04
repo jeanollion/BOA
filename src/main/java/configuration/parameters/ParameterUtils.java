@@ -78,10 +78,10 @@ public class ParameterUtils {
         return null;
     }
     
-    public static int getTimePointNumber(Parameter p, boolean afterTrim) {
+    public static int getTimePointNumber(Parameter p, boolean useRawInputFrames) {
         MicroscopyField f = getMicroscopyField(p);
         if (f!=null) {
-            return f.getTimePointNumber(afterTrim);
+            return f.getTimePointNumber(useRawInputFrames);
         } else {
             logger.warn("parameter: {}, no microscopy Field found in tree to get timePoint number", p.getName());
             /*Experiment xp = getExperiment(p);

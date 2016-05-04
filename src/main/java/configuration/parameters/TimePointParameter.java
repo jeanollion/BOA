@@ -27,28 +27,32 @@ import de.caluga.morphium.annotations.Transient;
  */
 public class TimePointParameter extends BoundedNumberParameter {
     @Transient private int timePointNumber=-1;
-    boolean afterTrim;
+    boolean useRawInputFrames;
     
-    public TimePointParameter(String name, int defaultTimePoint, boolean afterTrim) {
+    public TimePointParameter(String name, int defaultTimePoint, boolean useRawInputFrames) {
         super(name, 0, defaultTimePoint, 0, null);
-        this.afterTrim=afterTrim;
+        this.useRawInputFrames=useRawInputFrames;
     }
     public TimePointParameter(String name, int defaultTimePoint) {
-        this(name, defaultTimePoint, true);
+        this(name, defaultTimePoint, false);
     }
     public TimePointParameter(String name) {
-        this(name, 0, true);
+        this(name, 0, false);
     }
     public TimePointParameter() {this("");}
     
     
     public int getMaxTimePoint() {
         if (timePointNumber==-1) {
-            timePointNumber = ParameterUtils.getTimePointNumber(this, afterTrim);
-            logger.debug("tp param: {} after trim: {} tpnb: {}", name, afterTrim, timePointNumber);
+            timePointNumber = ParameterUtils.getTimePointNumber(this, useRawInputFrames);
+            logger.debug("tp param: {} after trim: {} tpnb: {}", name, useRawInputFrames, timePointNumber);
             if (timePointNumber>0) super.upperBound=timePointNumber-1;
         }
         return Math.max(0, timePointNumber-1);
+    }
+
+    public void setUseRawInputFrames(boolean useRawInputFrames) {
+        this.useRawInputFrames = useRawInputFrames;
     }
     
     public void setTimePoint(int timePoint) {

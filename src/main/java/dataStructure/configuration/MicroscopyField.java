@@ -116,12 +116,12 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     }
     
     public ArrayList<StructureObject> createRootObjects(ObjectDAO dao) {
-        ArrayList<StructureObject> res = new ArrayList<StructureObject>(getTimePointNumber(true));
+        ArrayList<StructureObject> res = new ArrayList<StructureObject>(getTimePointNumber(false));
         if (getMask()==null) {
             logger.warn("Could not initiate root objects, perform preProcessing first");
             return null;
         }
-        for (int t = 0; t<getTimePointNumber(true); ++t) {
+        for (int t = 0; t<getTimePointNumber(false); ++t) {
             res.add(new StructureObject(t, getMask(), dao));
         }
         setTrackLinks(res);
@@ -149,9 +149,9 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         } else return (float)preProcessingChain.getScaleZ();
     }
     
-    public int getTimePointNumber(boolean afterTrim) {
+    public int getTimePointNumber(boolean useRawInputFrames) {
         if (images!=null) {
-            if (!afterTrim) return images.getTimePointNumber();
+            if (useRawInputFrames) return images.getTimePointNumber();
             else return getEndTrimFrame() - getStartTrimFrame()+1;
         }
         else return 0;

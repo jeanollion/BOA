@@ -42,7 +42,7 @@ public class FieldNode implements TreeNode, UIContainer {
         if (children==null) {
             int timePointNb;
             MicroscopyField f = getGenerator().getExperiment().getMicroscopyField(fieldName);
-            if (f!=null) timePointNb = f.getTimePointNumber(true);
+            if (f!=null) timePointNb = f.getTimePointNumber(false);
             else {
                 timePointNb=0;
                 logger.error("MF not found : {}", fieldName);
