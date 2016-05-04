@@ -33,17 +33,19 @@ public class TrackLikelyhoodEstimator {
     double minLength, maxLength; // minimal length for a track
     double theoricalLength;
     final ScoreFunction scoreFunction;
-    
-    public TrackLikelyhoodEstimator(RealDistribution lengthDistribution, RealDistribution distanceDistribution, int minimalTrackLength) {
+    final int maximalSplitNumber;
+    public TrackLikelyhoodEstimator(RealDistribution lengthDistribution, RealDistribution distanceDistribution, int minimalTrackLength, int maximalSplitNumber) {
         this.scoreFunction = new HarmonicScoreFunction(new DistributionFunction(lengthDistribution), new DistributionFunction(distanceDistribution));
         this.minLength = minimalTrackLength;
+        this.maximalSplitNumber=maximalSplitNumber;
         init();
         //logger.debug("minLength: {}/D:{}, theorical length: {}/D:{}, maximalLength: {}/D:{}", minLength, lengthDistribution.density(minLength), theoricalLength, lengthDistribution.density(theoricalLength), maxLength, lengthDistribution.density(maxLength));
     }
     
-    public TrackLikelyhoodEstimator(ScoreFunction scoreFunction, double minimalTrackLength) {
+    public TrackLikelyhoodEstimator(ScoreFunction scoreFunction, double minimalTrackLength, int maximalSplitNumber) {
         this.scoreFunction = scoreFunction;
         this.minLength=minimalTrackLength;
+        this.maximalSplitNumber=maximalSplitNumber;
         init();
     }
     
@@ -127,11 +129,13 @@ public class TrackLikelyhoodEstimator {
         //logger.debug("split track: length: {}, rMin {}, rTh: {}, rMax: {}, meanGap: {}",track.getLength(), rMin, rTh, rMax, meanGap);
         int nMin = (int)Math.ceil(rMin);
         int nMax = (int)rMax;
+        if (nMin+1>=maximalSplitNumber) return new int[]{0};
         if (nMin==nMax) return new int[]{nMin};
         else if (nMax-nMin==1) return new int[]{nMin, nMax};
         else {
             int nThSup = (int) (rTh+0.5);
             int nThInf = (int) rTh;
+            if (nThSup>=maximalSplitNumber) return new int[]{0};
             if (nThSup==nThInf) {
                 if (nThSup==nMin) return new int[]{nThSup};
                 else return new int[]{nThSup-1, nThSup};

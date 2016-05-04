@@ -114,8 +114,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                         listener.fireDeselectAllObjects(i.childStructureIdx);
                         listener.fireDeselectAllTracks(i.childStructureIdx);
                     }
-                    hideLabileObjects(image);
-                    hideLabileTracks(image);
+                    hideAllRois(image, true, false);
                 }
                 Roi r = ip.getRoi();
                 BoundingBox selection = null;
@@ -356,8 +355,11 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             for (Roi r : o.toArray()) if (!(r instanceof Arrow)) o.remove(r);
         }
     }
-
     
+    // not to be called directly!!
+    protected void hideAllRois(ImagePlus image) {
+        image.setOverlay(new Overlay());
+    }
 
     
     public static class Roi3D extends HashMap<Integer, Roi> {

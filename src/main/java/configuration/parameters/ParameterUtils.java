@@ -252,7 +252,7 @@ public class ParameterUtils {
             public void configure(Parameter p) {
                 if (((StructureParameter)p).getSelectedStructureIdx()==-1) {
                     ((StructureParameter)p).setSelectedStructureIdx(structureIdxHint);
-                    logger.debug("Configuring: {}, with value: {}", p.getName(), structureIdxHint);
+                    //logger.debug("Configuring: {}, with value: {}", p.getName(), structureIdxHint);
                 }
             }
             public boolean isConfigurable(Parameter p) {

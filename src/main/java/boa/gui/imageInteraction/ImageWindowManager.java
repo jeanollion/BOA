@@ -540,8 +540,22 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         displayer.updateImageRoiDisplay(image);
     }
-
-    
+    protected abstract void hideAllRois(T image);
+    public void hideAllRois(Image image, boolean labile, boolean nonLabile) {
+        if (!labile && !nonLabile) return;
+        T im = getDisplayer().getImage(image);
+        if (im !=null) hideAllRois(im);
+        if (!labile) {
+            displayLabileObjects(image);
+            displayLabileTracks(image);
+        } else {
+            displayedLabileTrackRois.remove(image);
+            displayedLabileObjectRois.remove(image);
+        }
+        if (!nonLabile) {
+            GUI.updateRoiDisplayForSelections(image, null);
+        }
+    }
     protected abstract void hideAllTracks(T image);
     public void displayLabileTracks(Image image) {
         if (image==null) {

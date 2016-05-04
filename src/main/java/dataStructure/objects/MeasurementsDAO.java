@@ -22,6 +22,7 @@ import static dataStructure.objects.StructureObject.logger;
 import de.caluga.morphium.DAO;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.query.Query;
+import de.caluga.morphium.writer.MorphiumWriterImpl;
 import java.util.Collections;
 import java.util.List;
 import org.bson.types.ObjectId;

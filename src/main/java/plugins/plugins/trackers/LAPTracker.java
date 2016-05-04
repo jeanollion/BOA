@@ -83,7 +83,9 @@ public class LAPTracker implements TrackerSegmenter {
     }
     
     @Override public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
-        SegmentThenTrack stt = new SegmentThenTrack(segmenter.instanciatePlugin(), this).addPostFilters(postFilters.get()).addPreFilters(preFilters.get());
+        SegmentThenTrack stt = new SegmentThenTrack(segmenter.instanciatePlugin(), this);
+        if (preFilters!=null) stt.addPreFilters(preFilters.get());
+        if (postFilters!=null) stt.addPostFilters(postFilters.get());
         stt.segmentOnly(structureIdx, parentTrack);
         track(structureIdx, parentTrack, true);
     }
@@ -140,7 +142,7 @@ public class LAPTracker implements TrackerSegmenter {
         postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC);
         distParams.setGapDistancePenalty(gapPenalty*2); // double penalty  
         //postProcessor.printDistancesOnOverlay();
-        postProcessor.splitLongTracks(minimalTrackFrameNumber.getValue().intValue()-1, minimalDistanceForTrackSplittingPenalty.getValue().doubleValue(), maxLinkingDistanceGC, maximalTrackSplittingPenalty.getValue().doubleValue());
+        postProcessor.splitLongTracks(4, minimalTrackFrameNumber.getValue().intValue()-1, minimalDistanceForTrackSplittingPenalty.getValue().doubleValue(), maxLinkingDistanceGC, maximalTrackSplittingPenalty.getValue().doubleValue());
         postProcessor.flagShortAndLongTracks(minimalTrackFrameNumber.getValue().intValue(), maximalTrackFrameNumber.getValue().intValue());
         
         // ETUDE DES DEPLACEMENTS EN Y

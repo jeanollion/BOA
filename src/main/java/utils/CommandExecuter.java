@@ -17,6 +17,7 @@
  */
 package utils;
 
+import boa.gui.PropertyUtils;
 import boa.gui.DBUtil;
 import dataStructure.objects.MeasurementsDAO;
 import dataStructure.objects.MorphiumObjectDAO;

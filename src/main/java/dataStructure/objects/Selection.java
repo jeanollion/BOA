@@ -43,7 +43,7 @@ public class Selection implements Comparable<Selection> {
     @Id String id;
     int structureIdx;
     Map<String, List<String>> elements;
-    String color="Magenta";
+    String color="Green";
     boolean displayingTracks=false;
     boolean displayingObjects=false;
     

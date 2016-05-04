@@ -49,7 +49,7 @@ public class TestTrackLikelyhoodEstimator {
         ScoreFunction sf = new DistancePenaltyScoreFunction(new NormalDistribution(11.97, 1.76), new BetaDistribution(1.94, 7.66), 0.2, 0.02);
         //ScoreFunction sf = new DistancePenaltyScoreFunction(new NormalDistribution(11.97, 1.76), 0.2, 0.75, 100000);
         logger.debug("distance function: 0={} 0.3={}, 0.4={}, 0.5={}, 0.6={}, 0.7={}, 1={}", sf.getDistanceFunction().y(0), sf.getDistanceFunction().y(0.3), sf.getDistanceFunction().y(0.4), sf.getDistanceFunction().y(0.5), sf.getDistanceFunction().y(0.6), sf.getDistanceFunction().y(0.7), sf.getDistanceFunction().y(1));
-        estimator = new TrackLikelyhoodEstimator(sf, 5);
+        estimator = new TrackLikelyhoodEstimator(sf, 5, 3);
     }
 
     //@Test
