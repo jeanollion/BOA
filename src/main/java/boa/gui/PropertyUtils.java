@@ -36,6 +36,8 @@ public class PropertyUtils {
     public final static String MONGO_BIN_PATH = "mongo_bin_path";
     public final static String LAST_SELECTED_EXPERIMENT = "last_selected_xp";
     public final static String EXPORT_FORMAT = "export_format";
+    public final static String LAST_IMPORT_IMAGE_DIR = "last_import_image_dir";
+    public final static String LAST_IO_DATA_DIR = "last_io_data_dir";
     public static Properties getProps() { 
         if (props == null) { 
             props = new Properties();  

@@ -130,12 +130,12 @@ public class GenerateTestXP {
         boolean fluo = true;
         */
         
-        String dbName = "boa_fluo160428";
+        /*String dbName = "boa_fluo160428";
         String inputDir = "/data/Images/Fluo/film160428/63121r-laser1-28042016/";
         String outputDir = "/data/Images/Fluo/film160428/Output/";
         boolean flip = true;
         boolean fluo = true;
-        trimStart = 40;
+        trimStart = 40;*/
         
         /*String dbName = "boa_fluo160501";
         String inputDir = "/data/Images/Fluo/film160501/me121r-lr62rep2-01052016/";
@@ -151,6 +151,7 @@ public class GenerateTestXP {
         boolean fluo = false;
         */
         /*
+        ////////////////////////////
         // Ordi Portable
         String dbName = "testSub";
         String outputDir = "/home/jollion/Documents/LJP/DataLJP/TestOutput";
@@ -159,12 +160,12 @@ public class GenerateTestXP {
         boolean fluo = true;
         */     
         
-        /*String dbName = "fluo151127";
+        String dbName = "boa_fluo151127";
         String outputDir = "/home/jollion/Documents/LJP/DataLJP/Fluo151127/Output";
-        String inputDir = "/media/jollion/4336E5641DA22135/LJP/films1511/151127/ME121R-27112015-laser";
+        String inputDir = "/home/jollion/Documents/LJP/DataLJP/Fluo151127/champ1_0-49";
         boolean flip = true;
         boolean fluo = true;
-        */
+        
         
         boolean performProcessing = false;
         

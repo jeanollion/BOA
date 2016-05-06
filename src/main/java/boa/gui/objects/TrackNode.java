@@ -23,6 +23,7 @@ import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import core.Processor;
 import dataStructure.configuration.Experiment;
+import dataStructure.objects.Selection;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import java.awt.event.ActionEvent;
@@ -215,10 +216,11 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
         JMenuItem[] openSeg;
         JMenuItem[] runSegAndTracking;
         JMenuItem[] runTracking;
+        JMenuItem[] createSelection;
         JMenuItem delete;
         public TrackNodeUI(TrackNode tn) {
             this.trackNode=tn;
-            this.actions = new JMenuItem[5];
+            this.actions = new JMenuItem[6];
             JMenu segSubMenu = new JMenu("Open Segmented Track Image");
             actions[0] = segSubMenu;
             JMenu rawSubMenu = new JMenu("Open Raw Track Image");
@@ -228,9 +230,11 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
             actions[2] = runSegAndTrackingSubMenu;
             JMenu runTrackingSubMenu = new JMenu("Run tracking");
             actions[3] = runTrackingSubMenu;
+            JMenu createSelectionSubMenu = new JMenu("Create Selection");
+            actions[4] = createSelectionSubMenu;
             String[] childStructureNames = trackNode.trackHead.getExperiment().getChildStructuresAsString(trackNode.trackHead.getStructureIdx());
             delete = new JMenuItem("Delete");
-            actions[4] = delete;
+            actions[5] = delete;
             //delete.setEnabled(false);
             delete.setAction(new AbstractAction("Delete") {
                 @Override public void actionPerformed(ActionEvent e) {
@@ -336,10 +340,34 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                 );
                 runTrackingSubMenu.add(runTracking[i]);
             }
+            
+            createSelection = new JMenuItem[childStructureNames.length];
+            for (int i = 0; i < createSelection.length; i++) {
+                createSelection[i] = new JMenuItem(childStructureNames[i]);
+                createSelection[i].setAction(new AbstractAction(childStructureNames[i]) {
+                        @Override
+                        public void actionPerformed(ActionEvent ae) {
+                            final int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
+                            logger.debug("create selectionfor structure: {} of idx: {}, within track: {}", ae.getActionCommand(), structureIdx, trackHead);
+                            List<TrackNode> selectedNodes = root.generator.getSelectedTrackNodes();
+                            List<StructureObject> objectsToAdd = new ArrayList<StructureObject>();
+                            for (TrackNode tn : selectedNodes) {
+                                for (StructureObject p : tn.getTrack()) objectsToAdd.addAll(p.getChildren(structureIdx));
+                            }
+                            Selection s = root.generator.db.getSelectionDAO().getOrCreate(ae.getActionCommand(), true);
+                            s.addElements(objectsToAdd);
+                            s.setIsDisplayingObjects(true);
+                            root.generator.db.getSelectionDAO().store(s);
+                            GUI.getInstance().populateSelections();
+                        }
+                    }
+                );
+                createSelectionSubMenu.add(createSelection[i]);
+            }
         }
         public Object[] getDisplayComponent(boolean multipleSelection) {
             if (multipleSelection) {
-                return new JMenuItem[]{actions[2], actions[3], actions[4]};
+                return new JMenuItem[]{actions[2], actions[3], actions[4], actions[5]};
             } else return actions;
         }
         private int getStructureIdx(String name, JMenuItem[] actions) {

@@ -105,6 +105,7 @@ public abstract class ImageWindowManager<T, U, V> {
         if (displayImage) {
             displayer.showImage(image);
             addMouseListener(image);
+            GUI.updateRoiDisplayForSelections(image, i);
         }
     }
     

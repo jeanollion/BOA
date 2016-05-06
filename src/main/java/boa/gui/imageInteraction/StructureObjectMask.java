@@ -79,9 +79,11 @@ public class StructureObjectMask extends ImageObjectInterface {
     }
 
     @Override public ArrayList<Pair<StructureObject, BoundingBox>> getObjects() {
-        if (objects == null) reloadObjects();
+        getOffsets();
         ArrayList<Pair<StructureObject, BoundingBox>> res = new ArrayList<Pair<StructureObject, BoundingBox>>(objects.size());
-        for (int i = 0; i < offsets.length; ++i) res.add(new Pair(objects.get(i), offsets[i]));
+        for (int i = 0; i < offsets.length; ++i) {
+            res.add(new Pair(objects.get(i), offsets[i]));
+        }
         return res;
     }
 

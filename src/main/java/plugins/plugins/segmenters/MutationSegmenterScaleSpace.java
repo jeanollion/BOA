@@ -69,9 +69,9 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter {
     public static boolean debug = false;
     public static boolean displayImages = false;
     NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxels)", 0, 5, 1, null);
-    NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 3, 2, 1, null);
+    NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 3, 2.5, 1, null);
     NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 3, 0.75, 0, null);
-    NumberParameter intensityThreshold = new BoundedNumberParameter("Intensity Threshold for Seeds", 2, 125, 0, null);
+    NumberParameter intensityThreshold = new BoundedNumberParameter("Intensity Threshold for Seeds", 2, 117, 0, null);
     PostFilterSequence postFilters = new PostFilterSequence("Post-Filters").add(new FeatureFilter(new SNR().setBackgroundObjectStructureIdx(1), 0.75, true, true));
     Parameter[] parameters = new Parameter[]{minSpotSize, thresholdHigh,  thresholdLow, intensityThreshold, postFilters};
     
@@ -163,12 +163,15 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter {
         double[] radii = new double[]{2, 2.5, 3, 3.5, 5, 7};
         int maxScaleIdx=radii.length-1-2;
         int maxScaleWSIdx=1;
-        Image scaleSpace = getScaleSpace(input, radii); 
+        Image smooth = ImageFeatures.gaussianSmooth(input, 2, 2, false);
+        Image scaleSpace = getScaleSpace(input, smooth, radii); 
         ImageByte seedsSP = getSeedsScaleSpace(scaleSpace, thresholdSeeds, 1.5, maxScaleIdx);
+        //new IJImageDisplayer().showImage(seedsSP.duplicate("before filter intensity"));
+        //new IJImageDisplayer().showImage(smooth.duplicate("smoothed"));
         // filter by intensity : remove seeds with low intensity
         for (int z = 0; z<seedsSP.getSizeZ(); ++z) {
             for (int xy = 0; xy<seedsSP.getSizeXY(); ++xy) {
-                if (seedsSP.insideMask(xy, z) && input.getPixel(xy, 0)<thresholdSeedsIntensity) seedsSP.setPixel(xy, z, 0);
+                if (seedsSP.insideMask(xy, z) && smooth.getPixel(xy, 0)<thresholdSeedsIntensity) seedsSP.setPixel(xy, z, 0);
             }
         }
         Image[] wsMaps = scaleSpace.splitZPlanes(0, maxScaleWSIdx).toArray(new Image[0]);
@@ -191,10 +194,10 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter {
         return pop;
     }
     
-    private static Image getScaleSpace(Image input, double[] radii) {
+    private static Image getScaleSpace(Image input, Image norm, double[] radii) {
         //return ImageFeatures.getScaleSpaceHessianMax(input, radii);
         //return ImageFeatures.getScaleSpaceHessianMax(input, radii);
-        return ImageFeatures.getScaleSpaceHessianMaxNorm(input, radii, ImageFeatures.gaussianSmooth(input, 2, 2, false), 100); // ou scale = 3
+        return ImageFeatures.getScaleSpaceHessianMaxNorm(input, radii, norm, 100); // ou scale = 3
     }
     
     private static ImageByte getSeedsScaleSpace(Image scaleSpace, double thresholdSeeds, double radius, int maxScaleIdx) {
@@ -250,7 +253,8 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter {
     }
 
     public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
-        Image scaleSpace = getScaleSpace(input, new double[]{2.5}).setName("WatershedMap from: "+input.getName());
+        Image smooth = ImageFeatures.gaussianSmooth(input, 2, 2, false);
+        Image scaleSpace = getScaleSpace(input, smooth, new double[]{2.5}).setName("WatershedMap from: "+input.getName());
         List<Object3D> seedObjects = ObjectFactory.createObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());
         ObjectPopulation pop =  WatershedTransform.watershed(scaleSpace, segmentationMask, seedObjects, true, new WatershedTransform.ThresholdPropagationOnWatershedMap(thresholdLow.getValue().doubleValue()), new WatershedTransform.SizeFusionCriterion(minSpotSize.getValue().intValue()));
         

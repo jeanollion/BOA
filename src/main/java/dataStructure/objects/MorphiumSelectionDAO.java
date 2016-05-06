@@ -49,6 +49,7 @@ public class MorphiumSelectionDAO implements SelectionDAO {
     public List<Selection> getSelections() {
         List<Selection> sel = getQuery().asList();
         Collections.sort(sel);
+        for (Selection s : sel) s.setMasterDAO(masterDAO);
         return sel;
     }
     
@@ -78,5 +79,22 @@ public class MorphiumSelectionDAO implements SelectionDAO {
     public void deleteAllObjects() {
         masterDAO.m.getDatabase().getCollection(collectionName).drop();
         //masterDAO.m.clearCollection(Measurements.class, collectionName);
+    }
+
+    public Selection getOrCreate(String name, boolean clearIfExisting) {
+        List<Selection> sels = getSelections();
+        Selection res = null;
+        for (Selection s : sels) {
+            if (s.getName().equals(name)) {
+                res = s;
+                break;
+            }
+        }
+        if (res!=null) {
+            if (clearIfExisting) res.clear();
+        } else {
+            res = new Selection(name, masterDAO);
+        }
+        return res;
     }
 }

@@ -243,10 +243,7 @@
     </DimensionLayout>
     <DimensionLayout dim="1">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Group type="102" alignment="0" attributes="0">
-              <Component id="tabs" min="-2" pref="645" max="-2" attributes="0"/>
-              <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
-          </Group>
+          <Component id="tabs" alignment="0" pref="664" max="32767" attributes="0"/>
       </Group>
     </DimensionLayout>
   </Layout>
@@ -291,7 +288,7 @@
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Component id="actionMicroscopyFieldJSP" alignment="0" max="32767" attributes="0"/>
                           <Group type="102" alignment="0" attributes="0">
-                              <Component id="actionStructureJSP" pref="409" max="32767" attributes="0"/>
+                              <Component id="actionStructureJSP" pref="428" max="32767" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="actionJSP" min="-2" pref="163" max="-2" attributes="0"/>
                           </Group>
@@ -437,7 +434,7 @@
             </DimensionLayout>
             <DimensionLayout dim="1">
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="configurationJSP" alignment="0" pref="602" max="32767" attributes="0"/>
+                  <Component id="configurationJSP" alignment="0" pref="621" max="32767" attributes="0"/>
               </Group>
             </DimensionLayout>
           </Layout>
@@ -475,7 +472,7 @@
                   <Group type="102" alignment="0" attributes="0">
                       <EmptySpace max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="ControlPanel" pref="590" max="32767" attributes="0"/>
+                          <Component id="ControlPanel" max="32767" attributes="0"/>
                           <Group type="102" attributes="0">
                               <Group type="103" groupAlignment="0" attributes="0">
                                   <Component id="ObjectTreeJSP" pref="0" max="32767" attributes="0"/>
@@ -565,11 +562,11 @@
                           <Component id="deleteObjectsButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="linkObjectsButton" min="-2" max="-2" attributes="0"/>
-                          <EmptySpace max="32767" attributes="0"/>
+                          <EmptySpace max="-2" attributes="0"/>
                           <Component id="unlinkObjectsButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="collapseAllObjectButton" min="-2" max="-2" attributes="0"/>
-                          <EmptySpace min="-2" pref="24" max="-2" attributes="0"/>
+                          <EmptySpace max="32767" attributes="0"/>
                       </Group>
                   </Group>
                 </DimensionLayout>
@@ -740,7 +737,7 @@
                     </DimensionLayout>
                     <DimensionLayout dim="1">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="structureJSP" alignment="0" pref="554" max="32767" attributes="0"/>
+                          <Component id="structureJSP" alignment="0" pref="573" max="32767" attributes="0"/>
                       </Group>
                     </DimensionLayout>
                   </Layout>
@@ -773,7 +770,7 @@
                     </DimensionLayout>
                     <DimensionLayout dim="1">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="TimeJSP" alignment="0" pref="554" max="32767" attributes="0"/>
+                          <Component id="TimeJSP" alignment="0" pref="573" max="32767" attributes="0"/>
                       </Group>
                     </DimensionLayout>
                   </Layout>

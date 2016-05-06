@@ -61,7 +61,7 @@ public class DBUtil {
             Collections.sort(res);
             long t1 = System.currentTimeMillis();
             GUI.logger.info("{} db names retrieved in: {}ms", res.size(), t1 - t0);
-            if (filterPrefix!=null) filter(res, filterPrefix);
+            //if (filterPrefix!=null) filter(res, filterPrefix);
             return res;
         } catch (Exception e) {
             logger.error("DB connection error: check hostname or DB server status", e);

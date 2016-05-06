@@ -138,7 +138,7 @@ public class ManualCorrection {
             for (StructureObject o : uniqueTh) trackToDisp.add(StructureObjectUtils.getTrack(o, true));
             // update current image
             ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
-            iwm.displayTracks(null, null, trackToDisp, true);
+            if (!trackToDisp.isEmpty()) iwm.displayTracks(null, null, trackToDisp, true);
         }
     }
     

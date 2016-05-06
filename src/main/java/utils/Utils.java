@@ -337,6 +337,14 @@ public class Utils {
         else return null;
     }
     
+    public static File getOneDir(File[] files) {
+        for (File f : files) {
+            if (f.isDirectory()) return f;
+        }
+        if (files.length>0) return files[0].getParentFile();
+        return null;
+    }
+    
     public static String[] convertFilesToString(File[] files) {
         if (files ==null) return null;
         String[] res = new String[files.length];

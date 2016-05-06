@@ -53,7 +53,7 @@ public class Selection implements Comparable<Selection> {
     @Transient MasterDAO mDAO;
     @Transient Color col;
     
-    public Selection(String name) {
+    public Selection(String name, MasterDAO mDAO) {
         this.id=name;
         this.structureIdx=-1;
         elements = new HashMap<String, List<String>>();

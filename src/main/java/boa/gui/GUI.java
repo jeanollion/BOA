@@ -153,7 +153,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         toFront();
         // format button
-        boolean json = PropertyUtils.get(PropertyUtils.EXPORT_FORMAT, "json").equals("json");
+        boolean json = PropertyUtils.get(PropertyUtils.EXPORT_FORMAT, "bson").equals("json");
         this.bsonFormatMenuItem.setSelected(!json);
         this.jsonFormatMenuItem.setSelected(json);
         ButtonGroup group = new ButtonGroup();
@@ -379,7 +379,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         populateActionStructureList();
         populateActionMicroscopyFieldList();
         reloadObjectTrees=true;
-        loadSelections();
+        populateSelections();
     }
     
     private void updateConfigurationTree() {
@@ -413,15 +413,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         this.tabs.setEnabledAt(2, enable); // data browsing
     }
     
-    protected void loadSelections() {
+    public void populateSelections() {
         this.selectionModel.removeAllElements();
         if (!checkConnection()) return;
         SelectionDAO dao = this.db.getSelectionDAO();
         List<Selection> sels = dao.getSelections();
-        
         for (Selection sel : sels) {
             selectionModel.addElement(sel);
-            sel.setMasterDAO(db);
+            logger.debug("Selection : {}, displayingObjects: {} track: {}", sel.getName(), sel.isDisplayingObjects(), sel.isDisplayingTracks());
         }
     }
     
@@ -797,7 +796,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(actionMicroscopyFieldJSP)
                     .addGroup(actionPanelLayout.createSequentialGroup()
-                        .addComponent(actionStructureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 409, Short.MAX_VALUE)
+                        .addComponent(actionStructureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 428, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(actionJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 163, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(actionPanelLayout.createSequentialGroup()
@@ -817,7 +816,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         configurationPanelLayout.setVerticalGroup(
             configurationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 602, Short.MAX_VALUE)
+            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 621, Short.MAX_VALUE)
         );
 
         tabs.addTab("Configuration", configurationPanel);
@@ -990,11 +989,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addComponent(deleteObjectsButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(linkObjectsButton)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(unlinkObjectsButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(collapseAllObjectButton)
-                .addGap(24, 24, 24))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
         StructurePanel.setBorder(javax.swing.BorderFactory.createTitledBorder("SegmentedObjects"));
@@ -1007,7 +1006,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         StructurePanelLayout.setVerticalGroup(
             StructurePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(structureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 554, Short.MAX_VALUE)
+            .addComponent(structureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 573, Short.MAX_VALUE)
         );
 
         ObjectTreeJSP.setLeftComponent(StructurePanel);
@@ -1026,7 +1025,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         trackPanelLayout.setVerticalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 554, Short.MAX_VALUE)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 573, Short.MAX_VALUE)
         );
 
         ObjectTreeJSP.setRightComponent(trackPanel);
@@ -1085,7 +1084,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             .addGroup(dataPanelLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(ControlPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 590, Short.MAX_VALUE)
+                    .addComponent(ControlPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(dataPanelLayout.createSequentialGroup()
                         .addGroup(dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(ObjectTreeJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
@@ -1294,9 +1293,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(layout.createSequentialGroup()
-                .addComponent(tabs, javax.swing.GroupLayout.PREFERRED_SIZE, 645, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, Short.MAX_VALUE))
+            .addComponent(tabs, javax.swing.GroupLayout.DEFAULT_SIZE, 664, Short.MAX_VALUE)
         );
 
         pack();
@@ -1400,20 +1397,20 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }//GEN-LAST:event_deleteObjectsButtonActionPerformed
 
     private void reloadSelectionsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_reloadSelectionsButtonActionPerformed
-        loadSelections();
+        populateSelections();
     }//GEN-LAST:event_reloadSelectionsButtonActionPerformed
 
     private void createSelectionButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_createSelectionButtonActionPerformed
         String name = JOptionPane.showInputDialog("New Selection name:");
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
         else {
+            populateSelections();
             for (int i = 0; i<selectionModel.size(); ++i) if (selectionModel.get(i).getName().equals(name)) {
                 logger.error("Selection name already exists");
                 return;
             }
-            Selection sel = new Selection(name);
+            Selection sel = new Selection(name, db);
             this.db.getSelectionDAO().store(sel);
-            sel.setMasterDAO(db);
             this.selectionModel.addElement(sel);
         }
     }//GEN-LAST:event_createSelectionButtonActionPerformed
@@ -1510,15 +1507,16 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (!checkConnection()) return;
         db.updateExperiment();
     }//GEN-LAST:event_saveXPMenuItemActionPerformed
-    private String promptDir(String message) {
+    private String promptDir(String message, String def) {
         if (message==null) message = "Choose Directory";
-        File outputFile = Utils.chooseFile(message, null, FileChooser.FileChooserOption.FILE_OR_DIRECTORY, this);
+        File outputFile = Utils.chooseFile(message, def, FileChooser.FileChooserOption.FILE_OR_DIRECTORY, this);
         if (outputFile ==null) return null;
         if (!outputFile.isDirectory()) outputFile=outputFile.getParentFile();
         return outputFile.getAbsolutePath();
     }
     private void exportWholeXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exportWholeXPMenuItemActionPerformed
-        String dir = promptDir("Choose output directory");
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
+        String dir = promptDir("Choose output directory", defDir);
         if (dir==null) return;
         List<String> xpToExport = this.getSelectedExperiments();
         int count=0;
@@ -1526,11 +1524,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             logger.info("Exporting whole XP : {}/{}", ++count, xpToExport.size());
             CommandExecuter.dumpDB(getHostName(), xp, dir, jsonFormatMenuItem.isSelected());
         }
+        PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
     }//GEN-LAST:event_exportWholeXPMenuItemActionPerformed
 
     private void exportSelectedFieldsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exportSelectedFieldsMenuItemActionPerformed
         if (!checkConnection()) return;
-        String dir = promptDir("Choose output directory");
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
+        String dir = promptDir("Choose output directory", defDir);
         if (dir==null) return;
         int[] sel  = getSelectedMicroscopyFields();
         String[] fNames = db.getExperiment().getFieldsAsString();
@@ -1542,19 +1542,22 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             logger.info("Exporting: {}/{}", ++count, sel.length);
             CommandExecuter.dump(hostname, dbName, cName, dir, jsonFormatMenuItem.isSelected());
         }
+        PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
     }//GEN-LAST:event_exportSelectedFieldsMenuItemActionPerformed
 
     private void exportXPConfigMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exportXPConfigMenuItemActionPerformed
         if (!checkConnection()) return;
-        String dir = promptDir("Choose output directory");
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
+        String dir = promptDir("Choose output directory", defDir);
         if (dir==null) return;
         CommandExecuter.dump(getHostName(), db.getDBName(), "Experiment", dir, jsonFormatMenuItem.isSelected());
-        
+        PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
     }//GEN-LAST:event_exportXPConfigMenuItemActionPerformed
 
     private void importFieldsToCurrentExperimentMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importFieldsToCurrentExperimentMenuItemActionPerformed
         if (!checkConnection()) return;
-        File[] selectedFiles = Utils.chooseFiles("Select directory containing exported files OR directly exported files", null, FileChooser.FileChooserOption.FILE_OR_DIRECTORY, this);
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
+        File[] selectedFiles = Utils.chooseFiles("Select directory containing exported files OR directly exported files", defDir, FileChooser.FileChooserOption.FILE_OR_DIRECTORY, this);
         if (selectedFiles==null || selectedFiles.length==0) return;
         Map<String, String> fields = CommandExecuter.getObjectDumpedCollections(selectedFiles);
         if (fields.isEmpty()) {
@@ -1598,7 +1601,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             loadObjectTrees();
             populateActionMicroscopyFieldList();
         }
-        
+        File f = Utils.getOneDir(selectedFiles);
+        if (f!=null) PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, f.getAbsolutePath());
     }//GEN-LAST:event_importFieldsToCurrentExperimentMenuItemActionPerformed
 
     private void importConfigurationForSelectedPositionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importConfigurationForSelectedPositionsMenuItemActionPerformed
@@ -1612,7 +1616,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }//GEN-LAST:event_importConfigurationForSelectedStructuresMenuItemActionPerformed
 
     private void importNewExperimentMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importNewExperimentMenuItemActionPerformed
-        String dir = promptDir("Select folder containing experiment folders");
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
+        String dir = promptDir("Select folder containing experiment folders", defDir);
         if (dir==null) return;
         File directory = new File(dir);
         // whole xp are located in sub directories
@@ -1653,17 +1658,21 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             CommandExecuter.restoreDB(hostname, DBUtil.addPrefix(f.getName(), DBprefix), f.getAbsolutePath());
         }
         populateExperimentList();
+        PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
     }//GEN-LAST:event_importNewExperimentMenuItemActionPerformed
 
     private void importConfigToCurrentExperimentMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importConfigToCurrentExperimentMenuItemActionPerformed
         if (!checkConnection()) return;
-        File outputFile = Utils.chooseFile("Select Experiment.bson of Experiment.json file (WARNING: current configuration will be lost)", null, FileChooser.FileChooserOption.FILE_OR_DIRECTORY, this);
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
+        File outputFile = Utils.chooseFile("Select Experiment.bson of Experiment.json file (WARNING: current configuration will be lost)", defDir, FileChooser.FileChooserOption.FILE_OR_DIRECTORY, this);
         if (outputFile!=null && outputFile.getName().equals("Experiment.bson") || outputFile.getName().equals("Experiment.json")) {
             CommandExecuter.restore(getHostName(), db.getDBName(), "Experiment", outputFile.getAbsolutePath(), true);
             String dbName = db.getDBName();
             unsetXP();
             setDBConnection(dbName, getHostName());
+            PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, outputFile.getAbsolutePath());
         }
+        
     }//GEN-LAST:event_importConfigToCurrentExperimentMenuItemActionPerformed
 
     private void runSelectedActionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runSelectedActionsMenuItemActionPerformed
@@ -1700,11 +1709,16 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void importImagesMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importImagesMenuItemActionPerformed
         if (!checkConnection()) return;
-        File[] selectedFiles = Utils.chooseFiles("Choose images/directories to import", null, FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, this);
-        if (selectedFiles!=null) Processor.importFiles(this.db.getExperiment(), true,  Utils.convertFilesToString(selectedFiles));
-        db.updateExperiment(); //stores imported fields
-        populateActionMicroscopyFieldList();
-        updateConfigurationTree();
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_IMPORT_IMAGE_DIR);
+        File[] selectedFiles = Utils.chooseFiles("Choose images/directories to import", defDir, FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, this);
+        if (selectedFiles!=null) {
+            Processor.importFiles(this.db.getExperiment(), true,  Utils.convertFilesToString(selectedFiles));
+            File dir = Utils.getOneDir(selectedFiles);
+            if (dir!=null) PropertyUtils.set(PropertyUtils.LAST_IMPORT_IMAGE_DIR, dir.getAbsolutePath());
+            db.updateExperiment(); //stores imported fields
+            populateActionMicroscopyFieldList();
+            updateConfigurationTree();
+        }
     }//GEN-LAST:event_importImagesMenuItemActionPerformed
 
     private void extractMeasurementMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_extractMeasurementMenuItemActionPerformed
