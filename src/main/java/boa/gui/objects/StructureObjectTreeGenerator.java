@@ -110,10 +110,17 @@ public class StructureObjectTreeGenerator {
         if (treeModel!=null) treeModel.reload();
     }
     
+    public void reload(StructureObject o) {
+        reload(getStructureNode(o));
+    }
+    
     public void reload(TreeNode node) {
+        if (node==null) return;
         if (treeModel!=null) {
+            TreePath p = Utils.getTreePath(node);
+            boolean exp  = !tree.isCollapsed(p);
             treeModel.reload(node);
-            tree.expandPath(Utils.getTreePath(node));
+            if (exp) tree.expandPath(p);
         }
     }
     
@@ -164,7 +171,7 @@ public class StructureObjectTreeGenerator {
             StructureNode s = lastStructureContainer.getStructureNode(o.getStructureIdx());
             path.add(s);
             if (s.getChildren().size()<=o.getIdx()) logger.error("getObjectTreePath error:: object idx too hight: object to find: {}, current parent: {}, current child: {}", object, s, o);
-            ObjectNode on = s.getChildren().get(o.getIdx());
+            ObjectNode on = s.getChild(o);
             path.add(on);
             lastStructureContainer=on;
         }
@@ -179,10 +186,25 @@ public class StructureObjectTreeGenerator {
         StructureNodeContainer lastStructureContainer = t;
         for (StructureObject o : objectPath) {
             StructureNode s = lastStructureContainer.getStructureNode(o.getStructureIdx());
-            ObjectNode on = s.getChildren().get(o.getIdx());
+            ObjectNode on = s.getChild(o);
             lastStructureContainer=on;
         }
         return (ObjectNode)lastStructureContainer;
+    }
+    
+    public StructureNode getStructureNode(StructureObject object) {
+        FieldNode f = experimentNode.getFieldNode(object.getFieldName());
+        TimePointNode t = f.getChildren()[object.getTimePoint()];
+        ArrayList<StructureObject> objectPath = getObjectPath(object);
+        StructureNodeContainer lastStructureContainer = t;
+        for (StructureObject o : objectPath) {
+            StructureNode s = lastStructureContainer.getStructureNode(o.getStructureIdx());
+            if (o==object) return s;
+            ObjectNode on = s.getChild(o);
+            if (on==null) return null;
+            lastStructureContainer=on;
+        }
+        return null;
     }
     
     private ArrayList<StructureObject> getObjectPath(StructureObject object) {

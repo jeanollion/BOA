@@ -41,6 +41,7 @@ import plugins.plugins.segmenters.MicroChannelPhase2D;
 import plugins.plugins.segmenters.MutationSegmenter;
 import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
 import plugins.plugins.trackers.BacteriaClosedMicrochannelTrackerLocalCorrections;
+import plugins.plugins.trackers.LAPTracker;
 import plugins.plugins.trackers.MicrochannelProcessor;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import plugins.plugins.transformations.AutoRotationXY;
@@ -69,6 +70,7 @@ public class GenerateTestXP {
         boolean flip = true;
         boolean fluo = true;
         */
+        int trimStart=0, trimEnd=0;
         //////// FLUO
         // Ordi LJP
         /*String dbName = "fluo151130_OutputNewScaling";
@@ -121,12 +123,26 @@ public class GenerateTestXP {
         boolean flip = false;
         boolean fluo = true;*/
         
-        String dbName = "fluo160408";
+        /*String dbName = "fluo160408";
         String inputDir = "/data/Images/Fluo/film160408/me121r-laser1-08042016/";
         String outputDir = "/data/Images/Fluo/film160408/Output/";
         boolean flip = true;
         boolean fluo = true;
+        */
         
+        String dbName = "boa_fluo160428";
+        String inputDir = "/data/Images/Fluo/film160428/63121r-laser1-28042016/";
+        String outputDir = "/data/Images/Fluo/film160428/Output/";
+        boolean flip = true;
+        boolean fluo = true;
+        trimStart = 40;
+        
+        /*String dbName = "boa_fluo160501";
+        String inputDir = "/data/Images/Fluo/film160501/me121r-lr62rep2-01052016/";
+        String outputDir = "/data/Images/Fluo/film160501/Output";
+        boolean flip = true;
+        boolean fluo = true;
+        */
         //////////// Trans
         /*String dbName = "testBF";
         String inputDir = "/data/Images/Lydia/testJeanFilm";
@@ -154,10 +170,10 @@ public class GenerateTestXP {
         
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
         mDAO.reset();
-        Experiment xp = fluo ? generateXPFluo(outputDir, true, flip) : generateXPBF(outputDir, true, flip); 
+        Experiment xp = fluo ? generateXPFluo(outputDir, true, flip, trimStart, trimEnd) : generateXPBF(outputDir, true, flip, trimStart, trimEnd); 
         mDAO.setExperiment(xp);
         
-        Processor.importFiles(xp, inputDir);
+        Processor.importFiles(xp, true, inputDir);
         
         if (performProcessing) {
             Processor.preProcessImages(mDAO, true);
@@ -167,7 +183,7 @@ public class GenerateTestXP {
     }
     
     
-    public static Experiment generateXPFluo(String outputDir, boolean setUpPreProcessing, boolean flip) {
+    public static Experiment generateXPFluo(String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd) {
         
         Experiment xp = new Experiment("testXP");
         xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
@@ -182,7 +198,8 @@ public class GenerateTestXP {
         
         mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessor()));
         bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo(), 0.9, 1.1, 1.7, 1, 5)));
-        mutation.setProcessingScheme(new SegmentOnly(new MutationSegmenterScaleSpace().setThresholdSeeds(2)));
+        //mutation.setProcessingScheme(new SegmentOnly(new MutationSegmenterScaleSpace().setThresholdSeeds(2)));
+        mutation.setProcessingScheme(new SegmentAndTrack(new LAPTracker().setCompartimentStructure(1)));
         //mutation.setManualSegmenter();
         xp.addMeasurement(new BacteriaLineageIndex(1, "BacteriaLineage"));
         xp.addMeasurement(new BacteriaFluoMeasurements(1, 2));
@@ -191,6 +208,7 @@ public class GenerateTestXP {
         xp.addMeasurement(new BacteriaMeasurementsWoleMC(1, 2));
         if (setUpPreProcessing) {// preProcessing 
             //xp.getPreProcessingTemplate().addTransformation(0, null, new SuppressCentralHorizontalLine(6)).setActivated(false);
+            xp.getPreProcessingTemplate().setTrimFrames(trimFramesStart, trimFramesEnd);
             xp.getPreProcessingTemplate().addTransformation(0, null, new SaturateHistogram(350, 450));
             xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1, 0)).setActivated(true); // to remove salt and pepper noise
             xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
@@ -204,7 +222,7 @@ public class GenerateTestXP {
         return xp;
     }
     
-    public static Experiment generateXPBF(String outputDir, boolean setUpPreProcessing, boolean flip) {
+    public static Experiment generateXPBF(String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd) {
         
         Experiment xp = new Experiment("testXP");
         xp.setImportImageMethod(Experiment.ImportImageMethod.SINGLE_FILE);
@@ -228,6 +246,7 @@ public class GenerateTestXP {
         //xp.addMeasurement(new BacteriaMeasurements(1, 2));
         xp.addMeasurement(new BacteriaMeasurementsWoleMC(1, 2));
         if (setUpPreProcessing) {// preProcessing 
+            xp.getPreProcessingTemplate().setTrimFrames(trimFramesStart, trimFramesEnd);
             xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT, 0));
             xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
             xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannelBF2D());

@@ -200,9 +200,9 @@ public class ObjectPopulation {
                 labelImage.resetOffset().addOffset(properties);
             }
             labelImage.setCalibration(properties);
-            this.properties=  new BlankMask("", properties); 
+            this.properties=  properties.getProperties(); 
         } else {
-            this.properties = new BlankMask("", properties); //set aussi la taille de l'image
+            this.properties = properties.getProperties(); //set aussi la taille de l'image
         }
         return this;
     }

@@ -27,6 +27,7 @@ import configuration.parameters.ParameterUtils;
 import configuration.parameters.PluginParameter;
 import configuration.parameters.SimpleContainerParameter;
 import configuration.parameters.SimpleListParameter;
+import configuration.parameters.TimePointParameter;
 import configuration.parameters.TransformationPluginParameter;
 import configuration.parameters.ui.MultipleChoiceParameterUI;
 import configuration.parameters.ui.ParameterUI;
@@ -60,6 +61,7 @@ public class PreProcessingChain extends SimpleContainerParameter {
     BoundedNumberParameter scaleXY;
     BoundedNumberParameter scaleZ;
     @Transient ConditionalParameter imageScaleCond;
+    TimePointParameter trimFramesStart, trimFramesEnd;
     SimpleListParameter<TransformationPluginParameter<Transformation>> transformations;
     
     public PreProcessingChain(String name) {
@@ -69,7 +71,7 @@ public class PreProcessingChain extends SimpleContainerParameter {
         initScaleParam(true, true);
         initChildList();
     }
-    
+
     private void initScaleParam(boolean initParams, boolean initCond) {
         if (initParams) {
             useImageScale = new BooleanParameter("Voxel Calibration", "Use Image Calibration", "Custom Calibration", true);
@@ -93,7 +95,11 @@ public class PreProcessingChain extends SimpleContainerParameter {
     protected void initChildList() {
         //logger.debug("PreProc chain: {}, init list..", name);
         initScaleParam(useImageScale==null, imageScaleCond==null); //TODO for retrocompatibility
-        super.initChildren(imageScaleCond, transformations);
+        if (trimFramesStart==null) trimFramesStart = new TimePointParameter("Trim Frames Start Position", 0, false);
+        else trimFramesStart.setUseRawInputFrames(true); //TODO for retrocompatibility
+        if (trimFramesEnd==null) trimFramesEnd = new TimePointParameter("Trim Frames Stop Position (0=no trimming)", 0, false);
+        else trimFramesEnd.setUseRawInputFrames(true); //TODO for retrocompatibility
+        super.initChildren(imageScaleCond, transformations, trimFramesStart, trimFramesEnd);
     }
     
     public List<TransformationPluginParameter<Transformation>> getTransformations() {
@@ -102,6 +108,11 @@ public class PreProcessingChain extends SimpleContainerParameter {
     
     public void removeAllTransformations() {
         transformations.removeAllElements();
+    }
+    
+    public void setTrimFrames(int startFrame, int endFrame) {
+        this.trimFramesStart.setTimePoint(startFrame);
+        this.trimFramesEnd.setTimePoint(endFrame);
     }
     
     /**

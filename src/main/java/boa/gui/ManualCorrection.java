@@ -79,9 +79,10 @@ public class ManualCorrection {
             }
             // unlinking each of the two spots
             if (next.getPrevious()!=null) unlinkObjects(next.getPrevious(), next, modifiedTrackHeads);
-            if (prev.getNext()!=null) unlinkObjects(prev, prev.getNext(), modifiedTrackHeads);
-            next.setPreviousInTrack(prev, false);
-            next.setTrackHead(prev.getTrackHead(), false, true);
+            //if (prev.getNext()!=null) unlinkObjects(prev, prev.getNext(), modifiedTrackHeads);
+            boolean newTh = prev.getNext()!=null;
+            next.setPreviousInTrack(prev, newTh);
+            if (!newTh) next.setTrackHead(prev.getTrackHead(), false, true);
             next.setTrackFlag(StructureObject.TrackFlag.correctionMerge);
             modifiedTrackHeads.add(prev.getTrackHead());
             //logger.debug("linking: {} to {}", prev, next);
@@ -89,7 +90,7 @@ public class ManualCorrection {
         
     }
     
-    public static void linkObjects(MasterDAO db, List<StructureObject> objects, boolean updateDisplay) {
+    public static void modifyObjectLinks(MasterDAO db, List<StructureObject> objects, boolean unlink, boolean updateDisplay) {
         StructureObjectUtils.keepOnlyObjectsFromSameMicroscopyField(objects);
         StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(objects);
         if (objects.isEmpty()) return;
@@ -98,7 +99,7 @@ public class ManualCorrection {
         
         List<StructureObject> thToDisp = new ArrayList<StructureObject>();
         if (objects.size()==1) { // unlink spot
-            ManualCorrection.unlinkObject(objects.get(0));
+            if (unlink) ManualCorrection.unlinkObject(objects.get(0));
         } else { 
             TreeMap<StructureObject, List<StructureObject>> objectsByParent = new TreeMap(StructureObjectUtils.splitByParent(objects)); // sorted by time point
             StructureObject prevParent = null;
@@ -108,10 +109,10 @@ public class ManualCorrection {
                 if (l.size()==1 && (prevParent==null || prevParent.getTimePoint()<currentParent.getTimePoint())) {
                     if (prevParent!=null && prev!=null) {
                         StructureObject current = l.get(0);
-                        if (current.getPrevious()==prev) { //unlink the 2 spots
-                            ManualCorrection.unlinkObjects(prev, current, thToDisp);
+                        if (current.getPrevious()==prev || prev.getNext()==current) { //unlink the 2 spots
+                            if (unlink) ManualCorrection.unlinkObjects(prev, current, thToDisp);
                         } else { // link the 2 spots
-                            ManualCorrection.linkObjects(prev, current, thToDisp);
+                            if (!unlink) ManualCorrection.linkObjects(prev, current, thToDisp);
                         }
                     }
                     prevParent=currentParent;
@@ -259,26 +260,19 @@ public class ManualCorrection {
         ObjectDAO dao = db.getDao(fieldName);
         Map<StructureObject, List<StructureObject>> objectsByParent = StructureObjectUtils.splitByParent(objects);
         List<StructureObject> newObjects = new ArrayList<StructureObject>();
-        List<StructureObject> objectsToRemove = new ArrayList<StructureObject>();
         for (StructureObject parent : objectsByParent.keySet()) {
             List<StructureObject> objectsToMerge = objectsByParent.get(parent);
             if (objectsToMerge.size()<=1) logger.warn("Merge Objects: select several objects from same parent!");
             else {
                 StructureObject res = objectsToMerge.remove(0);
-                objectsToRemove.addAll(objectsToMerge);
                 for (StructureObject o : objectsToMerge) unlinkObject(o);
-                ArrayList<StructureObject> siblings = res.getParent().getChildren(res.getStructureIdx());
-                List<StructureObject> modified = new ArrayList<StructureObject>(siblings.size());
                 for (StructureObject toMerge : objectsToMerge) {
                     res.merge(toMerge);
-                    siblings.remove(toMerge);
                     unlinkObject(toMerge);
                 }
                 newObjects.add(res);
-                modified.add(res);
-                res.getParent().relabelChildren(structureIdx, modified);
-                dao.delete(objectsToMerge, false);
-                dao.store(modified, true);
+                dao.delete(objectsToMerge, true, true, true);
+                dao.store(res, true);
             }
         }
         if (updateDisplay) {
@@ -314,10 +308,7 @@ public class ManualCorrection {
             }
             Set<StructureObject> parents = StructureObjectUtils.getParents(list);
             logger.info("Deleting {} objects, from {} parents", list.size(), parents.size());
-            dao.delete(list, true);
-            ArrayList<StructureObject> modified = new ArrayList<StructureObject>();
-            for (StructureObject p : parents) p.relabelChildren(structureIdx, modified);
-            dao.store(modified, true);
+            dao.delete(list, true, true, true);
             
             if (updateDisplay) {
                 //Update selection on opened image

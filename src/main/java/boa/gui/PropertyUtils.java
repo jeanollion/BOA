@@ -15,7 +15,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package utils;
+package boa.gui;
 
 import static boa.gui.GUI.logger;
 import java.io.File;
@@ -35,6 +35,7 @@ public class PropertyUtils {
     private static Properties props;
     public final static String MONGO_BIN_PATH = "mongo_bin_path";
     public final static String LAST_SELECTED_EXPERIMENT = "last_selected_xp";
+    public final static String EXPORT_FORMAT = "export_format";
     public static Properties getProps() { 
         if (props == null) { 
             props = new Properties();  
@@ -53,12 +54,15 @@ public class PropertyUtils {
     public static String get(String key) {
         return getProps().getProperty(key);
     }
+    public static String get(String key, String defaultValue) {
+        return getProps().getProperty(key, defaultValue);
+    }
     public static void set(String key, String value) {
         getProps().setProperty(key, value);
         saveParamChanges();
     }
     
-    public static void saveParamChanges() {
+    public static synchronized void saveParamChanges() {
         try {
             File f = getFile();
             OutputStream out = new FileOutputStream( f );

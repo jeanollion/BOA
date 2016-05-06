@@ -48,8 +48,8 @@ public interface ObjectDAO {
      * @param o object to delete
      * @param deleteChildren if true, deletes all direct or indirect chilren
      */
-    public void delete(StructureObject o, boolean deleteChildren);
-    public void delete(List<StructureObject> list, final boolean deleteChildren);
+    public void delete(StructureObject o, boolean deleteChildren, boolean deleteFromParent, boolean relabelParent);
+    public void delete(List<StructureObject> list, boolean deleteChildren, boolean deleteFromParent, boolean relabelParent);
     //revoir les fonctions deletes avec la gestions des enfant directs et indirects.. la fonction delete doit elle appeller deleteChildren?
     public void store(StructureObject object, boolean updateTrackAttributes);
     public void store(final List<StructureObject> objects, final boolean updateTrackAttributes);

@@ -56,9 +56,11 @@ public class TestLAPTrackerMutations {
         PluginFactory.findPlugins("plugins.plugins");
         final String dbName = "fluo160407";
         final int fieldIdx = 24;
+        //final String dbName = "boa_fluo160428";
+        //final int fieldIdx = 0;
         final int mcIdx = 0;
         TestLAPTrackerMutations t = new TestLAPTrackerMutations();
-        t.init(dbName, fieldIdx, mcIdx, 0, 49);
+        t.init(dbName, fieldIdx, mcIdx, 0, 700);
         t.testLAPTracking();
         
         // multithread version testing
@@ -96,7 +98,7 @@ public class TestLAPTrackerMutations {
         TextRoi.setFont("SansSerif", 6, Font.PLAIN);
         
         LAPTracker tracker = new LAPTracker().setCompartimentStructure(bacteriaIdx);
-        tracker.track(mutationIdx, parentTrack, false);
+        tracker.segmentAndTrack(mutationIdx, parentTrack, null, null);
         
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, mutationIdx);
         logger.info("LAP tracker number of tracks: {}", allTracks.size());
@@ -113,6 +115,7 @@ public class TestLAPTrackerMutations {
     public void init(String dbName, int fieldIdx, int mcIdx, int tStart, int tEnd) {
         db = new MorphiumMasterDAO(dbName);
         logger.info("Experiment: {} retrieved from db: {}", db.getExperiment().getName(), dbName);
+        //logger.debug("PositionName: {}", db.getExperiment().getMicroscopyField(fieldIdx).getName());
         MorphiumObjectDAO dao = db.getDao(db.getExperiment().getMicroscopyField(fieldIdx).getName());
         parentTrack = new ArrayList<StructureObject>(tEnd-tStart+1);
         for (int t = tStart; t<=tEnd; ++t) {

@@ -17,10 +17,12 @@
  */
 package boa.gui.objects;
 
+import dataStructure.objects.StructureObject;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import javax.swing.tree.TreeNode;
 
 /**
@@ -41,13 +43,20 @@ public class TrackExperimentNode implements TreeNode, UIContainer {
         return generator;
     }
     
-    public ArrayList<RootTrackNode> getChildren() {
+    public List<RootTrackNode> getChildren() {
         if (children==null) {
             String[] fieldNames = generator.getExperiment().getFieldsAsString();
             children= new ArrayList<RootTrackNode>(fieldNames.length);
             for (String fieldName : fieldNames) children.add(new RootTrackNode(this, fieldName, structureIdx));
         }
         return children;
+    }
+    
+    public RootTrackNode getRootNodeOf(StructureObject s) {
+        for (RootTrackNode r : getChildren()) {
+            if (r.fieldName==s.getFieldName()) return r;
+        }
+        return null;
     }
     
     // UIContainer implementation

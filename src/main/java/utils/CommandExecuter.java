@@ -17,6 +17,8 @@
  */
 package utils;
 
+import boa.gui.PropertyUtils;
+import boa.gui.DBUtil;
 import dataStructure.objects.MeasurementsDAO;
 import dataStructure.objects.MorphiumObjectDAO;
 import java.io.BufferedReader;
@@ -26,7 +28,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.slf4j.LoggerFactory;
 
@@ -38,14 +42,7 @@ public class CommandExecuter {
     public static final org.slf4j.Logger logger = LoggerFactory.getLogger(CommandExecuter.class);
     public static final boolean isWin, isMac, isLinux;
     private static boolean interactive = false;
-    public static final String IO_JSON = "json";
-    public static final String IO_BSON = "bson";
-    private static String ioType=IO_JSON;
-    public static void setIoType(String ioType) {
-        if (IO_JSON.equals(ioType)) ioType=IO_JSON;
-        else if (IO_BSON.equals(ioType)) ioType=IO_BSON;
-        else throw new IllegalArgumentException("IO type should be either JSON or BSON");
-    }
+    
     static {
         String osname = System.getProperty("os.name");
         isWin = osname.startsWith("Windows");
@@ -53,7 +50,31 @@ public class CommandExecuter {
         isLinux = osname.startsWith("Linux");
     }
     public static boolean restoreDB(String host, String dbName, String inputPath) {
-        return restore(host, dbName, null, inputPath, false);
+        File f = new File(inputPath);
+        if (!f.isDirectory()) {
+            logger.warn("Import DB: need a directory containing Experiment file");
+            return false;
+        }
+        if (f.listFiles(new FilenameFilter() {
+                @Override public boolean accept(File dir, String name) {
+                    return name.equals("Experiment.bson");
+                }
+            }).length==1) return restore(host, dbName, null, inputPath, false);
+        else {
+            List<File> subFiles= Arrays.asList(f.listFiles(new FilenameFilter() {
+                @Override public boolean accept(File dir, String name) {
+                    return name.endsWith(".json") && !name.endsWith("metadata.json") && !name.startsWith("system.indexes");
+                }
+            }));
+            boolean hasXp = false;
+            for (File subFile : subFiles) if (subFile.getName().equals("Experiment.json")) hasXp = true;
+            logger.debug("import db in: {}, #files: {}, hasXp: {}", inputPath, subFiles.size(), hasXp);
+            if (hasXp) {
+                boolean processOK= true;
+                for (File subFile : subFiles) processOK = processOK && restore(host, dbName, subFile.getName().substring(0, subFile.getName().length()-5), subFile.getAbsolutePath(), false);
+            } else logger.warn("Folder: {} doesn't have Experiment.bson or Experiment.json file");
+        }
+        return false;
     }
     public static boolean restore(String host, String dbName, String collectionName, String inputPath, boolean drop) {
         if (inputPath==null) throw new IllegalArgumentException("Input path is null");
@@ -63,8 +84,15 @@ public class CommandExecuter {
         if (collectionName==null) drop=false;
         
         String cName = "mongorestore";
-        if (!new File(inputPath).isDirectory() && inputPath.endsWith("."+IO_JSON)) cName = "mongoimport";
-        
+        File f = new File(inputPath);
+        if (!f.isDirectory() && inputPath.endsWith(".json")) cName = "mongoimport";
+        else {
+            if (f.listFiles(new FilenameFilter() {
+                @Override public boolean accept(File dir, String name) {
+                    return name.equals("Experiment.bson");
+                }
+            }).length==0) return false; // cannot import a directory -> need to restore
+        }
         
         if (interactive){
             String command = cName + " --host "+host+" --db "+dbName+ (collectionName==null ? "" : " --collection "+collectionName) + (drop ? " --drop " : " ") + inputPath;
@@ -91,18 +119,23 @@ public class CommandExecuter {
         }
     }
     
-    public static boolean dumpDB(String host, String dbName, String outputPath) {
-        return dump(host, dbName, null, outputPath);
+    public static boolean dumpDB(String host, String dbName, String outputPath, boolean json) {
+        if (!json) return dump(host, dbName, null, outputPath, false);
+        else { // get all collections
+            boolean processOk = true;
+            for (String collectionName : DBUtil.listCollections(dbName, host)) processOk = processOk && dump(host, dbName, collectionName, outputPath, true);
+            return processOk;
+        }
     }
     
-    public static boolean dump(String host, String dbName, String collectionName, String outputPath) {
+    public static boolean dump(String host, String dbName, String collectionName, String outputPath, boolean json) {
         if (outputPath==null) throw new IllegalArgumentException("Output path is null");
         if (dbName==null) throw new IllegalArgumentException("DBName is null");
+        if (json && collectionName==null) throw new IllegalArgumentException("Export to JSON only on single collections");
         String mongoBinPath = PropertyUtils.get(PropertyUtils.MONGO_BIN_PATH);
         if (host==null) host = "localhost";
-        String cName = "mongodump";
-        if (IO_JSON.equals(ioType) && collectionName!=null) cName = "mongoexport";
-        if (cName.equals("mongoexport")) {
+        String cName = json? "mongoexport" : "mongodump";
+        if (json) {
             File out = new File(outputPath);
             if (out.isDirectory()) {
                 if (!outputPath.endsWith(File.separator)) outputPath+=File.separator;
@@ -235,7 +268,7 @@ public class CommandExecuter {
         Map<String, String> map = new HashMap<String, String>(files.length);
         for (File file : files) {
             if (file.isDirectory()) getObjectDumpedCollectionsInDirectory(file, map);
-            else if (isExportedObjectCollection(file.getName())) map.put(timExportedObjectCollectionFileName(file.getName()), file.getAbsolutePath());
+            else if (isExportedObjectCollection(file.getName())) map.put(trimExportedObjectCollectionFileName(file.getName()), file.getAbsolutePath());
         }
         return map;
     }
@@ -246,13 +279,13 @@ public class CommandExecuter {
             }
         });
         if (map==null) map = new HashMap<String, String>(files.length);
-        for (File file : files) map.put(timExportedObjectCollectionFileName(file.getName()), file.getAbsolutePath());
+        for (File file : files) map.put(trimExportedObjectCollectionFileName(file.getName()), file.getAbsolutePath());
         return map;
     }
     private static boolean isExportedObjectCollection(String string) {
-        return ( (string.startsWith(MorphiumObjectDAO.getCollectionName("")) || string.startsWith(MeasurementsDAO.getCollectionName(""))) && (string.endsWith("."+IO_BSON) || string.endsWith("."+IO_JSON)) &&  !string.endsWith(".metadata.json"));
+        return ( (string.startsWith(MorphiumObjectDAO.getCollectionName("")) || string.startsWith(MeasurementsDAO.getCollectionName(""))) && (string.endsWith(".bson") || string.endsWith(".json")) &&  !string.endsWith(".metadata.json"));
     }
-    private static String timExportedObjectCollectionFileName(String fieldName) {
+    private static String trimExportedObjectCollectionFileName(String fieldName) {
         if (fieldName.startsWith(MorphiumObjectDAO.getCollectionName(""))) return fieldName.substring(MorphiumObjectDAO.getCollectionName("").length(), fieldName.length()-5);
         else return fieldName.substring(MeasurementsDAO.getCollectionName("").length(), fieldName.length()-5);
     }

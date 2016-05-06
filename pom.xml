@@ -6,11 +6,11 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>ljp</groupId>
-    <artifactId>functional-bioimage-core</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <artifactId>functional_bioimage-core</artifactId>
+    <version>0.1.3-SNAPSHOT</version>
 
-    <name>functional-bioimage-core</name>
-    <description>Test Maven and Mongo and Morphia</description>
+    <name>functional_bioimage-core</name>
+    <description>Bacteria Analyzer</description>
 
     <developers>
         <developer>
@@ -33,7 +33,7 @@
     </scm>
 
     <properties>
-        <main-class>TestMavenMongo</main-class>
+        <main-class>GUI</main-class>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
@@ -243,6 +243,18 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>                   
+                        <manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                            <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+                        </manifest>
+                    </archive>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

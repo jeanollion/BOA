@@ -76,6 +76,10 @@ public class StructureNode implements TreeNode, UIContainer {
         }
         return children;
     }
+    public ObjectNode getChild(StructureObject object) {
+        for (ObjectNode o : getChildren()) if (o.data==object) return o;
+        return null;
+    }
     
     public StructureObject getParentObject() {
         return parent.getData();

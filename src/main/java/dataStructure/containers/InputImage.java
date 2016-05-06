@@ -42,12 +42,12 @@ public class InputImage {
     boolean intermediateImageSavedToDAO=false;
     ArrayList<Transformation> transformationsToApply;
     
-    public InputImage(int channelIdx, int timePoint, String microscopyFieldName, MultipleImageContainer imageSources, ImageDAO dao) {
+    public InputImage(int channelIdx, int inputTimePoint, int timePoint, String microscopyFieldName, MultipleImageContainer imageSources, ImageDAO dao) {
         this.imageSources = imageSources;
         this.dao = dao;
         this.channelIdx = channelIdx;
         this.timePoint = timePoint;
-        this.inputTimePoint=timePoint;
+        this.inputTimePoint=inputTimePoint;
         this.microscopyFieldName = microscopyFieldName;
         transformationsToApply=new ArrayList<Transformation>();
     }
@@ -97,6 +97,7 @@ public class InputImage {
                 while(it.hasNext()) {
                     Transformation t = it.next();
                     image =t.applyTransformation(channelIdx, timePoint, image);
+                    //if (this.timePoint==0) logger.debug("after trans: {}, scale: {}", t.getClass().getSimpleName(), image.getScaleXY());
                     it.remove();
                     //new IJImageDisplayer().showImage(image.setName("after: "+t.getClass().getSimpleName()));
                 }

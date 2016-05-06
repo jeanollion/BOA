@@ -43,11 +43,13 @@ import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import dataStructure.objects.MasterDAO;
+import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import javax.swing.tree.MutableTreeNode;
 import utils.Utils;
 /**
  *
@@ -182,6 +184,24 @@ public class TrackTreeGenerator {
             }
         }
     }*/
+    public void deleteSelectedTracks() {
+        List<StructureObject> selectedTrackHeads = getSelectedTrackHeads();
+        for (StructureObject s : selectedTrackHeads) deleteTrack(s);
+    }
+    public void deleteTrack(StructureObject trackHead) {
+        List<StructureObject> track = trackHead.getDAO().getTrack(trackHead);
+        trackHead.getDAO().delete(track, true, true, true);
+        
+        TreePath  p = getTreePath(trackHead);
+        if (p!=null) {
+            treeModel.removeNodeFromParent((MutableTreeNode)p.getLastPathComponent());
+            if (p.getPathCount()>=2 ) treeModel.nodeChanged((TreeNode)p.getPathComponent(p.getPathCount()-2));
+        }
+        
+        // reload object tree
+        for (StructureObject t : track) this.controller.objectGenerator.reload(t);
+        
+    }
     
     public void selectTracks(List<StructureObject> trackHeads, boolean addToSelection) {
         if (!addToSelection) tree.setSelectionRow(-1);
@@ -210,19 +230,26 @@ public class TrackTreeGenerator {
 
     public TreePath getTreePath(StructureObject object) {
         ArrayList<TreeNode> path = new ArrayList<TreeNode>(); 
-        RootTrackNode root = (RootTrackNode)treeModel.getRoot();
+        final RootTrackNode root;
+        if (treeModel.getRoot() instanceof RootTrackNode) root = (RootTrackNode)treeModel.getRoot();
+        else if (treeModel.getRoot() instanceof TrackExperimentNode) {
+            TrackExperimentNode ten = (TrackExperimentNode) treeModel.getRoot();
+            path.add(ten);
+            root = ten.getRootNodeOf(object);
+        } else throw new RuntimeException("Invalid root");
+        
         path.add(root);
-        ArrayList<StructureObject> objectPath = getObjectPath(object);
-        TrackNode t = root.getChild(objectPath.get(objectPath.size()-1));
+        ArrayList<StructureObject> objectPathIndices = getObjectPath(object);
+        TrackNode t = root.getChild(objectPathIndices.get(objectPathIndices.size()-1));
         if (t==null) {
             logger.debug("object: {} was not found in tree, last element found: {}", object, null);
             return null;
         }
         path.add(t);
-        for (int i = objectPath.size()-2; i>=0; --i) {
-            t=t.getChild(objectPath.get(i));
+        for (int i = objectPathIndices.size()-2; i>=0; --i) {
+            t=t.getChild(objectPathIndices.get(i));
             if (t==null) {
-                logger.debug("object: {} was not found in tree, last element found: {}", object, objectPath.get(i+1));
+                logger.debug("object: {} was not found in tree, last element found: {}", object, objectPathIndices.get(i+1));
                 return null;
             }
             path.add(t);

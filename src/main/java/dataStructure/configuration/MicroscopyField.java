@@ -51,10 +51,9 @@ import plugins.PreFilter;
  */
 public class MicroscopyField extends SimpleContainerParameter implements ListElementRemovable {
     
-    MultipleImageContainer images;
+    private MultipleImageContainer images;
     PreProcessingChain preProcessingChain;
     TimePointParameter defaultTimePoint;
-    
     @Transient InputImagesImpl inputImages;
     @Transient public static final int defaultTP = 50;
     //ui: bouton droit = selectionner un champ?
@@ -62,7 +61,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     public MicroscopyField(String name) {
         super(name);
         preProcessingChain=new PreProcessingChain("Pre-Processing chain");
-        defaultTimePoint = new TimePointParameter("Default TimePoint", defaultTP);
+        defaultTimePoint = new TimePointParameter("Default TimePoint", defaultTP, false);
         initChildList();
     }
     
@@ -70,7 +69,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     @Override
     protected void initChildList() {
         //logger.debug("MF: {}, init list..", name);
-        if (defaultTimePoint==null) defaultTimePoint = new TimePointParameter("Default TimePoint", defaultTP);
+        if (defaultTimePoint==null) defaultTimePoint = new TimePointParameter("Default TimePoint", defaultTP, false);
         initChildren(preProcessingChain, defaultTimePoint);
     }
     
@@ -81,17 +80,28 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     public PreProcessingChain getPreProcessingChain() {
         return preProcessingChain;
     }
-    
+    private int getEndTrimFrame() {
+        if (preProcessingChain.trimFramesEnd.getSelectedTimePoint()==0) preProcessingChain.trimFramesEnd.setTimePoint(images.getTimePointNumber()-1);
+        return preProcessingChain.trimFramesEnd.getSelectedTimePoint();
+    }
+    private int getStartTrimFrame() {
+        if (preProcessingChain.trimFramesEnd.getSelectedTimePoint()==0) preProcessingChain.trimFramesEnd.setTimePoint(images.getTimePointNumber()-1);
+        if (preProcessingChain.trimFramesStart.getSelectedTimePoint()>preProcessingChain.trimFramesEnd.getSelectedTimePoint()) preProcessingChain.trimFramesStart.setTimePoint(preProcessingChain.trimFramesEnd.getSelectedTimePoint());
+        return preProcessingChain.trimFramesStart.getSelectedTimePoint();
+    }
     public InputImagesImpl getInputImages() {
         if (inputImages==null) {
             ImageDAO dao = getExperiment().getImageDAO();
-            InputImage[][] res = new InputImage[images.getTimePointNumber()][images.getChannelNumber()];
+            if (dao==null || images==null) return null;
+            int tpOff = getStartTrimFrame();
+            int tpNp = getEndTrimFrame() - tpOff+1;
+            InputImage[][] res = new InputImage[tpNp][images.getChannelNumber()];
             for (int t = 0; t<res.length; ++t) {
                for (int c = 0; c<res[0].length; ++c) {
-                   res[t][c] = new InputImage(c, t, name, images, dao);
+                   res[t][c] = new InputImage(c, t+tpOff, t, name, images, dao);
                 } 
             }
-            inputImages = new InputImagesImpl(res, Math.min(defaultTimePoint.getSelectedTimePoint(), images.getTimePointNumber()-1));
+            inputImages = new InputImagesImpl(res, Math.min(defaultTimePoint.getSelectedTimePoint()-tpOff, preProcessingChain.trimFramesEnd.getSelectedTimePoint()));
             //logger.debug("creation input images: def tp: {}, total: {}, tp: {}",defaultTimePoint.getSelectedTimePoint(),images.getTimePointNumber(), inputImages.getDefaultTimePoint());
         }
         return inputImages;
@@ -106,12 +116,12 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     }
     
     public ArrayList<StructureObject> createRootObjects(ObjectDAO dao) {
-        ArrayList<StructureObject> res = new ArrayList<StructureObject>(getImages().getTimePointNumber());
+        ArrayList<StructureObject> res = new ArrayList<StructureObject>(getTimePointNumber(false));
         if (getMask()==null) {
             logger.warn("Could not initiate root objects, perform preProcessing first");
             return null;
         }
-        for (int t = 0; t<getImages().getTimePointNumber(); ++t) {
+        for (int t = 0; t<getTimePointNumber(false); ++t) {
             res.add(new StructureObject(t, getMask(), dao));
         }
         setTrackLinks(res);
@@ -139,8 +149,11 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         } else return (float)preProcessingChain.getScaleZ();
     }
     
-    public int getTimePointNumber() {
-        if (images!=null) return images.getTimePointNumber();
+    public int getTimePointNumber(boolean useRawInputFrames) {
+        if (images!=null) {
+            if (useRawInputFrames) return images.getTimePointNumber();
+            else return getEndTrimFrame() - getStartTrimFrame()+1;
+        }
         else return 0;
     }
     
@@ -151,10 +164,6 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     
     public void setImages(MultipleImageContainer images) {
         this.images=images;
-    }
-    
-    protected MultipleImageContainer getImages() {
-        return images;
     }
     
     @Override public MicroscopyField duplicate() {
@@ -183,7 +192,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
             if (response != JOptionPane.YES_OPTION) return false;
         }
         GUI.getDBConnection().getDao(name).deleteAllObjects();
-        this.getInputImages().deleteFromDAO();
+        if (getInputImages()!=null) getInputImages().deleteFromDAO();
         return true;
     }
     

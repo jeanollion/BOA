@@ -165,11 +165,11 @@ public class MutationTrackPostProcessing {
         }
         for (StructureObject p : parentsToRelabel) p.relabelChildren(spotStructureIdx);
     }
-    public void splitLongTracks(int minimalTrackLength, double distanceThreshold, double maxDistance, double maximalPenalty) {
+    public void splitLongTracks(int maximalSplitNumber, int minimalTrackLength, double distanceThreshold, double maxDistance, double maximalPenalty) {
         if (minimalTrackLength<1)minimalTrackLength=1;
         
         TrackLikelyhoodEstimator.ScoreFunction sf = new DistancePenaltyScoreFunction(new NormalDistribution(11.97, 1.76), new BetaDistribution(1.94, 7.66), distanceThreshold, maximalPenalty);
-        TrackLikelyhoodEstimator estimator = new TrackLikelyhoodEstimator(sf, minimalTrackLength);
+        TrackLikelyhoodEstimator estimator = new TrackLikelyhoodEstimator(sf, minimalTrackLength, maximalSplitNumber);
         logger.debug("distance function: 0={} 0.3={}, 0.4={}, 0.5={}, 0.6={}, 0.7={}, 1={}", sf.getDistanceFunction().y(0), sf.getDistanceFunction().y(0.3), sf.getDistanceFunction().y(0.4), sf.getDistanceFunction().y(0.5), sf.getDistanceFunction().y(0.6), sf.getDistanceFunction().y(0.7), sf.getDistanceFunction().y(1));
         
         Map<StructureObject, List<SpotWithinCompartment>> trackHeadSpotMapTemp = new HashMap<StructureObject, List<SpotWithinCompartment>>();

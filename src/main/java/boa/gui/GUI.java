@@ -102,9 +102,9 @@ import plugins.PluginFactory;
 import utils.CommandExecuter;
 import utils.MorphiumUtils;
 import utils.Pair;
-import utils.PropertyUtils;
 import utils.Utils;
 import static utils.Utils.addHorizontalScrollBar;
+
 
 /**
  *
@@ -112,6 +112,7 @@ import static utils.Utils.addHorizontalScrollBar;
  */
 public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     public static final Logger logger = LoggerFactory.getLogger(GUI.class);
+    public final static String DBprefix = "boa_";
     private static GUI instance;
     
     // db-related attributes
@@ -125,7 +126,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private HashMap<Integer, JTree> currentTrees;
     
     //Object Tree related attributes
-    boolean reloadTree=false;
+    boolean reloadObjectTrees=false;
     
     // structure-related attributes
     StructureObjectTreeGenerator objectTreeGenerator;
@@ -148,10 +149,17 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         this.instance=this;
         initComponents();
         experimentList.setModel(experimentModel);
-        relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(dataPanel);add(configurationPanel);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importFieldsToCurrentExperimentMenuItem);add(importConfigToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(runMenu);}};
+        relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importFieldsToCurrentExperimentMenuItem);add(importConfigToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(runMenu);}};
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         toFront();
-
+        // format button
+        boolean json = PropertyUtils.get(PropertyUtils.EXPORT_FORMAT, "json").equals("json");
+        this.bsonFormatMenuItem.setSelected(!json);
+        this.jsonFormatMenuItem.setSelected(json);
+        ButtonGroup group = new ButtonGroup();
+        group.add(bsonFormatMenuItem);
+        group.add(jsonFormatMenuItem);
+        
         PluginFactory.findPlugins("plugins.plugins");
         
         // selections
@@ -164,13 +172,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         populateExperimentList();
         updateDisplayRelatedToXPSet();
         //updateMongoDBBinActions();
-        jTabbedPane.addChangeListener(new ChangeListener() {
+        tabs.addChangeListener(new ChangeListener() {
             public void stateChanged(ChangeEvent e) {
-                if (reloadTree && jTabbedPane.getSelectedComponent()==dataPanel) {
-                    reloadTree=false;
+                if (reloadObjectTrees && tabs.getSelectedComponent()==dataPanel) {
+                    reloadObjectTrees=false;
                     loadObjectTrees();
                 }
-                if (jTabbedPane.getSelectedComponent()==actionPanel) {
+                if (tabs.getSelectedComponent()==actionPanel) {
                     populateActionStructureList();
                     populateActionMicroscopyFieldList();
                 }
@@ -178,11 +186,18 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         });
         
         // KEY shortcuts
-        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_L, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Link/Unlink") {
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_L, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Link") {
             @Override
             public void actionPerformed(ActionEvent e) {
                 linkObjectsButtonActionPerformed(e);
                 logger.debug("L pressed: " + e);
+            }
+        });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_U, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Unlink") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                linkObjectsButtonActionPerformed(e);
+                logger.debug("U pressed: " + e);
             }
         });
         actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_D, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Delete") {
@@ -288,18 +303,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (image==null) {
             return; // todo -> actions on all images?
         }
-        iwm.hideAllObjects(image, true);
-        iwm.hideAllTracks(image, true);
+        iwm.hideAllRois(image, true, false); // will update selections
         if (i==null) return;
-        // look in selections
-        Enumeration<Selection> sels = instance.selectionModel.elements();
-        while (sels.hasMoreElements()) {
-            Selection s = sels.nextElement();
-            //logger.debug("selection: {}", s);
-            if (s.isDisplayingTracks()) SelectionUtils.displayTracks(s, i);
-            if (s.isDisplayingObjects()) SelectionUtils.displayObjects(s, i);
-        }
-
+        
         // look in track list
         TrackTreeGenerator gen = instance.trackTreeController.getLastTreeGenerator();
         if (gen!=null) {
@@ -318,6 +324,30 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         // labile objects
         //iwm.displayLabileObjects(image);
         //iwm.displayLabileTracks(image);
+    }
+    
+    public static void updateRoiDisplayForSelections(Image image, ImageObjectInterface i) {
+        if (instance==null) return;
+        ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
+        if (iwm==null) return;
+        if (i==null) {
+            if (image==null) {
+                Object im = iwm.getDisplayer().getCurrentImage();
+                if (im!=null) image = iwm.getDisplayer().getImage(im);
+                if (image==null) return;
+            }
+            i = iwm.getImageObjectInterface(image);
+        }
+        if (image==null) {
+            return; // todo -> actions on all images?
+        }
+        Enumeration<Selection> sels = instance.selectionModel.elements();
+        while (sels.hasMoreElements()) {
+            Selection s = sels.nextElement();
+            //logger.debug("selection: {}", s);
+            if (s.isDisplayingTracks()) SelectionUtils.displayTracks(s, i);
+            if (s.isDisplayingObjects()) SelectionUtils.displayObjects(s, i);
+        }
     }
     
     public void setDBConnection(String dbName, String hostname) {
@@ -345,27 +375,42 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             unsetXP();
             return;
         } else logger.info("Experiment found: {} ", db.getExperiment().getName());
-        configurationTreeGenerator = new ConfigurationTreeGenerator(db.getExperiment());
-        configurationJSP.setViewportView(configurationTreeGenerator.getTree());
+        updateConfigurationTree();
         populateActionStructureList();
         populateActionMicroscopyFieldList();
-        reloadTree=true;
+        reloadObjectTrees=true;
         loadSelections();
+    }
+    
+    private void updateConfigurationTree() {
+        if (db==null) {
+            configurationTreeGenerator=null;
+            configurationJSP.setViewportView(null);
+        } else {
+            configurationTreeGenerator = new ConfigurationTreeGenerator(db.getExperiment());
+            configurationJSP.setViewportView(configurationTreeGenerator.getTree());
+        }
     }
     
     private void unsetXP() {
         db=null;
-        reloadTree=true;
+        reloadObjectTrees=true;
         populateActionStructureList();
         populateActionMicroscopyFieldList();
         updateDisplayRelatedToXPSet();
+        updateConfigurationTree();
+        tabs.setSelectedIndex(0);
     }
     
     private void updateDisplayRelatedToXPSet() {
         final boolean enable = db!=null;
-        if (db==null) setTitle("No Selected Experiment");
-        else setTitle("Experiment: "+db.getDBName());
+        String title = db==null ? "No Selected Experiment" : "Experiment: "+db.getDBName();
+        String v = Utils.getVersion(this);
+        if (v!=null && v.length()>0) title = "Version: "+v+" - "+title;
+        setTitle(title);
         for (Component c: relatedToXPSet) c.setEnabled(enable);
+        this.tabs.setEnabledAt(1, enable); // configuration
+        this.tabs.setEnabledAt(2, enable); // data browsing
     }
     
     protected void loadSelections() {
@@ -624,7 +669,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jTabbedPane = new javax.swing.JTabbedPane();
+        tabs = new javax.swing.JTabbedPane();
         actionPanel = new javax.swing.JPanel();
         hostName = new javax.swing.JTextField();
         actionStructureJSP = new javax.swing.JScrollPane();
@@ -653,6 +698,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         manualSegmentButton = new javax.swing.JButton();
         testManualSegmentationButton = new javax.swing.JButton();
         linkObjectsButton = new javax.swing.JButton();
+        jLabel1 = new javax.swing.JLabel();
+        jLabel2 = new javax.swing.JLabel();
+        unlinkObjectsButton = new javax.swing.JButton();
         ObjectTreeJSP = new javax.swing.JSplitPane();
         StructurePanel = new javax.swing.JPanel();
         structureJSP = new javax.swing.JScrollPane();
@@ -672,9 +720,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         deleteXPMenuItem = new javax.swing.JMenuItem();
         duplicateXPMenuItem = new javax.swing.JMenuItem();
         saveXPMenuItem = new javax.swing.JMenuItem();
+        runMenu = new javax.swing.JMenu();
+        importImagesMenuItem = new javax.swing.JMenuItem();
+        runSelectedActionsMenuItem = new javax.swing.JMenuItem();
+        extractMeasurementMenuItem = new javax.swing.JMenuItem();
         importExportMenu = new javax.swing.JMenu();
-        setMongoBinDirectoryMenu = new javax.swing.JMenuItem();
-        jSeparator1 = new javax.swing.JPopupMenu.Separator();
         exportSubMenu = new javax.swing.JMenu();
         exportSelectedFieldsMenuItem = new javax.swing.JMenuItem();
         exportXPConfigMenuItem = new javax.swing.JMenuItem();
@@ -685,10 +735,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         importConfigurationForSelectedPositionsMenuItem = new javax.swing.JMenuItem();
         importConfigurationForSelectedStructuresMenuItem = new javax.swing.JMenuItem();
         importNewExperimentMenuItem = new javax.swing.JMenuItem();
-        runMenu = new javax.swing.JMenu();
-        importImagesMenuItem = new javax.swing.JMenuItem();
-        runSelectedActionsMenuItem = new javax.swing.JMenuItem();
-        extractMeasurementMenuItem = new javax.swing.JMenuItem();
+        setMongoBinDirectoryMenu = new javax.swing.JMenuItem();
+        jMenu1 = new javax.swing.JMenu();
+        jsonFormatMenuItem = new javax.swing.JRadioButtonMenuItem();
+        bsonFormatMenuItem = new javax.swing.JRadioButtonMenuItem();
+        jSeparator1 = new javax.swing.JPopupMenu.Separator();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -746,7 +797,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(actionMicroscopyFieldJSP)
                     .addGroup(actionPanelLayout.createSequentialGroup()
-                        .addComponent(actionStructureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 310, Short.MAX_VALUE)
+                        .addComponent(actionStructureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 409, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(actionJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 163, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(actionPanelLayout.createSequentialGroup()
@@ -756,7 +807,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addContainerGap())
         );
 
-        jTabbedPane.addTab("Actions", actionPanel);
+        tabs.addTab("Actions", actionPanel);
 
         javax.swing.GroupLayout configurationPanelLayout = new javax.swing.GroupLayout(configurationPanel);
         configurationPanel.setLayout(configurationPanelLayout);
@@ -766,10 +817,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         configurationPanelLayout.setVerticalGroup(
             configurationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 503, Short.MAX_VALUE)
+            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 602, Short.MAX_VALUE)
         );
 
-        jTabbedPane.addTab("Configuration", configurationPanel);
+        tabs.addTab("Configuration", configurationPanel);
 
         ControlPanel.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createTitledBorder("Controls")));
 
@@ -862,10 +913,21 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
-        linkObjectsButton.setText("Link/Unlink Objects (U)");
+        linkObjectsButton.setText("Link Objects (L)");
         linkObjectsButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 linkObjectsButtonActionPerformed(evt);
+            }
+        });
+
+        jLabel1.setText("Interactive Structure:");
+
+        jLabel2.setText("Track-tree Structure:");
+
+        unlinkObjectsButton.setText("Unlink Objects (U)");
+        unlinkObjectsButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                unlinkObjectsButtonActionPerformed(evt);
             }
         });
 
@@ -889,16 +951,26 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(testManualSegmentationButton, javax.swing.GroupLayout.PREFERRED_SIZE, 59, javax.swing.GroupLayout.PREFERRED_SIZE))
             .addComponent(linkObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addGroup(ControlPanelLayout.createSequentialGroup()
+                .addGroup(ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel1)
+                    .addComponent(jLabel2))
+                .addGap(0, 0, Short.MAX_VALUE))
+            .addComponent(unlinkObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         ControlPanelLayout.setVerticalGroup(
             ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(ControlPanelLayout.createSequentialGroup()
-                .addComponent(trackStructureJCB, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(jLabel1)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(interactiveStructure, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel2)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(trackStructureJCB, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(updateRoiDisplayButton)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(selectAllObjects)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(selectAllTracksButton)
@@ -914,12 +986,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addComponent(splitObjectsButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(mergeObjectsButton)
-                .addGap(2, 2, 2)
-                .addComponent(deleteObjectsButton)
-                .addGap(4, 4, 4)
-                .addComponent(linkObjectsButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(collapseAllObjectButton))
+                .addComponent(deleteObjectsButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(linkObjectsButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addComponent(unlinkObjectsButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(collapseAllObjectButton)
+                .addGap(24, 24, 24))
         );
 
         StructurePanel.setBorder(javax.swing.BorderFactory.createTitledBorder("SegmentedObjects"));
@@ -932,7 +1007,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         StructurePanelLayout.setVerticalGroup(
             StructurePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(structureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 455, Short.MAX_VALUE)
+            .addComponent(structureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 554, Short.MAX_VALUE)
         );
 
         ObjectTreeJSP.setLeftComponent(StructurePanel);
@@ -951,7 +1026,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         trackPanelLayout.setVerticalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 455, Short.MAX_VALUE)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 554, Short.MAX_VALUE)
         );
 
         ObjectTreeJSP.setRightComponent(trackPanel);
@@ -989,9 +1064,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addComponent(createSelectionButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(reloadSelectionsButton)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(selectionJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 345, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(25, 25, 25))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(selectionJSP))
         );
 
         javax.swing.GroupLayout dataPanelLayout = new javax.swing.GroupLayout(dataPanel);
@@ -1011,7 +1085,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             .addGroup(dataPanelLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(ControlPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(ControlPanel, javax.swing.GroupLayout.PREFERRED_SIZE, 590, Short.MAX_VALUE)
                     .addGroup(dataPanelLayout.createSequentialGroup()
                         .addGroup(dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(ObjectTreeJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
@@ -1019,7 +1093,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                         .addContainerGap())))
         );
 
-        jTabbedPane.addTab("Data Browsing", dataPanel);
+        tabs.addTab("Data Browsing", dataPanel);
 
         experimentMenu.setText("Experiment");
 
@@ -1073,16 +1147,35 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
         jMenuBar1.add(experimentMenu);
 
-        importExportMenu.setText("Import/Export");
+        runMenu.setText("Run");
 
-        setMongoBinDirectoryMenu.setText("Set MongoDB Bin Directory");
-        setMongoBinDirectoryMenu.addActionListener(new java.awt.event.ActionListener() {
+        importImagesMenuItem.setText("Import/re-link Images");
+        importImagesMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                setMongoBinDirectoryMenuActionPerformed(evt);
+                importImagesMenuItemActionPerformed(evt);
             }
         });
-        importExportMenu.add(setMongoBinDirectoryMenu);
-        importExportMenu.add(jSeparator1);
+        runMenu.add(importImagesMenuItem);
+
+        runSelectedActionsMenuItem.setText("Selected Actions");
+        runSelectedActionsMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                runSelectedActionsMenuItemActionPerformed(evt);
+            }
+        });
+        runMenu.add(runSelectedActionsMenuItem);
+
+        extractMeasurementMenuItem.setText("Extract Measurements");
+        extractMeasurementMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                extractMeasurementMenuItemActionPerformed(evt);
+            }
+        });
+        runMenu.add(extractMeasurementMenuItem);
+
+        jMenuBar1.add(runMenu);
+
+        importExportMenu.setText("Import/Export");
 
         exportSubMenu.setText("Export");
 
@@ -1131,6 +1224,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         importSubMenu.add(importConfigToCurrentExperimentMenuItem);
 
         importConfigurationForSelectedPositionsMenuItem.setText("Configuration for Selected Positions");
+        importConfigurationForSelectedPositionsMenuItem.setEnabled(false);
         importConfigurationForSelectedPositionsMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 importConfigurationForSelectedPositionsMenuItemActionPerformed(evt);
@@ -1139,6 +1233,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         importSubMenu.add(importConfigurationForSelectedPositionsMenuItem);
 
         importConfigurationForSelectedStructuresMenuItem.setText("Configuration for Selected Structures");
+        importConfigurationForSelectedStructuresMenuItem.setEnabled(false);
         importConfigurationForSelectedStructuresMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 importConfigurationForSelectedStructuresMenuItemActionPerformed(evt);
@@ -1156,35 +1251,38 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
         importExportMenu.add(importSubMenu);
 
+        setMongoBinDirectoryMenu.setText("Set MongoDB Bin Directory");
+        setMongoBinDirectoryMenu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                setMongoBinDirectoryMenuActionPerformed(evt);
+            }
+        });
+        importExportMenu.add(setMongoBinDirectoryMenu);
+
+        jMenu1.setText("Set Export Format");
+
+        jsonFormatMenuItem.setSelected(true);
+        jsonFormatMenuItem.setText("JSON (human readable)");
+        jsonFormatMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jsonFormatMenuItemActionPerformed(evt);
+            }
+        });
+        jMenu1.add(jsonFormatMenuItem);
+
+        bsonFormatMenuItem.setSelected(true);
+        bsonFormatMenuItem.setText("BSON (faster)");
+        bsonFormatMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                bsonFormatMenuItemActionPerformed(evt);
+            }
+        });
+        jMenu1.add(bsonFormatMenuItem);
+
+        importExportMenu.add(jMenu1);
+        importExportMenu.add(jSeparator1);
+
         jMenuBar1.add(importExportMenu);
-
-        runMenu.setText("Run");
-
-        importImagesMenuItem.setText("Import Images");
-        importImagesMenuItem.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                importImagesMenuItemActionPerformed(evt);
-            }
-        });
-        runMenu.add(importImagesMenuItem);
-
-        runSelectedActionsMenuItem.setText("Selected Actions");
-        runSelectedActionsMenuItem.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                runSelectedActionsMenuItemActionPerformed(evt);
-            }
-        });
-        runMenu.add(runSelectedActionsMenuItem);
-
-        extractMeasurementMenuItem.setText("Extract Measurements");
-        extractMeasurementMenuItem.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                extractMeasurementMenuItemActionPerformed(evt);
-            }
-        });
-        runMenu.add(extractMeasurementMenuItem);
-
-        jMenuBar1.add(runMenu);
 
         setJMenuBar(jMenuBar1);
 
@@ -1192,11 +1290,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jTabbedPane)
+            .addComponent(tabs)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jTabbedPane)
+            .addGroup(layout.createSequentialGroup()
+                .addComponent(tabs, javax.swing.GroupLayout.PREFERRED_SIZE, 645, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addGap(0, 0, Short.MAX_VALUE))
         );
 
         pack();
@@ -1337,7 +1437,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             logger.warn("Select at least one object to modify its links");
             return;
         }
-        ManualCorrection.linkObjects(db, sel, true);
+        ManualCorrection.modifyObjectLinks(db, sel, false, true);
     }//GEN-LAST:event_linkObjectsButtonActionPerformed
 
     private void setMongoBinDirectoryMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_setMongoBinDirectoryMenuActionPerformed
@@ -1360,11 +1460,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             setDBConnection(dbName, host);
             PropertyUtils.set(PropertyUtils.LAST_SELECTED_EXPERIMENT, dbName);
         }
-        updateConnectButton();
     }//GEN-LAST:event_setSelectedExperimentMenuItemActionPerformed
 
     private void newXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newXPMenuItemActionPerformed
         String name = JOptionPane.showInputDialog("New XP name:");
+        name = DBUtil.addPrefix(name, DBprefix);
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
         else if (getDBNames().contains(name)) logger.error("XP name already exists");
         else {
@@ -1379,26 +1479,27 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }//GEN-LAST:event_newXPMenuItemActionPerformed
 
     private void deleteXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteXPMenuItemActionPerformed
-        String name = getSelectedExperiment();
-        if (name==null || name.length()==0) return;
-        int response = JOptionPane.showConfirmDialog(this, "Delete Experiment (all data will be lost)", "Confirm",
+        List<String> xps = getSelectedExperiments();
+        if (xps==null || xps.isEmpty()) return;
+        int response = JOptionPane.showConfirmDialog(this, "Delete Selected Experiment"+(xps.size()>1?"s":"")+" (all data will be lost)", "Confirm",
             JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (response == JOptionPane.NO_OPTION || response == JOptionPane.CLOSED_OPTION) {
         } else if (response == JOptionPane.YES_OPTION) {
-            MongoClient mongoClient = new MongoClient(getHostName(), 27017);
-            mongoClient.dropDatabase(name);
+            for (String xpName : xps) DBUtil.dropDatabase(xpName, getHostName());
             populateExperimentList();
-            unsetXP();
+            if (db!=null && xps.contains(db.getDBName())) unsetXP();
         }
     }//GEN-LAST:event_deleteXPMenuItemActionPerformed
 
     private void duplicateXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_duplicateXPMenuItemActionPerformed
         String name = JOptionPane.showInputDialog("New DB name:", getSelectedExperiment());
+        name = DBUtil.addPrefix(name, DBprefix);
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
         else if (getDBNames().contains(name)) logger.error("DB name already exists");
         else {
+            MorphiumMasterDAO db1 = new MorphiumMasterDAO(getSelectedExperiment());
             MorphiumMasterDAO db2 = new MorphiumMasterDAO(name);
-            Experiment xp2 = db.getExperiment().duplicate();
+            Experiment xp2 = db1.getExperiment().duplicate();
             xp2.setName(name);
             db2.setExperiment(xp2);
             populateExperimentList();
@@ -1419,13 +1520,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void exportWholeXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exportWholeXPMenuItemActionPerformed
         String dir = promptDir("Choose output directory");
         if (dir==null) return;
-        List<String> xpToExport = new ArrayList<String>();
-        xpToExport.add(this.getSelectedExperiment());
-        // TODO allow multiple selection for XP..
+        List<String> xpToExport = this.getSelectedExperiments();
         int count=0;
         for (String xp : xpToExport) {
             logger.info("Exporting whole XP : {}/{}", ++count, xpToExport.size());
-            CommandExecuter.dumpDB(getHostName(), xp, dir);
+            CommandExecuter.dumpDB(getHostName(), xp, dir, jsonFormatMenuItem.isSelected());
         }
     }//GEN-LAST:event_exportWholeXPMenuItemActionPerformed
 
@@ -1441,7 +1540,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         for (int f : sel) {
             String cName = MorphiumObjectDAO.getCollectionName(fNames[f]);
             logger.info("Exporting: {}/{}", ++count, sel.length);
-            CommandExecuter.dump(hostname, dbName, cName, dir);
+            CommandExecuter.dump(hostname, dbName, cName, dir, jsonFormatMenuItem.isSelected());
         }
     }//GEN-LAST:event_exportSelectedFieldsMenuItemActionPerformed
 
@@ -1449,7 +1548,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (!checkConnection()) return;
         String dir = promptDir("Choose output directory");
         if (dir==null) return;
-        CommandExecuter.dump(getHostName(), db.getDBName(), "experiment", dir);
+        CommandExecuter.dump(getHostName(), db.getDBName(), "Experiment", dir, jsonFormatMenuItem.isSelected());
         
     }//GEN-LAST:event_exportXPConfigMenuItemActionPerformed
 
@@ -1490,11 +1589,16 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 if (db.getExperiment().getMicroscopyField(f)==null) { // create entry
                     db.getExperiment().createMicroscopyField(f);
                     fieldsCreated=true;
-                    logger.info("Position: {} was created. Image directory should be set manually for this position");
+                    logger.info("Position: {} was created. Run \"re-link images\" to set the input images", f);
                 }
             }
         }
-        if (fieldsCreated) db.updateExperiment();
+        if (fieldsCreated) {
+            db.updateExperiment();
+            loadObjectTrees();
+            populateActionMicroscopyFieldList();
+        }
+        
     }//GEN-LAST:event_importFieldsToCurrentExperimentMenuItemActionPerformed
 
     private void importConfigurationForSelectedPositionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importConfigurationForSelectedPositionsMenuItemActionPerformed
@@ -1512,20 +1616,22 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (dir==null) return;
         File directory = new File(dir);
         // whole xp are located in sub directories
-        List<File> subDirs = new ArrayList<File>(Arrays.asList(directory.listFiles(new FileFilter() {
+        FileFilter filter = new FileFilter() {
             @Override public boolean accept(File file) {
                 if (file.isDirectory()) { // contains at least experiment collection
                     for (String fName : file.list()) {
-                        if (fName.startsWith("experiment") &&  (fName.endsWith(CommandExecuter.IO_BSON) || (fName.endsWith(CommandExecuter.IO_JSON) && !fName.endsWith(".metadata.json")))) return true;
+                        if (fName.equals("Experiment.bson") || fName.equals("Experiment.json")) return true;
                     }
                 } 
                 return false;
             }
-        })));
+        };
+        List<File> subDirs = new ArrayList<File>(Arrays.asList(directory.listFiles(filter)));
+        if (filter.accept(directory)) subDirs.add(directory);
         List<String> dbNames = getDBNames();
         boolean someDBAlreadyExist = false;
         for (File f : subDirs) {
-            if (dbNames.contains(f.getName())) {
+            if (dbNames.contains(DBUtil.addPrefix(f.getName(), DBprefix))) {
                 someDBAlreadyExist=true;
                 break;
             }
@@ -1544,12 +1650,20 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         int count = 0;
         for (File f : subDirs) {
             logger.info("Importing XP: {}/{}", ++count, subDirs.size());
-            CommandExecuter.restoreDB(hostname, f.getName(), f.getAbsolutePath());
+            CommandExecuter.restoreDB(hostname, DBUtil.addPrefix(f.getName(), DBprefix), f.getAbsolutePath());
         }
+        populateExperimentList();
     }//GEN-LAST:event_importNewExperimentMenuItemActionPerformed
 
     private void importConfigToCurrentExperimentMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importConfigToCurrentExperimentMenuItemActionPerformed
-        // TODO add your handling code here:
+        if (!checkConnection()) return;
+        File outputFile = Utils.chooseFile("Select Experiment.bson of Experiment.json file (WARNING: current configuration will be lost)", null, FileChooser.FileChooserOption.FILE_OR_DIRECTORY, this);
+        if (outputFile!=null && outputFile.getName().equals("Experiment.bson") || outputFile.getName().equals("Experiment.json")) {
+            CommandExecuter.restore(getHostName(), db.getDBName(), "Experiment", outputFile.getAbsolutePath(), true);
+            String dbName = db.getDBName();
+            unsetXP();
+            setDBConnection(dbName, getHostName());
+        }
     }//GEN-LAST:event_importConfigToCurrentExperimentMenuItemActionPerformed
 
     private void runSelectedActionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runSelectedActionsMenuItemActionPerformed
@@ -1581,15 +1695,16 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field
             db.getDao(fieldName).clearCache();
         }
-        if (needToDeleteObjects) this.reloadTree=true;
+        if (needToDeleteObjects) this.reloadObjectTrees=true;
     }//GEN-LAST:event_runSelectedActionsMenuItemActionPerformed
 
     private void importImagesMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importImagesMenuItemActionPerformed
         if (!checkConnection()) return;
         File[] selectedFiles = Utils.chooseFiles("Choose images/directories to import", null, FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, this);
-        if (selectedFiles!=null) Processor.importFiles(this.db.getExperiment(), Utils.convertFilesToString(selectedFiles));
+        if (selectedFiles!=null) Processor.importFiles(this.db.getExperiment(), true,  Utils.convertFilesToString(selectedFiles));
         db.updateExperiment(); //stores imported fields
-        this.populateActionMicroscopyFieldList();
+        populateActionMicroscopyFieldList();
+        updateConfigurationTree();
     }//GEN-LAST:event_importImagesMenuItemActionPerformed
 
     private void extractMeasurementMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_extractMeasurementMenuItemActionPerformed
@@ -1607,6 +1722,24 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void hostNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_hostNameActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_hostNameActionPerformed
+
+    private void jsonFormatMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jsonFormatMenuItemActionPerformed
+        PropertyUtils.set(PropertyUtils.EXPORT_FORMAT, this.jsonFormatMenuItem.isSelected()?"json":"bson");
+    }//GEN-LAST:event_jsonFormatMenuItemActionPerformed
+
+    private void bsonFormatMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bsonFormatMenuItemActionPerformed
+        PropertyUtils.set(PropertyUtils.EXPORT_FORMAT, this.jsonFormatMenuItem.isSelected()?"json":"bson");
+    }//GEN-LAST:event_bsonFormatMenuItemActionPerformed
+
+    private void unlinkObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_unlinkObjectsButtonActionPerformed
+        if (!checkConnection()) return;
+        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        if (sel.isEmpty()) {
+            logger.warn("Select at least one object to modify its links");
+            return;
+        }
+        ManualCorrection.modifyObjectLinks(db, sel, true, true);
+    }//GEN-LAST:event_unlinkObjectsButtonActionPerformed
     private void updateMongoDBBinActions() {
         boolean enableDump = false, enableRestore = false;
         String mPath = PropertyUtils.get(PropertyUtils.MONGO_BIN_PATH);
@@ -1623,31 +1756,21 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         importSubMenu.setEnabled(enableRestore);
     }
     
-    
-    private void updateConnectButton() {
-        setSelectedExperimentMenuItem.setEnabled(getSelectedExperiment()!=null);
-        /*String s = Utils.getSelectedString(dbNames);
-        logger.debug("DBName action: selected : {}, current: {} ", s, db!=null? db.getDBName() : null);
-        if (s==null || s.length()==0) this.connectButton.setEnabled(false);
-        else {
-            if (this.db!=null && db.getDBName().equals(s)) this.connectButton.setEnabled(false);
-            else this.connectButton.setEnabled(true);
-        }*/
-    }
-    
-    
-    
     private String getSelectedExperiment() {
         Object sel = experimentList.getSelectedValue();
         if (sel!=null) return (String) sel;
         else return null;
+    }
+    private List<String> getSelectedExperiments() {
+        List res = experimentList.getSelectedValuesList();
+        return res;
     }
     private void setSelectedExperiment(String xpName) {
         experimentList.setSelectedValue(xpName, true);
     }
     
     public List<String> getDBNames() {
-        return DBUtil.getDBNames(getHostName());
+        return DBUtil.getDBNames(getHostName(), DBprefix);
     }
     
     
@@ -1714,6 +1837,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JScrollPane actionMicroscopyFieldJSP;
     private javax.swing.JPanel actionPanel;
     private javax.swing.JScrollPane actionStructureJSP;
+    private javax.swing.JRadioButtonMenuItem bsonFormatMenuItem;
     private javax.swing.JButton collapseAllObjectButton;
     private javax.swing.JScrollPane configurationJSP;
     private javax.swing.JPanel configurationPanel;
@@ -1739,10 +1863,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JMenuItem importNewExperimentMenuItem;
     private javax.swing.JMenu importSubMenu;
     private javax.swing.JComboBox interactiveStructure;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
+    private javax.swing.JMenu jMenu1;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JPopupMenu.Separator jSeparator1;
-    private javax.swing.JTabbedPane jTabbedPane;
+    private javax.swing.JRadioButtonMenuItem jsonFormatMenuItem;
     private javax.swing.JButton linkObjectsButton;
     private javax.swing.JButton manualSegmentButton;
     private javax.swing.JButton mergeObjectsButton;
@@ -1766,10 +1893,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JButton splitObjectsButton;
     private javax.swing.JScrollPane structureJSP;
     private javax.swing.JList structureList;
+    private javax.swing.JTabbedPane tabs;
     private javax.swing.JButton testManualSegmentationButton;
     private javax.swing.JPanel trackPanel;
     private javax.swing.JComboBox trackStructureJCB;
     private javax.swing.JPanel trackSubPanel;
+    private javax.swing.JButton unlinkObjectsButton;
     private javax.swing.JButton updateRoiDisplayButton;
     // End of variables declaration//GEN-END:variables
 

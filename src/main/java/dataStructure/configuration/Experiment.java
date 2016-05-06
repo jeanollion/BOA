@@ -133,17 +133,8 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     public MicroscopyField getMicroscopyField(int fieldIdx) {
         checkInit();
         return fields.getChildAt(fieldIdx);
-    }
-    
-    public int getTimePointNumber() {
-        checkInit();
-        if (fields.getChildCount()==0) return 0;
-        MicroscopyField f= fields.getChildAt(0);
-        if (f!=null && f.images!=null) {
-            return f.images.getTimePointNumber();
-        } else return 0;
-    }
-    
+    }   
+   
     public ObjectId getId() {return id;}
     
     public SimpleListParameter<ChannelImage> getChannelImages() {

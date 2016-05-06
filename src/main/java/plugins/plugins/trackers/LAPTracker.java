@@ -83,7 +83,9 @@ public class LAPTracker implements TrackerSegmenter {
     }
     
     @Override public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
-        SegmentThenTrack stt = new SegmentThenTrack(segmenter.instanciatePlugin(), this).addPostFilters(postFilters.get()).addPreFilters(preFilters.get());
+        SegmentThenTrack stt = new SegmentThenTrack(segmenter.instanciatePlugin(), this);
+        if (preFilters!=null) stt.addPreFilters(preFilters.get());
+        if (postFilters!=null) stt.addPostFilters(postFilters.get());
         stt.segmentOnly(structureIdx, parentTrack);
         track(structureIdx, parentTrack, true);
     }
@@ -96,22 +98,20 @@ public class LAPTracker implements TrackerSegmenter {
     }
     
     public void track(int structureIdx, List<StructureObject> parentTrack, boolean LQSpots) {
-        for (StructureObject p : parentTrack) logger.debug("parent: {}, #bact: {}, #mut: {}", p, p.getChildren(1).size(), p.getChildren(2).size());
-        
         int compartirmentStructure=this.compartirmentStructure.getSelectedIndex();
         int maxGap = this.maxGap.getValue().intValue()+1; // parameter = count only the frames where the spot is missing
         double spotQualityThreshold = LQSpots ? this.spotQualityThreshold.getValue().doubleValue() : Double.NEGATIVE_INFINITY;
         double maxLinkingDistance = this.maxLinkingDistance.getValue().doubleValue();
         double maxLinkingDistanceGC = this.maxLinkingDistanceGC.getValue().doubleValue();
-        double gapPenalty = Math.pow(this.gapPenalty.getValue().doubleValue(), 2);
+        double gapPenalty = this.gapPenalty.getValue().doubleValue();
         double alternativeDistance = this.alternativeDistance.getValue().doubleValue();
-        DistanceComputationParameters distParams = new DistanceComputationParameters(alternativeDistance).setQualityThreshold(spotQualityThreshold).setGapSquareDistancePenalty(gapPenalty);
+        DistanceComputationParameters distParams = new DistanceComputationParameters(alternativeDistance).setQualityThreshold(spotQualityThreshold).setGapDistancePenalty(gapPenalty);
         SpotPopulation spotCollection = new SpotPopulation(distParams);
         long t0 = System.currentTimeMillis();
         for (StructureObject p : parentTrack) spotCollection.addSpots(p, structureIdx, p.getObjectPopulation(structureIdx).getObjects(), compartirmentStructure);
-        Spot s1 = spotCollection.getSpotCollection(true, false).iterator(1, false).next();
-        Spot s2 = spotCollection.getSpotCollection(true, false).iterator(2, false).next();
-        logger.debug("distance 1-2: {}", s1.squareDistanceTo(s2));
+        //SpotWithinCompartment s1 = (SpotWithinCompartment)spotCollection.getSpotCollection(true, false).iterator(1, false).next();
+        //SpotWithinCompartment s2 = (SpotWithinCompartment)spotCollection.getSpotCollection(true, false).iterator(2, false).next();
+        //if (s1!=null &&  s2!=null) logger.debug("distance 1-2: {}, scale 1: {}, 1 isAbsolute: {}, cent1: {}, cent2: {}", s1.squareDistanceTo(s2), s1.getObject().getScaleXY(), s1.getObject().isAbsoluteLandMark(), s1.getObject().getCenter(true), s2.getObject().getCenter(true));
         
         long t1 = System.currentTimeMillis();
         logger.debug("LAP Tracker: {}, spot HQ: {}, #spots LQ: {}, time: {}", parentTrack.get(0), spotCollection.getSpotSet(true, false).size(), spotCollection.getSpotSet(false, true).size(), t1-t0);
@@ -140,9 +140,9 @@ public class LAPTracker implements TrackerSegmenter {
         // post-processing
         MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, spotCollection);
         postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC);
-        distParams.setGapSquareDistancePenalty(gapPenalty*4); // double penalty (square distance=>*4) 
+        distParams.setGapDistancePenalty(gapPenalty*2); // double penalty  
         //postProcessor.printDistancesOnOverlay();
-        postProcessor.splitLongTracks(minimalTrackFrameNumber.getValue().intValue()-1, minimalDistanceForTrackSplittingPenalty.getValue().doubleValue(), maxLinkingDistanceGC, maximalTrackSplittingPenalty.getValue().doubleValue());
+        postProcessor.splitLongTracks(4, minimalTrackFrameNumber.getValue().intValue()-1, minimalDistanceForTrackSplittingPenalty.getValue().doubleValue(), maxLinkingDistanceGC, maximalTrackSplittingPenalty.getValue().doubleValue());
         postProcessor.flagShortAndLongTracks(minimalTrackFrameNumber.getValue().intValue(), maximalTrackFrameNumber.getValue().intValue());
         
         // ETUDE DES DEPLACEMENTS EN Y

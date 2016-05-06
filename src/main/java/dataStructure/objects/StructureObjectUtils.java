@@ -194,8 +194,8 @@ public class StructureObjectUtils {
         for (StructureObject o : track) {
             o.trackHead=trackHead;
             if (prev!=null) {
-                o.previous=prev;
-                prev.next=o;
+                o.setPrevious(prev);
+                prev.setNext(o);
             }
             prev = o;
         }
