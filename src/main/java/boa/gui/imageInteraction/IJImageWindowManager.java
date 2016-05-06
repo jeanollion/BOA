@@ -31,6 +31,7 @@ import ij.gui.ImageCanvas;
 import ij.gui.ImageWindow;
 import ij.gui.Overlay;
 import ij.gui.PointRoi;
+import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 import ij.plugin.OverlayLabels;
 import ij.plugin.filter.ThresholdToSelection;
@@ -56,6 +57,7 @@ import java.awt.event.MouseWheelListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -116,19 +118,33 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                     }
                     hideAllRois(image, true, false);
                 }
-                Roi r = ip.getRoi();
-                BoundingBox selection = null;
-                if (r!=null && r.getType()==Roi.RECTANGLE) {
-                    Rectangle rect = r.getBounds();
-                    selection = new BoundingBox(rect.x, rect.x+rect.width, rect.y, rect.y+rect.height, ip.getSlice()-1, ip.getSlice());
-                    if (selection.getSizeX()==0 && selection.getSizeY()==0) selection=null;
-                }
                 List<Pair<StructureObject, BoundingBox>> selectedObjects = new ArrayList<Pair<StructureObject, BoundingBox>>();
-                if (selection!=null) {
-                    i.addClickedObjects(selection, selectedObjects);
-                    //logger.debug("selection: {}, number of objects: {}", selection, selectedObjects.size());
-                    ip.deleteRoi();
-                } else {
+                Roi r = ip.getRoi();
+                boolean fromSelection = false;
+                if (r!=null) {
+                    boolean removeAfterwards = r.getType()==Roi.FREELINE || r.getType()==Roi.FREEROI || (r.getType()==Roi.POLYGON && r.getState()==Roi.NORMAL);
+                    logger.debug("Roi: {}/{}, rem: {}", r.getTypeAsString(), r.getClass(), removeAfterwards);
+                    if (r.getType()==Roi.RECTANGLE || removeAfterwards) {
+                        fromSelection=true;
+                        Rectangle rect = r.getBounds();
+                        BoundingBox selection = new BoundingBox(rect.x, rect.x+rect.width, rect.y, rect.y+rect.height, ip.getSlice()-1, ip.getSlice());
+                        if (selection.getSizeX()==0 && selection.getSizeY()==0) selection=null;
+                        i.addClickedObjects(selection, selectedObjects);
+                        //logger.debug("before remove, contained: {}", selectedObjects.size());
+                        if (removeAfterwards) {
+                            
+                            Iterator<Pair<StructureObject, BoundingBox>> it = selectedObjects.iterator();
+                            while (it.hasNext()) {
+                                Pair<StructureObject, BoundingBox> p= it.next();
+                                double[] center = p.key.getObject().getCenter(false);
+                                if (!r.contains((int)(center[0]+0.5)-p.key.getObject().getBounds().getxMin()+p.value.getxMin(), (int)(center[1]+0.5)-p.key.getObject().getBounds().getyMin()+p.value.getyMin())) it.remove();
+                            }
+                            //logger.debug("after remove, contained: {}", selectedObjects.size());
+                        }
+                        ip.deleteRoi();
+                    }
+                }
+                if (!fromSelection) {
                     int x = e.getX();
                     int y = e.getY();
                     int offscreenX = canvas.offScreenX(x);

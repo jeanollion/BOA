@@ -144,7 +144,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
     
     // TreeNode implementation
     @Override public String toString() {
-        if (trackHead==null || getTrack()==null) return "tracking should be re-run";
+        if (trackHead==null) return "tracking should be re-run";
         return "Track: Head idx="+trackHead.getIdx()+ " t="+trackHead.getTimePoint()+" length: "+(track!=null?track.size():"?"); 
     }
     
