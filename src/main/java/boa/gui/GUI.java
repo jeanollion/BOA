@@ -718,6 +718,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         runActionList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         actionJSP.setViewportView(runActionList);
 
+        experimentList.setBackground(new java.awt.Color(254, 254, 254));
         experimentList.setBorder(javax.swing.BorderFactory.createTitledBorder("Experiments"));
         jScrollPane1.setViewportView(experimentList);
 
