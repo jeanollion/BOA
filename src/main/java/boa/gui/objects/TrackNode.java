@@ -72,7 +72,8 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
     
     public boolean containsError() {
         if (containsErrors==null) {
-            for (StructureObject t: getTrack()) { //look for error within track
+            if (track==null) return false;
+            for (StructureObject t: track) { //look for error within track
                 if (t.hasTrackLinkError()) {
                     containsErrors=true;
                     break;
@@ -145,7 +146,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
     // TreeNode implementation
     @Override public String toString() {
         if (trackHead==null) return "tracking should be re-run";
-        return "Track: Head idx="+trackHead.getIdx()+ " t="+trackHead.getTimePoint()+" length: "+(track!=null?track.size():"?"); 
+        return "Track: Head idx="+trackHead.getIdx()+ " t="+trackHead.getTimePoint()+" length: "+(track!=null?track.size():"............."); 
     }
     
     public TrackNode getChildAt(int childIndex) {
@@ -169,6 +170,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
     }
 
     public boolean isLeaf() {
+        if (track==null && getParent() instanceof RootTrackNode && root.generator.getExperiment().getPathToRoot(root.structureIdx).length==1) return false; // Lazy loading only for 1st structure after root
         return getChildCount()==0;
     }
 
