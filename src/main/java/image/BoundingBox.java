@@ -271,13 +271,13 @@ public class BoundingBox {
     }
     
     public boolean hasIntersection(BoundingBox other) {
-        if (getSizeZ()<=1 && other.getSizeZ()<=1) return Math.max(xMin, other.xMin)<Math.min(xMax, other.xMax) && Math.max(yMin, other.yMin)<Math.min(yMax, other.yMax);
-        else return Math.max(xMin, other.xMin)<Math.min(xMax, other.xMax) && Math.max(yMin, other.yMin)<Math.min(yMax, other.yMax) && Math.max(zMin, other.zMin)<Math.min(zMax, other.zMax);
+        if (getSizeZ()<=1 && other.getSizeZ()<=1) return Math.max(xMin, other.xMin)<=Math.min(xMax, other.xMax) && Math.max(yMin, other.yMin)<=Math.min(yMax, other.yMax);
+        else return Math.max(xMin, other.xMin)<=Math.min(xMax, other.xMax) && Math.max(yMin, other.yMin)<=Math.min(yMax, other.yMax) && Math.max(zMin, other.zMin)<=Math.min(zMax, other.zMax);
     }
     
     public boolean hasIntersection(BoundingBox other, int tolerance) {
-        if (getSizeZ()<=1 && other.getSizeZ()<=1) return Math.max(xMin, other.xMin)<Math.min(xMax, other.xMax)+tolerance && Math.max(yMin, other.yMin)<Math.min(yMax, other.yMax)+tolerance;
-        else return Math.max(xMin, other.xMin)<Math.min(xMax, other.xMax)+tolerance && Math.max(yMin, other.yMin)<Math.min(yMax, other.yMax)+tolerance && Math.max(zMin, other.zMin)<Math.min(zMax, other.zMax)+tolerance;
+        if (getSizeZ()<=1 && other.getSizeZ()<=1) return Math.max(xMin, other.xMin)<=Math.min(xMax, other.xMax)+tolerance && Math.max(yMin, other.yMin)<=Math.min(yMax, other.yMax)+tolerance;
+        else return Math.max(xMin, other.xMin)<=Math.min(xMax, other.xMax)+tolerance && Math.max(yMin, other.yMin)<=Math.min(yMax, other.yMax)+tolerance && Math.max(zMin, other.zMin)<=Math.min(zMax, other.zMax)+tolerance;
     }
     /**
      * 

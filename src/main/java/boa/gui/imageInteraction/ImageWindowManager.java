@@ -332,7 +332,7 @@ public abstract class ImageWindowManager<T, U, V> {
             if (roi==null) {
                 roi = generateObjectRoi(p, image.getSizeZ()<=1, color);
                 map.put(p, roi);
-                if (!labileObjects) logger.debug("add non labile object: {}, found by keyonly? {}", p.key, map.containsKey(new Pair(p.key, null)));
+                //if (!labileObjects) logger.debug("add non labile object: {}, found by keyonly? {}", p.key, map.containsKey(new Pair(p.key, null)));
             } else {
                 setObjectColor(roi, color);
             }

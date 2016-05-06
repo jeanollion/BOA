@@ -301,8 +301,8 @@ public class TrackTreeGenerator {
         List<TrackNode> nodes = getSelectedTrackNodes();
         List<List<StructureObject>> res = new ArrayList<List<StructureObject>>(nodes.size());
         for (TrackNode n : nodes) {
-            if (extended) res.add(StructureObjectUtils.extendTrack(n.track));
-            else res.add(n.track); 
+            if (extended) res.add(StructureObjectUtils.extendTrack(n.getTrack()));
+            else res.add(n.getTrack()); 
         }
         return res;
     }

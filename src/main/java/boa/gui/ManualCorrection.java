@@ -37,6 +37,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -178,9 +179,14 @@ public class ManualCorrection {
                 ArrayList<StructureObject> oldChildren = e.getKey().getChildren(structureIdx);
                 for (StructureObject c : oldChildren) c.getObject().draw(mask, 0, new BoundingBox(0, 0, 0));
                 if (test) iwm.getDisplayer().showImage(mask, 0, 1);
-                
+                // remove seeds out of mask
+                Iterator<int[]> it=e.getValue().iterator();
+                while(it.hasNext()) {
+                    int[] seed = it.next();
+                    if (!mask.insideMask(seed[0], seed[1], seed[2])) it.remove();
+                }
                 ObjectPopulation seg = segmenter.manualSegment(segImage, e.getKey(), mask, structureIdx, e.getValue());
-                seg.filter(new ObjectPopulation.Size().setMin(2)); // remove seeds
+                //seg.filter(new ObjectPopulation.Size().setMin(2)); // remove seeds
                 logger.debug("{} children segmented in parent: {}", seg.getObjects().size(), e.getKey());
                 if (!test && !seg.getObjects().isEmpty()) {
                     ArrayList<StructureObject> newChildren = e.getKey().setChildrenObjects(seg, structureIdx);

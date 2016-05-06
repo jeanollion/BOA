@@ -123,7 +123,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 boolean fromSelection = false;
                 if (r!=null) {
                     boolean removeAfterwards = r.getType()==Roi.FREELINE || r.getType()==Roi.FREEROI || (r.getType()==Roi.POLYGON && r.getState()==Roi.NORMAL);
-                    logger.debug("Roi: {}/{}, rem: {}", r.getTypeAsString(), r.getClass(), removeAfterwards);
+                    //logger.debug("Roi: {}/{}, rem: {}", r.getTypeAsString(), r.getClass(), removeAfterwards);
                     if (r.getType()==Roi.RECTANGLE || removeAfterwards) {
                         fromSelection=true;
                         Rectangle rect = r.getBounds();
@@ -132,7 +132,6 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                         i.addClickedObjects(selection, selectedObjects);
                         //logger.debug("before remove, contained: {}", selectedObjects.size());
                         if (removeAfterwards) {
-                            
                             Iterator<Pair<StructureObject, BoundingBox>> it = selectedObjects.iterator();
                             while (it.hasNext()) {
                                 Pair<StructureObject, BoundingBox> p= it.next();

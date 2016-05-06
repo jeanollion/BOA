@@ -1401,18 +1401,26 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }//GEN-LAST:event_reloadSelectionsButtonActionPerformed
 
     private void createSelectionButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_createSelectionButtonActionPerformed
+        if (!checkConnection()) return;
         String name = JOptionPane.showInputDialog("New Selection name:");
-        if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
-        else {
-            populateSelections();
-            for (int i = 0; i<selectionModel.size(); ++i) if (selectionModel.get(i).getName().equals(name)) {
-                logger.error("Selection name already exists");
-                return;
-            }
-            Selection sel = new Selection(name, db);
-            this.db.getSelectionDAO().store(sel);
-            this.selectionModel.addElement(sel);
+        if (!Utils.isValid(name, false)) {
+            logger.error("Name should not contain special characters");
+            return;
         }
+        List<String> structures = Arrays.asList(db.getExperiment().getStructuresAsString());
+        if (structures.contains(name)) {
+            logger.error("Name should not be a Structure's name");
+            return;
+        }
+        populateSelections();
+        for (int i = 0; i<selectionModel.size(); ++i) if (selectionModel.get(i).getName().equals(name)) {
+            logger.error("Selection name already exists");
+            return;
+        }
+        Selection sel = new Selection(name, db);
+        this.db.getSelectionDAO().store(sel);
+        this.selectionModel.addElement(sel);
+        
     }//GEN-LAST:event_createSelectionButtonActionPerformed
 
     private void updateRoiDisplayButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_updateRoiDisplayButtonActionPerformed
