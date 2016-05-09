@@ -340,7 +340,7 @@ public abstract class ImageWindowManager<T, U, V> {
                     if (hideIfAlreadyDisplayed) {
                         hideObject(dispImage, roi);
                         labiles.remove(roi);
-                        logger.debug("display -> inverse state: hide: {}", p.key);
+                        //logger.debug("display -> inverse state: hide: {}", p.key);
                     }
                 } else {
                     displayObject(dispImage, roi);

@@ -140,9 +140,10 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                             }
                             //logger.debug("after remove, contained: {}", selectedObjects.size());
                         }
-                        ip.deleteRoi();
+                        //ip.deleteRoi(); TODO if here and not afterwards, overlay do not update correctly for inverse state without selection
                     }
                 }
+                ip.deleteRoi();
                 if (!fromSelection) {
                     int x = e.getX();
                     int y = e.getY();
