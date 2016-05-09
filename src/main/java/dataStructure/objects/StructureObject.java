@@ -375,6 +375,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 this.trackHead=previous.getTrackHead();
                 if (this.trackHead!=null) this.trackHeadId=trackHead.id;
             }
+            if (trackHead==null) { // set trackHead if no trackHead found
+                this.isTrackHead=true;
+                this.trackHead=this;
+            }
         }
         return trackHead;
     }
@@ -419,7 +423,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
     }
     
-    public void setTrackHead(StructureObject trackHead, boolean resetPreviousIfTrackHead, boolean propagateToNextObjects) {
+    public void setTrackHead(StructureObject trackHead, boolean resetPreviousIfTrackHead, boolean propagateToNextObjects, List<StructureObject> modifiedObjects) {
         if (resetPreviousIfTrackHead && this==trackHead) {
             if (previous!=null && previous.next==this) previous.setNext(null);
             this.setPrevious(null);
@@ -427,10 +431,12 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.isTrackHead=this==trackHead;
         this.trackHead=trackHead;
         this.trackHeadId=trackHead.id;
+        if (modifiedObjects!=null) modifiedObjects.add(this);
         if (propagateToNextObjects) {
             StructureObject n = getNext();
             while(n!=null) {
-                n.setTrackHead(trackHead, false, false);
+                n.setTrackHead(trackHead, false, false, null);
+                if (modifiedObjects!=null) modifiedObjects.add(n);
                 n = n.getNext();
             }
         }

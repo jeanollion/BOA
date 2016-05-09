@@ -24,6 +24,7 @@ import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import core.Processor;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.Selection;
+import dataStructure.objects.SelectionDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import java.awt.event.ActionEvent;
@@ -220,9 +221,11 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
         JMenuItem[] runTracking;
         JMenuItem[] createSelection;
         JMenuItem delete;
+        JMenuItem addToSelection, removeFromSelection;
         public TrackNodeUI(TrackNode tn) {
             this.trackNode=tn;
-            this.actions = new JMenuItem[6];
+            String[] childStructureNames = trackNode.trackHead.getExperiment().getChildStructuresAsString(trackNode.trackHead.getStructureIdx());
+            this.actions = new JMenuItem[8];
             JMenu segSubMenu = new JMenu("Open Segmented Track Image");
             actions[0] = segSubMenu;
             JMenu rawSubMenu = new JMenu("Open Raw Track Image");
@@ -234,9 +237,12 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
             actions[3] = runTrackingSubMenu;
             JMenu createSelectionSubMenu = new JMenu("Create Selection");
             actions[4] = createSelectionSubMenu;
-            String[] childStructureNames = trackNode.trackHead.getExperiment().getChildStructuresAsString(trackNode.trackHead.getStructureIdx());
+            addToSelection = new JMenuItem("Add to Selected Selection(s)");
+            actions[5] = addToSelection;
+            removeFromSelection = new JMenuItem("Remove from Selected Selection(s)");
+            actions[6] = removeFromSelection;
             delete = new JMenuItem("Delete");
-            actions[5] = delete;
+            actions[7] = delete;
             //delete.setEnabled(false);
             delete.setAction(new AbstractAction("Delete") {
                 @Override public void actionPerformed(ActionEvent e) {
@@ -366,10 +372,36 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                 );
                 createSelectionSubMenu.add(createSelection[i]);
             }
+            addToSelection.setAction(new AbstractAction("Add to Selected Selection(s)") {
+                @Override public void actionPerformed(ActionEvent e) {
+                    List<StructureObject> sel = trackNode.root.generator.controller.getGeneratorS().get(trackHead.getStructureIdx()).getSelectedTrackHeads();
+                    SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
+                    for (Selection s : GUI.getInstance().getSelectedSelections()) {
+                        if (s.getStructureIdx()==-1 || s.getStructureIdx()==trackHead.getStructureIdx()) {
+                            s.addElements(sel);
+                            dao.store(s);
+                        }
+                    }
+                    GUI.updateRoiDisplayForSelections(null, null);
+                }
+            });
+            removeFromSelection.setAction(new AbstractAction("Remove from Selected Selection(s)") {
+                @Override public void actionPerformed(ActionEvent e) {
+                    List<StructureObject> sel = trackNode.root.generator.controller.getGeneratorS().get(trackHead.getStructureIdx()).getSelectedTrackHeads();
+                    SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
+                    for (Selection s : GUI.getInstance().getSelectedSelections()) {
+                        if (s.getStructureIdx()==-1 || s.getStructureIdx()==trackHead.getStructureIdx()) {
+                            s.removeElements(sel);
+                            dao.store(s);
+                        }
+                    }
+                    GUI.updateRoiDisplayForSelections(null, null);
+                }
+            });
         }
         public Object[] getDisplayComponent(boolean multipleSelection) {
             if (multipleSelection) {
-                return new JMenuItem[]{actions[2], actions[3], actions[4], actions[5]};
+                return new JMenuItem[]{actions[2], actions[3], actions[4], actions[5], actions[6], actions[7]};
             } else return actions;
         }
         private int getStructureIdx(String name, JMenuItem[] actions) {

@@ -188,6 +188,15 @@
                 <Property name="text" type="java.lang.String" value="Set Export Format"/>
               </Properties>
               <SubComponents>
+                <MenuItem class="javax.swing.JRadioButtonMenuItem" name="bsonFormatMenuItem">
+                  <Properties>
+                    <Property name="selected" type="boolean" value="true"/>
+                    <Property name="text" type="java.lang.String" value="BSON (faster, safer)"/>
+                  </Properties>
+                  <Events>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="bsonFormatMenuItemActionPerformed"/>
+                  </Events>
+                </MenuItem>
                 <MenuItem class="javax.swing.JRadioButtonMenuItem" name="jsonFormatMenuItem">
                   <Properties>
                     <Property name="selected" type="boolean" value="true"/>
@@ -195,15 +204,6 @@
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="jsonFormatMenuItemActionPerformed"/>
-                  </Events>
-                </MenuItem>
-                <MenuItem class="javax.swing.JRadioButtonMenuItem" name="bsonFormatMenuItem">
-                  <Properties>
-                    <Property name="selected" type="boolean" value="true"/>
-                    <Property name="text" type="java.lang.String" value="BSON (faster)"/>
-                  </Properties>
-                  <Events>
-                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="bsonFormatMenuItemActionPerformed"/>
                   </Events>
                 </MenuItem>
               </SubComponents>
@@ -243,7 +243,7 @@
     </DimensionLayout>
     <DimensionLayout dim="1">
       <Group type="103" groupAlignment="0" attributes="0">
-          <Component id="tabs" alignment="0" pref="664" max="32767" attributes="0"/>
+          <Component id="tabs" alignment="0" max="32767" attributes="0"/>
       </Group>
     </DimensionLayout>
   </Layout>
@@ -288,7 +288,7 @@
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Component id="actionMicroscopyFieldJSP" alignment="0" max="32767" attributes="0"/>
                           <Group type="102" alignment="0" attributes="0">
-                              <Component id="actionStructureJSP" pref="428" max="32767" attributes="0"/>
+                              <Component id="actionStructureJSP" pref="443" max="32767" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="actionJSP" min="-2" pref="163" max="-2" attributes="0"/>
                           </Group>
@@ -434,7 +434,7 @@
             </DimensionLayout>
             <DimensionLayout dim="1">
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="configurationJSP" alignment="0" pref="621" max="32767" attributes="0"/>
+                  <Component id="configurationJSP" alignment="0" pref="636" max="32767" attributes="0"/>
               </Group>
             </DimensionLayout>
           </Layout>
@@ -519,6 +519,7 @@
                           <Component id="testManualSegmentationButton" min="-2" pref="59" max="-2" attributes="0"/>
                       </Group>
                       <Component id="linkObjectsButton" alignment="0" max="32767" attributes="0"/>
+                      <Component id="unlinkObjectsButton" alignment="0" max="32767" attributes="0"/>
                       <Group type="102" attributes="0">
                           <Group type="103" groupAlignment="0" attributes="0">
                               <Component id="jLabel1" alignment="0" min="-2" max="-2" attributes="0"/>
@@ -526,7 +527,7 @@
                           </Group>
                           <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                       </Group>
-                      <Component id="unlinkObjectsButton" alignment="0" max="32767" attributes="0"/>
+                      <Component id="resetLinksButton" alignment="0" max="32767" attributes="0"/>
                   </Group>
                 </DimensionLayout>
                 <DimensionLayout dim="1">
@@ -564,6 +565,8 @@
                           <Component id="linkObjectsButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="unlinkObjectsButton" min="-2" max="-2" attributes="0"/>
+                          <EmptySpace max="-2" attributes="0"/>
+                          <Component id="resetLinksButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="collapseAllObjectButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="32767" attributes="0"/>
@@ -706,6 +709,14 @@
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="unlinkObjectsButtonActionPerformed"/>
                   </Events>
                 </Component>
+                <Component class="javax.swing.JButton" name="resetLinksButton">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" value="Reset Links (R)"/>
+                  </Properties>
+                  <Events>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="resetLinksButtonActionPerformed"/>
+                  </Events>
+                </Component>
               </SubComponents>
             </Container>
             <Container class="javax.swing.JSplitPane" name="ObjectTreeJSP">
@@ -737,7 +748,7 @@
                     </DimensionLayout>
                     <DimensionLayout dim="1">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="structureJSP" alignment="0" pref="573" max="32767" attributes="0"/>
+                          <Component id="structureJSP" alignment="0" pref="588" max="32767" attributes="0"/>
                       </Group>
                     </DimensionLayout>
                   </Layout>
@@ -770,7 +781,7 @@
                     </DimensionLayout>
                     <DimensionLayout dim="1">
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="TimeJSP" alignment="0" pref="573" max="32767" attributes="0"/>
+                          <Component id="TimeJSP" alignment="0" pref="588" max="32767" attributes="0"/>
                       </Group>
                     </DimensionLayout>
                   </Layout>

@@ -51,41 +51,40 @@ import utils.Utils;
  * @author jollion
  */
 public class ManualCorrection {
-    public static void unlinkObject(StructureObject o) {
-        if (o.getNext()!=null) o.getNext().setTrackHead(o.getNext(), true, true);
+    public static void unlinkObject(StructureObject o, List<StructureObject> modifiedObjects) {
+        if (o.getNext()!=null) o.getNext().setTrackHead(o.getNext(), true, true, modifiedObjects);
         o.resetTrackLinks();
         //logger.debug("unlinking: {}", o);
     }
-    public static void unlinkObjects(StructureObject prev, StructureObject next, List<StructureObject> modifiedTrackHeads) {
-        if (next.getTimePoint()<prev.getTimePoint()) unlinkObjects(next, prev, modifiedTrackHeads);
+    public static void unlinkObjects(StructureObject prev, StructureObject next, List<StructureObject> modifiedObjects) {
+        if (next.getTimePoint()<prev.getTimePoint()) unlinkObjects(next, prev, modifiedObjects);
         else {
-            next.setTrackHead(next, true, true);
+            next.setTrackHead(next, true, true, modifiedObjects);
             //logger.debug("unlinking.. previous: {}, previous's next: {}", sel.get(1).getPrevious(), sel.get(0).getNext());
             prev.setTrackFlag(StructureObject.TrackFlag.correctionSplit);
             next.setTrackFlag(StructureObject.TrackFlag.correctionSplit);
-            if (modifiedTrackHeads!=null) {
-                modifiedTrackHeads.add(prev.getTrackHead());
-                modifiedTrackHeads.add(next);
-            }
+            if (modifiedObjects!=null) modifiedObjects.add(prev);
             //logger.debug("unlinking: {} to {}", sel.get(0), sel.get(1));
         }
         
     }
-    public static void linkObjects(StructureObject prev, StructureObject next, List<StructureObject> modifiedTrackHeads) {
-        if (next.getTimePoint()<prev.getTimePoint()) linkObjects(next, prev, modifiedTrackHeads);
+    public static void linkObjects(StructureObject prev, StructureObject next, List<StructureObject> modifiedObjects) {
+        if (next.getTimePoint()<prev.getTimePoint()) linkObjects(next, prev, modifiedObjects);
         else {
             if (prev.getNext()==next || next.getPrevious()==prev) {
                 logger.warn("spots are already linked");
                 return;
             }
             // unlinking each of the two spots
-            if (next.getPrevious()!=null) unlinkObjects(next.getPrevious(), next, modifiedTrackHeads);
+            if (next.getPrevious()!=null) unlinkObjects(next.getPrevious(), next, modifiedObjects);
             //if (prev.getNext()!=null) unlinkObjects(prev, prev.getNext(), modifiedTrackHeads);
             boolean newTh = prev.getNext()!=null;
             next.setPreviousInTrack(prev, newTh);
-            if (!newTh) next.setTrackHead(prev.getTrackHead(), false, true);
+            if (!newTh) next.setTrackHead(prev.getTrackHead(), false, true, modifiedObjects);
+            else next.setTrackHead(next, false, true, modifiedObjects);
             next.setTrackFlag(StructureObject.TrackFlag.correctionMerge);
-            modifiedTrackHeads.add(prev.getTrackHead());
+            modifiedObjects.add(next);
+            modifiedObjects.add(prev);
             //logger.debug("linking: {} to {}", prev, next);
         }
         
@@ -94,39 +93,43 @@ public class ManualCorrection {
     public static void modifyObjectLinks(MasterDAO db, List<StructureObject> objects, boolean unlink, boolean updateDisplay) {
         StructureObjectUtils.keepOnlyObjectsFromSameMicroscopyField(objects);
         StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(objects);
-        if (objects.isEmpty()) return;
+        if (objects.size()<=1) return;
         
         if (updateDisplay) ImageWindowManagerFactory.getImageManager().removeTracks(StructureObjectUtils.getTrackHeads(objects));
         
-        List<StructureObject> thToDisp = new ArrayList<StructureObject>();
-        if (objects.size()==1) { // unlink spot
-            if (unlink) ManualCorrection.unlinkObject(objects.get(0));
-        } else { 
-            TreeMap<StructureObject, List<StructureObject>> objectsByParent = new TreeMap(StructureObjectUtils.splitByParent(objects)); // sorted by time point
-            StructureObject prevParent = null;
-            StructureObject prev = null;
-            for (StructureObject currentParent : objectsByParent.keySet()) {
-                List<StructureObject> l = objectsByParent.get(currentParent);
-                if (l.size()==1 && (prevParent==null || prevParent.getTimePoint()<currentParent.getTimePoint())) {
-                    if (prevParent!=null && prev!=null) {
-                        StructureObject current = l.get(0);
+        List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
+        TreeMap<StructureObject, List<StructureObject>> objectsByParent = new TreeMap(StructureObjectUtils.splitByParent(objects)); // sorted by time point
+        StructureObject prevParent = null;
+        StructureObject prev = null;
+        logger.debug("modify: unlink: {}, #objects: {}, #parents: {}", unlink, objects.size(), objectsByParent.keySet().size());
+        for (StructureObject currentParent : objectsByParent.keySet()) {
+            List<StructureObject> l = objectsByParent.get(currentParent);
+            logger.debug("prevParent: {}, currentParent: {}, #objects: {}", prevParent, currentParent, l.size());
+            if (l.size()==1 && (prevParent==null || prevParent.getTimePoint()<currentParent.getTimePoint())) {
+                if (prev!=null) logger.debug("prev: {}, prevTh: {}, prevIsTh: {}, prevPrev: {}, prevNext: {}", prev, prev.getTrackHead(), prev.isTrackHead(), prev.getPrevious(), prev.getNext());
+                if (prevParent!=null && prev!=null) {
+                    StructureObject current = l.get(0);
+                    logger.debug("current: {}, currentTh: {}, currentIsTh: {}, currentPrev: {}, currentNext: {}", current, current.getTrackHead(), current.isTrackHead(), current.getPrevious(), current.getNext());
+                    if (unlink) {
                         if (current.getPrevious()==prev || prev.getNext()==current) { //unlink the 2 spots
-                            if (unlink) ManualCorrection.unlinkObjects(prev, current, thToDisp);
-                        } else { // link the 2 spots
-                            if (!unlink) ManualCorrection.linkObjects(prev, current, thToDisp);
+                            ManualCorrection.unlinkObjects(prev, current, modifiedObjects);
+                        } else { // reset links
+
                         }
-                    }
-                    prevParent=currentParent;
-                    prev = l.get(0);
-                } else {
-                    prev=null;
-                    prevParent=null;
-                }
-                
-            }
-            
+                    } else ManualCorrection.linkObjects(prev, current, modifiedObjects);
+
+                } //else if (unlink) ManualCorrection.unlinkObject(l.get(0), modifiedObjects);
+                prevParent=currentParent;
+                prev = l.get(0);
+            } else {
+                prev=null;
+                prevParent=null;
+                //if (unlink) for (StructureObject o : l) ManualCorrection.unlinkObject(o, modifiedObjects);
+            }   
         }
-        db.getDao(objects.get(0).getFieldName()).store(objects, true);
+        
+        Utils.removeDuplicates(modifiedObjects, false);
+        db.getDao(objects.get(0).getFieldName()).store(modifiedObjects, true);
         if (updateDisplay) {
             // reload track-tree and update selection list
             int parentStructureIdx = objects.get(0).getParent().getStructureIdx();
@@ -134,7 +137,32 @@ public class ManualCorrection {
             //List<List<StructureObject>> tracks = this.trackTreeController.getGeneratorS().get(structureIdx).getSelectedTracks(true);
             // get unique tracks to display
             Set<StructureObject> uniqueTh = new HashSet<StructureObject>();
-            for (StructureObject o : thToDisp) uniqueTh.add(o.getTrackHead());
+            for (StructureObject o : modifiedObjects) uniqueTh.add(o.getTrackHead());
+            List<List<StructureObject>> trackToDisp = new ArrayList<List<StructureObject>>();
+            for (StructureObject o : uniqueTh) trackToDisp.add(StructureObjectUtils.getTrack(o, true));
+            // update current image
+            ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
+            if (!trackToDisp.isEmpty()) iwm.displayTracks(null, null, trackToDisp, true);
+        }
+    }
+    
+    public static void resetObjectLinks(MasterDAO db, List<StructureObject> objects, boolean updateDisplay) {
+        StructureObjectUtils.keepOnlyObjectsFromSameMicroscopyField(objects);
+        StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(objects);
+        if (objects.isEmpty()) return;
+        
+        if (updateDisplay) ImageWindowManagerFactory.getImageManager().removeTracks(StructureObjectUtils.getTrackHeads(objects));
+        
+        List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
+        for (StructureObject o : objects) ManualCorrection.unlinkObject(o, modifiedObjects);
+        Utils.removeDuplicates(modifiedObjects, false);
+        db.getDao(objects.get(0).getFieldName()).store(modifiedObjects, true);
+        if (updateDisplay) {
+            // reload track-tree and update selection list
+            int parentStructureIdx = objects.get(0).getParent().getStructureIdx();
+            GUI.getInstance().trackTreeController.updateParentTracks(GUI.getInstance().trackTreeController.getTreeIdx(parentStructureIdx));
+            Set<StructureObject> uniqueTh = new HashSet<StructureObject>();
+            for (StructureObject o : modifiedObjects) uniqueTh.add(o.getTrackHead());
             List<List<StructureObject>> trackToDisp = new ArrayList<List<StructureObject>>();
             for (StructureObject o : uniqueTh) trackToDisp.add(StructureObjectUtils.getTrack(o, true));
             // update current image
@@ -271,14 +299,17 @@ public class ManualCorrection {
             if (objectsToMerge.size()<=1) logger.warn("Merge Objects: select several objects from same parent!");
             else {
                 StructureObject res = objectsToMerge.remove(0);
-                for (StructureObject o : objectsToMerge) unlinkObject(o);
+                List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
+                for (StructureObject o : objectsToMerge) unlinkObject(o, modifiedObjects);
                 for (StructureObject toMerge : objectsToMerge) {
                     res.merge(toMerge);
-                    unlinkObject(toMerge);
+                    unlinkObject(toMerge, modifiedObjects);
                 }
                 newObjects.add(res);
                 dao.delete(objectsToMerge, true, true, true);
-                dao.store(res, true);
+                modifiedObjects.add(res);
+                Utils.removeDuplicates(modifiedObjects, false);
+                dao.store(modifiedObjects, true);
             }
         }
         if (updateDisplay) {
@@ -308,14 +339,16 @@ public class ManualCorrection {
         Map<Integer, List<StructureObject>> objectsByStructureIdx = StructureObjectUtils.splitByStructureIdx(objects);
         for (int structureIdx : objectsByStructureIdx.keySet()) {
             List<StructureObject> list = objectsByStructureIdx.get(structureIdx);
+            List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
             for (StructureObject o : list) {
-                unlinkObject(o);
+                unlinkObject(o, modifiedObjects);
                 o.getParent().getChildren(o.getStructureIdx()).remove(o);
             }
             Set<StructureObject> parents = StructureObjectUtils.getParents(list);
             logger.info("Deleting {} objects, from {} parents", list.size(), parents.size());
             dao.delete(list, true, true, true);
-            
+            Utils.removeDuplicates(modifiedObjects, false);
+            dao.store(modifiedObjects, true);
             if (updateDisplay) {
                 //Update selection on opened image
                 ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);

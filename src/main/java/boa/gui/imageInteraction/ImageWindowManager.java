@@ -152,8 +152,7 @@ public abstract class ImageWindowManager<T, U, V> {
                     ImageOperations.fill(((ImageInteger)e.getKey()), 0, null);
                     i.draw((ImageInteger)e.getKey());
                 }
-                hideAllObjects(e.getKey(), true);
-                hideAllTracks(e.getKey(), true);
+                hideAllRois(null, true, true);
                 if (!track) getDisplayer().updateImageDisplay(e.getKey());
             }
         }
@@ -373,28 +372,7 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         displayer.updateImageRoiDisplay(image);
     }
-    public void hideAllObjects(Image image, boolean labileObjects) {
-        T dispImage;
-        if (image==null) {
-            dispImage = displayer.getCurrentImage();
-            if (dispImage==null) return;
-            image = displayer.getImage(dispImage);
-        }
-        else dispImage = displayer.getImage(image);
-        if (dispImage==null) return;
-        if (labileObjects) this.displayedLabileObjectRois.remove(image);
-        hideAllObjects(dispImage);
-        if (!labileObjects) { // re-display labile objects
-            Set<U> rois = displayedLabileObjectRois.get(image);
-            if (rois!=null) for (U roi : rois) displayObject(dispImage, roi);
-        }
-        displayer.updateImageRoiDisplay(image);
-        /*if (listener!=null) {
-            if (!labileObjects) listener.fireObjectSelected(Pair.unpair(getLabileObjects(image)), false);
-            else listener.fireObjectSelected(null, false);
-        }*/
-    }
-    protected abstract void hideAllObjects(T image);
+
     public void displayLabileObjects(Image image) {
         if (image==null) {
             image = getDisplayer().getCurrentImage2();
@@ -524,23 +502,6 @@ public abstract class ImageWindowManager<T, U, V> {
         
     }
     
-    public void hideAllTracks(Image image, boolean labileTracks) {
-        T dispImage;
-        if (image==null) {
-            dispImage = displayer.getCurrentImage();
-            if (dispImage==null) return;
-            image = displayer.getImage(dispImage);
-        }
-        else dispImage = displayer.getImage(image);
-        if (dispImage==null) return;
-        if (labileTracks) this.displayedLabileTrackRois.remove(image);
-        hideAllTracks(dispImage);
-        if (!labileTracks) {
-            Set<V> tracks = displayedLabileTrackRois.get(image);
-            if (tracks!=null) for (V roi: tracks) displayTrack(dispImage, roi);
-        }
-        displayer.updateImageRoiDisplay(image);
-    }
     protected abstract void hideAllRois(T image);
     public void hideAllRois(Image image, boolean labile, boolean nonLabile) {
         if (!labile && !nonLabile) return;
@@ -557,7 +518,6 @@ public abstract class ImageWindowManager<T, U, V> {
             GUI.updateRoiDisplayForSelections(image, null);
         }
     }
-    protected abstract void hideAllTracks(T image);
     public void displayLabileTracks(Image image) {
         if (image==null) {
             image = getDisplayer().getCurrentImage2();
@@ -592,7 +552,7 @@ public abstract class ImageWindowManager<T, U, V> {
         ArrayList<Image> images= Utils.getKeys(this.imageObjectInterfaceMap, i.getKey().getKey(-1));
         //logger.debug("display track on {} images", images.size());
         for (Image image : images) {
-            if (!addToCurrentSelectedTracks) hideAllTracks(image, true);
+            if (!addToCurrentSelectedTracks) hideAllRois(image, true, true); // TODO only tracks?
             displayTrack(image, i, track, color, labile);
         }
     }
@@ -634,10 +594,7 @@ public abstract class ImageWindowManager<T, U, V> {
     }
     
     public void resetObjectsAndTracksRoi() {
-        for (Image image : imageObjectInterfaceMap.keySet()) {
-            hideAllObjects(image, true);
-            hideAllTracks(image, true);
-        }
+        for (Image image : imageObjectInterfaceMap.keySet()) hideAllRois(image, true, true);
         objectRoiMap.clear();
         labileObjectRoiMap.clear();
         labileParentTrackHeadTrackRoiMap.clear();
@@ -646,7 +603,6 @@ public abstract class ImageWindowManager<T, U, V> {
     
     public void goToNextTrackError(Image trackImage, List<StructureObject> tracks) {
         //ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(rois.get(0).getParent().getTrackHead(), rois.get(0).getStructureIdx(), true));
-        if (tracks==null || tracks.isEmpty()) return;
         if (trackImage==null) {
             T selectedImage = displayer.getCurrentImage();
             trackImage = displayer.getImage(selectedImage);
@@ -657,6 +613,12 @@ public abstract class ImageWindowManager<T, U, V> {
             return;
         }
         TrackMask tm = (TrackMask)i;
+        if (tracks==null || tracks.isEmpty()) tracks = this.getSelectedLabileTrackHeads(trackImage);
+        if (tracks==null || tracks.isEmpty()) {
+            List<StructureObject> allObjects = Pair.unpairKeys(i.getObjects());
+            tracks = StructureObjectUtils.getTrackHeads(allObjects);
+        }
+        if (tracks==null || tracks.isEmpty()) return;
         BoundingBox currentDisplayRange = this.displayer.getDisplayRange(trackImage);
         int minTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMin());
         int maxTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMax());
@@ -688,6 +650,12 @@ public abstract class ImageWindowManager<T, U, V> {
             return;
         }
         TrackMask tm = (TrackMask)i;
+        if (tracks==null || tracks.isEmpty()) tracks = this.getSelectedLabileTrackHeads(trackImage);
+        if (tracks==null || tracks.isEmpty()) {
+            List<StructureObject> allObjects = Pair.unpairKeys(i.getObjects());
+            tracks = StructureObjectUtils.getTrackHeads(allObjects);
+        }
+        if (tracks==null || tracks.isEmpty()) return;
         BoundingBox currentDisplayRange = this.displayer.getDisplayRange(trackImage);
         int minTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMin());
         int maxTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMax());

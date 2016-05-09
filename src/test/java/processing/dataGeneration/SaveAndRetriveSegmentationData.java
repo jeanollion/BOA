@@ -151,7 +151,7 @@ public class SaveAndRetriveSegmentationData {
             List<StructureObject> track = dao.getTrack(th);
             ImageObjectInterface i = windowManager.getImageTrackObjectInterface(track, structureIdx);
             i.setGUIMode(false);
-            ArrayList<Pair<StructureObject, BoundingBox>> so = i.getObjects();
+            List<Pair<StructureObject, BoundingBox>> so = i.getObjects();
             ArrayList<Object3D> o3DList = new ArrayList<Object3D>(so.size());
             for (Pair<StructureObject, BoundingBox> o : so) {
                 o3DList.add(o.key.getObject().translate(o.key.getBounds().reverseOffset()).translate(o.value));

@@ -152,7 +152,7 @@ public class MutationTrackPostProcessing {
                 }
                 //logger.debug("link Tracks: delete: {}, minDist: {}, delete tailTrackHead? {}", objectToRemove, minDist, deleteTailTrackHead);
                 tailTrack.get(0).setPreviousInTrack(headTrackTail, false, StructureObject.TrackFlag.correctionMerge);
-                for (StructureObject o : tailTrack) o.setTrackHead(headTrackHead, false, false);
+                for (StructureObject o : tailTrack) o.setTrackHead(headTrackHead, false, false, null);
                 spotHeadTrack.addAll(spotTailTrack);
                 headTrack.addAll(tailTrack);
                 
@@ -190,7 +190,7 @@ public class MutationTrackPostProcessing {
                 trackHeadSpotMapTemp.put(th, spotTracks.get(i));
                 if (i!=0) {
                     //if (th.getNext()!=null) th.getNext().setTrackFlag(StructureObject.TrackFlag.correctionSplit); // correction flag @ start
-                    for (StructureObject o : subTrack) o.setTrackHead(th, true, false);
+                    for (StructureObject o : subTrack) o.setTrackHead(th, true, false, null);
                 }
             }
         }

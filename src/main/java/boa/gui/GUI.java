@@ -153,9 +153,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         toFront();
         // format button
-        boolean json = PropertyUtils.get(PropertyUtils.EXPORT_FORMAT, "bson").equals("json");
-        this.bsonFormatMenuItem.setSelected(!json);
-        this.jsonFormatMenuItem.setSelected(json);
+        this.bsonFormatMenuItem.setSelected(true);
+        this.jsonFormatMenuItem.setSelected(false);
         ButtonGroup group = new ButtonGroup();
         group.add(bsonFormatMenuItem);
         group.add(jsonFormatMenuItem);
@@ -422,6 +421,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             selectionModel.addElement(sel);
             logger.debug("Selection : {}, displayingObjects: {} track: {}", sel.getName(), sel.isDisplayingObjects(), sel.isDisplayingTracks());
         }
+    }
+    
+    public List<Selection> getSelectedSelections() {
+        return selectionList.getSelectedValuesList();
     }
     
     protected void loadObjectTrees() {
@@ -700,6 +703,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         jLabel1 = new javax.swing.JLabel();
         jLabel2 = new javax.swing.JLabel();
         unlinkObjectsButton = new javax.swing.JButton();
+        resetLinksButton = new javax.swing.JButton();
         ObjectTreeJSP = new javax.swing.JSplitPane();
         StructurePanel = new javax.swing.JPanel();
         structureJSP = new javax.swing.JScrollPane();
@@ -736,8 +740,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         importNewExperimentMenuItem = new javax.swing.JMenuItem();
         setMongoBinDirectoryMenu = new javax.swing.JMenuItem();
         jMenu1 = new javax.swing.JMenu();
-        jsonFormatMenuItem = new javax.swing.JRadioButtonMenuItem();
         bsonFormatMenuItem = new javax.swing.JRadioButtonMenuItem();
+        jsonFormatMenuItem = new javax.swing.JRadioButtonMenuItem();
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -796,7 +800,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(actionMicroscopyFieldJSP)
                     .addGroup(actionPanelLayout.createSequentialGroup()
-                        .addComponent(actionStructureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 428, Short.MAX_VALUE)
+                        .addComponent(actionStructureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 443, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(actionJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 163, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(actionPanelLayout.createSequentialGroup()
@@ -816,7 +820,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         configurationPanelLayout.setVerticalGroup(
             configurationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 621, Short.MAX_VALUE)
+            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 636, Short.MAX_VALUE)
         );
 
         tabs.addTab("Configuration", configurationPanel);
@@ -930,6 +934,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
+        resetLinksButton.setText("Reset Links (R)");
+        resetLinksButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                resetLinksButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout ControlPanelLayout = new javax.swing.GroupLayout(ControlPanel);
         ControlPanel.setLayout(ControlPanelLayout);
         ControlPanelLayout.setHorizontalGroup(
@@ -950,12 +961,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(testManualSegmentationButton, javax.swing.GroupLayout.PREFERRED_SIZE, 59, javax.swing.GroupLayout.PREFERRED_SIZE))
             .addComponent(linkObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(unlinkObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addGroup(ControlPanelLayout.createSequentialGroup()
                 .addGroup(ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(jLabel1)
                     .addComponent(jLabel2))
                 .addGap(0, 0, Short.MAX_VALUE))
-            .addComponent(unlinkObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(resetLinksButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         ControlPanelLayout.setVerticalGroup(
             ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -992,6 +1004,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(unlinkObjectsButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(resetLinksButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(collapseAllObjectButton)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
@@ -1006,7 +1020,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         StructurePanelLayout.setVerticalGroup(
             StructurePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(structureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 573, Short.MAX_VALUE)
+            .addComponent(structureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 588, Short.MAX_VALUE)
         );
 
         ObjectTreeJSP.setLeftComponent(StructurePanel);
@@ -1025,7 +1039,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         trackPanelLayout.setVerticalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 573, Short.MAX_VALUE)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 588, Short.MAX_VALUE)
         );
 
         ObjectTreeJSP.setRightComponent(trackPanel);
@@ -1260,6 +1274,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
         jMenu1.setText("Set Export Format");
 
+        bsonFormatMenuItem.setSelected(true);
+        bsonFormatMenuItem.setText("BSON (faster, safer)");
+        bsonFormatMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                bsonFormatMenuItemActionPerformed(evt);
+            }
+        });
+        jMenu1.add(bsonFormatMenuItem);
+
         jsonFormatMenuItem.setSelected(true);
         jsonFormatMenuItem.setText("JSON (human readable)");
         jsonFormatMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -1268,15 +1291,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
         jMenu1.add(jsonFormatMenuItem);
-
-        bsonFormatMenuItem.setSelected(true);
-        bsonFormatMenuItem.setText("BSON (faster)");
-        bsonFormatMenuItem.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                bsonFormatMenuItemActionPerformed(evt);
-            }
-        });
-        jMenu1.add(bsonFormatMenuItem);
 
         importExportMenu.add(jMenu1);
         importExportMenu.add(jSeparator1);
@@ -1293,7 +1307,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(tabs, javax.swing.GroupLayout.DEFAULT_SIZE, 664, Short.MAX_VALUE)
+            .addComponent(tabs)
         );
 
         pack();
@@ -1746,11 +1760,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }//GEN-LAST:event_hostNameActionPerformed
 
     private void jsonFormatMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jsonFormatMenuItemActionPerformed
-        PropertyUtils.set(PropertyUtils.EXPORT_FORMAT, this.jsonFormatMenuItem.isSelected()?"json":"bson");
+        //PropertyUtils.set(PropertyUtils.EXPORT_FORMAT, this.jsonFormatMenuItem.isSelected()?"json":"bson");
     }//GEN-LAST:event_jsonFormatMenuItemActionPerformed
 
     private void bsonFormatMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bsonFormatMenuItemActionPerformed
-        PropertyUtils.set(PropertyUtils.EXPORT_FORMAT, this.jsonFormatMenuItem.isSelected()?"json":"bson");
+        //PropertyUtils.set(PropertyUtils.EXPORT_FORMAT, this.jsonFormatMenuItem.isSelected()?"json":"bson");
     }//GEN-LAST:event_bsonFormatMenuItemActionPerformed
 
     private void unlinkObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_unlinkObjectsButtonActionPerformed
@@ -1762,6 +1776,16 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         }
         ManualCorrection.modifyObjectLinks(db, sel, true, true);
     }//GEN-LAST:event_unlinkObjectsButtonActionPerformed
+
+    private void resetLinksButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resetLinksButtonActionPerformed
+        if (!checkConnection()) return;
+        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        if (sel.isEmpty()) {
+            logger.warn("Select at least one object to modify its links");
+            return;
+        }
+        ManualCorrection.resetObjectLinks(db, sel, true);
+    }//GEN-LAST:event_resetLinksButtonActionPerformed
     private void updateMongoDBBinActions() {
         boolean enableDump = false, enableRestore = false;
         String mPath = PropertyUtils.get(PropertyUtils.MONGO_BIN_PATH);
@@ -1901,6 +1925,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JButton previousTrackErrorButton;
     private javax.swing.JMenuItem refreshExperimentListMenuItem;
     private javax.swing.JButton reloadSelectionsButton;
+    private javax.swing.JButton resetLinksButton;
     private javax.swing.JList runActionList;
     private javax.swing.JMenu runMenu;
     private javax.swing.JMenuItem runSelectedActionsMenuItem;

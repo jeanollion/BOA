@@ -23,6 +23,7 @@ import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.gui.objects.StructureObjectTreeGenerator;
+import boa.gui.objects.TrackTreeGenerator;
 import dataStructure.objects.Selection;
 import dataStructure.objects.SelectionDAO;
 import dataStructure.objects.StructureObject;
@@ -45,6 +46,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.SwingUtilities;
+import javax.swing.tree.TreePath;
 import utils.Pair;
 import utils.Utils;
 
@@ -110,8 +112,8 @@ public class SelectionUtils {
         list.addMouseListener( new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) {
                 if (SwingUtilities.isRightMouseButton(e)) {
-                    JList list = (JList)e.getSource();
                     int row = list.locationToIndex(e.getPoint());
+                    if (!list.isSelectedIndex(row)) list.addSelectionInterval(row, row);
                     //logger.debug("right button on row: {}, ctrl {} ctrl", row, ctrl);
                     if (list.isSelectedIndex(row)) {
                         JPopupMenu menu = generateMenu(list);
@@ -181,7 +183,7 @@ public class SelectionUtils {
         }
         menu.add(colorMenu);
         menu.add(new JSeparator());
-        JMenuItem add = new JMenuItem("Add to Selection");
+        JMenuItem add = new JMenuItem("Add objects selected on Current Image");
         add.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (selectedValues.isEmpty()) return;
@@ -195,11 +197,12 @@ public class SelectionUtils {
                     dao.store(s);
                 }
                 list.updateUI();
+                GUI.updateRoiDisplayForSelections(null, null);
             }
         });
         menu.add(add);
         
-        JMenuItem remove = new JMenuItem("Remove from Selection");
+        JMenuItem remove = new JMenuItem("Remove objects selected on Current Image");
         remove.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (selectedValues.isEmpty()) return;
@@ -209,13 +212,47 @@ public class SelectionUtils {
                     s.removeElements(sel);
                     dao.store(s);
                 }
-                ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getCurrentImageObjectInterface();
-                ImageWindowManagerFactory.getImageManager().hideObjects(null, i.pairWithOffset(sel), false);
+                GUI.updateRoiDisplayForSelections(null, null);
                 list.updateUI();
             }
         });
         menu.add(remove);
         
+        
+        JMenuItem addObjectTree = new JMenuItem("Add objects selected in ObjectTree");
+        addObjectTree.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (selectedValues.isEmpty()) return;
+                SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
+                List<StructureObject> sel = GUI.getInstance().getObjectTree().getSelectedObjects(false);
+                for (Selection s : selectedValues ) {
+                    int[] structureIdx = s.getStructureIdx()==-1 ? new int[0] : new int[]{s.getStructureIdx()};
+                    List<StructureObject> objects = new ArrayList<StructureObject>(sel);
+                    StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(sel, structureIdx);
+                    s.addElements(objects);
+                    dao.store(s);
+                }
+                list.updateUI();
+                GUI.updateRoiDisplayForSelections(null, null);
+            }
+        });
+        menu.add(addObjectTree);
+        
+        JMenuItem removeObjectTree = new JMenuItem("Remove objects selected in ObjectTree");
+        removeObjectTree.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (selectedValues.isEmpty()) return;
+                SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
+                List<StructureObject> sel = GUI.getInstance().getObjectTree().getSelectedObjects(false);
+                for (Selection s : selectedValues ) {
+                    s.removeElements(sel);
+                    dao.store(s);
+                }
+                GUI.updateRoiDisplayForSelections(null, null);
+                list.updateUI();
+            }
+        });
+        menu.add(removeObjectTree);
         
         JMenuItem clear = new JMenuItem("Clear");
         clear.addActionListener(new ActionListener() {
@@ -227,6 +264,7 @@ public class SelectionUtils {
                     dao.store(s);
                 }
                 list.updateUI();
+                GUI.updateRoiDisplayForSelections(null, null);
             }
         });
         menu.add(clear);
@@ -240,6 +278,7 @@ public class SelectionUtils {
                 for (Selection s : selectedValues ) dao.delete(s);
                 for (int i : list.getSelectedIndices()) model.removeElementAt(i);
                 list.updateUI();
+                GUI.updateRoiDisplayForSelections(null, null);
             }
         });
         menu.add(delete);

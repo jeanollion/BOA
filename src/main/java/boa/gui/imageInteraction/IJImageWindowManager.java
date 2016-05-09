@@ -355,22 +355,6 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         return res;
     }
     
-    @Override
-    protected void hideAllObjects(ImagePlus image) {
-        Overlay o = image.getOverlay();
-        if (o!=null) {
-            for (Roi r : o.toArray()) if (r instanceof Arrow) o.remove(r);
-        }
-    }
-
-    @Override
-    protected void hideAllTracks(ImagePlus image) {
-        Overlay o = image.getOverlay();
-        if (o!=null) {
-            for (Roi r : o.toArray()) if (!(r instanceof Arrow)) o.remove(r);
-        }
-    }
-    
     // not to be called directly!!
     protected void hideAllRois(ImagePlus image) {
         image.setOverlay(new Overlay());

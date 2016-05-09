@@ -118,6 +118,10 @@ public class TrackTreeController {
         return generatorS.get(max);
     }
     
+    public TrackTreeGenerator getTreeGenerator(int structureIdx) {
+        return generatorS.get(structureIdx);
+    }
+    
     /*public ArrayList<JTree> getTrees() {
         ArrayList<JTree> res = new ArrayList<JTree>(structurePathToRoot.length);
         for (TrackTreeGenerator generator : generatorS.values()) if (generator.getTree()!=null) res.add(generator.getTree());
