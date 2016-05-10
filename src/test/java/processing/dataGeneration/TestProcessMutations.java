@@ -56,11 +56,13 @@ public class TestProcessMutations {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         //String dbName = "testSub60";
-        String dbName = "boa_fluo151127";
+        final String dbName = "boa_fluo160428";
+        int fIdx = 1;
+        int mcIdx =0;
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
-        t.testSegMutationsFromXP(0, 0, true, 16, 20); // cellules avec formes bizares -< faux positifs + spots très petits proche de très intenses
+        t.testSegMutationsFromXP(fIdx, mcIdx, true, 0, 8); 
     }
     
     public void testSegMutation(StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {

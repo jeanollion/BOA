@@ -285,6 +285,7 @@ public class TrackTreeGenerator {
     
     
     public List<TrackNode> getSelectedTrackNodes() {
+        if (tree==null) return Collections.EMPTY_LIST;
         int sel = tree.getSelectionCount();
         if (sel==0) return Collections.EMPTY_LIST;
         ArrayList<TrackNode> res = new ArrayList<TrackNode>(sel);

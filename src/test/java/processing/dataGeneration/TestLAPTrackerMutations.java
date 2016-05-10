@@ -54,8 +54,8 @@ public class TestLAPTrackerMutations {
     static final int mutationIdx = 2;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        final String dbName = "fluo160407";
-        final int fieldIdx = 24;
+        final String dbName = "boa_fluo160428";
+        final int fieldIdx = 2;
         //final String dbName = "boa_fluo160428";
         //final int fieldIdx = 0;
         final int mcIdx = 0;

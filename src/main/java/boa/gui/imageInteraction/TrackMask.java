@@ -28,6 +28,7 @@ import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
 import image.ImageInteger;
+import image.ImageOperations;
 import static image.ImageOperations.pasteImage;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,6 +52,7 @@ public class TrackMask extends ImageObjectInterface {
     int maxParentY, maxParentZ;
     static final int updateImageFrequency=10;
     static final int intervalX=5;
+    static final float displayMinMaxFraction = 0.6f;
     List<StructureObject> parentTrack;
     
     public TrackMask(List<StructureObject> parentTrack, int childStructureIdx) {
@@ -179,6 +181,7 @@ public class TrackMask extends ImageObjectInterface {
     }
     
     @Override public Image generateRawImage(final int structureIdx) {
+        
         Image image0 = trackObjects[0].generateRawImage(structureIdx);
         String structureName;
         if (GUI.hasInstance() && GUI.getDBConnection()!=null && GUI.getDBConnection().getExperiment()!=null) structureName = GUI.getDBConnection().getExperiment().getStructure(structureIdx).getName(); 
@@ -199,11 +202,11 @@ public class TrackMask extends ImageObjectInterface {
                     if (mm[1]>minAndMax[1]) minAndMax[1]=mm[1];
                     pasteImage(image, displayImage, trackOffset[i]);
                     if (count>=updateImageFrequency) {
-                        ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage, minAndMax);
+                        ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage, minAndMax[0], (float)((1-displayMinMaxFraction) * minAndMax[0] + displayMinMaxFraction*minAndMax[1]));
                         count=0;
                     } else count++;
                 }
-                ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage, minAndMax);
+                ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage, minAndMax[0], (float)((1-displayMinMaxFraction) * minAndMax[0] + displayMinMaxFraction*minAndMax[1]));
             }
         });
         t.start();

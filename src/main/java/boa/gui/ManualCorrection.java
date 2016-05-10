@@ -247,6 +247,10 @@ public class ManualCorrection {
         int structureIdx = StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(objects);
         if (objects.isEmpty()) return;
         ObjectSplitter splitter = db.getExperiment().getStructure(structureIdx).getObjectSplitter();
+        if (splitter==null) {
+            logger.warn("No splitter configured");
+            return;
+        }
         Map<String, List<StructureObject>> objectsByFieldName = StructureObjectUtils.splitByFieldName(objects);
         for (String f : objectsByFieldName.keySet()) {
             ObjectDAO dao = db.getDao(f);
