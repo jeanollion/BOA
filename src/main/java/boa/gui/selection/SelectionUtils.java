@@ -134,11 +134,15 @@ public class SelectionUtils {
             if (s.isDisplayingTracks()) dispTracks++;
         }
         final JCheckBoxMenuItem displayObjects = new JCheckBoxMenuItem("Display Objects");
+        final SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
         displayObjects.setSelected(dispObjects==selectedValues.size());
         displayObjects.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (selectedValues.isEmpty()) return;
-                for (Selection s : selectedValues ) s.setIsDisplayingObjects(displayObjects.isSelected());
+                for (Selection s : selectedValues ) {
+                    s.setIsDisplayingObjects(displayObjects.isSelected());
+                    dao.store(s); // optimize if necessary -> update
+                }
                 GUI.updateRoiDisplay(null);
             }
         });
@@ -149,7 +153,10 @@ public class SelectionUtils {
         displayTracks.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (selectedValues.isEmpty()) return;
-                for (Selection s : selectedValues ) s.setIsDisplayingTracks(displayTracks.isSelected());
+                for (Selection s : selectedValues ) {
+                    s.setIsDisplayingTracks(displayTracks.isSelected());
+                    dao.store(s); // optimize if necessary -> update
+                }
                 GUI.updateRoiDisplay(null);
             }
         });
@@ -166,7 +173,7 @@ public class SelectionUtils {
                     if (selectedValues.isEmpty()) return;
                     for (Selection s : selectedValues ) {
                         s.setColor(colorName);
-                        SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
+                        
                         dao.store(s); // optimize if necessary -> update
                         if (s.isDisplayingObjects()) {
                             hideObjects(s, null);
@@ -187,7 +194,6 @@ public class SelectionUtils {
         add.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (selectedValues.isEmpty()) return;
-                SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
                 List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
                 for (Selection s : selectedValues ) {
                     int[] structureIdx = s.getStructureIdx()==-1 ? new int[0] : new int[]{s.getStructureIdx()};
@@ -206,7 +212,6 @@ public class SelectionUtils {
         remove.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (selectedValues.isEmpty()) return;
-                SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
                 List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
                 for (Selection s : selectedValues ) {
                     s.removeElements(sel);
@@ -223,7 +228,6 @@ public class SelectionUtils {
         addObjectTree.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (selectedValues.isEmpty()) return;
-                SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
                 List<StructureObject> sel = GUI.getInstance().getObjectTree().getSelectedObjects(false);
                 for (Selection s : selectedValues ) {
                     int[] structureIdx = s.getStructureIdx()==-1 ? new int[0] : new int[]{s.getStructureIdx()};
@@ -242,7 +246,6 @@ public class SelectionUtils {
         removeObjectTree.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (selectedValues.isEmpty()) return;
-                SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
                 List<StructureObject> sel = GUI.getInstance().getObjectTree().getSelectedObjects(false);
                 for (Selection s : selectedValues ) {
                     s.removeElements(sel);
@@ -258,7 +261,6 @@ public class SelectionUtils {
         clear.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (selectedValues.isEmpty()) return;
-                SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
                 for (Selection s : selectedValues ) {
                     s.clear();
                     dao.store(s);
@@ -274,7 +276,6 @@ public class SelectionUtils {
             public void actionPerformed(ActionEvent e) {
                 if (selectedValues.isEmpty()) return;
                 DefaultListModel<Selection> model = (DefaultListModel<Selection>)list.getModel();
-                SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
                 for (Selection s : selectedValues ) dao.delete(s);
                 for (int i : list.getSelectedIndices()) model.removeElementAt(i);
                 list.updateUI();

@@ -194,17 +194,20 @@ public class ManualCorrection {
             logger.warn("No manual segmenter found for structure: {}", structureIdx);
             return;
         }
-        segmenter.setManualSegmentationVerboseMode(test);
+        
         Map<StructureObject, List<int[]>> points = iwm.getParentSelectedPointsMap(image, parentStructureIdx);
         if (points!=null) {
             logger.debug("manual segment: {} distinct parents. Segmentation structure: {}, parent structure: {}", points.size(), structureIdx, parentStructureIdx);
             List<StructureObject> segmentedObjects = new ArrayList<StructureObject>();
             for (Map.Entry<StructureObject, List<int[]>> e : points.entrySet()) {
+                segmenter = db.getExperiment().getStructure(structureIdx).getManualSegmenter();
+                segmenter.setManualSegmentationVerboseMode(test);
+                
                 Image segImage = e.getKey().getRawImage(structureIdx);
                 
                 // generate image mask without old objects
                 ImageByte mask = TypeConverter.cast(e.getKey().getMask(), new ImageByte("Manual Segmentation Mask", 0, 0, 0));
-                ArrayList<StructureObject> oldChildren = e.getKey().getChildren(structureIdx);
+                List<StructureObject> oldChildren = e.getKey().getChildren(structureIdx);
                 for (StructureObject c : oldChildren) c.getObject().draw(mask, 0, new BoundingBox(0, 0, 0));
                 if (test) iwm.getDisplayer().showImage(mask, 0, 1);
                 // remove seeds out of mask
@@ -217,7 +220,7 @@ public class ManualCorrection {
                 //seg.filter(new ObjectPopulation.Size().setMin(2)); // remove seeds
                 logger.debug("{} children segmented in parent: {}", seg.getObjects().size(), e.getKey());
                 if (!test && !seg.getObjects().isEmpty()) {
-                    ArrayList<StructureObject> newChildren = e.getKey().setChildrenObjects(seg, structureIdx);
+                    List<StructureObject> newChildren = e.getKey().setChildrenObjects(seg, structureIdx);
                     segmentedObjects.addAll(newChildren);
                     newChildren.addAll(oldChildren);
                     ArrayList<StructureObject> modified = new ArrayList<StructureObject>();

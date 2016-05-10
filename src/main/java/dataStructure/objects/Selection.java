@@ -124,6 +124,7 @@ public class Selection implements Comparable<Selection> {
         List<StructureObject> res = new ArrayList<StructureObject>(indiciesList.size());
         retrievedElements.put(fieldName, res);
         retrievedTrackHeads.remove(fieldName);
+        long t0 = System.currentTimeMillis();
         for (String s : indiciesList) {
             int[] indicies = parseIndicies(s);
             if (indicies.length-1!=pathToRoot.length) {
@@ -140,6 +141,8 @@ public class Selection implements Comparable<Selection> {
             }
             res.add(elem);
         }
+        long t1 = System.currentTimeMillis();
+        //logger.debug("Selection: {}, #{} elements retrieved in: {}", this.id, res.size(), t1-t0);
         return res;
     }
     

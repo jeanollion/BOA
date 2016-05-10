@@ -17,9 +17,11 @@
  */
 package boa.gui.imageInteraction;
 
+import boa.gui.GUI;
 import static boa.gui.GUI.logger;
 import boa.gui.imageInteraction.IJImageWindowManager.Roi3D;
 import boa.gui.imageInteraction.IJImageWindowManager.TrackRoi;
+import static boa.gui.imageInteraction.ImageWindowManager.displayTrackMode;
 import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
@@ -33,6 +35,7 @@ import ij.gui.Overlay;
 import ij.gui.PointRoi;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
+import ij.gui.Toolbar;
 import ij.plugin.OverlayLabels;
 import ij.plugin.filter.ThresholdToSelection;
 import ij.process.ImageProcessor;
@@ -50,6 +53,7 @@ import java.awt.Scrollbar;
 import java.awt.event.ActionEvent;
 import java.awt.event.AdjustmentEvent;
 import java.awt.event.AdjustmentListener;
+import static java.awt.event.InputEvent.BUTTON2_DOWN_MASK;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseWheelEvent;
@@ -100,16 +104,19 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             }
 
             public void mouseReleased(MouseEvent e) {
-                if (IJ.getToolName().equals("zoom") || IJ.getToolName().equals("hand")) return;
-                int m = e.getModifiers();
-                boolean ctrl = (m & ActionEvent.CTRL_MASK) == ActionEvent.CTRL_MASK;
-                boolean shift = (m & ActionEvent.SHIFT_MASK) == ActionEvent.SHIFT_MASK;
+                if (IJ.getToolName().equals("zoom") || IJ.getToolName().equals("hand") || IJ.getToolName().equals("multipoint") || IJ.getToolName().equals("point")) return;
+                //int m = e.getModifiers();
+                //boolean addToSelection = (m & ActionEvent.CTRL_MASK) == ActionEvent.CTRL_MASK;
+                //boolean displayTrack = (m & ActionEvent.SHIFT_MASK) == ActionEvent.SHIFT_MASK;
+                boolean addToSelection = e.isShiftDown();
+                boolean displayTrack = displayTrackMode;
+                logger.debug("button ctrl: {}, shift: {}, alt: {}, meta: {}, altGraph: {}, alt: {}", e.isControlDown(), e.isShiftDown(), e.isAltDown(), e.isMetaDown(), e.isAltGraphDown(), displayTrackMode);
                 ImageObjectInterface i = getImageObjectInterface(image);
                 if (i==null) {
                     logger.trace("no image interface found");
                     return;
                 }
-                if (!ctrl) {
+                if (!addToSelection) {
                     if (listener!=null) {
                         //listener.fireObjectDeselected(Pair.unpair(getLabileObjects(image)));
                         //listener.fireTracksDeselected(getLabileTrackHeads(image));
@@ -140,10 +147,10 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                             }
                             //logger.debug("after remove, contained: {}", selectedObjects.size());
                         }
-                        //ip.deleteRoi(); TODO if here and not afterwards, overlay do not update correctly for inverse state without selection
+                        ip.deleteRoi();
                     }
                 }
-                ip.deleteRoi();
+                //if (fromSelection || r==null) 
                 if (!fromSelection) {
                     int x = e.getX();
                     int y = e.getY();
@@ -155,8 +162,12 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                         selectedObjects.add(o);
                         //logger.debug("selected object: "+o.key);
                     } else return;
+                    if (r!=null && r.getType()==Roi.TRACED_ROI) {
+                        logger.debug("Will delete Roi: type: {}, class: {}", r.getTypeAsString(), r.getClass().getSimpleName());
+                        ip.deleteRoi();
+                    }
                 }
-                if (!shift) {
+                if (!displayTrack) {
                     displayObjects(image, selectedObjects, ImageWindowManager.defaultRoiColor, true, true);
                     if (listener!=null) {
                         //List<Pair<StructureObject, BoundingBox>> labiles = getSelectedLabileObjects(image);

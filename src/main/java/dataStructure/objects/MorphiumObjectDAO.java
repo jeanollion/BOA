@@ -26,6 +26,7 @@ import static dataStructure.objects.StructureObject.logger;
 import de.caluga.morphium.async.AsyncOperationCallback;
 import de.caluga.morphium.async.AsyncOperationType;
 import de.caluga.morphium.query.Query;
+import de.caluga.morphium.query.QueryImpl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -52,6 +53,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
     final MorphiumMasterDAO masterDAO;
     MeasurementsDAO measurementsDAO;
     ConcurrentHashMap<ObjectId, StructureObject> idCache;
+    //StructureObject[] rootArray;
     public final String fieldName, collectionName;
     public MorphiumObjectDAO(MorphiumMasterDAO masterDAO, String fieldName) {
         this.masterDAO=masterDAO;
@@ -59,6 +61,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
         this.collectionName=getCollectionName(fieldName);
         masterDAO.m.ensureIndicesFor(StructureObject.class, collectionName);
         idCache = new ConcurrentHashMap<ObjectId, StructureObject>();
+        //rootArray = new StructureObject[masterDAO.getExperiment().getMicroscopyField(fieldName).getTimePointNumber(false)];
         measurementsDAO = new MeasurementsDAO(masterDAO, fieldName);
     }
     
@@ -466,7 +469,38 @@ public class MorphiumObjectDAO implements ObjectDAO {
     }*/
     
     public StructureObject getRoot(int timePoint) {
-        return this.checkAgainstCache(getRootQuery(timePoint).get());
+        /*if (timePoint%100==0) {
+            long t0 = System.currentTimeMillis();
+            for (int i = 0; i<100; ++i) getRootQuery(timePoint).get();
+            long t1 = System.currentTimeMillis();
+            for (int i = 0; i<99; ++i) {
+                Query<StructureObject> q = getRootQuery(timePoint);
+                q.addReturnedField("_id");
+                StructureObject r = q.get();
+            }
+            Query<StructureObject> q = getRootQuery(timePoint);
+            q.addReturnedField("_id");
+            StructureObject r = q.get();
+            long t2 = System.currentTimeMillis();
+            for (int i = 0; i<100; ++i) {
+                StructureObject o = idCache.get(r.id);
+            }
+            long t3 = System.currentTimeMillis();
+            StructureObject res;
+            for (int i = 0; i<100; ++i) {
+            for (StructureObject o : idCache.values()) {
+                if (o.getStructureIdx()==-1 && o.getTimePoint()==timePoint) {
+                    res = o;
+                    break;
+                }
+            }
+            }   
+            long t4 = System.currentTimeMillis();
+            logger.debug("tp: {}, get entire object: {}, idOnly: {} (id: {}) from cache: {}, loop cache: {}", timePoint, t1-t0, t2-t1, r.id, t3-t2, t4-t3);
+        }
+        if (rootArray[timePoint]==null) rootArray[timePoint] = 
+        return rootArray[timePoint];*/
+        return checkAgainstCache(getRootQuery(timePoint).get());
     }
     
     public ArrayList<StructureObject> getRoots() {

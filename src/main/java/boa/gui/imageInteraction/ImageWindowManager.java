@@ -56,6 +56,7 @@ import utils.Utils;
  * @param <V> track ROI class
  */
 public abstract class ImageWindowManager<T, U, V> {
+    public static boolean displayTrackMode;
     public final static Color[] palette = new Color[]{new Color(166, 206, 227, 150), new Color(31,120,180, 150), new Color(178,223,138, 150), new Color(51,160,44, 150), new Color(251,154,153, 150), new Color(253,191,111, 150), new Color(255,127,0, 150), new Color(255,255,153, 150), new Color(177,89,40, 150)};
     public final static Color defaultRoiColor = new Color(255, 0, 255, 150);
     public static Color getColor(int idx) {return palette[idx%palette.length];}
@@ -244,18 +245,14 @@ public abstract class ImageWindowManager<T, U, V> {
         if (i==null) return null;
         
         List<int[]> rawCoordinates = getSelectedPointsOnImage(dispImage);
-        Map<StructureObject, List<int[]>> map = new HashMap<StructureObject, List<int[]>>();
+        HashMapGetCreate<StructureObject, List<int[]>> map = new HashMapGetCreate<StructureObject, List<int[]>>(new HashMapGetCreate.ListFactory<StructureObject, int[]>());
         for (int[] c : rawCoordinates) {
             Pair<StructureObject, BoundingBox> parent = i.getClickedObject(c[0], c[1], c[2]);
             if (parent!=null) {
                 c[0]-=parent.value.getxMin();
                 c[1]-=parent.value.getyMin();
                 c[2]-=parent.value.getzMin();
-                List<int[]> children = map.get(parent.key);
-                if (children==null) {
-                    children = new ArrayList<int[]>();
-                    map.put(parent.key, children);
-                }
+                List<int[]> children = map.getAndCreateIfNecessary(parent.key);
                 children.add(c);
                 logger.debug("adding point: {} to parent: {} located: {}", c, parent.key, parent.value);
             }
@@ -340,7 +337,7 @@ public abstract class ImageWindowManager<T, U, V> {
                     if (hideIfAlreadyDisplayed) {
                         hideObject(dispImage, roi);
                         labiles.remove(roi);
-                        //logger.debug("display -> inverse state: hide: {}", p.key);
+                        logger.debug("display -> inverse state: hide: {}", p.key);
                     }
                 } else {
                     displayObject(dispImage, roi);

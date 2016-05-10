@@ -54,7 +54,7 @@ public interface ObjectDAO {
     public void store(StructureObject object, boolean updateTrackAttributes);
     public void store(final List<StructureObject> objects, final boolean updateTrackAttributes);
     
-    public List<StructureObject> getRoots(); // needs indicies: structureIdx
+    public List<StructureObject> getRoots();
     public StructureObject getRoot(int timePoint);
     
     public List<StructureObject> getTrack(StructureObject trackHead);

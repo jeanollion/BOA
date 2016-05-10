@@ -227,6 +227,23 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 logger.debug("C pressed: " + e);
             }
         });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Reset Links") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                resetLinksButtonActionPerformed(e);
+                logger.debug("R pressed: " + e);
+            }
+        });
+        
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_T, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Track mode") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (ImageWindowManager.displayTrackMode) ImageWindowManager.displayTrackMode = false;
+                else ImageWindowManager.displayTrackMode = true;
+                logger.debug("TrackMode is {}", ImageWindowManager.displayTrackMode? "ON":"OFF");
+            }
+        });
+        
         kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         kfm.addKeyEventDispatcher( new KeyEventDispatcher() {
             @Override
@@ -1608,8 +1625,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         int count = 0;
         boolean fieldsCreated = false;
         for (String f : fields.keySet()) {
-            logger.info("Importing: {}/{}", ++count, fields.size());
-            boolean ok = CommandExecuter.restore(hostname, dbName, null, fields.get(f), true);
+            logger.info("Importing: {}/{}, collection: {} file: {}", ++count, fields.size(), f, fields.get(f));
+            boolean ok = CommandExecuter.restore(hostname, dbName, MorphiumObjectDAO.getCollectionName("")+f, fields.get(f), true);
             if (ok) {
                 if (db.getExperiment().getMicroscopyField(f)==null) { // create entry
                     db.getExperiment().createMicroscopyField(f);

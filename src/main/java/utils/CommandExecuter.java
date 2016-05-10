@@ -85,7 +85,9 @@ public class CommandExecuter {
         
         String cName = "mongorestore";
         File f = new File(inputPath);
-        if (!f.isDirectory() && inputPath.endsWith(".json")) cName = "mongoimport";
+        if (!f.isDirectory()) {
+            if (inputPath.endsWith(".json")) cName = "mongoimport";
+        }
         else {
             if (f.listFiles(new FilenameFilter() {
                 @Override public boolean accept(File dir, String name) {
