@@ -73,10 +73,9 @@ public class BacteriaTrans implements SegmenterSplitAndMerge {
     NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 10, 0, null);
     NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 3, 1, 5);
     NumberParameter dogScale = new BoundedNumberParameter("DoG scale", 0, 40, 5, null);
-    NumberParameter hessianScale = new BoundedNumberParameter("Hessian scale", 1, 4, 1, 6);
-    NumberParameter hessianThresholdFactor = new BoundedNumberParameter("Hessian threshold factor", 1, 1, 0, 5);
     NumberParameter thresholdForEmptyChannel = new BoundedNumberParameter("Threshold for empty channel", 1, 2, 0, null);
-    Parameter[] parameters = new Parameter[]{splitThreshold, minSize, contactLimit, smoothScale, dogScale, hessianScale, hessianThresholdFactor, thresholdForEmptyChannel, openRadius};
+    NumberParameter relativeThicknessThreshold = new BoundedNumberParameter("Threshold for empty channel", 2, 0.6, 0, 1);
+    Parameter[] parameters = new Parameter[]{splitThreshold, minSize, contactLimit, smoothScale, dogScale, thresholdForEmptyChannel, openRadius, relativeThicknessThreshold};
     
     //segmentation-related attributes (kept for split and merge methods)
     Image distanceMap;
@@ -99,14 +98,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge {
         this.dogScale.setValue(dogScale);
         return this;
     }
-    public BacteriaTrans setHessianScale(double hessianScale) {
-        this.hessianScale.setValue(hessianScale);
-        return this;
-    }
-    public BacteriaTrans setHessianThresholdFactor(double hessianThresholdFactor) {
-        this.hessianThresholdFactor.setValue(hessianThresholdFactor);
-        return this;
-    }
+
     public BacteriaTrans setOpenRadius(double openRadius) {
         this.openRadius.setValue(openRadius);
         return this;
@@ -114,7 +106,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge {
     
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         double fusionThreshold = splitThreshold.getValue().doubleValue();
-        return run(input, parent.getMask(), fusionThreshold, minSize.getValue().intValue(), contactLimit.getValue().intValue(), smoothScale.getValue().doubleValue(), dogScale.getValue().doubleValue(), hessianScale.getValue().doubleValue(), hessianThresholdFactor.getValue().doubleValue(), thresholdForEmptyChannel.getValue().doubleValue(), openRadius.getValue().doubleValue(), this);
+        return run(input, parent.getMask(), fusionThreshold, minSize.getValue().intValue(), contactLimit.getValue().intValue(), smoothScale.getValue().doubleValue(), dogScale.getValue().doubleValue(), thresholdForEmptyChannel.getValue().doubleValue(), openRadius.getValue().doubleValue(), relativeThicknessThreshold.getValue().doubleValue(), this);
     }
     
     @Override
@@ -122,9 +114,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge {
         return "Bacteria Fluo: " + Utils.toStringArray(parameters);
     }   
     
-    public static ObjectPopulation run(Image input, ImageMask mask, double fusionThreshold, int minSize, int contactLimit, double smoothScale, double dogScale, double hessianScale, double hessianThresholdFactor, double thresholdForEmptyChannel, double openRadius, BacteriaTrans instance) {
+    public static ObjectPopulation run(Image input, ImageMask mask, double fusionThreshold, int minSize, int contactLimit, double smoothScale, double dogScale, double thresholdForEmptyChannel, double openRadius, final double relativeThicknessThreshold, BacteriaTrans instance) {
         double thicknessThreshold = 5;
-        final double relativeThicknessThreshold = 0.6;
         ImageDisplayer disp=debug?new IJImageDisplayer():null;
         //double hessianThresholdFacto = 1;
         
@@ -174,8 +165,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge {
             WatershedTransform instance;
             public void setUp(WatershedTransform instance) {this.instance=instance;}
             public boolean checkFusionCriteria(WatershedTransform.Spot s1, WatershedTransform.Spot s2, Voxel currentVoxel) {
-                double max1 = -Double.MAX_VALUE;
-                double max2 = -Double.MAX_VALUE;
+                double max1 = Double.NEGATIVE_INFINITY;
+                double max2 = Double.NEGATIVE_INFINITY;
                 for (Voxel v : s1.voxels) if (v.value>max1) max1 = v.value;
                 for (Voxel v : s2.voxels) if (v.value>max2) max2 = v.value;
                 double norm = Math.min(max1, max2);
@@ -183,6 +174,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge {
             }
         };
         ObjectPopulation res = WatershedTransform.watershed(edm, pop1.getLabelImage(), true, null, new WatershedTransform.MultipleFusionCriteria(new WatershedTransform.SizeFusionCriterion(minSize), relativeThickness)); //new WatershedTransform.ThresholdFusionOnWatershedMap(thicknessThreshold)
+        
+        // merge using the same criterion : max(EDM@frontière) / min(max(EDM@S1), max(EDM@S2)) > criterion
         
         
         

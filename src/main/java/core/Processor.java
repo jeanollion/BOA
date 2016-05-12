@@ -187,6 +187,7 @@ public class Processor {
             performMeasurements(db.getDao(fieldName));
             //if (dao!=null) dao.clearCacheLater(xp.getMicroscopyField(i).getName());
             db.getDao(fieldName).clearCache();
+            db.getExperiment().getMicroscopyField(fieldName).flushImages();
         }
     }
     

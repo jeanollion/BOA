@@ -88,6 +88,9 @@ public class InputImage {
     
     void deleteFromDAO() {dao.deletePreProcessedImage(channelIdx, timePoint, microscopyFieldName);}
     
+    public void flush() {
+        if (image!=null) image=null;
+    }
     
     private void applyTransformations() {
         if (transformationsToApply!=null && !transformationsToApply.isEmpty()) {

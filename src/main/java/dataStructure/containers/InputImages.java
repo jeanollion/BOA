@@ -29,4 +29,5 @@ public interface InputImages {
     public int getChannelNumber();
     public int getDefaultTimePoint();
     public int getSizeZ(int channelIdx);
+    public void flush();
 }

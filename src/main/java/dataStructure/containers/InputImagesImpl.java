@@ -109,6 +109,17 @@ public class InputImagesImpl implements InputImages {
             }
         }
     }
+    
+    @Override public void flush() {
+        int tCount = getTimePointNumber();
+        int cCount = getChannelNumber();
+        for (int t = 0; t<tCount; ++t) {
+            for (int c = 0; c<cCount; ++c) {
+                imageTC[t][c].flush();
+            }
+        }
+    }
+    
     /**
      * Remove all time points excluding time points between {@param tStart} and {@param tEnd}, for testing purposes only
      * @param tStart

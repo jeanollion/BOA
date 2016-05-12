@@ -144,12 +144,12 @@ public class GenerateTestXP {
         boolean fluo = true;
         */
         //////////// Trans
-        /*String dbName = "testBF";
+        String dbName = "boa_testBF";
         String inputDir = "/data/Images/Lydia/testJeanFilm";
         String outputDir = "/data/Images/Lydia/Output";
         boolean flip = true;
         boolean fluo = false;
-        */
+        
         /*
         ////////////////////////////
         // Ordi Portable
@@ -160,12 +160,12 @@ public class GenerateTestXP {
         boolean fluo = true;
         */     
         
-        String dbName = "boa_fluo151127";
+        /*String dbName = "boa_fluo151127";
         String outputDir = "/home/jollion/Documents/LJP/DataLJP/Fluo151127/Output";
         String inputDir = "/home/jollion/Documents/LJP/DataLJP/Fluo151127/champ1_0-49";
         boolean flip = true;
         boolean fluo = true;
-        
+        */
         
         boolean performProcessing = false;
         

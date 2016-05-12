@@ -89,6 +89,7 @@ public class SegmentThenTrack implements ProcessingScheme {
     
     public void segment(StructureObject parent, int structureIdx) {
         Segmenter s = segmenter.instanciatePlugin();
+        if (s==null) throw new Error("No Segmenter Found for structure: "+structureIdx);
         Image input = preFilters.filter(parent.getRawImage(structureIdx), parent);
         ObjectPopulation pop = s.runSegmenter(input, structureIdx, parent);
         pop = postFilters.filter(pop, structureIdx, parent);

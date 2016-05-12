@@ -107,6 +107,13 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         return inputImages;
     }
     
+    public void flushImages() {
+        if (inputImages!=null) {
+            inputImages.flush();
+            this.images.close();
+        }
+    }
+    
     public BlankMask getMask() {
         BlankMask mask = getExperiment().getImageDAO().getPreProcessedImageProperties(name);
         if (mask==null) return null;

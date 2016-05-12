@@ -1742,6 +1742,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             this.runAction(fieldName, preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements, needToDeleteObjects && !deleteAllField && !deleteAll);
             if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field
             db.getDao(fieldName).clearCache();
+            db.getExperiment().getMicroscopyField(fieldName).flushImages();
         }
         if (needToDeleteObjects) this.reloadObjectTrees=true;
     }//GEN-LAST:event_runSelectedActionsMenuItemActionPerformed

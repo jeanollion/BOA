@@ -40,7 +40,8 @@ import utils.MorphiumUtils;
  */
 public class TestProcessBacteriaPhase {
     public static void main(String[] args) {
-        int time =31;
+        //int time =31;
+        int time =20;
         int microChannel =0;
         int field = 0;
         String dbName = "testBF";
@@ -61,8 +62,9 @@ public class TestProcessBacteriaPhase {
                 100, // minSize
                 10, 3, 
                 10, // dog
-                5, // hessian 
-                1, 2, 5, // open
+                 2, // thld empty channel
+                 5, // open
+                 0.2, // relativeThickness threshold
                 null);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
