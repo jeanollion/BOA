@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import measurement.BasicMeasurements;
 import plugins.Segmenter;
 import plugins.SegmenterSplitAndMerge;
@@ -58,6 +59,8 @@ import utils.ArrayUtil;
 import utils.ThreadRunner;
 import utils.Utils;
 import static utils.Utils.plotProfile;
+import utils.clustering.Interface;
+import utils.clustering.Object3DCluster;
 
 /**
  *
@@ -176,12 +179,36 @@ public class BacteriaTrans implements SegmenterSplitAndMerge {
         ObjectPopulation res = WatershedTransform.watershed(edm, pop1.getLabelImage(), true, null, new WatershedTransform.MultipleFusionCriteria(new WatershedTransform.SizeFusionCriterion(minSize), relativeThickness)); //new WatershedTransform.ThresholdFusionOnWatershedMap(thicknessThreshold)
         
         // merge using the same criterion : max(EDM@frontière) / min(max(EDM@S1), max(EDM@S2)) > criterion
-        
-        
+        Object3DCluster.verbose=true;
+        Object3DCluster cluster = new Object3DCluster(res, false);
+        Object3DCluster.FusionCriterion fc = new Object3DCluster.FusionCriterion() {
+            @Override public boolean checkCriterion(Interface<Object3D, Set<Voxel>> i) {
+                double max1 = Double.NEGATIVE_INFINITY;
+                double max2 = Double.NEGATIVE_INFINITY;
+                double maxInter = Double.NEGATIVE_INFINITY;
+                for (Voxel v : i.e1.getVoxels()) if (v.value>max1) max1 = v.value;
+                for (Voxel v : i.e2.getVoxels()) if (v.value>max2) max2 = v.value;
+                for (Voxel v : i.getData()) if (v.value>maxInter) maxInter = v.value;
+                double norm = Math.min(max1, max2);
+                if (Object3DCluster.verbose) logger.debug("interface: {}+{}, norm: {} maxInter: {}, criterion: {} threshold: {} fusion: {}", i.e1.getLabel(), i.e2.getLabel(), norm, maxInter,maxInter/norm, relativeThicknessThreshold, maxInter/norm>relativeThicknessThreshold );
+                return maxInter/norm>relativeThicknessThreshold;
+            }
+        };
+        cluster.setVoxelIntensities(edm, true, true);
+        Object3DCluster.InterfaceSortMethod<Object3D, Set<Voxel>> sm = new Object3DCluster.InterfaceSortMethod<Object3D, Set<Voxel>>() {
+            @Override public double computeSortValue(Interface<Object3D, Set<Voxel>> i) {
+                double maxInter = Double.NEGATIVE_INFINITY;
+                for (Voxel v : i.getData()) if (v.value>maxInter) maxInter = v.value;
+                return maxInter; 
+            }
+        };
+        cluster.mergeSort(fc, sm);
         
         if (debug) {
             disp.showImage(edm);
             disp.showImage(res.getLabelImage().setName("watershed EDM"));
+            //disp.showImage(cluster.drawInterfacesSortValue(sm));
+            //disp.showImage(cluster.drawInterfaces());
             //FitEllipse.fitEllipse2D(pop1.getObjects().get(0));
             //FitEllipse.fitEllipse2D(pop1.getObjects().get(1));
         }

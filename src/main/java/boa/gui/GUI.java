@@ -1764,12 +1764,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void extractMeasurementMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_extractMeasurementMenuItemActionPerformed
         if (!checkConnection()) return;
         int[] selectedStructures = this.getSelectedStructures(true);
-        File outputDir = Utils.chooseFile("Choose directory", null, FileChooser.FileChooserOption.DIRECTORIES_ONLY, this);
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR);
+        File outputDir = Utils.chooseFile("Choose directory", defDir, FileChooser.FileChooserOption.DIRECTORIES_ONLY, this);
         if (outputDir!=null) {
             String file = outputDir.getAbsolutePath()+File.separator+"output"+Utils.toStringArray(selectedStructures, "_", "", "_")+".xls";
             logger.info("measurements will be extracted to: {}", file);
             Map<Integer, String[]> keys = db.getExperiment().getAllMeasurementNamesByStructureIdx(MeasurementKeyObject.class, selectedStructures);
             DataExtractor.extractMeasurementObjects(db, file, keys);
+            if (outputDir!=null) PropertyUtils.set(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR, outputDir.getAbsolutePath());
         }
     }//GEN-LAST:event_extractMeasurementMenuItemActionPerformed
 
