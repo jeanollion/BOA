@@ -47,14 +47,15 @@ import processing.ImageTransformation;
 public class TestPreProcess {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        String dbName= "fluo160408";
+        String dbName= "boa_fluo160428";
         //String dbName= "fluo151127";
         // 12 -> flip = true
         boolean flip = true;
-        int field = 1;
+        int field = 5;
         //testTransformation(dbName, 0, 0, 0);
         //testPreProcessing(dbName, field, 0, -1, 0, 150);
-        testCrop(dbName, field, 0, flip);
+        //testCrop(dbName, field, 0, flip);
+        displayPreProcessed(dbName, field, 2, 0, 680);
         //testStabilizer(dbName, field, 0, 19, 0, flip);
     }
     
@@ -116,6 +117,24 @@ public class TestPreProcess {
             disp.showImage(Image.mergeZPlanes(input).setName("input"));
             disp.showImage(Image.mergeZPlanes(output).setName("output"));
         }
+    }
+    
+    public static void displayPreProcessed(String dbName, int fieldIdx, int structureIdx, int tStart, int tEnd) {
+        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+        MicroscopyField f = db.getExperiment().getMicroscopyField(fieldIdx);
+        InputImagesImpl images = f.getInputImages();
+        IJImageDisplayer disp = new IJImageDisplayer();
+        int channelIdx = db.getExperiment().getStructure(structureIdx).getChannelImage();
+        List<Image> input = new ArrayList<Image>(tEnd-tStart+1);
+        for (int t = 0; t<images.getTimePointNumber(); ++t) input.add(images.getImage(channelIdx, t).duplicate("input"+t));
+        
+        List<StructureObject> roots = db.getDao(f.getName()).getRoots();
+        List<Image> output = new ArrayList<Image>(tEnd-tStart+1);
+        for (int t = tStart; t<=tEnd; ++t) {
+            output.add(roots.get(t).getRawImage(structureIdx));
+        }
+        disp.showImage(Image.mergeZPlanes(input).setName("input"));
+        disp.showImage(Image.mergeZPlanes(output).setName("output"));
     }
     
     public static void testStabilizer(String dbName, int fieldIdx, int channelIdx, int tRef, int t, boolean flip) {

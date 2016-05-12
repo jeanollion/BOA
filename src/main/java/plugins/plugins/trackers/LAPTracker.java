@@ -59,7 +59,7 @@ import utils.ArrayFileWriter;
 public class LAPTracker implements TrackerSegmenter {
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, new MutationSegmenterScaleSpace(), false);
     StructureParameter compartirmentStructure = new StructureParameter("Compartiment Structure");
-    NumberParameter spotQualityThreshold = new NumberParameter("Spot Quality Threshold", 3, 3.5);
+    NumberParameter spotQualityThreshold = new NumberParameter("Spot Quality Threshold", 3, 4);
     NumberParameter maxGap = new BoundedNumberParameter("Maximum frame gap", 0, 2, 0, null);
     NumberParameter maxLinkingDistance = new BoundedNumberParameter("FTF Maximum Linking Distance (0=skip)", 2, 0.75, 0, null);
     NumberParameter maxLinkingDistanceGC = new BoundedNumberParameter("Gap-closing Maximum Linking Distance (0=skip)", 2, 0.75, 0, null);
@@ -81,7 +81,10 @@ public class LAPTracker implements TrackerSegmenter {
         maxLinkingDistanceGC.setValue(maxDistGapClosing);
         return this;
     }
-    
+    public LAPTracker setSpotQualityThreshold(double threshold) {
+        this.spotQualityThreshold.setValue(threshold);
+        return this;
+    }
     @Override public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
         SegmentThenTrack stt = new SegmentThenTrack(segmenter.instanciatePlugin(), this);
         if (preFilters!=null) stt.addPreFilters(preFilters.get());
@@ -134,6 +137,7 @@ public class LAPTracker implements TrackerSegmenter {
         // second run with all spots at the same time
         //SpotWithinCompartment.displayPoles=true;
         processOk = core.processGC(maxLinkingDistanceGC, maxGap, true, true);
+        
         if (!processOk) logger.error("LAPTracker error : {}", core.getErrorMessage());
         else spotCollection.setTrackLinks(parentTrack, structureIdx, core.getEdges());
         

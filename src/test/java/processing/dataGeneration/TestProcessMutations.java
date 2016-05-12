@@ -57,20 +57,19 @@ public class TestProcessMutations {
         PluginFactory.findPlugins("plugins.plugins");
         //String dbName = "testSub60";
         final String dbName = "boa_fluo160428";
-        int fIdx = 1;
-        int mcIdx =0;
+        int fIdx = 5;
+        int mcIdx =4;
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
-        t.testSegMutationsFromXP(fIdx, mcIdx, true, 0, 8); 
+        t.testSegMutationsFromXP(fIdx, mcIdx, true, 565, 568); 
     }
     
     public void testSegMutation(StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
         Image input = parent.getRawImage(2);
         ImageInteger parentMask = parent.getMask();
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
-        //ObjectPopulation pop = MutationSegmenterScaleSpace.runPlaneMono(input.getZPlane(0), parentMask, 5, 3.5, 0.75, intermediateImages);
-        ObjectPopulation pop = MutationSegmenterScaleSpace.runPlaneHybrid(input.getZPlane(0), parentMask, 5, 117, 2.5, 0.75, intermediateImages);
+        ObjectPopulation pop = MutationSegmenterScaleSpace.runPlaneHybrid(input.getZPlane(0), parentMask, 5, 115, 2.5, 1.25, intermediateImages);
         ImageInteger beforePF = pop.getLabelImage().duplicate("Before Post-Filters");
         ObjectPopulation popPF = new MutationSegmenterScaleSpace().getPostFilters().filter(pop, 2, parent);
         

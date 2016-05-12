@@ -70,7 +70,7 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter {
     public static boolean displayImages = false;
     NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxels)", 0, 5, 1, null);
     NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 3, 2.5, 1, null);
-    NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 3, 0.75, 0, null);
+    NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 3, 1.5, 0, null);
     NumberParameter intensityThreshold = new BoundedNumberParameter("Intensity Threshold for Seeds", 2, 115, 0, null);
     PostFilterSequence postFilters = new PostFilterSequence("Post-Filters").add(new FeatureFilter(new SNR().setBackgroundObjectStructureIdx(1), 0.75, true, true));
     Parameter[] parameters = new Parameter[]{minSpotSize, thresholdHigh,  thresholdLow, intensityThreshold, postFilters};
@@ -160,7 +160,7 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter {
     
     public static ObjectPopulation runPlaneHybrid(Image input, ImageMask mask, int minSpotSize, double thresholdSeedsIntensity, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
         if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
-        double[] radii = new double[]{2, 2.5, 3, 3.5, 5, 7};
+        double[] radii = new double[]{2, 2.5, 3, 3.5, 6, 7}; // 5,7 ??
         int maxScaleIdx=radii.length-1-2;
         int maxScaleWSIdx=1;
         Image smooth = ImageFeatures.gaussianSmooth(input, 2, 2, false);

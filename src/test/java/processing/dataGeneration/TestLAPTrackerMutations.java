@@ -55,12 +55,12 @@ public class TestLAPTrackerMutations {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         final String dbName = "boa_fluo160428";
-        final int fieldIdx = 2;
+        final int fieldIdx = 5;
         //final String dbName = "boa_fluo160428";
         //final int fieldIdx = 0;
-        final int mcIdx = 0;
+        final int mcIdx = 4;
         TestLAPTrackerMutations t = new TestLAPTrackerMutations();
-        t.init(dbName, fieldIdx, mcIdx, 0, 700);
+        t.init(dbName, fieldIdx, mcIdx, 560, 580);
         t.testLAPTracking();
         
         // multithread version testing
@@ -98,6 +98,7 @@ public class TestLAPTrackerMutations {
         TextRoi.setFont("SansSerif", 6, Font.PLAIN);
         
         LAPTracker tracker = new LAPTracker().setCompartimentStructure(bacteriaIdx);
+        tracker.setSpotQualityThreshold(4);
         tracker.segmentAndTrack(mutationIdx, parentTrack, null, null);
         
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, mutationIdx);

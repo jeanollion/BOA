@@ -60,13 +60,19 @@ public class DisplayFilms {
         float saturateChannel1 = 0.6f;
         */
         
-        String dbName = "fluo160218";
+        /*String dbName = "fluo160218";
         int[] fields = ArrayUtil.generateIntegerArray(8, 9);
         int tStart = 14;
         int tEnd = 70;
         BoundingBox cropBB = new BoundingBox(18, 936, 26, 396, 0, 0);
         float saturateChannel1 = 0.4f;
-        
+        */
+        String dbName = "boa_fluo160428";
+        int[] fields = new int[]{6};
+        int tStart = 0;
+        int tEnd = 680;
+        BoundingBox cropBB = null;
+        float saturateChannel1 = 1;
         
         ImageDisplayer disp = new IJImageDisplayer();
         //Image[][] raw = getRawImagesAsFilmTF(dbName, 100, 200, 0, fields);
