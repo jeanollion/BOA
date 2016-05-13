@@ -19,6 +19,7 @@ package processing.neighborhood;
 
 import static core.Processor.logger;
 import dataStructure.objects.Voxel;
+import image.BoundingBox;
 import image.Image;
 import image.ImageByte;
 import image.ImageProperties;
@@ -95,7 +96,7 @@ public class EllipsoidalNeighborhood extends DisplacementNeighborhood {
      */
     public EllipsoidalNeighborhood(double radius, boolean excludeCenter) { 
         this.radius = radius;
-        this.radiusZ=radius;
+        this.radiusZ=0;
         is3D=false;
         int rad = (int) (radius + 0.5f);
         int[][] temp = new int[2][(2 * rad + 1) * (2 * rad + 1)];
@@ -139,6 +140,12 @@ public class EllipsoidalNeighborhood extends DisplacementNeighborhood {
 
     public double getRadiusZ() {
         return radiusZ;
+    }
+    
+    @Override public BoundingBox getBoundingBox() {
+        int r = (int) radius;
+        int rZ = (int) radiusZ;
+        return new BoundingBox(-r, r, -r, r, -rZ, rZ);
     }
     
     @Override public String toString() {

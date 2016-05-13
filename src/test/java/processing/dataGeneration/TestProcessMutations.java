@@ -70,17 +70,17 @@ public class TestProcessMutations {
         ImageInteger parentMask = parent.getMask();
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
         ObjectPopulation pop = MutationSegmenterScaleSpace.runPlaneHybrid(input.getZPlane(0), parentMask, 5, 115, 2.5, 1.25, intermediateImages);
-        ImageInteger beforePF = pop.getLabelImage().duplicate("Before Post-Filters");
+        ImageInteger beforePF = pop.getLabelMap().duplicate("Before Post-Filters");
         ObjectPopulation popPF = new MutationSegmenterScaleSpace().getPostFilters().filter(pop, 2, parent);
         
         //ObjectPopulation pop = MutationSegmenterScaleSpace.runPlane(input.getZPlane(0), parentMask, 5, 4, 0.75, intermediateImages);
         if (parentMask_!=null) parentMask_.add(parentMask);
         if (input_!=null) input_.add(input);
-        if (outputLabel!=null) outputLabel.add(popPF.getLabelImage());
+        if (outputLabel!=null) outputLabel.add(popPF.getLabelMap());
         //if (outputLabel!=null) outputLabel.add(beforePF);
         if (intermediateImages_!=null) {
             intermediateImages.add(beforePF);
-            intermediateImages.add(parent.getObjectPopulation(1).getLabelImage().setName("bacteria"));
+            intermediateImages.add(parent.getObjectPopulation(1).getLabelMap().setName("bacteria"));
             intermediateImages_.add(intermediateImages);
         }
     }

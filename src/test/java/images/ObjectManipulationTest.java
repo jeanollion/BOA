@@ -135,12 +135,12 @@ public class ObjectManipulationTest {
     @Test 
     public void testObjectPopulation() {
         ObjectPopulation popObj = new ObjectPopulation(new ArrayList<Object3D>(Arrays.asList(new Object3D[]{o1, o3})), im);
-        Utils.assertImage(im, (ImageByte)popObj.getLabelImage(), 0);
+        Utils.assertImage(im, (ImageByte)popObj.getLabelMap(), 0);
         popObj.relabel();
-        Utils.assertImage(imRelabel, (ImageByte)popObj.getLabelImage(), 0);
+        Utils.assertImage(imRelabel, (ImageByte)popObj.getLabelMap(), 0);
         popObj = new ObjectPopulation(new ArrayList<Object3D>(Arrays.asList(new Object3D[]{o1, o3})), im);
         popObj.relabel();
-        Utils.assertImage(imRelabel, (ImageByte)popObj.getLabelImage(), 0);
+        Utils.assertImage(imRelabel, (ImageByte)popObj.getLabelMap(), 0);
         
         ObjectPopulation popIm = new ObjectPopulation(im, true);
         assertEquals("number of objects", 2, popIm.getObjects().size());

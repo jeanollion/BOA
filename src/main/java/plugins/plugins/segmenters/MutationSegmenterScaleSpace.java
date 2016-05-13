@@ -263,7 +263,7 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter {
             for (int[] seed : seedsXYZ) seedMap.setPixelWithOffset(seed[0], seed[1], seed[2], 1);
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(seedMap);
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(scaleSpace);
-            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pop.getLabelImage().setName("segmented from: "+input.getName()));
+            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pop.getLabelMap().setName("segmented from: "+input.getName()));
         }
         
         return pop;

@@ -34,11 +34,15 @@ import image.ImageShort;
 import image.ObjectFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -138,13 +142,17 @@ public class ObjectPopulation {
         this.objects.addAll(Arrays.asList(objects));
         return this;
     }
-    
-    public ObjectPopulation addObjects(ArrayList<Object3D> objects) {
+    /**
+     * Add objects to the list. Do not update the label image
+     * @param objects
+     * @return 
+     */
+    public ObjectPopulation addObjects(List<Object3D> objects) {
         this.objects.addAll(objects);
         return this;
     }
     
-    public ImageInteger getLabelImage() {
+    public ImageInteger getLabelMap() {
         if (labelImage == null) {
             constructLabelImage();
         }
@@ -279,7 +287,7 @@ public class ObjectPopulation {
     public void fitToEdges(Image edgeMap, ImageMask mask) {
         // get seeds outsit label image
         ImageInteger seedMap = Filters.localExtrema(edgeMap, null, false, Filters.getNeighborhood(1, 1, edgeMap));
-        this.getLabelImage(); //creates the labelImage        
+        this.getLabelMap(); //creates the labelImage        
         // merge background seeds && foreground seeds : background = 1, foreground = label+1
         for (int z = 0; z < seedMap.getSizeZ(); z++) {
             for (int xy = 0; xy < seedMap.getSizeXY(); xy++) {
@@ -300,7 +308,7 @@ public class ObjectPopulation {
     }
     
     public void localThreshold(Image intensity, int marginX, int marginY, int marginZ) {
-        ImageInteger background = ImageOperations.xor(getLabelImage(), new BlankMask("", properties), null);
+        ImageInteger background = ImageOperations.xor(getLabelMap(), new BlankMask("", properties), null);
         for (Object3D o : getObjects()) {
             o.draw(background, 1);
             BoundingBox bounds = o.getBounds().duplicate();
@@ -334,7 +342,7 @@ public class ObjectPopulation {
         return filter(filter, null);
     }
     
-    public ObjectPopulation filter(Filter filter, ArrayList<Object3D> removedObjects) {
+    public ObjectPopulation filter(Filter filter, List<Object3D> removedObjects) {
         int objectNumber = objects.size();
         filter.init(this);
         Iterator<Object3D> it = objects.iterator();
@@ -342,7 +350,7 @@ public class ObjectPopulation {
             Object3D o = it.next();
             if (!filter.keepObject(o)) {
                 it.remove();
-                if (removedObjects != null)removedObjects.add(o);
+                if (removedObjects != null) removedObjects.add(o);
                 if (this.hasImage()) draw(o, 0);
             }
         }
@@ -399,10 +407,60 @@ public class ObjectPopulation {
             for (Object3D o : getObjects()) draw(o, 1);
         }
         for (Object3D o : getObjects()) o.setLabel(1);
-        Object3D o = new Object3D(getLabelImage(), 1);
+        Object3D o = new Object3D(getLabelMap(), 1);
         if (!this.absoluteLandmark) o.translate(o.getBounds().reverseOffset());
         objects.clear();
         objects.add(o);
+    }
+    public void mergeAllConnected() {
+        mergeAllConnected(Integer.MIN_VALUE);
+    }
+    private void mergeAllConnected(int fromLabel) {
+        relabel(); // objects label start from 1 -> idx = label-1
+        ImageInteger inputLabels = getLabelMap();
+        int otherLabel;
+        int[][] neigh = inputLabels.getSizeZ()>1 ? ImageLabeller.neigh3DHalf : ImageLabeller.neigh2DHalf;
+        Voxel n;
+        for (int z = 0; z<inputLabels.getSizeZ(); z++) {
+            for (int y = 0; y<inputLabels.getSizeY(); y++) {
+                for (int x = 0; x<inputLabels.getSizeX(); x++) {
+                    int label = inputLabels.getPixelInt(x, y, z);
+                    if (label==0) continue;
+                    Object3D currentRegion = objects.get(label-1);
+                    for (int i = 0; i<neigh.length; ++i) {
+                        n = new Voxel(x+neigh[i][0], y+neigh[i][1], z+neigh[i][2]);
+                        if (inputLabels.contains(n.x, n.y, n.z)) { 
+                            otherLabel = inputLabels.getPixelInt(n.x, n.y, n.z);   
+                            if (otherLabel>0 && otherLabel!=label) {
+                                if (label>=fromLabel || otherLabel>=fromLabel) {
+                                    Object3D otherRegion = objects.get(otherLabel-1);
+                                    if (otherLabel<label) { // switch
+                                        Object3D temp = currentRegion;
+                                        currentRegion = otherRegion;
+                                        otherRegion = temp;
+                                        label = currentRegion.getLabel();
+                                    }
+                                    currentRegion.addVoxels(otherRegion.getVoxels());
+                                    draw(otherRegion, label);
+                                    objects.remove(otherRegion);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    public void mergeWithConnected(Collection<Object3D> objectsToMerge) {
+        // create a new list, with objects to merge at the end, and record the last label to merge
+        ArrayList<Object3D> newObjects = new ArrayList<Object3D>();
+        Set<Object3D> toMerge=  new HashSet<Object3D>(objectsToMerge);
+        for (Object3D o : objects) if (!objectsToMerge.contains(o)) newObjects.add(o);
+        int labelToMerge = newObjects.size()+1;
+        newObjects.addAll(toMerge);
+        this.objects=newObjects;
+        relabel(false); // objects label start from 1 -> idx = label-1
+        mergeAllConnected(labelToMerge);
     }
     
     public void sortBySpatialOrder(final IndexingOrder order) {

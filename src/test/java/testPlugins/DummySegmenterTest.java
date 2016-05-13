@@ -41,7 +41,7 @@ public class DummySegmenterTest {
         ImageByte in = new ImageByte("", 50, 50, 2);
         ObjectPopulation pop = s.runSegmenter(in, 0, null);
         assertEquals("number of objects", 2, pop.getObjects().size());
-        ImageInteger image = pop.getLabelImage();
+        ImageInteger image = pop.getLabelMap();
         Object3D[] obs = ImageLabeller.labelImage(image);
         assertEquals("number of objects from image", 2, obs.length);
         

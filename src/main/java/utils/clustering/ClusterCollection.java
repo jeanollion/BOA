@@ -195,10 +195,12 @@ public class ClusterCollection<E, I> {
         public void performFusion(Interface<E, I> i); // update i.e1;
         public Interface<E, I> fusion(Interface<E, I> i1, Interface<E, I> i2);
     }
-    public abstract class FusionImpl implements Fusion<E, I> {
+    public static abstract class FusionImpl<E, I> implements Fusion<E, I> {
         final InterfaceDataFusion<I> interfaceDataFusion;
-        public FusionImpl(InterfaceDataFusion<I> interfaceDataFusion) {
+        final Comparator<? super E> elementComparator;
+        public FusionImpl(InterfaceDataFusion<I> interfaceDataFusion, Comparator<? super E> elementComparator) {
             this.interfaceDataFusion=interfaceDataFusion;
+            this.elementComparator=elementComparator;
         }
         @Override public Interface<E, I> fusion(Interface<E, I> i1, Interface<E, I> i2) {
             E com = i1.getCommonElement(i2);
@@ -214,9 +216,9 @@ public class ClusterCollection<E, I> {
     public interface InterfaceDataFactory<I> {
         public I create();
     }
-    public class InterfaceDataFusionSet<T> implements InterfaceDataFusion<Set<T>> {
+    public static class InterfaceDataFusionCollection<C extends Collection<T>, T> implements InterfaceDataFusion<C> {
         // modifies i1;
-        public Set<T> fusion(Set<T> i1, Set<T> i2) {
+        public C fusion(C i1, C i2) {
             i1.addAll(i2);
             return i1;
         }

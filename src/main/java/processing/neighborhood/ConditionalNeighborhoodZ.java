@@ -18,6 +18,7 @@
 package processing.neighborhood;
 
 import dataStructure.objects.Voxel;
+import image.BoundingBox;
 import image.Image;
 import java.util.HashMap;
 
@@ -48,6 +49,15 @@ public class ConditionalNeighborhoodZ implements Neighborhood {
     public void setPixels(int x, int y, int z, Image image) {
         currentNeighborhood = getNeighborhood(z);
         currentNeighborhood.setPixels(x, y, z, image);
+    }
+    
+    @Override public BoundingBox getBoundingBox() {
+        BoundingBox res=null;
+        for (Neighborhood n : neighborhoodZ.values()) {
+            if (res == null) res = n.getBoundingBox();
+            else res.expand(n.getBoundingBox());
+        }
+        return res;
     }
 
     public void setPixels(Voxel v, Image image) {

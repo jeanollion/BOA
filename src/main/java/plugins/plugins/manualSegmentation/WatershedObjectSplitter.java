@@ -62,7 +62,7 @@ public class WatershedObjectSplitter implements ObjectSplitter {
         }
         else {
             ObjectPopulation pop =  WatershedTransform.watershed(input, mask, seeds, decreasingPropagation, null, new WatershedTransform.NumberFusionCriterion(2));
-            if (debug) new IJImageDisplayer().showImage(pop.getLabelImage());
+            if (debug) new IJImageDisplayer().showImage(pop.getLabelMap());
             return pop;
         }
     }

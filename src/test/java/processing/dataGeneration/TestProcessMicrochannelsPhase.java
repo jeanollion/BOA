@@ -71,7 +71,7 @@ public class TestProcessMicrochannelsPhase {
         //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
-        disp.showImage(pop.getLabelImage());
+        disp.showImage(pop.getLabelMap());
         
         // test split
         //ObjectPopulation popSplit = testObjectSplitter(intensityMap, pop.getChildren().get(0));
@@ -93,7 +93,7 @@ public class TestProcessMicrochannelsPhase {
         mp.segmentAndTrack(0, rootTrack, new PreFilterSequence(""), new PostFilterSequence(""));
         
         ObjectPopulation pop  = rootTrack.get(0).getObjectPopulation(0);
-        new IJImageDisplayer().showImage(pop.getLabelImage());
+        new IJImageDisplayer().showImage(pop.getLabelMap());
         
     }
 }

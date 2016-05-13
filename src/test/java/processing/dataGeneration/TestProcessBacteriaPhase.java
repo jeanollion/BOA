@@ -41,7 +41,7 @@ import utils.MorphiumUtils;
 public class TestProcessBacteriaPhase {
     public static void main(String[] args) {
         //int time =31;
-        int time =17;
+        int time =34;
         int microChannel =0;
         int field = 0;
         String dbName = "testBF";
@@ -58,9 +58,10 @@ public class TestProcessBacteriaPhase {
         //input.invert();
         ImageMask parentMask = mc.getMask();
         BacteriaTrans.debug=true;
-        ObjectPopulation pop = BacteriaTrans.run(input, parentMask, 0.06, 
+        ObjectPopulation pop = BacteriaTrans.run(input, parentMask, 
                 100, // minSize
-                10, 3, 
+                10, // X contact limit
+                3, // smooth
                 10, // dog
                  2, // thld empty channel
                  5, // open
@@ -68,7 +69,7 @@ public class TestProcessBacteriaPhase {
                 null);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
-        disp.showImage(pop.getLabelImage());
+        disp.showImage(pop.getLabelMap());
         
     }
 }

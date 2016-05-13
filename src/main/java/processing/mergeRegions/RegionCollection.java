@@ -58,7 +58,7 @@ public class RegionCollection {
     public RegionCollection(ObjectPopulation pop, Image intensityMap, boolean verbose, int nCPUs) {
         this.verbose=verbose;
         this.nCPUs=nCPUs;
-        this.labelMap=pop.getLabelImage();
+        this.labelMap=pop.getLabelMap();
         this.inputGray=intensityMap;
         regions=new HashMap<Integer, Region>();
         regions.put(0, new Region(0, null, this)); // background

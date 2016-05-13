@@ -110,7 +110,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 //boolean displayTrack = (m & ActionEvent.SHIFT_MASK) == ActionEvent.SHIFT_MASK;
                 boolean addToSelection = e.isShiftDown();
                 boolean displayTrack = displayTrackMode;
-                logger.debug("button ctrl: {}, shift: {}, alt: {}, meta: {}, altGraph: {}, alt: {}", e.isControlDown(), e.isShiftDown(), e.isAltDown(), e.isMetaDown(), e.isAltGraphDown(), displayTrackMode);
+                //logger.debug("button ctrl: {}, shift: {}, alt: {}, meta: {}, altGraph: {}, alt: {}", e.isControlDown(), e.isShiftDown(), e.isAltDown(), e.isMetaDown(), e.isAltGraphDown(), displayTrackMode);
                 ImageObjectInterface i = getImageObjectInterface(image);
                 if (i==null) {
                     logger.trace("no image interface found");

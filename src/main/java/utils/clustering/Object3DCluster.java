@@ -42,19 +42,18 @@ import processing.neighborhood.EllipsoidalNeighborhood;
  */
 public class Object3DCluster extends ClusterCollection<Object3D, Set<Voxel>> {
     ObjectPopulation population;
-    
-    public Object3DCluster(ObjectPopulation population, boolean background) {
-        super(population.getObjects(), new Comparator<Object3D>() {
-            public int compare(Object3D o1, Object3D o2) {
+    static Comparator<Object3D> object3DComparator = new Comparator<Object3D>() {
+    public int compare(Object3D o1, Object3D o2) {
                 return Integer.compare(o1.getLabel(), o2.getLabel());
+            };
+    };
+    static InterfaceDataFactory<Set<Voxel>> interfaceVoxSetFactory = new InterfaceDataFactory<Set<Voxel>>() {
+            @Override public Set<Voxel> create() {
+                return new HashSet<Voxel>();
             }
-        },
-            new InterfaceDataFactory<Set<Voxel>>() {
-                @Override public Set<Voxel> create() {
-                    return new HashSet<Voxel>();
-                }
-        } 
-                );
+    };
+    public Object3DCluster(ObjectPopulation population, boolean background) {
+        super(population.getObjects(), object3DComparator, interfaceVoxSetFactory);
         this.population=population;
         setInterfaces(background);
     }
@@ -63,7 +62,7 @@ public class Object3DCluster extends ClusterCollection<Object3D, Set<Voxel>> {
         Map<Integer, Object3D> objects = new HashMap<Integer, Object3D>();
         for (Object3D o : population.getObjects()) objects.put(o.getLabel(), o);
         if (background) objects.put(0, new Object3D(new ArrayList<Voxel>(), 0, population.getImageProperties().getBoundingBox(), population.getImageProperties().getScaleXY(), population.getImageProperties().getScaleZ()));
-        ImageInteger inputLabels = population.getLabelImage();
+        ImageInteger inputLabels = population.getLabelMap();
         Voxel n;
         int otherLabel;
         int[][] neigh = inputLabels.getSizeZ()>1 ? ImageLabeller.neigh3DHalf : ImageLabeller.neigh2DHalf;
@@ -97,7 +96,7 @@ public class Object3DCluster extends ClusterCollection<Object3D, Set<Voxel>> {
         logger.debug("Interface collection: nb of interfaces:"+interfaces.size());
     }
     
-    public static List<Voxel> getInteface(Object3D o1, Object3D o2, ImageInteger labelImage) {
+    public static Interface<Object3D, Set<Voxel>> getInteface(Object3D o1, Object3D o2, ImageInteger labelImage) {
         EllipsoidalNeighborhood neigh = labelImage.getSizeZ()>1 ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true);
         Object3D min;
         int otherLabel;
@@ -109,7 +108,7 @@ public class Object3DCluster extends ClusterCollection<Object3D, Set<Voxel>> {
             otherLabel = o1.getLabel();
         }
         int xx, yy, zz;
-        ArrayList<Voxel> inter = new ArrayList<Voxel>();
+        Set<Voxel> inter = new HashSet<Voxel>();
         for (Voxel v : min.getVoxels()) {
             for (int i = 0; i<neigh.dx.length; ++i) {
                 xx=v.x+neigh.dx[i];
@@ -118,7 +117,7 @@ public class Object3DCluster extends ClusterCollection<Object3D, Set<Voxel>> {
                 if (labelImage.contains(xx, yy, zz) && labelImage.getPixelInt(xx, yy, zz)==otherLabel) inter.add(v);
             }
         }
-        return inter;
+        return new Interface<Object3D, Set<Voxel>>(o1, o2, inter, object3DComparator);
     }
     
     public void setVoxelIntensities(Image image, boolean objects, boolean interfaces) {
@@ -137,7 +136,7 @@ public class Object3DCluster extends ClusterCollection<Object3D, Set<Voxel>> {
         for (Interface<Object3D, Set<Voxel>> i : interfaces) {
             logger.debug("Interface: {}+{}, size: {}", i.e1.getLabel(), i.e2.getLabel(), i.data.size());
             for (Voxel v : i.data) {
-                if (population.getLabelImage().getPixelInt(v.x, v.y, v.z)==i.e1.getLabel()) im.setPixel(v.x, v.y, v.z, i.e2.getLabel());
+                if (population.getLabelMap().getPixelInt(v.x, v.y, v.z)==i.e1.getLabel()) im.setPixel(v.x, v.y, v.z, i.e2.getLabel());
                 else im.setPixel(v.x, v.y, v.z, i.e1.getLabel());
             }
         }
@@ -156,20 +155,28 @@ public class Object3DCluster extends ClusterCollection<Object3D, Set<Voxel>> {
         return im;
     }
     
-    private class InterfaceVoxelFusion extends FusionImpl {
+    private static class InterfaceVoxelFusion extends FusionImpl<Object3D, Set<Voxel>> {
         final FusionCriterion criterion;
         public InterfaceVoxelFusion(FusionCriterion criterion) {
-            super(new InterfaceDataFusionSet<Voxel>());
-            this.criterion=criterion;
+            super(new InterfaceDataFusionCollection<Set<Voxel>, Voxel>(), Object3DCluster.object3DComparator);
+            if (criterion==null) {
+                this.criterion = new FusionCriterion() {
+                    public boolean checkCriterion(Interface<Object3D, Set<Voxel>> i, double[] criterionValues) {
+                        return true;
+                    }
+                };
+            } else this.criterion=criterion;
+            if (interfaceDataFusion==null) throw new IllegalArgumentException("interfaceDataFusion null!");
         }
         @Override public void performFusion(Interface<Object3D, Set<Voxel>> i) {
             i.e1.addVoxels(i.e2.getVoxels());
         }
         @Override public boolean checkFusion(Interface<Object3D, Set<Voxel>> i) {
-            return criterion.checkCriterion(i);
+            return criterion.checkCriterion(i, null);
         }
     }
+    
     public interface FusionCriterion {
-        public boolean checkCriterion(Interface<Object3D, Set<Voxel>> i);
+        public boolean checkCriterion(Interface<Object3D, Set<Voxel>> i, double[] criterionValues);
     }
 }

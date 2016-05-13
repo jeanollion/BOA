@@ -147,7 +147,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
                 o.setMask(m);
             }
             pop1.relabel();
-            pop1 = new ObjectPopulation(pop1.getLabelImage(), false);
+            pop1 = new ObjectPopulation(pop1.getLabelMap(), false);
         }
         pop1.filter(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
         pop1.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
@@ -155,7 +155,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         
         if (debug) logger.debug("threhsold: {}", threshold);
         pop1.filter(new ObjectPopulation.MeanIntensity(threshold, true, smoothed));
-        if (debug) disp.showImage(pop1.getLabelImage().duplicate("first seg"));
+        if (debug) disp.showImage(pop1.getLabelMap().duplicate("first seg"));
         
         Image hessian = maps.hessian;
         
@@ -176,7 +176,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             //disp.showImage(seedMap);
             ObjectPopulation popWS = WatershedTransform.watershed(hessian, watershedMask, seedMap, false, null, new WatershedTransform.SizeFusionCriterion(minSize));
             popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
-            if (debug) disp.showImage(popWS.getLabelImage().duplicate("before local threshold & merging"));
+            if (debug) disp.showImage(popWS.getLabelMap().duplicate("before local threshold & merging"));
             //popWS.localThreshold(dogNoTrim, 0, localThresholdMargin, 0);
             //if (debug) disp.showImage(popWS.getLabelImage().duplicate("after local threhsold / before merging"));
             RegionCollection.verbose=debug;
@@ -239,10 +239,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         pop.filter(new ObjectPopulation.Size().setMin(minSize.getValue().intValue()), remove); // remove small objects
         if (pop.getObjects().size()<=1) return Double.NaN;
         else {
-            if (!remove.isEmpty()) {
-                logger.warn("BacteriaFluo split: small objects removed need to merge them");
-            }
-            
+            if (!remove.isEmpty()) pop.mergeWithConnected(remove);
             Object3D o1 = pop.getObjects().get(0);
             Object3D o2 = pop.getObjects().get(1);
             result.add(o1);
@@ -313,7 +310,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(seedMap);
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(maps.hessian);
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(maps.getNormalizedHessian().setName("NormalizedHessian: for propagation limit"));
-            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pop.getLabelImage().setName("segmented from: "+input.getName()));
+            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pop.getLabelMap().setName("segmented from: "+input.getName()));
         }
         
         return pop;

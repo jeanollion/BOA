@@ -18,6 +18,7 @@
 package processing.neighborhood;
 
 import dataStructure.objects.Voxel;
+import image.BoundingBox;
 import image.Image;
 
 /**
@@ -35,6 +36,11 @@ public interface Neighborhood {
     public void setPixels(int x, int y, int z, Image image);
     public void setPixels(Voxel v, Image image);
     public int getSize();
+    /**
+     * 
+     * @return bb centered @ 0 ie xMin, yMin, zMin <0
+     */
+    public BoundingBox getBoundingBox();
     public float[] getPixelValues();
     public float getMin(int x, int y, int z, Image image, float... outOfBoundValue);
     public float getMax(int x, int y, int z, Image image);

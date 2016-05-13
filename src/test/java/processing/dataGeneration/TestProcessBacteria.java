@@ -58,7 +58,7 @@ public class TestProcessBacteria {
         ObjectPopulation pop = BacteriaFluo.run(input, parentMask, 0.12, 100, 10, 3, 40, 4, 1, 2, 0, null);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
-        disp.showImage(pop.getLabelImage());
+        disp.showImage(pop.getLabelMap());
         
         // test split
         //ObjectPopulation popSplit = testObjectSplitter(intensityMap, pop.getChildren().get(0));

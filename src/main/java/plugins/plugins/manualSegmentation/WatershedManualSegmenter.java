@@ -59,7 +59,7 @@ public class WatershedManualSegmenter implements ManualSegmenter {
         if (verbose) {
             ImageDisplayer disp = new IJImageDisplayer();
             disp.showImage(input);
-            disp.showImage(pop.getLabelImage());
+            disp.showImage(pop.getLabelMap());
         }
         return pop;
     }

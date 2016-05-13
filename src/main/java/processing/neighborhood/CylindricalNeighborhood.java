@@ -19,6 +19,7 @@ package processing.neighborhood;
 
 import static core.Processor.logger;
 import dataStructure.objects.Voxel;
+import image.BoundingBox;
 import image.Image;
 import image.ImageByte;
 import image.ImageProperties;
@@ -107,6 +108,10 @@ public class CylindricalNeighborhood extends DisplacementNeighborhood {
         
     }
     
+    @Override public BoundingBox getBoundingBox() {
+        int r = (int) radius;
+        return new BoundingBox(-r, r, -r, r, -(int)radiusZDown, (int)radiusZUp);
+    }
     
     public ImageByte drawNeighborhood(ImageByte output) {
         int centerXY, centerZ;
