@@ -23,11 +23,16 @@ import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Voxel;
 import image.Image;
 import image.ImageByte;
 import image.ImageLabeller;
 import image.ImageMask;
 import image.ImageOperations;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import plugins.ObjectSplitter;
 import processing.Filters;
@@ -49,9 +54,9 @@ public class WatershedObjectSplitter implements ObjectSplitter {
         return splitInTwo(input, object.getMask(), true);
     }
     
-    public static ObjectPopulation splitInTwo(Image input, ImageMask mask, boolean decreasingPropagation) {
+    public static ObjectPopulation splitInTwo(Image watershedMap, ImageMask mask, final boolean decreasingPropagation) {
         
-        ImageByte localMax = Filters.localExtrema(input, null, decreasingPropagation, Filters.getNeighborhood(1, 1, input));
+        ImageByte localMax = Filters.localExtrema(watershedMap, null, decreasingPropagation, Filters.getNeighborhood(1, 1, watershedMap)).setName("Split seeds");
         ImageOperations.and(localMax, mask, localMax); // limit @ seeds within mask
         List<Object3D> seeds = ImageLabeller.labelImageList(localMax);
         if (seeds.size()<2) {
@@ -59,14 +64,67 @@ public class WatershedObjectSplitter implements ObjectSplitter {
             //new IJImageDisplayer().showImage(smoothed.setName("smoothed"));
             //new IJImageDisplayer().showImage(localMax.setName("localMax"));
             return null;
+        } else {
+            if (seeds.size()>4) { // keep half of the seeds... TODO find other algorithm to maximize distance? // si contrainte de taille, supprimer les seeds qui génère des objets trop petits
+                for (Object3D o : seeds) {
+                    for (Voxel v : o.getVoxels()) v.value = watershedMap.getPixel(v.x, v.y, v.z);
+                }
+                Comparator<Object3D> c = new Comparator<Object3D>() {
+                    public int compare(Object3D o1, Object3D o2) {
+                        return Double.compare(o1.getMeanVoxelValue(), o2.getMeanVoxelValue());
+                    }
+                };
+                Collections.sort(seeds, c);
+                if (decreasingPropagation) seeds = seeds.subList(seeds.size()/2, seeds.size());
+                else seeds = seeds.subList(0, seeds.size()/2);
+            }
+            ObjectPopulation pop =  WatershedTransform.watershed(watershedMap, mask, seeds, decreasingPropagation, null, new WatershedTransform.NumberFusionCriterion(2));
+            if (debug) {
+                new IJImageDisplayer().showImage(localMax);
+                new IJImageDisplayer().showImage(watershedMap.setName("watershedMap"));
+                new IJImageDisplayer().showImage(pop.getLabelMap());
+            }
+            return pop;
         }
-        else {
-            ObjectPopulation pop =  WatershedTransform.watershed(input, mask, seeds, decreasingPropagation, null, new WatershedTransform.NumberFusionCriterion(2));
-            if (debug) new IJImageDisplayer().showImage(pop.getLabelMap());
+    }
+    
+    public static ObjectPopulation splitInTwo(Image watershedMap, ImageMask mask, final boolean decreasingPropagation, int minSize) {
+        
+        ImageByte localMax = Filters.localExtrema(watershedMap, null, decreasingPropagation, Filters.getNeighborhood(1, 1, watershedMap)).setName("Split seeds");
+        ImageOperations.and(localMax, mask, localMax); // limit @ seeds within mask
+        List<Object3D> seeds = new ArrayList<Object3D>(ImageLabeller.labelImageList(localMax));
+        if (seeds.size()<2) {
+            //logger.warn("Object splitter : less than 2 seeds found");
+            //new IJImageDisplayer().showImage(smoothed.setName("smoothed"));
+            //new IJImageDisplayer().showImage(localMax.setName("localMax"));
+            return null;
+        } else {
+            ObjectPopulation pop =  WatershedTransform.watershed(watershedMap, mask, seeds, decreasingPropagation, null, new WatershedTransform.NumberFusionCriterion(2));
+            List<Object3D> remove = new ArrayList<Object3D>();
+            pop.filter(new ObjectPopulation.Size().setMin(minSize), remove);
+            while (!remove.isEmpty() && seeds.size()>=2) {
+                remove.clear();
+                Iterator<Object3D> it = seeds.iterator();
+                while (it.hasNext()) if (hasVoxelsOutsideMask(it.next(), pop.getLabelMap())) it.remove();
+                pop =  WatershedTransform.watershed(watershedMap, mask, seeds, decreasingPropagation, null, new WatershedTransform.NumberFusionCriterion(2));
+                pop.filter(new ObjectPopulation.Size().setMin(minSize), remove);
+                ... todo : debug..
+            }
+            
+            if (debug) {
+                new IJImageDisplayer().showImage(localMax);
+                new IJImageDisplayer().showImage(watershedMap.setName("watershedMap"));
+                new IJImageDisplayer().showImage(pop.getLabelMap());
+            }
             return pop;
         }
     }
 
+    private static boolean hasVoxelsOutsideMask(Object3D o, ImageMask mask) {
+        for (Voxel v : o.getVoxels()) if (!mask.insideMask(v.x, v.y, v.z)) return true;
+        return false;
+    }
+    
     public Parameter[] getParameters() {
         return new Parameter[]{smoothScale};
     }

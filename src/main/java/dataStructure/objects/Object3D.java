@@ -112,6 +112,16 @@ public class Object3D {
         else return mask.count();
     }
     
+    public double getMeanVoxelValue() {
+        if (getVoxels().isEmpty()) return Double.NaN;
+        else if (voxels.size()==1) return voxels.get(0).value;
+        else {
+            double sum = 0;
+            for (Voxel v : voxels) sum+=v.value;
+            return sum/(double)voxels.size();
+        }
+    }
+    
     public double[] getCenter(boolean scaled) {
         double[] center = new double[3];
         for (Voxel v : getVoxels()) {

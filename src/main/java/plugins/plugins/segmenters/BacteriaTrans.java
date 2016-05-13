@@ -338,7 +338,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
 
     public ObjectPopulation splitObject(Image input, Object3D object) {
         Image edm = EDT.transform(object.getMask(), true, 1, input.getScaleZ()/input.getScaleXY(), 1).setName("edm");
-        return WatershedObjectSplitter.splitInTwo(edm, object.getMask(), true);
+        return WatershedObjectSplitter.splitInTwo(edm, object.getMask(), true, minSize.getValue().intValue());
     }
     
     private static class ProcessingVariables {
