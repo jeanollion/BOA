@@ -323,9 +323,9 @@ public class WatershedTransform {
             return instance.spotNumber>numberOfSpots;
         }
     }
-    public static class MultipleFusionCriteria implements FusionCriterion {
+    public static class MultipleFusionCriteriaAnd implements FusionCriterion {
         FusionCriterion[] criteria;
-        public MultipleFusionCriteria(FusionCriterion... criteria) {
+        public MultipleFusionCriteriaAnd(FusionCriterion... criteria) {
             this.criteria=criteria;
         } 
         @Override public void setUp(WatershedTransform instance) {
@@ -335,6 +335,20 @@ public class WatershedTransform {
             if (criteria.length==0) return false;
             for (FusionCriterion c : criteria) if (!c.checkFusionCriteria(s1, s2, currentVoxel)) return false;
             return true;
+        }
+    }
+    public static class MultipleFusionCriteriaOr implements FusionCriterion {
+        FusionCriterion[] criteria;
+        public MultipleFusionCriteriaOr(FusionCriterion... criteria) {
+            this.criteria=criteria;
+        } 
+        @Override public void setUp(WatershedTransform instance) {
+            for (FusionCriterion f : criteria) f.setUp(instance);
+        }
+        @Override public boolean checkFusionCriteria(Spot s1, Spot s2, Voxel currentVoxel) {
+            if (criteria.length==0) return false;
+            for (FusionCriterion c : criteria) if (c.checkFusionCriteria(s1, s2, currentVoxel)) return true;
+            return false;
         }
     }
 }

@@ -49,13 +49,14 @@ public class WatershedManualSegmenter implements ManualSegmenter {
     public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> points) {
         input = prefilters.filter(input, parent).setName("preFilteredImage");
         Thresholder t = stopThreshold.instanciatePlugin();
-        double threshold = t.runThresholder(input, parent);
+        double threshold = t!=null?t.runThresholder(input, parent): Double.NaN;
+        WatershedTransform.PropagationCriterion prop = Double.isNaN(threshold) ? null : new WatershedTransform.ThresholdPropagationOnWatershedMap(threshold);
         ImageByte mask = new ImageByte("seeds mask", input);
         int label = 1;
         for (int[] p : points) {
             if (segmentationMask.insideMask(p[0], p[1], p[2])) mask.setPixel(p[0], p[1], p[2], label++);
         }
-        ObjectPopulation pop =  WatershedTransform.watershed(input, segmentationMask, mask, decreasingIntensities.getSelected(), new WatershedTransform.ThresholdPropagationOnWatershedMap(threshold), null);
+        ObjectPopulation pop =  WatershedTransform.watershed(input, segmentationMask, mask, decreasingIntensities.getSelected(), prop, null);
         if (verbose) {
             ImageDisplayer disp = new IJImageDisplayer();
             disp.showImage(input);

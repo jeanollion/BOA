@@ -37,6 +37,7 @@ import plugins.plugins.processingScheme.SegmentAndTrack;
 import plugins.plugins.processingScheme.SegmentOnly;
 import plugins.plugins.processingScheme.SegmentThenTrack;
 import plugins.plugins.segmenters.BacteriaFluo;
+import plugins.plugins.segmenters.BacteriaTrans;
 import plugins.plugins.segmenters.MicroChannelPhase2D;
 import plugins.plugins.segmenters.MutationSegmenter;
 import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
@@ -171,7 +172,7 @@ public class GenerateTestXP {
         
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
         mDAO.reset();
-        Experiment xp = fluo ? generateXPFluo(outputDir, true, flip, trimStart, trimEnd) : generateXPBF(outputDir, true, flip, trimStart, trimEnd); 
+        Experiment xp = fluo ? generateXPFluo(outputDir, true, flip, trimStart, trimEnd) : generateXPTrans(outputDir, true, flip, trimStart, trimEnd); 
         mDAO.setExperiment(xp);
         
         Processor.importFiles(xp, true, inputDir);
@@ -198,7 +199,7 @@ public class GenerateTestXP {
         xp.getStructures().insert(mc, bacteria, mutation);
         
         mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessor()));
-        bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo(), 0.9, 1.1, 1.7, 1, 5)));
+        bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo())));
         //mutation.setProcessingScheme(new SegmentOnly(new MutationSegmenterScaleSpace().setThresholdSeeds(2)));
         mutation.setProcessingScheme(new SegmentAndTrack(new LAPTracker().setCompartimentStructure(1)));
         //mutation.setManualSegmenter();
@@ -223,7 +224,7 @@ public class GenerateTestXP {
         return xp;
     }
     
-    public static Experiment generateXPBF(String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd) {
+    public static Experiment generateXPTrans(String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd) {
         
         Experiment xp = new Experiment("testXP");
         xp.setImportImageMethod(Experiment.ImportImageMethod.SINGLE_FILE);
@@ -238,10 +239,7 @@ public class GenerateTestXP {
                 new MicroChannelPhase2D(), 
                 new ObjectIdxTracker()
         ));
-        bacteria.setProcessingScheme(new SegmentAndTrack(
-                new BacteriaClosedMicrochannelTrackerLocalCorrections(
-                        new BacteriaFluo().setOpenRadius(3), 0.9, 1.1, 1.7, 1, 5))
-        );
+        bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaTrans())));
         
         //xp.addMeasurement(new BacteriaLineageIndex(1));
         //xp.addMeasurement(new BacteriaMeasurements(1, 2));

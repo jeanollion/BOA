@@ -93,7 +93,7 @@ public class Object3DCluster extends ClusterCollection<Object3D, Set<Voxel>> {
                 }
             } 
         }
-        logger.debug("Interface collection: nb of interfaces:"+interfaces.size());
+        if (verbose) logger.debug("Interface collection: nb of interfaces:"+interfaces.size());
     }
     
     public static Interface<Object3D, Set<Voxel>> getInteface(Object3D o1, Object3D o2, ImageInteger labelImage) {

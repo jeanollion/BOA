@@ -83,6 +83,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     public static boolean debug=false;
     public BacteriaClosedMicrochannelTrackerLocalCorrections() {}
     
+    public BacteriaClosedMicrochannelTrackerLocalCorrections(SegmenterSplitAndMerge segmenter) {
+        this.segmenter.setPlugin(segmenter);
+    }
+    
     public BacteriaClosedMicrochannelTrackerLocalCorrections(SegmenterSplitAndMerge segmenter, double divisionCriterion, double minGrowthRate, double maxGrowthRate, double costLimit, double cumulativeCostLimit) {
         this.segmenter.setPlugin(segmenter);
         this.maxGrowthRate.setValue(maxGrowthRate);

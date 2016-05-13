@@ -306,7 +306,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         
         if (verboseManualSeg) {
             Image seedMap = new ImageByte("seeds from: "+input.getName(), input);
-            for (int[] seed : seedsXYZ) seedMap.setPixelWithOffset(seed[0], seed[1], seed[2], 1);
+            for (int[] seed : seedsXYZ) seedMap.setPixel(seed[0], seed[1], seed[2], 1);
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(seedMap);
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(maps.hessian);
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(maps.getNormalizedHessian().setName("NormalizedHessian: for propagation limit"));
