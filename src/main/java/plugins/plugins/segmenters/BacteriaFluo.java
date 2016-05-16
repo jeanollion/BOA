@@ -38,9 +38,13 @@ import image.ImageMask;
 import image.ImageOperations;
 import image.ObjectFactory;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import measurement.BasicMeasurements;
 import plugins.ManualSegmenter;
 import plugins.ObjectSplitter;
@@ -52,9 +56,12 @@ import plugins.plugins.trackers.ObjectIdxTracker;
 import processing.Filters;
 import processing.ImageFeatures;
 import processing.WatershedTransform;
-import processing.mergeRegions.InterfaceCollection;
-import processing.mergeRegions.RegionCollection;
 import utils.Utils;
+import utils.clustering.ClusterCollection.InterfaceFactory;
+import utils.clustering.Interface;
+import utils.clustering.InterfaceObject3DImpl;
+import utils.clustering.Object3DCluster;
+import utils.clustering.Object3DCluster.InterfaceVoxels;
 
 /**
  *
@@ -77,7 +84,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     Parameter[] parameters = new Parameter[]{splitThreshold, minSize, contactLimit, smoothScale, dogScale, hessianScale, hessianThresholdFactor, thresholdForEmptyChannel, openRadius, manualSegPropagationHessianThreshold};
     
     //segmentation-related attributes (kept for split and merge methods)
-    ProcessingMaps maps;
+    ProcessingVariables pv;
     
     public BacteriaFluo setSplitThreshold(double splitThreshold) {
         this.splitThreshold.setValue(splitThreshold);
@@ -118,16 +125,16 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         return "Bacteria Fluo: " + Utils.toStringArray(parameters);
     }   
     private void initializeMaps(Image input) {
-        maps = new ProcessingMaps(input, this.splitThreshold.getValue().doubleValue(), dogScale.getValue().doubleValue(), smoothScale.getValue().doubleValue(), hessianScale.getValue().doubleValue());
+        pv = new ProcessingVariables(input, this.splitThreshold.getValue().doubleValue(), dogScale.getValue().doubleValue(), smoothScale.getValue().doubleValue(), hessianScale.getValue().doubleValue());
     }
     
     
     public static ObjectPopulation run(Image input, ImageMask mask, double fusionThreshold, int minSize, int contactLimit, double smoothScale, double dogScale, double hessianScale, double hessianThresholdFactor, double thresholdForEmptyChannel, double openRadius, BacteriaFluo instance) {
         ImageDisplayer disp=debug?new IJImageDisplayer():null;
         //double hessianThresholdFacto = 1;
-        ProcessingMaps maps = new ProcessingMaps(input, fusionThreshold, dogScale, smoothScale, hessianScale);
-        if (instance!=null) instance.maps=maps;
-        Image smoothed = maps.intensityMap;
+        ProcessingVariables pv = new ProcessingVariables(input, fusionThreshold, dogScale, smoothScale, hessianScale);
+        if (instance!=null) instance.pv=pv;
+        Image smoothed = pv.intensityMap;
         //Image hessian = ImageFeatures.getHessian(intensityMap, hessianScale, false)[0].setName("hessian");
 
         //double t0 = IJAutoThresholder.runThresholder(intensityMap, mask, null, AutoThresholder.Method.Otsu, 0);
@@ -157,7 +164,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         pop1.filter(new ObjectPopulation.MeanIntensity(threshold, true, smoothed));
         if (debug) disp.showImage(pop1.getLabelMap().duplicate("first seg"));
         
-        Image hessian = maps.hessian;
+        Image hessian = pv.hessian;
         
         if (debug) {
             disp.showImage(smoothed);
@@ -179,16 +186,24 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             if (debug) disp.showImage(popWS.getLabelMap().duplicate("before local threshold & merging"));
             //popWS.localThreshold(dogNoTrim, 0, localThresholdMargin, 0);
             //if (debug) disp.showImage(popWS.getLabelImage().duplicate("after local threhsold / before merging"));
-            RegionCollection.verbose=debug;
-            ObjectPopulation localPop= RegionCollection.mergeHessianBacteria(popWS, input, hessian, fusionThreshold, true);
-            if (res==null) res= localPop;
-            else res.addObjects(localPop.getObjects());
+            
+            // fusion
+            //RegionCollection.verbose=debug;
+            //ObjectPopulation localPop= RegionCollection.mergeHessianBacteria(popWS, input, hessian, fusionThreshold, true);
+            Object3DCluster.verbose=debug;
+            popWS.setVoxelIntensities(hessian);
+            Object3DCluster.mergeSort(popWS, pv.getFactory());
+            
+            
+            if (res==null) res= popWS;
+            else res.addObjects(popWS.getObjects());
             //if (debug) disp.showImage(localPop.getLabelImage().setName("after merging"));
             maskObject.draw(watershedMask, 0);
         }
         if (res!=null) {
             if (contactLimit>0) res.filter(new ObjectPopulation.ContactBorder(contactLimit, mask, ObjectPopulation.ContactBorder.Border.YDown));
             res.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
+            res.relabel(true);
         }
         return res;
     }
@@ -228,11 +243,11 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     }
 
     @Override public double split(Object3D o, List<Object3D> result) {
-        if (maps==null) throw new Error("Segment method have to be called before split method in order to initialize maps");
-        if (maps.splitMask==null) maps.splitMask = new ImageByte("split mask", maps.intensityMap);
-        o.draw(maps.splitMask, 1);
-        ObjectPopulation pop = WatershedObjectSplitter.splitInTwo(maps.intensityMap, maps.splitMask, true);
-        o.draw(maps.splitMask, 0);
+        if (pv==null) throw new Error("Segment method have to be called before split method in order to initialize maps");
+        if (pv.splitMask==null) pv.splitMask = new ImageByte("split mask", pv.intensityMap);
+        o.draw(pv.splitMask, 1);
+        ObjectPopulation pop = WatershedObjectSplitter.splitInTwo(pv.intensityMap, pv.splitMask, false, minSize.getValue().intValue(), false);
+        o.draw(pv.splitMask, 0);
         if (pop==null || pop.getObjects().isEmpty() || pop.getObjects().size()==1) return Double.NaN;
         ArrayList<Object3D> remove = new ArrayList<Object3D>(pop.getObjects().size());
         pop.filter(new ObjectPopulation.Thickness().setX(2).setY(2), remove); // remove thin objects
@@ -240,17 +255,19 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         if (pop.getObjects().size()<=1) return Double.NaN;
         else {
             if (!remove.isEmpty()) pop.mergeWithConnected(remove);
+            if (pop.getObjects().size()>2) pop.mergeWithConnected(pop.getObjects().subList(2, pop.getObjects().size()));
             Object3D o1 = pop.getObjects().get(0);
             Object3D o2 = pop.getObjects().get(1);
             result.add(o1);
             result.add(o2);
-            return maps.splitThresholdValue-getInterfaceValue(getInterface(o1, o2));
+            ProcessingVariables.InterfaceBF inter = getInterface(o1, o2);
+            return pv.splitThresholdValue-inter.value;
         }
     }
 
     @Override public double computeMergeCost(List<Object3D> objects) {
-        if (maps==null || maps.intensityMap==null || maps.hessian==null || maps.rawIntensityMap==null) throw new Error("Segment method have to be called before merge method in order to initialize images");
-        if (maps.splitMask==null) maps.splitMask = new ImageByte("split mask", maps.intensityMap);
+        if (pv==null || pv.intensityMap==null || pv.hessian==null || pv.rawIntensityMap==null) throw new Error("Segment method have to be called before merge method in order to initialize images");
+        if (pv.splitMask==null) pv.splitMask = new ImageByte("split mask", pv.intensityMap);
         if (objects.isEmpty() || objects.size()==1) return 0;
         Iterator<Object3D> it = objects.iterator();
         Object3D ref  = objects.get(0);
@@ -258,38 +275,28 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         while (it.hasNext()) { //first round : remove objects not connected with ref & compute interactions with ref objects
             Object3D n = it.next();
             if (n!=ref) {
-                ArrayList<Voxel> inter = getInterface(ref, n);
-                if (inter.isEmpty()) it.remove();
-                else {
-                    double c = getInterfaceValue(inter);
-                    if (c>maxCost) maxCost = c;
-                }
+                ProcessingVariables.InterfaceBF inter = getInterface(ref, n);
+                if (inter.voxels.isEmpty()) it.remove();
+                else if (inter.value>maxCost) maxCost = inter.value;
             }
         }
         for (int i = 2; i<objects.size()-1; ++i) { // second round compute other interactions
             for (int j = i+1; j<objects.size(); ++j) {
-                ArrayList<Voxel> inter = getInterface(objects.get(i), objects.get(j));
-                if (!inter.isEmpty()) {
-                    double c = getInterfaceValue(inter);
-                    if (c>maxCost) maxCost = c;
-                }
+                ProcessingVariables.InterfaceBF inter = getInterface(objects.get(i), objects.get(j));
+                if (inter.value>maxCost) maxCost = inter.value;
             }
         }
         if (maxCost==Double.MIN_VALUE) return Double.NaN;
-        return maxCost-maps.splitThresholdValue;
-    }
-    private double getInterfaceValue(ArrayList<Voxel> inter) {
-        double meanHess = BasicMeasurements.getMeanValue(inter, maps.hessian, false);
-        double meanDOG = BasicMeasurements.getMeanValue(inter, maps.rawIntensityMap, false);
-        return meanHess / meanDOG;
+        return maxCost-pv.splitThresholdValue;
     }
     
-    private ArrayList<Voxel> getInterface(Object3D o1, Object3D o2) {
-        o1.draw(maps.splitMask, o1.getLabel());
-        o2.draw(maps.splitMask, o2.getLabel());
-        ArrayList<Voxel> inter = InterfaceCollection.getInteface(o1, o2, maps.splitMask);
-        o1.draw(maps.splitMask, 0);
-        o2.draw(maps.splitMask, 0);
+    private ProcessingVariables.InterfaceBF getInterface(Object3D o1, Object3D o2) {
+        o1.draw(pv.splitMask, o1.getLabel());
+        o2.draw(pv.splitMask, o2.getLabel());
+        ProcessingVariables.InterfaceBF inter = Object3DCluster.getInteface(o1, o2, pv.splitMask, pv.getFactory());
+        inter.updateSortValue();
+        o1.draw(pv.splitMask, 0);
+        o2.draw(pv.splitMask, 0);
         return inter;
     }
     
@@ -300,34 +307,41 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     }
 
     public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
-        if (maps==null) initializeMaps(input);
+        if (pv==null) initializeMaps(input);
         List<Object3D> seedObjects = ObjectFactory.createObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());
-        ObjectPopulation pop =  WatershedTransform.watershed(maps.hessian, segmentationMask, seedObjects, false, new WatershedTransform.ThresholdPropagation(maps.getNormalizedHessian(), this.manualSegPropagationHessianThreshold.getValue().doubleValue(), false), new WatershedTransform.SizeFusionCriterion(this.minSize.getValue().intValue()));
+        ObjectPopulation pop =  WatershedTransform.watershed(pv.hessian, segmentationMask, seedObjects, false, new WatershedTransform.ThresholdPropagation(pv.getNormalizedHessian(), this.manualSegPropagationHessianThreshold.getValue().doubleValue(), false), new WatershedTransform.SizeFusionCriterion(this.minSize.getValue().intValue()));
         
         if (verboseManualSeg) {
             Image seedMap = new ImageByte("seeds from: "+input.getName(), input);
             for (int[] seed : seedsXYZ) seedMap.setPixel(seed[0], seed[1], seed[2], 1);
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(seedMap);
-            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(maps.hessian);
-            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(maps.getNormalizedHessian().setName("NormalizedHessian: for propagation limit"));
+            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pv.hessian);
+            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pv.getNormalizedHessian().setName("NormalizedHessian: for propagation limit"));
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pop.getLabelMap().setName("segmented from: "+input.getName()));
         }
         
         return pop;
     }
-
+    
+    // object splitter interface
+    boolean splitVerbose;
+    public void setSplitVerboseMode(boolean verbose) {
+        this.splitVerbose=verbose;
+    }
+    
     public ObjectPopulation splitObject(Image input, Object3D object) {
         Image hessian=ImageFeatures.getHessian(input, hessianScale.getValue().doubleValue(), false)[0].setName("hessian");
-        return WatershedObjectSplitter.splitInTwo(hessian, object.getMask(), true);
+        return WatershedObjectSplitter.splitInTwo(hessian, object.getMask(), false, minSize.getValue().intValue(), splitVerbose);
     }
-    private static class ProcessingMaps {
-        Image hessian;
-        Image rawIntensityMap;
-        Image intensityMap;
+    private static class ProcessingVariables {
+        final Image hessian;
+        final Image rawIntensityMap;
+        final Image intensityMap;
         Image normalizedHessian;
         ImageByte splitMask;
-        double splitThresholdValue, smoothScale;
-        private ProcessingMaps(Image input, double splitThreshold, double dogScale, double smoothScale, double hessianScale) {
+        final double splitThresholdValue, smoothScale;
+        InterfaceFactory<Object3D, InterfaceBF> factory;
+        private ProcessingVariables(Image input, double splitThreshold, double dogScale, double smoothScale, double hessianScale) {
             rawIntensityMap=input;
             splitThresholdValue=splitThreshold;
             this.smoothScale=smoothScale;
@@ -343,5 +357,74 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             } 
             return normalizedHessian;
         }
+        
+        public InterfaceFactory<Object3D, InterfaceBF> getFactory() {
+            if (factory==null) {
+                factory = new Object3DCluster.InterfaceFactory<Object3D, InterfaceBF>() {
+                    public InterfaceBF create(Object3D e1, Object3D e2, Comparator<? super Object3D> elementComparator) {
+                        return new InterfaceBF(e1, e2);
+                    }
+                };
+            }
+            return factory;
+        }
+        
+        protected class InterfaceBF extends InterfaceObject3DImpl implements InterfaceVoxels {
+            double value;
+            Set<Voxel> voxels;
+            public InterfaceBF(Object3D e1, Object3D e2) {
+                super(e1, e2);
+                voxels = new HashSet<Voxel>();
+            }
+
+            @Override public void updateSortValue() {
+                if (voxels.isEmpty()) {
+                    value = Double.NaN;
+                } else {
+                    double hessSum = 0, intensitySum = 0;
+                    for (Voxel v : voxels) {
+                        hessSum+=hessian.getPixel(v.x, v.y, v.z);
+                        intensitySum += rawIntensityMap.getPixel(v.x, v.y, v.z);
+                    }
+                    value = hessSum / intensitySum;
+                }
+            }
+
+            @Override 
+            public void fusionInterface(Interface<Object3D> otherInterface, Comparator<? super Object3D> elementComparator) {
+                fusionInterfaceSetElements(otherInterface, elementComparator);
+                InterfaceBF other = (InterfaceBF) otherInterface;
+                voxels.addAll(other.voxels);
+                updateSortValue();
+            }
+
+            @Override
+            public boolean checkFusion(double[] outputValues) {
+                // criterion = - hessian @ border / intensity @ border < threshold
+                if (outputValues!=null && outputValues.length>=1) outputValues[0] = value;
+                if (BacteriaFluo.debug) logger.debug("check fusion: {}+{}, size: {}, value: {}, threhsold: {}, fusion: {}", e1.getLabel(), e2.getLabel(), voxels.size(), value, splitThresholdValue, value<splitThresholdValue);
+                return value<splitThresholdValue;
+            }
+
+            @Override
+            public void addPair(Voxel v1, Voxel v2) {
+               voxels.add(v1);
+               voxels.add(v2);
+            }
+
+            public int compareTo(Interface<Object3D> t) {
+                return Double.compare(value, ((InterfaceBF)t).value);
+            }
+
+            public Collection<Voxel> getVoxels() {
+                return voxels;
+            }
+        }
+    }
+    protected static void mergeSort(ObjectPopulation pop, Image input, Image hessian, double threshold) {
+        
+    }
+    private class MergeInterfaceData {
+        double hessianSum, intensitySum, count;
     }
 }

@@ -26,10 +26,6 @@ import image.BlankMask;
 import image.Image;
 import image.ImageByte;
 import image.ImageMask;
-import java.util.ArrayList;
-import java.util.Iterator;
-import measurement.BasicMeasurements;
-import processing.mergeRegions.RegionCollection;
 
 /**
  *

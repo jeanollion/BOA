@@ -200,7 +200,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     @Override public ArrayList<StructureObject> setChildrenObjects(ObjectPopulation population, int structureIdx) {
         population.relabel();
-        if (!isRoot()) population.translate(getBounds()); // from parent-relative coordinates to absolute coordinates
+        population.translate(getBounds(), true); // from parent-relative coordinates to absolute coordinates
         for (Object3D o : population.getObjects()) o.setIsAbsoluteLandmark(true);
         ArrayList<StructureObject> res = new ArrayList<StructureObject>(population.getObjects().size());
         childrenSM.set(res, structureIdx);
@@ -593,34 +593,22 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public StructureObject split(ObjectSplitter splitter) { // in 2 objects
         // get cropped image
         ObjectPopulation pop = splitter.splitObject(getRawImage(structureIdx),  getObject());
-        if (pop==null) {
+        if (pop==null || pop.getObjects().size()==1) {
             this.flag=TrackFlag.correctionSplitError;
             logger.warn("split error: {}", this);
             return null;
         }
         // first object returned by splitter is updated to current structureObject
-        pop.translate(this.getBounds());
+        pop.translate(this.getBounds(), true);
         objectModified=true;
         this.object=pop.getObjects().get(0).setLabel(idx+1);
         flushImages();
-        if (pop.getObjects().size()>2) { // TODO merge other objects
-            logger.warn("split structureObject: {} yielded in {} objects, but only two will be considered", this, pop.getObjects().size());
-        } 
-        
+        if (pop.getObjects().size()>2) pop.mergeWithConnected(pop.getObjects().subList(2, pop.getObjects().size()));
+       
         StructureObject res = new StructureObject(timePoint, structureIdx, idx+1, pop.getObjects().get(1).setLabel(idx+2), getParent());
-        /*ArrayList<StructureObject> res = new ArrayList<StructureObject>(pop.getChildren().size()-1);
-        for (int i = 1; i<pop.getChildren().size(); ++i) {
-            res.add(new StructureObject(fieldName, timePoint, structureIdx, currentIdx++, pop.getChildren().get(i), getParent(), getExperiment()));
-        }*/
-        //if (res.size()>1) xp.getObjectDAO().storeLater(res);
-        //else xp.getObjectDAO().storeLater(res.get(0));
-        //logger.debug("split: adding: {} at position: {}/{}", res, getParent().getChildren(structureIdx).indexOf(this)+1, getParent().getChildren(structureIdx).size());
-        this.getParent().getChildren(structureIdx).add(getParent().getChildren(structureIdx).indexOf(this)+1, res);
-        
-        //res.previous=getPrevious();
+        getParent().getChildren(structureIdx).add(getParent().getChildren(structureIdx).indexOf(this)+1, res);
         setTrackFlag(TrackFlag.correctionSplit);
         res.setTrackFlag(TrackFlag.correctionSplitNew);
-        //logger.debug("spit object: {}, new: {}, added @ idx: {}", this, res, this.getParent().getChildren(structureIdx).indexOf(this)+1);
         return res;
     }
     

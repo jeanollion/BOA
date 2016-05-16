@@ -27,4 +27,5 @@ import image.Image;
  */
 public interface ObjectSplitter extends ImageProcessingPlugin {
     public ObjectPopulation splitObject(Image input, Object3D object);
+    public void setSplitVerboseMode(boolean verbose);
 }

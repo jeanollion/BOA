@@ -124,6 +124,7 @@ public class Selection implements Comparable<Selection> {
         List<StructureObject> res = new ArrayList<StructureObject>(indiciesList.size());
         retrievedElements.put(fieldName, res);
         retrievedTrackHeads.remove(fieldName);
+        List<StructureObject> roots = dao.getRoots();
         long t0 = System.currentTimeMillis();
         for (String s : indiciesList) {
             int[] indicies = parseIndicies(s);
@@ -131,7 +132,7 @@ public class Selection implements Comparable<Selection> {
                 logger.warn("Object: {} has wrong number of indicies (expected: {})", indicies, pathToRoot.length);
                 continue;
             }
-            StructureObject elem = dao.getRoot(indicies[0]);
+            StructureObject elem = roots.get(indicies[0]);
             IndexLoop : for (int i= 1; i<indicies.length; ++i) {
                 if (elem.getChildren(pathToRoot[i-1]).size()<=indicies[i]) {
                     logger.warn("Object: {} was not found @ idx {}, last parent: {}", indicies, i, elem);
@@ -142,7 +143,7 @@ public class Selection implements Comparable<Selection> {
             res.add(elem);
         }
         long t1 = System.currentTimeMillis();
-        //logger.debug("Selection: {}, #{} elements retrieved in: {}", this.id, res.size(), t1-t0);
+        logger.debug("Selection: {}, #{} elements retrieved in: {}", this.id, res.size(), t1-t0);
         return res;
     }
     

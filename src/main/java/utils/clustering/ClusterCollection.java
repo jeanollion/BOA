@@ -41,69 +41,69 @@ import utils.Utils;
  * @param <E> element data
  * @param <I> iterface data
  */
-public class ClusterCollection<E, I> {
+public class ClusterCollection<E, I extends Interface<E> > {
     public static boolean verbose;
     public static final Logger logger = LoggerFactory.getLogger(ClusterCollection.class);
     final Comparator<? super E> elementComparator;
-    final Set<Interface<E, I>> interfaces;
-    final HashMapGetCreate<E, List<Interface<E, I>>> elementInterfaces;
+    final Set<I> interfaces;
+    final HashMapGetCreate<E, List<I>> elementInterfaces;
     Collection<E> allElements;
-    InterfaceDataFactory<I> interfaceDataFactory;
-    public ClusterCollection(Collection<E> elements, Comparator<? super E> clusterComparator, InterfaceDataFactory<I> interfaceDataFactory) {
+    InterfaceFactory<E, I> interfaceFactory;
+    
+    public ClusterCollection(Collection<E> elements, Comparator<? super E> clusterComparator, InterfaceFactory<E, I> interfaceFactory) {
         this.elementComparator=clusterComparator;
-        elementInterfaces = new HashMapGetCreate<E, List<Interface<E, I>>>(elements.size(), new HashMapGetCreate.ListFactory());
+        elementInterfaces = new HashMapGetCreate<E, List<I>>(elements.size(), new HashMapGetCreate.ListFactory());
         this.allElements=elements;
-        this.interfaces = new HashSet<Interface<E, I>>();
-        this.interfaceDataFactory=interfaceDataFactory;
+        this.interfaces = new HashSet<I>();
+        this.interfaceFactory=interfaceFactory;
     }
     
-    public ClusterCollection(Collection<E> elements, Map<Pair<E, E>, I> interactions, Comparator<? super E> clusterComparator, InterfaceDataFactory<I> interfaceDataFactory) {
-        this(elements, clusterComparator, interfaceDataFactory);
+    /*public ClusterCollection(Collection<E> elements, Map<Pair<E, E>, I> interactions, Comparator<? super E> clusterComparator, InterfaceFactory<I> interfaceFactory) {
+        this(elements, clusterComparator, interfaceFactory);
         for (Entry<Pair<E, E>, I> e : interactions.entrySet()) addInteraction(e.getKey().key, e.getKey().value, e.getValue());
-    }
+    }*/
     
-    public Interface<E, I> addInteraction(E e1, E e2, I interaction) {
-        Interface<E, I> i = new Interface<E, I>(e1, e2, interaction, elementComparator);
+    public I addInteraction(I i) {
         interfaces.add(i);
-        elementInterfaces.getAndCreateIfNecessary(e1).add(i);
-        elementInterfaces.getAndCreateIfNecessary(e2).add(i);
+        elementInterfaces.getAndCreateIfNecessary(i.getE1()).add(i);
+        elementInterfaces.getAndCreateIfNecessary(i.getE2()).add(i);
         return i;
     }
     
-    public Interface<E, I> getInterface(E e1, E e2, boolean createIfNull) {
-        List<Interface<E, I>> l = elementInterfaces.getAndCreateIfNecessary(e1);
-        for (Interface<E, I> i : l) if (i.isInterfaceOf(e2)) return i;
-        if (createIfNull && interfaceDataFactory!=null) return addInteraction(e1, e2, interfaceDataFactory.create());
+    public I getInterface(E e1, E e2, boolean createIfNull) {
+        List<I> l = elementInterfaces.getAndCreateIfNecessary(e1);
+        for (I i : l) if (i.isInterfaceOf(e2)) return i;
+        if (createIfNull && interfaceFactory!=null) return addInteraction(interfaceFactory.create(e1, e2, elementComparator));
         return null;
     }
     
-    public List<Set<Interface<E, I>>> getClusters() {
-        List<Set<Interface<E, I>>> clusters = new ArrayList<Set<Interface<E, I>>>();
-        Set<Interface<E, I>> currentCluster;
-        for (Interface<E, I> i : interfaces) {
+    public List<Set<I>> getClusters() {
+        List<Set<I>> clusters = new ArrayList<Set<I>>();
+        Set<I> currentCluster;
+        for (I i : interfaces) {
             currentCluster = null;
-            List<Interface<E, I>> l1 = elementInterfaces.getAndCreateIfNecessary(i.e1);
-            List<Interface<E, I>> l2 = elementInterfaces.getAndCreateIfNecessary(i.e2);
+            List<I> l1 = elementInterfaces.getAndCreateIfNecessary(i.getE1());
+            List<I> l2 = elementInterfaces.getAndCreateIfNecessary(i.getE2());
             if (clusters.isEmpty()) {
-                currentCluster = new HashSet<Interface<E, I>>(l1.size()+ l2.size()-1);
+                currentCluster = new HashSet<I>(l1.size()+ l2.size()-1);
                 currentCluster.addAll(l1);
                 currentCluster.addAll(l2);
                 clusters.add(currentCluster);
             } else {
-                Iterator<Set<Interface<E, I>>> it = clusters.iterator();
+                Iterator<Set<I>> it = clusters.iterator();
                 while(it.hasNext()) {
-                    Set<Interface<E, I>> cluster = it.next();
+                    Set<I> cluster = it.next();
                     if (cluster.contains(i)) {
                         cluster.addAll(l1);
                         cluster.addAll(l2);
-                        if (currentCluster!=null) { // fusion des clusters
+                        if (currentCluster!=null) { // fusionInterface des clusters
                             currentCluster.addAll(cluster);
                             it.remove();
                         } else currentCluster=cluster;
                     }
                 }
                 if (currentCluster==null) {
-                    currentCluster = new HashSet<Interface<E, I>>(l1.size()+ l2.size()-1);
+                    currentCluster = new HashSet<I>(l1.size()+ l2.size()-1);
                     currentCluster.addAll(l1);
                     currentCluster.addAll(l2);
                     clusters.add(currentCluster);
@@ -113,31 +113,33 @@ public class ClusterCollection<E, I> {
         return clusters;
     }
     
-    /*public List<E> mergeSortCluster(Fusion<E, I> fusion, InterfaceSortValue<E, I> interfaceSortValue) {
+    /*public List<E> mergeSortCluster(Fusion<E, I> fusionInterface, InterfaceSortValue<E, I> interfaceSortValue) {
         List<Set<Interface<E, I>>> clusters = getClusters();
         // create one ClusterCollection per cluster and apply mergeSort
     }*/
     
-    public List<E> mergeSort(Fusion<E, I> fusion, InterfaceSortMethod<E, I> interfaceSortMethod) {
-        for (Interface i : interfaces) i.updateSortValue(interfaceSortMethod);
-        List<Interface<E, I>> currentInterfaces = new ArrayList<Interface<E, I>>(interfaces);
+    public List<E> mergeSort() {
+        long t0 = System.currentTimeMillis();
+        for (Interface i : interfaces) i.updateSortValue();
+        List<I> currentInterfaces = new ArrayList<I>(interfaces);
         Collections.sort(currentInterfaces);
-        if (verbose) logger.debug("Tree set: {}, total: {}", currentInterfaces.size(), interfaces.size());
-        Iterator<Interface<E, I>> it = currentInterfaces.iterator(); // descending
+        //if (verbose) logger.debug("Tree set: {}, total: {}", currentInterfaces.size(), interfaces.size());
+        Iterator<I> it = currentInterfaces.iterator(); // descending
         while (it.hasNext()) {
-            Interface<E, I> i = it.next();
-            if (verbose) logger.debug("Interface: {}+{}", i.e1, i.e2);
-            if (fusion.checkFusion(i)) {
+            I i = it.next();
+            if (i.checkFusion(null)) {
                 it.remove();
                 this.interfaces.remove(i);
-                allElements.remove(i.e2);
-                fusion.performFusion(i);
-                if (updateInterfacesAfterFusion(i, currentInterfaces, fusion, interfaceSortMethod)) { // if any change in the interface treeset, recompute the iterator
+                allElements.remove(i.getE2());
+                i.performFusion();
+                if (updateInterfacesAfterFusion(i, currentInterfaces)) { // if any change in the interface treeset, recompute the iterator
                     Collections.sort(currentInterfaces);
                     it=currentInterfaces.iterator();
                 } 
             } //else if (i.hasOneRegionWithNoOtherInteractant(this)) it.remove(); // won't be modified so no need to test once again
         }
+        long t1 = System.currentTimeMillis();
+        if (verbose) logger.debug("Merge sort: total time : {} total interfaces: {} after merge: {}", t1-t0, interfaces.size(), currentInterfaces.size());
         return new ArrayList<E>(elementInterfaces.keySet());
     }   
 
@@ -146,43 +148,39 @@ public class ClusterCollection<E, I> {
      * @param i
      * @return true if changes were made in the interfaces set
      */
-    protected boolean updateInterfacesAfterFusion(Interface<E, I> i, List<Interface<E, I>> interfaces, Fusion<E, I> fusion, InterfaceSortMethod<E, I> interfaceSortValue) {
-        List<Interface<E, I>> l1 = elementInterfaces.get(i.e1);
-        List<Interface<E, I>> l2 = elementInterfaces.remove(i.e2);
+    protected boolean updateInterfacesAfterFusion(I i, List<I> interfaces) {
+        List<I> l1 = elementInterfaces.get(i.getE1());
+        List<I> l2 = elementInterfaces.remove(i.getE2());
         if (l1!=null) l1.remove(i);
         boolean change = false;
         if (l2!=null) {
-            for (Interface<E, I> otherInterface : l2) { // appends interfaces of deleted region (e2) to new region (e1)
+            for (I otherInterface : l2) { // appends interfaces of deleted region (e2) to new region (e1)
                 if (!otherInterface.equals(i)) {
                     change=true;
-                    interfaces.remove(otherInterface);
-                    E otherRegion = otherInterface.getOther(i.e2);
-                    List<Interface<E, I>> otherRegionInterfaces = elementInterfaces.get(otherRegion);
-                    Interface<E, I> existingInterface=null;
+                    
+                    E otherElement = otherInterface.getOther(i.getE2());
+                    I existingInterface=null;
                     if (l1!=null) {
-                        for (Interface<E, I> j : l1) {
-                            if (j.isInterfaceOf(i.e1, otherRegion)) {
+                        for (I j : l1) {
+                            if (j.isInterfaceOf(i.getE1(), otherElement)) {
                                 existingInterface=j;
                                 break;
                             }
                         }
                     }
                     if (existingInterface!=null) { // if interface is already present in e1, simply merge the interfaces
-                        interfaces.remove(existingInterface);
-                        if (l1!=null) l1.remove(existingInterface);
-                        otherRegionInterfaces.remove(existingInterface);
-                        Interface<E, I> newInterface = fusion.fusion(existingInterface, otherInterface);
-                        newInterface.updateSortValue(interfaceSortValue);
-                        interfaces.add(newInterface);
-                        otherRegionInterfaces.add(newInterface);
-                        if (l1!=null) l1.add(newInterface);
+                        //interfaces.remove(existingInterface);
+                        //if (l1!=null) l1.remove(existingInterface);
+                        //otherRegionInterfaces.remove(existingInterface);
+                        existingInterface.fusionInterface(otherInterface, elementComparator);
+                        
+                        interfaces.remove(otherInterface);
+                        this.interfaces.remove(otherInterface);
+                        elementInterfaces.get(otherElement).remove(existingInterface);
                     } else { // if not add a new interface
-                        otherRegionInterfaces.remove(otherInterface);
-                        Interface<E, I> newInterface = new Interface<E, I>(i.e1, otherRegion, otherInterface.data, elementComparator);
-                        if (l1!=null) l1.add(newInterface);
-                        newInterface.updateSortValue(interfaceSortValue);
-                        interfaces.add(newInterface);
-                        otherRegionInterfaces.add(newInterface);
+                        //otherRegionInterfaces.remove(otherInterface);
+                        otherInterface.swichElements(i.getE1(), i.getE2(), elementComparator);
+                        if (l1!=null) l1.add(otherInterface);
                     }
                 }
             }
@@ -190,40 +188,9 @@ public class ClusterCollection<E, I> {
         return change;
     }
     
-    public interface Fusion<E, I> {
-        public boolean checkFusion(Interface<E, I> i); // returns true if the fusion criterion is reached
-        public void performFusion(Interface<E, I> i); // update i.e1;
-        public Interface<E, I> fusion(Interface<E, I> i1, Interface<E, I> i2);
+
+    public static interface InterfaceFactory<E, I extends Interface<E>> {
+        public I create(E e1, E e2, Comparator<? super E> elementComparator);
     }
-    public static abstract class FusionImpl<E, I> implements Fusion<E, I> {
-        final InterfaceDataFusion<I> interfaceDataFusion;
-        final Comparator<? super E> elementComparator;
-        public FusionImpl(InterfaceDataFusion<I> interfaceDataFusion, Comparator<? super E> elementComparator) {
-            this.interfaceDataFusion=interfaceDataFusion;
-            this.elementComparator=elementComparator;
-        }
-        @Override public Interface<E, I> fusion(Interface<E, I> i1, Interface<E, I> i2) {
-            E com = i1.getCommonElement(i2);
-            if (com==null) throw new IllegalArgumentException("No common elements in "+i1+" and "+i2+" cannot merge");
-            E o1 = i1.getOther(com);
-            E o2 = i2.getOther(com);
-            return new Interface<E, I>(o1, o2, interfaceDataFusion.fusion(i1.data, i2.data), elementComparator);
-        }
-    }
-    public interface InterfaceDataFusion<I> {
-        public I fusion(I i1, I i2);
-    }
-    public interface InterfaceDataFactory<I> {
-        public I create();
-    }
-    public static class InterfaceDataFusionCollection<C extends Collection<T>, T> implements InterfaceDataFusion<C> {
-        // modifies i1;
-        public C fusion(C i1, C i2) {
-            i1.addAll(i2);
-            return i1;
-        }
-    }
-    public interface InterfaceSortMethod<E, I> {
-        public double computeSortValue(Interface<E, I> i);
-    }
+    
 }

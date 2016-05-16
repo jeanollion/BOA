@@ -129,7 +129,7 @@ public class TestTrackCorrectionNew {
         testTrackCorrection(db.getDao(db.getExperiment().getMicroscopyField(0).getName()).getRoots(), actual, expected);
     }
     
-    private void testTrackCorrection(ArrayList<StructureObject> root, int[] actual, int[] expected) {
+    private void testTrackCorrection(List<StructureObject> root, int[] actual, int[] expected) {
         StructureObjectUtils.getAllTracks(root, 0); //sets track links
         assertEquals("number of root", actual.length, root.size());
         for (int i = 0; i<expected.length; ++i) {

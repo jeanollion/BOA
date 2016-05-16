@@ -243,7 +243,7 @@ public class ManualCorrection {
             if (i!=null) iwm.displayObjects(image, i.pairWithOffset(segmentedObjects), Color.ORANGE, true, false);
         }
     }
-    public static void splitObjects(MasterDAO db, Collection<StructureObject> objects, boolean updateDisplay) {
+    public static void splitObjects(MasterDAO db, Collection<StructureObject> objects, boolean updateDisplay, boolean test) {
         int structureIdx = StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(objects);
         if (objects.isEmpty()) return;
         ObjectSplitter splitter = db.getExperiment().getStructure(structureIdx).getObjectSplitter();
@@ -257,6 +257,8 @@ public class ManualCorrection {
             List<StructureObject> objectsToStore = new ArrayList<StructureObject>();
             List<StructureObject> newObjects = new ArrayList<StructureObject>();
             for (StructureObject objectToSplit : objectsByFieldName.get(f)) {
+                splitter = db.getExperiment().getStructure(structureIdx).getObjectSplitter();
+                splitter.setSplitVerboseMode(test);
                 StructureObject newObject = objectToSplit.split(splitter);
                 if (newObject==null) logger.warn("Object could not be splitted!");
                 else {
@@ -268,8 +270,8 @@ public class ManualCorrection {
             }
             
             Utils.removeDuplicates(objectsToStore, false);
-            dao.store(objectsToStore, true);
-            if (updateDisplay) {
+            if (!test) dao.store(objectsToStore, true);
+            if (updateDisplay && !test) {
                 // unselect
                 ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
                 ImageWindowManagerFactory.getImageManager().removeObjects(objects, true);

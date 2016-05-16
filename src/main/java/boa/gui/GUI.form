@@ -506,18 +506,12 @@
                       <Component id="collapseAllObjectButton" alignment="0" max="32767" attributes="0"/>
                       <Component id="selectAllTracksButton" alignment="0" max="32767" attributes="0"/>
                       <Component id="nextTrackErrorButton" max="32767" attributes="0"/>
-                      <Component id="splitObjectsButton" max="32767" attributes="0"/>
                       <Component id="mergeObjectsButton" alignment="0" max="32767" attributes="0"/>
                       <Component id="previousTrackErrorButton" alignment="0" max="32767" attributes="0"/>
                       <Component id="interactiveStructure" alignment="0" max="32767" attributes="0"/>
                       <Component id="selectAllObjects" alignment="0" max="32767" attributes="0"/>
                       <Component id="deleteObjectsButton" alignment="0" max="32767" attributes="0"/>
                       <Component id="updateRoiDisplayButton" alignment="0" max="32767" attributes="0"/>
-                      <Group type="102" alignment="0" attributes="0">
-                          <Component id="manualSegmentButton" pref="0" max="32767" attributes="0"/>
-                          <EmptySpace max="-2" attributes="0"/>
-                          <Component id="testManualSegmentationButton" min="-2" pref="59" max="-2" attributes="0"/>
-                      </Group>
                       <Component id="linkObjectsButton" alignment="0" max="32767" attributes="0"/>
                       <Component id="unlinkObjectsButton" alignment="0" max="32767" attributes="0"/>
                       <Group type="102" attributes="0">
@@ -528,6 +522,17 @@
                           <EmptySpace min="0" pref="0" max="32767" attributes="0"/>
                       </Group>
                       <Component id="resetLinksButton" alignment="0" max="32767" attributes="0"/>
+                      <Group type="102" alignment="1" attributes="0">
+                          <Group type="103" groupAlignment="1" attributes="0">
+                              <Component id="splitObjectsButton" alignment="0" max="32767" attributes="0"/>
+                              <Component id="manualSegmentButton" pref="0" max="32767" attributes="0"/>
+                          </Group>
+                          <EmptySpace max="-2" attributes="0"/>
+                          <Group type="103" groupAlignment="0" max="-2" attributes="0">
+                              <Component id="testManualSegmentationButton" pref="59" max="32767" attributes="0"/>
+                              <Component id="testSplitButton" max="32767" attributes="0"/>
+                          </Group>
+                      </Group>
                   </Group>
                 </DimensionLayout>
                 <DimensionLayout dim="1">
@@ -556,7 +561,10 @@
                               <Component id="testManualSegmentationButton" alignment="3" min="-2" max="-2" attributes="0"/>
                           </Group>
                           <EmptySpace max="-2" attributes="0"/>
-                          <Component id="splitObjectsButton" min="-2" max="-2" attributes="0"/>
+                          <Group type="103" groupAlignment="3" attributes="0">
+                              <Component id="splitObjectsButton" alignment="3" min="-2" max="-2" attributes="0"/>
+                              <Component id="testSplitButton" alignment="3" min="-2" max="-2" attributes="0"/>
+                          </Group>
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="mergeObjectsButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
@@ -611,7 +619,7 @@
                 </Component>
                 <Component class="javax.swing.JButton" name="splitObjectsButton">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Split Objects (S)"/>
+                    <Property name="text" type="java.lang.String" value="Split (S)"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="splitObjectsButtonActionPerformed"/>
@@ -715,6 +723,14 @@
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="resetLinksButtonActionPerformed"/>
+                  </Events>
+                </Component>
+                <Component class="javax.swing.JButton" name="testSplitButton">
+                  <Properties>
+                    <Property name="text" type="java.lang.String" value="Test"/>
+                  </Properties>
+                  <Events>
+                    <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="testSplitButtonActionPerformed"/>
                   </Events>
                 </Component>
               </SubComponents>

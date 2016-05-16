@@ -128,7 +128,7 @@ public class DeleteFromDAOTest {
         Processor.performMeasurements(masterDAO);
         ObjectDAO dao = masterDAO.getDao("field1");
         ObjectDAO dao11 = masterDAO.getDao("field11");
-        StructureObject root = dao.getRoot(0);
+        StructureObject root = dao.getRoots().get(0);
         StructureObject mc = dao.getChildren(root, 0).get(0);
         assertEquals(prefix+"number of stored objects ", 15, countObjects(masterDAO, StructureObject.class));
         assertEquals(prefix+"number of measurements ", 5, countObjects(masterDAO, Measurements.class));
@@ -142,7 +142,7 @@ public class DeleteFromDAOTest {
         assertEquals(prefix+"number of objects after delete root", 12, countObjects(masterDAO, StructureObject.class));
         assertEquals(prefix+"number of measurements after delete root", 4, countObjects(masterDAO, Measurements.class));
         logger.debug("before delete children2");
-        dao11.deleteChildren(dao11.getRoot(0), 0);
+        dao11.deleteChildren(dao11.getRoots().get(0), 0);
         assertEquals(prefix+"number of objects after delete root's children", 10, countObjects(masterDAO, StructureObject.class));
         assertEquals(prefix+"number of measurements after delete root's children", 3, countObjects(masterDAO, Measurements.class));
         logger.debug("before delete all 1");
@@ -186,7 +186,7 @@ public class DeleteFromDAOTest {
         dao.store(root, true);
         dao.store(children, true);
         dao.clearCache();
-        root = dao.getRoot(0);
+        root = dao.getRoots().get(0);
         children = root.getChildren(0);
         assertEquals("retrieve children", 5, children.size());
         List<StructureObject> toDelete = children.subList(1, 3);
@@ -194,7 +194,7 @@ public class DeleteFromDAOTest {
         assertEquals("delete list, from parent", 3, root.getChildren(0).size());
         assertEquals("delete list, relabel", true, root.getChildren(0).get(1).getIdx()==1);
         dao.clearCache();
-        root = dao.getRoot(0);
+        root = dao.getRoots().get(0);
         assertEquals("delete list, relabel stored", true, root.getChildren(0).get(1).getIdx()==1);
         
         // test with single object
@@ -202,7 +202,7 @@ public class DeleteFromDAOTest {
         assertEquals("delete single, from parent", 2, root.getChildren(0).size());
         assertEquals("delete single, relabel", true, root.getChildren(0).get(0).getIdx()==0);
         dao.clearCache();
-        root = dao.getRoot(0);
+        root = dao.getRoots().get(0);
         assertEquals("delete single, relabel stored", true, root.getChildren(0).get(0).getIdx()==0);
     }
     

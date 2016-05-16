@@ -125,7 +125,7 @@ public class DisplayFilms {
             MicroscopyField f = db.getExperiment().getMicroscopyField(fieldNumber);
             ObjectDAO dao = db.getDao(f.getName());
             for (int t = tStart; t<tEnd; ++t) {
-                StructureObject root = dao.getRoot(t);
+                StructureObject root = dao.getRoots().get(t);
                 if (root==null) logger.debug("root null for field: {} tp: {}", f.getName(), t);
                 int countC = 0;
                 for (int c : structureIdx) resFTC[count][t-tStart][countC++] = root.getRawImage(c);

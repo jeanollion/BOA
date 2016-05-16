@@ -25,6 +25,7 @@ import static boa.gui.imageInteraction.ImageWindowManager.displayTrackMode;
 import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
+import dataStructure.objects.Voxel;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.WindowManager;
@@ -142,8 +143,9 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                             Iterator<Pair<StructureObject, BoundingBox>> it = selectedObjects.iterator();
                             while (it.hasNext()) {
                                 Pair<StructureObject, BoundingBox> p= it.next();
-                                double[] center = p.key.getObject().getCenter(false);
-                                if (!r.contains((int)(center[0]+0.5)-p.key.getObject().getBounds().getxMin()+p.value.getxMin(), (int)(center[1]+0.5)-p.key.getObject().getBounds().getyMin()+p.value.getyMin())) it.remove();
+                                Polygon poly = r.getPolygon();
+                                Rectangle oRect = new Rectangle(p.value.getxMin(), p.value.getyMin(), p.key.getBounds().getSizeX(), p.key.getBounds().getSizeY());
+                                if (!poly.intersects(oRect)) it.remove();                                
                             }
                             //logger.debug("after remove, contained: {}", selectedObjects.size());
                         }

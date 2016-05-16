@@ -80,7 +80,7 @@ public class RootTrackNode implements TrackNodeInterface {
                 logger.warn("No track head or fieldName defined for RootTrackNode instance");
                 return null;
             }
-            parentTrackHead = generator.getObjectDAO(fieldName).getRoot(0);
+            parentTrackHead = generator.getObjectDAO(fieldName).getRoots().get(0);
             if (parentTrackHead!=null) logger.trace("parentTrackHead id:"+parentTrackHead.getId());
         }
         return parentTrackHead;

@@ -24,8 +24,10 @@ import configuration.parameters.Parameter;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.Voxel;
+import image.BoundingBox;
 import image.Image;
 import image.ImageByte;
+import image.ImageInteger;
 import image.ImageLabeller;
 import image.ImageMask;
 import image.ImageOperations;
@@ -44,17 +46,22 @@ import processing.WatershedTransform;
  * @author jollion
  */
 public class WatershedObjectSplitter implements ObjectSplitter {
-    static final boolean debug = false;
     //BoundedNumberParameter numberOfObjects = new BoundedNumberParameter("Maximum growth rate", 2, 1.5, 1, 2);
     NumberParameter smoothScale = new BoundedNumberParameter("Smooth Scale (0=no smooth)", 1, 2, 0, null);
+    
+    
+    boolean splitVerbose;
+    public void setSplitVerboseMode(boolean verbose) {
+        this.splitVerbose=verbose;
+    }
     
     public ObjectPopulation splitObject(Image input, Object3D object) {
         double sScale = smoothScale.getValue().doubleValue();
         if (sScale>0) input = ImageFeatures.gaussianSmooth(input, sScale, sScale * input.getScaleXY() / input.getScaleZ(), false);
-        return splitInTwo(input, object.getMask(), true);
+        return splitInTwo(input, object.getMask(), true, splitVerbose);
     }
     
-    public static ObjectPopulation splitInTwo(Image watershedMap, ImageMask mask, final boolean decreasingPropagation) {
+    public static ObjectPopulation splitInTwo(Image watershedMap, ImageMask mask, final boolean decreasingPropagation, boolean verbose) {
         
         ImageByte localMax = Filters.localExtrema(watershedMap, null, decreasingPropagation, Filters.getNeighborhood(1, 1, watershedMap)).setName("Split seeds");
         ImageOperations.and(localMax, mask, localMax); // limit @ seeds within mask
@@ -79,7 +86,7 @@ public class WatershedObjectSplitter implements ObjectSplitter {
                 else seeds = seeds.subList(0, seeds.size()/2);
             }
             ObjectPopulation pop =  WatershedTransform.watershed(watershedMap, mask, seeds, decreasingPropagation, null, new WatershedTransform.NumberFusionCriterion(2));
-            if (debug) {
+            if (verbose) {
                 new IJImageDisplayer().showImage(localMax);
                 new IJImageDisplayer().showImage(watershedMap.setName("watershedMap"));
                 new IJImageDisplayer().showImage(pop.getLabelMap());
@@ -88,7 +95,7 @@ public class WatershedObjectSplitter implements ObjectSplitter {
         }
     }
     
-    public static ObjectPopulation splitInTwo(Image watershedMap, ImageMask mask, final boolean decreasingPropagation, int minSize) {
+    public static ObjectPopulation splitInTwo(Image watershedMap, ImageMask mask, final boolean decreasingPropagation, int minSize, boolean verbose) {
         
         ImageByte localMax = Filters.localExtrema(watershedMap, null, decreasingPropagation, Filters.getNeighborhood(1, 1, watershedMap)).setName("Split seeds");
         ImageOperations.and(localMax, mask, localMax); // limit @ seeds within mask
@@ -102,16 +109,28 @@ public class WatershedObjectSplitter implements ObjectSplitter {
             ObjectPopulation pop =  WatershedTransform.watershed(watershedMap, mask, seeds, decreasingPropagation, null, new WatershedTransform.NumberFusionCriterion(2));
             List<Object3D> remove = new ArrayList<Object3D>();
             pop.filter(new ObjectPopulation.Size().setMin(minSize), remove);
+            if (verbose) logger.debug("seeds: {}, objects: {}, removed: {}", seeds.size(), pop.getObjects().size()+remove.size(), remove.size());
             while (!remove.isEmpty() && seeds.size()>=2) {
                 remove.clear();
+                boolean oneSeedRemoved = false;
                 Iterator<Object3D> it = seeds.iterator();
-                while (it.hasNext()) if (hasVoxelsOutsideMask(it.next(), pop.getLabelMap())) it.remove();
+                while (it.hasNext()) {
+                    if (hasVoxelsOutsideMask(it.next(), pop.getLabelMap())) {
+                        it.remove();
+                        oneSeedRemoved=true;
+                    }
+                }
+                if (!oneSeedRemoved) {
+                    logger.error("Split spot error: no seed removed");
+                    break;
+                }
                 pop =  WatershedTransform.watershed(watershedMap, mask, seeds, decreasingPropagation, null, new WatershedTransform.NumberFusionCriterion(2));
                 pop.filter(new ObjectPopulation.Size().setMin(minSize), remove);
-                ... todo : debug..
+                if (verbose) logger.debug("seeds: {}, objects: {}, removed: {}", seeds.size(), pop.getObjects().size()+remove.size(), remove.size());
             }
+            if (pop.getObjects().size()>2) pop.mergeWithConnected(pop.getObjects().subList(2, pop.getObjects().size())); // split only in 2
             
-            if (debug) {
+            if (verbose) {
                 new IJImageDisplayer().showImage(localMax);
                 new IJImageDisplayer().showImage(watershedMap.setName("watershedMap"));
                 new IJImageDisplayer().showImage(pop.getLabelMap());
@@ -121,7 +140,9 @@ public class WatershedObjectSplitter implements ObjectSplitter {
     }
 
     private static boolean hasVoxelsOutsideMask(Object3D o, ImageMask mask) {
-        for (Voxel v : o.getVoxels()) if (!mask.insideMask(v.x, v.y, v.z)) return true;
+        for (Voxel v : o.getVoxels()) {
+            if (!mask.insideMask(v.x, v.y, v.z)) return true;
+        }
         return false;
     }
     

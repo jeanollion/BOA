@@ -247,15 +247,23 @@ public class ObjectPopulation {
         }
     }
     
-    public void translate(int offsetX, int offsetY, int offsetZ) {
+    public void translate(int offsetX, int offsetY, int offsetZ , boolean absoluteLandmark) {
         for (Object3D o : objects) {
             o.translate(offsetX, offsetY, offsetZ);
         }
+        this.absoluteLandmark=absoluteLandmark;
     }
     
-    public void translate(BoundingBox bounds) {
+    public void translate(BoundingBox bounds, boolean absoluteLandmark) {
         for (Object3D o : objects) {
             o.translate(bounds);
+        }
+        this.absoluteLandmark=absoluteLandmark;
+    }
+    
+    public void setVoxelIntensities(Image intensityMap) {
+        for (Object3D o : getObjects()) {
+            for (Voxel v : o.getVoxels()) v.value=intensityMap.getPixel(v.x, v.y, v.z);
         }
     }
 
@@ -351,7 +359,7 @@ public class ObjectPopulation {
             if (!filter.keepObject(o)) {
                 it.remove();
                 if (removedObjects != null) removedObjects.add(o);
-                if (this.hasImage()) draw(o, 0);
+                if (hasImage()) draw(o, 0);
             }
         }
         relabel(false);

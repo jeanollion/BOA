@@ -53,7 +53,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
     final MorphiumMasterDAO masterDAO;
     MeasurementsDAO measurementsDAO;
     ConcurrentHashMap<ObjectId, StructureObject> idCache;
-    //StructureObject[] rootArray;
+    List<StructureObject> roots;
     public final String fieldName, collectionName;
     public MorphiumObjectDAO(MorphiumMasterDAO masterDAO, String fieldName) {
         this.masterDAO=masterDAO;
@@ -119,6 +119,8 @@ public class MorphiumObjectDAO implements ObjectDAO {
     
     public void clearCache() {
         this.idCache.clear();
+        roots.clear();
+        roots=null;
     }
     
     protected ArrayList<StructureObject> checkAgainstCache(List<StructureObject> list) {
@@ -468,7 +470,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
         return q.get().id;
     }*/
     
-    public StructureObject getRoot(int timePoint) {
+    @Override public StructureObject getRoot(int timePoint) {
         /*if (timePoint%100==0) {
             long t0 = System.currentTimeMillis();
             for (int i = 0; i<100; ++i) getRootQuery(timePoint).get();
@@ -503,12 +505,19 @@ public class MorphiumObjectDAO implements ObjectDAO {
         return checkAgainstCache(getRootQuery(timePoint).get());
     }
     
-    public ArrayList<StructureObject> getRoots() {
-        ArrayList<StructureObject> res = this.checkAgainstCache(getRootQuery().asList());
-        setTrackLinks(res);
-        return res;
+    @Override public List<StructureObject> getRoots() {
+        if (roots==null) {
+            synchronized(this) {
+                if (roots==null) {
+                    ArrayList<StructureObject> res = checkAgainstCache(getRootQuery().asList());
+                    setTrackLinks(res);
+                    if (res.size()==masterDAO.getExperiment().getMicroscopyField(fieldName).getTimePointNumber(false)) roots = res;
+                    else logger.error("Position: {} wrong root number: {} instead of {}", fieldName, res.size(), masterDAO.getExperiment().getMicroscopyField(fieldName).getTimePointNumber(false));
+                }
+            }
+        }
+        return roots;
     }
-    
     
     // measurement-specific methds
     public void upsertMeasurements(List<StructureObject> objects) {

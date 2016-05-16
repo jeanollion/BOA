@@ -17,23 +17,23 @@
  */
 package utils.clustering;
 
+import dataStructure.objects.Object3D;
+import dataStructure.objects.Voxel;
 import java.util.Comparator;
 
 /**
  *
  * @author jollion
  */
-public interface Interface<E> extends Comparable<Interface<E>> {
-    public E getE1();
-    public E getE2();
-    public boolean isInterfaceOf(E e1, E e2);
-    public boolean isInterfaceOf(E e1);
-    public E getOther(E e);
-    
-    public void swichElements(E newE, E oldE, Comparator<? super E> elementComparator);
-    public void performFusion();
-    public boolean checkFusion(double[] outputValues);
-    public void fusionInterface(Interface<E> otherInterface, Comparator<? super E> elementComparator);
-    public void updateSortValue();
-    
+public abstract class InterfaceObject3DImpl extends InterfaceImpl<Object3D> implements InterfaceObject3D {
+
+    public InterfaceObject3DImpl(Object3D e1, Object3D e2) {
+        super(e1, e2, Object3DCluster.object3DComparator);
+    }
+
+    @Override
+    public void performFusion() {
+        e1.addVoxels(e2.getVoxels());
+    }
+
 }

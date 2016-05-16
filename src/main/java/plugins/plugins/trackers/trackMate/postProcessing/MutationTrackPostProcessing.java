@@ -45,7 +45,7 @@ import utils.HashMapGetCreate;
 import utils.HashMapGetCreate.Factory;
 import utils.Pair;
 import utils.clustering.ClusterCollection;
-import utils.clustering.Interface;
+import utils.clustering.InterfaceImpl;
 
 /**
  *
@@ -216,12 +216,12 @@ public class MutationTrackPostProcessing {
         SpotWithinCompartment.displayPoles=false;
     }
     
-    public void groupTracks() {
+    /*public void groupTracks() {
         List<List<StructureObject>> trackHeadGroups = new ArrayList<List<StructureObject>>();
-        /*
-        1) compute interactions track to track
-        2) group interacting tracks
-        */
+        
+        //1) compute interactions track to track
+        //2) group interacting tracks
+        
         ClusterCollection<StructureObject, TrackExchangeTimePoints> clusterCollection = new ClusterCollection<StructureObject, TrackExchangeTimePoints>(trackHeadTrackMap.keySet(), trackHeadTrackMap.comparator(), null);
         Iterator<Entry<StructureObject, List<StructureObject>>> it1 = trackHeadTrackMap.entrySet().iterator();
         while(it1.hasNext()) {
@@ -236,9 +236,9 @@ public class MutationTrackPostProcessing {
                 if (t!=null) clusterCollection.addInteraction(e1.getKey(), e2.getKey(), t);
             }
         }
-        List<Set<Interface<StructureObject, TrackExchangeTimePoints>>> clusters = clusterCollection.getClusters();
+        List<Set<InterfaceImpl<StructureObject, TrackExchangeTimePoints>>> clusters = clusterCollection.getClusters();
         
-    }
+    }*/
     
     private class TrackExchangeTimePoints {
         List<StructureObject> track1;

@@ -52,5 +52,9 @@ public class DummySplitter implements ObjectSplitter {
     public boolean does3D() {
         return true;
     }
+
+    public void setSplitVerboseMode(boolean verbose) {
+        
+    }
     
 }
