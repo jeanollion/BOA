@@ -28,10 +28,12 @@ import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.Morphium;
+import ij.process.AutoThresholder;
 import image.Image;
 import image.ImageMask;
 import plugins.plugins.segmenters.BacteriaTrans;
 import plugins.plugins.segmenters.BacteriaFluo;
+import plugins.plugins.thresholders.IJAutoThresholder;
 import utils.MorphiumUtils;
 
 /**
@@ -41,10 +43,10 @@ import utils.MorphiumUtils;
 public class TestProcessBacteriaPhase {
     public static void main(String[] args) {
         //int time =31;
-        int time =31;
+        int time =0;
         int microChannel =0;
-        int field = 0;
-        String dbName = "testBF";
+        int field = 1;
+        String dbName = "boa_testBF";
         testSegBacteriesFromXP(dbName, field, time, microChannel);
     }
     
@@ -55,17 +57,18 @@ public class TestProcessBacteriaPhase {
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(microChannel);
         Image input = mc.getRawImage(1);
-        //input.invert();
-        ImageMask parentMask = mc.getMask();
         BacteriaTrans.debug=true;
-        ObjectPopulation pop = BacteriaTrans.run(input, parentMask, 
-                100, // minSize
+        ObjectPopulation pop = BacteriaTrans.run(input, mc, 
+                new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu),
+                50, // minSize propagation
+                150, // minSize for filtering
                 10, // X contact limit
-                3, // smooth
+                2, // smooth
                 10, // dog
-                 2, // thld empty channel
-                 4, // open
-                 0.8, // relativeThickness threshold
+                2, // thld empty channel
+                4, // open
+                0.8, // relativeThickness threshold
+                1, // relativeThickness max distance
                 null);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);

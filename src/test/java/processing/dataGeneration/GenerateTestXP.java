@@ -72,6 +72,7 @@ public class GenerateTestXP {
         boolean fluo = true;
         */
         int trimStart=0, trimEnd=0;
+        double scaleXY = Double.NaN;
         //////// FLUO
         // Ordi LJP
         /*String dbName = "fluo151130_OutputNewScaling";
@@ -150,7 +151,7 @@ public class GenerateTestXP {
         String outputDir = "/data/Images/Lydia/Output";
         boolean flip = true;
         boolean fluo = false;
-        
+        scaleXY = 0.0646;
         /*
         ////////////////////////////
         // Ordi Portable
@@ -172,7 +173,7 @@ public class GenerateTestXP {
         
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
         mDAO.reset();
-        Experiment xp = fluo ? generateXPFluo(outputDir, true, flip, trimStart, trimEnd) : generateXPTrans(outputDir, true, flip, trimStart, trimEnd); 
+        Experiment xp = fluo ? generateXPFluo(outputDir, true, flip, trimStart, trimEnd, scaleXY) : generateXPTrans(outputDir, true, flip, trimStart, trimEnd, scaleXY); 
         mDAO.setExperiment(xp);
         
         Processor.importFiles(xp, true, inputDir);
@@ -185,7 +186,7 @@ public class GenerateTestXP {
     }
     
     
-    public static Experiment generateXPFluo(String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd) {
+    public static Experiment generateXPFluo(String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY) {
         
         Experiment xp = new Experiment("testXP");
         xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
@@ -210,6 +211,7 @@ public class GenerateTestXP {
         xp.addMeasurement(new BacteriaMeasurementsWoleMC(1, 2));
         if (setUpPreProcessing) {// preProcessing 
             //xp.getPreProcessingTemplate().addTransformation(0, null, new SuppressCentralHorizontalLine(6)).setActivated(false);
+            if (!Double.isNaN(scaleXY)) xp.getPreProcessingTemplate().setCustomScale(scaleXY, 1);
             xp.getPreProcessingTemplate().setTrimFrames(trimFramesStart, trimFramesEnd);
             xp.getPreProcessingTemplate().addTransformation(0, null, new SaturateHistogram(350, 450));
             xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1, 0)).setActivated(true); // to remove salt and pepper noise
@@ -224,7 +226,7 @@ public class GenerateTestXP {
         return xp;
     }
     
-    public static Experiment generateXPTrans(String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd) {
+    public static Experiment generateXPTrans(String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY) {
         
         Experiment xp = new Experiment("testXP");
         xp.setImportImageMethod(Experiment.ImportImageMethod.SINGLE_FILE);
@@ -245,6 +247,7 @@ public class GenerateTestXP {
         //xp.addMeasurement(new BacteriaMeasurements(1, 2));
         xp.addMeasurement(new BacteriaMeasurementsWoleMC(1, 2));
         if (setUpPreProcessing) {// preProcessing 
+            if (!Double.isNaN(scaleXY)) xp.getPreProcessingTemplate().setCustomScale(scaleXY, 1);
             xp.getPreProcessingTemplate().setTrimFrames(trimFramesStart, trimFramesEnd);
             xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT, 0));
             xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);

@@ -289,7 +289,7 @@ public class ImageOperations {
         return output;
     }
     
-    public static void trim(Image image, float value, boolean zeroUnderValue, boolean strict) {
+    public static void trimValues(Image image, float value, boolean zeroUnderValue, boolean strict) {
         if (strict) {
             if (zeroUnderValue) {
                 for (int z = 0; z<image.sizeZ; ++z) {

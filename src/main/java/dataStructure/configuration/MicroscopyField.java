@@ -143,14 +143,14 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     }
     
     public float getScaleXY(){
-        if (preProcessingChain.useImageScale()) {
+        if (!preProcessingChain.useCustomScale()) {
             if (images!=null && images.getScaleXY()!=0) return images.getScaleXY();
             else return 1;
         } else return (float)preProcessingChain.getScaleXY();
         
     }
     public float getScaleZ(){
-        if (preProcessingChain.useImageScale()) {
+        if (!preProcessingChain.useCustomScale()) {
             if (images!=null && images.getScaleZ()!=0) return images.getScaleZ();
             else return 1;
         } else return (float)preProcessingChain.getScaleZ();

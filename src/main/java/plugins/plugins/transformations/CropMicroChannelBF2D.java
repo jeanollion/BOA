@@ -72,6 +72,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
     
     public static BoundingBox getBoundingBox(Image image, int cropMargin, int margin, int channelHeight, int channelWidth, double channelWidthError, int xStart, int xStop, int yStart, int yStop) {
         Result r = segmentMicroChannels(image, true, margin, channelWidth, channelWidthError);
+        if (r==null || r.xMin.length==0) return null;
         int yMin = Math.max(yStart, r.yMin);
         int yMax = Math.min(r.yMin+channelHeight, r.yMax);
         yStop = Math.min(yStop, yMax);

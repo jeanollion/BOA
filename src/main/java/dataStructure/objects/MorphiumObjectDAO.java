@@ -119,8 +119,10 @@ public class MorphiumObjectDAO implements ObjectDAO {
     
     public void clearCache() {
         this.idCache.clear();
-        roots.clear();
-        roots=null;
+        if (roots!=null) {
+            roots.clear();
+            roots=null;
+        }
     }
     
     protected ArrayList<StructureObject> checkAgainstCache(List<StructureObject> list) {

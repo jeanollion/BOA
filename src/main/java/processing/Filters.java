@@ -157,6 +157,7 @@ public class Filters {
             }
         }
         res.resetOffset().addOffset(image);
+        res.setCalibration(image);
         return res;
     }
     

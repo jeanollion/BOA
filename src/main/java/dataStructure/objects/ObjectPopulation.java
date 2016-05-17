@@ -266,6 +266,15 @@ public class ObjectPopulation {
             for (Voxel v : o.getVoxels()) v.value=intensityMap.getPixel(v.x, v.y, v.z);
         }
     }
+    
+    public List<Object3D> getExtremaSeedList(final boolean maxOfObjectVoxels) {
+        int label=1;
+        List<Object3D> seeds = new ArrayList<Object3D>(getObjects().size());
+        for (final Object3D o : getObjects()) {
+            seeds.add(new Object3D(o.getExtrema(maxOfObjectVoxels), label++, o.getScaleXY(), o.getScaleZ()));
+        }
+        return seeds;
+    }
 
     /*public void fitToEdges(Image edgeMap, ImageMask mask) {
      // 1st pass: increase foreground

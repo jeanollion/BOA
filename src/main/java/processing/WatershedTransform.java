@@ -54,13 +54,26 @@ public class WatershedTransform {
     public final boolean decreasingPropagation;
     PropagationCriterion propagationCriterion;
     FusionCriterion fusionCriterion;
-    
+    public static List<Object3D> duplicateSeeds(List<Object3D> seeds) {
+        List<Object3D> res = new ArrayList<Object3D>(seeds.size());
+        for (Object3D o : seeds) res.add(new Object3D(new ArrayList<Voxel>(o.getVoxels()), o.getLabel(), o.getScaleXY(), o.getScaleZ()));
+        return res;
+    }
     public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
         ImageByte seeds = Filters.localExtrema(watershedMap, null, decreasingPropagation, Filters.getNeighborhood(1.5, 1, watershedMap));
         if (mask!=null) ImageOperations.and(seeds, mask, seeds);
         return watershed(watershedMap, mask, ImageLabeller.labelImageList(seeds), decreasingPropagation, propagationCriterion,fusionCriterion);
     }
-    
+    /**
+     * 
+     * @param watershedMap
+     * @param mask
+     * @param regionalExtrema CONTAINED OBJECT3D WILL BE MODIFIED
+     * @param decreasingPropagation
+     * @param propagationCriterion
+     * @param fusionCriterion
+     * @return 
+     */
     public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, List<Object3D> regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
         WatershedTransform wt = new WatershedTransform(watershedMap, mask, regionalExtrema, decreasingPropagation, propagationCriterion, fusionCriterion);
         wt.run();
@@ -73,7 +86,15 @@ public class WatershedTransform {
     public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
         return watershed(watershedMap, mask, ImageLabeller.labelImageList(seeds), decreasingPropagation, propagationCriterion, fusionCriterion);
     }
-    
+    /**
+     * 
+     * @param watershedMap
+     * @param mask
+     * @param regionalExtrema CONTAINED OBJECT3D WILL BE MODIFIED
+     * @param decreasingPropagation
+     * @param propagationCriterion
+     * @param fusionCriterion 
+     */
     public WatershedTransform(Image watershedMap, ImageMask mask, List<Object3D> regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
         if (mask==null) mask=new BlankMask("", watershedMap);
         this.decreasingPropagation = decreasingPropagation;
@@ -83,7 +104,7 @@ public class WatershedTransform {
         spots = new Spot[regionalExtrema.size()+1];
         spotNumber=regionalExtrema.size();
         segmentedMap = ImageInteger.createEmptyLabelImage("segmentationMap", spots.length, watershedMap);
-        for (int i = 0; i<regionalExtrema.size(); ++i) spots[i+1] = new Spot(i+1, new ArrayList<Voxel>(regionalExtrema.get(i).getVoxels())); // do not modify seed objects
+        for (int i = 0; i<regionalExtrema.size(); ++i) spots[i+1] = new Spot(i+1, regionalExtrema.get(i).getVoxels()); // do modify seed objects
         logger.trace("watershed transform: number of seeds: {} segmented map type: {}", regionalExtrema.size(), segmentedMap.getClass().getSimpleName());
         is3D=watershedMap.getSizeZ()>1;   
         if (propagationCriterion==null) setPropagationCriterion(new DefaultPropagationCriterion());
@@ -151,7 +172,7 @@ public class WatershedTransform {
     }
     
     public class Spot {
-        public ArrayList<Voxel> voxels;
+        public List<Voxel> voxels;
         int label;
         //Voxel seed;
         /*public Spot(int label, Voxel seed) {
@@ -163,7 +184,7 @@ public class WatershedTransform {
             this.seed=seed;
             segmentedMap.setPixel(seed.x, seed.y, seed.getZ(), label);
         }*/
-        public Spot(int label, ArrayList<Voxel> voxels) {
+        public Spot(int label, List<Voxel> voxels) {
             this.label=label;
             this.voxels=voxels;
             for (Voxel v :voxels) {

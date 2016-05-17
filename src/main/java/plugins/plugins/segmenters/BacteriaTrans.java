@@ -23,6 +23,7 @@ import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
+import configuration.parameters.PluginParameter;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
@@ -49,6 +50,7 @@ import plugins.ManualSegmenter;
 import plugins.ObjectSplitter;
 import plugins.Segmenter;
 import plugins.SegmenterSplitAndMerge;
+import plugins.Thresholder;
 import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.segmenters.BacteriaTrans.ProcessingVariables.InterfaceBT;
@@ -77,13 +79,16 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     
     // configuration-related attributes
     NumberParameter openRadius = new BoundedNumberParameter("Open Radius", 1, 4, 0, null);
-    NumberParameter minSize = new BoundedNumberParameter("Minimum size", 0, 150, 5, null);
+    NumberParameter minSize = new BoundedNumberParameter("Minimum Object size", 0, 150, 5, null);
+    NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 50, 5, null);
     NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 10, 0, null);
-    NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 3, 1, 5);
+    //NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 1, 6);
     NumberParameter dogScale = new BoundedNumberParameter("DoG scale", 0, 10, 5, null);
     NumberParameter thresholdForEmptyChannel = new BoundedNumberParameter("Threshold for empty channel", 1, 2, 0, null);
-    NumberParameter relativeThicknessThreshold = new BoundedNumberParameter("Relative Thickness Threshold (lower: split more)", 2, 0.7, 0, 1);
-    Parameter[] parameters = new Parameter[]{minSize, contactLimit, smoothScale, dogScale, thresholdForEmptyChannel, openRadius, relativeThicknessThreshold};
+    NumberParameter relativeThicknessThreshold = new BoundedNumberParameter("Relative Thickness Threshold (lower: split more)", 2, 0.8, 0, 1);
+    PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
+    NumberParameter relativeThicknessMaxDistance = new BoundedNumberParameter("Max Distance for Relative Thickness normalization factor (calibrated)", 2, 1, 0, null);
+    Parameter[] parameters = new Parameter[]{dogScale, threshold, thresholdForEmptyChannel, openRadius, minSizePropagation, relativeThicknessThreshold, relativeThicknessMaxDistance, minSize, contactLimit};
     
     //segmentation-related attributes (kept for split and merge methods)
     ProcessingVariables pv;
@@ -96,10 +101,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         this.minSize.setValue(minSize);
         return this;
     }
-    public BacteriaTrans setSmoothScale(double smoothScale) {
+    /*public BacteriaTrans setSmoothScale(double smoothScale) {
         this.smoothScale.setValue(smoothScale);
         return this;
-    }
+    }*/
     public BacteriaTrans setDogScale(int dogScale) {
         this.dogScale.setValue(dogScale);
         return this;
@@ -111,7 +116,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     }
     
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        return run(input, parent.getMask(), minSize.getValue().intValue(), contactLimit.getValue().intValue(), smoothScale.getValue().doubleValue(), dogScale.getValue().doubleValue(), thresholdForEmptyChannel.getValue().doubleValue(), openRadius.getValue().doubleValue(), relativeThicknessThreshold.getValue().doubleValue(), this);
+        return run(input, parent, this.threshold.instanciatePlugin(), minSizePropagation.getValue().intValue(), minSize.getValue().intValue(), contactLimit.getValue().intValue(), 2, dogScale.getValue().doubleValue(), thresholdForEmptyChannel.getValue().doubleValue(), openRadius.getValue().doubleValue(), relativeThicknessThreshold.getValue().doubleValue(),relativeThicknessMaxDistance.getValue().doubleValue(), this);
     }
     
     @Override
@@ -119,57 +124,36 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         return "Bacteria Fluo: " + Utils.toStringArray(parameters);
     }   
     
-    public static ObjectPopulation run(Image input, ImageMask mask, int minSize, int contactLimit, double smoothScale, double dogScale, double thresholdForEmptyChannel, double openRadius, final double relativeThicknessThreshold, BacteriaTrans instance) {
+    public static ObjectPopulation run(Image input, StructureObjectProcessing parent, Thresholder thresholder, int minSizePropagation, int minSize, int contactLimit, double smoothScale, double dogScale, double thresholdForEmptyChannel, double openRadius, final double relativeThicknessThreshold, double relativeThicknessMaxDistance, BacteriaTrans instance) {
         ImageDisplayer disp=debug?new IJImageDisplayer():null;
         //double hessianThresholdFacto = 1;
-        ProcessingVariables pv = new ProcessingVariables(input, mask, relativeThicknessThreshold, dogScale, openRadius, minSize);
-        Image dog = pv.getDOG();
-        //double threshold = IJAutoThresholder.runThresholder(dog, mask, null, AutoThresholder.Method.Shanbhag, 0); // OTSU
-        double threshold = 100;
-        if (debug) logger.debug("threshold: {}", threshold);
-        
+        ImageMask mask = parent.getMask();
+        ProcessingVariables pv = new ProcessingVariables(input, mask, relativeThicknessThreshold, relativeThicknessMaxDistance, dogScale, openRadius, smoothScale);
+        pv.threshold = thresholder.runThresholder(pv.getDOG(), parent);
+        if (debug) logger.debug("threshold: {}", pv.threshold);
         // criterion for empty channel: 
-        double[] musigmaOver = getMeanAndSigma(dog, mask, threshold, true);
-        double[] musigmaUnder = getMeanAndSigma(dog, mask, threshold, false);
+        double[] musigmaOver = getMeanAndSigma(pv.getDOG(), mask, pv.threshold, true);
+        double[] musigmaUnder = getMeanAndSigma(pv.getDOG(), mask, pv.threshold, false);
         if (musigmaOver[2]==0 || musigmaUnder[2]==0) return new ObjectPopulation(input);
         else {            
             if (musigmaOver[0] - musigmaUnder[0]<thresholdForEmptyChannel) return new ObjectPopulation(input);
         }
-        pv.threshold=threshold;
-        ImageInteger segMask = pv.getSegmentationMask();
-        Image edm = pv.getEDM();
-
         
-        /*
-        segmentation based on thickness threshold
-        1) analyse Y profil of max|X values of distance map -> search for means under threshold
-        2) watershed on distance map with one seed at each segment (max)
-        */
-        
-        
-        /*WatershedTransform.FusionCriterion relativeThickness = new WatershedTransform.FusionCriterion() {
-            WatershedTransform instance;
-            public void setUp(WatershedTransform instance) {this.instance=instance;}
-            public boolean checkFusionCriteria(WatershedTransform.Spot s1, WatershedTransform.Spot s2, Voxel currentVoxel) {
-                double max1 = Double.NEGATIVE_INFINITY;
-                double max2 = Double.NEGATIVE_INFINITY;
-                for (Voxel v : s1.voxels) if (v.value>max1) max1 = v.value;
-                for (Voxel v : s2.voxels) if (v.value>max2) max2 = v.value;
-                double norm = Math.min(max1, max2);
-                return currentVoxel.value/norm>relativeThicknessThreshold;
-            }
-        };*/
-        ObjectPopulation res = WatershedTransform.watershed(edm, segMask, true, null, new WatershedTransform.SizeFusionCriterion(minSize)); //new WatershedTransform.ThresholdFusionOnWatershedMap(thicknessThreshold) // relativeThickness
+        ObjectPopulation res = WatershedTransform.watershed(pv.getDOG(), pv.getSegmentationMask(), false, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation));
         if (debug) disp.showImage(res.getLabelMap().duplicate("watershed EDM"));
+        res.setVoxelIntensities(pv.getEDM()); // for merging & shape-re-split
+        res = WatershedTransform.watershed(pv.getEDM(), pv.getSegmentationMask(), res.getExtremaSeedList(true), true, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation));
+        if (debug) disp.showImage(res.getLabelMap().duplicate("watershed EDM - shape re-split"));
         
-        // merge using the same criterion : max(EDM@frontière) / min(max(EDM@S1), max(EDM@S2)) > criterion
+        // merge using the criterion : max(EDM@frontière) / min(max(EDM@S1), max(EDM@S2)) > criterion
         Object3DCluster.verbose=debug;
-        res.setVoxelIntensities(pv.getEDM());
+        res.setVoxelIntensities(pv.getEDM());// for merging // useless if watershed transform on EDM has been called just before
         Object3DCluster.mergeSort(res,  pv.getFactory());
-        
+        res.filter(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
+        res.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
         if (debug) {
-            disp.showImage(dog.setName("DOG"));
-            disp.showImage(edm);
+            disp.showImage(pv.getDOG().setName("DOG"));
+            disp.showImage(pv.getEDM());
             disp.showImage(res.getLabelMap().setName("seg map after fusion"));
             //disp.showImage(cluster.drawInterfacesSortValue(sm));
             //disp.showImage(cluster.drawInterfaces());
@@ -186,8 +170,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         /*
         add thickness information:  * border size / mean thickness of the 2 objects -> transformation of the Hessian map
         */
-        
-        if (instance!=null) instance.pv=pv;
+        if (instance!=null) instance.pv=pv; // for further use : SegmenterSplitAndMerge
         return res;
     }
     
@@ -244,7 +227,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     @Override public double split(Object3D o, List<Object3D> result) {
         if (pv==null) throw new Error("Segment method have to be called before split method in order to initialize images");
         o.draw(pv.getSplitMask(), 1);
-        ObjectPopulation pop = WatershedObjectSplitter.splitInTwo(pv.getEDM(), pv.splitMask, true, minSize.getValue().intValue(), false);
+        ObjectPopulation pop = WatershedObjectSplitter.splitInTwo(pv.getSmoothed(), pv.splitMask, false, minSize.getValue().intValue(), false); // TODO minSize Propagation
         o.draw(pv.splitMask, 0);
         if (pop==null || pop.getObjects().isEmpty() || pop.getObjects().size()==1) return Double.NaN;
         ArrayList<Object3D> remove = new ArrayList<Object3D>(pop.getObjects().size());
@@ -258,10 +241,9 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             result.add(o1);
             result.add(o2);
             InterfaceBT inter = getInterface(o1, o2);
-            double[] value = new double[1];
-            inter.checkFusion(value);
-            if (Double.isNaN(value[0])) return Double.NaN;
-            return value[0]-pv.relativeThicknessThreshold; // split cost : if > threshold difficult to split, if not easy to split
+            inter.checkFusion();
+            if (Double.isNaN(inter.value)) return Double.NaN;
+            return inter.value-pv.relativeThicknessThreshold; // split cost : if > threshold difficult to split, if not easy to split
         }
     }
 
@@ -271,20 +253,19 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         Iterator<Object3D> it = objects.iterator();
         Object3D ref  = objects.get(0);
         double maxCost = Double.NEGATIVE_INFINITY;
-        double[] value = new double[1];
         while (it.hasNext()) { // first round : remove objects not connected with ref & compute interactions with ref objects
             Object3D n = it.next();
             if (n!=ref) {
                 InterfaceBT inter = getInterface(ref, n);
-                inter.checkFusion(value);
-                if (value[0]>maxCost) maxCost = value[0];
+                inter.checkFusion();
+                if (inter.value>maxCost) maxCost = inter.value;
             }
         }
         for (int i = 2; i<objects.size()-1; ++i) { // second round compute other interactions
             for (int j = i+1; j<objects.size(); ++j) {
                 InterfaceBT inter = getInterface(objects.get(i), objects.get(j));
-                inter.checkFusion(value);
-                if (value[0]>maxCost) maxCost = value[0];
+                inter.checkFusion();
+                if (inter.value>maxCost) maxCost = inter.value;
             }
         }
         if (maxCost==Double.NEGATIVE_INFINITY || maxCost==Double.NaN) return Double.NaN;
@@ -307,12 +288,12 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         this.verboseManualSeg=verbose;
     }
     @Override public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
-        ProcessingVariables pv = new ProcessingVariables(input, segmentationMask, this.relativeThicknessThreshold.getValue().doubleValue(), this.dogScale.getValue().doubleValue(), this.openRadius.getValue().doubleValue(), this.minSize.getValue().intValue());
-        pv.threshold=100d; // TODO variable ou auto
-        List<Object3D> seedObjects = ObjectFactory.createObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());
+        ProcessingVariables pv = new ProcessingVariables(input, segmentationMask, relativeThicknessThreshold.getValue().doubleValue(), relativeThicknessMaxDistance.getValue().doubleValue(), this.dogScale.getValue().doubleValue(), this.openRadius.getValue().doubleValue(), 2);
+        pv.threshold = threshold.instanciatePlugin().runThresholder(pv.getDOG(), parent);
+        //pv.threshold=100d; // TODO variable ou auto
+        List<Object3D> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());
         ImageOperations.and(segmentationMask, pv.getSegmentationMask(), pv.getSegmentationMask());
-        ObjectPopulation pop =  WatershedTransform.watershed(pv.getEDM(), pv.getSegmentationMask(), seedObjects, true, null, null);
-        
+        ObjectPopulation pop = WatershedTransform.watershed(pv.getSmoothed(), pv.getSegmentationMask(), seedObjects, false, null, null);
         if (verboseManualSeg) {
             Image seedMap = new ImageByte("seeds from: "+input.getName(), input);
             for (int[] seed : seedsXYZ) seedMap.setPixel(seed[0], seed[1], seed[2], 1);
@@ -332,8 +313,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     }
     
     public ObjectPopulation splitObject(Image input, Object3D object) {
-        Image edm = EDT.transform(object.getMask(), true, 1, input.getScaleZ()/input.getScaleXY(), 1).setName("edm");
-        return WatershedObjectSplitter.splitInTwo(edm, object.getMask(), true, minSize.getValue().intValue(), splitVerbose);
+        ProcessingVariables pv = new ProcessingVariables(input, object.getMask(), relativeThicknessThreshold.getValue().doubleValue(), relativeThicknessMaxDistance.getValue().doubleValue(), this.dogScale.getValue().doubleValue(), this.openRadius.getValue().doubleValue(), 2);
+        return WatershedObjectSplitter.splitInTwo(pv.getSmoothed(), object.getMask(), false, minSize.getValue().intValue(), splitVerbose); // TODO minSize Propagation?
     }
     
     protected static class ProcessingVariables {
@@ -342,20 +323,24 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         final ImageMask mask;
         final Image input;
         private Image dog;
+        private Image smoothed;
         ImageByte splitMask;
-        final double relativeThicknessThreshold, dogScale, openRadius; 
-        final int minSize;
+        final double relativeThicknessThreshold, dogScale, openRadius, relativeThicknessMaxDistance, smoothScale; 
         double threshold = Double.NaN;
         Object3DCluster.InterfaceFactory<Object3D, InterfaceBT> factory;
-        private ProcessingVariables(Image input, ImageMask mask, double splitThresholdValue, double dogScale, double openRadius, int minSize) {
+        private ProcessingVariables(Image input, ImageMask mask, double splitThresholdValue, double relativeThicknessMaxDistance, double dogScale, double openRadius, double smoothScale) {
             this.input=input;
             this.mask=mask;
             this.relativeThicknessThreshold=splitThresholdValue;
+            this.relativeThicknessMaxDistance=relativeThicknessMaxDistance;
+            this.smoothScale=smoothScale;
             this.dogScale=dogScale;
             this.openRadius=openRadius;
-            this.minSize=minSize;
         }
-        
+        private Image getSmoothed() {
+            if (smoothed==null) smoothed = ImageFeatures.gaussianSmooth(input, smoothScale, smoothScale, false);
+            return smoothed;
+        }
         private ImageByte getSplitMask() {
             if (splitMask==null) splitMask = new ImageByte("split mask", input);
             return splitMask;
@@ -383,14 +368,13 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 ImageInteger thresh = ImageOperations.threshold(getDOG(), threshold, false, false);
                 Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(openRadius, openRadius, thresh));
                 IJImageDisplayer disp = debug?new IJImageDisplayer():null;
-                if (debug) disp.showImage(thresh.duplicate("before close"));
-                thresh = Filters.binaryClose(thresh, Filters.getNeighborhood(1, 1, thresh));
-                if (debug) disp.showImage(thresh.duplicate("after close"));
+                //if (debug) disp.showImage(thresh.duplicate("before close"));
+                //thresh = Filters.binaryClose(thresh, Filters.getNeighborhood(1, 1, thresh));
+                //if (debug) disp.showImage(thresh.duplicate("after close"));
                 ImageOperations.and(mask, thresh, thresh);
                 ObjectPopulation pop1 = new ObjectPopulation(thresh, false);
                 pop1.filter(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
-                pop1.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
-                if (debug) disp.showImage(pop1.getLabelMap().duplicate("first seg"));
+                if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK"));
                 segMask = pop1.getLabelMap();
             }
             return segMask;
@@ -404,8 +388,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         
         protected class InterfaceBT extends InterfaceObject3DImpl {
             double maxDistance=Double.NEGATIVE_INFINITY;
-            Voxel maxVoxel;
-
+            Voxel maxVoxel=null;
+            double value=Double.NaN;
             public InterfaceBT(Object3D e1, Object3D e2) {
                 super(e1, e2);
             }
@@ -423,20 +407,17 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             }
 
             @Override
-            public boolean checkFusion(double[] outputValues) {
-                if (Double.isInfinite(maxDistance)) {
-                    if (outputValues!=null && outputValues.length>=1) outputValues[0] = Double.NaN;
-                    return false;
-                }
+            public boolean checkFusion() {
+                if (maxVoxel==null) return false;
                 double max1 = Double.NEGATIVE_INFINITY;
                 double max2 = Double.NEGATIVE_INFINITY;
-                for (Voxel v : e1.getVoxels()) if (v.value>max1 && v.getDistanceSquare(maxVoxel, e1.getScaleXY(), e1.getScaleZ())<maxDistance) max1 = v.value;
-                for (Voxel v : e2.getVoxels()) if (v.value>max2 && v.getDistanceSquare(maxVoxel, e1.getScaleXY(), e1.getScaleZ())<maxDistance) max2 = v.value;
-
+                for (Voxel v : e1.getVoxels()) if (v.value>max1 && v.getDistance(maxVoxel, e1.getScaleXY(), e1.getScaleZ())<relativeThicknessMaxDistance) max1 = v.value;
+                for (Voxel v : e2.getVoxels()) if (v.value>max2 && v.getDistance(maxVoxel, e1.getScaleXY(), e1.getScaleZ())<relativeThicknessMaxDistance) max2 = v.value;
+                
                 double norm = Math.min(max1, max2);
-                if (Object3DCluster.verbose) logger.debug("interface: {}+{}, norm: {} maxInter: {}, criterion: {} threshold: {} fusion: {}", e1.getLabel(), e2.getLabel(), norm, maxDistance,maxDistance/norm, relativeThicknessThreshold, maxDistance/norm>relativeThicknessThreshold );
-                if (outputValues!=null && outputValues.length>=1) outputValues[0] = maxDistance/norm;
-                return maxDistance/norm>relativeThicknessThreshold;
+                value = maxDistance/norm;
+                if (Object3DCluster.verbose) logger.debug("interface: {}+{}, norm: {} maxInter: {}, criterion: {} threshold: {} fusion: {}, scale: {}", e1.getLabel(), e2.getLabel(), norm, maxDistance,value, relativeThicknessThreshold, value>relativeThicknessThreshold, e1.getScaleXY() );
+                return  value>relativeThicknessThreshold;
             }
 
             @Override
@@ -445,15 +426,15 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 addVoxel(getEDM(), v2);
             }
             private void addVoxel(Image image, Voxel v) {
-                double value =image.getPixel(v.x, v.y, v.z);
-                if (value>maxDistance) {
-                    maxDistance = value;
+                double pixVal =image.getPixel(v.x, v.y, v.z);
+                if (pixVal>maxDistance) {
+                    maxDistance = pixVal;
                     maxVoxel = v;
                 }
             }
 
             public int compareTo(Interface<Object3D> t) {
-                return Double.compare(maxDistance, ((InterfaceBT)t).maxDistance);
+                return Double.compare(((InterfaceBT)t).maxDistance, maxDistance);
             }
         }
         

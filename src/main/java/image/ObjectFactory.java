@@ -118,7 +118,7 @@ public class ObjectFactory {
             ++newLabel;
         }
     }
-    public static List<Object3D> createObjectsFromSeeds(List<int[]> seedsXYZ, double scaleXY, double scaleZ) {
+    public static List<Object3D> createSeedObjectsFromSeeds(List<int[]> seedsXYZ, double scaleXY, double scaleZ) {
         List<Object3D> seedObjects = new ArrayList<Object3D>(seedsXYZ.size());
         int label = 0;
         for (int[] seed : seedsXYZ) seedObjects.add(new Object3D(new Voxel(seed), ++label, (float)scaleXY, (float)scaleZ));

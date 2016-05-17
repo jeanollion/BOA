@@ -19,6 +19,7 @@ import image.ImageMask;
 import image.ImageProperties;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import org.slf4j.Logger;
@@ -36,7 +37,7 @@ public class Object3D {
     protected ImageInteger mask; //lazy -> use getter // bounds par rapport au root si absoluteLandMark==true, au parent sinon
     protected BoundingBox bounds;
     protected int label;
-    protected ArrayList<Voxel> voxels; //lazy -> use getter // coordonnées des voxel = coord dans l'image mask + offset du masque.  
+    protected List<Voxel> voxels; //lazy -> use getter // coordonnées des voxel = coord dans l'image mask + offset du masque.  
     protected float scaleXY=1, scaleZ=1;
     protected boolean absoluteLandmark=false; // flase = coordinates relative to the direct parent
     protected double quality;
@@ -53,7 +54,7 @@ public class Object3D {
         this.scaleZ=mask.getScaleZ();
     }
     
-    public Object3D(ArrayList<Voxel> voxels, int label, float scaleXY, float scaleZ) {
+    public Object3D(List<Voxel> voxels, int label, float scaleXY, float scaleZ) {
         this.voxels=voxels;
         this.label=label;
         this.scaleXY=scaleXY;
@@ -63,7 +64,7 @@ public class Object3D {
         this(new ArrayList<Voxel>(){{add(voxel);}}, label, scaleXY, scaleZ);
     }
     
-    public Object3D(ArrayList<Voxel> voxels, int label, BoundingBox bounds, float scaleXY, float scaleZ) {
+    public Object3D(List<Voxel> voxels, int label, BoundingBox bounds, float scaleXY, float scaleZ) {
         this(voxels, label, scaleXY, scaleZ);
         this.bounds=bounds;
     }
@@ -120,6 +121,41 @@ public class Object3D {
             for (Voxel v : voxels) sum+=v.value;
             return sum/(double)voxels.size();
         }
+    }
+    public Voxel getExtremum(boolean max) {
+        if (getVoxels().isEmpty()) return null;
+        Voxel res = getVoxels().get(0);
+        if (max) {
+            for (Voxel v : getVoxels()) if (v.value>res.value) res = v;
+        } else {
+            for (Voxel v : getVoxels()) if (v.value<res.value) res = v;
+        }
+        return res;
+    }
+    public List<Voxel> getExtrema(boolean max) {
+        if (getVoxels().isEmpty()) return null;
+        Iterator<Voxel> it = getVoxels().iterator();
+        Voxel res = it.next();
+        List<Voxel> resList = new ArrayList<Voxel>();
+        if (max) {
+            while(it.hasNext()) {
+                Voxel v = it.next();
+                if (v.value>res.value) {
+                    res = v;
+                    resList.clear();
+                } else if (v.value==res.value) resList.add(v);
+            }
+        } else {
+            while(it.hasNext()) {
+                Voxel v = it.next();
+                if (v.value<res.value) {
+                    res = v;
+                    resList.clear();
+                } else if (v.value==res.value) resList.add(v);
+            }
+        }
+        resList.add(res);
+        return resList;
     }
     
     public double[] getCenter(boolean scaled) {
@@ -222,7 +258,7 @@ public class Object3D {
         return res;
     }
     
-    public ArrayList<Voxel> getVoxels() {
+    public List<Voxel> getVoxels() {
         if (voxels==null) {
             synchronized(this) { // "Double-Checked Locking"
                 if (voxels==null) {

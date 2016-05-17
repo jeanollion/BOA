@@ -38,7 +38,10 @@ import utils.Utils;
 public class IJAutoThresholder implements Thresholder {
     ChoiceParameter method = new ChoiceParameter("Method", AutoThresholder.getMethods(), AutoThresholder.Method.Otsu.toString(), false);
     
-    
+    public IJAutoThresholder setMethod(AutoThresholder.Method method) {
+        this.method.setValue(method.toString());
+        return this;
+    }
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
         ImageMask mask = structureObject!=null?structureObject.getMask():new BlankMask(input);
         return runThresholder(input, mask, Method.valueOf(method.getSelectedItem()));

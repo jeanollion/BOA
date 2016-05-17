@@ -86,8 +86,16 @@ public class PreProcessingChain extends SimpleContainerParameter {
             imageScaleCond.setParent(this);
         }
     }
-    
-    public boolean useImageScale() {return useImageScale.getSelected();}
+    public PreProcessingChain setCustomScale(double scaleXY, double scaleZ) {
+        if (Double.isNaN(scaleXY) || Double.isInfinite(scaleXY)) throw new IllegalArgumentException("Invalid scale value");
+        if (scaleXY<=0) throw new IllegalArgumentException("Scale should be >=0");
+        if (scaleZ<=0) scaleZ=1;
+        useImageScale.setSelected(false); // custom calibration
+        this.scaleXY.setValue(scaleXY);
+        this.scaleZ.setValue(scaleZ);
+        return this;
+    }
+    public boolean useCustomScale() {return !useImageScale.getSelected();}
     public double getScaleXY() {return scaleXY.getValue().doubleValue();}
     public double getScaleZ() {return scaleZ.getValue().doubleValue();}
     

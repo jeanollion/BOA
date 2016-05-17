@@ -308,7 +308,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
 
     public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
         if (pv==null) initializeMaps(input);
-        List<Object3D> seedObjects = ObjectFactory.createObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());
+        List<Object3D> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());
         ObjectPopulation pop =  WatershedTransform.watershed(pv.hessian, segmentationMask, seedObjects, false, new WatershedTransform.ThresholdPropagation(pv.getNormalizedHessian(), this.manualSegPropagationHessianThreshold.getValue().doubleValue(), false), new WatershedTransform.SizeFusionCriterion(this.minSize.getValue().intValue()));
         
         if (verboseManualSeg) {
@@ -399,9 +399,8 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             }
 
             @Override
-            public boolean checkFusion(double[] outputValues) {
+            public boolean checkFusion() {
                 // criterion = - hessian @ border / intensity @ border < threshold
-                if (outputValues!=null && outputValues.length>=1) outputValues[0] = value;
                 if (BacteriaFluo.debug) logger.debug("check fusion: {}+{}, size: {}, value: {}, threhsold: {}, fusion: {}", e1.getLabel(), e2.getLabel(), voxels.size(), value, splitThresholdValue, value<splitThresholdValue);
                 return value<splitThresholdValue;
             }

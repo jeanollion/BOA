@@ -23,6 +23,7 @@ import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
 import de.caluga.morphium.annotations.Embedded;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -52,7 +53,7 @@ public class ObjectContainerVoxels extends ObjectContainer {
 
     private void createCoordsArrays(Object3D object) {
         if (object.is3D()) {
-            ArrayList<Voxel> voxels = object.getVoxels();
+            List<Voxel> voxels = object.getVoxels();
             x = new int[voxels.size()];
             y = new int[voxels.size()];
             z = new int[voxels.size()];
@@ -63,7 +64,7 @@ public class ObjectContainerVoxels extends ObjectContainer {
                 z[idx++] = v.z;
             }
         } else {
-            ArrayList<Voxel> voxels = object.getVoxels();
+            List<Voxel> voxels = object.getVoxels();
             x = new int[voxels.size()];
             y = new int[voxels.size()];
             z = null;

@@ -127,7 +127,7 @@ public class ClusterCollection<E, I extends Interface<E> > {
         Iterator<I> it = currentInterfaces.iterator(); // descending
         while (it.hasNext()) {
             I i = it.next();
-            if (i.checkFusion(null)) {
+            if (i.checkFusion()) {
                 it.remove();
                 this.interfaces.remove(i);
                 allElements.remove(i.getE2());

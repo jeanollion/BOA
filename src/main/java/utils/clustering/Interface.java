@@ -32,7 +32,7 @@ public interface Interface<E> extends Comparable<Interface<E>> {
     
     public void swichElements(E newE, E oldE, Comparator<? super E> elementComparator);
     public void performFusion();
-    public boolean checkFusion(double[] outputValues);
+    public boolean checkFusion();
     public void fusionInterface(Interface<E> otherInterface, Comparator<? super E> elementComparator);
     public void updateSortValue();
     

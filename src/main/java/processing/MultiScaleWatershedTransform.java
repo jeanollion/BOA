@@ -157,7 +157,7 @@ public class MultiScaleWatershedTransform {
     }
     
     protected class Spot {
-        public ArrayList<Voxel> voxels;
+        public List<Voxel> voxels;
         int label;
         int scale;
         //Voxel seed;
@@ -170,7 +170,7 @@ public class MultiScaleWatershedTransform {
             this.seed=seed;
             segmentedMap.setPixel(seed.x, seed.y, seed.getZ(), label);
         }*/
-        public Spot(int label, int scale, ArrayList<Voxel> voxels) {
+        public Spot(int label, int scale, List<Voxel> voxels) {
             this.label=label;
             this.scale=scale;
             this.voxels=voxels;

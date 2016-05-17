@@ -82,8 +82,10 @@ public abstract class CropMicroChannels implements Transformation {
                 if (debug) logger.debug("time: {}, bounds: {}, max bounds: {}", time, bb, b);
             }
         } else b = getBoundingBox(image);
-        
-        logger.debug("Crop Microchannel: image: {} timepoint: {} boundingBox: {}", image.getName(), inputImages.getDefaultTimePoint(), b);
+        if (b==null) {
+            b=inputImages.getImage(channelIdx, tp).getBoundingBox();
+            logger.error("No Microchannels found");
+        } else logger.debug("Crop Microchannel: image: {} timepoint: {} boundingBox: {}", image.getName(), inputImages.getDefaultTimePoint(), b);
         configurationData=new ArrayList<Integer>(4);
         configurationData.add(b.getxMin());
         configurationData.add(b.getxMax());

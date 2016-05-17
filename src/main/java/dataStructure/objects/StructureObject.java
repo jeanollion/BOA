@@ -664,6 +664,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                             rawImagesC.set(root.openRawImage(structureIdx, bb), channelIdx);
                         }
                     }
+                    rawImagesC.get(channelIdx).setCalibration(getScaleXY(), getScaleZ());
+                    
+                    //logger.debug("{} open channel: {}, use scale? {}, scale: {}", this, channelIdx, this.getMicroscopyField().getPreProcessingChain().useCustomScale(), getScaleXY());
                 }
             }
         }
@@ -688,6 +691,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         Image res;
         if (rawImagesC.get(channelIdx)==null) {//opens only within bounds
             res =  getExperiment().getImageDAO().openPreProcessedImage(channelIdx, timePoint, getFieldName(), bounds);
+            res.setCalibration(getScaleXY(), getScaleZ());
             //if (this.timePoint==0) logger.debug("open from: {} within bounds: {}, resultBounds: {}", this, bounds, res.getBoundingBox());
         } 
         else {
