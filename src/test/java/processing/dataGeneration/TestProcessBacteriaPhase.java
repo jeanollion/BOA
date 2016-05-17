@@ -43,9 +43,9 @@ import utils.MorphiumUtils;
 public class TestProcessBacteriaPhase {
     public static void main(String[] args) {
         //int time =31;
-        int time =0;
+        int time =14;
         int microChannel =0;
-        int field = 1;
+        int field = 0;
         String dbName = "boa_testBF";
         testSegBacteriesFromXP(dbName, field, time, microChannel);
     }
@@ -67,8 +67,10 @@ public class TestProcessBacteriaPhase {
                 10, // dog
                 2, // thld empty channel
                 4, // open
-                0.8, // relativeThickness threshold
+                0.7, // relativeThickness threshold
                 1, // relativeThickness max distance
+                1.5,  // aspect ratio
+                20, // angle
                 null);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);

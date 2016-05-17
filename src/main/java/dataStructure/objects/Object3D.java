@@ -214,7 +214,7 @@ public class Object3D {
         this.mask=mask_;
     }
 
-    protected void createVoxels() {
+    public void createVoxels() {
         //logger.debug("create voxels: mask offset: {}", mask.getBoundingBox());
         ArrayList<Voxel> voxels_=new ArrayList<Voxel>();
         for (int z = 0; z < mask.getSizeZ(); ++z) {

@@ -15,6 +15,7 @@ import static core.Processor.logger;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.Voxel;
 import ij.ImagePlus;
+import ij.gui.Arrow;
 import ij.gui.EllipseRoi;
 import ij.gui.Roi;
 import ij.process.EllipseFitter;
@@ -24,7 +25,9 @@ import image.IJImageWrapper;
 import image.ImageByte;
 import image.ImageInteger;
 import image.ImageMask;
+import java.awt.Color;
 import java.awt.Rectangle;
+import org.scijava.vecmath.Vector2d;
 import plugins.plugins.measurements.SimpleObjectFeature;
 
 /**
@@ -227,18 +230,61 @@ public class FitEllipse {
         
         fitter.fit(mask);
         // compute the error = nPixels outside the ROI / total pixels count
-        ImageByte b = fitter.getEllipseMask();
-        new IJImageDisplayer().showImage(b);
-        new IJImageDisplayer().showImage(mask);
-        logger.debug("ellipse fit: angle: {}, major: {}, minor: {}, xCenter: {}, yCenter: {}", fitter.angle, fitter.major, fitter.minor, fitter.xCenter, fitter.yCenter);
-        return null;
+        //ImageByte b = fitter.getEllipseMask();
+        //new IJImageDisplayer().showImage(b);
+        //new IJImageDisplayer().showImage(mask);
+        EllipseFit2D res = new EllipseFit2D();
+        res.angleDegrees=fitter.angle;
+        res.angleRadians=fitter.theta;
+        res.major=fitter.major;
+        res.minor=fitter.minor;
+        res.xCenter=fitter.xCenter+object.getBounds().getxMin();
+        res.yCenter=fitter.yCenter+object.getBounds().getyMin();
+        
+        //logger.debug("ellipse fit: angle: {}, major: {}, minor: {}, xCenter: {}, yCenter: {}", fitter.angle, fitter.major, fitter.minor, fitter.xCenter, fitter.yCenter);
+        return res;
     }
     
     public static class EllipseFit2D {
-        double error;
-        Voxel center;
-        public EllipseFit2D() {
-            
+        //double error;
+        double angleDegrees, angleRadians, major, minor, xCenter, yCenter;
+        public double[] getAlignement(EllipseFit2D other) {
+            Vector2d cc = getCenterCenter(other, true);
+            return new double[]{getAngle(cc, getVector()), getAngle(cc, other.getVector()) };
+        }
+        private static double getAngle(Vector2d v1, Vector2d v2) {
+            double angle = regularizeAngle(v1.angle(v2));
+            double sign = v1.angle(new Vector2d(-v2.y, v2.x));
+            if (sign>Math.PI/2) return -angle;
+            else return angle;
+        }
+        private Vector2d getCenterCenter(EllipseFit2D other, boolean normalize) {
+            Vector2d centerToCenter = new Vector2d(xCenter-other.xCenter, yCenter-other.yCenter);
+            if (normalize) centerToCenter.normalize();
+            return centerToCenter;
+        }
+        public double getAspectRatio() {
+            return major / minor;
+        }
+        public Vector2d getVector() {
+            return new Vector2d(Math.cos(angleRadians), -Math.sin(angleRadians));
+        }
+        private static double regularizeAngle(double angleRad) {
+            if (angleRad<0) return -regularizeAngle(-angleRad);
+            if (angleRad>Math.PI/2 && angleRad<=Math.PI) return Math.PI-angleRad;
+            else if (angleRad>Math.PI && angleRad<=Math.PI*3d/4d) return angleRad-Math.PI;
+            else if (angleRad>Math.PI*3d/4d) return 2*Math.PI-angleRad;
+            return angleRad;
+        }
+        public Roi getAxisRoi() {
+            Vector2d axis = getVector();
+            return new Arrow(xCenter, yCenter, xCenter+axis.x*major, yCenter+axis.y*major);
+        }
+        public Roi getCenterRoi(EllipseFit2D other) {
+            Vector2d axis = getCenterCenter(other, false);
+            Arrow res= new Arrow(xCenter, yCenter, xCenter-axis.x, yCenter-axis.y);
+            res.setStrokeColor(Color.red);
+            return res;
         }
     }
-    }
+}
