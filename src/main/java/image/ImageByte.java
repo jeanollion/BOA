@@ -131,7 +131,7 @@ public class ImageByte extends ImageInteger {
     public ImageByte duplicate(String name) {
         byte[][] newPixels = new byte[sizeZ][sizeXY];
         for (int z = 0; z< sizeZ; ++z) System.arraycopy(pixels[z], 0, newPixels[z], 0, sizeXY);
-        return new ImageByte(name, sizeX, newPixels);
+        return new ImageByte(name, sizeX, newPixels).setCalibration(this).addOffset(this);
     }
 
     public boolean insideMask(int x, int y, int z) {

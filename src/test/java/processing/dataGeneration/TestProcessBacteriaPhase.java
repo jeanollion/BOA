@@ -43,7 +43,7 @@ import utils.MorphiumUtils;
 public class TestProcessBacteriaPhase {
     public static void main(String[] args) {
         //int time =31;
-        int time =14;
+        int time =33;
         int microChannel =0;
         int field = 0;
         String dbName = "boa_testBF";

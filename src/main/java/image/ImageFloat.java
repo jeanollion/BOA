@@ -105,7 +105,7 @@ public class ImageFloat extends Image {
     public ImageFloat duplicate(String name) {
         float[][] newPixels = new float[sizeZ][sizeXY];
         for (int z = 0; z< sizeZ; ++z) System.arraycopy(pixels[z], 0, newPixels[z], 0, sizeXY);
-        return new ImageFloat(name, sizeX, newPixels);
+        return new ImageFloat(name, sizeX, newPixels).setCalibration(this).addOffset(this);
     }
     
     @Override

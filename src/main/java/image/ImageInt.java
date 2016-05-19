@@ -132,7 +132,7 @@ public class ImageInt extends ImageInteger {
     public ImageInt duplicate(String name) {
         int[][] newPixels = new int[sizeZ][sizeXY];
         for (int z = 0; z< sizeZ; ++z) System.arraycopy(pixels[z], 0, newPixels[z], 0, sizeXY);
-        return new ImageInt(name, sizeX, newPixels);
+        return new ImageInt(name, sizeX, newPixels).setCalibration(this).addOffset(this);
     }
 
     public boolean insideMask(int x, int y, int z) {
