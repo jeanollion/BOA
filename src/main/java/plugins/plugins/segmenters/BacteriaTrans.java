@@ -539,7 +539,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 getCurvature();
                 for(Voxel v : borderVoxels) {
                     curvature.search(new Point(new int[]{v.x, v.y}));
-                    if (curvature.getDistance()<=2) mean+=curvature.getSampler().get(); // distance? // min de chaque coté? -> faire 2 clusters...
+                    if (curvature.getDistance()<=2) mean+=curvature.getSampler().get(); // distance? // min de chaque coté? -> faire 2 clusters..
+                
                 }
                 return mean/=borderVoxels.size();
             }
