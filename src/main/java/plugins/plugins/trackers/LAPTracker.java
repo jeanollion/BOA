@@ -60,6 +60,7 @@ public class LAPTracker implements TrackerSegmenter {
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, new MutationSegmenterScaleSpace(), false);
     StructureParameter compartirmentStructure = new StructureParameter("Compartiment Structure");
     NumberParameter spotQualityThreshold = new NumberParameter("Spot Quality Threshold", 3, 4);
+    //NumberParameter spotQualityThreshold = new BoundedNumberParameter("Spot Quality Threshold", 3, 4, 0, null);
     NumberParameter maxGap = new BoundedNumberParameter("Maximum frame gap", 0, 2, 0, null);
     NumberParameter maxLinkingDistance = new BoundedNumberParameter("FTF Maximum Linking Distance (0=skip)", 2, 0.75, 0, null);
     NumberParameter maxLinkingDistanceGC = new BoundedNumberParameter("Gap-closing Maximum Linking Distance (0=skip)", 2, 0.75, 0, null);

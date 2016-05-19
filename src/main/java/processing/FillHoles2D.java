@@ -42,7 +42,7 @@ public class FillHoles2D {
         }
         pop.relabel(true);
     }
-    
+    // TODO fix for other than byte processor!!
     public static void fillHoles(ImageInteger image, int midValue) {
         if (image.getSizeZ()==1) {
             fillHoles(IJImageWrapper.getImagePlus(image).getProcessor(), midValue);

@@ -18,6 +18,7 @@
 package plugins.plugins.segmenters;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.imageInteraction.IJImageWindowManager;
 import boa.gui.imageInteraction.ImageDisplayer;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import configuration.parameters.BoundedNumberParameter;
@@ -33,8 +34,10 @@ import dataStructure.objects.Voxel;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.gui.Overlay;
+import ij.gui.Roi;
 import ij.process.AutoThresholder;
 import image.BlankMask;
+import image.BoundingBox;
 import image.Image;
 import image.ImageByte;
 import image.ImageFloat;
@@ -45,10 +48,15 @@ import image.ObjectFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import measurement.BasicMeasurements;
+import net.imglib2.KDTree;
+import net.imglib2.Point;
+import net.imglib2.neighborsearch.NearestNeighborSearch;
+import net.imglib2.neighborsearch.NearestNeighborSearchOnKDTree;
 import plugins.ManualSegmenter;
 import plugins.ObjectSplitter;
 import plugins.Segmenter;
@@ -59,13 +67,17 @@ import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.segmenters.BacteriaTrans.ProcessingVariables.InterfaceBT;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.trackers.ObjectIdxTracker;
+import processing.Curvature;
 import processing.EDT;
 import processing.FillHoles2D;
 import processing.Filters;
 import processing.FitEllipse;
 import processing.FitEllipse.EllipseFit2D;
+import processing.Curvature;
 import processing.ImageFeatures;
 import processing.WatershedTransform;
+import processing.neighborhood.EllipsoidalNeighborhood;
+import processing.neighborhood.Neighborhood;
 import utils.Utils;
 import static utils.Utils.plotProfile;
 import utils.clustering.ClusterCollection.InterfaceFactory;
@@ -138,7 +150,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     
     @Override
     public String toString() {
-        return "Bacteria Fluo: " + Utils.toStringArray(parameters);
+        return "Bacteria Trans: " + Utils.toStringArray(parameters);
     }   
     
     public static ObjectPopulation run(Image input, StructureObjectProcessing parent, Thresholder thresholder, int minSizePropagation, int minSize, int contactLimit, double smoothScale, double dogScale, double thresholdForEmptyChannel, double openRadius, final double relativeThicknessThreshold, double relativeThicknessMaxDistance, double aspectRatioThreshold, double angleThreshold, BacteriaTrans instance) {
@@ -172,6 +184,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             }
             ip.setOverlay(ov);
             ip.updateAndDraw();
+            
         }
         
         // merge using the criterion : max(EDM@frontière) / min(max(EDM@S1), max(EDM@S2)) > criterion
@@ -356,6 +369,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         ImageByte splitMask;
         final double relativeThicknessThreshold, dogScale, openRadius, relativeThicknessMaxDistance, smoothScale, aspectRatioThreshold, angleThresholdRad; 
         double threshold = Double.NaN;
+        final int curvatureScale = 5;
+        final double curvatureThreshold = -1;
         Object3DCluster.InterfaceFactory<Object3D, InterfaceBT> factory;
         private ProcessingVariables(Image input, ImageMask mask, double splitThresholdValue, double relativeThicknessMaxDistance, double dogScale, double openRadius, double smoothScale, double aspectRatioThreshold, double angleThresholdDeg) {
             this.input=input;
@@ -407,6 +422,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 pop1.filter(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
                 FillHoles2D.fillHoles(pop1);
                 if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK"));
+                
                 segMask = pop1.getLabelMap();
             }
             return segMask;
@@ -423,8 +439,38 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             Voxel maxVoxel=null;
             double value=Double.NaN;
             private FitEllipse.EllipseFit2D ell1, ell2; // lazy loading
+            private NearestNeighborSearchOnKDTree<Double> curvature;
+            final Set<Voxel> borderVoxels;
+            final Set<Voxel> voxels;
+            final Neighborhood borderNeigh;
             public InterfaceBT(Object3D e1, Object3D e2) {
                 super(e1, e2);
+                borderVoxels = new HashSet<Voxel>();
+                borderNeigh = new EllipsoidalNeighborhood(1.5, true);
+                voxels = debug ? new HashSet<Voxel>() : null;
+            }
+            public NearestNeighborSearchOnKDTree<Double> getCurvature() {
+                if (curvature==null) {
+                    // getJoinedMask of 2 objects
+                    ImageInteger m1 = e1.getMask();
+                    ImageInteger m2 = e2.getMask();
+                    BoundingBox joinBox = m1.getBoundingBox(); 
+                    joinBox.expand(m2.getBoundingBox());
+                    ImageByte mask = new ImageByte("joinedMask:"+e1.getLabel()+"+"+e2.getLabel(), joinBox.getImageProperties()).setCalibration(m1);
+                    ImageOperations.pasteImage(m1, mask, m1.getBoundingBox().translate(mask.getBoundingBox().reverseOffset()));
+                    ImageOperations.orWithOffset(m2, mask, mask);
+                    KDTree<Double> curv = Curvature.computeCurvature(mask, curvatureScale);
+                    if (e1.getLabel()==2 && e2.getLabel()==3) {
+                        for (Voxel v : voxels) mask.setPixelWithOffset(v.x, v.y, v.z, 2);
+                        for (Voxel v : borderVoxels) mask.setPixelWithOffset(v.x, v.y, v.z, 3);
+                        Curvature.displayCurvature(mask, curv);
+                        
+                        
+                        
+                    }
+                    curvature = new NearestNeighborSearchOnKDTree(curv);
+                }
+                return curvature;
             }
             public FitEllipse.EllipseFit2D getEllipseFit1() {
                 if (ell1==null) ell1 = FitEllipse.fitEllipse2D(e1);
@@ -451,6 +497,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 }
                 ell1=null;
                 ell2=null;
+                curvature = null;
             }
 
             @Override
@@ -461,7 +508,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 // if aspect ratio is no elevated, angle is not taken into account
                 // look @ angles between major axis and center-center
                 // if both angles are opposed, it could be one single curved object, thus if angles are in same direction their sum is considered (penalty) 
-                double[] al12 = getEllipseFit1().getAlignement(getEllipseFit2());
+                /*double[] al12 = getEllipseFit1().getAlignement(getEllipseFit2());
                 double ar1 = getEllipseFit1().getAspectRatio();
                 double al1 = ar1>aspectRatioThreshold ? al12[0] : 0;
                 double ar2 = getEllipseFit2().getAspectRatio();
@@ -469,7 +516,11 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 double al = (al1*al2>0) ? Math.abs(al1+al2) : Math.max(Math.abs(al1), Math.abs(al2));
                 if (Object3DCluster.verbose) logger.debug("interface: {}+{}, Final Alignement: {}, AspectRatio1: {} Alignement1: {}, AspectRatio1: {} Alignement1: {}", e1.getLabel(), e2.getLabel(), al*180d/Math.PI, ar1, al1 * 180d/Math.PI, ar2, al2 * 180d/Math.PI);
                 if (al>angleThresholdRad) return false;
-                
+                */
+                // criterion on curvature
+                double curV = getMeanCurvature();
+                if (debug) logger.debug("interface: {}+{}, Mean curvature: {}, Threshold: {}", e1.getLabel(), e2.getLabel(), curV, curvatureThreshold);
+                if (curV<curvatureThreshold) return false;
                 
                 double max1 = Double.NEGATIVE_INFINITY;
                 double max2 = Double.NEGATIVE_INFINITY;
@@ -480,6 +531,17 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 value = maxDistance/norm;
                 if (Object3DCluster.verbose) logger.debug("interface: {}+{}, norm: {} maxInter: {}, criterion: {} threshold: {} fusion: {}, scale: {}", e1.getLabel(), e2.getLabel(), norm, maxDistance,value, relativeThicknessThreshold, value>relativeThicknessThreshold, e1.getScaleXY() );
                 return  value>relativeThicknessThreshold;
+            }
+            
+            public double getMeanCurvature() {
+                if (borderVoxels.isEmpty()) return 0;
+                double mean = 0;
+                getCurvature();
+                for(Voxel v : borderVoxels) {
+                    curvature.search(new Point(new int[]{v.x, v.y}));
+                    if (curvature.getDistance()<=1.5) mean+=curvature.getSampler().get();
+                }
+                return mean/=borderVoxels.size();
             }
 
             @Override
@@ -493,6 +555,9 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                     maxDistance = pixVal;
                     maxVoxel = v;
                 }
+                // add border voxel
+                if (this.borderNeigh.hasNullValue(v.x, v.y, v.z, getSegmentationMask(), true)) borderVoxels.add(v);
+                if (voxels!=null) voxels.add(v);
             }
 
             public int compareTo(Interface<Object3D> t) {

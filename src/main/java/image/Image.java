@@ -141,6 +141,10 @@ public abstract class Image implements ImageProperties {
     public <T extends Image> T duplicate() {return duplicate(name);}
     public abstract Image newImage(String name, ImageProperties properties);
     public abstract <T extends Image> T crop(BoundingBox bounds);
+    public <T extends Image> T extend(BoundingBox extent) {
+        BoundingBox resizeBB = new BoundingBox(extent.getxMin(), getSizeX()-1+extent.getxMax(), extent.getyMin(), getSizeY()-1+extent.getyMax(), extent.getzMin(), getSizeZ()-1+extent.getzMax());
+        return crop(resizeBB);
+    }
     public abstract void invert();
     
     @Override

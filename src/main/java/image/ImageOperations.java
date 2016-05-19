@@ -18,6 +18,7 @@
 package image;
 
 import dataStructure.objects.Voxel;
+import image.BoundingBox.LoopFunction;
 import static image.Image.logger;
 import static image.ImageOperations.Axis.*;
 
@@ -265,6 +266,20 @@ public class ImageOperations {
             }
         }
         return output;
+    }
+    public static ImageInteger orWithOffset(final ImageMask source1, final ImageMask source2, ImageInteger output) {
+        if (output==null) output = new ImageByte("or", source1);
+        final ImageInteger out = output;
+        output.getBoundingBox().loop(new LoopFunction() {
+            public void setUp() {}
+            public void tearDown() {}
+            public void loop(int x, int y, int z) {
+                if ((!source1.containsWithOffset(x, y, z) || !source1.insideMaskWithOffset(x, y, z)) 
+                        && (!source2.containsWithOffset(x, y, z) || !source2.insideMaskWithOffset(x, y, z))) out.setPixelWithOffset(x, y, z, 0);
+                else out.setPixelWithOffset(x, y, z, 1);
+            }
+        });
+        return out;
     }
     
     public static ImageInteger xor(ImageMask source1, ImageMask source2, ImageInteger output) {

@@ -133,7 +133,7 @@ public class ImageShort extends ImageInteger {
     public ImageShort duplicate(String name) {
         short[][] newPixels = new short[sizeZ][sizeXY];
         for (int z = 0; z< sizeZ; ++z) System.arraycopy(pixels[z], 0, newPixels[z], 0, sizeXY);
-        return new ImageShort(name, sizeX, newPixels);
+        return new ImageShort(name, sizeX, newPixels).setCalibration(this).addOffset(this);
     }
 
     public boolean insideMask(int x, int y, int z) {
