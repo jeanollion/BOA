@@ -234,6 +234,20 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 logger.debug("R pressed: " + e);
             }
         });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_A, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Select All Objects") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                selectAllObjectsActionPerformed(e);
+                logger.debug("A pressed: " + e);
+            }
+        });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Q, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Select All Tracks") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                selectAllTracksButtonActionPerformed(e);
+                logger.debug("Q pressed: " + e);
+            }
+        });
         
         actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_T, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Track mode") {
             @Override
@@ -851,7 +865,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
-        selectAllTracksButton.setText("Select All Tracks");
+        selectAllTracksButton.setText("Select All Tracks (Q)");
         selectAllTracksButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 selectAllTracksButtonActionPerformed(evt);
@@ -899,7 +913,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
-        selectAllObjects.setText("Select All Objects");
+        selectAllObjects.setText("Select All Objects (A)");
         selectAllObjects.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 selectAllObjectsActionPerformed(evt);

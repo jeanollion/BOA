@@ -595,7 +595,7 @@
                 </Component>
                 <Component class="javax.swing.JButton" name="selectAllTracksButton">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Select All Tracks"/>
+                    <Property name="text" type="java.lang.String" value="Select All Tracks (Q)"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="selectAllTracksButtonActionPerformed"/>
@@ -653,7 +653,7 @@
                 </Component>
                 <Component class="javax.swing.JButton" name="selectAllObjects">
                   <Properties>
-                    <Property name="text" type="java.lang.String" value="Select All Objects"/>
+                    <Property name="text" type="java.lang.String" value="Select All Objects (A)"/>
                   </Properties>
                   <Events>
                     <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="selectAllObjectsActionPerformed"/>
