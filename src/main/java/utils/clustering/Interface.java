@@ -23,7 +23,7 @@ import java.util.Comparator;
  *
  * @author jollion
  */
-public interface Interface<E> extends Comparable<Interface<E>> {
+public interface Interface<E, T extends Interface<E, T>> extends Comparable<T> {
     public E getE1();
     public E getE2();
     public boolean isInterfaceOf(E e1, E e2);
@@ -33,7 +33,6 @@ public interface Interface<E> extends Comparable<Interface<E>> {
     public void swichElements(E newE, E oldE, Comparator<? super E> elementComparator);
     public void performFusion();
     public boolean checkFusion();
-    public void fusionInterface(Interface<E> otherInterface, Comparator<? super E> elementComparator);
+    public void fusionInterface(T otherInterface, Comparator<? super E> elementComparator);
     public void updateSortValue();
-    
 }

@@ -146,12 +146,12 @@ public class GenerateTestXP {
         boolean fluo = true;
         */
         //////////// Trans
-        String dbName = "boa_testBF";
+       /* String dbName = "boa_testBF";
         String inputDir = "/data/Images/Lydia/testJeanFilm";
         String outputDir = "/data/Images/Lydia/Output";
         boolean flip = true;
         boolean fluo = false;
-        scaleXY = 0.0646;
+        scaleXY = 0.0646;*/
         /*
         ////////////////////////////
         // Ordi Portable
@@ -168,6 +168,13 @@ public class GenerateTestXP {
         boolean flip = true;
         boolean fluo = true;
         */
+        
+        String dbName = "boa_testBF";
+        String inputDir = "/home/jollion/Documents/LJP/DataLJP/SampleImageTrans/input/";
+        String outputDir = "/home/jollion/Documents/LJP/DataLJP/SampleImageTrans/output/";
+        boolean flip = true;
+        boolean fluo = false;
+        scaleXY = 0.0646;
         
         boolean performProcessing = false;
         

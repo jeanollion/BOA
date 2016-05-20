@@ -202,7 +202,7 @@ public class BoundingBox {
     }
     
     public BoundingBox translateToOrigin() {
-        return BoundingBox.this.translate(-xMin, -yMin, -zMin);
+        return translate(-xMin, -yMin, -zMin);
     }
     
     public int getxMin() {

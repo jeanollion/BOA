@@ -25,6 +25,6 @@ import java.util.Collection;
  *
  * @author jollion
  */
-public interface InterfaceObject3D extends Interface<Object3D> {
+public interface InterfaceObject3D<T extends Interface<Object3D, T>> extends Interface<Object3D, T> {
     public abstract void addPair(Voxel v1, Voxel v2);
 }

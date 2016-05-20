@@ -18,23 +18,31 @@
 package processing;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.IJImageWindowManager;
+import dataStructure.objects.Voxel;
+import ij.ImagePlus;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
 import ij.measure.ResultsTable;
 import ij.process.FloatPolygon;
 import ij.process.ImageProcessor;
 import image.BoundingBox;
+import image.BoundingBox.LoopFunction;
 import image.Image;
 import image.ImageFloat;
 import image.ImageInteger;
+import image.ImageMask;
 import image.ImageProperties;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.TreeSet;
 import net.imglib2.KDTree;
 import net.imglib2.KDTree.KDTreeCursor;
+import net.imglib2.Point;
 import net.imglib2.RealPoint;
+import net.imglib2.neighborsearch.NearestNeighborSearchOnKDTree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import processing.neighborhood.EllipsoidalNeighborhood;
 /**
  * Compute Fourier Descriptor and curvature values
  *
@@ -45,7 +53,6 @@ public class Curvature {
     public static final Logger logger = LoggerFactory.getLogger(Curvature.class);
     public static KDTree<Double> computeCurvature(ImageInteger mask, int scale_cur) {
         Roi r = IJImageWindowManager.createRoi(mask, new BoundingBox(0, 0, 0), false).get(0);
-        
         Fourier fourier = new Fourier();
         fourier.Init(r, mask.getScaleXY());
         double reso = mask.getScaleXY();
@@ -57,8 +64,12 @@ public class Curvature {
         }
         return new KDTree<Double>(values, points);
     }
-    
-    public static void displayCurvature(ImageProperties p, KDTree<Double> points) {
+    public static void displayCurvature(ImageInteger mask, int scale_cur) {
+        KDTree<Double> tree = computeCurvature(mask, scale_cur);
+        ImageFloat curv = getCurvatureMask(mask, tree).setName("Curv: "+scale_cur);
+        new IJImageDisplayer().showImage(curv);
+    }
+    public static ImageFloat getCurvatureMask(ImageProperties p, KDTree<Double> points) {
         ImageFloat res = new ImageFloat("Curvature", p);
         int xLim = res.getSizeX();
         int yLim = res.getSizeY();
@@ -71,9 +82,49 @@ public class Curvature {
             if (y>=yLim) --y;
             res.setPixel(x, y, 0, d);
         }
-        
-        new IJImageDisplayer().showImage((Image)p);
-        new IJImageDisplayer().showImage(res);
+        return res;
+    }
+    public static ImageFloat getCurvatureWatershedMap(final Image edm, final ImageInteger mask, KDTree<Double> curvature) {
+        final ImageFloat res = new ImageFloat("CurvatureWatershedMap", edm);
+        final NearestNeighborSearchOnKDTree<Double> search = new NearestNeighborSearchOnKDTree(curvature);
+        final TreeSet<Voxel> heap = new TreeSet<Voxel>();
+        final EllipsoidalNeighborhood neigh = new EllipsoidalNeighborhood(1.5, true);
+        // initialize with the border of objects
+        mask.getBoundingBox().translateToOrigin().loop(new LoopFunction() {
+            public void setUp() {}
+            public void tearDown() {}
+            public void loop(int x, int y, int z) {
+                if (mask.insideMask(x, y, z) && neigh.hasNullValue(x, y, z, mask, true)) {
+                    double edmValue = edm.getPixel(x, y, z);
+                    search.search(new Point(x+mask.getOffsetX(), y+mask.getOffsetY()));
+                    res.setPixel(x, y, z, search.getSampler().get());
+                    Voxel next;
+                    for (int i = 0; i<neigh.getSize(); ++i) {
+                        next = new Voxel(x+neigh.dx[i], y+neigh.dy[i], 0);
+                        if (!mask.contains(next.x, next.y, next.z) || !mask.insideMask(x, y, z)) continue;
+                        next.value=edm.getPixel(next.x, next.y, 0);
+                        if (next.value>edmValue) heap.add(next);
+                    }
+                }
+            }
+        });
+
+        Voxel next;
+        while(!heap.isEmpty()) {
+            Voxel v = heap.pollFirst();
+            double value = 0, count=0;
+            for (int i = 0; i<neigh.getSize(); ++i) {
+                next = new Voxel(v.x+neigh.dx[i], v.y+neigh.dy[i], 0);
+                next.value= edm.getPixel(next.x, next.y, next.z);
+                if (next.value>v.value) heap.add(next);
+                else {
+                    value += res.getPixel(next.x, next.y, 0);
+                    ++count;
+                    if (count>0) res.setPixel(v.x, v.y, 0, value/count);
+                }
+            }
+        }
+        return res;
     }
 
     /**

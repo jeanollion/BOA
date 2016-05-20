@@ -31,6 +31,7 @@ import de.caluga.morphium.Morphium;
 import ij.process.AutoThresholder;
 import image.Image;
 import image.ImageMask;
+import plugins.PluginFactory;
 import plugins.plugins.segmenters.BacteriaTrans;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.thresholders.IJAutoThresholder;
@@ -42,9 +43,10 @@ import utils.MorphiumUtils;
  */
 public class TestProcessBacteriaPhase {
     public static void main(String[] args) {
+        PluginFactory.findPlugins("plugins.plugins");
         //int time =31;
-        int time =33;
-        int microChannel =0;
+        int time =35;
+        int microChannel =1;
         int field = 0;
         String dbName = "boa_testBF";
         testSegBacteriesFromXP(dbName, field, time, microChannel);
@@ -58,22 +60,9 @@ public class TestProcessBacteriaPhase {
         StructureObject mc = root.getChildren(0).get(microChannel);
         Image input = mc.getRawImage(1);
         BacteriaTrans.debug=true;
-        ObjectPopulation pop = BacteriaTrans.run(input, mc, 
-                new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu),
-                50, // minSize propagation
-                150, // minSize for filtering
-                10, // X contact limit
-                2, // smooth
-                10, // dog
-                2, // thld empty channel
-                4, // open
-                0.7, // relativeThickness threshold
-                1, // relativeThickness max distance
-                1.5,  // aspect ratio
-                20, // angle
-                null);
+        BacteriaTrans seg = new BacteriaTrans();
+        ObjectPopulation pop = seg.runSegmenter(input, 1, mc);
         ImageDisplayer disp = new IJImageDisplayer();
-        disp.showImage(input);
         disp.showImage(pop.getLabelMap());
         
     }

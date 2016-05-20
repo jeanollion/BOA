@@ -25,7 +25,7 @@ import java.util.Comparator;
  *
  * @author jollion
  */
-public abstract class InterfaceObject3DImpl extends InterfaceImpl<Object3D> implements InterfaceObject3D {
+public abstract class InterfaceObject3DImpl<T extends Interface<Object3D, T>> extends InterfaceImpl<Object3D, T> implements InterfaceObject3D<T> {
 
     public InterfaceObject3DImpl(Object3D e1, Object3D e2) {
         super(e1, e2, Object3DCluster.object3DComparator);

@@ -40,7 +40,7 @@ import processing.neighborhood.EllipsoidalNeighborhood;
  *
  * @author jollion
  */
-public class Object3DCluster<I extends InterfaceObject3D> extends ClusterCollection<Object3D, I> {
+public class Object3DCluster<I extends InterfaceObject3D<I>> extends ClusterCollection<Object3D, I> {
     ObjectPopulation population;
     public final static Comparator<Object3D> object3DComparator = new Comparator<Object3D>() {
         public int compare(Object3D o1, Object3D o2) {
@@ -118,7 +118,7 @@ public class Object3DCluster<I extends InterfaceObject3D> extends ClusterCollect
         }
         return new InterfaceVoxelSet(o1, o2, inter, object3DComparator);
     }*/
-    public static <I extends InterfaceObject3D> I getInteface(Object3D o1, Object3D o2, ImageInteger labelImage, InterfaceFactory<Object3D, I> interfaceFactory) {
+    public static <I extends InterfaceObject3D<I>> I getInteface(Object3D o1, Object3D o2, ImageInteger labelImage, InterfaceFactory<Object3D, I> interfaceFactory) {
         EllipsoidalNeighborhood neigh = labelImage.getSizeZ()>1 ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true);
         Object3D min;
         int otherLabel;
@@ -159,7 +159,7 @@ public class Object3DCluster<I extends InterfaceObject3D> extends ClusterCollect
         if (voxelIntensityImage!=null) c.setVoxelIntensities(voxelIntensityImage, true, true);
         c.mergeSort(criterion, new InterfaceDataFusionCollection<Set<Voxel>, Voxel>(), interfaceSortMethod);
     }*/
-    public static <I extends InterfaceObject3D> void mergeSort(ObjectPopulation population, InterfaceFactory<Object3D, I> interfaceFactory) {
+    public static <I extends InterfaceObject3D<I>> void mergeSort(ObjectPopulation population, InterfaceFactory<Object3D, I> interfaceFactory) {
         Object3DCluster<I> c = new Object3DCluster<I>(population, false, interfaceFactory);
         c.mergeSort();
     }
@@ -171,7 +171,7 @@ public class Object3DCluster<I extends InterfaceObject3D> extends ClusterCollect
         return population.getObjects();
     }
     
-    public static <I extends InterfaceVoxels> ImageShort drawInterfaces(Object3DCluster<I> cluster) {
+    public static <I extends InterfaceVoxels<I>> ImageShort drawInterfaces(Object3DCluster<I> cluster) {
         ImageShort im = new ImageShort("Iterfaces", cluster.population.getImageProperties());
         for (I i : cluster.interfaces) {
             logger.debug("Interface: {}+{}, size: {}", i.getE1().getLabel(), i.getE2().getLabel(), i.getVoxels().size());
@@ -183,7 +183,7 @@ public class Object3DCluster<I extends InterfaceObject3D> extends ClusterCollect
         return im;
     }
     
-    public static interface InterfaceVoxels extends InterfaceObject3D {
+    public static interface InterfaceVoxels<T extends Interface<Object3D, T>> extends InterfaceObject3D<T> {
         public Collection<Voxel> getVoxels();
     } 
 }

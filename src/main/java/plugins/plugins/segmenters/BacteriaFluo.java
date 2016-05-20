@@ -333,7 +333,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         Image hessian=ImageFeatures.getHessian(input, hessianScale.getValue().doubleValue(), false)[0].setName("hessian");
         return WatershedObjectSplitter.splitInTwo(hessian, object.getMask(), false, minSize.getValue().intValue(), splitVerbose);
     }
-    private static class ProcessingVariables {
+    private  static class ProcessingVariables {
         final Image hessian;
         final Image rawIntensityMap;
         final Image intensityMap;
@@ -360,7 +360,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         
         public InterfaceFactory<Object3D, InterfaceBF> getFactory() {
             if (factory==null) {
-                factory = new Object3DCluster.InterfaceFactory<Object3D, InterfaceBF>() {
+                factory = new InterfaceFactory<Object3D, InterfaceBF>() {
                     public InterfaceBF create(Object3D e1, Object3D e2, Comparator<? super Object3D> elementComparator) {
                         return new InterfaceBF(e1, e2);
                     }
@@ -369,14 +369,14 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             return factory;
         }
         
-        protected class InterfaceBF extends InterfaceObject3DImpl implements InterfaceVoxels {
+        protected class InterfaceBF extends InterfaceObject3DImpl<InterfaceBF> implements InterfaceVoxels<InterfaceBF> {
             double value;
             Set<Voxel> voxels;
             public InterfaceBF(Object3D e1, Object3D e2) {
                 super(e1, e2);
                 voxels = new HashSet<Voxel>();
             }
-
+            
             @Override public void updateSortValue() {
                 if (voxels.isEmpty()) {
                     value = Double.NaN;
@@ -391,9 +391,9 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             }
 
             @Override 
-            public void fusionInterface(Interface<Object3D> otherInterface, Comparator<? super Object3D> elementComparator) {
+            public void fusionInterface(InterfaceBF otherInterface, Comparator<? super Object3D> elementComparator) {
                 fusionInterfaceSetElements(otherInterface, elementComparator);
-                InterfaceBF other = (InterfaceBF) otherInterface;
+                InterfaceBF other = otherInterface;
                 voxels.addAll(other.voxels);
                 updateSortValue();
             }
@@ -410,20 +410,16 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
                voxels.add(v1);
                voxels.add(v2);
             }
-
-            public int compareTo(Interface<Object3D> t) {
-                return Double.compare(value, ((InterfaceBF)t).value);
+            
+            @Override
+            public int compareTo(InterfaceBF t) {
+                return Double.compare(value, t.value);
             }
 
             public Collection<Voxel> getVoxels() {
                 return voxels;
             }
+
         }
-    }
-    protected static void mergeSort(ObjectPopulation pop, Image input, Image hessian, double threshold) {
-        
-    }
-    private class MergeInterfaceData {
-        double hessianSum, intensitySum, count;
     }
 }

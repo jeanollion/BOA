@@ -41,7 +41,7 @@ import utils.Utils;
  * @param <E> element data
  * @param <I> iterface data
  */
-public class ClusterCollection<E, I extends Interface<E> > {
+public class ClusterCollection<E, I extends Interface<E, I> > {
     public static boolean verbose;
     public static final Logger logger = LoggerFactory.getLogger(ClusterCollection.class);
     final Comparator<? super E> elementComparator;
@@ -189,8 +189,8 @@ public class ClusterCollection<E, I extends Interface<E> > {
     }
     
 
-    public static interface InterfaceFactory<E, I extends Interface<E>> {
-        public I create(E e1, E e2, Comparator<? super E> elementComparator);
+    public static interface InterfaceFactory<E, T extends Interface<E, T>> {
+        public T create(E e1, E e2, Comparator<? super E> elementComparator);
     }
     
 }

@@ -28,7 +28,7 @@ import utils.clustering.Object3DCluster.InterfaceVoxels;
  *
  * @author jollion
  */
-public abstract class InterfaceVoxelSet extends InterfaceObject3DImpl implements InterfaceVoxels {
+public abstract class InterfaceVoxelSet<T extends InterfaceVoxelSet<T>> extends InterfaceObject3DImpl<T> implements InterfaceVoxels<T> {
     Set<Voxel> voxels;
 
     public InterfaceVoxelSet(Object3D e1, Object3D e2) {
@@ -56,7 +56,7 @@ public abstract class InterfaceVoxelSet extends InterfaceObject3DImpl implements
     }
 
     @Override 
-    public void fusionInterface(Interface<Object3D> otherInterface, Comparator<? super Object3D> elementComparator) {
+    public void fusionInterface(T otherInterface, Comparator<? super Object3D> elementComparator) {
         fusionInterfaceSetElements(otherInterface, Object3DCluster.object3DComparator);
         voxels.addAll(((InterfaceVoxelSet)otherInterface).voxels);
     }

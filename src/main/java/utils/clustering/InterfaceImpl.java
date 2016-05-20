@@ -24,7 +24,7 @@ import java.util.List;
  *
  * @author jollion
  */
-public abstract class InterfaceImpl<E> implements Interface<E> {
+public abstract class InterfaceImpl<E, T extends Interface<E, T>> implements Interface<E, T> {
         protected E e1, e2;
         
         public InterfaceImpl(E e1, E e2, Comparator<? super E> elementComparator) {
@@ -49,7 +49,7 @@ public abstract class InterfaceImpl<E> implements Interface<E> {
         public E getE1() {return e1;}
         public E getE2() {return e2;}
         
-        protected void fusionInterfaceSetElements(Interface<E> otherInterface, Comparator<? super E> elementComparator)  {
+        protected void fusionInterfaceSetElements(Interface<E, T> otherInterface, Comparator<? super E> elementComparator)  {
             E com = getCommonElement(otherInterface);
             if (com==null) throw new IllegalArgumentException("No common elements in "+this+" and "+otherInterface+" cannot merge");
             E o1 = getOther(com);
@@ -77,16 +77,16 @@ public abstract class InterfaceImpl<E> implements Interface<E> {
             return this.e1==e1 || this.e2==e1;
         }
         
-        public E getCommonElement(Interface<E> other) {
+        public E getCommonElement(Interface<E, T> other) {
             if (e1==other.getE1() || e1==other.getE2()) return e1;
             else if (e2==other.getE1() || e2==other.getE2()) return e2;
             else return null;
         }
         
-        public <I extends InterfaceImpl<E>> boolean hasOneRegionWithNoOtherInteractant(ClusterCollection<E, I> c) {
-            List<I> l1 = c.elementInterfaces.get(e1);
+        public boolean hasOneRegionWithNoOtherInteractant(ClusterCollection<E, T> c) {
+            List<T> l1 = c.elementInterfaces.get(e1);
             if (l1==null || l1.isEmpty() || (l1.size()==1 && l1.contains(this))) return true;
-            List<I> l2 = c.elementInterfaces.get(e2);
+            List<T> l2 = c.elementInterfaces.get(e2);
             return (l2==null || l2.isEmpty() || (l2.size()==1 && l2.contains(this)) );
         }
 

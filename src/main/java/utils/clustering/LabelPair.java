@@ -54,7 +54,8 @@ public class LabelPair {
         if (o instanceof LabelPair) {
             return ((LabelPair)o).r1==r1 && ((LabelPair)o).r2==r2;
         } else if (o instanceof InterfaceImpl && ((InterfaceImpl)o).e1 instanceof Object3D) {
-            return (r1 == ((Interface<Object3D>)o).getE1().getLabel() && r2 == ((Interface<Object3D>)o).getE2().getLabel());
+            return (r1 == ((Interface<Object3D, ?>)o).getE1().getLabel() 
+                    && r2 == ((Interface<Object3D, ?>)o).getE2().getLabel());
         }
         return false;
     }
