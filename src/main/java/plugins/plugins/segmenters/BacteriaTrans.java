@@ -272,6 +272,16 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             return new double[]{0, 0, 0};
         }
     }
+    
+    public static double getCost(double value, double threshold, boolean valueShouldBeAboveThreshold)  {
+        if (valueShouldBeAboveThreshold) {
+            if (value>=threshold) return 0;
+            else return (threshold-value)/threshold;
+        } else {
+            if (value<=threshold) return 0;
+            else return (value-threshold)/threshold;
+        }
+    }
 
     public Parameter[] getParameters() {
         return parameters;
@@ -300,7 +310,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             InterfaceBT inter = getInterface(o1, o2);
             inter.checkFusion();
             if (Double.isNaN(inter.value)) return Double.NaN;
-            return inter.value-pv.relativeThicknessThreshold; // split cost : if > threshold difficult to split, if not easy to split
+            return getCost(inter.value, pv.relativeThicknessThreshold, false); // TODO faire un min avec la courbure
         }
     }
 
@@ -326,7 +336,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             }
         }
         if (maxCost==Double.NEGATIVE_INFINITY || maxCost==Double.NaN) return Double.NaN;
-        return maxCost-pv.relativeThicknessThreshold;
+        return getCost(maxCost, pv.relativeThicknessThreshold, true);
+        //return maxCost-pv.relativeThicknessThreshold;
     }
     
     private InterfaceBT getInterface(Object3D o1, Object3D o2) {

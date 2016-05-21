@@ -261,7 +261,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             result.add(o1);
             result.add(o2);
             ProcessingVariables.InterfaceBF inter = getInterface(o1, o2);
-            return pv.splitThresholdValue-inter.value;
+            return BacteriaTrans.getCost(inter.value, pv.splitThresholdValue, true);
         }
     }
 
@@ -287,7 +287,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             }
         }
         if (maxCost==Double.MIN_VALUE) return Double.NaN;
-        return maxCost-pv.splitThresholdValue;
+        return BacteriaTrans.getCost(maxCost, pv.splitThresholdValue, false);
     }
     
     private ProcessingVariables.InterfaceBF getInterface(Object3D o1, Object3D o2) {
