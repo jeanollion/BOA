@@ -55,7 +55,7 @@ public class MorphiumSelectionDAO implements SelectionDAO {
     
     public Selection getObject(String id) {
         Selection s =  getQuery().getById(id);
-        s.setMasterDAO(masterDAO);
+        if (s!=null) s.setMasterDAO(masterDAO);
         return s;
     }
     

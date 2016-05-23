@@ -36,8 +36,8 @@ public class SelectionRenderer extends JLabel implements ListCellRenderer<Select
     public Component getListCellRendererComponent(JList<? extends Selection> list, Selection selection, int index,
         boolean isSelected, boolean cellHasFocus) {
         setText(selection.toString());
-        setForeground(isSelected ? list.getSelectionForeground() : selection.getColor());
-        setBackground(isSelected ? selection.getColor() : list.getBackground());
+        setForeground(isSelected ? list.getSelectionForeground() : selection.getColor(false));
+        setBackground(isSelected ? selection.getColor(false) : list.getBackground());
         this.setOpaque(true);
         //57/105/138
         return this;

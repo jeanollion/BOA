@@ -261,6 +261,13 @@ public class StructureObjectUtils {
         return res;
     }
     
+    public static Map<StructureObject, List<StructureObject>> splitByParentTrackHead(Collection<StructureObject> list) {
+        if (list.isEmpty()) return Collections.EMPTY_MAP;
+        HashMapGetCreate<StructureObject, List<StructureObject>> res = new HashMapGetCreate<StructureObject, List<StructureObject>>(new HashMapGetCreate.ListFactory<StructureObject, StructureObject>());
+        for (StructureObject o : list) res.getAndCreateIfNecessary(o.getParent().getTrackHead()).add(o);
+        return res;
+    }
+    
     public static Map<Integer, List<StructureObject>> splitByStructureIdx(Collection<StructureObject> list) {
         if (list.isEmpty()) return Collections.EMPTY_MAP;
         HashMapGetCreate<Integer, List<StructureObject>> res = new HashMapGetCreate<Integer, List<StructureObject>>(new HashMapGetCreate.ListFactory<Integer, StructureObject>());
@@ -306,6 +313,12 @@ public class StructureObjectUtils {
     public static Set<StructureObject> getParents(Collection<StructureObject> objects) {
         Set<StructureObject> res = new HashSet<StructureObject>();
         for (StructureObject o : objects) res.add(o.getParent());
+        return res;
+    }
+    
+    public static Set<StructureObject> getParentTrackHeads(Collection<StructureObject> objects) {
+        Set<StructureObject> res = new HashSet<StructureObject>();
+        for (StructureObject o : objects) res.add(o.getParent().getTrackHead());
         return res;
     }
     

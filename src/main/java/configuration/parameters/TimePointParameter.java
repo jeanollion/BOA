@@ -45,7 +45,7 @@ public class TimePointParameter extends BoundedNumberParameter {
     public int getMaxTimePoint() {
         if (timePointNumber==-1) {
             timePointNumber = ParameterUtils.getTimePointNumber(this, useRawInputFrames);
-            logger.debug("tp param: {} after trim: {} tpnb: {}", name, useRawInputFrames, timePointNumber);
+            //logger.debug("tp param: {} after trim: {} tpnb: {}", name, useRawInputFrames, timePointNumber);
             if (timePointNumber>0) super.upperBound=timePointNumber-1;
         }
         return Math.max(0, timePointNumber-1);

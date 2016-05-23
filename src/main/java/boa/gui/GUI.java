@@ -195,7 +195,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_U, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Unlink") {
             @Override
             public void actionPerformed(ActionEvent e) {
-                linkObjectsButtonActionPerformed(e);
+                unlinkObjectsButtonActionPerformed(e);
                 logger.debug("U pressed: " + e);
             }
         });
@@ -450,7 +450,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         List<Selection> sels = dao.getSelections();
         for (Selection sel : sels) {
             selectionModel.addElement(sel);
-            logger.debug("Selection : {}, displayingObjects: {} track: {}", sel.getName(), sel.isDisplayingObjects(), sel.isDisplayingTracks());
+            //logger.debug("Selection : {}, displayingObjects: {} track: {}", sel.getName(), sel.isDisplayingObjects(), sel.isDisplayingTracks());
         }
     }
     
@@ -774,6 +774,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         jMenu1 = new javax.swing.JMenu();
         bsonFormatMenuItem = new javax.swing.JRadioButtonMenuItem();
         jsonFormatMenuItem = new javax.swing.JRadioButtonMenuItem();
+        importOptionsSubMenu = new javax.swing.JMenu();
+        eraseCollectionCheckbox = new javax.swing.JCheckBoxMenuItem();
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -1337,6 +1339,20 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         jMenu1.add(jsonFormatMenuItem);
 
         importExportMenu.add(jMenu1);
+
+        importOptionsSubMenu.setText("Import Options");
+
+        eraseCollectionCheckbox.setSelected(true);
+        eraseCollectionCheckbox.setText("Erase Collections before Import (recommended)");
+        eraseCollectionCheckbox.setEnabled(false);
+        eraseCollectionCheckbox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                eraseCollectionCheckboxActionPerformed(evt);
+            }
+        });
+        importOptionsSubMenu.add(eraseCollectionCheckbox);
+
+        importExportMenu.add(importOptionsSubMenu);
         importExportMenu.add(jSeparator1);
 
         jMenuBar1.add(importExportMenu);
@@ -1623,7 +1639,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void importFieldsToCurrentExperimentMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importFieldsToCurrentExperimentMenuItemActionPerformed
         if (!checkConnection()) return;
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
-        File[] selectedFiles = Utils.chooseFiles("Select directory containing exported files OR directly exported files", defDir, FileChooser.FileChooserOption.FILE_OR_DIRECTORY, this);
+        File[] selectedFiles = Utils.chooseFiles("Select directory containing exported files OR directly exported files", defDir, FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, this);
         if (selectedFiles==null || selectedFiles.length==0) return;
         Map<String, String> fields = CommandExecuter.getObjectDumpedCollections(selectedFiles);
         if (fields.isEmpty()) {
@@ -1639,8 +1655,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         }
         if (hasFieldsAlreadyPresent) {
-            Object[] options = {"Import and override existing data", "Ignore existing positions"};
-            int n = JOptionPane.showOptionDialog(this, "Some positions found in the directory are already present in the current experiment", "Import Positions", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+            String opt = true ? "Import and override existing data" : "Import and join with existing data";
+            Object[] options = {opt, "Ignore existing positions"};
+            String erase = true ? "Existing Data will be earsed before import, this may result in data loss.": "Existing data will not be earsed before import, this may result in data collapse and errors, check that imported data is disjoined from data that is already present.";
+            int n = JOptionPane.showOptionDialog(this, "Some positions found in the directory are already present in the current experiment. "+erase, "Import Positions", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
             ignoreExisting = n==1;
         }
         if (ignoreExisting) {
@@ -1659,7 +1677,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                     db.getExperiment().createMicroscopyField(f);
                     fieldsCreated=true;
                     logger.info("Position: {} was created. Run \"re-link images\" to set the input images", f);
-                }
+                } else db.getDao(f).clearCache();
             }
         }
         if (fieldsCreated) {
@@ -1840,6 +1858,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (selList.isEmpty()) logger.warn("Select at least one object to Split first!");
         else ManualCorrection.splitObjects(db, selList, false, true);
     }//GEN-LAST:event_testSplitButtonActionPerformed
+
+    private void eraseCollectionCheckboxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_eraseCollectionCheckboxActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_eraseCollectionCheckboxActionPerformed
     private void updateMongoDBBinActions() {
         boolean enableDump = false, enableRestore = false;
         String mPath = PropertyUtils.get(PropertyUtils.MONGO_BIN_PATH);
@@ -1946,6 +1968,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JButton deleteObjectsButton;
     private javax.swing.JMenuItem deleteXPMenuItem;
     private javax.swing.JMenuItem duplicateXPMenuItem;
+    private javax.swing.JCheckBoxMenuItem eraseCollectionCheckbox;
     private javax.swing.JList experimentList;
     private javax.swing.JMenu experimentMenu;
     private javax.swing.JMenuItem exportSelectedFieldsMenuItem;
@@ -1961,6 +1984,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JMenuItem importFieldsToCurrentExperimentMenuItem;
     private javax.swing.JMenuItem importImagesMenuItem;
     private javax.swing.JMenuItem importNewExperimentMenuItem;
+    private javax.swing.JMenu importOptionsSubMenu;
     private javax.swing.JMenu importSubMenu;
     private javax.swing.JComboBox interactiveStructure;
     private javax.swing.JLabel jLabel1;

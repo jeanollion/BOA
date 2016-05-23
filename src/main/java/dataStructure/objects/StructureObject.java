@@ -25,6 +25,7 @@ import image.ImageWriter;
 import image.ObjectFactory;
 import static image.ObjectFactory.getBounds;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.TreeMap;
@@ -423,7 +424,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
     }
     
-    public void setTrackHead(StructureObject trackHead, boolean resetPreviousIfTrackHead, boolean propagateToNextObjects, List<StructureObject> modifiedObjects) {
+    public void setTrackHead(StructureObject trackHead, boolean resetPreviousIfTrackHead, boolean propagateToNextObjects, Collection<StructureObject> modifiedObjects) {
         if (resetPreviousIfTrackHead && this==trackHead) {
             if (previous!=null && previous.next==this) previous.setNext(null);
             this.setPrevious(null);

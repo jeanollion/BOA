@@ -18,6 +18,7 @@
 package dataStructure.objects;
 
 import static boa.gui.selection.SelectionUtils.colors;
+import static boa.gui.selection.SelectionUtils.colorsImageDisplay;
 import static dataStructure.objects.StructureObject.logger;
 import de.caluga.morphium.annotations.Entity;
 import de.caluga.morphium.annotations.Id;
@@ -26,6 +27,7 @@ import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,26 +44,25 @@ import utils.Utils;
 public class Selection implements Comparable<Selection> {
     @Id String id;
     int structureIdx;
-    Map<String, List<String>> elements;
+    Map<String, Set<String>> elements;
     String color="Green";
     boolean displayingTracks=false;
     boolean displayingObjects=false;
     
     @Transient public final static String indexSeparator ="-";
-    @Transient Map<String, List<StructureObject>> retrievedElements= new HashMap<String, List<StructureObject>>();
-    @Transient Map<String, List<StructureObject>> retrievedTrackHeads = new HashMap<String, List<StructureObject>>();
+    @Transient Map<String, Set<StructureObject>> retrievedElements= new HashMap<String, Set<StructureObject>>();
+    @Transient Map<String, Set<StructureObject>> retrievedTrackHeads = new HashMap<String, Set<StructureObject>>();
     @Transient MasterDAO mDAO;
-    @Transient Color col;
     
     public Selection(String name, MasterDAO mDAO) {
         this.id=name;
         this.structureIdx=-1;
-        elements = new HashMap<String, List<String>>();
+        elements = new HashMap<String, Set<String>>();
     }
     
-    public Color getColor() {
-        if (col ==null) col = colors.get(color);
-        return col;
+    public Color getColor(boolean imageDisplay) {
+        if (imageDisplay) return colorsImageDisplay.get(color);
+        else return colors.get(color);
     }
     
     public boolean isDisplayingTracks() {
@@ -82,7 +83,6 @@ public class Selection implements Comparable<Selection> {
     
     public void setColor(String color) {
         this.color=color;
-        col = colors.get(color);
     }
     
     public void setMasterDAO(MasterDAO mDAO) {
@@ -93,35 +93,46 @@ public class Selection implements Comparable<Selection> {
         return structureIdx;
     }
     
-    public List<StructureObject> getElements(String fieldName) {
-        List<StructureObject> res =  retrievedElements.get(fieldName);
+    public Set<StructureObject> getElements(String fieldName) {
+        Set<StructureObject> res =  retrievedElements.get(fieldName);
         if (res==null && elements.containsKey(fieldName)) return retrieveElements(fieldName);
         return res;
     }
     
-    public List<StructureObject> getTrackHeads(String fieldName) {
-        List<StructureObject> res = this.retrievedTrackHeads.get(fieldName);
+    public Set<StructureObject> getTrackHeads(String fieldName) {
+        Set<StructureObject> res = this.retrievedTrackHeads.get(fieldName);
         if (res==null) {
-            List<StructureObject> els = getElements(fieldName);
+            Set<StructureObject> els = getElements(fieldName);
             if (els!=null) {
-                res = new ArrayList<StructureObject>(els.size());
+                res = new HashSet<StructureObject>(els.size());
                 for (StructureObject o : els) res.add(o.getTrackHead());
-                Utils.removeDuplicates(res, false);
                 retrievedTrackHeads.put(fieldName, res);
             }
         }
         return res;
     }
-    
-    protected List<StructureObject> retrieveElements(String fieldName) {
+    protected Set<String> get(String fieldName, boolean createIfNull) {
+        Collection<String> indiciesList = elements.get(fieldName);
+        if (indiciesList==null) {
+            if (createIfNull) {
+                indiciesList = new HashSet<String>();
+                elements.put(fieldName, (Set)indiciesList);
+            } else return null;
+        } else if (indiciesList instanceof List) { // retro-compatibility
+            indiciesList = new HashSet<String>(indiciesList);
+            elements.put(fieldName, (Set)indiciesList);
+        }
+        return (Set)indiciesList;
+    }
+    protected Set<StructureObject> retrieveElements(String fieldName) {
         if (fieldName==null) throw new IllegalArgumentException("FieldName cannot be null");
-        List<String> indiciesList = elements.get(fieldName);
+        Set<String> indiciesList = get(fieldName, false);
         if (indiciesList==null) {
             return null;
         }
         ObjectDAO dao = mDAO.getDao(fieldName);
         int[] pathToRoot = mDAO.getExperiment().getPathToRoot(structureIdx);
-        List<StructureObject> res = new ArrayList<StructureObject>(indiciesList.size());
+        Set<StructureObject> res = new HashSet<StructureObject>(indiciesList.size());
         retrievedElements.put(fieldName, res);
         retrievedTrackHeads.remove(fieldName);
         List<StructureObject> roots = dao.getRoots();
@@ -160,17 +171,13 @@ public class Selection implements Comparable<Selection> {
     
     public void updateElementList(String fieldName) {
         if (fieldName==null) throw new IllegalArgumentException("FieldName cannot be null");
-        List<StructureObject> objectList = retrievedElements.get(fieldName);
+        Set<StructureObject> objectList = retrievedElements.get(fieldName);
         if (objectList==null) {
             elements.remove(fieldName);
             return;
         }
-        Utils.removeDuplicates(objectList, true);
-        List<String> indiciesList = elements.get(fieldName);
-        if (indiciesList==null) {
-            indiciesList = new ArrayList<String>(objectList.size());
-            elements.put(fieldName, indiciesList);
-        } else indiciesList.clear();
+        Set<String> indiciesList = get(fieldName, true);
+        indiciesList.clear();
         for (StructureObject o : objectList) indiciesList.add(indiciesToString(StructureObjectUtils.getIndexTree(o)));
     }
     
@@ -178,43 +185,35 @@ public class Selection implements Comparable<Selection> {
         if (this.structureIdx==-1) structureIdx=elementToAdd.getStructureIdx();
         else if (structureIdx!=elementToAdd.getStructureIdx()) return;
         
-        List<StructureObject> list = getElements(elementToAdd.getFieldName());
+        Set<StructureObject> list = getElements(elementToAdd.getFieldName());
         if (list==null) {
-            list=new ArrayList<StructureObject>();
+            list=new HashSet<StructureObject>();
             retrievedElements.put(elementToAdd.getFieldName(), list);
         }
         if (!list.contains(elementToAdd)) {
             list.add(elementToAdd);
             // update trackHeads
             if (retrievedTrackHeads.containsKey(elementToAdd.getFieldName())) {
-                List<StructureObject> th = this.getTrackHeads(elementToAdd.getFieldName());
+                Set<StructureObject> th = this.getTrackHeads(elementToAdd.getFieldName());
                 if (!th.contains(elementToAdd.getTrackHead())) th.add(elementToAdd.getTrackHead());
             }
             // update DB refs
-            List<String> els = elements.get(elementToAdd.getFieldName());
-            if (els==null) {
-                els = new ArrayList<String>();
-                elements.put(elementToAdd.getFieldName(), els);
-            }
+            Set<String> els = get(elementToAdd.getFieldName(), true);
             els.add(indiciesToString(StructureObjectUtils.getIndexTree(elementToAdd)));
             if (els.size()!=list.size()) logger.error("unconsitancy in selection: {}, {} vs: {}", this.toString(), list.size(), els.size());
         }
     }
-    public void addElements(List<StructureObject> elementsToAdd) {
+    public void addElements(Collection<StructureObject> elementsToAdd) {
         for (StructureObject o : elementsToAdd) addElement(o);
     }
     
     public boolean removeElement(StructureObject elementToRemove) {
-        List<StructureObject> list = getElements(elementToRemove.getFieldName());
+        Set<StructureObject> list = getElements(elementToRemove.getFieldName());
         if (list!=null) {
-            int idx = list.indexOf(elementToRemove);
-            if (idx>=0) {
-                retrievedTrackHeads.remove(elementToRemove.getFieldName());
-                list.remove(idx);
-                List<String> els = elements.get(elementToRemove.getFieldName());
-                els.remove(idx);
-                if (els.size()!=list.size()) logger.error("unconsitancy in selection: {}, {} vs: {}", this.toString(), list.size(), els.size());
-            }
+            list.remove(elementToRemove);
+            String ref= indiciesToString(StructureObjectUtils.getIndexTree(elementToRemove));
+            Set<String> els = get(elementToRemove.getFieldName(), false);
+            if (els!=null) els.remove(ref);
         }
         return false;
     }
@@ -224,6 +223,7 @@ public class Selection implements Comparable<Selection> {
     public void clear() {
         elements.clear();
         if (retrievedElements!=null) retrievedElements.clear();
+        if (retrievedTrackHeads!=null) retrievedTrackHeads.clear();
     }
     @Override 
     public String toString() {
@@ -231,7 +231,7 @@ public class Selection implements Comparable<Selection> {
     }
     public int count() {
         int c = 0;
-        for (List<String> l : elements.values()) c+=l.size();
+        for (Collection<String> l : elements.values()) c+=l.size();
         return c;
     }
     public String getName() {

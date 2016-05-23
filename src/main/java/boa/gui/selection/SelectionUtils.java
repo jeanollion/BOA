@@ -24,6 +24,7 @@ import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.gui.objects.StructureObjectTreeGenerator;
 import boa.gui.objects.TrackTreeGenerator;
+import dataStructure.objects.MasterDAO;
 import dataStructure.objects.Selection;
 import dataStructure.objects.SelectionDAO;
 import dataStructure.objects.StructureObject;
@@ -38,6 +39,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.swing.DefaultListModel;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JList;
@@ -55,20 +57,33 @@ import utils.Utils;
  * @author jollion
  */
 public class SelectionUtils {
-    public static Map<String, Color> colors = new HashMap<String, Color>() {{
+    public static Map<String, Color> colorsImageDisplay = new HashMap<String, Color>() {{
         put("Magenta", new Color(255, 0, 255, 120));
         put("Blue", new Color(0, 0, 255, 120));
         put("Cyan", new Color(0, 255, 255, 120));
         put("Green", new Color(0, 255, 0, 120));
     }};
+    public static Map<String, Color> colors = new HashMap<String, Color>() {{
+        put("Magenta", new Color(255, 0, 255));
+        put("Blue", new Color(0, 0, 205));
+        put("Cyan", new Color(0, 139, 139));
+        put("Green", new Color(0, 100, 0));
+    }};
+    
+    public static Selection getSelection(MasterDAO db, String name, boolean createIfNonExisting) {
+        Selection res = db.getSelectionDAO().getObject(name);
+        if (res==null && createIfNonExisting) res = new Selection(name, db);
+        return res;
+    }
+    
     public static void displayObjects(Selection s, ImageObjectInterface i) {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (i==null) i = iwm.getCurrentImageObjectInterface();
         if (i!=null) {
             String fieldName = i.getParent().getFieldName();
-            List<StructureObject> objects = s.getElements(fieldName);
+            Set<StructureObject> objects = s.getElements(fieldName);
             if (objects!=null) {
-                iwm.displayObjects(null, i.pairWithOffset(objects), s.getColor(), false, false);
+                iwm.displayObjects(null, i.pairWithOffset(objects), s.getColor(true), false, false);
             }
         }
     }
@@ -78,7 +93,7 @@ public class SelectionUtils {
         if (i==null) i = iwm.getCurrentImageObjectInterface();
         if (i!=null) {
             String fieldName = i.getParent().getFieldName();
-            List<StructureObject> objects = s.getElements(fieldName);
+            Set<StructureObject> objects = s.getElements(fieldName);
             if (objects!=null) {
                 iwm.hideObjects(null, i.pairWithOffset(objects), false);
             }
@@ -89,11 +104,11 @@ public class SelectionUtils {
         if (i==null) i = iwm.getCurrentImageObjectInterface();
         if (i!=null) {
             String fieldName = i.getParent().getFieldName();
-            List<StructureObject> tracks = s.getTrackHeads(fieldName);
+            Set<StructureObject> tracks = s.getTrackHeads(fieldName);
             if (tracks==null) return;
             for (StructureObject trackHead : tracks) {
                 List<StructureObject> track = StructureObjectUtils.getTrack(trackHead, true);
-                iwm.displayTrack(null, i, i.pairWithOffset(track), s.getColor(), false);
+                iwm.displayTrack(null, i, i.pairWithOffset(track), s.getColor(true), false);
             }
         }
     }
@@ -102,7 +117,7 @@ public class SelectionUtils {
         if (i==null)  i = iwm.getCurrentImageObjectInterface();
         if (i!=null) {
             String fieldName = i.getParent().getFieldName();
-            List<StructureObject> tracks = s.getTrackHeads(fieldName);
+            Set<StructureObject> tracks = s.getTrackHeads(fieldName);
             if (tracks==null) return;
             iwm.hideTracks(null, i, tracks, false);
         }
@@ -143,7 +158,7 @@ public class SelectionUtils {
                     s.setIsDisplayingObjects(displayObjects.isSelected());
                     dao.store(s); // optimize if necessary -> update
                 }
-                GUI.updateRoiDisplay(null);
+                GUI.updateRoiDisplayForSelections(null, null);
             }
         });
         menu.add(displayObjects);
@@ -157,7 +172,7 @@ public class SelectionUtils {
                     s.setIsDisplayingTracks(displayTracks.isSelected());
                     dao.store(s); // optimize if necessary -> update
                 }
-                GUI.updateRoiDisplay(null);
+                GUI.updateRoiDisplayForSelections(null, null);
             }
         });
         menu.add(displayTracks);
@@ -277,7 +292,7 @@ public class SelectionUtils {
                 if (selectedValues.isEmpty()) return;
                 DefaultListModel<Selection> model = (DefaultListModel<Selection>)list.getModel();
                 for (Selection s : selectedValues ) dao.delete(s);
-                for (int i : list.getSelectedIndices()) model.removeElementAt(i);
+                for (Selection s : selectedValues) model.removeElement(s);
                 list.updateUI();
                 GUI.updateRoiDisplayForSelections(null, null);
             }

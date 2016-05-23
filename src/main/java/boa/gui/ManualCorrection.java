@@ -24,9 +24,12 @@ import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.gui.objects.ObjectNode;
 import boa.gui.objects.StructureNode;
+import boa.gui.selection.SelectionUtils;
+import dataStructure.configuration.Experiment;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.Selection;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import image.BoundingBox;
@@ -56,7 +59,7 @@ public class ManualCorrection {
         o.resetTrackLinks();
         //logger.debug("unlinking: {}", o);
     }
-    public static void unlinkObjects(StructureObject prev, StructureObject next, List<StructureObject> modifiedObjects) {
+    public static void unlinkObjects(StructureObject prev, StructureObject next, Collection<StructureObject> modifiedObjects) {
         if (next.getTimePoint()<prev.getTimePoint()) unlinkObjects(next, prev, modifiedObjects);
         else {
             next.setTrackHead(next, true, true, modifiedObjects);
@@ -68,17 +71,28 @@ public class ManualCorrection {
         }
         
     }
-    public static void linkObjects(StructureObject prev, StructureObject next, List<StructureObject> modifiedObjects) {
+    public static void linkObjects(StructureObject prev, StructureObject next, Collection<StructureObject> modifiedObjects) {
         if (next.getTimePoint()<prev.getTimePoint()) linkObjects(next, prev, modifiedObjects);
         else {
-            if (prev.getNext()==next || next.getPrevious()==prev) {
+            if (prev.getNext()==next && next.getPrevious()==prev)  {
                 logger.warn("spots are already linked");
                 return;
+            } else if (prev.getNext()==next || next.getPrevious()==prev) {
+                logger.warn("spots are already linked, s1: {}, th: {}, next: {}", prev, prev.getTrackHead(), prev.getNext());
+                logger.warn("spots are already linked, s2: {}, th: {}, prev: {}", next, next.getTrackHead(), next.getPrevious());
+                if (prev.getNext()==next && prev.getTrackHead()!=next.getTrackHead()) logger.error("Inconsitency: spots thrackHead differ: {} vs {}",  prev.getTrackHead(), next.getTrackHead());
+                if (prev.getNext()==next && next.getPrevious()!=prev) {
+                    logger.error("Data inconsitency: s2 is next of s1, but s1 is not prev of s2. Will be repaired");
+                } else if (next.getPrevious()==prev && prev.getNext()!=next) {
+                    logger.error("Data inconsitency: s2 is next of s1, but s1 is not prev of s2. {}", prev.getNext()==null?"will be repaired": "");
+                    if (prev.getNext()!=null) return;
+                }
             }
+            boolean newTh = prev.getNext()!=null && prev.getNext()!=next;
             // unlinking each of the two spots
             if (next.getPrevious()!=null) unlinkObjects(next.getPrevious(), next, modifiedObjects);
             //if (prev.getNext()!=null) unlinkObjects(prev, prev.getNext(), modifiedTrackHeads);
-            boolean newTh = prev.getNext()!=null;
+            
             next.setPreviousInTrack(prev, newTh);
             if (!newTh) next.setTrackHead(prev.getTrackHead(), false, true, modifiedObjects);
             else next.setTrackHead(next, false, true, modifiedObjects);
@@ -127,7 +141,7 @@ public class ManualCorrection {
                 //if (unlink) for (StructureObject o : l) ManualCorrection.unlinkObject(o, modifiedObjects);
             }   
         }
-        
+        repairLinkInconsistencies(db, modifiedObjects, modifiedObjects);
         Utils.removeDuplicates(modifiedObjects, false);
         db.getDao(objects.get(0).getFieldName()).store(modifiedObjects, true);
         if (updateDisplay) {
@@ -145,6 +159,39 @@ public class ManualCorrection {
             if (!trackToDisp.isEmpty()) iwm.displayTracks(null, null, trackToDisp, true);
         }
     }
+    
+    private static void repairLinkInconsistencies(MasterDAO db, Collection<StructureObject> objects, Collection<StructureObject> modifiedObjects) {
+        Map<StructureObject, List<StructureObject>> objectsByParentTh = StructureObjectUtils.splitByParentTrackHead(objects);
+        for (StructureObject parentTh : objectsByParentTh.keySet()) {
+            Selection sel = null;
+            String selName = "linkError_pIdx"+parentTh.getIdx()+"_Position"+parentTh.getFieldName();
+            for (StructureObject o : objectsByParentTh.get(parentTh)) {
+                if (o.getNext()!=null && o.getNext().getPrevious()!=o) {
+                    if (o.getNext().getPrevious()==null) linkObjects(o, o.getNext(), modifiedObjects);
+                    else {
+                        if (sel ==null) sel = SelectionUtils.getSelection(db, selName, true);
+                        sel.addElement(o);
+                        sel.addElement(o.getNext());
+                    }
+                }
+                if (o.getPrevious()!=null && o.getPrevious().getNext()!=o) {
+                    if (o.getPrevious().getNext()==null) linkObjects(o.getPrevious(), o, modifiedObjects);
+                    else {
+                        if (sel ==null) sel = SelectionUtils.getSelection(db, selName, true);
+                        sel.addElement(o);
+                        sel.addElement(o.getPrevious());
+                    }
+                }
+            }
+            if (sel!=null) {
+                sel.setIsDisplayingObjects(true);
+                sel.setIsDisplayingTracks(true);
+                db.getSelectionDAO().store(sel);
+            }
+        }
+        GUI.getInstance().populateSelections();
+    }
+    
     
     public static void resetObjectLinks(MasterDAO db, List<StructureObject> objects, boolean updateDisplay) {
         StructureObjectUtils.keepOnlyObjectsFromSameMicroscopyField(objects);
@@ -375,4 +422,60 @@ public class ManualCorrection {
             }
         }
     }
+    
+    public static void repairLinksForXP(MasterDAO db, int structureIdx) {
+        for (String f : db.getExperiment().getFieldsAsString()) repairLinksForField(db, f, structureIdx);
+    }
+    public static void repairLinksForField(MasterDAO db, String fieldName, int structureIdx) {
+        logger.debug("repairing field: {}", fieldName);
+        int count = 0, countUncorr=0, count2=0, countUncorr2=0;
+        ObjectDAO dao = db.getDao(fieldName);
+        List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
+        List<StructureObject> uncorrected = new ArrayList<StructureObject>();
+        for (StructureObject root : dao.getRoots()) {
+            for (StructureObject o : root.getChildren(structureIdx)) {
+                if (o.getNext()!=null) {
+                    if (o.getNext().getPrevious()!=o) {
+                        logger.debug("inconsitency: o: {}, next: {}, next's previous: {}", o, o.getNext(), o.getNext().getPrevious());
+                        if (o.getNext().getPrevious()==null) ManualCorrection.linkObjects(o, o.getNext(), modifiedObjects);
+                        else {
+                            uncorrected.add(o);
+                            uncorrected.add(o.getNext());
+                            countUncorr++;
+                        }
+                        ++count;
+                    }
+                    
+                }
+                if (o.getPrevious()!=null) {
+                        if (o.getPrevious().getNext()!=o) {
+                            if (o.getPrevious().getNext()==null) ManualCorrection.linkObjects(o.getPrevious(), o, modifiedObjects);
+                            else {
+                                uncorrected.add(o);
+                                uncorrected.add(o.getPrevious());
+                                countUncorr2++;
+                            }
+                            logger.debug("inconsitency: o: {}, previous: {}, previous's next: {}", o, o.getPrevious(), o.getPrevious().getNext());
+                            ++count2;
+                        }
+                }
+            }
+        }
+        logger.debug("total errors: type 1 : {}, uncorrected: {}, type 2: {}, uncorrected: {}", count, countUncorr, count2, countUncorr2);
+        Map<StructureObject, List<StructureObject>> uncorrByParentTH = StructureObjectUtils.splitByParentTrackHead(uncorrected);
+        
+        // create selection of uncorrected
+        for (StructureObject parentTh : uncorrByParentTH.keySet()) {
+            String selectionName = "linkError_pIdx"+parentTh.getIdx()+"_Position"+fieldName;
+            Selection sel = db.getSelectionDAO().getObject(fieldName);
+            if (sel == null) sel = new Selection(selectionName, db);
+            sel.addElements(uncorrByParentTH.get(parentTh));
+            sel.setIsDisplayingObjects(true);
+            sel.setIsDisplayingTracks(true);
+            db.getSelectionDAO().store(sel);
+        }
+        Utils.removeDuplicates(modifiedObjects, false);
+        dao.store(modifiedObjects, true);
+    }
+    
 }
