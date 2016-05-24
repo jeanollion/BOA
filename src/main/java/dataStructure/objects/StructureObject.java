@@ -163,7 +163,11 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public boolean isRoot() {return structureIdx==-1;}
     public ArrayList<? extends StructureObject> getChildObjects(int structureIdx) {return getChildren(structureIdx);} // for overriding purpose
     public ArrayList<StructureObject> getChildren(int structureIdx) {
-        if (structureIdx<=this.structureIdx) throw new IllegalArgumentException("Structure: "+structureIdx+" cannot be child of structure: "+this.structureIdx);
+        if (structureIdx<this.structureIdx) throw new IllegalArgumentException("Structure: "+structureIdx+" cannot be child of structure: "+this.structureIdx);
+        if (structureIdx == this.structureIdx) {
+            final StructureObject o = this;
+            return new ArrayList<StructureObject>(){{add(o);}};
+        }
         ArrayList<StructureObject> res= this.childrenSM.get(structureIdx);
         if (res==null) {
             if (getExperiment().isDirectChildOf(this.structureIdx, structureIdx)) { // direct child
@@ -276,7 +280,34 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     // track-related methods
     
+    public void setTrackLinks(StructureObject next, boolean setPrev, boolean setNext, TrackFlag flag) {
+        if (next==null) unSetTrackLinks(setPrev, setNext, flag);
+        else {
+            if (next.getTimePoint()<=this.getTimePoint()) throw new RuntimeException("setLink should be of time>= "+(timePoint+1) +" but is: "+next.getTimePoint()+ " current: "+this+", next: "+next);
+            if (setPrev && setNext) { // double link: set trackHead
+                setNext(next);
+                next.setPrevious(this);
+                next.setTrackHead(getTrackHead(), false, false, null);
+            } else if (setPrev) {
+                next.setPrevious(this);
+                next.setTrackHead(next, false, false, null);
+            } else if (setNext) {
+                setNext(next);
+            }
+        }
+    }
     
+    public void unSetTrackLinks(boolean prev, boolean next, TrackFlag flag) {
+        if (prev) {
+            // unset previous's next? 
+            setPrevious(null);
+            setTrackHead(this, false, false, null);
+        }
+        if (next) {
+            // unset next's previous?
+            setNext(null);
+        }
+    }
     
     @Override public void setPreviousInTrack(StructureObjectTracker previous, boolean isTrackHead) {
         setPreviousInTrack(previous, isTrackHead, null);

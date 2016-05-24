@@ -62,10 +62,10 @@ public class ManualCorrection {
     public static void unlinkObjects(StructureObject prev, StructureObject next, Collection<StructureObject> modifiedObjects) {
         if (next.getTimePoint()<prev.getTimePoint()) unlinkObjects(next, prev, modifiedObjects);
         else {
-            next.setTrackHead(next, true, true, modifiedObjects);
+            prev.unSetTrackLinks(false, prev.getNext()==next, StructureObject.TrackFlag.correctionSplit);
+            next.unSetTrackLinks(next.getPrevious()==prev, false, StructureObject.TrackFlag.correctionSplit);
+            next.setTrackHead(next, false, true, modifiedObjects);
             //logger.debug("unlinking.. previous: {}, previous's next: {}", sel.get(1).getPrevious(), sel.get(0).getNext());
-            prev.setTrackFlag(StructureObject.TrackFlag.correctionSplit);
-            next.setTrackFlag(StructureObject.TrackFlag.correctionSplit);
             if (modifiedObjects!=null) modifiedObjects.add(prev);
             //logger.debug("unlinking: {} to {}", sel.get(0), sel.get(1));
         }
@@ -74,34 +74,40 @@ public class ManualCorrection {
     public static void linkObjects(StructureObject prev, StructureObject next, Collection<StructureObject> modifiedObjects) {
         if (next.getTimePoint()<prev.getTimePoint()) linkObjects(next, prev, modifiedObjects);
         else {
-            if (prev.getNext()==next && next.getPrevious()==prev)  {
-                logger.warn("spots are already linked");
-                return;
-            } else if (prev.getNext()==next || next.getPrevious()==prev) {
-                logger.warn("spots are already linked, s1: {}, th: {}, next: {}", prev, prev.getTrackHead(), prev.getNext());
-                logger.warn("spots are already linked, s2: {}, th: {}, prev: {}", next, next.getTrackHead(), next.getPrevious());
-                if (prev.getNext()==next && prev.getTrackHead()!=next.getTrackHead()) logger.error("Inconsitency: spots thrackHead differ: {} vs {}",  prev.getTrackHead(), next.getTrackHead());
-                if (prev.getNext()==next && next.getPrevious()!=prev) {
-                    logger.error("Data inconsitency: s2 is next of s1, but s1 is not prev of s2. Will be repaired");
-                } else if (next.getPrevious()==prev && prev.getNext()!=next) {
-                    logger.error("Data inconsitency: s2 is next of s1, but s1 is not prev of s2. {}", prev.getNext()==null?"will be repaired": "");
-                    if (prev.getNext()!=null) return;
+            boolean allowMerge = prev.getExperiment().getStructure(prev.getStructureIdx()).allowMerge();
+            boolean allowSplit = prev.getExperiment().getStructure(prev.getStructureIdx()).allowMerge();
+            boolean doubleLink = true;
+            if (allowMerge) {
+                if (next.getPrevious()!=null && next.getPrevious()!=prev) { // mergeLink
+                    doubleLink = false;
+                    if (prev.getNext()!=null && prev.getNext()!=next) unlinkObjects(prev, prev.getNext(), modifiedObjects);
+                    if (next!=prev.getNext()) {
+                        prev.setTrackLinks(next, false, true, StructureObject.TrackFlag.correctionMerge);
+                        modifiedObjects.add(prev);
+                    }
                 }
             }
-            boolean newTh = prev.getNext()!=null && prev.getNext()!=next;
-            // unlinking each of the two spots
-            if (next.getPrevious()!=null) unlinkObjects(next.getPrevious(), next, modifiedObjects);
-            //if (prev.getNext()!=null) unlinkObjects(prev, prev.getNext(), modifiedTrackHeads);
-            
-            next.setPreviousInTrack(prev, newTh);
-            if (!newTh) next.setTrackHead(prev.getTrackHead(), false, true, modifiedObjects);
-            else next.setTrackHead(next, false, true, modifiedObjects);
-            next.setTrackFlag(StructureObject.TrackFlag.correctionMerge);
-            modifiedObjects.add(next);
-            modifiedObjects.add(prev);
-            //logger.debug("linking: {} to {}", prev, next);
+            if (allowSplit) {
+                if (prev.getNext()!=null && prev.getNext()!=next) { // split link
+                    doubleLink=false;
+                    if (next.getPrevious()!=null && next.getPrevious()!=prev) unlinkObjects(next.getPrevious(), next, modifiedObjects);
+                    if (prev!=next.getPrevious()) {
+                        prev.setTrackLinks(next, true, false, StructureObject.TrackFlag.correctionSplit);
+                        modifiedObjects.add(next);
+                    }
+                }
+            }
+            if (doubleLink) {
+                if (prev.getNext()!=null && prev.getNext()!=next) unlinkObjects(prev, prev.getNext(), modifiedObjects);
+                if (next.getPrevious()!=null && next.getPrevious()!=prev) unlinkObjects(next.getPrevious(), next, modifiedObjects);
+                if (next!=prev.getNext() || prev!=next.getPrevious()) {
+                    prev.setTrackLinks(next, true, true, StructureObject.TrackFlag.correctionMerge);
+                    next.setTrackHead(prev.getTrackHead(), false, true, modifiedObjects);
+                    modifiedObjects.add(prev);
+                    modifiedObjects.add(next);
+                }
+            }
         }
-        
     }
     
     public static void modifyObjectLinks(MasterDAO db, List<StructureObject> objects, boolean unlink, boolean updateDisplay) {

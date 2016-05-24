@@ -30,6 +30,7 @@ import plugins.plugins.measurements.BacteriaLineageIndex;
 import plugins.plugins.measurements.BacteriaMeasurementsWoleMC;
 import plugins.plugins.measurements.MeasurementObject;
 import plugins.plugins.measurements.MutationMeasurements;
+import plugins.plugins.measurements.MutationTrackMeasurements;
 import plugins.plugins.measurements.objectFeatures.SNR;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.preFilter.Median;
@@ -202,7 +203,7 @@ public class GenerateTestXP {
         xp.setOutputImageDirectory(outputDir);
         File f =  new File(outputDir); f.mkdirs(); //deleteDirectory(f);
         Structure mc = new Structure("MicroChannel", -1, 0);
-        Structure bacteria = new Structure("Bacteria", 0, 0);
+        Structure bacteria = new Structure("Bacteria", 0, 0).setAllowSplit(true);
         Structure mutation = new Structure("Mutation", 0, 1); // parent structure 1 segParentStructure 0
         xp.getStructures().insert(mc, bacteria, mutation);
         
@@ -214,6 +215,7 @@ public class GenerateTestXP {
         xp.addMeasurement(new BacteriaLineageIndex(1, "BacteriaLineage"));
         xp.addMeasurement(new BacteriaFluoMeasurements(1, 2));
         xp.addMeasurement(new MutationMeasurements(1, 2));
+        xp.addMeasurement(new MutationTrackMeasurements(1, 2));
         xp.addMeasurement(new MeasurementObject(2).addFeature(new SNR().setBackgroundObjectStructureIdx(1).setIntensityStructure(2), "MutationSNR"));
         xp.addMeasurement(new BacteriaMeasurementsWoleMC(1, 2));
         if (setUpPreProcessing) {// preProcessing 
@@ -241,7 +243,7 @@ public class GenerateTestXP {
         xp.setOutputImageDirectory(outputDir);
         File f =  new File(outputDir); f.mkdirs(); //deleteDirectory(f);
         Structure mc = new Structure("MicroChannel", -1, 0);
-        Structure bacteria = new Structure("Bacteria", 0, 0);
+        Structure bacteria = new Structure("Bacteria", 0, 0).setAllowSplit(true);
         xp.getStructures().insert(mc, bacteria);
         
         mc.setProcessingScheme(new SegmentThenTrack(

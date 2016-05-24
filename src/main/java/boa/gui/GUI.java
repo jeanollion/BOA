@@ -1812,7 +1812,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         String defDir = PropertyUtils.get(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR);
         File outputDir = Utils.chooseFile("Choose directory", defDir, FileChooser.FileChooserOption.DIRECTORIES_ONLY, this);
         if (outputDir!=null) {
-            String file = outputDir.getAbsolutePath()+File.separator+"output"+Utils.toStringArray(selectedStructures, "_", "", "_")+".xls";
+            String file = outputDir.getAbsolutePath()+File.separator+db.getDBName()+Utils.toStringArray(selectedStructures, "_", "", "_")+".xls";
             logger.info("measurements will be extracted to: {}", file);
             Map<Integer, String[]> keys = db.getExperiment().getAllMeasurementNamesByStructureIdx(MeasurementKeyObject.class, selectedStructures);
             DataExtractor.extractMeasurementObjects(db, file, keys);

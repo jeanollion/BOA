@@ -195,7 +195,6 @@ public class Processor {
         long t0 = System.currentTimeMillis();
         List<StructureObject> roots = dao.getRoots();
         final StructureObject[] rootArray = roots.toArray(new StructureObject[roots.size()]);
-        roots=null; // saves memory
         logger.debug("{} number of roots: {}", dao.getFieldName(), rootArray.length);
         final Map<Integer, List<Measurement>> measurements = dao.getExperiment().getMeasurementsByCallStructureIdx();
         final List<StructureObject> allModifiedObjects = new ArrayList<StructureObject>();
@@ -209,11 +208,9 @@ public class Processor {
                 List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
                 for(Entry<Integer, List<Measurement>> e : measurements.entrySet()) {
                     int structureIdx = e.getKey();
-                    ArrayList<StructureObject> parents;
-                    if (structureIdx==-1) {parents = new ArrayList<StructureObject>(1); parents.add(root);}
-                    else parents = root.getChildren(structureIdx);
+                    ArrayList<StructureObject> objects = root.getChildren(structureIdx);
                     for (Measurement m : e.getValue()) {
-                        for (StructureObject o : parents) {
+                        for (StructureObject o : objects) {
                             if (!m.callOnlyOnTrackHeads() || o.isTrackHead()) m.performMeasurement(o, modifiedObjects);
                         }
                     }
@@ -224,7 +221,7 @@ public class Processor {
             }
         });
         long t1 = System.currentTimeMillis();
-        if (dao!=null && !allModifiedObjects.isEmpty()) dao.upsertMeasurements(allModifiedObjects);
+        dao.upsertMeasurements(allModifiedObjects);
         long t2 = System.currentTimeMillis();
         logger.debug("measurements on field: {}: computation time: {}, upsert time: {} ({} objects)", dao.getFieldName(), t1-t0, t2-t1, allModifiedObjects.size());
         

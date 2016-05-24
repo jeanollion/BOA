@@ -17,6 +17,7 @@
 package dataStructure.configuration;
 
 import boa.gui.configuration.ConfigurationTreeModel;
+import configuration.parameters.BooleanParameter;
 import configuration.parameters.ChannelImageParameter;
 import configuration.parameters.Parameter;
 import static configuration.parameters.Parameter.logger;
@@ -54,7 +55,8 @@ public class Structure extends SimpleContainerParameter {
     PluginParameter<ObjectSplitter> objectSplitter;
     PluginParameter<ManualSegmenter> manualSegmenter;
     PluginParameter<ProcessingScheme> processingScheme;
-    
+    BooleanParameter allowSplit;
+    BooleanParameter allowMerge;
     @Transient NameEditorUI ui;
     
     
@@ -90,7 +92,27 @@ public class Structure extends SimpleContainerParameter {
         // for retro-compatibility only, to remove later
         if (processingScheme==null) processingScheme = new PluginParameter<ProcessingScheme>("Processing Scheme", ProcessingScheme.class, true); // for retro-compatibility only, to remove later
         if (manualSegmenter==null) manualSegmenter = new PluginParameter<ManualSegmenter>("Manual Segmenter", ManualSegmenter.class, new WatershedManualSegmenter(), false);
-        initChildren(parentStructure, channelImage, processingScheme, objectSplitter, manualSegmenter); //segmentationParent
+        if (allowSplit==null) allowSplit = new BooleanParameter("Allow Split", "yes", "no", false);
+        if (allowMerge==null) allowMerge = new BooleanParameter("Allow Merge", "yes", "no", false);
+        initChildren(parentStructure, channelImage, processingScheme, objectSplitter, manualSegmenter, allowMerge, allowSplit); //segmentationParent
+    }
+    
+    public boolean allowSplit() {
+        return allowSplit.getSelected();
+    }
+    
+    public boolean allowMerge() {
+        return allowMerge.getSelected();
+    }
+    
+    public Structure setAllowSplit(boolean allowSplit) {
+        this.allowSplit.setSelected(allowSplit);
+        return this;
+    }
+    
+    public Structure setAllowMerge(boolean allowMerge) {
+        this.allowMerge.setSelected(allowMerge);
+        return this;
     }
     
     public ProcessingScheme getProcessingScheme() {

@@ -154,15 +154,9 @@ public class MorphiumObjectDAO implements ObjectDAO {
             for (StructureObject o : children) {o.dao=this; o.parent=parent;}
         }
         if (children!=null) {
-            ThreadRunner.execute(children, new ThreadAction<StructureObject>() {
-                public void run(StructureObject o, int idx, int threadIdx) {
-                    masterDAO.m.delete(o, collectionName, null);
-                    //logger.debug("delete {}", o.getId());
-                    if (o.measurementsId!=null) measurementsDAO.delete(o.measurementsId);
-                    //if (o.objectContainer!=null) o.objectContainer.deleteObject();    
-                }
-            });
             for (StructureObject o : children) {
+                masterDAO.m.delete(o, collectionName, null);
+                if (o.measurementsId!=null) measurementsDAO.delete(o.measurementsId);
                 this.idCache.remove(o.getId()); // delete in cache
                 for (int s : directChildren) deleteChildren(o, s); // also delete all direct chilren (recursive call)
             }
@@ -247,9 +241,10 @@ public class MorphiumObjectDAO implements ObjectDAO {
     public void delete(List<StructureObject> list, final boolean deleteChildren, boolean deleteFromParent, boolean relabelSiblings) {
         ThreadRunner.execute(list, new ThreadAction<StructureObject>() {
             public void run(StructureObject o, int idx, int threadIdx) {
-                delete(o, deleteChildren, false, false);
+                delete(o, deleteChildren, false, false); // remove from parent && relabel siblings performed afterwards
             }
         });
+        //for (StructureObject o : list) delete(o, deleteChildren, false, false); // remove from parent && relabel siblings performed afterwards
         if (deleteFromParent && relabelSiblings) {
             Map<Integer, List<StructureObject>> objectsByStructure = StructureObjectUtils.splitByStructureIdx(list);
             for (int sIdx : objectsByStructure.keySet()) {
@@ -262,12 +257,12 @@ public class MorphiumObjectDAO implements ObjectDAO {
                     }
                 }
                 //logger.debug("number of parents with delete object from structure: {} = {}", sIdx, parents.size());
-                List<StructureObject> modified = new ArrayList<StructureObject>();
+                List<StructureObject> relabeled = new ArrayList<StructureObject>();
                 for (StructureObject p : parents) {
-                    p.relabelChildren(sIdx, modified);
+                    p.relabelChildren(sIdx, relabeled);
                 }
-                Utils.removeDuplicates(modified, false);
-                for (StructureObject o : modified) set(o, "idx", o.getIdx());
+                Utils.removeDuplicates(relabeled, false);
+                for (StructureObject o : relabeled) set(o, "idx", o.getIdx());
                 //store(modified, true);
             }
         } else if (deleteFromParent) {
