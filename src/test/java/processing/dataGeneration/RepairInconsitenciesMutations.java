@@ -43,7 +43,9 @@ public class RepairInconsitenciesMutations {
     public static void main(String[] args) {
         String dbName = "boa_fluo160428";
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
-        ManualCorrection.repairLinksForXP(mDAO, structureIdx);
+        ManualCorrection.repairLinksForField(mDAO, mDAO.getExperiment().getFieldsAsString()[3], structureIdx);
+        ManualCorrection.repairLinksForField(mDAO, mDAO.getExperiment().getFieldsAsString()[4], structureIdx);
+        ManualCorrection.repairLinksForField(mDAO, mDAO.getExperiment().getFieldsAsString()[5], structureIdx);
     }
     
 }

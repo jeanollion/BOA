@@ -63,4 +63,5 @@ public interface ObjectDAO {
     public void upsertMeasurements(List<StructureObject> objects);
     public void upsertMeasurement(StructureObject o);
     public List<Measurements> getMeasurements(int structureIdx, String... measurements);
+    public void deleteAllMeasurements();
 }

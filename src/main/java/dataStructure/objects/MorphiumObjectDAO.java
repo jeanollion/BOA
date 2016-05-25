@@ -554,6 +554,8 @@ public class MorphiumObjectDAO implements ObjectDAO {
     public List<Measurements> getMeasurements(int structureIdx, String... measurements) {
         return measurementsDAO.getMeasurements(structureIdx, measurements);
     }
-    
-    
+    @Override
+    public void deleteAllMeasurements() {
+        measurementsDAO.deleteAllObjects();
+    }
 }

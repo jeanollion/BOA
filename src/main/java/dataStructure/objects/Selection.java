@@ -140,13 +140,13 @@ public class Selection implements Comparable<Selection> {
         for (String s : indiciesList) {
             int[] indicies = parseIndicies(s);
             if (indicies.length-1!=pathToRoot.length) {
-                logger.warn("Object: {} has wrong number of indicies (expected: {})", indicies, pathToRoot.length);
+                logger.warn("Selection: Object: {} has wrong number of indicies (expected: {})", indicies, pathToRoot.length);
                 continue;
             }
             StructureObject elem = roots.get(indicies[0]);
             IndexLoop : for (int i= 1; i<indicies.length; ++i) {
                 if (elem.getChildren(pathToRoot[i-1]).size()<=indicies[i]) {
-                    logger.warn("Object: {} was not found @ idx {}, last parent: {}", indicies, i, elem);
+                    logger.warn("Selection: Object: {} was not found @ idx {}, last parent: {}", indicies, i, elem);
                     break IndexLoop;
                 }
                 elem = elem.getChildren(pathToRoot[i-1]).get(indicies[i]);

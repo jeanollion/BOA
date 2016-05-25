@@ -203,5 +203,16 @@ public class BasicObjectDAO implements ObjectDAO {
         }
         return res;
     }
-
+    @Override
+    public void deleteAllMeasurements() {
+        int structureCount = getExperiment().getStructureCount();
+        for (StructureObject root : rootTrack.getObjects()) {
+            for (int sIdx = 0; sIdx<structureCount; ++sIdx) {
+                for(StructureObject o : root.getChildren(sIdx)) {
+                    o.measurements=null;
+                    o.measurementsId=null;
+                }
+            }
+        } 
+    }
 }

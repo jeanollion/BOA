@@ -75,37 +75,50 @@ public class ManualCorrection {
         if (next.getTimePoint()<prev.getTimePoint()) linkObjects(next, prev, modifiedObjects);
         else {
             boolean allowMerge = prev.getExperiment().getStructure(prev.getStructureIdx()).allowMerge();
-            boolean allowSplit = prev.getExperiment().getStructure(prev.getStructureIdx()).allowMerge();
+            boolean allowSplit = prev.getExperiment().getStructure(prev.getStructureIdx()).allowSplit();
             boolean doubleLink = true;
             if (allowMerge) {
                 if (next.getPrevious()!=null && next.getPrevious()!=prev) { // mergeLink
                     doubleLink = false;
-                    if (prev.getNext()!=null && prev.getNext()!=next) unlinkObjects(prev, prev.getNext(), modifiedObjects);
-                    if (next!=prev.getNext()) {
+                    boolean allowMergeLink = true;
+                    if (prev.getNext()!=null && prev.getNext()!=next) {
+                        if (!allowSplit) {
+                            unlinkObjects(prev, prev.getNext(), modifiedObjects);
+                        } else allowMergeLink = false;
+                    }
+                    if (allowMergeLink && next!=prev.getNext()) {
                         prev.setTrackLinks(next, false, true, StructureObject.TrackFlag.correctionMerge);
                         modifiedObjects.add(prev);
+                        logger.debug("split link : {}+{}", prev, next);
                     }
                 }
             }
             if (allowSplit) {
                 if (prev.getNext()!=null && prev.getNext()!=next) { // split link
                     doubleLink=false;
-                    if (next.getPrevious()!=null && next.getPrevious()!=prev) unlinkObjects(next.getPrevious(), next, modifiedObjects);
-                    if (prev!=next.getPrevious()) {
+                    boolean allowSplitLink = true;
+                    if (next.getPrevious()!=null && next.getPrevious()!=prev) {
+                        if (!allowMerge) {
+                            unlinkObjects(next.getPrevious(), next, modifiedObjects);
+                        } else allowSplitLink = false;
+                    }
+                    if (allowSplitLink && prev!=next.getPrevious()) {
                         prev.setTrackLinks(next, true, false, StructureObject.TrackFlag.correctionSplit);
                         modifiedObjects.add(next);
+                        logger.debug("split link : {}+{}", prev, next);
                     }
                 }
             }
             if (doubleLink) {
                 if (prev.getNext()!=null && prev.getNext()!=next) unlinkObjects(prev, prev.getNext(), modifiedObjects);
                 if (next.getPrevious()!=null && next.getPrevious()!=prev) unlinkObjects(next.getPrevious(), next, modifiedObjects);
-                if (next!=prev.getNext() || prev!=next.getPrevious()) {
+                //if (next!=prev.getNext() || prev!=next.getPrevious() || next.getTrackHead()!=prev.getTrackHead()) {
                     prev.setTrackLinks(next, true, true, StructureObject.TrackFlag.correctionMerge);
                     next.setTrackHead(prev.getTrackHead(), false, true, modifiedObjects);
                     modifiedObjects.add(prev);
                     modifiedObjects.add(next);
-                }
+                    logger.debug("double link : {}+{}, th:{}", prev, next, prev.getTrackHead());
+                //}
             }
         }
     }
@@ -133,9 +146,7 @@ public class ManualCorrection {
                     if (unlink) {
                         if (current.getPrevious()==prev || prev.getNext()==current) { //unlink the 2 spots
                             ManualCorrection.unlinkObjects(prev, current, modifiedObjects);
-                        } else { // reset links
-
-                        }
+                        } 
                     } else ManualCorrection.linkObjects(prev, current, modifiedObjects);
 
                 } //else if (unlink) ManualCorrection.unlinkObject(l.get(0), modifiedObjects);
@@ -147,7 +158,7 @@ public class ManualCorrection {
                 //if (unlink) for (StructureObject o : l) ManualCorrection.unlinkObject(o, modifiedObjects);
             }   
         }
-        repairLinkInconsistencies(db, modifiedObjects, modifiedObjects);
+        //repairLinkInconsistencies(db, modifiedObjects, modifiedObjects);
         Utils.removeDuplicates(modifiedObjects, false);
         db.getDao(objects.get(0).getFieldName()).store(modifiedObjects, true);
         if (updateDisplay) {
@@ -162,7 +173,10 @@ public class ManualCorrection {
             for (StructureObject o : uniqueTh) trackToDisp.add(StructureObjectUtils.getTrack(o, true));
             // update current image
             ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
-            if (!trackToDisp.isEmpty()) iwm.displayTracks(null, null, trackToDisp, true);
+            if (!trackToDisp.isEmpty()) {
+                iwm.displayTracks(null, null, trackToDisp, true);
+                //GUI.updateRoiDisplayForSelections(null, null);
+            }
         }
     }
     
@@ -220,7 +234,10 @@ public class ManualCorrection {
             for (StructureObject o : uniqueTh) trackToDisp.add(StructureObjectUtils.getTrack(o, true));
             // update current image
             ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
-            if (!trackToDisp.isEmpty()) iwm.displayTracks(null, null, trackToDisp, true);
+            if (!trackToDisp.isEmpty()) {
+                iwm.displayTracks(null, null, trackToDisp, true);
+                GUI.updateRoiDisplayForSelections(null, null);
+            }
         }
     }
     
@@ -293,7 +310,10 @@ public class ManualCorrection {
             }
             // selected newly segmented objects on image
             ImageObjectInterface i = iwm.getImageObjectInterface(image);
-            if (i!=null) iwm.displayObjects(image, i.pairWithOffset(segmentedObjects), Color.ORANGE, true, false);
+            if (i!=null) {
+                iwm.displayObjects(image, i.pairWithOffset(segmentedObjects), Color.ORANGE, true, false);
+                GUI.updateRoiDisplayForSelections(image, i);
+            }
         }
     }
     public static void splitObjects(MasterDAO db, Collection<StructureObject> objects, boolean updateDisplay, boolean test) {
@@ -343,6 +363,7 @@ public class ManualCorrection {
                 if (i!=null) {
                     newObjects.addAll(objects);
                     ImageWindowManagerFactory.getImageManager().displayObjects(null, i.pairWithOffset(newObjects), Color.orange, true, false);
+                    GUI.updateRoiDisplayForSelections(null, null);
                 }
                 // update trackTree
                 GUI.getInstance().trackTreeController.updateParentTracks();
@@ -390,6 +411,7 @@ public class ManualCorrection {
             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null, structureIdx);
             if (i!=null) {
                 ImageWindowManagerFactory.getImageManager().displayObjects(null, i.pairWithOffset(newObjects), Color.orange, true, false);
+                GUI.updateRoiDisplayForSelections(null, null);
             }
             // update trackTree
             GUI.getInstance().trackTreeController.updateParentTracks();
@@ -413,8 +435,9 @@ public class ManualCorrection {
             dao.store(modifiedObjects, true);
             if (updateDisplay) {
                 //Update selection on opened image
-                ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
+                //ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
                 ImageWindowManagerFactory.getImageManager().removeObjects(list, true);
+                List<StructureObject> selTh = ImageWindowManagerFactory.getImageManager().getSelectedLabileTrackHeads(null);
                 //Update object tree
                 for (StructureObject s : parents) {
                     StructureNode node = GUI.getInstance().objectTreeGenerator.getObjectNode(s).getStructureNode(structureIdx);
@@ -423,6 +446,9 @@ public class ManualCorrection {
                 }
                 //Update all opened images & objectImageInteraction
                 for (StructureObject p : parents) ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
+                ImageWindowManagerFactory.getImageManager().displayTracks(null, null, StructureObjectUtils.getTracks(selTh, true), true);
+                GUI.updateRoiDisplayForSelections(null, null);
+                
                 // update trackTree
                 GUI.getInstance().trackTreeController.updateParentTracks();
             }

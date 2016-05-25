@@ -158,7 +158,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         ButtonGroup group = new ButtonGroup();
         group.add(bsonFormatMenuItem);
         group.add(jsonFormatMenuItem);
-        
+        deleteMeasurementsCheckBox.setSelected(PropertyUtils.get(PropertyUtils.DELETE_MEASUREMENTS, true));
+        logger.debug("del meas: {}, {} isSel: {}", PropertyUtils.get(PropertyUtils.DELETE_MEASUREMENTS, true), PropertyUtils.get(PropertyUtils.DELETE_MEASUREMENTS, "true"), deleteMeasurementsCheckBox.isSelected());
         PluginFactory.findPlugins("plugins.plugins");
         
         // selections
@@ -371,6 +372,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (image==null) {
             return; // todo -> actions on all images?
         }
+        logger.debug("updateSelectionsDisplay");
         Enumeration<Selection> sels = instance.selectionModel.elements();
         while (sels.hasMoreElements()) {
             Selection s = sels.nextElement();
@@ -777,6 +779,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         importOptionsSubMenu = new javax.swing.JMenu();
         eraseCollectionCheckbox = new javax.swing.JCheckBoxMenuItem();
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
+        optionMenu = new javax.swing.JMenu();
+        jMenu2 = new javax.swing.JMenu();
+        deleteMeasurementsCheckBox = new javax.swing.JCheckBoxMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -1216,7 +1221,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         });
         runMenu.add(importImagesMenuItem);
 
-        runSelectedActionsMenuItem.setText("Selected Actions");
+        runSelectedActionsMenuItem.setText("Run Selected Actions");
         runSelectedActionsMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 runSelectedActionsMenuItemActionPerformed(evt);
@@ -1357,6 +1362,23 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
         jMenuBar1.add(importExportMenu);
 
+        optionMenu.setText("Options");
+
+        jMenu2.setText("Measurements");
+
+        deleteMeasurementsCheckBox.setSelected(true);
+        deleteMeasurementsCheckBox.setText("Delete existing measurements before Running Measurements");
+        deleteMeasurementsCheckBox.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                deleteMeasurementsCheckBoxActionPerformed(evt);
+            }
+        });
+        jMenu2.add(deleteMeasurementsCheckBox);
+
+        optionMenu.add(jMenu2);
+
+        jMenuBar1.add(optionMenu);
+
         setJMenuBar(jMenuBar1);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -1395,6 +1417,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         }
         if (measurements) {
             logger.info("Measurements: Field: {}", fieldName);
+            if (deleteMeasurementsCheckBox.isSelected()) db.getDao(fieldName).deleteAllMeasurements();
             Processor.performMeasurements(db.getDao(fieldName));
         }
     }
@@ -1416,17 +1439,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }//GEN-LAST:event_collapseAllObjectButtonActionPerformed
 
     private void selectAllTracksButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllTracksButtonActionPerformed
-        TrackTreeGenerator t = trackTreeController.getLastTreeGenerator();
-        if (t==null) {
-            logger.warn("No displayed tree");
-            return;
-        } else {
-            Utils.expandTree(t.getTree());
-            //t.getTree().setSelectionInterval(1, t.getTree().getRowCount());
-            //GUI.updateRoiDisplay(null);
-            ImageWindowManagerFactory.getImageManager().selectAllTracks(null);
-        }
-        
+        ImageWindowManagerFactory.getImageManager().selectAllTracks(null);
+        //GUI.updateRoiDisplayForSelections(null, null);
     }//GEN-LAST:event_selectAllTracksButtonActionPerformed
 
     private void nextTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextTrackErrorButtonActionPerformed
@@ -1461,6 +1475,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void selectAllObjectsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllObjectsActionPerformed
         if (!checkConnection()) return;
         getImageManager().selectAllObjects(null);
+        //GUI.updateRoiDisplayForSelections(null, null);
         
     }//GEN-LAST:event_selectAllObjectsActionPerformed
 
@@ -1862,6 +1877,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void eraseCollectionCheckboxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_eraseCollectionCheckboxActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_eraseCollectionCheckboxActionPerformed
+
+    private void deleteMeasurementsCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteMeasurementsCheckBoxActionPerformed
+        PropertyUtils.set(PropertyUtils.DELETE_MEASUREMENTS, this.deleteMeasurementsCheckBox.isSelected());
+    }//GEN-LAST:event_deleteMeasurementsCheckBoxActionPerformed
     private void updateMongoDBBinActions() {
         boolean enableDump = false, enableRestore = false;
         String mPath = PropertyUtils.get(PropertyUtils.MONGO_BIN_PATH);
@@ -1965,6 +1984,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JPanel configurationPanel;
     private javax.swing.JButton createSelectionButton;
     private javax.swing.JPanel dataPanel;
+    private javax.swing.JCheckBoxMenuItem deleteMeasurementsCheckBox;
     private javax.swing.JButton deleteObjectsButton;
     private javax.swing.JMenuItem deleteXPMenuItem;
     private javax.swing.JMenuItem duplicateXPMenuItem;
@@ -1990,6 +2010,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JMenu jMenu1;
+    private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JScrollPane jScrollPane1;
     private javax.swing.JPopupMenu.Separator jSeparator1;
@@ -2000,6 +2021,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JList microscopyFieldList;
     private javax.swing.JMenuItem newXPMenuItem;
     private javax.swing.JButton nextTrackErrorButton;
+    private javax.swing.JMenu optionMenu;
     private javax.swing.JButton previousTrackErrorButton;
     private javax.swing.JMenuItem refreshExperimentListMenuItem;
     private javax.swing.JButton reloadSelectionsButton;

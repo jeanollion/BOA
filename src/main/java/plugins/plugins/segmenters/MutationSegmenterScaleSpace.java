@@ -44,7 +44,9 @@ import image.ObjectFactory;
 import java.util.ArrayList;
 import java.util.List;
 import plugins.ManualSegmenter;
+import plugins.ObjectSplitter;
 import plugins.Segmenter;
+import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
 import plugins.plugins.measurements.objectFeatures.IntensityRatio;
 import plugins.plugins.measurements.objectFeatures.SNR;
 import plugins.plugins.postFilters.FeatureFilter;
@@ -65,7 +67,7 @@ import processing.neighborhood.EllipsoidalNeighborhood;
  *
  * @author jollion
  */
-public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter {
+public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, ObjectSplitter {
     public static boolean debug = false;
     public static boolean displayImages = false;
     NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxels)", 0, 5, 1, null);
@@ -267,6 +269,14 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter {
         }
         
         return pop;
+    }
+    // object splitter implementation
+    public ObjectPopulation splitObject(Image input, Object3D object) {
+        return WatershedObjectSplitter.splitInTwo(input, object.getMask(), true, this.minSpotSize.getValue().intValue(), manualSplitVerbose);
+    }
+    boolean manualSplitVerbose;
+    public void setSplitVerboseMode(boolean verbose) {
+        manualSplitVerbose=verbose;
     }
       
 }

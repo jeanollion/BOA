@@ -81,6 +81,7 @@ public class MeasurementsDAO {
     }
     
     public void deleteAllObjects() {
+        logger.debug("deleting measurements for position: {}", fieldName);
         masterDAO.m.getDatabase().getCollection(collectionName).drop();
         //masterDAO.m.clearCollection(Measurements.class, collectionName);
     }

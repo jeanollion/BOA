@@ -39,6 +39,7 @@ public class PropertyUtils {
     public final static String LAST_IMPORT_IMAGE_DIR = "last_import_image_dir";
     public final static String LAST_IO_DATA_DIR = "last_io_data_dir";
     public final static String LAST_EXTRACT_MEASUREMENTS_DIR = "last_extract_measurement_dir";
+    public final static String DELETE_MEASUREMENTS = "delete_measurements";
     public static Properties getProps() { 
         if (props == null) { 
             props = new Properties();  
@@ -62,6 +63,13 @@ public class PropertyUtils {
     }
     public static void set(String key, String value) {
         getProps().setProperty(key, value);
+        saveParamChanges();
+    }
+    public static boolean get(String key, boolean defaultValue) {
+        return Boolean.parseBoolean(getProps().getProperty(key, Boolean.toString(defaultValue)));
+    }
+    public static void set(String key, boolean value) {
+        getProps().setProperty(key, Boolean.toString(value));
         saveParamChanges();
     }
     

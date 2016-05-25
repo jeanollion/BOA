@@ -324,7 +324,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             // 2D only errors -> TODO 3D also
             if (error || correction) {
                 Color c = error ? ImageWindowManager.trackErrorColor : ImageWindowManager.trackCorrectionColor;
-                trackRoi.add(getErrorArrow(arrow.x1, arrow.y1, arrow.x2, arrow.y2, c));
+                trackRoi.add(getErrorArrow(arrow.x1, arrow.y1, arrow.x2, arrow.y2, c, color));
             } 
             
             int zMin = Math.max(o1.value.getzMin(), o2.value.getzMin());
@@ -356,8 +356,8 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         }
         return trackRoi;
     }
-    private static Arrow getErrorArrow(double x1, double y1, double x2, double y2, Color c) {
-        /*double arrowSize = trackArrowStrokeWidth*2;
+    private static Arrow getErrorArrow(double x1, double y1, double x2, double y2, Color c, Color fillColor) {
+        double arrowSize = trackArrowStrokeWidth*2;
         double norm = Math.sqrt(Math.pow(x1-x2, 2)+Math.pow(y1-y2, 2));
         double[] vNorm = new double[]{(x2-x1)/norm, (y2-y1)/norm};
         double startLength = norm-2*arrowSize;
@@ -366,15 +366,18 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         double[] end = startLength>0 ? new double[]{x1+vNorm[0]*endLength, y1+vNorm[1]*endLength} : new double[]{x2, y2};
         Arrow res =  new Arrow(start[0], start[1], end[0], end[1]);
         res.setStrokeColor(c);
+        res.setFillColor(fillColor);
         res.setStrokeWidth(trackArrowStrokeWidth);
         res.setHeadSize(trackArrowStrokeWidth*1.5);
-        return res;*/
-        Arrow res =  new Arrow(x1, y1, x2, y2);
+        return res;
+        
+        // OTHER ARROW
+        /*Arrow res =  new Arrow(x1, y1, x2, y2);
         res.setStrokeColor(c);
         double size = trackArrowStrokeWidth+1.5;
         res.setStrokeWidth(size);
         res.setHeadSize(trackArrowStrokeWidth*1.5);
-        return res;
+        return res;*/
     }
     
     // not to be called directly!!

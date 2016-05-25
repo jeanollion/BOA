@@ -58,7 +58,7 @@ import utils.ArrayFileWriter;
  */
 public class LAPTracker implements TrackerSegmenter {
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, new MutationSegmenterScaleSpace(), false);
-    StructureParameter compartirmentStructure = new StructureParameter("Compartiment Structure");
+    StructureParameter compartirmentStructure = new StructureParameter("Compartiment Structure", 1, false, false);
     NumberParameter spotQualityThreshold = new NumberParameter("Spot Quality Threshold", 3, 4);
     //NumberParameter spotQualityThreshold = new BoundedNumberParameter("Spot Quality Threshold", 3, 4, 0, null);
     NumberParameter maxGap = new BoundedNumberParameter("Maximum frame gap", 0, 2, 0, null);

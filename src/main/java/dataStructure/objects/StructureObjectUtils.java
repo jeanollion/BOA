@@ -213,7 +213,11 @@ public class StructureObjectUtils {
         if (extend && track.get(track.size()-1).getNext()!=null) track.add(track.get(track.size()-1).getNext());
         return track;
     }
-    
+    public static List<List<StructureObject>> getTracks(Collection<StructureObject> trackHeads, boolean extend) {
+        List<List<StructureObject>> res = new ArrayList<List<StructureObject>>(trackHeads.size());
+        for (StructureObject o : trackHeads) res.add(getTrack(o, extend));
+        return res;
+    }
     /*public static Map<Integer, List<StructureObject>> mapByStructureIdx(List<StructureObject> objects) {
         Map<Integer, List<StructureObject>> res = new HashMap<Integer, List<StructureObject>>();
         

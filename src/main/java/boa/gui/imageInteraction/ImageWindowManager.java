@@ -345,6 +345,7 @@ public abstract class ImageWindowManager<T, U, V> {
                 }
             } else displayObject(dispImage, roi);
         }
+        
         displayer.updateImageRoiDisplay(image);
     }
     
@@ -430,6 +431,7 @@ public abstract class ImageWindowManager<T, U, V> {
         for (List<StructureObject> track : tracks) {
             displayTrack(image, i, i.pairWithOffset(track), getColor() , labile);
         }
+        //GUI.updateRoiDisplayForSelections(image, i);
     }
     public void displayTrack(Image image, ImageObjectInterface i, List<Pair<StructureObject, BoundingBox>> track, Color color, boolean labile) {
         //logger.debug("display selected track: image: {}, addToCurrentTracks: {}, track length: {} color: {}", image,addToCurrentSelectedTracks, track==null?"null":track.size(), color);
@@ -495,6 +497,7 @@ public abstract class ImageWindowManager<T, U, V> {
                 if (disp!=null) disp.remove(roi);
             }
         }
+        //GUI.updateRoiDisplayForSelections(image, i);
         displayer.updateImageRoiDisplay(image);
         
     }
