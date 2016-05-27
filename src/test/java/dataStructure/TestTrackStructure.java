@@ -27,6 +27,7 @@ import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.StructureObject;
+import static dataStructure.objects.StructureObjectUtils.setTrackLinks;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
 import image.BlankMask;
@@ -62,22 +63,35 @@ public class TestTrackStructure {
         StructureObject[] rootT = new StructureObject[5];
         for (int i = 0; i<rootT.length; ++i) rootT[i] = new StructureObject(i, new BlankMask("", 1, 1, 1), dao);
         
-        MicroscopyField.setTrackLinks(Arrays.asList(rootT));
+        setTrackLinks(Arrays.asList(rootT));
         dao.storeSequentially(Arrays.asList(rootT), true);
         StructureObject[] mcT = new StructureObject[5];
         for (int i = 0; i<mcT.length; ++i) mcT[i] = new StructureObject(i, 0, 0, new Object3D(new BlankMask("", 1, 1, 1), 1), rootT[i]);
-        MicroscopyField.setTrackLinks(Arrays.asList(mcT));
+        setTrackLinks(Arrays.asList(mcT));
         dao.storeSequentially(Arrays.asList(mcT), true);
         StructureObject[][] bTM = new StructureObject[5][3];
         for (int t = 0; t<bTM.length; ++t) {
             for (int j = 0; j<3; ++j) bTM[t][j] = new StructureObject(t, 1, j, new Object3D(new BlankMask("", 1, 1, 1), j+1), mcT[t]);
             //dao.storeLater(bTM[i]);
         }
-        for (int i= 1; i<mcT.length; ++i) bTM[i][0].setPreviousInTrack(bTM[i-1][0], false);
-        bTM[1][1].setPreviousInTrack(bTM[0][0], true);
-        for (int i= 2; i<mcT.length; ++i) bTM[i][1].setPreviousInTrack(bTM[i-1][1], false);
-        bTM[3][2].setPreviousInTrack(bTM[2][1], true); bTM[4][2].setPreviousInTrack(bTM[3][2], false);
-        bTM[1][2].setPreviousInTrack(bTM[0][1], false); bTM[2][2].setPreviousInTrack(bTM[1][2], false);
+        for (int i= 1; i<mcT.length; ++i) {
+            setTrackLinks(bTM[i-1][0], bTM[i][0], true, true);
+            //bTM[i][0].setPreviousInTrack(bTM[i-1][0], false);
+        }
+        setTrackLinks(bTM[0][0], bTM[1][1], true, false);
+        //bTM[1][1].setPreviousInTrack(bTM[0][0], true);
+        for (int i= 2; i<mcT.length; ++i) {
+            setTrackLinks(bTM[i-1][1], bTM[i][1], true, true);
+            //bTM[i][1].setPreviousInTrack(bTM[i-1][1], false);
+        }
+        setTrackLinks(bTM[2][1], bTM[3][2], true, false);
+        //bTM[3][2].setPreviousInTrack(bTM[2][1], true); 
+        setTrackLinks(bTM[3][2], bTM[4][2], true, true);
+        //bTM[4][2].setPreviousInTrack(bTM[3][2], false);
+        setTrackLinks(bTM[0][1], bTM[1][2], true, true);
+        //bTM[1][2].setPreviousInTrack(bTM[0][1], false); 
+        setTrackLinks(bTM[1][2], bTM[2][2], true, true);
+        //bTM[2][2].setPreviousInTrack(bTM[1][2], false);
         /*
         0.0->4
         -1->4
@@ -121,4 +135,5 @@ public class TestTrackStructure {
 
         
     }
+
 }

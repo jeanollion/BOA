@@ -24,7 +24,5 @@ import dataStructure.objects.StructureObject.TrackFlag;
  * @author jollion
  */
 public interface StructureObjectTracker extends StructureObjectPreProcessing {
-    public void setPreviousInTrack(StructureObjectTracker previous, boolean isTrackHead, TrackFlag flag);
-    public void setPreviousInTrack(StructureObjectTracker previous, boolean isTrackHead);
-    public void resetTrackLinks();
+    public StructureObject resetTrackLinks();
 }

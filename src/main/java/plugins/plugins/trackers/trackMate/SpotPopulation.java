@@ -124,11 +124,14 @@ public class SpotPopulation {
                 SpotWithinCompartment s = objectSpotMap.get(child.getObject());
                 getSortedEdgesOf(s, graph, false, nextEdges);
                 if (!nextEdges.isEmpty()) {
-                    DefaultWeightedEdge nextEdge = nextEdges.last();
+                    DefaultWeightedEdge nextEdge = nextEdges.last(); //main edge -> for previous.next
                     for (DefaultWeightedEdge e : nextEdges) {
                         SpotWithinCompartment nextSpot = getOtherSpot(e, s, graph);
                         StructureObject nextSo = getStructureObject(parentT.get(nextSpot.getFeature(Spot.FRAME).intValue()), structureIdx, nextSpot);
-                        if (nextSo.getPrevious()==null) nextSo.setPreviousInTrack(child, e!=nextEdge);
+                        if (nextSo.getPrevious()==null) {
+                            StructureObjectUtils.setTrackLinks(child, nextSo, true, e==nextEdge);
+                            //nextSo.setPreviousInTrack(child, e!=nextEdge);
+                        }
                         else logger.warn("SpotWrapper: next: {}, next of {}, has already a previous assigned: {}", nextSo, child, nextSo.getPrevious());
                     }
                 } 
@@ -230,13 +233,5 @@ public class SpotPopulation {
         for (StructureObject c : children) if (c.getObject() == o) return c;
         return null;
     }
-    
-    private static void setLink(StructureObject prev, StructureObject next) {
-        if (prev.getTimePoint()>next.getTimePoint()) setLink(next, prev);
-        else {
-            next.setPreviousInTrack(prev, true);
-        }
-    }
-    
     
 }

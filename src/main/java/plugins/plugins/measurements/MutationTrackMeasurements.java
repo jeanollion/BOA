@@ -78,6 +78,8 @@ public class MutationTrackMeasurements implements Measurement {
         List<StructureObject> track = StructureObjectUtils.getTrack(object, false);
         object.getMeasurements().setValue("TrackLength", track.get(track.size()-1).getTimePoint() - object.getTimePoint());
         object.getMeasurements().setValue("MutationNumber", track.size());
+        object.getMeasurements().setValue("PreviousFivisionFrame", parentBacteria.getPreviousDivisionTimePoint());
+        object.getMeasurements().setValue("NextFivisionFrame", parentBacteria.getNextDivisionTimePoint());
         modifiedObjects.add(object);
     }
 

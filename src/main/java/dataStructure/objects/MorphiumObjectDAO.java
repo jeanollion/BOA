@@ -508,8 +508,10 @@ public class MorphiumObjectDAO implements ObjectDAO {
                 if (roots==null) {
                     ArrayList<StructureObject> res = checkAgainstCache(getRootQuery().asList());
                     setTrackLinks(res);
-                    if (res.size()==masterDAO.getExperiment().getMicroscopyField(fieldName).getTimePointNumber(false)) roots = res;
-                    else logger.error("Position: {} wrong root number: {} instead of {}", fieldName, res.size(), masterDAO.getExperiment().getMicroscopyField(fieldName).getTimePointNumber(false));
+                    roots = res;
+                    if (masterDAO.getExperiment()!=null && masterDAO.getExperiment().getMicroscopyField(fieldName)!=null) {
+                        if (res.size()!=masterDAO.getExperiment().getMicroscopyField(fieldName).getTimePointNumber(false)) logger.error("Position: {} wrong root number: {} instead of {}", fieldName, res.size(), masterDAO.getExperiment().getMicroscopyField(fieldName).getTimePointNumber(false));
+                    }
                 }
             }
         }
@@ -557,5 +559,9 @@ public class MorphiumObjectDAO implements ObjectDAO {
     @Override
     public void deleteAllMeasurements() {
         measurementsDAO.deleteAllObjects();
+        for (StructureObject o : this.idCache.values()) {
+            o.measurements=null;
+            o.measurementsId=null;
+        }
     }
 }

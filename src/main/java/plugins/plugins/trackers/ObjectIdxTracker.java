@@ -24,6 +24,7 @@ import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectPreProcessing;
 import dataStructure.objects.StructureObjectProcessing;
 import dataStructure.objects.StructureObjectTracker;
+import static dataStructure.objects.StructureObjectUtils.setTrackLinks;
 import dataStructure.objects.Track;
 import image.BoundingBox;
 import image.ImageMask;
@@ -53,10 +54,10 @@ public class ObjectIdxTracker implements Tracker {
     };
     ChoiceParameter order = new ChoiceParameter("Indexing order", Utils.toStringArray(IndexingOrder.values()), IndexingOrder.XYZ.toString(), false);
     
-    public void assignPrevious(ArrayList<? extends StructureObjectTracker> previous, ArrayList<? extends StructureObjectTracker> next) {
+    public void assignPrevious(ArrayList<StructureObject> previous, ArrayList<StructureObject> next) {
         int lim = Math.min(previous.size(), next.size());
         for (int i = 0; i<lim; ++i) {
-            next.get(i).setPreviousInTrack(previous.get(i), false);
+            setTrackLinks(previous.get(i), next.get(i), true, true);
             Plugin.logger.trace("assign previous {} to next {}", previous.get(i), next.get(i));
         }
         for (int i = lim; i<next.size(); ++i) next.get(i).resetTrackLinks();

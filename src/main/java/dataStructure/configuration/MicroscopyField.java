@@ -38,6 +38,8 @@ import dataStructure.containers.InputImagesImpl;
 import dataStructure.containers.MultipleImageContainer;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectUtils;
+import static dataStructure.objects.StructureObjectUtils.setTrackLinks;
 import de.caluga.morphium.annotations.Transient;
 import image.BlankMask;
 import java.util.ArrayList;
@@ -135,9 +137,6 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         return res;
     }
     
-    public static void setTrackLinks(List<StructureObject> list) {
-        for (int i = 1; i<list.size(); ++i) list.get(i).setPreviousInTrack(list.get(i-1), false);
-    }
     protected Experiment getExperiment() {
         return (Experiment) parent.getParent();
     }

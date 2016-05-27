@@ -28,6 +28,7 @@ import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectTracker;
+import static dataStructure.objects.StructureObjectUtils.setTrackLinks;
 import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
@@ -102,7 +103,7 @@ public class MicrochannelProcessor implements TrackerSegmenter {
         StructureObject prev=null;
         for (StructureObject s : parentTrack) {
             s.setChildrenObjects(pop, structureIdx);
-            if (prev!=null) assignPrevious(prev.getChildObjects(structureIdx), s.getChildObjects(structureIdx));
+            if (prev!=null) assignPrevious(prev.getChildren(structureIdx), s.getChildren(structureIdx));
             prev=s;
         }
     }
@@ -119,10 +120,11 @@ public class MicrochannelProcessor implements TrackerSegmenter {
         }
     }
     
-    public void assignPrevious(ArrayList<? extends StructureObjectTracker> previous, ArrayList<? extends StructureObjectTracker> next) {
+    public void assignPrevious(ArrayList<StructureObject> previous, ArrayList<StructureObject> next) {
         int lim = Math.min(previous.size(), next.size());
         for (int i = 0; i<Math.min(previous.size(), next.size()); ++i) {
-            next.get(i).setPreviousInTrack(previous.get(i), false);
+            setTrackLinks(previous.get(i), next.get(i), true, true);
+            //next.get(i).setPreviousInTrack(previous.get(i), false);
             Plugin.logger.trace("assign previous {} to next {}", previous.get(i), next.get(i));
         }
         for (int i = lim; i<next.size(); ++i) next.get(i).resetTrackLinks();

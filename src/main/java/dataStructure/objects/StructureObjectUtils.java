@@ -39,6 +39,42 @@ import utils.Utils;
  */
 public class StructureObjectUtils {
     
+    public static void setTrackLinks(StructureObject previous, StructureObject next, boolean setPrevious, boolean setNext) {
+        if (previous==null && next==null) return;
+        else if (previous==null && next!=null) {
+            next.unSetTrackLinks(setPrevious, false, null);
+        } else if (previous!=null && next==null) {
+            previous.unSetTrackLinks(false, setNext, null);
+        }
+        else if (next.getTimePoint()<=previous.getTimePoint()) throw new RuntimeException("setLink should be of time>= "+(previous.getTimePoint()+1) +" but is: "+next.getTimePoint()+ " current: "+previous+", next: "+next);
+        else {
+            if (setPrevious && setNext) { // double link: set trackHead
+                    previous.setNext(next);
+                    next.setPrevious(previous);
+                    next.setTrackHead(previous.getTrackHead(), false, false, null);
+            } else if (setPrevious) {
+                next.setPrevious(previous);
+                next.setTrackHead(next, false, false, null);
+            } else if (setNext) {
+                previous.setNext(next);
+            }
+        }
+    }
+    
+    public static void setTrackLinks(List<StructureObject> track) {
+        if (track.isEmpty()) return;
+        StructureObject trackHead = track.get(0).getTrackHead();
+        StructureObject prev = null;
+        for (StructureObject o : track) {
+            o.setTrackHead(trackHead, false);
+            if (prev!=null) {
+                o.setPrevious(prev);
+                prev.setNext(o);
+            }
+            prev = o;
+        }
+    }
+    
     /**
      * 
      * @param referenceStructureObject
@@ -187,19 +223,7 @@ public class StructureObjectUtils {
         return res;
     }
     
-    protected static void setTrackLinks(List<StructureObject> track) {
-        if (track.isEmpty()) return;
-        StructureObject trackHead = track.get(0).getTrackHead();
-        StructureObject prev = null;
-        for (StructureObject o : track) {
-            o.trackHead=trackHead;
-            if (prev!=null) {
-                o.setPrevious(prev);
-                prev.setNext(o);
-            }
-            prev = o;
-        }
-    }
+    
     
     public static List<StructureObject> getTrack(StructureObject trackHead, boolean extend) {
         if (trackHead==null) return Collections.EMPTY_LIST;

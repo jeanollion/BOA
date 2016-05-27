@@ -41,8 +41,6 @@ import utils.SmallArray;
 @Entity
 @Index(value={"structure_idx, parent_id"})
 public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker, StructureObjectTrackCorrection, Comparable<StructureObject> {
-
-    
     public enum TrackFlag{trackError, correctionMerge, correctionMergeToErase, correctionSplit, correctionSplitNew, correctionSplitError};
     public final static Logger logger = LoggerFactory.getLogger(StructureObject.class);
     //structure-related attributes
@@ -308,41 +306,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             setNext(null);
         }
     }
-    
-    @Override public void setPreviousInTrack(StructureObjectTracker previous, boolean isTrackHead) {
-        setPreviousInTrack(previous, isTrackHead, null);
-    }
-    /**
-     * 
-     * @param previous the previous object in the track
-     * @param isTrackHead if false, sets this instance as the next of { 
-     * @param flag flag, can be null
-     */
-    @Override public void setPreviousInTrack(StructureObjectTracker previous, boolean isTrackHead, TrackFlag flag) {
-        if (previous==null) {
-            if (this.previous!=null && this.previous.next==this) this.previous.setNext(null);
-        } else {
-            if (((StructureObject)previous).getTimePoint()>=this.getTimePoint()) throw new RuntimeException("setPrevious in track should be of time<= "+(timePoint-1) +" but is: "+((StructureObject)previous).getTimePoint()+ " current: "+this+", prev: "+previous);
-            this.setPrevious((StructureObject)previous);
-        }
-        if (flag!=null) this.flag=flag;
-        if (!isTrackHead) {
-            if (this.previous!=null) {
-                this.previous.setNext(this);
-                this.trackHead= this.previous.getTrackHead();
-            }
-            this.isTrackHead=false;
-            this.trackHeadId=null;
-        } else {
-            this.isTrackHead=true;
-            this.trackHead=this;
-            this.trackHeadId=null;
-        }
-    }
-        
-    //public void setNextInTrack(StructureObject next, )
     @Override
-    public void resetTrackLinks() {
+    public StructureObject resetTrackLinks() {
         if (this.previous!=null && this.previous.next==this) this.previous.setNext(null);
         this.setPrevious(null);
         if (this.next!=null && this.next.previous==this) this.next.setPrevious(null);
@@ -351,8 +316,12 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.trackHeadId=null;
         this.isTrackHead=true;
         this.flag=null;
+        return this;
     }
-    public void setTrackFlag(TrackFlag flag) {this.flag=flag;}
+    public StructureObject setTrackFlag(TrackFlag flag) {
+        this.flag=flag;
+        return this;
+    }
     public TrackFlag getTrackFlag() {return this.flag;}
     
     public StructureObject getPrevious() {
@@ -443,7 +412,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public boolean isTrackHead() {return this.isTrackHead;}
     
-    public void resetTrackHead() {
+    public StructureObject resetTrackHead() {
         trackHeadId=null;
         trackHead=null;
         getTrackHead();
@@ -453,9 +422,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             n.trackHeadId=null;
             n.trackHead=trackHead;
         }
+        return this;
+    }
+    public StructureObject setTrackHead(StructureObject trackHead, boolean resetPreviousIfTrackHead) {
+        return setTrackHead(trackHead, resetPreviousIfTrackHead, false, null);
     }
     
-    public void setTrackHead(StructureObject trackHead, boolean resetPreviousIfTrackHead, boolean propagateToNextObjects, Collection<StructureObject> modifiedObjects) {
+    public StructureObject setTrackHead(StructureObject trackHead, boolean resetPreviousIfTrackHead, boolean propagateToNextObjects, Collection<StructureObject> modifiedObjects) {
         if (resetPreviousIfTrackHead && this==trackHead) {
             if (previous!=null && previous.next==this) previous.setNext(null);
             this.setPrevious(null);
@@ -472,6 +445,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 n = n.getNext();
             }
         }
+        return this;
     }
     
     // track correction-related methods 

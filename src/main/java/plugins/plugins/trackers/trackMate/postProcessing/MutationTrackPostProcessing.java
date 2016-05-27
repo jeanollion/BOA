@@ -22,6 +22,7 @@ import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import static dataStructure.objects.StructureObjectUtils.getStructureObjectComparator;
+import static dataStructure.objects.StructureObjectUtils.setTrackLinks;
 import fiji.plugin.trackmate.Spot;
 import fiji.plugin.trackmate.SpotCollection;
 import java.util.ArrayList;
@@ -151,7 +152,9 @@ public class MutationTrackPostProcessing {
                     headTrackTail = bestCandidate.getPrevious();
                 }
                 //logger.debug("link Tracks: delete: {}, minDist: {}, delete tailTrackHead? {}", objectToRemove, minDist, deleteTailTrackHead);
-                tailTrack.get(0).setPreviousInTrack(headTrackTail, false, StructureObject.TrackFlag.correctionMerge);
+                setTrackLinks(headTrackTail, tailTrack.get(0), true, true);
+                tailTrack.get(0).setTrackFlag(StructureObject.TrackFlag.correctionMerge);
+                //tailTrack.get(0).setPreviousInTrack(headTrackTail, false, StructureObject.TrackFlag.correctionMerge);
                 for (StructureObject o : tailTrack) o.setTrackHead(headTrackHead, false, false, null);
                 spotHeadTrack.addAll(spotTailTrack);
                 headTrack.addAll(tailTrack);
