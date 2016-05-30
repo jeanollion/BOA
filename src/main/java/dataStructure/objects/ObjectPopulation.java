@@ -359,6 +359,13 @@ public class ObjectPopulation {
         return filter(filter, null);
     }
     
+    public ObjectPopulation filterAndMergeWithConnected(Filter filter) {
+        List<Object3D> removed = new ArrayList<Object3D>();
+        filter(filter, removed);
+        if (!removed.isEmpty()) mergeWithConnected(removed);
+        return this;
+    }
+    
     public ObjectPopulation filter(Filter filter, List<Object3D> removedObjects) {
         int objectNumber = objects.size();
         filter.init(this);
@@ -476,8 +483,16 @@ public class ObjectPopulation {
         int labelToMerge = newObjects.size()+1;
         newObjects.addAll(toMerge);
         this.objects=newObjects;
-        relabel(false); // objects label start from 1 -> idx = label-1
         mergeAllConnected(labelToMerge);
+        // erase unmerged objects
+        Iterator<Object3D> it = objects.iterator();
+        while(it.hasNext()) {
+            Object3D n = it.next();
+            if (n.getLabel()>=labelToMerge) {
+                eraseObject(n, false);
+                it.remove();
+            }
+        }
     }
     
     public void sortBySpatialOrder(final IndexingOrder order) {

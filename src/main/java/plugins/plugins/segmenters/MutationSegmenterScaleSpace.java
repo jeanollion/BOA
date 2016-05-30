@@ -272,7 +272,8 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
     }
     // object splitter implementation
     public ObjectPopulation splitObject(Image input, Object3D object) {
-        return WatershedObjectSplitter.splitInTwo(input, object.getMask(), true, this.minSpotSize.getValue().intValue(), manualSplitVerbose);
+        ImageFloat wsMap = ImageFeatures.getHessian(input, 2, false)[0];
+        return WatershedObjectSplitter.splitInTwo(wsMap, object.getMask(), false, true, manualSplitVerbose);
     }
     boolean manualSplitVerbose;
     public void setSplitVerboseMode(boolean verbose) {

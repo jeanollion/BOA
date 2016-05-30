@@ -53,9 +53,9 @@ public class TestProcessBacteria {
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(microChannel);
         Image input = mc.getRawImage(1);
-        ImageMask parentMask = mc.getMask();
         BacteriaFluo.debug=true;
-        ObjectPopulation pop = BacteriaFluo.run(input, parentMask, 0.12, 100, 10, 3, 40, 4, 1, 2, 0, null);
+        BacteriaFluo seg = new BacteriaFluo();
+        ObjectPopulation pop = seg.runSegmenter(input, 1, mc);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
         disp.showImage(pop.getLabelMap());

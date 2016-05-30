@@ -22,6 +22,8 @@ import java.util.Comparator;
 /**
  *
  * @author jollion
+ * @param <E> type of elements
+ * @param <T> type of interface
  */
 public interface Interface<E, T extends Interface<E, T>> extends Comparable<T> {
     public E getE1();

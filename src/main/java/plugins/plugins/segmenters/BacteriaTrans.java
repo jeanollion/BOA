@@ -167,11 +167,15 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     }
     
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
+        /*
+            1) compute forground mask & check if there are objects inside
+            2) watershed on DOG -> produce oversegmentation
+            3) watershed on EDM using seeds from previous watershed in order to fit interfaces to morphology
+            4) merge using criterion on curvature & relative thickness
+            
+        */
         double thresholdForEmptyChannel = this.thresholdForEmptyChannel.getValue().doubleValue();
-        int minSizePropagation = this.minSizePropagation.getValue().intValue();
-        int minSize = this.minSize.getValue().intValue();
         pv = getProcessingVariables(input, parent.getMask());
-        IJImageDisplayer disp=debug?new IJImageDisplayer():null;
         //double hessianThresholdFacto = 1;
         ImageMask mask = parent.getMask();
         pv.threshold = this.threshold.instanciatePlugin().runThresholder(pv.getDOG(), parent);
@@ -183,7 +187,11 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         else {            
             if (musigmaOver[0] - musigmaUnder[0]<thresholdForEmptyChannel) return new ObjectPopulation(input);
         }
-        
+        return getSeparatedObjects(pv, minSizePropagation.getValue().intValue(), minSize.getValue().intValue(), 0, debug);
+    }
+    
+    protected static ObjectPopulation getSeparatedObjects(ProcessingVariables pv, int minSizePropagation, int minSize, int objectMergeLimit, boolean debug) {
+        IJImageDisplayer disp=debug?new IJImageDisplayer():null;
         ObjectPopulation res = WatershedTransform.watershed(pv.getDOG(), pv.getSegmentationMask(), false, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation));
         if (debug) disp.showImage(res.getLabelMap().duplicate("watershed EDM"));
         res.setVoxelIntensities(pv.getEDM()); // for getExtremaSeedList method called just afterwards
@@ -203,12 +211,12 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             ip.updateAndDraw();*/
         }
         
-        // merge using the criterion : max(EDM@frontière) / min(max(EDM@S1), max(EDM@S2)) > criterion
+        // merge using the criterion
         Object3DCluster.verbose=debug;
         //res.setVoxelIntensities(pv.getEDM());// for merging // useless if watershed transform on EDM has been called just before
-        Object3DCluster.mergeSort(res,  pv.getFactory());
-        res.filter(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
-        res.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
+        Object3DCluster.mergeSort(res,  pv.getFactory(), objectMergeLimit>1, 0, objectMergeLimit);
+        res.filterAndMergeWithConnected(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
+        res.filterAndMergeWithConnected(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
         if (debug) {
             disp.showImage(pv.getDOG().setName("DOG"));
             //disp.showImage(pv.getEDM());
@@ -218,20 +226,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             //FitEllipse.fitEllipse2D(pop1.getObjects().get(0));
             //FitEllipse.fitEllipse2D(pop1.getObjects().get(1));
         }
-        // OTHER IDEAS TO TAKE INTO ACCOUNT INTENSITY WITHIN BACTERIA
-        /* normalize image
-        1) dilate image & compute mean & sigma outside
-        2) compute mean & sigma inside
-        3) Histogram transformation: mean outside = 0 / mean inside = 1
-        */
-        
-        /*
-        add thickness information:  * border size / mean thickness of the 2 objects -> transformation of the Hessian map
-        */
         return res;
     }
-    
-    
     
     public static double getNomalizationValue(Image edm, List<Voxel> v1, List<Voxel> v2) {
         double max1 = -Double.MAX_VALUE;
@@ -273,13 +269,13 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         }
     }
     
-    public static double getCost(double value, double threshold, boolean valueShouldBeAboveThreshold)  {
-        if (valueShouldBeAboveThreshold) {
+    public static double getCost(double value, double threshold, boolean valueShouldBeBelowThresholdForAPositiveCost)  {
+        if (valueShouldBeBelowThresholdForAPositiveCost) {
             if (value>=threshold) return 0;
-            else return (threshold-value)/threshold;
+            else return (threshold-value);
         } else {
             if (value<=threshold) return 0;
-            else return (value-threshold)/threshold;
+            else return (value-threshold);
         }
     }
 
@@ -293,51 +289,58 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     // segmenter split and merge interface
     @Override public double split(Object3D o, List<Object3D> result) {
         if (pv==null) throw new Error("Segment method have to be called before split method in order to initialize images");
-        o.draw(pv.getSplitMask(), 1);
-        ObjectPopulation pop = WatershedObjectSplitter.splitInTwo(pv.getEDM(), pv.splitMask, true, minSize.getValue().intValue(), false); // TODO minSize Propagation
-        o.draw(pv.splitMask, 0);
-        if (pop==null || pop.getObjects().isEmpty() || pop.getObjects().size()==1) return Double.NaN;
-        ArrayList<Object3D> remove = new ArrayList<Object3D>(pop.getObjects().size());
-        pop.filter(new ObjectPopulation.Thickness().setX(2).setY(2), remove); // remove thin objects ?? merge? 
-        pop.filter(new ObjectPopulation.Size().setMin(minSize.getValue().intValue()), remove); // remove small objects ?? merge? 
-        if (pop.getObjects().size()<=1) return Double.NaN;
-        else {
-            if (!remove.isEmpty()) pop.mergeWithConnected(remove);
-            Object3D o1 = pop.getObjects().get(0);
-            Object3D o2 = pop.getObjects().get(1);
-            result.add(o1);
-            result.add(o2);
-            InterfaceBT inter = getInterface(o1, o2);
-            inter.checkFusion();
-            if (Double.isNaN(inter.value)) return Double.NaN;
-            return getCost(inter.value, pv.relativeThicknessThreshold, false); // TODO faire un min avec la courbure
+        synchronized(pv) {
+            ImageInteger segMask = pv.segMask;
+            pv.segMask=pv.getSplitMask();
+            o.draw(pv.getSplitMask(), 1);
+            pv.segMask=segMask;
+            ObjectPopulation pop = BacteriaTrans.getSeparatedObjects(pv, minSizePropagation.getValue().intValue(), minSize.getValue().intValue(), 2, false);
+            o.draw(pv.splitMask, 0);
+            if (pop==null || pop.getObjects().isEmpty() || pop.getObjects().size()==1) return Double.POSITIVE_INFINITY;
+            ArrayList<Object3D> remove = new ArrayList<Object3D>(pop.getObjects().size());
+            pop.filter(new ObjectPopulation.Thickness().setX(2).setY(2), remove); // remove thin objects ?? merge? 
+            pop.filter(new ObjectPopulation.Size().setMin(minSize.getValue().intValue()), remove); // remove small objects ?? merge? 
+            if (pop.getObjects().size()<=1) return Double.POSITIVE_INFINITY;
+            else {
+                if (!remove.isEmpty()) pop.mergeWithConnected(remove);
+                Object3D o1 = pop.getObjects().get(0);
+                Object3D o2 = pop.getObjects().get(1);
+                result.add(o1);
+                result.add(o2);
+                InterfaceBT inter = getInterface(o1, o2);
+                inter.updateSortValue();
+                return getCost(inter.curvatureValue, pv.curvatureThreshold, false); // TODO faire un min avec la courbure
+            }
+            
         }
     }
 
     @Override public double computeMergeCost(List<Object3D> objects) {
         if (pv==null) throw new Error("Segment method have to be called before merge method in order to initialize images");
         if (objects.isEmpty() || objects.size()==1) return 0;
-        Iterator<Object3D> it = objects.iterator();
-        Object3D ref  = objects.get(0);
-        double maxCost = Double.NEGATIVE_INFINITY;
-        while (it.hasNext()) { // first round : remove objects not connected with ref & compute interactions with ref objects
-            Object3D n = it.next();
-            if (n!=ref) {
-                InterfaceBT inter = getInterface(ref, n);
-                inter.checkFusion();
-                if (inter.value>maxCost) maxCost = inter.value;
+        synchronized(pv) {
+            Iterator<Object3D> it = objects.iterator();
+            Object3D ref  = objects.get(0);
+            double minCurv = Double.POSITIVE_INFINITY;
+            while (it.hasNext()) { // first round : remove objects not connected with ref & compute interactions with ref objects
+                Object3D n = it.next();
+                if (n!=ref) {
+                    InterfaceBT inter = getInterface(ref, n);
+                    inter.checkFusion();
+                    if (inter.curvatureValue<minCurv) minCurv = inter.curvatureValue;
+                }
             }
-        }
-        for (int i = 2; i<objects.size()-1; ++i) { // second round compute other interactions
-            for (int j = i+1; j<objects.size(); ++j) {
-                InterfaceBT inter = getInterface(objects.get(i), objects.get(j));
-                inter.checkFusion();
-                if (inter.value>maxCost) maxCost = inter.value;
+            for (int i = 2; i<objects.size()-1; ++i) { // second round compute other interactions
+                for (int j = i+1; j<objects.size(); ++j) {
+                    InterfaceBT inter = getInterface(objects.get(i), objects.get(j));
+                    inter.checkFusion();
+                    if (inter.curvatureValue<minCurv) minCurv = inter.curvatureValue;
+                }
             }
+            if (minCurv==Double.POSITIVE_INFINITY || minCurv==Double.NaN) return Double.POSITIVE_INFINITY;
+            return getCost(minCurv, pv.curvatureThreshold, true);
+            //return minCurv-pv.relativeThicknessThreshold;
         }
-        if (maxCost==Double.NEGATIVE_INFINITY || maxCost==Double.NaN) return Double.NaN;
-        return getCost(maxCost, pv.relativeThicknessThreshold, true);
-        //return maxCost-pv.relativeThicknessThreshold;
     }
     
     private InterfaceBT getInterface(Object3D o1, Object3D o2) {
@@ -382,8 +385,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     
     public ObjectPopulation splitObject(Image input, Object3D object) {
         ProcessingVariables pv = new ProcessingVariables(input, object.getMask(), relativeThicknessThreshold.getValue().doubleValue(), relativeThicknessMaxDistance.getValue().doubleValue(), this.dogScale.getValue().doubleValue(), this.openRadius.getValue().doubleValue(), curvatureScale.getValue().intValue(), curvatureThreshold.getValue().doubleValue(), curvatureSearchRadius.getValue().doubleValue());
-        pv.segMask=object.getMask(); // no need to compute threshold!!
-        return WatershedObjectSplitter.splitInTwo(pv.getEDM(), object.getMask(), true, minSize.getValue().intValue(), splitVerbose); // TODO minSize Propagation?
+        pv.segMask=object.getMask(); // no need to compute threshold because split is performed within object's mask
+        return BacteriaTrans.getSeparatedObjects(pv, minSizePropagation.getValue().intValue(), minSize.getValue().intValue(), 2, splitVerbose);
     }
     
     protected static class ProcessingVariables {
@@ -444,13 +447,13 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 if (Double.isNaN(threshold)) throw new Error("Threshold not set");
                 ImageInteger thresh = ImageOperations.threshold(getDOG(), threshold, false, false);
                 Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(openRadius, openRadius, thresh));
-                IJImageDisplayer disp = debug?new IJImageDisplayer():null;
+                //IJImageDisplayer disp = debug?new IJImageDisplayer():null;
                 //if (debug) disp.showImage(thresh.duplicate("before close"));
                 thresh = Filters.binaryClose(thresh, Filters.getNeighborhood(1, 1, thresh));
                 //if (debug) disp.showImage(thresh.duplicate("after close"));
                 ImageOperations.and(mask, thresh, thresh);
                 ObjectPopulation pop1 = new ObjectPopulation(thresh, false);
-                pop1.filter(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
+                pop1.filterAndMergeWithConnected(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
                 FillHoles2D.fillHoles(pop1);
                 //if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK"));
                 
@@ -467,9 +470,11 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         
         protected class InterfaceBT extends InterfaceObject3DImpl<InterfaceBT> {
             double maxDistance=Double.NEGATIVE_INFINITY;
+            double curvatureValue=Double.POSITIVE_INFINITY;
+            double relativeThickNess = Double.NEGATIVE_INFINITY;
             Voxel maxVoxel=null;
             double value=Double.NaN;
-            private FitEllipse.EllipseFit2D ell1, ell2; // lazy loading
+            //private FitEllipse.EllipseFit2D ell1, ell2; // lazy loading
             private KDTree<Double> curvature;
             private final Set<Voxel> borderVoxels, borderVoxels2;
             private final Set<Voxel> voxels;
@@ -500,26 +505,28 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 if (curvature==null) {
                     setBorderVoxels();
                     curvature = Curvature.computeCurvature(getJoinedMask(), curvatureScale);
-                    if (debug && ((e1.getLabel()==3 && e2.getLabel()==4))) {
+                    /*if (debug && ((e1.getLabel()==3 && e2.getLabel()==4))) {
                         ImageInteger m = getJoinedMask().duplicate("joinedMask:"+e1.getLabel()+"+"+e2.getLabel()+" (2)");
                         for (Voxel v : voxels) m.setPixelWithOffset(v.x, v.y, v.z, 2);
                         for (Voxel v : borderVoxels) m.setPixelWithOffset(v.x, v.y, v.z, 3);
                         for (Voxel v : borderVoxels2) m.setPixelWithOffset(v.x, v.y, v.z, 4);
                         new IJImageDisplayer().showImage(m);
                         Curvature.displayCurvature(m, curvatureScale);
-                    }
+                    }*/
                 }
                 return curvature;
             }
-            public FitEllipse.EllipseFit2D getEllipseFit1() {
+            /*public FitEllipse.EllipseFit2D getEllipseFit1() {
                 if (ell1==null) ell1 = FitEllipse.fitEllipse2D(e1);
                 return ell1;
             }
             public FitEllipse.EllipseFit2D getEllipseFit2() {
                 if (ell2==null) ell2 = FitEllipse.fitEllipse2D(e2);
                 return ell2;
+            }*/
+            @Override public void updateSortValue() {
+                curvatureValue = getMeanOfMinCurvature();
             }
-            @Override public void updateSortValue() {}
             @Override
             public void performFusion() {
                 super.performFusion();
@@ -531,8 +538,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                     this.maxDistance=otherInterface.maxDistance;
                     this.maxVoxel=otherInterface.maxVoxel;
                 }
-                ell1=null;
-                ell2=null;
+                //ell1=null;
+                //ell2=null;
                 curvature = null;
                 joinedMask=null;
                 voxels.addAll(otherInterface.voxels);
@@ -557,9 +564,9 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 if (al>angleThresholdRad) return false;
                 */
                 // criterion on curvature
-                double curV = getMeanOfMinCurvature();
-                if (debug) logger.debug("interface: {}+{}, Mean curvature: {}, Threshold: {}", e1.getLabel(), e2.getLabel(), curV, curvatureThreshold);
-                if (curV<curvatureThreshold) return false;
+                // curvature has been computed @ upadateSortValue
+                if (debug) logger.debug("interface: {}+{}, Mean curvature: {}, Threshold: {}", e1.getLabel(), e2.getLabel(), curvatureValue, curvatureThreshold);
+                if (curvatureValue<curvatureThreshold) return false;
                 
                 double max1 = Double.NEGATIVE_INFINITY;
                 double max2 = Double.NEGATIVE_INFINITY;
@@ -583,7 +590,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 }
                 return mean/=borderVoxels.size();
             }*/
-            private double getMinCurvature(Collection<Voxel> voxels) {
+            private double getMinCurvature(Collection<Voxel> voxels) { // returns positive infinity if no border
                 RadiusNeighborSearchOnKDTree<Double> search = new RadiusNeighborSearchOnKDTree(getCurvature());
                 if (voxels.isEmpty()) return 0;
                 double min = Double.POSITIVE_INFINITY;
@@ -595,14 +602,16 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                         if (min>d) min = d;
                     }
                 }
-                if (Double.isInfinite(min)) return Double.NaN;
+                //if (Double.isInfinite(min)) return Double.NaN;
                 return min;
             }
             public double getMeanOfMinCurvature() {
                 getCurvature(); // to set borderVoxels if not already done
                 if (borderVoxels.isEmpty() && borderVoxels2.isEmpty()) return 0;
-                else if (borderVoxels2.isEmpty()) return getMinCurvature(borderVoxels);
-                else return 0.5 * (getMinCurvature(borderVoxels)+ getMinCurvature(borderVoxels2));
+                else {    
+                    if (borderVoxels2.isEmpty()) return getMinCurvature(borderVoxels);
+                    else return 0.5 * (getMinCurvature(borderVoxels)+ getMinCurvature(borderVoxels2));
+                }
             }
 
             @Override
@@ -621,6 +630,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             private void setBorderVoxels() {
                 borderVoxels.clear();
                 borderVoxels2.clear();
+                if (voxels.isEmpty()) return;
                 // add border voxel
                 ImageInteger mask = getJoinedMask();
                 for (Voxel v : voxels) if (borderNeigh.hasNullValue(v.x-mask.getOffsetX(), v.y-mask.getOffsetY(), v.z-mask.getOffsetZ(), mask, true)) borderVoxels.add(v);
@@ -628,6 +638,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             }
             
             private void populateBoderVoxel(Collection<Voxel> allBorderVoxels) {
+                borderVoxels2.clear();
+                if (allBorderVoxels.isEmpty()) return;
                 BoundingBox b = new BoundingBox();
                 for (Voxel v : allBorderVoxels) b.expand(v);
                 ImageByte mask = new ImageByte("", b.getImageProperties());
@@ -636,7 +648,6 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 pop.translate(b, false);
                 List<Object3D> l = pop.getObjects();
                 borderVoxels.clear();
-                borderVoxels2.clear();
                 if (l.isEmpty()) logger.error("interface: {}, no side found", this);
                 else {
                     if (l.size()>=1) borderVoxels.addAll(l.get(0).getVoxels());
@@ -645,13 +656,16 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 }
             }
 
-            @Override public int compareTo(InterfaceBT t) {
-                return Double.compare(t.maxDistance, maxDistance);
+            @Override public int compareTo(InterfaceBT t) { // decreasingOrder of curvature value
+                //return Double.compare(t.maxDistance, maxDistance);
+                int c = Double.compare(t.curvatureValue, curvatureValue);
+                if (c==0) return super.compareElements(t, Object3DCluster.object3DComparator); // consitency with equals method
+                else return c;
             }
             
             @Override
             public String toString() {
-                return "Interface: " + e1.getLabel()+"+"+e2.getLabel();
+                return "Interface: " + e1.getLabel()+"+"+e2.getLabel()+ " sortValue: "+curvatureValue;
             }  
         }
         

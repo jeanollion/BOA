@@ -45,14 +45,14 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
     public static boolean verbose;
     public static final Logger logger = LoggerFactory.getLogger(ClusterCollection.class);
     final Comparator<? super E> elementComparator;
-    final Set<I> interfaces;
-    final HashMapGetCreate<E, List<I>> elementInterfaces;
+    Set<I> interfaces;
+    final HashMapGetCreate<E, Set<I>> interfaceByElement;
     Collection<E> allElements;
     InterfaceFactory<E, I> interfaceFactory;
     
     public ClusterCollection(Collection<E> elements, Comparator<? super E> clusterComparator, InterfaceFactory<E, I> interfaceFactory) {
         this.elementComparator=clusterComparator;
-        elementInterfaces = new HashMapGetCreate<E, List<I>>(elements.size(), new HashMapGetCreate.ListFactory());
+        interfaceByElement = new HashMapGetCreate<E, Set<I>>(elements.size(), new HashMapGetCreate.SetFactory());
         this.allElements=elements;
         this.interfaces = new HashSet<I>();
         this.interfaceFactory=interfaceFactory;
@@ -65,13 +65,13 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
     
     public I addInteraction(I i) {
         interfaces.add(i);
-        elementInterfaces.getAndCreateIfNecessary(i.getE1()).add(i);
-        elementInterfaces.getAndCreateIfNecessary(i.getE2()).add(i);
+        interfaceByElement.getAndCreateIfNecessary(i.getE1()).add(i);
+        interfaceByElement.getAndCreateIfNecessary(i.getE2()).add(i);
         return i;
     }
     
     public I getInterface(E e1, E e2, boolean createIfNull) {
-        List<I> l = elementInterfaces.getAndCreateIfNecessary(e1);
+        Collection<I> l = interfaceByElement.getAndCreateIfNecessary(e1);
         for (I i : l) if (i.isInterfaceOf(e2)) return i;
         if (createIfNull && interfaceFactory!=null) return addInteraction(interfaceFactory.create(e1, e2, elementComparator));
         return null;
@@ -82,8 +82,8 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
         Set<I> currentCluster;
         for (I i : interfaces) {
             currentCluster = null;
-            List<I> l1 = elementInterfaces.getAndCreateIfNecessary(i.getE1());
-            List<I> l2 = elementInterfaces.getAndCreateIfNecessary(i.getE2());
+            Collection<I> l1 = interfaceByElement.getAndCreateIfNecessary(i.getE1());
+            Collection<I> l2 = interfaceByElement.getAndCreateIfNecessary(i.getE2());
             if (clusters.isEmpty()) {
                 currentCluster = new HashSet<I>(l1.size()+ l2.size()-1);
                 currentCluster.addAll(l1);
@@ -118,29 +118,28 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
         // create one ClusterCollection per cluster and apply mergeSort
     }*/
     
-    public List<E> mergeSort() {
+    public List<E> mergeSort(boolean checkCriterion, int numberOfInterfacesToKeep, int numberOfElementsToKeep) {
         long t0 = System.currentTimeMillis();
-        for (Interface i : interfaces) i.updateSortValue();
-        List<I> currentInterfaces = new ArrayList<I>(interfaces);
-        Collections.sort(currentInterfaces);
-        //if (verbose) logger.debug("Tree set: {}, total: {}", currentInterfaces.size(), interfaces.size());
-        Iterator<I> it = currentInterfaces.iterator(); // descending
-        while (it.hasNext()) {
+        for (I i : interfaces) i.updateSortValue();
+        int interSize = interfaces.size();
+        interfaces = new TreeSet(interfaces);
+        if (verbose) for (I i : interfaces) logger.debug("interface: {}", i);
+        if (interSize!=interfaces.size()) throw new Error("Error INCONSITENCY BETWEEN COMPARE AND EQUALS METHOD FOR INTERFACE CLASS: "+interfaces.iterator().next().getClass().getSimpleName());
+        Iterator<I> it = interfaces.iterator();
+        while (it.hasNext() && interfaces.size()>numberOfInterfacesToKeep && allElements.size()>numberOfElementsToKeep) {
             I i = it.next();
-            if (i.checkFusion()) {
+            if (!checkCriterion || i.checkFusion()) {
                 it.remove();
-                this.interfaces.remove(i);
                 allElements.remove(i.getE2());
                 i.performFusion();
-                if (updateInterfacesAfterFusion(i, currentInterfaces)) { // if any change in the interface treeset, recompute the iterator
-                    Collections.sort(currentInterfaces);
-                    it=currentInterfaces.iterator();
+                if (updateInterfacesAfterFusion(i)) { // if any change in the interface treeset, recompute the iterator
+                    it=interfaces.iterator();
                 } 
             } //else if (i.hasOneRegionWithNoOtherInteractant(this)) it.remove(); // won't be modified so no need to test once again
         }
         long t1 = System.currentTimeMillis();
-        if (verbose) logger.debug("Merge sort: total time : {} total interfaces: {} after merge: {}", t1-t0, interfaces.size(), currentInterfaces.size());
-        return new ArrayList<E>(elementInterfaces.keySet());
+        if (verbose) logger.debug("Merge sort: total time : {} total interfaces: {} after merge: {}", t1-t0, interfaces.size(), interfaces.size());
+        return new ArrayList<E>(interfaceByElement.keySet());
     }   
 
     /**
@@ -148,19 +147,18 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
      * @param i
      * @return true if changes were made in the interfaces set
      */
-    protected boolean updateInterfacesAfterFusion(I i, List<I> interfaces) {
-        List<I> l1 = elementInterfaces.get(i.getE1());
-        List<I> l2 = elementInterfaces.remove(i.getE2());
+    protected boolean updateInterfacesAfterFusion(I i) {
+        Collection<I> l1 = interfaceByElement.get(i.getE1());
+        Collection<I> l2 = interfaceByElement.remove(i.getE2());
         if (l1!=null) l1.remove(i);
         boolean change = false;
         if (l2!=null) {
             for (I otherInterface : l2) { // appends interfaces of deleted region (e2) to new region (e1)
                 if (!otherInterface.equals(i)) {
-                    change=true;
-                    
+                    change = true;
                     E otherElement = otherInterface.getOther(i.getE2());
                     I existingInterface=null;
-                    if (l1!=null) {
+                    if (l1!=null) { // look for existing interface between e1 and otherElement
                         for (I j : l1) {
                             if (j.isInterfaceOf(i.getE1(), otherElement)) {
                                 existingInterface=j;
@@ -169,17 +167,22 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
                         }
                     }
                     if (existingInterface!=null) { // if interface is already present in e1, simply merge the interfaces
-                        //interfaces.remove(existingInterface);
-                        //if (l1!=null) l1.remove(existingInterface);
-                        //otherRegionInterfaces.remove(existingInterface);
-                        existingInterface.fusionInterface(otherInterface, elementComparator);
-                        
                         interfaces.remove(otherInterface);
-                        this.interfaces.remove(otherInterface);
-                        elementInterfaces.get(otherElement).remove(existingInterface);
-                    } else { // if not add a new interface
-                        //otherRegionInterfaces.remove(otherInterface);
+                        interfaces.remove(existingInterface);
+                        interfaceByElement.get(otherElement).remove(otherInterface); // will be replaced by existingInterface
+                        
+                        existingInterface.fusionInterface(otherInterface, elementComparator);
+                        existingInterface.updateSortValue();
+                        interfaces.add(existingInterface); // sort value changed 
+                        // no need to add and remove from interfaces of e1 and otherElement beause hashCode hasnt changed
+                        
+                    } else { // if not add a new interface between E1 and otherElement
+                        interfaces.remove(otherInterface); // hashCode will change because of switch
+                        interfaceByElement.get(otherElement).remove(otherInterface); // hashCode will change because of switch
+                        
                         otherInterface.swichElements(i.getE1(), i.getE2(), elementComparator);
+                        interfaces.add(otherInterface);
+                        interfaceByElement.get(otherElement).add(otherInterface);
                         if (l1!=null) l1.add(otherInterface);
                     }
                 }

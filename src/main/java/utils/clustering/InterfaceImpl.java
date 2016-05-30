@@ -17,6 +17,7 @@
  */
 package utils.clustering;
 
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 
@@ -57,6 +58,12 @@ public abstract class InterfaceImpl<E, T extends Interface<E, T>> implements Int
             setElements(o1, o2, elementComparator);
         }
         
+        protected int compareElements(T otherInterface, Comparator<? super E> elementComparator) {
+            int c = elementComparator.compare(e1, otherInterface.getE1());
+            if (c==0) return elementComparator.compare(e2, otherInterface.getE2());
+            return c;
+        }
+        
         public void swichElements(E newE, E oldE, Comparator<? super E> elementComparator) { // need to call update sort value
             if (e1==oldE) setElements(newE, e2, elementComparator);
             else if (e2==oldE) setElements(e1, newE, elementComparator);
@@ -84,9 +91,9 @@ public abstract class InterfaceImpl<E, T extends Interface<E, T>> implements Int
         }
         
         public boolean hasOneRegionWithNoOtherInteractant(ClusterCollection<E, T> c) {
-            List<T> l1 = c.elementInterfaces.get(e1);
+            Collection<T> l1 = c.interfaceByElement.get(e1);
             if (l1==null || l1.isEmpty() || (l1.size()==1 && l1.contains(this))) return true;
-            List<T> l2 = c.elementInterfaces.get(e2);
+            Collection<T> l2 = c.interfaceByElement.get(e2);
             return (l2==null || l2.isEmpty() || (l2.size()==1 && l2.contains(this)) );
         }
 

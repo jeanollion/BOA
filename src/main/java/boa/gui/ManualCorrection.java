@@ -332,13 +332,16 @@ public class ManualCorrection {
             for (StructureObject objectToSplit : objectsByFieldName.get(f)) {
                 splitter = db.getExperiment().getStructure(structureIdx).getObjectSplitter();
                 splitter.setSplitVerboseMode(test);
-                StructureObject newObject = objectToSplit.split(splitter);
-                if (newObject==null) logger.warn("Object could not be splitted!");
+                if (test) splitter.splitObject(objectToSplit.getRawImage(objectToSplit.getStructureIdx()), objectToSplit.getObject());
                 else {
-                    newObjects.add(newObject);
-                    objectToSplit.getParent().relabelChildren(objectToSplit.getStructureIdx(), objectsToStore);
-                    objectsToStore.add(newObject);
-                    objectsToStore.add(objectToSplit);
+                    StructureObject newObject = objectToSplit.split(splitter);
+                    if (newObject==null) logger.warn("Object could not be splitted!");
+                    else {
+                        newObjects.add(newObject);
+                        objectToSplit.getParent().relabelChildren(objectToSplit.getStructureIdx(), objectsToStore);
+                        objectsToStore.add(newObject);
+                        objectsToStore.add(objectToSplit);
+                    }
                 }
             }
             
@@ -362,6 +365,7 @@ public class ManualCorrection {
                 ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null, structureIdx);
                 if (i!=null) {
                     newObjects.addAll(objects);
+                    Utils.removeDuplicates(newObjects, false);
                     ImageWindowManagerFactory.getImageManager().displayObjects(null, i.pairWithOffset(newObjects), Color.orange, true, false);
                     GUI.updateRoiDisplayForSelections(null, null);
                 }

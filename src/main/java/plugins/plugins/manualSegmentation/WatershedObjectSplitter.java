@@ -18,6 +18,7 @@
 package plugins.plugins.manualSegmentation;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
+import configuration.parameters.BooleanParameter;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
@@ -40,6 +41,7 @@ import plugins.ObjectSplitter;
 import processing.Filters;
 import processing.ImageFeatures;
 import processing.WatershedTransform;
+import utils.clustering.Object3DCluster;
 
 /**
  *
@@ -48,8 +50,8 @@ import processing.WatershedTransform;
 public class WatershedObjectSplitter implements ObjectSplitter {
     //BoundedNumberParameter numberOfObjects = new BoundedNumberParameter("Maximum growth rate", 2, 1.5, 1, 2);
     NumberParameter smoothScale = new BoundedNumberParameter("Smooth Scale (0=no smooth)", 1, 2, 0, null);
-    
-    
+    BooleanParameter keepOnlyTwoSeeds = new BooleanParameter("Use only two best seeds", false);
+    Parameter[] parameters = new Parameter[]{smoothScale, keepOnlyTwoSeeds};
     boolean splitVerbose;
     public void setSplitVerboseMode(boolean verbose) {
         this.splitVerbose=verbose;
@@ -58,10 +60,10 @@ public class WatershedObjectSplitter implements ObjectSplitter {
     public ObjectPopulation splitObject(Image input, Object3D object) {
         double sScale = smoothScale.getValue().doubleValue();
         if (sScale>0) input = ImageFeatures.gaussianSmooth(input, sScale, sScale * input.getScaleXY() / input.getScaleZ(), false);
-        return splitInTwo(input, object.getMask(), true, splitVerbose);
+        return splitInTwo(input, object.getMask(), true, keepOnlyTwoSeeds.getSelected(), splitVerbose);
     }
     
-    public static ObjectPopulation splitInTwo(Image watershedMap, ImageMask mask, final boolean decreasingPropagation, boolean verbose) {
+    public static ObjectPopulation splitInTwo(Image watershedMap, ImageMask mask, final boolean decreasingPropagation, boolean keepOnlyTwoSeeds, boolean verbose) {
         
         ImageByte localMax = Filters.localExtrema(watershedMap, null, decreasingPropagation, Filters.getNeighborhood(1, 1, watershedMap)).setName("Split seeds");
         ImageOperations.and(localMax, mask, localMax); // limit @ seeds within mask
@@ -72,7 +74,7 @@ public class WatershedObjectSplitter implements ObjectSplitter {
             //new IJImageDisplayer().showImage(localMax.setName("localMax"));
             return null;
         } else {
-            if (seeds.size()>4) { // keep half of the seeds... TODO find other algorithm to maximize distance? // si contrainte de taille, supprimer les seeds qui génère des objets trop petits
+            if ((keepOnlyTwoSeeds && seeds.size()>2) || seeds.size()>4) { // keep half of the seeds... TODO find other algorithm to maximize distance? // si contrainte de taille, supprimer les seeds qui génère des objets trop petits
                 for (Object3D o : seeds) {
                     for (Voxel v : o.getVoxels()) v.value = watershedMap.getPixel(v.x, v.y, v.z);
                 }
@@ -82,8 +84,14 @@ public class WatershedObjectSplitter implements ObjectSplitter {
                     }
                 };
                 Collections.sort(seeds, c);
-                if (decreasingPropagation) seeds = seeds.subList(seeds.size()/2, seeds.size());
-                else seeds = seeds.subList(0, seeds.size()/2);
+                
+                if (keepOnlyTwoSeeds) {
+                    if (decreasingPropagation) seeds = seeds.subList(seeds.size()-2, seeds.size());
+                    else seeds = seeds.subList(0, 2);
+                } else {
+                    if (decreasingPropagation) seeds = seeds.subList(seeds.size()/2, seeds.size());
+                    else seeds = seeds.subList(0, seeds.size()/2);
+                }
             }
             ObjectPopulation pop =  WatershedTransform.watershed(watershedMap, mask, seeds, decreasingPropagation, null, new WatershedTransform.NumberFusionCriterion(2));
             if (verbose) {
@@ -138,7 +146,7 @@ public class WatershedObjectSplitter implements ObjectSplitter {
             return pop;
         }
     }
-
+    
     private static boolean hasVoxelsOutsideMask(Object3D o, ImageMask mask) {
         for (Voxel v : o.getVoxels()) {
             if (!mask.insideMask(v.x, v.y, v.z)) return true;
@@ -147,7 +155,7 @@ public class WatershedObjectSplitter implements ObjectSplitter {
     }
     
     public Parameter[] getParameters() {
-        return new Parameter[]{smoothScale};
+        return parameters;
     }
 
     public boolean does3D() {

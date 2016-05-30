@@ -159,14 +159,18 @@ public class Object3DCluster<I extends InterfaceObject3D<I>> extends ClusterColl
         if (voxelIntensityImage!=null) c.setVoxelIntensities(voxelIntensityImage, true, true);
         c.mergeSort(criterion, new InterfaceDataFusionCollection<Set<Voxel>, Voxel>(), interfaceSortMethod);
     }*/
-    public static <I extends InterfaceObject3D<I>> void mergeSort(ObjectPopulation population, InterfaceFactory<Object3D, I> interfaceFactory) {
+    public static <I extends InterfaceObject3D<I>> void mergeSort(ObjectPopulation population, InterfaceFactory<Object3D, I> interfaceFactory, boolean checkCriterion, int numberOfInterfacesToKeep, int numberOfObjecsToKeep) {
         Object3DCluster<I> c = new Object3DCluster<I>(population, false, interfaceFactory);
-        c.mergeSort();
+        c.mergeSort(checkCriterion, numberOfInterfacesToKeep, numberOfObjecsToKeep);
     }
     
-    @Override public List<Object3D> mergeSort() {
+    public static <I extends InterfaceObject3D<I>> void mergeSort(ObjectPopulation population, InterfaceFactory<Object3D, I> interfaceFactory) {
+        mergeSort(population, interfaceFactory, true, 0, 0);
+    }
+    
+    @Override public List<Object3D> mergeSort(boolean checkCriterion, int numberOfInterfacesToKeep, int numberOfObjecsToKeep) {
         int nInit = population.getObjects().size();
-        super.mergeSort();
+        super.mergeSort(checkCriterion, numberOfInterfacesToKeep, numberOfObjecsToKeep);
         if (nInit > population.getObjects().size()) population.relabel(true);
         return population.getObjects();
     }
