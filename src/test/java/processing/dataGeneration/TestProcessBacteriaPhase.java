@@ -20,6 +20,8 @@ package processing.dataGeneration;
 import static TestUtils.Utils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
+import boa.gui.imageInteraction.ImageObjectInterface;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;
@@ -31,6 +33,9 @@ import de.caluga.morphium.Morphium;
 import ij.process.AutoThresholder;
 import image.Image;
 import image.ImageMask;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import plugins.PluginFactory;
 import plugins.plugins.segmenters.BacteriaTrans;
 import plugins.plugins.segmenters.BacteriaFluo;
@@ -45,11 +50,12 @@ public class TestProcessBacteriaPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         //int time =31;
-        int time =0;
+        int time =398;
         int microChannel =0;
         int field = 0;
         String dbName = "boa_mutd5_141209";
         testSegBacteriesFromXP(dbName, field, time, microChannel);
+        //testSegBacteriesFromXP(dbName, field, microChannel, 201, 400);
     }
     
     public static void testSegBacteriesFromXP(String dbName, int fieldNumber, int timePoint, int microChannel) {
@@ -64,6 +70,32 @@ public class TestProcessBacteriaPhase {
         ObjectPopulation pop = seg.runSegmenter(input, 1, mc);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(pop.getLabelMap());
+        
+    }
+    public static void testSegBacteriesFromXP(String dbName, int fieldNumber, int microChannel, int timePointMin, int timePointMax) {
+        MasterDAO mDAO = new MorphiumMasterDAO(dbName);
+        MicroscopyField f = mDAO.getExperiment().getMicroscopyField(fieldNumber);
+        List<StructureObject> rootTrack = mDAO.getDao(f.getName()).getRoots();
+        Iterator<StructureObject> it = rootTrack.iterator();
+        while(it.hasNext()) {
+            StructureObject o = it.next();
+            if (o.getTimePoint()<timePointMin) it.remove();
+            if (o.getTimePoint()>timePointMax) it.remove();
+        }
+        List<StructureObject> parentTrack = new ArrayList<StructureObject>();
+        for (StructureObject root : rootTrack) {
+            StructureObject mc = root.getChildren(0).get(microChannel);
+            parentTrack.add(mc);
+            Image input = mc.getRawImage(1);
+            BacteriaTrans.debug=false;
+            BacteriaTrans seg = new BacteriaTrans();
+            logger.debug("seg: tp {}", mc.getTimePoint());
+            root.setChildrenObjects(seg.runSegmenter(input, 1, mc), 1);
+        }
+        ImageWindowManagerFactory.getImageManager().setInteractiveStructure(1);
+        ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(parentTrack, 1);
+        Image im = i.generateRawImage(1);
+        ImageWindowManagerFactory.getImageManager().addImage(im, i, false, true);
         
     }
 }

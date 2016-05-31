@@ -214,7 +214,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         // merge using the criterion
         Object3DCluster.verbose=debug;
         //res.setVoxelIntensities(pv.getEDM());// for merging // useless if watershed transform on EDM has been called just before
-        Object3DCluster.mergeSort(res,  pv.getFactory(), objectMergeLimit>1, 0, objectMergeLimit);
+        Object3DCluster.mergeSort(res,  pv.getFactory(), objectMergeLimit<=1, 0, objectMergeLimit);
         res.filterAndMergeWithConnected(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
         res.filterAndMergeWithConnected(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
         if (debug) {
@@ -504,8 +504,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             public KDTree<Double> getCurvature() {
                 if (curvature==null) {
                     setBorderVoxels();
-                    curvature = Curvature.computeCurvature(getJoinedMask(), curvatureScale);
-                    /*if (debug && ((e1.getLabel()==3 && e2.getLabel()==4))) {
+                    if (curvatureValue!=Double.NEGATIVE_INFINITY) curvature = Curvature.computeCurvature(getJoinedMask(), curvatureScale);
+                    /*if (debug && ((e1.getLabel()==1 && e2.getLabel()==2))) {
                         ImageInteger m = getJoinedMask().duplicate("joinedMask:"+e1.getLabel()+"+"+e2.getLabel()+" (2)");
                         for (Voxel v : voxels) m.setPixelWithOffset(v.x, v.y, v.z, 2);
                         for (Voxel v : borderVoxels) m.setPixelWithOffset(v.x, v.y, v.z, 3);
@@ -525,7 +525,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 return ell2;
             }*/
             @Override public void updateSortValue() {
-                curvatureValue = getMeanOfMinCurvature();
+                if (getCurvature()!=null) curvatureValue = getMeanOfMinCurvature(); 
             }
             @Override
             public void performFusion() {
@@ -606,7 +606,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 return min;
             }
             public double getMeanOfMinCurvature() {
-                getCurvature(); // to set borderVoxels if not already done
+                
                 if (borderVoxels.isEmpty() && borderVoxels2.isEmpty()) return 0;
                 else {    
                     if (borderVoxels2.isEmpty()) return getMinCurvature(borderVoxels);
@@ -640,6 +640,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             private void populateBoderVoxel(Collection<Voxel> allBorderVoxels) {
                 borderVoxels2.clear();
                 if (allBorderVoxels.isEmpty()) return;
+                else if (allBorderVoxels.size() >= Math.min(e1.getVoxels().size(), e2.getVoxels().size())/2) {
+                    curvatureValue=Double.NEGATIVE_INFINITY;
+                    return;
+                }
                 BoundingBox b = new BoundingBox();
                 for (Voxel v : allBorderVoxels) b.expand(v);
                 ImageByte mask = new ImageByte("", b.getImageProperties());
@@ -652,7 +656,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 else {
                     if (l.size()>=1) borderVoxels.addAll(l.get(0).getVoxels());
                     if (l.size()>=2) borderVoxels2.addAll(l.get(1).getVoxels());
-                    if (l.size()>=3) logger.error("interface: {}, #{} sides found!!", this, l.size());
+                    if (l.size()>=3) logger.error("interface: {}, #{} sides found!!, {}", this, l.size(), input.getName());
                 }
             }
 

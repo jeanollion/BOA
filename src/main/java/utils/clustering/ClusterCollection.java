@@ -119,6 +119,7 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
     }*/
     
     public List<E> mergeSort(boolean checkCriterion, int numberOfInterfacesToKeep, int numberOfElementsToKeep) {
+        if (verbose) logger.debug("MERGE SORT check: {}, interfacesToKeep: {}, elements to keep: {}", checkCriterion, numberOfInterfacesToKeep, numberOfElementsToKeep);
         long t0 = System.currentTimeMillis();
         for (I i : interfaces) i.updateSortValue();
         int interSize = interfaces.size();

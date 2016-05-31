@@ -202,7 +202,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             disp.showImage(popWS.getLabelMap().duplicate("seg map before merge"));
         }
         Object3DCluster.verbose=debug;
-        Object3DCluster.mergeSort(popWS,  pv.getFactory(), objectMergeLimit>1, 0, objectMergeLimit);
+        Object3DCluster.mergeSort(popWS,  pv.getFactory(), objectMergeLimit<=1, 0, objectMergeLimit);
         //if (debug) disp.showImage(popWS.getLabelMap().duplicate("seg map after merge"));
         popWS.filterAndMergeWithConnected(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
         popWS.filterAndMergeWithConnected(new ObjectPopulation.Size().setMin(minSize)); // remove small objects

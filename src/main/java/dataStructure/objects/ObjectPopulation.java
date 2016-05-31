@@ -271,7 +271,7 @@ public class ObjectPopulation {
         int label=1;
         List<Object3D> seeds = new ArrayList<Object3D>(getObjects().size());
         for (final Object3D o : getObjects()) {
-            seeds.add(new Object3D(o.getExtrema(maxOfObjectVoxels), label++, o.getScaleXY(), o.getScaleZ()));
+            seeds.add(new Object3D(o.getExtremum(maxOfObjectVoxels), label++, o.getScaleXY(), o.getScaleZ()));
         }
         return seeds;
     }
