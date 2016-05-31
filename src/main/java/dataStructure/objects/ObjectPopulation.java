@@ -441,6 +441,7 @@ public class ObjectPopulation {
     }
     private void mergeAllConnected(int fromLabel) {
         relabel(); // objects label start from 1 -> idx = label-1
+        List<Object3D> toRemove = new ArrayList<Object3D>();
         ImageInteger inputLabels = getLabelMap();
         int otherLabel;
         int[][] neigh = inputLabels.getSizeZ()>1 ? ImageLabeller.neigh3DHalf : ImageLabeller.neigh2DHalf;
@@ -450,6 +451,9 @@ public class ObjectPopulation {
                 for (int x = 0; x<inputLabels.getSizeX(); x++) {
                     int label = inputLabels.getPixelInt(x, y, z);
                     if (label==0) continue;
+                    if (label-1>=objects.size()) {
+                        new IJImageDisplayer().showImage(inputLabels.duplicate("label map, error: "+label));
+                    }
                     Object3D currentRegion = objects.get(label-1);
                     for (int i = 0; i<neigh.length; ++i) {
                         n = new Voxel(x+neigh[i][0], y+neigh[i][1], z+neigh[i][2]);
@@ -466,7 +470,7 @@ public class ObjectPopulation {
                                     }
                                     currentRegion.addVoxels(otherRegion.getVoxels());
                                     draw(otherRegion, label);
-                                    objects.remove(otherRegion);
+                                    toRemove.add(otherRegion);
                                 }
                             }
                         }
@@ -474,6 +478,7 @@ public class ObjectPopulation {
                 }
             }
         }
+        objects.removeAll(toRemove);
     }
     public void mergeWithConnected(Collection<Object3D> objectsToMerge) {
         // create a new list, with objects to merge at the end, and record the last label to merge

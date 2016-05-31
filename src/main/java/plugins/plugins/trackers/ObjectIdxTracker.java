@@ -58,7 +58,7 @@ public class ObjectIdxTracker implements Tracker {
         int lim = Math.min(previous.size(), next.size());
         for (int i = 0; i<lim; ++i) {
             setTrackLinks(previous.get(i), next.get(i), true, true);
-            Plugin.logger.trace("assign previous {} to next {}", previous.get(i), next.get(i));
+            //Plugin.logger.trace("assign previous {} to next {}", previous.get(i), next.get(i));
         }
         for (int i = lim; i<next.size(); ++i) next.get(i).resetTrackLinks();
     }

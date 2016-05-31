@@ -170,12 +170,19 @@ public class GenerateTestXP {
         boolean fluo = true;
         */
         
-        String dbName = "boa_testBF";
+        /*String dbName = "boa_testBF";
         String inputDir = "/home/jollion/Documents/LJP/DataLJP/SampleImageTrans/input/";
         String outputDir = "/home/jollion/Documents/LJP/DataLJP/SampleImageTrans/output/";
         boolean flip = true;
         boolean fluo = false;
-        scaleXY = 0.0646;
+        scaleXY = 0.0646;*/
+        
+        String dbName = "boa_mutd5_141209";
+        String inputDir = "/data/Images/Phase/09122014_mutd5_lb-lr62repl/mg6300mutd5_LB_lr62replic2_oil37.nd2";
+        String outputDir = "/data/Images/Phase/09122014_mutd5_lb-lr62repl/Output";
+        boolean flip = true;
+        boolean fluo = false;
+        //scaleXY = 0.0646;
         
         boolean performProcessing = false;
         
@@ -208,7 +215,7 @@ public class GenerateTestXP {
         xp.getStructures().insert(mc, bacteria, mutation);
         
         mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessor()));
-        bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo())));
+        bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo()).setCostParameters(0.1, 0.5)));
         //mutation.setProcessingScheme(new SegmentOnly(new MutationSegmenterScaleSpace().setThresholdSeeds(2)));
         mutation.setProcessingScheme(new SegmentAndTrack(new LAPTracker().setCompartimentStructure(1)));
         //mutation.setManualSegmenter();
@@ -250,7 +257,13 @@ public class GenerateTestXP {
                 new MicroChannelPhase2D(), 
                 new ObjectIdxTracker()
         ));
-        bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaTrans())));
+        bacteria.setProcessingScheme(
+                new SegmentAndTrack(
+                        new BacteriaClosedMicrochannelTrackerLocalCorrections(
+                                new BacteriaTrans()
+                        ).setCostParameters(1, 5)
+                )
+        );
         
         //xp.addMeasurement(new BacteriaLineageIndex(1));
         //xp.addMeasurement(new BacteriaMeasurements(1, 2));

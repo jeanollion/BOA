@@ -49,8 +49,8 @@ import static utils.Utils.plotProfile;
  */
 public class MicroChannelPhase2D implements Segmenter {
 
-    NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Width (pixels)", 0, 26, 5, null);
-    NumberParameter microChannelWidthError = new BoundedNumberParameter("Microchannel Width error proportion", 2, 0.15, 0, 1);
+    NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Width (pixels)", 0, 24, 5, null);
+    NumberParameter microChannelWidthError = new BoundedNumberParameter("Microchannel Width error proportion", 2, 0.25, 0, 1);
     Parameter[] parameters = new Parameter[]{channelWidth, microChannelWidthError};
     public static boolean debug = false;
 
@@ -68,7 +68,7 @@ public class MicroChannelPhase2D implements Segmenter {
     }
 
     public static ObjectPopulation run(Image image, int channelWidth, double channelWIdthError, double gradientScale, int erodeSize, int dilateSize) {
-        //CropMicroChannelBF2D.debug=debug;
+        CropMicroChannelBF2D.debug=debug;
         CropMicroChannelBF2D.Result r = CropMicroChannelBF2D.segmentMicroChannels(image, false, 0, channelWidth, channelWIdthError);
         if (r==null) return null;
         ArrayList<Object3D> objects = new ArrayList<Object3D>(r.xMax.length);

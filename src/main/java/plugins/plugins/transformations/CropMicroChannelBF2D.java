@@ -45,8 +45,8 @@ import static utils.Utils.plotProfile;
  */
 public class CropMicroChannelBF2D extends CropMicroChannels {
     public static boolean debug = false;
-    NumberParameter microChannelWidth = new BoundedNumberParameter("Microchannel Width (pix)", 0, 26, 5, null);
-    NumberParameter microChannelWidthError = new BoundedNumberParameter("Microchannel Width error proportion", 2, 0.15, 0, 1);
+    NumberParameter microChannelWidth = new BoundedNumberParameter("Microchannel Width (pix)", 0, 25, 5, null);
+    NumberParameter microChannelWidthError = new BoundedNumberParameter("Microchannel Width error proportion", 2, 0.35, 0, 1);
     Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, microChannelWidth, microChannelWidthError, xStart, xStop, yStart, yStop, number};
     
     public CropMicroChannelBF2D(int margin, int cropMargin, int microChannelWidth, double microChannelWidthError, int timePointNumber) {
@@ -89,7 +89,8 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         int xErode = Math.max(1, (int)(derScale/2d + 0.5+Double.MIN_VALUE));
         double widthMin = (1-channelWidthError) * channelWidth;
         double widthMax = (1+channelWidthError) * channelWidth;
-        double localExtremaThld = 0.05d;
+        double localExtremaThld = 0.025d;
+        
         /*
         1) search for optical aberation
         2) search for y-start of MC using Y-proj of d/dy image global max (projection from yE[0; y-aberation]
@@ -110,28 +111,48 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         if (debug) {
             //plotProfile("XProjDer", xProjDer);
             //plotProfile("XProj smoothed", xProj);
+            new IJImageDisplayer().showImage(imDer);
             plotProfile("yProjCrop", yProj);
             float[] norm = new float[xProjDer.length];
             for (int i = 0; i<norm.length; ++i) norm[i] = xProjDer[i] / xProj[i];
-            plotProfile("xProjNorm", norm);
+            plotProfile("xProjDer", xProjDer);
+            plotProfile("xProj", xProj);
+            plotProfile("xProjDerNorm", norm);
+            
         }
         int[] localMax = ArrayUtil.getRegionalExtrema(xProjDer, (int)(derScale+0.5), true);
         int[] localMin = ArrayUtil.getRegionalExtrema(xProjDer, (int)(derScale+0.5), false);
-        if (debug) {
-            logger.debug("{} max found, {} min found", localMax.length, localMin.length);
-        }
+        if (debug) logger.debug("{} max found, {} min found", localMax.length, localMin.length);
+        
         List<int[]> peaks = new ArrayList<int[]>();
         int lastMinIdx = -1;
         int leftMargin = image.getSizeX()-margin;
         MAX_LOOP : for (int maxIdx = 0; maxIdx<localMax.length; ++maxIdx) {
-            if (isExtremaValid(localMax[maxIdx], localExtremaThld, xProjDer, xProj) && localMax[maxIdx]>margin && localMax[maxIdx]<leftMargin) {
+            if (isExtremaValid(localMax[maxIdx], localExtremaThld, xProjDer, xProj, true) && localMax[maxIdx]>margin && localMax[maxIdx]<leftMargin) {
+                if (debug) logger.debug("VALID MAX: {}", localMax[maxIdx]);
                 int minIdx = lastMinIdx;
                 MIN_LOOP : while(minIdx<localMin.length-1) {
                     minIdx++;
                     if (localMin[minIdx]>leftMargin) break MAX_LOOP;
-                    if (isExtremaValid(localMin[minIdx], localExtremaThld, xProjDer, xProj)) {
+                    if (isExtremaValid(localMin[minIdx], localExtremaThld, xProjDer, xProj, false)) {
                         int d = localMin[minIdx] - localMax[maxIdx];
+                        if (debug) logger.debug("VALID MIN: {}, d: {}", localMin[minIdx], d);
                         if (d>=widthMin && d<=widthMax) {
+                            // see if next mins yield to better segmentation
+                            boolean better=true;
+                            while(better) {
+                                better=false;
+                                if (minIdx+1<localMin.length && isExtremaValid(localMin[minIdx+1], localExtremaThld, xProjDer, xProj, false)) {
+                                    int d2 = localMin[minIdx+1] - localMax[maxIdx];
+                                    if (Math.abs(d2-channelWidth) < Math.abs(d-channelWidth)) {
+                                        d = d2;
+                                        ++minIdx;
+                                        better = true;
+                                        if (debug) logger.debug("BETTER VALID MIN: {}, d: {}", localMin[minIdx], d);
+                                    } 
+                                }
+                            }
+                            
                             if (debug) {
                                 int x1 = localMax[maxIdx];
                                 int x2 = localMin[minIdx];
@@ -139,6 +160,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
                             }
                             peaks.add(new int[]{localMax[maxIdx]+xErode, localMin[minIdx]-xErode});
                             lastMinIdx = minIdx;
+                            while(maxIdx<localMax.length && localMax[maxIdx]<localMin[minIdx]) maxIdx++;
                             break MIN_LOOP;
                         } else if (d>widthMax) break MIN_LOOP;
                     }
@@ -149,8 +171,8 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         
     }
     
-    private static boolean isExtremaValid(int extrema, double thld, float[] values, float[] normValues) {
-        return Math.abs(values[extrema] / normValues[extrema]) > thld;
+    private static boolean isExtremaValid(int extrema, double thld, float[] values, float[] normValues, boolean max) {
+        return max ? values[extrema] / normValues[extrema] > thld : -values[extrema] / normValues[extrema] > thld ;
     }
     
     public static int searchYLimWithOpticalAberration(Image image, double peakProportion, double sigmaThreshold) {

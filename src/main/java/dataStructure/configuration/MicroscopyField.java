@@ -18,6 +18,9 @@
 package dataStructure.configuration;
 
 import boa.gui.GUI;
+import static boa.gui.GUI.logger;
+import boa.gui.imageInteraction.ImageObjectInterface;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import com.mongodb.MongoClient;
 import configuration.parameters.BooleanParameter;
 import configuration.parameters.BoundedNumberParameter;
@@ -31,6 +34,7 @@ import configuration.parameters.SimpleContainerParameter;
 import configuration.parameters.SimpleListParameter;
 import configuration.parameters.StructureParameter;
 import configuration.parameters.TimePointParameter;
+import configuration.parameters.ui.ParameterUI;
 import core.Processor;
 import dataStructure.containers.ImageDAO;
 import dataStructure.containers.InputImage;
@@ -42,9 +46,15 @@ import dataStructure.objects.StructureObjectUtils;
 import static dataStructure.objects.StructureObjectUtils.setTrackLinks;
 import de.caluga.morphium.annotations.Transient;
 import image.BlankMask;
+import image.Image;
+import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.AbstractAction;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JSeparator;
 import plugins.PreFilter;
 
 /**
@@ -189,6 +199,12 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         super.removeFromParent();
         
     }
+    
+    @Override
+    public ParameterUI getUI() {
+        return new MicroscopyFieldUI();
+    }
+    
     // listElementRemovable
     public boolean removeFromParentList(boolean callFromGUI) {
         if (callFromGUI) {
@@ -202,5 +218,88 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         return true;
     }
     
+    public class MicroscopyFieldUI implements ParameterUI {
+        JMenuItem[] openRawInput, openRawInputAll; 
+        JMenuItem openPreprocessedFrame, openPreprocessedAllFrames;
+        Object[] actions;
+        public MicroscopyFieldUI() {
+            actions = new Object[4];
+            final String[] channelNames = getExperiment().getChannelImagesAsString();
+            JMenu rawInputSubMenu = new JMenu("Open Raw Input Image (default timepoint)");
+            actions[0] = rawInputSubMenu;
+            openRawInput=new JMenuItem[channelNames.length];
+            for (int i = 0; i < openRawInput.length; i++) {
+                openRawInput[i] = new JMenuItem(channelNames[i]);
+                openRawInput[i].setAction(new AbstractAction(channelNames[i]) {
+                        @Override
+                        public void actionPerformed(ActionEvent ae) {
+                            int channelIdx = getStructureIdx(ae.getActionCommand(), channelNames);
+                            Image im = getInputImages().getImage(channelIdx, defaultTimePoint.getSelectedTimePoint()).setName("Channel: "+channelIdx+" Frame: "+defaultTimePoint.getSelectedTimePoint());
+                            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(im);
+                        }
+                    }
+                );
+                rawInputSubMenu.add(openRawInput[i]);
+            }
+            JMenu rawInputSubMenuAll = new JMenu("Open Raw Input Images");
+            actions[1] = rawInputSubMenuAll;
+            openRawInputAll=new JMenuItem[channelNames.length];
+            for (int i = 0; i < openRawInputAll.length; i++) {
+                openRawInputAll[i] = new JMenuItem(channelNames[i]);
+                openRawInputAll[i].setAction(new AbstractAction(channelNames[i]) {
+                        @Override
+                        public void actionPerformed(ActionEvent ae) {
+                            int channelIdx = getStructureIdx(ae.getActionCommand(), channelNames);
+                            int frames = getTimePointNumber(true);
+                            Image[][] imagesTC = new Image[frames][1];
+                            for (int frame = 0; frame<frames; ++frame) imagesTC[frame][0] = getInputImages().getImage(channelIdx, frame);
+                            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Position: "+name+" Channel: "+ae.getActionCommand(), imagesTC);
+                        }
+                    }
+                );
+                rawInputSubMenuAll.add(openRawInputAll[i]);
+            }
+            openPreprocessedFrame = new JMenuItem("Open Pre-processed Default Frame");
+            openPreprocessedFrame.setAction(new AbstractAction(openPreprocessedFrame.getActionCommand()) {
+                    @Override
+                    public void actionPerformed(ActionEvent ae) {
+                        int channels = getExperiment().getChannelImageCount();
+                        Image[][] imagesTC = new Image[1][channels];
+                        for (int channel = 0; channel<channels; ++channel) {
+                            imagesTC[0][channel] = getExperiment().getImageDAO().openPreProcessedImage(channel, defaultTimePoint.getSelectedTimePoint(), name);
+                            if (imagesTC[0][channel]==null) return;
+                        }
+                        ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("PreProcessed Image of Position: "+name+ " Frame: "+defaultTimePoint.getSelectedTimePoint(), imagesTC);
+                    }
+                }
+            );
+            actions[2] = openPreprocessedFrame;
+            openPreprocessedAllFrames = new JMenuItem("Open Pre-processed Frames");
+            openPreprocessedAllFrames.setAction(new AbstractAction(openPreprocessedAllFrames.getActionCommand()) {
+                    @Override
+                    public void actionPerformed(ActionEvent ae) {
+                        int channels = getExperiment().getChannelImageCount();
+                        int frames = getTimePointNumber(false);
+                        Image[][] imagesTC = new Image[frames][channels];
+                        for (int channel = 0; channel<channels; ++channel) {
+                            for (int frame = 0; frame<frames; ++frame) {
+                                imagesTC[frame][channel] = getExperiment().getImageDAO().openPreProcessedImage(channel, frame, name);
+                                if (imagesTC[frame][channel]==null) return;
+                            }
+                        }
+                        ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("PreProcessed Images of Position: "+name, imagesTC);
+                    }
+                }
+            );
+            actions[3] = openPreprocessedAllFrames;
+        }
+        public Object[] getDisplayComponent() {
+            return actions;
+        }
+        private int getStructureIdx(String name, String[] structureNames) {
+            for (int i = 0; i<structureNames.length; ++i) if (structureNames[i].equals(name)) return i;
+            return -1;
+        }
+    }
     
 }

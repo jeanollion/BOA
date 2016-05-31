@@ -38,10 +38,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import plugins.PluginFactory;
+import plugins.ProcessingScheme;
+import plugins.plugins.processingScheme.SegmentThenTrack;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.MicroChannelPhase2D;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.trackers.MicrochannelProcessor;
+import plugins.plugins.trackers.ObjectIdxTracker;
 import static processing.dataGeneration.TestLAPTrackerMutations.mutationIdx;
 import utils.MorphiumUtils;
 
@@ -52,11 +55,11 @@ import utils.MorphiumUtils;
 public class TestProcessMicrochannelsPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        int time =0;
+        int time =145;
         int field = 0;
-        String dbName = "testBF";
-        //testSegMicrochannelsFromXP(dbName, field, time);
-        testSegAndTrackMicrochannelsFromXP(dbName, field, 0, 54);
+        String dbName = "boa_mutd5_141209";
+        testSegMicrochannelsFromXP(dbName, field, time);
+        //testSegAndTrackMicrochannelsFromXP(dbName, field, 0, 650);
     }
     
     public static void testSegMicrochannelsFromXP(String dbName, int fieldNumber, int timePoint) {
@@ -67,7 +70,9 @@ public class TestProcessMicrochannelsPhase {
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         Image input = root.getRawImage(0);
         MicroChannelPhase2D.debug=true;
-        ObjectPopulation pop = MicroChannelPhase2D.run(input, 26, 0.15, 2, 6, 6);
+        MicroChannelPhase2D seg = new MicroChannelPhase2D();
+        //ObjectPopulation pop = MicroChannelPhase2D.run(input, 26, 0.15, 2, 6, 6);
+        ObjectPopulation pop = seg.runSegmenter(input, 0, root);
         //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
@@ -88,12 +93,19 @@ public class TestProcessMicrochannelsPhase {
             if (o.getTimePoint()<timePointMin) it.remove();
             if (o.getTimePoint()>timePointMax) it.remove();
         }
-        MicrochannelProcessor.debug=true;
-        MicrochannelProcessor mp = new MicrochannelProcessor(new MicroChannelPhase2D()).setTimePointNumber(5);
-        mp.segmentAndTrack(0, rootTrack, new PreFilterSequence(""), new PostFilterSequence(""));
-        
-        ObjectPopulation pop  = rootTrack.get(0).getObjectPopulation(0);
-        new IJImageDisplayer().showImage(pop.getLabelMap());
-        
+        ProcessingScheme ps = new SegmentThenTrack(
+                new MicroChannelPhase2D(), 
+                new ObjectIdxTracker()
+        );
+        ps.segmentAndTrack(0, rootTrack);
+        Image[][] raw = new Image[rootTrack.size()][1];
+        Image[][] seg = new Image[rootTrack.size()][1];
+        int idx = 0;
+        for (StructureObject o : rootTrack) {
+            raw[idx][0] = o.getRawImage(0);
+            seg[idx++][0] = o.getObjectPopulation(0).getLabelMap();
+        }
+        new IJImageDisplayer().showImage5D("Raw", raw);
+        new IJImageDisplayer().showImage5D("Seg", seg);
     }
 }

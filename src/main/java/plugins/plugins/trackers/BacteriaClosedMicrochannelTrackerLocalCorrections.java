@@ -81,6 +81,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     static int loopLimit=10;
     public static boolean debug=false;
+    
+    
     public BacteriaClosedMicrochannelTrackerLocalCorrections() {}
     
     public BacteriaClosedMicrochannelTrackerLocalCorrections(SegmenterSplitAndMerge segmenter) {
@@ -94,6 +96,12 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         this.divisionCriterion.setValue(divisionCriterion);
         this.costLimit.setValue(costLimit);
         this.cumCostLimit.setValue(cumulativeCostLimit);
+    }
+    
+    public BacteriaClosedMicrochannelTrackerLocalCorrections setCostParameters(double operationCostLimit, double cumulativeCostLimit) {
+        this.costLimit.setValue(operationCostLimit);
+        this.cumCostLimit.setValue(cumulativeCostLimit);
+        return this;
     }
     
     @Override public Parameter[] getParameters() {
