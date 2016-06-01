@@ -533,7 +533,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             }
             @Override 
             public void fusionInterface(InterfaceBT otherInterface, Comparator<? super Object3D> elementComparator) {
-                fusionInterfaceSetElements(otherInterface, elementComparator);
+                //fusionInterfaceSetElements(otherInterface, elementComparator);
                 if (otherInterface.maxDistance>maxDistance) {
                     this.maxDistance=otherInterface.maxDistance;
                     this.maxVoxel=otherInterface.maxVoxel;

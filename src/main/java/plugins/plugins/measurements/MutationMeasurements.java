@@ -62,17 +62,15 @@ public class MutationMeasurements implements Measurement {
     public List<MeasurementKey> getMeasurementKeys() {
         int structureIdx = mutation.getSelectedStructureIdx();
         ArrayList<MeasurementKey> res = new ArrayList<MeasurementKey>();
-        res.add(new MeasurementKeyObject("MutationCenterX", structureIdx));
-        res.add(new MeasurementKeyObject("MutationCenterY", structureIdx));
+        res.add(new MeasurementKeyObject("IsTrackHead", structureIdx));
         res.add(new MeasurementKeyObject("ParentBacteriaIdx", structureIdx));
-        res.add(new MeasurementKeyObject("MeanYFPInMutation", structureIdx));
-        res.add(new MeasurementKeyObject("MutationArea", structureIdx));
+        
         return res;
     }
 
     public void performMeasurement(StructureObject object, List<StructureObject> modifiedObjects) {
-        
-        Object3D mutObject = object.getObject();
+        object.getMeasurements().setValue("IsTrackHead", object.isTrackHead());
+        /*Object3D mutObject = object.getObject();
         Image mutImage = object.getRawImage(mutation.getSelectedIndex());
         BoundingBox parentOffset = object.getParent().getBounds();
         double[] center = mutObject.getCenter(mutImage, true);
@@ -82,12 +80,13 @@ public class MutationMeasurements implements Measurement {
         object.getMeasurements().setValue("MutationCenterY", center[1]);
         object.getMeasurements().setValue("MeanYFPInMutation", BasicMeasurements.getMeanValue(mutObject, mutImage, true));
         object.getMeasurements().setValue("MutationArea", GeometricalMeasurements.getVolume(mutObject));
-        
+        */
         StructureObject parentBacteria;
         if (bacteria.getSelectedStructureIdx()==object.getParent().getStructureIdx()) parentBacteria = object.getParent();
         else parentBacteria = StructureObjectUtils.getInclusionParent(object.getObject(), object.getParent().getChildren(bacteria.getSelectedStructureIdx()), null);
-        if (parentBacteria==null) logger.warn("No bacteria parent found for object: {}", object);
-        else object.getMeasurements().setValue("ParentBacteriaIdx", parentBacteria.getIdx());
+        if (parentBacteria==null) {
+            //logger.warn("No bacteria parent found for object: {}", object);
+        } else object.getMeasurements().setValue("ParentBacteriaIdx", parentBacteria.getIdx());
         modifiedObjects.add(object);
     }
 

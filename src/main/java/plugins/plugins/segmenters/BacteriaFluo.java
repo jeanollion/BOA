@@ -422,7 +422,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
 
             @Override 
             public void fusionInterface(InterfaceBF otherInterface, Comparator<? super Object3D> elementComparator) {
-                fusionInterfaceSetElements(otherInterface, elementComparator);
+                //fusionInterfaceSetElements(otherInterface, elementComparator);
                 InterfaceBF other = otherInterface;
                 voxels.addAll(other.voxels); 
                 value = Double.NaN;// updateSortValue will be called afterwards

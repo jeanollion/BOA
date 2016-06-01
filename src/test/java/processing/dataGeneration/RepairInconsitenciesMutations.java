@@ -41,11 +41,11 @@ import utils.Utils;
 public class RepairInconsitenciesMutations {
     static int structureIdx = 2;
     public static void main(String[] args) {
+        //String dbName = "boa_fluo160501";
         String dbName = "boa_fluo160428";
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
-        ManualCorrection.repairLinksForField(mDAO, mDAO.getExperiment().getFieldsAsString()[3], structureIdx);
-        ManualCorrection.repairLinksForField(mDAO, mDAO.getExperiment().getFieldsAsString()[4], structureIdx);
-        ManualCorrection.repairLinksForField(mDAO, mDAO.getExperiment().getFieldsAsString()[5], structureIdx);
+        //ManualCorrection.repairLinksForField(mDAO, mDAO.getExperiment().getFieldsAsString()[0], structureIdx);
+        ManualCorrection.repairLinksForField(mDAO, mDAO.getExperiment().getFieldsAsString()[1], structureIdx);
     }
     
 }

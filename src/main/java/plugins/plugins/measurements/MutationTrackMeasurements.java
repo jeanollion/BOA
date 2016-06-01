@@ -26,6 +26,7 @@ import dataStructure.objects.StructureObjectUtils;
 import dataStructure.objects.Voxel;
 import image.BoundingBox;
 import image.Image;
+import image.ImageMask;
 import java.util.ArrayList;
 import java.util.List;
 import measurement.BasicMeasurements;
@@ -56,15 +57,27 @@ public class MutationTrackMeasurements implements Measurement {
     }
 
     public boolean callOnlyOnTrackHeads() {
-        return true;
+        return false;
     }
 
     public List<MeasurementKey> getMeasurementKeys() {
         int structureIdx = mutation.getSelectedStructureIdx();
         ArrayList<MeasurementKey> res = new ArrayList<MeasurementKey>();
-        //res.add(new MeasurementKeyObject("ParentBacteriaIdx", structureIdx));
+        res.add(new MeasurementKeyObject("IsTrackHead", structureIdx));
+        res.add(new MeasurementKeyObject("BacteriaIdx", structureIdx));
+        res.add(new MeasurementKeyObject("PreviousFivisionFrame", structureIdx));
+        res.add(new MeasurementKeyObject("NextFivisionFrame", structureIdx));
+        
+        // localization
+        res.add(new MeasurementKeyObject("YCoordProportional", structureIdx));
+        res.add(new MeasurementKeyObject("XCoordRelToCenter", structureIdx));
+        res.add(new MeasurementKeyObject("YCoordRelToCenter", structureIdx));
+
+        // track parameters (only computed for trackHeads
         res.add(new MeasurementKeyObject("TrackLength", structureIdx));
         res.add(new MeasurementKeyObject("MutationNumber", structureIdx));
+        
+        
         return res;
     }
 
@@ -73,18 +86,53 @@ public class MutationTrackMeasurements implements Measurement {
         StructureObject parentBacteria;
         if (bacteria.getSelectedStructureIdx()==object.getParent().getStructureIdx()) parentBacteria = object.getParent();
         else parentBacteria = StructureObjectUtils.getInclusionParent(object.getObject(), object.getParent().getChildren(bacteria.getSelectedStructureIdx()), null);
-        if (parentBacteria == null || parentBacteria.getIdx()!=0) return;
+        if (parentBacteria == null) return;
+        object.getMeasurements().setValue("IsTrackHead", object.isTrackHead());
+        object.getMeasurements().setValue("BacteriaIdx", parentBacteria.getIdx());
+        int prevTP = parentBacteria.getPreviousDivisionTimePoint();
+        object.getMeasurements().setValue("PreviousFivisionFrame", prevTP>0 ? prevTP : null);
+        int nextTP = parentBacteria.getNextDivisionTimePoint();
+        object.getMeasurements().setValue("NextFivisionFrame", nextTP>=0?nextTP:null );
         
-        List<StructureObject> track = StructureObjectUtils.getTrack(object, false);
-        object.getMeasurements().setValue("TrackLength", track.get(track.size()-1).getTimePoint() - object.getTimePoint());
-        object.getMeasurements().setValue("MutationNumber", track.size());
-        object.getMeasurements().setValue("PreviousFivisionFrame", parentBacteria.getPreviousDivisionTimePoint());
-        object.getMeasurements().setValue("NextFivisionFrame", parentBacteria.getNextDivisionTimePoint());
+        double[] objectCenter = object.getObject().getCenter(object.getRawImage(mutation.getSelectedStructureIdx()), false);
+        object.getMeasurements().setValue("YCoordProportional", getYProportionalPositionWithinContainer(parentBacteria.getObject(), objectCenter[1]));
+        double[] parentCenter = parentBacteria.getObject().getCenter(false);
+        object.getMeasurements().setValue("YCoordRelToCenter", (objectCenter[1]-parentCenter[1]));
+        object.getMeasurements().setValue("XCoordRelToCenter", (objectCenter[0]-parentCenter[0]));
+        
+        if (object.isTrackHead()) {
+            List<StructureObject> track = StructureObjectUtils.getTrack(object, false);
+            object.getMeasurements().setValue("TrackLength", track.get(track.size()-1).getTimePoint() - object.getTimePoint());
+            object.getMeasurements().setValue("MutationNumber", track.size());
+        }
         modifiedObjects.add(object);
     }
 
     public Parameter[] getParameters() {
         return parameters;
+    }
+    
+    private static double getYProportionalPositionWithinContainer(Object3D container, double yCoordinate) {
+        double countNext=-1, countPrev=-1, count = 0;
+        ImageMask mask = container.getMask();
+        BoundingBox bds = container.getBounds();
+        double yLimPrev = (int) yCoordinate;
+        double yLimNext = yLimPrev+1;
+        for (int y = bds.getyMin(); y<=bds.getyMax(); ++y) {
+            countPrev = countNext;
+            for (int z = bds.getzMin(); z<=bds.getzMax(); ++z) {
+                for (int x = bds.getxMin(); x<=bds.getxMax(); ++x) {
+                    if (mask.insideMaskWithOffset(x, y, z)) ++count;
+                }
+            }
+            if (y==yLimPrev) countPrev = count;
+            else if (y==yLimNext) countNext = count;
+        }
+        if (countNext>=0) { // linear approx y-axis within current line
+            double curLine = countNext - countPrev;
+            double p = yCoordinate - (int)yCoordinate;
+            return (countPrev + p * curLine) / count;
+        } else return countPrev / count;
     }
     
 }

@@ -124,18 +124,29 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
         for (I i : interfaces) i.updateSortValue();
         int interSize = interfaces.size();
         interfaces = new TreeSet(interfaces);
-        if (verbose) for (I i : interfaces) logger.debug("interface: {}", i);
+        if (verbose) {
+            for (I i : interfaces) logger.debug("interface: {}", i);
+            for (E e : interfaceByElement.keySet()) logger.debug("Element: {}, interfaces: {}", e, interfaceByElement.get(e));
+        }
         if (interSize!=interfaces.size()) throw new Error("Error INCONSITENCY BETWEEN COMPARE AND EQUALS METHOD FOR INTERFACE CLASS: "+interfaces.iterator().next().getClass().getSimpleName());
         Iterator<I> it = interfaces.iterator();
         while (it.hasNext() && interfaces.size()>numberOfInterfacesToKeep && allElements.size()>numberOfElementsToKeep) {
             I i = it.next();
             if (!checkCriterion || i.checkFusion()) {
+                if (verbose) logger.debug("fusion {}", i);
                 it.remove();
                 allElements.remove(i.getE2());
                 i.performFusion();
                 if (updateInterfacesAfterFusion(i)) { // if any change in the interface treeset, recompute the iterator
                     it=interfaces.iterator();
+                    
                 } 
+                if (verbose) {
+                    logger.debug("bilan/");
+                    for (I ii : interfaces) logger.debug("interface: {}", ii);
+                    for (E e : interfaceByElement.keySet()) logger.debug("Element: {}, interfaces: {}", e, interfaceByElement.get(e));
+                    logger.debug("/bilan");
+                }
             } //else if (i.hasOneRegionWithNoOtherInteractant(this)) it.remove(); // won't be modified so no need to test once again
         }
         long t1 = System.currentTimeMillis();
@@ -168,8 +179,9 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
                         }
                     }
                     if (existingInterface!=null) { // if interface is already present in e1, simply merge the interfaces
+                        if (verbose) logger.debug("merge {} with {}", existingInterface, otherInterface);
                         interfaces.remove(otherInterface);
-                        interfaces.remove(existingInterface);
+                        interfaces.remove(existingInterface);// sort value will change 
                         interfaceByElement.get(otherElement).remove(otherInterface); // will be replaced by existingInterface
                         
                         existingInterface.fusionInterface(otherInterface, elementComparator);
@@ -178,6 +190,7 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
                         // no need to add and remove from interfaces of e1 and otherElement beause hashCode hasnt changed
                         
                     } else { // if not add a new interface between E1 and otherElement
+                        if (verbose) logger.debug("switch {}", otherInterface);
                         interfaces.remove(otherInterface); // hashCode will change because of switch
                         interfaceByElement.get(otherElement).remove(otherInterface); // hashCode will change because of switch
                         

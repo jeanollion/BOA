@@ -114,7 +114,7 @@ public class SpotCompartiment {
         return new double[][]{poleUp, poleDown};
     }
     
-    private static double[] getPositionWithinCompartimentByCount(Object3D o, int limit) {
+    private static double[] getYPositionWithinCompartimentByCount(Object3D o, int limit) {
         int count=0, countPrev, countCur=-1;
         ImageMask mask = o.getMask();
         BoundingBox bds = o.getBounds();
@@ -190,7 +190,7 @@ public class SpotCompartiment {
                 double c2 = (double) siblings.get(1).getMask().count();
                 double p = c1 / (c1+c2);
                 upperCompartimentCount = (int)(p * count +0.5);
-                this.offsetDivisionMiddle = getPositionWithinCompartimentByCount(object.getObject(), upperCompartimentCount); 
+                this.offsetDivisionMiddle = SpotCompartiment.getYPositionWithinCompartimentByCount(object.getObject(), upperCompartimentCount); 
             } 
         } 
         if (offsetDivisionMiddle==null) offsetDivisionMiddle = object.getObject().getCenter(true);

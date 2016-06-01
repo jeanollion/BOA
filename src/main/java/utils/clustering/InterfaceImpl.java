@@ -50,13 +50,13 @@ public abstract class InterfaceImpl<E, T extends Interface<E, T>> implements Int
         public E getE1() {return e1;}
         public E getE2() {return e2;}
         
-        protected void fusionInterfaceSetElements(Interface<E, T> otherInterface, Comparator<? super E> elementComparator)  {
+        /*protected void fusionInterfaceSetElements(Interface<E, T> otherInterface, Comparator<? super E> elementComparator)  {
             E com = getCommonElement(otherInterface);
             if (com==null) throw new IllegalArgumentException("No common elements in "+this+" and "+otherInterface+" cannot merge");
             E o1 = getOther(com);
             E o2 = otherInterface.getOther(com);
             setElements(o1, o2, elementComparator);
-        }
+        }*/
         
         protected int compareElements(T otherInterface, Comparator<? super E> elementComparator) {
             int c = elementComparator.compare(e1, otherInterface.getE1());

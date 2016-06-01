@@ -464,7 +464,10 @@ public class ManualCorrection {
     }
     public static void repairLinksForField(MasterDAO db, String fieldName, int structureIdx) {
         logger.debug("repairing field: {}", fieldName);
-        int count = 0, countUncorr=0, count2=0, countUncorr2=0;
+        boolean allowSplit = db.getExperiment().getStructure(structureIdx).allowSplit();
+        boolean allowMerge = db.getExperiment().getStructure(structureIdx).allowMerge();
+        logger.debug("allow Split: {}, allow merge: {}", allowSplit, allowMerge);
+        int count = 0, countUncorr=0, count2=0, countUncorr2=0, countTh=0;
         ObjectDAO dao = db.getDao(fieldName);
         List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
         List<StructureObject> uncorrected = new ArrayList<StructureObject>();
@@ -474,30 +477,38 @@ public class ManualCorrection {
                     if (o.getNext().getPrevious()!=o) {
                         logger.debug("inconsitency: o: {}, next: {}, next's previous: {}", o, o.getNext(), o.getNext().getPrevious());
                         if (o.getNext().getPrevious()==null) ManualCorrection.linkObjects(o, o.getNext(), modifiedObjects);
-                        else {
+                        else if (!allowMerge) {
                             uncorrected.add(o);
                             uncorrected.add(o.getNext());
                             countUncorr++;
                         }
                         ++count;
+                    } else if (!allowMerge && o.getNext().getTrackHead()!=o.getTrackHead()) {
+                        logger.debug("inconsitency on TH: o: {}, next: {}, o's th: {}, next's th: {}", o, o.getNext(), o.getTrackHead(), o.getNext().getTrackHead());
+                        countTh++;
+                        o.getNext().setTrackHead(o.getTrackHead(), false, true, modifiedObjects);
                     }
                     
                 }
                 if (o.getPrevious()!=null) {
-                        if (o.getPrevious().getNext()!=o) {
-                            if (o.getPrevious().getNext()==null) ManualCorrection.linkObjects(o.getPrevious(), o, modifiedObjects);
-                            else {
-                                uncorrected.add(o);
-                                uncorrected.add(o.getPrevious());
-                                countUncorr2++;
-                            }
-                            logger.debug("inconsitency: o: {}, previous: {}, previous's next: {}", o, o.getPrevious(), o.getPrevious().getNext());
-                            ++count2;
+                    if (o.getPrevious().getNext()!=o) {
+                        if (o.getPrevious().getNext()==null) ManualCorrection.linkObjects(o.getPrevious(), o, modifiedObjects);
+                        else if (!allowSplit) {
+                            uncorrected.add(o);
+                            uncorrected.add(o.getPrevious());
+                            countUncorr2++;
                         }
+                        logger.debug("inconsitency: o: {}, previous: {}, previous's next: {}", o, o.getPrevious(), o.getPrevious().getNext());
+                        ++count2;
+                    } else if (!allowSplit && o.getPrevious().getTrackHead()!=o.getTrackHead()) {
+                        logger.debug("inconsitency on TH: o: {}, previous: {}, o's th: {}, preivous's th: {}", o, o.getPrevious(), o.getTrackHead(), o.getPrevious().getTrackHead());
+                        countTh++;
+                        o.setTrackHead(o.getPrevious().getTrackHead(), false, true, modifiedObjects);
+                    }
                 }
             }
         }
-        logger.debug("total errors: type 1 : {}, uncorrected: {}, type 2: {}, uncorrected: {}", count, countUncorr, count2, countUncorr2);
+        logger.debug("total errors: type 1 : {}, uncorrected: {}, type 2: {}, uncorrected: {}, type trackHead: {}", count, countUncorr, count2, countUncorr2, countTh);
         Map<StructureObject, List<StructureObject>> uncorrByParentTH = StructureObjectUtils.splitByParentTrackHead(uncorrected);
         
         // create selection of uncorrected

@@ -43,7 +43,7 @@ public class Measurements implements Comparable<Measurements>{
     boolean isTrackHead;
     protected int[] indicies;
     protected HashMap<String, Object> values;
-    @Transient boolean modifications;
+    @Transient boolean modifications=false;
     
     public Measurements(StructureObject o) {
         this.fieldName=o.getFieldName();
@@ -105,16 +105,23 @@ public class Measurements implements Comparable<Measurements>{
     
     public String getValueAsString(String name) {
         Object o = values.get(name);
-        if (o instanceof Number || o instanceof String) return o.toString();
+        if (o instanceof Number || o instanceof String || o instanceof Boolean) return o.toString();
         else return "NaN";
     }
     
     public void setValue(String key, Number value) {
-        this.values.put(key, value);
+        if (value == null) values.remove(key);
+        else values.put(key, value);
         modifications=true;
     }
     
     public void setValue(String key, String value) {
+        if (value == null) values.remove(key);
+        else values.put(key, value);
+        modifications=true;
+    }
+    
+    public void setValue(String key, boolean value) {
         this.values.put(key, value);
         modifications=true;
     }

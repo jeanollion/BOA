@@ -57,7 +57,7 @@ public abstract class InterfaceVoxelSet<T extends InterfaceVoxelSet<T>> extends 
 
     @Override 
     public void fusionInterface(T otherInterface, Comparator<? super Object3D> elementComparator) {
-        fusionInterfaceSetElements(otherInterface, Object3DCluster.object3DComparator);
+        //fusionInterfaceSetElements(otherInterface, Object3DCluster.object3DComparator);
         voxels.addAll(((InterfaceVoxelSet)otherInterface).voxels);
     }
 }
