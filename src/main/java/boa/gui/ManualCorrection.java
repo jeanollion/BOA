@@ -386,7 +386,7 @@ public class ManualCorrection {
             if (objectsToMerge.size()<=1) logger.warn("Merge Objects: select several objects from same parent!");
             else {
                 StructureObject res = objectsToMerge.remove(0);
-                List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
+                Set<StructureObject> modifiedObjects = new HashSet<StructureObject>();
                 for (StructureObject o : objectsToMerge) unlinkObject(o, modifiedObjects);
                 for (StructureObject toMerge : objectsToMerge) {
                     res.merge(toMerge);
@@ -394,6 +394,7 @@ public class ManualCorrection {
                 }
                 newObjects.add(res);
                 dao.delete(objectsToMerge, true, true, true);
+                modifiedObjects.removeAll(objectsToMerge);
                 modifiedObjects.add(res);
                 Utils.removeDuplicates(modifiedObjects, false);
                 dao.store(modifiedObjects, true);

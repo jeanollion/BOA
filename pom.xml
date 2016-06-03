@@ -7,7 +7,7 @@
 
     <groupId>ljp</groupId>
     <artifactId>functional_bioimage-core</artifactId>
-    <version>0.2.3-SNAPSHOT</version>
+    <version>0.2.4-SNAPSHOT</version>
 
     <name>functional_bioimage-core</name>
     <description>Bacteria Analyzer</description>
@@ -58,7 +58,7 @@
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
-            <version>3.2.2</version>
+            <version>3.0.4</version>
         </dependency>
         <!--dependency>
             <groupId>asm</groupId>
