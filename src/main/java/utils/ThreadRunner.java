@@ -4,6 +4,7 @@
  */
 package utils;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 /**
@@ -142,16 +143,17 @@ public class ThreadRunner {
         }
         tr.startAndJoin();
     }
-    public static <T> void execute(final List<T> array, final ThreadAction<T> action) {
+    public static <T> void execute(Collection<T> array, final ThreadAction<T> action) {
         if (array==null) return;
         if (array.isEmpty()) return;
         if (array.size()==1) {
             if (action instanceof ThreadAction2) ((ThreadAction2)action).setUp();
-            action.run(array.get(0), 0, 0);
+            action.run(array.iterator().next(), 0, 0);
             if (action instanceof ThreadAction2) ((ThreadAction2)action).tearDown();
             return;
         }
-        final ThreadRunner tr = new ThreadRunner(0, array.size(), 0);
+        final List<T> list = (array instanceof List) ? (List)array : new ArrayList(array);
+        final ThreadRunner tr = new ThreadRunner(0, list.size(), 0);
         for (int i = 0; i<tr.threads.length; i++) {
             final int threadIdx = i;
             //final ThreadAction<T> localAction = action
@@ -160,7 +162,7 @@ public class ThreadRunner {
                     public void run() { 
                         if (action instanceof ThreadAction2) ((ThreadAction2)action).setUp();
                         for (int idx = tr.ai.getAndIncrement(); idx<tr.end; idx = tr.ai.getAndIncrement()) {
-                            action.run(array.get(idx), idx, threadIdx);
+                            action.run(list.get(idx), idx, threadIdx);
                         }
                         if (action instanceof ThreadAction2) ((ThreadAction2)action).tearDown();
                     }

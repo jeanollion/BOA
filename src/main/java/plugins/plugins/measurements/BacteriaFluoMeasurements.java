@@ -90,7 +90,7 @@ public class BacteriaFluoMeasurements implements Measurement {
         int includedMutations = ObjectInclusionCount.count(object, mutation.getSelectedIndex(), 0, true);
         object.getMeasurements().setValue("MutationCountInBacteria", includedMutations);
         
-        ArrayList<StructureObject> mutList = object.getChildren(mutation.getSelectedIndex()); // return included mutations
+        List<StructureObject> mutList = object.getChildren(mutation.getSelectedIndex()); // return included mutations
         if (includedMutations!=mutList.size()) logger.warn("Error Mutation count in: {}: {} vs: {}", object, includedMutations, mutList.size());
         
         modifiedObjects.add(object);

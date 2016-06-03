@@ -23,6 +23,7 @@ import image.BoundingBox;
 import image.ImageMask;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import static plugins.Plugin.logger;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparator;
@@ -174,8 +175,8 @@ public class SpotCompartiment {
         return compartimentOffsetDivisionUp;
     }*/
     
-    private static ArrayList<StructureObject> getDivisionSiblings(StructureObject firstDivObject) {
-        ArrayList<StructureObject> res = firstDivObject.getDivisionSiblings(true);
+    private static List<StructureObject> getDivisionSiblings(StructureObject firstDivObject) {
+        List<StructureObject> res = firstDivObject.getDivisionSiblings(true);
         if (res!=null) Collections.sort(res, getComparator(ObjectIdxTracker.IndexingOrder.YXZ));
         return res;
     }
@@ -184,7 +185,7 @@ public class SpotCompartiment {
         int upperCompartimentCount = count/2;
         if (this.nextDivisionTimePoint>0) {
             StructureObject parent = this.object.getInTrack(nextDivisionTimePoint);
-            ArrayList<StructureObject> siblings = getDivisionSiblings(parent);
+            List<StructureObject> siblings = getDivisionSiblings(parent);
             if (siblings.size()==2) { // cut the object whith the same proportion
                 double c1 = (double) siblings.get(0).getMask().count();
                 double c2 = (double) siblings.get(1).getMask().count();

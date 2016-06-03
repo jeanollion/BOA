@@ -34,15 +34,15 @@ public class MorphiumMasterDAO implements MasterDAO {
     final Morphium m;
     final ExperimentDAO xpDAO;
     final MorphiumSelectionDAO selectionDAO;
-    DereferencingListener dl;
+    //DereferencingListener dl;
     final HashMap<String, MorphiumObjectDAO> DAOs;
     public MorphiumMasterDAO(Morphium m) {
         this.m=m;
         this.xpDAO=new ExperimentDAO(m);
         this.selectionDAO=new MorphiumSelectionDAO(this);
         this.DAOs=new HashMap<String, MorphiumObjectDAO>();
-        if (dl!=null) m.removeDerrferencingListener(dl);
-        dl=MorphiumUtils.addDereferencingListeners(m, xpDAO);
+        //if (dl!=null) m.removeDerrferencingListener(dl);
+        //dl=MorphiumUtils.addDereferencingListeners(m, xpDAO);
     }
     
     public MorphiumMasterDAO(String dbName) {

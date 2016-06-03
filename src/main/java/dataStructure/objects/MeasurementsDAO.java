@@ -18,11 +18,15 @@
 package dataStructure.objects;
 
 import com.mongodb.BasicDBObject;
+import com.mongodb.QueryBuilder;
+import com.mongodb.WriteConcern;
+import com.mongodb.WriteResult;
 import static dataStructure.objects.StructureObject.logger;
 import de.caluga.morphium.DAO;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.query.Query;
 import de.caluga.morphium.writer.MorphiumWriterImpl;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import org.bson.types.ObjectId;
@@ -67,6 +71,12 @@ public class MeasurementsDAO {
         BasicDBObject db = new BasicDBObject().append("_id", id);
         //logger.debug("delete meas by id: {}, from colleciton: {}", db, collectionName);
         masterDAO.m.getDatabase().getCollection(collectionName).remove(db);
+    }
+    
+    public void delete(Collection<ObjectId> id) {
+        if (id.isEmpty()) return;
+        WriteResult r = masterDAO.m.getDatabase().getCollection(collectionName).remove(QueryBuilder.start("_id").in(id).get(), WriteConcern.ACKNOWLEDGED);
+        logger.debug("deleting: {} measurements, write result: {}", id.size(), r);
     }
     
     public void delete(Measurements o) {

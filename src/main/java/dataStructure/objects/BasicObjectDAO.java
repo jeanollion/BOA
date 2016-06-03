@@ -20,6 +20,7 @@ package dataStructure.objects;
 import dataStructure.configuration.Experiment;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -34,7 +35,7 @@ public class BasicObjectDAO implements ObjectDAO {
     final MasterDAO masterDAO;
     SmallArray<StructureObject> rootTrack;
     final String fieldName;
-    public BasicObjectDAO(MasterDAO masterDAO, ArrayList<StructureObject> rootTrack) {
+    public BasicObjectDAO(MasterDAO masterDAO, List<StructureObject> rootTrack) {
         this.masterDAO=masterDAO;
         if (rootTrack.isEmpty()) throw new IllegalArgumentException("root track should not be empty");
         this.rootTrack = new SmallArray<StructureObject>(rootTrack.size());
@@ -61,8 +62,13 @@ public class BasicObjectDAO implements ObjectDAO {
         // no cache..
     }
 
-    public ArrayList<StructureObject> getChildren(StructureObject parent, int structureIdx) {
+    public List<StructureObject> getChildren(StructureObject parent, int structureIdx) {
         return this.rootTrack.get(parent.getTimePoint()).getChildren(structureIdx);
+    }
+    
+    @Override 
+    public void deleteChildren(Collection<StructureObject> parents, int structureIdx) {
+        for (StructureObject p : parents) deleteChildren(p, structureIdx);
     }
 
     public void deleteChildren(StructureObject parent, int structureIdx) {
@@ -79,7 +85,7 @@ public class BasicObjectDAO implements ObjectDAO {
         if (pathToRoot.length==1) for (StructureObject r : rootTrack.getObjectsQuick()) deleteChildren(r, structureIdx);
         else {
             for (StructureObject r : rootTrack.getObjectsQuick()) {
-                ArrayList<StructureObject> allParents = r.getChildren(pathToRoot[pathToRoot.length-2]);
+                List<StructureObject> allParents = r.getChildren(pathToRoot[pathToRoot.length-2]);
                 for (StructureObject p : allParents) deleteChildren(p, structureIdx);
             }
         }
@@ -101,7 +107,7 @@ public class BasicObjectDAO implements ObjectDAO {
         }
     }
 
-    public void delete(List<StructureObject> list, boolean deleteChildren, boolean deleteFromParent, boolean relabelSiblings) {
+    public void delete(Collection<StructureObject> list, boolean deleteChildren, boolean deleteFromParent, boolean relabelSiblings) {
         for (StructureObject o : list) delete(o, deleteChildren, deleteFromParent, relabelSiblings);
     }
 
@@ -110,7 +116,7 @@ public class BasicObjectDAO implements ObjectDAO {
         if (object.structureIdx==-1) {
             rootTrack.set(object, object.getTimePoint());
         } else {
-            ArrayList<StructureObject> children = object.getParent().getChildren(object.getStructureIdx());
+            List<StructureObject> children = object.getParent().getChildren(object.getStructureIdx());
             if (children == null) {
                 children = new ArrayList<StructureObject>();
                 object.getParent().setChildren(children, object.getStructureIdx());
@@ -120,14 +126,14 @@ public class BasicObjectDAO implements ObjectDAO {
         }
     }
 
-    public void store(List<StructureObject> objects, boolean updateTrackAttributes) {
+    public void store(Collection<StructureObject> objects, boolean updateTrackAttributes) {
         int needToExtend = -1;
         for (StructureObject o : objects) if (o.getStructureIdx()==-1 && o.getTimePoint()>needToExtend) needToExtend = o.getTimePoint();
         if (needToExtend>0) rootTrack.extend(needToExtend);
         for (StructureObject o : objects) store(o, updateTrackAttributes);
     }
 
-    public ArrayList<StructureObject> getRoots() {
+    public List<StructureObject> getRoots() {
         return this.rootTrack.getObjectsQuick();
     }
 
@@ -135,7 +141,7 @@ public class BasicObjectDAO implements ObjectDAO {
         return rootTrack.get(timePoint);
     }
 
-    public ArrayList<StructureObject> getTrack(StructureObject trackHead) {
+    public List<StructureObject> getTrack(StructureObject trackHead) {
         if (trackHead.getStructureIdx()==-1) return getRoots();
         ArrayList<StructureObject> res = new ArrayList<StructureObject>();
         res.add(trackHead);
@@ -143,7 +149,7 @@ public class BasicObjectDAO implements ObjectDAO {
         while(trackHead.getTimePoint()+1<max && rootTrack.get(trackHead.getTimePoint()+1)!=null) {
             if (trackHead.getNext()!=null) trackHead = trackHead.getNext();
             else { // look for next:
-                ArrayList<StructureObject> candidates = rootTrack.getQuick(trackHead.getTimePoint()+1).getChildren(trackHead.getStructureIdx());
+                List<StructureObject> candidates = rootTrack.getQuick(trackHead.getTimePoint()+1).getChildren(trackHead.getStructureIdx());
                 StructureObject next = null;
                 for (StructureObject c : candidates) {
                     if (c.getPrevious()==trackHead) {
@@ -160,13 +166,13 @@ public class BasicObjectDAO implements ObjectDAO {
         return res;
     }
 
-    public ArrayList<StructureObject> getTrackHeads(StructureObject parentTrack, int structureIdx) {
+    public List<StructureObject> getTrackHeads(StructureObject parentTrack, int structureIdx) {
         ArrayList<StructureObject> res = new ArrayList<StructureObject>();
         if (structureIdx==-1) res.add(this.rootTrack.get(0));
         else {
             for (StructureObject r : rootTrack.getObjectsQuick()) {
                 if (r!=null) {
-                    ArrayList<StructureObject> candidates = r.getChildren(structureIdx);
+                    List<StructureObject> candidates = r.getChildren(structureIdx);
                     for (StructureObject c : candidates) {
                         if (c.isTrackHead()) res.add(c);
                     }
@@ -176,7 +182,7 @@ public class BasicObjectDAO implements ObjectDAO {
         return res;
     }
 
-    public void upsertMeasurements(List<StructureObject> objects) {
+    public void upsertMeasurements(Collection<StructureObject> objects) {
         // measurements are stored in objects...
     }
 

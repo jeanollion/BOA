@@ -360,7 +360,11 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                             List<TrackNode> selectedNodes = root.generator.getSelectedTrackNodes();
                             List<StructureObject> objectsToAdd = new ArrayList<StructureObject>();
                             for (TrackNode tn : selectedNodes) {
-                                for (StructureObject p : tn.getTrack()) objectsToAdd.addAll(p.getChildren(structureIdx));
+                                //logger.debug("creating selection: th: {}, length: {}", tn.trackHead, tn.getTrack().size());
+                                for (StructureObject p : tn.getTrack()) {
+                                    //if (p.getChildObjects(structureIdx)!=null && !p.getChildren(structureIdx).isEmpty()) logger.debug("creating selection: parent idx: {} children : {}", p, p.getChildren(structureIdx));
+                                    objectsToAdd.addAll(p.getChildren(structureIdx));
+                                }
                             }
                             Selection s = root.generator.db.getSelectionDAO().getOrCreate(ae.getActionCommand(), true);
                             s.addElements(objectsToAdd);

@@ -40,7 +40,7 @@ import utils.Pair;
 public class StructureObjectMask extends ImageObjectInterface {
 
     BoundingBox[] offsets;
-    ArrayList<StructureObject> objects;
+    List<StructureObject> objects;
     BoundingBox additionalOffset;
 
     public StructureObjectMask(StructureObject parent, int childStructureIdx) {
@@ -59,7 +59,7 @@ public class StructureObjectMask extends ImageObjectInterface {
     }
 
     public BoundingBox[] getOffsets() {
-        if (offsets==null) reloadObjects();
+        if (offsets==null || objects==null || offsets.length!=objects.size()) reloadObjects();
         return offsets;
     }
     

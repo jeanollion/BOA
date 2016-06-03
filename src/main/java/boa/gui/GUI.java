@@ -432,6 +432,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         updateDisplayRelatedToXPSet();
         updateConfigurationTree();
         tabs.setSelectedIndex(0);
+        ImageWindowManagerFactory.getImageManager().flush();
     }
     
     private void updateDisplayRelatedToXPSet() {
@@ -1558,6 +1559,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void newXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newXPMenuItemActionPerformed
         String name = JOptionPane.showInputDialog("New XP name:");
+        if (name==null) return;
         name = DBUtil.addPrefix(name, DBprefix);
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
         else if (getDBNames().contains(name)) logger.error("XP name already exists");

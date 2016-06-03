@@ -50,7 +50,7 @@ public class ClosedMicrochannelTracker implements Tracker {
         divCriterion.setValue(divisionCriterion);
     } 
     
-    private void assignPrevious(ArrayList<StructureObject> previous, ArrayList<StructureObject> next) {        
+    private void assignPrevious(List<StructureObject> previous, List<StructureObject> next) {        
         // sort by y order
         Collections.sort(previous, getComparator(ObjectIdxTracker.IndexingOrder.YXZ));
         Collections.sort(next, getComparator(ObjectIdxTracker.IndexingOrder.YXZ));

@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
@@ -62,7 +63,7 @@ public class StructureNode implements TreeNode, UIContainer {
             if (children==null) {
                 StructureObject parentObject = getParentObject();
                 if (parentObject==null) return null;
-                ArrayList<StructureObject> data = parentObject.getChildren(idx);
+                List<StructureObject> data = parentObject.getChildren(idx);
                 if (data==null) {
                     data = getGenerator().getObjectDAO(parentObject.getFieldName()).getChildren(parentObject, idx);
                     parentObject.setChildren(data, idx);

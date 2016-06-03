@@ -77,6 +77,9 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         initChildList();
     }
     
+    public int getIndex() {
+        return getParent().getIndex(this);
+    }
     
     @Override
     protected void initChildList() {

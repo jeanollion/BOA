@@ -36,4 +36,5 @@ public interface ImageDisplayer<T> {
     public void setDisplayRange(BoundingBox bounds, Image image);
     public T getCurrentImage();
     public Image getCurrentImage2();
+    public void flush();
 }

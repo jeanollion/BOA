@@ -143,19 +143,25 @@ public class Selection implements Comparable<Selection> {
                 logger.warn("Selection: Object: {} has wrong number of indicies (expected: {})", indicies, pathToRoot.length);
                 continue;
             }
-            StructureObject elem = roots.get(indicies[0]);
-            IndexLoop : for (int i= 1; i<indicies.length; ++i) {
-                if (elem.getChildren(pathToRoot[i-1]).size()<=indicies[i]) {
-                    logger.warn("Selection: Object: {} was not found @ idx {}, last parent: {}", indicies, i, elem);
-                    break IndexLoop;
-                }
-                elem = elem.getChildren(pathToRoot[i-1]).get(indicies[i]);
-            }
-            res.add(elem);
+            StructureObject elem = getObject(indicies, pathToRoot, roots);
+            if (elem!=null) res.add(elem);
         }
         long t1 = System.currentTimeMillis();
         logger.debug("Selection: {}, #{} elements retrieved in: {}", this.id, res.size(), t1-t0);
         return res;
+    }
+    
+    private StructureObject getObject(int[] indices, int[] pathToRoot, List<StructureObject> roots) {
+        StructureObject elem = roots.get(indices[0]);
+        for (int i= 1; i<indices.length; ++i) {
+            if (elem.getChildren(pathToRoot[i-1]).size()<=indices[i]) {
+                return null;
+                //logger.warn("Selection: Object: {} was not found @ idx {}, last parent: {}", indicies, i, elem);
+                //break IndexLoop;
+            }
+            elem = elem.getChildren(pathToRoot[i-1]).get(indices[i]);
+        }
+        return elem;
     }
     
     public static int[] parseIndicies(String indicies) {
@@ -200,7 +206,13 @@ public class Selection implements Comparable<Selection> {
             // update DB refs
             Set<String> els = get(elementToAdd.getFieldName(), true);
             els.add(indiciesToString(StructureObjectUtils.getIndexTree(elementToAdd)));
-            if (els.size()!=list.size()) logger.error("unconsitancy in selection: {}, {} vs: {}", this.toString(), list.size(), els.size());
+            if (false && els.size()!=list.size()) {
+                logger.error("unconsitancy in selection: {}, {} vs: {}", this.toString(), list.size(), els.size());
+                if (els.size()<=10) {
+                    for (StructureObject o : list) logger.debug("bact: {},  object: {}", StructureObjectUtils.getIndexTree(o), o);
+                    for (String elt : els) logger.debug("elt: {}", elt);
+                }
+            }
         }
     }
     public void addElements(Collection<StructureObject> elementsToAdd) {

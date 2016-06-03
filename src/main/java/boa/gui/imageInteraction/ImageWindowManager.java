@@ -89,6 +89,19 @@ public abstract class ImageWindowManager<T, U, V> {
         imageObjectInterfaces = new HashMap<ImageObjectInterfaceKey, ImageObjectInterface>();
     }
     
+    public void flush() {
+        objectRoiMap.clear();
+        parentTrackHeadTrackRoiMap.clear();
+        labileObjectRoiMap.clear();
+        labileParentTrackHeadTrackRoiMap.clear();
+        displayedLabileObjectRois.clear();
+        displayedLabileTrackRois.clear();
+        displayer.flush();
+        imageObjectInterfaces.clear();
+        imageObjectInterfaceMap.clear();
+        isLabelImage.clear();
+    }
+    
     public ImageDisplayer<T> getDisplayer() {return displayer;}
     
     //protected abstract T getImage(Image image);
@@ -146,6 +159,7 @@ public abstract class ImageWindowManager<T, U, V> {
         ImageObjectInterfaceKey key = new ImageObjectInterfaceKey(parent, childStructureIdx, track);
         ImageObjectInterface i = imageObjectInterfaces.get(key);
         if (i!=null) {
+            logger.debug("reloading object for parentTrackHead: {} structure: {}", parent, childStructureIdx);
             i.reloadObjects();
             for (Entry<Image, ImageObjectInterfaceKey> e : imageObjectInterfaceMap.entrySet()) if (e.getValue().equals(key)) {
                 //logger.debug("updating image: {}", e.getKey().getName());
@@ -161,12 +175,9 @@ public abstract class ImageWindowManager<T, U, V> {
     
     public void reloadObjects(StructureObject parent, int childStructureIdx, boolean wholeTrack) {
         reloadObjects_(parent, childStructureIdx, true); // reload track images
-        if (wholeTrack) { // reload other images
-            StructureObject parentTrack = parent.getTrackHead();
-            while (parentTrack!=null) {
-                reloadObjects_(parentTrack, childStructureIdx, false);
-                parentTrack=parentTrack.getNext();
-            }
+        if (wholeTrack) { // reload each image of the track
+            List<StructureObject> track = StructureObjectUtils.getTrack(parent.getTrackHead(), false);
+            for (StructureObject o : track) reloadObjects_(o, childStructureIdx, false);
         } else reloadObjects_(parent, childStructureIdx, false);
         if (parent.getParent()!=null) reloadObjects(parent.getParent(), childStructureIdx, wholeTrack);
         this.resetObjectsAndTracksRoi();
@@ -366,7 +377,7 @@ public abstract class ImageWindowManager<T, U, V> {
                 hideObject(dispImage, roi);
                 if (selectedObjects!=null) selectedObjects.remove(roi);
             }
-            logger.debug("hide object: {} found? {}", p.key, roi!=null);
+            //logger.debug("hide object: {} found? {}", p.key, roi!=null);
         }
         displayer.updateImageRoiDisplay(image);
     }
@@ -450,7 +461,7 @@ public abstract class ImageWindowManager<T, U, V> {
         StructureObject trackHead = track.get(track.size()>1 ? 1 : 0).key.getTrackHead(); // idx = 1 because track might begin with previous object
         boolean canDisplayTrack = i instanceof TrackMask;
         //canDisplayTrack = canDisplayTrack && ((TrackMask)i).parent.getTrackHead().equals(trackHead.getParent().getTrackHead()); // same track head
-        canDisplayTrack = canDisplayTrack && i.getParent().getStructureIdx()<trackHead.getStructureIdx();
+        canDisplayTrack = canDisplayTrack && i.getParent().getStructureIdx()<=trackHead.getStructureIdx();
         if (canDisplayTrack) {
             TrackMask tm = (TrackMask)i;
             canDisplayTrack = track.get(0).key.getTimePoint()>=tm.parentTrack.get(0).getTimePoint() 

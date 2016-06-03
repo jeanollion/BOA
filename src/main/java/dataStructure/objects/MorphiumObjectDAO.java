@@ -18,7 +18,12 @@
 package dataStructure.objects;
 
 import com.mongodb.BasicDBObject;
+import com.mongodb.BasicDBObjectBuilder;
+import com.mongodb.DBCursor;
 import com.mongodb.DBObject;
+import com.mongodb.QueryBuilder;
+import com.mongodb.WriteConcern;
+import com.mongodb.WriteResult;
 import dataStructure.configuration.*;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.StructureObject;
@@ -27,8 +32,10 @@ import de.caluga.morphium.async.AsyncOperationCallback;
 import de.caluga.morphium.async.AsyncOperationType;
 import de.caluga.morphium.query.Query;
 import de.caluga.morphium.query.QueryImpl;
+import de.caluga.morphium.writer.MorphiumWriterImpl;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -125,7 +132,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
         }
     }
     
-    protected ArrayList<StructureObject> checkAgainstCache(List<StructureObject> list) {
+    protected ArrayList<StructureObject> checkAgainstCache(Collection<StructureObject> list) {
         ArrayList<StructureObject> res= new ArrayList<StructureObject>(list.size());
         for (StructureObject o : list) res.add(checkAgainstCache(o));
         return res;
@@ -134,6 +141,34 @@ public class MorphiumObjectDAO implements ObjectDAO {
     public ArrayList<StructureObject> getChildren(StructureObject parent, int structureIdx) {
         List<StructureObject> list = this.getChildrenQuery(parent, structureIdx).sort("idx").asList();
         return checkAgainstCache(list);
+    }
+    @Override 
+    public void deleteChildren(Collection<StructureObject> parents, int structureIdx) {
+        deleteChildren(StructureObjectUtils.getIdList(parents), structureIdx, true);
+        for (StructureObject p : parents) p.setChildren(null, structureIdx);
+    }
+    protected void deleteChildren(Collection<ObjectId> parentIds, int structureIdx, boolean alsoDeleteDirectChildren) {
+        long t0 = System.currentTimeMillis();
+        // need to retrieve ids in case there are measurements to delete
+        DBObject query = QueryBuilder.start("parent_id").in(parentIds).put("structure_idx").is(structureIdx).get();
+        ArrayList<Integer> directChildren = alsoDeleteDirectChildren ? this.getExperiment().getAllDirectChildStructures(structureIdx) : null;
+        DBCursor cur = masterDAO.m.getDatabase().getCollection(collectionName).find(query, new BasicDBObject("_id", 1).append("measurements_id", 1));
+        List<ObjectId> childrenIds = new ArrayList<ObjectId>();
+        List<ObjectId> childrenMeasIds = new ArrayList<ObjectId>();
+        while (cur.hasNext()) {
+            DBObject o = cur.next();
+            childrenIds.add((ObjectId)o.get("_id"));
+            Object mId = o.get("measurements_id");
+            if (mId!=null) childrenMeasIds.add((ObjectId)mId);
+        }
+        cur.close();
+        masterDAO.m.getDatabase().getCollection(collectionName).remove(QueryBuilder.start("_id").in(childrenIds).get(), WriteConcern.ACKNOWLEDGED);
+        long t1 = System.currentTimeMillis();
+        logger.debug("delete {} objects of structure: {} from {} parents in : {}", childrenIds.size(), structureIdx, parentIds.size(), t1-t0);
+        measurementsDAO.delete(childrenMeasIds);
+        if (alsoDeleteDirectChildren && !directChildren.isEmpty()) {
+            for (int childStructure : directChildren) deleteChildren(childrenIds, childStructure, true);
+        }
     }
     
     public void deleteChildren(final StructureObject parent, int structureIdx) {
@@ -218,10 +253,14 @@ public class MorphiumObjectDAO implements ObjectDAO {
         if (o==null) return;
         if (deleteChildren) for (int s : o.getExperiment().getAllDirectChildStructures(o.getStructureIdx())) deleteChildren(o, s);
         if (o.getId()!=null) {
-            masterDAO.m.delete(o, collectionName, null);
+            //masterDAO.m.delete(o, collectionName, null);
+            BasicDBObject db = new BasicDBObject("_id", o.getId());
+            //WriteResult r = masterDAO.m.getDatabase().getCollection(collectionName).remove(db);
+            WriteResult r =  masterDAO.m.getDatabase().getCollection(collectionName).remove(db, WriteConcern.ACKNOWLEDGED);
+            if (masterDAO.m.getDatabase().getCollection(collectionName).findOne(db)!=null) logger.debug("undeletedObject: {}, write result: {}", o, r);
             idCache.remove(o.getId());
         }
-        measurementsDAO.delete(o.measurementsId);
+        if (o.measurementsId!=null) measurementsDAO.delete(o.measurementsId);
         if (deleteFromParent) {
             if (o.getParent().getChildren(o.getStructureIdx()).remove(o) && relabelSiblings) {
                 List<StructureObject> modified = new ArrayList<StructureObject>(o.getParent().getChildren(o.getStructureIdx()).size());
@@ -238,13 +277,19 @@ public class MorphiumObjectDAO implements ObjectDAO {
         masterDAO.m.set(o, collectionName, "idx", value, false, false, null);
     }
     
-    public void delete(List<StructureObject> list, final boolean deleteChildren, boolean deleteFromParent, boolean relabelSiblings) {
-        ThreadRunner.execute(list, new ThreadAction<StructureObject>() {
-            public void run(StructureObject o, int idx, int threadIdx) {
-                delete(o, deleteChildren, false, false); // remove from parent && relabel siblings performed afterwards
+    public void delete(Collection<StructureObject> list, final boolean deleteChildren, boolean deleteFromParent, boolean relabelSiblings) {
+        long t0=System.currentTimeMillis();
+        masterDAO.m.getDatabase().getCollection(collectionName).remove(QueryBuilder.start("_id").in(StructureObjectUtils.getIdList(list)).get(), WriteConcern.ACKNOWLEDGED);
+        getMeasurementsDAO().delete(StructureObjectUtils.getMeasurementIdList(list));
+        if (deleteChildren) {
+            Map<Integer, List<StructureObject>> objectsByStructure = StructureObjectUtils.splitByStructureIdx(list);
+            for (int s : objectsByStructure.keySet()) {
+                List<StructureObject> objects = objectsByStructure.get(s);
+                for (int sChild : getExperiment().getAllDirectChildStructures(s)) {
+                    deleteChildren(StructureObjectUtils.getIdList(objects), sChild, true);
+                }
             }
-        });
-        //for (StructureObject o : list) delete(o, deleteChildren, false, false); // remove from parent && relabel siblings performed afterwards
+        }
         if (deleteFromParent && relabelSiblings) {
             Map<Integer, List<StructureObject>> objectsByStructure = StructureObjectUtils.splitByStructureIdx(list);
             for (int sIdx : objectsByStructure.keySet()) {
@@ -270,6 +315,8 @@ public class MorphiumObjectDAO implements ObjectDAO {
                 if (o.getParent()!=null) o.getParent().getChildren(o.getStructureIdx()).remove(o);
             }
         }
+        long t1=System.currentTimeMillis();
+        logger.debug("{} objects deleted in : {}ms", list.size(), t1-t0);
     }
     
     public void store(StructureObject object, boolean updateTrackAttributes) {
@@ -297,7 +344,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
         idCache.put(object.getId(), object); //thread-safe??
     }
     
-    public void store(final List<StructureObject> objects, final boolean updateTrackAttributes) {
+    public void store(final Collection<StructureObject> objects, final boolean updateTrackAttributes) {
         ThreadRunner.execute(objects, new ThreadAction<StructureObject>() {
             public void run(StructureObject object, int idx, int threadIdx) {
                 store(object, updateTrackAttributes);
@@ -420,9 +467,11 @@ public class MorphiumObjectDAO implements ObjectDAO {
         //logger.debug("get track: from head: {}, number of objects {}", trackHead, res.size());
         return res;*/
         List<StructureObject> list = new ArrayList<StructureObject>();
-        while(trackHead!=null) {
-            list.add(trackHead);
-            trackHead = trackHead.getNext();
+        StructureObject o = trackHead;
+        while(o!=null) {
+            if (o.getTrackHead()!=trackHead) break;
+            list.add(o);
+            o = o.getNext();
         }
         return list;
     }
@@ -519,9 +568,10 @@ public class MorphiumObjectDAO implements ObjectDAO {
     }
     
     // measurement-specific methds
-    public void upsertMeasurements(List<StructureObject> objects) {
-        Utils.removeDuplicates(objects, false);
-        //this.agent.upsertMeasurements(objects);
+    public void upsertMeasurements(Collection<StructureObject> objects) {
+        if (objects.isEmpty()) return;
+        List<StructureObject> list;
+        if (!(objects instanceof Set)) Utils.removeDuplicates(objects, false);
         ThreadRunner.execute(objects, new ThreadRunner.ThreadAction<StructureObject>() {
             public void run(StructureObject object, int idx, int threadIdx) {
                 upsertMeasurement(object);

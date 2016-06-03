@@ -54,7 +54,7 @@ import utils.Utils;
  * @author jollion
  */
 public class ManualCorrection {
-    public static void unlinkObject(StructureObject o, List<StructureObject> modifiedObjects) {
+    public static void unlinkObject(StructureObject o, Collection<StructureObject> modifiedObjects) {
         if (o.getNext()!=null) o.getNext().setTrackHead(o.getNext(), true, true, modifiedObjects);
         o.resetTrackLinks();
         //logger.debug("unlinking: {}", o);
@@ -162,7 +162,7 @@ public class ManualCorrection {
         Utils.removeDuplicates(modifiedObjects, false);
         db.getDao(objects.get(0).getFieldName()).store(modifiedObjects, true);
         if (updateDisplay) {
-            // reload track-tree and update selection list
+            // reload track-tree and update selection toDelete
             int parentStructureIdx = objects.get(0).getParent().getStructureIdx();
             GUI.getInstance().trackTreeController.updateParentTracks(GUI.getInstance().trackTreeController.getTreeIdx(parentStructureIdx));
             //List<List<StructureObject>> tracks = this.trackTreeController.getGeneratorS().get(structureIdx).getSelectedTracks(true);
@@ -225,7 +225,7 @@ public class ManualCorrection {
         Utils.removeDuplicates(modifiedObjects, false);
         db.getDao(objects.get(0).getFieldName()).store(modifiedObjects, true);
         if (updateDisplay) {
-            // reload track-tree and update selection list
+            // reload track-tree and update selection toDelete
             int parentStructureIdx = objects.get(0).getParent().getStructureIdx();
             GUI.getInstance().trackTreeController.updateParentTracks(GUI.getInstance().trackTreeController.getTreeIdx(parentStructureIdx));
             Set<StructureObject> uniqueTh = new HashSet<StructureObject>();
@@ -408,7 +408,7 @@ public class ManualCorrection {
                 node.getParent().createChildren();
                 GUI.getInstance().objectTreeGenerator.reload(node.getParent());
             }
-            Set<StructureObject> parents = StructureObjectUtils.getParents(newObjects);
+            Set<StructureObject> parents = StructureObjectUtils.getParentTrackHeads(newObjects);
             //Update all opened images & objectImageInteraction
             for (StructureObject p : parents) ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
             // update selection
@@ -426,30 +426,36 @@ public class ManualCorrection {
         ObjectDAO dao = db.getDao(fieldName);
         Map<Integer, List<StructureObject>> objectsByStructureIdx = StructureObjectUtils.splitByStructureIdx(objects);
         for (int structureIdx : objectsByStructureIdx.keySet()) {
-            List<StructureObject> list = objectsByStructureIdx.get(structureIdx);
-            List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
-            for (StructureObject o : list) {
+            List<StructureObject> toDelete = objectsByStructureIdx.get(structureIdx);
+            Set<StructureObject> modifiedObjects = new HashSet<StructureObject>();
+            for (StructureObject o : toDelete) {
                 unlinkObject(o, modifiedObjects);
                 o.getParent().getChildren(o.getStructureIdx()).remove(o);
             }
-            Set<StructureObject> parents = StructureObjectUtils.getParents(list);
-            logger.info("Deleting {} objects, from {} parents", list.size(), parents.size());
-            dao.delete(list, true, true, true);
-            Utils.removeDuplicates(modifiedObjects, false);
+            Set<StructureObject> parents = StructureObjectUtils.getParents(toDelete);
+            Set<StructureObject> parentTH = StructureObjectUtils.getParentTrackHeads(toDelete);
+            logger.info("Deleting {} objects, from {} parents", toDelete.size(), parents.size());
+            dao.delete(toDelete, true, true, true);
+            modifiedObjects.removeAll(toDelete); // avoid storing deleted objects!!!
             dao.store(modifiedObjects, true);
             if (updateDisplay) {
                 //Update selection on opened image
                 //ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
-                ImageWindowManagerFactory.getImageManager().removeObjects(list, true);
+                ImageWindowManagerFactory.getImageManager().removeObjects(toDelete, true);
                 List<StructureObject> selTh = ImageWindowManagerFactory.getImageManager().getSelectedLabileTrackHeads(null);
                 //Update object tree
                 for (StructureObject s : parents) {
-                    StructureNode node = GUI.getInstance().objectTreeGenerator.getObjectNode(s).getStructureNode(structureIdx);
-                    node.createChildren();
-                    GUI.getInstance().objectTreeGenerator.reload(node);
+                    if (GUI.getInstance().objectTreeGenerator.getObjectNode(s)==null) {
+                        //logger.error("Node not found for parent object: {}", s);
+                    }
+                    else {
+                        StructureNode node = GUI.getInstance().objectTreeGenerator.getObjectNode(s).getStructureNode(structureIdx);
+                        node.createChildren();
+                        GUI.getInstance().objectTreeGenerator.reload(node);
+                    }
                 }
                 //Update all opened images & objectImageInteraction
-                for (StructureObject p : parents) ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
+                for (StructureObject p : parentTH) ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
                 ImageWindowManagerFactory.getImageManager().displayTracks(null, null, StructureObjectUtils.getTracks(selTh, true), true);
                 GUI.updateRoiDisplayForSelections(null, null);
                 
@@ -514,7 +520,7 @@ public class ManualCorrection {
         // create selection of uncorrected
         for (StructureObject parentTh : uncorrByParentTH.keySet()) {
             String selectionName = "linkError_pIdx"+parentTh.getIdx()+"_Position"+fieldName;
-            Selection sel = db.getSelectionDAO().getObject(fieldName);
+            Selection sel = db.getSelectionDAO().getObject(selectionName);
             if (sel == null) sel = new Selection(selectionName, db);
             sel.addElements(uncorrByParentTH.get(parentTh));
             sel.setIsDisplayingObjects(true);

@@ -77,7 +77,7 @@ public class DeleteFromDAOTest {
         deleteTest(dao);
     }
     
-    @Test 
+    //@Test 
     public void deleteTestBasic() throws IOException {
         MasterDAO dao = new BasicMasterDAO();
         dao.reset();
@@ -164,6 +164,65 @@ public class DeleteFromDAOTest {
     }
     
     @Test
+    public void testDeleteMass() {
+        MasterDAO db = new MorphiumMasterDAO("testImageDAO");
+        db.reset();
+        String f = "testField";
+        int[] count = new int[]{10, 10, 10};
+        Experiment xp = new Experiment("");
+        xp.createMicroscopyField(f);
+        xp.getStructures().insert(new Structure("S0", -1, 0), new Structure("Sub1", 0, 0), new Structure("Sub2",1, 0));
+        db.setExperiment(xp);
+        
+        ObjectDAO dao = db.getDao(f);
+        StructureObject root = new StructureObject(0, new BlankMask("", 1, 1, 1), dao);
+        Object3D o = new Object3D(new BlankMask("", 1, 1, 1), 1);
+        List<StructureObject> s0 = new ArrayList<StructureObject>();
+        for (int i = 0; i<count[0]; ++i) {
+            StructureObject oi = new StructureObject(0, 0, i, o, root);
+            s0.add(oi);
+            List<StructureObject> s1 = new ArrayList<StructureObject>(count[1]);
+            for (int j = 0; j<count[1]; ++j) {
+                StructureObject oj = new StructureObject(0, 1, j, o, oi);
+                s1.add(oj);
+                List<StructureObject> s2 = new ArrayList<StructureObject>(count[2]);
+                for (int k = 0; k<count[2]; ++k) {
+                    StructureObject ok = new StructureObject(0, 2, k, o, oj);
+                    s2.add(ok);
+                    ok.getMeasurements().setValue("test", k);
+                }
+                oj.setChildren(s2, 2);
+                oj.getMeasurements().setValue("test", j);
+            }
+            oi.setChildren(s1, 1);
+            oi.getMeasurements().setValue("test", i);
+        }
+        root.setChildren(s0, 0);
+        
+        int n = 1;
+        dao.store(root, true);
+        assertEquals("store root ", 1, countObjects(db, StructureObject.class) );
+        for (int i = 0; i<=2; ++i) { 
+            dao.store(root.getChildren(i), true); 
+            n+=root.getChildren(i).size();
+
+        }
+        assertEquals("store children count structureObjects", n, countObjects(db, StructureObject.class) );
+        assertEquals("store count measurements", n-1, countObjects(db, Measurements.class));
+        dao.clearCache();
+        root = dao.getRoots().get(0);
+        n =1;
+        for (int i = 0; i<=2; ++i) {
+            n*=count[i];
+            List<StructureObject> ci = root.getChildren(i);
+            assertEquals("retrieve children : s:"+i, n, ci.size());
+        }
+        dao.delete(root.getChildren(0), true, true, true);
+        assertEquals("delete children count structureObjects", 1, countObjects(db, StructureObject.class));
+        assertEquals("delete count measurements", 0, countObjects(db, Measurements.class));
+    }
+    
+    //@Test
     public void testDeleteAndRelabel() {
         MasterDAO db = new MorphiumMasterDAO("testImageDAO");
         db.reset();
@@ -171,6 +230,7 @@ public class DeleteFromDAOTest {
         
         Experiment xp = new Experiment("");
         xp.getStructures().insert(new Structure("MicroChannel", -1, 0));
+        xp.createMicroscopyField(f);
         db.setExperiment(xp);
         
         ObjectDAO dao = db.getDao(f);
@@ -181,15 +241,16 @@ public class DeleteFromDAOTest {
         final StructureObject c3 = new StructureObject(0, 0, 2, o, root);
         final StructureObject c4 = new StructureObject(0, 0, 3, o, root);
         final StructureObject c5 = new StructureObject(0, 0, 4, o, root);
-        ArrayList<StructureObject> children = new ArrayList<StructureObject>(){{add(c1);add(c2);add(c3);add(c4);add(c5);}};
-        
+        List<StructureObject> children = new ArrayList<StructureObject>(){{add(c1);add(c2);add(c3);add(c4);add(c5);}};
+        assertEquals("dao cleared", 0, countObjects(db, StructureObject.class));
         dao.store(root, true);
+        assertEquals("root stored", 1, countObjects(db, StructureObject.class));
         dao.store(children, true);
         dao.clearCache();
         root = dao.getRoots().get(0);
         children = root.getChildren(0);
         assertEquals("retrieve children", 5, children.size());
-        List<StructureObject> toDelete = children.subList(1, 3);
+        List<StructureObject> toDelete = new ArrayList(children.subList(1, 3));
         dao.delete(toDelete, true, true, true);
         assertEquals("delete list, from parent", 3, root.getChildren(0).size());
         assertEquals("delete list, relabel", true, root.getChildren(0).get(1).getIdx()==1);

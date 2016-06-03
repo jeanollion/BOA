@@ -38,7 +38,7 @@ import utils.Utils;
  *
  * @author jollion
  */
-public class RepairInconsitenciesMutations {
+public class RepairTrackInconsitencies {
     static int structureIdx = 2;
     public static void main(String[] args) {
         //String dbName = "boa_fluo160501";

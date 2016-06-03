@@ -120,7 +120,7 @@ public class MicrochannelProcessor implements TrackerSegmenter {
         }
     }
     
-    public void assignPrevious(ArrayList<StructureObject> previous, ArrayList<StructureObject> next) {
+    public void assignPrevious(List<StructureObject> previous, List<StructureObject> next) {
         int lim = Math.min(previous.size(), next.size());
         for (int i = 0; i<Math.min(previous.size(), next.size()); ++i) {
             setTrackLinks(previous.get(i), next.get(i), true, true);

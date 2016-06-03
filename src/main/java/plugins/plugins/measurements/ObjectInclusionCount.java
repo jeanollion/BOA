@@ -66,8 +66,8 @@ public class ObjectInclusionCount implements Measurement {
             object.getMeasurements().setValue(inclusionText.getValue(), count(object, structureToCount.getSelectedIndex(), p, onlyTrackHeads.getSelected()));
             modifiedObjects.add(object);
         } else {
-            ArrayList<StructureObject> containers = object.getChildren(structureContainer.getSelectedIndex());
-            ArrayList<StructureObject> toCount = object.getChildren(structureToCount.getSelectedIndex());
+            List<StructureObject> containers = object.getChildren(structureContainer.getSelectedIndex());
+            List<StructureObject> toCount = object.getChildren(structureToCount.getSelectedIndex());
             for (StructureObject c : containers) {
                 c.getMeasurements().setValue(inclusionText.getValue(), count(c, toCount, p, onlyTrackHeads.getSelected()));
                 modifiedObjects.add(c);
@@ -110,7 +110,7 @@ public class ObjectInclusionCount implements Measurement {
         int common = container.getExperiment().getFirstCommonParentStructureIdx(container.getStructureIdx(), structureToCount);
         StructureObject commonParent = container.getParent(common);
 
-        ArrayList<StructureObject> toCount = commonParent.getChildren(structureToCount);
+        List<StructureObject> toCount = commonParent.getChildren(structureToCount);
         return count(container, toCount, proportionInclusion, onlyTrackHeads);
         
     }

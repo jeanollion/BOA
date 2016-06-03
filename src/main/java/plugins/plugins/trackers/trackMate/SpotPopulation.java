@@ -84,7 +84,7 @@ public class SpotPopulation {
     }
     public void addSpots(StructureObject container, int spotSturctureIdx, List<Object3D> objects, int compartmentStructureIdx) {
         //ObjectPopulation population = container.getObjectPopulation(spotSturctureIdx);
-        ArrayList<StructureObject> compartments = container.getChildren(compartmentStructureIdx);
+        List<StructureObject> compartments = container.getChildren(compartmentStructureIdx);
         Image intensityMap = container.getRawImage(spotSturctureIdx);
         //logger.debug("adding: {} spots from timePoint: {}", population.getObjects().size(), container.getTimePoint());
         HashMapGetCreate<StructureObject, SpotCompartiment> compartimentMap = new HashMapGetCreate<StructureObject, SpotCompartiment>(new Factory<StructureObject, SpotCompartiment>() {
@@ -228,7 +228,7 @@ public class SpotPopulation {
     }
     
     private StructureObject getStructureObject(StructureObject parent, int structureIdx, SpotWithinCompartment s) {
-        ArrayList<StructureObject> children = parent.getChildren(structureIdx);
+        List<StructureObject> children = parent.getChildren(structureIdx);
         Object3D o = s.object;
         for (StructureObject c : children) if (c.getObject() == o) return c;
         return null;

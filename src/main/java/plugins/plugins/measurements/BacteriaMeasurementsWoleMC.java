@@ -97,7 +97,7 @@ public class BacteriaMeasurementsWoleMC implements Measurement {
         }
         logger.debug("vox xMax: {}, yMax: {}", xMax, yMax);*/
         object.getMeasurements().setValue("BacteriaMeanIntensity", BasicMeasurements.getMeanValue(o, bactImage, true));
-        ArrayList<StructureObject> mutList = object.getChildren(mutation.getSelectedIndex());
+        List<StructureObject> mutList = object.getChildren(mutation.getSelectedIndex());
         if (mutList.isEmpty()) object.getMeasurements().setValue("MutationMeanIntensity", BasicMeasurements.getMeanValue(o, mutImage, true));
         if (!mutList.isEmpty()) {
             List<Voxel> mutVox = new ArrayList<Voxel>();
@@ -113,7 +113,7 @@ public class BacteriaMeasurementsWoleMC implements Measurement {
               modifiedObjects.add(m);
         }*/
         long t4=t3, t5=t3;
-        ArrayList<StructureObject> bactList = object.getChildren(bacteria.getSelectedIndex());
+        List<StructureObject> bactList = object.getChildren(bacteria.getSelectedIndex());
         if (!bactList.isEmpty()) {
             StructureObject mm = bactList.get(0);
             object.getMeasurements().setValue("M_MutationCount", ObjectInclusionCount.count(mm, mutList, 0, true));

@@ -77,6 +77,11 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         else zoom(ip, ImageDisplayer.zoomMagnitude);
         return ip;
     }
+    public void flush() {
+        for (ImagePlus ip : displayedImages.values()) if (ip.isVisible()) ip.close();
+        displayedImages.clear();
+        displayedImagesInv.clear();
+    }
     
     private boolean imageExistButHasBeenClosed(Image image) {
         return displayedImages.get(image)!=null && displayedImages.get(image).getCanvas()==null;

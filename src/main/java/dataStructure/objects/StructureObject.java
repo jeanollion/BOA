@@ -49,7 +49,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     @Transient protected StructureObject parent;
     protected int structureIdx;
     protected int idx;
-    @Transient protected final SmallArray<ArrayList<StructureObject>> childrenSM=new SmallArray<ArrayList<StructureObject>>(); //maps structureIdx to Children (equivalent to hashMap)
+    @Transient protected final SmallArray<List<StructureObject>> childrenSM=new SmallArray<List<StructureObject>>(); //maps structureIdx to Children (equivalent to hashMap)
     @Transient protected ObjectDAO dao;
     
     // track-related attributes
@@ -101,9 +101,23 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public ObjectDAO getDAO() {return dao;}
     public ObjectId getId() {return id;}
     public String getFieldName() {return dao.getFieldName();}
+    public int getPositionIdx() {return getExperiment().getMicroscopyField(getFieldName()).getIndex();}
     public int getStructureIdx() {return structureIdx;}
     public int getTimePoint() {return timePoint;}
     public int getIdx() {return idx;}
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof StructureObject) {
+            return id==((StructureObject)obj).id;
+        }
+        return false;
+    }
     
     public Experiment getExperiment() {
         if (dao==null) return null;
@@ -159,14 +173,14 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return res;
     }
     public boolean isRoot() {return structureIdx==-1;}
-    public ArrayList<? extends StructureObject> getChildObjects(int structureIdx) {return getChildren(structureIdx);} // for overriding purpose
-    public ArrayList<StructureObject> getChildren(int structureIdx) {
+    public List<? extends StructureObject> getChildObjects(int structureIdx) {return getChildren(structureIdx);} // for overriding purpose
+    public List<StructureObject> getChildren(int structureIdx) {
         if (structureIdx<this.structureIdx) throw new IllegalArgumentException("Structure: "+structureIdx+" cannot be child of structure: "+this.structureIdx);
         if (structureIdx == this.structureIdx) {
             final StructureObject o = this;
             return new ArrayList<StructureObject>(){{add(o);}};
         }
-        ArrayList<StructureObject> res= this.childrenSM.get(structureIdx);
+        List<StructureObject> res= this.childrenSM.get(structureIdx);
         if (res==null) {
             if (getExperiment().isDirectChildOf(this.structureIdx, structureIdx)) { // direct child
                 synchronized(childrenSM) {
@@ -185,7 +199,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 if (path.length == 0) { // structure is not (indirect) child of current structure -> get included objects from first common parent
                     int commonParentIdx = getExperiment().getFirstCommonParentStructureIdx(this.structureIdx, structureIdx);
                     StructureObject commonParent = this.getParent(commonParentIdx);
-                    ArrayList<StructureObject> candidates = commonParent.getChildren(structureIdx);
+                    List<StructureObject> candidates = commonParent.getChildren(structureIdx);
                     //if (this.timePoint==0) logger.debug("structure: {}, child: {}, commonParentIdx: {}, object: {}, path: {}, candidates: {}", this.structureIdx, structureIdx, commonParentIdx, commonParent, getExperiment().getPathToStructure(commonParentIdx, structureIdx), candidates.size());
                     return StructureObjectUtils.getIncludedObjects(candidates, this);
                 } else return StructureObjectUtils.getAllObjects(this, path);
@@ -196,12 +210,12 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return childrenSM.has(structureIdx);
     }
 
-    public void setChildren(ArrayList<StructureObject> children, int structureIdx) {
+    public void setChildren(List<StructureObject> children, int structureIdx) {
         this.childrenSM.set(children, structureIdx);
         if (children!=null) for (StructureObject o : children) o.setParent(this);
     }
     
-    @Override public ArrayList<StructureObject> setChildrenObjects(ObjectPopulation population, int structureIdx) {
+    @Override public List<StructureObject> setChildrenObjects(ObjectPopulation population, int structureIdx) {
         population.relabel();
         population.translate(getBounds(), true); // from parent-relative coordinates to absolute coordinates
         for (Object3D o : population.getObjects()) o.setIsAbsoluteLandmark(true);
@@ -221,14 +235,14 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         children.add(o);
     }*/
     
-    public ArrayList<StructureObject> getSiblings() {
+    public List<StructureObject> getSiblings() {
         return this.getParent().getChildren(structureIdx);
     }
     public void relabelChildren(int structureIdx) {relabelChildren(structureIdx, null);}
     public void relabelChildren(int structureIdx, List<StructureObject> modifiedObjects) {
         //logger.debug("relabeling: {} number of children: {}", this, getChildren(structureIdx).size());
         // in order to avoid overriding some images, the algorithm is in two passes: ascending and descending indices
-        ArrayList<StructureObject> c = getChildren(structureIdx);
+        List<StructureObject> c = getChildren(structureIdx);
         StructureObject current;
         for (int i = 0; i<c.size(); ++i) {
             current = c.get(i);
@@ -452,7 +466,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public boolean divisionAtNextTimePoint() {
         int count = 0;
         if (getParent()==null || this.getParent().getNext()==null) return false;
-        ArrayList<StructureObject> candidates = this.getParent().getNext().getChildren(structureIdx);
+        List<StructureObject> candidates = this.getParent().getNext().getChildren(structureIdx);
         for (StructureObject o : candidates) {
             if (o.getPrevious()==this) ++count;
             if (count>1) return true;
@@ -488,8 +502,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
      * 
      * @return a list containing the sibling (structureObjects that have the same previous object) at the next division, null if there are no siblings. If there are siblings, the first object of the list is contained in the track.
      */
-    public ArrayList<StructureObject> getNextDivisionSiblings() {
-        ArrayList<StructureObject> res= null;
+    public List<StructureObject> getNextDivisionSiblings() {
+        List<StructureObject> res= null;
         StructureObject nextDiv = this;
         while(nextDiv.getNext()!=null && res==null) {
             nextDiv = nextDiv.getNext();
@@ -503,8 +517,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
      * 
      * @return a list containing the sibling (structureObjects that have the same previous object) at the previous division, null if there are no siblings. If there are siblings, the first object of the list is contained in the track.
      */
-    public ArrayList<StructureObject> getPreviousDivisionSiblings() {
-        ArrayList<StructureObject> res= null;
+    public List<StructureObject> getPreviousDivisionSiblings() {
+        List<StructureObject> res= null;
         StructureObject prevDiv = this;
         while(prevDiv.getPrevious()!=null && res==null) {
             prevDiv = prevDiv.getPrevious();
@@ -518,9 +532,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
      * @param includeCurrentObject if true, current instance will be included at first position of the list
      * @return a list containing the sibling (structureObjects that have the same previous object) at the previous division, null if there are no siblings and {@param includeCurrentObject} is false.
      */
-    public ArrayList<StructureObject> getDivisionSiblings(boolean includeCurrentObject) {
+    public List<StructureObject> getDivisionSiblings(boolean includeCurrentObject) {
         ArrayList<StructureObject> res=null;
-        ArrayList<StructureObject> siblings = getSiblings();
+        List<StructureObject> siblings = getSiblings();
         //logger.trace("get div siblings: timePoint: {}, number of siblings: {}", this.getTimePoint(), siblings.size());
         if (this.getPrevious()!=null) {
             for (StructureObject o : siblings) {
@@ -575,7 +589,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         StructureObject next = otherO.getNext(); 
         if (next==null) next = getNext();
         if (next!=null) {
-            ArrayList<StructureObject> siblings = next.getSiblings();
+            List<StructureObject> siblings = next.getSiblings();
             for (StructureObject o : siblings) if (o.getPrevious()==otherO) o.setPrevious(this);
         }
         this.getParent().getChildObjects(structureIdx).remove(otherO); // concurent modification..
@@ -586,11 +600,11 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         // update children
         int[] chilIndicies = getExperiment().getAllDirectChildStructuresAsArray(structureIdx);
         for (int cIdx : chilIndicies) {
-            ArrayList<StructureObject> otherChildren = otherO.getChildren(cIdx);
+            List<StructureObject> otherChildren = otherO.getChildren(cIdx);
             if (otherChildren!=null) {
                 for (StructureObject o : otherChildren) o.setParent(this);
                 //xp.getObjectDAO().updateParent(otherChildren);
-                ArrayList<StructureObject> ch = this.getChildren(cIdx);
+                List<StructureObject> ch = this.getChildren(cIdx);
                 if (ch!=null) ch.addAll(otherChildren);
             }
         }
@@ -778,7 +792,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     
     public ObjectPopulation getObjectPopulation(int structureIdx) {
-        ArrayList<StructureObject> child = this.getChildren(structureIdx);
+        List<StructureObject> child = this.getChildren(structureIdx);
         if (child==null || child.size()==0) return new ObjectPopulation(new ArrayList<Object3D>(0), this.getMaskProperties());
         else {
             ArrayList<Object3D> objects = new ArrayList<Object3D>(child.size());
@@ -818,12 +832,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     @Override
     public String toString() {
-        if (isRoot()) return "Root: F:"+getFieldName() + ",T:"+timePoint;
-        else return "F:"+getFieldName()+ ",T:"+timePoint+ ",S:"+structureIdx+ ",Idx:"+idx+ ",P:["+getParent().toStringShort()+"]" + (flag==null?"":"{"+flag+"}") ;
+        return "P:"+getPositionIdx()+"/S:"+structureIdx+"/I:"+Selection.indiciesToString(StructureObjectUtils.getIndexTree(this))+"/id:"+id;
+        //if (isRoot()) return "F:"+getPositionIdx() + ",T:"+timePoint;
+        //else return "F:"+getPositionIdx()+ ",T:"+timePoint+ ",S:"+structureIdx+ ",Idx:"+idx+ ",P:["+getParent().toStringShort()+"]" + (flag==null?"":"{"+flag+"}") ;
     }
     
     protected String toStringShort() {
-        if (isRoot()) return "Root";
+        if (isRoot()) return "";
         else return "S:"+structureIdx+ ",Idx:"+idx+ ",P:["+getParent().toStringShort()+"]" ;
     }
     

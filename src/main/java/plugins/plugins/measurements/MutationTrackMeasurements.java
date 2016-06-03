@@ -97,7 +97,7 @@ public class MutationTrackMeasurements implements Measurement {
         int nextTP = parentBacteria.getNextDivisionTimePoint();
         object.getMeasurements().setValue("NextDivisionFrame", nextTP>=0?nextTP:null );
         int[] indices = StructureObjectUtils.getIndexTree(object.getTrackHead()); 
-        object.getMeasurements().setValue("TrackHeadIndices", Utils.toStringArray(indices, "", "", Selection.indexSeparator));
+        object.getMeasurements().setValue("TrackHeadIndices", Selection.indiciesToString(indices));
         
         double[] objectCenter = object.getObject().getCenter(object.getRawImage(mutation.getSelectedStructureIdx()), false);
         object.getMeasurements().setValue("YCoordProportional", getYProportionalPositionWithinContainer(parentBacteria.getObject(), objectCenter[1]));

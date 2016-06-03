@@ -144,8 +144,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             }
         }
         // apply to structureObject
-        ArrayList<StructureObject> childrenPrev = null;
-        ArrayList<StructureObject> children = null;
+        List<StructureObject> childrenPrev = null;
+        List<StructureObject> children = null;
         for (int t = 0; t<populations.length; ++t) {
             StructureObject parent = this.parents.get(t);
             //logger.debug("setting objects from parent: {}, prevChildren null?", parent, childrenPrev==null);
@@ -162,7 +162,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         }
     }
     
-    private void setAttributes(int timePoint, ArrayList<StructureObject> children, ArrayList<StructureObject> childrenPrev) {
+    private void setAttributes(int timePoint, List<StructureObject> children, List<StructureObject> childrenPrev) {
         for (int i = 0; i<children.size(); ++i) {
             TrackAttribute ta= getAttribute(timePoint, i);
             if (ta.prev==null || childrenPrev==null) children.get(i).resetTrackLinks();
@@ -223,7 +223,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (this.populations[timePoint]==null) {
             StructureObject parent = this.parents.get(timePoint);
             if (segmenters==null) { // no segmentation, object should be already set as children of their parents
-                ArrayList<StructureObject> list = parent.getChildren(structureIdx);
+                List<StructureObject> list = parent.getChildren(structureIdx);
                 if (list!=null) {
                     populations[timePoint] = new ArrayList<Object3D>(list.size());
                     for (StructureObject o : list)  populations[timePoint].add(o.getObject());

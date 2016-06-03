@@ -66,7 +66,7 @@ public class BacteriaLineageIndex implements Measurement {
     public void performMeasurement(StructureObject parentTrackHead, List<StructureObject> modifiedObjects) {
         int bIdx = structure.getSelectedIndex();
         String key = this.keyName.getValue();
-        ArrayList<StructureObject> bacteria = parentTrackHead.getChildren(bIdx);
+        List<StructureObject> bacteria = parentTrackHead.getChildren(bIdx);
         int trackHeadIdx = 0;
         for (StructureObject o : bacteria) {
             o.getMeasurements().setValue(key, getTrackHeadName(trackHeadIdx++));

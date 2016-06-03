@@ -392,7 +392,7 @@ public class Utils {
         return new TreePath(path.toArray(new TreeNode[path.size()]));
     }
     
-    public static <T> void removeDuplicates(List<T> list, boolean keepOrder) {
+    public static <T> void removeDuplicates(Collection<T> list, boolean keepOrder) {
         Collection<T> set = keepOrder? new LinkedHashSet<T>(list) : new HashSet<T>(list);
         list.clear();
         list.addAll(set);

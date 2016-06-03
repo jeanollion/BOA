@@ -30,6 +30,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import net.imglib2.KDTree;
+import net.imglib2.RealPoint;
+import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
+import org.bson.types.ObjectId;
 import utils.HashMapGetCreate;
 import utils.Utils;
 
@@ -116,7 +120,7 @@ public class StructureObjectUtils {
         } else return getAllObjects(referenceStructutre, Arrays.copyOfRange(pathToStructure, 0, pathToStructure.length-1));
     }
     
-    public static void assignChildren(ArrayList<StructureObject> parent, ArrayList<StructureObject> children) {
+    public static void assignChildren(List<StructureObject> parent, List<StructureObject> children) {
         if (children.isEmpty()) return;
         int childStructure = children.get(0).getStructureIdx();
         for (StructureObject p : parent) p.setChildren(new ArrayList<StructureObject>(), childStructure);
@@ -144,14 +148,14 @@ public class StructureObjectUtils {
         }
     }
     
-    public static ArrayList<StructureObject> getIncludedObjects(ArrayList<StructureObject> candidates, StructureObject container) {
+    public static List<StructureObject> getIncludedObjects(List<StructureObject> candidates, StructureObject container) {
         ArrayList<StructureObject> res = new ArrayList<StructureObject>();
         BoundingBox containerBox = container.getBounds();
         for (StructureObject c : candidates) if (c.getBounds().hasIntersection(containerBox)) res.add(c); // strict inclusion?
         return res;
     }
     
-    public static Object3D getInclusionParent(Object3D children, ArrayList<Object3D> parents, BoundingBox offset, BoundingBox offsetParent) {
+    public static Object3D getInclusionParent(Object3D children, List<Object3D> parents, BoundingBox offset, BoundingBox offsetParent) {
         if (parents.isEmpty() || children==null) return null;
         Object3D currentParent=null;
         int currentIntersection=-1;
@@ -170,7 +174,7 @@ public class StructureObjectUtils {
         return currentParent;
     }
     
-    public static StructureObject getInclusionParent(Object3D children, ArrayList<StructureObject> parents, BoundingBox offset) {
+    public static StructureObject getInclusionParent(Object3D children, List<StructureObject> parents, BoundingBox offset) {
         if (parents.isEmpty() || children==null) return null;
         StructureObject currentParent=null;
         int currentIntersection=-1;
@@ -205,7 +209,7 @@ public class StructureObjectUtils {
     public static Map<StructureObject, List<StructureObject>> getAllTracks(List<StructureObject> parentTrack, int structureIdx) {
         HashMap<StructureObject, List<StructureObject>>  res = new HashMap<StructureObject, List<StructureObject>>();
         for (StructureObject p : parentTrack) {
-            ArrayList<StructureObject> children = p.getChildren(structureIdx);
+            List<StructureObject> children = p.getChildren(structureIdx);
             for (StructureObject c : children) {
                 List<StructureObject> l;
                 if (c.isTrackHead()) {
@@ -227,12 +231,13 @@ public class StructureObjectUtils {
     
     public static List<StructureObject> getTrack(StructureObject trackHead, boolean extend) {
         if (trackHead==null) return Collections.EMPTY_LIST;
-        StructureObject head = trackHead.getTrackHead();
+        trackHead = trackHead.getTrackHead();
         ArrayList<StructureObject> track = new ArrayList<StructureObject>();
-        if (extend && head.getPrevious()!=null) track.add(head.getPrevious());
-        while(trackHead!=null && trackHead.getTrackHead()==head) {
-            track.add(trackHead);
-            trackHead = trackHead.getNext();
+        if (extend && trackHead.getPrevious()!=null) track.add(trackHead.getPrevious());
+        StructureObject o = trackHead;
+        while(o!=null && o.getTrackHead()==trackHead) {
+            track.add(o);
+            o = o.getNext();
         } 
         if (extend && track.get(track.size()-1).getNext()!=null) track.add(track.get(track.size()-1).getNext());
         return track;
@@ -281,6 +286,17 @@ public class StructureObjectUtils {
         }
         return res;
     }
+    
+    public static List<ObjectId> getIdList(Collection<StructureObject> objects) {
+        List<ObjectId> ids = new ArrayList<ObjectId>(objects.size());
+        for (StructureObject o : objects) ids.add(o.id);
+        return ids;
+    }
+    public static List<ObjectId> getMeasurementIdList(Collection<StructureObject> objects) {
+        List<ObjectId> ids = new ArrayList<ObjectId>(objects.size());
+        for (StructureObject o : objects) if (o.measurementsId!=null) ids.add(o.measurementsId);
+        return ids;
+    }
 
     public static Map<StructureObject, List<StructureObject>> splitByParent(Collection<StructureObject> list) {
         if (list.isEmpty()) return Collections.EMPTY_MAP;
@@ -303,12 +319,22 @@ public class StructureObjectUtils {
         return res;
     }
     
+    public static Map<Integer, List<StructureObject>> splitByIdx(Collection<StructureObject> list) {
+        if (list.isEmpty()) return Collections.EMPTY_MAP;
+        HashMapGetCreate<Integer, List<StructureObject>> res = new HashMapGetCreate<Integer, List<StructureObject>>(new HashMapGetCreate.ListFactory<Integer, StructureObject>());
+        for (StructureObject o : list) res.getAndCreateIfNecessary(o.getIdx()).add(o);
+        return res;
+    }
+    
+    
     public static Map<String, List<StructureObject>> splitByFieldName(Collection<StructureObject> list) {
         if (list.isEmpty()) return Collections.EMPTY_MAP;
         HashMapGetCreate<String, List<StructureObject>> res = new HashMapGetCreate<String, List<StructureObject>>(new HashMapGetCreate.ListFactory<String, StructureObject>());
         for (StructureObject o : list) res.getAndCreateIfNecessary(o.getFieldName()).add(o);
         return res;
     }
+    
+    
     
     public static StructureObject keepOnlyObjectsFromSameParent(Collection<StructureObject> list, StructureObject... parent) {
         if (list.isEmpty()) return null;

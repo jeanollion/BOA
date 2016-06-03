@@ -173,7 +173,7 @@ public class Processor {
     }
     
     private static void execute(ProcessingScheme ps, int structureIdx, List<StructureObject> parentTrack, boolean trackOnly, boolean deleteChildren, ObjectDAO dao) {
-        if (!trackOnly && deleteChildren) for (StructureObject p : parentTrack) dao.deleteChildren(p, structureIdx);
+        if (!trackOnly && deleteChildren) dao.deleteChildren(parentTrack, structureIdx);
         if (trackOnly) ps.trackOnly(structureIdx, parentTrack);
         else ps.segmentAndTrack(structureIdx, parentTrack);
     }
@@ -208,7 +208,7 @@ public class Processor {
                 List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
                 for(Entry<Integer, List<Measurement>> e : measurements.entrySet()) {
                     int structureIdx = e.getKey();
-                    ArrayList<StructureObject> objects = root.getChildren(structureIdx);
+                    List<StructureObject> objects = root.getChildren(structureIdx);
                     for (Measurement m : e.getValue()) {
                         for (StructureObject o : objects) {
                             if (!m.callOnlyOnTrackHeads() || o.isTrackHead()) m.performMeasurement(o, modifiedObjects);
