@@ -63,11 +63,11 @@ public class DataExtractor {
     protected String getBaseLine(Measurements m) {
         String line = m.getFieldName();
         int[] idx = m.getIndices();
-        if (idx.length==1) line+=separator+-1; // only time point
-        else line+=Utils.toStringArray(idx, separator, "", Selection.indexSeparator);
-        for (int i : idx) line+=separator+i;
+        line+= Utils.toStringArray(idx, separator, "", Selection.indexSeparator);
+        for (int i : idx) line+=Selection.indexSeparator+i; // separated columns ..
         return line;
     }
+    
     protected String getHeader(ArrayList<String> measurements) {
         String header = getBaseHeader();
         for (String m : measurements) header+=separator+m;
