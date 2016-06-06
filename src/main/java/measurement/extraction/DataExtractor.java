@@ -64,7 +64,7 @@ public class DataExtractor {
         String line = m.getFieldName();
         int[] idx = m.getIndices();
         line+= Utils.toStringArray(idx, separator, "", Selection.indexSeparator);
-        for (int i : idx) line+=Selection.indexSeparator+i; // separated columns ..
+        for (int i : idx) line+=separator+i; // separated columns ..
         return line;
     }
     
@@ -79,19 +79,20 @@ public class DataExtractor {
         for (String[] s : measurements.values()) l.addAll(Arrays.asList(s));
         return l;
     }
-    public static void extractMeasurementObjects(MorphiumMasterDAO db, String outputFile, int structureIdx, String... measurements) {
+    public static void extractMeasurementObjects(MorphiumMasterDAO db, String outputFile, int structureIdx,  List<String> positions, String... measurements) {
         Map<Integer, String[]> map = new HashMap<Integer, String[]>(1);
         map.put(structureIdx, measurements);
         DataExtractor de= new DataExtractor(db, structureIdx);
-        de.extractMeasurementObjects(outputFile, map);
+        de.extractMeasurementObjects(outputFile, positions, map);
     }
-    public static void extractMeasurementObjects(MasterDAO db, String outputFile, Map<Integer, String[]> allMeasurements) {
+    public static void extractMeasurementObjects(MasterDAO db, String outputFile, List<String> positions, Map<Integer, String[]> allMeasurements) {
         TreeMap<Integer, String[]> allMeasurementsSort = new TreeMap<Integer, String[]>(allMeasurements);
         DataExtractor de= new DataExtractor(db, allMeasurementsSort.lastKey());
-        de.extractMeasurementObjects(outputFile, allMeasurementsSort);
+        de.extractMeasurementObjects(outputFile, positions, allMeasurementsSort);
     }
-    protected void extractMeasurementObjects(String outputFile, Map<Integer, String[]> allMeasurements) {
+    protected void extractMeasurementObjects(String outputFile, List<String> positions, Map<Integer, String[]> allMeasurements) {
         Experiment xp = db.getExperiment();
+        if (positions==null) positions = Arrays.asList(db.getExperiment().getFieldsAsString());
         long t0 = System.currentTimeMillis();
         FileWriter fstream;
         BufferedWriter out;
@@ -112,7 +113,7 @@ public class DataExtractor {
                 }
             }
             String[] currentMeasurementNames = allMeasurementsSort.pollLastEntry().getValue();
-            for (String fieldName : xp.getFieldsAsString()) {
+            for (String fieldName : positions) {
                 ObjectDAO dao = db.getDao(fieldName);
                 TreeMap<Integer, List<Measurements>> parentMeasurements = new TreeMap<Integer, List<Measurements>>();
                 for (Entry<Integer, String[]> e : allMeasurementsSort.entrySet()) parentMeasurements.put(e.getKey(), dao.getMeasurements(e.getKey(), e.getValue()));

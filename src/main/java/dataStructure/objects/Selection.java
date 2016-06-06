@@ -27,6 +27,7 @@ import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,7 +45,7 @@ import utils.Utils;
 public class Selection implements Comparable<Selection> {
     @Id String id;
     int structureIdx;
-    Map<String, Set<String>> elements;
+    Map<String, List<String>> elements; // stored as list for simplicity
     String color="Green";
     boolean displayingTracks=false;
     boolean displayingObjects=false;
@@ -57,7 +58,7 @@ public class Selection implements Comparable<Selection> {
     public Selection(String name, MasterDAO mDAO) {
         this.id=name;
         this.structureIdx=-1;
-        elements = new HashMap<String, Set<String>>();
+        elements = new HashMap<String, List<String>>();
     }
     
     public Color getColor(boolean imageDisplay) {
@@ -111,22 +112,23 @@ public class Selection implements Comparable<Selection> {
         }
         return res;
     }
-    protected Set<String> get(String fieldName, boolean createIfNull) {
+    protected Collection<String> get(String fieldName, boolean createIfNull) {
         Collection<String> indiciesList = elements.get(fieldName);
         if (indiciesList==null) {
             if (createIfNull) {
-                indiciesList = new HashSet<String>();
-                elements.put(fieldName, (Set)indiciesList);
+                indiciesList = new ArrayList<String>();
+                elements.put(fieldName, (List)indiciesList);
             } else return null;
-        } else if (indiciesList instanceof List) { // retro-compatibility
-            indiciesList = new HashSet<String>(indiciesList);
-            elements.put(fieldName, (Set)indiciesList);
         }
-        return (Set)indiciesList;
+        else if (indiciesList instanceof Set) { // retro-compatibility
+            indiciesList = new ArrayList<String>(indiciesList);
+            elements.put(fieldName, (List)indiciesList);
+        }
+        return indiciesList;
     }
     protected Set<StructureObject> retrieveElements(String fieldName) {
         if (fieldName==null) throw new IllegalArgumentException("FieldName cannot be null");
-        Set<String> indiciesList = get(fieldName, false);
+        Collection<String> indiciesList = get(fieldName, false);
         if (indiciesList==null) {
             return null;
         }
@@ -145,6 +147,7 @@ public class Selection implements Comparable<Selection> {
             }
             StructureObject elem = getObject(indicies, pathToRoot, roots);
             if (elem!=null) res.add(elem);
+            else logger.warn("Selection: object not found: {}", indicies);
         }
         long t1 = System.currentTimeMillis();
         logger.debug("Selection: {}, #{} elements retrieved in: {}", this.id, res.size(), t1-t0);
@@ -154,14 +157,22 @@ public class Selection implements Comparable<Selection> {
     private StructureObject getObject(int[] indices, int[] pathToRoot, List<StructureObject> roots) {
         StructureObject elem = roots.get(indices[0]);
         for (int i= 1; i<indices.length; ++i) {
-            if (elem.getChildren(pathToRoot[i-1]).size()<=indices[i]) {
+            /*if (elem.getChildren(pathToRoot[i-1]).size()<=indices[i]) {
+                logger.warn("Selection: Object: {} was not found @ idx {}, last parent: {}", indices, i, elem);
                 return null;
-                //logger.warn("Selection: Object: {} was not found @ idx {}, last parent: {}", indicies, i, elem);
-                //break IndexLoop;
             }
-            elem = elem.getChildren(pathToRoot[i-1]).get(indices[i]);
+            elem = elem.getChildren(pathToRoot[i-1]).get(indices[i]);*/
+            elem = getChild(elem.getChildren(pathToRoot[i-1]), indices[i]); // in case relabel was not performed -> safer method but slower
+            if (elem == null) {
+                //logger.warn("Selection: Object: {} was not found @ idx {}", indices, i);
+                return null;
+            }
         }
         return elem;
+    }
+    private static StructureObject getChild(List<StructureObject> list, int idx) {
+        for (StructureObject o : list) if (o.getIdx()==idx) return o;
+        return null;
     }
     
     public static int[] parseIndicies(String indicies) {
@@ -182,7 +193,7 @@ public class Selection implements Comparable<Selection> {
             elements.remove(fieldName);
             return;
         }
-        Set<String> indiciesList = get(fieldName, true);
+        Collection<String> indiciesList = get(fieldName, true);
         indiciesList.clear();
         for (StructureObject o : objectList) indiciesList.add(indiciesToString(StructureObjectUtils.getIndexTree(o)));
     }
@@ -204,7 +215,7 @@ public class Selection implements Comparable<Selection> {
                 if (!th.contains(elementToAdd.getTrackHead())) th.add(elementToAdd.getTrackHead());
             }
             // update DB refs
-            Set<String> els = get(elementToAdd.getFieldName(), true);
+            Collection<String> els = get(elementToAdd.getFieldName(), true);
             els.add(indiciesToString(StructureObjectUtils.getIndexTree(elementToAdd)));
             if (false && els.size()!=list.size()) {
                 logger.error("unconsitancy in selection: {}, {} vs: {}", this.toString(), list.size(), els.size());
@@ -224,7 +235,7 @@ public class Selection implements Comparable<Selection> {
         if (list!=null) {
             list.remove(elementToRemove);
             String ref= indiciesToString(StructureObjectUtils.getIndexTree(elementToRemove));
-            Set<String> els = get(elementToRemove.getFieldName(), false);
+            Collection<String> els = get(elementToRemove.getFieldName(), false);
             if (els!=null) els.remove(ref);
         }
         return false;

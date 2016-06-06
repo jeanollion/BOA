@@ -70,6 +70,8 @@ public class BacteriaLineageIndex implements Measurement {
         int trackHeadIdx = 0;
         for (StructureObject o : bacteria) {
             o.getMeasurements().setValue(key, getTrackHeadName(trackHeadIdx++));
+            int nextTP = o.getNextDivisionTimePoint();
+            o.getMeasurements().setValue("NextDivisionFrame", nextTP>=0?nextTP:null );
             modifiedObjects.add(o);
         }
         while(parentTrackHead.getNext()!=null) {
@@ -79,6 +81,11 @@ public class BacteriaLineageIndex implements Measurement {
                 if (o.getPrevious()==null) o.getMeasurements().setValue(key, getTrackHeadName(trackHeadIdx++));
                 else if (o.isTrackHead()) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[0]);
                 else o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[1]);
+                
+                int prevTP = o.getPreviousDivisionTimePoint();
+                o.getMeasurements().setValue("PreviousDivisionFrame", prevTP>0 ? prevTP : null);
+                int nextTP = o.getNextDivisionTimePoint();
+                o.getMeasurements().setValue("NextDivisionFrame", nextTP>=0?nextTP:null );
                 modifiedObjects.add(o);
             }
         }
@@ -88,6 +95,8 @@ public class BacteriaLineageIndex implements Measurement {
     public ArrayList<MeasurementKey> getMeasurementKeys() {
         ArrayList<MeasurementKey> res = new ArrayList<MeasurementKey>(1);
         res.add(new MeasurementKeyObject(keyName.getValue(), structure.getSelectedIndex()));
+        res.add(new MeasurementKeyObject("NextDivisionFrame", structure.getSelectedIndex()));
+        res.add(new MeasurementKeyObject("PreviousDivisionFrame", structure.getSelectedIndex()));
         return res;
     }
     

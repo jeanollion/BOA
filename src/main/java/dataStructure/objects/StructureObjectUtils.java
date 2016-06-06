@@ -399,27 +399,13 @@ public class StructureObjectUtils {
             }
         };
     }
-    public static Comparator<StructureObject> getStructureObjectTimePointComparator() {
-        return new Comparator<StructureObject>() {
-            public int compare(StructureObject arg0, StructureObject arg1) {
-                int comp = Integer.compare(arg0.getTimePoint(), arg1.getTimePoint());
-                if (comp == 0) {
-                    comp = Integer.compare(arg0.getStructureIdx(), arg1.getStructureIdx());
-                    if (comp == 0) {
-                        if (arg0.getParent() != null && arg1.getParent() != null) {
-                            comp = compare(arg0.getParent(), arg1.getParent());
-                            if (comp != 0) {
-                                return comp;
-                            }
-                        }
-                        return Integer.compare(arg0.getIdx(), arg1.getIdx());
-                    } else {
-                        return comp;
-                    }
-                } else {
-                    return comp;
-                }
-            }
-        };
+    static Comparator<StructureObject> timePointComparator = new Comparator<StructureObject>() {
+        public int compare(StructureObject arg0, StructureObject arg1) {
+            return  Integer.compare(arg0.getTimePoint(), arg1.getTimePoint());
+        }
+    };
+    public static Comparator<StructureObject> timePointComparator() {
+        return timePointComparator;
     }
+    
 }
