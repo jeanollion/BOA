@@ -138,9 +138,11 @@ public class MorphiumObjectDAO implements ObjectDAO {
         return res;
     }
     
-    public ArrayList<StructureObject> getChildren(StructureObject parent, int structureIdx) {
+    public List<StructureObject> getChildren(StructureObject parent, int structureIdx) {
         List<StructureObject> list = this.getChildrenQuery(parent, structureIdx).sort("idx").asList();
-        return checkAgainstCache(list);
+        list = checkAgainstCache(list);
+        //Collections.sort(list);
+        return list;
     }
     @Override 
     public void deleteChildren(Collection<StructureObject> parents, int structureIdx) {

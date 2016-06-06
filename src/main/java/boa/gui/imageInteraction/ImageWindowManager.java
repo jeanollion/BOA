@@ -22,6 +22,7 @@ import static boa.gui.GUI.logger;
 import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
+import static dataStructure.objects.StructureObjectUtils.timePointComparator;
 import ij.ImagePlus;
 import image.BoundingBox;
 import image.Image;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -349,6 +351,7 @@ public abstract class ImageWindowManager<T, U, V> {
                         hideObject(dispImage, roi);
                         labiles.remove(roi);
                         logger.debug("display -> inverse state: hide: {}", p.key);
+                        logger.debug("isTH: {}, values: {}", p.key.isTrackHead(), p.key.getMeasurements().getValues());
                     }
                 } else {
                     displayObject(dispImage, roi);
@@ -612,7 +615,7 @@ public abstract class ImageWindowManager<T, U, V> {
         parentTrackHeadTrackRoiMap.clear();
     }
     
-    public void goToNextTrackError(Image trackImage, List<StructureObject> tracks) {
+    public void goToNextTrackError(Image trackImage, List<StructureObject> trackHeads, boolean next) {
         //ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(rois.get(0).getParent().getTrackHead(), rois.get(0).getStructureIdx(), true));
         if (trackImage==null) {
             T selectedImage = displayer.getCurrentImage();
@@ -624,22 +627,32 @@ public abstract class ImageWindowManager<T, U, V> {
             return;
         }
         TrackMask tm = (TrackMask)i;
-        if (tracks==null || tracks.isEmpty()) tracks = this.getSelectedLabileTrackHeads(trackImage);
-        if (tracks==null || tracks.isEmpty()) {
+        if (trackHeads==null || trackHeads.isEmpty()) trackHeads = this.getSelectedLabileTrackHeads(trackImage);
+        if (trackHeads==null || trackHeads.isEmpty()) {
             List<StructureObject> allObjects = Pair.unpairKeys(i.getObjects());
-            tracks = StructureObjectUtils.getTrackHeads(allObjects);
+            trackHeads = StructureObjectUtils.getTrackHeads(allObjects);
         }
-        if (tracks==null || tracks.isEmpty()) return;
+        if (trackHeads==null || trackHeads.isEmpty()) return;
         BoundingBox currentDisplayRange = this.displayer.getDisplayRange(trackImage);
         int minTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMin());
         int maxTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMax());
-        if (maxTimePoint>minTimePoint+2) maxTimePoint-=2;
-        else maxTimePoint--;
+        if (next) {
+            if (maxTimePoint>minTimePoint+2) maxTimePoint-=2;
+            else maxTimePoint--;
+        } else {
+            if (maxTimePoint>minTimePoint+2) minTimePoint+=2;
+            else minTimePoint++;
+        }
         //logger.debug("Current Display range: {}, maxTimePoint: {}, number of selected rois: {}", currentDisplayRange, maxTimePoint, rois.size());
-        StructureObject nextError = getNextError(maxTimePoint, tracks);
-        if (nextError==null) logger.info("No errors detected after timepoint: {}", maxTimePoint);
+        StructureObject nextError = next ? getNextError(maxTimePoint, trackHeads) : getPreviousError(minTimePoint, trackHeads);
+        if (nextError==null) logger.info("No errors detected {} timepoint: {}", next? "after": "before", maxTimePoint);
         else {
             BoundingBox off = tm.getObjectOffset(nextError);
+            while(off==null) {
+                nextError = getNextObject(nextError.getTimePoint() + (next?1:-1), trackHeads, next);
+                if (nextError==null) return;
+                off = tm.getObjectOffset(nextError);
+            }
             int mid = (int)off.getXMean();
             if (mid+currentDisplayRange.getSizeX()/2>=trackImage.getSizeX()) mid = trackImage.getSizeX()-currentDisplayRange.getSizeX()/2;
             if (mid-currentDisplayRange.getSizeX()/2<0) mid = currentDisplayRange.getSizeX()/2;
@@ -648,9 +661,9 @@ public abstract class ImageWindowManager<T, U, V> {
             displayer.setDisplayRange(nextDisplayRange, trackImage);
         }
     }
-    public void goToPreviousTrackError(Image trackImage, List<StructureObject> tracks) {
+    
+    public void goToNextObject(Image trackImage, List<StructureObject> objects, boolean next) {
         //ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(rois.get(0).getParent().getTrackHead(), rois.get(0).getStructureIdx(), true));
-        if (tracks==null || tracks.isEmpty()) return;
         if (trackImage==null) {
             T selectedImage = displayer.getCurrentImage();
             trackImage = displayer.getImage(selectedImage);
@@ -661,32 +674,53 @@ public abstract class ImageWindowManager<T, U, V> {
             return;
         }
         TrackMask tm = (TrackMask)i;
-        if (tracks==null || tracks.isEmpty()) tracks = this.getSelectedLabileTrackHeads(trackImage);
-        if (tracks==null || tracks.isEmpty()) {
-            List<StructureObject> allObjects = Pair.unpairKeys(i.getObjects());
-            tracks = StructureObjectUtils.getTrackHeads(allObjects);
-        }
-        if (tracks==null || tracks.isEmpty()) return;
+        if (objects==null || objects.isEmpty()) objects = this.getSelectedLabileObjects(trackImage);
+        if (objects==null || objects.isEmpty()) objects = Pair.unpairKeys(i.getObjects());
+        if (objects==null || objects.isEmpty()) return;
         BoundingBox currentDisplayRange = this.displayer.getDisplayRange(trackImage);
         int minTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMin());
         int maxTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMax());
-        if (maxTimePoint>minTimePoint+2) minTimePoint+=2;
-        else minTimePoint++;
-        logger.debug("Current Display range: {}, minTimePoint: {}, number of selected tracks: {}", currentDisplayRange, minTimePoint, tracks.size());
-        StructureObject prevError = getPreviousError(minTimePoint, tracks);
-        if (prevError==null) logger.info("No errors detected before timepoint: {}", minTimePoint);
+        if (next) {
+            if (maxTimePoint>minTimePoint+2) maxTimePoint-=2;
+            else maxTimePoint--;
+        } else {
+            if (maxTimePoint>minTimePoint+2) minTimePoint+=2;
+            else minTimePoint++;
+        }
+        //logger.debug("Current Display range: {}, maxTimePoint: {}, number of selected rois: {}", currentDisplayRange, maxTimePoint, rois.size());
+        StructureObject nextObject = getNextObject(next? maxTimePoint: minTimePoint, objects, next);
+        if (nextObject==null) logger.info("No object detected {} timepoint: {}", next? "after" : "before", maxTimePoint);
         else {
-            BoundingBox off = tm.getObjectOffset(prevError);
+            BoundingBox off = tm.getObjectOffset(nextObject);
+            while(off==null) {
+                nextObject = getNextObject(nextObject.getTimePoint() + (next?1:-1), objects, next);
+                if (nextObject==null) return;
+                off = tm.getObjectOffset(nextObject);
+            }
             int mid = (int)off.getXMean();
             if (mid+currentDisplayRange.getSizeX()/2>=trackImage.getSizeX()) mid = trackImage.getSizeX()-currentDisplayRange.getSizeX()/2;
             if (mid-currentDisplayRange.getSizeX()/2<0) mid = currentDisplayRange.getSizeX()/2;
             BoundingBox nextDisplayRange = new BoundingBox(mid-currentDisplayRange.getSizeX()/2, mid+currentDisplayRange.getSizeX()/2, currentDisplayRange.getyMin(), currentDisplayRange.getyMax(), currentDisplayRange.getzMin(), currentDisplayRange.getzMax());
-            logger.info("Error detected @ timepoint: {}, xMid: {}, update display range: {}", prevError.getTimePoint(), mid,  nextDisplayRange);
+            logger.info("Object detected @ timepoint: {}, xMid: {}, update display range: {}", nextObject.getTimePoint(), mid,  nextDisplayRange);
             displayer.setDisplayRange(nextDisplayRange, trackImage);
         }
     }
-    private static StructureObject getNextError(int maxTimePoint, List<StructureObject> tracks) {
-        StructureObject[] trackArray = tracks.toArray(new StructureObject[tracks.size()]);
+    
+    private static StructureObject getNextObject(int timePointLimit, List<StructureObject> objects, boolean next) {
+        Collections.sort(objects, timePointComparator()); // sort by timePoint
+        int idx = Collections.binarySearch(objects, new StructureObject(timePointLimit, null, null), timePointComparator());
+        if (idx>=0) return objects.get(idx);
+        int insertionPoint = -idx-1;
+        if (next) {
+            if (insertionPoint<objects.size()-1) return objects.get(insertionPoint+1);
+        } else {
+            if (insertionPoint>0) return objects.get(insertionPoint-1);
+        }
+        return null;
+    }
+    
+    private static StructureObject getNextError(int maxTimePoint, List<StructureObject> tracksHeads) {
+        StructureObject[] trackArray = tracksHeads.toArray(new StructureObject[tracksHeads.size()]);
         boolean change = true;
         boolean remainTrack = true;
         int currentTimePoint = maxTimePoint;
@@ -708,8 +742,8 @@ public abstract class ImageWindowManager<T, U, V> {
         
         return null;
     }
-    private static StructureObject getPreviousError(int minTimePoint, List<StructureObject> tracks) {
-        StructureObject[] trackArray = tracks.toArray(new StructureObject[tracks.size()]);
+    private static StructureObject getPreviousError(int minTimePoint, List<StructureObject> trackHeads) {
+        StructureObject[] trackArray = trackHeads.toArray(new StructureObject[trackHeads.size()]);
         // get all rois to maximal value < errorTimePoint
         for (int trackIdx = 0; trackIdx<trackArray.length; ++trackIdx) {
             if (trackArray[trackIdx].getTimePoint()>=minTimePoint) trackArray[trackIdx] = null;

@@ -832,7 +832,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     @Override
     public String toString() {
-        return "P:"+getPositionIdx()+"/S:"+structureIdx+"/I:"+Selection.indiciesToString(StructureObjectUtils.getIndexTree(this))+"/id:"+id;
+        return "P:"+getPositionIdx()+"/S:"+structureIdx+"/I:"+Selection.indiciesToString(StructureObjectUtils.getIndexTree(this));//+"/id:"+id;
         //if (isRoot()) return "F:"+getPositionIdx() + ",T:"+timePoint;
         //else return "F:"+getPositionIdx()+ ",T:"+timePoint+ ",S:"+structureIdx+ ",Idx:"+idx+ ",P:["+getParent().toStringShort()+"]" + (flag==null?"":"{"+flag+"}") ;
     }
@@ -842,24 +842,17 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         else return "S:"+structureIdx+ ",Idx:"+idx+ ",P:["+getParent().toStringShort()+"]" ;
     }
     
+    @Override
     public int compareTo(StructureObject other) {
         int comp = Integer.compare(getTimePoint(), other.getTimePoint());
-        if (comp == 0) {
-            comp = Integer.compare(getStructureIdx(), other.getStructureIdx());
-            if (comp == 0) {
-                if (getParent() != null && other.getParent() != null) {
-                    comp = getParent().compareTo(other.getParent());
-                    if (comp != 0) {
-                        return comp;
-                    }
-                }
-                return Integer.compare(getIdx(), other.getIdx());
-            } else {
-                return comp;
-            }
-        } else {
-            return comp;
+        if (comp!=0) return comp;
+        comp = Integer.compare(getStructureIdx(), other.getStructureIdx());
+        if (comp!=0) return comp;
+        if (getParent() != null && other.getParent() != null) {
+            comp = getParent().compareTo(other.getParent());
+            if (comp!=0) return comp;
         }
+        return Integer.compare(getIdx(), other.getIdx());
     }
     
     // morphium-related methods

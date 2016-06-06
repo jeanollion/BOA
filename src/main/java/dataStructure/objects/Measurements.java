@@ -143,13 +143,14 @@ public class Measurements implements Comparable<Measurements>{
             }
         }
         return 0;
+        
     }
     
     @Override 
     public boolean equals(Object o) {
         if (o instanceof Measurements) {
             Measurements m = (Measurements)o;
-            if (fieldName == null ? m.fieldName != null : !fieldName.equals(m.fieldName)) return false;
+            if (!fieldName.equals(m.fieldName)) return false;
             if (structureIdx!=m.structureIdx) return false;
             if (timePoint!=m.timePoint) return false;
             return Arrays.equals(indicies, m.indicies);
@@ -159,7 +160,7 @@ public class Measurements implements Comparable<Measurements>{
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 83 * hash + (this.fieldName != null ? this.fieldName.hashCode() : 0);
+        hash = 83 * hash + this.fieldName.hashCode();
         hash = 83 * hash + this.timePoint;
         hash = 83 * hash + this.structureIdx;
         hash = 83 * hash + Arrays.hashCode(this.indicies);
@@ -181,5 +182,5 @@ public class Measurements implements Comparable<Measurements>{
         } 
         return new Measurements(fieldName, timePoint, structureIdx, Arrays.copyOfRange(indicies, 0, indicies.length-parentOrder));
     }
-    
+    public Object getValues() {return values;}
 }

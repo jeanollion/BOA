@@ -128,13 +128,14 @@ public class SelectionUtils {
             @Override public void mouseClicked(MouseEvent e) {
                 if (SwingUtilities.isRightMouseButton(e)) {
                     int row = list.locationToIndex(e.getPoint());
-                    if (!list.isSelectedIndex(row)) list.addSelectionInterval(row, row);
+                    if (!list.isSelectedIndex(row)) list.setSelectedIndex(row);
                     //logger.debug("right button on row: {}, ctrl {} ctrl", row, ctrl);
                     if (list.isSelectedIndex(row)) {
                         JPopupMenu menu = generateMenu(list);
                         menu.show(list, e.getX(), e.getY());
                     }
                 }
+                GUI.setNavigationButtonNames(list.getSelectedIndex()>=0);
             }
         });
     }

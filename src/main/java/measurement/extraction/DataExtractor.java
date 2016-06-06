@@ -64,7 +64,7 @@ public class DataExtractor {
         String line = m.getFieldName();
         int[] idx = m.getIndices();
         line+= Utils.toStringArray(idx, separator, "", Selection.indexSeparator);
-        for (int i : idx) line+=Selection.indexSeparator+i; // separated columns ..
+        for (int i : idx) line+=separator+i; // separated columns ..
         return line;
     }
     

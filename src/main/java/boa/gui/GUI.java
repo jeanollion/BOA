@@ -258,6 +258,19 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 logger.debug("TrackMode is {}", ImageWindowManager.displayTrackMode? "ON":"OFF");
             }
         });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_W, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Prev") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                previousTrackErrorButtonActionPerformed(e);
+            }
+        });
+        
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Next") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                nextTrackErrorButtonActionPerformed(e);
+            }
+        });
         
         kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         kfm.addKeyEventDispatcher( new KeyEventDispatcher() {
@@ -1446,7 +1459,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void nextTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextTrackErrorButtonActionPerformed
         if (!checkConnection()) return;
-        ImageWindowManagerFactory.getImageManager().goToNextTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads());
+        if (selectionList.getSelectedValuesList().isEmpty()) ImageWindowManagerFactory.getImageManager().goToNextTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads(), true);
+        else {
+            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null);
+            if (i==null) return;
+            List<StructureObject> objects = new ArrayList<StructureObject>();
+            for (Object s : selectionList.getSelectedValuesList()) objects.addAll(((Selection)s).getElements(i.getParent().getFieldName()));
+            ImageWindowManagerFactory.getImageManager().goToNextObject(null, objects, true);
+        }
     }//GEN-LAST:event_nextTrackErrorButtonActionPerformed
 
     private void splitObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_splitObjectsButtonActionPerformed
@@ -1465,7 +1485,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void previousTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_previousTrackErrorButtonActionPerformed
         if (!checkConnection()) return;
-        getImageManager().goToPreviousTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads());
+        if (selectionList.getSelectedValuesList().isEmpty()) ImageWindowManagerFactory.getImageManager().goToNextTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads(), false);
+        else {
+            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null);
+            if (i==null) return;
+            List<StructureObject> objects = new ArrayList<StructureObject>();
+            for (Object s : selectionList.getSelectedValuesList()) objects.addAll(((Selection)s).getElements(i.getParent().getFieldName()));
+            ImageWindowManagerFactory.getImageManager().goToNextObject(null, objects, false);
+        }
     }//GEN-LAST:event_previousTrackErrorButtonActionPerformed
 
     private void interactiveStructureActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_interactiveStructureActionPerformed
@@ -1935,6 +1962,17 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         getInstance().trackStructureJCB.setSelectedIndex(structureIdx);
         getInstance().trackStructureJCBActionPerformed(null);
     }
+    
+    public static void setNavigationButtonNames(boolean selectionsSelected) {
+        if (getInstance()==null) return;
+        if (selectionsSelected) {
+            getInstance().nextTrackErrorButton.setText("Go to Next Object in Selection (X)");
+            getInstance().previousTrackErrorButton.setText("Go to Prev. Object in Selection (W)");
+        } else {
+            getInstance().nextTrackErrorButton.setText("Go to Next Track Error (X)");
+            getInstance().previousTrackErrorButton.setText("Go to Prev. TrackError (W)");
+        }
+    } 
     
     /**
      * @param args the command line arguments

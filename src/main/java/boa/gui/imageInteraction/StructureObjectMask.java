@@ -117,12 +117,11 @@ public class StructureObjectMask extends ImageObjectInterface {
             return null;
         }
         if (objects==null) reloadObjects();
-        int i = objects.indexOf(object);
+        int i = this.childStructureIdx==object.getStructureIdx()? objects.indexOf(object) : -1;
         if (i >= 0) {
             return offsets[i];
         } else {
-            StructureObject p = object.getFirstCommonParent(parent);
-            //logger.debug("getOBjectOffset: {}, parent: {}, common parent: {}", object, parent, p);
+            StructureObject p = object.getFirstCommonParent(parent); // do not display objects that don't have a common parent not root
             if (p!=null && !p.isRoot()) return object.getRelativeBoundingBox(parent).translate(additionalOffset);
             else return null;
         }
