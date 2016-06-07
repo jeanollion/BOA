@@ -50,10 +50,11 @@ public class TestProcessBacteriaPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         //int time =31;
-        int time =0;
+        int time =10;
         int microChannel =0;
         int field = 0;
-        String dbName = "boa_mutd5_141209";
+        //String dbName = "boa_mutd5_141209";
+        String dbName = "boa_testBF";
         testSegBacteriesFromXP(dbName, field, time, microChannel);
         //testSegBacteriesFromXP(dbName, field, microChannel, 201, 400);
     }

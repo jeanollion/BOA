@@ -258,15 +258,15 @@ public class Utils {
     
     
     
-    public static void setSelectedValues(List selection, JList list, DefaultListModel model) {
+    public static <T> void setSelectedValues(Collection<T> selection, JList list, DefaultListModel<T> model) {
         List<Integer> selectedIndicies = new ArrayList<Integer>();
-        for (Object s : selection) {
+        for (T s : selection) {
             int i = model.indexOf(s);
             if (i!=-1) selectedIndicies.add(i);
-            if (!selectedIndicies.isEmpty()) {
+            //if (!selectedIndicies.isEmpty()) {
                 int[] res = Utils.toArray(selectedIndicies, false);
                 list.setSelectedIndices(res);
-            }
+            //}
         }
     }
     

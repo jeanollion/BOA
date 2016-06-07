@@ -179,7 +179,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         //double hessianThresholdFacto = 1;
         ImageMask mask = parent.getMask();
         pv.threshold = this.threshold.instanciatePlugin().runThresholder(pv.getDOG(), parent);
-        if (debug) logger.debug("threshold: {}", pv.threshold);
+        if (debug) {
+            new IJImageDisplayer().showImage(input.setName("input"));
+            logger.debug("threshold: {}", pv.threshold);
+        }
         // criterion for empty channel: 
         double[] musigmaOver = getMeanAndSigma(pv.getDOG(), mask, pv.threshold, true);
         double[] musigmaUnder = getMeanAndSigma(pv.getDOG(), mask, pv.threshold, false);
@@ -191,9 +194,13 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     }
     
     protected static ObjectPopulation getSeparatedObjects(ProcessingVariables pv, int minSizePropagation, int minSize, int objectMergeLimit, boolean debug) {
+        if (BacteriaTrans.debug) debug=true;
         IJImageDisplayer disp=debug?new IJImageDisplayer():null;
         ObjectPopulation res = WatershedTransform.watershed(pv.getDOG(), pv.getSegmentationMask(), false, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation));
-        if (debug) disp.showImage(res.getLabelMap().duplicate("watershed EDM"));
+        if (debug) {
+            disp.showImage(pv.getEDM());
+            disp.showImage(res.getLabelMap().duplicate("watershed EDM"));
+        }
         res.setVoxelIntensities(pv.getEDM()); // for getExtremaSeedList method called just afterwards
         res = WatershedTransform.watershed(pv.getEDM(), pv.getSegmentationMask(), res.getExtremaSeedList(true), true, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation));
         if (debug) {
@@ -505,14 +512,14 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 if (curvature==null) {
                     setBorderVoxels();
                     if (curvatureValue!=Double.NEGATIVE_INFINITY) curvature = Curvature.computeCurvature(getJoinedMask(), curvatureScale);
-                    /*if (debug && ((e1.getLabel()==1 && e2.getLabel()==2))) {
+                    if (debug && ((e1.getLabel()==1 && e2.getLabel()==2))) {
                         ImageInteger m = getJoinedMask().duplicate("joinedMask:"+e1.getLabel()+"+"+e2.getLabel()+" (2)");
                         for (Voxel v : voxels) m.setPixelWithOffset(v.x, v.y, v.z, 2);
                         for (Voxel v : borderVoxels) m.setPixelWithOffset(v.x, v.y, v.z, 3);
                         for (Voxel v : borderVoxels2) m.setPixelWithOffset(v.x, v.y, v.z, 4);
                         new IJImageDisplayer().showImage(m);
                         Curvature.displayCurvature(m, curvatureScale);
-                    }*/
+                    }
                 }
                 return curvature;
             }

@@ -460,6 +460,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }
     
     public void populateSelections() {
+        List<Selection> selectedValues = selectionList.getSelectedValuesList();
         this.selectionModel.removeAllElements();
         if (!checkConnection()) return;
         SelectionDAO dao = this.db.getSelectionDAO();
@@ -468,6 +469,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             selectionModel.addElement(sel);
             //logger.debug("Selection : {}, displayingObjects: {} track: {}", sel.getName(), sel.isDisplayingObjects(), sel.isDisplayingTracks());
         }
+        Utils.setSelectedValues(selectedValues, selectionList, selectionModel);
     }
     
     public List<Selection> getSelectedSelections() {
