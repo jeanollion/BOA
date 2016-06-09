@@ -51,10 +51,11 @@ public class RepairObjectInconsitencies {
         CORRECT_ALL, ERASE_ONLY_IF_UNLINKED, NEVER_ERASE;
     }
     public static void main(String[] args) {
-        //String dbName = "boa_fluo160501";
-        String dbName = "boa_160501";
+        String dbName = "boa_fluo160501";
+        //String dbName = "boa_160501";
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
-        repair(mDAO, mDAO.getExperiment().getFieldsAsString()[0], 1, NEVER_ERASE);
+        repair(mDAO, mDAO.getExperiment().getFieldsAsString()[1], 1, NEVER_ERASE);
+        repair(mDAO, mDAO.getExperiment().getFieldsAsString()[3], 1, NEVER_ERASE);
     }
     
     public static void repair(MasterDAO db, String positionName, int structureIdx, RepairMode r) {

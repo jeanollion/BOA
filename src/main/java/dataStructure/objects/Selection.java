@@ -279,7 +279,18 @@ public class Selection implements Comparable<Selection> {
     public int compareTo(Selection o) {
         return this.id.compareTo(o.id);
     }
-    
+
+    @Override
+    public int hashCode() {
+        return id.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Selection) {
+            return ((Selection)obj).id.equals(id);
+        } else return false;
+    }
     // morphium
     public Selection() {}
 

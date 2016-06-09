@@ -263,11 +263,12 @@ public class Utils {
         for (T s : selection) {
             int i = model.indexOf(s);
             if (i!=-1) selectedIndicies.add(i);
-            //if (!selectedIndicies.isEmpty()) {
-                int[] res = Utils.toArray(selectedIndicies, false);
-                list.setSelectedIndices(res);
-            //}
         }
+        //if (!selectedIndicies.isEmpty()) {
+            int[] res = Utils.toArray(selectedIndicies, false);
+            list.setSelectedIndices(res);
+            logger.debug("set selected indices on list: {}", res);
+        //}
     }
     
     private static double incrementColor(double h, double goldenRatioConjugate) {return (h+goldenRatioConjugate)%1;}
