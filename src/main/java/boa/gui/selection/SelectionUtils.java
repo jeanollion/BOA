@@ -23,6 +23,7 @@ import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import boa.gui.objects.StructureObjectTreeGenerator;
+import boa.gui.objects.TrackTreeController;
 import boa.gui.objects.TrackTreeGenerator;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.Selection;
@@ -36,7 +37,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -123,6 +126,19 @@ public class SelectionUtils {
         }
     }
     
+    public static void setHighlight(Collection<Selection> selections) {
+        Set<StructureObject> toHighlight = new HashSet<StructureObject>();
+        Set<StructureObject> toUnhighlight = new HashSet<StructureObject>();
+        for (Selection s : selections) {
+            if (s.isHighlightingTracks()) toHighlight.addAll(s.getAllElements());
+            else toUnhighlight.addAll(s.getAllElements());
+        }
+        toUnhighlight.removeAll(toHighlight);
+        if (GUI.getInstance()==null || GUI.getInstance().getTrackTrees()==null) return;
+        GUI.getInstance().getTrackTrees().setHighlight(toUnhighlight, false);
+        GUI.getInstance().getTrackTrees().setHighlight(toHighlight, true);
+    }
+    
     public static void setMouseAdapter(final JList list) {
         list.addMouseListener( new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) {
@@ -145,9 +161,11 @@ public class SelectionUtils {
         final List<Selection> selectedValues = list.getSelectedValuesList();
         int dispObjects=0;
         int dispTracks = 0;
+        int highTracks = 0;
         for (Selection s : selectedValues) {
             if (s.isDisplayingObjects()) dispObjects++;
             if (s.isDisplayingTracks()) dispTracks++;
+            if (s.isHighlightingTracks()) highTracks++;
         }
         final JCheckBoxMenuItem displayObjects = new JCheckBoxMenuItem("Display Objects");
         final SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
@@ -177,6 +195,22 @@ public class SelectionUtils {
             }
         });
         menu.add(displayTracks);
+        
+        final JCheckBoxMenuItem highlightTracks = new JCheckBoxMenuItem("Highlight in Track-Tree");
+        highlightTracks.setSelected(highTracks==selectedValues.size());
+        highlightTracks.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (selectedValues.isEmpty()) return;
+                Set<Selection> switched = new HashSet<Selection>(selectedValues.size());
+                for (Selection s : selectedValues ) {
+                    if (s.isHighlightingTracks()!=highlightTracks.isSelected()) switched.add(s);
+                    s.setHighlightingTracks(highlightTracks.isSelected());
+                    dao.store(s); // optimize if necessary -> update
+                }
+                setHighlight(switched);
+            }
+        });
+        menu.add(highlightTracks);
         
         menu.add(new JSeparator());
         JMenu colorMenu = new JMenu("Set Color");

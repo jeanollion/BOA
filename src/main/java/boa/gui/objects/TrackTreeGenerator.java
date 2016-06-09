@@ -47,8 +47,11 @@ import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import javax.swing.tree.MutableTreeNode;
 import utils.Utils;
 /**
@@ -60,7 +63,8 @@ public class TrackTreeGenerator {
     protected StructureObjectTreeModel treeModel;
     JTree tree;
     TrackTreeController controller;
-    
+    final private Set<StructureObject> highlightedObjects = new HashSet<StructureObject>();
+    final private Set<String> highlightedRoots = new HashSet<String>();
     public TrackTreeGenerator(MasterDAO db, TrackTreeController controller) {
         this.db = db;
         this.controller=controller;
@@ -73,7 +77,22 @@ public class TrackTreeGenerator {
     public Experiment getExperiment() {
         return db.getExperiment();
     }
-    
+    private void setHighlightedRoots(Collection<StructureObject> objects) {
+        for(StructureObject o : objects) highlightedRoots.add(o.getFieldName());
+    }
+    public void addHighlightedObjects(Collection<StructureObject> objects) {
+        highlightedObjects.addAll(objects);
+        setHighlightedRoots(objects);
+    }
+    public void removeHighlightedObjects(Collection<StructureObject> objects) {
+        highlightedObjects.removeAll(objects);
+        highlightedRoots.clear();
+        setHighlightedRoots(highlightedObjects);
+    }
+    public void clearHighlightedObjects() {
+        highlightedObjects.clear();
+        highlightedRoots.clear();
+    }
     public StructureObject getSelectedTrack() {
         if (hasSelection() && tree.getSelectionPath().getLastPathComponent() instanceof TrackNode) return ((TrackNode)tree.getSelectionPath().getLastPathComponent()).trackHead;
         else return null;
@@ -131,7 +150,7 @@ public class TrackTreeGenerator {
         if (root instanceof TrackExperimentNode) tree.setRootVisible(false);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
         tree.setOpaque(false);
-        tree.setCellRenderer(new TrackTreeCellRenderer());
+        tree.setCellRenderer(new TrackTreeCellRenderer(highlightedObjects, highlightedRoots));
         tree.setScrollsOnExpand(true);
         tree.addMouseListener(new MouseAdapter() {
             @Override
@@ -202,8 +221,9 @@ public class TrackTreeGenerator {
         for (StructureObject t : track) this.controller.objectGenerator.reload(t);
         
     }
+
     
-    public void selectTracks(List<StructureObject> trackHeads, boolean addToSelection) {
+    public void selectTracks(Collection<StructureObject> trackHeads, boolean addToSelection) {
         if (!addToSelection) tree.setSelectionRow(-1);
         if (trackHeads==null) return;
         List<TreePath> list = new ArrayList<TreePath>(trackHeads.size());
@@ -214,7 +234,7 @@ public class TrackTreeGenerator {
         Utils.addToSelectionPaths(tree, list);
     }
     
-    public void deselectTracks(List<StructureObject> trackHeads) {
+    public void deselectTracks(Collection<StructureObject> trackHeads) {
         if (trackHeads==null) return;
         List<TreePath> list = new ArrayList<TreePath>(trackHeads.size());
         for (StructureObject o : trackHeads) {

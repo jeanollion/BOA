@@ -470,6 +470,18 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             //logger.debug("Selection : {}, displayingObjects: {} track: {}", sel.getName(), sel.isDisplayingObjects(), sel.isDisplayingTracks());
         }
         Utils.setSelectedValues(selectedValues, selectionList, selectionModel);
+        setSelectionHighlight();
+    }
+    
+    public void setSelectionHighlight() {
+        if (trackTreeController==null) return;
+        trackTreeController.resetHighlight();
+        Set<Selection> toHighlight = new HashSet<Selection>();
+        for (int i = 0; i<selectionModel.getSize(); ++i) {
+            Selection sel = selectionModel.getElementAt(i);
+            if (sel.isHighlightingTracks()) toHighlight.add(sel);
+        }
+        SelectionUtils.setHighlight(toHighlight);
     }
     
     public List<Selection> getSelectedSelections() {
@@ -484,6 +496,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         
         trackTreeController = new TrackTreeController(db, objectTreeGenerator);
         setTrackTreeStructures(db.getExperiment().getStructuresAsString());
+        setSelectionHighlight();
     }
     
     private void populateExperimentList() {
@@ -609,6 +622,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void setStructure(int structureIdx) {
         trackTreeController.setStructure(structureIdx);
         displayTrackTrees();
+        // highlight les nouveaux trees...
     }
     
     public void displayTrackTrees() {

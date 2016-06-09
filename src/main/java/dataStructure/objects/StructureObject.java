@@ -135,10 +135,12 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return parent;
     }
     public StructureObject getParent(int parentStructureIdx) {
+        if (structureIdx==parentStructureIdx) return this;
+        if (parentStructureIdx<0) return getRoot();
         StructureObject p = this;
         while (p!=null && p.getStructureIdx()!=parentStructureIdx) p = p.getParent();
-        if (p.structureIdx!=parentStructureIdx) {
-            logger.error("Structure: {} is not in parent-tree of structure: {}", parentStructureIdx, this.structureIdx);
+        if (p==null || p.structureIdx!=parentStructureIdx) {
+            //logger.error("Structure: {} is not in parent-tree of structure: {}", parentStructureIdx, this.structureIdx);
             return null;
         }
         return p;

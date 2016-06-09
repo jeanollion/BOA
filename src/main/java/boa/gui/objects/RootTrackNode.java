@@ -59,6 +59,12 @@ public class RootTrackNode implements TrackNodeInterface {
         this.structureIdx=structureIdx;
         logger.trace("creating root track node for field: {} structure: {}", fieldName, structureIdx);
     }
+
+    public String getFieldName() {
+        return fieldName;
+    }
+    
+    
     
     public boolean containsError() {
         if (containsErrors==null) {
@@ -160,7 +166,9 @@ public class RootTrackNode implements TrackNodeInterface {
     }
     
     // TreeNode implementation
-    @Override public String toString() {return (parent!=null?fieldName+"::": "")+(structureIdx>=0?generator.getExperiment().getStructure(structureIdx).getName():"Root");}
+    @Override public String toString() {
+        return (parent!=null?fieldName+"::": "")+(structureIdx>=0?generator.getExperiment().getStructure(structureIdx).getName():"Root");
+    }
     
     public TrackNode getChildAt(int childIndex) {
         return getChildren().get(childIndex);

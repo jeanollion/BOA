@@ -54,7 +54,7 @@ public class TrackExperimentNode implements TreeNode, UIContainer {
     
     public RootTrackNode getRootNodeOf(StructureObject s) {
         for (RootTrackNode r : getChildren()) {
-            if (r.fieldName==s.getFieldName()) return r;
+            if (r.fieldName.equals(s.getFieldName())) return r;
         }
         return null;
     }
@@ -96,4 +96,5 @@ public class TrackExperimentNode implements TreeNode, UIContainer {
     public Enumeration children() {
         return Collections.enumeration(getChildren());
     }
+    
 }

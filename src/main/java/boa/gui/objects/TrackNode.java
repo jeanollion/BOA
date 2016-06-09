@@ -65,6 +65,10 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
         this.containsErrors = containsErrors;
     }
 
+    public StructureObject getTrackHead() {
+        return trackHead;
+    }
+    
     public List<StructureObject> getTrack() {
         if (track==null) track=root.generator.getObjectDAO(this.trackHead.getFieldName()).getTrack(trackHead);
         if (track==null) logger.error("Could not retrieve track from trackHead: {}", trackHead);
@@ -211,7 +215,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
     public void setParent(MutableTreeNode newParent) {
         this.parent=(TrackNodeInterface)newParent;
     }
-    
+
     class TrackNodeUI {
         TrackNode trackNode;
         JMenuItem[] actions;

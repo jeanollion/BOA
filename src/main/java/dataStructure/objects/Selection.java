@@ -49,6 +49,7 @@ public class Selection implements Comparable<Selection> {
     String color="Green";
     boolean displayingTracks=false;
     boolean displayingObjects=false;
+    boolean highlightingTracks=false;
     
     @Transient public final static String indexSeparator ="-";
     @Transient Map<String, Set<StructureObject>> retrievedElements= new HashMap<String, Set<StructureObject>>();
@@ -81,6 +82,14 @@ public class Selection implements Comparable<Selection> {
     public void setIsDisplayingObjects(boolean displayingObjects) {
         this.displayingObjects=displayingObjects;
     }
+
+    public boolean isHighlightingTracks() {
+        return highlightingTracks;
+    }
+
+    public void setHighlightingTracks(boolean highlightingTracks) {
+        this.highlightingTracks = highlightingTracks;
+    }
     
     public void setColor(String color) {
         this.color=color;
@@ -92,6 +101,12 @@ public class Selection implements Comparable<Selection> {
     
     public int getStructureIdx() {
         return structureIdx;
+    }
+    
+    public Set<StructureObject> getAllElements() {
+        Set<StructureObject> res = new HashSet<StructureObject>();
+        for (String f : elements.keySet()) res.addAll(getElements(f));
+        return res;
     }
     
     public Set<StructureObject> getElements(String fieldName) {

@@ -26,9 +26,11 @@ import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import javax.swing.JTree;
 
 /**
@@ -37,7 +39,7 @@ import javax.swing.JTree;
  */
 public class TrackTreeController {
     MasterDAO db;
-    HashMap<Integer, TrackTreeGenerator> generatorS;
+    TreeMap<Integer, TrackTreeGenerator> generatorS;
     int[] structurePathToRoot;
     StructureObjectTreeGenerator objectGenerator;
     boolean updateRoiDisplayWhenSelectionChange = true;
@@ -57,7 +59,7 @@ public class TrackTreeController {
     
     public void setStructure(int structureIdx) {
         structurePathToRoot = db.getExperiment().getPathToRoot(structureIdx);
-        HashMap<Integer, TrackTreeGenerator> newGeneratorS = new HashMap<Integer, TrackTreeGenerator>(db.getExperiment().getStructureCount());
+        TreeMap<Integer, TrackTreeGenerator> newGeneratorS = new TreeMap<Integer, TrackTreeGenerator>();
         for (int s: structurePathToRoot) {
             if (generatorS!=null && generatorS.containsKey(s)) newGeneratorS.put(s, generatorS.get(s));
             else newGeneratorS.put(s, new TrackTreeGenerator(db, this));
@@ -113,9 +115,7 @@ public class TrackTreeController {
     
     public TrackTreeGenerator getLastTreeGenerator() {
         if (generatorS.isEmpty()) return null;
-        int max = Integer.MIN_VALUE;
-        for (int i : this.generatorS.keySet()) if (i>max) max=i;
-        return generatorS.get(max);
+        return generatorS.lastEntry().getValue();
     }
     
     public TrackTreeGenerator getTreeGenerator(int structureIdx) {
@@ -128,7 +128,7 @@ public class TrackTreeController {
         return res;
     }*/
     
-    public HashMap<Integer, TrackTreeGenerator> getGeneratorS() {
+    public TreeMap<Integer, TrackTreeGenerator> getGeneratorS() {
         return generatorS;
     }
     
@@ -152,5 +152,16 @@ public class TrackTreeController {
     }
     public void deselectAllTracks(int structureIdx) {
         if (generatorS.containsKey(structureIdx)) generatorS.get(structureIdx).deselectAllTracks();
+    }
+    public void resetHighlight() {
+        for (TrackTreeGenerator t : generatorS.values()) t.clearHighlightedObjects();
+    }
+    public void setHighlight(Collection<StructureObject> objects, boolean highlight) {
+        for (Entry<Integer, TrackTreeGenerator> e  : generatorS.entrySet()) {
+            Collection<StructureObject> objectsToHighligh = StructureObjectUtils.getParentTrackHeads(objects, e.getKey(), false);
+            if (highlight) e.getValue().addHighlightedObjects(objectsToHighligh);
+            else e.getValue().removeHighlightedObjects(objectsToHighligh);
+            e.getValue().tree.updateUI();
+        }
     }
 }

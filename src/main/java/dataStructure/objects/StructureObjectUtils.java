@@ -370,6 +370,26 @@ public class StructureObjectUtils {
         return res;
     }
     
+    public static Set<StructureObject> getParents(Collection<StructureObject> objects, int parentStructureIdx, boolean strictParent) {
+        Set<StructureObject> res = new HashSet<StructureObject>();
+        for (StructureObject o : objects) {
+            if (strictParent && o.getStructureIdx()==parentStructureIdx) continue;
+            StructureObject p = o.getParent(parentStructureIdx);
+            if (p!=null) res.add(p);
+        }
+        return res;
+    }
+    
+    public static Set<StructureObject> getParentTrackHeads(Collection<StructureObject> objects, int parentStructureIdx, boolean strictParent) {
+        Set<StructureObject> res = new HashSet<StructureObject>();
+        for (StructureObject o : objects) {
+            if (strictParent && o.getStructureIdx()==parentStructureIdx) continue;
+            StructureObject p = o.getParent(parentStructureIdx);
+            if (p!=null) res.add(p.getTrackHead());
+        }
+        return res;
+    }
+    
     public static Set<StructureObject> getParentTrackHeads(Collection<StructureObject> objects) {
         Set<StructureObject> res = new HashSet<StructureObject>();
         for (StructureObject o : objects) res.add(o.getParent().getTrackHead());
