@@ -123,10 +123,8 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     }
     
     public void flushImages() {
-        if (inputImages!=null) {
-            inputImages.flush();
-            this.images.close();
-        }
+        if (inputImages!=null) inputImages.flush();
+        if (images!=null) images.close();
     }
     
     public BlankMask getMask() {
@@ -222,29 +220,53 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     }
     
     public class MicroscopyFieldUI implements ParameterUI {
-        JMenuItem[] openRawInput, openRawInputAll; 
-        JMenuItem openPreprocessedFrame, openPreprocessedAllFrames;
+        JMenuItem[] openRawInputAll; 
+        JMenuItem openRawFrame, openRawAllFrames, openPreprocessedFrame, openPreprocessedAllFrames;
         Object[] actions;
         public MicroscopyFieldUI() {
             actions = new Object[4];
             final String[] channelNames = getExperiment().getChannelImagesAsString();
-            JMenu rawInputSubMenu = new JMenu("Open Raw Input Image (default timepoint)");
-            actions[0] = rawInputSubMenu;
-            openRawInput=new JMenuItem[channelNames.length];
-            for (int i = 0; i < openRawInput.length; i++) {
-                openRawInput[i] = new JMenuItem(channelNames[i]);
-                openRawInput[i].setAction(new AbstractAction(channelNames[i]) {
-                        @Override
-                        public void actionPerformed(ActionEvent ae) {
-                            int channelIdx = getStructureIdx(ae.getActionCommand(), channelNames);
-                            Image im = getInputImages().getImage(channelIdx, defaultTimePoint.getSelectedTimePoint()).setName("Channel: "+channelIdx+" Frame: "+defaultTimePoint.getSelectedTimePoint());
-                            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(im);
+            openRawFrame = new JMenuItem("Open Raw Input Image (default frame)");
+            actions[0] = openRawFrame;
+            openRawFrame.setAction(new AbstractAction(openRawFrame.getActionCommand()) {
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    int channels = getExperiment().getChannelImageCount();
+                    Image[][] imagesTC = new Image[1][channels];
+                    for (int channelIdx = 0; channelIdx<channels; ++channelIdx) {
+                        imagesTC[0][channelIdx] = getInputImages().getImage(channelIdx, defaultTimePoint.getSelectedTimePoint()).setName("Channel: "+channelIdx+" Frame: "+defaultTimePoint.getSelectedTimePoint());
+                        if (imagesTC[0][channelIdx]==null) return;
+                    }
+                    flushImages();
+                    ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Raw Image of Position: "+name+ " Frame: "+defaultTimePoint.getSelectedTimePoint(), imagesTC);
+                }
+            }
+            );
+            
+            openRawAllFrames = new JMenuItem("Open Raw Input Frames");
+            actions[1] = openRawAllFrames;
+            openRawAllFrames.setAction(new AbstractAction(openRawAllFrames.getActionCommand()) {
+                @Override
+                public void actionPerformed(ActionEvent ae) {
+                    int channels = getExperiment().getChannelImageCount();
+                    int frames = getTimePointNumber(true);
+                    Image[][] imagesTC = new Image[frames][channels];
+                    for (int channelIdx = 0; channelIdx<channels; ++channelIdx) {
+                        for (int frame = 0; frame<frames; ++frame) {
+                            imagesTC[frame][channelIdx] = images.getImage(frame, channelIdx);
+                            if (imagesTC[frame][channelIdx]==null) {
+                                logger.error("Could not open image: channel: {} frame: {}", channelIdx, frame);
+                                return;
+                            }
                         }
                     }
-                );
-                rawInputSubMenu.add(openRawInput[i]);
+                    flushImages();
+                    ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Raw Image of Position: "+name, imagesTC);
+                }
             }
-            JMenu rawInputSubMenuAll = new JMenu("Open Raw Input Images");
+            );
+            
+            /*JMenu rawInputSubMenuAll = new JMenu("Open Raw Input Images");
             actions[1] = rawInputSubMenuAll;
             openRawInputAll=new JMenuItem[channelNames.length];
             for (int i = 0; i < openRawInputAll.length; i++) {
@@ -261,8 +283,8 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
                     }
                 );
                 rawInputSubMenuAll.add(openRawInputAll[i]);
-            }
-            openPreprocessedFrame = new JMenuItem("Open Pre-processed Default Frame");
+            }*/
+            openPreprocessedFrame = new JMenuItem("Open Pre-processed (Default Frame)");
             openPreprocessedFrame.setAction(new AbstractAction(openPreprocessedFrame.getActionCommand()) {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
@@ -272,6 +294,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
                             imagesTC[0][channel] = getExperiment().getImageDAO().openPreProcessedImage(channel, defaultTimePoint.getSelectedTimePoint(), name);
                             if (imagesTC[0][channel]==null) return;
                         }
+                        flushImages();
                         ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("PreProcessed Image of Position: "+name+ " Frame: "+defaultTimePoint.getSelectedTimePoint(), imagesTC);
                     }
                 }
@@ -290,6 +313,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
                                 if (imagesTC[frame][channel]==null) return;
                             }
                         }
+                        flushImages();
                         ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("PreProcessed Images of Position: "+name, imagesTC);
                     }
                 }

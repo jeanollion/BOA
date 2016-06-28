@@ -267,7 +267,7 @@ public class Utils {
         //if (!selectedIndicies.isEmpty()) {
             int[] res = Utils.toArray(selectedIndicies, false);
             list.setSelectedIndices(res);
-            logger.debug("set selected indices on list: {}", res);
+            //logger.debug("set selected indices on list: {}", res);
         //}
     }
     

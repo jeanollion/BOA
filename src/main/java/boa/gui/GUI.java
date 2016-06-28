@@ -627,8 +627,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     
     public void displayTrackTrees() {
         this.trackSubPanel.removeAll();
-        HashMap<Integer, JTree> newCurrentTrees = new HashMap<Integer, JTree>(trackTreeController.getGeneratorS().size());
-        for (Entry<Integer, TrackTreeGenerator> e : trackTreeController.getGeneratorS().entrySet()) {
+        HashMap<Integer, JTree> newCurrentTrees = new HashMap<Integer, JTree>(trackTreeController.getDisplayedGeneratorS().size());
+        for (Entry<Integer, TrackTreeGenerator> e : trackTreeController.getDisplayedGeneratorS().entrySet()) {
             final Entry<Integer, TrackTreeGenerator> entry = e;
             final JTree tree = entry.getValue().getTree();
             if (tree!=null) {
@@ -666,7 +666,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         }
         currentTrees = newCurrentTrees;
-        logger.trace("display track tree: number of trees: {} subpanel component count: {}",trackTreeController.getGeneratorS().size(), trackSubPanel.getComponentCount() );
+        logger.trace("display track tree: number of trees: {} subpanel component count: {}",trackTreeController.getDisplayedGeneratorS().size(), trackSubPanel.getComponentCount() );
         trackSubPanel.revalidate();
         trackSubPanel.repaint();
     }

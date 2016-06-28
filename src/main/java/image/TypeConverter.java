@@ -86,14 +86,18 @@ public class TypeConverter {
      * 
      * @param image input image to be converted
      * @param output image to cast values to. if null, a new image will be created
-     * @return a mask represented as an ImageByte, each non-zero voxel of {@param image} has a value of 1
+     * @param value value of voxels contained in mask
+     * @return a mask represented as an ImageByte, each non-zero voxel of {@param image} has a value of {@param value}
      */
-    public static ImageByte toByteMask(ImageMask image, ImageByte output) {
+    public static ImageByte toByteMask(ImageMask image, ImageByte output, int value) {
         if (output==null || !output.sameSize(image)) output = new ImageByte(image.getName(), image);
+        if (value>255) value = 255;
+        if (value<0) value = 0;
+        byte  v = (byte)value;
         byte[][] newPixels = output.getPixelArray();
         for (int z = 0; z<image.getSizeZ(); ++z) {
             for (int xy = 0; xy<image.getSizeXY(); ++xy) {
-                if (image.insideMask(xy, z)) newPixels[z][xy] = 1;
+                if (image.insideMask(xy, z)) newPixels[z][xy] = v;
             }
         }
         return output;
@@ -116,7 +120,7 @@ public class TypeConverter {
             if (mm[1]>(65535)) return toFloat(image, null);
             else return toShort(image, null);
         }
-        else if (image instanceof ImageMask) return toByteMask((ImageMask)image, null);
+        else if (image instanceof ImageMask) return toByteMask((ImageMask)image, null, 1);
         else return toFloat(image, null);
     }
     

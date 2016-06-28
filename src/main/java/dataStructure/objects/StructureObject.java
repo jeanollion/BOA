@@ -56,7 +56,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected int timePoint;
     @Transient protected StructureObject previous, next; 
     private ObjectId nextId, previousId;
-    private ObjectId parentTrackHeadId, trackHeadId;
+    private ObjectId parentTrackHeadId, trackHeadId; // TODO remove parentTrackHeadId
     @Transient protected StructureObject trackHead;
     protected boolean isTrackHead=true;
     protected TrackFlag flag=null;

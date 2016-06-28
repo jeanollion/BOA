@@ -252,7 +252,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                 @Override public void actionPerformed(ActionEvent e) {
                     //trackNode.trackHead.getDAO().delete(track, true);
                     //trackNode.getParent().getChildren().remove(trackNode);
-                    trackNode.root.generator.controller.getGeneratorS().get(trackHead.getStructureIdx()).deleteSelectedTracks();
+                    trackNode.root.generator.controller.getTreeGenerator(trackHead.getStructureIdx()).deleteSelectedTracks();
                 }
             });
             
@@ -382,7 +382,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
             }
             addToSelection.setAction(new AbstractAction("Add to Selected Selection(s)") {
                 @Override public void actionPerformed(ActionEvent e) {
-                    List<StructureObject> sel = trackNode.root.generator.controller.getGeneratorS().get(trackHead.getStructureIdx()).getSelectedTrackHeads();
+                    List<StructureObject> sel = trackNode.root.generator.controller.getTreeGenerator(trackHead.getStructureIdx()).getSelectedTrackHeads();
                     SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
                     for (Selection s : GUI.getInstance().getSelectedSelections()) {
                         if (s.getStructureIdx()==-1 || s.getStructureIdx()==trackHead.getStructureIdx()) {
@@ -395,7 +395,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
             });
             removeFromSelection.setAction(new AbstractAction("Remove from Selected Selection(s)") {
                 @Override public void actionPerformed(ActionEvent e) {
-                    List<StructureObject> sel = trackNode.root.generator.controller.getGeneratorS().get(trackHead.getStructureIdx()).getSelectedTrackHeads();
+                    List<StructureObject> sel = trackNode.root.generator.controller.getTreeGenerator(trackHead.getStructureIdx()).getSelectedTrackHeads();
                     SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
                     for (Selection s : GUI.getInstance().getSelectedSelections()) {
                         if (s.getStructureIdx()==-1 || s.getStructureIdx()==trackHead.getStructureIdx()) {

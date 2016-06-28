@@ -300,13 +300,13 @@ public class ImageFeatures {
         return Image.mergeZPlanes(planes).setName("Laplacian Scale-Space");
     }
     
-    public static Image getScaleSpaceLaplacianNorm(Image plane, double[] scales, double... multiplicativeCoefficient) {
+    public static Image getScaleSpaceLaplacianNorm(Image plane, double[] scales, Image norm, double... multiplicativeCoefficient) {
         if (plane.getSizeZ()>1) throw new IllegalArgumentException("2D image only");
         ArrayList<ImageFloat> planes = new ArrayList<ImageFloat>(scales.length);
         for (double s : scales) {
             ImageFloat im = ImageFeatures.getLaplacian(plane, s, true, false);
-            ImageFloat norm = ImageFeatures.gaussianSmooth(plane, s, s, false);
-            ImageOperations.divide(im, norm, im, multiplicativeCoefficient);
+            Image n = norm==null? ImageFeatures.gaussianSmooth(plane, s, s, false) : norm;
+            ImageOperations.divide(im, n, im, multiplicativeCoefficient);
             planes.add(im);
         }
         return Image.mergeZPlanes(planes).setName("Laplacian Norm Scale-Space");

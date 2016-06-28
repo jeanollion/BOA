@@ -124,7 +124,7 @@ public class BlankMask extends ImageInteger implements ImageMask {
 
     @Override
     public Object[] getPixelArray() {
-        return TypeConverter.toByteMask(this, null).getPixelArray();
+        return TypeConverter.toByteMask(this, null, 1).getPixelArray();
     }
 
     @Override

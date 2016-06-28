@@ -185,6 +185,7 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
         if (intermediateImages!=null) {
             //intermediateImages.add(input);
             intermediateImages.add(scaleSpace);
+            intermediateImages.add(ImageFeatures.getScaleSpaceLaplacianNorm(input, radii, smooth));
             intermediateImages.add(seedsSP);
         }
         

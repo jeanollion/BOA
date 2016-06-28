@@ -105,6 +105,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             }
 
             public void mouseReleased(MouseEvent e) {
+                logger.debug("tool : {}", IJ.getToolName());
                 if (IJ.getToolName().equals("zoom") || IJ.getToolName().equals("hand") || IJ.getToolName().equals("multipoint") || IJ.getToolName().equals("point")) return;
                 //int m = e.getModifiers();
                 //boolean addToSelection = (m & ActionEvent.CTRL_MASK) == ActionEvent.CTRL_MASK;

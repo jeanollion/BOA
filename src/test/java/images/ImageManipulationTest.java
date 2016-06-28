@@ -67,7 +67,7 @@ public class ImageManipulationTest {
         ImageInt imInt = new ImageInt("im test int", 2, 2, 2);
         imInt.setPixel(0, 1, 1, Integer.MAX_VALUE);
         imInt.setPixel(0, 0, 1, 2);
-        ImageByte imByte = TypeConverter.toByteMask(imInt, null);
+        ImageByte imByte = TypeConverter.toByteMask(imInt, null, 1);
         assertEquals("Read voxel value: mask", imByte.getPixelInt(0, 1, 1), 1);
         
         ImageFloat imFloat = TypeConverter.toFloat(imInt, null);

@@ -40,6 +40,23 @@ public class SimpleCrop implements Cropper {
     Parameter[] parameters = new Parameter[]{xMin, xLength, yMin, yLength, zMin, zLength};
     BoundingBox bounds;
     int[] configurationData;
+    public SimpleCrop(){}
+    public SimpleCrop(int x, int xL, int y, int yL, int z, int zL){
+        xMin.setValue(x);
+        xLength.setValue(xL);
+        yMin.setValue(y);
+        yLength.setValue(yL);
+        zMin.setValue(z);
+        zLength.setValue(zL);
+    }
+    public SimpleCrop(int... bounds){
+        if (bounds.length>0) xMin.setValue(bounds[0]);
+        if (bounds.length>1) xLength.setValue(bounds[1]);
+        if (bounds.length>2) yMin.setValue(bounds[2]);
+        if (bounds.length>3) yLength.setValue(bounds[3]);
+        if (bounds.length>4) zMin.setValue(bounds[4]);
+        if (bounds.length>5) zLength.setValue(bounds[5]);
+    }
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
         Image input = inputImages.getImage(channelIdx, inputImages.getDefaultTimePoint());
         if (xLength.getValue().intValue()==0) xLength.setValue(input.getSizeX()-xMin.getValue().intValue());

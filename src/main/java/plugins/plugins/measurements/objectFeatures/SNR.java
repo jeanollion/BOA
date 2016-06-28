@@ -88,7 +88,7 @@ public class SNR extends IntensityMeasurement {
         childrenParentMap = new HashMap<Object3D, Object3D>();
         for (Object3D p : parents) {
             ImageMask ref = p.getMask();
-            ImageByte mask  = TypeConverter.toByteMask(ref, null).setName("mask:");
+            ImageByte mask  = TypeConverter.toByteMask(ref, null, 1).setName("mask:");
             ArrayList<Object3D> children = parentChildrenMap.get(p);
             if (children!=null) {
                 if (backgroundObject.getSelectedStructureIdx()==super.parent.getStructureIdx()) {

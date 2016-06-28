@@ -56,6 +56,7 @@ import plugins.plugins.transformations.SaturateHistogram;
 import plugins.plugins.transformations.ScaleHistogramSignalExclusion;
 import plugins.plugins.transformations.ScaleHistogramSignalExclusionY;
 import plugins.plugins.transformations.SelectBestFocusPlane;
+import plugins.plugins.transformations.SimpleCrop;
 import plugins.plugins.transformations.SuppressCentralHorizontalLine;
 import processing.ImageTransformation;
 
@@ -73,24 +74,25 @@ public class GenerateTestXP {
         boolean fluo = true;
         */
         int trimStart=0, trimEnd=0;
+        int[] cropXYdXdY;
         double scaleXY = Double.NaN;
         //////// FLUO
         // Ordi LJP
-        /*String dbName = "fluo151130_OutputNewScaling";
-        String outputDir = "/data/Images/Fluo/films1511/151130/OutputNewScaling";
-        String inputDir = "/data/Images/Fluo/films1511/151130/ME120R63-30112015-lr62r1";
+        /*String dbName = "boa_fluo151130_OutputNewScaling";
+        String outputDir = "/data/Images/Fluo/film151130/OutputNewScaling";
+        String inputDir = "/data/Images/Fluo/film151130/ME120R63-30112015-lr62r1";
         boolean flip = true;
         boolean fluo = true;
         */
         
-        /*String dbName = "fluo151127";
-        String outputDir = "/data/Images/Fluo/films1511/151127/Output";
-        String inputDir = "/data/Images/Fluo/films1511/151127/ME121R-27112015-laser";
+        /*String dbName = "boa_fluo151127";
+        String outputDir = "/data/Images/Fluo/film151127/Output";
+        String inputDir = "/data/Images/Fluo/film151127/ME121R-27112015-laser";
         boolean flip = true; 
         boolean fluo = true;
         */
         
-        /*String dbName = "fluo160218";
+        /*String dbName = "boa_fluo160218";
         String inputDir = "/data/Images/Fluo/film160218/ME120R63-18022016-LR62r";
         String outputDir = "/data/Images/Fluo/film160218/Output";
         boolean flip = false;
@@ -98,7 +100,7 @@ public class GenerateTestXP {
         */
         
         /*
-        String dbName = "fluo160217";
+        String dbName = "boa_fluo160217";
         String inputDir = "/data/Images/Fluo/film160217/ME120R63-17022016-LR62r";
         String outputDir = "/data/Images/Fluo/film160217/Output";
         boolean flip = false;
@@ -107,31 +109,42 @@ public class GenerateTestXP {
         */
         
         
-        /*String dbName = "fluo160212";
+        /*String dbName = "boa_fluo160212";
         String inputDir = "/data/Images/Fluo/film160212/ImagesSubset0-120/";
         String outputDir = "/data/Images/Fluo/film160212/Output";
         boolean flip = true;
         boolean fluo = true;
         */
-        
-        /*String dbName = "fluo160311";
+        // moitié droite des cannaux hors focus + perte de focus après 700
+        String dbName = "boa_fluo160311";
         String inputDir = "/data/Images/Fluo/film160311/ME121R-11032016-lr62r2/";
         String outputDir = "/data/Images/Fluo/film160311/Output/";
         boolean flip = true;
+        boolean fluo = true;
+        trimEnd=800;
+        cropXYdXdY=new int[]{0, 512, 512, 1024};
+        /*
+        // perte de focus seulement 300 frames
+        String dbName = "boa_fluo160314";
+        String inputDir = "/data/Images/Fluo/film160314/ME121R-14032016-lr62r2/";
+        String outputDir = "/data/Images/Fluo/film160314/Output/";
+        boolean flip = true;
         boolean fluo = true;*/
         
-        /*String dbName = "fluo160407";
+        /*String dbName = "boa_fluo160407";
         String inputDir = "/data/Images/Fluo/film160407/me121r-lr62r2-07042016";
         String outputDir = "/data/Images/Fluo/film160407/Output/";
         boolean flip = false;
-        boolean fluo = true;*/
-        
-        /*String dbName = "fluo160408";
+        boolean fluo = true;
+        */
+        /*
+        // bactérie sortent des cannaux
+        String dbName = "boa_fluo160408";
         String inputDir = "/data/Images/Fluo/film160408/me121r-laser1-08042016/";
         String outputDir = "/data/Images/Fluo/film160408/Output/";
         boolean flip = true;
-        boolean fluo = true;
-        */
+        boolean fluo = true;*/
+        
         
         /*String dbName = "boa_fluo160428";
         String inputDir = "/data/Images/Fluo/film160428/63121r-laser1-28042016/";
@@ -177,18 +190,18 @@ public class GenerateTestXP {
         boolean fluo = false;
         scaleXY = 0.0646;*/
         
-        String dbName = "boa_mutd5_141209";
+        /*String dbName = "boa_mutd5_141209";
         String inputDir = "/data/Images/Phase/09122014_mutd5_lb-lr62repl/mg6300mutd5_LB_lr62replic2_oil37.nd2";
         String outputDir = "/data/Images/Phase/09122014_mutd5_lb-lr62repl/Output";
         boolean flip = true;
         boolean fluo = false;
-        //scaleXY = 0.0646;
+        */
         
         boolean performProcessing = false;
         
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
         mDAO.reset();
-        Experiment xp = fluo ? generateXPFluo(outputDir, true, flip, trimStart, trimEnd, scaleXY) : generateXPTrans(outputDir, true, flip, trimStart, trimEnd, scaleXY); 
+        Experiment xp = fluo ? generateXPFluo(outputDir, true, flip, trimStart, trimEnd, scaleXY, cropXYdXdY) : generateXPTrans(outputDir, true, flip, trimStart, trimEnd, scaleXY); 
         mDAO.setExperiment(xp);
         
         Processor.importFiles(xp, true, inputDir);
@@ -201,7 +214,7 @@ public class GenerateTestXP {
     }
     
     
-    public static Experiment generateXPFluo(String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY) {
+    public static Experiment generateXPFluo(String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY, int[] crop) {
         
         Experiment xp = new Experiment("testXP");
         xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
@@ -228,6 +241,7 @@ public class GenerateTestXP {
         if (setUpPreProcessing) {// preProcessing 
             //xp.getPreProcessingTemplate().addTransformation(0, null, new SuppressCentralHorizontalLine(6)).setActivated(false);
             if (!Double.isNaN(scaleXY)) xp.getPreProcessingTemplate().setCustomScale(scaleXY, 1);
+            if (crop!=null) xp.getPreProcessingTemplate().addTransformation(0, null, new SimpleCrop(crop));
             xp.getPreProcessingTemplate().setTrimFrames(trimFramesStart, trimFramesEnd);
             xp.getPreProcessingTemplate().addTransformation(0, null, new SaturateHistogram(350, 450));
             xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1, 0)).setActivated(true); // to remove salt and pepper noise

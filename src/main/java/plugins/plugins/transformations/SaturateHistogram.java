@@ -54,7 +54,7 @@ public class SaturateHistogram implements Transformation {
         final double factor = (maxTarget - thld) / (maxObs - thld);
         final double add = thld * (1 - factor);
 
-        image.getBoundingBox().loop(new LoopFunction() {
+        image.getBoundingBox().translateToOrigin().loop(new LoopFunction() {
 
             public void setUp() {}
 

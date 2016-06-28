@@ -28,8 +28,11 @@ import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.TreeMap;
 import javax.swing.JTree;
 
@@ -39,7 +42,8 @@ import javax.swing.JTree;
  */
 public class TrackTreeController {
     MasterDAO db;
-    TreeMap<Integer, TrackTreeGenerator> generatorS;
+    TreeMap<Integer, TrackTreeGenerator> displayedGeneratorS;
+    HashMap<Integer, TrackTreeGenerator> allGeneratorS;
     int[] structurePathToRoot;
     StructureObjectTreeGenerator objectGenerator;
     boolean updateRoiDisplayWhenSelectionChange = true;
@@ -47,6 +51,9 @@ public class TrackTreeController {
     public TrackTreeController(MasterDAO db, StructureObjectTreeGenerator objectGenerator) {
         this.db = db;
         this.objectGenerator=objectGenerator;
+        allGeneratorS = new HashMap<Integer, TrackTreeGenerator>();
+        for (int s = 0; s<db.getExperiment().getStructureCount(); ++s) allGeneratorS.put(s, new TrackTreeGenerator(db, this));
+        displayedGeneratorS=new TreeMap<Integer, TrackTreeGenerator>();
     }
 
     public boolean isUpdateRoiDisplayWhenSelectionChange() {
@@ -59,26 +66,27 @@ public class TrackTreeController {
     
     public void setStructure(int structureIdx) {
         structurePathToRoot = db.getExperiment().getPathToRoot(structureIdx);
-        TreeMap<Integer, TrackTreeGenerator> newGeneratorS = new TreeMap<Integer, TrackTreeGenerator>();
-        for (int s: structurePathToRoot) {
-            if (generatorS!=null && generatorS.containsKey(s)) newGeneratorS.put(s, generatorS.get(s));
-            else newGeneratorS.put(s, new TrackTreeGenerator(db, this));
+        if (structureIdx<0) {
+            for (TrackTreeGenerator t : displayedGeneratorS.values()) t.clearTree();
+            displayedGeneratorS.clear();
+            return;
         }
-        generatorS=newGeneratorS;
+        displayedGeneratorS.clear();
+        for (int s: structurePathToRoot) displayedGeneratorS.put(s, allGeneratorS.get(s));
         updateParentTracks();
-        if (logger.isTraceEnabled()) logger.trace("track tree controller set structure: number of generators: {}", generatorS.size());
+        if (logger.isTraceEnabled()) logger.trace("track tree controller set structure: number of generators: {}", displayedGeneratorS.size());
     }
     
     private int getLastTreeIdxWithSelection() {
         for (int i = structurePathToRoot.length-1; i>=0; --i) {
-            if (generatorS.get(structurePathToRoot[i]).hasSelection()) return i;
+            if (displayedGeneratorS.get(structurePathToRoot[i]).hasSelection()) return i;
         }
         return -1;
     }
     
     public void updateParentTracks() {
         int lastTreeIdx = getLastTreeIdxWithSelection();
-        if (lastTreeIdx+1<structurePathToRoot.length && !generatorS.get(structurePathToRoot[lastTreeIdx+1]).hasSelection()) {
+        if (lastTreeIdx+1<structurePathToRoot.length && !displayedGeneratorS.get(structurePathToRoot[lastTreeIdx+1]).hasSelection()) {
             updateParentTracks(lastTreeIdx);
         }
     }
@@ -91,7 +99,7 @@ public class TrackTreeController {
         if (lastSelectedTreeIdx==-1) setParentTrackOnRootTree();
         else if (lastSelectedTreeIdx+1<structurePathToRoot.length) {
             //logger.debug("setting parent track on tree for structure: {}", structurePathToRoot[lastSelectedTreeIdx+1]);
-            generatorS.get(structurePathToRoot[lastSelectedTreeIdx+1]).setParentTrack(generatorS.get(structurePathToRoot[lastSelectedTreeIdx]).getSelectedTrack(), structurePathToRoot[lastSelectedTreeIdx+1]);
+            allGeneratorS.get(structurePathToRoot[lastSelectedTreeIdx+1]).setParentTrack(allGeneratorS.get(structurePathToRoot[lastSelectedTreeIdx]).getSelectedTrack(), structurePathToRoot[lastSelectedTreeIdx+1]);
             clearTreesFromIdx(lastSelectedTreeIdx+2);
         }
     }
@@ -99,12 +107,12 @@ public class TrackTreeController {
     public void clearTreesFromIdx(int treeIdx) {
         for (int i = treeIdx; i < structurePathToRoot.length; ++i) {
             logger.debug("clearing tree for structure: {}", structurePathToRoot[i]);
-            generatorS.get(structurePathToRoot[i]).clearTree();
+            allGeneratorS.get(structurePathToRoot[i]).clearTree();
         }
     }
     
     public void setParentTrackOnRootTree() {
-        generatorS.get(structurePathToRoot[0]).setRootParentTrack(false, structurePathToRoot[0]);
+        allGeneratorS.get(structurePathToRoot[0]).setRootParentTrack(false, structurePathToRoot[0]);
         clearTreesFromIdx(1);
     }
     
@@ -114,12 +122,12 @@ public class TrackTreeController {
     }
     
     public TrackTreeGenerator getLastTreeGenerator() {
-        if (generatorS.isEmpty()) return null;
-        return generatorS.lastEntry().getValue();
+        if (displayedGeneratorS.isEmpty()) return null;
+        return displayedGeneratorS.lastEntry().getValue();
     }
     
     public TrackTreeGenerator getTreeGenerator(int structureIdx) {
-        return generatorS.get(structureIdx);
+        return allGeneratorS.get(structureIdx);
     }
     
     /*public ArrayList<JTree> getTrees() {
@@ -128,8 +136,8 @@ public class TrackTreeController {
         return res;
     }*/
     
-    public TreeMap<Integer, TrackTreeGenerator> getGeneratorS() {
-        return generatorS;
+    public TreeMap<Integer, TrackTreeGenerator> getDisplayedGeneratorS() {
+        return displayedGeneratorS;
     }
     
     public void selectTracks(List<StructureObject> trackHeads, boolean addToCurrentSelection) {
@@ -140,7 +148,7 @@ public class TrackTreeController {
         int structureIdx = StructureObjectUtils.getStructureIdx(trackHeads);
         if (structureIdx == -2) throw new IllegalArgumentException("TrackHeads have different structure indicies");
         // TODO : select parent tracks in previous trees
-        if (generatorS.containsKey(structureIdx)) generatorS.get(structureIdx).selectTracks(trackHeads, addToCurrentSelection);
+        allGeneratorS.get(structureIdx).selectTracks(trackHeads, addToCurrentSelection);
     }
     public void deselectTracks(List<StructureObject> trackHeads) {
         if (trackHeads==null) return;
@@ -148,20 +156,20 @@ public class TrackTreeController {
         int structureIdx = StructureObjectUtils.getStructureIdx(trackHeads);
         logger.debug("unselect : {} tracks from structure: {}", trackHeads.size(), structureIdx);
         if (structureIdx == -2) throw new IllegalArgumentException("TrackHeads have different structure indicies");
-        if (generatorS.containsKey(structureIdx)) generatorS.get(structureIdx).deselectTracks(trackHeads);
+        allGeneratorS.get(structureIdx).deselectTracks(trackHeads);
     }
     public void deselectAllTracks(int structureIdx) {
-        if (generatorS.containsKey(structureIdx)) generatorS.get(structureIdx).deselectAllTracks();
+        allGeneratorS.get(structureIdx).deselectAllTracks();
     }
     public void resetHighlight() {
-        for (TrackTreeGenerator t : generatorS.values()) t.clearHighlightedObjects();
+        for (TrackTreeGenerator t : allGeneratorS.values()) t.clearHighlightedObjects();
     }
     public void setHighlight(Collection<StructureObject> objects, boolean highlight) {
-        for (Entry<Integer, TrackTreeGenerator> e  : generatorS.entrySet()) {
+        for (Entry<Integer, TrackTreeGenerator> e  : allGeneratorS.entrySet()) {
             Collection<StructureObject> objectsToHighligh = StructureObjectUtils.getParentTrackHeads(objects, e.getKey(), false);
             if (highlight) e.getValue().addHighlightedObjects(objectsToHighligh);
             else e.getValue().removeHighlightedObjects(objectsToHighligh);
-            e.getValue().tree.updateUI();
+            if (e.getValue().tree!=null) e.getValue().tree.updateUI();
         }
     }
 }

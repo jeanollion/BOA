@@ -384,6 +384,7 @@ public class StructureObjectUtils {
         Set<StructureObject> res = new HashSet<StructureObject>();
         for (StructureObject o : objects) {
             if (strictParent && o.getStructureIdx()==parentStructureIdx) continue;
+            if (parentStructureIdx>o.getStructureIdx()) continue;
             StructureObject p = o.getParent(parentStructureIdx);
             if (p!=null) res.add(p.getTrackHead());
         }
