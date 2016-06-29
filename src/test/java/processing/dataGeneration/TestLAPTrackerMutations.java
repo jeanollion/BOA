@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import plugins.PluginFactory;
+import plugins.plugins.segmenters.MutationSegmenterScaleSpace2;
 import plugins.plugins.trackers.LAPTracker;
 import plugins.plugins.trackers.trackMate.SpotWithinCompartment;
 import utils.ThreadRunner;
@@ -54,13 +55,14 @@ public class TestLAPTrackerMutations {
     static final int mutationIdx = 2;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        final String dbName = "boa_fluo160428";
+        final String dbName = "fluo160407";
         final int fieldIdx = 0;
         //final String dbName = "boa_fluo160428";
         //final int fieldIdx = 0;
-        final int mcIdx = 0;
+        final int mcIdx = 8;
         TestLAPTrackerMutations t = new TestLAPTrackerMutations();
-        t.init(dbName, fieldIdx, mcIdx, 0, 15);
+        
+        t.init(dbName, fieldIdx, mcIdx, 482, 496);
         t.testLAPTracking();
         
         // multithread version testing
@@ -98,6 +100,7 @@ public class TestLAPTrackerMutations {
         TextRoi.setFont("SansSerif", 6, Font.PLAIN);
         
         LAPTracker tracker = new LAPTracker().setCompartimentStructure(bacteriaIdx);
+        tracker.setSegmenter(new MutationSegmenterScaleSpace2()).setSpotQualityThreshold(10);
         tracker.segmentAndTrack(mutationIdx, parentTrack, null, null);
         
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, mutationIdx);

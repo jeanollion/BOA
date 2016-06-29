@@ -86,6 +86,10 @@ public class LAPTracker implements TrackerSegmenter {
         this.spotQualityThreshold.setValue(threshold);
         return this;
     }
+    public LAPTracker setSegmenter(Segmenter s) {
+        segmenter.setPlugin(s);
+        return this;
+    }
     @Override public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
         SegmentThenTrack stt = new SegmentThenTrack(segmenter.instanciatePlugin(), this);
         if (preFilters!=null) stt.addPreFilters(preFilters.get());
@@ -121,6 +125,7 @@ public class LAPTracker implements TrackerSegmenter {
         logger.debug("LAP Tracker: {}, spot HQ: {}, #spots LQ: {}, time: {}", parentTrack.get(0), spotCollection.getSpotSet(true, false).size(), spotCollection.getSpotSet(false, true).size(), t1-t0);
         LAPTrackerCore core = new LAPTrackerCore(spotCollection);
         boolean processOk = true;
+        
         if (LQSpots) {
             // first run to select  LQ spots linked to HQ spots
             double maxD = Math.max(maxLinkingDistanceGC, maxLinkingDistance);
@@ -140,7 +145,10 @@ public class LAPTracker implements TrackerSegmenter {
         processOk = core.processGC(maxLinkingDistanceGC, maxGap, true, true);
         
         if (!processOk) logger.error("LAPTracker error : {}", core.getErrorMessage());
-        else spotCollection.setTrackLinks(parentTrack, structureIdx, core.getEdges());
+        else {
+            spotCollection.setTrackLinks(parentTrack, structureIdx, core.getEdges());
+            
+        }
         
         // post-processing
         MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, spotCollection);

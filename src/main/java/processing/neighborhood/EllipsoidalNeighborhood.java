@@ -175,7 +175,7 @@ public class EllipsoidalNeighborhood extends DisplacementNeighborhood {
             for (int i = 0; i<dx.length; ++i) {
                 xx=v.x+dx[i];
                 yy=v.y+dy[i];
-                if (p.contains(xx, yy, 0)) res.add(new Voxel(xx, yy, 0));
+                if (p.contains(xx, yy, v.z)) res.add(new Voxel(xx, yy, v.z));
             }
         }
     }

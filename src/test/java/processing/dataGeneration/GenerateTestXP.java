@@ -74,7 +74,7 @@ public class GenerateTestXP {
         boolean fluo = true;
         */
         int trimStart=0, trimEnd=0;
-        int[] cropXYdXdY;
+        int[] cropXYdXdY=null;
         double scaleXY = Double.NaN;
         //////// FLUO
         // Ordi LJP
@@ -85,12 +85,13 @@ public class GenerateTestXP {
         boolean fluo = true;
         */
         
-        /*String dbName = "boa_fluo151127";
+        // mutH. blink
+        String dbName = "boa_fluo151127";
         String outputDir = "/data/Images/Fluo/film151127/Output";
         String inputDir = "/data/Images/Fluo/film151127/ME121R-27112015-laser";
         boolean flip = true; 
         boolean fluo = true;
-        */
+        
         
         /*String dbName = "boa_fluo160218";
         String inputDir = "/data/Images/Fluo/film160218/ME120R63-18022016-LR62r";
@@ -115,6 +116,7 @@ public class GenerateTestXP {
         boolean flip = true;
         boolean fluo = true;
         */
+        /*
         // moitié droite des cannaux hors focus + perte de focus après 700
         String dbName = "boa_fluo160311";
         String inputDir = "/data/Images/Fluo/film160311/ME121R-11032016-lr62r2/";
@@ -123,6 +125,7 @@ public class GenerateTestXP {
         boolean fluo = true;
         trimEnd=800;
         cropXYdXdY=new int[]{0, 512, 512, 1024};
+        */
         /*
         // perte de focus seulement 300 frames
         String dbName = "boa_fluo160314";

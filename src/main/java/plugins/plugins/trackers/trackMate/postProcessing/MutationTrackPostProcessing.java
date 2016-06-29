@@ -162,8 +162,8 @@ public class MutationTrackPostProcessing {
                 // remove object
                 parentsToRelabel.add(objectToRemove.getParent());
                 objectToRemove.resetTrackLinks();
-                //pop.removeSpot(objectToRemove);
-                //objectToRemove.getParent().getChildren(spotStructureIdx).remove(objectToRemove);
+                pop.removeSpot(objectToRemove);
+                objectToRemove.getParent().getChildren(spotStructureIdx).remove(objectToRemove);
             }
         }
         for (StructureObject p : parentsToRelabel) p.relabelChildren(spotStructureIdx);

@@ -28,6 +28,8 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import image.IJImageWrapper;
 import image.Image;
+import image.ImageFloat;
+import image.TypeConverter;
 import java.util.ArrayList;
 import plugins.PreFilter;
 import plugins.TransformationTimeIndependent;
@@ -55,24 +57,24 @@ public class IJSubtractBackground implements PreFilter, TransformationTimeIndepe
     public IJSubtractBackground(){}
     
     public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
-        
-        filter(input, radius.getValue().doubleValue(), !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), corners.getSelected());
-        return input;
+        return filter(input, radius.getValue().doubleValue(), !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), corners.getSelected());
     }
     /**
      * IJ's subtrract background {@link ij.plugin.filter.BackgroundSubtracter#rollingBallBackground(ij.process.ImageProcessor, double, boolean, boolean, boolean, boolean, boolean) }
-     * @param input will be modified
+     * @param input input image (will not be modified)
      * @param radius
      * @param doSlidingParaboloid
      * @param lightBackground
      * @param smooth
      * @param corners
-     * @return {@param input} for convinience
+     * @return subtracted image 
      */
-    public static Image filter(Image input, double radius, boolean doSlidingParaboloid, boolean lightBackground, boolean smooth, boolean corners) {
+    public static ImageFloat filter(Image input, double radius, boolean doSlidingParaboloid, boolean lightBackground, boolean smooth, boolean corners) {
+        if (!(input instanceof ImageFloat)) input = TypeConverter.toFloat(input, null);
+        else input = input.duplicate();
         ImageStack ip = IJImageWrapper.getImagePlus(input).getImageStack();
         for (int z = 0; z<input.getSizeZ(); ++z) new ij.plugin.filter.BackgroundSubtracter().rollingBallBackground(ip.getProcessor(z+1), radius, false, lightBackground, doSlidingParaboloid, smooth, corners);
-        return input;
+        return (ImageFloat)input;
     }
 
     public Parameter[] getParameters() {
@@ -90,8 +92,7 @@ public class IJSubtractBackground implements PreFilter, TransformationTimeIndepe
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {}
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        filter(image, radius.getValue().doubleValue(), !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), corners.getSelected());
-        return image;
+        return filter(image, radius.getValue().doubleValue(), !method.getSelected(), !imageType.getSelected(), smooth.getSelected(), corners.getSelected());
     }
     
     public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {

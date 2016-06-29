@@ -90,7 +90,7 @@ public class DisplayFilms {
         for (int c = 0; c<imageTC[0].length; ++c) {
             float[] minAndMax = new float[]{Float.MAX_VALUE, -Float.MAX_VALUE}; // get Min and max over time
             for (int t = 0; t<imageTC.length; ++t) {
-                if (c==1) IJSubtractBackground.filter(imageTC[t][c], 15, false, false, true, false);
+                if (c==1) imageTC[t][c]=IJSubtractBackground.filter(imageTC[t][c], 15, false, false, true, false);
                 if (cropBB!=null) imageTC[t][c] = imageTC[t][c].crop(cropBB).resetOffset();
                 float[] minAndMaxTemp = imageTC[t][c].getMinAndMax(null);
                 if (minAndMaxTemp[0]<minAndMax[0]) minAndMax[0] = minAndMaxTemp[0];

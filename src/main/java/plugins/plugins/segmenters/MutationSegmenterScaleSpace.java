@@ -50,6 +50,7 @@ import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
 import plugins.plugins.measurements.objectFeatures.IntensityRatio;
 import plugins.plugins.measurements.objectFeatures.SNR;
 import plugins.plugins.postFilters.FeatureFilter;
+import plugins.plugins.preFilter.IJSubtractBackground;
 import processing.Filters;
 import processing.ImageFeatures;
 import processing.MultiScaleWatershedTransform;
@@ -75,10 +76,13 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
     NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 3, 1.5, 0, null);
     NumberParameter intensityThreshold = new BoundedNumberParameter("Intensity Threshold for Seeds", 2, 115, 0, null);
     PostFilterSequence postFilters = new PostFilterSequence("Post-Filters").add(new FeatureFilter(new SNR().setBackgroundObjectStructureIdx(1), 0.75, true, true));
-    Parameter[] parameters = new Parameter[]{minSpotSize, thresholdHigh,  thresholdLow, intensityThreshold, postFilters};
-    
+    Parameter[] parameters;
+    public List<Image> intermediateImages;
+    public MutationSegmenterScaleSpace() {
+        parameters = new Parameter[]{minSpotSize, thresholdHigh,  thresholdLow, intensityThreshold, postFilters};
+    }
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        ObjectPopulation res= run(input, parent.getMask(), minSpotSize.getValue().intValue(), intensityThreshold.getValue().doubleValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), null);
+        ObjectPopulation res= runPlaneHybrid(input, parent.getMask());
         return postFilters.filter(res, structureIdx, (StructureObject)parent);
     }
     public PostFilterSequence getPostFilters() {return postFilters;}
@@ -86,27 +90,6 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
     public MutationSegmenterScaleSpace setThresholdSeeds(double threshold) {
         this.thresholdHigh.setValue(threshold);
         return this;
-    }
-    
-    public static ObjectPopulation run(Image input, ImageMask mask, int minSpotSize, double thresholdSeedsIntensity, double thresholdHigh , double thresholdLow, ArrayList<Image> intermediateImages) {
-        if (input.getSizeZ()>1) {
-            /*
-            // tester sur average, max, ou plan par plan
-            ArrayList<Image> planes = input.splitZPlanes();
-            ArrayList<ObjectPopulation> populations = new ArrayList<ObjectPopulation>(planes.size());
-            for (Image plane : planes) {
-                ObjectPopulation obj = runPlaneHybrid(plane, mask, minSpotSize, thresholdHigh, thresholdLow, intermediateImages);
-                //if (true) return obj;
-                if (obj!=null && !obj.getObjects().isEmpty()) populations.add(obj);
-            }
-            if (populations.isEmpty()) return new ObjectPopulation(new ArrayList<Object3D>(0), planes.get(0));
-            // combine: 
-            ObjectPopulation pop = populations.remove(populations.size()-1);
-            pop.combine(populations);
-            return pop;
-            */
-            throw new Error("MutationSegmenter: should be run only a 2D image");
-        } else return runPlaneHybrid(input, mask, minSpotSize, thresholdSeedsIntensity, thresholdHigh, thresholdLow, intermediateImages);
     }
     
     /*public static ObjectPopulation runPlane(Image input, ImageMask mask, int minSpotSize, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
@@ -160,20 +143,21 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
         return pop;
     }*/
     
-    public static ObjectPopulation runPlaneHybrid(Image input, ImageMask mask, int minSpotSize, double thresholdSeedsIntensity, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
+    public ObjectPopulation runPlaneHybrid(Image input, ImageMask mask) {
         if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
         double[] radii = new double[]{2, 2.5, 3, 3.5, 6, 7}; // 5,7 ??
         int maxScaleIdx=radii.length-1-2;
         int maxScaleWSIdx=1;
         Image smooth = ImageFeatures.gaussianSmooth(input, 2, 2, false);
+        //Image sb = IJSubtractBackground.filter(input, 6, false, false, true, false).setName("sub");
         Image scaleSpace = getScaleSpace(input, smooth, radii); 
-        ImageByte seedsSP = getSeedsScaleSpace(scaleSpace, thresholdSeeds, 1.5, maxScaleIdx);
+        ImageByte seedsSP = getSeedsScaleSpace(scaleSpace, thresholdHigh.getValue().doubleValue(), 1.5, maxScaleIdx);
         //new IJImageDisplayer().showImage(seedsSP.duplicate("before filter intensity"));
         //new IJImageDisplayer().showImage(smooth.duplicate("smoothed"));
         // filter by intensity : remove seeds with low intensity
         for (int z = 0; z<seedsSP.getSizeZ(); ++z) {
             for (int xy = 0; xy<seedsSP.getSizeXY(); ++xy) {
-                if (seedsSP.insideMask(xy, z) && smooth.getPixel(xy, 0)<thresholdSeedsIntensity) seedsSP.setPixel(xy, z, 0);
+                if (seedsSP.insideMask(xy, z) && smooth.getPixel(xy, 0)<intensityThreshold.getValue().doubleValue()) seedsSP.setPixel(xy, z, 0);
             }
         }
         Image[] wsMaps = scaleSpace.splitZPlanes(0, maxScaleWSIdx).toArray(new Image[0]);
@@ -186,28 +170,40 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
             //intermediateImages.add(input);
             intermediateImages.add(scaleSpace);
             intermediateImages.add(ImageFeatures.getScaleSpaceLaplacianNorm(input, radii, smooth));
+            intermediateImages.add(ImageFeatures.getScaleSpaceLaplacian(input, radii).setName("lap"));
+            
+            Image sub = IJSubtractBackground.filter(input, 6, false, false, true, false).setName("sub");
+            intermediateImages.add(sub);
+            intermediateImages.add(ImageFeatures.getScaleSpaceLaplacian(sub, radii).setName("lap sub"));
+            intermediateImages.add(ImageFeatures.getScaleSpaceLaplacianNorm(sub, radii, smooth).setName("lap sub norm"));
             intermediateImages.add(seedsSP);
         }
         
         
-        ObjectPopulation pop =  MultiScaleWatershedTransform.watershed(wsMaps, mask, seedMaps, true, new MultiScaleWatershedTransform.MultiplePropagationCriteria(new MultiScaleWatershedTransform.ThresholdPropagationOnWatershedMap(thresholdPropagation)), new MultiScaleWatershedTransform.SizeFusionCriterion(minSpotSize));// minSpotSize->1 //, new MultiScaleWatershedTransform.MonotonalPropagation()
+        ObjectPopulation pop =  MultiScaleWatershedTransform.watershed(wsMaps, mask, seedMaps, true, new MultiScaleWatershedTransform.MultiplePropagationCriteria(new MultiScaleWatershedTransform.ThresholdPropagationOnWatershedMap(thresholdLow.getValue().doubleValue())), new MultiScaleWatershedTransform.SizeFusionCriterion(minSpotSize.getValue().intValue()));// minSpotSize->1 //, new MultiScaleWatershedTransform.MonotonalPropagation()
         
         pop.filter(new ObjectPopulation.RemoveFlatObjects(input));
-        pop.filter(new ObjectPopulation.Size().setMin(minSpotSize));
+        pop.filter(new ObjectPopulation.Size().setMin(minSpotSize.getValue().intValue()));
         return pop;
     }
     
-    private static Image getScaleSpace(Image input, Image norm, double[] radii) {
+    
+    
+    protected static Image getScaleSpace(Image input, Image norm, double[] radii) {
         //return ImageFeatures.getScaleSpaceHessianMax(input, radii);
         //return ImageFeatures.getScaleSpaceHessianMax(input, radii);
         return ImageFeatures.getScaleSpaceHessianMaxNorm(input, radii, norm, 100); // ou scale = 3
     }
     
-    private static ImageByte getSeedsScaleSpace(Image scaleSpace, double thresholdSeeds, double radius, int maxScaleIdx) {
+    protected static ImageByte getSeedsScaleSpace(Image scaleSpace, double thresholdSeeds, double radius, int maxScaleIdx) {
         return Filters.localExtrema(scaleSpace, null, true, thresholdSeeds, new ConditionalNeighborhoodZ(new CylindricalNeighborhood(radius, 1, false)).setNeighborhood(maxScaleIdx, new CylindricalNeighborhood(radius, 1, 2, false)) ).setName("seedsSP"); //new CylindricalNeighborhood(2, 1, false) //
     }
     
-    private static void combineSeeds(ImageByte input, ImageByte output, Image watershedMap, double scale) { // seeds from other plane do not necessaryly correspond to a local max in the current plane
+    protected static ImageByte getSeedsScaleSpace(Image scaleSpace, double thresholdSeeds, double radius) {
+        return Filters.localExtrema(scaleSpace, null, true, thresholdSeeds, new CylindricalNeighborhood(radius, 1, false)).setName("seedsSP");
+    }
+    
+    protected static void combineSeeds(ImageByte input, ImageByte output, Image watershedMap, double scale) { // seeds from other plane do not necessaryly correspond to a local max in the current plane
         ObjectPopulation seedPop0 = new ObjectPopulation(input, false);
         EllipsoidalNeighborhood n = new EllipsoidalNeighborhood(scale, false);
         for (Object3D o : seedPop0.getObjects()) {
@@ -250,7 +246,7 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
     
     // manual segmenter implementation
     
-    private boolean verboseManualSeg;
+    protected boolean verboseManualSeg;
     public void setManualSegmentationVerboseMode(boolean verbose) {
         this.verboseManualSeg=verbose;
     }

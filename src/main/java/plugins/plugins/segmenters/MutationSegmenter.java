@@ -98,7 +98,7 @@ public class MutationSegmenter implements Segmenter {
     public static ObjectPopulation runPlane(Image input, ImageMask mask, double scale, double subtractBackgroundScale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
         if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
         IJImageDisplayer disp = debug?new IJImageDisplayer():null;
-        input = IJSubtractBackground.filter(input.duplicate("sub"), subtractBackgroundScale, false, false, true, false);
+        input = IJSubtractBackground.filter(input, subtractBackgroundScale, false, false, true, false);
         //Image lap = ImageFeatures.getLaplacian(input, scale, true, false).setName("laplacian: "+scale);
         //Image lapSP = ImageFeatures.getScaleSpaceLaplacian(input, new double[]{2, 4, 6, 8, 10});
         //Image hessSP = ImageFeatures.getScaleSpaceHessianDet(input, new double[]{2, 4, 6, 8, 10});

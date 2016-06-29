@@ -92,6 +92,13 @@ public class Filters {
         return min.crop(image.getBoundingBox().translateToOrigin().translate(offset));
     }
     
+    public static <T extends Image> T tophat(Image image, Image imageForBackground, T output, Neighborhood neighborhood) {
+        T open =open(imageForBackground, output, neighborhood).setName("Tophat of: "+image.getName());
+        ImageOperations.addImage(image, open, open, -1); //1-open
+        open.resetOffset().addOffset(image);
+        return open;
+    }
+    
     public static <T extends Image> T tophat(Image image, T output, Neighborhood neighborhood) {
         T open =open(image, output, neighborhood).setName("Tophat of: "+image.getName());
         ImageOperations.addImage(image, open, open, -1); //1-open

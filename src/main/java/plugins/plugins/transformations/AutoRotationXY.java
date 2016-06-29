@@ -117,8 +117,8 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     public static double computeRotationAngleXY(Image image, int z, int backgroundSubtractionRadius, double ang1, double ang2, double stepsize, float[] proj, boolean var, double filterScale) {
         // subtract background
         if (backgroundSubtractionRadius>0) {
-            image = image.duplicate(image.getName());
-            IJSubtractBackground.filter(image, backgroundSubtractionRadius, true, false, true, false);
+            //image = image.duplicate(image.getName());
+            image = IJSubtractBackground.filter(image, backgroundSubtractionRadius, true, false, true, false);
         }
         // initial search
         double[] angles = getAngleArray(ang1, ang2, stepsize);

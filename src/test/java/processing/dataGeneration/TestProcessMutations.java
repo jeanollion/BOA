@@ -42,6 +42,7 @@ import plugins.PluginFactory;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.MutationSegmenter;
 import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
+import plugins.plugins.segmenters.MutationSegmenterScaleSpace2;
 import plugins.plugins.segmenters.SpotFluo2D5;
 import processing.neighborhood.CylindricalNeighborhood;
 import processing.neighborhood.EllipsoidalNeighborhood;
@@ -58,20 +59,22 @@ public class TestProcessMutations {
         //String dbName = "testSub60";
         final String dbName = "fluo160407";
         int fIdx = 0;
-        int mcIdx =8;
+        int mcIdx =1;
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
-        t.testSegMutationsFromXP(fIdx, mcIdx, true, 220, 220); 
+        t.testSegMutationsFromXP(fIdx, mcIdx, true, 7, 12);
     }
     
     public void testSegMutation(StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
         Image input = parent.getRawImage(2);
         ImageInteger parentMask = parent.getMask();
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
-        ObjectPopulation pop = MutationSegmenterScaleSpace.runPlaneHybrid(input.getZPlane(0), parentMask, 5, 115, 2.5, 1.25, intermediateImages);
-        ImageInteger beforePF = pop.getLabelMap().duplicate("Before Post-Filters");
-        ObjectPopulation popPF = new MutationSegmenterScaleSpace().getPostFilters().filter(pop, 2, parent);
+        MutationSegmenterScaleSpace seg = new MutationSegmenterScaleSpace2();
+        seg.intermediateImages=intermediateImages;
+        ObjectPopulation popPF = seg.runSegmenter(input, 2, parent);
+        //ImageInteger beforePF = pop.getLabelMap().duplicate("Before Post-Filters");
+        //ObjectPopulation popPF = new MutationSegmenterScaleSpace().getPostFilters().filter(pop, 2, parent);
         
         //ObjectPopulation pop = MutationSegmenterScaleSpace.runPlane(input.getZPlane(0), parentMask, 5, 4, 0.75, intermediateImages);
         if (parentMask_!=null) parentMask_.add(parentMask);
@@ -79,7 +82,7 @@ public class TestProcessMutations {
         if (outputLabel!=null) outputLabel.add(popPF.getLabelMap());
         //if (outputLabel!=null) outputLabel.add(beforePF);
         if (intermediateImages_!=null) {
-            intermediateImages.add(beforePF);
+            //intermediateImages.add(beforePF);
             intermediateImages.add(parent.getObjectPopulation(1).getLabelMap().setName("bacteria"));
             intermediateImages_.add(intermediateImages);
         }
