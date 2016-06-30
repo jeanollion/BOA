@@ -174,6 +174,10 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         else return 0;
     }
     
+    public int getDefaultTimePoint() {
+        return defaultTimePoint.getSelectedTimePoint();
+    }
+    
     public int getSizeZ(int channelIdx) {
         if (images!=null) return images.getSizeZ(channelIdx);
         else return -1;

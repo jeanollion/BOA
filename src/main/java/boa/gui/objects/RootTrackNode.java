@@ -17,9 +17,18 @@
  */
 package boa.gui.objects;
 
+import boa.gui.GUI;
 import static boa.gui.GUI.logger;
+import boa.gui.imageInteraction.ImageObjectInterface;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import core.Processor;
+import dataStructure.configuration.MicroscopyField;
+import dataStructure.objects.Selection;
+import dataStructure.objects.SelectionDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
+import image.Image;
+import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,14 +38,18 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import javax.swing.AbstractAction;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
+import utils.ThreadRunner;
 
 /**
  *
  * @author nasique
  */
-public class RootTrackNode implements TrackNodeInterface {
+public class RootTrackNode implements TrackNodeInterface, UIContainer {
     TrackTreeGenerator generator;
     private ArrayList<TrackNode> children;
     private TreeMap<Integer, List<StructureObject>> remainingTrackHeadsTM;
@@ -223,5 +236,61 @@ public class RootTrackNode implements TrackNodeInterface {
 
     public void setParent(MutableTreeNode newParent) {
         this.parent=(TrackExperimentNode)newParent;
+    }
+    
+    // UIContainer implementation
+    @Override public Object[] getDisplayComponent(boolean multipleSelection) {
+        return (new RootTrackNodeUI()).getDisplayComponent(multipleSelection);
+    }
+    
+    class RootTrackNodeUI {
+        JMenuItem openPreprocessedFrame, openPreprocessedAllFrames;
+        Object[] actions;
+        
+        public RootTrackNodeUI() {
+            this.actions = new JMenuItem[2];
+            openPreprocessedFrame = new JMenuItem("Open Pre-processed (Default Frame)");
+            openPreprocessedFrame.setAction(new AbstractAction(openPreprocessedFrame.getActionCommand()) {
+                    @Override
+                    public void actionPerformed(ActionEvent ae) {
+                        int channels = generator.db.getExperiment().getChannelImageCount();
+                        Image[][] imagesTC = new Image[1][channels];
+                        MicroscopyField f = generator.db.getExperiment().getMicroscopyField(fieldName);
+                        for (int channel = 0; channel<channels; ++channel) {
+                            imagesTC[0][channel] = generator.db.getExperiment().getImageDAO().openPreProcessedImage(channel, f.getDefaultTimePoint(), fieldName);
+                            if (imagesTC[0][channel]==null) return;
+                        }
+                        f.flushImages();
+                        ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("PreProcessed Image of Position: "+fieldName+ " Frame: "+f.getDefaultTimePoint(), imagesTC);
+                    }
+                }
+            );
+            actions[0] = openPreprocessedFrame;
+            openPreprocessedAllFrames = new JMenuItem("Open Pre-processed Frames");
+            openPreprocessedAllFrames.setAction(new AbstractAction(openPreprocessedAllFrames.getActionCommand()) {
+                    @Override
+                    public void actionPerformed(ActionEvent ae) {
+                        MicroscopyField f = generator.db.getExperiment().getMicroscopyField(fieldName);
+                        int channels = generator.db.getExperiment().getChannelImageCount();
+                        int frames = f.getTimePointNumber(false);
+                        Image[][] imagesTC = new Image[frames][channels];
+                        for (int channel = 0; channel<channels; ++channel) {
+                            for (int frame = 0; frame<frames; ++frame) {
+                                imagesTC[frame][channel] = generator.db.getExperiment().getImageDAO().openPreProcessedImage(channel, frame, fieldName);
+                                if (imagesTC[frame][channel]==null) return;
+                            }
+                        }
+                        f.flushImages();
+                        ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("PreProcessed Images of Position: "+fieldName, imagesTC);
+                    }
+                }
+            );
+            actions[1] = openPreprocessedAllFrames;
+        }
+        public Object[] getDisplayComponent(boolean multipleSelection) {
+            if (multipleSelection) {
+                return new JMenuItem[]{};
+            } else return actions;
+        }
     }
 }

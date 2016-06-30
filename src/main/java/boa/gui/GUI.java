@@ -385,7 +385,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (image==null) {
             return; // todo -> actions on all images?
         }
-        logger.debug("updateSelectionsDisplay");
+        //logger.debug("updateSelectionsDisplay");
         Enumeration<Selection> sels = instance.selectionModel.elements();
         while (sels.hasMoreElements()) {
             Selection s = sels.nextElement();
