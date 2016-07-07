@@ -53,7 +53,14 @@ public class ObjectInclusionCount implements Measurement {
         this.structureToCount.setSelectedIndex(structureToCount);
         this.percentageInclusion.setValue(minPercentageInclusion);
     }
-    
+    public ObjectInclusionCount setMeasurementName(String name) {
+        inclusionText.setValue(name);
+        return this;
+    }
+    public ObjectInclusionCount setOnlyTrackHeads(boolean onlyTh) {
+        onlyTrackHeads.setSelected(onlyTh);
+        return this;
+    }
     @Override
     public int getCallStructure() {
         return structureContainer.getFirstCommonParentStructureIdx(structureToCount.getSelectedIndex());

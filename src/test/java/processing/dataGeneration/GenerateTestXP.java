@@ -31,6 +31,7 @@ import plugins.plugins.measurements.BacteriaMeasurementsWoleMC;
 import plugins.plugins.measurements.MeasurementObject;
 import plugins.plugins.measurements.MutationMeasurements;
 import plugins.plugins.measurements.MutationTrackMeasurements;
+import plugins.plugins.measurements.ObjectInclusionCount;
 import plugins.plugins.measurements.objectFeatures.SNR;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.preFilter.Median;
@@ -236,11 +237,12 @@ public class GenerateTestXP {
         mutation.setProcessingScheme(new SegmentAndTrack(new LAPTracker().setCompartimentStructure(1)));
         //mutation.setManualSegmenter();
         xp.addMeasurement(new BacteriaLineageIndex(1, "BacteriaLineage"));
-        xp.addMeasurement(new BacteriaFluoMeasurements(1, 2));
-        xp.addMeasurement(new MutationMeasurements(1, 2));
+        //xp.addMeasurement(new BacteriaFluoMeasurements(1, 2));
+        //xp.addMeasurement(new MutationMeasurements(1, 2));
         xp.addMeasurement(new MutationTrackMeasurements(1, 2));
-        xp.addMeasurement(new MeasurementObject(2).addFeature(new SNR().setBackgroundObjectStructureIdx(1).setIntensityStructure(2), "MutationSNR"));
-        xp.addMeasurement(new BacteriaMeasurementsWoleMC(1, 2));
+        xp.addMeasurement(new ObjectInclusionCount(1, 2, 10).setMeasurementName("MutationNumber"));
+        //xp.addMeasurement(new MeasurementObject(2).addFeature(new SNR().setBackgroundObjectStructureIdx(1).setIntensityStructure(2), "MutationSNR"));
+        //xp.addMeasurement(new BacteriaMeasurementsWoleMC(1, 2));
         if (setUpPreProcessing) {// preProcessing 
             //xp.getPreProcessingTemplate().addTransformation(0, null, new SuppressCentralHorizontalLine(6)).setActivated(false);
             if (!Double.isNaN(scaleXY)) xp.getPreProcessingTemplate().setCustomScale(scaleXY, 1);

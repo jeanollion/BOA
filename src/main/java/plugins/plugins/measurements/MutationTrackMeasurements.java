@@ -67,6 +67,7 @@ public class MutationTrackMeasurements implements Measurement {
         ArrayList<MeasurementKey> res = new ArrayList<MeasurementKey>();
         res.add(new MeasurementKeyObject("IsTrackHead", structureIdx));
         res.add(new MeasurementKeyObject("BacteriaIdx", structureIdx));
+        res.add(new MeasurementKeyObject("BacteriaIndices", structureIdx));
         res.add(new MeasurementKeyObject("PreviousDivisionFrame", structureIdx));
         res.add(new MeasurementKeyObject("NextDivisionFrame", structureIdx));
         res.add(new MeasurementKeyObject("TrackHeadIndices", structureIdx));
@@ -92,12 +93,12 @@ public class MutationTrackMeasurements implements Measurement {
         if (parentBacteria == null) return;
         object.getMeasurements().setValue("IsTrackHead", object.isTrackHead());
         object.getMeasurements().setValue("BacteriaIdx", parentBacteria.getIdx());
+        object.getMeasurements().setValue("BacteriaIndices", StructureObjectUtils.getIndices(parentBacteria));
         int prevTP = parentBacteria.getPreviousDivisionTimePoint();
         object.getMeasurements().setValue("PreviousDivisionFrame", prevTP>0 ? prevTP : null);
         int nextTP = parentBacteria.getNextDivisionTimePoint();
         object.getMeasurements().setValue("NextDivisionFrame", nextTP>=0?nextTP:null );
-        int[] indices = StructureObjectUtils.getIndexTree(object.getTrackHead()); 
-        object.getMeasurements().setValue("TrackHeadIndices", Selection.indiciesToString(indices));
+        object.getMeasurements().setValue("TrackHeadIndices", StructureObjectUtils.getIndices(object.getTrackHead()));
         
         double[] objectCenter = object.getObject().getCenter(object.getRawImage(mutation.getSelectedStructureIdx()), false);
         object.getMeasurements().setValue("YCoordProportional", getYProportionalPositionWithinContainer(parentBacteria.getObject(), objectCenter[1]));

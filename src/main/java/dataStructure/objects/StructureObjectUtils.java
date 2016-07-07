@@ -206,6 +206,9 @@ public class StructureObjectUtils {
         al.add(o.getTimePoint());
         return Utils.toArray(al, true);
     }
+    public static String getIndices(StructureObject o) {
+        return Selection.indiciesToString(getIndexTree(o));
+    }
     public static Map<StructureObject, List<StructureObject>> getAllTracks(List<StructureObject> parentTrack, int structureIdx) {
         HashMap<StructureObject, List<StructureObject>>  res = new HashMap<StructureObject, List<StructureObject>>();
         for (StructureObject p : parentTrack) {

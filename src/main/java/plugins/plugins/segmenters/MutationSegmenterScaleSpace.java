@@ -253,7 +253,7 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
 
     public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
         Image smooth = ImageFeatures.gaussianSmooth(input, 2, 2, false);
-        Image scaleSpace = getScaleSpace(input, smooth, new double[]{2.5}).setName("WatershedMap from: "+input.getName());
+        Image scaleSpace = getScaleSpace(input, smooth, new double[]{2}).setName("WatershedMap from: "+input.getName());
         List<Object3D> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());
         ObjectPopulation pop =  WatershedTransform.watershed(scaleSpace, segmentationMask, seedObjects, true, new WatershedTransform.ThresholdPropagationOnWatershedMap(thresholdLow.getValue().doubleValue()), new WatershedTransform.SizeFusionCriterion(minSpotSize.getValue().intValue()));
         
@@ -269,7 +269,7 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
     }
     // object splitter implementation
     public ObjectPopulation splitObject(Image input, Object3D object) {
-        ImageFloat wsMap = ImageFeatures.getHessian(input, 2, false)[0];
+        ImageFloat wsMap = ImageFeatures.getHessian(input, 1.5, false)[0];
         return WatershedObjectSplitter.splitInTwo(wsMap, object.getMask(), false, true, manualSplitVerbose);
     }
     boolean manualSplitVerbose;
