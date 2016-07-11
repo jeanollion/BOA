@@ -83,6 +83,7 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
     }
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         ObjectPopulation res= runPlaneHybrid(input, parent.getMask());
+        if (intermediateImages!=null) intermediateImages.add(res.getLabelMap().duplicate("before post-filters"));
         return postFilters.filter(res, structureIdx, (StructureObject)parent);
     }
     public PostFilterSequence getPostFilters() {return postFilters;}

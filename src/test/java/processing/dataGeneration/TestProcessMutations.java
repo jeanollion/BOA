@@ -39,6 +39,9 @@ import static image.ImageOperations.pasteImage;
 import java.util.ArrayList;
 import java.util.HashSet;
 import plugins.PluginFactory;
+import plugins.plugins.measurements.objectFeatures.DifferenceToLocalBackground;
+import plugins.plugins.measurements.objectFeatures.SNR;
+import plugins.plugins.postFilters.FeatureFilter;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.MutationSegmenter;
 import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
@@ -57,24 +60,24 @@ public class TestProcessMutations {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         //String dbName = "testSub60";
-        final String dbName = "fluo160407";
+        final String dbName = "boa_fluo151127";
         int fIdx = 0;
         int mcIdx =1;
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
-        t.testSegMutationsFromXP(fIdx, mcIdx, true, 7, 12);
+        t.testSegMutationsFromXP(fIdx, mcIdx, true, 0, 0);
     }
     
     public void testSegMutation(StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
         Image input = parent.getRawImage(2);
         ImageInteger parentMask = parent.getMask();
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
-        MutationSegmenterScaleSpace seg = new MutationSegmenterScaleSpace2();
+        MutationSegmenterScaleSpace seg = new MutationSegmenterScaleSpace();
+        seg.getPostFilters().removeAllElements();
+        seg.getPostFilters().add(new FeatureFilter(new DifferenceToLocalBackground().setBackgroundObjectStructureIdx(1), 0.75, true, true));
         seg.intermediateImages=intermediateImages;
         ObjectPopulation popPF = seg.runSegmenter(input, 2, parent);
-        //ImageInteger beforePF = pop.getLabelMap().duplicate("Before Post-Filters");
-        //ObjectPopulation popPF = new MutationSegmenterScaleSpace().getPostFilters().filter(pop, 2, parent);
         
         //ObjectPopulation pop = MutationSegmenterScaleSpace.runPlane(input.getZPlane(0), parentMask, 5, 4, 0.75, intermediateImages);
         if (parentMask_!=null) parentMask_.add(parentMask);

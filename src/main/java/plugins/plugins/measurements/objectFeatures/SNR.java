@@ -97,7 +97,7 @@ public class SNR extends IntensityMeasurement {
                     for (Object3D o : parentChildrenMap.get(p)) o.draw(mask, 0, childrenOffset);
                 }
             
-                ImageByte maskErode = Filters.min(mask, null, Filters.getNeighborhood(2.5, 2.5, mask)); // erode mask // TODO dillate objects?
+                ImageByte maskErode = Filters.min(mask, null, Filters.getNeighborhood(1.5, 1.5, mask)); // erode mask // TODO dillate objects?
                 if (maskErode.count()==0) maskErode = mask;
                 for (Object3D o : children) childrenParentMap.put(o, new Object3D(maskErode, 1));
             }
@@ -113,7 +113,7 @@ public class SNR extends IntensityMeasurement {
         if (parentObject==null) return 0;
         IntensityMeasurements iParent = super.core.getIntensityMeasurements(parentObject, null);
         double fore = super.core.getIntensityMeasurements(object, offset).mean;
-        //logger.debug("SNR: fore:{}, back I: {} back SD: {}", fore, iParent.mean, iParent.sd);
+        logger.debug("SNR: object: {}, value: {}, fore:{}, back I: {} back SD: {}", object.getLabel(), (fore-iParent.mean ) / iParent.sd, fore, iParent.mean, iParent.sd);
         return ( fore-iParent.mean ) / iParent.sd;
     }
 
