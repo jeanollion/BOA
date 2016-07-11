@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import plugins.ParameterSetup;
 import plugins.Segmenter;
 import plugins.SegmenterSplitAndMerge;
 import plugins.Tracker;
@@ -172,6 +173,8 @@ public class LAPTracker implements TrackerSegmenter {
     public Parameter[] getParameters() {
         return parameters;
     }
+
+    
 
     
     

@@ -189,6 +189,10 @@ public class BasicObjectDAO implements ObjectDAO {
     public void upsertMeasurement(StructureObject o) {
         // measurements are stored in objects...
     }
+    
+    public void upsertModifiedMeasurements() {
+        // measurements are stored in objects...
+    }
 
     public List<Measurements> getMeasurements(int structureIdx, String... measurements) {
         List<Measurements> res = new ArrayList<Measurements>();
@@ -221,4 +225,6 @@ public class BasicObjectDAO implements ObjectDAO {
             }
         } 
     }
+
+    
 }

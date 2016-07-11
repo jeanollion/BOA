@@ -19,21 +19,12 @@ package configuration.parameters;
 
 import configuration.parameters.ui.ChoiceParameterUI;
 import static configuration.parameters.ui.ChoiceParameterUI.NO_SELECTION;
-import configuration.parameters.ui.ParameterUI;
-import core.Core;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.logging.Level;
-import javax.swing.tree.MutableTreeNode;
-import javax.swing.tree.TreeNode;
-import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
-import de.caluga.morphium.annotations.lifecycle.Lifecycle;
-import de.caluga.morphium.annotations.lifecycle.PostLoad;
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Logger;
+import plugins.ParameterSetup;
 import plugins.Plugin;
 import plugins.PluginFactory;
 
@@ -200,7 +191,14 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     
     @Override
     public ChoiceParameterUI getUI(){
-        return new ChoiceParameterUI(this, false);
+        ChoiceParameterUI ui =  new ChoiceParameterUI(this, false);
+        if (this.isOnePluginSet()) {
+            Plugin pl = this.instanciatePlugin();
+            if (pl instanceof ParameterSetup) {
+                ui.addActions(ParameterUtils.getTestMenu((ParameterSetup)pl, pl.getParameters()));
+            }   
+        }
+        return ui;
     }
     
     @Override

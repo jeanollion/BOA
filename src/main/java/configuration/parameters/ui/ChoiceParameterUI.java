@@ -24,8 +24,12 @@ import configuration.parameters.ParameterUtils;
 import boa.gui.configuration.ConfigurationTreeModel;
 import java.awt.Component;
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.JMenuItem;
+import javax.swing.JSeparator;
 
 /**
  *
@@ -35,7 +39,8 @@ public class ChoiceParameterUI implements ArmableUI {
     ChoosableParameter choice;
     ConditionalParameter cond;
     ConfigurationTreeModel model;
-    JMenuItem[] actions;
+    JMenuItem[] actionChoice;
+    List allActions;
     int inc;
     //final static int choiceLimit = 50;
     boolean limitChoice;
@@ -57,13 +62,13 @@ public class ChoiceParameterUI implements ArmableUI {
             System.arraycopy(c, 0, res, 1, c.length);
             choices=res;
         } else choices=choice.getChoiceList();
-        //this.actions = new JMenuItem[!limitChoice || choiceLimit>choices.length? choices.length:choiceLimit];
-        this.actions = new JMenuItem[choices.length];
+        //this.actionChoice = new JMenuItem[!limitChoice || choiceLimit>choices.length? choices.length:choiceLimit];
+        this.actionChoice = new JMenuItem[choices.length];
         //modulo = (!limitChoice || choiceLimit>choices.length)? 1 : (double)choices.length/(double)(choiceLimit-1);
-        for (int i = 0; i < actions.length; i++) {
+        for (int i = 0; i < actionChoice.length; i++) {
             //int choiceIdx = (int)(i * modulo);
-            actions[i] = new JMenuItem(choices[i]);
-            actions[i].setAction(
+            actionChoice[i] = new JMenuItem(choices[i]);
+            actionChoice[i].setAction(
                 new AbstractAction(choices[i]) {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
@@ -77,7 +82,12 @@ public class ChoiceParameterUI implements ArmableUI {
                 }
             );
         }
+        allActions = new ArrayList(Arrays.asList(actionChoice));
         refreshArming();
+    }
+    public void addActions(JMenuItem action) {
+        if (this.actionChoice.length==this.allActions.size()) allActions.add(new JSeparator());
+        allActions.add(action);
     }
     public void updateUIFromParameter() {
         refreshArming();
@@ -88,14 +98,14 @@ public class ChoiceParameterUI implements ArmableUI {
         int sel = choice.getSelectedIndex();
         if (sel>=0) {
             //actions[(int)((sel+inc) / modulo+0.5)].setArmed(true);
-            actions[sel+inc].setArmed(true);
+            actionChoice[sel+inc].setArmed(true);
         }
-        if (inc>0 && sel<0) actions[0].setArmed(true);
+        if (inc>0 && sel<0) actionChoice[0].setArmed(true);
     }
     
     public void unArm() {
-        for (JMenuItem a:actions) a.setArmed(false);
+        for (JMenuItem a:actionChoice) a.setArmed(false);
     }
 
-    public JMenuItem[] getDisplayComponent() {return actions;}
+    public Object[] getDisplayComponent() {return allActions.toArray();}
 }

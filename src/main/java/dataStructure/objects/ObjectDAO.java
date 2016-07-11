@@ -62,6 +62,7 @@ public interface ObjectDAO {
     public List<StructureObject> getTrack(StructureObject trackHead);
     public List<StructureObject> getTrackHeads(StructureObject parentTrack, int structureIdx);
     
+    public void upsertModifiedMeasurements();
     public void upsertMeasurements(Collection<StructureObject> objects);
     public void upsertMeasurement(StructureObject o);
     public List<Measurements> getMeasurements(int structureIdx, String... measurements);

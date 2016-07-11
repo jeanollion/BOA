@@ -63,7 +63,7 @@ public class BacteriaLineageIndex implements Measurement {
     }
     
     @Override
-    public void performMeasurement(StructureObject parentTrackHead, List<StructureObject> modifiedObjects) {
+    public void performMeasurement(StructureObject parentTrackHead) {
         int bIdx = structure.getSelectedIndex();
         String key = this.keyName.getValue();
         List<StructureObject> bacteria = parentTrackHead.getChildren(bIdx);
@@ -72,7 +72,6 @@ public class BacteriaLineageIndex implements Measurement {
             o.getMeasurements().setValue(key, getTrackHeadName(trackHeadIdx++));
             int nextTP = o.getNextDivisionTimePoint();
             o.getMeasurements().setValue("NextDivisionFrame", nextTP>=0?nextTP:null );
-            modifiedObjects.add(o);
         }
         while(parentTrackHead.getNext()!=null) {
             parentTrackHead = parentTrackHead.getNext();
@@ -86,7 +85,6 @@ public class BacteriaLineageIndex implements Measurement {
                 o.getMeasurements().setValue("PreviousDivisionFrame", prevTP>0 ? prevTP : null);
                 int nextTP = o.getNextDivisionTimePoint();
                 o.getMeasurements().setValue("NextDivisionFrame", nextTP>=0?nextTP:null );
-                modifiedObjects.add(o);
             }
         }
     }

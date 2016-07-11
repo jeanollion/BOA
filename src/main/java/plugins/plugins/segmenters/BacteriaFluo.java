@@ -49,6 +49,7 @@ import java.util.Set;
 import measurement.BasicMeasurements;
 import plugins.ManualSegmenter;
 import plugins.ObjectSplitter;
+import plugins.ParameterSetup;
 import plugins.Segmenter;
 import plugins.SegmenterSplitAndMerge;
 import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
@@ -68,7 +69,7 @@ import utils.clustering.Object3DCluster.InterfaceVoxels;
  *
  * @author jollion
  */
-public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter {
+public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter, ParameterSetup {
     public static boolean debug = false;
     
     // configuration-related attributes
@@ -346,6 +347,19 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         extent = new BoundingBox(ext, -ext, ext, -ext, 0, 0);
         ImageInteger labels = res.getLabelMap().extend(extent);
         return new ObjectPopulation(labels, true);
+    }
+
+    public boolean canBeTested(Parameter p) {
+        List canBeTested = new ArrayList(){{add(splitThreshold); add(dogScale);}};
+        return canBeTested.contains(p);
+    }
+
+    public void test(Parameter p) {
+        if (p==splitThreshold) {
+            logger.debug("test split threshold");
+        } else if (p==dogScale) {
+            logger.debug("dogScale");
+        }
     }
     
     private  static class ProcessingVariables {

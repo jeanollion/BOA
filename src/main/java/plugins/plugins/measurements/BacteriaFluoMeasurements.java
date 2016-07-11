@@ -72,7 +72,7 @@ public class BacteriaFluoMeasurements implements Measurement {
         return res;
     }
 
-    public void performMeasurement(StructureObject object, List<StructureObject> modifiedObjects) {
+    public void performMeasurement(StructureObject object) {
         Object3D bactObject = object.getObject();
         Image bactImage = object.getRawImage(bacteria.getSelectedIndex());
         Image mutImage = object.getRawImage(mutation.getSelectedIndex());
@@ -87,13 +87,11 @@ public class BacteriaFluoMeasurements implements Measurement {
         object.getMeasurements().setValue("MeanYFPInBacteria", BasicMeasurements.getMeanValue(bactObject, mutImage, true));
         object.getMeasurements().setValue("BacteriaLength", GeometricalMeasurements.getFeretMax(bactObject));
         object.getMeasurements().setValue("BacteriaArea", GeometricalMeasurements.getVolume(bactObject));
-        int includedMutations = ObjectInclusionCount.count(object, mutation.getSelectedIndex(), 0, true);
+        int includedMutations = ObjectInclusionCount.count(object, mutation.getSelectedIndex(), 0, false);
         object.getMeasurements().setValue("MutationCountInBacteria", includedMutations);
         
         List<StructureObject> mutList = object.getChildren(mutation.getSelectedIndex()); // return included mutations
         if (includedMutations!=mutList.size()) logger.warn("Error Mutation count in: {}: {} vs: {}", object, includedMutations, mutList.size());
-        
-        modifiedObjects.add(object);
     }
 
     public Parameter[] getParameters() {

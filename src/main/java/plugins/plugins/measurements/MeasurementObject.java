@@ -83,7 +83,7 @@ public class MeasurementObject implements Measurement {
         return res;
     }
 
-    public void performMeasurement(StructureObject object, List<StructureObject> modifiedObjects) {
+    public void performMeasurement(StructureObject object) {
         int structureIdx = structure.getSelectedIndex();
         ArrayList<ObjectFeatureCore> cores = new ArrayList<ObjectFeatureCore>();
         for (PluginParameter<ObjectFeature> ofp : features.getActivatedChildren()) {
@@ -94,7 +94,6 @@ public class MeasurementObject implements Measurement {
                 for (StructureObject o : object.getChildren(structureIdx)) {
                     double m = f.performMeasurement(o.getObject(), null); 
                     o.getMeasurements().setValue(((TextParameter)ofp.getAdditionalParameters().get(0)).getValue(), m);
-                    modifiedObjects.add(o);
                 }
             }
         }

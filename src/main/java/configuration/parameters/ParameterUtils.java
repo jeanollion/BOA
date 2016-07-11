@@ -23,8 +23,13 @@ import boa.gui.configuration.TreeModelContainer;
 import static configuration.parameters.Parameter.logger;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
+import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.AbstractAction;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
+import plugins.ParameterSetup;
 import utils.Utils;
 
 /**
@@ -273,5 +278,34 @@ public class ParameterUtils {
     public interface ParameterConfiguration {
         public void configure(Parameter p);
         public boolean isConfigurable(Parameter p);
+    }
+    
+    public static JMenu getTestMenu(final ParameterSetup ps, final Parameter[] parameters) {
+        JMenu subMenu = new JMenu("Test Parameters");
+        List<JMenuItem> items = new ArrayList<JMenuItem>();
+        for (int i = 0; i<parameters.length; ++i) { // todo: case of parameters with subparameters -> plain...
+            final int idx = i;
+            if (ps.canBeTested(parameters[i])) {
+                JMenuItem item = new JMenuItem(parameters[i].getName());
+                item.setAction(new AbstractAction(item.getActionCommand()) {
+                    @Override
+                    public void actionPerformed(ActionEvent ae) {
+                        ps.test(parameters[idx]);
+                    }
+                });
+                items.add(item);
+            }
+            if (parameters[i] instanceof SimpleContainerParameter) {
+                JMenu m = getTestMenu(ps, ((SimpleContainerParameter)parameters[i]).getChildren().toArray(new Parameter[0]));
+                m.setName(parameters[i].getName()); //TODO set name do not work
+                if (m.getItemCount()>0) items.add(m);
+            } else if (parameters[i] instanceof SimpleListParameter) {
+                JMenu m = getTestMenu(ps, ((ArrayList<? extends Parameter>)((SimpleListParameter)parameters[i]).getChildren()).toArray(new Parameter[0]));
+                m.setName(parameters[i].getName());
+                if (m.getItemCount()>0) items.add(m);
+            }
+        }
+        for (JMenuItem i : items) subMenu.add(i);
+        return subMenu;
     }
 }

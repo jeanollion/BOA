@@ -67,17 +67,15 @@ public class ObjectInclusionCount implements Measurement {
     }
     // TODO: only track heads
     @Override
-    public void performMeasurement(StructureObject object, List<StructureObject> modifiedObjects) {
+    public void performMeasurement(StructureObject object) {
         double p = percentageInclusion.getValue().doubleValue()/100d;
         if (object.getStructureIdx()==structureContainer.getSelectedIndex()) {
             object.getMeasurements().setValue(inclusionText.getValue(), count(object, structureToCount.getSelectedIndex(), p, onlyTrackHeads.getSelected()));
-            modifiedObjects.add(object);
         } else {
             List<StructureObject> containers = object.getChildren(structureContainer.getSelectedIndex());
             List<StructureObject> toCount = object.getChildren(structureToCount.getSelectedIndex());
             for (StructureObject c : containers) {
                 c.getMeasurements().setValue(inclusionText.getValue(), count(c, toCount, p, onlyTrackHeads.getSelected()));
-                modifiedObjects.add(c);
             }
         }
         

@@ -24,6 +24,7 @@ import com.mongodb.DBObject;
 import com.mongodb.QueryBuilder;
 import com.mongodb.WriteConcern;
 import com.mongodb.WriteResult;
+import core.Processor;
 import dataStructure.configuration.*;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.StructureObject;
@@ -570,9 +571,23 @@ public class MorphiumObjectDAO implements ObjectDAO {
     }
     
     // measurement-specific methds
+    
+    @Override
+    public void upsertModifiedMeasurements() {
+        long t1 = System.currentTimeMillis();
+        List<StructureObject> toUpsert = new ArrayList<StructureObject>();
+        for (StructureObject o : idCache.values()) if (o.hasMeasurements() && o.getMeasurements().modifications) toUpsert.add(o);
+        ThreadRunner.execute(toUpsert, new ThreadRunner.ThreadAction<StructureObject>() {
+            public void run(StructureObject object, int idx, int threadIdx) {
+                upsertMeasurement(object);
+            }
+        });
+        long t2 = System.currentTimeMillis();
+        Processor.logger.debug("measurements on field: {}: upsert time: {} ({} objects)", getFieldName(), t2-t1, toUpsert.size());
+    }
+    
     public void upsertMeasurements(Collection<StructureObject> objects) {
         if (objects.isEmpty()) return;
-        List<StructureObject> list;
         if (!(objects instanceof Set)) Utils.removeDuplicates(objects, false);
         ThreadRunner.execute(objects, new ThreadRunner.ThreadAction<StructureObject>() {
             public void run(StructureObject object, int idx, int threadIdx) {

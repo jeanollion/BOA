@@ -85,7 +85,7 @@ public class MutationTrackMeasurements implements Measurement {
         return res;
     }
 
-    public void performMeasurement(StructureObject object, List<StructureObject> modifiedObjects) {
+    public void performMeasurement(StructureObject object) {
         // limit to trackHead of mother bacteria
         StructureObject parentBacteria;
         if (bacteria.getSelectedStructureIdx()==object.getParent().getStructureIdx()) parentBacteria = object.getParent();
@@ -111,7 +111,6 @@ public class MutationTrackMeasurements implements Measurement {
             object.getMeasurements().setValue("TrackLength", track.get(track.size()-1).getTimePoint() - object.getTimePoint()+1);
             object.getMeasurements().setValue("MutationNumber", track.size());
         }
-        modifiedObjects.add(object);
     }
 
     public Parameter[] getParameters() {

@@ -68,7 +68,7 @@ public class MutationMeasurements implements Measurement {
         return res;
     }
 
-    public void performMeasurement(StructureObject object, List<StructureObject> modifiedObjects) {
+    public void performMeasurement(StructureObject object) {
         object.getMeasurements().setValue("IsTrackHead", object.isTrackHead());
         /*Object3D mutObject = object.getObject();
         Image mutImage = object.getRawImage(mutation.getSelectedIndex());
@@ -87,7 +87,6 @@ public class MutationMeasurements implements Measurement {
         if (parentBacteria==null) {
             //logger.warn("No bacteria parent found for object: {}", object);
         } else object.getMeasurements().setValue("ParentBacteriaIdx", parentBacteria.getIdx());
-        modifiedObjects.add(object);
     }
 
     public Parameter[] getParameters() {

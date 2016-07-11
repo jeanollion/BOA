@@ -61,6 +61,7 @@ import net.imglib2.neighborsearch.NearestNeighborSearchOnKDTree;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 import plugins.ManualSegmenter;
 import plugins.ObjectSplitter;
+import plugins.ParameterSetup;
 import plugins.Segmenter;
 import plugins.SegmenterSplitAndMerge;
 import plugins.Thresholder;
@@ -94,7 +95,7 @@ import utils.clustering.Object3DCluster;
  *
  * @author jollion
  */
-public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter {
+public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter, ParameterSetup {
     public static boolean debug = false;
     
     // configuration-related attributes
@@ -127,6 +128,16 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSize, contactLimit);
     
     Parameter[] parameters = new Parameter[]{backgroundSeparation, thicknessParameters, curvatureParameters, objectParameters};
+    
+    public boolean canBeTested(Parameter p) {
+        List canBeTested = new ArrayList(){{add(curvatureScale); add(dogScale); add(relativeThicknessThreshold);}};
+        return canBeTested.contains(p);
+    }
+
+    public void test(Parameter p) {
+        if (p == relativeThicknessThreshold) logger.debug("rel t test");
+        else if (p==curvatureScale) logger.debug("cur test");
+    }
     
     //segmentation-related attributes (kept for split and merge methods)
     ProcessingVariables pv;

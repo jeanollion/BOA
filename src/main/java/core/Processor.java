@@ -197,33 +197,31 @@ public class Processor {
         final StructureObject[] rootArray = roots.toArray(new StructureObject[roots.size()]);
         logger.debug("{} number of roots: {}", dao.getFieldName(), rootArray.length);
         final Map<Integer, List<Measurement>> measurements = dao.getExperiment().getMeasurementsByCallStructureIdx();
-        final List<StructureObject> allModifiedObjects = new ArrayList<StructureObject>();
-        final List<StructureObject> allModifiedObjectsSync = Collections.synchronizedList(allModifiedObjects);
+        //final List<StructureObject> allModifiedObjects = new ArrayList<StructureObject>();
+        //final List<StructureObject> allModifiedObjectsSync = Collections.synchronizedList(allModifiedObjects);
         
         ThreadRunner.execute(rootArray, true, new ThreadAction<StructureObject>() {
             @Override
             public void run(StructureObject root, int idx, int threadIdx) {
                 //long t0 = System.currentTimeMillis();
                 //logger.debug("running measurements on: {}", root);
-                List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
+                //List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
                 for(Entry<Integer, List<Measurement>> e : measurements.entrySet()) {
                     int structureIdx = e.getKey();
                     List<StructureObject> objects = root.getChildren(structureIdx);
                     for (Measurement m : e.getValue()) {
                         for (StructureObject o : objects) {
-                            if (!m.callOnlyOnTrackHeads() || o.isTrackHead()) m.performMeasurement(o, modifiedObjects);
+                            if (!m.callOnlyOnTrackHeads() || o.isTrackHead()) m.performMeasurement(o);
                         }
                     }
                 }
-                allModifiedObjectsSync.addAll(modifiedObjects);
+                //allModifiedObjectsSync.addAll(modifiedObjects);
                 //long t1 = System.currentTimeMillis();
                 //logger.debug("measurements on: {}, time elapsed: {}ms", root, t1-t0);
             }
         });
         long t1 = System.currentTimeMillis();
-        dao.upsertMeasurements(allModifiedObjects);
-        long t2 = System.currentTimeMillis();
-        logger.debug("measurements on field: {}: computation time: {}, upsert time: {} ({} objects)", dao.getFieldName(), t1-t0, t2-t1, allModifiedObjects.size());
-        
+        logger.debug("measurements on field: {}: computation time: {}", dao.getFieldName(), t1-t0);
+        dao.upsertModifiedMeasurements();    
     }
 }

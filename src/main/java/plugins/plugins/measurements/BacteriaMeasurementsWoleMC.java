@@ -77,7 +77,7 @@ public class BacteriaMeasurementsWoleMC implements Measurement {
         return res;
     }
 
-    public void performMeasurement(StructureObject object, List<StructureObject> modifiedObjects) {
+    public void performMeasurement(StructureObject object) {
         // measurements on microchannels
         Object3D o = object.getObject();
         long t0 = System.currentTimeMillis();
@@ -126,7 +126,6 @@ public class BacteriaMeasurementsWoleMC implements Measurement {
         }
         
         //o.resetOffset();
-        modifiedObjects.add(object);
         //logger.debug("BMWMC on {}. inclusion: {}ms, get images: {}ms, intensity meas: {}ms, M inclusion: {}ms, M intensity {}ms", object, t1-t0, t2-t1, t3-t2, t4-t3, t5-t4);
     }
 

@@ -57,7 +57,7 @@ public class ExtractTransformationParameter implements Measurement{
         return res;
     }
 
-    public void performMeasurement(StructureObject root, List<StructureObject> modifiedObjects) {
+    public void performMeasurement(StructureObject root) {
         ArrayList data=null;
         Transformation t=null;
         List<TransformationPluginParameter<Transformation>> l = root.getExperiment().getMicroscopyField(root.getFieldName()).getPreProcessingChain().getTransformations();
@@ -71,25 +71,22 @@ public class ExtractTransformationParameter implements Measurement{
         if (data!=null) {
             List<StructureObject> rootTrack = StructureObjectUtils.getTrack(root, false);
             if (data.size()==rootTrack.size()) {
-                for (int i = 0 ;i<rootTrack.size(); ++i) assignData(t, data.get(i), rootTrack.get(i), structure.getSelectedStructureIdx(), keyName.getValue(), modifiedObjects);
-            } else if (data.size()==1) assignData(t, data.get(0), root, structure.getSelectedStructureIdx(), keyName.getValue(), modifiedObjects);
-            else assignData(t, data, root, structure.getSelectedStructureIdx(), keyName.getValue(), modifiedObjects);
+                for (int i = 0 ;i<rootTrack.size(); ++i) assignData(t, data.get(i), rootTrack.get(i), structure.getSelectedStructureIdx(), keyName.getValue());
+            } else if (data.size()==1) assignData(t, data.get(0), root, structure.getSelectedStructureIdx(), keyName.getValue());
+            else assignData(t, data, root, structure.getSelectedStructureIdx(), keyName.getValue());
         }
     }
     
-    private static void assignData(Transformation t, Object o, StructureObject root, int structureIdx, String key, List<StructureObject> modifiedObjects) {
+    private static void assignData(Transformation t, Object o, StructureObject root, int structureIdx, String key) {
         List<StructureObject> children = root.getChildren(structureIdx);
         if (o instanceof Number) for (StructureObject object : children)  {
             object.getMeasurements().setValue(key, (Number)o);
-            modifiedObjects.add(object);
         }
         else if (o instanceof String) for (StructureObject object : children) {
             object.getMeasurements().setValue(key, (String)o);
-            modifiedObjects.add(object);
         }
         else if (o instanceof double[]) for (StructureObject object : children) {
             object.getMeasurements().setValue(key, (double[])o);
-            modifiedObjects.add(object);
         }
         else {
             if (t instanceof ScaleHistogramSignalExclusion) {
@@ -97,7 +94,6 @@ public class ExtractTransformationParameter implements Measurement{
                 for (StructureObject object : children) {
                     object.getMeasurements().setValue(key+"_mean", d.get(0));
                     object.getMeasurements().setValue(key+"_sd", d.get(1));
-                    modifiedObjects.add(object);
                 }
             }
         }

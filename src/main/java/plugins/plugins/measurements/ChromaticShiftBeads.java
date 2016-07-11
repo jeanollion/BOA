@@ -60,7 +60,7 @@ public class ChromaticShiftBeads implements Measurement{
         return res;
     }
 
-    public void performMeasurement(StructureObject object, List<StructureObject> modifiedObjects) {
+    public void performMeasurement(StructureObject object) {
         
         List<StructureObject> objects1 = object.getChildren(structure.getSelectedIndex());
         List<StructureObject> objects2 = object.getChildren(structure2.getSelectedIndex());
@@ -83,7 +83,6 @@ public class ChromaticShiftBeads implements Measurement{
                 o1.getMeasurements().setValue("dYPix", c2[1]-c1[1]);
                 o1.getMeasurements().setValue("dZSlice", c2[2]-c1[2]);
                 logger.debug("Chromatic Shift: o1: {}, closest: {} (dist: {}), dX: {}, dY: {}, dZ: {}", o1, closest, dist, c2[0]-c1[0], c2[1]-c1[1], c2[2]-c1[2]);
-                modifiedObjects.add(o1);
             }
         }
         
