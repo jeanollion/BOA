@@ -181,7 +181,13 @@ public class Object3D {
         double count = 0;
         double value;
         for (Voxel v : getVoxels()) {
-            value = this.absoluteLandmark ? image.getPixelWithOffset(v.x, v.y, v.z) : image.getPixel(v.x, v.y, v.z);
+            if (absoluteLandmark) {
+                if (image.containsWithOffset(v.x, v.y, v.z)) value = image.getPixelWithOffset(v.x, v.y, v.z);
+                else continue;
+            } else {
+                if (image.contains(v.x, v.y, v.z)) value = image.getPixel(v.x, v.y, v.z);
+                else continue;
+            }
             center[0] += v.x * value;
             center[1] += v.y * value;
             center[2] += v.z * value;
