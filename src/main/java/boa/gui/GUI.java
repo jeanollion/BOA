@@ -1746,9 +1746,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         }
         if (fieldsCreated) {
             db.updateExperiment();
-            loadObjectTrees();
             populateActionMicroscopyFieldList();
         }
+        loadObjectTrees();
+        
         File f = Utils.getOneDir(selectedFiles);
         if (f!=null) PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, f.getAbsolutePath());
     }//GEN-LAST:event_importFieldsToCurrentExperimentMenuItemActionPerformed

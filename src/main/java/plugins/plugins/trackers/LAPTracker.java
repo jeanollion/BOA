@@ -154,9 +154,9 @@ public class LAPTracker implements TrackerSegmenter {
         // post-processing
         MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, spotCollection);
         postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC);
-        distParams.setGapDistancePenalty(gapPenalty*2); // double penalty  
+        //distParams.setGapDistancePenalty(gapPenalty*2); // double penalty  
         //postProcessor.printDistancesOnOverlay();
-        postProcessor.splitLongTracks(4, minimalTrackFrameNumber.getValue().intValue()-1, minimalDistanceForTrackSplittingPenalty.getValue().doubleValue(), maxLinkingDistanceGC, maximalTrackSplittingPenalty.getValue().doubleValue());
+        //postProcessor.splitLongTracks(4, minimalTrackFrameNumber.getValue().intValue()-1, minimalDistanceForTrackSplittingPenalty.getValue().doubleValue(), maxLinkingDistanceGC, maximalTrackSplittingPenalty.getValue().doubleValue());
         postProcessor.flagShortAndLongTracks(minimalTrackFrameNumber.getValue().intValue(), maximalTrackFrameNumber.getValue().intValue());
         
         // ETUDE DES DEPLACEMENTS EN Y
