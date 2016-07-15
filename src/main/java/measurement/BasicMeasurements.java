@@ -31,9 +31,10 @@ import static plugins.Plugin.logger;
  * @author jollion
  */
 public class BasicMeasurements {
-    public static double getSum(Object3D object, Image image) {
+    public static double getSum(Object3D object, Image image, boolean useOffset) {
         double value=0;
-        for (Voxel v : object.getVoxels()) value+=image.getPixelWithOffset(v.x, v.y, v.z);
+        if (useOffset) for (Voxel v : object.getVoxels()) value+=image.getPixelWithOffset(v.x, v.y, v.z);
+        else for (Voxel v : object.getVoxels()) value+=image.getPixel(v.x, v.y, v.z);
         return value;
     }
     public static double getMeanValue(Object3D object, Image image, boolean useOffset) {

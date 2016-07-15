@@ -77,9 +77,14 @@ public class MutationTrackMeasurements implements Measurement {
         res.add(new MeasurementKeyObject("XCoordRelToCenter", structureIdx));
         res.add(new MeasurementKeyObject("YCoordRelToCenter", structureIdx));
 
+        // intensity
+        res.add(new MeasurementKeyObject("MeanIntensity", structureIdx));
+        res.add(new MeasurementKeyObject("SumIntensity", structureIdx));
+        
         // track parameters (only computed for trackHeads
         res.add(new MeasurementKeyObject("TrackLength", structureIdx));
         res.add(new MeasurementKeyObject("MutationNumber", structureIdx));
+        
         
         
         return res;
@@ -99,12 +104,14 @@ public class MutationTrackMeasurements implements Measurement {
         int nextTP = parentBacteria.getNextDivisionTimePoint();
         object.getMeasurements().setValue("NextDivisionFrame", nextTP>=0?nextTP:null );
         object.getMeasurements().setValue("TrackHeadIndices", StructureObjectUtils.getIndices(object.getTrackHead()));
-        
-        double[] objectCenter = object.getObject().getCenter(object.getRawImage(mutation.getSelectedStructureIdx()), false);
+        Image intensities = object.getRawImage(mutation.getSelectedStructureIdx());
+        double[] objectCenter = object.getObject().getCenter(intensities, false);
         object.getMeasurements().setValue("YCoordProportional", getYProportionalPositionWithinContainer(parentBacteria.getObject(), objectCenter[1]));
         double[] parentCenter = parentBacteria.getObject().getCenter(false);
         object.getMeasurements().setValue("YCoordRelToCenter", (objectCenter[1]-parentCenter[1]));
         object.getMeasurements().setValue("XCoordRelToCenter", (objectCenter[0]-parentCenter[0]));
+        object.getMeasurements().setValue("MeanIntensity", BasicMeasurements.getMeanValue(object.getObject(), intensities, true));
+        object.getMeasurements().setValue("SumIntensity", BasicMeasurements.getSum(object.getObject(), intensities, true));
         
         if (object.isTrackHead()) {
             List<StructureObject> track = StructureObjectUtils.getTrack(object, false);
