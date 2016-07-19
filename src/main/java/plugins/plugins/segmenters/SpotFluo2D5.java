@@ -46,7 +46,7 @@ import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.thresholders.BackgroundFit;
 import plugins.plugins.thresholders.KappaSigma;
 import processing.Filters;
-import processing.GaussianFit;
+import processing.gaussianFit.GaussianFit;
 import processing.IJFFTBandPass;
 import processing.ImageFeatures;
 import processing.LoG;

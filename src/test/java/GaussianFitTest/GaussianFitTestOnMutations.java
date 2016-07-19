@@ -1,0 +1,60 @@
+/*
+ * Copyright (C) 2016 jollion
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+package GaussianFitTest;
+
+import static TestUtils.Utils.logger;
+import boa.gui.imageInteraction.IJImageDisplayer;
+import dataStructure.configuration.MicroscopyField;
+import dataStructure.objects.MorphiumMasterDAO;
+import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.StructureObject;
+import plugins.PluginFactory;
+import processing.dataGeneration.TestProcessMutations;
+
+/**
+ *
+ * @author jollion
+ */
+public class GaussianFitTestOnMutations {
+    MorphiumMasterDAO db;
+    public static void main(String[] args) {
+        PluginFactory.findPlugins("plugins.plugins");
+        //String dbName = "testSub60";
+        final String dbName = "boa_fluo151127";
+        int fIdx = 0;
+        int mcIdx =1;
+        //String dbName = "fluo151130_Output";
+        GaussianFitTestOnMutations t = new GaussianFitTestOnMutations();
+        t.init(dbName);
+        t.testGaussFit(fIdx, mcIdx, 0);
+    }
+    public void init(String dbName) {
+        db = new MorphiumMasterDAO(dbName);
+        logger.info("Experiment: {} retrieved from db: {}", db.getExperiment().getName(), dbName);
+    }
+    public void testGaussFit(int fieldIdx, int mcIdx, int tp) {
+        MicroscopyField f = db.getExperiment().getMicroscopyField(fieldIdx);
+        StructureObject root = db.getDao(f.getName()).getRoot(tp);
+        //logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
+        StructureObject mc = root.getChildren(0).get(mcIdx);
+        ObjectPopulation pop = mc.getObjectPopulation(2);
+        ObjectPopulation.GaussianFit.disp=true;
+        new IJImageDisplayer().showImage(mc.getRawImage(2).duplicate("source"));
+        pop.filter(new ObjectPopulation.GaussianFit(mc.getRawImage(2), 4, 2, 6, 0.5, 1, 5));
+    }
+}

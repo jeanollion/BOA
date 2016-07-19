@@ -15,17 +15,20 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package processing;
+package processing.gaussianFit;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
+import static core.Processor.logger;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.Voxel;
 import ij.ImagePlus;
 import ij.gui.EllipseRoi;
 import ij.gui.Overlay;
 import ij.gui.Roi;
+import image.BoundingBox;
 import image.Image;
 import image.ImgLib2ImageWrapper;
+import image.TypeConverter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -35,8 +38,15 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import net.imglib2.Localizable;
 import net.imglib2.Point;
+import net.imglib2.algorithm.localization.FitFunction;
+import net.imglib2.algorithm.localization.LevenbergMarquardtSolver;
+import net.imglib2.algorithm.localization.LocalizationUtils;
+import net.imglib2.algorithm.localization.Observation;
+import net.imglib2.algorithm.localization.PeakFitter;
+import net.imglib2.img.Img;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
 
-import static plugins.Plugin.logger;
+//import static plugins.Plugin.logger;
 
 /**
  *
@@ -71,29 +81,39 @@ public class GaussianFit {
      * @return for each peak array of fitted parameters: coordinates, intensity@peak, 1/sigma2 in each dimension, error
      */
     public static Map<Object3D, double[]> run(Image image, List<Object3D> peaks, double[][] typicalSigmas, int maxIter, double lambda, double termEpsilon ) {
-        /*boolean is3D = image.getSizeZ()>1;
+        boolean is3D = image.getSizeZ()>1;
         Img img = ImgLib2ImageWrapper.getImage(image);
         //MLEllipticGaussianSimpleEstimator estimator = new MLEllipticGaussianSimpleEstimator(typicalSigmas[0], typicalSigmas[1], typicalSigmas[2]);
-        MLGaussianSimpleEstimator estimator = new MLGaussianSimpleEstimator(typicalSigmas[0][0], typicalSigmas[1][0], typicalSigmas[2][0], is3D?3:2);
         //EllipticGaussianOrtho fitFunction = new EllipticGaussianOrtho();
-        Gaussian fitFunction = new Gaussian();
+        //MLGaussianSimpleEstimator estimator = new MLGaussianSimpleEstimator(typicalSigmas[0][0], typicalSigmas[1][0], typicalSigmas[2][0], is3D?3:2);
+        
+        //FitFunction fitFunction = new Gaussian();
+        MLGaussianPlusConstantSimpleEstimator estimator = new MLGaussianPlusConstantSimpleEstimator(typicalSigmas[0][0], typicalSigmas[1][0], typicalSigmas[2][0], is3D?3:2);
+        GaussianPlusConstant fitFunction = new GaussianPlusConstant();
+        //logger.debug("span: {}", estimator.getDomainSpan());
         Map<Localizable, Object3D> locObj = new HashMap<Localizable, Object3D>(peaks.size());
         List<Localizable> peaksLoc = new ArrayList<Localizable>(peaks.size());
         for (Object3D o : peaks) {
-            Localizable l = getLocalizable(o.getCenter(), is3D);
+            double[] center = o.getCenter(false);
+            if (o.isAbsoluteLandMark()) {
+                center[0]-=image.getBoundingBox().getxMin();
+                center[1]-=image.getBoundingBox().getyMin();
+                center[2]-=image.getBoundingBox().getzMin();
+            }
+            Localizable l = getLocalizable(center, is3D);
             peaksLoc.add(l);
             locObj.put(l, o);
         }
-        //LevenbergMarquardtSolver solver = new LevenbergMarquardtSolver(maxIter, lambda, termEpsilon);
+        LevenbergMarquardtSolver solver = new LevenbergMarquardtSolver(maxIter, lambda, termEpsilon);
         //BruteForceSolver solver = new BruteForceSolver(is3D?new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN, typicalSigmas[3][0], typicalSigmas[3][1], typicalSigmas[3][2]} : new double[] {Double.NaN, Double.NaN, Double.NaN, typicalSigmas[3][0], typicalSigmas[3][1]});
-        BruteForceSolver solver = new BruteForceSolver(is3D?new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN, typicalSigmas[3][0]} : new double[] {Double.NaN, Double.NaN, Double.NaN, typicalSigmas[3][0]});
-        PeakFitter<UnsignedByteType> fitter = new PeakFitter<UnsignedByteType>(img, peaksLoc, solver, fitFunction, estimator);
+        //BruteForceSolver solver = new BruteForceSolver(is3D?new double[]{Double.NaN, Double.NaN, Double.NaN, Double.NaN, typicalSigmas[3][0], 2} : new double[] {Double.NaN, Double.NaN, Double.NaN, typicalSigmas[3][0], 2}); // toDo: estimate grayLevel precision
+        PeakFitter fitter = new PeakFitter(img, peaksLoc, solver, fitFunction, estimator);
         fitter.setNumThreads(1);
         if ( !fitter.checkInput() || !fitter.process()) {
-            logger.error("Problem with peak fitting: {}", fitter.getErrorMessage());
+            //logger.error("Problem with peak fitting: {}", fitter.getErrorMessage());
             return null;
         }
-        logger.debug("Peak fitting of {} peaks, using {} threads, done in {} ms.", peaks.size(), fitter.getNumThreads(), fitter.getProcessingTime());
+        //logger.debug("Peak fitting of {} peaks, using {} threads, done in {} ms.", peaks.size(), fitter.getNumThreads(), fitter.getProcessingTime());
         
         Map<Localizable, double[]> results = fitter.getResult();
         Map<Object3D, double[]> results2 = new HashMap<Object3D, double[]>(results.size());
@@ -101,13 +121,25 @@ public class GaussianFit {
             Observation data = LocalizationUtils.gatherObservationData(img, e.getKey(), estimator.getDomainSpan());
             double[] params = new double[e.getValue().length+1];
             System.arraycopy(e.getValue(), 0, params, 0, e.getValue().length);
-            params[params.length-1] = Math.sqrt(LevenbergMarquardtSolver.chiSquared(data.X, e.getValue(), data.I, fitFunction))/params[is3D?3:2]/data.I.length; // normalized error by intensity & number of pixels
+            params[params.length-1] = Math.sqrt(LevenbergMarquardtSolver.chiSquared(data.X, e.getValue(), data.I, fitFunction)); ///params[is3D?3:2]; // normalized error by intensity & number of pixels
             results2.put(locObj.get(e.getKey()), params);
         }
         return results2;
-                */
-        return null;
+                
+        //return null;
     }
+    public static final double chiSquared(final double[][] x, final double[] a, final double[] y, final FitFunction f)  {
+            int npts = y.length;
+            double sum = 0.;
+
+            for( int i = 0; i < npts; i++ ) {
+                    double d = y[i] - f.val(x[i], a);
+                    sum = sum + (d*d);
+            }
+
+            return sum;
+    }
+    
     private static Localizable getLocalizable(double[] v, boolean is3D) {
         if (is3D) return new Point((long)(v[0]+0.5d), (long)(v[1]+0.5d), (long)(v[2]+0.5d));
         else return new Point((long)(v[0]+0.5d), (long)(v[1]+0.5d));
@@ -123,15 +155,31 @@ public class GaussianFit {
             }
         });
         paramsSort.putAll(params);
-        for (Entry<Object3D, double[]> e : paramsSort.entrySet()) overlay.add(get2DEllipse(e.getKey(), e.getValue()));
+        for (Entry<Object3D, double[]> e : paramsSort.entrySet()) overlay.add(get2DEllipse(e.getKey(), e.getValue(), null));
     }
-    public static Roi get2DEllipse(Object3D o, double[] p) {
+    public static void appendRois(Overlay overlay, BoundingBox offset, Map<Object3D, double[]> params) {
+        TreeMap<Object3D, double[]> paramsSort = new TreeMap<Object3D, double[]>(new Comparator<Object3D>() {
+
+            public int compare(Object3D arg0, Object3D arg1) {
+                return Integer.compare(arg0.getLabel(), arg1.getLabel());
+            }
+        });
+        paramsSort.putAll(params);
+        for (Entry<Object3D, double[]> e : paramsSort.entrySet()) overlay.add(get2DEllipse(e.getKey(), e.getValue(), offset));
+    }
+    
+    public static Roi get2DEllipse(Object3D o, double[] p, BoundingBox offset) {
         double Ar = p[2];
         double x = p[0];
         double y = p[1];
         double sx = p[3];
         double sy = p[3];
-        double error = p[4];
+        double C = p[4];
+        double error = p[p.length-1];
+        if (offset!=null) {
+            x+=offset.getxMin();
+            y+=offset.getyMin();
+        }
         //double sy = p[4];
         //double sx = 1/Math.sqrt(p[3]);
         //double sy = 1/Math.sqrt(p[4]);
@@ -152,7 +200,7 @@ public class GaussianFit {
                 ar = sx / sy; 
         }
         //logger.debug("gaussian fit on seed: {}; center: {}, x: {}, y: {}, I: {}, sigmaX: {}, sigmaY: {}, error: {}", o.getLabel(), o.getCenter(),x, y, Ar, sx, sy, error);
-        logger.debug("gaussian fit on seed: {}; center: {}, sigmaX: {}, error: {}", o.getLabel(), o.getCenter(false), sx, error);
+        logger.debug("gaussian fit on seed: {}; center: {}, sigmaX: {}, A: {}, C:{}, error: {}", o.getLabel(), o.getCenter(false), sx, Ar, C, error);
         return new EllipseRoi(x1, y1, x2, y2, ar);
     }
 }

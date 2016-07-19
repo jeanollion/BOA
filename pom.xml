@@ -129,11 +129,6 @@
         </dependency>
         <dependency>
             <groupId>net.imglib2</groupId>
-            <artifactId>imglib2-algorithm-gpl</artifactId>
-            <version>0.1.6-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>net.imglib2</groupId>
             <artifactId>imglib2-ij</artifactId>
             <version>2.0.0-beta-32-SNAPSHOT</version>
         </dependency>

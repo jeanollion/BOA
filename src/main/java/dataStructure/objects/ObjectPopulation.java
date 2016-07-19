@@ -694,11 +694,12 @@ public class ObjectPopulation {
     }
     
     public static class GaussianFit implements Filter {
-        double sigmaSpan, sigmaMin,sigmaMax, precision, errorThreshold, sigmaThreshold; 
+        public static boolean disp = false;
+        double typicalSigma, sigmaMin,sigmaMax, precision, errorThreshold, sigmaThreshold; 
         Image image;
         Map<Object3D, double[]> fit;
-        public GaussianFit(Image image, double sigmaSpan, double sigmaMin, double sigmaMax, double precision, double errorThreshold, double sigmaThreshold) {
-            this.sigmaSpan=sigmaSpan;
+        public GaussianFit(Image image, double typicalSigma, double sigmaMin, double sigmaMax, double precision, double errorThreshold, double sigmaThreshold) {
+            this.typicalSigma=typicalSigma;
             this.sigmaMin=sigmaMin;
             this.sigmaMax=sigmaMax;
             this.errorThreshold=errorThreshold;
@@ -706,8 +707,8 @@ public class ObjectPopulation {
             this.image=image;
         }
         @Override public void init(ObjectPopulation population) {
-            fit = processing.GaussianFit.run(image, population.getObjects(), sigmaSpan, sigmaMin, sigmaMax, precision, 300, 0.001, 0.01);
-            //processing.GaussianFit.display2DImageAndRois(image, fit);
+            fit = processing.gaussianFit.GaussianFit.run(image, population.getObjects(), typicalSigma, sigmaMin, sigmaMax, precision, 300, 0.001, 0.01);
+            if (disp) processing.gaussianFit.GaussianFit.display2DImageAndRois(image, fit);
         }
         @Override
         public boolean keepObject(Object3D object) {
