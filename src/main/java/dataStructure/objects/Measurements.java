@@ -106,7 +106,7 @@ public class Measurements implements Comparable<Measurements>{
     public String getValueAsString(String name) {
         Object o = values.get(name);
         if (o instanceof Number || o instanceof String || o instanceof Boolean) return o.toString();
-        else return "NaN";
+        else return "NA";
     }
     
     public void setValue(String key, Number value) {

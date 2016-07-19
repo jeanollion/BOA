@@ -301,9 +301,10 @@ public class ManualCorrection {
                     
                     //Update tree
                     ObjectNode node = GUI.getInstance().objectTreeGenerator.getObjectNode(e.getKey());
-                    node.getParent().createChildren();
-                    GUI.getInstance().objectTreeGenerator.reload(node.getParent());
-                    
+                    if (node!=null && node.getParent()!=null) {
+                        node.getParent().createChildren();
+                        GUI.getInstance().objectTreeGenerator.reload(node.getParent());
+                    }
                     //Update all opened images & objectImageInteraction
                     ImageWindowManagerFactory.getImageManager().reloadObjects(e.getKey(), structureIdx, false);
                 }

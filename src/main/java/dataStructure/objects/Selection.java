@@ -32,6 +32,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -55,6 +56,7 @@ public class Selection implements Comparable<Selection> {
     @Transient Map<String, Set<StructureObject>> retrievedElements= new HashMap<String, Set<StructureObject>>();
     @Transient Map<String, Set<StructureObject>> retrievedTrackHeads = new HashMap<String, Set<StructureObject>>();
     @Transient MasterDAO mDAO;
+    @Transient boolean elementsTypeChecked=false;
     
     public Selection(String name, MasterDAO mDAO) {
         this.id=name;
@@ -128,7 +130,7 @@ public class Selection implements Comparable<Selection> {
         return res;
     }
     protected Collection<String> get(String fieldName, boolean createIfNull) {
-        Collection<String> indiciesList = elements.get(fieldName);
+        Object indiciesList = elements.get(fieldName);
         if (indiciesList==null) {
             if (createIfNull) {
                 indiciesList = new ArrayList<String>();
@@ -136,10 +138,15 @@ public class Selection implements Comparable<Selection> {
             } else return null;
         }
         else if (indiciesList instanceof Set) { // retro-compatibility
-            indiciesList = new ArrayList<String>(indiciesList);
+            indiciesList = new ArrayList<String>((Set)indiciesList);
             elements.put(fieldName, (List)indiciesList);
+        } else if (indiciesList instanceof String) { // case of one single object stored by R
+            ArrayList<String> l = new ArrayList<String>();
+            l.add((String)indiciesList);
+            elements.put(fieldName, l);
+            return l;
         }
-        return indiciesList;
+        return (Collection<String>)indiciesList;
     }
     protected Set<StructureObject> retrieveElements(String fieldName) {
         if (fieldName==null) throw new IllegalArgumentException("FieldName cannot be null");
@@ -170,6 +177,7 @@ public class Selection implements Comparable<Selection> {
     }
     
     private StructureObject getObject(int[] indices, int[] pathToRoot, List<StructureObject> roots) {
+        if (roots==null || roots.size()<indices[0]) return null;
         StructureObject elem = roots.get(indices[0]);
         for (int i= 1; i<indices.length; ++i) {
             /*if (elem.getChildren(pathToRoot[i-1]).size()<=indices[i]) {
@@ -269,7 +277,7 @@ public class Selection implements Comparable<Selection> {
     }
     public int count() {
         int c = 0;
-        for (Collection<String> l : elements.values()) c+=l.size();
+        for (String k : elements.keySet()) c+=get(k, true).size();
         return c;
     }
     public String getName() {

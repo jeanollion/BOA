@@ -35,13 +35,14 @@ public class GaussianFitTestOnMutations {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         //String dbName = "testSub60";
-        final String dbName = "boa_fluo151127";
-        int fIdx = 0;
-        int mcIdx =1;
+        //final String dbName = "boa_fluo151127";
+        final String dbName = "boa_fluo160428";
+        int fIdx = 1;
+        int mcIdx =0;
         //String dbName = "fluo151130_Output";
         GaussianFitTestOnMutations t = new GaussianFitTestOnMutations();
         t.init(dbName);
-        t.testGaussFit(fIdx, mcIdx, 0);
+        t.testGaussFit(fIdx, mcIdx, 3);
     }
     public void init(String dbName) {
         db = new MorphiumMasterDAO(dbName);
