@@ -716,6 +716,7 @@ public abstract class ImageWindowManager<T, U, V> {
     }
     
     private static StructureObject getNextObject(int timePointLimit, List<StructureObject> objects, boolean next) {
+        if (objects.isEmpty()) return null;
         int idx = Collections.binarySearch(objects, new StructureObject(timePointLimit, null, null), timePointComparator());
         if (idx>=0) return objects.get(idx);
         int insertionPoint = -idx-1;
@@ -729,6 +730,7 @@ public abstract class ImageWindowManager<T, U, V> {
     }
     
     private static StructureObject getNextError(int maxTimePoint, List<StructureObject> tracksHeads) {
+        if (tracksHeads.isEmpty()) return null;
         StructureObject[] trackArray = tracksHeads.toArray(new StructureObject[tracksHeads.size()]);
         boolean change = true;
         boolean remainTrack = true;
@@ -752,6 +754,7 @@ public abstract class ImageWindowManager<T, U, V> {
         return null;
     }
     private static StructureObject getPreviousError(int minTimePoint, List<StructureObject> trackHeads) {
+        if (trackHeads.isEmpty()) return null;
         StructureObject[] trackArray = trackHeads.toArray(new StructureObject[trackHeads.size()]);
         // get all rois to maximal value < errorTimePoint
         for (int trackIdx = 0; trackIdx<trackArray.length; ++trackIdx) {

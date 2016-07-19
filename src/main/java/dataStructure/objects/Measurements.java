@@ -26,6 +26,7 @@ import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
 import org.bson.types.ObjectId;
 import utils.Utils;
 
@@ -53,7 +54,8 @@ public class Measurements implements Comparable<Measurements>{
         this.values=new HashMap<String, Object>();
         updateObjectProperties(o);
     }
-
+    
+    public boolean modified() {return modifications;}
     
     public ObjectId getId() {
         return id;
@@ -182,5 +184,5 @@ public class Measurements implements Comparable<Measurements>{
         } 
         return new Measurements(fieldName, timePoint, structureIdx, Arrays.copyOfRange(indicies, 0, indicies.length-parentOrder));
     }
-    public Object getValues() {return values;}
+    public Map<String, Object> getValues() {return values;}
 }
