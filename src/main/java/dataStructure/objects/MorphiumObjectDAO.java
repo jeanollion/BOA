@@ -589,7 +589,14 @@ public class MorphiumObjectDAO implements ObjectDAO {
     public void upsertMeasurement(StructureObject o) {
         o.getMeasurements().updateObjectProperties(o);
         //if (o.getMeasurements().id!=null) measurementsDAO.delete(o.getMeasurements());
-        this.measurementsDAO.store(o.getMeasurements()); // toDO -> partial update if already an ID
+        try {
+            this.measurementsDAO.store(o.getMeasurements());// toDO -> partial update if already an ID
+        } catch (Exception e) {
+            logger.debug("Error while storing measurement: {}", e);
+            Measurements m = o.getMeasurements();
+            logger.debug("Object: {}, meas: {}, {}, {}, {}", o, m.fieldName, m.id, m.indicies, m.values);
+            return;
+        }
         o.getMeasurements().modifications=false;
         
         //logger.debug("store meas: id: {}, id in object: {}: {}", o.measurements.id, o, o.measurementsId);

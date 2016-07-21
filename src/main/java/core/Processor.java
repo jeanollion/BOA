@@ -30,9 +30,12 @@ import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import measurement.MeasurementKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plugins.Measurement;
@@ -214,7 +217,10 @@ public class Processor {
                             if (!m.callOnlyOnTrackHeads() || o.isTrackHead()) m.performMeasurement(o);
                         }
                     }
-                    for (StructureObject o : objects) if (o.getMeasurements().modified()) modifiedObjects.add(o);
+                    for (int sOut : getOutputStructures(e.getValue())) {
+                        List<StructureObject> l= sOut==structureIdx ? objects : root.getChildren(sOut); 
+                        for (StructureObject o : l) if (o.getMeasurements().modified()) modifiedObjects.add(o);
+                    }
                 }
                 allModifiedObjectsSync.addAll(modifiedObjects);
                 //long t1 = System.currentTimeMillis();
@@ -225,5 +231,11 @@ public class Processor {
         Utils.removeDuplicates(allModifiedObjects, false);
         logger.debug("measurements on field: {}: computation time: {}, #modified objects: {}", dao.getFieldName(), t1-t0, allModifiedObjects.size());
         dao.upsertMeasurements(allModifiedObjects);
+    }
+    
+    private static Set<Integer> getOutputStructures(List<Measurement> mList) {
+        Set<Integer> l = new HashSet<Integer>(5);
+        for (Measurement m : mList) for (MeasurementKey k : m.getMeasurementKeys()) l.add(k.getStoreStructureIdx());
+        return l;
     }
 }

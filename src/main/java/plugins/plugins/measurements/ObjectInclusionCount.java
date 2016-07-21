@@ -43,7 +43,7 @@ public class ObjectInclusionCount implements Measurement {
     protected StructureParameter structureToCount = new StructureParameter("Structure to count", -1, false, false);
     protected BooleanParameter onlyTrackHeads = new BooleanParameter("Count Only TrackHeads", false);
     protected BoundedNumberParameter percentageInclusion = new BoundedNumberParameter("Minimum percentage of inclusion", 0, 100, 0, 100);
-    protected TextParameter inclusionText = new TextParameter("Inclusion Key Name", "ObjectNumber", false);
+    protected TextParameter inclusionText = new TextParameter("Inclusion Key Name", "ObjectCount", false);
     protected Parameter[] parameters = new Parameter[]{structureContainer, structureToCount, percentageInclusion, onlyTrackHeads, inclusionText};
     
     public ObjectInclusionCount() {}
