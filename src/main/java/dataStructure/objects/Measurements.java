@@ -78,7 +78,7 @@ public class Measurements implements Comparable<Measurements>{
     }
         
     static String[] getBaseFields() {
-        return new String[]{"time_point", "structure_idx", "indicies", "is_track_head"};
+        return new String[]{"time_point", "structure_idx", "indices", "is_track_head"};
     }
     static String[] getReturnedFields(String... measurements) {
         String[] baseReturnedFields = getBaseFields();
@@ -90,8 +90,8 @@ public class Measurements implements Comparable<Measurements>{
     }
     
     public void updateObjectProperties(StructureObject o) {
-        int[] newIndicies = StructureObjectUtils.getIndexTree(o);
-        if (!Arrays.equals(newIndicies, indices)) {
+        int[] newIndices = StructureObjectUtils.getIndexTree(o);
+        if (!Arrays.equals(newIndices, indices)) {
             this.indices=StructureObjectUtils.getIndexTree(o);
             modifications=true; // TODO partial update
         }
@@ -169,11 +169,11 @@ public class Measurements implements Comparable<Measurements>{
         return hash;
     }
     
-    private Measurements(String fieldName, int timePoint, int structureIdx, int[] indicies) { // only for getParentMeasurementKey
+    private Measurements(String fieldName, int timePoint, int structureIdx, int[] indices) { // only for getParentMeasurementKey
         this.fieldName = fieldName;
         this.timePoint = timePoint;
         this.structureIdx = structureIdx;
-        this.indices = indicies;
+        this.indices = indices;
     }
     
     public Measurements getParentMeasurementKey(int parentOrder) {
