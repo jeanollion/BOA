@@ -42,7 +42,7 @@ public class Measurements implements Comparable<Measurements>{
     @Transient protected String fieldName;
     protected int timePoint, structureIdx;
     boolean isTrackHead;
-    protected int[] indicies;
+    protected int[] indices;
     protected HashMap<String, Object> values;
     @Transient boolean modifications=false;
     
@@ -74,7 +74,7 @@ public class Measurements implements Comparable<Measurements>{
     }
 
     public int[] getIndices() {
-        return indicies;
+        return indices;
     }
         
     static String[] getBaseFields() {
@@ -91,8 +91,8 @@ public class Measurements implements Comparable<Measurements>{
     
     public void updateObjectProperties(StructureObject o) {
         int[] newIndicies = StructureObjectUtils.getIndexTree(o);
-        if (!Arrays.equals(newIndicies, indicies)) {
-            this.indicies=StructureObjectUtils.getIndexTree(o);
+        if (!Arrays.equals(newIndicies, indices)) {
+            this.indices=StructureObjectUtils.getIndexTree(o);
             modifications=true; // TODO partial update
         }
         if (this.isTrackHead!=o.isTrackHead) {
@@ -133,15 +133,15 @@ public class Measurements implements Comparable<Measurements>{
         modifications=true;
     }
     
-    public int compareTo(Measurements o) { // fieldName / structureIdx / timePoint / indicies
+    public int compareTo(Measurements o) { // fieldName / structureIdx / timePoint / indices
         int f = fieldName.compareTo(o.fieldName);
         if (f!=0) return f;
         if (structureIdx<o.structureIdx) return -1;
         else if (structureIdx>o.structureIdx) return 1;
         else {
-            for (int i  = 0; i<indicies.length; ++i) {
-                if (indicies[i]<o.indicies[i]) return -1;
-                if (indicies[i]>o.indicies[i]) return 1;
+            for (int i  = 0; i<indices.length; ++i) {
+                if (indices[i]<o.indices[i]) return -1;
+                if (indices[i]>o.indices[i]) return 1;
             }
         }
         return 0;
@@ -155,7 +155,7 @@ public class Measurements implements Comparable<Measurements>{
             if (!fieldName.equals(m.fieldName)) return false;
             if (structureIdx!=m.structureIdx) return false;
             if (timePoint!=m.timePoint) return false;
-            return Arrays.equals(indicies, m.indicies);
+            return Arrays.equals(indices, m.indices);
         } else return false;
     }
 
@@ -165,7 +165,7 @@ public class Measurements implements Comparable<Measurements>{
         hash = 83 * hash + this.fieldName.hashCode();
         hash = 83 * hash + this.timePoint;
         hash = 83 * hash + this.structureIdx;
-        hash = 83 * hash + Arrays.hashCode(this.indicies);
+        hash = 83 * hash + Arrays.hashCode(this.indices);
         return hash;
     }
     
@@ -173,16 +173,16 @@ public class Measurements implements Comparable<Measurements>{
         this.fieldName = fieldName;
         this.timePoint = timePoint;
         this.structureIdx = structureIdx;
-        this.indicies = indicies;
+        this.indices = indicies;
     }
     
     public Measurements getParentMeasurementKey(int parentOrder) {
-        if (indicies.length==0) return this;
-        if (parentOrder<=0 || parentOrder> indicies.length) {
+        if (indices.length==0) return this;
+        if (parentOrder<=0 || parentOrder> indices.length) {
             return null;
             //throw new IllegalArgumentException("parent order should be >0 & <="+indicies.length+ "current value: "+parentOrder);
         } 
-        return new Measurements(fieldName, timePoint, structureIdx, Arrays.copyOfRange(indicies, 0, indicies.length-parentOrder));
+        return new Measurements(fieldName, timePoint, structureIdx, Arrays.copyOfRange(indices, 0, indices.length-parentOrder));
     }
     public Map<String, Object> getValues() {return values;}
 }

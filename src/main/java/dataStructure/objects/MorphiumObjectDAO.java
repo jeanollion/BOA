@@ -594,7 +594,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
         } catch (Exception e) {
             logger.debug("Error while storing measurement: {}", e);
             Measurements m = o.getMeasurements();
-            logger.debug("Object: {}, meas: {}, {}, {}, {}", o, m.fieldName, m.id, m.indicies, m.values);
+            logger.debug("Object: {}, meas: {}, {}, {}, {}", o, m.fieldName, m.id, m.indices, m.values);
             return;
         }
         o.getMeasurements().modifications=false;
