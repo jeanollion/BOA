@@ -322,6 +322,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
         logger.debug("{} objects deleted in : {}ms", list.size(), t1-t0);
     }
     
+    @Override
     public void store(StructureObject object, boolean updateTrackAttributes) {
         object.updateObjectContainer();
         object.updateMeasurementsIfNecessary();

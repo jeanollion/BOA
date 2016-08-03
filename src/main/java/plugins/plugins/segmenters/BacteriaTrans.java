@@ -117,7 +117,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     NumberParameter relativeThicknessMaxDistance = new BoundedNumberParameter("Max Distance for Relative Thickness normalization factor (calibrated)", 2, 1, 0, null);
     GroupParameter thicknessParameters = new GroupParameter("Constaint on thickness", relativeThicknessMaxDistance, relativeThicknessThreshold);
     
-    NumberParameter curvatureThreshold = new BoundedNumberParameter("Curvature Threshold (higher merge more)", 2, -0.75, null, 0);
+    NumberParameter curvatureThreshold = new BoundedNumberParameter("Curvature Threshold (lower merge more)", 2, 1, null, 0);
     NumberParameter curvatureScale = new BoundedNumberParameter("Curvature scale", 0, 6, 3, null);
     NumberParameter curvatureSearchRadius = new BoundedNumberParameter("Radius for min. search", 1, 2.5, 1, null);
     GroupParameter curvatureParameters = new GroupParameter("Constaint on curvature", curvatureScale, curvatureThreshold, curvatureSearchRadius);
@@ -127,7 +127,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     GroupParameter angleParameters = new GroupParameter("Constaint on angles", aspectRatioThreshold, angleThreshold);
     */
     NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 10, 0, null);
-    NumberParameter minSize = new BoundedNumberParameter("Minimum Object size", 0, 150, 5, null);
+    NumberParameter minSize = new BoundedNumberParameter("Minimum Object size", 0, 250, 5, null);
     GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSize, contactLimit);
     
     Parameter[] parameters = new Parameter[]{backgroundSeparation, thicknessParameters, curvatureParameters, objectParameters};
@@ -151,11 +151,9 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         else if (p==curvatureScale) {
             logger.debug("cur test");
             disp.showImage(pv.getSegmentationMask().duplicate("segmentation mask"));
-            ObjectPopulation pop = new ObjectPopulation(pv.getSegmentationMask(), true);
-            ImageFloat curv = new ImageFloat("Curvature map: "+curvatureScale.getValue().intValue(), pv.getSegmentationMask()).resetOffset();
-            pop.getObjects().stream().map((o) -> computeCurvature(o.getMask(), curvatureScale.getValue().intValue())).forEach((tree) -> { Curvature.drawOnCurvatureMask(curv, tree); });
-            disp.showImage(curv);
+            
             ObjectPopulation popSplit = getSeparatedObjects(pv, minSize.getValue().intValue(), 0, false);
+            disp.showImage(getCurvatureImage(new ObjectPopulation(pv.getSegmentationMask(), true), curvatureScale.getValue().intValue()));
             disp.showImage(pv.splitSegmentationMask().getLabelMap().setName("after split"));
             disp.showImage(popSplit.getLabelMap().duplicate("after merge"));
         } else if (p==threshold) {
@@ -165,6 +163,12 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             disp.showImage(input.duplicate("input"));
             disp.showImage(pv.getDOG().duplicate("DoG: Scale: "+dogScale.getValue().doubleValue()));
         }
+    }
+    
+    private static Image getCurvatureImage(ObjectPopulation pop, int curvatureScale) {
+        ImageFloat curv = new ImageFloat("Curvature map: "+curvatureScale, pop.getImageProperties()).resetOffset();
+        pop.getObjects().stream().map((o) -> computeCurvature(o.getMask(), curvatureScale)).forEach((tree) -> { Curvature.drawOnCurvatureMask(curv, tree); });
+        return curv;
     }
     
     //segmentation-related attributes (kept for split and merge methods)
@@ -201,7 +205,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     public ProcessingVariables getProcessingVariables(Image input, ImageMask segmentationMask) {
         return new ProcessingVariables(input, segmentationMask, 
                 relativeThicknessThreshold.getValue().doubleValue(), relativeThicknessMaxDistance.getValue().doubleValue(), 
-                dogScale.getValue().doubleValue(), openRadius.getValue().doubleValue(), minSizePropagation.getValue().intValue(),
+                dogScale.getValue().doubleValue(), openRadius.getValue().doubleValue(), minSizePropagation.getValue().intValue(), minSize.getValue().intValue(),
                 curvatureScale.getValue().intValue(), curvatureThreshold.getValue().doubleValue(), curvatureSearchRadius.getValue().doubleValue());
     }
     
@@ -242,6 +246,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         }
         if (debug) {
             ImagePlus ip = disp.showImage(res.getLabelMap().duplicate("watershed EDM - shape re-split"));
+            disp.showImage(getCurvatureImage(new ObjectPopulation(pv.getSegmentationMask(), true), pv.curvatureScale));
             //display ellipses..
             /*Overlay ov = new Overlay();
             EllipseFit2D prev=null;
@@ -259,6 +264,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         Object3DCluster.verbose=debug;
         //res.setVoxelIntensities(pv.getEDM());// for merging // useless if watershed transform on EDM has been called just before
         Object3DCluster.mergeSort(res,  pv.getFactory(), objectMergeLimit<=1, 0, objectMergeLimit);
+        
         res.filterAndMergeWithConnected(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
         res.filterAndMergeWithConnected(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
         if (debug) {
@@ -449,11 +455,11 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         ImageByte splitMask;
         final double relativeThicknessThreshold, dogScale, openRadius, relativeThicknessMaxDistance;//, smoothScale;// aspectRatioThreshold, angleThresholdRad; 
         double threshold = Double.NaN;
-        final int curvatureScale, minSizePropagation;
+        final int curvatureScale, minSizePropagation, minSize;
         final double curvatureSearchScale;
         final double curvatureThreshold;
         Object3DCluster.InterfaceFactory<Object3D, InterfaceBT> factory;
-        private ProcessingVariables(Image input, ImageMask mask, double splitThresholdValue, double relativeThicknessMaxDistance, double dogScale, double openRadius, int minSizePropagation, int curvatureScale, double curvatureThreshold, double curvatureSearchRadius) {
+        private ProcessingVariables(Image input, ImageMask mask, double splitThresholdValue, double relativeThicknessMaxDistance, double dogScale, double openRadius, int minSizePropagation, int minSize, int curvatureScale, double curvatureThreshold, double curvatureSearchRadius) {
             this.input=input;
             this.mask=mask;
             this.relativeThicknessThreshold=splitThresholdValue;
@@ -462,6 +468,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             this.dogScale=dogScale;
             this.openRadius=openRadius;
             this.minSizePropagation=minSizePropagation;
+            this.minSize=minSize;
             //this.aspectRatioThreshold=aspectRatioThreshold;
             //this.angleThresholdRad = angleThresholdDeg * Math.PI / 180d ;
             this.curvatureScale = curvatureScale;
@@ -598,8 +605,11 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             @Override
             public boolean checkFusion() {
                 if (maxVoxel==null) return false;
-
-                // criterion angle between two 
+                if (this.voxels.isEmpty()) return false;
+                // criterion on size
+                if (this.e1.getSize()<minSize || this.e2.getSize()<minSize) return true;
+                
+                // criterion angle between two fitted ellipses
                 // if aspect ratio is no elevated, angle is not taken into account
                 // look @ angles between major axis and center-center
                 // if both angles are opposed, it could be one single curved object, thus if angles are in same direction their sum is considered (penalty) 

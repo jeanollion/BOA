@@ -75,11 +75,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     List<StructureObject> parents;
     int structureIdx;
     double maxGR, minGR, div, costLim, cumCostLim;
-    
+    final static int maxCorrectionLength = 10;
     PreFilterSequence preFilters; 
     PostFilterSequence postFilters;
     
-    static int loopLimit=10;
+    static int loopLimit=3;
     public static boolean debug=false, debugCorr=false;
     
     
@@ -126,7 +126,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         int nLoop = 0;
         while(currentTimePoint<populations.length) {
             int corr = assignPrevious(currentTimePoint, performCorrection);
-            if (corr==-1) ++currentTimePoint;   
+            if (corr==-1) {
+                ++currentTimePoint;
+                freeMemoryUntil(currentTimePoint-maxCorrectionLength);
+                if (currentTimePoint%100==0) logger.debug("tp: {}", currentTimePoint);
+            }   
             else {
                 if (corr==0) corr=1;
                 ++nLoop;
@@ -140,6 +144,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             }
             if (maxTimePoint<currentTimePoint) { // when max timePoint in reached -> reset counter
                 maxTimePoint=currentTimePoint;
+                freeMemoryUntil(currentTimePoint-maxCorrectionLength);
                 nLoop=0;
             }
         }
@@ -159,6 +164,14 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 setAttributes(t, children, childrenPrev);
             }
             childrenPrev=children;
+        }
+    }
+    
+    private void freeMemoryUntil(int timePoint) {
+        if (timePoint<0) return;
+        while(true) {
+            segmenters[timePoint--]=null;
+            if (timePoint<0 || segmenters[timePoint]==null) return;
         }
     }
     
@@ -387,7 +400,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
          */
         public int performCorrection() {
             //logger.debug("t: {}: performing correction, idxPrev: {}, idxPrevEnd: {}", timePoint, idxPrev, idxPrevEnd);
-            List<CorrectionScenario> merge = new MergeScenario(idxPrev, idxPrevEnd, timePoint-1).getWholeScenario(-1, costLim, cumCostLim);
+            List<CorrectionScenario> merge = new MergeScenario(idxPrev, idxPrevEnd, timePoint-1).getWholeScenario(maxCorrectionLength, costLim, cumCostLim);
             double mergeCost = 0; for (CorrectionScenario c : merge) mergeCost+=c.cost; if (merge.isEmpty()) mergeCost=Double.POSITIVE_INFINITY;
             List<CorrectionScenario> split = new SplitScenario(getAttribute(timePoint, idx), timePoint).getWholeScenario(-1, costLim, mergeCost>0? Math.min(mergeCost, cumCostLim) : cumCostLim);
             double splitCost = 0; for (CorrectionScenario c : split) splitCost+=c.cost; if (split.isEmpty()) splitCost=Double.POSITIVE_INFINITY;

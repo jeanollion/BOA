@@ -83,6 +83,7 @@ public class SegmentOnly implements ProcessingScheme {
 
     @Override public void trackOnly(int structureIdx, List<StructureObject> parentTrack) {}
 
+    @Override
     public Parameter[] getParameters() {
         return parameters;
     }

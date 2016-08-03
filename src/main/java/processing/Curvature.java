@@ -84,6 +84,7 @@ public class Curvature {
             int y = (int) Math.round(cur.getDoublePosition(1)) - curvatureMask.getOffsetY();
             if (x>=xLim) --x;
             if (y>=yLim) --y;
+            //double oldV = curvatureMask.getPixel(x, y, 0);
             curvatureMask.setPixel(x, y, 0, d);
         }
     }

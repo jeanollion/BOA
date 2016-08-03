@@ -47,10 +47,12 @@ public class SegmentThenTrack implements ProcessingScheme {
         this.segmenter.setPlugin(segmenter);
         this.tracker.setPlugin(tracker);
     }
+    @Override
     public SegmentThenTrack addPreFilters(PreFilter... preFilter) {
         preFilters.add(preFilter);
         return this;
     }
+    @Override
     public SegmentThenTrack addPostFilters(PostFilter... postFilter) {
         postFilters.add(postFilter);
         return this;
@@ -63,9 +65,11 @@ public class SegmentThenTrack implements ProcessingScheme {
         postFilters.add(postFilter);
         return this;
     }
+    @Override
     public Segmenter getSegmenter() {return segmenter.instanciatePlugin();}
     public Tracker getTracker() {return tracker.instanciatePlugin();}
 
+    @Override
     public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack) {
         if (!segmenter.isOnePluginSet()) {
             logger.info("No segmenter set for structure: {}", structureIdx);
@@ -96,6 +100,7 @@ public class SegmentThenTrack implements ProcessingScheme {
         parent.setChildrenObjects(pop, structureIdx);
     }
 
+    @Override
     public void trackOnly(final int structureIdx, List<StructureObject> parentTrack) {
         if (!tracker.isOnePluginSet()) {
             logger.info("No tracker set for structure: {}", structureIdx);
@@ -108,6 +113,7 @@ public class SegmentThenTrack implements ProcessingScheme {
         t.track(structureIdx, parentTrack);
     }
 
+    @Override
     public Parameter[] getParameters() {
         return parameters;
     }

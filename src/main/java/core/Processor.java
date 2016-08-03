@@ -127,19 +127,23 @@ public class Processor {
         }
         for (String fieldName : xp.getFieldsAsString()) {
             processAndTrackStructures(db.getDao(fieldName), deleteObjects, structures);
-            db.getDao(fieldName);
+            db.getDao(fieldName).clearCache();
+            db.getExperiment().getMicroscopyField(fieldName).flushImages();
         }
     }
     
     public static void processAndTrackStructures(ObjectDAO dao, boolean deleteObjects, int... structures) {
         Experiment xp = dao.getExperiment();
         if (deleteObjects) {
-            if (structures.length==0) dao.deleteAllObjects();
+            if (structures.length==0 || structures.length==xp.getStructureCount()) dao.deleteAllObjects();
             else dao.deleteObjectsByStructureIdx(structures);
         } 
         List<StructureObject> root = getOrCreateRootTrack(dao);
         if (structures.length==0) structures=xp.getStructuresInHierarchicalOrderAsArray();
-        for (int s: structures) executeProcessingScheme(root, s, false, false);
+        for (int s: structures) {
+            executeProcessingScheme(root, s, false, false);
+            System.gc();
+        }
     }
     
     public static void executeProcessingScheme(List<StructureObject> parentTrack, final int structureIdx, final boolean trackOnly, final boolean deleteChildren) {
@@ -159,7 +163,8 @@ public class Processor {
             logger.debug("ex ps: structure: {}, allParentTracks: {}", structureIdx, allParentTracks.size());
             // one thread per track
             ThreadAction<List<StructureObject>> ta = new ThreadAction<List<StructureObject>>() {
-                public void run(List<StructureObject> pt, int idx, int threadIdx) {execute(ps, structureIdx, pt, trackOnly, deleteChildren, dao);}
+                @Override
+                public void run(List<StructureObject> pt, int idx, int threadIdx) {execute(xp.getStructure(structureIdx).getProcessingScheme(), structureIdx, pt, trackOnly, deleteChildren, dao);}
             };
             ThreadRunner.execute(new ArrayList<List<StructureObject>> (allParentTracks.values()), ta);
         }

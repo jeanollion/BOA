@@ -47,10 +47,12 @@ public class SegmentAndTrack implements ProcessingScheme {
     public SegmentAndTrack(TrackerSegmenter tracker){
         this.tracker.setPlugin(tracker);
     }
+    @Override
     public SegmentAndTrack addPreFilters(PreFilter... preFilter) {
         preFilters.add(preFilter);
         return this;
     }
+    @Override
     public SegmentAndTrack addPostFilters(PostFilter... postFilter) {
         postFilters.add(postFilter);
         return this;
@@ -63,6 +65,7 @@ public class SegmentAndTrack implements ProcessingScheme {
         postFilters.add(postFilter);
         return this;
     }
+    @Override
     public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack) {
         if (!tracker.isOnePluginSet()) {
             logger.info("No tracker set for structure: {}", structureIdx);
@@ -72,6 +75,7 @@ public class SegmentAndTrack implements ProcessingScheme {
         t.segmentAndTrack(structureIdx, parentTrack, preFilters, postFilters);
     }
 
+    @Override
     public void trackOnly(int structureIdx, List<StructureObject> parentTrack) {
         if (!tracker.isOnePluginSet()) {
             logger.info("No tracker set for structure: {}", structureIdx);
@@ -84,6 +88,7 @@ public class SegmentAndTrack implements ProcessingScheme {
         t.track(structureIdx, parentTrack);
     }
 
+    @Override
     public Parameter[] getParameters() {
         return parameters;
     }
