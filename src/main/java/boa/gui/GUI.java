@@ -1473,7 +1473,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }//GEN-LAST:event_collapseAllObjectButtonActionPerformed
 
     private void selectAllTracksButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllTracksButtonActionPerformed
-        ImageWindowManagerFactory.getImageManager().selectAllTracks(null);
+        ImageWindowManagerFactory.getImageManager().displayAllTracks(null);
         //GUI.updateRoiDisplayForSelections(null, null);
     }//GEN-LAST:event_selectAllTracksButtonActionPerformed
 
@@ -1521,8 +1521,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }//GEN-LAST:event_interactiveStructureActionPerformed
 
     private void selectAllObjectsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllObjectsActionPerformed
-        if (!checkConnection()) return;
-        getImageManager().selectAllObjects(null);
+        getImageManager().displayAllObjects(null);
         //GUI.updateRoiDisplayForSelections(null, null);
         
     }//GEN-LAST:event_selectAllObjectsActionPerformed

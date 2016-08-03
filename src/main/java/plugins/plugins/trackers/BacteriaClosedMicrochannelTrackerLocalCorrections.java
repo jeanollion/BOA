@@ -56,9 +56,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     // parametrization-related attributes
     protected PluginParameter<SegmenterSplitAndMerge> segmenter = new PluginParameter<SegmenterSplitAndMerge>("Segmentation algorithm", SegmenterSplitAndMerge.class, new BacteriaFluo(), false);
-    BoundedNumberParameter maxGrowthRate = new BoundedNumberParameter("Maximum growth rate", 2, 1.7, 1, 2);
-    BoundedNumberParameter minGrowthRate = new BoundedNumberParameter("Minimum growth rate", 2, 1.1, 1, 2);
-    BoundedNumberParameter divisionCriterion = new BoundedNumberParameter("Division Criterio", 2, 0.9, 0.5, 1.1);
+    BoundedNumberParameter maxGrowthRate = new BoundedNumberParameter("Maximum growth rate", 2, 1.7, 1, 4);
+    BoundedNumberParameter minGrowthRate = new BoundedNumberParameter("Minimum growth rate", 2, 1, 0.75, 2);
+    BoundedNumberParameter divisionCriterion = new BoundedNumberParameter("Division Criterion", 2, 0.75, 0.5, 1.1);
     BoundedNumberParameter costLimit = new BoundedNumberParameter("Correction: operation cost limit", 3, 1, 0, null);
     BoundedNumberParameter cumCostLimit = new BoundedNumberParameter("Correction: cumulative cost limit", 3, 5, 0, null);
     Parameter[] parameters = new Parameter[]{segmenter, maxGrowthRate, minGrowthRate, divisionCriterion, costLimit, cumCostLimit};
@@ -80,7 +80,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     PostFilterSequence postFilters;
     
     static int loopLimit=10;
-    public static boolean debug=false;
+    public static boolean debug=false, debugCorr=false;
     
     
     public BacteriaClosedMicrochannelTrackerLocalCorrections() {}
@@ -386,20 +386,21 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
          * @return minimal timePoint where correction has been performed
          */
         public int performCorrection() {
-            //logger.debug("t: {}: performing correction", timePoint);
+            //logger.debug("t: {}: performing correction, idxPrev: {}, idxPrevEnd: {}", timePoint, idxPrev, idxPrevEnd);
             List<CorrectionScenario> merge = new MergeScenario(idxPrev, idxPrevEnd, timePoint-1).getWholeScenario(-1, costLim, cumCostLim);
-            double mergeCost = 0; for (CorrectionScenario c : merge) mergeCost+=c.cost; if (merge.isEmpty()) mergeCost=-1;
+            double mergeCost = 0; for (CorrectionScenario c : merge) mergeCost+=c.cost; if (merge.isEmpty()) mergeCost=Double.POSITIVE_INFINITY;
             List<CorrectionScenario> split = new SplitScenario(getAttribute(timePoint, idx), timePoint).getWholeScenario(-1, costLim, mergeCost>0? Math.min(mergeCost, cumCostLim) : cumCostLim);
-            double splitCost = 0; for (CorrectionScenario c : split) splitCost+=c.cost; if (split.isEmpty()) splitCost=-1;
-            if (debug) logger.debug("t: {}: performing correction: merge scenario length: {}, cost: {}, split scenario: length {}, cost: {}", timePoint, merge.size(), mergeCost, split.size(), splitCost);
-            if (mergeCost>splitCost && !split.isEmpty()) {
+            double splitCost = 0; for (CorrectionScenario c : split) splitCost+=c.cost; if (split.isEmpty()) splitCost=Double.POSITIVE_INFINITY;
+            if (debugCorr) logger.debug("t: {}: performing correction: merge scenario length: {}, cost: {}, split scenario: length {}, cost: {}", timePoint, merge.size(), mergeCost, split.size(), splitCost);
+            if (Double.isInfinite(mergeCost) && Double.isInfinite(splitCost)) return -1;
+            if (mergeCost>splitCost) {
                 for (CorrectionScenario c : split) c.applyScenario();
                 return Math.max(1, timePoint);
             }
-            else if (!merge.isEmpty()) {
+            else {
                 for (CorrectionScenario c : merge) c.applyScenario();
                 return Math.max(1, timePoint-merge.size());
-            } else return -1;
+            }
         }
         @Override public String toString() {
             return "timePoint: "+timePoint+ " prev: ["+idxPrev+";"+idxPrevEnd+"[ (lim: "+idxPrevLim+ ") next: ["+idx+";"+idxEnd+"[ (lim: "+idxLim+ ") size prev: "+sizePrev+ " size: "+size+ " error: "+verifyInequality();
@@ -407,7 +408,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     }
     
     protected abstract class CorrectionScenario {
-        double cost;
+        double cost=Double.POSITIVE_INFINITY;
         protected abstract CorrectionScenario getNextScenario();
         /**
          * 
@@ -421,12 +422,12 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             CorrectionScenario cur = this;
             if (cur instanceof MergeScenario && ((MergeScenario)cur).listO.isEmpty()) return Collections.emptyList();
             double sum = 0;
-            while(cur!=null && !Double.isNaN(cur.cost)) {
+            while(cur!=null && (!Double.isNaN(cur.cost)) && Double.isFinite(cur.cost)) {
                 res.add(cur);
                 sum+=cur.cost;
                 if (cur.cost > costLimit) return Collections.emptyList();
-                if (cumulativeCostLimit>0 && sum>cumulativeCostLimit) return res; 
-                if (lengthLimit>0 && res.size()>lengthLimit) return res;
+                if (cumulativeCostLimit>0 && sum>cumulativeCostLimit) return Collections.emptyList();
+                if (lengthLimit>0 && res.size()>lengthLimit) return Collections.emptyList();
                 cur = cur.getNextScenario();
             }
             return res;
@@ -446,6 +447,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 listO.add(ta.o);
             }
             if (!listO.isEmpty()) this.cost = getSegmenter(timePoint).computeMergeCost(listO);
+            if (debugCorr) logger.debug("Merge scenario: tp: {}, idxMin: {}, #objects: {}, cost: {}", timePoint, idxMin, listO.size(), cost);
         }
         @Override protected MergeScenario getNextScenario() { // @ previous time, until there is one single parent ie no more bacteria to merge
             if (timePoint==0 || idxMin==idxMax) return null;

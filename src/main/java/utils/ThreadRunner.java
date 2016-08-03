@@ -3,6 +3,7 @@
  * and open the template in the editor.
  */
 package utils;
+import static core.Processor.logger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -125,6 +126,7 @@ public class ThreadRunner {
             return;
         }
         final ThreadRunner tr = new ThreadRunner(0, array.length, nThreadLimit);
+        final AtomicInteger count = new AtomicInteger(0);
         for (int i = 0; i<tr.threads.length; i++) {
             final int threadIdx = i;
             //final ThreadAction<T> localAction = action
@@ -134,6 +136,8 @@ public class ThreadRunner {
                         if (action instanceof ThreadAction2) ((ThreadAction2)action).setUp();
                         for (int idx = tr.ai.getAndIncrement(); idx<tr.end; idx = tr.ai.getAndIncrement()) {
                             action.run(array[idx], idx,threadIdx );
+                            int currentCount = count.incrementAndGet();
+                            logger.debug("Processed: {}/{}", currentCount, array.length);
                             if (setToNull) array[idx]=null;
                         }
                         if (action instanceof ThreadAction2) ((ThreadAction2)action).tearDown();

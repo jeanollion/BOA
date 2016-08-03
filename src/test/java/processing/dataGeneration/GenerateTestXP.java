@@ -77,6 +77,7 @@ public class GenerateTestXP {
         int trimStart=0, trimEnd=0;
         int[] cropXYdXdY=null;
         double scaleXY = Double.NaN;
+        boolean transSingleFileImport = true;
         //////// FLUO
         // Ordi LJP
         /*String dbName = "boa_fluo151130_OutputNewScaling";
@@ -87,12 +88,12 @@ public class GenerateTestXP {
         */
         
         // mutH. blink
-        String dbName = "boa_fluo151127";
+        /*String dbName = "boa_fluo151127";
         String outputDir = "/data/Images/Fluo/film151127/Output";
         String inputDir = "/data/Images/Fluo/film151127/ME121R-27112015-laser";
         boolean flip = true; 
         boolean fluo = true;
-        
+        */
         
         /*String dbName = "boa_fluo160218";
         String inputDir = "/data/Images/Fluo/film160218/ME120R63-18022016-LR62r";
@@ -201,11 +202,37 @@ public class GenerateTestXP {
         boolean fluo = false;
         */
         
+        /*String dbName = "boa_mutH_150120";
+        String inputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase150120/6300_mutH_LB_LR62rep_20012015_nd2/mg6300mutH_LB_lr62rep_oil37.nd2";
+        String outputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase150120/Output";
+        boolean flip = true;
+        boolean fluo = false;*/
+        
+        String dbName = "boa_mutH_140115";
+        String inputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase140115/6300_mutH_LB-LR62rep-15012014_nd2/mg6300mutH_LB_lr62rep_oil37.nd2";
+        String outputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase140115/Output";
+        boolean flip = true;
+        boolean fluo = false;
+        
+        /*String dbName = "boa_phase140115wt";
+        String inputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase_mg6300wtlbl1/mg6300wt-lb-laser1-oil37/";
+        String outputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase_mg6300wtlbl1/Output";
+        boolean flip = true;
+        boolean fluo = false;
+        transSingleFileImport = false;*/
+        
+        /*String dbName = "boa_phase141107wt";
+        String inputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase141107/mg6300WT-lb-lr62replic1-7-11-14/";
+        String outputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase141107/Output";
+        boolean flip = true;
+        boolean fluo = false;
+        transSingleFileImport = false;
+        */
         boolean performProcessing = false;
         
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
         mDAO.reset();
-        Experiment xp = fluo ? generateXPFluo(outputDir, true, flip, trimStart, trimEnd, scaleXY, cropXYdXdY) : generateXPTrans(outputDir, true, flip, trimStart, trimEnd, scaleXY); 
+        Experiment xp = fluo ? generateXPFluo(outputDir, true, flip, trimStart, trimEnd, scaleXY, cropXYdXdY) : generateXPTrans(outputDir, true, flip, trimStart, trimEnd, scaleXY, transSingleFileImport); 
         mDAO.setExperiment(xp);
         
         Processor.importFiles(xp, true, inputDir);
@@ -261,11 +288,12 @@ public class GenerateTestXP {
         return xp;
     }
     
-    public static Experiment generateXPTrans(String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY) {
+    public static Experiment generateXPTrans(String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY, boolean transSingleFileImport) {
         
         Experiment xp = new Experiment("testXP");
-        xp.setImportImageMethod(Experiment.ImportImageMethod.SINGLE_FILE);
-        xp.getChannelImages().insert(new ChannelImage("BF"));
+        if (transSingleFileImport) xp.setImportImageMethod(Experiment.ImportImageMethod.SINGLE_FILE);
+        else xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_TIME_POSITION);
+        xp.getChannelImages().insert(new ChannelImage("BF", "c1"));
         xp.setOutputImageDirectory(outputDir);
         File f =  new File(outputDir); f.mkdirs(); //deleteDirectory(f);
         Structure mc = new Structure("MicroChannel", -1, 0);
@@ -280,7 +308,7 @@ public class GenerateTestXP {
                 new SegmentAndTrack(
                         new BacteriaClosedMicrochannelTrackerLocalCorrections(
                                 new BacteriaTrans()
-                        ).setCostParameters(1, 5)
+                        ).setCostParameters(0.2, 1)
                 )
         );
         

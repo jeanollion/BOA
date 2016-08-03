@@ -434,6 +434,11 @@ public class Utils {
         }
         return s;
     }
+    public static String getExtension(String s) {
+        int idx = s.indexOf(".");
+        if (idx > 0) return s.substring(idx+1, s.length());
+        return "";
+    }
     
     public static String getVersion(Object o) {
         String version = null;

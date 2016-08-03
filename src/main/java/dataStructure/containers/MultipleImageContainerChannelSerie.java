@@ -38,7 +38,8 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
     BoundingBox bounds;
     @Transient private ImageReader reader[];
     
-    public MultipleImageContainerChannelSerie(String name, String[] imagePathC, int timePointNumber, int[] sizeZC) {
+    public MultipleImageContainerChannelSerie(String name, String[] imagePathC, int timePointNumber, int[] sizeZC, double scaleXY, double scaleZ) {
+        super(scaleXY, scaleZ);
         this.name = name;
         filePathC = imagePathC;
         this.timePointNumber = timePointNumber;
@@ -47,7 +48,7 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
     }
     
     public MultipleImageContainerChannelSerie duplicate() {
-        return new MultipleImageContainerChannelSerie(name, filePathC, timePointNumber, sizeZC);
+        return new MultipleImageContainerChannelSerie(name, filePathC, timePointNumber, sizeZC, scaleXY, scaleZ);
     }
     
     public void setImagePath(String[] path) {
@@ -95,11 +96,11 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
         ImageIOCoordinates ioCoordinates = getImageIOCoordinates(timePoint);
         if (bounds!=null) ioCoordinates.setBounds(bounds);
         Image image = getReader(channel).openImage(ioCoordinates);
-        if (scaleXY!=0 && scaleZ!=0) image.setCalibration((float)scaleXY, (float)scaleZ);
+        /*if (scaleXY!=0 && scaleZ!=0) image.setCalibration((float)scaleXY, (float)scaleZ);
         else {
             scaleXY = image.getScaleXY();
             scaleZ = image.getScaleZ();
-        }
+        }*/
         return image;
     }
     
@@ -111,11 +112,11 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
         ImageIOCoordinates ioCoords = ioCoordinates.duplicate();
         ioCoords.setBounds(bounds);
         Image image = getReader(channel).openImage(ioCoordinates);
-        if (scaleXY!=0 && scaleZ!=0) image.setCalibration((float)scaleXY, (float)scaleZ);
+        /*if (scaleXY!=0 && scaleZ!=0) image.setCalibration((float)scaleXY, (float)scaleZ);
         else {
             scaleXY = image.getScaleXY();
             scaleZ = image.getScaleZ();
-        }
+        }*/
         return image;
     }
     

@@ -23,6 +23,10 @@ import dataStructure.configuration.Experiment;
 import dataStructure.containers.MultipleImageContainer;
 import dataStructure.containers.MultipleImageContainerChannelSerie;
 import dataStructure.containers.MultipleImageContainerSingleFile;
+import dataStructure.containers.MultipleImageContainerPositionChannelFrame;
+import static dataStructure.containers.MultipleImageContainerPositionChannelFrame.get;
+import static dataStructure.containers.MultipleImageContainerPositionChannelFrame.getAsString;
+import static dataStructure.containers.MultipleImageContainerPositionChannelFrame.getKeyword;
 import image.ImageReader;
 import java.io.File;
 import java.io.FileFilter;
@@ -31,9 +35,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import utils.Utils;
 
 /**
@@ -48,8 +61,7 @@ public class ImageFieldFactory {
         ArrayList<MultipleImageContainer> res = new ArrayList<MultipleImageContainer>();
         if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.SINGLE_FILE)) {
             for (String p : path) ImageFieldFactory.importImagesSingleFile(new File(p), xp, res);
-        }
-        else if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD)) {
+        } else if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD)) {
             // get keywords
             int nb = xp.getChannelImages().getChildCount();
             String[] keyWords = new String[nb];
@@ -57,12 +69,14 @@ public class ImageFieldFactory {
             for (ChannelImage i : xp.getChannelImages().getChildren()) keyWords[idx++] = i.getImportImageChannelKeyword();
             logger.debug("import image channel: keywords: {}", (Object)keyWords);
             for (String p : path) ImageFieldFactory.importImagesChannel(new File(p), xp, keyWords, res);
+        } else if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_TIME_POSITION)) {
+            int nb = xp.getChannelImages().getChildCount();
+            String[] keyWords = new String[nb];
+            int idx = 0;
+            for (ChannelImage i : xp.getChannelImages().getChildren()) keyWords[idx++] = i.getImportImageChannelKeyword();
+            for (String p : path) ImageFieldFactory.importImagesCTP(new File(p), xp, keyWords, res);
         }
-        Collections.sort(res, new Comparator<MultipleImageContainer>() {
-            @Override public int compare(MultipleImageContainer arg0, MultipleImageContainer arg1) {
-                return arg0.getName().compareToIgnoreCase(arg1.getName());
-            }
-        });
+        Collections.sort(res, (MultipleImageContainer arg0, MultipleImageContainer arg1) -> arg0.getName().compareToIgnoreCase(arg1.getName()));
         return res;
     }
     
@@ -92,7 +106,8 @@ public class ImageFieldFactory {
             for (int[] tc:stc) {
                 if (stc.length>1) end = seriesSeparator+Utils.formatInteger(digits, s);
                 if (tc[1]==xp.getChannelImageCount()) {
-                    containersTC.add(new MultipleImageContainerSingleFile(Utils.removeExtension(image.getName())+end, image.getAbsolutePath(),s, tc[0], tc[1], tc[4]));
+                    double[] scaleXYZ = reader.getScaleXYZ(1);
+                    containersTC.add(new MultipleImageContainerSingleFile(Utils.removeExtension(image.getName())+end, image.getAbsolutePath(),s, tc[0], tc[1], tc[4], scaleXYZ[0], scaleXYZ[2]));
                     logger.info("image {} imported successfully", image.getAbsolutePath());
                 } else {
                     logger.warn("Invalid Image: {} has: {} channels instead of: {}", image.getAbsolutePath(), tc[1], xp.getChannelImageCount());
@@ -102,19 +117,20 @@ public class ImageFieldFactory {
         }
     }
     
-    protected static void importImagesChannel(File input, Experiment xp, String[] keyWords, ArrayList<MultipleImageContainer> containersTC) {
+    protected static void importImagesChannel(File input, Experiment xp, String[] channelKeywords, ArrayList<MultipleImageContainer> containersTC) {
+        if (channelKeywords.length==0) return;
         if (!input.isDirectory()) return;
         File[] subDirs = input.listFiles(getDirectoryFilter()); // recursivity
-        for (File dir : subDirs) importImagesChannel(dir, xp, keyWords, containersTC);// recursivity
+        for (File dir : subDirs) importImagesChannel(dir, xp, channelKeywords, containersTC);// recursivity
         
-        File[] file0 = input.listFiles(getFileFilterKeyword(keyWords[0]));
+        File[] file0 = input.listFiles((File dir, String name) -> name.contains(channelKeywords[0]) && !isIgnoredExtension(name));
         logger.debug("import images in dir: {} number of candidates: {}", input.getAbsolutePath(), file0.length);
         for (File f : file0) {
-            String[] allChannels = new String[keyWords.length];
+            String[] allChannels = new String[channelKeywords.length];
             allChannels[0] = f.getAbsolutePath();
             boolean allFiles = true;
-            for (int c = 1; c < keyWords.length; ++c) {
-                String name = input + File.separator + f.getName().replace(keyWords[0], keyWords[c]);
+            for (int c = 1; c < channelKeywords.length; ++c) {
+                String name = input + File.separator + f.getName().replace(channelKeywords[0], channelKeywords[c]);
                 File channel = new File(name);
                 if (!channel.exists()) {
                     logger.warn("missing file: {}", name);
@@ -123,10 +139,94 @@ public class ImageFieldFactory {
                 } else allChannels[c] = name;
             }
             if (allFiles) {
-                String name = Utils.removeExtension(f.getName().replace(keyWords[0], ""));
+                String name = Utils.removeExtension(f.getName().replace(channelKeywords[0], ""));
                 addContainerChannel(allChannels, name, xp, containersTC);
             }
             
+        }
+    }
+    
+    private static String[] imageExtensions = new String[]{"tif", "tiff", "nd2", "png"};
+    public final static String[] timeKeywords = new String[]{"t"};
+    public final static String[] positionKeywords = new String[]{"xy"};
+    protected static void importImagesCTP(File input, Experiment xp, String[] channelKeywords, ArrayList<MultipleImageContainer> containersTC) {
+        if (channelKeywords.length==0) return;
+        if (!input.isDirectory()) return;
+        File[] subDirs = input.listFiles(getDirectoryFilter()); // recursivity
+        for (File dir : subDirs) importImagesCTP(dir, xp, channelKeywords, containersTC);// recursivity
+        // 1 : filter by extension
+        Pattern allchanPattern = getAllChannelPattern(channelKeywords);
+        Map<String, List<File>> filesByExtension = Arrays.stream(input.listFiles((File dir, String name) -> allchanPattern.matcher(name).find() && !isIgnoredExtension(name))).collect(Collectors.groupingBy(f -> Utils.getExtension(f.getName())));
+        List<File> files=null;
+        String extension = null;
+        if (filesByExtension.size()>1) { // keep most common extension
+            int maxLength = Collections.max(filesByExtension.entrySet(), (e1, e2) -> e1.getValue().size() - e2.getValue().size()).getValue().size();
+            filesByExtension.entrySet().removeIf(e -> e.getValue().size()<maxLength);
+            if (filesByExtension.size()>1) { // keep extension in list
+                Set<String> contained = new HashSet<>(Arrays.asList(imageExtensions));
+                filesByExtension.entrySet().removeIf(e -> !contained.contains(e.getKey()));
+                if (filesByExtension.size()>1) {
+                    logger.warn("Folder: {} contains several image extension: {}", input.getAbsolutePath(), filesByExtension.keySet());
+                    return;
+                } else if (filesByExtension.isEmpty()) return;
+            }
+            //List<Entry<String, List<File>>> l = filesByExtension.entrySet().stream().filter(e -> e.getValue().size()==maxLength).collect(Collectors.toList());
+        } 
+        if (filesByExtension.size()==1) {
+            files = filesByExtension.entrySet().iterator().next().getValue();
+            extension = filesByExtension.keySet().iterator().next();
+        } else return;
+        
+        // get other channels
+        
+        // 2/ get maximum common part at start
+        
+        /*List<String> fileNames = new ArrayList<String>(files.size());
+        for (File f : files) fileNames.add(Utils.removeExtension(f.getName()));
+        int startIndex = MultipleImageContainerPositionChannelFrame.getCommomStartIndex(fileNames);
+        String startName = fileNames.get(0).substring(0, startIndex+1);
+        logger.debug("common image name: {}", startName);
+        Map<String, File> filesMap= new HashMap<>(fileNames.size());
+        for (File f : files) filesMap.put(f.getName().substring(startIndex+1, f.getName().length()), f);*/
+        
+        // 3 split by position / channel (check number) / frames (check same number between channels & continity)
+        Pattern posPattern = Pattern.compile(".*("+positionKeywords[0]+"\\d+).*");
+        Pattern timePattern = Pattern.compile(".*"+timeKeywords[0]+"(\\d+).*");
+        Map<String, List<File>> filesByPosition = files.stream().collect(Collectors.groupingBy(f -> getAsString(f.getName(), posPattern)));
+        logger.debug("Dir: {} # positions: {}", input.getAbsolutePath(), filesByPosition.size());
+        PosLoop : for (Entry<String, List<File>> positionFiles : filesByPosition.entrySet()) {
+            Map<String, List<File>> filesByChannel = positionFiles.getValue().stream().collect(Collectors.groupingBy(f -> getKeyword(f.getName(), channelKeywords, "")));
+            logger.debug("Pos: {}, channel found: {}", positionFiles.getKey(),filesByChannel.keySet() );
+            if (filesByChannel.size()==channelKeywords.length) {
+                Integer timePoints = null;
+                boolean ok = true;
+                for (Entry<String, List<File>> channelFiles : filesByChannel.entrySet()) {
+                    Map<Integer, File> filesByTimePoint = channelFiles.getValue().stream().collect(Collectors.toMap(f -> get(f.getName(), timePattern), Function.identity()));
+                    int maxTimePoint = Collections.max(filesByTimePoint.entrySet(), (e1, e2) -> e1.getKey() - e2.getKey()).getKey();
+                    int minTimePoint = Collections.min(filesByTimePoint.entrySet(), (e1, e2) -> e1.getKey() - e2.getKey()).getKey();
+                    int tpCount = maxTimePoint-minTimePoint+1;
+                    if (tpCount != filesByTimePoint.size()) {
+                        logger.warn("Dir: {} Position: {}, missing time points for channel: {}, 1st: {}, last: {}, count: {}", input.getAbsolutePath(), positionFiles.getKey(), channelFiles.getKey(), minTimePoint, maxTimePoint, filesByTimePoint.size());
+                        ok = false;
+                        break;
+                    } else {
+                        if (timePoints == null) timePoints = tpCount;
+                        else {
+                            if (timePoints!=tpCount) {
+                                logger.warn("Dir: {} Position: {}, Channel: {}, {} tp found instead of {}", input.getAbsolutePath(), positionFiles.getKey(), channelFiles.getKey(), tpCount, timePoints);
+                                ok = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (ok) {
+                    ImageReader r = new ImageReader(positionFiles.getValue().get(0).getAbsolutePath());
+                    double[] scaleXYZ = r.getScaleXYZ(1);
+                    containersTC.add(new MultipleImageContainerPositionChannelFrame(input.getAbsolutePath(), extension, positionFiles.getKey(), timeKeywords[0], channelKeywords, timePoints, scaleXYZ[0], scaleXYZ[1]));
+                }
+                
+            } else logger.warn("Dir: {} Position: {}, {} channels instead of {}", input.getAbsolutePath(), positionFiles.getKey(), filesByChannel.size(), channelKeywords.length);
         }
     }
     
@@ -134,6 +234,7 @@ public class ImageFieldFactory {
         //checks timepoint number is equal for all channels
         int timePointNumber=0;
         int[] sizeZC = new int[imageC.length];
+        double[] scaleXYZ=null;
         for (int c = 0; c< imageC.length; ++c) {
             ImageReader reader = null;
             try {
@@ -151,10 +252,11 @@ public class ImageFieldFactory {
                     return;
                 }
                 sizeZC[c] = stc[0][4];
+                if (c==0) scaleXYZ = reader.getScaleXYZ(1);
             }
         }
         if (timePointNumber>0) {
-            MultipleImageContainerChannelSerie c = new MultipleImageContainerChannelSerie(fieldName, imageC, timePointNumber, sizeZC);
+            MultipleImageContainerChannelSerie c = new MultipleImageContainerChannelSerie(fieldName, imageC, timePointNumber, sizeZC, scaleXYZ[0], scaleXYZ[2]);
             containersTC.add(c);
         }
         
@@ -182,20 +284,14 @@ public class ImageFieldFactory {
     }
     
     private static FileFilter getFileFilter() {
-        return new FileFilter() {
-            public boolean accept(File file) {
-                return !file.isDirectory();
-            }
-        };
+        return (File file) -> !file.isDirectory();
     }
     
-    private static FilenameFilter getFileFilterKeyword(final String keyword) {
-        return new FilenameFilter() {
-            public boolean accept(File dir, String name) {
-                return name.contains(keyword) && !isIgnoredExtension(name);
-            }
-        };
+    private static Pattern getAllChannelPattern(String[] channelKeywords) {
+        String pat = ".*("+channelKeywords[0]+")";
+        for (int i = 1; i<channelKeywords.length; ++i) pat+="|("+channelKeywords[i]+")";
+        pat+=".*";
+        return Pattern.compile(pat);
     }
-    
     
 }

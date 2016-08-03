@@ -34,4 +34,8 @@ public class ImageWindowManagerFactory {
         }
         return currentImageManager;
     }
+    public static ImageDisplayer instanciateDisplayer() {
+        if (currentImageDisplayerType.equals(IJ)) return new IJImageDisplayer();
+        else return null;
+    }
 }

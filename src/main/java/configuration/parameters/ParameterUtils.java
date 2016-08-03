@@ -17,12 +17,15 @@
  */
 package configuration.parameters;
 
+import boa.gui.GUI;
 import dataStructure.configuration.Experiment;
 import boa.gui.configuration.ConfigurationTreeModel;
 import boa.gui.configuration.TreeModelContainer;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import static configuration.parameters.Parameter.logger;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
+import dataStructure.objects.StructureObject;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
@@ -280,9 +283,9 @@ public class ParameterUtils {
         public boolean isConfigurable(Parameter p);
     }
     
-    public static JMenu getTestMenu(final ParameterSetup ps, final Parameter[] parameters) {
-        JMenu subMenu = new JMenu("Test Parameters");
-        List<JMenuItem> items = new ArrayList<JMenuItem>();
+    public static JMenu getTestMenu(String name, final ParameterSetup ps, final Parameter[] parameters, int structureIdx) {
+        JMenu subMenu = new JMenu(name);
+        List<JMenuItem> items = new ArrayList<>();
         for (int i = 0; i<parameters.length; ++i) { // todo: case of parameters with subparameters -> plain...
             final int idx = i;
             if (ps.canBeTested(parameters[i])) {
@@ -290,18 +293,23 @@ public class ParameterUtils {
                 item.setAction(new AbstractAction(item.getActionCommand()) {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
-                        ps.test(parameters[idx]);
+                        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+                        if (sel == null || sel.isEmpty()) logger.info("Select an object to test parameter");
+                        else {
+                            StructureObject o = sel.get(0);
+                            int parentStrutureIdx = o.getExperiment().getStructure(structureIdx).getParentStructure();
+                            o = o.getParent(parentStrutureIdx);
+                            ps.test(parameters[idx], o.getRawImage(structureIdx), structureIdx, o);
+                        }
                     }
                 });
                 items.add(item);
             }
             if (parameters[i] instanceof SimpleContainerParameter) {
-                JMenu m = getTestMenu(ps, ((SimpleContainerParameter)parameters[i]).getChildren().toArray(new Parameter[0]));
-                m.setName(parameters[i].getName()); //TODO set name do not work
+                JMenu m = getTestMenu(parameters[i].getName(), ps, ((SimpleContainerParameter)parameters[i]).getChildren().toArray(new Parameter[0]), structureIdx);
                 if (m.getItemCount()>0) items.add(m);
             } else if (parameters[i] instanceof SimpleListParameter) {
-                JMenu m = getTestMenu(ps, ((ArrayList<? extends Parameter>)((SimpleListParameter)parameters[i]).getChildren()).toArray(new Parameter[0]));
-                m.setName(parameters[i].getName());
+                JMenu m = getTestMenu(parameters[i].getName(), ps, ((ArrayList<? extends Parameter>)((SimpleListParameter)parameters[i]).getChildren()).toArray(new Parameter[0]), structureIdx);
                 if (m.getItemCount()>0) items.add(m);
             }
         }

@@ -283,7 +283,7 @@ public abstract class ImageWindowManager<T, U, V> {
         return null;
     }
 
-    public void selectAllObjects(Image image) {
+    public void displayAllObjects(Image image) {
         if (image==null) {
             image = getDisplayer().getCurrentImage2();
             if (image==null) return;
@@ -297,7 +297,7 @@ public abstract class ImageWindowManager<T, U, V> {
         if (listener!=null) listener.fireObjectSelected(Pair.unpairKeys(i.getObjects()), true);
     }
     
-    public void selectAllTracks(Image image) {
+    public void displayAllTracks(Image image) {
         if (image==null) {
             image = getDisplayer().getCurrentImage2();
             if (image==null) return;
@@ -467,8 +467,8 @@ public abstract class ImageWindowManager<T, U, V> {
         canDisplayTrack = canDisplayTrack && i.getParent().getStructureIdx()<=trackHead.getStructureIdx();
         if (canDisplayTrack) {
             TrackMask tm = (TrackMask)i;
-            canDisplayTrack = track.get(0).key.getTimePoint()>=tm.parentTrack.get(0).getTimePoint() 
-                    && track.get(track.size()-1).key.getTimePoint()<=tm.parentTrack.get(tm.parentTrack.size()-1).getTimePoint();
+            tm.trimTrack(track);
+            canDisplayTrack = !track.isEmpty();
         }
         Map<Pair<StructureObject, StructureObject>, V> map = labile ? labileParentTrackHeadTrackRoiMap : parentTrackHeadTrackRoiMap;
         if (canDisplayTrack) { 

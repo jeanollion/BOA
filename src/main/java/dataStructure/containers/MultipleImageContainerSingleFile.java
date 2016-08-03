@@ -38,7 +38,8 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
     BoundingBox bounds;
     @Transient private ImageReader reader;
     
-    public MultipleImageContainerSingleFile(String name, String imagePath, int series, int timePointNumber, int channelNumber, int sizeZ) {
+    public MultipleImageContainerSingleFile(String name, String imagePath, int series, int timePointNumber, int channelNumber, int sizeZ, double scaleXY, double scaleZ) {
+        super(scaleXY, scaleZ);
         this.name = name;
         this.seriesIdx=series;
         filePath = imagePath;
@@ -47,8 +48,8 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
         this.sizeZ=sizeZ;
     }
     
-    public MultipleImageContainerSingleFile duplicate() {
-        return new MultipleImageContainerSingleFile(name, filePath, seriesIdx, timePointNumber, channelNumber, sizeZ);
+    @Override public MultipleImageContainerSingleFile duplicate() {
+        return new MultipleImageContainerSingleFile(name, filePath, seriesIdx, timePointNumber, channelNumber, sizeZ, scaleXY, scaleZ);
     }
     
     public void setImagePath(String path) {
@@ -91,11 +92,11 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
         ImageIOCoordinates ioCoordinates = getImageIOCoordinates(timePoint, channel);
         if (bounds!=null) ioCoordinates.setBounds(bounds);
         Image image = getReader().openImage(ioCoordinates);
-        if (scaleXY!=0 && scaleZ!=0) image.setCalibration((float)scaleXY, (float)scaleZ);
+        /*if (scaleXY!=0 && scaleZ!=0) image.setCalibration((float)scaleXY, (float)scaleZ);
         else {
             scaleXY = image.getScaleXY();
             scaleZ = image.getScaleZ();
-        }
+        }*/
         return image;
     }
     
@@ -106,11 +107,11 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
         ImageIOCoordinates ioCoords = ioCoordinates.duplicate();
         ioCoords.setBounds(bounds);
         Image image = getReader().openImage(ioCoordinates);
-        if (scaleXY!=0 && scaleZ!=0) image.setCalibration((float)scaleXY, (float)scaleZ);
+        /*if (scaleXY!=0 && scaleZ!=0) image.setCalibration((float)scaleXY, (float)scaleZ);
         else {
             scaleXY = image.getScaleXY();
             scaleZ = image.getScaleZ();
-        }
+        }*/
         return image;
     }
     public void close() {

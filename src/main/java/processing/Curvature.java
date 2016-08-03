@@ -45,13 +45,13 @@ import org.slf4j.LoggerFactory;
 import processing.neighborhood.EllipsoidalNeighborhood;
 /**
  * Compute Fourier Descriptor and curvature values
- *
+ * Adapted from
  * @author thomas.boudier@snv.jussieu.fr
  * @created 11 mars 2004
  */
 public class Curvature {
     public static final Logger logger = LoggerFactory.getLogger(Curvature.class);
-    public static KDTree<Double> computeCurvature(ImageInteger mask, int scale_cur) {
+    public static KDTree<Double> computeCurvature(ImageInteger mask, int scale) {
         Roi r = IJImageWindowManager.createRoi(mask, new BoundingBox(0, 0, 0), false).get(0);
         Fourier fourier = new Fourier();
         fourier.Init(r, mask.getScaleXY());
@@ -60,7 +60,7 @@ public class Curvature {
         final ArrayList<Double> values = new ArrayList<Double>(fourier.points.length);
         for ( int i = 0; i <fourier.points.length ; ++i ) {
             points.add( new RealPoint( new double[]{ mask.getOffsetX()+fourier.points[i].x / reso, mask.getOffsetY() + fourier.points[i].y / reso}  ));
-            values.add(fourier.curvature(i, scale_cur, false));
+            values.add(fourier.curvature(i, scale, false));
         }
         return new KDTree<Double>(values, points);
     }
@@ -71,18 +71,21 @@ public class Curvature {
     }
     public static ImageFloat getCurvatureMask(ImageProperties p, KDTree<Double> points) {
         ImageFloat res = new ImageFloat("Curvature", p);
-        int xLim = res.getSizeX();
-        int yLim = res.getSizeY();
+        drawOnCurvatureMask(res, points);
+        return res;
+    }
+    public static void drawOnCurvatureMask(ImageFloat curvatureMask , KDTree<Double> points) {
+        int xLim = curvatureMask.getSizeX();
+        int yLim = curvatureMask.getSizeY();
         KDTreeCursor cur = points.localizingCursor();
         while (cur.hasNext()) {
             Double d = (Double) cur.next();
-            int x = (int) Math.round(cur.getDoublePosition(0)) - p.getOffsetX();
-            int y = (int) Math.round(cur.getDoublePosition(1)) - p.getOffsetY();
+            int x = (int) Math.round(cur.getDoublePosition(0)) - curvatureMask.getOffsetX();
+            int y = (int) Math.round(cur.getDoublePosition(1)) - curvatureMask.getOffsetY();
             if (x>=xLim) --x;
             if (y>=yLim) --y;
-            res.setPixel(x, y, 0, d);
+            curvatureMask.setPixel(x, y, 0, d);
         }
-        return res;
     }
     public static ImageFloat getCurvatureWatershedMap(final Image edm, final ImageInteger mask, KDTree<Double> curvature) {
         final ImageFloat res = new ImageFloat("CurvatureWatershedMap", edm);

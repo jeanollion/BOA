@@ -422,7 +422,8 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
 
     public enum ImportImageMethod {
         SINGLE_FILE("Single-file"),
-        ONE_FILE_PER_CHANNEL_AND_FIELD("One File Per Channel And Microscopy Field");
+        ONE_FILE_PER_CHANNEL_AND_FIELD("One File Per Channel And Position"),
+        ONE_FILE_PER_CHANNEL_TIME_POSITION("One File Per Position, Channel And Frame");
         private final String name;
         ImportImageMethod(String name) {
             this.name=name;

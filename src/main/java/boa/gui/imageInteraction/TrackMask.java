@@ -131,11 +131,20 @@ public class TrackMask extends ImageObjectInterface {
     @Override
     public BoundingBox getObjectOffset(StructureObject object) {
         if (object==null) return null;
-        return trackObjects[getTrackIndex(object)].getObjectOffset(object);
+        int i = getTrackIndex(object);
+        if (i<0) return null;
+        return trackObjects[i].getObjectOffset(object);
     }
     
     private int getTrackIndex(StructureObject object) {
+        //if (object.getTimePoint()<parent.getTimePoint()) logger.error("Object not in track : Object: {} parent: {}", object, parent);
         return object.getTimePoint()-parent.getTimePoint();
+    }
+    
+    public void trimTrack(List<Pair<StructureObject, BoundingBox>> track) {
+        int tpMin = parent.getTimePoint();
+        int tpMax = parentTrack.get(parentTrack.size()-1).getTimePoint();
+        track.removeIf(o -> o.key.getTimePoint()<tpMin || o.key.getTimePoint()>tpMax);
     }
 
     @Override

@@ -127,7 +127,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         return new ProcessingVariables(input, this.splitThreshold.getValue().doubleValue(), dogScale.getValue().doubleValue(), smoothScale.getValue().doubleValue(), hessianScale.getValue().doubleValue());
     }
     
-    public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
+    @Override public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         pv = initializeVariables(input);
         ImageDisplayer disp=debug?new IJImageDisplayer():null;
         double threshold = IJAutoThresholder.runThresholder(pv.getIntensityMap(), parent.getMask(), null, AutoThresholder.Method.Otsu, 0);
@@ -349,12 +349,14 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         return new ObjectPopulation(labels, true);
     }
 
-    public boolean canBeTested(Parameter p) {
+    // ParameterSetup Implementation
+    
+    @Override public boolean canBeTested(Parameter p) {
         List canBeTested = new ArrayList(){{add(splitThreshold); add(dogScale);}};
         return canBeTested.contains(p);
     }
 
-    public void test(Parameter p) {
+    @Override public void test(Parameter p, Image input, int structureIdx, StructureObjectProcessing parent) {
         if (p==splitThreshold) {
             logger.debug("test split threshold");
         } else if (p==dogScale) {

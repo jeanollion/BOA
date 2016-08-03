@@ -191,7 +191,7 @@ public class ArrayUtil {
             if (localExtrema.get(i)==localExtrema.get(i-1)+1) {
                 int j = i+1;
                 while (j<localExtrema.size() && localExtrema.get(j)==localExtrema.get(j-1)+1){j++;}
-                logger.debug("i: {}, j:{}, loc i-1: {}, loc j-1: {}",i, j, localExtrema.get(i-1), localExtrema.get(j-1));
+                //logger.debug("i: {}, j:{}, loc i-1: {}, loc j-1: {}",i, j, localExtrema.get(i-1), localExtrema.get(j-1));
                 regionalExtrema.add((localExtrema.get(i-1)+localExtrema.get(j-1))/2); //mid-value of plateau (i-1 = borne inf, j-1 = borne sup)
                 i=j;
             } else regionalExtrema.add(localExtrema.get(i-1));

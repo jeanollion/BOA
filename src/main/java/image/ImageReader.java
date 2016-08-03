@@ -38,6 +38,7 @@ import loci.plugins.util.ImageProcessorReader;
 import loci.plugins.util.LociPrefs;
 import ome.units.quantity.Length;
 import static image.Image.logger;
+import java.util.Arrays;
 
 /**
  *
@@ -185,29 +186,28 @@ public class ImageReader {
                     res=res.crop(bounds);
                 }
                 if (coords.getBounds()!=null) res.resetOffset().addOffset(coords.getBounds());
-                if (meta != null) {
-                    Length lxy = meta.getPixelsPhysicalSizeX(0);
-                    Length lz = meta.getPixelsPhysicalSizeZ(0);
-                    float scaleXY=0, scaleZ=0;
-                    
-                    if (lxy!=null) {
-                        if (lz==null) {
-                            lz=lxy;
-                            if (res.getSizeZ()>1) {
-                                //logger.warn("No calibration in Z dimension found for image: {}, while image haz more than one Z plane", reader.getCurrentFile());
-                            }
-                        }
-                        if (scaleXY==0) scaleXY=lxy.value().floatValue();
-                        if (scaleZ==0) scaleZ=lz.value().floatValue();
-                    }
-                    if (scaleXY!=0 && scaleZ!=0) res.setCalibration(scaleXY, scaleZ);
-                }
+                double[] scaleXYZ = getScaleXYZ(1);
+                if (scaleXYZ[0]!=1) res.setCalibration((float)scaleXYZ[0], (float)scaleXYZ[2]);
             } catch (FormatException ex) {
                 logger.error("An error occurred while opering image: " + reader.getCurrentFile() + " channel:" + coords.getChannel() + " t:" + coords.getTimePoint() + " series :" + coords.getSerie(), ex);
             } catch (IOException ex) {
                 logger.error("An error occurred while opering image: " + reader.getCurrentFile() + " channel:" + coords.getChannel() + " t:" + coords.getTimePoint() + " series :" + coords.getSerie(), ex);
             }
         }
+        return res;
+    }
+    
+    public double[] getScaleXYZ(double defaultValue) {
+        double[] res = new double[3];
+        Arrays.fill(res, defaultValue);
+        if (meta != null) {
+            Length lx = meta.getPixelsPhysicalSizeX(0);
+            Length ly = meta.getPixelsPhysicalSizeY(0);
+            Length lz = meta.getPixelsPhysicalSizeZ(0);
+            if (lx!=null) res[0] = lx.value().doubleValue();
+            if (ly!=null) res[1] = ly.value().doubleValue();
+            if (lz!=null) res[2] = lz.value().doubleValue();
+        } 
         return res;
     }
     

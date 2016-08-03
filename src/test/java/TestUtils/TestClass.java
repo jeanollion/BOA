@@ -18,10 +18,16 @@
 package TestUtils;
 
 import static TestUtils.Utils.logger;
+import image.ImageReader;
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
@@ -34,7 +40,29 @@ import static utils.Utils.removeFromMap;
  * @author jollion
  */
 public class TestClass {
+    @Test
+    public void testReadND2() {
+        String inputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase140115/6300_mutH_LB-LR62rep-15012014_nd2/mg6300mutH_LB_lr62rep_oil37.nd2";
+        File f = new File(inputDir);
+        logger.debug("file: {}, exists? {}", f.getAbsolutePath(), f.exists());
+        ImageReader r = new ImageReader(inputDir);
+        logger.debug("features: {}", (Object)r.getSTCXYZNumbers());
+    }
     
+    //@Test
+    public void testRegex() {
+        String[] tests = new String[]{"xy1", "lalaxy1", "xy23lala", "lalaxy1lala", "xyz1n", "xy"};
+        Pattern p = Pattern.compile(".*xy(\\d+).*");
+        for (String test : tests) {
+            Matcher m = p.matcher(test);
+            boolean b = m.find();
+            logger.debug("String: {}, match: {}, res: {}", test, b, b? m.group(1) : null);
+        }
+        
+        //String[] array = {"name1","name2","name3","name4", "name5", "name2"};
+        //Map<String, List<String>> l = Arrays.stream(array).collect(Collectors.groupingBy(s -> s)); //.forEach((k, v) -> System.out.println(k+" "+v.size()));
+
+    }
     //@Test
     public void testPair() {
         List<Pair<Integer, Double>> l = new ArrayList<Pair<Integer, Double>>();

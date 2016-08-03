@@ -19,6 +19,7 @@ package configuration.parameters;
 
 import configuration.parameters.ui.ChoiceParameterUI;
 import static configuration.parameters.ui.ChoiceParameterUI.NO_SELECTION;
+import dataStructure.configuration.Structure;
 import java.util.ArrayList;
 import java.util.HashMap;
 import de.caluga.morphium.annotations.Transient;
@@ -193,10 +194,14 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     public ChoiceParameterUI getUI(){
         ChoiceParameterUI ui =  new ChoiceParameterUI(this, false);
         if (this.isOnePluginSet()) {
-            Plugin pl = this.instanciatePlugin();
-            if (pl instanceof ParameterSetup) {
-                ui.addActions(ParameterUtils.getTestMenu((ParameterSetup)pl, pl.getParameters()));
-            }   
+            // get structureIdx
+            Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, this, false);
+            if (s!=null) {
+                Plugin pl = this.instanciatePlugin();
+                if (pl instanceof ParameterSetup) {
+                    ui.addActions(ParameterUtils.getTestMenu("Test Parameters", (ParameterSetup)pl, pl.getParameters(), s.getIndex()));
+                }
+            }
         }
         return ui;
     }
