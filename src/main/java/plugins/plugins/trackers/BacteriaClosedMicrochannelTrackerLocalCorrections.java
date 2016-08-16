@@ -501,6 +501,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             this.timePoint=timePoint;
             splitObjects= new ArrayList<Object3D>();
             cost = getSegmenter(timePoint).split(o.o, splitObjects);
+            logger.debug("creating split scenario: tp: {}, cost: {} # objects: {}", timePoint, cost, splitObjects.size());
         }
         @Override protected SplitScenario getNextScenario() { // until next division event
             if (timePoint == populations.length-1) return null;

@@ -43,13 +43,13 @@ public class TestTracker {
         //String dbName = "testSub60";
         final String dbName = "boa_mutH_140115";
         int fIdx = 0;
-        int mcIdx =13;
+        int mcIdx =1;
         int structureIdx = 1;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         if (db.getExperiment()==null) return;
         ObjectDAO dao = db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName());
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
-        testSegmentationAndTracking(dao, ps, structureIdx, mcIdx, 0, 4);
+        testSegmentationAndTracking(dao, ps, structureIdx, mcIdx, 30, 35);
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         List<StructureObject> roots = dao.getRoots();
