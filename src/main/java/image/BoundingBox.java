@@ -63,6 +63,33 @@ public class BoundingBox {
         zMax=z;
         count=1;
     }
+
+    public void setxMin(int xMin) {
+        this.xMin = xMin;
+    }
+
+    public void setxMax(int xMax) {
+        this.xMax = xMax;
+    }
+
+    public void setyMin(int yMin) {
+        this.yMin = yMin;
+    }
+
+    public void setyMax(int yMax) {
+        this.yMax = yMax;
+    }
+
+    public void setzMin(int zMin) {
+        this.zMin = zMin;
+    }
+
+    public void setzMax(int zMax) {
+        this.zMax = zMax;
+    }
+    
+    
+    
     /**
      * 
      * @param image

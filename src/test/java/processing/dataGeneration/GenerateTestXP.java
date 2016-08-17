@@ -46,6 +46,7 @@ import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
 import plugins.plugins.trackers.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import plugins.plugins.trackers.LAPTracker;
 import plugins.plugins.trackers.MicrochannelProcessor;
+import plugins.plugins.trackers.MicrochannelProcessorPhase;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import plugins.plugins.transformations.AutoRotationXY;
 import plugins.plugins.transformations.CropMicroChannelBF2D;
@@ -300,10 +301,11 @@ public class GenerateTestXP {
         Structure bacteria = new Structure("Bacteria", 0, 0).setAllowSplit(true);
         xp.getStructures().insert(mc, bacteria);
         
-        mc.setProcessingScheme(new SegmentThenTrack(
+        /*mc.setProcessingScheme(new SegmentThenTrack(
                 new MicroChannelPhase2D(), 
                 new ObjectIdxTracker()
-        ));
+        ));*/
+        mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessorPhase()));
         bacteria.setProcessingScheme(
                 new SegmentAndTrack(
                         new BacteriaClosedMicrochannelTrackerLocalCorrections(

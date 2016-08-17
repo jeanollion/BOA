@@ -21,8 +21,11 @@ import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import dataStructure.containers.InputImages;
 import dataStructure.objects.Object3D;
+import dataStructure.objects.ObjectPopulation;
+import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
+import image.ImageProperties;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,6 +35,7 @@ import plugins.TransformationTimeIndependent;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
 import static plugins.plugins.transformations.CropMicroChannelFluo2D.getBoundingBox;
+import utils.ArrayUtil;
 
 /**
  *
@@ -114,27 +118,31 @@ public abstract class CropMicroChannels implements Transformation {
     public static class Result {
         public final int[] xMax;
         public final int[] xMin;
+        public final int[] yMinShift;
         public final int yMin, yMax;
         public Result(Object3D[] xObjects, int yMin, int yMax) {
             this.yMin = yMin;
             this.yMax=yMax;
             this.xMax= new int[xObjects.length];
             this.xMin=new int[xObjects.length];
+            this.yMinShift= new int[xObjects.length];
             Arrays.sort(xObjects, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.XZY));
             for (int i = 0; i<xObjects.length; ++i) {
                 xMax[i] = xObjects[i].getBounds().getxMax();
                 xMin[i] = xObjects[i].getBounds().getxMin();
             }
         }
-        public Result(List<int[]> sortedMinMaxList, int yMin, int yMax) {
+        public Result(List<int[]> sortedMinMaxYShiftList, int yMin, int yMax) {
             this.yMin = yMin;
             this.yMax=yMax;
-            this.xMax= new int[sortedMinMaxList.size()];
-            this.xMin=new int[sortedMinMaxList.size()];
+            this.xMax= new int[sortedMinMaxYShiftList.size()];
+            this.xMin=new int[sortedMinMaxYShiftList.size()];
+            this.yMinShift= new int[sortedMinMaxYShiftList.size()];
             int idx = 0;
-            for (int[] minMax : sortedMinMaxList) {
+            for (int[] minMax : sortedMinMaxYShiftList) {
                 xMin[idx] = minMax[0];
-                xMax[idx++] = minMax[1];
+                xMax[idx] = minMax[1];
+                yMinShift[idx++] = minMax[2];
             }
         }
         public int getXMin() {
@@ -146,8 +154,25 @@ public abstract class CropMicroChannels implements Transformation {
         public double getXMean(int idx) {
             return (xMax[idx]+xMin[idx]) / 2d ;
         }
+        public int getYMin() {
+            return yMin+ArrayUtil.min(yMinShift);
+        }
+        public int getYMax() {
+            return yMax;
+        }
+        public int size() {
+            return xMin.length;
+        }
         public BoundingBox getBounds(int idx) {
-            return new BoundingBox(xMin[idx], xMax[idx], yMin, yMax, 0, 0);
+            return new BoundingBox(xMin[idx], xMax[idx], yMin+yMinShift[idx], yMax, 0, 0);
+        }
+        public Object3D getObject3D(int idx, float scaleXY, float scaleZ) {
+            return new Object3D(new BlankMask("mask of:" + idx+1, getBounds(idx).getImageProperties(scaleXY, scaleZ)), idx+1);
+        }
+        public ObjectPopulation getObjectPopulation(ImageProperties im) {
+            List<Object3D> l = new ArrayList<>(xMin.length);
+            for (int i = 0; i<xMin.length; ++i) l.add(getObject3D(i, im.getScaleXY(), im.getScaleZ()));
+            return new ObjectPopulation(l, im);
         }
     }
 }

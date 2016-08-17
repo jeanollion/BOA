@@ -160,15 +160,21 @@ public class Object3D {
     
     public double[] getCenter(boolean scaled) {
         double[] center = new double[3];
-        for (Voxel v : getVoxels()) {
-            center[0] += v.x;
-            center[1] += v.y;
-            center[2] += v.z;
+        if (mask instanceof BlankMask) {
+            center[0] = mask.getBoundingBox().getXMean();
+            center[1] = mask.getBoundingBox().getYMean();
+            center[2] = mask.getBoundingBox().getZMean();
+        } else {
+            for (Voxel v : getVoxels()) {
+                center[0] += v.x;
+                center[1] += v.y;
+                center[2] += v.z;
+            }
+            double count = voxels.size();
+            center[0]/=count;
+            center[1]/=count;
+            center[2]/=count;
         }
-        double count = voxels.size();
-        center[0]/=count;
-        center[1]/=count;
-        center[2]/=count;
         if (scaled) {
             center[0] *=this.getScaleXY();
             center[1] *=this.getScaleXY();

@@ -646,6 +646,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
         return object;
     }
+    public void setObject(Object3D o) {
+        synchronized(this) {
+            objectContainer=null;
+            object=o;
+            object.label=idx+1;
+        }
+    }
     public ImageProperties getMaskProperties() {return getObject().getImageProperties();}
     public ImageInteger getMask() {return getObject().getMask();}
     public BoundingBox getBounds() {return getObject().getBounds();}

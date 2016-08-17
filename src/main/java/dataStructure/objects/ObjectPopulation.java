@@ -64,7 +64,7 @@ import processing.neighborhood.Neighborhood;
 public class ObjectPopulation {
 
     private ImageInteger labelImage;
-    private ArrayList<Object3D> objects;
+    private List<Object3D> objects;
     private ImageProperties properties;
     private boolean absoluteLandmark=false;
     /**
@@ -95,7 +95,7 @@ public class ObjectPopulation {
     /*public ObjectPopulation(ArrayList<Object3D> objects) {
      this.objects = objects;
      }*/
-    public ObjectPopulation(ArrayList<Object3D> objects, ImageProperties properties) {
+    public ObjectPopulation(List<Object3D> objects, ImageProperties properties) {
         if (objects != null) {
             this.objects = objects;
         } else {
@@ -104,7 +104,7 @@ public class ObjectPopulation {
         if (properties!=null) this.properties = new BlankMask("", properties);
     }
     
-    public ObjectPopulation(ArrayList<Object3D> objects, ImageProperties properties, boolean absoluteLandmark) {
+    public ObjectPopulation(List<Object3D> objects, ImageProperties properties, boolean absoluteLandmark) {
         if (objects != null) {
             this.objects = objects;
         } else {
@@ -113,6 +113,20 @@ public class ObjectPopulation {
         if (properties!=null) this.properties = new BlankMask("", properties);
         this.absoluteLandmark=absoluteLandmark;
         for (Object3D o : objects) o.setIsAbsoluteLandmark(absoluteLandmark);
+    }
+    
+    public ObjectPopulation(List<Object3D> objects, ImageInteger labelMap, ImageProperties properties, boolean absoluteLandmark) {
+        if (!labelMap.sameSize(properties)) throw new IllegalArgumentException("labelMap and ImageProperties should be of same dimensions");
+        if (objects != null) {
+            this.objects = objects;
+        } else {
+            this.objects = new ArrayList<Object3D>();
+        }
+        if (properties!=null) this.properties = new BlankMask("", properties);
+        this.absoluteLandmark=absoluteLandmark;
+        for (Object3D o : objects) o.setIsAbsoluteLandmark(absoluteLandmark);
+        labelImage = labelMap;
+        this.relabel(true);
     }
     
     public ObjectPopulation duplicate() {
@@ -159,7 +173,7 @@ public class ObjectPopulation {
         return labelImage;
     }
     
-    public ArrayList<Object3D> getObjects() {
+    public List<Object3D> getObjects() {
         if (objects == null) {
             constructObjects();
         }

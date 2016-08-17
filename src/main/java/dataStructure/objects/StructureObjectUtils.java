@@ -226,7 +226,7 @@ public class StructureObjectUtils {
                 }
             }
         }
-        for (List<StructureObject> l : res.values()) setTrackLinks(l);
+        //for (List<StructureObject> l : res.values()) setTrackLinks(l);
         return res;
     }
     

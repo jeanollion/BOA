@@ -84,7 +84,7 @@ public class LAPTrackerCore {
         return errorMessage;
     }
     /**
-     * Do not take into accound previously created graph
+     * Do take into accound previously created graph
      * @param distanceThreshold
      * @param includeLQ
      * @param includeHQ

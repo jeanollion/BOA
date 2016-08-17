@@ -275,23 +275,21 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         if (pv==null) throw new Error("Segment method have to be called before merge method in order to initialize images");
         if (objects.isEmpty() || objects.size()==1) return 0;
         synchronized(pv) {
-            Iterator<Object3D> it = objects.iterator();
-            Object3D ref  = objects.get(0);
-            double maxCost = Double.MIN_VALUE;
-            while (it.hasNext()) { //first round : remove objects not connected with ref & compute interactions with ref objects
-                Object3D n = it.next();
-                if (n!=ref) {
-                    ProcessingVariables.InterfaceBF inter = getInterface(ref, n);
-                    if (inter.voxels.isEmpty()) it.remove();
-                    else if (inter.value>maxCost) maxCost = inter.value;
-                }
+            double maxCost = Double.NEGATIVE_INFINITY;
+            ObjectPopulation mergePop = new ObjectPopulation(objects, pv.getSplitMask(), pv.getSplitMask(), false);
+            Object3DCluster c = new Object3DCluster(mergePop, false, pv.getFactory());
+            List<Set<Object3D>> clusters = c.getClusters();
+            logger.debug("compute merge cost: {} objects in {} clusters", objects.size(), clusters.size());
+            if (clusters.size()>1) { // merge impossible : presence of disconnected objects
+                if (debug) logger.debug("merge impossible: {} disconnected clusters detected", clusters.size());
+                return Double.POSITIVE_INFINITY;
+            } 
+            Set<ProcessingVariables.InterfaceBF> allInterfaces = c.getInterfaces(clusters.get(0));
+            for (ProcessingVariables.InterfaceBF i : allInterfaces) {
+                i.updateSortValue();
+                if (i.value>maxCost) maxCost = i.value;
             }
-            for (int i = 2; i<objects.size()-1; ++i) { // second round compute other interactions
-                for (int j = i+1; j<objects.size(); ++j) {
-                    ProcessingVariables.InterfaceBF inter = getInterface(objects.get(i), objects.get(j));
-                    if (inter.value>maxCost) maxCost = inter.value;
-                }
-            }
+            
             if (maxCost==Double.MIN_VALUE) return Double.POSITIVE_INFINITY;
             return BacteriaTrans.getCost(maxCost, pv.splitThresholdValue, false);
         }

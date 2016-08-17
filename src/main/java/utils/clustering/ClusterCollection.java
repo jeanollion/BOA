@@ -77,26 +77,27 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
         return null;
     }
     
-    public List<Set<I>> getClusters() {
-        List<Set<I>> clusters = new ArrayList<Set<I>>();
+    public List<Set<E>> getClusters() {
+        List<Set<I>> interfaceClusters = new ArrayList<Set<I>>();
         Set<I> currentCluster;
+        //logger.debug("get interfaceClusters: # of interfaces {}", interfaces.size());
         for (I i : interfaces) {
             currentCluster = null;
             Collection<I> l1 = interfaceByElement.getAndCreateIfNecessary(i.getE1());
             Collection<I> l2 = interfaceByElement.getAndCreateIfNecessary(i.getE2());
-            if (clusters.isEmpty()) {
+            if (interfaceClusters.isEmpty()) {
                 currentCluster = new HashSet<I>(l1.size()+ l2.size()-1);
                 currentCluster.addAll(l1);
                 currentCluster.addAll(l2);
-                clusters.add(currentCluster);
+                interfaceClusters.add(currentCluster);
             } else {
-                Iterator<Set<I>> it = clusters.iterator();
+                Iterator<Set<I>> it = interfaceClusters.iterator();
                 while(it.hasNext()) {
                     Set<I> cluster = it.next();
                     if (cluster.contains(i)) {
                         cluster.addAll(l1);
                         cluster.addAll(l2);
-                        if (currentCluster!=null) { // fusionInterface des clusters
+                        if (currentCluster!=null) { // fusionInterface des interfaceClusters
                             currentCluster.addAll(cluster);
                             it.remove();
                         } else currentCluster=cluster;
@@ -106,15 +107,35 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
                     currentCluster = new HashSet<I>(l1.size()+ l2.size()-1);
                     currentCluster.addAll(l1);
                     currentCluster.addAll(l2);
-                    clusters.add(currentCluster);
+                    interfaceClusters.add(currentCluster);
                 }
             }
         }
+        // creation des clusters d'objets 
+        List<Set<E>> clusters = new ArrayList<>();
+        for (Set<I> iSet : interfaceClusters) {
+            Set<E> eSet = new HashSet<>();
+            for (I i : iSet) {
+                eSet.add(i.getE1());
+                eSet.add(i.getE2());
+            }
+            clusters.add(eSet);
+        }
+        // ajout des elements sans interfaces
+        for (E e : allElements) if (!interfaceByElement.containsKey(e) || interfaceByElement.get(e).isEmpty()) clusters.add(new HashSet<E>(){{add(e);}});
         return clusters;
     }
     
+    public Set<I> getInterfaces(Collection<E> elements) {
+        Set<I> res = new HashSet<>();
+        elements.stream().filter((e) -> (interfaceByElement.containsKey(e))).forEach((e) -> {
+            res.addAll(interfaceByElement.get(e));
+        });
+        return res;
+    }
+    
     /*public List<E> mergeSortCluster(Fusion<E, I> fusionInterface, InterfaceSortValue<E, I> interfaceSortValue) {
-        List<Set<Interface<E, I>>> clusters = getClusters();
+        List<Set<Interface<E, I>>> interfaceClusters = getClusters();
         // create one ClusterCollection per cluster and apply mergeSort
     }*/
     
@@ -141,7 +162,7 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
                     it=interfaces.iterator();
                     
                 } 
-                if (verbose) {
+                if (false && verbose) {
                     logger.debug("bilan/");
                     for (I ii : interfaces) logger.debug("interface: {}", ii);
                     for (E e : interfaceByElement.keySet()) logger.debug("Element: {}, interfaces: {}", e, interfaceByElement.get(e));

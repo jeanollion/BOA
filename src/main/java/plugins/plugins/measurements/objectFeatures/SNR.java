@@ -32,6 +32,7 @@ import image.ImageMask;
 import image.TypeConverter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import plugins.objectFeature.IntensityMeasurement;
 import plugins.objectFeature.IntensityMeasurementCore.IntensityMeasurements;
 import processing.Filters;
@@ -62,7 +63,7 @@ public class SNR extends IntensityMeasurement {
         parentOffsetRev = parent.getBounds().duplicate().reverseOffset();
         
         // get parents
-        ArrayList<Object3D> parents;
+        List<Object3D> parents;
         if (backgroundObject.getSelectedStructureIdx()!=super.parent.getStructureIdx()) {
             parents = parent.getObjectPopulation(backgroundObject.getSelectedStructureIdx()).getObjects();
         } else {

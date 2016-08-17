@@ -67,14 +67,16 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
     }
     
     @Override public BoundingBox getBoundingBox(Image image) {
-        return getBoundingBox(image, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), microChannelWidth.getValue().intValue(), microChannelWidthError.getValue().doubleValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue());
+        return getBoundingBox(image, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), microChannelWidth.getValue().intValue(), microChannelWidthError.getValue().doubleValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue(), 0);
     }
     
-    public static BoundingBox getBoundingBox(Image image, int cropMargin, int margin, int channelHeight, int channelWidth, double channelWidthError, int xStart, int xStop, int yStart, int yStop) {
-        Result r = segmentMicroChannels(image, true, margin, channelWidth, channelWidthError);
-        if (r==null || r.xMin.length==0) return null;
-        int yMin = Math.max(yStart, r.yMin);
-        int yMax = Math.min(r.yMin+channelHeight, r.yMax);
+    public static BoundingBox getBoundingBox(Image image, int cropMargin, int margin, int channelHeight, int channelWidth, double channelWidthError, int xStart, int xStop, int yStart, int yStop, int yStartAdjustWindow) {
+        Result r = segmentMicroChannels(image, true, margin, channelWidth, channelWidthError, yStartAdjustWindow);
+        if (r==null || r.xMax.length==0) return null;
+        int yMin = r.getYMin();
+        int yMax = r.getYMax();
+        yMax = Math.min(yMin+channelHeight, yMax);
+        yMin = Math.max(yStart,yMin);
         yStop = Math.min(yStop, yMax);
         yStart = Math.max(yMin-cropMargin, yStart);
         
@@ -84,7 +86,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         return new BoundingBox(xStart, xStop, yStart, yStop, 0, image.getSizeZ()-1);
         
     }
-    public static Result segmentMicroChannels(Image image, boolean opticalAberration, int margin, int channelWidth, double channelWidthError) {
+    public static Result segmentMicroChannels(Image image, boolean opticalAberration, int margin, int channelWidth, double channelWidthError, int yStartAdjustWindow) {
         double derScale = 2;
         int xErode = Math.max(1, (int)(derScale/2d + 0.5+Double.MIN_VALUE));
         double widthMin = (1-channelWidthError) * channelWidth;
@@ -99,19 +101,20 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         
         int aberrationStart = opticalAberration ? searchYLimWithOpticalAberration(image, 0.25, 0.05) : image.getSizeY()-1;
         Image imCrop = image.crop(new BoundingBox(0, image.getSizeX()-1, 0, aberrationStart, 0, image.getSizeZ()-1));
-        Image imDer = ImageFeatures.getDerivative(imCrop, derScale, 0, 1, 0, true);
-        float[] yProj = ImageOperations.meanProjection(imDer, ImageOperations.Axis.Y, null);
+        Image imDerY = ImageFeatures.getDerivative(imCrop, derScale, 0, 1, 0, true);
+        float[] yProj = ImageOperations.meanProjection(imDerY, ImageOperations.Axis.Y, null);
         int channelStartIdx = ArrayUtil.max(yProj, 0, (int)(yProj.length*0.75)); // limit to 
-        
+
         imCrop = image.crop(new BoundingBox(0, image.getSizeX()-1, channelStartIdx, aberrationStart, 0, image.getSizeZ()-1));
         float[] xProj = ImageOperations.meanProjection(imCrop, ImageOperations.Axis.X, null); 
         ArrayUtil.gaussianSmooth(xProj, derScale);
-        imDer = ImageFeatures.getDerivative(imCrop, derScale, 1, 0, 0, true);
-        float[] xProjDer = ImageOperations.meanProjection(imDer, ImageOperations.Axis.X, null);
+        Image imDerX = ImageFeatures.getDerivative(imCrop, derScale, 1, 0, 0, true);
+        float[] xProjDer = ImageOperations.meanProjection(imDerX, ImageOperations.Axis.X, null);
         if (debug) {
             //plotProfile("XProjDer", xProjDer);
             //plotProfile("XProj smoothed", xProj);
-            new IJImageDisplayer().showImage(imDer);
+            new IJImageDisplayer().showImage(imDerY);
+            new IJImageDisplayer().showImage(imDerX);
             plotProfile("yProjCrop", yProj);
             float[] norm = new float[xProjDer.length];
             for (int i = 0; i<norm.length; ++i) norm[i] = xProjDer[i] / xProj[i];
@@ -124,7 +127,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         int[] localMin = ArrayUtil.getRegionalExtrema(xProjDer, (int)(derScale+0.5), false);
         if (debug) logger.debug("{} max found, {} min found", localMax.length, localMin.length);
         
-        List<int[]> peaks = new ArrayList<int[]>();
+        List<int[]> peaks = new ArrayList<>();
         int lastMinIdx = -1;
         int leftMargin = image.getSizeX()-margin;
         MAX_LOOP : for (int maxIdx = 0; maxIdx<localMax.length; ++maxIdx) {
@@ -158,13 +161,23 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
                                 int x2 = localMin[minIdx];
                                 logger.debug("Peak found X: [{};{}], distance: {}, value: [{};{}], normedValue: [{};{}]", x1, x2, d, xProjDer[x1], xProjDer[x2], xProjDer[x1]/xProj[x1], xProjDer[x2]/xProj[x2]);
                             }
-                            peaks.add(new int[]{localMax[maxIdx]+xErode, localMin[minIdx]-xErode});
+                            peaks.add(new int[]{localMax[maxIdx]+xErode, localMin[minIdx]-xErode, 0});
+                            //peaks.add(new int[]{localMax[maxIdx]+xErode, localMin[minIdx]-xErode, channelStartIdx, aberrationStart});
                             lastMinIdx = minIdx;
                             while(maxIdx<localMax.length && localMax[maxIdx]<localMin[minIdx]) maxIdx++;
                             break MIN_LOOP;
                         } else if (d>widthMax) break MIN_LOOP;
                     }
                 }
+            }
+        }
+        // precise Y-value within shift around channelStartIdx
+        if (yStartAdjustWindow>0) {
+            for (int[] peak : peaks) {
+                BoundingBox win = new BoundingBox(peak[0], peak[1], channelStartIdx-yStartAdjustWindow, channelStartIdx+yStartAdjustWindow, 0, 0);
+                float[] proj = ImageOperations.meanProjection(imDerY, ImageOperations.Axis.Y, win);
+                peak[2] = ArrayUtil.max(proj)-yStartAdjustWindow;
+                //if (debug) plotProfile("yProjDerAdjust", proj);
             }
         }
         return new Result(peaks, channelStartIdx, aberrationStart);

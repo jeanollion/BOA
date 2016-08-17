@@ -26,8 +26,10 @@ import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectUtils;
 import image.Image;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import plugins.PluginFactory;
 import plugins.ProcessingScheme;
@@ -43,19 +45,35 @@ public class TestTracker {
         //String dbName = "testSub60";
         final String dbName = "boa_mutH_140115";
         int fIdx = 0;
-        int mcIdx =1;
+        int mcIdx =4;
         int structureIdx = 1;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         if (db.getExperiment()==null) return;
         ObjectDAO dao = db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName());
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
-        testSegmentationAndTracking(dao, ps, structureIdx, mcIdx, 30, 35);
+        testSegmentationAndTracking(dao, ps, structureIdx, mcIdx, 0, 900);
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         List<StructureObject> roots = dao.getRoots();
-        roots.removeIf(o -> o.getTimePoint()<tStart || o.getTimePoint()>tEnd);
-        List<StructureObject> parentTrack = roots.stream().map(o -> o.getChildren(0).get(mcIdx)).collect(Collectors.toList());
-        BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
+        
+        List<StructureObject> parentTrack=null;
+        if (structureIdx==0) {
+            parentTrack = roots;
+            roots.removeIf(o -> o.getTimePoint()<tStart || o.getTimePoint()>tEnd);
+        }
+        else {
+            Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(roots, 0);
+            for (StructureObject th : allTracks.keySet()) {
+                if (th.getIdx()==mcIdx && th.getTimePoint()<tEnd) {
+                    if (parentTrack==null || parentTrack.isEmpty()) {
+                        parentTrack = allTracks.get(th);
+                        parentTrack.removeIf(o -> o.getTimePoint()<tStart || o.getTimePoint()>tEnd);
+                    }
+                }
+            }
+        }
+        //BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
+        //BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
         ps.segmentAndTrack(structureIdx, parentTrack);
         GUI.getInstance();
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();

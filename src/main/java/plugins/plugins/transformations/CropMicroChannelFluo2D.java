@@ -166,7 +166,7 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         
     }
 
-    public Parameter[] getParameters() {
+    @Override public Parameter[] getParameters() {
         return parameters;
     }
     

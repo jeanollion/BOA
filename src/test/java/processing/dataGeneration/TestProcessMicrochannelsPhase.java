@@ -55,9 +55,9 @@ import utils.MorphiumUtils;
 public class TestProcessMicrochannelsPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        int time =145;
+        int time =411;
         int field = 0;
-        String dbName = "boa_mutd5_141209";
+        String dbName = "boa_mutH_140115";
         testSegMicrochannelsFromXP(dbName, field, time);
         //testSegAndTrackMicrochannelsFromXP(dbName, field, 0, 650);
     }
@@ -70,7 +70,7 @@ public class TestProcessMicrochannelsPhase {
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         Image input = root.getRawImage(0);
         MicroChannelPhase2D.debug=true;
-        MicroChannelPhase2D seg = new MicroChannelPhase2D();
+        MicroChannelPhase2D seg = new MicroChannelPhase2D().setyStartAdjustWindow(5);
         //ObjectPopulation pop = MicroChannelPhase2D.run(input, 26, 0.15, 2, 6, 6);
         ObjectPopulation pop = seg.runSegmenter(input, 0, root);
         //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);

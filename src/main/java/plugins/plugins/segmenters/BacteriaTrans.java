@@ -117,7 +117,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     NumberParameter relativeThicknessMaxDistance = new BoundedNumberParameter("Max Distance for Relative Thickness normalization factor (calibrated)", 2, 1, 0, null);
     GroupParameter thicknessParameters = new GroupParameter("Constaint on thickness", relativeThicknessMaxDistance, relativeThicknessThreshold);
     
-    NumberParameter curvatureThreshold = new BoundedNumberParameter("Curvature Threshold (lower merge more)", 2, 1, null, 0);
+    NumberParameter curvatureThreshold = new BoundedNumberParameter("Curvature Threshold (lower merge more)", 2, -1, null, 0);
     NumberParameter curvatureScale = new BoundedNumberParameter("Curvature scale", 0, 6, 3, null);
     NumberParameter curvatureSearchRadius = new BoundedNumberParameter("Radius for min. search", 1, 2.5, 1, null);
     GroupParameter curvatureParameters = new GroupParameter("Constaint on curvature", curvatureScale, curvatureThreshold, curvatureSearchRadius);
@@ -127,7 +127,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     GroupParameter angleParameters = new GroupParameter("Constaint on angles", aspectRatioThreshold, angleThreshold);
     */
     NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 10, 0, null);
-    NumberParameter minSize = new BoundedNumberParameter("Minimum Object size", 0, 250, 5, null);
+    NumberParameter minSize = new BoundedNumberParameter("Minimum Object size", 0, 200, 5, null);
     GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSize, contactLimit);
     
     Parameter[] parameters = new Parameter[]{backgroundSeparation, thicknessParameters, curvatureParameters, objectParameters};
@@ -341,6 +341,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         synchronized(pv) {
             o.draw(pv.getSplitMask(), 1);
             ObjectPopulation pop = BacteriaTrans.getSeparatedObjects(pv, pv.getSplitMask(), minSize.getValue().intValue(), 2, false);
+            //new IJImageDisplayer().showImage(pop.getLabelMap().duplicate("split"));
             o.draw(pv.splitMask, 0);
             if (pop==null || pop.getObjects().isEmpty() || pop.getObjects().size()==1) return Double.POSITIVE_INFINITY;
             ArrayList<Object3D> remove = new ArrayList<Object3D>(pop.getObjects().size());
@@ -366,31 +367,24 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         if (pv==null) throw new Error("Segment method have to be called before merge method in order to initialize images");
         if (objects.isEmpty() || objects.size()==1) return 0;
         synchronized(pv) {
-            Iterator<Object3D> it = objects.iterator();
-            Object3D ref  = objects.get(0);
             double minCurv = Double.POSITIVE_INFINITY;
-            while (it.hasNext()) { // first round : remove objects not connected with ref & compute interactions with ref objects
-                Object3D n = it.next();
-                if (n!=ref) {
-                    InterfaceBT inter = getInterface(ref, n);
-                    if (!inter.voxels.isEmpty()) {
-                        inter.updateSortValue();
-                        if (inter.curvatureValue<minCurv) minCurv = inter.curvatureValue;
-                    }
-                }
+            ObjectPopulation mergePop = new ObjectPopulation(objects, pv.getSplitMask(), pv.getSplitMask(), false);
+            //new IJImageDisplayer().showImage(mergePop.getLabelMap());
+            Object3DCluster c = new Object3DCluster(mergePop, false, pv.getFactory());
+            List<Set<Object3D>> clusters = c.getClusters();
+            //logger.debug("compute merge cost: {} objects in {} clusters", objects.size(), clusters.size());
+            if (clusters.size()>1) { // merge impossible : presence of disconnected objects
+                if (debug) logger.debug("merge impossible: {} disconnected clusters detected", clusters.size());
+                return Double.POSITIVE_INFINITY;
+            } 
+            Set<InterfaceBT> allInterfaces = c.getInterfaces(clusters.get(0));
+            for (InterfaceBT i : allInterfaces) {
+                i.updateSortValue();
+                if (i.curvatureValue<minCurv) minCurv = i.curvatureValue;
             }
-            for (int i = 2; i<objects.size()-1; ++i) { // second round compute other interactions
-                for (int j = i+1; j<objects.size(); ++j) {
-                    InterfaceBT inter = getInterface(objects.get(i), objects.get(j));
-                    if (!inter.voxels.isEmpty()) {
-                        inter.updateSortValue();
-                        if (inter.curvatureValue<minCurv) minCurv = inter.curvatureValue;
-                    }
-                }
-            }
+            //logger.debug("minCurv: {}", minCurv);
             if (minCurv==Double.POSITIVE_INFINITY || minCurv==Double.NaN) return Double.POSITIVE_INFINITY;
             return getCost(minCurv, pv.curvatureThreshold, true);
-            //return minCurv-pv.relativeThicknessThreshold;
         }
     }
     
