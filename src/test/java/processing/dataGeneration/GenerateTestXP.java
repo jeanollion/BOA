@@ -172,6 +172,14 @@ public class GenerateTestXP {
         boolean flip = true;
         boolean fluo = false;
         scaleXY = 0.0646;*/
+        
+        String dbName = "boa_phase140115mutH";
+        String inputDir = "/data/Images/Phase/140115_6300_mutH_LB-LR62rep/6300_mutH_LB-LR62rep-15012014_tif/";
+        String outputDir = "/data/Images/Phase/140115_6300_mutH_LB-LR62rep/Output";
+        boolean flip = true;
+        boolean fluo = false;
+        transSingleFileImport=false;
+        scaleXY = 0.0646;
         /*
         ////////////////////////////
         // Ordi Portable
@@ -209,11 +217,11 @@ public class GenerateTestXP {
         boolean flip = true;
         boolean fluo = false;*/
         
-        String dbName = "boa_mutH_140115";
+        /*String dbName = "boa_mutH_140115";
         String inputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase140115/6300_mutH_LB-LR62rep-15012014_nd2/mg6300mutH_LB_lr62rep_oil37.nd2";
         String outputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase140115/Output";
         boolean flip = true;
-        boolean fluo = false;
+        boolean fluo = false;*/
         
         /*String dbName = "boa_phase140115wt";
         String inputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase_mg6300wtlbl1/mg6300wt-lb-laser1-oil37/";

@@ -1476,17 +1476,50 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         ImageWindowManagerFactory.getImageManager().displayAllTracks(null);
         //GUI.updateRoiDisplayForSelections(null, null);
     }//GEN-LAST:event_selectAllTracksButtonActionPerformed
-
-    private void nextTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextTrackErrorButtonActionPerformed
-        if (!checkConnection()) return;
-        if (selectionList.getSelectedValuesList().isEmpty()) ImageWindowManagerFactory.getImageManager().goToNextTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads(), true);
+    private int navigateCount = 0;
+    private void navigateToNextObjects(boolean next) {
+        if (selectionList.getSelectedValuesList().isEmpty()) ImageWindowManagerFactory.getImageManager().goToNextTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads(), next);
         else {
             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null);
-            if (i==null) return;
-            List<StructureObject> objects = new ArrayList<StructureObject>();
-            for (Object s : selectionList.getSelectedValuesList()) objects.addAll(((Selection)s).getElements(i.getParent().getFieldName()));
-            ImageWindowManagerFactory.getImageManager().goToNextObject(null, objects, true);
+            String position = i==null? null:i.getParent().getFieldName();
+            List<StructureObject> objects = SelectionUtils.getStructureObjects(selectionList.getSelectedValuesList(), position);
+            if (objects.isEmpty()) return;
+            if (i==null) navigateCount=2;
+            else {
+                boolean move = ImageWindowManagerFactory.getImageManager().goToNextObject(null, objects, next);
+                if (move) navigateCount=0;
+                else navigateCount++;
+            }
+            if (navigateCount>1) { // open next/prev image containig objects
+                Map<StructureObject, List<StructureObject>> objectsByParent = StructureObjectUtils.splitByParentTrackHead(objects);
+                List<StructureObject> parents = new ArrayList<>(objectsByParent.keySet());
+                Collections.sort(parents);
+                int currentParentIdx = i==null? 0 :parents.indexOf(i.getParent());
+                if (currentParentIdx==-1) {
+                    logger.warn("current parent {} not found in objects parents: {}", i==null?null : i.getParent(), parents);
+                    return;
+                } else {
+                    int childStructureIdx = i==null? objects.get(0).getStructureIdx() : i.getChildStructureIdx();
+                    int nextParentIdx = currentParentIdx + (i!=null ? (next ? 1 : -1) : 0 ) ;
+                    if (nextParentIdx<0 || nextParentIdx>=parents.size()) return;
+                    StructureObject nextParent = parents.get(nextParentIdx);
+                    logger.debug("next parent: {}", nextParent);
+                    List track = db.getDao(nextParent.getFieldName()).getTrack(nextParent);
+                    ImageObjectInterface nextI = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, childStructureIdx);
+                    ImageWindowManagerFactory.getImageManager().addImage(nextI.generateRawImage(childStructureIdx), nextI, false, true);
+                    navigateCount=0;
+                    if (i==null) { // new image open -> set interactive structure & navigate to next object in newly opened image
+                        interactiveStructure.setSelectedIndex(childStructureIdx);
+                        interactiveStructureActionPerformed(null);
+                    }
+                    navigateToNextObjects(next);
+                }
+            }
         }
+    }
+    private void nextTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextTrackErrorButtonActionPerformed
+        if (!checkConnection()) return;
+        navigateToNextObjects(true);
     }//GEN-LAST:event_nextTrackErrorButtonActionPerformed
 
     private void splitObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_splitObjectsButtonActionPerformed
@@ -1505,14 +1538,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void previousTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_previousTrackErrorButtonActionPerformed
         if (!checkConnection()) return;
-        if (selectionList.getSelectedValuesList().isEmpty()) ImageWindowManagerFactory.getImageManager().goToNextTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads(), false);
-        else {
-            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null);
-            if (i==null) return;
-            List<StructureObject> objects = new ArrayList<StructureObject>();
-            for (Object s : selectionList.getSelectedValuesList()) objects.addAll(((Selection)s).getElements(i.getParent().getFieldName()));
-            ImageWindowManagerFactory.getImageManager().goToNextObject(null, objects, false);
-        }
+        navigateToNextObjects(false);
     }//GEN-LAST:event_previousTrackErrorButtonActionPerformed
 
     private void interactiveStructureActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_interactiveStructureActionPerformed

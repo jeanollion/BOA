@@ -17,6 +17,7 @@
  */
 package dataStructure.containers;
 
+import static core.Processor.logger;
 import de.caluga.morphium.annotations.Transient;
 import image.BoundingBox;
 import image.Image;
@@ -82,6 +83,10 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
     @Override
     public Image getImage(int timePoint, int channel) {
         if (fileCT==null) createFileMap();
+        if (timePoint==0) {
+            logger.debug("fileMap: {} x {}", fileCT.size(), fileCT.get(0).size());
+            logger.debug("file: {}", fileCT.get(channel).get(timePoint));
+        }
         return ImageReader.openImage(fileCT.get(channel).get(timePoint));
     }
 
@@ -114,7 +119,7 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
         Map<Integer, List<File>> filesByChannel = files.stream().collect(Collectors.groupingBy(f -> getKeywordIdx(f.getName(), channelKeywords)));
         fileCT = new ArrayList<>(filesByChannel.size());
         filesByChannel.entrySet().stream().sorted().forEach((channelFiles) -> {
-            Map<Integer, String> filesByTimePoint = channelFiles.getValue().stream().collect(Collectors.toMap(f -> get(f.getName(), timePattern), f -> f.getName()));
+            Map<Integer, String> filesByTimePoint = channelFiles.getValue().stream().collect(Collectors.toMap(f -> get(f.getName(), timePattern), f -> f.getAbsolutePath()));
             fileCT.add(new ArrayList<>(new TreeMap(filesByTimePoint).values()));
         });
     }

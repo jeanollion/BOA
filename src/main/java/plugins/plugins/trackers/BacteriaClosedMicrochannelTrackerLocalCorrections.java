@@ -166,6 +166,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     }
     
     private void freeMemoryUntil(int timePoint) {
+        if (segmenters==null) return;
         --timePoint;
         if (timePoint<0) return;
         while(true) {

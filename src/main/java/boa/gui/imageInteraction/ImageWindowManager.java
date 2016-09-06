@@ -663,8 +663,14 @@ public abstract class ImageWindowManager<T, U, V> {
             displayer.setDisplayRange(nextDisplayRange, trackImage);
         }
     }
-
-    public void goToNextObject(Image trackImage, List<StructureObject> objects, boolean next) {
+    /**
+     * Center this image on the objects at next (or previous, if {@param next} is false) undiplayed frames
+     * @param trackImage
+     * @param objects
+     * @param next 
+     * @return true if display has changed
+     */
+    public boolean goToNextObject(Image trackImage, List<StructureObject> objects, boolean next) {
         //ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(rois.get(0).getParent().getTrackHead(), rois.get(0).getStructureIdx(), true));
         if (trackImage==null) {
             T selectedImage = displayer.getCurrentImage();
@@ -673,12 +679,12 @@ public abstract class ImageWindowManager<T, U, V> {
         ImageObjectInterface i = this.getImageObjectInterface(trackImage);
         if (!i.isTimeImage()) {
             logger.warn("selected image is not a track image");
-            return;
+            return false;
         }
         TrackMask tm = (TrackMask)i;
         if (objects==null || objects.isEmpty()) objects = this.getSelectedLabileObjects(trackImage);
         if (objects==null || objects.isEmpty()) objects = Pair.unpairKeys(i.getObjects());
-        if (objects==null || objects.isEmpty()) return;
+        if (objects==null || objects.isEmpty()) return false;
         BoundingBox currentDisplayRange = this.displayer.getDisplayRange(trackImage);
         int minTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMin());
         int maxTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMax());
@@ -692,7 +698,10 @@ public abstract class ImageWindowManager<T, U, V> {
         logger.debug("Current Display range: {}, maxTimePoint: {}, minTimePoint: {}, number of objects: {}", currentDisplayRange, maxTimePoint, minTimePoint, objects.size());
         Collections.sort(objects, timePointComparator()); // sort by timePoint
         StructureObject nextObject = getNextObject(next? maxTimePoint: minTimePoint, objects, next);
-        if (nextObject==null) logger.info("No object detected {} timepoint: {}", next? "after" : "before", maxTimePoint);
+        if (nextObject==null) {
+            logger.info("No object detected {} timepoint: {}", next? "after" : "before", maxTimePoint);
+            return false;
+        }
         else {
             BoundingBox off = tm.getObjectOffset(nextObject);
             if (off==null) objects = new ArrayList<StructureObject>(objects);
@@ -702,7 +711,7 @@ public abstract class ImageWindowManager<T, U, V> {
                 nextObject = getNextObject(nextObject.getTimePoint(), objects, next);
                 if (nextObject==null) {
                     logger.info("No object detected {} timepoint: {}", next? "after" : "before", maxTimePoint);
-                    return;
+                    return false;
                 }
                 off = tm.getObjectOffset(nextObject);
             }
@@ -712,6 +721,7 @@ public abstract class ImageWindowManager<T, U, V> {
             BoundingBox nextDisplayRange = new BoundingBox(mid-currentDisplayRange.getSizeX()/2, mid+currentDisplayRange.getSizeX()/2, currentDisplayRange.getyMin(), currentDisplayRange.getyMax(), currentDisplayRange.getzMin(), currentDisplayRange.getzMax());
             logger.info("Object detected @ timepoint: {}, xMid: {}, update display range: {}", nextObject.getTimePoint(), mid,  nextDisplayRange);
             displayer.setDisplayRange(nextDisplayRange, trackImage);
+            return true;
         }
     }
     
@@ -724,7 +734,6 @@ public abstract class ImageWindowManager<T, U, V> {
             if (insertionPoint<objects.size()) return objects.get(insertionPoint);
         } else {
             if (insertionPoint>0) return objects.get(insertionPoint-1);
-            else return objects.get(0);
         }
         return null;
     }

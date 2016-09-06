@@ -38,6 +38,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -72,6 +73,15 @@ public class SelectionUtils {
         put("Cyan", new Color(0, 139, 139));
         put("Green", new Color(0, 100, 0));
     }};
+    
+    public static List<StructureObject> getStructureObjects(List<Selection> selections, String fieldName) {
+        if (selections==null || selections.isEmpty()) return Collections.EMPTY_LIST;
+        selections.removeIf(s -> s.getStructureIdx()!=selections.get(0).getStructureIdx());
+        List<StructureObject> res=  new ArrayList<StructureObject>();
+        if (fieldName!=null) for (Selection s : selections) res.addAll(s.getElements(fieldName));
+        else for (Selection s : selections) res.addAll(s.getAllElements());
+        return res;
+    }
     
     public static Selection getSelection(MasterDAO db, String name, boolean createIfNonExisting) {
         Selection res = db.getSelectionDAO().getObject(name);
