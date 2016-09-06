@@ -213,7 +213,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
      */
     protected int assignPrevious(int timePoint, boolean performCorrection) {
         if (debug) logger.debug("assign previous timePOint: {}, correction? {}", timePoint, performCorrection);
-        TrackAssginer assigner = new TrackAssginer(timePoint);
+        TrackAssigner assigner = new TrackAssigner(timePoint);
         assigner.resetTrackAttributes();
         while(assigner.nextTrack()) {
             if (debug) logger.debug("assigner: {}", assigner);
@@ -305,16 +305,26 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         }
     }
     
-    protected class TrackAssginer {
+    protected class TrackAssigner {
         int timePoint;
         int idxPrev=0, idxPrevEnd=0, idxPrevLim, idx=0, idxEnd=0, idxLim;
         double sizePrev=0, size=0;
-        protected TrackAssginer(int timePoint) {
+        protected TrackAssigner(int timePoint) {
             if (timePoint<=0) throw new IllegalArgumentException("timePoint cannot be <=0");
             this.timePoint=timePoint;
             idxPrevLim = getObjects(timePoint-1).size();
             idxLim = getObjects(timePoint).size();
             //logger.debug("ini assigner: {}", timePoint);
+        }
+        protected TrackAssigner duplicate() {
+            TrackAssigner res = new TrackAssigner(timePoint);
+            res.idx=idx;
+            res.idxEnd=idxEnd;
+            res.idxPrev=idxPrev;
+            res.idxPrevEnd=idxPrevEnd;
+            res.size=size;
+            res.sizePrev=sizePrev;
+            return res;
         }
         protected boolean isValid() {
             return size>0 && sizePrev>0;
@@ -334,17 +344,36 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         }
         protected void incrementIfNecessary() {
             boolean change = true;
-            while (change && !verifyInequality()) {
+            while (change) { // && !verifyInequality() do not limit to the inequality because several solution that verify the inequality can coexist
                 if (size>=sizePrev) change=incrementPrev();
                 else change=increment();
             }
         }
+
         protected boolean incrementPrev() { // maximum index so that prevSize * minGR remain inferior to size-1
             boolean change = false;
             while(idxPrevEnd<idxPrevLim) {
                 double newSizePrev = sizePrev + getSize(timePoint-1, idxPrevEnd);
-                if (debug) logger.debug("t: {}, increment prev: {}, old size prev: {} new size prev: {}, size: {}, maxGR: {}, minGR: {}, will increment: {}", timePoint, idxPrevEnd,sizePrev, newSizePrev, size, maxGR, minGR, sizePrev * maxGR < size || newSizePrev * minGR <= size  );
-                if (sizePrev * maxGR < size || newSizePrev * minGR <= size) { // previous is too small compared to current -> add a second one, so that is is not too big
+                if (debug) logger.debug("t: {}, increment prev: [{};{}[ , old size prev: {} new size prev: {}, size: {}, maxGR: {}, minGR: {}, will increment: {}", timePoint, idxPrev, idxPrevEnd,sizePrev, newSizePrev, size, maxGR, minGR, sizePrev * maxGR < size || newSizePrev * minGR <= size  );
+                if (sizePrev * maxGR < size || newSizePrev * minGR <= size) { // previous is too small compared to current -> add another second one, so that is is not too big
+                    if (verifyInequality()) { // if the current assignment already verify the inequality, increment only if there is improvement
+                        double scaleOld = sizePrev * maxGR - sizePrev * minGR;
+                        double scaleNew = newSizePrev * maxGR - newSizePrev * minGR;
+                        double dOldMax = (sizePrev * maxGR-size)/scaleOld;
+                        double dNewMax = (newSizePrev * maxGR-size)/scaleNew;
+                        double dOldMin = (size - sizePrev * minGR)/scaleOld;
+                        double dNewMin = (size - newSizePrev * minGR)/scaleNew;
+                        double scoreOld = dOldMax*dOldMax+dOldMin*dOldMin;
+                        double scoreNew = dNewMax*dNewMax+dNewMin*dNewMin;
+                        if (debug) logger.debug("comparison of two solution for prevInc: old : {}&{} score: {}, new: {}&{} score:{}", dOldMin, dOldMax, scoreOld, dNewMin, dNewMax, scoreNew);
+                        if (scoreOld<scoreNew) { // no amelioration
+                            // check next assignement
+                            TrackAssigner dup = this.duplicate();
+                            if (dup.nextTrack()) {
+                                if (!dup.needCorrection()) return change;
+                            }
+                        } 
+                    }
                     sizePrev=newSizePrev;
                     ++idxPrevEnd;
                     change = true;
@@ -356,7 +385,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             boolean change = false;
             while(idxEnd<idxLim && sizePrev * minGR > size) {
                 double newSize = size + getSize(timePoint, idxEnd);
-                if (debug) logger.debug("t: {}, increment: {}, old size: {} new size: {}, size prev: {}, maxGR: {}, minGR: {}, will increment: {}", timePoint, idxEnd,size, newSize, sizePrev, maxGR, minGR, sizePrev * minGR > size && sizePrev * maxGR > newSize );
+                if (debug) logger.debug("t: {}, increment: [{};{}[, old size: {} new size: {}, size prev: {}, maxGR: {}, minGR: {}, will increment: {}", timePoint, idx, idxEnd,size, newSize, sizePrev, maxGR, minGR, sizePrev * minGR > size && sizePrev * maxGR > newSize );
                 if ( sizePrev * maxGR > newSize) { // division, but don't grow to much // (sizePrev * minGR > size) // division: size < sizePrev * div
                     size=newSize;
                     ++idxEnd;
@@ -377,28 +406,63 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (trackAttributes[timePoint-1]!=null) for (TrackAttribute ta : trackAttributes[timePoint-1]) ta.next=null;
         }
         public void assignCurrent() {
-            boolean error = (idxPrevEnd-idxPrev)>1 || (idxEnd-idx)>2;
-            TrackAttribute taCur = getAttribute(timePoint, idx);
-            TrackAttribute taPrev = getAttribute(timePoint-1, idxPrev);
-            // assignments @ timePoint
-            taCur.prev=taPrev;
-            taCur.trackHead=false;
-            if (error) taCur.flag=Flag.error;
-            if ((idxEnd-idx)>1) {
+            int nPrev = idxPrevEnd-idxPrev;
+            int nCur = idxEnd-idx;
+            boolean error = nPrev>1 || nCur>2;
+            if (nPrev==nCur) {
+                for (int i = 0; i<nPrev; ++i) {
+                    TrackAttribute taCur = getAttribute(timePoint, idx+i);
+                    TrackAttribute taPrev = getAttribute(timePoint-1, idxPrev+i);
+                    taCur.prev=taPrev;
+                    taPrev.next=taCur;
+                    taCur.trackHead=false;
+                    if (error) taCur.flag=Flag.error;
+                }
+            }else if (nPrev==1 && nCur>1) { // division
+                TrackAttribute taPrev = getAttribute(timePoint-1, idxPrev);
+                TrackAttribute taCur = getAttribute(timePoint, idx);
                 taPrev.division=true;
-                for (int i = idx+1; i<idxEnd; ++i) {
+                if (error) taPrev.flag=Flag.error;
+                taPrev.next=taCur;
+                taCur.trackHead=false;
+                for (int i = idx; i<idxEnd; ++i) {
                     getAttribute(timePoint, i).prev=taPrev;
                     if (error) getAttribute(timePoint, i).flag=Flag.error;
                 }
-            }
-            // assignments @ timePoint-1
-            taPrev.next=taCur;
-            if (error) taPrev.flag=Flag.error;
-            if ((idxPrevEnd-idxPrev)>1) {
-                for (int i = idxPrev+1; i<idxPrevEnd; ++i) {
+            }else if (nPrev>1 && nCur==1) { // merging
+                TrackAttribute taCur = getAttribute(timePoint, idx);
+                taCur.trackHead=false;
+                taCur.prev=getAttribute(timePoint-1, idxPrev);
+                for (int i = idxPrev; i<idxPrevEnd; ++i) {
                     getAttribute(timePoint-1, i).next=taCur;
                     getAttribute(timePoint-1, i).flag=Flag.error;
                 }
+            } else if (nPrev>1 && nCur>1) { // algorithm assign first with first or last with last (the most likely) and recursive call
+                TrackAttribute taCur1 = getAttribute(timePoint, idx);
+                TrackAttribute taPrev1 = getAttribute(timePoint-1, idxPrev);
+                double diff1 = Math.abs(taCur1.objectSize-taPrev1.objectSize);
+                TrackAttribute taCurEnd = getAttribute(timePoint, idxEnd-1);
+                TrackAttribute taPrevEnd = getAttribute(timePoint-1, idxPrevEnd-1);
+                double diffEnd = Math.abs(taCurEnd.objectSize-taPrevEnd.objectSize);
+                TrackAttribute taCur, taPrev;
+                if (diff1<diffEnd) { // assign first with first
+                    taCur = taCur1;
+                    taPrev= taPrev1;
+                    idx++;
+                    idxPrev++;
+                } else { // assign last with last
+                    taCur = taCurEnd;
+                    taPrev= taPrevEnd;
+                    idxEnd--;
+                    idxPrevEnd--;
+                }
+                taCur.prev=taPrev;
+                taPrev.next=taCur;
+                taCur.flag=Flag.error;
+                taPrev.flag=Flag.error;
+                taCur.trackHead=false;
+                if (debug) logger.debug("assignment {} with {} objects, assign {}", nPrev, nCur, diff1<diffEnd ? "first" : "last");
+                assignCurrent(); // recursive call
             }
         }
         
