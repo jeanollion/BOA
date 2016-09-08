@@ -27,6 +27,7 @@ import image.ImageByte;
 import image.ImageFloat;
 import image.ImageInteger;
 import image.ImageOperations;
+import image.ImageProperties;
 import java.util.Arrays;
 import java.util.Comparator;
 import processing.neighborhood.EllipsoidalNeighborhood;
@@ -38,7 +39,7 @@ import utils.ArrayUtil;
  * @author jollion
  */
 public class Filters {
-    public static Neighborhood getNeighborhood(double radiusXY, double radiusZ, Image image) {return image.getSizeZ()>1 ? new EllipsoidalNeighborhood(radiusXY, radiusZ, false) : new EllipsoidalNeighborhood(radiusXY, false);}
+    public static Neighborhood getNeighborhood(double radiusXY, double radiusZ, ImageProperties image) {return image.getSizeZ()>1 ? new EllipsoidalNeighborhood(radiusXY, radiusZ, false) : new EllipsoidalNeighborhood(radiusXY, false);}
       
     public static <T extends Image> T mean(Image image, T output, Neighborhood neighborhood) {
         return applyFilter(image, output, new Mean(), neighborhood);
@@ -56,7 +57,8 @@ public class Filters {
         return applyFilter(image, output, new Min(), neighborhood);
     }
     
-    public static <T extends ImageInteger> T binaryMax(ImageInteger image, T output, Neighborhood neighborhood, boolean outOfBoundIsNonNull) {
+    public static <T extends ImageInteger> T binaryMax(ImageInteger image, T output, Neighborhood neighborhood, boolean outOfBoundIsNonNull, boolean extendImage) {
+        if (extendImage) image =  image.extend(neighborhood.getBoundingBox());
         return applyFilter(image, output, new BinaryMax(outOfBoundIsNonNull), neighborhood);
     }
     
@@ -84,12 +86,10 @@ public class Filters {
     
     public static <T extends ImageInteger> T binaryClose(T image, Neighborhood neighborhood) {
         BoundingBox extend = neighborhood.getBoundingBox();
-        BoundingBox offset = extend.duplicate().reverseOffset();
-        BoundingBox resizeBB = new BoundingBox(extend.getxMin(), image.getSizeX()-1+extend.getxMax(), extend.getyMin(), image.getSizeY()-1+extend.getyMax(), extend.getzMin(), image.getSizeZ()-1+extend.getzMax());
-        T resized =  image.crop(resizeBB);
+        T resized =  image.extend(extend);
         ImageByte max = applyFilter(resized, new ImageByte("", 0, 0, 0), new BinaryMax(false), neighborhood);
         T min = applyFilter(max, resized, new BinaryMin(false), neighborhood);
-        return min.crop(image.getBoundingBox().translateToOrigin().translate(offset));
+        return min.crop(image.getBoundingBox().translateToOrigin().translate(extend.duplicate().reverseOffset()));
     }
     
     public static <T extends Image> T tophat(Image image, Image imageForBackground, T output, Neighborhood neighborhood) {

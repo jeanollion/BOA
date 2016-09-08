@@ -44,14 +44,14 @@ public class TestTracker {
         PluginFactory.findPlugins("plugins.plugins");
         //String dbName = "testSub60";
         final String dbName = "boa_phase140115mutH";
-        int fIdx = 0;
-        int mcIdx =7;
+        int fIdx = 1;
+        int mcIdx =2;
         int structureIdx = 1;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         if (db.getExperiment()==null) return;
         ObjectDAO dao = db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName());
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
-        testSegmentationAndTracking(dao, ps, structureIdx, mcIdx, 716, 720);
+        testSegmentationAndTracking(dao, ps, structureIdx, mcIdx, 89, 90);
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         List<StructureObject> roots = dao.getRoots();

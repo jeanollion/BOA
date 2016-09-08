@@ -27,6 +27,7 @@ import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
+import dataStructure.objects.ObjectPopulation.Filter;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectProcessing;
 import dataStructure.objects.Voxel;
@@ -53,6 +54,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import measurement.BasicMeasurements;
 import net.imglib2.KDTree;
@@ -108,10 +110,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     NumberParameter openRadius = new BoundedNumberParameter("Open Radius", 1, 4, 0, null);
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 50, 5, null);
     NumberParameter dogScale = new BoundedNumberParameter("DoG scale", 0, 10, 5, null);
-    NumberParameter thresholdForEmptyChannel = new BoundedNumberParameter("Threshold for empty channel", 1, 2, 0, null);
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
     PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new ConstantValue(50), false);
-    GroupParameter backgroundSeparation = new GroupParameter("Separation from background", dogScale, threshold, thresholdForEmptyChannel, minSizePropagation, openRadius);
+    PluginParameter<Thresholder> thresholdContrast = new PluginParameter<Thresholder>("DoG Threshold for false positive", Thresholder.class, new ConstantValue(250), false);
+    GroupParameter backgroundSeparation = new GroupParameter("Separation from background", dogScale, threshold, thresholdContrast, minSizePropagation, openRadius);
     
     NumberParameter relativeThicknessThreshold = new BoundedNumberParameter("Relative Thickness Threshold (lower: split more)", 2, 0.7, 0, 1);
     NumberParameter relativeThicknessMaxDistance = new BoundedNumberParameter("Max Distance for Relative Thickness normalization factor (calibrated)", 2, 1, 0, null);
@@ -203,7 +205,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     }   
     
     public ProcessingVariables getProcessingVariables(Image input, ImageMask segmentationMask) {
-        return new ProcessingVariables(input, segmentationMask, 
+        return new ProcessingVariables(input, segmentationMask,
                 relativeThicknessThreshold.getValue().doubleValue(), relativeThicknessMaxDistance.getValue().doubleValue(), 
                 dogScale.getValue().doubleValue(), openRadius.getValue().doubleValue(), minSizePropagation.getValue().intValue(), minSizeFusion.getValue().intValue(),
                 curvatureScale.getValue().intValue(), curvatureThreshold.getValue().doubleValue(), curvatureSearchRadius.getValue().doubleValue());
@@ -217,22 +219,14 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             4) merge using criterion on curvature & relative thickness
             
         */
-        double thresholdForEmptyChannel = this.thresholdForEmptyChannel.getValue().doubleValue();
         pv = getProcessingVariables(input, parent.getMask());
-        //double hessianThresholdFacto = 1;
-        ImageMask mask = parent.getMask();
         pv.threshold = this.threshold.instanciatePlugin().runThresholder(pv.getDOG(), parent);
+        pv.contrastThreshold = this.thresholdContrast.instanciatePlugin().runThresholder(pv.getDOG(), parent);
         if (debug) {
             new IJImageDisplayer().showImage(input.setName("input"));
             logger.debug("threshold: {}", pv.threshold);
         }
-        // criterion for empty channel: 
-        double[] musigmaOver = getMeanAndSigma(pv.getDOG(), mask, pv.threshold, true);
-        double[] musigmaUnder = getMeanAndSigma(pv.getDOG(), mask, pv.threshold, false);
-        if (musigmaOver[2]==0 || musigmaUnder[2]==0) return new ObjectPopulation(input);
-        else {            
-            if (musigmaOver[0] - musigmaUnder[0]<thresholdForEmptyChannel) return new ObjectPopulation(input);
-        }
+        
         return getSeparatedObjects(pv, pv.getSegmentationMask(), minSizePropagation.getValue().intValue(), 0, debug);
     }
     
@@ -449,10 +443,12 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         final int curvatureScale, minSizePropagation, minSizeFusion;
         final double curvatureSearchScale;
         final double curvatureThreshold;
+        double contrastThreshold;
         Object3DCluster.InterfaceFactory<Object3D, InterfaceBT> factory;
         private ProcessingVariables(Image input, ImageMask mask, double splitThresholdValue, double relativeThicknessMaxDistance, double dogScale, double openRadius, int minSizePropagation, int minSizeFusion, int curvatureScale, double curvatureThreshold, double curvatureSearchRadius) {
             this.input=input;
             this.mask=mask;
+            this.contrastThreshold=contrastThreshold;
             this.relativeThicknessThreshold=splitThresholdValue;
             this.relativeThicknessMaxDistance=relativeThicknessMaxDistance;
             //this.smoothScale=smoothScale;
@@ -501,9 +497,11 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 ObjectPopulation pop1 = new ObjectPopulation(thresh, false);
                 pop1.filterAndMergeWithConnected(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
                 FillHoles2D.fillHoles(pop1);
-                //if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK"));
-                
+                if (debug) new IJImageDisplayer().showImage(pop1.getLabelMap().duplicate("SEG MASK"));
+                pop1.filter(new ContrastIntensity(-contrastThreshold, 3,3,false, getDOG()));
+                if (debug) new IJImageDisplayer().showImage(pop1.getLabelMap().duplicate("SEG MASK AFTER  REMOVE CONTRAST"));
                 segMask = pop1.getLabelMap();
+                //throw new Error();
             }
             return segMask;
         }
@@ -724,6 +722,35 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         }
         
     }
-    
+    public static class ContrastIntensity implements Filter {
+        final double threshold;
+        final double dilRadiusXY, dilRadiusZ;
+        final Image intensityMap;
+        final boolean keepOverThreshold;
+        Map<Object3D, Object3D> dilatedObjects;
+        
+        public ContrastIntensity(double threshold, double dilatationRadiusXY, double dilatationRadiusZ, boolean keepOverThreshold, Image intensityMap) {
+            this.threshold = threshold;
+            this.intensityMap = intensityMap;
+            this.dilRadiusXY=dilatationRadiusXY;
+            this.dilRadiusZ=dilatationRadiusZ;
+            this.keepOverThreshold=keepOverThreshold;
+        }
+        
+        @Override
+        public void init(ObjectPopulation population) {
+            dilatedObjects = population.getDilatedObjects(dilRadiusXY, dilRadiusZ, true);
+        }
+
+        @Override
+        public boolean keepObject(Object3D object) {
+            Object3D dil = dilatedObjects.get(object);
+            double mean = BasicMeasurements.getMeanValue(object, intensityMap, false);
+            double meanOut = BasicMeasurements.getMeanValue(dil, intensityMap, false);
+            if (debug) logger.debug("object: {}, mean: {}, mean out: {}, diff: {}, thld: {}, keep? {}", object.getLabel(), mean, meanOut, mean-meanOut, threshold, mean-meanOut >= threshold == keepOverThreshold);
+            return mean-meanOut >= threshold == keepOverThreshold;
+        }
+        
+    }
     
 }

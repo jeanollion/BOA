@@ -114,58 +114,64 @@ public class BoundingBox {
      * Modify the bounds so that is contains the {@param x} coordinate
      * @param x coordinate in the X-Axis
      */
-    public void expandX(int x) {
+    public BoundingBox expandX(int x) {
         if (x < xMin) {
             xMin = x;
         } 
         if (x > xMax) {
             xMax = x;
         }
+        return this;
     }
     /**
      * Modify the bounds so that is contains the {@param y} coordinate
      * @param y coordinate in the X-Axis
      */
-    public void expandY(int y) {
+    public BoundingBox expandY(int y) {
         if (y < yMin) {
             yMin = y;
         } 
         if (y > yMax) {
             yMax = y;
         }
+        return this;
     }
     /**
      * Modify the bounds so that is contains the {@param z} coordinate
      * @param z coordinate in the X-Axis
      */
-    public void expandZ(int z) {
+    public BoundingBox expandZ(int z) {
         if (z < zMin) {
             zMin = z;
         } 
         if (z > zMax) {
             zMax = z;
         }
+        return this;
     }
     
-    public void expand(int x, int y, int z) {
+    public BoundingBox expand(int x, int y, int z) {
         expandX(x);
         expandY(y);
         expandZ(z);
+        return this;
     }
     
-    public void expand(Voxel v) {
+    public BoundingBox expand(Voxel v) {
         expandX(v.x);
         expandY(v.y);
         expandZ(v.z);
+        return this;
     }
     
-    public void expand(BoundingBox other) {
+    public BoundingBox expand(BoundingBox other) {
         expandX(other.xMin);
         expandX(other.xMax);
         expandY(other.yMin);
         expandY(other.yMax);
         expandZ(other.zMin);
         expandZ(other.zMax);
+        return this;
     }
     
     public void addToCounter() {
@@ -178,7 +184,7 @@ public class BoundingBox {
      * add {@param border} value in each direction and both ways
      * @param border value of the border
      */
-    public void addBorder(int border, boolean addInZDirection) {
+    public BoundingBox addBorder(int border, boolean addInZDirection) {
         xMin-=border;
         xMax+=border;
         yMin-=border;
@@ -187,30 +193,33 @@ public class BoundingBox {
             zMin-=border;
             zMax+=border;
         }
-        
+        return this;
     }
     /**
      * adds a border of 1 pixel in each directions and both ways
      */
-    public void addBorder() {
+    public BoundingBox addBorder() {
         xMin--;
         xMax++;
         yMin--;
         yMax++;
         zMin--;
         zMax++;
+        return this;
     }
     /**
-     * ensures the bounds are included in the bounds of the {@param properties} object
+     * ensures the bounds are included in the bounds of the {@param properties} object.
      * @param properties 
+     * @return  current modified boundingbox object
      */
-    public void trimToImage(ImageProperties properties) {
-        if (xMin<0) xMin=0;
-        if (yMin<0) yMin=0;
-        if (zMin<0) zMin=0;
-        if (xMax>=properties.getSizeX()) xMax=properties.getSizeX()-1;
-        if (yMax>=properties.getSizeY()) yMax=properties.getSizeY()-1;
-        if (zMax>=properties.getSizeZ()) zMax=properties.getSizeZ()-1;
+    public BoundingBox trim(BoundingBox properties) {
+        if (xMin<properties.xMin) xMin=properties.xMin;
+        if (yMin<properties.yMin) yMin=properties.yMin;
+        if (zMin<properties.zMin) zMin=properties.zMin;
+        if (xMax>properties.xMax) xMax=properties.xMax;
+        if (yMax>properties.yMax) yMax=properties.yMax;
+        if (zMax>properties.zMax) zMax=properties.zMax;
+        return this;
     }
     
     public boolean sameBounds(ImageProperties properties) {

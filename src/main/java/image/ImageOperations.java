@@ -17,10 +17,12 @@
  */
 package image;
 
+import boa.gui.imageInteraction.IJImageDisplayer;
 import dataStructure.objects.Voxel;
 import image.BoundingBox.LoopFunction;
 import static image.Image.logger;
 import static image.ImageOperations.Axis.*;
+import processing.Filters;
 
 /**
  *
@@ -270,7 +272,8 @@ public class ImageOperations {
     public static ImageInteger orWithOffset(final ImageMask source1, final ImageMask source2, ImageInteger output) {
         if (output==null) output = new ImageByte("or", source1);
         final ImageInteger out = output;
-        output.getBoundingBox().loop(new LoopFunction() {
+        BoundingBox loopBound = output.getBoundingBox().trim(source1.getBoundingBox().expand(source2.getBoundingBox()));
+        loopBound.loop(new LoopFunction() {
             public void setUp() {}
             public void tearDown() {}
             public void loop(int x, int y, int z) {
@@ -280,6 +283,63 @@ public class ImageOperations {
             }
         });
         return out;
+    }
+    
+    public static ImageInteger xorWithOffset(final ImageMask source1, final ImageMask source2, ImageInteger output) {
+        if (output==null) output = new ImageByte("or", source1);
+        final ImageInteger out = output;
+        //logger.debug("output: {}, trimmed: {}", output.getBoundingBox(), output.getBoundingBox().trim(source1.getBoundingBox().expand(source2.getBoundingBox())));
+        BoundingBox loopBound = output.getBoundingBox().trim(source1.getBoundingBox().expand(source2.getBoundingBox()));
+        loopBound.loop(new LoopFunction() {
+            public void setUp() {}
+            public void tearDown() {}
+            public void loop(int x, int y, int z) {
+                if ((source1.containsWithOffset(x, y, z) && source1.insideMaskWithOffset(x, y, z))!=(source2.containsWithOffset(x, y, z) && source2.insideMaskWithOffset(x, y, z))) out.setPixelWithOffset(x, y, z, 1);
+                else out.setPixelWithOffset(x, y, z, 0);
+            }
+        });
+        return out;
+    }
+    
+    public static ImageInteger andWithOffset(final ImageMask source1, final ImageMask source2, ImageInteger output) {
+        if (output==null) output = new ImageByte("or", source1);
+        final ImageInteger out = output;
+        BoundingBox loopBound = output.getBoundingBox().trim(source1.getBoundingBox().expand(source2.getBoundingBox()));
+        loopBound.loop(new LoopFunction() {
+            public void setUp() {}
+            public void tearDown() {}
+            public void loop(int x, int y, int z) {
+                if ((source1.containsWithOffset(x, y, z) && source1.insideMaskWithOffset(x, y, z))&&(source2.containsWithOffset(x, y, z) && source2.insideMaskWithOffset(x, y, z))) out.setPixelWithOffset(x, y, z, 1);
+                else out.setPixelWithOffset(x, y, z, 0);
+            }
+        });
+        return out;
+    }
+    /*public static ImageInteger andWithOffset(final ImageMask source1, final ImageMask source2, boolean source1OutOfBoundIsNull, boolean source2OutOfBoundIsNull, ImageInteger output) {
+        if (output==null) output = new ImageByte("or", source1);
+        final ImageInteger out = output;
+        BoundingBox loopBound = output.getBoundingBox().trim(source1.getBoundingBox().expand(source2.getBoundingBox()));
+        loopBound.loop(new LoopFunction() {
+            public void setUp() {}
+            public void tearDown() {}
+            public void loop(int x, int y, int z) {
+                if ((source1.containsWithOffset(x, y, z) ? source1.insideMaskWithOffset(x, y, z) : !source1OutOfBoundIsNull)&&(source2.containsWithOffset(x, y, z) ? source2.insideMaskWithOffset(x, y, z) : !source2OutOfBoundIsNull)) out.setPixelWithOffset(x, y, z, 1);
+                else out.setPixelWithOffset(x, y, z, 0);
+            }
+        });
+        return out;
+    }*/
+    
+    public static <T extends ImageInteger> T not(ImageMask source1, T output) {
+        if (output==null) output = (T)new ImageByte("not", source1);
+        if (!output.sameSize(source1)) output = Image.createEmptyImage("not", output, source1);
+        for (int z = 0; z<source1.getSizeZ(); ++z) {
+            for (int xy=0; xy<source1.getSizeXY(); ++xy) {
+                if (source1.insideMask(xy, z)) output.setPixel(xy, z, 0);
+                else output.setPixel(xy, z, 1);
+            }
+        }
+        return output;
     }
     
     public static ImageInteger xor(ImageMask source1, ImageMask source2, ImageInteger output) {
@@ -550,5 +610,26 @@ public class ImageOperations {
         mean /= count;
         values2 /= count;
         return new double[]{mean, Math.sqrt(values2 - mean * mean)};
+    }
+    
+    /**
+     * 
+     * @param image
+     * @param radiusXY
+     * @param radiusZ
+     * @param mask area where objects can be dillated, can be null
+     * @param keepOnlyDilatedPart
+     * @return dilatedMask
+     */
+    public static ImageByte getDilatedMask(ImageInteger image, double radiusXY, double radiusZ, ImageInteger mask, boolean keepOnlyDilatedPart) {
+        ImageByte dilatedMask = Filters.binaryMax(image, new ImageByte("", 0, 0, 0), Filters.getNeighborhood(radiusXY, radiusZ, image), false, true);
+        if (keepOnlyDilatedPart) {
+            ImageOperations.xorWithOffset(dilatedMask, image, dilatedMask);
+        }
+        if (mask!=null) {
+            ImageOperations.andWithOffset(dilatedMask, mask, dilatedMask);
+            if (!keepOnlyDilatedPart) ImageOperations.andWithOffset(dilatedMask, image, dilatedMask); // ensures the object is included in the mask
+        }
+        return dilatedMask;
     }
 }

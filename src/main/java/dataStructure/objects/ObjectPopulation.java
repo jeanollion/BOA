@@ -289,6 +289,23 @@ public class ObjectPopulation {
         }
         return seeds;
     }
+    public Map<Object3D, Object3D> getDilatedObjects(double radiusXY, double radiusZ, boolean onlyDilatedPart) {
+        Map<Object3D, Object3D> res = new HashMap<>(objects.size());
+        ImageInteger mask = ImageOperations.not(getLabelMap(), new ImageByte("", 0, 0, 0));
+        if (!absoluteLandmark) mask.resetOffset();
+        for (Object3D o : objects) {
+            res.put(o, new Object3D(ImageOperations.getDilatedMask(o.getMask(), radiusXY, radiusZ, mask, onlyDilatedPart), o.getLabel()));
+        }
+        /*ImageInteger dilLabelMap = Image.createEmptyImage("dilatedObjects", getLabelMap(), getLabelMap());
+        for (Object3D o : res.values()) {
+            if (this.absoluteLandmark) o.draw(dilLabelMap, o.getLabel(), new BoundingBox(0, 0, 0)); // in order to remove the offset of the image
+            else o.draw(dilLabelMap, o.getLabel());
+        }
+        new IJImageDisplayer().showImage(dilLabelMap);*/
+        return res;
+    }
+    
+    
 
     /*public void fitToEdges(Image edgeMap, ImageMask mask) {
      // 1st pass: increase foreground
@@ -381,7 +398,7 @@ public class ObjectPopulation {
     }
     
     public ObjectPopulation filter(Filter filter, List<Object3D> removedObjects) {
-        int objectNumber = objects.size();
+        //int objectNumber = objects.size();
         filter.init(this);
         Iterator<Object3D> it = objects.iterator();
         while (it.hasNext()) {
@@ -706,7 +723,7 @@ public class ObjectPopulation {
             return mean >= threshold == keepOverThreshold;
         }
     }
-    
+        
     public static class GaussianFit implements Filter {
         public static boolean disp = false;
         double typicalSigma, sigmaMin,sigmaMax, precision, errorThreshold, sigmaThreshold; 

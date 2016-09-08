@@ -65,7 +65,7 @@ public class SimpleCrop implements Cropper {
         bounds = new BoundingBox(xMin.getValue().intValue(), xMin.getValue().intValue()+xLength.getValue().intValue()-1, 
         yMin.getValue().intValue(), yMin.getValue().intValue()+yLength.getValue().intValue()-1, 
         zMin.getValue().intValue(), zMin.getValue().intValue()+zLength.getValue().intValue()-1);
-        bounds.trimToImage(input);
+        bounds.trim(input.getBoundingBox());
         configurationData = new int[6];
         configurationData[0]=bounds.getxMin();
         configurationData[1]=bounds.getxMax();
