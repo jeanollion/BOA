@@ -51,7 +51,7 @@ public class TestTracker {
         if (db.getExperiment()==null) return;
         ObjectDAO dao = db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName());
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
-        testSegmentationAndTracking(dao, ps, structureIdx, mcIdx, 89, 90);
+        testSegmentationAndTracking(dao, ps, structureIdx, mcIdx, 91, 93);
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         List<StructureObject> roots = dao.getRoots();
@@ -74,8 +74,8 @@ public class TestTracker {
         }
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
-        ps.segmentAndTrack(structureIdx, parentTrack);
-        //ps.trackOnly(structureIdx, parentTrack);
+        //ps.segmentAndTrack(structureIdx, parentTrack);
+        ps.trackOnly(structureIdx, parentTrack);
         GUI.getInstance();
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, structureIdx);

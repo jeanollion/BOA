@@ -328,6 +328,7 @@ public class GenerateTestXP {
         if (setUpPreProcessing) {// preProcessing 
             if (!Double.isNaN(scaleXY)) xp.getPreProcessingTemplate().setCustomScale(scaleXY, 1);
             xp.getPreProcessingTemplate().setTrimFrames(trimFramesStart, trimFramesEnd);
+            xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(0.5, true, false, true, false));
             xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT, 0));
             xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
             xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannelBF2D());

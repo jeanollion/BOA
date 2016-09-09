@@ -24,6 +24,7 @@ import dataStructure.objects.Track;
 import de.caluga.morphium.annotations.Transient;
 import de.caluga.morphium.annotations.lifecycle.Lifecycle;
 import de.caluga.morphium.annotations.lifecycle.PostLoad;
+import image.Image;
 
 /**
  *
@@ -60,15 +61,21 @@ public class ScaleXYZParameter extends SimpleContainerParameter {
     public double getScaleXY() {
         return scaleXY.getValue().doubleValue();
     }
-    public double getScaleZ(Track o) {
+    public double getScaleZ(double theoScaleXY, double theoScaleZ) {
         if (useImageCalibration.getSelected()) {
-            //MicroscopyField f = ParameterUtils.getMicroscopyFiedl(this);
-            //if (f==null) throw new Error("ScaleXYZParameter: no scale found in xp tree");
-            if (o==null) return scaleZ.getValue().doubleValue();
-            return getScaleXY() * o.getScaleXY() / o.getScaleZ();
+            return theoScaleZ * getScaleXY() / theoScaleXY;
         } else return scaleZ.getValue().doubleValue();
     }
-    
+    public void setScaleXY(double scaleXY) {
+        this.scaleXY.setValue(scaleXY);
+    }
+    public void setScaleZ(double scaleZ) {
+        if (Double.isNaN(scaleZ) || Double.isInfinite(scaleZ) || scaleZ<=0) useImageCalibration.setSelected(true);
+        else {
+            useImageCalibration.setSelected(false);
+            this.scaleZ.setValue(scaleZ);
+        }
+    }
     @Override public void setContentFrom(Parameter other) { // need to override because the super class's method only set the content from children parameters (children parameter = transient conditional parameter)
         if (other instanceof ScaleXYZParameter) {
             ScaleXYZParameter otherP = (ScaleXYZParameter) other;

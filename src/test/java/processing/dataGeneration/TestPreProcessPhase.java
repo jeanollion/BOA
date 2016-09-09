@@ -31,6 +31,7 @@ import java.util.List;
 import plugins.PluginFactory;
 import plugins.Transformation;
 import plugins.plugins.preFilter.IJSubtractBackground;
+import plugins.plugins.preFilter.TopHat;
 import plugins.plugins.transformations.AutoRotationXY;
 import plugins.plugins.transformations.CropMicroChannelBF2D;
 import plugins.plugins.transformations.CropMicroChannelFluo2D;
@@ -49,11 +50,12 @@ import processing.ImageTransformation;
 public class TestPreProcessPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        String dbName= "testBF";
+        String dbName= "boa_phase140115mutH";
         boolean flip = true;
         int field = 0;
-        //testTransformation(dbName, 0, 0, 0);
-        testPreProcessing(dbName, field, 0, -1, 0, 54);
+        int time = 529;
+        testTransformation(dbName, 0, 0, time);
+        //testPreProcessing(dbName, field, 0, -1, 0, 10);
         //testCrop(dbName, field, 0, flip);
         //testStabilizer(dbName, field, 0, 20, 19, flip);
     }
@@ -64,7 +66,9 @@ public class TestPreProcessPhase {
         //Processor.setTransformations(f, true);
         InputImagesImpl images = f.getInputImages();
         Image im = images.getImage(channelIdx, time);
-        Transformation t = new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT, 0);
+        //Transformation t = new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT, 0);
+        //Transformation t = new TopHat(12, Double.NaN, true, true);
+        Transformation t = new IJSubtractBackground(0.5, true, false, true, false);
         t.computeConfigurationData(channelIdx, images);
         Image res = t.applyTransformation(channelIdx, time, im);
         IJImageDisplayer disp = new IJImageDisplayer();

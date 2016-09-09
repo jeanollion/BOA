@@ -91,7 +91,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         int xErode = Math.max(1, (int)(derScale/2d + 0.5+Double.MIN_VALUE));
         double widthMin = (1-channelWidthError) * channelWidth;
         double widthMax = (1+channelWidthError) * channelWidth;
-        double localExtremaThld = 0.025d;
+        double localExtremaThld = 0.1d;
         
         /*
         1) search for optical aberation

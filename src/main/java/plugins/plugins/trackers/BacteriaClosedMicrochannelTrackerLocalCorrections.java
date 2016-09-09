@@ -56,7 +56,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     // parametrization-related attributes
     protected PluginParameter<SegmenterSplitAndMerge> segmenter = new PluginParameter<SegmenterSplitAndMerge>("Segmentation algorithm", SegmenterSplitAndMerge.class, new BacteriaFluo(), false);
-    BoundedNumberParameter maxGrowthRate = new BoundedNumberParameter("Maximum growth rate", 2, 1.7, 1, 4);
+    BoundedNumberParameter maxGrowthRate = new BoundedNumberParameter("Maximum growth rate", 2, 1.5, 1, 4);
     BoundedNumberParameter minGrowthRate = new BoundedNumberParameter("Minimum growth rate", 2, 1, 0.75, 2);
     //BoundedNumberParameter divisionCriterion = new BoundedNumberParameter("Division Criterion", 2, 0.75, 0.5, 1.1);
     BoundedNumberParameter costLimit = new BoundedNumberParameter("Correction: operation cost limit", 3, 1, 0, null);
@@ -354,7 +354,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             boolean change = false;
             while(idxPrevEnd<idxPrevLim) {
                 double newSizePrev = sizePrev + getSize(timePoint-1, idxPrevEnd);
-                if (debug) logger.debug("t: {}, increment prev: [{};{}[ , old size prev: {} new size prev: {}, size: {}, maxGR: {}, minGR: {}, will increment: {}", timePoint, idxPrev, idxPrevEnd,sizePrev, newSizePrev, size, maxGR, minGR, sizePrev * maxGR < size || newSizePrev * minGR <= size  );
+                if (debug) logger.debug("t: {}, increment prev: [{};{}[ , old size prev: {} (size€[{};{}]) new size prev: {} (size€[{};{}]), size: {}, will increment: {}", timePoint, idxPrev, idxPrevEnd,sizePrev, sizePrev*minGR, sizePrev*maxGR, newSizePrev, newSizePrev*minGR, newSizePrev*maxGR, size, sizePrev * maxGR < size || newSizePrev * minGR <= size  );
                 if (sizePrev * maxGR < size || newSizePrev * minGR <= size) { // previous is too small compared to current -> add another second one, so that is is not too big
                     if (verifyInequality()) { // if the current assignment already verify the inequality, increment only if there is improvement
                         double scaleOld = sizePrev * maxGR - sizePrev * minGR;
@@ -366,12 +366,19 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                         double scoreOld = dOldMax*dOldMax+dOldMin*dOldMin;
                         double scoreNew = dNewMax*dNewMax+dNewMin*dNewMin;
                         if (debug) logger.debug("comparison of two solution for prevInc: old : {}&{} score: {}, new: {}&{} score:{}", dOldMin, dOldMax, scoreOld, dNewMin, dNewMax, scoreNew);
-                        if (scoreOld<scoreNew) { // no amelioration
+                        /*double scoreOld = Math.abs(size/scaleOld - 0.5);
+                        double scoreNew = Math.abs(size/scaleNew - 0.5);
+                        if (debug) logger.debug("comparison of two solution for prevInc: {} vs {}, size: {}, size th old: {}, size th new: {}", scoreOld, scoreNew, size, scaleOld/2, scaleNew/2);
+                        */
+                        if (scoreOld<scoreNew) { // no amelioration. score needs to be low
+                            // check if the added can be merged, otherwise will generate an error
+                            
                             // check next assignement
-                            TrackAssigner dup = this.duplicate();
+                            /*TrackAssigner dup = this.duplicate();
                             if (dup.nextTrack()) {
                                 if (!dup.needCorrection()) return change;
-                            }
+                            }*/
+                            return change;
                         } 
                     }
                     sizePrev=newSizePrev;
@@ -383,13 +390,30 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         }
         protected boolean increment() {
             boolean change = false;
-            while(idxEnd<idxLim && sizePrev * minGR > size) {
+            while(idxEnd<idxLim && size<sizePrev) {
                 double newSize = size + getSize(timePoint, idxEnd);
-                if (debug) logger.debug("t: {}, increment: [{};{}[, old size: {} new size: {}, size prev: {}, maxGR: {}, minGR: {}, will increment: {}", timePoint, idx, idxEnd,size, newSize, sizePrev, maxGR, minGR, sizePrev * minGR > size && sizePrev * maxGR > newSize );
-                if ( sizePrev * maxGR > newSize) { // division, but don't grow to much // (sizePrev * minGR > size) // division: size < sizePrev * div
+                if (debug) logger.debug("t: {}, increment: [{};{}[, old size: {} new size: {}, size prev: {}, theo size€[{};{}], will increment: {}", timePoint, idx, idxEnd,size, newSize, sizePrev, sizePrev*minGR, sizePrev*maxGR, sizePrev * minGR > size && sizePrev * maxGR > newSize );
+                if (sizePrev * maxGR > newSize) { // don't grow to much // (sizePrev * minGR > size) // sizePrev * minGR>= size && 
+                    if (verifyInequality()) { // if the current assignment already verify the inequality, increment only if there is improvement
+                        double scale = sizePrev * maxGR - sizePrev * minGR;
+                        double dOldMax = (sizePrev * maxGR-size)/scale;
+                        double dNewMax = (sizePrev * maxGR-newSize)/scale;
+                        double dOldMin = (size - sizePrev * minGR)/scale;
+                        double dNewMin = (newSize - sizePrev * minGR)/scale;
+                        double scoreOld = dOldMax*dOldMax+dOldMin*dOldMin;
+                        double scoreNew = dNewMax*dNewMax+dNewMin*dNewMin;
+                        if (debug) logger.debug("comparison of two solution for curInc: old : {}&{} score: {}, new: {}&{} score:{}", dOldMin, dOldMax, scoreOld, dNewMin, dNewMax, scoreNew);
+                        
+                        /*double scoreOld = Math.abs(size/scale - 0.5);
+                        double scoreNew = Math.abs(newSize/scale - 0.5);
+                        if (debug) logger.debug("comparison of two solution for curInc: {} vs {}, old: {} new: {} th: {}", scoreOld, scoreNew, size, newSize, scale/2);
+                        */
+                        if (scoreOld<scoreNew) return change; // no amelioration. score needs to be low
+
+                    }
                     size=newSize;
                     ++idxEnd;
-                    //if (debug) logger.debug("increment: idxEnd: {}, ta: {}", idxEnd, this);
+                    if (debug) logger.debug("increment: idxEnd: {}, ta: {}", idxEnd, this);
                     change = true;
                 } else return change;
             }
@@ -472,9 +496,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
          */
         public int performCorrection() {
             if (debugCorr) logger.debug("t: {}: performing correction, idxPrev: {}, idxPrevEnd: {}", timePoint, idxPrev, idxPrevEnd);
-            List<CorrectionScenario> merge = new MergeScenario(idxPrev, idxPrevEnd, timePoint-1).getWholeScenario(maxCorrectionLength, costLim, cumCostLim);
+            List<CorrectionScenario> merge = new MergeScenario(idxPrev, idxPrevEnd, timePoint-1).getWholeScenario(maxCorrectionLength, costLim, cumCostLim); // merge scenario
             double mergeCost = 0; for (CorrectionScenario c : merge) mergeCost+=c.cost; if (merge.isEmpty()) mergeCost=Double.POSITIVE_INFINITY;
-            List<CorrectionScenario> split = new SplitScenario(getAttribute(timePoint, idx), timePoint).getWholeScenario(-1, costLim, mergeCost>0? Math.min(mergeCost, cumCostLim) : cumCostLim);
+            List<CorrectionScenario> split = new SplitScenario(getAttribute(timePoint, idx), timePoint).getWholeScenario(maxCorrectionLength, costLim, mergeCost>0? Math.min(mergeCost, cumCostLim) : cumCostLim);
             double splitCost = 0; for (CorrectionScenario c : split) splitCost+=c.cost; if (split.isEmpty()) splitCost=Double.POSITIVE_INFINITY;
             if (debugCorr) logger.debug("t: {}: performing correction: merge scenario length: {}, cost: {}, split scenario: length {}, cost: {}", timePoint, merge.size(), mergeCost, split.size(), splitCost);
             if (Double.isInfinite(mergeCost) && Double.isInfinite(splitCost)) return -1;

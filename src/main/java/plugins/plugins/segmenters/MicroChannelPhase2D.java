@@ -52,7 +52,7 @@ import static utils.Utils.plotProfile;
 public class MicroChannelPhase2D implements Segmenter {
     
     NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Width (pixels)", 0, 24, 5, null);
-    NumberParameter microChannelWidthError = new BoundedNumberParameter("Microchannel Width error proportion", 2, 0.25, 0, 1);
+    NumberParameter microChannelWidthError = new BoundedNumberParameter("Microchannel Width error proportion", 2, 0.35, 0, 1);
     NumberParameter yStartAdjustWindow = new BoundedNumberParameter("Y-Start Adjust Window (pixels)", 0, 5, 0, null);
     Parameter[] parameters = new Parameter[]{channelWidth, microChannelWidthError, yStartAdjustWindow};
     public static boolean debug = false;
@@ -77,6 +77,7 @@ public class MicroChannelPhase2D implements Segmenter {
         return new ObjectPopulation(objects, input);
     }
     public Result segment(Image input) {
+        CropMicroChannelBF2D.debug=debug;
         return  CropMicroChannelBF2D.segmentMicroChannels(input, false, 0, channelWidth.getValue().intValue(), microChannelWidthError.getValue().doubleValue(), yStartAdjustWindow.getValue().intValue());
     }
     
