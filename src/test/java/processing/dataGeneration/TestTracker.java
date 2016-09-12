@@ -44,14 +44,23 @@ public class TestTracker {
         PluginFactory.findPlugins("plugins.plugins");
         //String dbName = "testSub60";
         final String dbName = "boa_phase140115mutH";
-        int fIdx = 1;
-        int mcIdx =2;
+        int fIdx = 0;
+        int mcIdx =7;
         int structureIdx = 1;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         if (db.getExperiment()==null) return;
-        ObjectDAO dao = db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName());
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
-        testSegmentationAndTracking(dao, ps, structureIdx, mcIdx, 91, 93);
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName()), ps, structureIdx, mcIdx, 0, 720);
+        int[][] testsF_MC_TT = {
+           {0, 3, 90, 94},
+           {0, 5, 48, 52}, 
+           {0, 5, 103, 107}, 
+           {0, 7, 716, 720}, 
+           {1, 2, 90, 94}, 
+           {1, 2, 195, 199}
+        };
+        int idx = 4;
+        //testSegmentationAndTracking(db.getDao(db.getExperiment().getMicroscopyField(testsF_MC_TT[idx][0]).getName()), ps, structureIdx, testsF_MC_TT[idx][1], testsF_MC_TT[idx][2], testsF_MC_TT[idx][3]);
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         List<StructureObject> roots = dao.getRoots();
@@ -74,8 +83,8 @@ public class TestTracker {
         }
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
-        //ps.segmentAndTrack(structureIdx, parentTrack);
-        ps.trackOnly(structureIdx, parentTrack);
+        ps.segmentAndTrack(structureIdx, parentTrack);
+        //ps.trackOnly(structureIdx, parentTrack);
         GUI.getInstance();
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, structureIdx);

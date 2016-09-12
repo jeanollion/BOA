@@ -349,37 +349,40 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 else change=increment();
             }
         }
-
+        protected double getCurrentAssignmentScore() {
+            return getAssignmentScore(sizePrev, size);
+        }
+        protected double getAssignmentScore(double sizePrev, double size) {
+            double scale = sizePrev * maxGR - sizePrev * minGR;
+            return Math.pow((sizePrev * maxGR-size)/scale, 2) + Math.pow((size - sizePrev * minGR)/scale, 2);
+        }
+        protected double getAssignmentScoreForWholeScenario() { // will modify the current scenario!!
+            double score = getCurrentAssignmentScore();
+            if (debug) logger.debug("score for whole scenario: start: {}", score);
+            while(nextTrack() && idxEnd<idxLim) { // do not use the last assignemt as cells can get out of the channel and score might be unrelevant         
+                double newScore=getCurrentAssignmentScore();
+                score = Math.max(score, newScore); // maximum score = worst case scenario
+                if (debug) logger.debug("score for whole scenario: {}, wcs: {}", newScore, score);
+            }
+            return score;
+        }
         protected boolean incrementPrev() { // maximum index so that prevSize * minGR remain inferior to size-1
             boolean change = false;
             while(idxPrevEnd<idxPrevLim) {
                 double newSizePrev = sizePrev + getSize(timePoint-1, idxPrevEnd);
-                if (debug) logger.debug("t: {}, increment prev: [{};{}[ , old size prev: {} (size€[{};{}]) new size prev: {} (size€[{};{}]), size: {}, will increment: {}", timePoint, idxPrev, idxPrevEnd,sizePrev, sizePrev*minGR, sizePrev*maxGR, newSizePrev, newSizePrev*minGR, newSizePrev*maxGR, size, sizePrev * maxGR < size || newSizePrev * minGR <= size  );
+                if (debug) logger.debug("t: {}, increment prev: [{};{}[->[{};{}[ , old size prev: {} (size€[{};{}]) new size prev: {} (size€[{};{}]), size: {}, will increment: {}", timePoint, idxPrev, idxPrevEnd, idx, idxEnd,sizePrev, sizePrev*minGR, sizePrev*maxGR, newSizePrev, newSizePrev*minGR, newSizePrev*maxGR, size, sizePrev * maxGR < size || newSizePrev * minGR <= size  );
                 if (sizePrev * maxGR < size || newSizePrev * minGR <= size) { // previous is too small compared to current -> add another second one, so that is is not too big
                     if (verifyInequality()) { // if the current assignment already verify the inequality, increment only if there is improvement
-                        double scaleOld = sizePrev * maxGR - sizePrev * minGR;
-                        double scaleNew = newSizePrev * maxGR - newSizePrev * minGR;
-                        double dOldMax = (sizePrev * maxGR-size)/scaleOld;
-                        double dNewMax = (newSizePrev * maxGR-size)/scaleNew;
-                        double dOldMin = (size - sizePrev * minGR)/scaleOld;
-                        double dNewMin = (size - newSizePrev * minGR)/scaleNew;
-                        double scoreOld = dOldMax*dOldMax+dOldMin*dOldMin;
-                        double scoreNew = dNewMax*dNewMax+dNewMin*dNewMin;
-                        if (debug) logger.debug("comparison of two solution for prevInc: old : {}&{} score: {}, new: {}&{} score:{}", dOldMin, dOldMax, scoreOld, dNewMin, dNewMax, scoreNew);
-                        /*double scoreOld = Math.abs(size/scaleOld - 0.5);
-                        double scoreNew = Math.abs(size/scaleNew - 0.5);
-                        if (debug) logger.debug("comparison of two solution for prevInc: {} vs {}, size: {}, size th old: {}, size th new: {}", scoreOld, scoreNew, size, scaleOld/2, scaleNew/2);
-                        */
-                        if (scoreOld<scoreNew) { // no amelioration. score needs to be low
-                            // check if the added can be merged, otherwise will generate an error
-                            
-                            // check next assignement
-                            /*TrackAssigner dup = this.duplicate();
-                            if (dup.nextTrack()) {
-                                if (!dup.needCorrection()) return change;
-                            }*/
-                            return change;
-                        } 
+                        TrackAssigner newScenario = duplicate();
+                        newScenario.idxPrevEnd+=1;
+                        newScenario.sizePrev=newSizePrev;
+                        TrackAssigner currenScenario = duplicate();
+                        if (debug) logger.debug("getting score for current scenario...");
+                        double scoreCur = currenScenario.getAssignmentScoreForWholeScenario();
+                        if (debug) logger.debug("getting score for other scenario...");
+                        double scoreNew = newScenario.getAssignmentScoreForWholeScenario();
+                        if (debug) logger.debug("comparison of two solution for prevInc: old {} new: {}", scoreCur, scoreNew);
+                        if (scoreCur<scoreNew) return change;
                     }
                     sizePrev=newSizePrev;
                     ++idxPrevEnd;
@@ -392,28 +395,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             boolean change = false;
             while(idxEnd<idxLim && size<sizePrev) {
                 double newSize = size + getSize(timePoint, idxEnd);
-                if (debug) logger.debug("t: {}, increment: [{};{}[, old size: {} new size: {}, size prev: {}, theo size€[{};{}], will increment: {}", timePoint, idx, idxEnd,size, newSize, sizePrev, sizePrev*minGR, sizePrev*maxGR, sizePrev * minGR > size && sizePrev * maxGR > newSize );
-                if (sizePrev * maxGR > newSize) { // don't grow to much // (sizePrev * minGR > size) // sizePrev * minGR>= size && 
-                    if (verifyInequality()) { // if the current assignment already verify the inequality, increment only if there is improvement
-                        double scale = sizePrev * maxGR - sizePrev * minGR;
-                        double dOldMax = (sizePrev * maxGR-size)/scale;
-                        double dNewMax = (sizePrev * maxGR-newSize)/scale;
-                        double dOldMin = (size - sizePrev * minGR)/scale;
-                        double dNewMin = (newSize - sizePrev * minGR)/scale;
-                        double scoreOld = dOldMax*dOldMax+dOldMin*dOldMin;
-                        double scoreNew = dNewMax*dNewMax+dNewMin*dNewMin;
-                        if (debug) logger.debug("comparison of two solution for curInc: old : {}&{} score: {}, new: {}&{} score:{}", dOldMin, dOldMax, scoreOld, dNewMin, dNewMax, scoreNew);
-                        
-                        /*double scoreOld = Math.abs(size/scale - 0.5);
-                        double scoreNew = Math.abs(newSize/scale - 0.5);
-                        if (debug) logger.debug("comparison of two solution for curInc: {} vs {}, old: {} new: {} th: {}", scoreOld, scoreNew, size, newSize, scale/2);
-                        */
-                        if (scoreOld<scoreNew) return change; // no amelioration. score needs to be low
-
-                    }
+                if (debug) logger.debug("t: {}, increment: [{};{}[->[{};{}[, old size: {} new size: {}, size prev: {}, theo size€[{};{}], will increment: {}", timePoint, idxPrev, idxPrevEnd, idx, idxEnd,size, newSize, sizePrev, sizePrev*minGR, sizePrev*maxGR, sizePrev * minGR > size && sizePrev * maxGR > newSize );
+                if (sizePrev * minGR > size && sizePrev * maxGR > newSize) { // don't grow to much => (sizePrev * minGR > size) && division criterion == sizePrev * minGR>= size 
                     size=newSize;
                     ++idxEnd;
-                    if (debug) logger.debug("increment: idxEnd: {}, ta: {}", idxEnd, this);
+                    //if (debug) logger.debug("increment: idxEnd: {}, ta: {}", idxEnd, this);
                     change = true;
                 } else return change;
             }
@@ -453,7 +439,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     getAttribute(timePoint, i).prev=taPrev;
                     if (error) getAttribute(timePoint, i).flag=Flag.error;
                 }
-            }else if (nPrev>1 && nCur==1) { // merging
+            } else if (nPrev>1 && nCur==1) { // merging
                 TrackAttribute taCur = getAttribute(timePoint, idx);
                 taCur.trackHead=false;
                 taCur.prev=getAttribute(timePoint-1, idxPrev);

@@ -138,12 +138,16 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         List canBeTested = new ArrayList(){{add(threshold); add(curvatureScale); add(dogScale); add(relativeThicknessThreshold);}};
         return canBeTested.contains(p);
     }
-
+    public BacteriaTrans setThreshold(Thresholder t) {
+        this.threshold.setPlugin(t);
+        return this;
+    }
+    
     @Override public void test(Parameter p, Image input, int structureIdx, StructureObjectProcessing parent) {
         debug=false;
         ImageDisplayer disp = ImageWindowManagerFactory.instanciateDisplayer();
         pv = getProcessingVariables(input, parent.getMask());
-        pv.threshold = this.threshold.instanciatePlugin().runThresholder(pv.getDOG(), parent);
+        pv.threshold = this.threshold.instanciatePlugin().runThresholder(pv.getIntensityMap(), parent);
         if (p == relativeThicknessThreshold) {
             logger.debug("rel t test");
             ObjectPopulation pop = getSeparatedObjects(pv, pv.getSegmentationMask(), minSizePropagation.getValue().intValue(), 0, false);
@@ -159,11 +163,11 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             disp.showImage(pv.splitSegmentationMask(pv.getSegmentationMask()).getLabelMap().setName("after split"));
             disp.showImage(popSplit.getLabelMap().duplicate("after merge"));
         } else if (p==threshold) {
-            disp.showImage(pv.getDOG().duplicate("before threshold. Value: "+pv.threshold));
+            disp.showImage(pv.getIntensityMap().duplicate("before threshold. Value: "+pv.threshold));
             disp.showImage(pv.getSegmentationMask().duplicate("after threshold"));
         } else if (p==dogScale) {
             disp.showImage(input.duplicate("input"));
-            disp.showImage(pv.getDOG().duplicate("DoG: Scale: "+dogScale.getValue().doubleValue()));
+            disp.showImage(pv.getIntensityMap().duplicate("DoG: Scale: "+dogScale.getValue().doubleValue()));
         }
     }
     
@@ -220,8 +224,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             
         */
         pv = getProcessingVariables(input, parent.getMask());
-        pv.threshold = this.threshold.instanciatePlugin().runThresholder(pv.getDOG(), parent);
-        pv.contrastThreshold = this.thresholdContrast.instanciatePlugin().runThresholder(pv.getDOG(), parent);
+        pv.threshold = this.threshold.instanciatePlugin().runThresholder(pv.getIntensityMap(), parent);
+        pv.contrastThreshold = this.thresholdContrast.instanciatePlugin().runThresholder(pv.getIntensityMap(), parent);
         if (debug) {
             new IJImageDisplayer().showImage(input.setName("input"));
             logger.debug("threshold: {}", pv.threshold);
@@ -261,7 +265,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         res.filterAndMergeWithConnected(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
         res.filterAndMergeWithConnected(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
         if (debug) {
-            disp.showImage(pv.getDOG().setName("DOG"));
+            disp.showImage(pv.getIntensityMap().setName("DOG"));
             //disp.showImage(pv.getEDM());
             //disp.showImage(res.getLabelMap().setName("seg map after fusion"));
             //disp.showImage(cluster.drawInterfacesSortValue(sm));
@@ -399,17 +403,17 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     }
     @Override public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
         ProcessingVariables pv = getProcessingVariables(input, segmentationMask);
-        pv.threshold = threshold.instanciatePlugin().runThresholder(pv.getDOG(), parent);
+        pv.threshold = threshold.instanciatePlugin().runThresholder(pv.getIntensityMap(), parent);
         //pv.threshold=100d; // TODO variable ou auto
         List<Object3D> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());
         ImageOperations.and(segmentationMask, pv.getSegmentationMask(), pv.getSegmentationMask());
-        ObjectPopulation pop = WatershedTransform.watershed(pv.getDOG(), pv.getSegmentationMask(), seedObjects, false, null, null);
+        ObjectPopulation pop = WatershedTransform.watershed(pv.getIntensityMap(), pv.getSegmentationMask(), seedObjects, false, null, null);
         if (verboseManualSeg) {
             Image seedMap = new ImageByte("seeds from: "+input.getName(), input);
             for (int[] seed : seedsXYZ) seedMap.setPixel(seed[0], seed[1], seed[2], 1);
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(seedMap);
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pv.getEDM());
-            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pv.getDOG());
+            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pv.getIntensityMap());
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pop.getLabelMap().setName("segmented from: "+input.getName()));
         }
         
@@ -435,7 +439,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         private ImageInteger segMask;
         final ImageMask mask;
         final Image input;
-        private Image dog;
+        private Image intensityMap;
         //private Image smoothed;
         ImageByte splitMask;
         final double relativeThicknessThreshold, dogScale, openRadius, relativeThicknessMaxDistance;//, smoothScale;// aspectRatioThreshold, angleThresholdRad; 
@@ -475,19 +479,20 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             return factory;
         }
 
-        private Image getDOG() {
-            if (dog==null) dog = ImageFeatures.differenceOfGaussians(input, 0, dogScale, 1, false).setName("DoG");
-            return dog;
+        private Image getIntensityMap() {
+            if (intensityMap==null) intensityMap = ImageFeatures.differenceOfGaussians(input, 0, dogScale, 1, false).setName("DoG");
+            return intensityMap;
+            //return input;
         }
         private ObjectPopulation splitSegmentationMask(ImageInteger maskToSplit) {
-            ObjectPopulation res = WatershedTransform.watershed(getDOG(), maskToSplit, false, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation));
+            ObjectPopulation res = WatershedTransform.watershed(getIntensityMap(), maskToSplit, false, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation));
             res.setVoxelIntensities(getEDM()); // for getExtremaSeedList method called just afterwards
             return WatershedTransform.watershed(getEDM(), maskToSplit, res.getExtremaSeedList(true), true, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation));
         }
         private ImageInteger getSegmentationMask() {
             if (segMask == null) {
                 if (Double.isNaN(threshold)) throw new Error("Threshold not set");
-                ImageInteger thresh = ImageOperations.threshold(getDOG(), threshold, false, false);
+                ImageInteger thresh = ImageOperations.threshold(getIntensityMap(), threshold, false, false);
                 Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(openRadius, openRadius, thresh));
                 //IJImageDisplayer disp = debug?new IJImageDisplayer():null;
                 //if (debug) disp.showImage(thresh.duplicate("before close"));
@@ -498,7 +503,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 pop1.filterAndMergeWithConnected(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
                 FillHoles2D.fillHoles(pop1);
                 if (debug) new IJImageDisplayer().showImage(pop1.getLabelMap().duplicate("SEG MASK"));
-                pop1.filter(new ContrastIntensity(-contrastThreshold, 3,3,false, getDOG()));
+                pop1.filter(new ContrastIntensity(-contrastThreshold, 3,3,false, getIntensityMap()));
                 if (debug) new IJImageDisplayer().showImage(pop1.getLabelMap().duplicate("SEG MASK AFTER  REMOVE CONTRAST"));
                 segMask = pop1.getLabelMap();
                 //throw new Error();

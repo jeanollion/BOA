@@ -18,9 +18,11 @@
 package processing.dataGeneration;
 
 import static TestUtils.Utils.logger;
+import boa.gui.GUI;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
 import boa.gui.imageInteraction.ImageObjectInterface;
+import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.MicroscopyField;
@@ -39,6 +41,7 @@ import java.util.List;
 import plugins.PluginFactory;
 import plugins.plugins.segmenters.BacteriaTrans;
 import plugins.plugins.segmenters.BacteriaFluo;
+import plugins.plugins.thresholders.ConstantValue;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import utils.MorphiumUtils;
 
@@ -50,14 +53,16 @@ public class TestProcessBacteriaPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         //int time =31;
-        int time =900;
+        int time =23;
         int microChannel =2;
         int field = 0;
         //String dbName = "boa_mutd5_141209";
         String dbName = "boa_phase140115mutH";
         testSegBacteriesFromXP(dbName, field, time, microChannel);
-        //testSegBacteriesFromXP(dbName, field, microChannel, 201, 400);
+        //testSegBacteriesFromXP(dbName, field, microChannel, 0, 400);
     }
+    
+    
     
     public static void testSegBacteriesFromXP(String dbName, int fieldNumber, int timePoint, int microChannel) {
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
@@ -67,7 +72,7 @@ public class TestProcessBacteriaPhase {
         StructureObject mc = root.getChildren(0).get(microChannel);
         Image input = mc.getRawImage(1);
         BacteriaTrans.debug=true;
-        BacteriaTrans seg = new BacteriaTrans();
+        BacteriaTrans seg = new BacteriaTrans();//.setThreshold(new ConstantValue(350));
         ObjectPopulation pop = seg.runSegmenter(input, 1, mc);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(pop.getLabelMap());
@@ -77,26 +82,24 @@ public class TestProcessBacteriaPhase {
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
         MicroscopyField f = mDAO.getExperiment().getMicroscopyField(fieldNumber);
         List<StructureObject> rootTrack = mDAO.getDao(f.getName()).getRoots();
-        Iterator<StructureObject> it = rootTrack.iterator();
-        while(it.hasNext()) {
-            StructureObject o = it.next();
-            if (o.getTimePoint()<timePointMin) it.remove();
-            if (o.getTimePoint()>timePointMax) it.remove();
-        }
+        rootTrack.removeIf(o -> o.getTimePoint()<timePointMin || o.getTimePoint()>timePointMax);
         List<StructureObject> parentTrack = new ArrayList<StructureObject>();
         for (StructureObject root : rootTrack) {
             StructureObject mc = root.getChildren(0).get(microChannel);
             parentTrack.add(mc);
             Image input = mc.getRawImage(1);
             BacteriaTrans.debug=false;
-            BacteriaTrans seg = new BacteriaTrans();
-            logger.debug("seg: tp {}", mc.getTimePoint());
-            root.setChildrenObjects(seg.runSegmenter(input, 1, mc), 1);
+            BacteriaTrans seg = new BacteriaTrans();//.setThreshold(new ConstantValue(350));
+            
+            mc.setChildrenObjects(seg.runSegmenter(input, 1, mc), 1);
+            logger.debug("seg: tp {}, #objects: {}", mc.getTimePoint(), mc.getChildren(1).size());
         }
-        ImageWindowManagerFactory.getImageManager().setInteractiveStructure(1);
-        ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(parentTrack, 1);
+        GUI.getInstance(); // for hotkeys...
+        ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
+        ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, 1);
         Image im = i.generateRawImage(1);
-        ImageWindowManagerFactory.getImageManager().addImage(im, i, false, true);
-        
+        iwm.addImage(im, i, false, true);
+        iwm.setInteractiveStructure(1);
+        iwm.displayAllObjects(im);
     }
 }

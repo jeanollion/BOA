@@ -63,6 +63,10 @@ public class StructureParameter extends IndexChoiceParameter {
     
     @Override public int getSelectedIndex() {
         int idx = super.getSelectedIndex();
+        if (idx==-1 && getChoiceList().length==1 && getXP()!=null) {
+           this.setSelectedStructureIdx(0);
+           return 0;
+        }
         if (idx==-1 && autoConfiguration) {
             autoConfiguration();
             return super.getSelectedIndex();

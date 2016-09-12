@@ -29,6 +29,7 @@ import image.ImageInteger;
 import java.util.ArrayList;
 import java.util.List;
 import plugins.PluginFactory;
+import plugins.Transformation;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.transformations.AutoRotationXY;
 import plugins.plugins.transformations.CropMicroChannelFluo2D;
@@ -52,10 +53,10 @@ public class TestPreProcess {
         // 12 -> flip = true
         boolean flip = true;
         int field = 5;
-        //testTransformation(dbName, 0, 0, 0);
+        testTransformation(dbName, 0, 0, 0);
         //testPreProcessing(dbName, field, 0, -1, 0, 150);
         //testCrop(dbName, field, 0, flip);
-        displayPreProcessed(dbName, field, 2, 0, 680);
+        //displayPreProcessed(dbName, field, 2, 0, 680);
         //testStabilizer(dbName, field, 0, 19, 0, flip);
     }
     
@@ -65,12 +66,13 @@ public class TestPreProcess {
         //Processor.setTransformations(f, true);
         InputImagesImpl images = f.getInputImages();
         Image im = images.getImage(channelIdx, time);
-        AutoRotationXY rot = new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0);
-        rot.computeConfigurationData(channelIdx, images);
-        Image res = rot.applyTransformation(channelIdx, time, im);
+        Transformation t = new IJSubtractBackground(0.5, true, false, true, false);
+        //AutoRotationXY t = new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0);
+        t.computeConfigurationData(channelIdx, images);
+        Image res = t.applyTransformation(channelIdx, time, im);
         IJImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(im.setName("input"));
-        disp.showImage(res.setName("rotated5"));
+        disp.showImage(res.setName("transformed"));
     }
     
     public static void testCrop(String dbName, int fieldIdx, int time, boolean flip) {

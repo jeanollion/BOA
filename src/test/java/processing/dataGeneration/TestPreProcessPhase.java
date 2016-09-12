@@ -68,7 +68,7 @@ public class TestPreProcessPhase {
         Image im = images.getImage(channelIdx, time);
         //Transformation t = new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT, 0);
         //Transformation t = new TopHat(12, Double.NaN, true, true);
-        Transformation t = new IJSubtractBackground(0.5, true, false, true, false);
+        Transformation t = new IJSubtractBackground(0.3, true, false, true, false);
         t.computeConfigurationData(channelIdx, images);
         Image res = t.applyTransformation(channelIdx, time, im);
         IJImageDisplayer disp = new IJImageDisplayer();
