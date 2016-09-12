@@ -226,5 +226,10 @@ public class BasicObjectDAO implements ObjectDAO {
         } 
     }
 
+    @Override
+    public MasterDAO getMasterDAO() {
+        return this.masterDAO;
+    }
+
     
 }

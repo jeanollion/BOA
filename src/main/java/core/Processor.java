@@ -25,6 +25,7 @@ import dataStructure.containers.InputImagesImpl;
 import dataStructure.containers.MultipleImageContainer;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.ObjectDAO;
+import dataStructure.objects.Selection;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
@@ -168,7 +169,18 @@ public class Processor {
             };
             ThreadRunner.execute(new ArrayList<List<StructureObject>> (allParentTracks.values()), ta);
         }
-        if (ps instanceof SegmentOnly) { // gather all objects and store
+        ArrayList<StructureObject> children = new ArrayList<StructureObject>();
+        for (StructureObject p : parentTrack) children.addAll(p.getChildren(structureIdx));
+        dao.store(children, !(ps instanceof SegmentOnly));
+        // create error selection
+        Selection errors = dao.getMasterDAO().getSelectionDAO().getOrCreate(dao.getExperiment().getStructure(structureIdx).getName()+"_TrackingErrors", false);
+        if (errors.count(dao.getFieldName())>0) errors.removeChildrenOf(parentTrack); // if selection already exists: remove children of parentTrack
+        children.removeIf(o -> o.getTrackFlag()!=StructureObject.TrackFlag.trackError);
+        logger.debug("errors: {}", children.size());
+        errors.addElements(children);
+        dao.getMasterDAO().getSelectionDAO().store(errors);
+        
+        /*if (ps instanceof SegmentOnly) { // gather all objects and store // TODO no difference between SegmentOnly and others...
             ArrayList<StructureObject> children = new ArrayList<StructureObject>();
             for (StructureObject p : parentTrack) children.addAll(p.getChildren(structureIdx));
             dao.store(children, false);
@@ -178,6 +190,7 @@ public class Processor {
                 dao.store(p.getChildren(structureIdx), true);
             }
         }
+        */
     }
     
     private static void execute(ProcessingScheme ps, int structureIdx, List<StructureObject> parentTrack, boolean trackOnly, boolean deleteChildren, ObjectDAO dao) {

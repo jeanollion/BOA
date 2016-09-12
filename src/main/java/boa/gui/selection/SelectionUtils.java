@@ -138,15 +138,12 @@ public class SelectionUtils {
     
     public static void setHighlight(Collection<Selection> selections) {
         Set<StructureObject> toHighlight = new HashSet<StructureObject>();
-        Set<StructureObject> toUnhighlight = new HashSet<StructureObject>();
-        for (Selection s : selections) {
-            if (s.isHighlightingTracks()) toHighlight.addAll(s.getAllElements());
-            else toUnhighlight.addAll(s.getAllElements());
-        }
-        toUnhighlight.removeAll(toHighlight);
+        for (Selection s : selections) if (s.isHighlightingTracks()) toHighlight.addAll(s.getAllElements());
         if (GUI.getInstance()==null || GUI.getInstance().getTrackTrees()==null) return;
-        GUI.getInstance().getTrackTrees().setHighlight(toUnhighlight, false);
-        GUI.getInstance().getTrackTrees().setHighlight(toHighlight, true);
+        long t0 = System.currentTimeMillis();
+        GUI.getInstance().getTrackTrees().setHighlight(toHighlight);
+        long t1 = System.currentTimeMillis();
+        logger.debug("Highlight: {}", t1-t0);
     }
     
     public static void setMouseAdapter(final JList list) {
@@ -211,13 +208,13 @@ public class SelectionUtils {
         highlightTracks.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (selectedValues.isEmpty()) return;
-                Set<Selection> switched = new HashSet<Selection>(selectedValues.size());
+                //Set<Selection> switched = new HashSet<Selection>(selectedValues.size());
                 for (Selection s : selectedValues ) {
-                    if (s.isHighlightingTracks()!=highlightTracks.isSelected()) switched.add(s);
-                    s.setHighlightingTracks(highlightTracks.isSelected());
+                    //if (s.isHighlightingTracks()!=highlightTracks.isSelected()) switched.add(s);
+                    //s.setHighlightingTracks(highlightTracks.isSelected());
                     dao.store(s); // optimize if necessary -> update
                 }
-                setHighlight(switched);
+                GUI.getInstance().setSelectionHighlight();
             }
         });
         menu.add(highlightTracks);

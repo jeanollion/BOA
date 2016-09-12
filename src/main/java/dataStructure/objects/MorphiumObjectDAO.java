@@ -454,12 +454,14 @@ public class MorphiumObjectDAO implements ObjectDAO {
     
     
     // TODO for faster retrieve:  retrieve only: timepoint, idx, structureIdx, parent + set dao & set trackHead as this -> ATTENTION object retrieved incompletely..
-    public ArrayList<StructureObject> getTrackHeads(StructureObject parentTrack, int structureIdx) {
+    public List<StructureObject> getTrackHeads(StructureObject parentTrack, int structureIdx) {
         if (parentTrack==null) return new ArrayList<StructureObject>(0);
         Query<StructureObject> q = getQuery().f("is_track_head").eq(true).f("parent_track_head_id").eq(parentTrack.getTrackHeadId()).f("structure_idx").eq(structureIdx).sort("time_point", "idx");
         List<StructureObject> list =  q.asList();
         //logger.debug("track head query: parentTrack: {} structure: {} result length: {}, collectionName: {}, query: {}", parentTrack.getTrackHeadId(), structureIdx, list.size(), collectionName, q.toQueryObject());
-        return this.checkAgainstCache(list);
+        List<StructureObject> res = this.checkAgainstCache(list);
+        logger.debug("getTrackHeads from TrackHead {} & Structure: {}, found: {}", parentTrack, structureIdx, res.size());
+        return res;
     }
     
     public List<StructureObject> getTrack(StructureObject trackHead) {
@@ -628,5 +630,10 @@ public class MorphiumObjectDAO implements ObjectDAO {
             o.measurements=null;
             o.measurementsId=null;
         }
+    }
+
+    @Override
+    public MasterDAO getMasterDAO() {
+        return masterDAO;
     }
 }

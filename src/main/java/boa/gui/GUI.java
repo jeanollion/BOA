@@ -476,12 +476,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     public void setSelectionHighlight() {
         if (trackTreeController==null) return;
         trackTreeController.resetHighlight();
-        Set<Selection> toHighlight = new HashSet<Selection>();
+        Set<StructureObject> toHighlight = new HashSet<StructureObject>();
         for (int i = 0; i<selectionModel.getSize(); ++i) {
             Selection sel = selectionModel.getElementAt(i);
-            if (sel.isHighlightingTracks()) toHighlight.add(sel);
+            if (sel.isHighlightingTracks()) toHighlight.addAll(sel.getAllElements());
         }
-        SelectionUtils.setHighlight(toHighlight);
+        trackTreeController.setHighlight(toHighlight);
+        trackTreeController.updateHighlight();
     }
     
     public List<Selection> getSelectedSelections() {

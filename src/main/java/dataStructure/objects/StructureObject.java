@@ -56,10 +56,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     protected int timePoint;
     @Transient protected StructureObject previous, next; 
     private ObjectId nextId, previousId;
-    private ObjectId parentTrackHeadId, trackHeadId; // TODO remove parentTrackHeadId
+    private ObjectId parentTrackHeadId, trackHeadId; // TODO remove parentTrackHeadId ? useful for getTrackHeads
     @Transient protected StructureObject trackHead;
     protected boolean isTrackHead=true;
-    protected TrackFlag flag=null;
+    @Transient protected TrackFlag flag=null;
     
     // object- and images-related attributes
     @Transient private Object3D object;
@@ -295,7 +295,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     // track-related methods
     
     public void setTrackLinks(StructureObject next, boolean setPrev, boolean setNext, TrackFlag flag) {
-        if (next==null) unSetTrackLinks(setPrev, setNext, flag);
+        if (next==null) unSetTrackLinks(setPrev, setNext);
         else {
             if (next.getTimePoint()<=this.getTimePoint()) throw new RuntimeException("setLink should be of time>= "+(timePoint+1) +" but is: "+next.getTimePoint()+ " current: "+this+", next: "+next);
             if (setPrev && setNext) { // double link: set trackHead
@@ -309,9 +309,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 setNext(next);
             }
         }
+        this.flag=flag;
     }
     
-    public void unSetTrackLinks(boolean prev, boolean next, TrackFlag flag) {
+    public void unSetTrackLinks(boolean prev, boolean next) {
         if (prev) {
             // unset previous's next? 
             setPrevious(null);
@@ -388,14 +389,29 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             if (isTrackHead) {
                 this.trackHead=this;
                 this.trackHeadId=this.id;
+            } else if (trackHeadId!=null && dao instanceof MorphiumObjectDAO) {
+                trackHead = ((MorphiumObjectDAO)dao).getById(trackHeadId);
             } else if (getPrevious()!=null) {
-                this.trackHead=previous.getTrackHead();
-                if (this.trackHead!=null) this.trackHeadId=trackHead.id;
+                if (previous.isTrackHead) this.trackHead=previous;
+                else if (previous.trackHead!=null) this.trackHead=previous.trackHead;
+                else {
+                    ArrayList<StructureObject> prevList = new ArrayList<StructureObject>();
+                    prevList.add(this);
+                    prevList.add(previous);
+                    StructureObject prev = previous;
+                    while (prev.getPrevious()!=null && (prev.getPrevious().trackHead==null || !prev.getPrevious().isTrackHead)) {
+                        prev=prev.previous;
+                        prevList.add(prev);
+                    }
+                    if (prev.isTrackHead) for (StructureObject o : prevList) o.trackHead=prev;
+                    else if (prev.trackHead!=null) for (StructureObject o : prevList) o.trackHead=prev.trackHead;
+                }
             }
             if (trackHead==null) { // set trackHead if no trackHead found
                 this.isTrackHead=true;
                 this.trackHead=this;
-            }
+            } 
+            this.trackHeadId=trackHead.id;
         }
         return trackHead;
     }

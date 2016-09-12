@@ -28,6 +28,7 @@ import org.bson.types.ObjectId;
  * @author jollion
  */
 public interface ObjectDAO {
+    public MasterDAO getMasterDAO();
     public Experiment getExperiment();
     public String getFieldName();
     public void clearCache();

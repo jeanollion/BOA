@@ -60,7 +60,10 @@ public class MorphiumSelectionDAO implements SelectionDAO {
     }
     
     public void store(Selection s) {
+        long t0 = System.currentTimeMillis();
         masterDAO.m.storeNoCache(s, collectionName, null);
+        long t1 = System.currentTimeMillis();
+        logger.debug("Stored selection: {} in {}ms", s.getName(), t1-t0);
     }
     
     public void delete(String id) {

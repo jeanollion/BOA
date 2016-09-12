@@ -133,7 +133,7 @@ public class TrackMask extends ImageObjectInterface {
         if (object==null) return null;
         int i = getTrackIndex(object);
         if (i<0) return null;
-        //if (i>=trackObjects.length) logger.debug("error: getObjectIndex parent: {}, object: {}");
+        if (i>=trackObjects.length) return null;
         return trackObjects[i].getObjectOffset(object);
     }
     

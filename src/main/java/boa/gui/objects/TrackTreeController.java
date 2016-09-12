@@ -27,6 +27,7 @@ import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -34,6 +35,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import javax.swing.JTree;
 
 /**
@@ -164,12 +166,26 @@ public class TrackTreeController {
     public void resetHighlight() {
         for (TrackTreeGenerator t : allGeneratorS.values()) t.clearHighlightedObjects();
     }
-    public void setHighlight(Collection<StructureObject> objects, boolean highlight) {
-        for (Entry<Integer, TrackTreeGenerator> e  : allGeneratorS.entrySet()) {
-            Collection<StructureObject> objectsToHighligh = StructureObjectUtils.getParentTrackHeads(objects, e.getKey(), false);
-            if (highlight) e.getValue().addHighlightedObjects(objectsToHighligh);
-            else e.getValue().removeHighlightedObjects(objectsToHighligh);
-            if (e.getValue().tree!=null) e.getValue().tree.updateUI();
+    public void setHighlight(Collection<StructureObject> objects) {
+        Map<Integer, List<StructureObject>> objectByStructureIdx = StructureObjectUtils.splitByStructureIdx(objects);
+        for (int sIdx : objectByStructureIdx.keySet()) {
+            TrackTreeGenerator t = allGeneratorS.get(sIdx);
+            if (t!=null) t.addHighlightedObjects(StructureObjectUtils.getTrackHeads(objectByStructureIdx.get(sIdx)));
+            logger.debug("add: {} objects to tree: {}", objectByStructureIdx.get(sIdx).size(), sIdx);
+        }
+    }
+    public void updateHighlight() {
+        Set<StructureObject> previousObjects=null;
+        TreeSet<Integer> structures = new TreeSet<>(this.allGeneratorS.keySet());
+        logger.debug("updateHighlight: {}", structures.descendingSet());
+        for (int sIdx : structures.descendingSet()) { // TODO if different path to last structure idx, won't work
+            if (previousObjects!=null) {
+                Collection<StructureObject> objectsToHighligh = StructureObjectUtils.getParentTrackHeads(previousObjects, sIdx, false);
+                allGeneratorS.get(sIdx).addHighlightedObjects(objectsToHighligh);
+                logger.debug("update highlight: add {} objects to tree: {}", objectsToHighligh.size(), sIdx);
+            }
+            previousObjects = allGeneratorS.get(sIdx).highlightedObjects;
+            if (allGeneratorS.get(sIdx).tree!=null) allGeneratorS.get(sIdx).tree.updateUI();
         }
     }
 }

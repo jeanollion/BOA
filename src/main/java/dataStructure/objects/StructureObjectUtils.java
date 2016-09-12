@@ -30,6 +30,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import net.imglib2.KDTree;
 import net.imglib2.RealPoint;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
@@ -46,9 +47,9 @@ public class StructureObjectUtils {
     public static void setTrackLinks(StructureObject previous, StructureObject next, boolean setPrevious, boolean setNext) {
         if (previous==null && next==null) return;
         else if (previous==null && next!=null) {
-            next.unSetTrackLinks(setPrevious, false, null);
+            next.unSetTrackLinks(setPrevious, false);
         } else if (previous!=null && next==null) {
-            previous.unSetTrackLinks(false, setNext, null);
+            previous.unSetTrackLinks(false, setNext);
         }
         else if (next.getTimePoint()<=previous.getTimePoint()) throw new RuntimeException("setLink should be of time>= "+(previous.getTimePoint()+1) +" but is: "+next.getTimePoint()+ " current: "+previous+", next: "+next);
         else {
@@ -303,67 +304,46 @@ public class StructureObjectUtils {
 
     public static Map<StructureObject, List<StructureObject>> splitByParent(Collection<StructureObject> list) {
         if (list.isEmpty()) return Collections.EMPTY_MAP;
-        HashMapGetCreate<StructureObject, List<StructureObject>> res = new HashMapGetCreate<StructureObject, List<StructureObject>>(new HashMapGetCreate.ListFactory<StructureObject, StructureObject>());
-        for (StructureObject o : list) res.getAndCreateIfNecessary(o.getParent()).add(o);
-        return res;
+        return list.stream().collect(Collectors.groupingBy(o -> o.getParent()));
     }
     
     public static Map<StructureObject, List<StructureObject>> splitByParentTrackHead(Collection<StructureObject> list) {
         if (list.isEmpty()) return Collections.EMPTY_MAP;
-        HashMapGetCreate<StructureObject, List<StructureObject>> res = new HashMapGetCreate<StructureObject, List<StructureObject>>(new HashMapGetCreate.ListFactory<StructureObject, StructureObject>());
-        for (StructureObject o : list) res.getAndCreateIfNecessary(o.getParent().getTrackHead()).add(o);
-        return res;
+        return list.stream().collect(Collectors.groupingBy(o -> o.getParent().getTrackHead()));
     }
     
     public static Map<Integer, List<StructureObject>> splitByStructureIdx(Collection<StructureObject> list) {
         if (list.isEmpty()) return Collections.EMPTY_MAP;
-        HashMapGetCreate<Integer, List<StructureObject>> res = new HashMapGetCreate<Integer, List<StructureObject>>(new HashMapGetCreate.ListFactory<Integer, StructureObject>());
-        for (StructureObject o : list) res.getAndCreateIfNecessary(o.getStructureIdx()).add(o);
-        return res;
+        return list.stream().collect(Collectors.groupingBy(o -> o.getStructureIdx()));
     }
     
     public static Map<Integer, List<StructureObject>> splitByIdx(Collection<StructureObject> list) {
         if (list.isEmpty()) return Collections.EMPTY_MAP;
-        HashMapGetCreate<Integer, List<StructureObject>> res = new HashMapGetCreate<Integer, List<StructureObject>>(new HashMapGetCreate.ListFactory<Integer, StructureObject>());
-        for (StructureObject o : list) res.getAndCreateIfNecessary(o.getIdx()).add(o);
-        return res;
+        return list.stream().collect(Collectors.groupingBy(o -> o.getIdx()));
     }
     
     
     public static Map<String, List<StructureObject>> splitByFieldName(Collection<StructureObject> list) {
         if (list.isEmpty()) return Collections.EMPTY_MAP;
-        HashMapGetCreate<String, List<StructureObject>> res = new HashMapGetCreate<String, List<StructureObject>>(new HashMapGetCreate.ListFactory<String, StructureObject>());
-        for (StructureObject o : list) res.getAndCreateIfNecessary(o.getFieldName()).add(o);
-        return res;
+        return list.stream().collect(Collectors.groupingBy(o -> o.getFieldName()));
     }
-    
-    
-    
+        
     public static StructureObject keepOnlyObjectsFromSameParent(Collection<StructureObject> list, StructureObject... parent) {
         if (list.isEmpty()) return null;
-        Iterator<StructureObject> it = list.iterator();
-        StructureObject p = parent.length>=1 ? parent[0] : it.next().getParent();
-        while(it.hasNext()) {
-            if (it.next().getParent()!=p) it.remove();
-        }
+        StructureObject p = parent.length>=1 ? parent[0] : list.iterator().next().getParent();
+        list.removeIf(o -> o.getParent()!=p);
         return p;
     }
     public static int keepOnlyObjectsFromSameStructureIdx(Collection<StructureObject> list, int... structureIdx) {
         if (list.isEmpty()) return -2;
-        Iterator<StructureObject> it = list.iterator();
-        int sIdx = structureIdx.length>=1 ? structureIdx[0] : it.next().getStructureIdx();
-        while(it.hasNext()) {
-            if (it.next().getStructureIdx()!=sIdx) it.remove();
-        }
+        int sIdx = structureIdx.length>=1 ? structureIdx[0] : list.iterator().next().getStructureIdx();
+        list.removeIf(o -> o.getStructureIdx()!=sIdx);
         return sIdx;
     }
     public static String keepOnlyObjectsFromSameMicroscopyField(Collection<StructureObject> list, String... fieldName) {
         if (list.isEmpty()) return null;
-        Iterator<StructureObject> it = list.iterator();
-        String fName = fieldName.length>=1 ? fieldName[0] : it.next().getFieldName();
-        while(it.hasNext()) {
-            if (!it.next().getFieldName().equals(fName)) it.remove();
-        }
+        String fName = fieldName.length>=1 ? fieldName[0] : list.iterator().next().getFieldName();
+        list.removeIf(o -> !o.getFieldName().equals(fName));
         return fName;
     }
     

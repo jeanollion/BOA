@@ -62,14 +62,22 @@ public class ManualCorrection {
     public static void unlinkObjects(StructureObject prev, StructureObject next, Collection<StructureObject> modifiedObjects) {
         if (next.getTimePoint()<prev.getTimePoint()) unlinkObjects(next, prev, modifiedObjects);
         else {
-            prev.unSetTrackLinks(false, prev.getNext()==next, StructureObject.TrackFlag.correctionSplit);
-            next.unSetTrackLinks(next.getPrevious()==prev, false, StructureObject.TrackFlag.correctionSplit);
+            prev.unSetTrackLinks(false, prev.getNext()==next);
+            next.unSetTrackLinks(next.getPrevious()==prev, false);
             next.setTrackHead(next, false, true, modifiedObjects);
+            getManualCorrectionSelection(prev).addElement(next);
+            getManualCorrectionSelection(prev).addElement(prev);
+            saveManualCorrectionSelection(prev);
             //logger.debug("unlinking.. previous: {}, previous's next: {}", sel.get(1).getPrevious(), sel.get(0).getNext());
             if (modifiedObjects!=null) modifiedObjects.add(prev);
             //logger.debug("unlinking: {} to {}", sel.get(0), sel.get(1));
         }
-        
+    }
+    public static Selection getManualCorrectionSelection(StructureObject o) {
+        return o.getDAO().getMasterDAO().getSelectionDAO().getOrCreate(o.getExperiment().getStructure(o.getStructureIdx()).getName()+"_ManualCorrection", true);
+    }
+    public static void saveManualCorrectionSelection(StructureObject o) {
+        o.getDAO().getMasterDAO().getSelectionDAO().store(getManualCorrectionSelection(o));
     }
     public static void linkObjects(StructureObject prev, StructureObject next, Collection<StructureObject> modifiedObjects) {
         if (next.getTimePoint()<prev.getTimePoint()) linkObjects(next, prev, modifiedObjects);

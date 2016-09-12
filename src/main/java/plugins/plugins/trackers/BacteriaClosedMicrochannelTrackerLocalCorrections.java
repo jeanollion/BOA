@@ -149,6 +149,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         // apply to structureObject
         List<StructureObject> childrenPrev = null;
         List<StructureObject> children = null;
+        int errors = 0;
         for (int t = 0; t<populations.length; ++t) {
             StructureObject parent = this.parents.get(t);
             //logger.debug("setting objects from parent: {}, prevChildren null?", parent, childrenPrev==null);
@@ -160,9 +161,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             } else { // creates new structureObjects
                 children = parent.setChildrenObjects(new ObjectPopulation(populations[t], null), structureIdx); // will translate all voxels
                 setAttributes(t, children, childrenPrev);
+                if (debug) for (StructureObject c : children) if (c.getTrackFlag()==StructureObject.TrackFlag.trackError) ++errors;
             }
             childrenPrev=children;
         }
+        if (debug) logger.debug("Errors: {}", errors);
     }
     
     private void freeMemoryUntil(int timePoint) {
@@ -174,7 +177,6 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (timePoint<0 || segmenters[timePoint]==null) return;
         }
     }
-    
     private void setAttributes(int timePoint, List<StructureObject> children, List<StructureObject> childrenPrev) {
         for (int i = 0; i<children.size(); ++i) {
             TrackAttribute ta= getAttribute(timePoint, i);

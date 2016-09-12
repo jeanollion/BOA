@@ -19,6 +19,7 @@ package dataStructure.objects;
 
 import static boa.gui.selection.SelectionUtils.colors;
 import static boa.gui.selection.SelectionUtils.colorsImageDisplay;
+import com.google.common.collect.Sets;
 import static dataStructure.objects.StructureObject.logger;
 import de.caluga.morphium.annotations.Entity;
 import de.caluga.morphium.annotations.Id;
@@ -264,7 +265,16 @@ public class Selection implements Comparable<Selection> {
         return false;
     }
     public void removeElements(List<StructureObject> elementsToRemove) {
+        if (elementsToRemove==null || elementsToRemove.isEmpty()) return;
         for (StructureObject o : elementsToRemove) removeElement(o);
+    }
+    public void removeChildrenOf(List<StructureObject> parents) {
+        Map<String, List<StructureObject>> parentsByPosition = StructureObjectUtils.splitByFieldName(parents);
+        for (String position : parentsByPosition.keySet()) {
+            Set<StructureObject> allElements = getElements(position);
+            Map<StructureObject, List<StructureObject>> elementsByParent = StructureObjectUtils.splitByParent(allElements);
+            for (StructureObject parent : parentsByPosition.get(position)) removeElements(elementsByParent.get(parent));
+        }
     }
     public void clear() {
         elements.clear();
@@ -279,6 +289,9 @@ public class Selection implements Comparable<Selection> {
         int c = 0;
         for (String k : elements.keySet()) c+=get(k, true).size();
         return c;
+    }
+    public int count(String position) {
+        return get(position, true).size();
     }
     public String getName() {
         return id;

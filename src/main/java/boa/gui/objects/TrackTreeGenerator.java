@@ -63,7 +63,7 @@ public class TrackTreeGenerator {
     protected StructureObjectTreeModel treeModel;
     JTree tree;
     TrackTreeController controller;
-    final private Set<StructureObject> highlightedObjects = new HashSet<StructureObject>();
+    final protected Set<StructureObject> highlightedObjects = new HashSet<StructureObject>();
     final private Set<String> highlightedRoots = new HashSet<String>();
     public TrackTreeGenerator(MasterDAO db, TrackTreeController controller) {
         this.db = db;
@@ -84,11 +84,7 @@ public class TrackTreeGenerator {
         highlightedObjects.addAll(objects);
         setHighlightedRoots(objects);
     }
-    public void removeHighlightedObjects(Collection<StructureObject> objects) {
-        highlightedObjects.removeAll(objects);
-        highlightedRoots.clear();
-        setHighlightedRoots(highlightedObjects);
-    }
+
     public void clearHighlightedObjects() {
         highlightedObjects.clear();
         highlightedRoots.clear();

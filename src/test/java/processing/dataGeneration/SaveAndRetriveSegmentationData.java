@@ -106,7 +106,7 @@ public class SaveAndRetriveSegmentationData {
         MorphiumMasterDAO m = new MorphiumMasterDAO(dbName);
         MorphiumObjectDAO dao = m.getDao(m.getExperiment().getMicroscopyField(fieldIdx).getName());
         StructureObject root = dao.getRoot(0);
-        ArrayList<StructureObject> mcTH = dao.getTrackHeads(root, 0); // MC
+        List<StructureObject> mcTH = dao.getTrackHeads(root, 0); // MC
         logger.debug("{} MC founds", mcTH.size());
         HashMap<Image, Overlay> res = new HashMap<Image, Overlay>(mcTH.size());
         IJImageWindowManager windowManager = new IJImageWindowManager(null);
@@ -144,7 +144,7 @@ public class SaveAndRetriveSegmentationData {
         MorphiumMasterDAO m = new MorphiumMasterDAO(dbName);
         MorphiumObjectDAO dao = m.getDao(m.getExperiment().getMicroscopyField(fieldIdx).getName());
         StructureObject root = dao.getRoot(0);
-        ArrayList<StructureObject> mcTH = dao.getTrackHeads(root, 0); // MC
+        List<StructureObject> mcTH = dao.getTrackHeads(root, 0); // MC
         ArrayList<ArrayList<Object3D>> res = new ArrayList<ArrayList<Object3D>>();
         IJImageWindowManager windowManager = new IJImageWindowManager(null);
         for (StructureObject th : mcTH) {
