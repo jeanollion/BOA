@@ -29,11 +29,14 @@ import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.MorphiumObjectDAO;
+import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.Morphium;
 import ij.process.AutoThresholder;
+import image.BoundingBox;
 import image.Image;
+import image.ImageByte;
 import image.ImageMask;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -53,16 +56,37 @@ public class TestProcessBacteriaPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         //int time =31;
-        int time =23;
-        int microChannel =2;
+        int time =64;
+        int microChannel =3;
         int field = 0;
         //String dbName = "boa_mutd5_141209";
         String dbName = "boa_phase140115mutH";
-        testSegBacteriesFromXP(dbName, field, time, microChannel);
+        //testSegBacteriesFromXP(dbName, field, time, microChannel);
         //testSegBacteriesFromXP(dbName, field, microChannel, 0, 400);
+        testSplit(dbName, field, time, microChannel, 0);
     }
     
-    
+    public static void testSplit(String dbName, int position, int timePoint, int microChannel, int oIdx) {
+        MasterDAO mDAO = new MorphiumMasterDAO(dbName);
+        MicroscopyField f = mDAO.getExperiment().getMicroscopyField(position);
+        StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
+        logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
+        StructureObject mc = root.getChildren(0).get(microChannel);
+        Image input = mc.getRawImage(1);
+        BacteriaTrans seg = new BacteriaTrans();
+        ObjectPopulation pop = seg.runSegmenter(input, 1, mc);
+        seg.setSplitVerboseMode(true);
+        List<Object3D> res = new ArrayList<>();
+        //pop.translate(input.getBoundingBox(), true);
+        new IJImageDisplayer().showImage(pop.getObjects().get(oIdx).getMask().crop(input.getBoundingBox().translateToOrigin()));
+        //seg.split(input.resetOffset().crop(pop.getObjects().get(oIdx).getBounds()), pop.getObjects().get(oIdx), res);
+        seg.split(input, pop.getObjects().get(oIdx), res);
+        ImageDisplayer disp = new IJImageDisplayer();
+        ImageByte splitMap = new ImageByte("splitted objects", pop.getLabelMap());
+        int label=1;
+        for (Object3D o : res) o.draw(splitMap, label++);
+        disp.showImage(splitMap);
+    }
     
     public static void testSegBacteriesFromXP(String dbName, int fieldNumber, int timePoint, int microChannel) {
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
@@ -76,8 +100,8 @@ public class TestProcessBacteriaPhase {
         ObjectPopulation pop = seg.runSegmenter(input, 1, mc);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(pop.getLabelMap());
-        
     }
+    
     public static void testSegBacteriesFromXP(String dbName, int fieldNumber, int microChannel, int timePointMin, int timePointMax) {
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
         MicroscopyField f = mDAO.getExperiment().getMicroscopyField(fieldNumber);

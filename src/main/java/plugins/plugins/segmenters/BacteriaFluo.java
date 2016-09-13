@@ -246,8 +246,22 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         return true;
     }
 
-    @Override public double split(Object3D o, List<Object3D> result) {
-        if (pv==null) throw new Error("Segment method have to be called before split method in order to initialize maps");
+    @Override public double split(Image input, Object3D o, List<Object3D> result) {
+        ObjectPopulation pop =  splitObject(input, o);
+        pop.translate(o.getBounds().duplicate().reverseOffset(), false);
+        if (pop.getObjects().size()<=1) return Double.POSITIVE_INFINITY;
+        else {
+            if (pop.getObjects().size()>2) pop.mergeWithConnected(pop.getObjects().subList(2, pop.getObjects().size()));
+            Object3D o1 = pop.getObjects().get(0);
+            Object3D o2 = pop.getObjects().get(1);
+            result.add(o1);
+            result.add(o2);
+            ProcessingVariables.InterfaceBF inter = getInterface(o1, o2);
+            double cost = BacteriaTrans.getCost(inter.value, pv.splitThresholdValue, true);
+            pop.translate(o.getBounds(), true);
+            return cost;
+        }
+        /*if (pv==null) throw new Error("Segment method have to be called before split method in order to initialize maps");
         synchronized(pv) {
             o.draw(pv.getSplitMask(), 1);
             //ObjectPopulation pop = WatershedObjectSplitter.splitInTwo(pv.intensityMap, pv.splitMask, false, minSize.getValue().intValue(), false);
@@ -268,10 +282,30 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
                 ProcessingVariables.InterfaceBF inter = getInterface(o1, o2);
                 return BacteriaTrans.getCost(inter.value, pv.splitThresholdValue, true);
             }
-        }
+        }*/
     }
 
-    @Override public double computeMergeCost(List<Object3D> objects) {
+    @Override public double computeMergeCost(Image input, List<Object3D> objects) {
+        if (objects.isEmpty() || objects.size()==1) return 0;
+        ObjectPopulation mergePop = new ObjectPopulation(objects, input, false);
+        pv = this.initializeVariables(input);
+        Object3DCluster c = new Object3DCluster(mergePop, false, pv.getFactory());
+        List<Set<Object3D>> clusters = c.getClusters();
+        double maxCost = Double.NEGATIVE_INFINITY;
+        logger.debug("compute merge cost: {} objects in {} clusters", objects.size(), clusters.size());
+        if (clusters.size()>1) { // merge impossible : presence of disconnected objects
+            if (debug) logger.debug("merge impossible: {} disconnected clusters detected", clusters.size());
+            return Double.POSITIVE_INFINITY;
+        } 
+        Set<ProcessingVariables.InterfaceBF> allInterfaces = c.getInterfaces(clusters.get(0));
+        for (ProcessingVariables.InterfaceBF i : allInterfaces) {
+            i.updateSortValue();
+            if (i.value>maxCost) maxCost = i.value;
+        }
+
+        if (maxCost==Double.MIN_VALUE) return Double.POSITIVE_INFINITY;
+        return BacteriaTrans.getCost(maxCost, pv.splitThresholdValue, false);
+        /*
         if (pv==null) throw new Error("Segment method have to be called before merge method in order to initialize images");
         if (objects.isEmpty() || objects.size()==1) return 0;
         synchronized(pv) {
@@ -292,7 +326,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             
             if (maxCost==Double.MIN_VALUE) return Double.POSITIVE_INFINITY;
             return BacteriaTrans.getCost(maxCost, pv.splitThresholdValue, false);
-        }
+        }*/
     }
     
     private ProcessingVariables.InterfaceBF getInterface(Object3D o1, Object3D o2) {
@@ -307,11 +341,11 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     
     // manual correction implementations
     private boolean verboseManualSeg;
-    public void setManualSegmentationVerboseMode(boolean verbose) {
+    @Override public void setManualSegmentationVerboseMode(boolean verbose) {
         this.verboseManualSeg=verbose;
     }
 
-    public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
+    @Override public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
         if (pv==null) initializeVariables(input);
         List<Object3D> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());
         ObjectPopulation pop =  WatershedTransform.watershed(pv.hessian, segmentationMask, seedObjects, false, new WatershedTransform.ThresholdPropagation(pv.getNormalizedHessian(), this.manualSegPropagationHessianThreshold.getValue().doubleValue(), false), new WatershedTransform.SizeFusionCriterion(this.minSize.getValue().intValue()));
@@ -330,21 +364,23 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     
     // object splitter interface
     boolean splitVerbose;
-    public void setSplitVerboseMode(boolean verbose) {
+    @Override public void setSplitVerboseMode(boolean verbose) {
         this.splitVerbose=verbose;
     }
     
-    public ObjectPopulation splitObject(Image input, Object3D object) {
+    @Override public ObjectPopulation splitObject(Image input, Object3D object) {
         // avoid border effects: dilate image
         int ext = (int)this.hessianScale.getValue().doubleValue()+1;
         BoundingBox extent = new BoundingBox(-ext, ext, -ext, ext, 0, 0);
         Image inExt = input.extend(extent);
         ImageInteger maskExt = object.getMask().extend(extent);
-        ProcessingVariables pv = initializeVariables(inExt);
+        pv = initializeVariables(inExt);
         ObjectPopulation res = getSeparatedObjects(maskExt, pv, minSizePropagation.getValue().intValue(), minSize.getValue().intValue(), 2, splitVerbose);
         extent = new BoundingBox(ext, -ext, ext, -ext, 0, 0);
         ImageInteger labels = res.getLabelMap().extend(extent);
-        return new ObjectPopulation(labels, true);
+        ObjectPopulation pop= new ObjectPopulation(labels, true);
+        pop.translate(object.getBounds(), true);
+        return pop;
     }
 
     // ParameterSetup Implementation
@@ -426,6 +462,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
                     value = Double.NaN;
                 } else {
                     double hessSum = 0, intensitySum = 0;
+                    getHessian();
                     for (Voxel v : voxels) {
                         hessSum+=hessian.getPixel(v.x, v.y, v.z);
                         intensitySum += rawIntensityMap.getPixel(v.x, v.y, v.z);

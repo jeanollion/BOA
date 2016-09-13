@@ -238,23 +238,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         //if (BacteriaTrans.debug) debug=true;
         IJImageDisplayer disp=debug?new IJImageDisplayer():null;
         ObjectPopulation res = pv.splitSegmentationMask(segmentationMask);
+        if (debug) disp.showImage(pv.getEDM());
         if (debug) {
-            disp.showImage(pv.getEDM());
-        }
-        if (debug) {
-            ImagePlus ip = disp.showImage(res.getLabelMap().duplicate("labelMap - shape re-split"));
+            disp.showImage(res.getLabelMap().duplicate("labelMap - shape re-split"));
             disp.showImage(getCurvatureImage(new ObjectPopulation(segmentationMask, true), pv.curvatureScale));
-            //display ellipses..
-            /*Overlay ov = new Overlay();
-            EllipseFit2D prev=null;
-            for (Object3D o : res.getObjects()) {
-                EllipseFit2D el = FitEllipse.fitEllipse2D(o);
-                ov.add(el.getAxisRoi());
-                if (prev!=null) ov.add(el.getCenterRoi(prev));
-                prev = el;
-            }
-            ip.setOverlay(ov);
-            ip.updateAndDraw();*/
         }
         
         // merge using the criterion
@@ -334,12 +321,28 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         return true;
     }
     // segmenter split and merge interface
-    @Override public double split(Object3D o, List<Object3D> result) {
+    @Override public double split(Image input, Object3D o, List<Object3D> result) {
+        ObjectPopulation pop =  splitObject(input, o); // initialize pv
+        pop.translate(o.getBounds().duplicate().reverseOffset(), false);
+        if (pop.getObjects().size()<=1) return Double.POSITIVE_INFINITY;
+        else {
+            Object3D o1 = pop.getObjects().get(0);
+            Object3D o2 = pop.getObjects().get(1);
+            result.add(o1);
+            result.add(o2);
+            InterfaceBT inter = getInterface(o1, o2);
+            inter.updateSortValue();
+            //logger.debug("split: intersize: {}, cost {}", inter.voxels.size(), inter.curvatureValue);
+            double cost = getCost(inter.curvatureValue, curvatureThreshold.getValue().doubleValue(), false); 
+            pop.translate(o.getBounds(), true);
+            return cost;
+        }
+        /*
         if (pv==null) throw new Error("Segment method have to be called before split method in order to initialize images");
         synchronized(pv) {
             o.draw(pv.getSplitMask(), 1);
-            ObjectPopulation pop = BacteriaTrans.getSeparatedObjects(pv, pv.getSplitMask(), minSizePropagation.getValue().intValue(), 2, false);
-            //new IJImageDisplayer().showImage(pop.getLabelMap().duplicate("split"));
+            ObjectPopulation pop = BacteriaTrans.getSeparatedObjects(pv, pv.getSplitMask(), minSizePropagation.getValue().intValue(), 2, true);
+            new IJImageDisplayer().showImage(pop.getLabelMap().duplicate("split"));
             o.draw(pv.splitMask, 0);
             if (pop==null || pop.getObjects().isEmpty() || pop.getObjects().size()==1) return Double.POSITIVE_INFINITY;
             ArrayList<Object3D> remove = new ArrayList<Object3D>(pop.getObjects().size());
@@ -358,10 +361,31 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 return getCost(inter.curvatureValue, pv.curvatureThreshold, false); 
             }
             
-        }
+        }*/
     }
 
-    @Override public double computeMergeCost(List<Object3D> objects) {
+    @Override public double computeMergeCost(Image input, List<Object3D> objects) {
+        if (objects.isEmpty() || objects.size()==1) return 0;
+        ObjectPopulation mergePop = new ObjectPopulation(objects, input, false);
+        pv = getProcessingVariables(input, mergePop.getLabelMap());
+        pv.segMask=mergePop.getLabelMap();
+        double minCurv = Double.POSITIVE_INFINITY;
+        Object3DCluster c = new Object3DCluster(mergePop, false, pv.getFactory());
+        List<Set<Object3D>> clusters = c.getClusters();
+        //logger.debug("compute merge cost: {} objects in {} clusters", objects.size(), clusters.size());
+        if (clusters.size()>1) { // merge impossible : presence of disconnected objects
+            if (debug) logger.debug("merge impossible: {} disconnected clusters detected", clusters.size());
+            return Double.POSITIVE_INFINITY;
+        } 
+        Set<InterfaceBT> allInterfaces = c.getInterfaces(clusters.get(0));
+        for (InterfaceBT i : allInterfaces) {
+            i.updateSortValue();
+            if (i.curvatureValue<minCurv) minCurv = i.curvatureValue;
+        }
+        //logger.debug("minCurv: {}", minCurv);
+        if (minCurv==Double.POSITIVE_INFINITY || minCurv==Double.NaN) return Double.POSITIVE_INFINITY;
+        return getCost(minCurv, pv.curvatureThreshold, true);
+        /*
         if (pv==null) throw new Error("Segment method have to be called before merge method in order to initialize images");
         if (objects.isEmpty() || objects.size()==1) return 0;
         synchronized(pv) {
@@ -383,7 +407,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             //logger.debug("minCurv: {}", minCurv);
             if (minCurv==Double.POSITIVE_INFINITY || minCurv==Double.NaN) return Double.POSITIVE_INFINITY;
             return getCost(minCurv, pv.curvatureThreshold, true);
-        }
+        }*/
     }
     
     private InterfaceBT getInterface(Object3D o1, Object3D o2) {
@@ -429,9 +453,16 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     
     @Override
     public ObjectPopulation splitObject(Image input, Object3D object) {
-        ProcessingVariables pv = getProcessingVariables(input, object.getMask());
-        pv.segMask=object.getMask(); // no need to compute threshold because split is performed within object's mask
-        return BacteriaTrans.getSeparatedObjects(pv, pv.segMask, minSizeFusion.getValue().intValue(), 2, splitVerbose);
+        ImageInteger mask = object.getMask();
+        if (!input.sameSize(mask)) {
+            input = input.crop(object.getBounds());
+            //mask = mask.crop(input.getBoundingBox()); // problem with crop & offsets when bb is larger & has an offset
+        }
+        pv = getProcessingVariables(input, mask);
+        pv.segMask=mask; // no need to compute threshold because split is performed within object's mask
+        ObjectPopulation pop = BacteriaTrans.getSeparatedObjects(pv, pv.segMask, minSizePropagation.getValue().intValue(), 2, splitVerbose);
+        pop.translate(object.getBounds(), true);
+        return pop;
     }
     
     protected static class ProcessingVariables {
@@ -486,7 +517,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         }
         private ObjectPopulation splitSegmentationMask(ImageInteger maskToSplit) {
             ObjectPopulation res = WatershedTransform.watershed(getIntensityMap(), maskToSplit, false, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation));
-            res.setVoxelIntensities(getEDM()); // for getExtremaSeedList method called just afterwards
+            res.setVoxelIntensities(getEDM()); // for getExtremaSeedList method called just afterwards. // offset of objects needs to be relative to EDM map because EDM offset is not taken into acount
             return WatershedTransform.watershed(getEDM(), maskToSplit, res.getExtremaSeedList(true), true, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation));
         }
         private ImageInteger getSegmentationMask() {

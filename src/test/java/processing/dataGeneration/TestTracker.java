@@ -44,13 +44,13 @@ public class TestTracker {
         PluginFactory.findPlugins("plugins.plugins");
         //String dbName = "testSub60";
         final String dbName = "boa_phase140115mutH";
-        int fIdx = 0;
-        int mcIdx =0;
+        int fIdx = 1;
+        int mcIdx =2;
         int structureIdx = 1;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         if (db.getExperiment()==null) return;
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
-        //testSegmentationAndTracking(db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName()), ps, structureIdx, mcIdx, 0, 583);
+        //testSegmentationAndTracking(db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName()), ps, structureIdx, mcIdx, 50, 150);
         int[][] testsF_MC_TT = {
            {0, 3, 90, 94},
            {0, 5, 48, 52}, 
@@ -58,9 +58,11 @@ public class TestTracker {
            {0, 7, 716, 720}, 
            {1, 2, 90, 94}, 
            {1, 2, 195, 199}, 
-           {0, 3, 62, 64}
+           {0, 3, 62, 64},
+           {1, 2, 89, 90}, // cas division de longue bacterie
+           {1, 2, 114, 115} // cas petite erreur de seg qui cree une fausse division
         };
-        int idx = 6;
+        int idx = 7;
         testSegmentationAndTracking(db.getDao(db.getExperiment().getMicroscopyField(testsF_MC_TT[idx][0]).getName()), ps, structureIdx, testsF_MC_TT[idx][1], testsF_MC_TT[idx][2], testsF_MC_TT[idx][3]);
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {

@@ -181,7 +181,7 @@ public abstract class Image implements ImageProperties {
         this.offsetX+=offsetX;
         this.offsetY+=offsetY;
         this.offsetZ+=offsetZ;
-        this.offsetXY = offsetX + sizeX * offsetY;
+        this.offsetXY = this.offsetX + sizeX * this.offsetY;
         return (T)this;
     }
     
@@ -247,7 +247,7 @@ public abstract class Image implements ImageProperties {
         //bounds.trimToImage(this);
         Image res = newImage(name, bounds.getImageProperties("", scaleXY, scaleZ));
         res.setCalibration(this);
-        res.addOffset(this);
+        res.addOffset(this); // TODO: si absoluteLandmark -> ne pas ajouter...
         int x_min = bounds.getxMin();
         int y_min = bounds.getyMin();
         int z_min = bounds.getzMin();

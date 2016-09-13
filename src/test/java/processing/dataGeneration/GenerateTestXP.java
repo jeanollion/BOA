@@ -318,7 +318,7 @@ public class GenerateTestXP {
                 new SegmentAndTrack(
                         new BacteriaClosedMicrochannelTrackerLocalCorrections(
                                 new BacteriaTrans()
-                        ).setCostParameters(1.5, 1.5)
+                        ).setCostParameters(1.5, 3)
                 )
         );
         

@@ -637,7 +637,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             return null;
         }
         // first object returned by splitter is updated to current structureObject
-        pop.translate(this.getBounds(), true);
+        if (!pop.isAbsoluteLandmark()) pop.translate(this.getBounds(), true); 
         objectModified=true;
         this.object=pop.getObjects().get(0).setLabel(idx+1);
         flushImages();
