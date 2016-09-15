@@ -108,7 +108,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     
     //NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 1, 6);
     NumberParameter openRadius = new BoundedNumberParameter("Open Radius", 1, 4, 0, null);
-    NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 50, 5, null);
+    NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 20, 5, null);
     NumberParameter dogScale = new BoundedNumberParameter("DoG scale", 0, 10, 5, null);
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
     PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new ConstantValue(50), false);
@@ -133,7 +133,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSizeFusion, contactLimit);
     
     Parameter[] parameters = new Parameter[]{backgroundSeparation, thicknessParameters, curvatureParameters, objectParameters};
-    
+        
+    // ParameterSetup interface
     @Override public boolean canBeTested(Parameter p) {
         List canBeTested = new ArrayList(){{add(threshold); add(curvatureScale); add(dogScale); add(relativeThicknessThreshold);}};
         return canBeTested.contains(p);
