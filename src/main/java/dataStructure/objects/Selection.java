@@ -63,6 +63,7 @@ public class Selection implements Comparable<Selection> {
         this.id=name;
         this.structureIdx=-1;
         elements = new HashMap<String, List<String>>();
+        this.mDAO=mDAO;
     }
     
     public Color getColor(boolean imageDisplay) {
@@ -98,7 +99,7 @@ public class Selection implements Comparable<Selection> {
         this.color=color;
     }
     
-    public void setMasterDAO(MasterDAO mDAO) {
+    protected void setMasterDAO(MasterDAO mDAO) {
         this.mDAO=mDAO;
     }
     

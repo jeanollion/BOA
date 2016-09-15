@@ -128,7 +128,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     NumberParameter angleThreshold = new BoundedNumberParameter("Angle Threshold", 1, 20, 0, 90);
     GroupParameter angleParameters = new GroupParameter("Constaint on angles", aspectRatioThreshold, angleThreshold);
     */
-    NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 10, 0, null);
+    NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 2, 0, null);
     NumberParameter minSizeFusion = new BoundedNumberParameter("Minimum Object size (fusion)", 0, 200, 5, null);
     GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSizeFusion, contactLimit);
     
@@ -231,7 +231,9 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             logger.debug("threshold: {}", pv.threshold);
         }
         
-        return getSeparatedObjects(pv, pv.getSegmentationMask(), minSizePropagation.getValue().intValue(), 0, debug);
+        ObjectPopulation pop = getSeparatedObjects(pv, pv.getSegmentationMask(), minSizePropagation.getValue().intValue(), 0, debug);
+        if (contactLimit.getValue().intValue()>0) pop.filter(new ObjectPopulation.ContactBorder(contactLimit.getValue().intValue(), parent.getMask(), ObjectPopulation.ContactBorder.Border.YDown));
+        return pop;
     }
     
     protected static ObjectPopulation getSeparatedObjects(ProcessingVariables pv, ImageInteger segmentationMask, int minSize, int objectMergeLimit, boolean debug) {
@@ -332,8 +334,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             result.add(o2);
             InterfaceBT inter = getInterface(o1, o2);
             inter.updateSortValue();
-            //logger.debug("split: intersize: {}, cost {}", inter.voxels.size(), inter.curvatureValue);
             double cost = getCost(inter.curvatureValue, curvatureThreshold.getValue().doubleValue(), false); 
+            logger.debug("split: intersize: {}, curvature {}, threshold: {}, cost: {}", inter.voxels.size(), inter.curvatureValue, curvatureThreshold.getValue().doubleValue(), cost);
             pop.translate(o.getBounds(), true);
             return cost;
         }
@@ -460,7 +462,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         }
         pv = getProcessingVariables(input, mask);
         pv.segMask=mask; // no need to compute threshold because split is performed within object's mask
-        ObjectPopulation pop = BacteriaTrans.getSeparatedObjects(pv, pv.segMask, minSizePropagation.getValue().intValue(), 2, splitVerbose);
+        ObjectPopulation pop = BacteriaTrans.getSeparatedObjects(pv, pv.segMask, minSizePropagation.getValue().intValue(), 2, true);
         pop.translate(object.getBounds(), true);
         return pop;
     }
@@ -517,8 +519,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         }
         private ObjectPopulation splitSegmentationMask(ImageInteger maskToSplit) {
             ObjectPopulation res = WatershedTransform.watershed(getIntensityMap(), maskToSplit, false, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation));
-            res.setVoxelIntensities(getEDM()); // for getExtremaSeedList method called just afterwards. // offset of objects needs to be relative to EDM map because EDM offset is not taken into acount
-            return WatershedTransform.watershed(getEDM(), maskToSplit, res.getExtremaSeedList(true), true, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation));
+            if (res.getObjects().size()>1) {
+                res.setVoxelIntensities(getEDM()); // for getExtremaSeedList method called just afterwards. // offset of objects needs to be relative to EDM map because EDM offset is not taken into acount
+                return WatershedTransform.watershed(getEDM(), maskToSplit, res.getExtremaSeedList(true), true, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation));
+            } else return WatershedTransform.watershed(getEDM(), maskToSplit, true, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation));
         }
         private ImageInteger getSegmentationMask() {
             if (segMask == null) {

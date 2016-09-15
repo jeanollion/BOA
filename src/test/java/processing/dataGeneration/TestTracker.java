@@ -56,14 +56,16 @@ public class TestTracker {
            {0, 5, 48, 52}, 
            {0, 5, 103, 107}, 
            {0, 7, 716, 720}, 
-           {1, 2, 90, 94}, 
-           {1, 2, 195, 199}, 
+           {1, 2, 90, 94}, // cas division de longue bacterie non reconnu car petite erreur de segmentation
+           {1, 2, 195, 199}, // petits objects avec découpage aléatoire. si on limite les scenario pas de bug
            {0, 3, 62, 64},
            {1, 2, 89, 90}, // cas division de longue bacterie
-           {1, 2, 114, 115} // cas petite erreur de seg qui cree une fausse division
+           {1, 2, 114, 115}, // cas petite erreur de seg qui cree une fausse division
+           {0, 1, 203, 204}     
         };
-        int idx = 7;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getMicroscopyField(testsF_MC_TT[idx][0]).getName()), ps, structureIdx, testsF_MC_TT[idx][1], testsF_MC_TT[idx][2], testsF_MC_TT[idx][3]);
+        int idxStartInc = 0; // for adaptative sizeIncrement Estimation
+        int idx = 9;
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getMicroscopyField(testsF_MC_TT[idx][0]).getName()), ps, structureIdx, testsF_MC_TT[idx][1], Math.max(0, testsF_MC_TT[idx][2]-idxStartInc), testsF_MC_TT[idx][3]);
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         List<StructureObject> roots = dao.getRoots();

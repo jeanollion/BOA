@@ -40,6 +40,12 @@ import static utils.Utils.removeFromMap;
  * @author jollion
  */
 public class TestClass {
+    @Test
+    public void testNaN() {
+        double a = Double.NaN;
+        double b = 1;
+        logger.debug("a<b: {}, a>b: {}", a<b, a>b);
+    }
     //@Test
     public void testReadND2() {
         String inputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase140115/6300_mutH_LB-LR62rep-15012014_nd2/mg6300mutH_LB_lr62rep_oil37.nd2";
