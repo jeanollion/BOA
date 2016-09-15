@@ -309,7 +309,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 setNext(next);
             }
         }
-        this.flag=flag;
+        if (next!=null) next.flag=flag;
     }
     
     public void unSetTrackLinks(boolean prev, boolean next) {

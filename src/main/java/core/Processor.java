@@ -174,12 +174,14 @@ public class Processor {
         dao.store(children, !(ps instanceof SegmentOnly));
         // create error selection
         Selection errors = dao.getMasterDAO().getSelectionDAO().getOrCreate(dao.getExperiment().getStructure(structureIdx).getName()+"_TrackingErrors", false);
-        if (errors.count(dao.getFieldName())>0) errors.removeChildrenOf(parentTrack); // if selection already exists: remove children of parentTrack
+        boolean hadObjectsBefore=errors.count(dao.getFieldName())>0;
+        if (hadObjectsBefore) errors.removeChildrenOf(parentTrack); // if selection already exists: remove children of parentTrack
         children.removeIf(o -> o.getTrackFlag()!=StructureObject.TrackFlag.trackError);
         logger.debug("errors: {}", children.size());
-        errors.addElements(children);
-        dao.getMasterDAO().getSelectionDAO().store(errors);
-        
+        if (hadObjectsBefore || !children.isEmpty()) {
+            errors.addElements(children);
+            dao.getMasterDAO().getSelectionDAO().store(errors);
+        }
         /*if (ps instanceof SegmentOnly) { // gather all objects and store // TODO no difference between SegmentOnly and others...
             ArrayList<StructureObject> children = new ArrayList<StructureObject>();
             for (StructureObject p : parentTrack) children.addAll(p.getChildren(structureIdx));

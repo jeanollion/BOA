@@ -719,9 +719,11 @@ public abstract class ImageWindowManager<T, U, V> {
             if (mid+currentDisplayRange.getSizeX()/2>=trackImage.getSizeX()) mid = trackImage.getSizeX()-currentDisplayRange.getSizeX()/2;
             if (mid-currentDisplayRange.getSizeX()/2<0) mid = currentDisplayRange.getSizeX()/2;
             BoundingBox nextDisplayRange = new BoundingBox(mid-currentDisplayRange.getSizeX()/2, mid+currentDisplayRange.getSizeX()/2, currentDisplayRange.getyMin(), currentDisplayRange.getyMax(), currentDisplayRange.getzMin(), currentDisplayRange.getzMax());
-            logger.info("Object detected @ timepoint: {}, xMid: {}, update display range: {}", nextObject.getTimePoint(), mid,  nextDisplayRange);
-            displayer.setDisplayRange(nextDisplayRange, trackImage);
-            return true;
+            if (!nextDisplayRange.equals(currentDisplayRange)) {
+                logger.info("Object detected @ timepoint: {}, xMid: {}, update display range: {}", nextObject.getTimePoint(), mid,  nextDisplayRange);
+                displayer.setDisplayRange(nextDisplayRange, trackImage);
+                return true;
+            } return false;
         }
     }
     

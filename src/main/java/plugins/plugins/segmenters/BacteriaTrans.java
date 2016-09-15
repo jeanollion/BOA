@@ -590,7 +590,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 if (curvature==null) {
                     setBorderVoxels();
                     if (curvatureValue!=Double.NEGATIVE_INFINITY) curvature = Curvature.computeCurvature(getJoinedMask(), curvatureScale);
-                    if (debug && ((e1.getLabel()==1 && e2.getLabel()==2))) {
+                    if (debug && ((e1.getLabel()==0 && e2.getLabel()==1))) {
                         ImageInteger m = getJoinedMask().duplicate("joinedMask:"+e1.getLabel()+"+"+e2.getLabel()+" (2)");
                         for (Voxel v : voxels) m.setPixelWithOffset(v.x, v.y, v.z, 2);
                         for (Voxel v : borderVoxels) m.setPixelWithOffset(v.x, v.y, v.z, 3);
@@ -610,7 +610,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 return ell2;
             }*/
             @Override public void updateSortValue() {
-                if (voxels.isEmpty()) curvatureValue=Double.POSITIVE_INFINITY;
+                if (voxels.size()<=2) curvatureValue=Double.NEGATIVE_INFINITY; // when border is too small curvature may not be computable
                 else if (getCurvature()!=null) curvatureValue = getMeanOfMinCurvature(); 
             }
             @Override

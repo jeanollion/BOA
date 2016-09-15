@@ -274,7 +274,10 @@ public class Selection implements Comparable<Selection> {
         for (String position : parentsByPosition.keySet()) {
             Set<StructureObject> allElements = getElements(position);
             Map<StructureObject, List<StructureObject>> elementsByParent = StructureObjectUtils.splitByParent(allElements);
-            for (StructureObject parent : parentsByPosition.get(position)) removeElements(elementsByParent.get(parent));
+            for (StructureObject parent : parentsByPosition.get(position)) {
+                //if (elementsByParent.containsKey(parent)) logger.debug("remove {} children of: {}", elementsByParent.get(parent).size(), parent);
+                removeElements(elementsByParent.get(parent));
+            }
         }
     }
     public void clear() {
