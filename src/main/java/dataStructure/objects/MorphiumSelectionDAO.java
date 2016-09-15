@@ -23,7 +23,9 @@ import de.caluga.morphium.DAO;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.query.Query;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.bson.types.ObjectId;
 
 /**
@@ -33,11 +35,12 @@ import org.bson.types.ObjectId;
 public class MorphiumSelectionDAO implements SelectionDAO {
     final MorphiumMasterDAO masterDAO;
     public final String collectionName;
-    
+    private Map<String, Selection> idCache;
     public MorphiumSelectionDAO(MorphiumMasterDAO masterDAO) {
         this.collectionName="selections";
         this.masterDAO=masterDAO;
         masterDAO.m.ensureIndicesFor(Selection.class, collectionName);
+        this.idCache=new HashMap<>();
     }
     
     protected Query<Selection> getQuery() {
@@ -46,45 +49,58 @@ public class MorphiumSelectionDAO implements SelectionDAO {
         return res;
     }
     
-    public List<Selection> getSelections() {
+    public synchronized List<Selection> getSelections() {
+        idCache.clear();
         List<Selection> sel = getQuery().asList();
         Collections.sort(sel);
         for (Selection s : sel) s.setMasterDAO(masterDAO);
         return sel;
     }
     
-    public Selection getObject(String id) {
-        Selection s =  getQuery().getById(id);
-        if (s!=null) s.setMasterDAO(masterDAO);
+    public synchronized Selection getObject(String id) {
+        Selection s = idCache.get(id);
+        if (s==null) {
+            s =  getQuery().getById(id);
+            if (s!=null) {
+                s.setMasterDAO(masterDAO);
+                idCache.put(id, s);
+            }
+        }
         return s;
+        
     }
     
-    public void store(Selection s) {
+    public synchronized void store(Selection s) {
         long t0 = System.currentTimeMillis();
         masterDAO.m.storeNoCache(s, collectionName, null);
         long t1 = System.currentTimeMillis();
         logger.debug("Stored selection: {} in {}ms", s.getName(), t1-t0);
+        idCache.remove(s.getName());
     }
     
-    public void delete(String id) {
+    public synchronized void delete(String id) {
         //masterDAO.m.delete(getQuery().f("id").eq(id));
         BasicDBObject db = new BasicDBObject().append("_id", id);
         //logger.debug("delete meas by id: {}, from colleciton: {}", db, collectionName);
         masterDAO.m.getDatabase().getCollection(collectionName).remove(db);
+        idCache.remove(id);
     }
     
-    public void delete(Selection o) {
+    public synchronized void delete(Selection o) {
         if (o==null) return;
         masterDAO.m.delete(o, collectionName, null);
+        idCache.remove(o.getName());
         //logger.debug("delete meas: {}, from colleciton: {}", o.getId(), collectionName);
     }
     
-    public void deleteAllObjects() {
+    public synchronized void deleteAllObjects() {
+        idCache.clear();
         masterDAO.m.getDatabase().getCollection(collectionName).drop();
         //masterDAO.m.clearCollection(Measurements.class, collectionName);
     }
 
-    public Selection getOrCreate(String name, boolean clearIfExisting) {
+    @Override public synchronized Selection getOrCreate(String name, boolean clearIfExisting) {
+        if (idCache.containsKey(name)) return idCache.get(name);
         List<Selection> sels = getSelections();
         Selection res = null;
         for (Selection s : sels) {
@@ -98,6 +114,8 @@ public class MorphiumSelectionDAO implements SelectionDAO {
         } else {
             res = new Selection(name, masterDAO);
         }
+        idCache.put(name, res);
         return res;
     }
+    
 }

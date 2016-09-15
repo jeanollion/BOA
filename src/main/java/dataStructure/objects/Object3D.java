@@ -86,12 +86,12 @@ public class Object3D {
     }
     
     public Object3D duplicate() {
-        if (this.mask!=null) return new Object3D((ImageInteger)mask.duplicate(""), label);
+        if (this.mask!=null) return new Object3D((ImageInteger)mask.duplicate(""), label).setIsAbsoluteLandmark(absoluteLandmark);
         else if (this.voxels!=null) {
-            ArrayList<Voxel> vox = new ArrayList<Voxel> (voxels.size());
+            ArrayList<Voxel> vox = new ArrayList<> (voxels.size());
             for (Voxel v : voxels) vox.add(v.duplicate());
-            if (bounds==null) return new Object3D(voxels, label, scaleXY, scaleZ);
-            else return new Object3D(vox, label, bounds, scaleXY, scaleZ);
+            if (bounds==null) return new Object3D(voxels, label, scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark);
+            else return new Object3D(vox, label, bounds.duplicate(), scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark);
         }
         return null;
     }

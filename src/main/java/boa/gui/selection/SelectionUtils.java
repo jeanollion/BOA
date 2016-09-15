@@ -78,8 +78,11 @@ public class SelectionUtils {
         if (selections==null || selections.isEmpty()) return Collections.EMPTY_LIST;
         selections.removeIf(s -> s.getStructureIdx()!=selections.get(0).getStructureIdx());
         List<StructureObject> res=  new ArrayList<StructureObject>();
-        if (fieldName!=null) for (Selection s : selections) res.addAll(s.getElements(fieldName));
-        else for (Selection s : selections) res.addAll(s.getAllElements());
+        if (fieldName!=null) for (Selection s : selections) {
+            if (s.getElements(fieldName)!=null) res.addAll(s.getElements(fieldName));
+        } else for (Selection s : selections) {
+            if (s.getAllElements()!=null) res.addAll(s.getAllElements());
+        }
         return res;
     }
     

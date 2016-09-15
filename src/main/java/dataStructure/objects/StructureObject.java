@@ -97,6 +97,11 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.dao=dao;
     }
     
+    public StructureObject duplicate() {
+        if (isRoot()) return new StructureObject(timePoint, (BlankMask)getMask(), dao);
+        else return new StructureObject(timePoint, structureIdx, idx, getObject(), getParent());
+    }
+    
     // structure-related methods
     public ObjectDAO getDAO() {return dao;}
     public ObjectId getId() {return id;}
@@ -309,7 +314,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 setNext(next);
             }
         }
-        this.flag=flag;
+        if (next!=null) next.flag=flag;
     }
     
     public void unSetTrackLinks(boolean prev, boolean next) {
