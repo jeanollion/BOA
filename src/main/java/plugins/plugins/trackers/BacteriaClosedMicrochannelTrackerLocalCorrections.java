@@ -209,7 +209,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     private TrackFlag getFlag(TrackAttribute ta) {
         if (ta==null) return null;
-        if (ta.error) return TrackFlag.trackError;
+        if (ta.errorPrev || ta.errorNext) return TrackFlag.trackError;
         if (ta.flag==Flag.correctionSplit) return TrackFlag.correctionSplit;
         if (ta.flag==Flag.correctionMerge) return TrackFlag.correctionMerge;
         return null;
@@ -326,7 +326,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         TrackAttribute prev;
         TrackAttribute next;
         Flag flag;
-        boolean error;
+        boolean errorPrev, errorNext;
         Object3D o;
         boolean division=false, trackHead=true;
         private double objectSize=Double.NaN;
@@ -341,7 +341,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         public void resetTrackAttributes() {
             this.prev=null;
             this.next=null;
-            error=false;
+            errorPrev=false;
+            errorNext=false;
             this.division=false;
             trackHead=true;
         }
@@ -353,7 +354,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             List<Double> res=  new ArrayList<>(sizeIncrementLimit);
             TrackAttribute prev = this.prev;
             WL: while(res.size()<sizeIncrementLimit && prev!=null) {
-                if (!prev.error) {
+                if (!prev.errorNext) {
                     if (prev.division) {
                         double nextSize = 0;
                         List<TrackAttribute> n = prev.getNext();
@@ -540,6 +541,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             int nPrev = idxPrevEnd-idxPrev;
             int nCur = idxEnd-idx;
             boolean error = nPrev>1 || nCur>2;
+            // TODO: inclure aussi l'info si ne vérifie pas l'inegalité. attention a ne pas lancer la correction pour autant
             if (nPrev==nCur) {
                 for (int i = 0; i<nPrev; ++i) {
                     TrackAttribute taCur = getAttribute(timePoint, idx+i);

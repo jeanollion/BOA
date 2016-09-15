@@ -336,7 +336,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             InterfaceBT inter = getInterface(o1, o2);
             inter.updateSortValue();
             double cost = getCost(inter.curvatureValue, curvatureThreshold.getValue().doubleValue(), false); 
-            logger.debug("split: intersize: {}, curvature {}, threshold: {}, cost: {}", inter.voxels.size(), inter.curvatureValue, curvatureThreshold.getValue().doubleValue(), cost);
+            //logger.debug("split: intersize: {}, curvature {}, threshold: {}, cost: {}", inter.voxels.size(), inter.curvatureValue, curvatureThreshold.getValue().doubleValue(), cost);
             pop.translate(o.getBounds(), true);
             return cost;
         }
@@ -463,7 +463,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         }
         pv = getProcessingVariables(input, mask);
         pv.segMask=mask; // no need to compute threshold because split is performed within object's mask
-        ObjectPopulation pop = BacteriaTrans.getSeparatedObjects(pv, pv.segMask, minSizePropagation.getValue().intValue(), 2, true);
+        ObjectPopulation pop = BacteriaTrans.getSeparatedObjects(pv, pv.segMask, minSizePropagation.getValue().intValue(), 2, splitVerbose);
         pop.translate(object.getBounds(), true);
         return pop;
     }
