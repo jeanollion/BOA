@@ -22,6 +22,8 @@ import ij.gui.Plot;
 import ij.measure.CurveFitter;
 import image.ImageFloat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import processing.ImageFeatures;
 
 /**
@@ -324,6 +326,14 @@ public class ArrayUtil {
     public static int[] generateIntegerArray(int size) {
         int[] res = new int[size];
         for (int i = 0; i<size; ++i) res[i]=i;
+        return res;
+    }
+    public static double median(List<Double> list) {
+        if (list.isEmpty()) return Double.NaN;
+        Collections.sort(list);
+        double res;
+        if (list.size()%2==1) res = list.get(list.size()/2);
+        else res=(list.get(list.size()/2)+list.get(list.size()/2-1))/2.0;
         return res;
     }
 }
