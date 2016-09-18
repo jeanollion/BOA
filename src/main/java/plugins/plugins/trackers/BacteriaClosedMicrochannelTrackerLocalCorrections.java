@@ -466,6 +466,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             while (change) { // && !verifyInequality() do not limit to the inequality because several solution that verify the inequality can coexist
                 if (size>=sizePrev) change=incrementPrev();
                 else change=increment();
+                //if (!change) incrementPrevAndCur();
             }
         }
 
@@ -553,7 +554,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                         ++idxEnd;
                         change = true;
                     }
-                } else if (sizePrev * minGR > size && idxPrevEnd<idxPrevLim && canMerge(idxPrev, idxPrevEnd+1, timePoint-1) ) { // cannot increment because grow too much but need to: increment & increment prev
+                } else if (sizePrev * minGR > size && idxPrevEnd<idxPrevLim && canMerge(idxPrev, idxPrevEnd+1, timePoint-1) ) { // cannot increment because grow too much but need to: increment & increment prev. REMOVE AND PUT IN OTHER METHOD?s
                     TrackAssigner newScenario = duplicate();
                     newScenario.idxEnd+=1;
                     newScenario.idxPrevEnd+=1;
@@ -570,6 +571,37 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                         size=newSize;
                         ++idxEnd;
                         sizePrev+=getSize(timePoint-1, idxPrevEnd);
+                        ++idxPrevEnd;
+                        change = true;
+                    }
+                }
+                else return change;
+            }
+            return change;
+        }
+        protected boolean incrementPrevAndCur() { // CONDITIONS??
+            boolean change = false;
+            if(idxEnd<idxLim && idxPrevEnd<idxPrevLim) {
+                double newSize = size + getSize(timePoint, idxEnd);
+                double newSizePrev = sizePrev + getSize(timePoint-1, idxPrevEnd);
+                if (debug) logger.debug("t: {}, incrementPrev&Cur: [{};{}[->[{};{}[, old size: {} new size: {}, size prev: {}, theo size€[{};{}], will increment: {}", timePoint, idxPrev, idxPrevEnd, idx, idxEnd,size, newSize, sizePrev, sizePrev*minGR, sizePrev*maxGR, sizePrev * minGR > size && sizePrev * maxGR > newSize );
+                if (sizePrev * minGR > size && canMerge(idxPrev, idxPrevEnd+1, timePoint-1) ) { // cannot increment because grow too much but need to: increment & increment prev
+                    TrackAssigner newScenario = duplicate();
+                    newScenario.idxEnd+=1;
+                    newScenario.idxPrevEnd+=1;
+                    newScenario.size=newSize;
+                    newScenario.sizePrev=newSizePrev;
+                    TrackAssigner currenScenario = duplicate();
+                    if (debug) logger.debug("[{};{}[->[{};{}[: getting score for current scenario...", idxPrev, idxPrevEnd, idx, idxEnd);
+                    double scoreCur = currenScenario.getAssignmentScoreForWholeScenario(idxPrevLim, newScenario.idxEnd);
+                    if (debug) logger.debug("[{};{}[->[{};{}[: getting score for other scenario... ", idxPrev, idxPrevEnd, idx, idxEnd);
+                    double scoreNew = newScenario.getAssignmentScoreForWholeScenario(idxPrevLim, newScenario.idxEnd);
+                    if (debug) logger.debug("[{};{}[->[{};{}[: comparison of two solution for prevInc&curInc: old {} new: {}", idxPrev, idxPrevEnd, idx, idxEnd, scoreCur, scoreNew);
+                    if (scoreCur<scoreNew) return change;
+                    else {
+                        size=newSize;
+                        ++idxEnd;
+                        sizePrev=newSizePrev;
                         ++idxPrevEnd;
                         change = true;
                     }
