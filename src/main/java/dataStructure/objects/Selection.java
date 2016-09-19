@@ -115,7 +115,13 @@ public class Selection implements Comparable<Selection> {
     
     public Set<StructureObject> getElements(String fieldName) {
         Set<StructureObject> res =  retrievedElements.get(fieldName);
-        if (res==null && elements.containsKey(fieldName)) return retrieveElements(fieldName);
+        if (res==null && elements.containsKey(fieldName)) {
+            synchronized(retrievedElements) {
+                res =  retrievedElements.get(fieldName);
+                if (res==null) return retrieveElements(fieldName);
+                else return res;
+            }
+        }
         return res;
     }
     
@@ -135,8 +141,13 @@ public class Selection implements Comparable<Selection> {
         Object indiciesList = elements.get(fieldName);
         if (indiciesList==null) {
             if (createIfNull) {
-                indiciesList = new ArrayList<String>();
-                elements.put(fieldName, (List)indiciesList);
+                synchronized(elements) {
+                    indiciesList = elements.get(fieldName);
+                    if (indiciesList==null) {
+                        indiciesList = new ArrayList<String>();
+                        elements.put(fieldName, (List)indiciesList);
+                    }
+                }
             } else return null;
         }
         else if (indiciesList instanceof Set) { // retro-compatibility
@@ -251,7 +262,8 @@ public class Selection implements Comparable<Selection> {
             }
         }
     }
-    public void addElements(Collection<StructureObject> elementsToAdd) {
+    public synchronized void addElements(Collection<StructureObject> elementsToAdd) {
+        if (elementsToAdd==null || elementsToAdd.isEmpty()) return;
         for (StructureObject o : elementsToAdd) addElement(o);
     }
     
@@ -265,11 +277,11 @@ public class Selection implements Comparable<Selection> {
         }
         return false;
     }
-    public void removeElements(List<StructureObject> elementsToRemove) {
+    public synchronized void removeElements(List<StructureObject> elementsToRemove) {
         if (elementsToRemove==null || elementsToRemove.isEmpty()) return;
         for (StructureObject o : elementsToRemove) removeElement(o);
     }
-    public void removeChildrenOf(List<StructureObject> parents) {
+    public synchronized void removeChildrenOf(List<StructureObject> parents) {
         Map<String, List<StructureObject>> parentsByPosition = StructureObjectUtils.splitByFieldName(parents);
         for (String position : parentsByPosition.keySet()) {
             Set<StructureObject> allElements = getElements(position);
@@ -280,7 +292,7 @@ public class Selection implements Comparable<Selection> {
             }
         }
     }
-    public void clear() {
+    public synchronized void clear() {
         elements.clear();
         if (retrievedElements!=null) retrievedElements.clear();
         if (retrievedTrackHeads!=null) retrievedTrackHeads.clear();

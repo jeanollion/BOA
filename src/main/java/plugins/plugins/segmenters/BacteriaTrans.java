@@ -107,11 +107,11 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     
     
     //NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 1, 6);
-    NumberParameter openRadius = new BoundedNumberParameter("Open Radius", 1, 4, 0, null);
+    NumberParameter openRadius = new BoundedNumberParameter("Open Radius", 1, 3, 0, null);
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 20, 5, null);
     NumberParameter dogScale = new BoundedNumberParameter("DoG scale", 0, 10, 5, null);
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
-    PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new ConstantValue(50), false);
+    PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new ConstantValue(275), false);
     PluginParameter<Thresholder> thresholdContrast = new PluginParameter<Thresholder>("DoG Threshold for false positive", Thresholder.class, new ConstantValue(250), false);
     GroupParameter backgroundSeparation = new GroupParameter("Separation from background", dogScale, threshold, thresholdContrast, minSizePropagation, openRadius);
     
@@ -473,7 +473,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         private ImageInteger segMask;
         final ImageMask mask;
         final Image input;
-        private Image intensityMap;
+        //private Image intensityMap;
         //private Image smoothed;
         ImageByte splitMask;
         final double relativeThicknessThreshold, dogScale, openRadius, relativeThicknessMaxDistance;//, smoothScale;// aspectRatioThreshold, angleThresholdRad; 
@@ -486,7 +486,6 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         private ProcessingVariables(Image input, ImageMask mask, double splitThresholdValue, double relativeThicknessMaxDistance, double dogScale, double openRadius, int minSizePropagation, int minSizeFusion, int curvatureScale, double curvatureThreshold, double curvatureSearchRadius) {
             this.input=input;
             this.mask=mask;
-            this.contrastThreshold=contrastThreshold;
             this.relativeThicknessThreshold=splitThresholdValue;
             this.relativeThicknessMaxDistance=relativeThicknessMaxDistance;
             //this.smoothScale=smoothScale;
@@ -528,12 +527,14 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         private ImageInteger getSegmentationMask() {
             if (segMask == null) {
                 if (Double.isNaN(threshold)) throw new Error("Threshold not set");
+                IJImageDisplayer disp = debug?new IJImageDisplayer():null;
                 ImageInteger thresh = ImageOperations.threshold(getIntensityMap(), threshold, false, false);
+                if (debug) disp.showImage(thresh.duplicate("before open"));
                 Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(openRadius, openRadius, thresh));
-                //IJImageDisplayer disp = debug?new IJImageDisplayer():null;
-                //if (debug) disp.showImage(thresh.duplicate("before close"));
+                
+                if (debug) disp.showImage(thresh.duplicate("after open / before close"));
                 thresh = Filters.binaryClose(thresh, Filters.getNeighborhood(1, 1, thresh));
-                //if (debug) disp.showImage(thresh.duplicate("after close"));
+                if (debug) disp.showImage(thresh.duplicate("after close"));
                 ImageOperations.and(mask, thresh, thresh);
                 ObjectPopulation pop1 = new ObjectPopulation(thresh, false);
                 pop1.filterAndMergeWithConnected(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects

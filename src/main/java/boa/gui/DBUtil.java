@@ -79,6 +79,7 @@ public class DBUtil {
         return name;
     }
     public static String addPrefix(String name, String prefix) {
+        if (name==null) return null;
         if (!name.startsWith(prefix)) name= prefix+name;
         return name;
     }
