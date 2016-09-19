@@ -172,13 +172,14 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         
     }
     private void step() {
-        logger.debug("step: {}", stepParents.size());
         List<StructureObject> newParents = new ArrayList<StructureObject>(parents.size());
         for (StructureObject p : parents) newParents.add(p.duplicate());
         stepParents.add(newParents);
         // perform assignment without corrections
+        logger.debug("perform assignement without corrections");
         for (int currentTimePoint = 1; currentTimePoint<populations.length; ++currentTimePoint) assignPrevious(currentTimePoint, false);
         applyLinksToParents(newParents);
+        logger.debug("step: {}", stepParents.size());
     }
     private void applyLinksToParents(List<StructureObject> parents) {
         List<StructureObject> childrenPrev = null;
@@ -466,7 +467,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             while (change) { // && !verifyInequality() do not limit to the inequality because several solution that verify the inequality can coexist
                 if (size>=sizePrev) change=incrementPrev();
                 else change=increment();
-                //if (!change) incrementPrevAndCur();
+                //if (!change) change=incrementPrevAndCur();
             }
         }
 
@@ -579,13 +580,13 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             }
             return change;
         }
-        protected boolean incrementPrevAndCur() { // CONDITIONS??
+        /*protected boolean incrementPrevAndCur() { // CONDITIONS??
             boolean change = false;
             if(idxEnd<idxLim && idxPrevEnd<idxPrevLim) {
                 double newSize = size + getSize(timePoint, idxEnd);
                 double newSizePrev = sizePrev + getSize(timePoint-1, idxPrevEnd);
-                if (debug) logger.debug("t: {}, incrementPrev&Cur: [{};{}[->[{};{}[, old size: {} new size: {}, size prev: {}, theo size€[{};{}], will increment: {}", timePoint, idxPrev, idxPrevEnd, idx, idxEnd,size, newSize, sizePrev, sizePrev*minGR, sizePrev*maxGR, sizePrev * minGR > size && sizePrev * maxGR > newSize );
-                if (sizePrev * minGR > size && canMerge(idxPrev, idxPrevEnd+1, timePoint-1) ) { // cannot increment because grow too much but need to: increment & increment prev
+                if (debug) logger.debug("t: {}, incrementPrev&Cur: [{};{}[->[{};{}[, old size: {} new size: {}, size prev: {}, theo size€[{};{}], will increment: {}", timePoint, idxPrev, idxPrevEnd, idx, idxEnd,size, newSize, sizePrev, sizePrev*minGR, sizePrev*maxGR, sizePrev * maxGR < newSize && newSizePrev * minGR < size && newSizePrev * minGR < newSize && newSizePrev * maxGR>newSize );
+                if (sizePrev * maxGR < newSize && newSizePrev * minGR < size && newSizePrev * minGR < newSize && newSizePrev * maxGR>newSize ) { // 1) cannot increment or increment prev only, because grow too much but need to: increment & increment prev
                     TrackAssigner newScenario = duplicate();
                     newScenario.idxEnd+=1;
                     newScenario.idxPrevEnd+=1;
@@ -609,7 +610,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 else return change;
             }
             return change;
-        }
+        }*/
         protected boolean verifyInequality() {
             return sizePrev * minGR <= size && size <= sizePrev * maxGR;
         }

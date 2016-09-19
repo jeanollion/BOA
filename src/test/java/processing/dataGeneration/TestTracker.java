@@ -42,8 +42,8 @@ import plugins.plugins.trackers.BacteriaClosedMicrochannelTrackerLocalCorrection
 public class TestTracker {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        String dbName = "boa_mutH_140115";
-        //final String dbName = "boa_phase140115mutH";
+        //String dbName = "boa_mutH_140115";
+        final String dbName = "boa_phase140115mutH";
         int fIdx = 0;
         int mcIdx =0;
         int structureIdx = 1;
@@ -91,7 +91,7 @@ public class TestTracker {
             }
         }
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
-        //BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
+        BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
         ps.segmentAndTrack(structureIdx, parentTrack);
         //ps.trackOnly(structureIdx, parentTrack);
         GUI.getInstance();
