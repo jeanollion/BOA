@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import measurement.GeometricalMeasurements;
 import static plugins.Plugin.logger;
@@ -150,28 +151,33 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             for (StructureObject p : parents) p.setChildren(null, structureIdx);
             return;
         } else for (int t = maxT; t<populations.length; ++t) if (populations[t]!=null) populations[t].clear();
-        // 2) perform corrections by idx 
-
+        
+        // 2) perform corrections idx-wise
         if (correctionStep) step();
         int idxMax=0;
         int idxLim = populations[0].size();
-        int[] tRange = new int[]{minT+1, maxT-1};
+        List<int[]> corrRanges = new ArrayList<>();
+        List<int[]> corrRanges2 = new ArrayList<>(1);
         while(idxMax<idxLim) {
-            tRange = performCorrectionsByIdx(tRange[0], tRange[1], idxMax);
-            if (tRange[0]<tRange[1] && idxMax>0) { // corrections have been performed : run correction from 0 to idxMax within time range
-                int nLoop=1;
-                for (int idx = 0; idx<=idxMax; ++idx) {
-                    int[] tRange2 = performCorrectionsByIdx(tRange[0], tRange[1], idx);
-                    if (tRange2[0]<tRange[0]) tRange[0] = tRange2[0];
-                    if (tRange2[1]>tRange[1]) tRange[1] = tRange2[1];
-                    if (idx>0 && tRange2[0]<tRange2[1] && nLoop<=loopLimit) { // corrections have been performed : reset idx
-                        idx = 0;
-                        nLoop++;
-                    } 
+            boolean corr = performCorrectionsByIdx(minT+1, maxT-1, idxMax, corrRanges, false);
+            if (corr && idxMax>0) { // corrections have been performed : run correction from 0 to idxMax within each time range
+                for (int[] tRange : corrRanges) {
+                    int nLoop=1;
+                    for (int idx = 0; idx<=idxMax; ++idx) {
+                        boolean corr2 = performCorrectionsByIdx(tRange[0], tRange[1], idx, corrRanges2, true);
+                        if (corr2) {
+                            int[] tRange2 = corrRanges2.get(0);
+                            if (tRange2[0]<tRange[0]) tRange[0] = tRange2[0];
+                            if (tRange2[1]>tRange[1]) tRange[1] = tRange2[1];
+                        }
+                        if (idx>0 && corr2 && nLoop<=loopLimit) { // corrections have been performed : reset idx
+                            idx = 0;
+                            nLoop++;
+                        } 
+                    }
                 }
             }
             idxMax++;
-            tRange = new int[]{minT+1, maxT-1};
         }
         
         // 3) final assignement without correction, noticing all errors
@@ -179,48 +185,82 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         applyLinksToParents(parents);
     }
     
-    private int[] performCorrectionsByIdx(int tMin, int tMax, int idx) {
+    private boolean performCorrectionsByIdx(int tMin, int tMax, int idx, List<int[]> outRanges, boolean limitToOneRange) {
         if (debugCorr) logger.debug("performing corrections [{};{}] @ {}", tMin, tMax, idx);
         int nLoop=1;
         int currentT = tMin;
-        int globalMinT = tMax;
-        int globalMaxT = tMin;
+        outRanges.clear();
+        int[] currentRange = null;
         while(currentT<=tMax) {
             int minT = currentT;
             if (idx<populations[currentT].size()) {
                 TrackAttribute ta = getAttribute(currentT, idx);
                 CorLoop : while (ta.nPrev>1 && nLoop<=loopLimit) { // il y a une erreur à corriger (type nPrev>1)
+                    if (currentRange == null) currentRange = new int[]{tMax, tMin};
                     TrackAssigner assigner = new TrackAssigner(currentT);
                     while (assigner.nextTrack() && assigner.idxEnd<=idx){} // idx > idxEnd 
+                    //logger.debug("t:{}, idx:{}, ass: {}, can be corrected: {}, ta: {}",currentT, idx, assigner, assigner.canBeCorrected(), ta);
                     if (assigner.canBeCorrected()) {
                         int corrT = assigner.performCorrection();
                         if (corrT>=1) {
                             minT = Math.min(minT, corrT);
                             if (corrT<=currentT) {
-                                globalMinT = Math.min(globalMinT, corrT);
-                                globalMaxT = Math.max(globalMaxT, currentT);
+                                currentRange[0] = Math.min(currentRange[0], corrT);
+                                currentRange[1] = Math.max(currentRange[1], currentT);
                                 for (int t = corrT; t<=currentT; ++t) assignPrevious(t, false, false);
                             } else {
-                                globalMinT = Math.min(globalMinT, currentT);
-                                globalMaxT = Math.max(globalMaxT, corrT);
+                                currentRange[0] = Math.min(currentRange[0], currentT);
+                                currentRange[1] = Math.max(currentRange[1], Math.min(populations.length-1, corrT+1)); // assgin beyond last splitted idx
                                 for (int t = currentT; t<=Math.min(populations.length-1, corrT+1); ++t) assignPrevious(t, false, false);
                             }
                             if (correctionStep) {
                                 step();
                                 //if (stepParents.size()>=4) return;
                             }
+                            ta = getAttribute(currentT, idx); // in case of correction..
                         }
                     } else break CorLoop;
                     nLoop++;
+                }
+                nLoop=1;
+                if (currentRange!=null && currentRange[0]<=currentRange[1]) {
+                    outRanges.add(currentRange);
+                    currentRange=null;
                 }
             }
             if (minT<currentT) currentT=minT;
             else ++currentT;
         }
-        if (globalMaxT>=populations.length-1) globalMaxT = populations.length-1;
-        if (debugCorr) logger.debug("out range for @ {}: [{};{}]", idx, globalMinT, globalMaxT);
-        return new int[]{globalMinT, globalMaxT};
+        if (outRanges.size()>1) { 
+            Collections.sort(outRanges, (int[] o1, int[] o2) -> {
+                if (o1[0]<o2[0]) return -1;
+                else if (o1[0]>o2[0]) return 1;
+                else if (o1[1]<o2[1]) return -1;
+                else if (o1[1]>o2[1]) return -1;
+                else return 0;
+            });
+            Iterator<int[]> it = outRanges.iterator();
+            if (limitToOneRange) { // merge all
+                int[] range = it.next();
+                while(it.hasNext()) {
+                    range[1] = Math.max(range[1], it.next()[1]);
+                    it.remove();
+                }
+            } else { //merge if overlap
+                int[] prev = it.next();
+                while(it.hasNext()) {
+                    int[] cur = it.next();
+                    if (prev[1]>=cur[0]) {
+                        prev[1] = cur[1];
+                        it.remove();
+                    } else prev=cur;
+                }
+            }
+        }
+        if (debugCorr) logger.debug("out range for @ {}: [{};{}]", idx, outRanges.toArray());
+        return !outRanges.isEmpty();
     }
+    
     
     /*protected void segmentAndTrack2(boolean performCorrection) {
         if (performCorrection && correctionStep) {
@@ -308,9 +348,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (populations[t]==null || populations[t].isEmpty()) return;
         TrackAttribute lastO = getAttribute(t, populations[t].size()-1); // remove incomplete divisions
         if (lastO.prev!=null && lastO.prev.incompleteDivision) {
-            logger.debug("incomplete division at: {}", lastO);
+            if (debug) logger.debug("incomplete division at: {}", lastO);
             while (lastO!=null) {
-                logger.debug("incomplete division removing: {}", lastO);
+                if (debug) logger.debug("incomplete division removing: {}", lastO);
                 if (lastO.idx==populations[lastO.timePoint].size()-1) {
                     populations[lastO.timePoint].remove(lastO.o);
                     lastO=lastO.next;
@@ -543,7 +583,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             else return Collections.EMPTY_LIST;
         }
         @Override public String toString() {
-            return timePoint+"-"+idx+"(s:"+getSize()+"/th:"+this.trackHead+"/div:"+division+")";
+            return timePoint+"-"+idx+"(s:"+getSize()+"/th:"+this.trackHead+"/div:"+division+"/nPrev"+nPrev+")";
         }
     }
     
@@ -755,7 +795,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             return (idxPrevEnd-idxPrev)>1; //|| (sizePrev * maxGR < size); et supprimer @ increment.. 
         }
         public boolean canBeCorrected() {
-            return needCorrection()&&idxEnd-idx==1;
+            return needCorrection() && idxEnd-idx==1;
         }
         public void resetTrackAttributes() {
             if (trackAttributes[timePoint]!=null) for (TrackAttribute ta : trackAttributes[timePoint]) ta.resetTrackAttributes(true, false);
