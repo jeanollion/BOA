@@ -107,11 +107,11 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     
     
     //NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 1, 6);
-    NumberParameter openRadius = new BoundedNumberParameter("Open Radius", 1, 3, 0, null);
+    NumberParameter openRadius = new BoundedNumberParameter("Open Radius", 1, 2, 0, null); // 2-4
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 20, 5, null);
     NumberParameter dogScale = new BoundedNumberParameter("DoG scale", 0, 10, 5, null);
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
-    PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new ConstantValue(275), false);
+    PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new ConstantValue(400), false);
     PluginParameter<Thresholder> thresholdContrast = new PluginParameter<Thresholder>("DoG Threshold for false positive", Thresholder.class, new ConstantValue(250), false);
     GroupParameter backgroundSeparation = new GroupParameter("Separation from background", dogScale, threshold, thresholdContrast, minSizePropagation, openRadius);
     

@@ -233,8 +233,14 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                                 minT=currentT;
                                 change=true;
                             }
-                        } else rangeLoop=0;
-                    } else outRanges.add(currentRange);
+                        } else {
+                            outRanges.add(currentRange);
+                            rangeLoop=0;
+                        }
+                    } else {
+                        outRanges.add(currentRange);
+                        rangeLoop=0;
+                    }
                     currentRange=null;
                 }
             }
@@ -916,7 +922,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             }
             else {
                 for (CorrectionScenario c : merge) c.applyScenario();
-                return new int[]{Math.max(1, timePoint-merge.size()), timePoint};
+                return new int[]{Math.max(1, timePoint-merge.size()), timePoint+1};
             }
         }
         
