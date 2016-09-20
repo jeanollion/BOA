@@ -35,7 +35,7 @@ import org.bson.types.ObjectId;
 public class MorphiumSelectionDAO implements SelectionDAO {
     final MorphiumMasterDAO masterDAO;
     public final String collectionName;
-    private Map<String, Selection> idCache;
+    private final Map<String, Selection> idCache;
     public MorphiumSelectionDAO(MorphiumMasterDAO masterDAO) {
         this.collectionName="selections";
         this.masterDAO=masterDAO;
@@ -49,7 +49,7 @@ public class MorphiumSelectionDAO implements SelectionDAO {
         return res;
     }
     
-    public synchronized List<Selection> getSelections() {
+    @Override public synchronized List<Selection> getSelections() {
         idCache.clear();
         List<Selection> sel = getQuery().asList();
         Collections.sort(sel);
@@ -57,7 +57,7 @@ public class MorphiumSelectionDAO implements SelectionDAO {
         return sel;
     }
     
-    public synchronized Selection getObject(String id) {
+    @Override public synchronized Selection getObject(String id) {
         Selection s = idCache.get(id);
         if (s==null) {
             s =  getQuery().getById(id);
@@ -70,7 +70,7 @@ public class MorphiumSelectionDAO implements SelectionDAO {
         
     }
     
-    public synchronized void store(Selection s) {
+    @Override public synchronized void store(Selection s) {
         long t0 = System.currentTimeMillis();
         masterDAO.m.storeNoCache(s, collectionName, null);
         long t1 = System.currentTimeMillis();
@@ -78,7 +78,7 @@ public class MorphiumSelectionDAO implements SelectionDAO {
         idCache.remove(s.getName());
     }
     
-    public synchronized void delete(String id) {
+    @Override public synchronized void delete(String id) {
         //masterDAO.m.delete(getQuery().f("id").eq(id));
         BasicDBObject db = new BasicDBObject().append("_id", id);
         //logger.debug("delete meas by id: {}, from colleciton: {}", db, collectionName);
@@ -86,14 +86,14 @@ public class MorphiumSelectionDAO implements SelectionDAO {
         idCache.remove(id);
     }
     
-    public synchronized void delete(Selection o) {
+    @Override public synchronized void delete(Selection o) {
         if (o==null) return;
         masterDAO.m.delete(o, collectionName, null);
         idCache.remove(o.getName());
         //logger.debug("delete meas: {}, from colleciton: {}", o.getId(), collectionName);
     }
     
-    public synchronized void deleteAllObjects() {
+    @Override public synchronized void deleteAllObjects() {
         idCache.clear();
         masterDAO.m.getDatabase().getCollection(collectionName).drop();
         //masterDAO.m.clearCollection(Measurements.class, collectionName);

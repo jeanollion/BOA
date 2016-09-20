@@ -161,7 +161,7 @@ public class Selection implements Comparable<Selection> {
         }
         return (Collection<String>)indiciesList;
     }
-    protected Set<StructureObject> retrieveElements(String fieldName) {
+    protected synchronized Set<StructureObject> retrieveElements(String fieldName) {
         if (fieldName==null) throw new IllegalArgumentException("FieldName cannot be null");
         Collection<String> indiciesList = get(fieldName, false);
         if (indiciesList==null) {
@@ -222,7 +222,7 @@ public class Selection implements Comparable<Selection> {
         return Utils.toStringArray(indicies, "", "", indexSeparator);
     }
     
-    public void updateElementList(String fieldName) {
+    public synchronized void updateElementList(String fieldName) {
         if (fieldName==null) throw new IllegalArgumentException("FieldName cannot be null");
         Set<StructureObject> objectList = retrievedElements.get(fieldName);
         if (objectList==null) {
@@ -286,10 +286,9 @@ public class Selection implements Comparable<Selection> {
         for (String position : parentsByPosition.keySet()) {
             Set<StructureObject> allElements = getElements(position);
             Map<StructureObject, List<StructureObject>> elementsByParent = StructureObjectUtils.splitByParent(allElements);
-            for (StructureObject parent : parentsByPosition.get(position)) {
-                //if (elementsByParent.containsKey(parent)) logger.debug("remove {} children of: {}", elementsByParent.get(parent).size(), parent);
-                removeElements(elementsByParent.get(parent));
-            }
+            List<StructureObject> toRemove = new ArrayList<>();
+            for (StructureObject parent : parentsByPosition.get(position)) if (elementsByParent.containsKey(parent)) toRemove.addAll(elementsByParent.get(parent));
+            removeElements(toRemove);
         }
     }
     public synchronized void clear() {
@@ -313,7 +312,7 @@ public class Selection implements Comparable<Selection> {
         return id;
     }
 
-    public int compareTo(Selection o) {
+    @Override public int compareTo(Selection o) {
         return this.id.compareTo(o.id);
     }
 

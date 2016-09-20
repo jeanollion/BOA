@@ -182,17 +182,6 @@ public class Processor {
             errors.addElements(children);
             dao.getMasterDAO().getSelectionDAO().store(errors);
         }
-        /*if (ps instanceof SegmentOnly) { // gather all objects and store // TODO no difference between SegmentOnly and others...
-            ArrayList<StructureObject> children = new ArrayList<StructureObject>();
-            for (StructureObject p : parentTrack) children.addAll(p.getChildren(structureIdx));
-            dao.store(children, false);
-        } else { // store by time point in order to include tracklinks
-            for (StructureObject p : parentTrack) {
-                //logger.debug("storing object of structure: {} from timepoint: {}", structureIdx, p.getTimePoint());
-                dao.store(p.getChildren(structureIdx), true);
-            }
-        }
-        */
     }
     
     private static void execute(ProcessingScheme ps, int structureIdx, List<StructureObject> parentTrack, boolean trackOnly, boolean deleteChildren, ObjectDAO dao) {

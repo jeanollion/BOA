@@ -45,13 +45,13 @@ public class TestTracker {
         //String dbName = "boa_mutH_140115";
         final String dbName = "boa_phase140115mutH";
         int fIdx = 0;
-        int mcIdx =1;
+        int mcIdx =0;
         int structureIdx = 1;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         if (db.getExperiment()==null) return;
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
-        //testSegmentationAndTracking(db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName()), ps, structureIdx, mcIdx, 250, 530);
-        testBCMTLCStep(db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName()), ps, structureIdx, mcIdx, 250, 530);
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName()), ps, structureIdx, mcIdx, 0, 450);
+        //testBCMTLCStep(db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName()), ps, structureIdx, mcIdx, 416, 443);
         
         int[][] testsF_MC_TT = {
            {0, 3, 90, 94},
@@ -65,7 +65,8 @@ public class TestTracker {
            {1, 2, 114, 115}, // cas petite erreur de seg qui cree une fausse division
            {0, 3, 138, 140}, 
            {0, 9, 249, 250}, // cas besoin d'incrementer prev et cur en même temps
-           {0, 9, 425, 427} // cas split scenario doit s'arreter avt car division non detectee (au bout d'un channel avec soeur non detectee)
+           {0, 9, 425, 427}, // cas split scenario doit s'arreter avt car division non detectee (au bout d'un channel avec soeur non detectee)
+           {0, 0, 416, 443} // accumulation, emballement des réparations 
         };
         int idxStartInc = 5; // for adaptative sizeIncrement Estimation
         int idx = 9;
@@ -125,7 +126,7 @@ public class TestTracker {
             }
         }
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
-        //BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
+        BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.correctionStep=true;
         ps.segmentAndTrack(structureIdx, parentTrack);
         //ps.trackOnly(structureIdx, parentTrack);
@@ -135,7 +136,7 @@ public class TestTracker {
         for (List<StructureObject> pt : BacteriaClosedMicrochannelTrackerLocalCorrections.stepParents) {
             ImageObjectInterface i = iwm.getImageTrackObjectInterface(pt, structureIdx);
             Image im = i.generateRawImage(structureIdx);
-            im.setName("Step: "+step++);
+            im.setName("After Step: "+step++);
             iwm.addImage(im, i, false, true);
             iwm.setInteractiveStructure(structureIdx);
             iwm.displayAllObjects(im);
