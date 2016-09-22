@@ -325,7 +325,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
     @Override
     public void store(StructureObject object, boolean updateTrackAttributes) {
         object.updateObjectContainer();
-        object.updateMeasurementsIfNecessary();
+        object.updateMeasurementsIfNecessary(); // TODO: regrouper ttes les mesures si plusieurs objects sont stockés à la suite?
         if (updateTrackAttributes) {
             object.getParentTrackHeadId();
             object.getTrackHeadId();

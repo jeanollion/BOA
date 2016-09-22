@@ -44,22 +44,23 @@ public class TestTracker {
         PluginFactory.findPlugins("plugins.plugins");
         //String dbName = "boa_mutH_140115";
         final String dbName = "boa_phase140115mutH";
-        int fIdx = 0;
-        int mcIdx =1;
+        int fIdx = 1;
+        int mcIdx =2;
         int structureIdx = 1;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         if (db.getExperiment()==null) return;
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName()), ps, structureIdx, mcIdx, 110, 130);
-        //testBCMTLCStep(db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName()), ps, structureIdx, mcIdx, 416, 443);
+        //testSegmentationAndTracking(db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName()), ps, structureIdx, mcIdx, 150, 166);
+        testBCMTLCStep(db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName()), ps, structureIdx, mcIdx, 85, 94);
         
         int[][] testsF_MC_TT = {
-           {0, 3, 90, 94},
-           {0, 5, 48, 52}, 
-           {0, 5, 103, 107}, 
-           {0, 7, 716, 720}, 
-           {1, 2, 90, 94}, // cas division de longue bacterie non reconnu car petite erreur de segmentation
-           {1, 2, 195, 199}, // petits objects avec découpage aléatoire. si on limite les scenario pas de bug
+           {0, 3, 90, 94}, // 0
+           {0, 5, 48, 52}, // 1
+           {0, 5, 103, 107}, // 2
+           {0, 7, 716, 720}, // 3 cas cellules qui ne croissent plus + cellule mère morte
+           {0, 14, 150, 166}, // 4
+           {1, 2, 90, 94}, // 5 cas division de longue bacterie non reconnu car petite erreur de segmentation
+           {1, 2, 195, 199}, // 6 petits objects avec découpage aléatoire. si on limite les scenario pas de bug
            {0, 3, 62, 64},
            {1, 2, 89, 90}, // cas division de longue bacterie
            {1, 2, 114, 115}, // cas petite erreur de seg qui cree une fausse division
@@ -69,7 +70,7 @@ public class TestTracker {
            {0, 0, 416, 443} // accumulation, emballement des réparations 
         };
         int idxStartInc = 5; // for adaptative sizeIncrement Estimation
-        int idx = 9;
+        int idx = 6;
         //testSegmentationAndTracking(db.getDao(db.getExperiment().getMicroscopyField(testsF_MC_TT[idx][0]).getName()), ps, structureIdx, testsF_MC_TT[idx][1], Math.max(0, testsF_MC_TT[idx][2]-idxStartInc), testsF_MC_TT[idx][3]);
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {

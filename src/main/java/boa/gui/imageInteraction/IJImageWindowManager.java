@@ -313,7 +313,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             o2 = track.get(idx);
             if (o1==null || o2==null) continue;
             Arrow arrow = new Arrow(o1.value.getXMean(), o1.value.getYMean(), o2.value.getXMean()-1, o2.value.getYMean());
-            boolean error = o2.key.hasTrackLinkError() || (o1.key.hasTrackLinkError()&&o1.key.isTrackHead());
+            boolean error = o2.key.hasTrackLinkError(true) || (o1.key.hasTrackLinkError(false));
             boolean correction = o2.key.hasTrackLinkCorrection()||(o1.key.hasTrackLinkCorrection()&&o1.key.isTrackHead());
             //arrow.setStrokeColor( (o2.key.hasTrackLinkError() || (o1.key.hasTrackLinkError()&&o1.key.isTrackHead()) )?ImageWindowManager.trackErrorColor: (o2.key.hasTrackLinkCorrection()||(o1.key.hasTrackLinkCorrection()&&o1.key.isTrackHead())) ?ImageWindowManager.trackCorrectionColor : color);
             arrow.setStrokeColor(color);

@@ -107,13 +107,13 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     
     
     //NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 1, 6);
-    NumberParameter openRadius = new BoundedNumberParameter("Open Radius", 1, 2, 0, null); // 2-4
+    NumberParameter openRadius = new BoundedNumberParameter("Open Radius", 1, 3, 0, null); // 2-4
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 20, 5, null);
-    NumberParameter dogScale = new BoundedNumberParameter("DoG scale", 0, 10, 5, null);
+    NumberParameter subBackScale = new BoundedNumberParameter("Subtract Background scale", 1, 10, 0.1, null);
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
-    PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new ConstantValue(400), false);
-    PluginParameter<Thresholder> thresholdContrast = new PluginParameter<Thresholder>("DoG Threshold for false positive", Thresholder.class, new ConstantValue(250), false);
-    GroupParameter backgroundSeparation = new GroupParameter("Separation from background", dogScale, threshold, thresholdContrast, minSizePropagation, openRadius);
+    PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false); //new ConstantValue(-400)
+    PluginParameter<Thresholder> thresholdContrast = new PluginParameter<Thresholder>("Threshold for false positive", Thresholder.class, new ConstantValue(250), false);
+    GroupParameter backgroundSeparation = new GroupParameter("Separation from background", subBackScale, threshold, thresholdContrast, minSizePropagation, openRadius);
     
     NumberParameter relativeThicknessThreshold = new BoundedNumberParameter("Relative Thickness Threshold (lower: split more)", 2, 0.7, 0, 1);
     NumberParameter relativeThicknessMaxDistance = new BoundedNumberParameter("Max Distance for Relative Thickness normalization factor (calibrated)", 2, 1, 0, null);
@@ -129,14 +129,14 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     GroupParameter angleParameters = new GroupParameter("Constaint on angles", aspectRatioThreshold, angleThreshold);
     */
     NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 2, 0, null);
-    NumberParameter minSizeFusion = new BoundedNumberParameter("Minimum Object size (fusion)", 0, 200, 5, null);
+    NumberParameter minSizeFusion = new BoundedNumberParameter("Minimum Object size (fusion)", 0, 50, 5, null);
     GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSizeFusion, contactLimit);
     
     Parameter[] parameters = new Parameter[]{backgroundSeparation, thicknessParameters, curvatureParameters, objectParameters};
         
     // ParameterSetup interface
     @Override public boolean canBeTested(Parameter p) {
-        List canBeTested = new ArrayList(){{add(threshold); add(curvatureScale); add(dogScale); add(relativeThicknessThreshold);}};
+        List canBeTested = new ArrayList(){{add(threshold); add(curvatureScale); add(subBackScale); add(relativeThicknessThreshold);}};
         return canBeTested.contains(p);
     }
     public BacteriaTrans setThreshold(Thresholder t) {
@@ -166,9 +166,9 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         } else if (p==threshold) {
             disp.showImage(pv.getIntensityMap().duplicate("before threshold. Value: "+pv.threshold));
             disp.showImage(pv.getSegmentationMask().duplicate("after threshold"));
-        } else if (p==dogScale) {
+        } else if (p==subBackScale) {
             disp.showImage(input.duplicate("input"));
-            disp.showImage(pv.getIntensityMap().duplicate("DoG: Scale: "+dogScale.getValue().doubleValue()));
+            disp.showImage(pv.getIntensityMap().duplicate("DoG: Scale: "+subBackScale.getValue().doubleValue()));
         }
     }
     
@@ -194,7 +194,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         return this;
     }*/
     public BacteriaTrans setDogScale(int dogScale) {
-        this.dogScale.setValue(dogScale);
+        this.subBackScale.setValue(dogScale);
         return this;
     }
 
@@ -212,7 +212,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     public ProcessingVariables getProcessingVariables(Image input, ImageMask segmentationMask) {
         return new ProcessingVariables(input, segmentationMask,
                 relativeThicknessThreshold.getValue().doubleValue(), relativeThicknessMaxDistance.getValue().doubleValue(), 
-                dogScale.getValue().doubleValue(), openRadius.getValue().doubleValue(), minSizePropagation.getValue().intValue(), minSizeFusion.getValue().intValue(),
+                subBackScale.getValue().doubleValue(), openRadius.getValue().doubleValue(), minSizePropagation.getValue().intValue(), minSizeFusion.getValue().intValue(),
                 curvatureScale.getValue().intValue(), curvatureThreshold.getValue().doubleValue(), curvatureSearchRadius.getValue().doubleValue());
     }
     
@@ -473,7 +473,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         private ImageInteger segMask;
         final ImageMask mask;
         final Image input;
-        //private Image intensityMap;
+        private Image intensityMap;
         //private Image smoothed;
         ImageByte splitMask;
         final double relativeThicknessThreshold, dogScale, openRadius, relativeThicknessMaxDistance;//, smoothScale;// aspectRatioThreshold, angleThresholdRad; 
@@ -514,8 +514,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
 
         private Image getIntensityMap() {
             //if (intensityMap==null) intensityMap = ImageFeatures.differenceOfGaussians(input, 0, dogScale, 1, false).setName("DoG");
-            //return intensityMap;
-            return input;
+            if (intensityMap==null) intensityMap=IJSubtractBackground.filter(input, dogScale, true, true, true, false).setName("subLight");
+            return intensityMap;
+            
+            //return input;
         }
         private ObjectPopulation splitSegmentationMask(ImageInteger maskToSplit) {
             ObjectPopulation res = WatershedTransform.watershed(getIntensityMap(), maskToSplit, false, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation));
@@ -638,7 +640,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 if (maxVoxel==null) return false;
                 if (this.voxels.isEmpty()) return false;
                 // criterion on size
-                if (this.e1.getSize()<minSizeFusion || this.e2.getSize()<minSizeFusion) return true;
+                if (this.e1.getSize()<minSizeFusion || this.e2.getSize()<minSizeFusion) return true; // 
                 
                 // criterion angle between two fitted ellipses
                 // if aspect ratio is no elevated, angle is not taken into account

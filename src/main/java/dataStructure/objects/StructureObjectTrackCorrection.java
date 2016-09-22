@@ -27,7 +27,12 @@ import plugins.ObjectSplitter;
  * @author jollion
  */
 public interface StructureObjectTrackCorrection extends StructureObjectTracker {
-    public boolean hasTrackLinkError();
+    /**
+     * 
+     * @param prev check error at previous (if not at next) link
+     * @return 
+     */
+    public boolean hasTrackLinkError(boolean prev);
     /**
      * 
      * @return the next element of the track that contains a track link error, as defined by the tracker; null is there are no next track error;

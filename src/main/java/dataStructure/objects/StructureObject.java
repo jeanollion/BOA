@@ -439,8 +439,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return parentTrackHeadId;
     }
 
-    public boolean hasTrackLinkError() {
-        return TrackFlag.trackError.equals(flag);
+    public static final String trackErrorPrev = "TrackErrorPrev";
+    public static final String trackErrorNext = "TrackErrorNext";
+    @Override public boolean hasTrackLinkError(boolean prev) {
+        if (!this.hasMeasurements()) return false;
+        Object o = getMeasurements().getValue(prev ? trackErrorPrev : trackErrorNext);
+        if (o instanceof Boolean) return (Boolean)o;
+        else return false;
     }
     
     public boolean hasTrackLinkCorrection() {
@@ -518,7 +523,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
      */
     public StructureObjectTrackCorrection getNextTrackError() {
         StructureObject error = this.getNext();
-        while(error!=null && !error.hasTrackLinkError()) error=error.getNext();
+        while(error!=null && !error.hasTrackLinkError(true) && !error.hasTrackLinkError(false)) error=error.getNext();
         return error;
     }
     /**

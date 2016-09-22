@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import plugins.PluginFactory;
+import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.segmenters.BacteriaTrans;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.thresholders.ConstantValue;
@@ -56,9 +57,9 @@ public class TestProcessBacteriaPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         //int time =31;
-        int time =429;
-        int microChannel =0;
-        int field = 0;
+        int time =198;
+        int microChannel =2;
+        int field = 1;
         //String dbName = "boa_mutH_140115";
         String dbName = "boa_phase140115mutH";
         testSegBacteriesFromXP(dbName, field, time, microChannel);
