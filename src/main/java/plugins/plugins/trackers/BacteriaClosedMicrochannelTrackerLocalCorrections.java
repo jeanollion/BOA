@@ -155,6 +155,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         
         // 2) perform corrections idx-wise
         if (correctionStep) step();
+        if (true) return;
         int idxMax=0;
         int idxLim = populations[0].size();
         List<int[]> corrRanges = new ArrayList<>();
@@ -354,8 +355,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             TrackAttribute ta= getAttribute(timePoint, i);
             if (ta.prev==null || childrenPrev==null) children.get(i).resetTrackLinks();
             else {
-                if (ta.prev.idx>=childrenPrev.size()) logger.debug("ta: {}: prev not found", ta);
-                else childrenPrev.get(ta.prev.idx).setTrackLinks(children.get(i), true, !ta.trackHead, getFlag(ta));
+                //if (ta.prev.idx>=childrenPrev.size()) logger.error("t:{} PREV NOT FOUND ta: {}, prev {}, all prev: {}", ta.timePoint, ta, ta.prev, trackAttributes[ta.timePoint-1]);
+                //else 
+                childrenPrev.get(ta.prev.idx).setTrackLinks(children.get(i), true, !ta.trackHead, getFlag(ta));
             }
             Measurements m = children.get(i).getMeasurements();
             if (ta.sizeIncrementError) m.setValue("TrackErrorSizeIncrement", true);
@@ -471,7 +473,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         for (int i = 0; i<pop.size(); ++i) trackAttributes[timePoint].add(new TrackAttribute(pop.get(i), i, timePoint));
     }
 
-    protected void resetIndicies(int timePoint) {
+    protected void resetIndices(int timePoint) {
+        logger.debug("reset indices: {}", timePoint);
         if (trackAttributes[timePoint]!=null) for (int i = 0; i<trackAttributes[timePoint].size(); ++i) trackAttributes[timePoint].get(i).idx=i;
     }
     protected double defaultSizeIncrement() {
@@ -483,7 +486,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (tpMax>=populations.length) tpMax = populations.length-1;
         int res = 0;
         for (int t = tpMin; t<tpMax; ++t) {
-            TrackAssigner ta = new TrackAssigner(t).setAllowVerbose(false);
+            TrackAssigner ta = new TrackAssigner(t).verboseLevel(verboseLevelLimit);
             while(ta.nextTrack()) {res+=ta.getErrorCount();}
         }
         return res;
@@ -561,7 +564,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             double res = ArrayUtil.median(list);
             if (res<minGR) res = minGR;
             else if (res>maxGR) res = maxGR;
-            //if (debug && allowVerbose) logger.debug("getSizeIncrement for {}-{}: {} list:{}", timePoint, idx, res, list);
+            //if (debug) logger.debug("getSizeIncrement for {}-{}: {} list:{}", timePoint, idx, res, list);
             return res;
         }
         public List<TrackAttribute> getNext() {
@@ -577,21 +580,28 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             return timePoint+"-"+idx+"(s:"+getSize()+"/th:"+this.trackHead+"/div:"+division+"/nPrev:"+nPrev+")";
         }
     }
-    
+    static int verboseLevelLimit = 3;
+    private static enum AssignerMode {ADAPTATIVE, RANGE};
     protected class TrackAssigner {
         int timePoint;
         int idxPrev=0, idxPrevEnd=0, idxPrevLim, idx=0, idxEnd=0, idxLim;
         double sizePrev=0, size=0;
-        private boolean allowVerbose = true;
+        private int verboseLevel = 1;
+        AssignerMode mode = AssignerMode.RANGE;
         protected TrackAssigner(int timePoint) {
             if (timePoint<=0) throw new IllegalArgumentException("timePoint cannot be <=0");
             this.timePoint=timePoint;
             idxPrevLim = getObjects(timePoint-1).size();
             idxLim = getObjects(timePoint).size();
+            if (timePoint==1) mode = AssignerMode.RANGE;
             //logger.debug("ini assigner: {}", timePoint);
         }
-        private TrackAssigner setAllowVerbose(boolean allowVerbose) {
-            this.allowVerbose=allowVerbose;
+        private TrackAssigner verboseLevel(int verboseLevel) {
+            this.verboseLevel=verboseLevel;
+            return this;
+        }
+        private TrackAssigner setMode(AssignerMode mode) {
+            this.mode = mode;
             return this;
         }
         protected TrackAssigner duplicate() {
@@ -602,6 +612,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             res.idxPrevEnd=idxPrevEnd;
             res.size=size;
             res.sizePrev=sizePrev;
+            res.mode=mode;
+            res.verboseLevel=verboseLevel;
             return res;
         }
         protected boolean isValid() {
@@ -612,6 +624,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
          * @return true if there is at least 1 remaining object @ timePoint & timePoint -1
          */
         public boolean nextTrack() {
+            //if (debug && idxEnd!=0) logger.debug("t:{}, [{};{}]->[{};{}]", timePoint, idxPrev, idxPrevEnd-1, idx, idxEnd-1);
             if (idxPrevEnd==idxPrevLim || idxEnd==idxLim) return false;
             idxPrev = idxPrevEnd;
             sizePrev = getSize(timePoint-1, idxPrevEnd++);
@@ -623,15 +636,25 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         protected void incrementIfNecessary() {
             boolean change = true;
             while (change) {
-                if (size>=sizePrev) change=incrementPrev();
-                else change=increment();
+                double prevSI = mode==AssignerMode.ADAPTATIVE ? getPreviousSizeIncrement(false) : Double.NaN;
+                if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{} increment if necessary: PSI: {}, SI: {}, mode: {}", verboseLevel, prevSI, size/sizePrev, mode);
+                if (!Double.isNaN(prevSI)) {
+                    if (size/sizePrev<prevSI) change=increment(); // introduire notion d'erreur?
+                    else change=incrementPrev();
+                } else {
+                    if (size<sizePrev) change = increment();
+                    //to be continued....
+                }
+                
                 //if (!change) change=incrementPrevAndCur();
             }
         }
-
-        protected double getCurrentAssignmentScore() {
+        protected double getPreviousSizeIncrement(boolean returnDefault) {
             double prevSizeIncrement = getAttribute(timePoint-1, idxPrev).getLineageSizeIncrement();
-            if (Double.isNaN(prevSizeIncrement)) return Double.NaN;
+            if (Double.isNaN(prevSizeIncrement)) {
+                if (returnDefault) return defaultSizeIncrement();
+                else return Double.NaN;
+            }
             if (idxPrevEnd-idxPrev>1) {
                 double totalSize=getAttribute(timePoint-1, idxPrev).getSize();
                 prevSizeIncrement *= getAttribute(timePoint-1, idxPrev).getSize();
@@ -644,20 +667,26 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 }
                 prevSizeIncrement/=totalSize;
             }
-            if (debug && allowVerbose) logger.debug("assignement score: prevSI: {}, SI: {}", prevSizeIncrement, size/sizePrev);
-            return Math.abs(prevSizeIncrement - size/sizePrev);
+            return prevSizeIncrement;
+            
+        }
+        protected double[] getCurrentAssignmentScore() {
+            double prevSizeIncrement = mode==AssignerMode.ADAPTATIVE ? getPreviousSizeIncrement(false) : Double.NaN;
+            if (Double.isNaN(prevSizeIncrement)) return new double[]{this.getErrorCount(), Double.NaN};
+            if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{}, assignement score: prevSI: {}, SI: {}", verboseLevel, prevSizeIncrement, size/sizePrev);
+            return new double[]{this.getErrorCount(), Math.abs(prevSizeIncrement - size/sizePrev)};
         }
 
-        protected double getAssignmentScoreForWholeScenario(int idxPrevLimit, int idxLimit) { // will modify the current scenario!!
-            if (incompleteDivision()) return 0; 
-            double score = getCurrentAssignmentScore();
-            if (debug && allowVerbose) logger.debug("score for whole scenario: start: {}", score);
-            if (Double.isNaN(score)) return score;
-            while(nextTrack() && idxEnd<idxLim && idx<=idxLimit && idxPrev<=idxPrevLimit) { // worst case scenario cannot be the last one because of removed cells
-                //if (getAttribute(timePoint, idxEnd-1).touchEndOfChannel || getAttribute(timePoint-1, idxPrevEnd-1).touchEndOfChannel) continue; // do not use the last assignemt as cells can get out of the channel and score might be unrelevant
-                double newScore=getCurrentAssignmentScore();
-                score = Math.max(score, newScore); // maximum score = worst case scenario
-                if (debug && allowVerbose) logger.debug("score for whole scenario: new score for [{};{}[->[{};{}[={}, wcs: {}", idxPrev, idxPrevEnd, idx, idxEnd, newScore, score);
+        protected double[] getAssignmentScoreForWholeScenario(int idxPrevLimit, int idxLimit) { // will modify the current scenario!!
+            if (incompleteDivision()) return new double[]{0, 0}; 
+            double[] score = getCurrentAssignmentScore();
+            if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{}, t:{}, [{};{}]->[{};{}] score start:{}", verboseLevel, timePoint, idxPrev, idxPrevEnd-1, idx, idxEnd-1, score);
+            //if (Double.isNaN(score[1])) return score;
+            while(nextTrack() && idxEnd<idxLim && idxEnd<=idxLimit && idxPrevEnd<=idxPrevLimit) { // worst case scenario cannot be the last one because of removed cells
+                double[] newScore=getCurrentAssignmentScore();
+                score[1] = Math.max(score[1], newScore[1]); // maximum score = worst case scenario
+                score[0]+=newScore[0];
+                if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{}score for whole scenario: new score for [{};{}]->[{};{}]={}, wcs: {}", verboseLevel, idxPrev, idxPrevEnd-1, idx, idxEnd-1, newScore, score);
             }
             return score;
         }
@@ -669,19 +698,19 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             while(idxPrevEnd<idxPrevLim) {
                 double newSizePrev = sizePrev + getSize(timePoint-1, idxPrevEnd);
                 if (!canMerge(idxPrev, idxPrevEnd+1, timePoint-1)) return false;
-                if (debug && allowVerbose) logger.debug("t: {}, increment prev: [{};{}[->[{};{}[ , old size prev: {} (size€[{};{}]) new size prev: {} (size€[{};{}]), size: {}, will increment: {}", timePoint, idxPrev, idxPrevEnd, idx, idxEnd,sizePrev, sizePrev*minGR, sizePrev*maxGR, newSizePrev, newSizePrev*minGR, newSizePrev*maxGR, size, sizePrev * maxGR < size || newSizePrev * minGR <= size  );
+                if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{}, t: {}, increment prev: [{};{}][->[{};{}] , old size prev: {} (size€[{};{}]) new size prev: {} (size€[{};{}]), size: {}, will increment: {}", verboseLevel, timePoint, idxPrev, idxPrevEnd-1, idx, idxEnd-1,sizePrev, sizePrev*minGR, sizePrev*maxGR, newSizePrev, newSizePrev*minGR, newSizePrev*maxGR, size, sizePrev * maxGR < size || newSizePrev * minGR <= size  );
                 if (sizePrev * maxGR < size || newSizePrev * minGR < size) { // previous is too small compared to current -> add another second one, so that is is not too big
                     if (verifyInequality()) { // if the current assignment already verify the inequality, increment only if there is improvement
-                        TrackAssigner newScenario = duplicate().setAllowVerbose(false);
+                        TrackAssigner newScenario = duplicate().verboseLevel(verboseLevel+1).setMode(mode);
                         newScenario.idxPrevEnd+=1;
                         newScenario.sizePrev=newSizePrev;
-                        TrackAssigner currenScenario = duplicate().setAllowVerbose(false);
-                        if (debug && allowVerbose) logger.debug("[{};{}[->[{};{}[: getting score for current scenario...", idxPrev, idxPrevEnd, idx, idxEnd);
-                        double scoreCur = currenScenario.getAssignmentScoreForWholeScenario(newScenario.idxPrevEnd, idxLim);
-                        if (debug && allowVerbose) logger.debug("[{};{}[->[{};{}[: getting score for other scenario...", idxPrev, idxPrevEnd, idx, idxEnd);
-                        double scoreNew = newScenario.getAssignmentScoreForWholeScenario(newScenario.idxPrevEnd, idxLim);
-                        if (debug && allowVerbose) logger.debug("[{};{}[->[{};{}[: comparison of two solution for prevInc: old {} new: {}", idxPrev, idxPrevEnd, idx, idxEnd, scoreCur, scoreNew);
-                        if (Double.isNaN(scoreNew) || scoreCur<scoreNew) return change;
+                        TrackAssigner currenScenario = duplicate().verboseLevel(verboseLevel+1).setMode(mode);
+                        if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{}, [{};{}]->[{};{}]: getting score for current scenario...", verboseLevel, idxPrev, idxPrevEnd-1, idx, idxEnd-1);
+                        double[] scoreCur = currenScenario.getAssignmentScoreForWholeScenario(newScenario.idxPrevEnd, idxLim);
+                        if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{}, [{};{}]->[{};{}]: getting score for other scenario...", verboseLevel, idxPrev, idxPrevEnd-1, idx, idxEnd-1);
+                        double[] scoreNew = newScenario.getAssignmentScoreForWholeScenario(newScenario.idxPrevEnd, idxLim);
+                        if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{}, [{};{}]->[{};{}]: comparison of two solution for prevInc: old {} new: {}", verboseLevel, idxPrev, idxPrevEnd-1, idx, idxEnd-1, scoreCur, scoreNew);
+                        if (compareScores(scoreCur, scoreNew)<=0) return change;
                     }
                     sizePrev=newSizePrev;
                     ++idxPrevEnd;
@@ -690,44 +719,46 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             }
             return change;
         }
+        
         protected boolean increment() {
             boolean change = false;
-            while(idxEnd<idxLim && size<sizePrev) {
+            while(idxEnd<idxLim) {
                 double newSize = size + getSize(timePoint, idxEnd);
-                if (debug && allowVerbose) logger.debug("t: {}, increment: [{};{}[->[{};{}[, old size: {} new size: {}, size prev: {}, theo size€[{};{}], will increment: {}", timePoint, idxPrev, idxPrevEnd, idx, idxEnd,size, newSize, sizePrev, sizePrev*minGR, sizePrev*maxGR, sizePrev * minGR > size && sizePrev * maxGR > newSize );
+                if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{}, t: {}, increment: [{};{}]->[{};{}][, old size: {} new size: {}, size prev: {}, theo size€[{};{}], will increment: {}", verboseLevel, timePoint, idxPrev, idxPrevEnd-1, idx, idxEnd-1,size, newSize, sizePrev, sizePrev*minGR, sizePrev*maxGR, sizePrev * minGR > size && sizePrev * maxGR > newSize );
                 if (sizePrev * div > size && sizePrev * maxGR > newSize) { // division criterion + don't grow too much. Div criterio is mostly used at 1rst slide, afterwards the adaptative incrementSize is more useful 
                     size=newSize;
                     ++idxEnd;
                     change = true;
                 } else if (sizePrev * maxGR > newSize) { // don't grow too much
-                    TrackAssigner newScenario = duplicate().setAllowVerbose(false);
+                    TrackAssigner newScenario = duplicate().verboseLevel(verboseLevel+1).setMode(mode);
                     newScenario.idxEnd+=1;
                     newScenario.size=newSize;
-                    TrackAssigner currenScenario = duplicate().setAllowVerbose(false);
-                    if (debug && allowVerbose) logger.debug("[{};{}[->[{};{}[: getting score for current scenario...", idxPrev, idxPrevEnd, idx, idxEnd);
-                    double scoreCur = currenScenario.getAssignmentScoreForWholeScenario(idxPrevLim, newScenario.idxEnd);
-                    if (debug && allowVerbose) logger.debug("[{};{}[->[{};{}[: getting score for other scenario...", idxPrev, idxPrevEnd, idx, idxEnd);
-                    double scoreNew = newScenario.getAssignmentScoreForWholeScenario(idxPrevLim, newScenario.idxEnd);
-                    if (debug && allowVerbose) logger.debug("[{};{}[->[{};{}[: comparison of two solution for curInc: old {} new: {}", idxPrev, idxPrevEnd, idx, idxEnd, scoreCur, scoreNew);
-                    if (Double.isNaN(scoreNew) || scoreCur<scoreNew) return change;
+                    TrackAssigner currenScenario = duplicate().verboseLevel(verboseLevel+1).setMode(mode);
+                    if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{}, [{};{}]->[{};{}]: getting score for current scenario...", verboseLevel, idxPrev, idxPrevEnd-1, idx, idxEnd-1);
+                    double[] scoreCur = currenScenario.getAssignmentScoreForWholeScenario(idxPrevLim, newScenario.idxEnd);
+                    if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{}, [{};{}]->[{};{}]: getting score for other scenario...", verboseLevel, idxPrev, idxPrevEnd-1, idx, idxEnd-1);
+                    double[] scoreNew = newScenario.getAssignmentScoreForWholeScenario(idxPrevLim, newScenario.idxEnd);
+                    if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{}, [{};{}]->[{};{}]: comparison of two solution for curInc: old {} new: {}", verboseLevel, idxPrev, idxPrevEnd-1, idx, idxEnd-1, scoreCur, scoreNew);
+                    if (compareScores(scoreCur, scoreNew)<=0) return change;
                     else {
                         size=newSize;
                         ++idxEnd;
                         change = true;
                     }
-                } else if (sizePrev * minGR > size && idxPrevEnd<idxPrevLim && canMerge(idxPrev, idxPrevEnd+1, timePoint-1) ) { // cannot increment because grow too much but need to: increment & increment prev. REMOVE AND PUT IN OTHER METHOD?s
-                    TrackAssigner newScenario = duplicate().setAllowVerbose(false);
+                } else if (mode == AssignerMode.ADAPTATIVE && sizePrev * minGR > size && idxPrevEnd<idxPrevLim && canMerge(idxPrev, idxPrevEnd+1, timePoint-1) ) { // cannot increment because grow too much but need to: increment & increment prev. REMOVE AND PUT IN OTHER METHOD?s
+                    TrackAssigner newScenario = duplicate().verboseLevel(verboseLevel+1).setMode(mode);;
                     newScenario.idxEnd+=1;
                     newScenario.idxPrevEnd+=1;
                     newScenario.size=newSize;
                     newScenario.sizePrev+=getSize(timePoint-1, idxPrevEnd);
-                    TrackAssigner currenScenario = duplicate().setAllowVerbose(false);
-                    if (debug && allowVerbose) logger.debug("[{};{}[->[{};{}[: getting score for current scenario...", idxPrev, idxPrevEnd, idx, idxEnd);
-                    double scoreCur = currenScenario.getAssignmentScoreForWholeScenario(idxPrevLim, newScenario.idxEnd);
-                    if (debug && allowVerbose) logger.debug("[{};{}[->[{};{}[: getting score for other scenario... ", idxPrev, idxPrevEnd, idx, idxEnd);
-                    double scoreNew = newScenario.getAssignmentScoreForWholeScenario(idxPrevLim, newScenario.idxEnd);
-                    if (debug && allowVerbose) logger.debug("[{};{}[->[{};{}[: comparison of two solution for prevInc&curInc: old {} new: {}", idxPrev, idxPrevEnd, idx, idxEnd, scoreCur, scoreNew);
-                    if (Double.isNaN(scoreNew) || scoreCur<scoreNew+maxSizeIncrementError) return change;
+                    TrackAssigner currenScenario = duplicate().verboseLevel(verboseLevel+1).setMode(mode);;
+                    if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{}, [{};{}]->[{};{}]: getting score for current scenario...", verboseLevel, idxPrev, idxPrevEnd-1, idx, idxEnd-1);
+                    double[] scoreCur = currenScenario.getAssignmentScoreForWholeScenario(idxPrevLim, newScenario.idxEnd);
+                    if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{}, [{};{}]->[{};{}]: getting score for other scenario... ", verboseLevel, idxPrev, idxPrevEnd-1, idx, idxEnd-1);
+                    double[] scoreNew = newScenario.getAssignmentScoreForWholeScenario(idxPrevLim, newScenario.idxEnd);
+                    if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{}, [{};{}]->[{};{}]: comparison of two solution for prevInc&curInc: old {} new: {}", verboseLevel, idxPrev, idxPrevEnd-1, idx, idxEnd-1, scoreCur, scoreNew);
+                    scoreNew[1]+=maxSizeIncrementError; // increment only if there is a significant amelioration
+                    if (compareScores(scoreCur, scoreNew)<=0) return change;
                     else { // increment only if there is a significant amelioration
                         size=newSize;
                         ++idxEnd;
@@ -739,6 +770,16 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 else return change;
             }
             return change;
+        }
+        private int compareScores(double[] s1, double[] s2) { // 0 = nb errors / 1 = score value. return -1 if first has less errors & lower score
+            if (mode==AssignerMode.RANGE) return Double.compare(s1[0], s2[0]);
+            else {
+                if (s1[0]<s2[0]) return -1;
+                else if (s1[0]>s2[0]) return 1;
+                else if (s1[1]<s2[1]) return -1;
+                else if (s1[1]>s2[1]) return 1;
+                else return 0;
+            }
         }
         /*protected boolean incrementPrevAndCur() { // CONDITIONS??
             boolean change = false;
@@ -783,7 +824,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 return !verifyInequality();
             } else {
                 double sizeIncrement = size/sizePrev;
-                if (debug && allowVerbose) logger.debug("sizeIncrementError check: {}, SI:{} lineage: {}, error: {}", this, sizeIncrement, prevSizeIncrement, Math.abs(prevSizeIncrement-sizeIncrement));
+                if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{}, sizeIncrementError check: {}, SI:{} lineage: {}, error: {}", this, verboseLevel, sizeIncrement, prevSizeIncrement, Math.abs(prevSizeIncrement-sizeIncrement));
                 return Math.abs(prevSizeIncrement-sizeIncrement)>maxSizeIncrementError;
             }
         }
@@ -920,7 +961,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                         taCurDiv.sizeIncrementError=taCur.sizeIncrementError;
                     }
                 }
-                if (debug && allowVerbose) logger.debug("assignment {} with {} objects, assign {}, div:{}", nPrev, nCur, score<scoreEnd1&score<scoreEnd2 ? "first" : "last", taCurDiv!=null);
+                if (debug && verboseLevel<verboseLevelLimit) logger.debug("assignment {} with {} objects, assign {}, div:{}", nPrev, nCur, score<scoreEnd1&score<scoreEnd2 ? "first" : "last", taCurDiv!=null);
                 dup.assignCurrent(noticeAll); // recursive call
             }
         }
@@ -930,7 +971,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
          * @return minimal/maximal+1 timePoint where correction has been performed
          */
         public int[] performCorrection() {
-            if (debugCorr && allowVerbose) logger.debug("t: {}: performing correction, idxPrev: {}, idxPrevEnd: {}", timePoint, idxPrev, idxPrevEnd);
+            if (debugCorr && verboseLevel<verboseLevelLimit) logger.debug("t: {}: performing correction, idxPrev: {}, idxPrevEnd: {}", timePoint, idxPrev, idxPrevEnd);
             if (idxEnd-idx==1) return performCorrectionSingleSplitOrMerge();
             else if (idxPrevEnd-idxPrev>1) return performCorrectionMultipleObjects();
             else return null;
@@ -965,11 +1006,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 saveMerge = new ObjectAndAttributeSave(timePoint-merge.size(), timePoint-1);
                 saveCur.restore(timePoint-merge.size(), timePoint-1);
             }
-            if (debugCorr && allowVerbose) logger.debug("t: {}: performing correction: errors: {}, merge scenario length: {}, cost: {}, errors: {}, split scenario: length {}, cost: {}, errors: {}", timePoint, currentErrors, merge.size(), mergeCost, errorsMerge, split.size(), splitCost, errorsSplit);
-            if (saveMerge!=null && errorsMerge<currentErrors && (errorsMerge<errorsSplit || (errorsMerge==errorsSplit && mergeCost<splitCost))) {
+            if (debugCorr && verboseLevel<verboseLevelLimit) logger.debug("t: {}: performing correction: errors: {}, merge scenario length: {}, cost: {}, errors: {}, split scenario: length {}, cost: {}, errors: {}", timePoint, currentErrors, merge.size(), mergeCost, errorsMerge, split.size(), splitCost, errorsSplit);
+            if (saveMerge!=null && errorsMerge<currentErrors && (errorsMerge<errorsSplit && mergeCost<splitCost || (errorsMerge==errorsSplit && mergeCost<splitCost))) {
                 saveMerge.restoreAll();
                 return new int[]{Math.max(1, timePoint-merge.size()), Math.min(populations.length-1, timePoint+1)};
-            } else if (saveSplit!=null && errorsSplit<currentErrors && (errorsSplit<errorsMerge || (errorsSplit==errorsMerge && splitCost<mergeCost))) {
+            } else if (saveSplit!=null && errorsSplit<currentErrors && (errorsSplit<errorsMerge && splitCost<mergeCost || (errorsSplit==errorsMerge && splitCost<mergeCost))) {
                 saveSplit.restoreAll();
                 return new int[]{timePoint, Math.min(populations.length-1, timePoint+split.size()+1)};
             } else return null;
@@ -1009,11 +1050,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     saveAfter= new ObjectAndAttributeSave(timePoint, timePoint);
                     saveCur.restore(timePoint);
                 }
-                if (debugCorr && allowVerbose) logger.debug("split&merge: errors current: {}, errors sc.tp-1: {}, cost: {}, errors sc.tp: {}, cost{}",currentErrors, errorsBefore, before.cost, errorsAfter, after.cost );
-                if (saveBefore!=null && errorsBefore<currentErrors && (errorsBefore<errorsAfter || (errorsBefore==errorsAfter && before.cost<after.cost))) {
+                if (debugCorr && verboseLevel<verboseLevelLimit) logger.debug("split&merge: errors current: {}, errors sc.tp-1: {}, cost: {}, errors sc.tp: {}, cost{}",currentErrors, errorsBefore, before.cost, errorsAfter, after.cost );
+                if (saveBefore!=null && errorsBefore<currentErrors && (errorsBefore<errorsAfter && before.cost<after.cost || (errorsBefore==errorsAfter && before.cost<after.cost))) {
                     saveBefore.restore(timePoint-1);
                     return new int[]{Math.max(1, timePoint-1), timePoint};
-                } else if (saveAfter!=null && errorsAfter<currentErrors && (errorsAfter<errorsBefore || (errorsBefore==errorsAfter && after.cost<before.cost))) {
+                } else if (saveAfter!=null && errorsAfter<currentErrors && (errorsAfter<errorsBefore && after.cost<before.cost || (errorsBefore==errorsAfter && after.cost<before.cost))) {
                     saveAfter.restore(timePoint);
                     return new int[]{Math.max(1, timePoint-1), Math.min(populations.length-1, timePoint+1)};
                 } else return null;
@@ -1045,6 +1086,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             for (int i = 0; i<objects.length; i++) {
                 populations[i+tpMin] = new ArrayList(objects[i]);
                 trackAttributes[i+tpMin] = new ArrayList(ta[i]);
+                resetIndices(i+tpMin);
             }
         }
         public boolean restore(int tMin, int tMax) {
@@ -1054,6 +1096,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             for (int t = tMin; t<=tMax; ++t) {
                 populations[t] = new ArrayList(objects[t-tpMin]);
                 trackAttributes[t] = new ArrayList(ta[t-tpMin]);
+                resetIndices(t);
             }
             return true;
         }
@@ -1061,6 +1104,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (t<tpMin || t>=tpMin+objects.length) return false;
             populations[t] = new ArrayList(objects[t-tpMin]);
             trackAttributes[t] = new ArrayList(ta[t-tpMin]);
+            resetIndices(t);
             return true;
         }
     }
@@ -1139,7 +1183,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             Object3D merged = new Object3D(vox, idxMin+1, o.getScaleXY(), o.getScaleZ());
             populations[timePoint].add(idxMin, merged);
             trackAttributes[timePoint].add(idxMin, new TrackAttribute(merged, idxMin, timePoint));
-            resetIndicies(timePoint);
+            resetIndices(timePoint);
         }
     }
     
@@ -1177,7 +1221,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 trackAttributes[timePoint].add(curIdx, new TrackAttribute(splitObject, curIdx, timePoint).setFlag(Flag.correctionSplit));
                 ++curIdx;
             }
-            resetIndicies(timePoint);
+            resetIndices(timePoint);
         }
     }
     protected class SplitAndMerge extends CorrectionScenario {
@@ -1268,7 +1312,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     }
                 }
             }
-            resetIndicies(timePoint);
+            resetIndices(timePoint);
         }
         
     }

@@ -107,7 +107,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     
     
     //NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 1, 6);
-    NumberParameter openRadius = new BoundedNumberParameter("Open Radius", 1, 3, 0, null); // 2-4
+    NumberParameter openRadius = new BoundedNumberParameter("Open Radius", 1, 2, 0, null); // 2-4
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 20, 5, null);
     NumberParameter subBackScale = new BoundedNumberParameter("Subtract Background scale", 1, 10, 0.1, null);
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
@@ -130,7 +130,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     */
     NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 2, 0, null);
     NumberParameter minSizeFusion = new BoundedNumberParameter("Minimum Object size (fusion)", 0, 50, 5, null);
-    GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSizeFusion, contactLimit);
+    NumberParameter minSizeChannelEnd = new BoundedNumberParameter("Minimum Object size (end of channel)", 0, 150, 5, null);
+    GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSizeFusion, minSizeChannelEnd, contactLimit);
     
     Parameter[] parameters = new Parameter[]{backgroundSeparation, thicknessParameters, curvatureParameters, objectParameters};
         
@@ -234,6 +235,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         
         ObjectPopulation pop = getSeparatedObjects(pv, pv.getSegmentationMask(), minSizePropagation.getValue().intValue(), 0, debug);
         if (contactLimit.getValue().intValue()>0) pop.filter(new ObjectPopulation.ContactBorder(contactLimit.getValue().intValue(), parent.getMask(), ObjectPopulation.ContactBorder.Border.YDown));
+        
+        if (pop.getObjects().get(pop.getObjects().size()-1).getSize()<minSizeChannelEnd.getValue().intValue()) pop.getObjects().remove(pop.getObjects().size()-1); // remove small objects at the end of channel? // si plusieurs somme des tailles inférieurs?
         return pop;
     }
     

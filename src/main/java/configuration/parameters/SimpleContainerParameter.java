@@ -77,7 +77,8 @@ public abstract class SimpleContainerParameter implements ContainerParameter, Po
     public void setContentFrom(Parameter other) {
         if (other instanceof SimpleContainerParameter) {
             SimpleContainerParameter otherP = (SimpleContainerParameter) other;
-            for (int i = 0; i<getChildren().size(); i++) children.get(i).setContentFrom((Parameter)otherP.getChildAt(i));
+            if (getChildren().size()==otherP.getChildCount()) for (int i = 0; i<getChildren().size(); i++) children.get(i).setContentFrom((Parameter)otherP.getChildAt(i));
+            //else return false;
         } else {
             throw new IllegalArgumentException("wrong parameter type");
         }
