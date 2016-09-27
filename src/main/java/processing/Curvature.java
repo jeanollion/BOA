@@ -64,10 +64,10 @@ public class Curvature {
         }
         return new KDTree<Double>(values, points);
     }
-    public static void displayCurvature(ImageInteger mask, int scale_cur) {
+    public static ImageFloat getCurvatureMask(ImageInteger mask, int scale_cur) {
         KDTree<Double> tree = computeCurvature(mask, scale_cur);
         ImageFloat curv = getCurvatureMask(mask, tree).setName("Curv: "+scale_cur);
-        new IJImageDisplayer().showImage(curv);
+        return curv;
     }
     public static ImageFloat getCurvatureMask(ImageProperties p, KDTree<Double> points) {
         ImageFloat res = new ImageFloat("Curvature", p);
@@ -260,6 +260,7 @@ public class Curvature {
          * @return curvature value
          */
         public double curvature(int iref, int scale, boolean fourier) {
+            if (NPT<=scale) return 0;
             double da;
             double a;
             Point2d U;

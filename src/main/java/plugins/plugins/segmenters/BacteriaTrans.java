@@ -105,11 +105,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     
     // configuration-related attributes
     
-    
     //NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 1, 6);
-    NumberParameter openRadius = new BoundedNumberParameter("Open Radius", 1, 2, 0, null); // 2-4
+    NumberParameter openRadius = new BoundedNumberParameter("Open Radius", 1, 0, 0, null); // 0-3
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 20, 5, null);
-    NumberParameter subBackScale = new BoundedNumberParameter("Subtract Background scale", 1, 10, 0.1, null);
+    NumberParameter subBackScale = new BoundedNumberParameter("Subtract Background scale", 1, 2, 0.1, null);
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
     PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false); //new ConstantValue(-400)
     PluginParameter<Thresholder> thresholdContrast = new PluginParameter<Thresholder>("Threshold for false positive", Thresholder.class, new ConstantValue(250), false);
@@ -236,7 +235,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         ObjectPopulation pop = getSeparatedObjects(pv, pv.getSegmentationMask(), minSizePropagation.getValue().intValue(), 0, debug);
         if (contactLimit.getValue().intValue()>0) pop.filter(new ObjectPopulation.ContactBorder(contactLimit.getValue().intValue(), parent.getMask(), ObjectPopulation.ContactBorder.Border.YDown));
         
-        if (pop.getObjects().get(pop.getObjects().size()-1).getSize()<minSizeChannelEnd.getValue().intValue()) pop.getObjects().remove(pop.getObjects().size()-1); // remove small objects at the end of channel? // si plusieurs somme des tailles inférieurs?
+        if (!pop.getObjects().isEmpty()&& pop.getObjects().get(pop.getObjects().size()-1).getSize()<minSizeChannelEnd.getValue().intValue()) pop.getObjects().remove(pop.getObjects().size()-1); // remove small objects at the end of channel? // si plusieurs somme des tailles inférieurs?
         return pop;
     }
     
@@ -337,9 +336,12 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             result.add(o1);
             result.add(o2);
             InterfaceBT inter = getInterface(o1, o2);
+            
             inter.updateSortValue();
             double cost = getCost(inter.curvatureValue, curvatureThreshold.getValue().doubleValue(), false); 
-            //logger.debug("split: intersize: {}, curvature {}, threshold: {}, cost: {}", inter.voxels.size(), inter.curvatureValue, curvatureThreshold.getValue().doubleValue(), cost);
+            new IJImageDisplayer().showImage(pop.getLabelMap().duplicate("split"));
+            new IJImageDisplayer().showImage(inter.getCurvatureMask());
+            logger.debug("split: intersize: {}, curvature {}, threshold: {}, cost: {}", inter.voxels.size(), inter.curvatureValue, curvatureThreshold.getValue().doubleValue(), cost);
             pop.translate(o.getBounds(), true);
             return cost;
         }
@@ -534,13 +536,13 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 if (Double.isNaN(threshold)) throw new Error("Threshold not set");
                 IJImageDisplayer disp = debug?new IJImageDisplayer():null;
                 ImageInteger thresh = ImageOperations.threshold(getIntensityMap(), threshold, false, false);
-                /*
-                no morphology filters needed with the new subtract background step
-                if (debug) disp.showImage(thresh.duplicate("before open"));
-                //Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(openRadius, openRadius, thresh));
-                //if (debug) disp.showImage(thresh.duplicate("after open / before close"));
-                //thresh = Filters.binaryClose(thresh, Filters.getNeighborhood(1, 1, thresh));
-                if (debug) disp.showImage(thresh.duplicate("after close"));*/
+                if (openRadius>=1) {
+                    if (debug) disp.showImage(thresh.duplicate("before open"));
+                    Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(openRadius, openRadius, thresh));
+                    if (debug) disp.showImage(thresh.duplicate("after open / before close"));
+                    thresh = Filters.binaryClose(thresh, Filters.getNeighborhood(openRadius, openRadius, thresh));
+                    if (debug) disp.showImage(thresh.duplicate("after close"));
+                } else Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(1, 1, thresh)); // remove pixels only connected by diagonal -> otherwise curvature cannot be computed
                 ImageOperations.and(mask, thresh, thresh);
                 ObjectPopulation pop1 = new ObjectPopulation(thresh, false);
                 pop1.filterAndMergeWithConnected(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
@@ -593,6 +595,9 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 }
                 return joinedMask;
             }
+            public ImageFloat getCurvatureMask() {
+                return Curvature.getCurvatureMask(getJoinedMask(), curvatureScale);
+            }
             public KDTree<Double> getCurvature() {
                 if (curvature==null) {
                     setBorderVoxels();
@@ -603,7 +608,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                         for (Voxel v : borderVoxels) m.setPixelWithOffset(v.x, v.y, v.z, 3);
                         for (Voxel v : borderVoxels2) m.setPixelWithOffset(v.x, v.y, v.z, 4);
                         new IJImageDisplayer().showImage(m);
-                        Curvature.displayCurvature(m, curvatureScale);
+                        ImageFloat curv =Curvature.getCurvatureMask(m, curvatureScale);
+                        new IJImageDisplayer().showImage(curv);
                     }
                 }
                 return curvature;
