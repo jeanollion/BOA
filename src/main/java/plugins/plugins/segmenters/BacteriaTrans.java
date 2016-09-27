@@ -534,12 +534,13 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 if (Double.isNaN(threshold)) throw new Error("Threshold not set");
                 IJImageDisplayer disp = debug?new IJImageDisplayer():null;
                 ImageInteger thresh = ImageOperations.threshold(getIntensityMap(), threshold, false, false);
+                /*
+                no morphology filters needed with the new subtract background step
                 if (debug) disp.showImage(thresh.duplicate("before open"));
-                Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(openRadius, openRadius, thresh));
-                
-                if (debug) disp.showImage(thresh.duplicate("after open / before close"));
-                thresh = Filters.binaryClose(thresh, Filters.getNeighborhood(1, 1, thresh));
-                if (debug) disp.showImage(thresh.duplicate("after close"));
+                //Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(openRadius, openRadius, thresh));
+                //if (debug) disp.showImage(thresh.duplicate("after open / before close"));
+                //thresh = Filters.binaryClose(thresh, Filters.getNeighborhood(1, 1, thresh));
+                if (debug) disp.showImage(thresh.duplicate("after close"));*/
                 ImageOperations.and(mask, thresh, thresh);
                 ObjectPopulation pop1 = new ObjectPopulation(thresh, false);
                 pop1.filterAndMergeWithConnected(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
