@@ -35,6 +35,7 @@ public interface SegmenterSplitAndMerge extends Segmenter {
     public double split(Image input, Object3D o, List<Object3D> result);
     /**
      * Compute Merge Cost & removes from the list objects that are not in contact with the first object from the list
+     * @param input
      * @param objects objects to be merged
      * @return a value representing the cost of merging the objects, NaN if none of the objects are in contact. 
      */

@@ -1438,17 +1438,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         }
         if (segmentAndTrack || trackOnly) {
             int[] selectedStructures = this.getSelectedStructures(true);
-            List<StructureObject> roots = Processor.getOrCreateRootTrack(db.getDao(fieldName));
-            if (roots==null) {
-                logger.error("Field: {} no pre-processed image found", fieldName);
-                return;
-            }
-            logger.debug("roots: {}", roots.size());
-            for (int s : selectedStructures) {
-                if (!trackOnly) logger.info("Segmentation & Tracking: Field: {}, Structure: {}", fieldName, s);
-                else logger.info("Tracking: Field: {}, Structure: {}", fieldName, s);
-                Processor.executeProcessingScheme(roots, s, trackOnly, deleteObjects);
-            }
+            Processor.processAndTrackStructures(db.getDao(fieldName), true, trackOnly, selectedStructures);
+            populateSelections();
         }
         if (measurements) {
             logger.info("Measurements: Field: {}", fieldName);

@@ -60,12 +60,22 @@ public class IJAutoThresholder implements Thresholder {
         return convertHisto256Threshold(thld, input, mask, limits);
     }
     
+    public static double runThresholder(Method method, int[] histogram, double[] minAndMax, boolean byteImage) {
+        AutoThresholder at = new AutoThresholder();
+        double thld = at.getThreshold(method, histogram);
+        if (byteImage) return thld;
+        else return convertHisto256Threshold(thld, minAndMax);
+    }
+    
+    public static double convertHisto256Threshold(double threshold256, double[] minAndMax) {
+        return threshold256 * (minAndMax[1] - minAndMax[0]) / 256.0 + minAndMax[0];
+    }
+    
     public static double convertHisto256Threshold(double threshold256, Image input, ImageMask mask, BoundingBox limits) {
         if (mask == null) mask = new BlankMask("", input);
         double[] mm = input.getMinAndMax(mask, limits);
-        double binSize = (input instanceof ImageByte) ? 1 : (mm[1] - mm[0]) / 256.0;
-        double min = (input instanceof ImageByte) ? 0 : mm[0];
-        return threshold256 * binSize + min;
+        if (input instanceof ImageByte) return threshold256;
+        else  return convertHisto256Threshold(threshold256, mm);
     }
     
     public Parameter[] getParameters() {

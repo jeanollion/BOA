@@ -243,17 +243,17 @@ public abstract class Image implements ImageProperties {
     abstract int[] getHisto256(double min, double max, ImageMask mask, BoundingBox limit);
     /**
      * 
-     * @param image
+     * @param images
      * @param minAndMax the method will output min and max values in this array, except if minAndMax[0]<minAndMax[1] -> in this case will use these values for histogram
      * @return 
      */
     public static int[] getHisto256(List<Image> images, double[] minAndMax) {
         if ( !(minAndMax[0]<minAndMax[1])) {
-        for (Image i : images) {
-            double[] mm = i.getMinAndMax(null);
-            if (minAndMax[0]>mm[0]) minAndMax[0]=mm[0];
-            if (minAndMax[1]<mm[1]) minAndMax[1]=mm[1];
-        }
+            for (Image i : images) {
+                double[] mm = i.getMinAndMax(null);
+                if (minAndMax[0]>mm[0]) minAndMax[0]=mm[0];
+                if (minAndMax[1]<mm[1]) minAndMax[1]=mm[1];
+            }
         }
         int[] histo= new int[256];
         for (Image im : images) {

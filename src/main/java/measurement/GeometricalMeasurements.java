@@ -21,6 +21,7 @@ import dataStructure.objects.Object3D;
 import dataStructure.objects.Voxel;
 import image.Image;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -35,7 +36,7 @@ public class GeometricalMeasurements {
     }
     public static double getFeretMax(Object3D o) {
         double d2Max = 0;
-        ArrayList<Voxel> list = o.getContour();
+        List<Voxel> list = o.getContour();
         int voxCount = list.size();
         double scaleXY = o.getScaleXY();
         double scaleZ = o.getScaleZ();

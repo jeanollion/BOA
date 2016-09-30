@@ -127,24 +127,31 @@ public class Processor {
             deleteObjects=false;
         }
         for (String fieldName : xp.getFieldsAsString()) {
-            processAndTrackStructures(db.getDao(fieldName), deleteObjects, structures);
+            processAndTrackStructures(db.getDao(fieldName), deleteObjects, false, structures);
             db.getDao(fieldName).clearCache();
             db.getExperiment().getMicroscopyField(fieldName).flushImages();
         }
     }
     
-    public static void processAndTrackStructures(ObjectDAO dao, boolean deleteObjects, int... structures) {
+    public static void processAndTrackStructures(ObjectDAO dao, boolean deleteObjects, boolean trackOnly, int... structures) {
         Experiment xp = dao.getExperiment();
         if (deleteObjects) {
             if (structures.length==0 || structures.length==xp.getStructureCount()) dao.deleteAllObjects();
             else dao.deleteObjectsByStructureIdx(structures);
         } 
         List<StructureObject> root = getOrCreateRootTrack(dao);
+        if (root==null) {
+            logger.error("Field: {} no pre-processed image found", dao.getFieldName());
+            return;
+        }
         if (structures.length==0) structures=xp.getStructuresInHierarchicalOrderAsArray();
         for (int s: structures) {
-            executeProcessingScheme(root, s, false, false);
+            if (!trackOnly) logger.info("Segmentation & Tracking: Field: {}, Structure: {}", dao.getFieldName(), s);
+            else logger.info("Tracking: Field: {}, Structure: {}", dao.getFieldName(), s);
+            executeProcessingScheme(root, s, trackOnly, false);
             System.gc();
         }
+        
     }
     
     public static void executeProcessingScheme(List<StructureObject> parentTrack, final int structureIdx, final boolean trackOnly, final boolean deleteChildren) {

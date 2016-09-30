@@ -321,6 +321,8 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                             root.generator.controller.updateParentTracks(root.generator.controller.getTreeIdx(trackHead.getStructureIdx()));
                             // reload objects
                             ImageWindowManagerFactory.getImageManager().reloadObjects(trackHead, structureIdx, true);
+                            // reload selection
+                            GUI.getInstance().populateSelections();
                         }
                     }
                 );

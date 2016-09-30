@@ -167,9 +167,7 @@ public class ObjectPopulation {
     }
     
     public ImageInteger getLabelMap() {
-        if (labelImage == null) {
-            constructLabelImage();
-        }
+        if (labelImage == null) constructLabelImage();
         return labelImage;
     }
     
@@ -191,9 +189,15 @@ public class ObjectPopulation {
         } else {
             labelImage = ImageInteger.createEmptyLabelImage("labelImage", objects.size(), getImageProperties());
             //logger.debug("creating image: properties: {} imagetype: {} number of objects: {}", properties, labelImage.getClass(), objects.size());
-            for (Object3D o : objects) {
-                draw(o, o.getLabel());
-            }
+            for (Object3D o : objects) draw(o, o.getLabel());
+        }
+    }
+    
+    public void reDrawLabelMap() {
+        if (labelImage==null) constructLabelImage();
+        else {
+            ImageOperations.fill(labelImage, 0, null);
+            for (Object3D o : objects) draw(o, o.getLabel());
         }
     }
     

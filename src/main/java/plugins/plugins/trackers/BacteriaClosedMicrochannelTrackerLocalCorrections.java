@@ -31,7 +31,9 @@ import dataStructure.objects.StructureObject.TrackFlag;
 import dataStructure.objects.StructureObjectPreProcessing;
 import dataStructure.objects.StructureObjectTracker;
 import dataStructure.objects.Voxel;
+import ij.process.AutoThresholder;
 import image.Image;
+import image.ImageByte;
 import image.ImageMask;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,6 +53,7 @@ import plugins.Tracker;
 import plugins.TrackerSegmenter;
 import plugins.UseThreshold;
 import plugins.plugins.segmenters.BacteriaFluo;
+import plugins.plugins.thresholders.IJAutoThresholder;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
 import utils.ArrayUtil;
 import utils.Utils;
@@ -92,7 +95,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     static int loopLimit=3;
     public static boolean debug=false, debugCorr=false;
+    
+    // hidden parameters! 
     static double maxSizeIncrementError = 0.3;
+    static double maxFusionSize=200;
     
     public BacteriaClosedMicrochannelTrackerLocalCorrections() {}
     
@@ -144,18 +150,20 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         this.correction=performCorrection;
         if (correction) inputImages=new Image[populations.length];
         // 0) optional compute threshold for all images
-        Segmenter s = getSegmenter();
-        if (s instanceof UseThreshold) {
+        if (false && getSegmenter() instanceof UseThreshold) {
             List<Image> planes = new ArrayList<>();
-            for (int t = 0; t<populations.length; ++t) planes.add(getImage(t));
-            Image.getHisto256(planes)
-            Image thresholdImage = Image.mergeZPlanes(planes);
-            thresholdValue = ((UseThreshold)s).getThresholder().runThresholder(thresholdImage, null);
-            if (debug) logger.debug("Threshold Value over time: {}", thresholdValue);
+            // TODO -> record segmenters at this step in order not to have to process.. & erase after segmentation.
+            for (int t = 0; t<populations.length; ++t) planes.add(((UseThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, parents.get(t)));
+            double[] minAndMax = new double[2];
+            int[] histo = Image.getHisto256(planes, minAndMax);
+            //Image thresholdImage = Image.mergeZPlanes(planes);
+            //thresholdValue = ((UseThreshold)s).getThresholder().runThresholder(thresholdImage, null);
+            thresholdValue = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo, minAndMax, planes.get(0) instanceof ImageByte);
+            logger.debug("Threshold Value over time: {}", thresholdValue);
         }
         // 1) assign all. Limit to first continuous segment of cells
         int minT = 0;
-        while (getObjects(minT).isEmpty()) minT++;
+        while (minT<populations.length && getObjects(minT).isEmpty()) minT++;
         int maxT = populations.length;
         for (int t = minT+1; t<populations.length; ++t) {
             if (getObjects(t).isEmpty()) {
@@ -1152,10 +1160,12 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         private int[] performCorrectionMultipleObjects() {
             double sizeInc1 = getAttribute(timePoint, idx).getSize()/getAttribute(timePoint-1, idxPrev).getSize();
             double expectedInc1 = getAttribute(timePoint-1, idxPrev).getLineageSizeIncrement();
+            // TODO : plus de scenarios: merge all before, merge all before & after, merge all but one... 
+            //Faire un type de scenario qui encapsule plusieurs scenarios. P0 23-2-0 si fusion = 50
             if (Math.abs(sizeInc1-expectedInc1)>maxSizeIncrementError) {
                 CorrectionScenario before, after;
                 if (sizeInc1>expectedInc1) { // split after VS merge before & split
-                    before = new SplitAndMerge(timePoint-1, idxPrev, false, false);
+                    before = new SplitAndMerge(timePoint-1, idxPrev, false, false); // ajouter merge all
                     //after = new SplitAndMerge(timePoint, idx, true, true);
                     after = new SplitScenario(getAttribute(timePoint, idx), timePoint);
                 } else { // merge & split before vs split & merge after
@@ -1198,7 +1208,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         }
         
         @Override public String toString() {
-            return "L:"+verboseLevel+ "/t: "+timePoint+ "["+idxPrev+";"+(idxPrevEnd-1)+"]->["+idx+";"+(idxEnd-1)+"] Size: "+sizePrev+ "->"+size+ "/nPrev: "+(idxPrevEnd-idxPrev)+"/nCur: "+(idxEnd-idx)+"/inequality: "+verifyInequality()+ "/errors: "+getErrorCount();
+            return "L:"+verboseLevel+ "/t:"+timePoint+ " ["+idxPrev+";"+(idxPrevEnd-1)+"]->["+idx+";"+(idxEnd-1)+"] Size: "+sizePrev+ "->"+size+ "/nPrev: "+(idxPrevEnd-idxPrev)+"/nCur: "+(idxEnd-idx)+"/inequality: "+verifyInequality()+ "/errors: "+getErrorCount();
         }
     }
 
@@ -1246,8 +1256,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     protected abstract class CorrectionScenario {
         double cost=Double.POSITIVE_INFINITY;
-        final int timePoint;
-        protected CorrectionScenario(int timePoint) {this.timePoint=timePoint;}
+        final int timePointMin, timePointMax;
+        protected CorrectionScenario(int timePointMin, int timePointMax) {this.timePointMin=timePointMin; this.timePointMax=timePointMax;}
         protected abstract CorrectionScenario getNextScenario();
         /**
          * 
@@ -1277,7 +1287,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         int idxMin, idxMax;
         ArrayList<Object3D> listO;
         public MergeScenario(int idxMin, int idxMax, int timePoint) { // idxMax excluded
-            super(timePoint);
+            super(timePoint, timePoint);
             this.idxMax=idxMax;
             this.idxMin = idxMin;
             listO = new ArrayList<Object3D>(idxMax - idxMin);
@@ -1287,41 +1297,45 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             }
             if (!listO.isEmpty()) {
                 this.cost = getSegmenter().computeMergeCost(getImage(timePoint), listO);
-            }
+                // check for small objects
+                if (Double.isFinite(cost)) { // could merge
+                    int nSmall = 0;
+                    for (Object3D o :  listO) if (o.getSize()<maxFusionSize) ++nSmall;
+                    if (nSmall>=listO.size()-1) cost = 0;
+                }
+            } else cost = Double.POSITIVE_INFINITY;
             if (debugCorr) logger.debug("Merge scenario: tp: {}, idxMin: {}, #objects: {}, cost: {}", timePoint, idxMin, listO.size(), cost);
         }
         @Override protected MergeScenario getNextScenario() { // @ previous time, until there is one single parent ie no more bacteria to merge
-            if (timePoint==0 || idxMin==idxMax) return null;
+            if (timePointMin==0 || idxMin==idxMax) return null;
             int iMin = Integer.MAX_VALUE;
             int iMax = -1;
             for (int i = idxMin; i<idxMax; ++i) { // get all connected trackAttributes from previous timePoint
-                TrackAttribute ta = getAttribute(timePoint, i).prev;
+                TrackAttribute ta = getAttribute(timePointMin, i).prev;
                 if (ta==null) continue;
-                if (ta.division) { // if division & on of the divided objects is not in the current objects to merge: stop
-                    for (TrackAttribute taDiv : ta.getNext()) if (taDiv.idx<idxMin || taDiv.idx>=idxMax) return null;
-                }
+                //if (ta.division) for (TrackAttribute taDiv : ta.getNext()) if (taDiv.idx<idxMin || taDiv.idx>=idxMax) return null; // if division & on of the divided objects is not in the current objects to merge: stop
                 if (iMin>ta.idx) iMin = ta.idx;
                 if (iMax<ta.idx) iMax = ta.idx;
-                if (ta.idx != trackAttributes[timePoint-1].indexOf(ta)) logger.error("BCMTLC: inconsistent data: t: {}, expected idx: {}, actual: {}", timePoint-1, ta.idx, trackAttributes[timePoint-1].indexOf(ta));
+                if (ta.idx != trackAttributes[timePointMin-1].indexOf(ta)) logger.error("BCMTLC: inconsistent data: t: {}, expected idx: {}, actual: {}", timePointMin-1, ta.idx, trackAttributes[timePointMin-1].indexOf(ta));
             }
             if (iMin==iMax) return null; // no need to merge
             if (iMin==Integer.MAX_VALUE || iMax==-1) return null; // no previous objects 
-            return new MergeScenario(iMin,iMax+1, timePoint-1);
+            return new MergeScenario(iMin,iMax+1, timePointMin-1);
         }
 
         @Override
         protected void applyScenario() {
             List<Voxel> vox = new ArrayList<>();
-            Object3D o = populations[timePoint].get(idxMin); 
+            Object3D o = populations[timePointMin].get(idxMin); 
             for (int i = idxMax-1; i>=idxMin; --i) {
-                Object3D rem = populations[timePoint].remove(i);
+                Object3D rem = populations[timePointMin].remove(i);
                 vox.addAll(rem.getVoxels());
-                trackAttributes[timePoint].remove(i);
+                trackAttributes[timePointMin].remove(i);
             }
             Object3D merged = new Object3D(vox, idxMin+1, o.getScaleXY(), o.getScaleZ());
-            populations[timePoint].add(idxMin, merged);
-            trackAttributes[timePoint].add(idxMin, new TrackAttribute(merged, idxMin, timePoint));
-            resetIndices(timePoint);
+            populations[timePointMin].add(idxMin, merged);
+            trackAttributes[timePointMin].add(idxMin, new TrackAttribute(merged, idxMin, timePointMin));
+            resetIndices(timePointMin);
         }
     }
     
@@ -1329,21 +1343,21 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         TrackAttribute o;
         List<Object3D> splitObjects;
         public SplitScenario(TrackAttribute o, int timePoint) {
-            super(timePoint);
+            super(timePoint, timePoint);
             this.o=o;
             splitObjects= new ArrayList<Object3D>();
             cost = getSegmenter().split(getImage(timePoint), o.o, splitObjects);
             if (debugCorr) logger.debug("Split scenario: tp: {}, idx: {}, cost: {} # objects: {}", timePoint, o.idx, cost, splitObjects.size());
         }
         @Override protected SplitScenario getNextScenario() { // until next division event OR reach end of channel & division with 2n sister lost
-            if (timePoint == populations.length-1) return null;
+            if (timePointMin == populations.length-1) return null;
             if (o.next==null) {
-                if (debugCorr) logger.debug("getNextScenario: assign @:{}", timePoint+1);
-                assignPrevious(timePoint+1, false, false);
+                if (debugCorr) logger.debug("getNextScenario: assign @:{}", timePointMin+1);
+                assignPrevious(timePointMin+1, false, false);
             }
             if (o.next!=null) {
-                if (o.division || (o.next.idx==getObjects(timePoint+1).size()-1 && o.getSize() * minGR > o.next.getSize())) return null;
-                else return new SplitScenario(o.next, timePoint+1);
+                if (o.division || (o.next.idx==getObjects(timePointMin+1).size()-1 && o.getSize() * minGR > o.next.getSize())) return null;
+                else return new SplitScenario(o.next, timePointMin+1);
             }
             else return null;
         }
@@ -1351,15 +1365,15 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         @Override
         protected void applyScenario() {
             Collections.sort(splitObjects, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ)); // sort by increasing Y position
-            populations[timePoint].remove(o.idx);
-            populations[timePoint].addAll(o.idx, splitObjects);
-            trackAttributes[timePoint].remove(o.idx);
+            populations[timePointMin].remove(o.idx);
+            populations[timePointMin].addAll(o.idx, splitObjects);
+            trackAttributes[timePointMin].remove(o.idx);
             int curIdx = o.idx;
             for (Object3D splitObject : splitObjects) {
-                trackAttributes[timePoint].add(curIdx, new TrackAttribute(splitObject, curIdx, timePoint).setFlag(Flag.correctionSplit));
+                trackAttributes[timePointMin].add(curIdx, new TrackAttribute(splitObject, curIdx, timePointMin).setFlag(Flag.correctionSplit));
                 ++curIdx;
             }
-            resetIndices(timePoint);
+            resetIndices(timePointMin);
         }
     }
     protected class SplitAndMerge extends CorrectionScenario {
@@ -1367,7 +1381,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         final int idx;
         final boolean splitFirst;
         public SplitAndMerge(int timePoint, int idx, boolean splitFirst, boolean mergeOptional) {
-            super(timePoint);
+            super(timePoint, timePoint);
             this.idx=idx;
             this.splitFirst=splitFirst;
             splitObjects= new ArrayList<Object3D>(2);
@@ -1379,6 +1393,12 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     mergeObjects.add(splitObjects.get(1));
                     mergeObjects.add(getAttribute(timePoint, idx+1).o);
                     double mergeCost = getSegmenter().computeMergeCost(getImage(timePoint), mergeObjects);
+                    // check for small objects
+                    if (Double.isFinite(mergeCost)) { // could merge
+                        int nSmall = 0;
+                        for (Object3D o :  mergeObjects) if (o.getSize()<maxFusionSize) ++nSmall;
+                        if (nSmall>=mergeObjects.size()-1) mergeCost = 0;
+                    }
                     if (!mergeOptional || mergeCost+cost<costLim) {
                         cost+=mergeCost;
                     } else mergeObjects=null;
@@ -1391,6 +1411,12 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     mergeObjects.add(getAttribute(timePoint, idx).o);
                     mergeObjects.add(splitObjects.get(0));
                     double mergeCost = getSegmenter().computeMergeCost(getImage(timePoint), mergeObjects);
+                    // check for small objects
+                    if (Double.isFinite(mergeCost)) { // could merge
+                        int nSmall = 0;
+                        for (Object3D o :  mergeObjects) if (o.getSize()<maxFusionSize) ++nSmall;
+                        if (nSmall>=mergeObjects.size()-1) mergeCost = 0;
+                    }
                     if (!mergeOptional || mergeCost+cost<costLim) {
                         cost+=mergeCost;
                     } else mergeObjects=null;
@@ -1407,13 +1433,13 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
 
         @Override
         protected void applyScenario() { //TODO : if reverse if needed -> create new object & new trackAttribute
-            if (debugCorr) logger.debug("t: {}, idx {}: performing correction: split&merge scenario, cost: {}, splitFist: {}", timePoint, idx, cost, splitFirst);
+            if (debugCorr) logger.debug("t: {}, idx {}: performing correction: split&merge scenario, cost: {}, splitFist: {}", timePointMin, idx, cost, splitFirst);
             
             if (splitFirst) {
-                populations[timePoint].remove(idx);
-                trackAttributes[timePoint].remove(idx);
-                populations[timePoint].add(idx, splitObjects.get(0));
-                trackAttributes[timePoint].add(idx, new TrackAttribute(splitObjects.get(0), idx, timePoint).setFlag(Flag.correctionSplit));
+                populations[timePointMin].remove(idx);
+                trackAttributes[timePointMin].remove(idx);
+                populations[timePointMin].add(idx, splitObjects.get(0));
+                trackAttributes[timePointMin].add(idx, new TrackAttribute(splitObjects.get(0), idx, timePointMin).setFlag(Flag.correctionSplit));
                 Object3D nextObject;
                 if (mergeObjects!=null) {
                     List<Voxel> mergedVox = new ArrayList<>();
@@ -1421,36 +1447,55 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     nextObject = new Object3D(mergedVox, idx+2, mergeObjects.get(0).getScaleXY(), mergeObjects.get(0).getScaleZ());
                 } else nextObject = splitObjects.get(1);
                 if (mergeObjects!=null) {
-                    populations[timePoint].remove(idx+1);
-                    trackAttributes[timePoint].remove(idx+1);
+                    populations[timePointMin].remove(idx+1);
+                    trackAttributes[timePointMin].remove(idx+1);
                 }
-                populations[timePoint].add(idx+1, nextObject);
-                trackAttributes[timePoint].add(idx+1, new TrackAttribute(nextObject, idx+1, timePoint).setFlag(mergeObjects!=null ? Flag.correctionMerge : Flag.correctionSplit));
+                populations[timePointMin].add(idx+1, nextObject);
+                trackAttributes[timePointMin].add(idx+1, new TrackAttribute(nextObject, idx+1, timePointMin).setFlag(mergeObjects!=null ? Flag.correctionMerge : Flag.correctionSplit));
             } else {
                 if (mergeObjects!=null) {
                     List<Voxel> mergedVox = new ArrayList<>();
                     for (Object3D o : mergeObjects) mergedVox.addAll(o.getVoxels());
                     Object3D mergeObject = new Object3D(mergedVox, idx+1, mergeObjects.get(0).getScaleXY(), mergeObjects.get(0).getScaleZ());
                     
-                    populations[timePoint].remove(idx);
-                    trackAttributes[timePoint].remove(idx);
-                    populations[timePoint].add(idx, mergeObject);
-                    trackAttributes[timePoint].add(idx, new TrackAttribute(mergeObject, idx, timePoint).setFlag(Flag.correctionMerge));
+                    populations[timePointMin].remove(idx);
+                    trackAttributes[timePointMin].remove(idx);
+                    populations[timePointMin].add(idx, mergeObject);
+                    trackAttributes[timePointMin].add(idx, new TrackAttribute(mergeObject, idx, timePointMin).setFlag(Flag.correctionMerge));
                     
-                    populations[timePoint].remove(idx+1);
-                    trackAttributes[timePoint].remove(idx+1);
-                    populations[timePoint].add(idx+1, splitObjects.get(1));
-                    trackAttributes[timePoint].add(idx+1, new TrackAttribute(splitObjects.get(1), idx+1, timePoint).setFlag(Flag.correctionSplit));
+                    populations[timePointMin].remove(idx+1);
+                    trackAttributes[timePointMin].remove(idx+1);
+                    populations[timePointMin].add(idx+1, splitObjects.get(1));
+                    trackAttributes[timePointMin].add(idx+1, new TrackAttribute(splitObjects.get(1), idx+1, timePointMin).setFlag(Flag.correctionSplit));
                 } else {
-                    populations[timePoint].remove(idx+1);
-                    trackAttributes[timePoint].remove(idx+1);
+                    populations[timePointMin].remove(idx+1);
+                    trackAttributes[timePointMin].remove(idx+1);
                     for (int i = 0; i<splitObjects.size(); ++i) {
-                        populations[timePoint].add(idx+1+i, splitObjects.get(i));
-                        trackAttributes[timePoint].add(idx+1+i, new TrackAttribute(splitObjects.get(i), idx+1+i, timePoint).setFlag(Flag.correctionSplit));
+                        populations[timePointMin].add(idx+1+i, splitObjects.get(i));
+                        trackAttributes[timePointMin].add(idx+1+i, new TrackAttribute(splitObjects.get(i), idx+1+i, timePointMin).setFlag(Flag.correctionSplit));
                     }
                 }
             }
-            resetIndices(timePoint);
+            resetIndices(timePointMin);
+        }
+        
+    }
+    protected class MultipleScenario extends CorrectionScenario {
+        final List<CorrectionScenario> scenarios;
+
+        public MultipleScenario(List<CorrectionScenario> sortedScenarios) {
+            super(sortedScenarios.isEmpty()? 0 :sortedScenarios.get(0).timePointMin, sortedScenarios.isEmpty()? 0 : sortedScenarios.get(sortedScenarios.size()-1).timePointMax);
+            this.scenarios = sortedScenarios;
+        }
+        
+        @Override
+        protected CorrectionScenario getNextScenario() {
+            return null;
+        }
+
+        @Override
+        protected void applyScenario() {
+            for (CorrectionScenario s : scenarios) s.applyScenario();
         }
         
     }

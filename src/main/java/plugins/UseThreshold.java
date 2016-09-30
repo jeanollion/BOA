@@ -17,6 +17,9 @@
  */
 package plugins;
 
+import dataStructure.objects.StructureObjectProcessing;
+import image.Image;
+
 /**
  *
  * @author jollion
@@ -24,4 +27,5 @@ package plugins;
 public interface UseThreshold {
     public Thresholder getThresholder();
     public void setThresholdValue(double threhsold);
+    public Image getThresholdImage(Image input, int structureIdx, StructureObjectProcessing parent);
 }

@@ -129,7 +129,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     GroupParameter angleParameters = new GroupParameter("Constaint on angles", aspectRatioThreshold, angleThreshold);
     */
     NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 2, 0, null);
-    NumberParameter minSizeFusion = new BoundedNumberParameter("Minimum Object size (fusion)", 0, 50, 5, null);
+    NumberParameter minSizeFusion = new BoundedNumberParameter("Minimum Object size (fusion)", 0, 200, 5, null);
     NumberParameter minSizeChannelEnd = new BoundedNumberParameter("Minimum Object size (end of channel)", 0, 150, 5, null);
     GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSizeFusion, minSizeChannelEnd, contactLimit);
     
@@ -187,7 +187,9 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     @Override public void setThresholdValue(double threhsold) {
         thresholdValue = threhsold;
     }
-    
+    @Override public Image getThresholdImage(Image input, int structureIdx, StructureObjectProcessing parent) {
+        return getProcessingVariables(input, parent.getMask()).getIntensityMap(); // TODO for all methdos with these argument : check if pv exists and has same input & parent ...
+    }
     //segmentation-related attributes (kept for split and merge methods)
     ProcessingVariables pv;
     
@@ -338,6 +340,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     }
     // segmenter split and merge interface
     @Override public double split(Image input, Object3D o, List<Object3D> result) {
+        //new IJImageDisplayer().showImage(o.getMask().duplicate("split mask"));
         ObjectPopulation pop =  splitObject(input, o); // initialize pv
         pop.translate(o.getBounds().duplicate().reverseOffset(), false);
         if (pop.getObjects().size()<=1) return Double.POSITIVE_INFINITY;
@@ -350,9 +353,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             
             inter.updateSortValue();
             double cost = getCost(inter.curvatureValue, curvatureThreshold.getValue().doubleValue(), false); 
+            
             //new IJImageDisplayer().showImage(pop.getLabelMap().duplicate("split"));
             //new IJImageDisplayer().showImage(inter.getCurvatureMask());
-            //logger.debug("split: intersize: {}, curvature {}, threshold: {}, cost: {}", inter.voxels.size(), inter.curvatureValue, curvatureThreshold.getValue().doubleValue(), cost);
+            //logger.debug("split: #objects: {} intersize: {}, curvature {}, threshold: {}, cost: {}", pop.getObjects().size(), inter.voxels.size(), inter.curvatureValue, curvatureThreshold.getValue().doubleValue(), cost);
             pop.translate(o.getBounds(), true);
             return cost;
         }
@@ -397,9 +401,12 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             return Double.POSITIVE_INFINITY;
         } 
         Set<InterfaceBT> allInterfaces = c.getInterfaces(clusters.get(0));
-        for (InterfaceBT i : allInterfaces) {
+        double minSize= minSizeFusion.getValue().doubleValue();
+        for (InterfaceBT i : allInterfaces) { // get the min curvature value = worst case
             i.updateSortValue();
-            if (i.curvatureValue<minCurv) minCurv = i.curvatureValue;
+            if (i.getE1().getSize()<=minSize || i.getE2().getSize()<=minSize) {
+                if (minCurv>0) minCurv=0;
+            } else if (i.curvatureValue<minCurv) minCurv = i.curvatureValue;
         }
         //logger.debug("minCurv: {}", minCurv);
         if (minCurv==Double.POSITIVE_INFINITY || minCurv==Double.NaN) return Double.POSITIVE_INFINITY;
@@ -547,6 +554,20 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 if (Double.isNaN(threshold)) throw new Error("Threshold not set");
                 IJImageDisplayer disp = debug?new IJImageDisplayer():null;
                 ImageInteger thresh = ImageOperations.threshold(getIntensityMap(), threshold, false, false);
+                ImageOperations.and(mask, thresh, thresh);
+                ObjectPopulation pop1 = new ObjectPopulation(thresh, false);
+                if (debug) disp.showImage(pop1.getLabelMap().duplicate("objects before adjust contour"));
+                // adjust contours
+                for (Object3D o : pop1.getObjects()) {
+                    double contourMean = 0;
+                    List<Voxel> contour = o.getContour();
+                    for (Voxel v : contour) contourMean+=input.getPixel(v.x, v.y, v.z);
+                    contourMean/=contour.size();
+                    o.adjustContours(input, contourMean, false, contour);
+                    //logger.debug("adjust contour: threshold: {}", contourMean);  
+                }
+                pop1.reDrawLabelMap();
+                thresh = pop1.getLabelMap();
                 if (openRadius>=1) {
                     if (debug) disp.showImage(thresh.duplicate("before open"));
                     Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(openRadius, openRadius, thresh));
@@ -554,8 +575,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                     thresh = Filters.binaryClose(thresh, Filters.getNeighborhood(openRadius, openRadius, thresh));
                     if (debug) disp.showImage(thresh.duplicate("after close"));
                 } else Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(1, 1, thresh)); // remove pixels only connected by diagonal -> otherwise curvature cannot be computed
-                ImageOperations.and(mask, thresh, thresh);
-                ObjectPopulation pop1 = new ObjectPopulation(thresh, false);
+                
+                pop1 = new ObjectPopulation(thresh, false); // re-create label image in case objects have been separated in previous steps
+                if (debug) disp.showImage(pop1.getLabelMap().duplicate("objects after adjust contour"));
+                
                 pop1.filterAndMergeWithConnected(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
                 FillHoles2D.fillHoles(pop1);
                 if (debug) new IJImageDisplayer().showImage(pop1.getLabelMap().duplicate("SEG MASK"));
@@ -634,8 +657,9 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 return ell2;
             }*/
             @Override public void updateSortValue() {
-                if (voxels.size()<=2) curvatureValue=Double.NEGATIVE_INFINITY; // when border is too small curvature may not be computable
+                if (voxels.size()<=2) curvatureValue=Double.NEGATIVE_INFINITY; // when border is too small curvature may not be computable, but objects should be splited
                 else if (getCurvature()!=null) curvatureValue = getMeanOfMinCurvature(); 
+                //else logger.debug("curvature null");
             }
             @Override
             public void performFusion() {
@@ -708,22 +732,33 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 if (voxels.isEmpty()) return 0;
                 double min = Double.POSITIVE_INFINITY;
                 getCurvature();
-                for(Voxel v : voxels) {
-                    search.search(new Point(new int[]{v.x, v.y}), curvatureSearchScale, false);
-                    for (int i = 0; i<search.numNeighbors(); ++i) {
-                        Double d = search.getSampler(i).get();
-                        if (min>d) min = d;
+                double searchScale = curvatureSearchScale;
+                double searchScaleLim = 2 * curvatureSearchScale;
+                while(Double.isInfinite(min) && searchScale<searchScaleLim) { // curvature is smoothed thus when there are angles the neerest value might be far away. progressively increment search scale in order not to reach the other side too easily
+                    for(Voxel v : voxels) {
+                        search.search(new Point(new int[]{v.x, v.y}), searchScale, false);
+                        for (int i = 0; i<search.numNeighbors(); ++i) {
+                            Double d = search.getSampler(i).get();
+                            if (min>d) min = d;
+                        }
                     }
+                    ++searchScale;
                 }
                 //if (Double.isInfinite(min)) return Double.NaN;
                 return min;
             }
             public double getMeanOfMinCurvature() {
-                
+                //logger.debug("size mean of min: b1: {}, b2: {}", borderVoxels.size(), borderVoxels2.size());
                 if (borderVoxels.isEmpty() && borderVoxels2.isEmpty()) return 0;
                 else {    
-                    if (borderVoxels2.isEmpty()) return getMinCurvature(borderVoxels);
-                    else return 0.5 * (getMinCurvature(borderVoxels)+ getMinCurvature(borderVoxels2));
+                    if (borderVoxels2.isEmpty()) {
+                        //logger.debug("mean of min: b1: {}", getMinCurvature(borderVoxels));
+                        return getMinCurvature(borderVoxels);
+                    }
+                    else {
+                        //logger.debug("mean of min: b1: {}, b2: {}", getMinCurvature(borderVoxels), getMinCurvature(borderVoxels2));
+                        return 0.5 * (getMinCurvature(borderVoxels)+ getMinCurvature(borderVoxels2));
+                    }
                 }
             }
 

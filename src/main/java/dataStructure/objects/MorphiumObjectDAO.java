@@ -348,15 +348,17 @@ public class MorphiumObjectDAO implements ObjectDAO {
         idCache.put(object.getId(), object); //thread-safe??
     }
     
-    public void store(final Collection<StructureObject> objects, final boolean updateTrackAttributes) {
-        ThreadRunner.execute(objects, new ThreadAction<StructureObject>() {
+    @Override public void store(final Collection<StructureObject> objects, final boolean updateTrackAttributes) {
+        /*ThreadRunner.execute(objects, new ThreadAction<StructureObject>() {
             public void run(StructureObject object, int idx, int threadIdx) {
                 store(object, updateTrackAttributes);
             }
-        });
+        });*/
+        //for (StructureObject o : objects) store(object, updateTrackAttributes);
+        storeSequentially(objects, updateTrackAttributes);
     }
     
-    public void storeSequentially(final List<StructureObject> objects, final boolean updateTrackAttributes) {
+    public void storeSequentially(final Collection<StructureObject> objects, final boolean updateTrackAttributes) {
         for (StructureObject o : objects) store(o, updateTrackAttributes);
     }
     

@@ -19,8 +19,11 @@ import image.ImageMask;
 import image.ImageProperties;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -285,7 +288,7 @@ public class Object3D {
         return voxels!=null;
     }
     
-    public ArrayList<Voxel> getContour() {
+    public List<Voxel> getContour() {
         ArrayList<Voxel> res = new ArrayList<Voxel>();
         ImageMask mask = getMask();
         EllipsoidalNeighborhood neigh = this.is3D() ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true);
@@ -305,9 +308,35 @@ public class Object3D {
                     break;
                 }
             }
-        }
+        } // TODO : method without getVoxels 
+        
         //logger.debug("contour: {} (total: {})", res.size(), getVoxels().size());
         return res; // set as attribute ? => erase when modification of the object
+    }
+    
+    public void adjustContours(Image image, double threshold, boolean removeIfLowerThanThreshold, List<Voxel> contour) {
+        if (contour==null || contour.isEmpty()) contour = getContour();
+        Set<Voxel> heap = new HashSet<>(contour);
+        EllipsoidalNeighborhood neigh = this.is3D() ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true);
+        ImageInteger mask = getMask();
+        int xx, yy, zz;
+        heap.removeIf(v -> !mask.insideMask(v.x-mask.getOffsetX(), v.y-mask.getOffsetY(), v.z-mask.getOffsetZ())); // heap contains only voxels inside mask
+        while(!heap.isEmpty()) {
+            Iterator<Voxel> it= heap.iterator();
+            Voxel v = it.next();
+            it.remove();
+            if (removeIfLowerThanThreshold ? image.getPixel(v.x, v.y, v.z)<=threshold : image.getPixel(v.x, v.y, v.z)>=threshold) {
+                mask.setPixel(v.x-mask.getOffsetX(), v.y-mask.getOffsetY(), v.z-mask.getOffsetZ(), 0);
+                for (int i = 0; i<neigh.dx.length; ++i) {
+                    xx=v.x+neigh.dx[i];
+                    yy=v.y+neigh.dy[i];
+                    zz=v.z+neigh.dz[i];
+                    if (mask.contains(xx-mask.getOffsetX(), yy-mask.getOffsetY(), zz-mask.getOffsetZ()) && mask.insideMask(xx-mask.getOffsetX(), yy-mask.getOffsetY(), zz-mask.getOffsetZ())) heap.add(new Voxel(xx, yy, zz));
+                }
+            }
+        }
+        voxels = null; // reset voxels
+        // TODO reset bounds ?
     }
     
     protected void createBoundsFromVoxels() {
