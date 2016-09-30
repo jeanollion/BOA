@@ -50,7 +50,7 @@ import java.util.HashMap;
 public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
     protected HashMap<Image, ImagePlus> displayedImages=new HashMap<Image, ImagePlus>();
     protected HashMap<ImagePlus, Image> displayedImagesInv=new HashMap<ImagePlus, Image>();
-    @Override public ImagePlus showImage(Image image, float... displayRange) {
+    @Override public ImagePlus showImage(Image image, double... displayRange) {
         if (IJ.getInstance()==null) {
             ij.ImageJ.main(new String[0]);
             //new ImageJ();
@@ -62,12 +62,12 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         ImagePlus ip = getImage(image);
         if (displayRange.length==0) displayRange = image.getMinAndMax(null);
         else if (displayRange.length==1) {
-            float[] minAndMax = image.getMinAndMax(null);
+            double[] minAndMax = image.getMinAndMax(null);
             minAndMax[0]=displayRange[0];
             displayRange=minAndMax;
         } else if (displayRange.length>=2) {
             if (displayRange[1]<=displayRange[0]) {
-                float[] minAndMax = image.getMinAndMax(null);
+                double[] minAndMax = image.getMinAndMax(null);
                 displayRange[1] = minAndMax[1];
             }
         }
@@ -216,17 +216,17 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         }
     }
 
-    @Override public void updateImageDisplay(Image image, float... displayRange) {
+    @Override public void updateImageDisplay(Image image, double... displayRange) {
         if (this.displayedImages.containsKey(image)) {
             if (displayRange.length == 0) {
                 displayRange = image.getMinAndMax(null);
             } else if (displayRange.length == 1) {
-                float[] minAndMax = image.getMinAndMax(null);
+                double[] minAndMax = image.getMinAndMax(null);
                 minAndMax[0] = displayRange[0];
                 displayRange = minAndMax;
             } else if (displayRange.length >= 2) {
                 if (displayRange[1] <= displayRange[0]) {
-                    float[] minAndMax = image.getMinAndMax(null);
+                    double[] minAndMax = image.getMinAndMax(null);
                     displayRange[1] = minAndMax[1];
                 }
             }

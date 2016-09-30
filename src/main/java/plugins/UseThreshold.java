@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 nasique
+ * Copyright (C) 2016 jollion
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -15,26 +15,13 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package boa.gui.imageInteraction;
-
-import image.BoundingBox;
-import image.Image;
+package plugins;
 
 /**
  *
  * @author jollion
  */
-public interface ImageDisplayer<T> {
-    public static double zoomMagnitude=1;
-    public T showImage(Image image, double... displayRange);
-    public T getImage(Image image);
-    public Image getImage(T image);
-    public void updateImageDisplay(Image image, double... displayRange);
-    public void updateImageRoiDisplay(Image image);
-    public void showImage5D(String title, Image[][] imageTC);
-    public BoundingBox getDisplayRange(Image image);
-    public void setDisplayRange(BoundingBox bounds, Image image);
-    public T getCurrentImage();
-    public Image getCurrentImage2();
-    public void flush();
+public interface UseThreshold {
+    public Thresholder getThresholder();
+    public void setThresholdValue(double threhsold);
 }

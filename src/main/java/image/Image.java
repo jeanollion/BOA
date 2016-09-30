@@ -210,7 +210,7 @@ public abstract class Image implements ImageProperties {
         res.translate(offsetX, offsetY, offsetZ);
         return res;
     }
-    public float[] getMinAndMax(ImageMask mask) {
+    public double[] getMinAndMax(ImageMask mask) {
         return getMinAndMax(mask, null);
     }
     /**
@@ -218,10 +218,10 @@ public abstract class Image implements ImageProperties {
      * @param mask min and max are computed within the mask, or within the whole image if mask==null 
      * @return float[]{min, max}
      */
-    public float[] getMinAndMax(ImageMask mask, BoundingBox limits) {
+    public double[] getMinAndMax(ImageMask mask, BoundingBox limits) {
         if (mask==null) mask = new BlankMask("", this);
         if (limits==null) limits = mask.getBoundingBox().translateToOrigin();
-        float min = Float.MAX_VALUE, max = -Float.MAX_VALUE;
+        float min = Float.POSITIVE_INFINITY, max = Float.NEGATIVE_INFINITY;
         for (int z = limits.zMin; z <= limits.zMax; z++) {
             for (int y = limits.yMin; y<=limits.yMax; ++y) {
                 for (int x = limits.xMin; x <= limits.xMax; ++x) {
@@ -236,12 +236,32 @@ public abstract class Image implements ImageProperties {
                 }
             }
         }
-        return new float[]{min, max};
+        return new double[]{min, max};
     }
     public abstract int[] getHisto256(ImageMask mask, BoundingBox bounds);
     public int[] getHisto256(ImageMask mask) {return getHisto256(mask, null);}
     abstract int[] getHisto256(double min, double max, ImageMask mask, BoundingBox limit);
-    
+    /**
+     * 
+     * @param image
+     * @param minAndMax the method will output min and max values in this array, except if minAndMax[0]<minAndMax[1] -> in this case will use these values for histogram
+     * @return 
+     */
+    public static int[] getHisto256(List<Image> images, double[] minAndMax) {
+        if ( !(minAndMax[0]<minAndMax[1])) {
+        for (Image i : images) {
+            double[] mm = i.getMinAndMax(null);
+            if (minAndMax[0]>mm[0]) minAndMax[0]=mm[0];
+            if (minAndMax[1]<mm[1]) minAndMax[1]=mm[1];
+        }
+        }
+        int[] histo= new int[256];
+        for (Image im : images) {
+            int[] h = im.getHisto256(minAndMax[0], minAndMax[1], null, null);
+            for (int i = 0; i<256; ++i) histo[i]=h[i];
+        }
+        return histo;
+    }
     
     protected Image cropI(BoundingBox bounds) {
         //bounds.trimToImage(this);

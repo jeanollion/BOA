@@ -125,8 +125,8 @@ public class ImageFloat extends Image {
     
     @Override
     public void invert() {
-        float[] minAndMax = this.getMinAndMax(null);
-        float off = minAndMax[1] + minAndMax[0];
+        double[] minAndMax = this.getMinAndMax(null);
+        float off = (float)(minAndMax[1] + minAndMax[0]);
         for (int z = 0; z < sizeZ; z++) {
             for (int xy = 0; xy<sizeXY; ++xy) {
                 pixels[z][xy] = off - pixels[z][xy];
@@ -137,7 +137,7 @@ public class ImageFloat extends Image {
     @Override
     public int[] getHisto256(ImageMask mask, BoundingBox limit) {
         if (mask == null) mask = new BlankMask("", this);
-        float[] minAndMax = getMinAndMax(mask);
+        double[] minAndMax = getMinAndMax(mask);
         return getHisto256(minAndMax[0], minAndMax[1], mask, limit);
     }
     @Override int[] getHisto256(double min, double max, ImageMask mask, BoundingBox limits) {

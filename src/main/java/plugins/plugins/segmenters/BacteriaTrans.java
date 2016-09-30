@@ -68,6 +68,7 @@ import plugins.ParameterSetup;
 import plugins.Segmenter;
 import plugins.SegmenterSplitAndMerge;
 import plugins.Thresholder;
+import plugins.UseThreshold;
 import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.segmenters.BacteriaTrans.ProcessingVariables.InterfaceBT;
@@ -100,7 +101,7 @@ import utils.clustering.Object3DCluster;
  *
  * @author jollion
  */
-public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter, ParameterSetup {
+public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, ObjectSplitter, ParameterSetup, UseThreshold {
     public static boolean debug = false;
     
     // configuration-related attributes
@@ -148,7 +149,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         debug=false;
         ImageDisplayer disp = ImageWindowManagerFactory.instanciateDisplayer();
         pv = getProcessingVariables(input, parent.getMask());
-        pv.threshold = this.threshold.instanciatePlugin().runThresholder(pv.getIntensityMap(), parent);
+        if (Double.isNaN(thresholdValue)) pv.threshold = this.threshold.instanciatePlugin().runThresholder(pv.getIntensityMap(), parent);
+        else pv.threshold=thresholdValue;
         if (p == relativeThicknessThreshold) {
             logger.debug("rel t test");
             ObjectPopulation pop = getSeparatedObjects(pv, pv.getSegmentationMask(), minSizePropagation.getValue().intValue(), 0, false);
@@ -176,6 +178,14 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         ImageFloat curv = new ImageFloat("Curvature map: "+curvatureScale, pop.getImageProperties()).resetOffset();
         pop.getObjects().stream().map((o) -> computeCurvature(o.getMask(), curvatureScale)).forEach((tree) -> { Curvature.drawOnCurvatureMask(curv, tree); });
         return curv;
+    }
+    // UseTreshold related interface
+    @Override public Thresholder getThresholder() {
+        return this.threshold.instanciatePlugin();
+    }
+    Double thresholdValue = Double.NaN;
+    @Override public void setThresholdValue(double threhsold) {
+        thresholdValue = threhsold;
     }
     
     //segmentation-related attributes (kept for split and merge methods)
@@ -225,7 +235,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             
         */
         pv = getProcessingVariables(input, parent.getMask());
-        pv.threshold = this.threshold.instanciatePlugin().runThresholder(pv.getIntensityMap(), parent);
+        if (Double.isNaN(thresholdValue)) pv.threshold = this.threshold.instanciatePlugin().runThresholder(pv.getIntensityMap(), parent);
+        else pv.threshold=thresholdValue;
         pv.contrastThreshold = this.thresholdContrast.instanciatePlugin().runThresholder(pv.getIntensityMap(), parent);
         if (debug) {
             new IJImageDisplayer().showImage(input.setName("input"));
@@ -339,9 +350,9 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             
             inter.updateSortValue();
             double cost = getCost(inter.curvatureValue, curvatureThreshold.getValue().doubleValue(), false); 
-            new IJImageDisplayer().showImage(pop.getLabelMap().duplicate("split"));
-            new IJImageDisplayer().showImage(inter.getCurvatureMask());
-            logger.debug("split: intersize: {}, curvature {}, threshold: {}, cost: {}", inter.voxels.size(), inter.curvatureValue, curvatureThreshold.getValue().doubleValue(), cost);
+            //new IJImageDisplayer().showImage(pop.getLabelMap().duplicate("split"));
+            //new IJImageDisplayer().showImage(inter.getCurvatureMask());
+            //logger.debug("split: intersize: {}, curvature {}, threshold: {}, cost: {}", inter.voxels.size(), inter.curvatureValue, curvatureThreshold.getValue().doubleValue(), cost);
             pop.translate(o.getBounds(), true);
             return cost;
         }

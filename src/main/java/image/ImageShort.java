@@ -179,7 +179,7 @@ public class ImageShort extends ImageInteger {
     
     @Override
     public void invert() {
-        float[] minAndMax = this.getMinAndMax(null);
+        double[] minAndMax = this.getMinAndMax(null);
         int off = (int) (minAndMax[1] + minAndMax[0]);
         for (int z = 0; z < sizeZ; z++) {
             for (int xy = 0; xy<sizeXY; ++xy) {
@@ -215,7 +215,7 @@ public class ImageShort extends ImageInteger {
     @Override 
     public int[] getHisto256(ImageMask mask, BoundingBox limits) {
         if (mask==null) mask=new BlankMask("", this);
-        float[] minAndMax = getMinAndMax(mask);
+        double[] minAndMax = getMinAndMax(mask);
         return getHisto256(minAndMax[0], minAndMax[1], mask, limits);
     }
     @Override int[] getHisto256(double min, double max, ImageMask mask, BoundingBox limits) {

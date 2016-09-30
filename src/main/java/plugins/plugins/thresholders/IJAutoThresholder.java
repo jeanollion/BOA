@@ -62,7 +62,7 @@ public class IJAutoThresholder implements Thresholder {
     
     public static double convertHisto256Threshold(double threshold256, Image input, ImageMask mask, BoundingBox limits) {
         if (mask == null) mask = new BlankMask("", input);
-        float[] mm = input.getMinAndMax(mask, limits);
+        double[] mm = input.getMinAndMax(mask, limits);
         double binSize = (input instanceof ImageByte) ? 1 : (mm[1] - mm[0]) / 256.0;
         double min = (input instanceof ImageByte) ? 0 : mm[0];
         return threshold256 * binSize + min;

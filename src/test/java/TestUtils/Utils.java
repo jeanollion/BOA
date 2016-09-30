@@ -42,7 +42,7 @@ public class Utils {
     public static void showImageIJ(Image image) {
         if (IJ.getInstance()==null) new ImageJ();
         ImagePlus ip = IJImageWrapper.getImagePlus(image);
-        float[] minAndMax = image.getMinAndMax(null);
+        double[] minAndMax = image.getMinAndMax(null);
         ip.setDisplayRange(minAndMax[0], minAndMax[1]);
         ip.show();
     }

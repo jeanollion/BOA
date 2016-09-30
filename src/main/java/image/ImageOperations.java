@@ -500,7 +500,7 @@ public class ImageOperations {
     }
     
     public static ImageFloat normalize(Image input, ImageMask mask, ImageFloat output) {
-        float[] mm = input.getMinAndMax(mask);
+        double[] mm = input.getMinAndMax(mask);
         if (output==null || !output.sameSize(input)) output = new ImageFloat(input.getName()+" normalized", input);
         if (mm[0]==mm[1]) return output;
         double scale = 1 / (mm[1] - mm[0]);
@@ -514,7 +514,7 @@ public class ImageOperations {
         return output;
     }
     public static double getPercentile(Image image, double percent, ImageMask mask, BoundingBox limits) {
-        float[] mm = image.getMinAndMax(mask);
+        double[] mm = image.getMinAndMax(mask);
         int[] histo = image.getHisto256(mm[0], mm[1], mask, limits);
         double binSize = (image instanceof ImageByte) ? 1: (mm[1]-mm[0]) / 256d;
         int count = 0;

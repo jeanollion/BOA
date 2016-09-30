@@ -116,7 +116,7 @@ public class TypeConverter {
     public static Image toCommonImageType(Image image) {
         if (isCommonImageType(image)) return image;
         else if (image instanceof ImageInt) {
-            float[] mm = image.getMinAndMax(null);
+            double[] mm = image.getMinAndMax(null);
             if (mm[1]>(65535)) return toFloat(image, null);
             else return toShort(image, null);
         }

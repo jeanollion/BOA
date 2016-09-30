@@ -59,7 +59,7 @@ public class BackgroundFit implements Thresholder {
         fit = ArrayUtil.gaussianFit(subset);
         double threshold = mode + sigmaFactor * fit[0];
         
-        float[] mm = input.getMinAndMax(mask, null);
+        double[] mm = input.getMinAndMax(mask, null);
         double binSize = (input instanceof ImageByte) ? 1 : (mm[1] - mm[0]) / 256.0;
         double min = (input instanceof ImageByte) ? 0 : mm[0];
         threshold = threshold * binSize + min;

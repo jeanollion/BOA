@@ -49,6 +49,7 @@ import plugins.Segmenter;
 import plugins.SegmenterSplitAndMerge;
 import plugins.Tracker;
 import plugins.TrackerSegmenter;
+import plugins.UseThreshold;
 import plugins.plugins.segmenters.BacteriaFluo;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
 import utils.ArrayUtil;
@@ -61,7 +62,7 @@ import utils.Utils;
 public class BacteriaClosedMicrochannelTrackerLocalCorrections implements TrackerSegmenter {
     
     // parametrization-related attributes
-    protected PluginParameter<SegmenterSplitAndMerge> segmenter = new PluginParameter<SegmenterSplitAndMerge>("Segmentation algorithm", SegmenterSplitAndMerge.class, false);
+    protected PluginParameter<SegmenterSplitAndMerge> segmenter = new PluginParameter<>("Segmentation algorithm", SegmenterSplitAndMerge.class, false);
     BoundedNumberParameter maxGrowthRate = new BoundedNumberParameter("Maximum growth rate", 2, 1.5, 1, null);
     BoundedNumberParameter minGrowthRate = new BoundedNumberParameter("Minimum growth rate", 2, 0.9, 0.01, null);
     BoundedNumberParameter divisionCriterion = new BoundedNumberParameter("Division Criterion", 2, 0.80, 0.01, 1);
@@ -69,8 +70,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     BoundedNumberParameter cumCostLimit = new BoundedNumberParameter("Correction: cumulative cost limit", 3, 5, 0, null);
     Parameter[] parameters = new Parameter[]{segmenter, divisionCriterion, minGrowthRate, maxGrowthRate, costLimit, cumCostLimit};
 
-    public Segmenter getSegmenter() {
-        return segmenter.instanciatePlugin();
+    @Override public SegmenterSplitAndMerge getSegmenter() {
+        SegmenterSplitAndMerge s= segmenter.instanciatePlugin();
+        if (!Double.isNaN(thresholdValue)) ((UseThreshold)s).setThresholdValue(thresholdValue);
+        return s;
     }
 
     // tracking-related attributes
@@ -135,12 +138,21 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     public static boolean correctionStep;
     public static Map<String, List<StructureObject>> stepParents;
     private static int step = 0;
+    double thresholdValue = Double.NaN;
     protected void segmentAndTrack(boolean performCorrection) {
-        if (performCorrection && correctionStep) {
-            stepParents = new LinkedHashMap<>();
-        }
+        if (performCorrection && correctionStep) stepParents = new LinkedHashMap<>();
         this.correction=performCorrection;
         if (correction) inputImages=new Image[populations.length];
+        // 0) optional compute threshold for all images
+        Segmenter s = getSegmenter();
+        if (s instanceof UseThreshold) {
+            List<Image> planes = new ArrayList<>();
+            for (int t = 0; t<populations.length; ++t) planes.add(getImage(t));
+            Image.getHisto256(planes)
+            Image thresholdImage = Image.mergeZPlanes(planes);
+            thresholdValue = ((UseThreshold)s).getThresholder().runThresholder(thresholdImage, null);
+            if (debug) logger.debug("Threshold Value over time: {}", thresholdValue);
+        }
         // 1) assign all. Limit to first continuous segment of cells
         int minT = 0;
         while (getObjects(minT).isEmpty()) minT++;
@@ -424,12 +436,12 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         return null;
     }
     
-    protected SegmenterSplitAndMerge getSegmenter(int timePoint) {
-        /*if (segmenters==null) return null;
+    /*protected SegmenterSplitAndMerge getSegmenter(int timePoint) {
+        if (segmenters==null) return null;
         if (segmenters[timePoint]==null) segmenters[timePoint] = this.segmenter.instanciatePlugin();
-        return segmenters[timePoint];*/
+        return segmenters[timePoint];
         return segmenter.instanciatePlugin();
-    }
+    }*/
     
     protected Image getImage(int timePoint) {
         if (inputImages==null || inputImages[timePoint]==null) {
@@ -453,7 +465,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             } else {
                 //logger.debug("tp: {}, seg null? {} image null ? {}", timePoint, getSegmenter(timePoint)==null, parent.getRawImage(structureIdx)==null);
                 Image input = preFilters.filter(parent.getRawImage(structureIdx), parent);
-                ObjectPopulation pop= getSegmenter(timePoint).runSegmenter(input, structureIdx, parent);
+                ObjectPopulation pop= getSegmenter().runSegmenter(input, structureIdx, parent);
                 pop = postFilters.filter(pop, structureIdx, parent);
                 if (pop!=null) populations[timePoint] = pop.getObjects();
                 else populations[timePoint] = new ArrayList<Object3D>(0);
@@ -1274,7 +1286,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 listO.add(ta.o);
             }
             if (!listO.isEmpty()) {
-                this.cost = getSegmenter(timePoint).computeMergeCost(getImage(timePoint), listO);
+                this.cost = getSegmenter().computeMergeCost(getImage(timePoint), listO);
             }
             if (debugCorr) logger.debug("Merge scenario: tp: {}, idxMin: {}, #objects: {}, cost: {}", timePoint, idxMin, listO.size(), cost);
         }
@@ -1320,7 +1332,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             super(timePoint);
             this.o=o;
             splitObjects= new ArrayList<Object3D>();
-            cost = getSegmenter(timePoint).split(getImage(timePoint), o.o, splitObjects);
+            cost = getSegmenter().split(getImage(timePoint), o.o, splitObjects);
             if (debugCorr) logger.debug("Split scenario: tp: {}, idx: {}, cost: {} # objects: {}", timePoint, o.idx, cost, splitObjects.size());
         }
         @Override protected SplitScenario getNextScenario() { // until next division event OR reach end of channel & division with 2n sister lost
@@ -1360,25 +1372,25 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             this.splitFirst=splitFirst;
             splitObjects= new ArrayList<Object3D>(2);
             if (splitFirst) {
-                cost = getSegmenter(timePoint).split(getImage(timePoint), getAttribute(timePoint, idx).o, splitObjects);
+                cost = getSegmenter().split(getImage(timePoint), getAttribute(timePoint, idx).o, splitObjects);
                 Collections.sort(splitObjects, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ));
                 if (splitObjects.size()==2 && cost<costLim) {
                     mergeObjects = new ArrayList<>(2);
                     mergeObjects.add(splitObjects.get(1));
                     mergeObjects.add(getAttribute(timePoint, idx+1).o);
-                    double mergeCost = getSegmenter(timePoint).computeMergeCost(getImage(timePoint), mergeObjects);
+                    double mergeCost = getSegmenter().computeMergeCost(getImage(timePoint), mergeObjects);
                     if (!mergeOptional || mergeCost+cost<costLim) {
                         cost+=mergeCost;
                     } else mergeObjects=null;
                 }
             } else {
-                cost = getSegmenter(timePoint).split(getImage(timePoint), getAttribute(timePoint, idx+1).o, splitObjects);
+                cost = getSegmenter().split(getImage(timePoint), getAttribute(timePoint, idx+1).o, splitObjects);
                 Collections.sort(splitObjects, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ));
                 if (splitObjects.size()==2 && cost<costLim) {
                     mergeObjects = new ArrayList<>(2);
                     mergeObjects.add(getAttribute(timePoint, idx).o);
                     mergeObjects.add(splitObjects.get(0));
-                    double mergeCost = getSegmenter(timePoint).computeMergeCost(getImage(timePoint), mergeObjects);
+                    double mergeCost = getSegmenter().computeMergeCost(getImage(timePoint), mergeObjects);
                     if (!mergeOptional || mergeCost+cost<costLim) {
                         cost+=mergeCost;
                     } else mergeObjects=null;

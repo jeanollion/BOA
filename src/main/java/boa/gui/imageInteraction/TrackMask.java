@@ -198,7 +198,7 @@ public class TrackMask extends ImageObjectInterface {
         else structureName= structureIdx+"";
         final Image displayImage =  Image.createEmptyImage("Track: Parent:"+parent+" Raw Image of"+structureName, image0, new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, Math.max(image0.getSizeZ(), this.maxParentZ)).setCalibration(parent.getMaskProperties().getScaleXY(), parent.getMaskProperties().getScaleZ()));
         pasteImage(image0, displayImage, trackOffset[0]);
-        final float[] minAndMax = image0.getMinAndMax(null);
+        final double[] minAndMax = image0.getMinAndMax(null);
         // draw image in another thread..
         // update display every X paste...
         Thread t = new Thread(new Runnable() {
@@ -207,7 +207,7 @@ public class TrackMask extends ImageObjectInterface {
                 int count = 0;
                 for (int i = 1; i<trackObjects.length; ++i) {
                     Image image = trackObjects[i].generateRawImage(structureIdx);
-                    float[] mm = image.getMinAndMax(null);
+                    double[] mm = image.getMinAndMax(null);
                     if (mm[0]<minAndMax[0]) minAndMax[0]=mm[0];
                     if (mm[1]>minAndMax[1]) minAndMax[1]=mm[1];
                     pasteImage(image, displayImage, trackOffset[i]);
