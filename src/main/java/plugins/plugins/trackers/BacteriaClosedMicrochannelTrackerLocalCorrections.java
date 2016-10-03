@@ -66,8 +66,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     // parametrization-related attributes
     protected PluginParameter<SegmenterSplitAndMerge> segmenter = new PluginParameter<>("Segmentation algorithm", SegmenterSplitAndMerge.class, false);
-    BoundedNumberParameter maxGrowthRate = new BoundedNumberParameter("Maximum growth rate", 2, 1.5, 1, null);
-    BoundedNumberParameter minGrowthRate = new BoundedNumberParameter("Minimum growth rate", 2, 0.9, 0.01, null);
+    BoundedNumberParameter maxGrowthRate = new BoundedNumberParameter("Maximum Size Increment", 2, 1.5, 1, null);
+    BoundedNumberParameter minGrowthRate = new BoundedNumberParameter("Minimum size increment", 2, 0.8, 0.01, null);
     BoundedNumberParameter divisionCriterion = new BoundedNumberParameter("Division Criterion", 2, 0.80, 0.01, 1);
     BoundedNumberParameter costLimit = new BoundedNumberParameter("Correction: operation cost limit", 3, 1, 0, null);
     BoundedNumberParameter cumCostLimit = new BoundedNumberParameter("Correction: cumulative cost limit", 3, 5, 0, null);
@@ -182,12 +182,13 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         //if (true) return;
         //if (true) return;
         int idxMax=0;
-        int idxLim = populations[0].size();
+        int idxLim = populations[minT].size();
+        for (int t = minT+1; t<maxT; ++t) if (populations[t].size()>idxLim) idxLim=populations[t].size();
         List<int[]> corrRanges = new ArrayList<>();
         List<int[]> corrRanges2 = new ArrayList<>(1);
         while(idxMax<idxLim) {
             boolean corr = performCorrectionsByIdx(minT+1, maxT-1, idxMax, corrRanges, false);
-            if (corr && idxMax>0) { // corrections have been performed : run correction from 0 to idxMax within each time range
+            if (corr && idxMax>0) { // corrections have been performed : run correction from 0 to idxMax within each time range// TODO: necessaire?
                 for (int[] tRange : corrRanges) {
                     int nLoop=1;
                     for (int idx = 0; idx<=idxMax; ++idx) {
@@ -203,6 +204,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                             nLoop++;
                         } 
                     }
+                    for (int t = tRange[0]; t<=tRange[1]; ++t) if (populations[t].size()>idxLim) idxLim=populations[t].size();
                 }
             }
             idxMax++;
@@ -566,7 +568,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             }
         }
         public double getSize() {
-            if (Double.isNaN(objectSize)) this.objectSize=GeometricalMeasurements.getVolume(o);
+            if (Double.isNaN(objectSize)) {
+                //this.objectSize=GeometricalMeasurements.getVolume(o);
+                this.objectSize = o.getBounds().getSizeY();
+            }
             return objectSize;
         }
         private List<Double> getLineageSizeIncrementList() {
@@ -949,6 +954,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             return sizePrev * minGR <= size && size <= sizePrev * maxGR;
         }
         public boolean significantSizeIncrementError(int idxPrev, double size, double sizePrev) {
+            if (mode==AssignerMode.ADAPTATIVE) {
             double prevSizeIncrement = getAttribute(timePoint-1, idxPrev).getLineageSizeIncrement();
             if (Double.isNaN(prevSizeIncrement)) {
                 return !verifyInequality();
@@ -957,6 +963,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 if (debug && verboseLevel<verboseLevelLimit) logger.debug("{}, sizeIncrementError check: {}, SI:{} lineage: {}, error: {}", this, sizeIncrement, prevSizeIncrement, Math.abs(prevSizeIncrement-sizeIncrement));
                 return Math.abs(prevSizeIncrement-sizeIncrement)>maxSizeIncrementError;
             }
+            } else return !verifyInequality();
         }
         public boolean significantSizeIncrementError() {
             return significantSizeIncrementError(idxPrev, size, sizePrev);

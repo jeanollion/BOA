@@ -109,7 +109,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     //NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 1, 6);
     NumberParameter openRadius = new BoundedNumberParameter("Open Radius", 1, 0, 0, null); // 0-3
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 20, 5, null);
-    NumberParameter subBackScale = new BoundedNumberParameter("Subtract Background scale", 1, 2, 0.1, null);
+    NumberParameter subBackScale = new BoundedNumberParameter("Subtract Background scale", 1, 100, 0.1, null);
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
     PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false); //new ConstantValue(-400)
     PluginParameter<Thresholder> thresholdContrast = new PluginParameter<Thresholder>("Threshold for false positive", Thresholder.class, new ConstantValue(250), false);
@@ -130,7 +130,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     */
     NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 2, 0, null);
     NumberParameter minSizeFusion = new BoundedNumberParameter("Minimum Object size (fusion)", 0, 200, 5, null);
-    NumberParameter minSizeChannelEnd = new BoundedNumberParameter("Minimum Object size (end of channel)", 0, 150, 5, null);
+    NumberParameter minSizeChannelEnd = new BoundedNumberParameter("Minimum Object size (end of channel)", 0, 400, 5, null);
     GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSizeFusion, minSizeChannelEnd, contactLimit);
     
     Parameter[] parameters = new Parameter[]{backgroundSeparation, thicknessParameters, curvatureParameters, objectParameters};
@@ -261,7 +261,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             disp.showImage(res.getLabelMap().duplicate("labelMap - shape re-split"));
             disp.showImage(getCurvatureImage(new ObjectPopulation(segmentationMask, true), pv.curvatureScale));
         }
-        
+        if (!res.getObjects().isEmpty()) pv.yLimLastObject = res.getObjects().get(res.getObjects().size()-1).getBounds().getyMax();
         // merge using the criterion
         Object3DCluster.verbose=debug;
         //res.setVoxelIntensities(pv.getEDM());// for merging // useless if watershed transform on EDM has been called just before
@@ -506,6 +506,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         final double curvatureThreshold;
         double contrastThreshold;
         Object3DCluster.InterfaceFactory<Object3D, InterfaceBT> factory;
+        private double yLimLastObject = Double.NaN;
         private ProcessingVariables(Image input, ImageMask mask, double splitThresholdValue, double relativeThicknessMaxDistance, double dogScale, double openRadius, int minSizePropagation, int minSizeFusion, int curvatureScale, double curvatureThreshold, double curvatureSearchRadius) {
             this.input=input;
             this.mask=mask;
@@ -563,10 +564,21 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                     List<Voxel> contour = o.getContour();
                     for (Voxel v : contour) contourMean+=input.getPixel(v.x, v.y, v.z);
                     contourMean/=contour.size();
-                    o.adjustContours(input, contourMean, false, contour);
+                    o.erodeContours(input, contourMean, false, contour);
                     //logger.debug("adjust contour: threshold: {}", contourMean);  
                 }
                 pop1.reDrawLabelMap();
+                if (debug) disp.showImage(pop1.getLabelMap().duplicate("objects after adjust contour"));
+                pop1 = new ObjectPopulation(pop1.getLabelMap(), false);
+                for (Object3D o : pop1.getObjects()) {
+                    double contourMean = 0;
+                    List<Voxel> contour = o.getContour();
+                    for (Voxel v : contour) contourMean+=input.getPixel(v.x, v.y, v.z);
+                    contourMean/=contour.size();
+                    o.dilateContours(input, contourMean, false, contour);
+                }
+                pop1.reDrawLabelMap();
+                if (debug) disp.showImage(pop1.getLabelMap().duplicate("objects after adjust contour2"));
                 thresh = pop1.getLabelMap();
                 if (openRadius>=1) {
                     if (debug) disp.showImage(thresh.duplicate("before open"));
@@ -679,13 +691,13 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 voxels.addAll(otherInterface.voxels);
                 // border voxels will be set at next creation of curvature
             }
-
+            
             @Override
             public boolean checkFusion() {
                 if (maxVoxel==null) return false;
                 if (this.voxels.isEmpty()) return false;
                 // criterion on size
-                if (this.e1.getSize()<minSizeFusion || this.e2.getSize()<minSizeFusion) return true; // 
+                if ((this.e1.getSize()<minSizeFusion && (Double.isNaN(yLimLastObject) || e1.getBounds().getyMax()<yLimLastObject)) || (this.e2.getSize()<minSizeFusion&& (Double.isNaN(yLimLastObject) || e2.getBounds().getyMax()<yLimLastObject))) return true; // except for last objects
                 
                 // criterion angle between two fitted ellipses
                 // if aspect ratio is no elevated, angle is not taken into account

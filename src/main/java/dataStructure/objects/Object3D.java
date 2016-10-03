@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import processing.Filters;
 import processing.neighborhood.EllipsoidalNeighborhood;
 import processing.neighborhood.Neighborhood;
+import utils.Utils;
 /**
  * 
  * @author jollion
@@ -291,7 +292,7 @@ public class Object3D {
     public List<Voxel> getContour() {
         ArrayList<Voxel> res = new ArrayList<Voxel>();
         ImageMask mask = getMask();
-        EllipsoidalNeighborhood neigh = this.is3D() ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true);
+        EllipsoidalNeighborhood neigh = this.is3D() ? new EllipsoidalNeighborhood(1.5, 1.5, true) : new EllipsoidalNeighborhood(1.5, true);
         int xx, yy, zz;
         for (int i = 0; i<neigh.dx.length; ++i) {
             neigh.dx[i]-=mask.getOffsetX();
@@ -309,18 +310,17 @@ public class Object3D {
                 }
             }
         } // TODO : method without getVoxels 
-        
+        Utils.removeDuplicates(res, false);
         //logger.debug("contour: {} (total: {})", res.size(), getVoxels().size());
-        return res; // set as attribute ? => erase when modification of the object
+        return res; 
     }
     
-    public void adjustContours(Image image, double threshold, boolean removeIfLowerThanThreshold, List<Voxel> contour) {
+    public void erodeContours(Image image, double threshold, boolean removeIfLowerThanThreshold, List<Voxel> contour) {
         if (contour==null || contour.isEmpty()) contour = getContour();
         Set<Voxel> heap = new HashSet<>(contour);
-        EllipsoidalNeighborhood neigh = this.is3D() ? new EllipsoidalNeighborhood(1, 1, true) : new EllipsoidalNeighborhood(1, true);
+        EllipsoidalNeighborhood neigh = this.is3D() ? new EllipsoidalNeighborhood(1.5, 1.5, true) : new EllipsoidalNeighborhood(1.5, true);
         ImageInteger mask = getMask();
         int xx, yy, zz;
-        heap.removeIf(v -> !mask.insideMask(v.x-mask.getOffsetX(), v.y-mask.getOffsetY(), v.z-mask.getOffsetZ())); // heap contains only voxels inside mask
         while(!heap.isEmpty()) {
             Iterator<Voxel> it= heap.iterator();
             Voxel v = it.next();
@@ -332,6 +332,30 @@ public class Object3D {
                     yy=v.y+neigh.dy[i];
                     zz=v.z+neigh.dz[i];
                     if (mask.contains(xx-mask.getOffsetX(), yy-mask.getOffsetY(), zz-mask.getOffsetZ()) && mask.insideMask(xx-mask.getOffsetX(), yy-mask.getOffsetY(), zz-mask.getOffsetZ())) heap.add(new Voxel(xx, yy, zz));
+                }
+            }
+        }
+        voxels = null; // reset voxels
+        // TODO reset bounds ?
+    }
+    
+    public void dilateContours(Image image, double threshold, boolean addIfHigherThanThreshold, List<Voxel> contour) {
+        if (contour==null || contour.isEmpty()) contour = getContour();
+        Set<Voxel> heap = new HashSet<>(contour);
+        EllipsoidalNeighborhood neigh = this.is3D() ? new EllipsoidalNeighborhood(1.5, 1.5, true) : new EllipsoidalNeighborhood(1.5, true);
+        ImageInteger mask = getMask();
+        int xx, yy, zz;
+        while(!heap.isEmpty()) {
+            Iterator<Voxel> it= heap.iterator();
+            Voxel v = it.next();
+            it.remove();
+            if (addIfHigherThanThreshold ? image.getPixel(v.x, v.y, v.z)>=threshold : image.getPixel(v.x, v.y, v.z)<=threshold) {
+                mask.setPixel(v.x-mask.getOffsetX(), v.y-mask.getOffsetY(), v.z-mask.getOffsetZ(), 1);
+                for (int i = 0; i<neigh.dx.length; ++i) {
+                    xx=v.x+neigh.dx[i];
+                    yy=v.y+neigh.dy[i];
+                    zz=v.z+neigh.dz[i];
+                    if (mask.contains(xx-mask.getOffsetX(), yy-mask.getOffsetY(), zz-mask.getOffsetZ()) && !mask.insideMask(xx-mask.getOffsetX(), yy-mask.getOffsetY(), zz-mask.getOffsetZ())) heap.add(new Voxel(xx, yy, zz));
                 }
             }
         }
