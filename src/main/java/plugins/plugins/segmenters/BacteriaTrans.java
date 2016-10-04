@@ -107,11 +107,11 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     // configuration-related attributes
     
     //NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 1, 6);
-    NumberParameter openRadius = new BoundedNumberParameter("Open Radius", 1, 0, 0, null); // 0-3
+    NumberParameter openRadius = new BoundedNumberParameter("Open Radius", 1, 2, 0, null); // 0-3
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 20, 5, null);
     NumberParameter subBackScale = new BoundedNumberParameter("Subtract Background scale", 1, 100, 0.1, null);
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
-    PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false); //new ConstantValue(-400)
+    PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Threshold (separation from background)", Thresholder.class, new ConstantValue(408), false); // //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
     PluginParameter<Thresholder> thresholdContrast = new PluginParameter<Thresholder>("Threshold for false positive", Thresholder.class, new ConstantValue(250), false);
     GroupParameter backgroundSeparation = new GroupParameter("Separation from background", subBackScale, threshold, thresholdContrast, minSizePropagation, openRadius);
     
@@ -537,10 +537,15 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         }
 
         private Image getIntensityMap() {
-            //if (intensityMap==null) intensityMap = ImageFeatures.differenceOfGaussians(input, 0, dogScale, 1, false).setName("DoG");
-            if (intensityMap==null) intensityMap=IJSubtractBackground.filter(input, dogScale, true, true, true, false).setName("subLight");
+            return input;
+            /*if (intensityMap==null) {
+                //Image close = Filters.close(input, null, Filters.getNeighborhood(5, 5, input)).setName("open3");
+                //new IJImageDisplayer().showImage(close);
+                intensityMap = ImageFeatures.differenceOfGaussians(input, 0, dogScale, 1, false).setName("DoG");
+            }
+            //if (intensityMap==null) intensityMap=IJSubtractBackground.filter(input, dogScale, true, true, true, false).setName("subLight");
             return intensityMap;
-            
+            */
             //return input;
         }
         private ObjectPopulation splitSegmentationMask(ImageInteger maskToSplit) {
@@ -557,6 +562,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 ImageInteger thresh = ImageOperations.threshold(getIntensityMap(), threshold, false, false);
                 ImageOperations.and(mask, thresh, thresh);
                 ObjectPopulation pop1 = new ObjectPopulation(thresh, false);
+                /*
+                // adjust to contours
                 if (debug) disp.showImage(pop1.getLabelMap().duplicate("objects before adjust contour"));
                 // adjust contours
                 for (Object3D o : pop1.getObjects()) {
@@ -579,13 +586,14 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 }
                 pop1.reDrawLabelMap();
                 if (debug) disp.showImage(pop1.getLabelMap().duplicate("objects after adjust contour2"));
+                */
                 thresh = pop1.getLabelMap();
                 if (openRadius>=1) {
                     if (debug) disp.showImage(thresh.duplicate("before open"));
                     Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(openRadius, openRadius, thresh));
-                    if (debug) disp.showImage(thresh.duplicate("after open / before close"));
-                    thresh = Filters.binaryClose(thresh, Filters.getNeighborhood(openRadius, openRadius, thresh));
-                    if (debug) disp.showImage(thresh.duplicate("after close"));
+                    if (debug) disp.showImage(thresh.duplicate("after open"));
+                    //thresh = Filters.binaryClose(thresh, Filters.getNeighborhood(openRadius, openRadius, thresh));
+                    //if (debug) disp.showImage(thresh.duplicate("after close"));
                 } else Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(1, 1, thresh)); // remove pixels only connected by diagonal -> otherwise curvature cannot be computed
                 
                 pop1 = new ObjectPopulation(thresh, false); // re-create label image in case objects have been separated in previous steps

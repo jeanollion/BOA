@@ -55,6 +55,7 @@ public class Curvature {
         Roi r = IJImageWindowManager.createRoi(mask, new BoundingBox(0, 0, 0), false).get(0);
         Fourier fourier = new Fourier();
         fourier.Init(r, mask.getScaleXY());
+        //logger.debug("Curvature: length: {}, closed?: {}", fourier.NPT, fourier.closed());
         double reso = mask.getScaleXY();
         final ArrayList<RealPoint> points = new ArrayList<RealPoint>(fourier.points.length);
         final ArrayList<Double> values = new ArrayList<Double>(fourier.points.length);
