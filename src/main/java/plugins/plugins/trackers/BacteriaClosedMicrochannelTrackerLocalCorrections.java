@@ -357,18 +357,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (lastO.prev!=null && lastO.prev.incompleteDivision) { // remove incomplete divisions
             if (debugCorr) logger.debug("incomplete division at: {}", lastO);
             removeTrack(lastO);
-            /*while (lastO!=null) {
-                if (debugCorr) logger.debug("incomplete division removing: {}", lastO);
-                if (lastO.idx==populations[lastO.timePoint].size()-1) {
-                    populations[lastO.timePoint].remove(lastO.o);
-                    lastO=lastO.next;
-                } else {
-                    lastO.errorPrev=true;
-                    lastO.prev=null; // in order not to generate an error during assignment
-                    lastO=null;
-                }
-            }*/
-        } else if (lastO.prev==null && t>minT) removeTrack(lastO); // remove tracks that do not start a min timePoint
+        } 
+        //if (t>minT) for (TrackAttribute ta : trackAttributes[t])  if (ta.prev==null) removeTrack(ta); // remove tracks that do not start a min timePoint. // DO NOT REMOVE THEM IN ORDER TO BE ABLE TO PERFORM MANUAL CORRECTION
+        
     }
     private void removeTrack(TrackAttribute o) {
         populations[o.timePoint].remove(o.o);
@@ -597,7 +588,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         public double getSize() {
             if (Double.isNaN(objectSize)) {
                 //this.objectSize=GeometricalMeasurements.getVolume(o);
-                this.objectSize = o.getBounds().getSizeY();
+                //this.objectSize = o.getBounds().getSizeY();
+                this.objectSize = GeometricalMeasurements.getFeretMax(o);
             }
             return objectSize;
         }

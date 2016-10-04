@@ -130,8 +130,9 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     */
     NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 2, 0, null);
     NumberParameter minSizeFusion = new BoundedNumberParameter("Minimum Object size (fusion)", 0, 200, 5, null);
+    NumberParameter minSize = new BoundedNumberParameter("Minimum Object size", 0, 200, 5, null);
     NumberParameter minSizeChannelEnd = new BoundedNumberParameter("Minimum Object size (end of channel)", 0, 400, 5, null);
-    GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSizeFusion, minSizeChannelEnd, contactLimit);
+    GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSize, minSizeFusion, minSizeChannelEnd, contactLimit);
     
     Parameter[] parameters = new Parameter[]{backgroundSeparation, thicknessParameters, curvatureParameters, objectParameters};
         
@@ -224,7 +225,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     public ProcessingVariables getProcessingVariables(Image input, ImageMask segmentationMask) {
         return new ProcessingVariables(input, segmentationMask,
                 relativeThicknessThreshold.getValue().doubleValue(), relativeThicknessMaxDistance.getValue().doubleValue(), 
-                subBackScale.getValue().doubleValue(), openRadius.getValue().doubleValue(), minSizePropagation.getValue().intValue(), minSizeFusion.getValue().intValue(),
+                subBackScale.getValue().doubleValue(), openRadius.getValue().doubleValue(), 
+                minSize.getValue().intValue(), minSizePropagation.getValue().intValue(), minSizeFusion.getValue().intValue(),
                 curvatureScale.getValue().intValue(), curvatureThreshold.getValue().doubleValue(), curvatureSearchRadius.getValue().doubleValue());
     }
     
@@ -249,6 +251,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         if (contactLimit.getValue().intValue()>0) pop.filter(new ObjectPopulation.ContactBorder(contactLimit.getValue().intValue(), parent.getMask(), ObjectPopulation.ContactBorder.Border.YDown));
         
         if (!pop.getObjects().isEmpty()&& pop.getObjects().get(pop.getObjects().size()-1).getSize()<minSizeChannelEnd.getValue().intValue()) pop.getObjects().remove(pop.getObjects().size()-1); // remove small objects at the end of channel? // si plusieurs somme des tailles inférieurs?
+        pop.filter(new ObjectPopulation.Size().setMin(minSize.getValue().intValue()));
         return pop;
     }
     
@@ -501,13 +504,13 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         ImageByte splitMask;
         final double relativeThicknessThreshold, dogScale, openRadius, relativeThicknessMaxDistance;//, smoothScale;// aspectRatioThreshold, angleThresholdRad; 
         double threshold = Double.NaN;
-        final int curvatureScale, minSizePropagation, minSizeFusion;
+        final int curvatureScale, minSizePropagation, minSizeFusion, minSize;
         final double curvatureSearchScale;
         final double curvatureThreshold;
         double contrastThreshold;
         Object3DCluster.InterfaceFactory<Object3D, InterfaceBT> factory;
         private double yLimLastObject = Double.NaN;
-        private ProcessingVariables(Image input, ImageMask mask, double splitThresholdValue, double relativeThicknessMaxDistance, double dogScale, double openRadius, int minSizePropagation, int minSizeFusion, int curvatureScale, double curvatureThreshold, double curvatureSearchRadius) {
+        private ProcessingVariables(Image input, ImageMask mask, double splitThresholdValue, double relativeThicknessMaxDistance, double dogScale, double openRadius, int minSize, int minSizePropagation, int minSizeFusion, int curvatureScale, double curvatureThreshold, double curvatureSearchRadius) {
             this.input=input;
             this.mask=mask;
             this.relativeThicknessThreshold=splitThresholdValue;
@@ -522,6 +525,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             this.curvatureScale = curvatureScale;
             curvatureSearchScale = curvatureSearchRadius;
             this.curvatureThreshold=curvatureThreshold;
+            this.minSize=minSize;
         }
         /*private Image getSmoothed() {
             if (smoothed==null) smoothed = ImageFeatures.gaussianSmooth(input, smoothScale, smoothScale, false);
@@ -592,14 +596,14 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                     if (debug) disp.showImage(thresh.duplicate("before open"));
                     Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(openRadius, openRadius, thresh));
                     if (debug) disp.showImage(thresh.duplicate("after open"));
-                    //thresh = Filters.binaryClose(thresh, Filters.getNeighborhood(openRadius, openRadius, thresh));
+                    //thresh = Filters.binaryClose(thresh, Filters.getNeighborhood(openRadius, openRadius, thresh)); // no close -> create errors with curvature
                     //if (debug) disp.showImage(thresh.duplicate("after close"));
                 } else Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(1, 1, thresh)); // remove pixels only connected by diagonal -> otherwise curvature cannot be computed
                 
                 pop1 = new ObjectPopulation(thresh, false); // re-create label image in case objects have been separated in previous steps
                 if (debug) disp.showImage(pop1.getLabelMap().duplicate("objects after adjust contour"));
-                
-                pop1.filterAndMergeWithConnected(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
+                pop1.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
+                pop1.filter(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
                 FillHoles2D.fillHoles(pop1);
                 if (debug) new IJImageDisplayer().showImage(pop1.getLabelMap().duplicate("SEG MASK"));
                 pop1.filter(new ContrastIntensity(-contrastThreshold, 3,3,false, getIntensityMap()));

@@ -578,7 +578,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
     // measurement-specific methds
 
     
-    public void upsertMeasurements(Collection<StructureObject> objects) {
+    @Override public void upsertMeasurements(Collection<StructureObject> objects) {
         if (objects.isEmpty()) return;
         long t1 = System.currentTimeMillis();
         if (!(objects instanceof Set)) Utils.removeDuplicates(objects, false);
@@ -591,7 +591,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
         Processor.logger.debug("measurements on field: {}: upsert time: {} ({} objects)", getFieldName(), t2-t1, objects.size());
     }
     
-    public void upsertMeasurement(StructureObject o) {
+    @Override public void upsertMeasurement(StructureObject o) {
         o.getMeasurements().updateObjectProperties(o);
         //if (o.getMeasurements().id!=null) measurementsDAO.delete(o.getMeasurements());
         try {

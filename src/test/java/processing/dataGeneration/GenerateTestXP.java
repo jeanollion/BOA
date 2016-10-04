@@ -28,6 +28,7 @@ import plugins.PluginFactory;
 import plugins.plugins.measurements.BacteriaFluoMeasurements;
 import plugins.plugins.measurements.BacteriaLineageIndex;
 import plugins.plugins.measurements.BacteriaMeasurementsWoleMC;
+import plugins.plugins.measurements.BacteriaTransMeasurements;
 import plugins.plugins.measurements.MeasurementObject;
 import plugins.plugins.measurements.MutationMeasurements;
 import plugins.plugins.measurements.MutationTrackMeasurements;
@@ -262,7 +263,7 @@ public class GenerateTestXP {
         xp.getChannelImages().insert(new ChannelImage("RFP", "_REF"), new ChannelImage("YFP", ""));
         xp.setOutputImageDirectory(outputDir);
         File f =  new File(outputDir); f.mkdirs(); //deleteDirectory(f);
-        Structure mc = new Structure("MicroChannel", -1, 0);
+        Structure mc = new Structure("Microchannel", -1, 0);
         Structure bacteria = new Structure("Bacteria", 0, 0).setAllowSplit(true);
         Structure mutation = new Structure("Mutation", 0, 1); // parent structure 1 segParentStructure 0
         xp.getStructures().insert(mc, bacteria, mutation);
@@ -305,7 +306,7 @@ public class GenerateTestXP {
         xp.getChannelImages().insert(new ChannelImage("BF", "c1"));
         xp.setOutputImageDirectory(outputDir);
         File f =  new File(outputDir); f.mkdirs(); //deleteDirectory(f);
-        Structure mc = new Structure("MicroChannel", -1, 0);
+        Structure mc = new Structure("Microchannel", -1, 0);
         Structure bacteria = new Structure("Bacteria", 0, 0).setAllowSplit(true);
         xp.getStructures().insert(mc, bacteria);
         
@@ -322,10 +323,9 @@ public class GenerateTestXP {
                 )
         );
         
-        //xp.addMeasurement(new BacteriaLineageIndex(1));
-        //xp.addMeasurement(new BacteriaMeasurements(1, 2));
-        xp.addMeasurement(new BacteriaMeasurementsWoleMC(1, 2));
-        if (setUpPreProcessing) {// preProcessing 
+        xp.addMeasurement(new BacteriaLineageIndex(1));
+        xp.addMeasurement(new BacteriaTransMeasurements(1));
+        if (setUpPreProcessing) { // preProcessing 
             if (!Double.isNaN(scaleXY)) xp.getPreProcessingTemplate().setCustomScale(scaleXY, 1);
             xp.getPreProcessingTemplate().setTrimFrames(trimFramesStart, trimFramesEnd);
             xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(0.3, true, false, true, true));

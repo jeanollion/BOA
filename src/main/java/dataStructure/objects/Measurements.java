@@ -45,7 +45,7 @@ public class Measurements implements Comparable<Measurements>{
     protected int[] indices;
     protected HashMap<String, Object> values;
     @Transient boolean modifications=false;
-    
+    final static String NA_STRING = "NA";
     public Measurements(StructureObject o) {
         this.fieldName=o.getFieldName();
         this.timePoint=o.getTimePoint();
@@ -108,15 +108,17 @@ public class Measurements implements Comparable<Measurements>{
     public String getValueAsString(String name) {
         Object o = values.get(name);
         if (o instanceof Number || o instanceof String || o instanceof Boolean) return o.toString();
-        else return "NA";
+        else return NA_STRING;
     }
     
     public void setValue(String key, Number value) {
-        if (value == null) values.remove(key);
+        if (value == null || isNA(value)) values.remove(key);
         else values.put(key, value);
         modifications=true;
     }
-    
+    private static boolean isNA(Number value) {
+        return (value instanceof Double && ((Double)value).isNaN() ||  value instanceof Float && ((Float)value).isNaN());
+    }
     public void setValue(String key, String value) {
         if (value == null) values.remove(key);
         else values.put(key, value);

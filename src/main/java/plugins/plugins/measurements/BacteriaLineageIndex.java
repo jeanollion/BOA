@@ -106,9 +106,10 @@ public class BacteriaLineageIndex implements Measurement {
         return true;
     }
     private static String getTrackHeadName(int trackHeadIdx) {
-        char c = (char)(trackHeadIdx%26 + 65); //ASCII UPPER CASE +65
+        return String.valueOf(trackHeadIdx);
+        /*char c = (char)(trackHeadIdx%26 + 65); //ASCII UPPER CASE +65
         int mod = trackHeadIdx/26;
         if (mod>0) return String.valueOf(c)+mod;
-        else return String.valueOf(c);
+        else return String.valueOf(c);*/
     }
 }

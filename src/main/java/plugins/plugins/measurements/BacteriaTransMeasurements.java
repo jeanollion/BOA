@@ -37,17 +37,15 @@ import plugins.Measurement;
  *
  * @author jollion
  */
-public class BacteriaFluoMeasurements implements Measurement {
+public class BacteriaTransMeasurements implements Measurement {
     protected StructureParameter bacteria = new StructureParameter("Bacteria Structure", 1, false, false);
-    protected StructureParameter mutation = new StructureParameter("Mutation Structure", 2, false, false);
-    protected Parameter[] parameters = new Parameter[]{bacteria, mutation};
+    protected Parameter[] parameters = new Parameter[]{bacteria};
     
     
-    public BacteriaFluoMeasurements(){}
+    public BacteriaTransMeasurements(){}
     
-    public BacteriaFluoMeasurements(int bacteriaStructureIdx, int mutationStructureIdx){
+    public BacteriaTransMeasurements(int bacteriaStructureIdx){
         this.bacteria.setSelectedIndex(bacteriaStructureIdx);
-        this.mutation.setSelectedIndex(mutationStructureIdx);
     }
     
     public int getCallStructure() {
@@ -63,39 +61,31 @@ public class BacteriaFluoMeasurements implements Measurement {
         ArrayList<MeasurementKey> res = new ArrayList<MeasurementKey>();
         res.add(new MeasurementKeyObject("BacteriaCenterX", structureIdx));
         res.add(new MeasurementKeyObject("BacteriaCenterY", structureIdx));
-        res.add(new MeasurementKeyObject("MeanRFPInBacteria", structureIdx));
-        res.add(new MeasurementKeyObject("MeanYFPInBacteria", structureIdx));
         res.add(new MeasurementKeyObject("BacteriaLength", structureIdx));
         res.add(new MeasurementKeyObject("BacteriaArea", structureIdx));
-        res.add(new MeasurementKeyObject("MutationCountInBacteria", structureIdx));
+        
         // from tracking
         res.add(new MeasurementKeyObject("TrackErrorPrev", structureIdx));
         res.add(new MeasurementKeyObject("TrackErrorNext", structureIdx));
         res.add(new MeasurementKeyObject("SizeIncrement", structureIdx));
         res.add(new MeasurementKeyObject("TrackErrorSizeIncrement", structureIdx));
+
         return res;
     }
 
-    public void performMeasurement(StructureObject object) {
+    @Override public void performMeasurement(StructureObject object) {
         Object3D bactObject = object.getObject();
-        Image bactImage = object.getRawImage(bacteria.getSelectedIndex());
-        Image mutImage = object.getRawImage(mutation.getSelectedIndex());
         BoundingBox parentOffset = object.getParent().getBounds();
-        double[] center=bactObject.getCenter(bactImage, true);
+        double[] center=bactObject.getCenter(true);
         center[0]-=parentOffset.getxMin()*object.getScaleXY();
         center[1]-=parentOffset.getyMin()*object.getScaleXY();
         //if (object.getTimePoint()==0) logger.debug("object: {} center: {}, parentOffset: {}, objectoffset: {} bactImageOffset: {}, mutImageOffset: {}", object, center, parentOffset, object.getBounds(), bactImage.getBoundingBox(), mutImage.getBoundingBox());
         object.getMeasurements().setValue("BacteriaCenterX", center[0]);
         object.getMeasurements().setValue("BacteriaCenterY", center[1]);
-        object.getMeasurements().setValue("MeanRFPInBacteria", BasicMeasurements.getMeanValue(bactObject, bactImage, true));
-        object.getMeasurements().setValue("MeanYFPInBacteria", BasicMeasurements.getMeanValue(bactObject, mutImage, true));
         object.getMeasurements().setValue("BacteriaLength", GeometricalMeasurements.getFeretMax(bactObject));
         object.getMeasurements().setValue("BacteriaArea", GeometricalMeasurements.getVolume(bactObject));
-        int includedMutations = ObjectInclusionCount.count(object, mutation.getSelectedIndex(), 0, false);
-        object.getMeasurements().setValue("MutationCountInBacteria", includedMutations);
         
-        List<StructureObject> mutList = object.getChildren(mutation.getSelectedIndex()); // return included mutations
-        if (includedMutations!=mutList.size()) logger.warn("Error Mutation count in: {}: {} vs: {}", object, includedMutations, mutList.size());
+        
     }
 
     public Parameter[] getParameters() {

@@ -56,12 +56,12 @@ public class DataExtractor {
     protected String getBaseHeader() { //TODO split Indicies column ...
         int[] path = db.getExperiment().getPathToRoot(structureIdx);
         String[] structureNames = db.getExperiment().getStructureNames(path);
-        String res =  "FieldName"+separator+"Indices"+separator+"TimePoint";
+        String res =  "Position"+separator+"PositionIdx"+separator+"Indices"+separator+"Frame";
         for (String s : structureNames) res+=separator+s+"Idx";
         return res;
     }
     protected String getBaseLine(Measurements m) {
-        String line = m.getFieldName();
+        String line = m.getFieldName()+separator+db.getExperiment().getPositionIdx(m.getFieldName());
         int[] idx = m.getIndices();
         line+= Utils.toStringArray(idx, separator, "", Selection.indexSeparator);
         for (int i : idx) line+=separator+i; // separated columns ..
