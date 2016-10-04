@@ -46,8 +46,8 @@ public class TestTracker {
         new ImageJ();
         //String dbName = "boa_mutH_140115";
         final String dbName = "boa_phase140115mutH";
-        int fIdx = 0;
-        int mcIdx =1;
+        int fIdx = 1;
+        int mcIdx =2;
         int structureIdx = 1;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();

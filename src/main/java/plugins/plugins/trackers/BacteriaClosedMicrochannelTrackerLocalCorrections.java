@@ -373,6 +373,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     private void removeTrack(TrackAttribute o) {
         populations[o.timePoint].remove(o.o);
         trackAttributes[o.timePoint].remove(o);
+        resetIndices(o.timePoint);
         if (o.next!=null) {
             List<TrackAttribute> curO = new ArrayList<>(3);
             List<TrackAttribute> nextO = new ArrayList<>(3);
@@ -388,6 +389,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     populations[ta.timePoint].remove(ta.o);
                     trackAttributes[ta.timePoint].remove(ta);
                 }
+                resetIndices(curO.get(0).timePoint);
             }
         }
     }
@@ -1167,7 +1169,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 saveSplit = new ObjectAndAttributeSave(timePoint, timePoint+split.size()-1);
                 if (correctionStep) step("step:"+step+"/split scenario ["+timePoint+";"+(timePoint+split.size()-1)+"]", false);
                 saveCur.restore(timePoint, timePoint+split.size()-1);
-                for (int t = timePoint;t <Math.min(timePoint+split.size(), populations.length-1); ++t) assignPrevious(t, false, false);
+                for (int t = timePoint;t <Math.min(timePoint+split.size()+1, populations.length-1); ++t) assignPrevious(t, false, false);
             }
             if (Double.isFinite(mergeCost[1])) {
                 for (CorrectionScenario c : merge) c.applyScenario();
@@ -1175,14 +1177,14 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 saveMerge = new ObjectAndAttributeSave(timePoint-merge.size(), timePoint-1);
                 if (correctionStep) step("step:"+step+"/merge scenario ["+(timePoint-merge.size())+";"+(timePoint-1)+"]", false);
                 saveCur.restore(timePoint-merge.size(), timePoint-1);
-                for (int t = Math.max(1, timePoint-merge.size());t <timePoint; ++t) assignPrevious(t, false, false);
+                for (int t = Math.max(1, timePoint-merge.size());t<=timePoint; ++t) assignPrevious(t, false, false);
             }
             if (debugCorr && verboseLevel<verboseLevelLimit) logger.debug("t: {}: performing correction: errors: {}, merge scenario length: {}, cost: {}, errors: {}, split scenario: length {}, cost: {}, errors: {}", timePoint, currentErrors, merge.size(), mergeCost[1], mergeCost[0], split.size(), splitCost[1], splitCost[0]);
-            if (saveMerge!=null && mergeCost[0]<currentErrors && compareScores(mergeCost, splitCost, true)<=0 ) {
+            if (saveMerge!=null && mergeCost[0]<=currentErrors && compareScores(mergeCost, splitCost, true)<=0 ) {
                 saveMerge.restoreAll();
                 if (debugCorr && verboseLevel<verboseLevelLimit) logger.debug("apply merge scenario!");
                 return new int[]{Math.max(1, timePoint-merge.size()), Math.min(populations.length-1, timePoint+1)};
-            } else if (saveSplit!=null && splitCost[0]<currentErrors && compareScores(mergeCost, splitCost, true)>=0 ) {
+            } else if (saveSplit!=null && splitCost[0]<=currentErrors && compareScores(mergeCost, splitCost, true)>=0 ) {
                 if (debugCorr && verboseLevel<verboseLevelLimit) logger.debug("apply split scenario!");
                 saveSplit.restoreAll();
                 return new int[]{timePoint, Math.min(populations.length-1, timePoint+split.size()+1)};
@@ -1232,10 +1234,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     for (int t = timePoint; t<=Math.min(timePoint+1, populations.length-1); ++t) assignPrevious(t, false , false);
                 }
                 if (debugCorr && verboseLevel<verboseLevelLimit) logger.debug("split&merge: errors current: {}, errors sc.tp-1: {}, cost: {}, errors sc.tp: {}, cost{}",currentErrors, errorsBefore, before.cost, errorsAfter, after.cost );
-                if (saveBefore!=null && errorsBefore<currentErrors && (errorsBefore<errorsAfter && before.cost<after.cost || (errorsBefore==errorsAfter && before.cost<after.cost))) {
+                if (saveBefore!=null && errorsBefore<=currentErrors && (errorsBefore<errorsAfter && before.cost<after.cost || (errorsBefore==errorsAfter && before.cost<after.cost))) {
                     saveBefore.restore(timePoint-1);
                     return new int[]{Math.max(1, timePoint-1), timePoint};
-                } else if (saveAfter!=null && errorsAfter<currentErrors && (errorsAfter<errorsBefore && after.cost<before.cost || (errorsBefore==errorsAfter && after.cost<before.cost))) {
+                } else if (saveAfter!=null && errorsAfter<=currentErrors && (errorsAfter<errorsBefore && after.cost<before.cost || (errorsBefore==errorsAfter && after.cost<before.cost))) {
                     saveAfter.restore(timePoint);
                     return new int[]{Math.max(1, timePoint-1), Math.min(populations.length-1, timePoint+1)};
                 } else return null;
