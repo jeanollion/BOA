@@ -112,6 +112,15 @@ public abstract class ImageWindowManager<T, U, V> {
         this.interactiveStructureIdx=structureIdx;
     }
     
+    public Image getImage(ImageObjectInterface i, boolean labelImage) {
+        List<Image> list = Utils.getKeys(imageObjectInterfaceMap, new ImageObjectInterfaceKey(i.parent, i.childStructureIdx, i.isTimeImage()));
+        list.removeIf(im -> isLabelImage.get(im)!=labelImage);
+        if (list.isEmpty()) return null;
+        else return list.get(0);
+    }
+    
+    public abstract void setActive(Image image);
+    
     public void addImage(Image image, ImageObjectInterface i, boolean labelImage, boolean displayImage) {
         //ImageObjectInterface i = getImageObjectInterface(parent, childStructureIdx, timeImage);
         if (!imageObjectInterfaces.containsValue(i)) throw new RuntimeException("image object interface should be created through the manager");

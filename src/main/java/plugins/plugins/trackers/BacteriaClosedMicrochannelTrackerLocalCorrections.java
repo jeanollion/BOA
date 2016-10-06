@@ -590,6 +590,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 //this.objectSize=GeometricalMeasurements.getVolume(o);
                 //this.objectSize = o.getBounds().getSizeY();
                 this.objectSize = GeometricalMeasurements.getFeretMax(o);
+                // TODO Pour le squelette: calculer le squelette et pour le fermet: prendre une extremité et chercher le point du contour le + eloingé et le relier a l'autre extremitée, idem pour l'autre extremité.
             }
             return objectSize;
         }
@@ -1022,6 +1023,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     if (noticeAll) {
                         taPrev.incompleteDivision = truncatedEndOfChannel();
                         if (!taPrev.incompleteDivision) taCur.sizeIncrementError = significantSizeIncrementError(idxPrev+i, taCur.getSize(), taPrev.getSize());
+                        if (taCur.sizeIncrementError && !taCur.errorPrev) taCur.errorPrev=true;
+                        if (taCur.sizeIncrementError && !taPrev.errorCur) taPrev.errorCur=true;
                         taCur.sizeIncrement=taCur.getSize()/taPrev.getSize();
                     }
                 }
@@ -1040,6 +1043,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     if (noticeAll) {
                         ta.sizeIncrementError = significantSizeIncrementError();
                         ta.sizeIncrement = size / sizePrev;
+                        if (ta.sizeIncrementError && !ta.errorPrev) ta.errorPrev=true;
+                        if (ta.sizeIncrementError && !taPrev.errorCur) taPrev.errorCur=true;
                     }
                 }
             } else if (nPrev>1 && nCur==1) { // merging
@@ -1058,70 +1063,45 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 }
             } else if (nPrev>1 && nCur>1) { // algorithm assign first with first (or 2 first) or last with last (or 2 last) (the most likely) and recursive call.
                 TrackAssigner dup = duplicate(); // recursive algo. do not modify current trackAssigner!
+                TrackAssigner currentAssigner = duplicate();
                 TrackAttribute taCur1 = getAttribute(timePoint, idx);
                 TrackAttribute taCur2 = getAttribute(timePoint, idx+1);
                 TrackAttribute taPrev1 = getAttribute(timePoint-1, idxPrev);
                 double sizeIncrement1 = taPrev1.getLineageSizeIncrement();
                 if (Double.isNaN(sizeIncrement1)) sizeIncrement1 = defaultSizeIncrement();
                 double score1 = Math.abs(taCur1.getSize()/taPrev1.getSize()-sizeIncrement1);
-                double score2 = Math.abs((taCur1.getSize()+taCur2.getSize())/taPrev1.getSize()-sizeIncrement1);
+                double scoreDiv = Math.abs((taCur1.getSize()+taCur2.getSize())/taPrev1.getSize()-sizeIncrement1);
                 TrackAttribute taCurEnd1 = getAttribute(timePoint, idxEnd-1);
                 TrackAttribute taCurEnd2 = getAttribute(timePoint, idxEnd-2);
                 TrackAttribute taPrevEnd = getAttribute(timePoint-1, idxPrevEnd-1);
                 double sizeIncrementEnd = taPrevEnd.getLineageSizeIncrement();
                 if (Double.isNaN(sizeIncrementEnd)) sizeIncrementEnd = defaultSizeIncrement();
                 double scoreEnd1 = Math.abs(taCurEnd1.getSize()/taPrevEnd.getSize()-sizeIncrementEnd);
-                double scoreEnd2 = Math.abs((taCurEnd1.getSize()+taCurEnd2.getSize())/taPrevEnd.getSize()-sizeIncrementEnd);
-                TrackAttribute taCur, taCurDiv=null, taPrev;
-                double score;
-                if (score1<scoreEnd1 && score1<scoreEnd2 && score1<score2) { // assign first with first
-                    taCur = taCur1;
-                    taPrev= taPrev1;
+                double scoreEndDiv = Math.abs((taCurEnd1.getSize()+taCurEnd2.getSize())/taPrevEnd.getSize()-sizeIncrementEnd);
+                double score=Math.min(scoreEndDiv, Math.min(scoreEnd1, Math.min(score1, scoreDiv)));
+                if (score1==score) { // assign first with first
                     dup.idx++;
                     dup.idxPrev++;
-                    score = score1;
-                } else if (scoreEnd1<score1 && scoreEnd1<score2 && scoreEnd1<scoreEnd2) { // assign last with last
-                    taCur = taCurEnd1;
-                    taPrev= taPrevEnd;
+                    currentAssigner.idxEnd=dup.idx;
+                    currentAssigner.idxPrevEnd=dup.idxPrev;
+                } else if (score==scoreEnd1) { // assign last with last
                     dup.idxEnd--;
                     dup.idxPrevEnd--;
-                    score = scoreEnd1;
-                } else if (score2<score1 && score2<scoreEnd1 && score2<scoreEnd2) { // assign first with 2 first
-                    taCur = taCur1;
-                    taCurDiv = taCur2;
-                    taPrev= taPrev1;
+                    currentAssigner.idx=dup.idxEnd;
+                    currentAssigner.idxPrev=dup.idxPrevEnd;
+                } else if (scoreDiv==score) { // assign first with 2 first
                     dup.idx+=2;
                     dup.idxPrev++;
-                    score = score1;
+                    currentAssigner.idxEnd=dup.idx;
+                    currentAssigner.idxPrevEnd=dup.idxPrev;
                 } else { // assign last with 2 lasts
-                    taCur = taCurEnd2;
-                    taPrev= taPrevEnd;
-                    taCurDiv = taCurEnd1;
                     dup.idxEnd-=2;
                     dup.idxPrevEnd--;
-                    score = scoreEnd1;
+                    currentAssigner.idx=dup.idxEnd;
+                    currentAssigner.idxPrev=dup.idxPrevEnd;
                 }
-                taCur.prev=taPrev;
-                taPrev.next=taCur;
-                taCur.errorPrev=true;
-                taPrev.errorCur=true;
-                taCur.trackHead=false;
-                taCur.nPrev=nPrev;
-                if (taCurDiv!=null) {
-                    taPrev.division=true;
-                    taCurDiv.prev=taPrev;
-                    taCurDiv.trackHead=true;
-                    taCurDiv.errorPrev=true;
-                }
-                if (noticeAll) {
-                    taCur.sizeIncrementError = score>maxSizeIncrementError;
-                    taCur.sizeIncrement=(taCur.getSize()+(taCurDiv!=null?taCurDiv.getSize():0))/taPrev.getSize();
-                    if (taCurDiv!=null) {
-                        taCurDiv.sizeIncrement=taCur.sizeIncrement;
-                        taCurDiv.sizeIncrementError=taCur.sizeIncrementError;
-                    }
-                }
-                if (debug && verboseLevel<verboseLevelLimit) logger.debug("assignment {} with {} objects, assign {}, div:{}", nPrev, nCur, score<scoreEnd1&score<scoreEnd2 ? "first" : "last", taCurDiv!=null);
+                if (debug && verboseLevel<verboseLevelLimit) logger.debug("assignment {} with {} objects, assign {}, div:{}", nPrev, nCur, (score==score1||score==scoreEndDiv) ? "first" : "last", (score==scoreDiv||score==scoreEndDiv));
+                currentAssigner.assignCurrent(noticeAll); // perform current assignement
                 dup.assignCurrent(noticeAll); // recursive call
             }
         }

@@ -186,7 +186,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     public int getPositionIdx(String positionName) {
-        return fields.getIndex(fields.getChildByName(positionName));
+        return fields.getIndex(positionName);
     }
     
     public String[] getStructuresAsString() {return structures.getChildrenString();}

@@ -82,7 +82,9 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         displayedImages.clear();
         displayedImagesInv.clear();
     }
-    
+    /*@Override public boolean isVisible(Image image) {
+        return displayedImages.containsKey(image) && displayedImages.get(image).isVisible();
+    }*/
     private boolean imageExistButHasBeenClosed(Image image) {
         return displayedImages.get(image)!=null && displayedImages.get(image).getCanvas()==null;
     }

@@ -55,8 +55,8 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
         if (parentTrack.isEmpty()) return;
         TrackMateInterface<Spot> tmi = new TrackMateInterface(TrackMateInterface.defaultFactory());
         tmi.addObjects(parentTrack, structureIdx);
-        tmi.processFTF(maxShift.getValue().doubleValue()*parentTrack.get(0).getScaleXY());
-        tmi.setTrackLinks(parentTrack, structureIdx);
+        boolean ok = tmi.processFTF(maxShift.getValue().doubleValue()*parentTrack.get(0).getScaleXY());
+        if (ok) tmi.setTrackLinks(parentTrack, structureIdx);
     }
 
     @Override

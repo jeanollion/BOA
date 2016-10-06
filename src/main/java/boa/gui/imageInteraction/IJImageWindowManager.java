@@ -199,6 +199,13 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
         });
     }
     
+    @Override public void setActive(Image image) {
+        ImagePlus ip = this.displayer.getImage(image);
+        if (ip!=null && ip.isVisible()) {
+            IJ.selectWindow(image.getName());
+        } else displayer.showImage(image);
+    }
+    
     @Override
     protected List<int[]> getSelectedPointsOnImage(ImagePlus image) {
         Roi r = image.getRoi();

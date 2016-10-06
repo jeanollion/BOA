@@ -53,6 +53,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.SwingUtilities;
 import javax.swing.tree.TreePath;
+import utils.HashMapGetCreate;
 import utils.Pair;
 import utils.Utils;
 
@@ -84,6 +85,29 @@ public class SelectionUtils {
             if (s.getAllElements()!=null) res.addAll(s.getAllElements());
         }
         return res;
+    }
+    
+    public static Map<String, List<StructureObject>> getStructureObjects(List<Selection> selections) {
+        if (selections==null || selections.isEmpty()) return Collections.EMPTY_MAP;
+        selections.removeIf(s -> s.getStructureIdx()!=selections.get(0).getStructureIdx());
+        HashMapGetCreate<String, List<StructureObject>> res=  new HashMapGetCreate<>(new HashMapGetCreate.ListFactory<>());
+        for (Selection s : selections) {
+            for (String p : s.getAllPositions()) res.getAndCreateIfNecessary(p).addAll(s.getElements(p));
+        }
+        return res;
+    }
+    public static Set<String> getPositions(List<Selection> selections) {
+        Set<String> res = new HashSet<>();
+        for (Selection s: selections) res.addAll(s.getAllPositions());
+        return res;
+    }
+    public static String getNextPosition(List<Selection> selections, String position, boolean next) {
+        List<String> p = new ArrayList<>(getPositions(selections));
+        Collections.sort(p);
+        logger.debug("getNext pos: {}, cur: {}", p, position);
+        int idx = p.indexOf(position) + (next?1:-1);
+        if (idx==-1 || idx==p.size()) return null;
+        else return p.get(idx);
     }
     
     public static Selection getSelection(MasterDAO db, String name, boolean createIfNonExisting) {

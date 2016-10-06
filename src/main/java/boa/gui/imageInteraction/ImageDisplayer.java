@@ -37,4 +37,5 @@ public interface ImageDisplayer<T> {
     public T getCurrentImage();
     public Image getCurrentImage2();
     public void flush();
+    //public boolean isVisible(Image image);
 }

@@ -37,6 +37,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import utils.Utils;
 
 /**
@@ -64,6 +65,16 @@ public class Selection implements Comparable<Selection> {
         this.structureIdx=-1;
         elements = new HashMap<String, List<String>>();
         this.mDAO=mDAO;
+    }
+    public Set<String> getAllPositions() {
+        return elements.keySet();
+    }
+    public String getNextPosition(String position, boolean next) {
+        List<String> p = new ArrayList<>(elements.keySet());
+        Collections.sort(p);
+        int idx = p.indexOf(position) + (next?1:-1);
+        if (idx==-1 || idx==p.size()) return null;
+        else return p.get(idx);
     }
     
     public Color getColor(boolean imageDisplay) {

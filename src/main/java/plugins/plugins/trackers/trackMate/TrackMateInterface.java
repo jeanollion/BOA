@@ -78,8 +78,7 @@ public class TrackMateInterface<S extends Spot> {
         final Map< String, Object > ftfSettings = new HashMap< String, Object >();
         ftfSettings.put( KEY_LINKING_MAX_DISTANCE, distanceThreshold );
         ftfSettings.put( KEY_ALTERNATIVE_LINKING_COST_FACTOR, 1.05 );
-        //ftfSettings.put( KEY_LINKING_FEATURE_PENALTIES, settings.get( KEY_LINKING_FEATURE_PENALTIES ) );
-
+        
         final SparseLAPFrameToFrameTrackerFromExistingGraph frameToFrameLinker = new SparseLAPFrameToFrameTrackerFromExistingGraph(collection, ftfSettings, graph );
         frameToFrameLinker.setNumThreads( numThreads );
         final Logger.SlaveLogger ftfLogger = new Logger.SlaveLogger( internalLogger, 0, 0.5 );
@@ -87,6 +86,7 @@ public class TrackMateInterface<S extends Spot> {
 
         if ( !frameToFrameLinker.checkInput() || !frameToFrameLinker.process()) {
                 errorMessage = frameToFrameLinker.getErrorMessage();
+                logger.error(errorMessage);
                 return false;
         }
         graph = frameToFrameLinker.getResult();

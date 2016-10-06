@@ -293,7 +293,11 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
         for (T child : getChildren()) if (name.equals(child.getName())) return child;
         return null;
     }
-
+    public int getIndex(String name) {
+        T child = getChildByName(name);
+        if (child==null) return -1;
+        else return getIndex(child);
+    }
     @Override
     public T getChildAt(int childIndex) {
         return getChildren().get(childIndex);
