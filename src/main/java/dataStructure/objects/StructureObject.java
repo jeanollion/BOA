@@ -300,7 +300,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     // track-related methods
     
     public void setTrackLinks(StructureObject next, boolean setPrev, boolean setNext, TrackFlag flag) {
-        if (next==null) unSetTrackLinks(setPrev, setNext);
+        if (next==null) resetTrackLinks(setPrev, setNext);
         else {
             if (next.getTimePoint()<=this.getTimePoint()) throw new RuntimeException("setLink should be of time>= "+(timePoint+1) +" but is: "+next.getTimePoint()+ " current: "+this+", next: "+next);
             if (setPrev && setNext) { // double link: set trackHead
@@ -317,29 +317,33 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (next!=null) next.flag=flag;
     }
     
-    public void unSetTrackLinks(boolean prev, boolean next) {
+    public StructureObject resetTrackLinks(boolean prev, boolean next) {
+        if (prev && this.previous!=null && this.previous.next==this) previous.unSetTrackLinksOneWay(false, true);
+        if (next && this.next!=null && this.next.previous==this) this.next.unSetTrackLinksOneWay(true, false);
+        unSetTrackLinksOneWay(prev, next);
+        if (prev && next) flag = null;
+        return this;
+    }
+    private void unSetTrackLinksOneWay(boolean prev, boolean next) {
         if (prev) {
-            // unset previous's next? 
+            if (this.previous!=null && this.previous.next==this)
             setPrevious(null);
             setTrackHead(this, false, false, null);
+            if (hasMeasurements()) {
+                String value = null;
+                getMeasurements().setValue(trackErrorPrev, value);
+            }
         }
         if (next) {
             // unset next's previous?
             setNext(null);
+            if (hasMeasurements()) {
+                String value = null;
+                getMeasurements().setValue(trackErrorNext, value);
+            }
         }
     }
-    @Override
-    public StructureObject resetTrackLinks() {
-        if (this.previous!=null && this.previous.next==this) this.previous.setNext(null);
-        this.setPrevious(null);
-        if (this.next!=null && this.next.previous==this) this.next.setPrevious(null);
-        this.setNext(null);
-        this.trackHead=null;
-        this.trackHeadId=null;
-        this.isTrackHead=true;
-        this.flag=null;
-        return this;
-    }
+
     public StructureObject setTrackFlag(TrackFlag flag) {
         this.flag=flag;
         return this;

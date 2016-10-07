@@ -120,7 +120,7 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
         fileCT = new ArrayList<>(filesByChannel.size());
         filesByChannel.entrySet().stream().sorted().forEach((channelFiles) -> {
             Map<Integer, String> filesByTimePoint = channelFiles.getValue().stream().collect(Collectors.toMap(f -> get(f.getName(), timePattern), f -> f.getAbsolutePath()));
-            fileCT.add(new ArrayList<>(new TreeMap(filesByTimePoint).values()));
+            fileCT.add(new ArrayList<>(new TreeMap(filesByTimePoint).values()).subList(0, frameNumber));
         });
     }
     

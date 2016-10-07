@@ -47,9 +47,9 @@ public class StructureObjectUtils {
     public static void setTrackLinks(StructureObject previous, StructureObject next, boolean setPrevious, boolean setNext) {
         if (previous==null && next==null) return;
         else if (previous==null && next!=null) {
-            next.unSetTrackLinks(setPrevious, false);
+            next.resetTrackLinks(setPrevious, false);
         } else if (previous!=null && next==null) {
-            previous.unSetTrackLinks(false, setNext);
+            previous.resetTrackLinks(false, setNext);
         }
         else if (next.getTimePoint()<=previous.getTimePoint()) throw new RuntimeException("setLink should be of time>= "+(previous.getTimePoint()+1) +" but is: "+next.getTimePoint()+ " current: "+previous+", next: "+next);
         else {

@@ -111,7 +111,7 @@ public class SpotPopulation {
         HashMap<Integer, StructureObject> parentT = new HashMap<Integer, StructureObject>(parentTrack.size());
         for (StructureObject p : parentTrack) {
             parentT.put(p.getTimePoint(), p);
-            for (StructureObject s : p.getChildren(structureIdx)) s.resetTrackLinks();
+            for (StructureObject s : p.getChildren(structureIdx)) s.resetTrackLinks(true, true);
         }
         TreeSet<DefaultWeightedEdge> nextEdges = new TreeSet(new Comparator<DefaultWeightedEdge>() {
             public int compare(DefaultWeightedEdge arg0, DefaultWeightedEdge arg1) {

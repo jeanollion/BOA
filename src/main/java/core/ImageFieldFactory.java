@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -58,7 +59,7 @@ public class ImageFieldFactory {
     private final static String seriesSeparator = "_xy";
     private final static List<String> ignoredExtensions = Arrays.asList(new String[]{".log"});
     public static List<MultipleImageContainer> importImages(String[] path, Experiment xp) {
-        ArrayList<MultipleImageContainer> res = new ArrayList<MultipleImageContainer>();
+        ArrayList<MultipleImageContainer> res = new ArrayList<>();
         if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.SINGLE_FILE)) {
             for (String p : path) ImageFieldFactory.importImagesSingleFile(new File(p), xp, res);
         } else if (xp.getImportImageMethod().equals(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD)) {
@@ -198,32 +199,48 @@ public class ImageFieldFactory {
             Map<String, List<File>> filesByChannel = positionFiles.getValue().stream().collect(Collectors.groupingBy(f -> getKeyword(f.getName(), channelKeywords, "")));
             logger.debug("Pos: {}, channel found: {}", positionFiles.getKey(),filesByChannel.keySet() );
             if (filesByChannel.size()==channelKeywords.length) {
-                Integer timePoints = null;
+                Integer frameNumber = null;
                 boolean ok = true;
                 for (Entry<String, List<File>> channelFiles : filesByChannel.entrySet()) {
                     Map<Integer, File> filesByTimePoint = channelFiles.getValue().stream().collect(Collectors.toMap(f -> get(f.getName(), timePattern), Function.identity()));
-                    int maxTimePoint = Collections.max(filesByTimePoint.entrySet(), (e1, e2) -> e1.getKey() - e2.getKey()).getKey();
-                    int minTimePoint = Collections.min(filesByTimePoint.entrySet(), (e1, e2) -> e1.getKey() - e2.getKey()).getKey();
-                    int tpCount = maxTimePoint-minTimePoint+1;
-                    if (tpCount != filesByTimePoint.size()) {
-                        logger.warn("Dir: {} Position: {}, missing time points for channel: {}, 1st: {}, last: {}, count: {}", input.getAbsolutePath(), positionFiles.getKey(), channelFiles.getKey(), minTimePoint, maxTimePoint, filesByTimePoint.size());
-                        ok = false;
-                        break;
-                    } else {
-                        if (timePoints == null) timePoints = tpCount;
-                        else {
-                            if (timePoints!=tpCount) {
-                                logger.warn("Dir: {} Position: {}, Channel: {}, {} tp found instead of {}", input.getAbsolutePath(), positionFiles.getKey(), channelFiles.getKey(), tpCount, timePoints);
-                                ok = false;
-                                break;
-                            }
+                    List<Integer> tpList = new ArrayList<>(new TreeMap<>(filesByTimePoint).keySet());
+                    int minTimePoint = tpList.get(0);
+                    int maxFrameNumberSuccessive=1;
+                    while(maxFrameNumberSuccessive<tpList.size() && tpList.get(maxFrameNumberSuccessive-1)+1==tpList.get(maxFrameNumberSuccessive)) {++maxFrameNumberSuccessive;}
+                    int maxTimePoint = tpList.get(tpList.size()-1);
+                    //int maxTimePoint = Collections.max(filesByTimePoint.entrySet(), (e1, e2) -> e1.getKey() - e2.getKey()).getKey();
+                    //int minTimePoint = Collections.min(filesByTimePoint.entrySet(), (e1, e2) -> e1.getKey() - e2.getKey()).getKey();
+                    int theoframeNumberCurrentChannel = maxTimePoint-minTimePoint+1;
+                    
+                    if (theoframeNumberCurrentChannel != maxFrameNumberSuccessive) {
+                        logger.warn("Dir: {} Position: {}, missing time points for channel: {}, 1st: {}, last: {}, count: {}, max successive: {}", input.getAbsolutePath(), positionFiles.getKey(), channelFiles.getKey(), minTimePoint, maxTimePoint, filesByTimePoint.size(), maxFrameNumberSuccessive);
+                        //ok = false;
+                        //break;
+                    } 
+                    // check if all channels have same number of Frames
+                    if (frameNumber == null) frameNumber = maxFrameNumberSuccessive;
+                    else {
+                        if (frameNumber!=maxFrameNumberSuccessive) {
+                            logger.warn("Dir: {} Position: {}, Channel: {}, {} tp found instead of {}", input.getAbsolutePath(), positionFiles.getKey(), channelFiles.getKey(), maxFrameNumberSuccessive, frameNumber);
+                            ok = false;
+                            break;
                         }
                     }
                 }
                 if (ok) {
                     ImageReader r = new ImageReader(positionFiles.getValue().get(0).getAbsolutePath());
                     double[] scaleXYZ = r.getScaleXYZ(1);
-                    containersTC.add(new MultipleImageContainerPositionChannelFrame(input.getAbsolutePath(), extension, positionFiles.getKey(), timeKeywords[0], channelKeywords, timePoints, scaleXYZ[0], scaleXYZ[1]));
+                    containersTC.add(
+                            new MultipleImageContainerPositionChannelFrame(
+                                    input.getAbsolutePath(), 
+                                    extension, 
+                                    positionFiles.getKey(), 
+                                    timeKeywords[0], 
+                                    channelKeywords, 
+                                    frameNumber, 
+                                    scaleXYZ[0], 
+                                    scaleXYZ[2]
+                            ));
                 }
                 
             } else logger.warn("Dir: {} Position: {}, {} channels instead of {}", input.getAbsolutePath(), positionFiles.getKey(), filesByChannel.size(), channelKeywords.length);

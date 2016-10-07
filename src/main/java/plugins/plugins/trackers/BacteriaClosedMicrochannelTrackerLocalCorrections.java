@@ -405,7 +405,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     private void setAttributes(int timePoint, List<StructureObject> children, List<StructureObject> childrenPrev) {
         for (int i = 0; i<children.size(); ++i) {
             TrackAttribute ta= getAttribute(timePoint, i);
-            if (ta.prev==null || childrenPrev==null) children.get(i).resetTrackLinks();
+            if (ta.prev==null || childrenPrev==null) children.get(i).resetTrackLinks(true, true);
             else {
                 if (ta.prev.idx>=childrenPrev.size()) logger.error("t:{} PREV NOT FOUND ta: {}, prev {}, all prev: {}", ta.timePoint, ta, ta.prev, trackAttributes[ta.timePoint-1]);
                 else childrenPrev.get(ta.prev.idx).setTrackLinks(children.get(i), true, !ta.trackHead, getFlag(ta));

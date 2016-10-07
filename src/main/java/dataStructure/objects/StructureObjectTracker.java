@@ -24,5 +24,5 @@ import dataStructure.objects.StructureObject.TrackFlag;
  * @author jollion
  */
 public interface StructureObjectTracker extends StructureObjectPreProcessing {
-    public StructureObject resetTrackLinks();
+    public StructureObject resetTrackLinks(boolean prev, boolean next);
 }

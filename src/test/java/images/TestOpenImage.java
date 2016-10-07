@@ -28,13 +28,25 @@ import org.junit.Test;
  * @author jollion
  */
 public class TestOpenImage {
+    public static void main(String[] args) {
+        new TestOpenImage().testDim();
+    }
     //@Test
     public void testDim() {
-        ImageReader r = new ImageReader("/data/Images/Fluo/films1511/151127/champ1/me121r-27112018_01_R3D.dv");
+        long t0 = System.currentTimeMillis();
+        ImageReader r = new ImageReader("/data/Images/Phase/121202_6300_mutd5_lb/mg6300mutd5_LB_lr62replic2_oil37.nd2");
+        long t1 = System.currentTimeMillis();
+        logger.info("reader creation time: {}", t1-t0);
         int[][] stc = r.getSTCXYZNumbers();
-        logger.info("number of series: "+stc.length+ " time points (0): "+stc[0][0]+ " channels (0): "+stc[0][1]);
+        long t2 = System.currentTimeMillis();
+        logger.info("number of series: {} time points, channel {}. time {}ms", stc.length, stc,t2-t1);
+        double[] scale =  r.getScaleXYZ(1);
+        long t3 = System.currentTimeMillis();
+        logger.info("scaleXYZ: {}, time: {}ms",scale, t3-t2);
+        
         Image im = r.openImage(new ImageIOCoordinates(0, 0, 2));
-        logger.info("X: "+im.getSizeX()+ " Y: "+im.getSizeY()+ " Z: "+im.getSizeZ());
+        long t4 = System.currentTimeMillis();
+        logger.info("X: "+im.getSizeX()+ " Y: "+im.getSizeY()+ " Z: time: {}ms"+im.getSizeZ(), t4-t3);
         //>5min .. 60 series 985 timePoints 1 channel
     }
 }

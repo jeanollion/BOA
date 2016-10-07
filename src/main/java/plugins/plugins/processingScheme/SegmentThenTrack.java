@@ -107,7 +107,7 @@ public class SegmentThenTrack implements ProcessingScheme {
             return;
         }
         for (StructureObject parent : parentTrack) {
-            for (StructureObject c : parent.getChildren(structureIdx)) c.resetTrackLinks();
+            for (StructureObject c : parent.getChildren(structureIdx)) c.resetTrackLinks(true, true);
         }
         Tracker t = tracker.instanciatePlugin();
         t.track(structureIdx, parentTrack);

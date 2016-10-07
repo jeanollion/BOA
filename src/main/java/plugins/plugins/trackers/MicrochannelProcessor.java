@@ -127,7 +127,7 @@ public class MicrochannelProcessor implements TrackerSegmenter {
             //next.get(i).setPreviousInTrack(previous.get(i), false);
             Plugin.logger.trace("assign previous {} to next {}", previous.get(i), next.get(i));
         }
-        for (int i = lim; i<next.size(); ++i) next.get(i).resetTrackLinks();
+        for (int i = lim; i<next.size(); ++i) next.get(i).resetTrackLinks(true, true);
     }
     
     private static StructureObject getRefTimePoint(int refTimePoint, List<StructureObject> track) {

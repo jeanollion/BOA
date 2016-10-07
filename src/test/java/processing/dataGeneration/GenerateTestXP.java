@@ -174,13 +174,23 @@ public class GenerateTestXP {
         boolean fluo = false;
         scaleXY = 0.0646;*/
         
-        String dbName = "boa_phase140115mutH";
+        /*String dbName = "boa_phase140115mutH";
         String inputDir = "/data/Images/Phase/140115_6300_mutH_LB-LR62rep/6300_mutH_LB-LR62rep-15012014_tif/";
         String outputDir = "/data/Images/Phase/140115_6300_mutH_LB-LR62rep/Output";
         boolean flip = true;
         boolean fluo = false;
         transSingleFileImport=false;
-        scaleXY = 0.0646;
+        scaleXY = 0.06289;
+        */
+        
+        String dbName = "boa_phase141129wt";
+        String inputDir = "/data/Images/Phase/141129_mg6300_wt/mg6300wt-lb-laser1-oil37/";
+        String outputDir = "/data/Images/Phase/141129_mg6300_wt/Output";
+        boolean flip = true;
+        boolean fluo = false;
+        transSingleFileImport=false;
+        scaleXY = 0.06289;
+        
         /*
         ////////////////////////////
         // Ordi Portable
@@ -309,11 +319,6 @@ public class GenerateTestXP {
         Structure mc = new Structure("Microchannel", -1, 0);
         Structure bacteria = new Structure("Bacteria", 0, 0).setAllowSplit(true);
         xp.getStructures().insert(mc, bacteria);
-        
-        /*mc.setProcessingScheme(new SegmentThenTrack(
-                new MicroChannelPhase2D(), 
-                new ObjectIdxTracker()
-        ));*/
         mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessorPhase()));
         bacteria.setProcessingScheme(
                 new SegmentAndTrack(

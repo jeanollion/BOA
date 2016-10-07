@@ -31,6 +31,8 @@ import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.Selection;
 import dataStructure.objects.StructureObject;
+import static dataStructure.objects.StructureObject.trackErrorNext;
+import static dataStructure.objects.StructureObject.trackErrorPrev;
 import dataStructure.objects.StructureObjectUtils;
 import image.BoundingBox;
 import image.Image;
@@ -56,14 +58,21 @@ import utils.Utils;
 public class ManualCorrection {
     public static void unlinkObject(StructureObject o, Collection<StructureObject> modifiedObjects) {
         if (o.getNext()!=null) o.getNext().setTrackHead(o.getNext(), true, true, modifiedObjects);
-        o.resetTrackLinks();
+        o.resetTrackLinks(true, true);
         //logger.debug("unlinking: {}", o);
+    }
+    private static void removeError(StructureObject o, boolean next, boolean prev) {
+        if (o.hasMeasurements()) {
+            String value = null;
+            if (prev) o.getMeasurements().setValue(trackErrorPrev, value);
+            if (next) o.getMeasurements().setValue(trackErrorNext, value);
+        }
     }
     public static void unlinkObjects(StructureObject prev, StructureObject next, Collection<StructureObject> modifiedObjects) {
         if (next.getTimePoint()<prev.getTimePoint()) unlinkObjects(next, prev, modifiedObjects);
         else {
-            prev.unSetTrackLinks(false, prev.getNext()==next);
-            next.unSetTrackLinks(next.getPrevious()==prev, false);
+            prev.resetTrackLinks(false, prev.getNext()==next);
+            next.resetTrackLinks(next.getPrevious()==prev, false);
             next.setTrackHead(next, false, true, modifiedObjects);
             getManualCorrectionSelection(prev).addElement(next);
             getManualCorrectionSelection(prev).addElement(prev);

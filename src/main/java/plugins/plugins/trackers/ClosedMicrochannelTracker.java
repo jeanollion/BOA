@@ -113,7 +113,7 @@ public class ClosedMicrochannelTracker implements Tracker {
             } 
         }
         // reset trackLinks for unset objects
-        for (int i = nextCounter; i<next.size(); ++i) next.get(i).resetTrackLinks();
+        for (int i = nextCounter; i<next.size(); ++i) next.get(i).resetTrackLinks(true, true);
         
      }
 

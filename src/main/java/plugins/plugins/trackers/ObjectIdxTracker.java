@@ -60,7 +60,7 @@ public class ObjectIdxTracker implements Tracker {
             setTrackLinks(previous.get(i), next.get(i), true, true);
             //Plugin.logger.trace("assign previous {} to next {}", previous.get(i), next.get(i));
         }
-        for (int i = lim; i<next.size(); ++i) next.get(i).resetTrackLinks();
+        for (int i = lim; i<next.size(); ++i) next.get(i).resetTrackLinks(true, true);
     }
     
     public void track(int structureIdx, List<StructureObject> parentTrack) {
