@@ -160,7 +160,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             //Image thresholdImage = Image.mergeZPlanes(planes);
             //thresholdValue = ((UseThreshold)s).getThresholder().runThresholder(thresholdImage, null);
             thresholdValue = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo, minAndMax, planes.get(0) instanceof ImageByte);
-            logger.debug("Threshold Value over time: {}", thresholdValue);
+            logger.debug("Threshold Value over time: {}, minAndMax: {}, byte?{}", thresholdValue, minAndMax, planes.get(0) instanceof ImageByte);
         }
         // 1) assign all. Limit to first continuous segment of cells
         minT = 0;

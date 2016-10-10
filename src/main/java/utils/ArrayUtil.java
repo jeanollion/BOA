@@ -217,7 +217,7 @@ public class ArrayUtil {
         }
         return true;
     }
-    
+   
     public static float[] getDerivative(float[] array, double scale, int order, boolean override) {
         ImageFloat in = new ImageFloat("", array.length, new float[][]{array});
         ImageFloat out = ImageFeatures.getDerivative(in, scale, order, 0, 0, override);

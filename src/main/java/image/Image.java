@@ -248,7 +248,7 @@ public abstract class Image implements ImageProperties {
      * @return 
      */
     public static int[] getHisto256(List<Image> images, double[] minAndMax) {
-        if ( !(minAndMax[0]<minAndMax[1])) {
+        if ( !(minAndMax[0]<minAndMax[1])) { // compute min and max for all images and store it in array
             for (Image i : images) {
                 double[] mm = i.getMinAndMax(null);
                 if (minAndMax[0]>mm[0]) minAndMax[0]=mm[0];
@@ -258,7 +258,7 @@ public abstract class Image implements ImageProperties {
         int[] histo= new int[256];
         for (Image im : images) {
             int[] h = im.getHisto256(minAndMax[0], minAndMax[1], null, null);
-            for (int i = 0; i<256; ++i) histo[i]=h[i];
+            for (int i = 0; i<256; ++i) histo[i]+=h[i];
         }
         return histo;
     }

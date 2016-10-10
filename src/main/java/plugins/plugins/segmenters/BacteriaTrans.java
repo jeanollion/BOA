@@ -131,7 +131,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 2, 0, null);
     NumberParameter minSizeFusion = new BoundedNumberParameter("Minimum Object size (fusion)", 0, 200, 5, null);
     NumberParameter minSize = new BoundedNumberParameter("Minimum Object size", 0, 200, 5, null);
-    NumberParameter minSizeChannelEnd = new BoundedNumberParameter("Minimum Object size (end of channel)", 0, 400, 5, null);
+    NumberParameter minSizeChannelEnd = new BoundedNumberParameter("Minimum Object size (end of channel)", 0, 200, 5, null);
     GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSize, minSizeFusion, minSizeChannelEnd, contactLimit);
     
     Parameter[] parameters = new Parameter[]{backgroundSeparation, thicknessParameters, curvatureParameters, objectParameters};

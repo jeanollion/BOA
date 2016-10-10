@@ -51,7 +51,7 @@ public class TrackMask extends ImageObjectInterface {
     StructureObjectMask[] trackObjects;
     int maxParentY, maxParentZ;
     static final int updateImageFrequency=10;
-    static final int intervalX=5;
+    static final int intervalX=0; //5
     static final float displayMinMaxFraction = 0.6f;
     List<StructureObject> parentTrack;
     

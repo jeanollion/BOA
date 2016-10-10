@@ -32,8 +32,10 @@ import image.ImageInteger;
 import image.ImageLabeller;
 import image.ImageOperations;
 import static image.ImageOperations.threshold;
-import java.util.ArrayList;;
+import java.util.ArrayList;import java.util.Comparator;
+;
 import java.util.List;
+import org.apache.commons.lang.ArrayUtils;
 import processing.ImageFeatures;
 import utils.ArrayUtil;
 import utils.Utils;
@@ -45,18 +47,21 @@ import static utils.Utils.plotProfile;
  */
 public class CropMicroChannelBF2D extends CropMicroChannels {
     public static boolean debug = false;
-    NumberParameter microChannelWidth = new BoundedNumberParameter("Microchannel Width (pix)", 0, 25, 5, null);
-    NumberParameter microChannelWidthError = new BoundedNumberParameter("Microchannel Width error proportion", 2, 0.35, 0, 1);
-    Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, microChannelWidth, microChannelWidthError, xStart, xStop, yStart, yStop, number};
-    
-    public CropMicroChannelBF2D(int margin, int cropMargin, int microChannelWidth, double microChannelWidthError, int timePointNumber) {
+    NumberParameter microChannelWidth = new BoundedNumberParameter("Microchannel Width (pix)", 0, 20, 5, null);
+    NumberParameter microChannelWidthMin = new BoundedNumberParameter("MicroChannel Width Min(pixels)", 0, 15, 5, null);
+    NumberParameter microChannelWidthMax = new BoundedNumberParameter("MicroChannel Width Max(pixels)", 0, 26, 5, null);
+    NumberParameter localDerExtremaThld = new BoundedNumberParameter("X-Derivative Threshold (absolute value)", 1, 25, 0, null);
+    Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, microChannelWidth, microChannelWidthMin, microChannelWidthMax, localDerExtremaThld, xStart, xStop, yStart, yStop, number};
+    public final static double betterPeakRelativeThreshold = 0.6;
+    public CropMicroChannelBF2D(int margin, int cropMargin, int microChannelWidth, double microChannelWidthMin, int microChannelWidthMax, int timePointNumber) {
         this.margin.setValue(margin);
         this.cropMargin.setValue(cropMargin);
         this.microChannelWidth.setValue(microChannelWidth);
-        this.microChannelWidthError.setValue(microChannelWidthError);
+        this.microChannelWidthMin.setValue(microChannelWidthMin);
+        this.microChannelWidthMax.setValue(microChannelWidthMax);
+        
         this.number.setValue(timePointNumber);
     }
-    
     public CropMicroChannelBF2D() {
         
     }
@@ -67,11 +72,11 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
     }
     
     @Override public BoundingBox getBoundingBox(Image image) {
-        return getBoundingBox(image, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), microChannelWidth.getValue().intValue(), microChannelWidthError.getValue().doubleValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue(), 0);
+        return getBoundingBox(image, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), microChannelWidth.getValue().intValue(), microChannelWidthMin.getValue().intValue(), microChannelWidthMax.getValue().intValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue(), 0, localDerExtremaThld.getValue().doubleValue());
     }
     
-    public static BoundingBox getBoundingBox(Image image, int cropMargin, int margin, int channelHeight, int channelWidth, double channelWidthError, int xStart, int xStop, int yStart, int yStop, int yStartAdjustWindow) {
-        Result r = segmentMicroChannels(image, true, margin, channelWidth, channelWidthError, yStartAdjustWindow);
+    public static BoundingBox getBoundingBox(Image image, int cropMargin, int margin, int channelHeight, int channelWidth, int widthMin, int widthMax, int xStart, int xStop, int yStart, int yStop, int yStartAdjustWindow, double localExtremaThld) {
+        Result r = segmentMicroChannels(image, true, margin, channelWidth, widthMin, widthMax, yStartAdjustWindow, localExtremaThld);
         if (r==null || r.xMax.length==0) return null;
         int yMin = r.getYMin();
         int yMax = r.getYMax();
@@ -86,12 +91,9 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         return new BoundingBox(xStart, xStop, yStart, yStop, 0, image.getSizeZ()-1);
         
     }
-    public static Result segmentMicroChannels(Image image, boolean opticalAberration, int margin, int channelWidth, double channelWidthError, int yStartAdjustWindow) {
+    public static Result segmentMicroChannels(Image image, boolean opticalAberration, int margin, int channelWidth, int widthMin, int widthMax, int yStartAdjustWindow, double localExtremaThld) {
         double derScale = 2;
         int xErode = Math.max(1, (int)(derScale/2d + 0.5+Double.MIN_VALUE));
-        double widthMin = (1-channelWidthError) * channelWidth;
-        double widthMax = (1+channelWidthError) * channelWidth;
-        double localExtremaThld = 0.1d;
         
         /*
         1) search for optical aberation
@@ -107,68 +109,79 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
 
         imCrop = image.crop(new BoundingBox(0, image.getSizeX()-1, channelStartIdx, aberrationStart, 0, image.getSizeZ()-1));
         float[] xProj = ImageOperations.meanProjection(imCrop, ImageOperations.Axis.X, null); 
-        ArrayUtil.gaussianSmooth(xProj, derScale);
+        ArrayUtil.gaussianSmooth(xProj, 1); // derScale
         Image imDerX = ImageFeatures.getDerivative(imCrop, derScale, 1, 0, 0, true);
         float[] xProjDer = ImageOperations.meanProjection(imDerX, ImageOperations.Axis.X, null);
+        int xShift = true ? 0 : (int)derScale ; // get a symetric profil between local max & min 
+        //for (int i = 0; i<xShift; ++i) xProjDer=ArrayUtils.remove(xProjDer, 0); // shift
+        float[] xProjDerNorm = new float[xProjDer.length];
+        for (int i = 0; i<xProjDerNorm.length; ++i) {
+            if (xProjDer[i]>0 && i>xShift && i<xProjDerNorm.length-xShift) xProjDerNorm[i] = xProjDer[i] / xProj[i-xShift];
+            else xProjDerNorm[i] = xProjDer[i] / xProj[i];
+        }
         if (debug) {
             //plotProfile("XProjDer", xProjDer);
             //plotProfile("XProj smoothed", xProj);
             new IJImageDisplayer().showImage(imDerY);
             new IJImageDisplayer().showImage(imDerX);
             plotProfile("yProjCrop", yProj);
-            float[] norm = new float[xProjDer.length];
-            for (int i = 0; i<norm.length; ++i) norm[i] = xProjDer[i] / xProj[i];
             plotProfile("xProjDer", xProjDer);
             plotProfile("xProj", xProj);
-            plotProfile("xProjDerNorm", norm);
+            plotProfile("xProjDerNorm", xProjDerNorm);
             
         }
+        xProjDerNorm = xProjDer;
+        final float[] derMap = xProjDerNorm;
         int[] localMax = ArrayUtil.getRegionalExtrema(xProjDer, (int)(derScale+0.5), true);
         int[] localMin = ArrayUtil.getRegionalExtrema(xProjDer, (int)(derScale+0.5), false);
+        Comparator<int[]> segmentScoreComparator = (int[] o1, int[] o2) -> { // >0 -> o2 better that o1
+            int d1 = localMin[o1[1]] - localMax[o1[0]];
+            int d2 = localMin[o2[1]] - localMax[o2[0]];
+            int comp =  Integer.compare(Math.abs(d1-channelWidth), Math.abs(d2-channelWidth));
+            if (comp==0) {
+                double score1 = Math.abs(derMap[localMax[o1[0]]]) + Math.abs(derMap[localMin[o1[1]]]);
+                double score2 = Math.abs(derMap[localMax[o2[0]]]) + Math.abs(derMap[localMin[o2[1]]]);
+                return Double.compare(score1, score2);
+            } else return comp;
+        };
+        
         if (debug) logger.debug("{} max found, {} min found", localMax.length, localMin.length);
         
         List<int[]> peaks = new ArrayList<>();
-        int lastMinIdx = -1;
+        int lastMinIdx = 0;
         int leftMargin = image.getSizeX()-margin;
         MAX_LOOP : for (int maxIdx = 0; maxIdx<localMax.length; ++maxIdx) {
-            if (isExtremaValid(localMax[maxIdx], localExtremaThld, xProjDer, xProj, true) && localMax[maxIdx]>margin && localMax[maxIdx]<leftMargin) {
+            if (Math.abs(xProjDerNorm[localMax[maxIdx]])>localExtremaThld && localMax[maxIdx]>margin && localMax[maxIdx]<leftMargin) {
                 if (debug) logger.debug("VALID MAX: {}", localMax[maxIdx]);
-                int minIdx = lastMinIdx;
-                MIN_LOOP : while(minIdx<localMin.length-1) {
-                    minIdx++;
-                    if (localMin[minIdx]>leftMargin) break MAX_LOOP;
-                    if (isExtremaValid(localMin[minIdx], localExtremaThld, xProjDer, xProj, false)) {
-                        int d = localMin[minIdx] - localMax[maxIdx];
-                        if (debug) logger.debug("VALID MIN: {}, d: {}", localMin[minIdx], d);
-                        if (d>=widthMin && d<=widthMax) {
-                            // see if next mins yield to better segmentation
-                            boolean better=true;
-                            while(better) {
-                                better=false;
-                                if (minIdx+1<localMin.length && isExtremaValid(localMin[minIdx+1], localExtremaThld, xProjDer, xProj, false)) {
-                                    int d2 = localMin[minIdx+1] - localMax[maxIdx];
-                                    if (Math.abs(d2-channelWidth) < Math.abs(d-channelWidth)) {
-                                        d = d2;
-                                        ++minIdx;
-                                        better = true;
-                                        if (debug) logger.debug("BETTER VALID MIN: {}, d: {}", localMin[minIdx], d);
-                                    } 
+                int minIdx = getNextMinIdx(xProjDerNorm, localMin, localMax, maxIdx, lastMinIdx, widthMin,widthMax, segmentScoreComparator, localExtremaThld);
+                if (minIdx>=0 && localMin[minIdx]<leftMargin) {
+                    // check all valid max between current max and min
+                    int nextMaxIdx = maxIdx+1;
+                    
+                    while (nextMaxIdx<localMax.length && localMax[nextMaxIdx]<localMin[minIdx]) {
+                        if (Math.abs(xProjDerNorm[localMax[nextMaxIdx]])>localExtremaThld && Math.abs(xProjDerNorm[localMax[maxIdx]])*betterPeakRelativeThreshold<Math.abs(xProjDerNorm[localMax[nextMaxIdx]])) {
+                            int nextMinIdx = getNextMinIdx(xProjDerNorm, localMin, localMax, nextMaxIdx, lastMinIdx, widthMin,widthMax, segmentScoreComparator, localExtremaThld);
+                            if (nextMinIdx>=0 && localMin[nextMinIdx]<leftMargin) {
+                                int comp = segmentScoreComparator.compare(new int[]{maxIdx, minIdx}, new int[]{nextMaxIdx, nextMinIdx});
+                                if (comp>0) {
+                                    maxIdx = nextMaxIdx;
+                                    minIdx = nextMinIdx;
+                                    if (debug) logger.debug("BETTER VALID MAX: {}, d: {}", localMax[maxIdx], localMin[minIdx] - localMax[maxIdx]);
                                 }
                             }
-                            
-                            if (debug) {
-                                int x1 = localMax[maxIdx];
-                                int x2 = localMin[minIdx];
-                                logger.debug("Peak found X: [{};{}], distance: {}, value: [{};{}], normedValue: [{};{}]", x1, x2, d, xProjDer[x1], xProjDer[x2], xProjDer[x1]/xProj[x1], xProjDer[x2]/xProj[x2]);
-                            }
-                            peaks.add(new int[]{localMax[maxIdx]+xErode, localMin[minIdx]-xErode, 0});
-                            //peaks.add(new int[]{localMax[maxIdx]+xErode, localMin[minIdx]-xErode, channelStartIdx, aberrationStart});
-                            lastMinIdx = minIdx;
-                            while(maxIdx<localMax.length && localMax[maxIdx]<localMin[minIdx]) maxIdx++;
-                            break MIN_LOOP;
-                        } else if (d>widthMax) break MIN_LOOP;
+                        }
+                        ++nextMaxIdx;
                     }
-                }
+                    if (debug) {
+                        int x1 = localMax[maxIdx];
+                        int x2 = localMin[minIdx];
+                        logger.debug("Peak found X: [{};{}], distance: {}, value: [{};{}], normedValue: [{};{}]", x1, x2, localMin[minIdx] - localMax[maxIdx], xProjDer[x1], xProjDer[x2], xProjDer[x1]/xProj[x1], xProjDer[x2]/xProj[x2]);
+                    }
+                    peaks.add(new int[]{localMax[maxIdx]+xErode, localMin[minIdx]-xErode, 0});
+                    lastMinIdx = minIdx;
+                    maxIdx = nextMaxIdx;
+                } 
+                while (localMax[maxIdx]>localMin[lastMinIdx]) ++lastMinIdx;
             }
         }
         // precise Y-value within shift around channelStartIdx
@@ -184,9 +197,33 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         
     }
     
-    private static boolean isExtremaValid(int extrema, double thld, float[] values, float[] normValues, boolean max) {
-        return max ? values[extrema] / normValues[extrema] > thld : -values[extrema] / normValues[extrema] > thld ;
+    private static int getNextMinIdx(final float[] xProjDerNorm, final int[] localMin, final int[] localMax, final int maxIdx, int lastMinIdx, final double widthMin, final double widthMax, Comparator<int[]> segmentScoreComparator, double localExtremaThld) {
+        int minIdx = lastMinIdx;
+        while(minIdx<localMin.length-1) {
+            if (Math.abs(xProjDerNorm[localMin[minIdx]])>localExtremaThld) {
+                int d = localMin[minIdx] - localMax[maxIdx];
+                if (d>=widthMin && d<=widthMax) {
+                    if (debug) logger.debug("VALID MIN: {}, d: {}", localMin[minIdx], d);
+                    // see if next mins yield to better segmentation
+                    boolean better=true;
+                    while(better) {
+                        better=false;
+                        if (minIdx+1<localMin.length && Math.abs(xProjDerNorm[localMin[minIdx+1]])>localExtremaThld && Math.abs(xProjDerNorm[localMin[minIdx+1]])>Math.abs(xProjDerNorm[localMin[minIdx]])*betterPeakRelativeThreshold) {
+                            if (segmentScoreComparator.compare(new int[]{maxIdx, minIdx}, new int[]{maxIdx, minIdx+1})>0) {
+                                ++minIdx;
+                                better = true;
+                                if (debug) logger.debug("BETTER VALID MIN: {}, d: {}", localMin[minIdx], localMin[minIdx] - localMax[maxIdx]);
+                            } 
+                        }
+                    }
+                    return minIdx;
+                } else if (d>widthMax) return -1;
+            }
+            minIdx++;
+        }
+        return -1;
     }
+       
     
     public static int searchYLimWithOpticalAberration(Image image, double peakProportion, double sigmaThreshold) {
         int slidingSigmaWindow = 20;

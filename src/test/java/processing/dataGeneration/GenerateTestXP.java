@@ -186,7 +186,7 @@ public class GenerateTestXP {
         String dbName = "boa_phase141129wt";
         String inputDir = "/data/Images/Phase/141129_mg6300_wt/mg6300wt-lb-laser1-oil37/";
         String outputDir = "/data/Images/Phase/141129_mg6300_wt/Output";
-        boolean flip = true;
+        boolean flip = false;
         boolean fluo = false;
         transSingleFileImport=false;
         scaleXY = 0.06289;
@@ -298,7 +298,7 @@ public class GenerateTestXP {
             xp.getPreProcessingTemplate().addTransformation(0, null, new SaturateHistogram(350, 450));
             xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1, 0)).setActivated(true); // to remove salt and pepper noise
             xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
-            xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
+            xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
             xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
             xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannelFluo2D(30, 45, 200, 0.6, 5));
             xp.getPreProcessingTemplate().addTransformation(1, null, new ScaleHistogramSignalExclusionY().setExclusionChannel(0)); // to remove blinking / homogenize on Y direction
@@ -332,11 +332,11 @@ public class GenerateTestXP {
         xp.addMeasurement(new BacteriaTransMeasurements(1));
         if (setUpPreProcessing) { // preProcessing 
             if (!Double.isNaN(scaleXY)) xp.getPreProcessingTemplate().setCustomScale(scaleXY, 1);
-            xp.getPreProcessingTemplate().setTrimFrames(trimFramesStart, trimFramesEnd);
-            xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(0.3, true, false, true, true));
-            xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT, 0));
+            xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT));
             xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
             xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannelBF2D());
+            xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(0.3, true, false, true, true)); // subtract after crop in order to detect optical aberation
+            xp.getPreProcessingTemplate().setTrimFrames(trimFramesStart, trimFramesEnd);
         }
         return xp;
     }

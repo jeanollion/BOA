@@ -51,10 +51,12 @@ import static utils.Utils.plotProfile;
  */
 public class MicroChannelPhase2D implements Segmenter {
     
-    NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Width (pixels)", 0, 24, 5, null);
-    NumberParameter microChannelWidthError = new BoundedNumberParameter("Microchannel Width error proportion", 2, 0.35, 0, 1);
+    NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Width (pixels)", 0, 20, 5, null);
+    NumberParameter channelWidthMin = new BoundedNumberParameter("MicroChannel Width Min(pixels)", 0, 15, 5, null);
+    NumberParameter channelWidthMax = new BoundedNumberParameter("MicroChannel Width Max(pixels)", 0, 26, 5, null);
     NumberParameter yStartAdjustWindow = new BoundedNumberParameter("Y-Start Adjust Window (pixels)", 0, 5, 0, null);
-    Parameter[] parameters = new Parameter[]{channelWidth, microChannelWidthError, yStartAdjustWindow};
+    NumberParameter localDerExtremaThld = new BoundedNumberParameter("X-Derivative Threshold (absolute value)", 1, 25, 0, null);
+    Parameter[] parameters = new Parameter[]{channelWidth, channelWidthMin, channelWidthMax, localDerExtremaThld};
     public static boolean debug = false;
 
     public MicroChannelPhase2D() {
@@ -78,7 +80,7 @@ public class MicroChannelPhase2D implements Segmenter {
     }
     public Result segment(Image input) {
         CropMicroChannelBF2D.debug=debug;
-        return  CropMicroChannelBF2D.segmentMicroChannels(input, false, 0, channelWidth.getValue().intValue(), microChannelWidthError.getValue().doubleValue(), yStartAdjustWindow.getValue().intValue());
+        return  CropMicroChannelBF2D.segmentMicroChannels(input, false, 0, channelWidth.getValue().intValue(), channelWidthMin.getValue().intValue(), channelWidthMax.getValue().intValue(), yStartAdjustWindow.getValue().intValue(), localDerExtremaThld.getValue().doubleValue());
     }
     
     

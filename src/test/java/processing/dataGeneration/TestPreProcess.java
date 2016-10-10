@@ -81,7 +81,7 @@ public class TestPreProcess {
         f.getPreProcessingChain().removeAllTransformations();
         f.getPreProcessingChain().addTransformation(0, null, new SaturateHistogram(350, 450));
         f.getPreProcessingChain().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
-        f.getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
+        f.getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
         if (flip) f.getPreProcessingChain().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
         /*f.getPreProcessingChain().addTransformation(0, null, new CropMicroChannels2D());
         CropMicroChannels2D.debug=true;*/
@@ -145,7 +145,7 @@ public class TestPreProcess {
         f.getPreProcessingChain().removeAllTransformations();
         f.getPreProcessingChain().addTransformation(0, null, new SaturateHistogram(350, 450));
         f.getPreProcessingChain().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
-        f.getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR, 0));
+        f.getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
         if (flip) f.getPreProcessingChain().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
         f.getPreProcessingChain().addTransformation(0, null, new CropMicroChannels2D());
         setTransformations(f, true);
