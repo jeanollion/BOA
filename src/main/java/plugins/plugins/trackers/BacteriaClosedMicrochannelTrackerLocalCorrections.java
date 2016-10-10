@@ -1181,7 +1181,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (debugCorr) logger.debug("performing correction multiple objects: {}", this);
             if (Math.abs(sizeInc1-expectedInc1)>maxSizeIncrementError) {
                 List<CorrectionScenario> scenarios = new ArrayList<>(5);
-                if (idxEnd-idx==2) scenarios.add(new MergeScenario(idxPrev, idxPrevEnd, timePoint-1)); // merge all
+                for (int iMerge = idxPrev; iMerge<idxPrevEnd-1; ++iMerge) {
+                    scenarios.add(new MergeScenario(iMerge, iMerge+2, timePoint-1)); // merge one @ previous
+                }
+                
                 if (sizeInc1>expectedInc1) { // split after VS merge before & split
                     scenarios.add(new SplitAndMerge(timePoint-1, idxPrev, false, false));
                     //after = new SplitAndMerge(timePoint, idx, true, true);

@@ -45,15 +45,15 @@ public class TestTracker {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
         //String dbName = "boa_mutH_140115";
-        final String dbName = "boa_phase140115mutH";
-        //String dbName = "boa_phase141129wt";
+        //final String dbName = "boa_phase140115mutH";
+        String dbName = "boa_phase141129wt";
         int fIdx = 0;
         int mcIdx =1;
         int structureIdx = 1;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         //testSegmentationAndTracking(db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName()), ps, structureIdx, mcIdx, 0, 200);
-        //testBCMTLCStep(db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName()), ps, structureIdx, mcIdx, 184, 185); 
+        testBCMTLCStep(db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName()), ps, structureIdx, mcIdx, 20, 25); 
         
         int[][] testsF_MC_TT = {
            {0, 3, 90, 100}, // 0
@@ -73,7 +73,7 @@ public class TestTracker {
         };
         int idxStartInc = 5; // for adaptative sizeIncrement Estimation
         int idx =6;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getMicroscopyField(testsF_MC_TT[idx][0]).getName()), ps, structureIdx, testsF_MC_TT[idx][1], Math.max(0, testsF_MC_TT[idx][2]-idxStartInc), testsF_MC_TT[idx][3]);
+        //testSegmentationAndTracking(db.getDao(db.getExperiment().getMicroscopyField(testsF_MC_TT[idx][0]).getName()), ps, structureIdx, testsF_MC_TT[idx][1], Math.max(0, testsF_MC_TT[idx][2]-idxStartInc), testsF_MC_TT[idx][3]);
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         List<StructureObject> roots = dao.getRoots();
