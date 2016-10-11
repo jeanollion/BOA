@@ -47,13 +47,13 @@ public class TestTracker {
         //String dbName = "boa_mutH_140115";
         //final String dbName = "boa_phase140115mutH";
         String dbName = "boa_phase141129wt";
-        int fIdx = 0;
-        int mcIdx =1;
+        int fIdx = 3;
+        int mcIdx =2;
         int structureIdx = 1;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
-        //testSegmentationAndTracking(db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName()), ps, structureIdx, mcIdx, 0, 200);
-        testBCMTLCStep(db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName()), ps, structureIdx, mcIdx, 20, 25); 
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName()), ps, structureIdx, mcIdx, 0, 500);
+        //testBCMTLCStep(db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName()), ps, structureIdx, mcIdx, 290, 299); 
         
         int[][] testsF_MC_TT = {
            {0, 3, 90, 100}, // 0
@@ -64,7 +64,7 @@ public class TestTracker {
            {1, 2, 90, 94}, // 5 cas division de longue bacterie non reconnu car petite erreur de segmentation
            {1, 2, 195, 199}, // 6 petits objects avec découpage aléatoire. si on limite les scenario pas de bug
            {0, 3, 62, 64}, // 7
-           {1, 2, 114, 115}, // 8 cas petite erreur de seg qui cree une fausse division
+           {1, 2, 113, 115}, // 8 cas petite erreur de seg qui cree une fausse division
            {0, 3, 138, 140}, // 9
            {0, 9, 249, 250}, // 10 cas besoin d'incrementer prev et cur en même temps
            {0, 9, 425, 427}, // 11 cas split scenario doit s'arreter avt car division non detectee (au bout d'un channel avec soeur non detectee)
@@ -72,7 +72,7 @@ public class TestTracker {
            {0, 0, 78, 80} // 13 split and merge
         };
         int idxStartInc = 5; // for adaptative sizeIncrement Estimation
-        int idx =6;
+        int idx =13;
         //testSegmentationAndTracking(db.getDao(db.getExperiment().getMicroscopyField(testsF_MC_TT[idx][0]).getName()), ps, structureIdx, testsF_MC_TT[idx][1], Math.max(0, testsF_MC_TT[idx][2]-idxStartInc), testsF_MC_TT[idx][3]);
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
@@ -94,7 +94,7 @@ public class TestTracker {
                 }
             }
         }
-        //BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
+        BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;
         ps.segmentAndTrack(structureIdx, parentTrack);
@@ -130,7 +130,7 @@ public class TestTracker {
             }
         }
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
-        //BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
+        BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.correctionStep=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;
         ps.segmentAndTrack(structureIdx, parentTrack);

@@ -629,6 +629,7 @@ public abstract class ImageWindowManager<T, U, V> {
         if (trackImage==null) {
             T selectedImage = displayer.getCurrentImage();
             trackImage = displayer.getImage(selectedImage);
+            if (trackImage==null) return;
         }
         ImageObjectInterface i = this.getImageObjectInterface(trackImage);
         if (!i.isTimeImage()) {

@@ -33,6 +33,7 @@ import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.Morphium;
+import ij.ImageJ;
 import ij.process.AutoThresholder;
 import image.BoundingBox;
 import image.Image;
@@ -56,16 +57,17 @@ import utils.MorphiumUtils;
 public class TestProcessBacteriaPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
+        new ImageJ();
         //int time =31;
-        int time =323;
-        int microChannel =3;
-        int field = 0;
+        int time =297;
+        int microChannel =2;
+        int field = 3;
         //String dbName = "boa_mutH_140115";
         //String dbName = "boa_phase140115mutH";
         String dbName = "boa_phase141129wt";
         testSegBacteriesFromXP(dbName, field, time, microChannel);
         //testSegBacteriesFromXP(dbName, field, microChannel, 0, 400);
-        //testSplit(dbName, field, time, microChannel, 1);
+        //testSplit(dbName, field, time, microChannel, 4);
     }
     
     public static void testSplit(String dbName, int position, int timePoint, int microChannel, int oIdx) {
@@ -98,7 +100,7 @@ public class TestProcessBacteriaPhase {
         StructureObject mc = root.getChildren(0).get(microChannel);
         Image input = mc.getRawImage(1);
         BacteriaTrans.debug=true;
-        BacteriaTrans seg = new BacteriaTrans();//.setThreshold(new ConstantValue(250));
+        BacteriaTrans seg = new BacteriaTrans().setThreshold(new ConstantValue(320));
         ObjectPopulation pop = seg.runSegmenter(input, 1, mc);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(pop.getLabelMap());

@@ -112,7 +112,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     NumberParameter subBackScale = new BoundedNumberParameter("Subtract Background scale", 1, 100, 0.1, null);
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
     PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Threshold (separation from background)", Thresholder.class, new ConstantValue(408), false); // //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
-    PluginParameter<Thresholder> thresholdContrast = new PluginParameter<Thresholder>("Threshold for false positive", Thresholder.class, new ConstantValue(250), false);
+    PluginParameter<Thresholder> thresholdContrast = new PluginParameter<Thresholder>("Threshold for false positive", Thresholder.class, new ConstantValue(125), false);
     GroupParameter backgroundSeparation = new GroupParameter("Separation from background", subBackScale, threshold, thresholdContrast, minSizePropagation, openRadius);
     
     NumberParameter relativeThicknessThreshold = new BoundedNumberParameter("Relative Thickness Threshold (lower: split more)", 2, 0.7, 0, 1);
@@ -135,7 +135,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSize, minSizeFusion, minSizeChannelEnd, contactLimit);
     
     Parameter[] parameters = new Parameter[]{backgroundSeparation, thicknessParameters, curvatureParameters, objectParameters};
-        
+    private final static int contrastRadius = 5; // for contrast removal of objects
     // ParameterSetup interface
     @Override public boolean canBeTested(Parameter p) {
         List canBeTested = new ArrayList(){{add(threshold); add(curvatureScale); add(subBackScale); add(relativeThicknessThreshold);}};
@@ -566,6 +566,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 ImageInteger thresh = ImageOperations.threshold(getIntensityMap(), threshold, false, false);
                 ImageOperations.and(mask, thresh, thresh);
                 ObjectPopulation pop1 = new ObjectPopulation(thresh, false);
+                FillHoles2D.fillHoles(pop1); // before open in order to avoid digging holes close to borders
                 /*
                 // adjust to contours
                 if (debug) disp.showImage(pop1.getLabelMap().duplicate("objects before adjust contour"));
@@ -601,12 +602,12 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 } else Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(1, 1, thresh)); // remove pixels only connected by diagonal -> otherwise curvature cannot be computed
                 
                 pop1 = new ObjectPopulation(thresh, false); // re-create label image in case objects have been separated in previous steps
-                if (debug) disp.showImage(pop1.getLabelMap().duplicate("objects after adjust contour"));
+                //if (debug) disp.showImage(pop1.getLabelMap().duplicate("objects after adjust contour"));
                 pop1.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
                 pop1.filter(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
-                FillHoles2D.fillHoles(pop1);
+                
                 if (debug) new IJImageDisplayer().showImage(pop1.getLabelMap().duplicate("SEG MASK"));
-                pop1.filter(new ContrastIntensity(-contrastThreshold, 3,3,false, getIntensityMap()));
+                pop1.filter(new ContrastIntensity(-contrastThreshold, contrastRadius,0,false, getIntensityMap()));
                 if (debug) new IJImageDisplayer().showImage(pop1.getLabelMap().duplicate("SEG MASK AFTER  REMOVE CONTRAST"));
                 segMask = pop1.getLabelMap();
                 //throw new Error();
