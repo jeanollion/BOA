@@ -55,8 +55,8 @@ public class Selection implements Comparable<Selection> {
     boolean highlightingTracks=false;
     
     @Transient public final static String indexSeparator ="-";
-    @Transient Map<String, Set<StructureObject>> retrievedElements= new HashMap<String, Set<StructureObject>>();
-    @Transient Map<String, Set<StructureObject>> retrievedTrackHeads = new HashMap<String, Set<StructureObject>>();
+    @Transient Map<String, Set<StructureObject>> retrievedElements= new HashMap<>();
+    @Transient Map<String, Set<StructureObject>> retrievedTrackHeads = new HashMap<>();
     @Transient MasterDAO mDAO;
     @Transient boolean elementsTypeChecked=false;
     

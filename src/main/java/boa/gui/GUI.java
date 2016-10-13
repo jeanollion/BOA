@@ -1475,30 +1475,41 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         else {
             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null);
             String position = i==null? null:i.getParent().getFieldName();
-            Map<String, List<StructureObject>> objectMap = SelectionUtils.getStructureObjects(sels);
             if (i==null || nextPosition) navigateCount=2;
             else {
-                boolean move = ImageWindowManagerFactory.getImageManager().goToNextObject(null, objectMap.get(position), next);
+                boolean move = ImageWindowManagerFactory.getImageManager().goToNextObject(null, SelectionUtils.getStructureObjects(sels, position), next);
                 if (move) {
                     navigateCount=0;
                 }
                 else navigateCount++;
             }
             if (navigateCount>1) { // open next/prev image containig objects
+                List<StructureObject> l;
                 if (nextPosition || position==null) {
-                    do {position = SelectionUtils.getNextPosition(sels, position, next); } while (position!=null && (!objectMap.containsKey(position) || objectMap.get(position).isEmpty()));
+                    do {
+                        position = SelectionUtils.getNextPosition(sels, position, next); 
+                        l = position==null ? null : SelectionUtils.getStructureObjects(sels, position);
+                    } while (position!=null && (l==null || l.isEmpty()));
                     i=null;
                     logger.debug("changing position");
-                }
-                logger.debug("position: {}, #objects: {}, nav: {}, NextPosition? {}", position, position!=null ? objectMap.get(position).size() : 0, navigateCount, nextPosition);
+                } else l = SelectionUtils.getStructureObjects(sels, position);
+                logger.debug("position: {}, #objects: {}, nav: {}, NextPosition? {}", position, position!=null ? l.size() : 0, navigateCount, nextPosition);
                 if (position==null) return;
-                Map<StructureObject, List<StructureObject>> objectsByParent = StructureObjectUtils.splitByParentTrackHead(objectMap.get(position));
+                Map<StructureObject, List<StructureObject>> objectsByParent = StructureObjectUtils.splitByParentTrackHead(l);
                 List<StructureObject> parents = new ArrayList<>(objectsByParent.keySet());
                 Collections.sort(parents);
-                int currentParentIdx = i==null? 0 : parents.indexOf(i.getParent());
-                int childStructureIdx = i==null? objectMap.get(position).get(0).getStructureIdx() : i.getChildStructureIdx();
-                int nextParentIdx = currentParentIdx + (i!=null ? (next ? 1 : -1) : 0 ) ;
-                if (currentParentIdx==-1 || (nextParentIdx<0 || nextParentIdx>=parents.size())) {
+                int nextParentIdx = 0;
+                if (i!=null && !nextPosition) {
+                    int idx = Collections.binarySearch(parents, i.getParent());
+                    if (idx<-1) nextParentIdx = -idx-1 + (next ? 0:-1); // current image's parent is not in selection
+                    else if (idx==-1) nextParentIdx=-1;
+                    else nextParentIdx = idx + (next ? 1:-1) ;
+                    logger.warn("next parent idx: {} (search idx: {}) parent {} all parents: {}", nextParentIdx, idx, i.getParent(), parents);
+                } else if (nextPosition) {
+                    nextParentIdx = next ? 0 : parents.size()-1;
+                }
+                int childStructureIdx = i==null? l.get(0).getStructureIdx() : i.getChildStructureIdx();
+                if ((nextParentIdx<0 || nextParentIdx>=parents.size())) {
                     logger.warn("current parent {} not found in objects parents: {}", i==null?null : i.getParent(), parents);
                     navigateToNextObjects(next, true);
                 } else {

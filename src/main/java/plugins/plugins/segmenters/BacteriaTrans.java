@@ -565,9 +565,9 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 IJImageDisplayer disp = debug?new IJImageDisplayer():null;
                 ImageInteger thresh = ImageOperations.threshold(getIntensityMap(), threshold, false, false);
                 ImageOperations.and(mask, thresh, thresh);
-                
-                ObjectPopulation pop1 = new ObjectPopulation(thresh).setLabelImage(thresh, false, true);
-                FillHoles2D.fillHoles(pop1); // before open in order to avoid digging holes close to borders
+                thresh = Filters.applyFilter(thresh, null, new RemoveThinBorder(), null); // aberation: borders of microchannels can be segemented -> fill holes would create aberations
+                ObjectPopulation pop1 = new ObjectPopulation(thresh).setLabelImage(thresh, false, false); // high connectivity for fill holes to fill holes between close cells?
+                FillHoles2D.fillHoles(pop1); // before open in order to avoid digging holes close to borders / after having removed borders
                 /*
                 // adjust to contours
                 if (debug) disp.showImage(pop1.getLabelMap().duplicate("objects before adjust contour"));
@@ -878,5 +878,23 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         }
         
     }
-    
+    public static class RemoveThinBorder extends processing.Filters.Filter {
+        int xLim, yLim;
+        @Override public void setUp(Image image, Neighborhood neighborhood) {
+            super.setUp(image, neighborhood);
+            this.xLim=image.getSizeX()-1;
+            this.yLim=image.getSizeY()-1;
+        }
+        @Override
+        public float applyFilter(int x, int y, int z) {
+            float pix = image.getPixel(x, y, z);
+            if (pix==0) return 0;
+            if (x==0 && xLim>1 && image.getPixel(x+1, y, z)==0) return 0;
+            if (x==xLim && xLim>1 && image.getPixel(x-1, y, z)==0) return 0;
+            if (y==0 && yLim>1 && image.getPixel(x, y+1, z)==0) return 0;
+            if (y==yLim && yLim>1 && image.getPixel(x, y-1, z)==0) return 0;
+            return pix;
+        }
+        
+    }
 }

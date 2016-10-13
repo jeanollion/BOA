@@ -59,8 +59,8 @@ public class TestProcessBacteriaPhase {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
         //int time =31;
-        int time =327;
-        int microChannel =3;
+        int time =48;
+        int microChannel =18;
         int field = 0;
         //String dbName = "boa_mutH_140115";
         //String dbName = "boa_phase140115mutH";
@@ -100,7 +100,7 @@ public class TestProcessBacteriaPhase {
         StructureObject mc = root.getChildren(0).get(microChannel);
         Image input = mc.getRawImage(1);
         BacteriaTrans.debug=true;
-        BacteriaTrans seg = new BacteriaTrans().setThreshold(new ConstantValue(343.11));
+        BacteriaTrans seg = new BacteriaTrans().setThreshold(new ConstantValue(417));
         ObjectPopulation pop = seg.runSegmenter(input, 1, mc);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(pop.getLabelMap());

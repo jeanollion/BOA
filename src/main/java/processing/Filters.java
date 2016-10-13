@@ -146,9 +146,9 @@ public class Filters {
         return applyFilter(image, res, filter, neighborhood);
     }
     
-    protected static <T extends Image, F extends Filter> T applyFilter(Image image, T output, F filter, Neighborhood neighborhood) {
+    public static <T extends Image, F extends Filter> T applyFilter(Image image, T output, F filter, Neighborhood neighborhood) {
         if (filter==null) throw new IllegalArgumentException("Apply Filter Error: Filter cannot be null");
-        if (neighborhood==null) throw new IllegalArgumentException("Apply Filter ("+filter.getClass().getSimpleName()+") Error: Neighborhood cannot be null");
+        //if (neighborhood==null) throw new IllegalArgumentException("Apply Filter ("+filter.getClass().getSimpleName()+") Error: Neighborhood cannot be null");
         T res;
         String name = filter.getClass().getSimpleName()+" of: "+image.getName();
         if (output==null) res = (T)Image.createEmptyImage(name, image, image);
@@ -168,9 +168,9 @@ public class Filters {
         return res;
     }
     
-    private static abstract class Filter {
-        Image image;
-        Neighborhood neighborhood;
+    public static abstract class Filter {
+        protected Image image;
+        protected Neighborhood neighborhood;
         public void setUp(Image image, Neighborhood neighborhood) {this.image=image; this.neighborhood=neighborhood;}
         public abstract float applyFilter(int x, int y, int z);
     }

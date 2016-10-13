@@ -162,8 +162,21 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             //Image thresholdImage = Image.mergeZPlanes(planes);
             //thresholdValue = ((UseThreshold)s).getThresholder().runThresholder(thresholdImage, null);
             thresholdValue = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo, minAndMax, planes.get(0) instanceof ImageByte);
-            if (debug || debugCorr) logger.debug("Threshold Value over time: {}, minAndMax: {}, byte?{}", thresholdValue, minAndMax, planes.get(0) instanceof ImageByte);
+            if (debug || debugCorr) logger.debug("Threshold Value over all time: {}, minAndMax: {}, byte?{}", thresholdValue, minAndMax, planes.get(0) instanceof ImageByte);
+            int[] frameWindow = getFrameWindowContainingCells();
+            if (frameWindow==null) return;
+            else if (frameWindow[0]>0 || frameWindow[1]<populations.length-1) {
+                // getThreshold within frame
+                planes = planes.subList(frameWindow[0], frameWindow[1]+1);
+                minAndMax = new double[2];
+                histo = Image.getHisto256(planes, minAndMax);
+                double newThresholdValue = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo, minAndMax, planes.get(0) instanceof ImageByte);
+                if (debug || debugCorr) logger.debug("Threshold Value over frames {}: {}, minAndMax: {}, byte?{}", frameWindow,  newThresholdValue, minAndMax, planes.get(0) instanceof ImageByte);
+                if (newThresholdValue != thresholdValue) for (int f = 0; f<populations.length; ++f) populations[f] = null; // clean segmentation performed with previous threshold
+                thresholdValue = newThresholdValue;
+            }
         } else if (!Double.isNaN(debugThreshold)) thresholdValue = debugThreshold;
+        
         // 1) assign all. Limit to first continuous segment of cells
         minT = 0;
         while (minT<populations.length && getObjects(minT).isEmpty()) minT++;
@@ -216,6 +229,20 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         // 3) final assignement without correction, noticing all errors
         for (int t = minT+1; t<maxT; ++t) assignPrevious(t, false, true);
         applyLinksToParents(parents);
+    }
+    
+    private int[] getFrameWindowContainingCells() {
+        int inc = this.populations.length<100 ? 1 : 10;
+        int minT = 0;
+        while (minT<populations.length && getObjects(minT).isEmpty()) minT+=inc;
+        if (minT>=populations.length-1) return null;
+        if (inc>1) while (minT>0 && !getObjects(minT-1).isEmpty()) minT--; // backward
+        
+        int maxT = populations.length-1;
+        while (maxT>minT && getObjects(maxT).isEmpty()) maxT-=inc;
+        if (maxT<=minT) return null;
+        if (inc>1) while (maxT<populations.length-1 && !getObjects(maxT+1).isEmpty()) maxT++; // forward
+        return new int[]{minT, maxT};
     }
     
     private boolean performCorrectionsByIdx(int tMin, int tMax, int idx, List<int[]> outRanges, boolean limitToOneRange) {
