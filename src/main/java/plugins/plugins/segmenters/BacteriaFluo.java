@@ -289,7 +289,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         if (objects.isEmpty() || objects.size()==1) return 0;
         ObjectPopulation mergePop = new ObjectPopulation(objects, input, false);
         pv = this.initializeVariables(input);
-        Object3DCluster c = new Object3DCluster(mergePop, false, pv.getFactory());
+        Object3DCluster c = new Object3DCluster(mergePop, false, true, pv.getFactory());
         List<Set<Object3D>> clusters = c.getClusters();
         double maxCost = Double.NEGATIVE_INFINITY;
         logger.debug("compute merge cost: {} objects in {} clusters", objects.size(), clusters.size());

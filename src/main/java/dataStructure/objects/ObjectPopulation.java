@@ -494,9 +494,7 @@ public class ObjectPopulation {
         List<Object3D> toRemove = new ArrayList<Object3D>();
         ImageInteger inputLabels = getLabelMap();
         int otherLabel;
-        int[][] neigh;
-        if (inputLabels.getSizeZ()>1) neigh = lowConnectivity ? ImageLabeller.neigh3DLowHalf : ImageLabeller.neigh3DHalf;
-        else neigh = lowConnectivity ? ImageLabeller.neigh2D4Half : ImageLabeller.neigh2D8Half;
+        int[][] neigh = inputLabels.getSizeZ()>1 ? (lowConnectivity ? ImageLabeller.neigh3DLowHalf : ImageLabeller.neigh3DHalf) : (lowConnectivity ? ImageLabeller.neigh2D4Half : ImageLabeller.neigh2D8Half);
         Voxel n;
         for (int z = 0; z<inputLabels.getSizeZ(); z++) {
             for (int y = 0; y<inputLabels.getSizeY(); y++) {

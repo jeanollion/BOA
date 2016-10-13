@@ -48,21 +48,21 @@ public class Object3DCluster<I extends InterfaceObject3D<I>> extends ClusterColl
         };
     };
     
-    public Object3DCluster(ObjectPopulation population, boolean background, InterfaceFactory<Object3D, I> interfaceFactory) {
+    public Object3DCluster(ObjectPopulation population, boolean background, boolean lowConnectivity, InterfaceFactory<Object3D, I> interfaceFactory) {
         super(population.getObjects(), object3DComparator, interfaceFactory);
         this.population=population;
-        setInterfaces(background);
+        setInterfaces(background, lowConnectivity);
     }
     
     
-    protected void setInterfaces(boolean background) {
+    protected void setInterfaces(boolean background, boolean lowConnectivity) {
         Map<Integer, Object3D> objects = new HashMap<Integer, Object3D>();
         for (Object3D o : population.getObjects()) objects.put(o.getLabel(), o);
         if (background) objects.put(0, new Object3D(new ArrayList<Voxel>(), 0, population.getImageProperties().getBoundingBox(), population.getImageProperties().getScaleXY(), population.getImageProperties().getScaleZ()));
         ImageInteger inputLabels = population.getLabelMap();
         Voxel n;
         int otherLabel;
-        int[][] neigh = inputLabels.getSizeZ()>1 ? ImageLabeller.neigh3DHalf : ImageLabeller.neigh2D8Half;
+        int[][] neigh = inputLabels.getSizeZ()>1 ? (lowConnectivity ? ImageLabeller.neigh3DLowHalf : ImageLabeller.neigh3DHalf) : (lowConnectivity ? ImageLabeller.neigh2D4Half : ImageLabeller.neigh2D8Half);
         for (Object3D o : population.getObjects()) {
             for (Voxel vox : o.getVoxels()) {
                 vox = vox.duplicate(); // to avoid having the same instance of voxel as in the region, because voxel value could be different
@@ -160,7 +160,7 @@ public class Object3DCluster<I extends InterfaceObject3D<I>> extends ClusterColl
         c.mergeSort(criterion, new InterfaceDataFusionCollection<Set<Voxel>, Voxel>(), interfaceSortMethod);
     }*/
     public static <I extends InterfaceObject3D<I>> void mergeSort(ObjectPopulation population, InterfaceFactory<Object3D, I> interfaceFactory, boolean checkCriterion, int numberOfInterfacesToKeep, int numberOfObjecsToKeep) {
-        Object3DCluster<I> c = new Object3DCluster<I>(population, false, interfaceFactory);
+        Object3DCluster<I> c = new Object3DCluster<>(population, false, true, interfaceFactory);
         c.mergeSort(checkCriterion, numberOfInterfacesToKeep, numberOfObjecsToKeep);
     }
     

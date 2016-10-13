@@ -396,7 +396,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         pv = getProcessingVariables(input, mergePop.getLabelMap());
         pv.segMask=mergePop.getLabelMap();
         double minCurv = Double.POSITIVE_INFINITY;
-        Object3DCluster c = new Object3DCluster(mergePop, false, pv.getFactory());
+        Object3DCluster c = new Object3DCluster(mergePop, false, true, pv.getFactory());
         List<Set<Object3D>> clusters = c.getClusters();
         //logger.debug("compute merge cost: {} objects in {} clusters", objects.size(), clusters.size());
         if (clusters.size()>1) { // merge impossible : presence of disconnected objects
