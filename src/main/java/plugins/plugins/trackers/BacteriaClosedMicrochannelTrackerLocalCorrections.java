@@ -1088,12 +1088,13 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             double expectedInc1 = getAttribute(timePoint-1, idxPrev).getLineageSizeIncrement();
             // TODO : plus de scenarios: merge all before & after, merge all but one... 
             if (debugCorr) logger.debug("performing correction multiple objects: {}", this);
+            
+            List<CorrectionScenario> scenarios = new ArrayList<>(5);
+            for (int iMerge = idxPrev; iMerge<idxPrevEnd-1; ++iMerge) {
+                scenarios.add(new MergeScenario(iMerge, iMerge+2, timePoint-1)); // merge one @ previous
+            }
+            if (idxPrevEnd-idxPrev>2 && idxEnd-idx<=2) scenarios.add(new MergeScenario(idxPrev, idxPrevEnd, timePoint-1)); // merge all previous objects
             if (Math.abs(sizeInc1-expectedInc1)>maxSizeIncrementError) {
-                List<CorrectionScenario> scenarios = new ArrayList<>(5);
-                for (int iMerge = idxPrev; iMerge<idxPrevEnd-1; ++iMerge) {
-                    scenarios.add(new MergeScenario(iMerge, iMerge+2, timePoint-1)); // merge one @ previous
-                }
-                
                 if (sizeInc1>expectedInc1) { // split after VS merge before & split
                     scenarios.add(new SplitAndMerge(timePoint-1, idxPrev, false, false));
                     //after = new SplitAndMerge(timePoint, idx, true, true);
@@ -1103,36 +1104,37 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     //after = new SplitAndMerge(timePoint, idx, false, true);
                     scenarios.add(new SplitScenario(getAttribute(timePoint, idx+1), timePoint));
                 }
-                scenarios.removeIf(c -> c.cost>costLim);
-                if (scenarios.isEmpty()) return null;
-                // try all scenarios and check error number
-                double currentErrors = getErrorNumber(timePoint-1, timePoint+1, false);
-                ObjectAndAttributeSave saveCur = new ObjectAndAttributeSave(timePoint-1, timePoint);
-                final Map<CorrectionScenario, ObjectAndAttributeSave> saveMap = new HashMap<>(scenarios.size());
-                final Map<CorrectionScenario, Integer> errorMap = new HashMap<>(scenarios.size());
-                
-                for (CorrectionScenario c : scenarios) {
-                    c.applyScenario();
-                    errorMap.put(c, getErrorNumber(timePoint-1, timePoint+1, true));
-                    saveMap.put(c, new ObjectAndAttributeSave(c.timePointMin, c.timePointMax));
-                    if (correctionStep) step("step:"+step+"/"+c, false);
-                    if (debugCorr && verboseLevel<verboseLevelLimit) logger.debug("correction multiple: errors current: {}, scenario: {}:  errors: {}, cost: {}",currentErrors, c, errorMap.get(c), c.cost);
-                    saveCur.restore(c.timePointMin, c.timePointMax);
-                    for (int t = Math.max(1, c.timePointMin); t<=Math.min(c.timePointMax+1, populations.length-1); ++t) assignPrevious(t, false , false);
-                }
-                CorrectionScenario best = Collections.min(scenarios, new Comparator<CorrectionScenario>() {
-                    @Override
-                    public int compare(CorrectionScenario o1, CorrectionScenario o2) {
-                        int comp = Integer.compare(errorMap.get(o1), errorMap.get(o2));
-                        if (comp==0) comp = Double.compare(o1.cost, o2.cost);
-                        return comp;
-                    }
-                });
-                if (errorMap.get(best)<=currentErrors) {
-                    saveMap.get(best).restoreAll();
-                    return new int[]{Math.max(1, best.timePointMin), Math.min(best.timePointMax+1, populations.length-1)};
-                }
             }
+            scenarios.removeIf(c -> c.cost>costLim);
+            if (scenarios.isEmpty()) return null;
+            // try all scenarios and check error number
+            double currentErrors = getErrorNumber(timePoint-1, timePoint+1, false);
+            ObjectAndAttributeSave saveCur = new ObjectAndAttributeSave(timePoint-1, timePoint);
+            final Map<CorrectionScenario, ObjectAndAttributeSave> saveMap = new HashMap<>(scenarios.size());
+            final Map<CorrectionScenario, Integer> errorMap = new HashMap<>(scenarios.size());
+
+            for (CorrectionScenario c : scenarios) {
+                c.applyScenario();
+                errorMap.put(c, getErrorNumber(timePoint-1, timePoint+1, true));
+                saveMap.put(c, new ObjectAndAttributeSave(c.timePointMin, c.timePointMax));
+                if (correctionStep) step("step:"+step+"/"+c, false);
+                if (debugCorr && verboseLevel<verboseLevelLimit) logger.debug("correction multiple: errors current: {}, scenario: {}:  errors: {}, cost: {}",currentErrors, c, errorMap.get(c), c.cost);
+                saveCur.restore(c.timePointMin, c.timePointMax);
+                for (int t = Math.max(1, c.timePointMin); t<=Math.min(c.timePointMax+1, populations.length-1); ++t) assignPrevious(t, false , false);
+            }
+            CorrectionScenario best = Collections.min(scenarios, new Comparator<CorrectionScenario>() {
+                @Override
+                public int compare(CorrectionScenario o1, CorrectionScenario o2) {
+                    int comp = Integer.compare(errorMap.get(o1), errorMap.get(o2));
+                    if (comp==0) comp = Double.compare(o1.cost, o2.cost);
+                    return comp;
+                }
+            });
+            if (errorMap.get(best)<=currentErrors) {
+                saveMap.get(best).restoreAll();
+                return new int[]{Math.max(1, best.timePointMin), Math.min(best.timePointMax+1, populations.length-1)};
+            }
+            
             return null;
         }
         
