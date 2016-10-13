@@ -125,7 +125,7 @@ public class MutationSegmenter implements Segmenter {
         ObjectPopulation seedPop = new ObjectPopulation(seeds, false);
         //seedPop.filter(new Overlap(seedsHess, 1.5));
         //seedPop.filter(new Or(new ObjectPopulation.GaussianFit(norm, 3, 3, 5, 0.2, 0.010, 6), new MeanIntensity(-0.2, false, hess)));
-        ObjectPopulation pop =  watershed(det, mask, seedPop.getObjects(), true, new MultiplePropagationCriteria(new ThresholdPropagationOnWatershedMap(thresholdPropagation), new MonotonalPropagation(), new ThresholdPropagation(hessMax, 0, false)), new SizeFusionCriterion(minSpotSize));
+        ObjectPopulation pop =  watershed(det, mask, seedPop.getObjects(), true, new MultiplePropagationCriteria(new ThresholdPropagationOnWatershedMap(thresholdPropagation), new MonotonalPropagation(), new ThresholdPropagation(hessMax, 0, false)), new SizeFusionCriterion(minSpotSize), false);
         pop.filter(new ObjectPopulation.RemoveFlatObjects(input));
         pop.filter(new ObjectPopulation.Size().setMin(minSpotSize));
         return pop;

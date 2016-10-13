@@ -96,7 +96,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     static int loopLimit=3;
     public static boolean debug=false, debugCorr=false;
-    
+    public static double debugThreshold = Double.NaN;
     // hidden parameters! 
     final static int maxCorrectionLength = 20;
     static double maxSizeIncrementError = 0.3;
@@ -153,7 +153,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         this.correction=performCorrection;
         if (correction) inputImages=new Image[populations.length];
         // 0) optional compute threshold for all images
-        if (getSegmenter() instanceof UseThreshold) {
+        if (Double.isNaN(debugThreshold) && getSegmenter() instanceof UseThreshold) {
             List<Image> planes = new ArrayList<>();
             // TODO -> record segmenters at this step in order not to have to process.. & erase after segmentation.
             for (int t = 0; t<populations.length; ++t) planes.add(((UseThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, parents.get(t)));
@@ -162,9 +162,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             //Image thresholdImage = Image.mergeZPlanes(planes);
             //thresholdValue = ((UseThreshold)s).getThresholder().runThresholder(thresholdImage, null);
             thresholdValue = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo, minAndMax, planes.get(0) instanceof ImageByte);
-            //thresholdValue = 320; // for testing purposes
             if (debug || debugCorr) logger.debug("Threshold Value over time: {}, minAndMax: {}, byte?{}", thresholdValue, minAndMax, planes.get(0) instanceof ImageByte);
-        }
+        } else if (!Double.isNaN(debugThreshold)) thresholdValue = debugThreshold;
         // 1) assign all. Limit to first continuous segment of cells
         minT = 0;
         while (minT<populations.length && getObjects(minT).isEmpty()) minT++;

@@ -67,6 +67,7 @@ public class ObjectPopulation {
     private List<Object3D> objects;
     private ImageProperties properties;
     private boolean absoluteLandmark=false;
+    private boolean lowConnectivity = false;
     /**
      * Creates an empty ObjectPopulation instance
      * @param properties 
@@ -87,9 +88,23 @@ public class ObjectPopulation {
         this.properties = image.getProperties();
         labelImage = image;
         if (!isLabeledImage) {
-            objects = new ArrayList<Object3D>(ImageLabeller.labelImageList(image));
+            objects = new ArrayList<>(ImageLabeller.labelImageList(image));
             relabel(false); // in order to have consistent labels between image & object list
         }
+    }
+    
+    public ObjectPopulation setLabelImage(ImageInteger image, boolean isLabeledImage, boolean lowConnectivity) {
+        this.lowConnectivity=lowConnectivity;
+        labelImage = image;
+        if (!isLabeledImage) {
+            objects = new ArrayList<>(lowConnectivity ? ImageLabeller.labelImageListLowConnectivity(image) : ImageLabeller.labelImageList(image));
+            relabel(false); // in order to have consistent labels between image & object list
+        } else objects = null;
+        return this;
+    }
+    public ObjectPopulation setConnectivity(boolean low) {
+        this.lowConnectivity = low;
+        return this;
     }
 
     /*public ObjectPopulation(ArrayList<Object3D> objects) {
@@ -338,7 +353,7 @@ public class ObjectPopulation {
      }*/
     public void fitToEdges(Image edgeMap, ImageMask mask) {
         // get seeds outsit label image
-        ImageInteger seedMap = Filters.localExtrema(edgeMap, null, false, Filters.getNeighborhood(1, 1, edgeMap));
+        ImageInteger seedMap = Filters.localExtrema(edgeMap, null, false, Filters.getNeighborhood(1.5, 1.5, edgeMap));
         this.getLabelMap(); //creates the labelImage        
         // merge background seeds && foreground seeds : background = 1, foreground = label+1
         for (int z = 0; z < seedMap.getSizeZ(); z++) {
@@ -353,7 +368,7 @@ public class ObjectPopulation {
             }
         }
         ArrayList<Object3D> seeds = new ArrayList<Object3D>(Arrays.asList(ObjectFactory.getObjectsImage(seedMap, false)));        
-        ObjectPopulation pop = WatershedTransform.watershed(edgeMap, mask, seeds, false, null, null);
+        ObjectPopulation pop = WatershedTransform.watershed(edgeMap, mask, seeds, false, null, null, lowConnectivity);
         this.objects = pop.getObjects();
         objects.remove(0); // remove background object
         relabel(true);
@@ -479,7 +494,9 @@ public class ObjectPopulation {
         List<Object3D> toRemove = new ArrayList<Object3D>();
         ImageInteger inputLabels = getLabelMap();
         int otherLabel;
-        int[][] neigh = inputLabels.getSizeZ()>1 ? ImageLabeller.neigh3DHalf : ImageLabeller.neigh2DHalf;
+        int[][] neigh;
+        if (inputLabels.getSizeZ()>1) neigh = lowConnectivity ? ImageLabeller.neigh3DLowHalf : ImageLabeller.neigh3DHalf;
+        else neigh = lowConnectivity ? ImageLabeller.neigh2D4Half : ImageLabeller.neigh2D8Half;
         Voxel n;
         for (int z = 0; z<inputLabels.getSizeZ(); z++) {
             for (int y = 0; y<inputLabels.getSizeY(); y++) {

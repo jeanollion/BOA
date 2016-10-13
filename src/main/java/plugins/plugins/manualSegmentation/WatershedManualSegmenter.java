@@ -56,7 +56,7 @@ public class WatershedManualSegmenter implements ManualSegmenter {
         for (int[] p : points) {
             if (segmentationMask.insideMask(p[0], p[1], p[2])) mask.setPixel(p[0], p[1], p[2], label++);
         }
-        ObjectPopulation pop =  WatershedTransform.watershed(input, segmentationMask, mask, decreasingIntensities.getSelected(), prop, null);
+        ObjectPopulation pop =  WatershedTransform.watershed(input, segmentationMask, mask, decreasingIntensities.getSelected(), prop, null, false);
         if (verbose) {
             ImageDisplayer disp = new IJImageDisplayer();
             disp.showImage(input);

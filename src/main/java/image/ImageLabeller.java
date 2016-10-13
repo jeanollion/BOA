@@ -46,9 +46,9 @@ public class ImageLabeller {
             {1, 1, -1}, {0, 1, -1}, {-1, 1, -1}, {1, 0, -1}, {0, 0, -1}, {-1, 0, -1}, {1, -1, -1}, {0, 1, -1}, {-1, -1, -1},
             {1, -1, 0}, {0, -1, 0}, {-1, -1, 0}, {-1, 0, 0}
         };
-    public static final int[][] neigh2DHalf = new int[][]{
-            {1, -1, 0}, {0, -1, 0}, {-1, -1, 0}, {-1, 0, 0}
-        };
+    public static final int[][] neigh3DLowHalf = new int[][]{ {0, 0, -1}, {0, -1, 0},  {-1, 0, 0} };
+    public static final int[][] neigh2D8Half = new int[][]{ {1, -1, 0}, {0, -1, 0}, {-1, -1, 0}, {-1, 0, 0} };
+    public static final int[][] neigh2D4Half = new int[][]{ {0, -1, 0}, {-1, 0, 0} };
     int[][] neigh;
     
     protected ImageLabeller(ImageMask mask) {
@@ -64,7 +64,18 @@ public class ImageLabeller {
         else {
             ImageLabeller il = new ImageLabeller(mask);
             if (mask.getSizeZ()>1) il.neigh=ImageLabeller.neigh3DHalf;
-            else il.neigh=ImageLabeller.neigh2DHalf;
+            else il.neigh=ImageLabeller.neigh2D8Half;
+            il.labelSpots();
+            return il.getObjects();
+        }
+    }
+    
+    public static Object3D[] labelImageLowConnectivity(ImageMask mask) {
+        if (mask instanceof BlankMask) return new Object3D[]{new Object3D((BlankMask)mask, 1)};
+        else {
+            ImageLabeller il = new ImageLabeller(mask);
+            if (mask.getSizeZ()>1) il.neigh=ImageLabeller.neigh3DLowHalf;
+            else il.neigh=ImageLabeller.neigh2D4Half;
             il.labelSpots();
             return il.getObjects();
         }
@@ -72,6 +83,10 @@ public class ImageLabeller {
     
     public static List<Object3D> labelImageList(ImageMask mask) {
         return Arrays.asList(labelImage(mask));
+    }
+    
+    public static List<Object3D> labelImageListLowConnectivity(ImageMask mask) {
+        return Arrays.asList(labelImageLowConnectivity(mask));
     }
     
     protected Object3D[] getObjects() {

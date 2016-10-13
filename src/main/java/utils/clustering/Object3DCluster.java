@@ -62,7 +62,7 @@ public class Object3DCluster<I extends InterfaceObject3D<I>> extends ClusterColl
         ImageInteger inputLabels = population.getLabelMap();
         Voxel n;
         int otherLabel;
-        int[][] neigh = inputLabels.getSizeZ()>1 ? ImageLabeller.neigh3DHalf : ImageLabeller.neigh2DHalf;
+        int[][] neigh = inputLabels.getSizeZ()>1 ? ImageLabeller.neigh3DHalf : ImageLabeller.neigh2D8Half;
         for (Object3D o : population.getObjects()) {
             for (Voxel vox : o.getVoxels()) {
                 vox = vox.duplicate(); // to avoid having the same instance of voxel as in the region, because voxel value could be different

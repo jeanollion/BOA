@@ -111,7 +111,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 20, 5, null);
     NumberParameter subBackScale = new BoundedNumberParameter("Subtract Background scale", 1, 100, 0.1, null);
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
-    PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Threshold (separation from background)", Thresholder.class, new ConstantValue(408), false); // //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
+    PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Threshold (separation from background)", Thresholder.class, new ConstantValue(423), false); // //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
     PluginParameter<Thresholder> thresholdContrast = new PluginParameter<Thresholder>("Threshold for false positive", Thresholder.class, new ConstantValue(125), false);
     GroupParameter backgroundSeparation = new GroupParameter("Separation from background", subBackScale, threshold, thresholdContrast, minSizePropagation, openRadius);
     
@@ -460,7 +460,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         //pv.threshold=100d; // TODO variable ou auto
         List<Object3D> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());
         ImageOperations.and(segmentationMask, pv.getSegmentationMask(), pv.getSegmentationMask());
-        ObjectPopulation pop = WatershedTransform.watershed(pv.getIntensityMap(), pv.getSegmentationMask(), seedObjects, false, null, null);
+        ObjectPopulation pop = WatershedTransform.watershed(pv.getIntensityMap(), pv.getSegmentationMask(), seedObjects, false, null, null, true);
         if (verboseManualSeg) {
             Image seedMap = new ImageByte("seeds from: "+input.getName(), input);
             for (int[] seed : seedsXYZ) seedMap.setPixel(seed[0], seed[1], seed[2], 1);
@@ -553,11 +553,11 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             //return input;
         }
         private ObjectPopulation splitSegmentationMask(ImageInteger maskToSplit) {
-            ObjectPopulation res = WatershedTransform.watershed(getIntensityMap(), maskToSplit, false, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation));
+            ObjectPopulation res = WatershedTransform.watershed(getIntensityMap(), maskToSplit, false, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation), true);
             if (res.getObjects().size()>1) {
                 res.setVoxelIntensities(getEDM()); // for getExtremaSeedList method called just afterwards. // offset of objects needs to be relative to EDM map because EDM offset is not taken into acount
-                return WatershedTransform.watershed(getEDM(), maskToSplit, res.getExtremaSeedList(true), true, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation));
-            } else return WatershedTransform.watershed(getEDM(), maskToSplit, true, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation));
+                return WatershedTransform.watershed(getEDM(), maskToSplit, res.getExtremaSeedList(true), true, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation), true);
+            } else return WatershedTransform.watershed(getEDM(), maskToSplit, true, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation), true);
         }
         private ImageInteger getSegmentationMask() {
             if (segMask == null) {
@@ -565,7 +565,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 IJImageDisplayer disp = debug?new IJImageDisplayer():null;
                 ImageInteger thresh = ImageOperations.threshold(getIntensityMap(), threshold, false, false);
                 ImageOperations.and(mask, thresh, thresh);
-                ObjectPopulation pop1 = new ObjectPopulation(thresh, false);
+                
+                ObjectPopulation pop1 = new ObjectPopulation(thresh).setLabelImage(thresh, false, true);
                 FillHoles2D.fillHoles(pop1); // before open in order to avoid digging holes close to borders
                 /*
                 // adjust to contours
@@ -601,7 +602,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                     //if (debug) disp.showImage(thresh.duplicate("after close"));
                 } else Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(1, 1, thresh)); // remove pixels only connected by diagonal -> otherwise curvature cannot be computed
                 
-                pop1 = new ObjectPopulation(thresh, false); // re-create label image in case objects have been separated in previous steps
+                pop1 = new ObjectPopulation(thresh).setLabelImage(thresh, false, true); // re-create label image in case objects have been separated in previous steps
                 //if (debug) disp.showImage(pop1.getLabelMap().duplicate("objects after adjust contour"));
                 pop1.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
                 pop1.filter(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects

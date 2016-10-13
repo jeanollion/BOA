@@ -337,18 +337,20 @@ public class ManualCorrection {
     public static void splitObjects(MasterDAO db, Collection<StructureObject> objects, boolean updateDisplay, boolean test) {
         int structureIdx = StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(objects);
         if (objects.isEmpty()) return;
-        ObjectSplitter splitter = db.getExperiment().getStructure(structureIdx).getObjectSplitter();
+        if (db==null) test = true;
+        Experiment xp = db!=null ? db.getExperiment() : objects.iterator().next().getExperiment();
+        ObjectSplitter splitter = xp.getStructure(structureIdx).getObjectSplitter();
         if (splitter==null) {
             logger.warn("No splitter configured");
             return;
         }
         Map<String, List<StructureObject>> objectsByFieldName = StructureObjectUtils.splitByFieldName(objects);
         for (String f : objectsByFieldName.keySet()) {
-            ObjectDAO dao = db.getDao(f);
+            ObjectDAO dao = db==null? null : db.getDao(f);
             List<StructureObject> objectsToStore = new ArrayList<StructureObject>();
             List<StructureObject> newObjects = new ArrayList<StructureObject>();
             for (StructureObject objectToSplit : objectsByFieldName.get(f)) {
-                splitter = db.getExperiment().getStructure(structureIdx).getObjectSplitter();
+                splitter = xp.getStructure(structureIdx).getObjectSplitter();
                 splitter.setSplitVerboseMode(test);
                 if (test) splitter.splitObject(objectToSplit.getRawImage(objectToSplit.getStructureIdx()), objectToSplit.getObject());
                 else {
@@ -364,20 +366,22 @@ public class ManualCorrection {
             }
             
             Utils.removeDuplicates(objectsToStore, false);
-            if (!test) dao.store(objectsToStore, true);
+            if (!test && dao!=null) dao.store(objectsToStore, true);
             if (updateDisplay && !test) {
                 // unselect
                 ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
                 ImageWindowManagerFactory.getImageManager().removeObjects(objects, true);
                 
                 Set<StructureObject> parents = StructureObjectUtils.getParents(newObjects);
-                for (StructureObject p : parents) {
-                    //Update tree
-                    StructureNode node = GUI.getInstance().objectTreeGenerator.getObjectNode(p).getStructureNode(structureIdx);
-                    node.createChildren();
-                    GUI.getInstance().objectTreeGenerator.reload(node);
-                    //Update all opened images & objectImageInteraction
-                    ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
+                if (GUI.hasInstance() && GUI.getInstance().objectTreeGenerator!=null) {
+                    for (StructureObject p : parents) {
+                        //Update tree
+                        StructureNode node = GUI.getInstance().objectTreeGenerator.getObjectNode(p).getStructureNode(structureIdx);
+                        node.createChildren();
+                        GUI.getInstance().objectTreeGenerator.reload(node);
+                        //Update all opened images & objectImageInteraction
+                        ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
+                    }
                 }
                 // update selection
                 ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null, structureIdx);

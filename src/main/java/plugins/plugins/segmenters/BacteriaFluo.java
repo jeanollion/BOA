@@ -193,7 +193,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     }
     
     protected static ObjectPopulation getSeparatedObjects(ImageInteger segmentationMask, ProcessingVariables pv, int minSizePropagation, int minSize, int objectMergeLimit, boolean debug) {
-        ObjectPopulation popWS = WatershedTransform.watershed(pv.getHessian(), segmentationMask, false, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation));
+        ObjectPopulation popWS = WatershedTransform.watershed(pv.getHessian(), segmentationMask, false, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation), false);
         if (debug) popWS.sortBySpatialOrder(ObjectIdxTracker.IndexingOrder.YXZ);
         ImageDisplayer disp=debug?new IJImageDisplayer():null;
         
@@ -348,7 +348,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     @Override public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
         if (pv==null) initializeVariables(input);
         List<Object3D> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());
-        ObjectPopulation pop =  WatershedTransform.watershed(pv.hessian, segmentationMask, seedObjects, false, new WatershedTransform.ThresholdPropagation(pv.getNormalizedHessian(), this.manualSegPropagationHessianThreshold.getValue().doubleValue(), false), new WatershedTransform.SizeFusionCriterion(this.minSize.getValue().intValue()));
+        ObjectPopulation pop =  WatershedTransform.watershed(pv.hessian, segmentationMask, seedObjects, false, new WatershedTransform.ThresholdPropagation(pv.getNormalizedHessian(), this.manualSegPropagationHessianThreshold.getValue().doubleValue(), false), new WatershedTransform.SizeFusionCriterion(this.minSize.getValue().intValue()), false);
         
         if (verboseManualSeg) {
             Image seedMap = new ImageByte("seeds from: "+input.getName(), input);

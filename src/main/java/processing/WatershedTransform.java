@@ -52,6 +52,7 @@ public class WatershedTransform {
     final protected ImageMask mask;
     final boolean is3D;
     public final boolean decreasingPropagation;
+    protected boolean lowConnectivity = false;
     PropagationCriterion propagationCriterion;
     FusionCriterion fusionCriterion;
     public static List<Object3D> duplicateSeeds(List<Object3D> seeds) {
@@ -59,10 +60,10 @@ public class WatershedTransform {
         for (Object3D o : seeds) res.add(new Object3D(new ArrayList<Voxel>(o.getVoxels()), o.getLabel(), o.getScaleXY(), o.getScaleZ()));
         return res;
     }
-    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
-        ImageByte seeds = Filters.localExtrema(watershedMap, null, decreasingPropagation, Filters.getNeighborhood(1.5, 1, watershedMap));
+    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion, boolean lowConnectivity) {
+        ImageByte seeds = Filters.localExtrema(watershedMap, null, decreasingPropagation, Filters.getNeighborhood(1.5, 1.5, watershedMap));
         if (mask!=null) ImageOperations.and(seeds, mask, seeds);
-        return watershed(watershedMap, mask, ImageLabeller.labelImageList(seeds), decreasingPropagation, propagationCriterion,fusionCriterion);
+        return watershed(watershedMap, mask, ImageLabeller.labelImageList(seeds), decreasingPropagation, propagationCriterion,fusionCriterion, lowConnectivity);
     }
     /**
      * 
@@ -74,17 +75,17 @@ public class WatershedTransform {
      * @param fusionCriterion
      * @return 
      */
-    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, List<Object3D> regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
-        WatershedTransform wt = new WatershedTransform(watershedMap, mask, regionalExtrema, decreasingPropagation, propagationCriterion, fusionCriterion);
+    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, List<Object3D> regionalExtrema, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion, boolean lowConnectivity) {
+        WatershedTransform wt = new WatershedTransform(watershedMap, mask, regionalExtrema, decreasingPropagation, propagationCriterion, fusionCriterion).setConnectivity(lowConnectivity);
         wt.run();
         return wt.getObjectPopulation();
     }
     
-    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean invertWatershedMapValues) {
-        return watershed(watershedMap, mask, ImageLabeller.labelImageList(seeds), invertWatershedMapValues, null, null);
+    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean invertWatershedMapValues, boolean lowConnectivity) {
+        return watershed(watershedMap, mask, ImageLabeller.labelImageList(seeds), invertWatershedMapValues, null, null, lowConnectivity);
     }
-    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion) {
-        return watershed(watershedMap, mask, ImageLabeller.labelImageList(seeds), decreasingPropagation, propagationCriterion, fusionCriterion);
+    public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion, boolean lowConnectivity) {
+        return watershed(watershedMap, mask, ImageLabeller.labelImageList(seeds), decreasingPropagation, propagationCriterion, fusionCriterion, lowConnectivity);
     }
     /**
      * 
@@ -112,7 +113,10 @@ public class WatershedTransform {
         if (fusionCriterion==null) setFusionCriterion(new DefaultFusionCriterion());
         else setFusionCriterion(fusionCriterion);
     }
-    
+    public WatershedTransform setConnectivity(boolean lowConnectivity) {
+        this.lowConnectivity = lowConnectivity;
+        return this;
+    }
     public WatershedTransform setFusionCriterion(FusionCriterion fusionCriterion) {
         this.fusionCriterion=fusionCriterion;
         fusionCriterion.setUp(this);
@@ -129,7 +133,8 @@ public class WatershedTransform {
         for (Spot s : spots) {
             if (s!=null) for (Voxel v : s.voxels) heap.add(v);
         }
-        EllipsoidalNeighborhood neigh = watershedMap.getSizeZ()>1?new EllipsoidalNeighborhood(1.5, 1.5, true) : new EllipsoidalNeighborhood(1.5, true);
+        double rad = lowConnectivity ? 1 : 1.5;
+        EllipsoidalNeighborhood neigh = watershedMap.getSizeZ()>1?new EllipsoidalNeighborhood(rad, rad, true) : new EllipsoidalNeighborhood(rad, true);
         while (!heap.isEmpty()) {
             Voxel v = heap.pollFirst();
             Spot currentSpot = spots[segmentedMap.getPixelInt(v.x, v.y, v.z)];
@@ -150,7 +155,7 @@ public class WatershedTransform {
         ArrayList<Object3D> res = new ArrayList<Object3D>(spotNumber);
         int label = 1;
         for (Spot s : spots) if (s!=null) res.add(s.toObject3D(label++));
-        return new ObjectPopulation(res, watershedMap);
+        return new ObjectPopulation(res, watershedMap).setConnectivity(lowConnectivity);
     }
     
     protected Spot propagate(Spot currentSpot, Voxel currentVoxel, Voxel nextVox) { /// nextVox.value = 0 at this step
