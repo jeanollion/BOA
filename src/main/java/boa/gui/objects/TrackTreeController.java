@@ -164,28 +164,7 @@ public class TrackTreeController {
         allGeneratorS.get(structureIdx).deselectAllTracks();
     }
     public void resetHighlight() {
-        for (TrackTreeGenerator t : allGeneratorS.values()) t.clearHighlightedObjects();
-    }
-    public void setHighlight(Collection<StructureObject> objects) {
-        Map<Integer, List<StructureObject>> objectByStructureIdx = StructureObjectUtils.splitByStructureIdx(objects);
-        for (int sIdx : objectByStructureIdx.keySet()) {
-            TrackTreeGenerator t = allGeneratorS.get(sIdx);
-            if (t!=null) t.addHighlightedObjects(StructureObjectUtils.getTrackHeads(objectByStructureIdx.get(sIdx)));
-            logger.debug("add: {} objects to tree: {}", objectByStructureIdx.get(sIdx).size(), sIdx);
-        }
-    }
-    public void updateHighlight() {
-        Set<StructureObject> previousObjects=null;
-        TreeSet<Integer> structures = new TreeSet<>(this.allGeneratorS.keySet());
-        logger.debug("updateHighlight: {}", structures.descendingSet());
-        for (int sIdx : structures.descendingSet()) { // TODO if different path to last structure idx, won't work
-            if (previousObjects!=null) {
-                Collection<StructureObject> objectsToHighligh = StructureObjectUtils.getParentTrackHeads(previousObjects, sIdx, false);
-                allGeneratorS.get(sIdx).addHighlightedObjects(objectsToHighligh);
-                logger.debug("update highlight: add {} objects to tree: {}", objectsToHighligh.size(), sIdx);
-            }
-            previousObjects = allGeneratorS.get(sIdx).highlightedObjects;
-            if (allGeneratorS.get(sIdx).tree!=null) allGeneratorS.get(sIdx).tree.updateUI();
-        }
+        for (TrackTreeGenerator t : allGeneratorS.values()) t.resetHighlightedObjects();
+        for (TrackTreeGenerator t : this.displayedGeneratorS.values()) t.tree.updateUI();
     }
 }

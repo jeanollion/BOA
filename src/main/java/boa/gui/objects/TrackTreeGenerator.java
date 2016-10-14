@@ -45,14 +45,18 @@ import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.ObjectDAO;
+import dataStructure.objects.Selection;
 import dataStructure.objects.StructureObjectUtils;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.swing.tree.MutableTreeNode;
+import utils.HashMapGetCreate;
 import utils.Utils;
 /**
  *
@@ -63,8 +67,8 @@ public class TrackTreeGenerator {
     protected StructureObjectTreeModel treeModel;
     JTree tree;
     TrackTreeController controller;
-    final protected Set<StructureObject> highlightedObjects = new HashSet<StructureObject>();
-    final private Set<String> highlightedRoots = new HashSet<String>();
+    final protected HashMapGetCreate<String, Set<StructureObject>> highlightedObjects = new HashMapGetCreate<>(new HashMapGetCreate.SetFactory<>());
+    final protected Set<String> highlightedPositions = new HashSet<>();
     public TrackTreeGenerator(MasterDAO db, TrackTreeController controller) {
         this.db = db;
         this.controller=controller;
@@ -77,17 +81,26 @@ public class TrackTreeGenerator {
     public Experiment getExperiment() {
         return db.getExperiment();
     }
-    private void setHighlightedRoots(Collection<StructureObject> objects) {
-        for(StructureObject o : objects) highlightedRoots.add(o.getFieldName());
-    }
-    public void addHighlightedObjects(Collection<StructureObject> objects) {
-        highlightedObjects.addAll(objects);
-        setHighlightedRoots(objects);
+
+    public Set<StructureObject> getHighlightedObjects(String position) {
+        if (!highlightedObjects.containsKey(position)) {
+            if (GUI.getInstance()==null) return Collections.EMPTY_SET;     
+            for (Selection s: GUI.getInstance().getSelections()) {
+                if (s.isHighlightingTracks()) highlightedObjects.getAndCreateIfNecessary(position).addAll(StructureObjectUtils.getParentTrackHeads(s.getElements(position), getStructureIdx(), false));
+            }
+            logger.debug("Structure: {}, position: {}, #{} highlighted objects", getStructureIdx(), position, highlightedObjects.getAndCreateIfNecessary(position).size());
+        }
+        return highlightedObjects.getAndCreateIfNecessary(position);
     }
 
-    public void clearHighlightedObjects() {
+    public void resetHighlightedObjects() {
         highlightedObjects.clear();
-        highlightedRoots.clear();
+        highlightedPositions.clear();
+        for (Selection s: GUI.getInstance().getSelections()) if (s.isHighlightingTracks()) highlightedPositions.addAll(s.getAllPositions());
+    }
+    
+    public boolean isHighlightedPosition(String position) {
+        return highlightedPositions.contains(position);
     }
     public StructureObject getSelectedTrack() {
         if (hasSelection() && tree.getSelectionPath().getLastPathComponent() instanceof TrackNode) return ((TrackNode)tree.getSelectionPath().getLastPathComponent()).trackHead;
@@ -146,7 +159,7 @@ public class TrackTreeGenerator {
         if (root instanceof TrackExperimentNode) tree.setRootVisible(false);
         tree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
         tree.setOpaque(false);
-        tree.setCellRenderer(new TrackTreeCellRenderer(highlightedObjects, highlightedRoots));
+        tree.setCellRenderer(new TrackTreeCellRenderer(this));
         tree.setScrollsOnExpand(true);
         tree.addMouseListener(new MouseAdapter() {
             @Override

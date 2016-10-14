@@ -130,9 +130,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     
     // structure-related attributes
     StructureObjectTreeGenerator objectTreeGenerator;
-    DefaultListModel structureModel;
-    DefaultListModel experimentModel = new DefaultListModel();
-    DefaultListModel actionMicroscopyFieldModel;
+    DefaultListModel<String> structureModel;
+    DefaultListModel<String> experimentModel = new DefaultListModel();
+    DefaultListModel<String> actionMicroscopyFieldModel;
     DefaultListModel<Selection> selectionModel;
     
     // shortcuts
@@ -149,7 +149,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         this.instance=this;
         initComponents();
         experimentList.setModel(experimentModel);
-        relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importFieldsToCurrentExperimentMenuItem);add(importConfigToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(runMenu);}};
+        relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importFieldsToCurrentExperimentMenuItem);add(importConfigToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(extractMeasurementMenuItem);}};
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         toFront();
         // format button
@@ -455,6 +455,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (v!=null && v.length()>0) title = "Version: "+v+" - "+title;
         setTitle(title);
         for (Component c: relatedToXPSet) c.setEnabled(enable);
+        runActionAllXPMenuItem.setEnabled(!enable); // only available if no xp is set
         this.tabs.setEnabledAt(1, enable); // configuration
         this.tabs.setEnabledAt(2, enable); // data browsing
     }
@@ -470,23 +471,19 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             //logger.debug("Selection : {}, displayingObjects: {} track: {}", sel.getName(), sel.isDisplayingObjects(), sel.isDisplayingTracks());
         }
         Utils.setSelectedValues(selectedValues, selectionList, selectionModel);
-        setSelectionHighlight();
+        resetSelectionHighlight();
     }
     
-    public void setSelectionHighlight() {
+    public void resetSelectionHighlight() {
         if (trackTreeController==null) return;
         trackTreeController.resetHighlight();
-        Set<StructureObject> toHighlight = new HashSet<StructureObject>();
-        for (int i = 0; i<selectionModel.getSize(); ++i) {
-            Selection sel = selectionModel.getElementAt(i);
-            if (sel.isHighlightingTracks()) toHighlight.addAll(sel.getAllElements());
-        }
-        trackTreeController.setHighlight(toHighlight);
-        trackTreeController.updateHighlight();
     }
     
     public List<Selection> getSelectedSelections() {
         return selectionList.getSelectedValuesList();
+    }
+    public List<Selection> getSelections() {
+        return Utils.asList(selectionModel);
     }
     
     protected void loadObjectTrees() {
@@ -497,7 +494,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         
         trackTreeController = new TrackTreeController(db, objectTreeGenerator);
         setTrackTreeStructures(db.getExperiment().getStructuresAsString());
-        setSelectionHighlight();
+        resetSelectionHighlight();
     }
     
     private void populateExperimentList() {
@@ -795,6 +792,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         runMenu = new javax.swing.JMenu();
         importImagesMenuItem = new javax.swing.JMenuItem();
         runSelectedActionsMenuItem = new javax.swing.JMenuItem();
+        runActionAllXPMenuItem = new javax.swing.JMenuItem();
         extractMeasurementMenuItem = new javax.swing.JMenuItem();
         importExportMenu = new javax.swing.JMenu();
         exportSubMenu = new javax.swing.JMenu();
@@ -1125,7 +1123,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         trackPanelLayout.setVerticalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 588, Short.MAX_VALUE)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 590, Short.MAX_VALUE)
         );
 
         ObjectTreeJSP.setRightComponent(trackPanel);
@@ -1263,6 +1261,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
         runMenu.add(runSelectedActionsMenuItem);
+
+        runActionAllXPMenuItem.setText("Run Selected Actions on all Selected Experiments");
+        runActionAllXPMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                runActionAllXPMenuItemActionPerformed(evt);
+            }
+        });
+        runMenu.add(runActionAllXPMenuItem);
 
         extractMeasurementMenuItem.setText("Extract Measurements");
         extractMeasurementMenuItem.addActionListener(new java.awt.event.ActionListener() {
@@ -1969,6 +1975,37 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void deleteMeasurementsCheckBoxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteMeasurementsCheckBoxActionPerformed
         PropertyUtils.set(PropertyUtils.DELETE_MEASUREMENTS, this.deleteMeasurementsCheckBox.isSelected());
     }//GEN-LAST:event_deleteMeasurementsCheckBoxActionPerformed
+
+    private void runActionAllXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runActionAllXPMenuItemActionPerformed
+        boolean preProcess=false;
+        boolean reRunPreProcess=false;
+        boolean segmentAndTrack = false;
+        boolean trackOnly = false;
+        boolean runMeasurements=false;
+        for (int i : this.runActionList.getSelectedIndices()) {
+            if (i==0) preProcess=true;
+            if (i==1) reRunPreProcess=!preProcess;
+            if (i==2) segmentAndTrack=true;
+            if (i==3) trackOnly = !segmentAndTrack;
+            if (i==4) runMeasurements=true;
+        }
+        boolean deleteAll =  preProcess || reRunPreProcess || segmentAndTrack;
+        logger.debug("Will run on XP: {} / Run actions: preProcess: {}, rePreProcess: {}, segmentAndTrack: {}, trackOnly: {}, runMeasurements: {}, delete all: {}", getSelectedExperiments(), preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements,  deleteAll);
+        for (String xpName : getSelectedExperiments()) {
+            setDBConnection(xpName, getHostName());
+            if (db!=null) {
+                if (deleteAll) db.deleteAllObjects();
+                logger.debug("XP: {} / Run actions: preProcess: {}, rePreProcess: {}, segmentAndTrack: {}, trackOnly: {}, runMeasurements: {}, delete all: {}", xpName, preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements,  deleteAll);
+                
+                for (String fieldName : Utils.asList(actionMicroscopyFieldModel)) {
+                    runAction(fieldName, preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements, !deleteAll);
+                    if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field
+                    db.getDao(fieldName).clearCache();
+                    db.getExperiment().getMicroscopyField(fieldName).flushImages();
+                }
+            }
+        }
+    }//GEN-LAST:event_runActionAllXPMenuItemActionPerformed
     private void updateMongoDBBinActions() {
         boolean enableDump = false, enableRestore = false;
         String mPath = PropertyUtils.get(PropertyUtils.MONGO_BIN_PATH);
@@ -2125,6 +2162,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JMenuItem refreshExperimentListMenuItem;
     private javax.swing.JButton reloadSelectionsButton;
     private javax.swing.JButton resetLinksButton;
+    private javax.swing.JMenuItem runActionAllXPMenuItem;
     private javax.swing.JList runActionList;
     private javax.swing.JMenu runMenu;
     private javax.swing.JMenuItem runSelectedActionsMenuItem;

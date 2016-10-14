@@ -24,7 +24,7 @@ import image.Image;
  *
  * @author jollion
  */
-public abstract class DisplacementNeighborhood implements Neighborhood{
+public abstract class DisplacementNeighborhood implements Neighborhood {
     public int[] dx, dy, dz;
     boolean is3D;        
     float[] values;
@@ -91,7 +91,6 @@ public abstract class DisplacementNeighborhood implements Neighborhood{
     @Override public float[] getPixelValues() {
         return values;
     }
-
     @Override public int getValueCount() {
         return valueCount;
     }

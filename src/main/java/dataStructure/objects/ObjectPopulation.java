@@ -718,9 +718,12 @@ public class ObjectPopulation {
             }
             int count = 0;
             for (Voxel v : object.getVoxels()) {
-                if (border.contact(v)) ++count;
+                if (border.contact(v)) {
+                    ++count;
+                    if (count>=contactLimit) return false;
+                }
             }
-            return count < contactLimit;
+            return true;
         }
     }
 

@@ -113,7 +113,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
     PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Threshold (separation from background)", Thresholder.class, new ConstantValue(423), false); // //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
     PluginParameter<Thresholder> thresholdContrast = new PluginParameter<Thresholder>("Threshold for false positive", Thresholder.class, new ConstantValue(125), false);
-    GroupParameter backgroundSeparation = new GroupParameter("Separation from background", subBackScale, threshold, thresholdContrast, minSizePropagation, openRadius);
+    GroupParameter backgroundSeparation = new GroupParameter("Separation from background", threshold, thresholdContrast, openRadius);
     
     NumberParameter relativeThicknessThreshold = new BoundedNumberParameter("Relative Thickness Threshold (lower: split more)", 2, 0.7, 0, 1);
     NumberParameter relativeThicknessMaxDistance = new BoundedNumberParameter("Max Distance for Relative Thickness normalization factor (calibrated)", 2, 1, 0, null);
@@ -128,10 +128,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     NumberParameter angleThreshold = new BoundedNumberParameter("Angle Threshold", 1, 20, 0, 90);
     GroupParameter angleParameters = new GroupParameter("Constaint on angles", aspectRatioThreshold, angleThreshold);
     */
-    NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 2, 0, null);
-    NumberParameter minSizeFusion = new BoundedNumberParameter("Minimum Object size (fusion)", 0, 200, 5, null);
-    NumberParameter minSize = new BoundedNumberParameter("Minimum Object size", 0, 200, 5, null);
-    NumberParameter minSizeChannelEnd = new BoundedNumberParameter("Minimum Object size (end of channel)", 0, 200, 5, null);
+    NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 5, 0, null);
+    NumberParameter minSizeFusion = new BoundedNumberParameter("Minimum Object size (fusion)", 0, 300, 5, null);
+    NumberParameter minSize = new BoundedNumberParameter("Minimum Object size", 0, 100, 5, null);
+    NumberParameter minSizeChannelEnd = new BoundedNumberParameter("Minimum Object size (end of channel)", 0, 300, 5, null);
     GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSize, minSizeFusion, minSizeChannelEnd, contactLimit);
     
     Parameter[] parameters = new Parameter[]{backgroundSeparation, thicknessParameters, curvatureParameters, objectParameters};
@@ -154,7 +154,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         else pv.threshold=thresholdValue;
         if (p == relativeThicknessThreshold) {
             logger.debug("rel t test");
-            ObjectPopulation pop = getSeparatedObjects(pv, pv.getSegmentationMask(), minSizePropagation.getValue().intValue(), 0, false);
+            ObjectPopulation pop = getSeparatedObjects(pv, pv.getSegmentationMask(), minSize.getValue().intValue(), 0, false);
             disp.showImage(pv.getSegmentationMask().duplicate("before merging"));
             disp.showImage(pop.getLabelMap().duplicate("after merging"));
         }
@@ -162,7 +162,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             logger.debug("cur test");
             disp.showImage(pv.getSegmentationMask().duplicate("segmentation mask"));
             
-            ObjectPopulation popSplit = getSeparatedObjects(pv, pv.getSegmentationMask(), minSizePropagation.getValue().intValue(), 0, false);
+            ObjectPopulation popSplit = getSeparatedObjects(pv, pv.getSegmentationMask(), minSize.getValue().intValue(), 0, false);
             disp.showImage(getCurvatureImage(new ObjectPopulation(pv.getSegmentationMask(), true), curvatureScale.getValue().intValue()));
             disp.showImage(pv.splitSegmentationMask(pv.getSegmentationMask()).getLabelMap().setName("after split"));
             disp.showImage(popSplit.getLabelMap().duplicate("after merge"));
@@ -184,7 +184,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     @Override public Thresholder getThresholder() {
         return this.threshold.instanciatePlugin();
     }
-    Double thresholdValue = Double.NaN;
+    double thresholdValue = Double.NaN;
     @Override public void setThresholdValue(double threhsold) {
         thresholdValue = threhsold;
     }
@@ -247,7 +247,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             logger.debug("threshold: {}", pv.threshold);
         }
         
-        ObjectPopulation pop = getSeparatedObjects(pv, pv.getSegmentationMask(), minSizePropagation.getValue().intValue(), 0, debug);
+        ObjectPopulation pop = getSeparatedObjects(pv, pv.getSegmentationMask(), minSize.getValue().intValue(), 0, debug);
         if (contactLimit.getValue().intValue()>0) pop.filter(new ObjectPopulation.ContactBorder(contactLimit.getValue().intValue(), parent.getMask(), ObjectPopulation.ContactBorder.Border.YDown));
         
         if (!pop.getObjects().isEmpty()&& pop.getObjects().get(pop.getObjects().size()-1).getSize()<minSizeChannelEnd.getValue().intValue()) pop.getObjects().remove(pop.getObjects().size()-1); // remove small objects at the end of channel? // si plusieurs somme des tailles inférieurs?
@@ -489,7 +489,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         }
         pv = getProcessingVariables(input, mask);
         pv.segMask=mask; // no need to compute threshold because split is performed within object's mask
-        ObjectPopulation pop = BacteriaTrans.getSeparatedObjects(pv, pv.segMask, minSizePropagation.getValue().intValue(), 2, splitVerbose);
+        ObjectPopulation pop = BacteriaTrans.getSeparatedObjects(pv, pv.segMask, minSize.getValue().intValue(), 2, splitVerbose);
         pop.translate(object.getBounds(), true);
         return pop;
     }
@@ -517,7 +517,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             this.relativeThicknessMaxDistance=relativeThicknessMaxDistance;
             //this.smoothScale=smoothScale;
             this.dogScale=dogScale;
-            this.openRadius=openRadius;
+            this.openRadius=openRadius; //Math.max(1, openRadius);
             this.minSizePropagation=minSizePropagation;
             this.minSizeFusion=minSizeFusion;
             //this.aspectRatioThreshold=aspectRatioThreshold;
@@ -594,22 +594,37 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 if (debug) disp.showImage(pop1.getLabelMap().duplicate("objects after adjust contour2"));
                 */
                 thresh = pop1.getLabelMap();
-                if (openRadius>=1) {
+                
+                /*if (openRadius>=1) {
                     if (debug) disp.showImage(thresh.duplicate("before open"));
                     Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(openRadius, openRadius, thresh));
                     if (debug) disp.showImage(thresh.duplicate("after open"));
                     //thresh = Filters.binaryClose(thresh, Filters.getNeighborhood(openRadius, openRadius, thresh)); // no close -> create errors with curvature
                     //if (debug) disp.showImage(thresh.duplicate("after close"));
                 } else Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(1, 1, thresh)); // remove pixels only connected by diagonal -> otherwise curvature cannot be computed
+                */
+                ImageInteger open = Filters.binaryOpen(thresh, null, Filters.getNeighborhood(openRadius, openRadius, thresh));
+                ImageOperations.xor(open, thresh, open);
+                ObjectPopulation openPop = new ObjectPopulation(open, false);
+                List<Object3D> toRemove = new ArrayList<>();
+                openPop.filter(new ObjectPopulation.ContactBorder(1, open, ObjectPopulation.ContactBorder.Border.X), toRemove);
+                openPop.filter(new ObjectPopulation.ContactBorder(1, open, ObjectPopulation.ContactBorder.Border.YUp), toRemove); // do not remove Ydown -> end of channel
+                for (Object3D o : toRemove) o.draw(thresh, 0);
+                if (debug) {
+                    int label = 1;
+                    ImageOperations.fill(open, 0, null);
+                    for (Object3D o : toRemove) o.draw(open, label++);
+                    disp.showImage(open.duplicate("Open Border Remove #: "+label));
+                }
                 
                 pop1 = new ObjectPopulation(thresh).setLabelImage(thresh, false, true); // re-create label image in case objects have been separated in previous steps
                 //if (debug) disp.showImage(pop1.getLabelMap().duplicate("objects after adjust contour"));
-                pop1.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
+                //pop1.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
                 pop1.filter(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
                 
-                if (debug) new IJImageDisplayer().showImage(pop1.getLabelMap().duplicate("SEG MASK"));
+                if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK"));
                 pop1.filter(new ContrastIntensity(-contrastThreshold, contrastRadius,0,false, getIntensityMap()));
-                if (debug) new IJImageDisplayer().showImage(pop1.getLabelMap().duplicate("SEG MASK AFTER  REMOVE CONTRAST"));
+                if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK AFTER  REMOVE CONTRAST"));
                 segMask = pop1.getLabelMap();
                 //throw new Error();
             }
@@ -762,11 +777,12 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 double searchScaleLim = 2 * curvatureSearchScale;
                 while(Double.isInfinite(min) && searchScale<searchScaleLim) { // curvature is smoothed thus when there are angles the neerest value might be far away. progressively increment search scale in order not to reach the other side too easily
                     for(Voxel v : voxels) {
-                        search.search(new Point(new int[]{v.x, v.y}), searchScale, false);
-                        for (int i = 0; i<search.numNeighbors(); ++i) {
+                        search.search(new Point(new int[]{v.x, v.y}), searchScale, true);
+                        if (search.numNeighbors()>=1) min=search.getSampler(0).get();
+                        /*for (int i = 0; i<search.numNeighbors(); ++i) {
                             Double d = search.getSampler(i).get();
                             if (min>d) min = d;
-                        }
+                        }*/
                     }
                     ++searchScale;
                 }
@@ -783,7 +799,11 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                     }
                     else {
                         //logger.debug("mean of min: b1: {}, b2: {}", getMinCurvature(borderVoxels), getMinCurvature(borderVoxels2));
-                        return 0.5 * (getMinCurvature(borderVoxels)+ getMinCurvature(borderVoxels2));
+                        //return 0.5 * (getMinCurvature(borderVoxels)+ getMinCurvature(borderVoxels2));
+                        double min1 = getMinCurvature(borderVoxels);
+                        double min2 = getMinCurvature(borderVoxels2);
+                        if (Math.abs(min1-min2)>2*Math.abs(curvatureThreshold)) return Math.max(min1, min2); // when one side has a curvature very different from the other -> hole -> do not take into acount // TODO: check generality of criterion. put parameter? 
+                        else return 0.5 * (min1 + min2);
                     }
                 }
             }
@@ -878,7 +898,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         }
         
     }
-    public static class RemoveThinBorder extends processing.Filters.Filter {
+    private static class RemoveThinBorder extends processing.Filters.Filter {
         int xLim, yLim;
         @Override public void setUp(Image image, Neighborhood neighborhood) {
             super.setUp(image, neighborhood);
@@ -895,6 +915,6 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             if (y==yLim && yLim>1 && image.getPixel(x, y-1, z)==0) return 0;
             return pix;
         }
-        
     }
+
 }

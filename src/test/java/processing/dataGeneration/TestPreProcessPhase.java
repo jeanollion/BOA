@@ -24,6 +24,7 @@ import dataStructure.configuration.MicroscopyField;
 import dataStructure.containers.InputImagesImpl;
 import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.StructureObject;
+import ij.ImageJ;
 import image.Image;
 import image.ImageInteger;
 import java.util.ArrayList;
@@ -49,16 +50,17 @@ import processing.ImageTransformation;
  */
 public class TestPreProcessPhase {
     public static void main(String[] args) {
+        new ImageJ();
         PluginFactory.findPlugins("plugins.plugins");
         //String dbName= "boa_phase140115mutH";
-        String dbName = "boa_phase141129wt";
+        String dbName = "boa_phase150616wt";
         boolean flip = false;
         int field = 0;
-        int time = 7;
-        //testTransformation(dbName, 0, 0, time);
+        int time = 998;
+        //testRotation(dbName, 0, 0, time);
         //CropMicroChannelBF2D.debug=true;
-        //testPreProcessing(dbName, field, 0, -1, 8, 8);
-        //testCrop(dbName, field, 0, flip);
+        //testPreProcessing(dbName, field, 0, -1, 0, 2);
+        testCrop(dbName, field, time, flip);
         //testStabilizer(dbName, field, 0, 20, 19, flip);
     }
     
@@ -68,7 +70,7 @@ public class TestPreProcessPhase {
         //Processor.setTransformations(f, true);
         InputImagesImpl images = f.getInputImages();
         Image im = images.getImage(channelIdx, time);
-        Transformation t = new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT);
+        Transformation t = new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(0.3, true, false, true, false));
         //Transformation t = new TopHat(12, Double.NaN, true, true);
         //Transformation t = new IJSubtractBackground(0.3, true, false, true, false);
         t.computeConfigurationData(channelIdx, images);
@@ -78,11 +80,27 @@ public class TestPreProcessPhase {
         disp.showImage(res.setName("transformed"));
     }
     
+    public static void testRotation(String dbName, int fieldIdx, int channelIdx, int time) {
+        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+        MicroscopyField f = db.getExperiment().getMicroscopyField(fieldIdx);
+        InputImagesImpl images = f.getInputImages();
+        Image im = images.getImage(channelIdx, time);
+        AutoRotationXY t = new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(0.3, true, false, true, false));
+        
+        AutoRotationXY.debug=true;
+        
+        t.computeConfigurationData(channelIdx, images);
+        Image res = t.applyTransformation(channelIdx, time, im);
+        IJImageDisplayer disp = new IJImageDisplayer();
+        disp.showImage(im.setName("input"));
+        disp.showImage(res.setName("rotated"));
+    }
+    
     public static void testCrop(String dbName, int fieldIdx, int time, boolean flip) {
         MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
         MicroscopyField f = db.getExperiment().getMicroscopyField(fieldIdx);
         f.getPreProcessingChain().removeAllTransformations();
-        f.getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT));
+        f.getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(0.3, true, false, true, false)));
         if (flip) f.getPreProcessingChain().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
         f.getPreProcessingChain().addTransformation(0, null, new CropMicroChannelBF2D().setTimePointNumber(1));
         CropMicroChannelBF2D.debug=true;

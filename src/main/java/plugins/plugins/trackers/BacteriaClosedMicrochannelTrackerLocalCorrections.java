@@ -68,10 +68,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     protected PluginParameter<SegmenterSplitAndMerge> segmenter = new PluginParameter<>("Segmentation algorithm", SegmenterSplitAndMerge.class, false);
     BoundedNumberParameter maxGrowthRate = new BoundedNumberParameter("Maximum Size Increment", 2, 1.5, 1, null);
     BoundedNumberParameter minGrowthRate = new BoundedNumberParameter("Minimum size increment", 2, 0.8, 0.01, null);
-    BoundedNumberParameter divisionCriterion = new BoundedNumberParameter("Division Criterion", 2, 0.80, 0.01, 1);
+    //BoundedNumberParameter divisionCriterion = new BoundedNumberParameter("Division Criterion", 2, 0.80, 0.01, 1);
     BoundedNumberParameter costLimit = new BoundedNumberParameter("Correction: operation cost limit", 3, 1.5, 0, null);
     BoundedNumberParameter cumCostLimit = new BoundedNumberParameter("Correction: cumulative cost limit", 3, 5, 0, null);
-    Parameter[] parameters = new Parameter[]{segmenter, divisionCriterion, minGrowthRate, maxGrowthRate, costLimit, cumCostLimit};
+    Parameter[] parameters = new Parameter[]{segmenter, minGrowthRate, maxGrowthRate, costLimit, cumCostLimit};
 
     @Override public SegmenterSplitAndMerge getSegmenter() {
         SegmenterSplitAndMerge s= segmenter.instanciatePlugin();
@@ -89,7 +89,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     List<StructureObject> parents;
     int structureIdx;
     int minT, maxT;
-    double maxGR, minGR, div, costLim, cumCostLim;
+    double maxGR, minGR, costLim, cumCostLim;
     
     PreFilterSequence preFilters; 
     PostFilterSequence postFilters;
@@ -113,7 +113,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         this.segmenter.setPlugin(segmenter);
         this.maxGrowthRate.setValue(maxGrowthRate);
         this.minGrowthRate.setValue(minGrowthRate);
-        this.divisionCriterion.setValue(divisionCriterion);
+        //this.divisionCriterion.setValue(divisionCriterion);
         this.costLimit.setValue(costLimit);
         this.cumCostLimit.setValue(cumulativeCostLimit);
     }
@@ -175,7 +175,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 if (newThresholdValue != thresholdValue) for (int f = 0; f<populations.length; ++f) populations[f] = null; // clean segmentation performed with previous threshold
                 thresholdValue = newThresholdValue;
             }
-        } else if (!Double.isNaN(debugThreshold)) thresholdValue = debugThreshold;
+        } else if (!Double.isNaN(debugThreshold)) {
+            thresholdValue = debugThreshold;
+            logger.debug("Threshold used: {}", thresholdValue);
+        }
         
         // 1) assign all. Limit to first continuous segment of cells
         minT = 0;
@@ -468,7 +471,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         //if (segment) segmenters  = new SegmenterSplitAndMerge[timePointNumber];
         this.maxGR=this.maxGrowthRate.getValue().doubleValue();
         this.minGR=this.minGrowthRate.getValue().doubleValue();
-        this.div=this.divisionCriterion.getValue().doubleValue();
+        //this.div=this.divisionCriterion.getValue().doubleValue();
         this.costLim = this.costLimit.getValue().doubleValue();
         this.cumCostLim = this.cumCostLimit.getValue().doubleValue();
         this.structureIdx=structureIdx;

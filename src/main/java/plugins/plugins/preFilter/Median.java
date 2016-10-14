@@ -25,6 +25,7 @@ import dataStructure.containers.InputImages;
 import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
 import java.util.ArrayList;
+import plugins.Filter;
 import plugins.PreFilter;
 import plugins.TransformationTimeIndependent;
 import processing.Filters;
@@ -34,7 +35,7 @@ import processing.neighborhood.EllipsoidalNeighborhood;
  *
  * @author jollion
  */
-public class Median implements PreFilter, TransformationTimeIndependent {
+public class Median implements PreFilter, Filter {
     NumberParameter radiusXY = new BoundedNumberParameter("Radius XY (pixels)", 1, 2, 1, null);
     NumberParameter radiusZ = new BoundedNumberParameter("Radius Z (pixels)", 1, 1, 0, null); //TODO: conditional parameter that allow to automatically take in account z-anisotropy
     Parameter[] parameters = new Parameter[]{radiusXY, radiusZ};

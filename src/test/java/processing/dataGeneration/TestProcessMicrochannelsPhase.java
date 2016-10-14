@@ -55,10 +55,10 @@ import utils.MorphiumUtils;
 public class TestProcessMicrochannelsPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        int time =181;
+        int time =33;
         int field = 0;
-        //String dbName = "boa_phase140115mutH";
-        String dbName = "boa_phase141129wt";
+        String dbName = "boa_phase150616wt";
+        //String dbName = "boa_phase141129wt";
         testSegMicrochannelsFromXP(dbName, field, time);
         //testSegAndTrackMicrochannelsFromXP(dbName, field, 518, 530);
     }

@@ -106,6 +106,7 @@ public class ImageReader {
         if (!new File(getImagePath()).exists()) logger.error("File: {} was not found", getImagePath());
         //logger.debug("init reader: {}", getImagePath());
         reader = new ImageProcessorReader(new ChannelSeparator(LociPrefs.makeImageReader()));
+        
         ServiceFactory factory;
         try {
             factory = new ServiceFactory();
@@ -122,10 +123,9 @@ public class ImageReader {
         
         try {
             reader.setId(getImagePath());
-        } catch (FormatException ex) {
+        } catch (FormatException | IOException ex) {
             logger.error("An error occurred while opering image: "+getImagePath(),  ex);
-        } catch (IOException ex) {
-            logger.error("An error occurred while opering image: "+getImagePath(),  ex);
+            reader=null;
         }
     }
     
@@ -145,6 +145,11 @@ public class ImageReader {
     
     public Image openImage(ImageIOCoordinates coords) {
         Image res = null;
+        /*if (reader==null && extension==ImageFormat.TIF) { // try IJ's method
+            res = ImageReader.openIJTif(fullPath);
+            if (coords.getBounds()!=null) res = res.crop(coords.getBounds());
+            return res;
+        }*/
         reader.setSeries(coords.getSerie());
         int sizeX = reader.getSizeX();
         int sizeY = reader.getSizeY();
@@ -188,9 +193,8 @@ public class ImageReader {
                 if (coords.getBounds()!=null) res.resetOffset().addOffset(coords.getBounds());
                 double[] scaleXYZ = getScaleXYZ(1);
                 if (scaleXYZ[0]!=1) res.setCalibration((float)scaleXYZ[0], (float)scaleXYZ[2]);
-            } catch (FormatException ex) {
-                logger.error("An error occurred while opering image: " + reader.getCurrentFile() + " channel:" + coords.getChannel() + " t:" + coords.getTimePoint() + " series :" + coords.getSerie(), ex);
-            } catch (IOException ex) {
+            } catch (FormatException | IOException ex) {
+                 
                 logger.error("An error occurred while opering image: " + reader.getCurrentFile() + " channel:" + coords.getChannel() + " t:" + coords.getTimePoint() + " series :" + coords.getSerie(), ex);
             }
         }
@@ -201,12 +205,14 @@ public class ImageReader {
         double[] res = new double[3];
         Arrays.fill(res, defaultValue);
         if (meta != null) {
-            Length lx = meta.getPixelsPhysicalSizeX(0);
-            Length ly = meta.getPixelsPhysicalSizeY(0);
-            Length lz = meta.getPixelsPhysicalSizeZ(0);
-            if (lx!=null) res[0] = lx.value().doubleValue();
-            if (ly!=null) res[1] = ly.value().doubleValue();
-            if (lz!=null) res[2] = lz.value().doubleValue();
+            try {
+                Length lx = meta.getPixelsPhysicalSizeX(0);
+                Length ly = meta.getPixelsPhysicalSizeY(0);
+                Length lz = meta.getPixelsPhysicalSizeZ(0);
+                if (lx!=null) res[0] = lx.value().doubleValue();
+                if (ly!=null) res[1] = ly.value().doubleValue();
+                if (lz!=null) res[2] = lz.value().doubleValue();
+            } catch(Exception e) {}
         } 
         return res;
     }
@@ -257,12 +263,10 @@ public class ImageReader {
         return im;
     }
     
-    public static Image openIJTif(String filePath) {
+    public static Image openIJTif(String filePath) { // TODO : 3D files open only some planes
         File file = new File(filePath);
         TiffDecoder td = new TiffDecoder(file.getParent(), file.getName());
-
         FileInfo[] info = null;
-        
         try {
             info = td.getTiffInfo();
             ImagePlus imp = null;
@@ -285,7 +289,7 @@ public class ImageReader {
                 return im;
             }
         } catch (IOException ex) {
-            logger.error("an error occured while opening tif image", ex);
+            logger.error("An error occured while opening tif image", ex);
         }
 
         return null;

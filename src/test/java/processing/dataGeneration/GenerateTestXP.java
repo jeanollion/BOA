@@ -17,6 +17,8 @@
  */
 package processing.dataGeneration;
 
+import boa.gui.DBUtil;
+import boa.gui.GUI;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
@@ -174,22 +176,47 @@ public class GenerateTestXP {
         boolean fluo = false;
         scaleXY = 0.0646;*/
         
-        /*String dbName = "boa_phase140115mutH";
+        String dbName = "boa_phase140115mutH";
         String inputDir = "/data/Images/Phase/140115_6300_mutH_LB-LR62rep/6300_mutH_LB-LR62rep-15012014_tif/";
         String outputDir = "/data/Images/Phase/140115_6300_mutH_LB-LR62rep/Output";
         boolean flip = true;
         boolean fluo = false;
         transSingleFileImport=false;
         scaleXY = 0.06289;
-        */
         
-        String dbName = "boa_phase141129wt";
-        String inputDir = "/data/Images/Phase/141129_mg6300_wt/mg6300wt-lb-laser1-oil37/";
-        String outputDir = "/data/Images/Phase/141129_mg6300_wt/Output";
+        
+        /*String dbName = "boa_phase141107wt";
+        String inputDir = "/data/Images/Phase/141107_mg6300_wt/mg6300WT-lb-lr62replic1-7-11-14/";
+        String outputDir = "/data/Images/Phase/141107_mg6300_wt/Output";
+        boolean flip = true;
+        boolean fluo = false;
+        transSingleFileImport=false;
+        scaleXY = 0.06289;*/
+        
+        /*String dbName = "boa_phase141113wt";
+        String inputDir = "/data/Images/Phase/141113_mg6300_wt/mg6300wt-lb-lr62/";
+        String outputDir = "/data/Images/Phase/141113_mg6300_wt/Output";
+        boolean flip = true;
+        boolean fluo = false;
+        transSingleFileImport=false;
+        scaleXY = 0.06289;*/
+        
+        /*String dbName = "boa_phase150324mutH";
+        String inputDir = "/data/Images/Phase/150324_6300_mutH/6300_mutH_LB_LR62silicium-24032015-tif/";
+        String outputDir = "/data/Images/Phase/150324_6300_mutH/Output";
         boolean flip = false;
         boolean fluo = false;
         transSingleFileImport=false;
-        scaleXY = 0.06289;
+        scaleXY = 0.06289;*/
+        
+        
+        /*String dbName = "boa_phase150616wt";
+        String inputDir = "/data/Images/Phase/150616_6300_wt/6300_WT_LB_LR62silicium_16062015_tif/";
+        String outputDir = "/data/Images/Phase/150616_6300_wt/Output";
+        boolean flip = false;
+        boolean fluo = false;
+        transSingleFileImport=false;
+        scaleXY = 0.06289;*/
         
         /*
         ////////////////////////////
@@ -252,7 +279,7 @@ public class GenerateTestXP {
         
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
         mDAO.reset();
-        Experiment xp = fluo ? generateXPFluo(outputDir, true, flip, trimStart, trimEnd, scaleXY, cropXYdXdY) : generateXPTrans(outputDir, true, flip, trimStart, trimEnd, scaleXY, transSingleFileImport); 
+        Experiment xp = fluo ? generateXPFluo(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, flip, trimStart, trimEnd, scaleXY, cropXYdXdY) : generateXPTrans(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, flip, trimStart, trimEnd, scaleXY, transSingleFileImport); 
         mDAO.setExperiment(xp);
         
         Processor.importFiles(xp, true, inputDir);
@@ -265,9 +292,9 @@ public class GenerateTestXP {
     }
     
     
-    public static Experiment generateXPFluo(String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY, int[] crop) {
+    public static Experiment generateXPFluo(String name, String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY, int[] crop) {
         
-        Experiment xp = new Experiment("testXP");
+        Experiment xp = new Experiment(name);
         xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
         //xp.setImportImageMethod(Experiment.ImportImageMethod.SINGLE_FILE);
         xp.getChannelImages().insert(new ChannelImage("RFP", "_REF"), new ChannelImage("YFP", ""));
@@ -308,9 +335,9 @@ public class GenerateTestXP {
         return xp;
     }
     
-    public static Experiment generateXPTrans(String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY, boolean transSingleFileImport) {
+    public static Experiment generateXPTrans(String name, String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY, boolean transSingleFileImport) {
         
-        Experiment xp = new Experiment("testXP");
+        Experiment xp = new Experiment(name);
         if (transSingleFileImport) xp.setImportImageMethod(Experiment.ImportImageMethod.SINGLE_FILE);
         else xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_TIME_POSITION);
         xp.getChannelImages().insert(new ChannelImage("BF", "c1"));
@@ -332,7 +359,7 @@ public class GenerateTestXP {
         xp.addMeasurement(new BacteriaTransMeasurements(1));
         if (setUpPreProcessing) { // preProcessing 
             if (!Double.isNaN(scaleXY)) xp.getPreProcessingTemplate().setCustomScale(scaleXY, 1);
-            xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT));
+            xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(0.3, true, false, true, true)));
             xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
             xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannelBF2D());
             xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(0.3, true, false, true, true)); // subtract after crop in order to detect optical aberation

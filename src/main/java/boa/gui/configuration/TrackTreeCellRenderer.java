@@ -19,10 +19,12 @@ package boa.gui.configuration;
 
 import boa.gui.objects.RootTrackNode;
 import boa.gui.objects.TrackNode;
+import boa.gui.objects.TrackTreeGenerator;
 import dataStructure.objects.StructureObject;
 import java.awt.Color;
 import java.awt.Component;
 import java.util.Collection;
+import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -34,11 +36,9 @@ import javax.swing.tree.TreeNode;
  * @author nasique
  */
 public class TrackTreeCellRenderer extends DefaultTreeCellRenderer {
-    final Collection<StructureObject> highlightedObjects;
-    final Collection<String> highlightedRoots;
-    public TrackTreeCellRenderer(Collection<StructureObject> highlightedObjects, Collection<String> highlightedRoots) {
-        this.highlightedObjects=highlightedObjects;
-        this.highlightedRoots=highlightedRoots;
+    final TrackTreeGenerator generator;
+    public TrackTreeCellRenderer(TrackTreeGenerator generator) {
+        this.generator=generator;
         setLeafIcon(null);
         setClosedIcon(null);
         setOpenIcon(null);
@@ -63,9 +63,9 @@ public class TrackTreeCellRenderer extends DefaultTreeCellRenderer {
         
         if (value instanceof TrackNode) {
             TrackNode tn = (TrackNode)value;
-            if (highlightedObjects.contains(tn.getTrackHead())) ret.setForeground(highlightColor);
+            if (generator.getHighlightedObjects(tn.getTrackHead().getFieldName()).contains(tn.getTrackHead())) ret.setForeground(highlightColor);
         } else if (node instanceof RootTrackNode) {
-            if (highlightedRoots.contains(((RootTrackNode)node).getFieldName())) ret.setForeground(highlightColor);
+            if (generator.isHighlightedPosition(((RootTrackNode)node).getFieldName())) ret.setForeground(highlightColor);
         }
         return ret;
     }

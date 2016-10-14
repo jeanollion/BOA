@@ -162,17 +162,7 @@ public class SelectionUtils {
             iwm.hideTracks(null, i, tracks, false);
         }
     }
-    
-    public static void setHighlight(Collection<Selection> selections) {
-        Set<StructureObject> toHighlight = new HashSet<StructureObject>();
-        for (Selection s : selections) if (s.isHighlightingTracks()) toHighlight.addAll(s.getAllElements());
-        if (GUI.getInstance()==null || GUI.getInstance().getTrackTrees()==null) return;
-        long t0 = System.currentTimeMillis();
-        GUI.getInstance().getTrackTrees().setHighlight(toHighlight);
-        long t1 = System.currentTimeMillis();
-        logger.debug("Highlight: {}", t1-t0);
-    }
-    
+        
     public static void setMouseAdapter(final JList list) {
         list.addMouseListener( new MouseAdapter() {
             @Override public void mouseClicked(MouseEvent e) {
@@ -238,10 +228,10 @@ public class SelectionUtils {
                 //Set<Selection> switched = new HashSet<Selection>(selectedValues.size());
                 for (Selection s : selectedValues ) {
                     //if (s.isHighlightingTracks()!=highlightTracks.isSelected()) switched.add(s);
-                    //s.setHighlightingTracks(highlightTracks.isSelected());
+                    s.setHighlightingTracks(highlightTracks.isSelected());
                     dao.store(s); // optimize if necessary -> update
                 }
-                GUI.getInstance().setSelectionHighlight();
+                GUI.getInstance().resetSelectionHighlight();
             }
         });
         menu.add(highlightTracks);

@@ -179,13 +179,13 @@ public class ArrayUtil {
         }
     }
     
-    public static int[] getRegionalExtrema(float[] array, int scale, boolean max) {
+    public static List<Integer> getRegionalExtrema(float[] array, int scale, boolean max) {
         if (scale<1) scale = 1;
         ArrayList<Integer> localExtrema = new ArrayList<Integer>();
         // get local extrema
         if (max) for (int i = 0; i<array.length; ++i) {if (isLocalMax(array, scale, i)) localExtrema.add(i);}
         else for (int i = 0; i<array.length; ++i) {if (isLocalMin(array, scale, i)) localExtrema.add(i);}
-        if (localExtrema.size()<=1) return Utils.toArray(localExtrema, false);
+        if (localExtrema.size()<=1) return localExtrema;
         
         // suppress plateau
         ArrayList<Integer> regionalExtrema = new ArrayList<Integer>(localExtrema.size());
@@ -200,7 +200,7 @@ public class ArrayUtil {
         }
         // add last element if not plateau:
         if (localExtrema.get(localExtrema.size()-1)!=localExtrema.get(localExtrema.size()-2)+1) regionalExtrema.add(localExtrema.get(localExtrema.size()-1));
-        return Utils.toArray(regionalExtrema, false);
+        return regionalExtrema;
     }
     
     protected static boolean isLocalMax(float[] array, int scale, int idx) {

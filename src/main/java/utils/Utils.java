@@ -271,6 +271,13 @@ public class Utils {
         //}
     }
     
+    public static <T> List<T> asList(ListModel<T> model) {
+        int s = model.getSize();
+        List<T> res = new ArrayList<>(s);
+        for (int i = 0; i<s; ++i) res.add(model.getElementAt(i));
+        return res;
+    }
+    
     private static double incrementColor(double h, double goldenRatioConjugate) {return (h+goldenRatioConjugate)%1;}
     
     public static void plotProfile(Image image, int z, int coord, boolean alongX) {

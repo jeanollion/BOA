@@ -99,5 +99,5 @@ public class ConditionalNeighborhoodZ implements Neighborhood {
     public boolean hasNullValue(int x, int y, int z, Image image, boolean outOfBoundIsNull) {
         return currentNeighborhood.hasNullValue(x, y, z, image, outOfBoundIsNull);
     }
-    
+   
 }

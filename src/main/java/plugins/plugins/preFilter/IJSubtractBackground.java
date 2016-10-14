@@ -31,6 +31,7 @@ import image.Image;
 import image.ImageFloat;
 import image.TypeConverter;
 import java.util.ArrayList;
+import plugins.Filter;
 import plugins.PreFilter;
 import plugins.TransformationTimeIndependent;
 
@@ -38,7 +39,7 @@ import plugins.TransformationTimeIndependent;
  *
  * @author jollion
  */
-public class IJSubtractBackground implements PreFilter, TransformationTimeIndependent {
+public class IJSubtractBackground implements PreFilter, Filter {
     BooleanParameter method = new BooleanParameter("Method", "Rolling Ball", "Sliding Paraboloid", true);
     BooleanParameter imageType = new BooleanParameter("Image Background", "Dark", "Light", true);
     BooleanParameter smooth = new BooleanParameter("Perform Smoothing", true);

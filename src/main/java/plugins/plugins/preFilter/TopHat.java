@@ -33,6 +33,7 @@ import image.ImageFloat;
 import image.ImageOperations;
 import image.TypeConverter;
 import java.util.ArrayList;
+import plugins.Filter;
 import plugins.PreFilter;
 import plugins.TransformationTimeIndependent;
 import processing.Filters;
@@ -45,7 +46,7 @@ import processing.neighborhood.Neighborhood;
  *
  * @author jollion
  */
-public class TopHat implements PreFilter, TransformationTimeIndependent {
+public class TopHat implements PreFilter, Filter {
 
     ScaleXYZParameter radius = new ScaleXYZParameter("Radius");
     BooleanParameter darkBackground = new BooleanParameter("Image Background", "Dark", "Light", true);
