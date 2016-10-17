@@ -50,17 +50,17 @@ public class HashMapGetCreate<K, V> extends HashMap<K, V> {
     }
     public static class ArrayListFactory<K, V> implements Factory<K, ArrayList<V>>{
         @Override public ArrayList<V> create(K key) {
-            return new ArrayList<V>();
+            return new ArrayList<>();
         }
     }
     public static class ListFactory<K, V> implements Factory<K, List<V>>{
         @Override public List<V> create(K key) {
-            return new ArrayList<V>();
+            return new ArrayList<>();
         }
     }
     public static class SetFactory<K, V> implements Factory<K, Set<V>>{
         @Override public Set<V> create(K key) {
-            return new HashSet<V>();
+            return new HashSet<>();
         }
     }
 }

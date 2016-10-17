@@ -70,6 +70,26 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
         return i;
     }
     
+    public Set<I> getInterfaces(Collection<E> elements) {
+        Set<I> res = new HashSet<>();
+        elements.stream().filter((e) -> (interfaceByElement.containsKey(e))).forEach((e) -> {
+            res.addAll(interfaceByElement.get(e));
+        });
+        return res;
+    }
+    
+    public Set<I> getInterfaces(E e) {
+        if (interfaceByElement.containsKey(e)) return interfaceByElement.get(e);
+        else return Collections.EMPTY_SET;
+    }
+    
+    public Set<E> getInteractants(E e) {
+        Set<I> inter =getInterfaces(e);
+        Set<E> res = new HashSet<>(inter.size());
+        for (I i : inter) res.add(i.getOther(e));
+        return res;
+    }
+    
     public I getInterface(E e1, E e2, boolean createIfNull) {
         Collection<I> l = interfaceByElement.getAndCreateIfNecessary(e1);
         for (I i : l) if (i.isInterfaceOf(e2)) return i;
@@ -126,13 +146,7 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
         return clusters;
     }
     
-    public Set<I> getInterfaces(Collection<E> elements) {
-        Set<I> res = new HashSet<>();
-        elements.stream().filter((e) -> (interfaceByElement.containsKey(e))).forEach((e) -> {
-            res.addAll(interfaceByElement.get(e));
-        });
-        return res;
-    }
+    
     
     /*public List<E> mergeSortCluster(Fusion<E, I> fusionInterface, InterfaceSortValue<E, I> interfaceSortValue) {
         List<Set<Interface<E, I>>> interfaceClusters = getClusters();

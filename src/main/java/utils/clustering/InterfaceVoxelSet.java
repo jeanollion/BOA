@@ -22,6 +22,7 @@ import dataStructure.objects.Voxel;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
+import utils.Pair;
 import utils.clustering.Object3DCluster.InterfaceVoxels;
 
 /**
@@ -29,25 +30,36 @@ import utils.clustering.Object3DCluster.InterfaceVoxels;
  * @author jollion
  */
 public abstract class InterfaceVoxelSet<T extends InterfaceVoxelSet<T>> extends InterfaceObject3DImpl<T> implements InterfaceVoxels<T> {
-    Set<Voxel> voxels;
+    Set<Pair<Voxel, Voxel>> voxels;
 
     public InterfaceVoxelSet(Object3D e1, Object3D e2) {
         super(e1, e2);
-        voxels=new HashSet<Voxel>();
+        voxels=new HashSet<>();
     }
     
-    public InterfaceVoxelSet(Object3D e1, Object3D e2, Set<Voxel> voxels) {
+    public InterfaceVoxelSet(Object3D e1, Object3D e2, Set<Pair<Voxel, Voxel>> voxels) {
         super(e1, e2);
         this.voxels=voxels;
     }
 
-    public void addPair(Voxel v1, Voxel v2) {
-        voxels.add(v1);
-        voxels.add(v2);
+    @Override public void addPair(Voxel v1, Voxel v2) {
+        voxels.add(new Pair(v1, v2));
     }
     
-    public Set<Voxel> getVoxels() {
-        return voxels;
+    @Override public Set<Voxel> getVoxels() {
+        Set<Voxel> res = new HashSet<>(voxels.size()*2);
+        for (Pair<Voxel, Voxel> p : voxels) {
+            res.add(p.key);
+            res.add(p.value);
+        }
+        return res;
+    }
+    
+    public Set<Voxel> getVoxels(Object3D o) {
+        Set<Voxel> res = new HashSet<>(voxels.size());
+        if (o==e1) voxels.stream().forEach((p) -> { res.add(p.key); });
+        else if (o==e2) voxels.stream().forEach((p) -> { res.add(p.value); });
+        return res;
     }
 
     @Override

@@ -55,13 +55,15 @@ import utils.MorphiumUtils;
  * @author jollion
  */
 public class TestProcessBacteriaPhase {
+    static double thld = Double.NaN;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
         //int time =31;
-        int time =457;
-        int microChannel =11;
+        int time =959;
+        int microChannel =9;
         int field = 0;
+        thld = 252.9;
         //String dbName = "boa_mutH_140115";
         //String dbName = "boa_phase140115mutH";
         String dbName = "boa_phase150616wt";
@@ -78,6 +80,7 @@ public class TestProcessBacteriaPhase {
         StructureObject mc = root.getChildren(0).get(microChannel);
         Image input = mc.getRawImage(1);
         BacteriaTrans seg = new BacteriaTrans();
+        if (!Double.isNaN(thld)) seg.setThresholdValue(thld);
         ObjectPopulation pop = seg.runSegmenter(input, 1, mc);
         seg.setSplitVerboseMode(true);
         List<Object3D> res = new ArrayList<>();
@@ -100,7 +103,8 @@ public class TestProcessBacteriaPhase {
         StructureObject mc = root.getChildren(0).get(microChannel);
         Image input = mc.getRawImage(1);
         BacteriaTrans.debug=true;
-        BacteriaTrans seg = new BacteriaTrans().setThreshold(new ConstantValue(287));
+        BacteriaTrans seg = new BacteriaTrans();
+        if (!Double.isNaN(thld)) seg.setThresholdValue(thld);
         ObjectPopulation pop = seg.runSegmenter(input, 1, mc);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(pop.getLabelMap());
@@ -117,8 +121,8 @@ public class TestProcessBacteriaPhase {
             parentTrack.add(mc);
             Image input = mc.getRawImage(1);
             BacteriaTrans.debug=false;
-            BacteriaTrans seg = new BacteriaTrans();//.setThreshold(new ConstantValue(350));
-            
+            BacteriaTrans seg = new BacteriaTrans();
+            if (!Double.isNaN(thld)) seg.setThresholdValue(thld);
             mc.setChildrenObjects(seg.runSegmenter(input, 1, mc), 1);
             logger.debug("seg: tp {}, #objects: {}", mc.getTimePoint(), mc.getChildren(1).size());
         }

@@ -167,17 +167,17 @@ public class ObjectPopulation {
         return this.absoluteLandmark;
     }
     
-    public ObjectPopulation addObjects(Object3D... objects) {
-        this.objects.addAll(Arrays.asList(objects));
-        return this;
+    public ObjectPopulation addObjects(boolean updateLabelImage, Object3D... objects) {
+        return addObjects(Arrays.asList(objects), updateLabelImage);
     }
     /**
-     * Add objects to the list. Do not update the label image
+     * Add objects to the list.
      * @param objects
      * @return 
      */
-    public ObjectPopulation addObjects(List<Object3D> objects) {
+    public ObjectPopulation addObjects(List<Object3D> objects, boolean updateLabelImage) {
         this.objects.addAll(objects);
+        if (updateLabelImage) relabel(true);
         return this;
     }
     

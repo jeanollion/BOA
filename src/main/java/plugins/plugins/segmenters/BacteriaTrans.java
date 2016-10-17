@@ -51,14 +51,17 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import measurement.BasicMeasurements;
 import net.imglib2.KDTree;
 import net.imglib2.Point;
+import net.imglib2.neighborsearch.KNearestNeighborSearchOnKDTree;
 import net.imglib2.neighborsearch.NearestNeighborSearch;
 import net.imglib2.neighborsearch.NearestNeighborSearchOnKDTree;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
@@ -88,9 +91,11 @@ import processing.ImageFeatures;
 import processing.WatershedTransform;
 import processing.neighborhood.EllipsoidalNeighborhood;
 import processing.neighborhood.Neighborhood;
+import utils.HashMapGetCreate;
 import utils.Utils;
 import static utils.Utils.plotProfile;
 import utils.clustering.ClusterCollection.InterfaceFactory;
+import utils.clustering.DummyInterfaceVoxelSet;
 import utils.clustering.Interface;
 import utils.clustering.InterfaceImpl;
 import utils.clustering.InterfaceObject3D;
@@ -108,12 +113,14 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     
     //NumberParameter smoothScale = new BoundedNumberParameter("Smooth scale", 1, 2, 1, 6);
     NumberParameter openRadius = new BoundedNumberParameter("Open Radius", 1, 2, 0, null); // 0-3
+    NumberParameter closeRadius = new BoundedNumberParameter("Close Radius", 1, 4, 0, null); //3-5
+    NumberParameter fillHolesBackgroundContactProportion = new BoundedNumberParameter("Fill holes background contact proportion", 2, 0.25, 0, 1);
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 20, 5, null);
     NumberParameter subBackScale = new BoundedNumberParameter("Subtract Background scale", 1, 100, 0.1, null);
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
     PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Threshold (separation from background)", Thresholder.class, new ConstantValue(423), false); // //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
     PluginParameter<Thresholder> thresholdContrast = new PluginParameter<Thresholder>("Threshold for false positive", Thresholder.class, new ConstantValue(125), false);
-    GroupParameter backgroundSeparation = new GroupParameter("Separation from background", threshold, thresholdContrast, openRadius);
+    GroupParameter backgroundSeparation = new GroupParameter("Separation from background", threshold, thresholdContrast, openRadius, closeRadius, fillHolesBackgroundContactProportion);
     
     NumberParameter relativeThicknessThreshold = new BoundedNumberParameter("Relative Thickness Threshold (lower: split more)", 2, 0.7, 0, 1);
     NumberParameter relativeThicknessMaxDistance = new BoundedNumberParameter("Max Distance for Relative Thickness normalization factor (calibrated)", 2, 1, 0, null);
@@ -225,7 +232,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     public ProcessingVariables getProcessingVariables(Image input, ImageMask segmentationMask) {
         return new ProcessingVariables(input, segmentationMask,
                 relativeThicknessThreshold.getValue().doubleValue(), relativeThicknessMaxDistance.getValue().doubleValue(), 
-                subBackScale.getValue().doubleValue(), openRadius.getValue().doubleValue(), 
+                subBackScale.getValue().doubleValue(), openRadius.getValue().doubleValue(), closeRadius.getValue().doubleValue(), this.fillHolesBackgroundContactProportion.getValue().doubleValue(),
                 minSize.getValue().intValue(), minSizePropagation.getValue().intValue(), minSizeFusion.getValue().intValue(),
                 curvatureScale.getValue().intValue(), curvatureThreshold.getValue().doubleValue(), curvatureSearchRadius.getValue().doubleValue());
     }
@@ -502,7 +509,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         private Image intensityMap;
         //private Image smoothed;
         ImageByte splitMask;
-        final double relativeThicknessThreshold, dogScale, openRadius, relativeThicknessMaxDistance;//, smoothScale;// aspectRatioThreshold, angleThresholdRad; 
+        final double relativeThicknessThreshold, dogScale, openRadius, fillHolesBckProp, closeRadius, relativeThicknessMaxDistance;//, smoothScale;// aspectRatioThreshold, angleThresholdRad; 
         double threshold = Double.NaN;
         final int curvatureScale, minSizePropagation, minSizeFusion, minSize;
         final double curvatureSearchScale;
@@ -510,7 +517,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         double contrastThreshold;
         Object3DCluster.InterfaceFactory<Object3D, InterfaceBT> factory;
         private double yLimLastObject = Double.NaN;
-        private ProcessingVariables(Image input, ImageMask mask, double splitThresholdValue, double relativeThicknessMaxDistance, double dogScale, double openRadius, int minSize, int minSizePropagation, int minSizeFusion, int curvatureScale, double curvatureThreshold, double curvatureSearchRadius) {
+        private ProcessingVariables(Image input, ImageMask mask, double splitThresholdValue, double relativeThicknessMaxDistance, double dogScale, double openRadius, double closeRadius, double fillHolesBckProp, int minSize, int minSizePropagation, int minSizeFusion, int curvatureScale, double curvatureThreshold, double curvatureSearchRadius) {
             this.input=input;
             this.mask=mask;
             this.relativeThicknessThreshold=splitThresholdValue;
@@ -526,6 +533,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             curvatureSearchScale = curvatureSearchRadius;
             this.curvatureThreshold=curvatureThreshold;
             this.minSize=minSize;
+            this.closeRadius=closeRadius;
+            this.fillHolesBckProp=fillHolesBckProp;
         }
         /*private Image getSmoothed() {
             if (smoothed==null) smoothed = ImageFeatures.gaussianSmooth(input, smoothScale, smoothScale, false);
@@ -616,10 +625,13 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                     for (Object3D o : toRemove) o.draw(open, label++);
                     disp.showImage(open.duplicate("Open Border Remove #: "+label));
                 }
+                FillHoles2D.debug=debug;
+                FillHoles2D.fillHolesClosing(thresh, closeRadius, fillHolesBckProp, minSizeFusion);
                 
-                pop1 = new ObjectPopulation(thresh).setLabelImage(thresh, false, true); // re-create label image in case objects have been separated in previous steps
+                pop1 = new ObjectPopulation(thresh).setLabelImage(thresh, false, true);
+                
                 //if (debug) disp.showImage(pop1.getLabelMap().duplicate("objects after adjust contour"));
-                //pop1.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
+                pop1.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
                 pop1.filter(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
                 
                 if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK"));
@@ -769,23 +781,31 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 return mean/=borderVoxels.size();
             }*/
             private double getMinCurvature(Collection<Voxel> voxels) { // returns positive infinity if no border
-                RadiusNeighborSearchOnKDTree<Double> search = new RadiusNeighborSearchOnKDTree(getCurvature());
                 if (voxels.isEmpty()) return 0;
+                //RadiusNeighborSearchOnKDTree<Double> search = new RadiusNeighborSearchOnKDTree(getCurvature());
+                NearestNeighborSearchOnKDTree<Double> search = new NearestNeighborSearchOnKDTree(getCurvature());
+                
                 double min = Double.POSITIVE_INFINITY;
-                getCurvature();
-                double searchScale = curvatureSearchScale;
+                for (Voxel v : voxels) {
+                    search.search(new Point(new int[]{v.x, v.y}));
+                    double d = search.getSampler().get();
+                    if (d<min) min = d;
+                }
+                
+                /*double searchScale = curvatureSearchScale;
                 double searchScaleLim = 2 * curvatureSearchScale;
                 while(Double.isInfinite(min) && searchScale<searchScaleLim) { // curvature is smoothed thus when there are angles the neerest value might be far away. progressively increment search scale in order not to reach the other side too easily
                     for(Voxel v : voxels) {
+                        
                         search.search(new Point(new int[]{v.x, v.y}), searchScale, true);
                         if (search.numNeighbors()>=1) min=search.getSampler(0).get();
-                        /*for (int i = 0; i<search.numNeighbors(); ++i) {
-                            Double d = search.getSampler(i).get();
-                            if (min>d) min = d;
-                        }*/
+                        //for (int i = 0; i<search.numNeighbors(); ++i) {
+                        //    Double d = search.getSampler(i).get();
+                        //    if (min>d) min = d;
+                        //}
                     }
                     ++searchScale;
-                }
+                }*/
                 //if (Double.isInfinite(min)) return Double.NaN;
                 return min;
             }
@@ -868,6 +888,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         }
         
     }
+    
     public static class ContrastIntensity implements Filter {
         final double threshold;
         final double dilRadiusXY, dilRadiusZ;

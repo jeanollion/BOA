@@ -42,7 +42,7 @@ public class DummySplitter implements ObjectSplitter {
         Object3D o1  = new Object3D(v1, 1, object.getScaleXY(), object.getScaleZ());
         Object3D o2  = new Object3D(v2, 2, object.getScaleXY(), object.getScaleZ());
         //logger.debug("dummy splitter: object1: {} object2: {}", v1.size(), v2.size());
-        return new ObjectPopulation(null, input).addObjects(o1, o2);
+        return new ObjectPopulation(null, input).addObjects(false, o1, o2);
     }
 
     public Parameter[] getParameters() {

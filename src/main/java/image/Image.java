@@ -1,6 +1,7 @@
 package image;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -241,27 +242,8 @@ public abstract class Image implements ImageProperties {
     public abstract int[] getHisto256(ImageMask mask, BoundingBox bounds);
     public int[] getHisto256(ImageMask mask) {return getHisto256(mask, null);}
     abstract int[] getHisto256(double min, double max, ImageMask mask, BoundingBox limit);
-    /**
-     * 
-     * @param images
-     * @param minAndMax the method will output min and max values in this array, except if minAndMax[0]<minAndMax[1] -> in this case will use these values for histogram
-     * @return 
-     */
-    public static int[] getHisto256(List<Image> images, double[] minAndMax) {
-        if ( !(minAndMax[0]<minAndMax[1])) { // compute min and max for all images and store it in array
-            for (Image i : images) {
-                double[] mm = i.getMinAndMax(null);
-                if (minAndMax[0]>mm[0]) minAndMax[0]=mm[0];
-                if (minAndMax[1]<mm[1]) minAndMax[1]=mm[1];
-            }
-        }
-        int[] histo= new int[256];
-        for (Image im : images) {
-            int[] h = im.getHisto256(minAndMax[0], minAndMax[1], null, null);
-            for (int i = 0; i<256; ++i) histo[i]+=h[i];
-        }
-        return histo;
-    }
+    
+    
     
     protected Image cropI(BoundingBox bounds) {
         //bounds.trimToImage(this);

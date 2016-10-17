@@ -77,6 +77,9 @@ public class Object3DCluster<I extends InterfaceObject3D<I>> extends ClusterColl
                                 else inter.addPair(n, vox);
                             }
                         }
+                    } else if (background) {
+                        InterfaceObject3D inter = getInterface(o, objects.get(0), true); 
+                        inter.addPair(n, vox);
                     }
                     n = new Voxel(vox.x-neigh[i][0], vox.y-neigh[i][1], vox.z-neigh[i][2]);// eventuellement aussi en arriere juste pour interaction avec 0 = background
                     if (inputLabels.contains(n.x, n.y, n.z)) {
@@ -85,6 +88,9 @@ public class Object3DCluster<I extends InterfaceObject3D<I>> extends ClusterColl
                             InterfaceObject3D inter = getInterface(o, objects.get(otherLabel), true); 
                             inter.addPair(n, vox);
                         }
+                    } else if (background) {
+                        InterfaceObject3D inter = getInterface(o, objects.get(0), true); 
+                        inter.addPair(n, vox);
                     }
                 }
             } 
@@ -180,6 +186,7 @@ public class Object3DCluster<I extends InterfaceObject3D<I>> extends ClusterColl
         for (I i : cluster.interfaces) {
             logger.debug("Interface: {}+{}, size: {}", i.getE1().getLabel(), i.getE2().getLabel(), i.getVoxels().size());
             for (Voxel v : i.getVoxels()) {
+                if (!cluster.population.getLabelMap().contains(v.x, v.y, v.z)) continue; // case of background pixels -> can be out of bound
                 if (cluster.population.getLabelMap().getPixelInt(v.x, v.y, v.z)==i.getE1().getLabel()) im.setPixel(v.x, v.y, v.z, i.getE2().getLabel());
                 else im.setPixel(v.x, v.y, v.z, i.getE1().getLabel());
             }

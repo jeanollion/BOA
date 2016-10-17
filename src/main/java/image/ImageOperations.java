@@ -22,6 +22,9 @@ import dataStructure.objects.Voxel;
 import image.BoundingBox.LoopFunction;
 import static image.Image.logger;
 import static image.ImageOperations.Axis.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import processing.Filters;
 
 /**
@@ -30,6 +33,58 @@ import processing.Filters;
  */
 public class ImageOperations {
 
+    /**
+     *
+     * @param images
+     * @param minAndMax the method will output min and max values in this array, except if minAndMax[0]<minAndMax[1] -> in this case will use these values for histogram
+     * @return
+     */
+    public static int[] getHisto256(List<Image> images, double[] minAndMax) {
+        if (!(minAndMax[0] < minAndMax[1])) {
+            double[] mm = getMinAndMax(images);
+            minAndMax[0] = mm[0]; minAndMax[1]=mm[1];
+        }
+        int[] histo = new int[256];
+        for (Image im : images) {
+            int[] h = im.getHisto256(minAndMax[0], minAndMax[1], null, null);
+            for (int i = 0; i < 256; ++i) {
+                histo[i] += h[i];
+            }
+        }
+        return histo;
+    }
+
+    public static List<int[]> getHisto256AsList(List<Image> images, double[] minAndMax) {
+        if (!(minAndMax[0] < minAndMax[1])) {
+            double[] mm = getMinAndMax(images);
+            minAndMax[0] = mm[0]; minAndMax[1]=mm[1];
+        }
+        List<int[]> res = new ArrayList<>(images.size());
+        for (Image im : images) res.add(im.getHisto256(minAndMax[0], minAndMax[1], null, null));
+        return res;
+    }
+
+    public static double[] getMinAndMax(List<Image> images) {
+        if (images.isEmpty()) {
+            return new double[2];
+        }
+        Iterator<Image> it = images.iterator();
+        double[] minAndMax = it.next().getMinAndMax(null);
+        while (it.hasNext()) {
+            double[] mm = it.next().getMinAndMax(null);
+            if (minAndMax[0] > mm[0]) {
+                minAndMax[0] = mm[0];
+            }
+            if (minAndMax[1] < mm[1]) {
+                minAndMax[1] = mm[1];
+            }
+        }
+        return minAndMax;
+    }
+    public static void addHisto(int[] source, int[] dest, boolean remove) {
+        if (remove) for (int i =0; i<source.length; ++i) dest[i]-=source[i];
+        else for (int i =0; i<source.length; ++i) dest[i]+=source[i];
+    }
     
     public static enum Axis {X, Y, Z;}
     
