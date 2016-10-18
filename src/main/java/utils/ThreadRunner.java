@@ -137,7 +137,7 @@ public class ThreadRunner {
                         for (int idx = tr.ai.getAndIncrement(); idx<tr.end; idx = tr.ai.getAndIncrement()) {
                             action.run(array[idx], idx,threadIdx );
                             int currentCount = count.incrementAndGet();
-                            logger.debug("Processed: {}/{}", currentCount, array.length);
+                            //logger.debug("Processed: {}/{}", currentCount, array.length);
                             if (setToNull) array[idx]=null;
                         }
                         if (action instanceof ThreadAction2) ((ThreadAction2)action).tearDown();

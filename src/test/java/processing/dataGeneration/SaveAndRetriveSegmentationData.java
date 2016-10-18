@@ -104,7 +104,7 @@ public class SaveAndRetriveSegmentationData {
     
     public static HashMap<Image, Overlay> getImagesWithOverlay(String dbName, String baseFileName, int fieldIdx, int structureIdx, int[] roiStructureIdx, int[] trackStructureIdx) {
         MorphiumMasterDAO m = new MorphiumMasterDAO(dbName);
-        MorphiumObjectDAO dao = m.getDao(m.getExperiment().getMicroscopyField(fieldIdx).getName());
+        MorphiumObjectDAO dao = m.getDao(m.getExperiment().getPosition(fieldIdx).getName());
         StructureObject root = dao.getRoot(0);
         List<StructureObject> mcTH = dao.getTrackHeads(root, 0); // MC
         logger.debug("{} MC founds", mcTH.size());
@@ -142,7 +142,7 @@ public class SaveAndRetriveSegmentationData {
     
     public static ArrayList<ArrayList<Object3D>> getObjectsMC(String dbName, int fieldIdx, int structureIdx) {
         MorphiumMasterDAO m = new MorphiumMasterDAO(dbName);
-        MorphiumObjectDAO dao = m.getDao(m.getExperiment().getMicroscopyField(fieldIdx).getName());
+        MorphiumObjectDAO dao = m.getDao(m.getExperiment().getPosition(fieldIdx).getName());
         StructureObject root = dao.getRoot(0);
         List<StructureObject> mcTH = dao.getTrackHeads(root, 0); // MC
         ArrayList<ArrayList<Object3D>> res = new ArrayList<ArrayList<Object3D>>();

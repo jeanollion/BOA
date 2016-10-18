@@ -82,8 +82,8 @@ public class Processor {
     
     public static void preProcessImages(MasterDAO db, boolean computeConfigurationData) {
         Experiment xp = db.getExperiment();
-        for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
-            preProcessImages(xp.getMicroscopyField(i), db.getDao(xp.getMicroscopyField(i).getName()), false, computeConfigurationData);
+        for (int i = 0; i<xp.getPositionCount(); ++i) {
+            preProcessImages(xp.getPosition(i), db.getDao(xp.getPosition(i).getName()), false, computeConfigurationData);
         }
     }
     
@@ -201,8 +201,8 @@ public class Processor {
     
     public static void performMeasurements(MasterDAO db) {
         Experiment xp = db.getExperiment();
-        for (int i = 0; i<xp.getMicrocopyFieldCount(); ++i) {
-            String fieldName = xp.getMicroscopyField(i).getName();
+        for (int i = 0; i<xp.getPositionCount(); ++i) {
+            String fieldName = xp.getPosition(i).getName();
             performMeasurements(db.getDao(fieldName));
             //if (dao!=null) dao.clearCacheLater(xp.getMicroscopyField(i).getName());
             db.getDao(fieldName).clearCache();

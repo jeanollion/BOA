@@ -106,7 +106,9 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         */
         
         int aberrationStart = opticalAberration ? searchYLimWithOpticalAberration(image, 0.25, yMarginEndChannel) : image.getSizeY()-1;
+        if (aberrationStart<=0) return null;
         Image imCrop = image.crop(new BoundingBox(0, image.getSizeX()-1, 0, aberrationStart, 0, image.getSizeZ()-1));
+        
         Image imDerY = ImageFeatures.getDerivative(imCrop, derScale, 0, 1, 0, true);
         float[] yProj = ImageOperations.meanProjection(imDerY, ImageOperations.Axis.Y, null);
         int channelStartIdx = ArrayUtil.max(yProj, 0, (int)(yProj.length*0.75)); // limit to 

@@ -130,7 +130,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         return fields.getChildByName(fieldName);
     }
     
-    public MicroscopyField getMicroscopyField(int fieldIdx) {
+    public MicroscopyField getPosition(int fieldIdx) {
         checkInit();
         return fields.getChildAt(fieldIdx);
     }   
@@ -181,7 +181,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         return channelImages.getChildCount();
     }
     
-    public int getMicrocopyFieldCount() {
+    public int getPositionCount() {
         return fields.getChildCount();
     }
     

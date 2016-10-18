@@ -34,7 +34,7 @@ public class NoMeasurementError {
         int fIdx = 0;
         int structureIdx = 2;
         MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
-        MicroscopyField f = db.getExperiment().getMicroscopyField(fIdx);
+        MicroscopyField f = db.getExperiment().getPosition(fIdx);
         ObjectDAO dao = db.getDao(f.getName());
         checkMeasurements(dao, structureIdx);
     }

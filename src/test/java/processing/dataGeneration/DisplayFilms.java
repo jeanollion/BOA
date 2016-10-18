@@ -118,11 +118,11 @@ public class DisplayFilms {
     public static Image[][][] getPreProcessedImagesAsFilmFTC(String dbName, int tStart, int tEnd, int[] structureIdx, int... fieldIndices) {
         if (tEnd<=tStart) throw new IllegalArgumentException("TEnds should be > tStart");
         MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
-        if (fieldIndices==null || fieldIndices.length==0) fieldIndices = ArrayUtil.generateIntegerArray(db.getExperiment().getMicrocopyFieldCount());
+        if (fieldIndices==null || fieldIndices.length==0) fieldIndices = ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount());
         Image[][][] resFTC = new Image[fieldIndices.length][tEnd-tStart][structureIdx.length];
         int count = 0;
         for (int fieldNumber : fieldIndices) {
-            MicroscopyField f = db.getExperiment().getMicroscopyField(fieldNumber);
+            MicroscopyField f = db.getExperiment().getPosition(fieldNumber);
             ObjectDAO dao = db.getDao(f.getName());
             for (int t = tStart; t<tEnd; ++t) {
                 StructureObject root = dao.getRoots().get(t);
@@ -137,11 +137,11 @@ public class DisplayFilms {
     public static Image[][] getRawImagesAsFilmTF(String dbName, int tStart, int tEnd, int channelIdx, int... fieldIndices) {
         if (tEnd<=tStart) throw new IllegalArgumentException("TEnds should be > tStart");
         MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
-        if (fieldIndices==null || fieldIndices.length==0) fieldIndices = ArrayUtil.generateIntegerArray(db.getExperiment().getMicrocopyFieldCount());
+        if (fieldIndices==null || fieldIndices.length==0) fieldIndices = ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount());
         Image[][] resTF = new Image[tEnd-tStart][fieldIndices.length];
         int count = 0;
         for (int fieldNumber : fieldIndices) {
-            MicroscopyField f = db.getExperiment().getMicroscopyField(fieldNumber);
+            MicroscopyField f = db.getExperiment().getPosition(fieldNumber);
             InputImages images = f.getInputImages();
             for (int t = tStart; t<tEnd; ++t) {
                 resTF[t-tStart][count] = images.getImage(channelIdx, t);

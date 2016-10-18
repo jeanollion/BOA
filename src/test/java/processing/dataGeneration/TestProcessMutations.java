@@ -100,7 +100,7 @@ public class TestProcessMutations {
         testSegMutationsFromXP(fieldIdx, mcIdx, true, time, null, null, null, null, null);
     }
     public void testSegMutationsFromXP(int fieldIdx, int mcIdx, boolean parentMC, int time, ArrayList<ImageInteger> mcMask_, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
-        MicroscopyField f = db.getExperiment().getMicroscopyField(fieldIdx);
+        MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         StructureObject root = db.getDao(f.getName()).getRoot(time);
         //logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(mcIdx);

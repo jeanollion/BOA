@@ -540,14 +540,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             this.microscopyFieldList.setModel(actionMicroscopyFieldModel);
         } else actionMicroscopyFieldModel.removeAllElements();
         if (db!=null) {
-            for (int i =0; i<db.getExperiment().getMicrocopyFieldCount(); ++i) actionMicroscopyFieldModel.addElement(db.getExperiment().getMicroscopyField(i).getName());
+            for (int i =0; i<db.getExperiment().getPositionCount(); ++i) actionMicroscopyFieldModel.addElement(db.getExperiment().getPosition(i).getName());
             Utils.setSelectedValues(sel, microscopyFieldList, actionMicroscopyFieldModel);
         }
     }
     public int[] getSelectedMicroscopyFields() {
         int[] res = microscopyFieldList.getSelectedIndices();
         if (res.length==0) {
-            res=new int[db.getExperiment().getMicrocopyFieldCount()];
+            res=new int[db.getExperiment().getPositionCount()];
             for (int i = 0; i<res.length; ++i) res[i]=i;
         }
         return res;
@@ -1886,12 +1886,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         int[] selectedStructures = this.getSelectedStructures(true);
         boolean allStructures = selectedStructures.length==db.getExperiment().getStructureCount();
         boolean needToDeleteObjects = preProcess || reRunPreProcess || segmentAndTrack;
-        boolean deleteAll =  needToDeleteObjects && allStructures && microscopyFields.length==db.getExperiment().getMicrocopyFieldCount();
+        boolean deleteAll =  needToDeleteObjects && allStructures && microscopyFields.length==db.getExperiment().getPositionCount();
         if (deleteAll) db.deleteAllObjects();
         boolean deleteAllField = needToDeleteObjects && allStructures && !deleteAll;
         logger.debug("Run actions: preProcess: {}, rePreProcess: {}, segmentAndTrack: {}, trackOnly: {}, runMeasurements: {}, need to delete objects: {}, delete all: {}, delete all by field: {}", preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements, needToDeleteObjects, deleteAll, deleteAllField);
         for (int f : microscopyFields) {
-            String fieldName = db.getExperiment().getMicroscopyField(f).getName();
+            String fieldName = db.getExperiment().getPosition(f).getName();
             if (deleteAllField) db.getDao(fieldName).deleteAllObjects();
             this.runAction(fieldName, preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements, needToDeleteObjects && !deleteAllField && !deleteAll);
             if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field

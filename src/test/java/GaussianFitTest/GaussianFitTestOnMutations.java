@@ -49,7 +49,7 @@ public class GaussianFitTestOnMutations {
         logger.info("Experiment: {} retrieved from db: {}", db.getExperiment().getName(), dbName);
     }
     public void testGaussFit(int fieldIdx, int mcIdx, int tp) {
-        MicroscopyField f = db.getExperiment().getMicroscopyField(fieldIdx);
+        MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         StructureObject root = db.getDao(f.getName()).getRoot(tp);
         //logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(mcIdx);

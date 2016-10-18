@@ -125,8 +125,8 @@ public class TestTrackCorrectionNew {
     private void testWholeProcessDB(int[] actual, int[] expected) {
         setUpDB();
         generateData(actual);
-        db.getDao(db.getExperiment().getMicroscopyField(0).getName()).clearCache();
-        testTrackCorrection(db.getDao(db.getExperiment().getMicroscopyField(0).getName()).getRoots(), actual, expected);
+        db.getDao(db.getExperiment().getPosition(0).getName()).clearCache();
+        testTrackCorrection(db.getDao(db.getExperiment().getPosition(0).getName()).getRoots(), actual, expected);
     }
     
     private void testTrackCorrection(List<StructureObject> root, int[] actual, int[] expected) {
@@ -208,7 +208,7 @@ public class TestTrackCorrectionNew {
         db.setExperiment(xp);
         Processor.importFiles(xp, true, input.getAbsolutePath());
         Processor.preProcessImages(db, true);
-        MicroscopyField f= xp.getMicroscopyField(0);
+        MicroscopyField f= xp.getPosition(0);
         List<StructureObject> root = Processor.getOrCreateRootTrack(db.getDao(f.getName()));
         logger.debug("create root objects: {}", root.size());
         Processor.executeProcessingScheme(root, 0, false, false);

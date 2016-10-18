@@ -37,7 +37,7 @@ public class TestSkeletonize {
         String dbName = "boa_fluo160501";
         int fieldNumber= 0, timePoint=0, mc=0, b=1;
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
-        MicroscopyField f = mDAO.getExperiment().getMicroscopyField(fieldNumber);
+        MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
         StructureObject bact = root.getChildren(0).get(mc).getChildren(1).get(b);
         Image sk = TypeConverter.toByteMask(bact.getMask(), null, 255);

@@ -46,11 +46,11 @@ import plugins.TrackerSegmenter;
 import plugins.plugins.processingScheme.SegmentThenTrack;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
+import plugins.plugins.trackers.trackMate.DistanceComputationParameters;
 import plugins.plugins.trackers.trackMate.LAPTrackerCore;
 import plugins.plugins.trackers.trackMate.postProcessing.MutationTrackPostProcessing;
 import plugins.plugins.trackers.trackMate.SpotPopulation;
 import plugins.plugins.trackers.trackMate.SpotWithinCompartment;
-import plugins.plugins.trackers.trackMate.SpotWithinCompartment.DistanceComputationParameters;
 import utils.ArrayFileWriter;
 
 /**
@@ -66,7 +66,7 @@ public class LAPTracker implements TrackerSegmenter {
     NumberParameter maxLinkingDistance = new BoundedNumberParameter("FTF Maximum Linking Distance (0=skip)", 2, 0.75, 0, null);
     NumberParameter maxLinkingDistanceGC = new BoundedNumberParameter("Gap-closing Maximum Linking Distance (0=skip)", 2, 0.75, 0, null);
     NumberParameter gapPenalty = new BoundedNumberParameter("Gap Distance Penalty", 2, 0.25, 0, null);
-    NumberParameter alternativeDistance = new BoundedNumberParameter("Alternative Distance (>maxLinkinDistance)", 2, 0.8, 0, null);
+    NumberParameter alternativeDistance = new BoundedNumberParameter("Alternative Distance (>maxLinkingDistance)", 2, 0.8, 0, null);
     NumberParameter minimalDistanceForTrackSplittingPenalty = new BoundedNumberParameter("Minimal Distance For Track Splitting Penalty", 2, 0.2, 0, null);
     NumberParameter maximalTrackSplittingPenalty = new BoundedNumberParameter("Maximal Track Splitting Penalty", 5, 0.00001, 0.01, 1);
     NumberParameter minimalTrackFrameNumber = new BoundedNumberParameter("Minimal Track Frame Number", 0, 6, 1, null);
@@ -114,7 +114,7 @@ public class LAPTracker implements TrackerSegmenter {
         double maxLinkingDistanceGC = this.maxLinkingDistanceGC.getValue().doubleValue();
         double gapPenalty = this.gapPenalty.getValue().doubleValue();
         double alternativeDistance = this.alternativeDistance.getValue().doubleValue();
-        DistanceComputationParameters distParams = new DistanceComputationParameters(alternativeDistance).setQualityThreshold(spotQualityThreshold).setGapDistancePenalty(gapPenalty);
+        DistanceComputationParameters distParams = new DistanceComputationParameters().setQualityThreshold(spotQualityThreshold).setGapDistancePenalty(gapPenalty).setAlternativeDistance(alternativeDistance);
         SpotPopulation spotCollection = new SpotPopulation(distParams);
         long t0 = System.currentTimeMillis();
         for (StructureObject p : parentTrack) spotCollection.addSpots(p, structureIdx, p.getObjectPopulation(structureIdx).getObjects(), compartirmentStructure);

@@ -39,7 +39,6 @@ import java.util.TreeSet;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 import static plugins.Plugin.logger;
-import plugins.plugins.trackers.trackMate.SpotWithinCompartment.DistanceComputationParameters;
 import utils.HashMapGetCreate;
 import utils.HashMapGetCreate.Factory;
 import utils.Pair;

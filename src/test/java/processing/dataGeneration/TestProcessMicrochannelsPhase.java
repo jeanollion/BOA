@@ -55,8 +55,8 @@ import utils.MorphiumUtils;
 public class TestProcessMicrochannelsPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        int time =33;
-        int field = 0;
+        int time =248;
+        int field = 60;
         String dbName = "boa_phase150616wt";
         //String dbName = "boa_phase141129wt";
         testSegMicrochannelsFromXP(dbName, field, time);
@@ -65,7 +65,7 @@ public class TestProcessMicrochannelsPhase {
     
     public static void testSegMicrochannelsFromXP(String dbName, int fieldNumber, int timePoint) {
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
-        MicroscopyField f = mDAO.getExperiment().getMicroscopyField(fieldNumber);
+        MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         StructureObject root = mDAO.getDao(f.getName()).getRoot(timePoint);
         if (root==null) root = f.createRootObjects(mDAO.getDao(f.getName())).get(timePoint);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
@@ -86,7 +86,7 @@ public class TestProcessMicrochannelsPhase {
     
     public static void testSegAndTrackMicrochannelsFromXP(String dbName, int fieldNumber, int timePointMin, int timePointMax) {
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
-        MicroscopyField f = mDAO.getExperiment().getMicroscopyField(fieldNumber);
+        MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         List<StructureObject> rootTrack = mDAO.getDao(f.getName()).getRoots();
         Iterator<StructureObject> it = rootTrack.iterator();
         while(it.hasNext()) {

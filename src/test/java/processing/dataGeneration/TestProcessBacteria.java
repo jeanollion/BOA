@@ -48,7 +48,7 @@ public class TestProcessBacteria {
     
     public static void testSegBacteriesFromXP(String dbName, int fieldNumber, int timePoint, int microChannel) {
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
-        MicroscopyField f = mDAO.getExperiment().getMicroscopyField(fieldNumber);
+        MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(microChannel);

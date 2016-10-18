@@ -179,21 +179,20 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 thresholdValue = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histoAll, minAndMax, planes.get(0) instanceof ImageByte);
                 long t2 = System.currentTimeMillis();
                 if (debug || debugCorr) logger.debug("Threshold Value over all time: {}, minAndMax: {}, byte?{}", thresholdValue, minAndMax, planes.get(0) instanceof ImageByte);
-                int[] frameWindow = getFrameWindowContainingCells();
+                int[] frameWindow = getFramRangeContainingCells();
                 long t3 = System.currentTimeMillis();
-                boolean resetThreshold = false;
                 if (frameWindow==null) return;
-                else if (frameWindow[0]>0 || frameWindow[1]<populations.length-1) { // minAndMax can differ -> recompute m&m and histo if necessary
-                    planes = planes.subList(frameWindow[0], frameWindow[1]+1);
-                    double[] minAndMaxNew = ImageOperations.getMinAndMax(planes);
+                else if (frameWindow[0]>0 || frameWindow[1]<populations.length-1) { // update min and max if necessary
+                    List<Image> planesSub = planes.subList(frameWindow[0], frameWindow[1]+1);
+                    double[] minAndMaxNew = ImageOperations.getMinAndMax(planesSub);
                     if (minAndMaxNew[0]!=minAndMax[0] || minAndMaxNew[1]!=minAndMax[1]) {
                         minAndMax = minAndMaxNew;
-                        histos = ImageOperations.getHisto256AsList(planes, minAndMax);
+                        List<int[]> histosSub = ImageOperations.getHisto256AsList(planesSub, minAndMax);
                         //resetThreshold = true;
                         histoAll = new int[256];
-                        for (int[] h : histos) ImageOperations.addHisto(h, histoAll, true);
+                        for (int[] h : histosSub) ImageOperations.addHisto(h, histoAll, true);
                         thresholdValue = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histoAll, minAndMax, planes.get(0) instanceof ImageByte);
-                    } else histos = histos.subList(frameWindow[0], frameWindow[1]+1);
+                    }
                 }
                 long t4 = System.currentTimeMillis();
                 // adaptative threhsold on sliding window histo mean
@@ -208,7 +207,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     for (int f = fMin; f<=fMin+adaptativeThresholdHalfWindow; ++f) thresholdValueT[f] = t; // this histo is valid until fMin + window
                     while (fMax<frameWindow[1]) {
                         ++fMax;
-                        ImageOperations.addHisto(histos.get(fMax), histo, true);
+                        ImageOperations.addHisto(histos.get(fMax), histo, true); // TODO ICI BUG pour xy070
                         ImageOperations.addHisto(histos.get(fMin), histo, false);
                         ++fMin;
                         thresholdValueT[fMin+adaptativeThresholdHalfWindow] = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo, minAndMax, planes.get(0) instanceof ImageByte);
@@ -221,26 +220,20 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                         logger.debug("getHistos: {}ms, compute 1st thld: {}ms, getFrameWindow: {}ms, compute new Min&Max: {}ms, compute threshold window: {}ms", t1-t0, t2-t1, t3-t2, t4-t3, t5-t4);
                         logger.debug("77: {}, 81: {}, 82: {}", thresholdValueT[77], thresholdValueT[81], thresholdValueT[82]);
                     }
-                } else if (resetThreshold) { // re-compute threshold 
-                    histoAll = new int[256];
-                    for (int[] h : histos) ImageOperations.addHisto(h, histoAll, true);
-                    thresholdValue = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histoAll, minAndMax, planes.get(0) instanceof ImageByte);
                 }
             } else {
                 int[] histo = ImageOperations.getHisto256(planes, minAndMax);
-                //Image thresholdImage = Image.mergeZPlanes(planes);
-                //thresholdValue = ((UseThreshold)s).getThresholder().runThresholder(thresholdImage, null);
                 thresholdValue = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo, minAndMax, planes.get(0) instanceof ImageByte);
                 if (debug || debugCorr) logger.debug("Threshold Value over all time: {}, minAndMax: {}, byte?{}", thresholdValue, minAndMax, planes.get(0) instanceof ImageByte);
-                int[] frameWindow = getFrameWindowContainingCells();
-                if (frameWindow==null) return;
-                else if (frameWindow[0]>0 || frameWindow[1]<populations.length-1) {
+                int[] frameRange = getFramRangeContainingCells();
+                if (frameRange==null) return;
+                else if (frameRange[0]>0 || frameRange[1]<populations.length-1) {
                     // getThreshold within frame
-                    planes = planes.subList(frameWindow[0], frameWindow[1]+1);
+                    planes = planes.subList(frameRange[0], frameRange[1]+1);
                     minAndMax = new double[2];
                     histo = ImageOperations.getHisto256(planes, minAndMax);
                     double newThresholdValue = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo, minAndMax, planes.get(0) instanceof ImageByte);
-                    if (debug || debugCorr) logger.debug("Threshold Value over frames {}: {}, minAndMax: {}, byte?{}", frameWindow,  newThresholdValue, minAndMax, planes.get(0) instanceof ImageByte);
+                    if (debug || debugCorr) logger.debug("Threshold Value over frames {}: {}, minAndMax: {}, byte?{}", frameRange,  newThresholdValue, minAndMax, planes.get(0) instanceof ImageByte);
                     if (newThresholdValue != thresholdValue) for (int f = 0; f<populations.length; ++f) populations[f] = null; // clean segmentation performed with previous threshold
                     thresholdValue = newThresholdValue;
                 }
@@ -304,7 +297,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         applyLinksToParents(parents);
     }
     
-    private int[] getFrameWindowContainingCells() {
+    private int[] getFramRangeContainingCells() {
         int inc = this.populations.length<100 ? 1 : 10;
         int minT = 0;
         while (minT<populations.length && getObjects(minT).isEmpty()) minT+=inc;

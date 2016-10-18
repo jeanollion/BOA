@@ -299,29 +299,5 @@ public class SpotWithinCompartment extends Spot {
             }
         }
     };
-    public static class DistanceComputationParameters {
-        public double qualityThreshold = 0;
-        public double gapDistancePenalty = 0;
-        private double gapSquareDistancePenalty;
-        public double alternativeDistance;
-        public DistanceComputationParameters(double alternativeDistance) {
-            this.alternativeDistance=alternativeDistance;
-        }
-        public DistanceComputationParameters setQualityThreshold(double qualityThreshold) {
-            this.qualityThreshold=qualityThreshold;
-            return this;
-        }
-        public DistanceComputationParameters setGapDistancePenalty(double gapDistancePenalty) {
-            this.gapSquareDistancePenalty=gapDistancePenalty*gapDistancePenalty;
-            this.gapDistancePenalty=gapDistancePenalty;
-            return this;
-        }
-        public DistanceComputationParameters setAlternativeDistance(double alternativeDistance) {
-            this.alternativeDistance=alternativeDistance;
-            return this;
-        }
-        public double getSquareDistancePenalty(double distance, int tSource, int tTarget) {
-            return Math.pow(tTarget - tSource-1, 2) * (gapSquareDistancePenalty + 2*gapDistancePenalty*distance); // pow* -> working on square distances
-        }
-    }
+    
 }

@@ -60,7 +60,7 @@ public class TestProcessMicrochannels {
     
     public static void testSegMicrochannelsFromXP(String dbName, int fieldNumber, int timePoint) {
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
-        MicroscopyField f = mDAO.getExperiment().getMicroscopyField(fieldNumber);
+        MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         StructureObject root = mDAO.getDao(f.getName()).getRoot(timePoint);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         Image input = root.getRawImage(0);
@@ -78,7 +78,7 @@ public class TestProcessMicrochannels {
     
     public static void testSegAndTrackMicrochannelsFromXP(String dbName, int fieldNumber, int timePointMin, int timePointMax) {
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
-        MicroscopyField f = mDAO.getExperiment().getMicroscopyField(fieldNumber);
+        MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         List<StructureObject> rootTrack = mDAO.getDao(f.getName()).getRoots();
         Iterator<StructureObject> it = rootTrack.iterator();
         while(it.hasNext()) {

@@ -17,8 +17,10 @@
  */
 package processing.dataGeneration;
 
+import static TestUtils.Utils.logger;
 import boa.gui.DBUtil;
 import boa.gui.GUI;
+import configuration.parameters.TransformationPluginParameter;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
@@ -26,7 +28,10 @@ import dataStructure.configuration.Structure;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MorphiumMasterDAO;
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
 import plugins.PluginFactory;
+import plugins.Transformation;
 import plugins.plugins.measurements.BacteriaFluoMeasurements;
 import plugins.plugins.measurements.BacteriaLineageIndex;
 import plugins.plugins.measurements.BacteriaMeasurementsWoleMC;
@@ -82,6 +87,7 @@ public class GenerateTestXP {
         int[] cropXYdXdY=null;
         double scaleXY = Double.NaN;
         boolean transSingleFileImport = true;
+        boolean[] flipArray= null;
         //////// FLUO
         // Ordi LJP
         /*String dbName = "boa_fluo151130_OutputNewScaling";
@@ -216,7 +222,9 @@ public class GenerateTestXP {
         boolean flip = false;
         boolean fluo = false;
         transSingleFileImport=false;
-        scaleXY = 0.06289;*/
+        scaleXY = 0.06289;
+        flipArray = fillRange(getBooleanArray(96, false), 61, 95, true); //pos 62 - 96 -> flip = true
+        */
         
         /*
         ////////////////////////////
@@ -283,7 +291,15 @@ public class GenerateTestXP {
         mDAO.setExperiment(xp);
         
         Processor.importFiles(xp, true, inputDir);
-        
+        if (flipArray!=null) {
+            if (flipArray.length!=xp.getPositionCount()) logger.error("Flip array has {} elements and xp has: {} imported positions", flipArray.length, xp.getPositionCount());
+            else {
+                for (int i = 0; i<flipArray.length; ++i) {
+                    List<TransformationPluginParameter<Transformation>> transfo = xp.getPosition(i).getPreProcessingChain().getTransformations();
+                    for (TransformationPluginParameter<Transformation> tp : transfo) if (tp.instanciatePlugin().getClass()==Flip.class) tp.setActivated(flipArray[i]);
+                }
+            }
+        }
         if (performProcessing) {
             Processor.preProcessImages(mDAO, true);
             Processor.processAndTrackStructures(mDAO, true, 0);
@@ -367,5 +383,13 @@ public class GenerateTestXP {
         }
         return xp;
     }
-
+    private static boolean[] getBooleanArray(int N, boolean defaultValue) {
+        boolean[] res= new boolean[N];
+        if (defaultValue) Arrays.fill(res, true);
+        return res;
+    }
+    private static boolean[] fillRange(boolean[] array, int idxMin, int idxMaxIncluded, boolean value) {
+        for (int i = idxMin; i<=idxMaxIncluded; ++i) array[i] = value;
+        return array;
+    }
 }

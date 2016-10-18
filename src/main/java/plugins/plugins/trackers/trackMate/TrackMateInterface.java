@@ -17,18 +17,29 @@
  */
 package plugins.plugins.trackers.trackMate;
 
+import com.google.common.collect.Sets;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import fiji.plugin.trackmate.Logger;
 import fiji.plugin.trackmate.Spot;
 import fiji.plugin.trackmate.SpotCollection;
+import static fiji.plugin.trackmate.tracking.TrackerKeys.KEY_ALLOW_GAP_CLOSING;
+import static fiji.plugin.trackmate.tracking.TrackerKeys.KEY_ALLOW_TRACK_MERGING;
+import static fiji.plugin.trackmate.tracking.TrackerKeys.KEY_ALLOW_TRACK_SPLITTING;
 import static fiji.plugin.trackmate.tracking.TrackerKeys.KEY_ALTERNATIVE_LINKING_COST_FACTOR;
+import static fiji.plugin.trackmate.tracking.TrackerKeys.KEY_CUTOFF_PERCENTILE;
+import static fiji.plugin.trackmate.tracking.TrackerKeys.KEY_GAP_CLOSING_MAX_DISTANCE;
+import static fiji.plugin.trackmate.tracking.TrackerKeys.KEY_GAP_CLOSING_MAX_FRAME_GAP;
 import static fiji.plugin.trackmate.tracking.TrackerKeys.KEY_LINKING_MAX_DISTANCE;
+import static fiji.plugin.trackmate.tracking.TrackerKeys.KEY_MERGING_MAX_DISTANCE;
+import static fiji.plugin.trackmate.tracking.TrackerKeys.KEY_SPLITTING_MAX_DISTANCE;
 import java.util.HashMap;
 import fiji.plugin.trackmate.tracking.sparselap.SparseLAPFrameToFrameTracker;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -75,7 +86,7 @@ public class TrackMateInterface<S extends Spot> {
     public boolean processFTF(double distanceThreshold) {
         long t0 = System.currentTimeMillis();
         // Prepare settings object
-        final Map< String, Object > ftfSettings = new HashMap< String, Object >();
+        final Map< String, Object > ftfSettings = new HashMap<>();
         ftfSettings.put( KEY_LINKING_MAX_DISTANCE, distanceThreshold );
         ftfSettings.put( KEY_ALTERNATIVE_LINKING_COST_FACTOR, 1.05 );
         
@@ -91,8 +102,77 @@ public class TrackMateInterface<S extends Spot> {
         }
         graph = frameToFrameLinker.getResult();
         long t1 = System.currentTimeMillis();
-        core.Processor.logger.debug("number of edges after FTF step: {}, nb of vertices: {}, processing time: {}", graph.edgeSet().size(), graph.vertexSet().size(), t1-t0);
+        logger.debug("number of edges after FTF step: {}, nb of vertices: {}, processing time: {}", graph.edgeSet().size(), graph.vertexSet().size(), t1-t0);
         return true;
+    }
+    
+    public boolean processGC(double distanceThreshold, int maxFrameGap) {
+        long t0 = System.currentTimeMillis();
+        Set<S> unlinkedSpots;
+        if (graph == null) {
+            graph = new SimpleWeightedGraph<>( DefaultWeightedEdge.class );
+            unlinkedSpots = new HashSet<>(spotObjectMap.keySet()); 
+        } else {
+            Set<Spot> linkedSpots = graph.vertexSet();
+            unlinkedSpots = new HashSet<>(Sets.difference(spotObjectMap.keySet(), linkedSpots));
+        }
+        Map<Spot, Spot> clonedSpots = new HashMap<>();
+        // duplicate unlinked spots to include them in the gap-closing part
+        for (S s : unlinkedSpots) {
+            Spot clone = factory.duplicate(s);
+            graph.addVertex(s);
+            graph.addVertex(clone);
+            clonedSpots.put(clone, s);
+            graph.addEdge(s,clone);
+        }
+        // Prepare settings object
+        final Map< String, Object > slSettings = new HashMap<>();
+
+        slSettings.put( KEY_ALLOW_GAP_CLOSING, maxFrameGap>1 );
+        //slSettings.put( KEY_GAP_CLOSING_FEATURE_PENALTIES, settings.get( KEY_GAP_CLOSING_FEATURE_PENALTIES ) );
+        slSettings.put( KEY_GAP_CLOSING_MAX_DISTANCE, distanceThreshold );
+        slSettings.put( KEY_GAP_CLOSING_MAX_FRAME_GAP, maxFrameGap );
+
+        slSettings.put( KEY_ALLOW_TRACK_SPLITTING, false );
+        //slSettings.put( KEY_SPLITTING_FEATURE_PENALTIES, settings.get( KEY_SPLITTING_FEATURE_PENALTIES ) );
+        slSettings.put( KEY_SPLITTING_MAX_DISTANCE, distanceThreshold );
+
+        slSettings.put( KEY_ALLOW_TRACK_MERGING, false );
+        //slSettings.put( KEY_MERGING_FEATURE_PENALTIES, settings.get( KEY_MERGING_FEATURE_PENALTIES ) );
+        slSettings.put( KEY_MERGING_MAX_DISTANCE, distanceThreshold );
+
+        slSettings.put( KEY_ALTERNATIVE_LINKING_COST_FACTOR, 1.05 );
+        slSettings.put( KEY_CUTOFF_PERCENTILE, 1d );
+        // Solve.
+        final SparseLAPSegmentTracker segmentLinker = new SparseLAPSegmentTracker( graph, slSettings, new DistanceComputationParameters().setAlternativeDistance(distanceThreshold*1.05));
+        //final fiji.plugin.trackmate.tracking.sparselap.SparseLAPSegmentTracker segmentLinker = new fiji.plugin.trackmate.tracking.sparselap.SparseLAPSegmentTracker( graph, slSettings);
+        segmentLinker.setNumThreads(numThreads);
+        final Logger.SlaveLogger slLogger = new Logger.SlaveLogger( internalLogger, 0.5, 0.5 );
+        segmentLinker.setLogger( slLogger );
+        if ( !segmentLinker.checkInput() || !segmentLinker.process() ) {
+            errorMessage = segmentLinker.getErrorMessage();
+            logger.error(errorMessage);
+            return false;
+        }
+        for (Map.Entry<Spot, Spot> e : clonedSpots.entrySet()) transferLinks(e.getKey(), e.getValue());
+        long t1 = System.currentTimeMillis();
+        logger.debug("number of edges after GC step: {}, nb of vertices: {}, processing time: {}", graph.edgeSet().size(), graph.vertexSet().size(), t1-t0);
+        return true;
+    }
+    
+    private void transferLinks(Spot from, Spot to) {
+        List<DefaultWeightedEdge> edgeList = new ArrayList<>(graph.edgesOf(from));
+        for (DefaultWeightedEdge e : edgeList) {
+            Spot target = graph.getEdgeTarget(e);
+            boolean isSource = true;
+            if (target==from) {
+                target = graph.getEdgeSource(e);
+                isSource=false;
+            }
+            graph.removeEdge(e);
+            if (target!=to) graph.addEdge(isSource?to : target, isSource ? target : to, e);          
+        }
+        graph.removeVertex(from);
     }
     
     public void setTrackLinks(List<StructureObject> parentTrack, int structureIdx) {
@@ -164,7 +244,9 @@ public class TrackMateInterface<S extends Spot> {
     }
     public interface SpotFactory<S extends Spot> {
         public S toSpot(Object3D o, int frame);
+        public S duplicate(S s);
     }
+
     public static class DefaultObject3DSpotFactory implements SpotFactory<Spot> {
         @Override
         public Spot toSpot(Object3D o, int frame) {
@@ -172,6 +254,11 @@ public class TrackMateInterface<S extends Spot> {
             Spot s = new Spot(center[0], center[1], center[2], 1, 1);
             s.getFeatures().put(Spot.FRAME, (double)frame);
             return s;
+        }
+        @Override public Spot duplicate(Spot s) {
+            Spot res =  new Spot(s.getFeature(Spot.POSITION_X), s.getFeature(Spot.POSITION_Y), s.getFeature(Spot.POSITION_Z), s.getFeature(Spot.RADIUS), s.getFeature(Spot.QUALITY));
+            res.getFeatures().put(Spot.FRAME, s.getFeature(Spot.FRAME));
+            return res;
         }
     }
 }

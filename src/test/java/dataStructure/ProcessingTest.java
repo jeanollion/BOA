@@ -106,7 +106,7 @@ public class ProcessingTest {
         xp.getChannelImages().insert(new ChannelImage("channel1"), new ChannelImage("channel2"));
         
         Processor.importFiles(xp, true, folder.getAbsolutePath());
-        assertEquals("number of fields detected", 6-1-1, xp.getMicrocopyFieldCount()); // 6 - 1 (unique title) - 1 (channel number)
+        assertEquals("number of fields detected", 6-1-1, xp.getPositionCount()); // 6 - 1 (unique title) - 1 (channel number)
         assertTrue("field non null", xp.getMicroscopyField(title)!=null);
         assertTrue("images non null", xp.getMicroscopyField(title).getInputImages()!=null);
         Utils.assertImage(images[0][0], xp.getMicroscopyField(title).getInputImages().getImage(0, 0), 0);
@@ -142,7 +142,7 @@ public class ProcessingTest {
         xp.getChannelImages().insert(new ChannelImage("channel1", "_c1"), new ChannelImage("channel2", "_c2"));
         
         Processor.importFiles(xp, true, folder.getAbsolutePath());
-        assertEquals("number of fields detected", 6-1-1-1, xp.getMicrocopyFieldCount()); // 6 - 1 (unique title) - 1 (channel number)-1(timepoint number)
+        assertEquals("number of fields detected", 6-1-1-1, xp.getPositionCount()); // 6 - 1 (unique title) - 1 (channel number)-1(timepoint number)
         Utils.assertImage(images[0][0], xp.getMicroscopyField(title).getInputImages().getImage(0, 0), 0);
     }
     
@@ -164,8 +164,8 @@ public class ProcessingTest {
         File folder = testFolder.newFolder("TestImagesPreProcessing");
         ImageWriter.writeToFile(folder.getAbsolutePath(), "field1", ImageFormat.OMETIF, images);
         Processor.importFiles(xp, true, folder.getAbsolutePath());
-        MicroscopyField f = xp.getMicroscopyField(0);
-        assertEquals("number of fields detected", 1, xp.getMicrocopyFieldCount());
+        MicroscopyField f = xp.getPosition(0);
+        assertEquals("number of fields detected", 1, xp.getPositionCount());
         
         //set-up pre-processing chains
         PluginFactory.findPlugins("plugins.plugins.transformations");
@@ -264,7 +264,7 @@ public class ProcessingTest {
         MorphiumObjectDAO dao = db.getDao(fieldName);
         
         Processor.preProcessImages(db, true);
-        List<StructureObject> rootTrack = xp.getMicroscopyField(0).createRootObjects(dao);
+        List<StructureObject> rootTrack = xp.getPosition(0).createRootObjects(dao);
         assertEquals("root object creation: number of objects", 3, rootTrack.size());
         Processor.processAndTrackStructures(db, true);
         dao.clearCache();

@@ -151,6 +151,9 @@ public abstract class CropMicroChannels implements Transformation {
         public int getXMax() {
             return xMax[xMax.length-1];
         }
+        public int getXWidth(int idx) {
+            return xMax[idx]-xMin[idx];
+        }
         public double getXMean(int idx) {
             return (xMax[idx]+xMin[idx]) / 2d ;
         }
@@ -163,15 +166,15 @@ public abstract class CropMicroChannels implements Transformation {
         public int size() {
             return xMin.length;
         }
-        public BoundingBox getBounds(int idx) {
-            return new BoundingBox(xMin[idx], xMax[idx], yMin+yMinShift[idx], yMax, 0, 0);
+        public BoundingBox getBounds(int idx, boolean includeYMinShift) {
+            return new BoundingBox(xMin[idx], xMax[idx], yMin+(includeYMinShift?yMinShift[idx]:0), yMax, 0, 0);
         }
-        public Object3D getObject3D(int idx, float scaleXY, float scaleZ) {
-            return new Object3D(new BlankMask("mask of:" + idx+1, getBounds(idx).getImageProperties(scaleXY, scaleZ)), idx+1);
+        public Object3D getObject3D(int idx, float scaleXY, float scaleZ, boolean includeYMinShift) {
+            return new Object3D(new BlankMask("mask of:" + idx+1, getBounds(idx, includeYMinShift).getImageProperties(scaleXY, scaleZ)), idx+1);
         }
-        public ObjectPopulation getObjectPopulation(ImageProperties im) {
+        public ObjectPopulation getObjectPopulation(ImageProperties im, boolean includeYMinShift) {
             List<Object3D> l = new ArrayList<>(xMin.length);
-            for (int i = 0; i<xMin.length; ++i) l.add(getObject3D(i, im.getScaleXY(), im.getScaleZ()));
+            for (int i = 0; i<xMin.length; ++i) l.add(getObject3D(i, im.getScaleXY(), im.getScaleZ(), includeYMinShift));
             return new ObjectPopulation(l, im);
         }
     }

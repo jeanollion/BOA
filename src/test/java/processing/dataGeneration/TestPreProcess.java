@@ -62,7 +62,7 @@ public class TestPreProcess {
     
     public static void testTransformation(String dbName, int fieldIdx, int channelIdx, int time) {
         MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
-        MicroscopyField f = db.getExperiment().getMicroscopyField(fieldIdx);
+        MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         //Processor.setTransformations(f, true);
         InputImagesImpl images = f.getInputImages();
         Image im = images.getImage(channelIdx, time);
@@ -77,7 +77,7 @@ public class TestPreProcess {
     
     public static void testCrop(String dbName, int fieldIdx, int time, boolean flip) {
         MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
-        MicroscopyField f = db.getExperiment().getMicroscopyField(fieldIdx);
+        MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         f.getPreProcessingChain().removeAllTransformations();
         f.getPreProcessingChain().addTransformation(0, null, new SaturateHistogram(350, 450));
         f.getPreProcessingChain().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
@@ -99,7 +99,7 @@ public class TestPreProcess {
     
     public static void testPreProcessing(String dbName, int fieldIdx, int channelIdx, int time, int tStart, int tEnd) {
         MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
-        MicroscopyField f = db.getExperiment().getMicroscopyField(fieldIdx);
+        MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         InputImagesImpl images = f.getInputImages();
         if (time>=tStart) time -=tStart;
         images.subSetTimePoints(tStart, tEnd);
@@ -123,7 +123,7 @@ public class TestPreProcess {
     
     public static void displayPreProcessed(String dbName, int fieldIdx, int structureIdx, int tStart, int tEnd) {
         MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
-        MicroscopyField f = db.getExperiment().getMicroscopyField(fieldIdx);
+        MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         InputImagesImpl images = f.getInputImages();
         IJImageDisplayer disp = new IJImageDisplayer();
         int channelIdx = db.getExperiment().getStructure(structureIdx).getChannelImage();
@@ -141,7 +141,7 @@ public class TestPreProcess {
     
     public static void testStabilizer(String dbName, int fieldIdx, int channelIdx, int tRef, int t, boolean flip) {
         MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
-        MicroscopyField f = db.getExperiment().getMicroscopyField(fieldIdx);
+        MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         f.getPreProcessingChain().removeAllTransformations();
         f.getPreProcessingChain().addTransformation(0, null, new SaturateHistogram(350, 450));
         f.getPreProcessingChain().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
