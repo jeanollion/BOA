@@ -41,6 +41,11 @@ import static utils.Utils.removeFromMap;
  */
 public class TestClass {
     @Test
+    public void testDIv() {
+        int a = 1;
+        logger.debug("1/2: {}", a/2);
+    }
+    //@Test
     public void testNaN() {
         double a = Double.NaN;
         double b = 1;

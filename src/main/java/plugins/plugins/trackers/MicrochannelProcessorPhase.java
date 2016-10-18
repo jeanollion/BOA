@@ -90,7 +90,7 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         logger.debug("trackHead number: {}", allTracks.size());
         for (List<StructureObject> track : allTracks.values()) {
-            if (track.size()<=2) continue;
+            if (track.isEmpty()) continue;
             // compute mean shift on the whole track + mean width
             List<Integer> shifts = new ArrayList<>(track.size());
             List<Integer> widths = new ArrayList<>(track.size());
@@ -105,7 +105,7 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
             
             int shift = shifts.get(shifts.size()/2);
             int width = widths.get(widths.size()/2);
-            if (debug) logger.debug("mean ymin-shift: {}, mean width: {}", shift, width);
+            if (debug) logger.debug("track: {} ymin-shift: {}, width: {}", track.get(0), shift, width);
             // modify all objects of the track with the shift
             for (StructureObject o : track) {
                 BoundingBox b = o.getBounds();
