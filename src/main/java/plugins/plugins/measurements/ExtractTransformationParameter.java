@@ -60,7 +60,7 @@ public class ExtractTransformationParameter implements Measurement{
     public void performMeasurement(StructureObject root) {
         ArrayList data=null;
         Transformation t=null;
-        List<TransformationPluginParameter<Transformation>> l = root.getExperiment().getMicroscopyField(root.getFieldName()).getPreProcessingChain().getTransformations();
+        List<TransformationPluginParameter<Transformation>> l = root.getExperiment().getPosition(root.getFieldName()).getPreProcessingChain().getTransformations();
         for (TransformationPluginParameter<Transformation> tpp : l) {
             if (tpp.getPluginName()!=null && tpp.getPluginName().equals(transformation.getPluginName())) {
                 t = tpp.instanciatePlugin();

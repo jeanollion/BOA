@@ -566,8 +566,8 @@ public class MorphiumObjectDAO implements ObjectDAO {
                     ArrayList<StructureObject> res = checkAgainstCache(getRootQuery().asList());
                     setTrackLinks(res);
                     roots = res;
-                    if (masterDAO.getExperiment()!=null && masterDAO.getExperiment().getMicroscopyField(fieldName)!=null) {
-                        if (res.size()!=masterDAO.getExperiment().getMicroscopyField(fieldName).getTimePointNumber(false)) logger.error("Position: {} wrong root number: {} instead of {}", fieldName, res.size(), masterDAO.getExperiment().getMicroscopyField(fieldName).getTimePointNumber(false));
+                    if (masterDAO.getExperiment()!=null && masterDAO.getExperiment().getPosition(fieldName)!=null) {
+                        if (res.size()!=masterDAO.getExperiment().getPosition(fieldName).getTimePointNumber(false)) logger.error("Position: {} wrong root number: {} instead of {}", fieldName, res.size(), masterDAO.getExperiment().getPosition(fieldName).getTimePointNumber(false));
                     }
                 }
             }

@@ -107,9 +107,9 @@ public class ProcessingTest {
         
         Processor.importFiles(xp, true, folder.getAbsolutePath());
         assertEquals("number of fields detected", 6-1-1, xp.getPositionCount()); // 6 - 1 (unique title) - 1 (channel number)
-        assertTrue("field non null", xp.getMicroscopyField(title)!=null);
-        assertTrue("images non null", xp.getMicroscopyField(title).getInputImages()!=null);
-        Utils.assertImage(images[0][0], xp.getMicroscopyField(title).getInputImages().getImage(0, 0), 0);
+        assertTrue("field non null", xp.getPosition(title)!=null);
+        assertTrue("images non null", xp.getPosition(title).getInputImages()!=null);
+        Utils.assertImage(images[0][0], xp.getPosition(title).getInputImages().getImage(0, 0), 0);
     }
     
     @Test
@@ -143,7 +143,7 @@ public class ProcessingTest {
         
         Processor.importFiles(xp, true, folder.getAbsolutePath());
         assertEquals("number of fields detected", 6-1-1-1, xp.getPositionCount()); // 6 - 1 (unique title) - 1 (channel number)-1(timepoint number)
-        Utils.assertImage(images[0][0], xp.getMicroscopyField(title).getInputImages().getImage(0, 0), 0);
+        Utils.assertImage(images[0][0], xp.getPosition(title).getInputImages().getImage(0, 0), 0);
     }
     
     @Test

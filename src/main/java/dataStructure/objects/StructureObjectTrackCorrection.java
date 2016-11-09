@@ -17,7 +17,6 @@
  */
 package dataStructure.objects;
 
-import dataStructure.objects.StructureObject.TrackFlag;
 import java.util.ArrayList;
 import java.util.List;
 import plugins.ObjectSplitter;
@@ -32,7 +31,7 @@ public interface StructureObjectTrackCorrection extends StructureObjectTracker {
      * @param prev check error at previous (if not at next) link
      * @return 
      */
-    public boolean hasTrackLinkError(boolean prev);
+    public boolean hasTrackLinkError(boolean prev, boolean next);
     /**
      * 
      * @return the next element of the track that contains a track link error, as defined by the tracker; null is there are no next track error;
@@ -51,7 +50,6 @@ public interface StructureObjectTrackCorrection extends StructureObjectTracker {
     public void merge(StructureObjectTrackCorrection other);
     public StructureObjectTrackCorrection split(ObjectSplitter splitter);
     public StructureObject resetTrackHead();
-    public StructureObject setTrackFlag(TrackFlag flag);
     @Override public StructureObjectTrackCorrection getPrevious();
     @Override public StructureObjectTrackCorrection getNext();
     

@@ -17,8 +17,6 @@
  */
 package dataStructure.objects;
 
-import dataStructure.objects.StructureObject.TrackFlag;
-
 /**
  *
  * @author jollion

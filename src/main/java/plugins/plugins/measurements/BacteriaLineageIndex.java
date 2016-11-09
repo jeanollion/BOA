@@ -78,6 +78,7 @@ public class BacteriaLineageIndex implements Measurement {
             bacteria = parentTrackHead.getChildren(bIdx);
             for (StructureObject o : bacteria) {
                 if (o.getPrevious()==null) o.getMeasurements().setValue(key, getTrackHeadName(trackHeadIdx++));
+                else if (o.getDivisionSiblings(false)==null) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key));
                 else if (o.isTrackHead()) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[0]);
                 else o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[1]);
                 
@@ -106,10 +107,10 @@ public class BacteriaLineageIndex implements Measurement {
         return true;
     }
     private static String getTrackHeadName(int trackHeadIdx) {
-        return String.valueOf(trackHeadIdx);
-        /*char c = (char)(trackHeadIdx%26 + 65); //ASCII UPPER CASE +65
+        //return String.valueOf(trackHeadIdx);
+        char c = (char)(trackHeadIdx%26 + 65); //ASCII UPPER CASE +65
         int mod = trackHeadIdx/26;
         if (mod>0) return String.valueOf(c)+mod;
-        else return String.valueOf(c);*/
+        else return String.valueOf(c);
     }
 }

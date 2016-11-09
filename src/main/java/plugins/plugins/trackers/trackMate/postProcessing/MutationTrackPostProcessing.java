@@ -153,7 +153,7 @@ public class MutationTrackPostProcessing {
                 }
                 //logger.debug("link Tracks: delete: {}, minDist: {}, delete tailTrackHead? {}", objectToRemove, minDist, deleteTailTrackHead);
                 setTrackLinks(headTrackTail, tailTrack.get(0), true, true);
-                tailTrack.get(0).setTrackFlag(StructureObject.TrackFlag.correctionMerge);
+                tailTrack.get(0).setAttribute(StructureObject.correctionMerge, true);
                 //tailTrack.get(0).setPreviousInTrack(headTrackTail, false, StructureObject.TrackFlag.correctionMerge);
                 for (StructureObject o : tailTrack) o.setTrackHead(headTrackHead, false, false, null);
                 spotHeadTrack.addAll(spotTailTrack);
@@ -187,8 +187,8 @@ public class MutationTrackPostProcessing {
                 StructureObject th = subTrack.get(0);
                 if (modif) {
                     trackHeadTrackMap.put(th, subTrack);
-                    if (i!=tracks.size()-1) subTrack.get(subTrack.size()-1).setTrackFlag(StructureObject.TrackFlag.correctionSplit); // correction flag @ end
-                    if (i!=0 ) subTrack.get(0).setTrackFlag(StructureObject.TrackFlag.correctionSplit); // correction flag @ start
+                    if (i!=tracks.size()-1) subTrack.get(subTrack.size()-1).setAttribute(StructureObject.correctionSplit, true); // correction flag @ end
+                    if (i!=0 ) subTrack.get(0).setAttribute(StructureObject.correctionSplit, true); // correction flag @ start
                 }
                 trackHeadSpotMapTemp.put(th, spotTracks.get(i));
                 if (i!=0) {
@@ -204,7 +204,7 @@ public class MutationTrackPostProcessing {
         for (List<StructureObject> track : trackHeadTrackMap.values()) {
             int trackLength = track.get(track.size()-1).getTimePoint()-track.get(0).getTimePoint();
             if (trackLength<shortTrackThreshold || trackLength>longTrackTreshold) {
-                for (StructureObject o : track) o.setTrackFlag(StructureObject.TrackFlag.trackError);
+                for (StructureObject o : track) o.setAttribute(StructureObject.trackErrorNext, true);
             }
         }
     }

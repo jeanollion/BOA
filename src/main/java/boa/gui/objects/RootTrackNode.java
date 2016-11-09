@@ -255,7 +255,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
                     public void actionPerformed(ActionEvent ae) {
                         int channels = generator.db.getExperiment().getChannelImageCount();
                         Image[][] imagesTC = new Image[1][channels];
-                        MicroscopyField f = generator.db.getExperiment().getMicroscopyField(fieldName);
+                        MicroscopyField f = generator.db.getExperiment().getPosition(fieldName);
                         for (int channel = 0; channel<channels; ++channel) {
                             imagesTC[0][channel] = generator.db.getExperiment().getImageDAO().openPreProcessedImage(channel, f.getDefaultTimePoint(), fieldName);
                             if (imagesTC[0][channel]==null) return;
@@ -270,7 +270,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
             openPreprocessedAllFrames.setAction(new AbstractAction(openPreprocessedAllFrames.getActionCommand()) {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
-                        MicroscopyField f = generator.db.getExperiment().getMicroscopyField(fieldName);
+                        MicroscopyField f = generator.db.getExperiment().getPosition(fieldName);
                         int channels = generator.db.getExperiment().getChannelImageCount();
                         int frames = f.getTimePointNumber(false);
                         Image[][] imagesTC = new Image[frames][channels];

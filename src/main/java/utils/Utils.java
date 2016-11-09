@@ -47,6 +47,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.DefaultListModel;
@@ -156,6 +158,12 @@ public class Utils {
         String res = "[";
         for (int i = 0; i<array.length-1; ++i) res+=array[i].toString()+"; ";
         res+=array[array.length-1]+"]";
+        return res;
+    }
+    public static <T> String toStringArray(T[] array, Function<T, String> toString) {
+        String res = "[";
+        for (int i = 0; i<array.length-1; ++i) res+=toString.apply(array[i])+"; ";
+        res+=toString.apply(array[array.length-1])+"]";
         return res;
     }
     

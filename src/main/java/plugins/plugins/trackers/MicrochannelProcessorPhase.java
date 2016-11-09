@@ -111,7 +111,11 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
                 BoundingBox b = o.getBounds();
                 int offX = b.getxMin() + (int)Math.round((b.getSizeX()-width)/2d + Double.MIN_VALUE); // if width change -> offset X change
                 int offY = b.getyMin() + shift; // shift was not included before
-                BlankMask m = new BlankMask("", width, b.getSizeY(), b.getSizeZ(), offX, offY, b.getzMin(), o.getScaleXY(), o.getScaleZ());
+                BoundingBox parentBounds = o.getParent().getBounds();
+                if (width+offX>parentBounds.getxMax()) width = parentBounds.getxMax()-offX;
+                int height = b.getSizeY();
+                if (height+offY>parentBounds.getyMax()) height = parentBounds.getyMax()-offY;
+                BlankMask m = new BlankMask("", width, height, b.getSizeZ(), offX, offY, b.getzMin(), o.getScaleXY(), o.getScaleZ());
                 o.setObject(new Object3D(m, o.getIdx()+1));
             }
         }
@@ -155,10 +159,10 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
                             parent.getChildren(structureIdx).add(s);
                             if (debug) logger.debug("add object: {}, bounds: {}", s, s.getBounds());
                             // set links
-                            prev.setTrackLinks(s, true, true, null);
+                            prev.setTrackLinks(s, true, true);
                             prev = s;
                         }
-                        prev.setTrackLinks(cur, true, true, null);
+                        prev.setTrackLinks(cur, true, true);
                     }
                 }
             }

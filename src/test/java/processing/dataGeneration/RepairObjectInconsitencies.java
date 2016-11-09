@@ -78,7 +78,7 @@ public class RepairObjectInconsitencies {
         }
         
         if (!uncorrected.isEmpty()) {
-            int posIdx = dao.getExperiment().getMicroscopyField(positionName).getIndex();
+            int posIdx = dao.getExperiment().getPosition(positionName).getIndex();
             Map<StructureObject, List<StructureObject>> uncorrByParentTH = StructureObjectUtils.splitByParentTrackHead(uncorrected);
             for (StructureObject parentTh : uncorrByParentTH.keySet()) {
                 String selectionName = "P:"+posIdx+"_objectError_ParentIdx:"+parentTh.getIdx();

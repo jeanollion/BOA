@@ -92,7 +92,7 @@ public class Measurements implements Comparable<Measurements>{
     public void updateObjectProperties(StructureObject o) {
         int[] newIndices = StructureObjectUtils.getIndexTree(o);
         if (!Arrays.equals(newIndices, indices)) {
-            this.indices=StructureObjectUtils.getIndexTree(o);
+            this.indices=newIndices;
             modifications=true; // TODO partial update
         }
         if (this.isTrackHead!=o.isTrackHead) {
@@ -141,6 +141,7 @@ public class Measurements implements Comparable<Measurements>{
         if (structureIdx<o.structureIdx) return -1;
         else if (structureIdx>o.structureIdx) return 1;
         else {
+            //if (indices==null) logger.error("indices null error: {}", this);
             for (int i  = 0; i<indices.length; ++i) {
                 if (indices[i]<o.indices[i]) return -1;
                 if (indices[i]>o.indices[i]) return 1;
@@ -170,7 +171,9 @@ public class Measurements implements Comparable<Measurements>{
         hash = 83 * hash + Arrays.hashCode(this.indices);
         return hash;
     }
-    
+    @Override public String toString() {
+        return "P:"+fieldName+"/F:"+timePoint+"/S:"+structureIdx;
+    }
     private Measurements(String fieldName, int timePoint, int structureIdx, int[] indices) { // only for getParentMeasurementKey
         this.fieldName = fieldName;
         this.timePoint = timePoint;

@@ -26,8 +26,10 @@ import image.ObjectFactory;
 import static image.ObjectFactory.getBounds;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 import measurement.MeasurementKey;
 import org.bson.types.ObjectId;
@@ -41,7 +43,6 @@ import utils.SmallArray;
 @Entity
 @Index(value={"structure_idx, parent_id"})
 public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker, StructureObjectTrackCorrection, Comparable<StructureObject> {
-    public enum TrackFlag{trackError, correctionMerge, correctionMergeToErase, correctionSplit, correctionSplitNew, correctionSplitError};
     public final static Logger logger = LoggerFactory.getLogger(StructureObject.class);
     //structure-related attributes
     @Id protected ObjectId id;
@@ -59,13 +60,12 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     private ObjectId parentTrackHeadId, trackHeadId; // TODO remove parentTrackHeadId ? useful for getTrackHeads
     @Transient protected StructureObject trackHead;
     protected boolean isTrackHead=true;
-    @Transient protected TrackFlag flag=null;
-    
+    protected Map<String, Object> attributes;
     // object- and images-related attributes
     @Transient private Object3D object;
     @Transient private boolean objectModified=false;
     protected ObjectContainer objectContainer;
-    @Transient protected SmallArray<Image> rawImagesC=new SmallArray<Image>();
+    @Transient protected SmallArray<Image> rawImagesC=new SmallArray<>();
     //@Transient protected SmallArray<Image> preProcessedImageS=new SmallArray<Image>();
     
     // measurement-related attributes
@@ -106,7 +106,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public ObjectDAO getDAO() {return dao;}
     public ObjectId getId() {return id;}
     public String getFieldName() {return dao.getFieldName();}
-    public int getPositionIdx() {return getExperiment().getMicroscopyField(getFieldName()).getIndex();}
+    public int getPositionIdx() {return getExperiment().getPosition(getFieldName()).getIndex();}
     public int getStructureIdx() {return structureIdx;}
     public int getTimePoint() {return timePoint;}
     public int getIdx() {return idx;}
@@ -128,7 +128,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (dao==null) return null;
         return dao.getExperiment();
     }
-    public MicroscopyField getMicroscopyField() {return getExperiment()!=null?getExperiment().getMicroscopyField(getFieldName()):null;}
+    public MicroscopyField getMicroscopyField() {return getExperiment()!=null?getExperiment().getPosition(getFieldName()):null;}
     public float getScaleXY() {return getMicroscopyField()!=null?getMicroscopyField().getScaleXY():1;}
     public float getScaleZ() {return getMicroscopyField()!=null?getMicroscopyField().getScaleZ():1;}
     public StructureObject getParent() {
@@ -299,7 +299,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     // track-related methods
     
-    public void setTrackLinks(StructureObject next, boolean setPrev, boolean setNext, TrackFlag flag) {
+    public void setTrackLinks(StructureObject next, boolean setPrev, boolean setNext) {
         if (next==null) resetTrackLinks(setPrev, setNext);
         else {
             if (next.getTimePoint()<=this.getTimePoint()) throw new RuntimeException("setLink should be of time>= "+(timePoint+1) +" but is: "+next.getTimePoint()+ " current: "+this+", next: "+next);
@@ -314,14 +314,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 setNext(next);
             }
         }
-        if (next!=null) next.flag=flag;
+        if (next!=null && setPrev) next.setAttribute(trackErrorPrev, null);
     }
     
     public StructureObject resetTrackLinks(boolean prev, boolean next) {
         if (prev && this.previous!=null && this.previous.next==this) previous.unSetTrackLinksOneWay(false, true);
         if (next && this.next!=null && this.next.previous==this) this.next.unSetTrackLinksOneWay(true, false);
         unSetTrackLinksOneWay(prev, next);
-        if (prev && next) flag = null;
         return this;
     }
     private void unSetTrackLinksOneWay(boolean prev, boolean next) {
@@ -329,27 +328,15 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             if (this.previous!=null && this.previous.next==this)
             setPrevious(null);
             setTrackHead(this, false, false, null);
-            if (hasMeasurements()) {
-                String value = null;
-                getMeasurements().setValue(trackErrorPrev, value);
-            }
+            setAttribute(trackErrorPrev, null);
         }
         if (next) {
             // unset next's previous?
             setNext(null);
-            if (hasMeasurements()) {
-                String value = null;
-                getMeasurements().setValue(trackErrorNext, value);
-            }
+            setAttribute(trackErrorNext, null);
         }
     }
 
-    public StructureObject setTrackFlag(TrackFlag flag) {
-        this.flag=flag;
-        return this;
-    }
-    public TrackFlag getTrackFlag() {return this.flag;}
-    
     public StructureObject getPrevious() {
         if (previous==null) {
             if (previousId!=null && dao instanceof MorphiumObjectDAO) {
@@ -445,15 +432,18 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
 
     public static final String trackErrorPrev = "TrackErrorPrev";
     public static final String trackErrorNext = "TrackErrorNext";
-    @Override public boolean hasTrackLinkError(boolean prev) {
-        if (!this.hasMeasurements()) return false;
-        Object o = getMeasurements().getValue(prev ? trackErrorPrev : trackErrorNext);
-        if (o instanceof Boolean) return (Boolean)o;
+    public static final String correctionMerge = "correctionMerge";
+    public static final String correctionSplit = "correctionSplit";
+    public static final String correctionSplitNew = "correctionSplitNew";
+    @Override public boolean hasTrackLinkError(boolean prev, boolean next) {
+        if (attributes==null) return false;
+        if (prev && Boolean.TRUE.equals(getAttribute(trackErrorPrev))) return true;
+        else if (next && Boolean.TRUE.equals(getAttribute(trackErrorNext))) return true;
         else return false;
     }
     
     public boolean hasTrackLinkCorrection() {
-        return TrackFlag.correctionMerge.equals(flag) || TrackFlag.correctionSplit.equals(flag) || TrackFlag.correctionSplitNew.equals(flag);
+        return Boolean.TRUE.equals(getAttribute(correctionMerge)) || Boolean.TRUE.equals(getAttribute(correctionSplit)) || Boolean.TRUE.equals(getAttribute(correctionSplitNew));
     }
     
     public boolean isTrackHead() {return this.isTrackHead;}
@@ -527,7 +517,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
      */
     public StructureObjectTrackCorrection getNextTrackError() {
         StructureObject error = this.getNext();
-        while(error!=null && !error.hasTrackLinkError(true) && !error.hasTrackLinkError(false)) error=error.getNext();
+        while(error!=null && !error.hasTrackLinkError(true, true)) error=error.getNext();
         return error;
     }
     /**
@@ -626,8 +616,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
         this.getParent().getChildObjects(structureIdx).remove(otherO); // concurent modification..
         // set flags
-        setTrackFlag(TrackFlag.correctionMerge);
-        otherO.setTrackFlag(TrackFlag.correctionMergeToErase);
+        setAttribute(correctionMerge, true);
         otherO.isTrackHead=false; // so that it won't be detected in the correction
         // update children
         int[] chilIndicies = getExperiment().getAllDirectChildStructuresAsArray(structureIdx);
@@ -646,7 +635,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         // get cropped image
         ObjectPopulation pop = splitter.splitObject(getRawImage(structureIdx),  getObject());
         if (pop==null || pop.getObjects().size()==1) {
-            this.flag=TrackFlag.correctionSplitError;
             logger.warn("split error: {}", this);
             return null;
         }
@@ -659,8 +647,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
        
         StructureObject res = new StructureObject(timePoint, structureIdx, idx+1, pop.getObjects().get(1).setLabel(idx+2), getParent());
         getParent().getChildren(structureIdx).add(getParent().getChildren(structureIdx).indexOf(this)+1, res);
-        setTrackFlag(TrackFlag.correctionSplit);
-        res.setTrackFlag(TrackFlag.correctionSplitNew);
+        setAttribute(correctionSplit, true);
+        res.setAttribute(correctionSplitNew, true);
         return res;
     }
     
@@ -734,7 +722,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     private void extendBoundsInZIfNecessary(int channelIdx, BoundingBox bounds) { //when the current structure is 2D but channel is 3D 
         //logger.debug("extends bounds if necessary: is2D: {}, bounds 2D: {}, sizeZ of image to open: {}", is2D(), bounds.getSizeZ(), getExperiment().getMicroscopyField(fieldName).getSizeZ(channelIdx));
         if (bounds.getSizeZ()==1 && is2D() && channelIdx!=this.getExperiment().getChannelImageIdx(structureIdx)) { 
-            int sizeZ = getExperiment().getMicroscopyField(getFieldName()).getSizeZ(channelIdx); //TODO no reliable if a transformation removes planes -> need to record the dimensions of the preProcessed Images
+            int sizeZ = getExperiment().getPosition(getFieldName()).getSizeZ(channelIdx); //TODO no reliable if a transformation removes planes -> need to record the dimensions of the preProcessed Images
             if (sizeZ>1) {
                 bounds.expandZ(sizeZ-1);
             }
@@ -839,7 +827,33 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             return new ObjectPopulation(objects, this.getMaskProperties(), true);
         }
     }
-    
+    public void setAttribute(String key, boolean value) {
+        if (this.attributes==null) attributes = new HashMap<>();
+        attributes.put(key, value);
+    }
+    public void setAttribute(String key, double value) {
+        if (this.attributes==null) attributes = new HashMap<>();
+        attributes.put(key, value);
+    }
+    public void setAttribute(String key, String value) {
+        if (value==null) {
+            if (attributes==null) return;
+            attributes.remove(key);
+            if (attributes.isEmpty()) attributes=null;
+        } else {
+            if (this.attributes==null) attributes = new HashMap<>();
+            attributes.put(key, value);
+        }
+    }
+    public Object getAttribute(String key) {
+        if (attributes==null) return null;
+        return attributes.get(key);
+    }
+    public Object getAttribute(String key, Object defaultValue) {
+        if (attributes==null) return null;
+        return attributes.getOrDefault(key, defaultValue);
+    }
+
     public Measurements getMeasurements() {
         if (measurements==null) {
             synchronized(this) {

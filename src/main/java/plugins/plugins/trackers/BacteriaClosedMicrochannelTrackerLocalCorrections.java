@@ -27,7 +27,6 @@ import dataStructure.objects.Measurements;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
-import dataStructure.objects.StructureObject.TrackFlag;
 import dataStructure.objects.StructureObjectPreProcessing;
 import dataStructure.objects.StructureObjectTracker;
 import dataStructure.objects.Voxel;
@@ -442,7 +441,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 }
                 children = parent.setChildrenObjects(new ObjectPopulation(cObjects, null), structureIdx); // will translate all voxels
                 setAttributes(t, children, childrenPrev);
-                if (debug) for (StructureObject c : children) if (c.getTrackFlag()==StructureObject.TrackFlag.trackError) ++errors;
+                if (debug) for (StructureObject c : children) if (c.hasTrackLinkError(true, true)) ++errors;
             }
             childrenPrev=children;
         }
@@ -505,23 +504,18 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (ta.prev==null || childrenPrev==null) children.get(i).resetTrackLinks(true, true);
             else {
                 if (ta.prev.idx>=childrenPrev.size()) logger.error("t:{} PREV NOT FOUND ta: {}, prev {}, all prev: {}", ta.timePoint, ta, ta.prev, trackAttributes[ta.timePoint-1]);
-                else childrenPrev.get(ta.prev.idx).setTrackLinks(children.get(i), true, !ta.trackHead, getFlag(ta));
+                else childrenPrev.get(ta.prev.idx).setTrackLinks(children.get(i), true, !ta.trackHead);
             }
-            Measurements m = children.get(i).getMeasurements();
-            if (ta.sizeIncrementError) m.setValue("TrackErrorSizeIncrement", true);
-            if (ta.errorPrev) m.setValue("TrackErrorPrev", true);
-            if (ta.errorCur) m.setValue("TrackErrorNext", true);
-            m.setValue("SizeIncrement", ta.sizeIncrement);
+            StructureObject o = children.get(i);
+            if (ta.sizeIncrementError) o.setAttribute("TrackErrorSizeIncrement", true);
+            else o.setAttribute("TrackErrorSizeIncrement", null);
+            if (ta.errorPrev) o.setAttribute(StructureObject.trackErrorPrev, true);
+            else o.setAttribute(StructureObject.trackErrorPrev, null);
+            if (ta.errorCur) o.setAttribute(StructureObject.trackErrorNext, true);
+            o.setAttribute("SizeIncrement", ta.sizeIncrement);
         }
     }
     
-    private TrackFlag getFlag(TrackAttribute ta) {
-        if (ta==null) return null;
-        if (ta.errorPrev || ta.errorCur) return TrackFlag.trackError;
-        if (ta.flag==Flag.correctionSplit) return TrackFlag.correctionSplit;
-        if (ta.flag==Flag.correctionMerge) return TrackFlag.correctionMerge;
-        return null;
-    }
     
     protected void init(List<StructureObject> parentTrack, int structureIdx, boolean segment) {
         if (preFilters==null) this.preFilters=new PreFilterSequence("");

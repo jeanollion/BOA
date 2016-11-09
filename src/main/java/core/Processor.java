@@ -69,7 +69,7 @@ public class Processor {
                 f.setImages(c);
                 count++;
             } else if (relink) {
-                xp.getMicroscopyField(c.getName()).setImages(c);
+                xp.getPosition(c.getName()).setImages(c);
                 ++relinkCount;
             } else {
                 logger.warn("Image: {} already present in fields was no added", c.getName());
@@ -114,7 +114,7 @@ public class Processor {
     public static List<StructureObject> getOrCreateRootTrack(ObjectDAO dao) {
         List<StructureObject> res = dao.getRoots();
         if (res==null || res.isEmpty()) {
-            res = dao.getExperiment().getMicroscopyField(dao.getFieldName()).createRootObjects(dao);
+            res = dao.getExperiment().getPosition(dao.getFieldName()).createRootObjects(dao);
             for (StructureObject o : res) dao.store(o, true);
         }
         return res;
@@ -129,7 +129,7 @@ public class Processor {
         for (String fieldName : xp.getFieldsAsString()) {
             processAndTrackStructures(db.getDao(fieldName), deleteObjects, false, structures);
             db.getDao(fieldName).clearCache();
-            db.getExperiment().getMicroscopyField(fieldName).flushImages();
+            db.getExperiment().getPosition(fieldName).flushImages();
         }
     }
     
@@ -183,7 +183,7 @@ public class Processor {
         Selection errors = dao.getMasterDAO().getSelectionDAO().getOrCreate(dao.getExperiment().getStructure(structureIdx).getName()+"_TrackingErrors", false);
         boolean hadObjectsBefore=errors.count(dao.getFieldName())>0;
         if (hadObjectsBefore) errors.removeChildrenOf(parentTrack); // if selection already exists: remove children of parentTrack
-        children.removeIf(o -> o.getTrackFlag()!=StructureObject.TrackFlag.trackError);
+        children.removeIf(o -> !o.hasTrackLinkError(true, true));
         logger.debug("errors: {}", children.size());
         if (hadObjectsBefore || !children.isEmpty()) {
             errors.addElements(children);
@@ -206,7 +206,7 @@ public class Processor {
             performMeasurements(db.getDao(fieldName));
             //if (dao!=null) dao.clearCacheLater(xp.getMicroscopyField(i).getName());
             db.getDao(fieldName).clearCache();
-            db.getExperiment().getMicroscopyField(fieldName).flushImages();
+            db.getExperiment().getPosition(fieldName).flushImages();
         }
     }
     
@@ -216,37 +216,44 @@ public class Processor {
         final StructureObject[] rootArray = roots.toArray(new StructureObject[roots.size()]);
         logger.debug("{} number of roots: {}", dao.getFieldName(), rootArray.length);
         final Map<Integer, List<Measurement>> measurements = dao.getExperiment().getMeasurementsByCallStructureIdx();
-        final List<StructureObject> allModifiedObjects = new ArrayList<StructureObject>();
-        final List<StructureObject> allModifiedObjectsSync = Collections.synchronizedList(allModifiedObjects);
         
-        ThreadRunner.execute(rootArray, true, new ThreadAction<StructureObject>() {
-            @Override
-            public void run(StructureObject root, int idx, int threadIdx) {
-                //long t0 = System.currentTimeMillis();
-                //logger.debug("running measurements on: {}", root);
-                List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
-                for(Entry<Integer, List<Measurement>> e : measurements.entrySet()) {
-                    int structureIdx = e.getKey();
-                    List<StructureObject> objects = root.getChildren(structureIdx);
-                    for (Measurement m : e.getValue()) {
-                        for (StructureObject o : objects) {
-                            if (!m.callOnlyOnTrackHeads() || o.isTrackHead()) m.performMeasurement(o);
-                        }
-                    }
-                    for (int sOut : getOutputStructures(e.getValue())) {
-                        List<StructureObject> l= sOut==structureIdx ? objects : root.getChildren(sOut); 
-                        for (StructureObject o : l) if (o.getMeasurements().modified()) modifiedObjects.add(o);
-                    }
-                }
-                allModifiedObjectsSync.addAll(modifiedObjects);
-                //long t1 = System.currentTimeMillis();
-                //logger.debug("measurements on: {}, time elapsed: {}ms", root, t1-t0);
+        for(Entry<Integer, List<Measurement>> e : measurements.entrySet()) {
+            if (e.getKey()==-1) {
+                executeMeasurementsOnParentTrack(roots, e.getValue());
+                logger.debug("performing: #{} measurements", e.getValue().size());
+            } else {
+                Map<StructureObject, List<StructureObject>> allParentTracks = StructureObjectUtils.getAllTracks(roots, e.getKey());
+                
+                logger.debug("performing: #{} measurements from parent: {} (#{} parentTracks)", e.getValue().size(), e.getKey(), allParentTracks.size());
+                ThreadAction<List<StructureObject>> ta = new ThreadAction<List<StructureObject>>() {
+                    @Override
+                    public void run(List<StructureObject> pt, int idx, int threadIdx) {executeMeasurementsOnParentTrack(pt, dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey()));} // re-instanciate measurement in case they are not thread safe
+                };
+                //for (List<StructureObject> tr : allParentTracks.values()) ta.run(tr, 0, 0);
+                ThreadRunner.execute(new ArrayList<List<StructureObject>> (allParentTracks.values()), ta); // todo : manage case of mutationTrackMeasurement: measurement on one single object: better root by root
             }
-        });
+            
+        }
         long t1 = System.currentTimeMillis();
-        Utils.removeDuplicates(allModifiedObjects, false);
+        final Set<StructureObject> allModifiedObjects = new HashSet<>();
+        for (List<Measurement> lm : measurements.values()) {
+            for (int sOut : getOutputStructures(lm)) {
+                for (StructureObject root : roots) {
+                    for (StructureObject o : root.getChildren(sOut)) if (o.getMeasurements().modified()) allModifiedObjects.add(o);
+                }
+            }
+        }
         logger.debug("measurements on field: {}: computation time: {}, #modified objects: {}", dao.getFieldName(), t1-t0, allModifiedObjects.size());
         dao.upsertMeasurements(allModifiedObjects);
+    }
+    
+    private static void executeMeasurementsOnParentTrack(List<StructureObject> parentTrack, List<Measurement> list) {
+        for (Measurement m : list) {
+            if (m.callOnlyOnTrackHeads()) m.performMeasurement(parentTrack.get(0));
+            else {
+                for (StructureObject parent : parentTrack) m.performMeasurement(parent);
+            }
+        }
     }
     
     private static Set<Integer> getOutputStructures(List<Measurement> mList) {

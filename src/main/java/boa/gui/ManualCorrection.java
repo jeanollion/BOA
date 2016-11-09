@@ -31,6 +31,8 @@ import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.Selection;
 import dataStructure.objects.StructureObject;
+import static dataStructure.objects.StructureObject.correctionMerge;
+import static dataStructure.objects.StructureObject.correctionSplit;
 import static dataStructure.objects.StructureObject.trackErrorNext;
 import static dataStructure.objects.StructureObject.trackErrorPrev;
 import dataStructure.objects.StructureObjectUtils;
@@ -104,7 +106,8 @@ public class ManualCorrection {
                         } else allowMergeLink = false;
                     }
                     if (allowMergeLink && next!=prev.getNext()) {
-                        prev.setTrackLinks(next, false, true, StructureObject.TrackFlag.correctionMerge);
+                        prev.setTrackLinks(next, false, true);
+                        prev.setAttribute(correctionMerge, true);
                         modifiedObjects.add(prev);
                         logger.debug("split link : {}+{}", prev, next);
                     }
@@ -120,7 +123,8 @@ public class ManualCorrection {
                         } else allowSplitLink = false;
                     }
                     if (allowSplitLink && prev!=next.getPrevious()) {
-                        prev.setTrackLinks(next, true, false, StructureObject.TrackFlag.correctionSplit);
+                        prev.setTrackLinks(next, true, false);
+                        prev.setAttribute(correctionSplit, true);
                         modifiedObjects.add(next);
                         logger.debug("split link : {}+{}", prev, next);
                     }
@@ -130,7 +134,8 @@ public class ManualCorrection {
                 if (prev.getNext()!=null && prev.getNext()!=next) unlinkObjects(prev, prev.getNext(), modifiedObjects);
                 if (next.getPrevious()!=null && next.getPrevious()!=prev) unlinkObjects(next.getPrevious(), next, modifiedObjects);
                 //if (next!=prev.getNext() || prev!=next.getPrevious() || next.getTrackHead()!=prev.getTrackHead()) {
-                    prev.setTrackLinks(next, true, true, StructureObject.TrackFlag.correctionMerge);
+                    prev.setTrackLinks(next, true, true);
+                    prev.setAttribute(correctionMerge, true);
                     next.setTrackHead(prev.getTrackHead(), false, true, modifiedObjects);
                     modifiedObjects.add(prev);
                     modifiedObjects.add(next);

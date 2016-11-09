@@ -29,6 +29,7 @@ import image.Image;
 import image.ImageInteger;
 import image.ImageOperations;
 import java.awt.Color;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -360,7 +361,12 @@ public abstract class ImageWindowManager<T, U, V> {
                         hideObject(dispImage, roi);
                         labiles.remove(roi);
                         logger.debug("display -> inverse state: hide: {}", p.key);
-                        logger.debug("isTH: {}, values: {}", p.key.isTrackHead(), p.key.getMeasurements().getValues());
+                        Object attr = new HashMap<String, Object>(0);
+                        try {
+                            Field attributes = StructureObject.class.getDeclaredField("attributes"); attributes.setAccessible(true);
+                            attr = attributes.get(p.key);
+                        } catch (Exception e) {}
+                        logger.debug("isTH: {}, values: {}, attributes: {}", p.key.isTrackHead(), p.key.getMeasurements().getValues(), attr);
                     }
                 } else {
                     displayObject(dispImage, roi);
@@ -766,7 +772,7 @@ public abstract class ImageWindowManager<T, U, V> {
                         trackArray[trackIdx]=trackArray[trackIdx].getNext(); 
                         change=true;
                     }
-                    if (trackArray[trackIdx]!=null && trackArray[trackIdx].getTimePoint()==currentTimePoint && trackArray[trackIdx].getTrackFlag()!=null) return trackArray[trackIdx];
+                    if (trackArray[trackIdx]!=null && trackArray[trackIdx].getTimePoint()==currentTimePoint && trackArray[trackIdx].hasTrackLinkError(true, true)) return trackArray[trackIdx];
                 }
             }
             if (!change) ++currentTimePoint;
@@ -796,7 +802,7 @@ public abstract class ImageWindowManager<T, U, V> {
                         trackArray[trackIdx]=trackArray[trackIdx].getPrevious();
                         change=true;
                     }
-                    if (trackArray[trackIdx]!=null && trackArray[trackIdx].getTimePoint()==currentTimePoint && trackArray[trackIdx].getTrackFlag()!=null) return trackArray[trackIdx];
+                    if (trackArray[trackIdx]!=null && trackArray[trackIdx].getTimePoint()==currentTimePoint && trackArray[trackIdx].hasTrackLinkError(true, true)) return trackArray[trackIdx];
                 }
             }
             if (!change) --currentTimePoint;

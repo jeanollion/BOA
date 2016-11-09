@@ -51,6 +51,7 @@ import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
+import ij.ImageJ;
 import image.BoundingBox;
 import image.Image;
 import image.ImageByte;
@@ -1440,7 +1441,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void runAction(String fieldName, boolean preProcess, boolean reProcess, boolean segmentAndTrack, boolean trackOnly, boolean measurements, boolean deleteObjects) {
         if (preProcess || reProcess) {
             logger.info("Pre-Processing: Field: {}", fieldName);
-            Processor.preProcessImages(db.getExperiment().getMicroscopyField(fieldName), db.getDao(fieldName), true, preProcess);
+            Processor.preProcessImages(db.getExperiment().getPosition(fieldName), db.getDao(fieldName), true, preProcess);
         }
         if (segmentAndTrack || trackOnly) {
             int[] selectedStructures = this.getSelectedStructures(true);
@@ -1757,7 +1758,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         boolean hasFieldsAlreadyPresent = false;
         boolean ignoreExisting = false;
         for (String f : fields.keySet()) {
-            if (db.getExperiment().getMicroscopyField(f)!=null) {
+            if (db.getExperiment().getPosition(f)!=null) {
                 hasFieldsAlreadyPresent = true;
                 break;
             }
@@ -1771,7 +1772,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         }
         if (ignoreExisting) {
             Iterator<String> it = fields.keySet().iterator();
-            while (it.hasNext()) { if (db.getExperiment().getMicroscopyField(it.next())!=null) it.remove();}
+            while (it.hasNext()) { if (db.getExperiment().getPosition(it.next())!=null) it.remove();}
         }
         String dbName = db.getDBName();
         String hostname = getHostName();
@@ -1781,7 +1782,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             logger.info("Importing: {}/{}, collection: {} file: {}", ++count, fields.size(), f, fields.get(f));
             boolean ok = CommandExecuter.restore(hostname, dbName, MorphiumObjectDAO.getCollectionName("")+f, fields.get(f), true);
             if (ok) {
-                if (db.getExperiment().getMicroscopyField(f)==null) { // create entry
+                if (db.getExperiment().getPosition(f)==null) { // create entry
                     db.getExperiment().createMicroscopyField(f);
                     fieldsCreated=true;
                     logger.info("Position: {} was created. Run \"re-link images\" to set the input images", f);
@@ -1896,7 +1897,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             this.runAction(fieldName, preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements, needToDeleteObjects && !deleteAllField && !deleteAll);
             if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field
             db.getDao(fieldName).clearCache();
-            db.getExperiment().getMicroscopyField(fieldName).flushImages();
+            db.getExperiment().getPosition(fieldName).flushImages();
         }
         if (needToDeleteObjects) this.reloadObjectTrees=true;
     }//GEN-LAST:event_runSelectedActionsMenuItemActionPerformed
@@ -2001,7 +2002,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                     runAction(fieldName, preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements, !deleteAll);
                     if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field
                     db.getDao(fieldName).clearCache();
-                    db.getExperiment().getMicroscopyField(fieldName).flushImages();
+                    db.getExperiment().getPosition(fieldName).flushImages();
                 }
             }
         }
@@ -2096,7 +2097,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             java.util.logging.Logger.getLogger(GUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         //</editor-fold>
-        
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {

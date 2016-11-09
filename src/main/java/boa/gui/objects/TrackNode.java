@@ -79,7 +79,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
         if (containsErrors==null) {
             if (track==null) return false;
             for (StructureObject t: track) { //look for error within track
-                if (t.hasTrackLinkError(true)) {
+                if (t.hasTrackLinkError(true, false)) {
                     containsErrors=true;
                     break;
                 }

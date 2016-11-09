@@ -118,14 +118,14 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
      */
     public MicroscopyField createMicroscopyField(String fieldName) {
         checkInit();
-        if (getMicroscopyField(fieldName)!=null) return null;
+        if (getPosition(fieldName)!=null) return null;
         MicroscopyField res =fields.createChildInstance(fieldName);
         fields.insert(res);
         res.setPreProcessingChains(template);
         return res;
     }
     
-    public MicroscopyField getMicroscopyField(String fieldName) {
+    public MicroscopyField getPosition(String fieldName) {
         checkInit();
         return fields.getChildByName(fieldName);
     }

@@ -202,6 +202,8 @@ public class GenerateTestXP {
         /*String dbName = "boa_phase141113wt";
         String inputDir = "/data/Images/Phase/141113_mg6300_wt/mg6300wt-lb-lr62/";
         String outputDir = "/data/Images/Phase/141113_mg6300_wt/Output";
+        trimFrameStart = 40;
+        trimFrameEnd = 561;
         boolean flip = true;
         boolean fluo = false;
         transSingleFileImport=false;
@@ -266,6 +268,7 @@ public class GenerateTestXP {
         /*String dbName = "boa_mutH_140115";
         String inputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase140115/6300_mutH_LB-LR62rep-15012014_nd2/mg6300mutH_LB_lr62rep_oil37.nd2";
         String outputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase140115/Output";
+        // a partir de la position 55 -> suppr
         boolean flip = true;
         boolean fluo = false;*/
         

@@ -41,7 +41,7 @@ public class FieldNode implements TreeNode, UIContainer {
     public TimePointNode[] getChildren() { // charger tous les root object d'un coup en une requete?
         if (children==null) {
             int timePointNb;
-            MicroscopyField f = getGenerator().getExperiment().getMicroscopyField(fieldName);
+            MicroscopyField f = getGenerator().getExperiment().getPosition(fieldName);
             if (f!=null) timePointNb = f.getTimePointNumber(false);
             else {
                 timePointNb=0;
