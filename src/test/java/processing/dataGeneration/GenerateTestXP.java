@@ -28,6 +28,7 @@ import dataStructure.configuration.Structure;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MorphiumMasterDAO;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import plugins.PluginFactory;
@@ -77,6 +78,7 @@ import processing.ImageTransformation;
  */
 public class GenerateTestXP {
     public static void main(String[] args) {
+        PluginFactory.findPlugins("plugins.plugins");
         /*String dbName = "dummyXP";
         String inputDir = "!!not a directory";
         String outputDir = "!!not a directory";
@@ -88,6 +90,7 @@ public class GenerateTestXP {
         double scaleXY = Double.NaN;
         boolean transSingleFileImport = true;
         boolean[] flipArray= null;
+        boolean[] deletePositions = null;
         //////// FLUO
         // Ordi LJP
         /*String dbName = "boa_fluo151130_OutputNewScaling";
@@ -185,6 +188,7 @@ public class GenerateTestXP {
         String dbName = "boa_phase140115mutH";
         String inputDir = "/data/Images/Phase/140115_6300_mutH_LB-LR62rep/6300_mutH_LB-LR62rep-15012014_tif/";
         String outputDir = "/data/Images/Phase/140115_6300_mutH_LB-LR62rep/Output";
+        deletePositions = fillRange(getBooleanArray(92, false), 54, 91, true); // a partir de la position 55 -> suppr
         boolean flip = true;
         boolean fluo = false;
         transSingleFileImport=false;
@@ -213,10 +217,11 @@ public class GenerateTestXP {
         String inputDir = "/data/Images/Phase/150324_6300_mutH/6300_mutH_LB_LR62silicium-24032015-tif/";
         String outputDir = "/data/Images/Phase/150324_6300_mutH/Output";
         boolean flip = false;
+        flipArray = fillRange(getBooleanArray(100, false), 63, 99, true);
         boolean fluo = false;
         transSingleFileImport=false;
-        scaleXY = 0.06289;*/
-        
+        scaleXY = 0.06289;
+        */
         
         /*String dbName = "boa_phase150616wt";
         String inputDir = "/data/Images/Phase/150616_6300_wt/6300_WT_LB_LR62silicium_16062015_tif/";
@@ -268,7 +273,7 @@ public class GenerateTestXP {
         /*String dbName = "boa_mutH_140115";
         String inputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase140115/6300_mutH_LB-LR62rep-15012014_nd2/mg6300mutH_LB_lr62rep_oil37.nd2";
         String outputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase140115/Output";
-        // a partir de la position 55 -> suppr
+        deletePositions = fillRange(getBooleanArray(95, false), 55, 94); // a partir de la position 55 -> suppr
         boolean flip = true;
         boolean fluo = false;*/
         
@@ -298,8 +303,23 @@ public class GenerateTestXP {
             if (flipArray.length!=xp.getPositionCount()) logger.error("Flip array has {} elements and xp has: {} imported positions", flipArray.length, xp.getPositionCount());
             else {
                 for (int i = 0; i<flipArray.length; ++i) {
-                    List<TransformationPluginParameter<Transformation>> transfo = xp.getPosition(i).getPreProcessingChain().getTransformations();
-                    for (TransformationPluginParameter<Transformation> tp : transfo) if (tp.instanciatePlugin().getClass()==Flip.class) tp.setActivated(flipArray[i]);
+                    List<TransformationPluginParameter<Transformation>> transfo = xp.getPosition(i).getPreProcessingChain().getTransformations(false);
+                    for (TransformationPluginParameter<Transformation> tp : transfo) if (tp.instanciatePlugin().getClass()==Flip.class) {
+                        tp.setActivated(flipArray[i]);
+                        logger.debug("{} flip: {}", i, flipArray[i]);
+                    }
+                }
+            }
+        }
+        if (deletePositions!=null) {
+            if (deletePositions.length!=xp.getPositionCount()) logger.error("Delete array has {} elements and xp has: {} imported positions", deletePositions.length, xp.getPositionCount());
+            else {
+                List<String> toDelete = new ArrayList<>();
+                String[] names = xp.getPositionsAsString();
+                for (int i = 0; i<deletePositions.length; ++i) if (deletePositions[i]) toDelete.add(names[i]);
+                for (String p : toDelete) {
+                    xp.getPosition(p).eraseData(false); // deletes images - 
+                    xp.getPosition(p).removeFromParent(); // remove from parent
                 }
             }
         }
@@ -391,8 +411,8 @@ public class GenerateTestXP {
         if (defaultValue) Arrays.fill(res, true);
         return res;
     }
-    private static boolean[] fillRange(boolean[] array, int idxMin, int idxMaxIncluded, boolean value) {
-        for (int i = idxMin; i<=idxMaxIncluded; ++i) array[i] = value;
+    private static boolean[] fillRange(boolean[] array, int idxMinIncluded, int idxMaxIncluded, boolean value) {
+        for (int i = idxMinIncluded; i<=idxMaxIncluded; ++i) array[i] = value;
         return array;
     }
 }

@@ -21,6 +21,6 @@ package configuration.parameters;
  *
  * @author jollion
  */
-public interface ListElementRemovable {
-    public boolean removeFromParentList(boolean callFromGUI);
+public interface ListElementErasable {
+    public boolean eraseData(boolean callFromGUI);
 }

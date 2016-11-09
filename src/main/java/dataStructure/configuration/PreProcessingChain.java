@@ -110,8 +110,8 @@ public class PreProcessingChain extends SimpleContainerParameter {
         super.initChildren(imageScaleCond, transformations, trimFramesStart, trimFramesEnd);
     }
     
-    public List<TransformationPluginParameter<Transformation>> getTransformations() {
-        return transformations.getActivatedChildren();
+    public List<TransformationPluginParameter<Transformation>> getTransformations(boolean onlyActivated) {
+        return onlyActivated ? transformations.getActivatedChildren() : transformations.getChildren();
     }
     
     public void removeAllTransformations() {
@@ -160,7 +160,7 @@ public class PreProcessingChain extends SimpleContainerParameter {
         public PreProcessingChainUI(PreProcessingChain ppc) {
             xp = ParameterUtils.getExperiment(ppc);
             this.ppc=ppc;
-            fields = new MultipleChoiceParameter("Fields", xp.getFieldsAsString(), false);
+            fields = new MultipleChoiceParameter("Fields", xp.getPositionsAsString(), false);
         }
         public void addMenuListener(JPopupMenu menu, int X, int Y, Component parent) {
             ((MultipleChoiceParameterUI)fields.getUI()).addMenuListener(menu, X, Y, parent);

@@ -147,7 +147,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter, Po
 
     @Override
     public void removeFromParent() {
-        logger.info("(container) removing node from parent:"+((Parameter)this).toString() +" total number: "+children.size());
+        //logger.info("(container) removing node from parent:"+((Parameter)this).toString() +" total number: "+children.size());
         parent.remove(this);
     }
 

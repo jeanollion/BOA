@@ -92,7 +92,7 @@ public class DataExtractor {
     }
     protected void extractMeasurementObjects(String outputFile, List<String> positions, Map<Integer, String[]> allMeasurements) {
         Experiment xp = db.getExperiment();
-        if (positions==null) positions = Arrays.asList(db.getExperiment().getFieldsAsString());
+        if (positions==null) positions = Arrays.asList(db.getExperiment().getPositionsAsString());
         long t0 = System.currentTimeMillis();
         FileWriter fstream;
         BufferedWriter out;

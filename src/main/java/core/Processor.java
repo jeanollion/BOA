@@ -64,7 +64,7 @@ public class Processor {
         List<MultipleImageContainer> images = ImageFieldFactory.importImages(selectedFiles, xp);
         int count=0, relinkCount=0;
         for (MultipleImageContainer c : images) {
-            MicroscopyField f = xp.createMicroscopyField(c.getName());
+            MicroscopyField f = xp.createPosition(c.getName());
             if (f!=null) {
                 f.setImages(c);
                 count++;
@@ -99,7 +99,7 @@ public class Processor {
     public static void setTransformations(MicroscopyField field, boolean computeConfigurationData) {
         InputImagesImpl images = field.getInputImages();
         PreProcessingChain ppc = field.getPreProcessingChain();
-        for (TransformationPluginParameter<Transformation> tpp : ppc.getTransformations()) {
+        for (TransformationPluginParameter<Transformation> tpp : ppc.getTransformations(true)) {
             Transformation transfo = tpp.instanciatePlugin();
             logger.debug("adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}, isConfigured?: {}", transfo, transfo.getClass(), field.getName(), tpp.getInputChannel(), tpp.getOutputChannels(), transfo.isConfigured(images.getChannelNumber(), images.getTimePointNumber()));
             if (computeConfigurationData || !transfo.isConfigured(images.getChannelNumber(), images.getTimePointNumber())) {
@@ -126,7 +126,7 @@ public class Processor {
             db.deleteAllObjects();
             deleteObjects=false;
         }
-        for (String fieldName : xp.getFieldsAsString()) {
+        for (String fieldName : xp.getPositionsAsString()) {
             processAndTrackStructures(db.getDao(fieldName), deleteObjects, false, structures);
             db.getDao(fieldName).clearCache();
             db.getExperiment().getPosition(fieldName).flushImages();

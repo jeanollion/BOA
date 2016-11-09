@@ -494,7 +494,7 @@ public class ManualCorrection {
     }
     
     public static void repairLinksForXP(MasterDAO db, int structureIdx) {
-        for (String f : db.getExperiment().getFieldsAsString()) repairLinksForField(db, f, structureIdx);
+        for (String f : db.getExperiment().getPositionsAsString()) repairLinksForField(db, f, structureIdx);
     }
     public static void repairLinksForField(MasterDAO db, String fieldName, int structureIdx) {
         logger.debug("repairing field: {}", fieldName);

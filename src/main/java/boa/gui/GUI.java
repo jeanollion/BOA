@@ -554,7 +554,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         return res;
     }
     public List<String> getSelectedMicroscopyFieldNames(boolean returnAllIfNoneSelected) {
-        if (returnAllIfNoneSelected && microscopyFieldList.getSelectedIndex()<0) return new ArrayList<String>(Arrays.asList(db.getExperiment().getFieldsAsString()));
+        if (returnAllIfNoneSelected && microscopyFieldList.getSelectedIndex()<0) return new ArrayList<String>(Arrays.asList(db.getExperiment().getPositionsAsString()));
         else return microscopyFieldList.getSelectedValuesList();
     }
     
@@ -1724,7 +1724,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         String dir = promptDir("Choose output directory", defDir);
         if (dir==null) return;
         int[] sel  = getSelectedMicroscopyFields();
-        String[] fNames = db.getExperiment().getFieldsAsString();
+        String[] fNames = db.getExperiment().getPositionsAsString();
         String dbName = db.getDBName();
         String hostname = getHostName();
         int count = 0;
@@ -1783,7 +1783,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             boolean ok = CommandExecuter.restore(hostname, dbName, MorphiumObjectDAO.getCollectionName("")+f, fields.get(f), true);
             if (ok) {
                 if (db.getExperiment().getPosition(f)==null) { // create entry
-                    db.getExperiment().createMicroscopyField(f);
+                    db.getExperiment().createPosition(f);
                     fieldsCreated=true;
                     logger.info("Position: {} was created. Run \"re-link images\" to set the input images", f);
                 } else db.getDao(f).clearCache();

@@ -30,7 +30,7 @@ public class CountObjects {
         String dbName = "boa_fluo160428";
         //String dbName = "boa_fluo151127";
         MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
-        for (String f : db.getExperiment().getFieldsAsString()) {
+        for (String f : db.getExperiment().getPositionsAsString()) {
             ObjectDAO dao = db.getDao(f);
             countMicrochannels(dao);
         }

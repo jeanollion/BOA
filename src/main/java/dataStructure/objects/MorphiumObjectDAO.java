@@ -567,7 +567,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
                     setTrackLinks(res);
                     roots = res;
                     if (masterDAO.getExperiment()!=null && masterDAO.getExperiment().getPosition(fieldName)!=null) {
-                        if (res.size()!=masterDAO.getExperiment().getPosition(fieldName).getTimePointNumber(false)) logger.error("Position: {} wrong root number: {} instead of {}", fieldName, res.size(), masterDAO.getExperiment().getPosition(fieldName).getTimePointNumber(false));
+                        if (res.size()>0 && res.size()!=masterDAO.getExperiment().getPosition(fieldName).getTimePointNumber(false)) logger.error("Position: {} wrong root number: {} instead of {}", fieldName, res.size(), masterDAO.getExperiment().getPosition(fieldName).getTimePointNumber(false));
                     }
                 }
             }

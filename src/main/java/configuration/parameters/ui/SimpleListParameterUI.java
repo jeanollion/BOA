@@ -22,7 +22,7 @@ import configuration.parameters.ParameterUtils;
 import configuration.parameters.SimpleParameter;
 import configuration.parameters.ui.ListParameterUI;
 import boa.gui.configuration.ConfigurationTreeModel;
-import configuration.parameters.ListElementRemovable;
+import configuration.parameters.ListElementErasable;
 import static configuration.parameters.Parameter.logger;
 import dataStructure.configuration.MicroscopyField;
 import java.awt.Component;
@@ -63,19 +63,18 @@ public class SimpleListParameterUI implements ListParameterUI{
         );
         action = new JMenuItem(actionNames[1]);
         actions[1]=action;
-        action.setAction(
-            new AbstractAction(actionNames[1]) {
+        action.setAction(new AbstractAction(actionNames[1]) {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     if (list.getChildCount()==0) return;
                     TreeNode child = list.getChildAt(0);
                     // 
-                    if ((child instanceof ListElementRemovable)) {
-                        if (((ListElementRemovable)child).removeFromParentList(true)) { // call from GUI only for the first
+                    if ((child instanceof ListElementErasable)) {
+                        if (((ListElementErasable)child).eraseData(true)) { // call from GUI only for the first
                             model.removeNodeFromParent((MutableTreeNode)child);
                             while (list.getChildCount()>0) {
                                 child = list.getChildAt(0);
-                                ((ListElementRemovable)child).removeFromParentList(false);
+                                ((ListElementErasable)child).eraseData(false);
                                 model.removeNodeFromParent((MutableTreeNode)child);
                             }
                         }
@@ -131,11 +130,10 @@ public class SimpleListParameterUI implements ListParameterUI{
             }
         );
         childActions[1] = new JMenuItem(childActionNames[1]);
-        ((JMenuItem)childActions[1]).setAction(
-            new AbstractAction(childActionNames[1]) {
+        ((JMenuItem)childActions[1]).setAction(new AbstractAction(childActionNames[1]) {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    if (!(child instanceof ListElementRemovable) || ((ListElementRemovable)child).removeFromParentList(true) ) {
+                    if (!(child instanceof ListElementErasable) || ((ListElementErasable)child).eraseData(true) ) {
                         model.removeNodeFromParent(child);
                     }
                 }

@@ -25,7 +25,7 @@ import com.mongodb.MongoClient;
 import configuration.parameters.BooleanParameter;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ConditionalParameter;
-import configuration.parameters.ListElementRemovable;
+import configuration.parameters.ListElementErasable;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
@@ -61,7 +61,7 @@ import plugins.PreFilter;
  *
  * @author jollion
  */
-public class MicroscopyField extends SimpleContainerParameter implements ListElementRemovable {
+public class MicroscopyField extends SimpleContainerParameter implements ListElementErasable {
     
     private MultipleImageContainer images;
     PreProcessingChain preProcessingChain;
@@ -210,15 +210,16 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         return new MicroscopyFieldUI();
     }
     
-    // listElementRemovable
-    public boolean removeFromParentList(boolean callFromGUI) {
+    // listElementErasable
+    @Override 
+    public boolean eraseData(boolean callFromGUI) { // do not delete objects if GUI not connected
         if (callFromGUI) {
             // delete all objects..
             int response = JOptionPane.showConfirmDialog(null, "Delete Field: "+name+ "(all data will be lost)", "Confirm",
             JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
             if (response != JOptionPane.YES_OPTION) return false;
         }
-        GUI.getDBConnection().getDao(name).deleteAllObjects();
+        if (GUI.getDBConnection()!=null && GUI.getDBConnection().getDao(name)!=null) GUI.getDBConnection().getDao(name).deleteAllObjects(); //TODO : unsafe if not called from GUI.. // ne pas conditionner par callFromGUI 
         if (getInputImages()!=null) getInputImages().deleteFromDAO();
         return true;
     }

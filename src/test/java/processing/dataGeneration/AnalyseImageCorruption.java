@@ -76,7 +76,7 @@ public class AnalyseImageCorruption {
         logger.debug("errors for xp: {}", dbName);
         Map<String, int[]> errors = new HashMap<>();
         int count = 0;
-        for (String position : xp.getFieldsAsString()) {
+        for (String position : xp.getPositionsAsString()) {
             errors.put(position, getCorruptedFrames(xp, position));
             xp.getPosition(position).flushImages();
             logger.debug("POSITION: {}/{}", ++count, xp.getPositionCount());

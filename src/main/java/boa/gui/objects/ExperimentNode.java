@@ -40,7 +40,7 @@ public class ExperimentNode implements TreeNode, UIContainer {
     
     public FieldNode[] getChildren() {
         if (children==null) {
-            String[] fieldNames = generator.getExperiment().getFieldsAsString();
+            String[] fieldNames = generator.getExperiment().getPositionsAsString();
             children= new FieldNode[fieldNames.length];
             for (int i = 0; i<children.length; ++i) children[i] = new FieldNode(this, fieldNames[i]);
         }

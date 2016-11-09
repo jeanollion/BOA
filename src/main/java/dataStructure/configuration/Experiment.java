@@ -116,7 +116,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
      * @param fieldName name of the MicroscopyField
      * @return a new MicroscopyField if no MicroscopyField named {@param fieldName} are already existing, null if not. 
      */
-    public MicroscopyField createMicroscopyField(String fieldName) {
+    public MicroscopyField createPosition(String fieldName) {
         checkInit();
         if (getPosition(fieldName)!=null) return null;
         MicroscopyField res =fields.createChildInstance(fieldName);
@@ -193,7 +193,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     public String[] getChannelImagesAsString() {return channelImages.getChildrenString();}
     
-    public String[] getFieldsAsString() {return fields.getChildrenString();}
+    public String[] getPositionsAsString() {return fields.getChildrenString();}
     
     public String[] getChildStructuresAsString(int structureIdx) {
         int[] childIdx = getAllChildStructures(structureIdx);

@@ -44,9 +44,9 @@ public class RepairTrackInconsitencies {
         //String dbName = "boa_fluo160501";
         String dbName = "boa_fluo160501";
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
-        ManualCorrection.repairLinksForField(mDAO, mDAO.getExperiment().getFieldsAsString()[0], structureIdx);
-        ManualCorrection.repairLinksForField(mDAO, mDAO.getExperiment().getFieldsAsString()[1], structureIdx);
-        ManualCorrection.repairLinksForField(mDAO, mDAO.getExperiment().getFieldsAsString()[3], structureIdx);
+        ManualCorrection.repairLinksForField(mDAO, mDAO.getExperiment().getPositionsAsString()[0], structureIdx);
+        ManualCorrection.repairLinksForField(mDAO, mDAO.getExperiment().getPositionsAsString()[1], structureIdx);
+        ManualCorrection.repairLinksForField(mDAO, mDAO.getExperiment().getPositionsAsString()[3], structureIdx);
     }
     
 }

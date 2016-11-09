@@ -20,6 +20,7 @@ package plugins.plugins.measurements;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import configuration.parameters.Parameter;
 import configuration.parameters.StructureParameter;
+import dataStructure.objects.Measurements;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
@@ -65,8 +66,8 @@ public class BacteriaTransMeasurements implements Measurement {
         res.add(new MeasurementKeyObject("BacteriaArea", structureIdx));
         
         // from tracking
-        res.add(new MeasurementKeyObject("TrackErrorPrev", structureIdx));
-        res.add(new MeasurementKeyObject("TrackErrorNext", structureIdx));
+        res.add(new MeasurementKeyObject(StructureObject.trackErrorPrev, structureIdx));
+        res.add(new MeasurementKeyObject(StructureObject.trackErrorNext, structureIdx));
         res.add(new MeasurementKeyObject("SizeIncrement", structureIdx));
         res.add(new MeasurementKeyObject("TrackErrorSizeIncrement", structureIdx));
 
@@ -80,11 +81,18 @@ public class BacteriaTransMeasurements implements Measurement {
         center[0]-=parentOffset.getxMin()*object.getScaleXY();
         center[1]-=parentOffset.getyMin()*object.getScaleXY();
         //if (object.getTimePoint()==0) logger.debug("object: {} center: {}, parentOffset: {}, objectoffset: {} bactImageOffset: {}, mutImageOffset: {}", object, center, parentOffset, object.getBounds(), bactImage.getBoundingBox(), mutImage.getBoundingBox());
-        object.getMeasurements().setValue("BacteriaCenterX", center[0]);
-        object.getMeasurements().setValue("BacteriaCenterY", center[1]);
-        object.getMeasurements().setValue("BacteriaLength", GeometricalMeasurements.getFeretMax(bactObject));
-        object.getMeasurements().setValue("BacteriaArea", GeometricalMeasurements.getVolume(bactObject));
+        Measurements m = object.getMeasurements();
+        m.setValue("BacteriaCenterX", center[0]);
+        m.setValue("BacteriaCenterY", center[1]);
+        m.setValue("BacteriaLength", GeometricalMeasurements.getFeretMax(bactObject));
+        m.setValue("BacteriaArea", GeometricalMeasurements.getVolume(bactObject));
         
+        m.setValue(StructureObject.trackErrorNext, object.hasTrackLinkError(false, true));
+        m.setValue(StructureObject.trackErrorPrev, object.hasTrackLinkError(true, false));
+        Object si = object.getAttribute("SizeIncrement");
+        if (si instanceof Number) m.setValue("SizeIncrement", (Number)si);
+        Object tesi = object.getAttribute("TrackErrorSizeIncrement");
+        m.setValue("TrackErrorSizeIncrement", Boolean.TRUE.equals(tesi));
         
     }
 

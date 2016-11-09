@@ -170,7 +170,7 @@ public class DeleteFromDAOTest {
         String f = "testField";
         int[] count = new int[]{10, 10, 10};
         Experiment xp = new Experiment("");
-        xp.createMicroscopyField(f);
+        xp.createPosition(f);
         xp.getStructures().insert(new Structure("S0", -1, 0), new Structure("Sub1", 0, 0), new Structure("Sub2",1, 0));
         db.setExperiment(xp);
         
@@ -230,7 +230,7 @@ public class DeleteFromDAOTest {
         
         Experiment xp = new Experiment("");
         xp.getStructures().insert(new Structure("MicroChannel", -1, 0));
-        xp.createMicroscopyField(f);
+        xp.createPosition(f);
         db.setExperiment(xp);
         
         ObjectDAO dao = db.getDao(f);
@@ -271,7 +271,7 @@ public class DeleteFromDAOTest {
         if (db instanceof MorphiumMasterDAO) {
             MorphiumMasterDAO m = (MorphiumMasterDAO)db;
             int count = 0; 
-            for (String f : db.getExperiment().getFieldsAsString()) {
+            for (String f : db.getExperiment().getPositionsAsString()) {
                 Query q = m.getMorphium().createQueryFor(clazz);
                 if (clazz==StructureObject.class) q.setCollectionName(m.getDao(f).collectionName);
                 else if (clazz == Measurements.class) q.setCollectionName(m.getDao(f).getMeasurementsDAO().collectionName);
@@ -281,7 +281,7 @@ public class DeleteFromDAOTest {
             return count;
         } else if (db instanceof BasicMasterDAO) {
             ArrayList<StructureObject> allObjects = new ArrayList<StructureObject>();
-            for (String f : db.getExperiment().getFieldsAsString()) {
+            for (String f : db.getExperiment().getPositionsAsString()) {
                 List<StructureObject> rootTrack = db.getDao(f).getRoots();
                 allObjects.addAll(rootTrack);
                 for (int s = 0; s<db.getExperiment().getStructureCount(); ++s) {

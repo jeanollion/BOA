@@ -57,7 +57,7 @@ public class TestTrackStructure {
         Structure bacteries = new Structure("Bacteries", 0, 0);
         xp.getStructures().insert(microChannel, bacteries);
         bacteries.setParentStructure(0);
-        xp.createMicroscopyField("field1");
+        xp.createPosition("field1");
         masterDAO.setExperiment(xp);
         MorphiumObjectDAO dao = masterDAO.getDao("field1");
         StructureObject[] rootT = new StructureObject[5];
