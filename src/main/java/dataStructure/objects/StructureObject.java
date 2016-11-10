@@ -302,7 +302,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public void setTrackLinks(StructureObject next, boolean setPrev, boolean setNext) {
         if (next==null) resetTrackLinks(setPrev, setNext);
         else {
-            if (next.getTimePoint()<=this.getTimePoint()) throw new RuntimeException("setLink should be of time>= "+(timePoint+1) +" but is: "+next.getTimePoint()+ " current: "+this+", next: "+next);
+            if (next.getTimePoint()<=this.getTimePoint()) throw new RuntimeException("setLink should be of time>= "+(timePoint+1) +" but is: "+next.getTimePoint()+ " current: "+this+", next: "+next+ " parent: "+getParent()+", next parent: "+next.getParent());
             if (setPrev && setNext) { // double link: set trackHead
                 setNext(next);
                 next.setPrevious(this);

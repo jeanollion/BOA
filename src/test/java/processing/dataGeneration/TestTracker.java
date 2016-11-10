@@ -17,6 +17,7 @@
  */
 package processing.dataGeneration;
 
+import static TestUtils.Utils.logger;
 import boa.gui.GUI;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManager;
@@ -35,6 +36,7 @@ import java.util.stream.Collectors;
 import plugins.PluginFactory;
 import plugins.ProcessingScheme;
 import plugins.plugins.trackers.BacteriaClosedMicrochannelTrackerLocalCorrections;
+import plugins.plugins.trackers.MicrochannelProcessorPhase;
 
 /**
  *
@@ -45,16 +47,16 @@ public class TestTracker {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
         //String dbName = "boa_mutH_140115";
-        //final String dbName = "boa_phase140115mutH";
-        String dbName = "boa_phase150616wt";
-        int fIdx = 59;
-        int mcIdx =0;
+        final String dbName = "boa_phase140115mutH";
+        //String dbName = "boa_phase150616wt";
+        int fIdx = 0;
+        int mcIdx =1;
         int structureIdx = 0;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 59, 62);
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 2);
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 246.28;
-        //testBCMTLCStep(db.getDao(db.getExperiment().getMicroscopyField(fIdx).getName()), ps, structureIdx, mcIdx, 40, 48); 
+        //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 54); 
         
         int[][] testsF_MC_TT = {
            {0, 3, 90, 100}, // 0
@@ -95,11 +97,12 @@ public class TestTracker {
                 }
             }
         }
-       
+        MicrochannelProcessorPhase.debug=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;
         ps.segmentAndTrack(structureIdx, parentTrack);
+        logger.debug("children: {}", StructureObjectUtils.getAllTracks(parentTrack, 0));
         //ps.trackOnly(structureIdx, parentTrack);
         GUI.getInstance();
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
@@ -127,6 +130,8 @@ public class TestTracker {
                     if (parentTrack==null || parentTrack.isEmpty()) {
                         parentTrack = allTracks.get(th);
                         parentTrack.removeIf(o -> o.getTimePoint()<tStart || o.getTimePoint()>tEnd);
+                        //logger.debug("parents: {}", parentTrack);
+                        //return;
                     }
                 }
             }

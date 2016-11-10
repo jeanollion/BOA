@@ -55,10 +55,11 @@ import utils.MorphiumUtils;
 public class TestProcessMicrochannelsPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        int time =248;
-        int field = 60;
-        String dbName = "boa_phase150616wt";
+        int time =1;
+        int field = 0;
+        //String dbName = "boa_phase150616wt";
         //String dbName = "boa_phase141129wt";
+        String dbName = "boa_phase140115mutH";
         testSegMicrochannelsFromXP(dbName, field, time);
         //testSegAndTrackMicrochannelsFromXP(dbName, field, 518, 530);
     }
@@ -78,7 +79,7 @@ public class TestProcessMicrochannelsPhase {
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
         disp.showImage(pop.getLabelMap());
-        
+        logger.debug("{} objects found", pop.getObjects().size());
         // test split
         //ObjectPopulation popSplit = testObjectSplitter(intensityMap, pop.getChildren().get(0));
         //disp.showImage(popSplit.getLabelImage());

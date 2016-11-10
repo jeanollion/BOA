@@ -185,14 +185,14 @@ public class GenerateTestXP {
         boolean fluo = false;
         scaleXY = 0.0646;*/
         
-        String dbName = "boa_phase140115mutH";
+        /*String dbName = "boa_phase140115mutH";
         String inputDir = "/data/Images/Phase/140115_6300_mutH_LB-LR62rep/6300_mutH_LB-LR62rep-15012014_tif/";
         String outputDir = "/data/Images/Phase/140115_6300_mutH_LB-LR62rep/Output";
         deletePositions = fillRange(getBooleanArray(92, false), 54, 91, true); // a partir de la position 55 -> suppr
         boolean flip = true;
         boolean fluo = false;
         transSingleFileImport=false;
-        scaleXY = 0.06289;
+        scaleXY = 0.06289;*/
         
         
         /*String dbName = "boa_phase141107wt";
@@ -213,7 +213,7 @@ public class GenerateTestXP {
         transSingleFileImport=false;
         scaleXY = 0.06289;*/
         
-        /*String dbName = "boa_phase150324mutH";
+        String dbName = "boa_phase150324mutH";
         String inputDir = "/data/Images/Phase/150324_6300_mutH/6300_mutH_LB_LR62silicium-24032015-tif/";
         String outputDir = "/data/Images/Phase/150324_6300_mutH/Output";
         boolean flip = false;
@@ -221,7 +221,7 @@ public class GenerateTestXP {
         boolean fluo = false;
         transSingleFileImport=false;
         scaleXY = 0.06289;
-        */
+        
         
         /*String dbName = "boa_phase150616wt";
         String inputDir = "/data/Images/Phase/150616_6300_wt/6300_WT_LB_LR62silicium_16062015_tif/";

@@ -504,7 +504,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (ta.prev==null || childrenPrev==null) children.get(i).resetTrackLinks(true, true);
             else {
                 if (ta.prev.idx>=childrenPrev.size()) logger.error("t:{} PREV NOT FOUND ta: {}, prev {}, all prev: {}", ta.timePoint, ta, ta.prev, trackAttributes[ta.timePoint-1]);
-                else childrenPrev.get(ta.prev.idx).setTrackLinks(children.get(i), true, !ta.trackHead);
+                else {
+                    childrenPrev.get(ta.prev.idx).setTrackLinks(children.get(i), true, !ta.trackHead);
+                }
             }
             StructureObject o = children.get(i);
             if (ta.sizeIncrementError) o.setAttribute("TrackErrorSizeIncrement", true);

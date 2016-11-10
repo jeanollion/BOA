@@ -165,6 +165,7 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
                         prev.setTrackLinks(cur, true, true);
                     }
                 }
+                prev = cur;
             }
         }
         
