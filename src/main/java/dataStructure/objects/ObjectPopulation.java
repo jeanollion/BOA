@@ -207,15 +207,7 @@ public class ObjectPopulation {
             for (Object3D o : objects) draw(o, o.getLabel());
         }
     }
-    
-    public void reDrawLabelMap() {
-        if (labelImage==null) constructLabelImage();
-        else {
-            ImageOperations.fill(labelImage, 0, null);
-            for (Object3D o : objects) draw(o, o.getLabel());
-        }
-    }
-    
+        
     private void constructObjects() {
         Object3D[] obs = ObjectFactory.getObjectsImage(labelImage, false);
         objects = new ArrayList<Object3D>(Arrays.asList(obs));
@@ -269,8 +261,11 @@ public class ObjectPopulation {
             o.label = idx++;
         }
         if (objects == null || objects.isEmpty()) return;
+        redrawLabelMap(fillImage);
+    }
+    public void redrawLabelMap(boolean fillImage) {
         if (hasImage()) {
-            int maxLabel = getObjects().get(objects.size() - 1).getLabel();
+            int maxLabel = Collections.max(objects, (o1, o2) -> Integer.compare(o1.getLabel(), o2.getLabel())).getLabel();
             if (maxLabel > ImageInteger.getMaxValue(labelImage, false)) {
                 labelImage = ImageInteger.createEmptyLabelImage(labelImage.getName(), maxLabel, properties);
             } else {

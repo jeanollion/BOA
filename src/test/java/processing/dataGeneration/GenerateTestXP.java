@@ -213,7 +213,7 @@ public class GenerateTestXP {
         transSingleFileImport=false;
         scaleXY = 0.06289;*/
         
-        String dbName = "boa_phase150324mutH";
+        /*String dbName = "boa_phase150324mutH";
         String inputDir = "/data/Images/Phase/150324_6300_mutH/6300_mutH_LB_LR62silicium-24032015-tif/";
         String outputDir = "/data/Images/Phase/150324_6300_mutH/Output";
         boolean flip = false;
@@ -221,7 +221,7 @@ public class GenerateTestXP {
         boolean fluo = false;
         transSingleFileImport=false;
         scaleXY = 0.06289;
-        
+        */
         
         /*String dbName = "boa_phase150616wt";
         String inputDir = "/data/Images/Phase/150616_6300_wt/6300_WT_LB_LR62silicium_16062015_tif/";
@@ -284,13 +284,14 @@ public class GenerateTestXP {
         boolean fluo = false;
         transSingleFileImport = false;*/
         
-        /*String dbName = "boa_phase141107wt";
+        String dbName = "boa_phase141107wt";
         String inputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase141107/mg6300WT-lb-lr62replic1-7-11-14/";
         String outputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase141107/Output";
         boolean flip = true;
         boolean fluo = false;
         transSingleFileImport = false;
-        */
+        deletePositions = fillRange(getBooleanArray(991, true), 120, 990, false);
+        
         boolean performProcessing = false;
         
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);

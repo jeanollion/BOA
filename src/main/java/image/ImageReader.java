@@ -124,7 +124,7 @@ public class ImageReader {
         try {
             reader.setId(getImagePath());
         } catch (FormatException | IOException ex) {
-            logger.error("An error occurred while opering image: "+getImagePath(),  ex);
+            logger.error("An error occurred while opering image: {}, message: {}", getImagePath(),  ex.getMessage());
             reader=null;
         }
     }
@@ -194,8 +194,7 @@ public class ImageReader {
                 double[] scaleXYZ = getScaleXYZ(1);
                 if (scaleXYZ[0]!=1) res.setCalibration((float)scaleXYZ[0], (float)scaleXYZ[2]);
             } catch (FormatException | IOException ex) {
-                 
-                logger.error("An error occurred while opering image: " + reader.getCurrentFile() + " channel:" + coords.getChannel() + " t:" + coords.getTimePoint() + " series :" + coords.getSerie(), ex);
+                logger.error("An error occurred while opering image: {}, c:{}, t:{}, s:{}, message: {}", reader.getCurrentFile() , coords.getChannel() , coords.getTimePoint(), coords.getSerie(), ex.getMessage());
             }
         }
         return res;

@@ -38,7 +38,7 @@ import utils.Utils;
  */
 public class AnalyseImageCorruption {
     public static void main(String[] args) {
-        String[] dbList = new String[]{"boa_phase141113wt", "boa_phase141107wt"};
+        String[] dbList = new String[]{"boa_phase141113wt"}; //boa_phase141113wt //boa_phase141107wt
         List<Map<String, int[]>> errors = new ArrayList<>();
         List<int[]> errorRange = new ArrayList<>();
         for (String db : dbList) {
@@ -61,16 +61,17 @@ public class AnalyseImageCorruption {
             return i1;
             }));*/
             errorRange.add(bestRange);
+            logger.debug("db: {}, bestRange: {}, all ranges: {}", db, bestRange, Utils.toStringArray(corr.values().toArray(new int[0][]), arr -> Utils.toStringArray(arr)));
         }
         
         for (int i = 0; i<errors.size(); ++i) logger.debug("db: {}, bestRange: {}, all ranges: {}", dbList[i], errorRange.get(i), Utils.toStringArray(errors.get(i).values().toArray(new int[0][]), arr -> Utils.toStringArray(arr)));
     }
     
     public static Map<String, int[]> geCorruptedFrame(String dbName) {
-        Map<String, int[]> res = new HashMap<>();
+        /*Map<String, int[]> res = new HashMap<>();
         res.put("A", new int[]{10, 25, 39});
         res.put("B", new int[]{15, 20, 30, 40});
-        if (true) return res;
+        if (true) return res;*/
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
         Experiment xp = mDAO.getExperiment();
         logger.debug("errors for xp: {}", dbName);

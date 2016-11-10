@@ -17,6 +17,7 @@
  */
 package utils.clustering;
 
+import boa.gui.imageInteraction.IJImageDisplayer;
 import dataStructure.objects.Voxel;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -186,6 +187,7 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
         }
         long t1 = System.currentTimeMillis();
         if (verbose) logger.debug("Merge sort: total time : {} total interfaces: {} after merge: {}", t1-t0, interfaces.size(), interfaces.size());
+        
         return new ArrayList<E>(interfaceByElement.keySet());
     }   
 

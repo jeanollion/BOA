@@ -59,35 +59,45 @@ public class TestProcessBacteriaPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         //int time =31;
-        int time =16;
-        int microChannel =5;
+        int time =0;
+        int microChannel =1;
         int field = 0;
-        thld = 229;
+        thld = 432;
         //String dbName = "boa_mutH_140115";
-        //String dbName = "boa_phase140115mutH";
-        String dbName = "boa_phase150616wt";
+        String dbName = "boa_phase140115mutH";
+        //String dbName = "boa_phase150616wt";
         testSegBacteriesFromXP(dbName, field, time, microChannel);
         //testSegBacteriesFromXP(dbName, field, microChannel, 0, 400);
-        //testSplit(dbName, field, time, microChannel, 4);
+        //testSplit(dbName, field, time, microChannel, 1, true);
     }
     
-    public static void testSplit(String dbName, int position, int timePoint, int microChannel, int oIdx) {
+    public static void testSplit(String dbName, int position, int timePoint, int microChannel, int oIdx, boolean useSegmentedObjectsFromDB) {
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
         MicroscopyField f = mDAO.getExperiment().getPosition(position);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(microChannel);
+        ObjectPopulation pop;
         Image input = mc.getRawImage(1);
-        BacteriaTrans seg = new BacteriaTrans();
-        if (!Double.isNaN(thld)) seg.setThresholdValue(thld);
-        ObjectPopulation pop = seg.runSegmenter(input, 1, mc);
-        seg.setSplitVerboseMode(true);
+        if (useSegmentedObjectsFromDB) {
+            pop=mc.getObjectPopulation(1);
+            pop.translate(pop.getObjectOffset().reverseOffset(), false); // translate object to relative landmark
+        } else {
+            BacteriaTrans seg = new BacteriaTrans();
+            if (!Double.isNaN(thld)) seg.setThresholdValue(thld);
+            pop = seg.runSegmenter(input, 1, mc);
+            seg.setSplitVerboseMode(true);
+        }
+        
         List<Object3D> res = new ArrayList<>();
         //pop.translate(input.getBoundingBox(), true);
-        new IJImageDisplayer().showImage(pop.getObjects().get(oIdx).getMask().crop(input.getBoundingBox().translateToOrigin()));
-        //seg.split(input.resetOffset().crop(pop.getObjects().get(oIdx).getBounds()), pop.getObjects().get(oIdx), res);
-        seg.split(input, pop.getObjects().get(oIdx), res);
         ImageDisplayer disp = new IJImageDisplayer();
+        disp.showImage(pop.getObjects().get(oIdx).getMask().crop(input.getBoundingBox().translateToOrigin()));
+        //seg.split(input.resetOffset().crop(pop.getObjects().get(oIdx).getBounds()), pop.getObjects().get(oIdx), res);
+        BacteriaTrans seg = new BacteriaTrans();
+        seg.setSplitVerboseMode(true);
+        seg.split(input, pop.getObjects().get(oIdx), res);
+        
         ImageByte splitMap = new ImageByte("splitted objects", pop.getLabelMap());
         int label=1;
         for (Object3D o : res) o.draw(splitMap, label++);

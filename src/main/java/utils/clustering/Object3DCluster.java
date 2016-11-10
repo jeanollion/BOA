@@ -177,6 +177,10 @@ public class Object3DCluster<I extends InterfaceObject3D<I>> extends ClusterColl
     @Override public List<Object3D> mergeSort(boolean checkCriterion, int numberOfInterfacesToKeep, int numberOfObjecsToKeep) {
         int nInit = population.getObjects().size();
         super.mergeSort(checkCriterion, numberOfInterfacesToKeep, numberOfObjecsToKeep);
+        if (verbose) {
+            population.redrawLabelMap(true);
+            new IJImageDisplayer().showImage(population.getLabelMap().duplicate("labelMap after merge"));
+        }
         if (nInit > population.getObjects().size()) population.relabel(true);
         return population.getObjects();
     }
