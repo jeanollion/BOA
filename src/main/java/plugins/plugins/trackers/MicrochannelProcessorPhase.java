@@ -146,8 +146,11 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
                         int ySize = Math.round((prev.getBounds().getSizeY()+cur.getBounds().getSizeY())/2);
                         int zSize = Math.round((prev.getBounds().getSizeZ()+cur.getBounds().getSizeZ())/2);
                         int startFrame = prev.getTimePoint()+1;
+                        if (debug) logger.debug("mc close gap between: {}&{}, off: {}/{}/{}, size:{}/{}/{}", prev.getTimePoint(), cur.getTimePoint(), deltaOffX, deltaOffY, deltaOffZ, xSize, ySize, zSize);
+                        if (debug) logger.debug("reference: {}", localReference);
                         for (int f = startFrame; f<cur.getTimePoint(); ++f) { 
                             StructureObject ref=localReference.get(f);
+                            if (debug) logger.debug("mc close gap: f:{}, ref: {}", f, ref);
                             int offX = deltaOffX + ref.getBounds().getxMin();
                             int offY = deltaOffY + ref.getBounds().getyMin();
                             int offZ = deltaOffZ + ref.getBounds().getzMin();
@@ -185,13 +188,24 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
      */
     private static Map<Integer, StructureObject> getReference(Map<StructureObject, List<StructureObject>> allTracks, int fStart, int fEnd) { 
         for (Entry<StructureObject, List<StructureObject>> e : allTracks.entrySet()) {
-            if (e.getKey().getTimePoint()<=fStart) {
-                int lastFrame = e.getKey().getTimePoint()+e.getValue().size();
-                int lastFrame2 = e.getValue().get(e.getValue().size()-1).getTimePoint();
-                if (lastFrame>=fEnd && lastFrame==lastFrame2) return e.getValue().stream().collect(Collectors.toMap(s->s.getTimePoint(), s->s));
+            if (e.getKey().getTimePoint()<=fStart && e.getValue().get(e.getValue().size()-1).getTimePoint()>=fEnd) {
+                if (isContinuousBetweenFrames(e.getValue(), fStart, fEnd)) return e.getValue().stream().collect(Collectors.toMap(s->s.getTimePoint(), s->s));
             }
         }
         return null;
+    }
+    private static boolean isContinuousBetweenFrames(List<StructureObject> list, int fStart, int fEnd) {
+        Iterator<StructureObject> it = list.iterator();    
+        StructureObject prev=it.next();
+        while (it.hasNext()) {
+            StructureObject cur = it.next();
+            if (cur.getTimePoint()>=fStart) {
+                if (cur.getTimePoint()!=prev.getTimePoint()+1) return false;
+                if (cur.getTimePoint()>=fEnd) return true;
+            }
+            prev = cur;
+        }
+        return false;
     }
     
     @Override
