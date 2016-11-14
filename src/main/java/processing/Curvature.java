@@ -61,7 +61,12 @@ public class Curvature {
         final ArrayList<Double> values = new ArrayList<Double>(fourier.points.length);
         for ( int i = 0; i <fourier.points.length ; ++i ) {
             points.add( new RealPoint( new double[]{ mask.getOffsetX()+fourier.points[i].x / reso, mask.getOffsetY() + fourier.points[i].y / reso}  ));
-            values.add(fourier.curvature(i, scale, false));
+            try {
+                values.add(fourier.curvature(i, scale, false));
+            } catch(Exception e) {
+                logger.debug("error computing curvature: {}", e);
+                return null;
+            }
         }
         return new KDTree<Double>(values, points);
     }
@@ -261,7 +266,7 @@ public class Curvature {
          * @return curvature value
          */
         public double curvature(int iref, int scale, boolean fourier) {
-            if (NPT<=scale) return 0;
+            if (NPT<=2*scale+1) return Double.NaN;
             double da;
             double a;
             Point2d U;

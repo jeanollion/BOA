@@ -139,7 +139,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     NumberParameter minSizeFusion = new BoundedNumberParameter("Minimum Object size (fusion)", 0, 200, 5, null);
     NumberParameter minSize = new BoundedNumberParameter("Minimum Object size", 0, 100, 5, null);
     NumberParameter minSizeChannelEnd = new BoundedNumberParameter("Minimum Object size (end of channel)", 0, 300, 5, null);
-    GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSize, minSizeFusion, minSizeChannelEnd, contactLimit);
+    NumberParameter minXSize = new BoundedNumberParameter("Minimum X-Thickness", 0, 7, 1, null);
+    GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSize, minXSize, minSizeFusion, minSizeChannelEnd, contactLimit);
     
     Parameter[] parameters = new Parameter[]{backgroundSeparation, thicknessParameters, curvatureParameters, objectParameters};
     private final static int contrastRadius = 5; // for contrast removal of objects
@@ -233,7 +234,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         return new ProcessingVariables(input, segmentationMask,
                 relativeThicknessThreshold.getValue().doubleValue(), relativeThicknessMaxDistance.getValue().doubleValue(), 
                 subBackScale.getValue().doubleValue(), openRadius.getValue().doubleValue(), closeRadius.getValue().doubleValue(), this.fillHolesBackgroundContactProportion.getValue().doubleValue(),
-                minSize.getValue().intValue(), minSizePropagation.getValue().intValue(), minSizeFusion.getValue().intValue(),
+                minSize.getValue().intValue(), minXSize.getValue().intValue(), minSizePropagation.getValue().intValue(), minSizeFusion.getValue().intValue(),
                 curvatureScale.getValue().intValue(), curvatureThreshold.getValue().doubleValue(), curvatureSearchRadius.getValue().doubleValue());
     }
     
@@ -277,7 +278,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         //res.setVoxelIntensities(pv.getEDM());// for merging // useless if watershed transform on EDM has been called just before
         Object3DCluster.mergeSort(res,  pv.getFactory(), objectMergeLimit<=1, 0, objectMergeLimit);
         
-        //res.filterAndMergeWithConnected(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
+        //res.filterAndMergeWithConnected(new ObjectPopulation.Thickness().setX(minXSize).setY(2)); // remove thin objects
         //res.filterAndMergeWithConnected(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
         if (debug) {
             disp.showImage(pv.getIntensityMap().setName("DOG"));
@@ -379,7 +380,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             o.draw(pv.splitMask, 0);
             if (pop==null || pop.getObjects().isEmpty() || pop.getObjects().size()==1) return Double.POSITIVE_INFINITY;
             ArrayList<Object3D> remove = new ArrayList<Object3D>(pop.getObjects().size());
-            pop.filter(new ObjectPopulation.Thickness().setX(2).setY(2), remove); // remove thin objects ?? merge? 
+            pop.filter(new ObjectPopulation.Thickness().setX(minXSize).setY(2), remove); // remove thin objects ?? merge? 
             pop.filter(new ObjectPopulation.Size().setMin(minSizePropagation.getValue().intValue()), remove); // remove small objects ?? merge? 
             if (pop.getObjects().size()<=1) return Double.POSITIVE_INFINITY;
             else {
@@ -510,13 +511,13 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         ImageByte splitMask;
         final double relativeThicknessThreshold, dogScale, openRadius, fillHolesBckProp, closeRadius, relativeThicknessMaxDistance;//, smoothScale;// aspectRatioThreshold, angleThresholdRad; 
         double threshold = Double.NaN;
-        final int curvatureScale, minSizePropagation, minSizeFusion, minSize;
+        final int curvatureScale, minSizePropagation, minSizeFusion, minSize, minXSize;
         final double curvatureSearchScale;
         final double curvatureThreshold;
         double contrastThreshold;
         Object3DCluster.InterfaceFactory<Object3D, InterfaceBT> factory;
         private double yLimLastObject = Double.NaN;
-        private ProcessingVariables(Image input, ImageMask mask, double splitThresholdValue, double relativeThicknessMaxDistance, double dogScale, double openRadius, double closeRadius, double fillHolesBckProp, int minSize, int minSizePropagation, int minSizeFusion, int curvatureScale, double curvatureThreshold, double curvatureSearchRadius) {
+        private ProcessingVariables(Image input, ImageMask mask, double splitThresholdValue, double relativeThicknessMaxDistance, double dogScale, double openRadius, double closeRadius, double fillHolesBckProp, int minSize, int minXSize, int minSizePropagation, int minSizeFusion, int curvatureScale, double curvatureThreshold, double curvatureSearchRadius) {
             this.input=input;
             this.mask=mask;
             this.relativeThicknessThreshold=splitThresholdValue;
@@ -532,6 +533,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             curvatureSearchScale = curvatureSearchRadius;
             this.curvatureThreshold=curvatureThreshold;
             this.minSize=minSize;
+            this.minXSize=minXSize;
             this.closeRadius=closeRadius;
             this.fillHolesBckProp=fillHolesBckProp;
         }
@@ -635,7 +637,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 
                 //if (debug) disp.showImage(pop1.getLabelMap().duplicate("objects after adjust contour"));
                 pop1.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
-                pop1.filter(new ObjectPopulation.Thickness().setX(2).setY(2)); // remove thin objects
+                pop1.filter(new ObjectPopulation.Thickness().setX(minXSize).setY(2)); // remove thin objects
                 
                 if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK"));
                 pop1.filter(new ContrastIntensity(-contrastThreshold, contrastRadius,0,false, getIntensityMap()));
@@ -692,7 +694,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 if (curvature==null) {
                     setBorderVoxels();
                     curvature = Curvature.computeCurvature(getJoinedMask(), curvatureScale);
-                    if (debug && ((e1.getLabel()==29 && e2.getLabel()==33))) {
+                    if (curvature==null) {
+                        logger.debug("curv error: inter={}, parent={}", this, mask.getName());
+                    }
+                    if (debug && ((e1.getLabel()==29 && e2.getLabel()==33))) { //DISPLAY FOR DEBUG
                         ImageInteger m = getJoinedMask().duplicate("joinedMask:"+e1.getLabel()+"+"+e2.getLabel()+" (2)");
                         for (Voxel v : voxels) m.setPixelWithOffset(v.x, v.y, v.z, 2);
                         for (Voxel v : borderVoxels) m.setPixelWithOffset(v.x, v.y, v.z, 3);
@@ -715,6 +720,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             @Override public void updateSortValue() {
                 if (voxels.size()<=2) curvatureValue=Double.NEGATIVE_INFINITY; // when border is too small curvature may not be computable, but objects should not be merged
                 else if (getCurvature()!=null) curvatureValue = getMeanOfMinCurvature(); 
+                if (Double.isNaN(curvatureValue)) curvatureValue = Double.NEGATIVE_INFINITY; // curvature cannot be computed for objects too small
                 //else logger.debug("curvature null");
             }
             @Override

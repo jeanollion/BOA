@@ -61,6 +61,7 @@ public class ThreadRunner {
     public int size() {
         return this.threads.length;
     }
+    public static boolean leaveOneCPUFree = true;
     /**
      * 
      * @param start inclusive
@@ -72,7 +73,11 @@ public class ThreadRunner {
         this.end=end;
         this.ai= new AtomicInteger(this.start);
         int nb = getNbCpus();
-        if (cpulimit>0 && nb>cpulimit) nb=cpulimit;
+        if (cpulimit>0 && nb>cpulimit) {
+            nb=cpulimit;
+            if (leaveOneCPUFree && nb==getNbCpus() && nb>1) nb--;
+        }
+       
         this.threads = new Thread[nb];
         
     }

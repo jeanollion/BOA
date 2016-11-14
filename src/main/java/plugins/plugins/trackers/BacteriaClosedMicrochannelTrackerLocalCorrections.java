@@ -111,7 +111,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     static double maxSizeIncrementError = 0.3;
     static double sizeIncrementIncreaseThld = 0.1;
     static double maxFusionSize=200;
-    
+    static boolean setSIErrorsAsErrors = false;
     public BacteriaClosedMicrochannelTrackerLocalCorrections() {}
     
     public BacteriaClosedMicrochannelTrackerLocalCorrections(SegmenterSplitAndMerge segmenter) {
@@ -324,7 +324,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (idx<populations[currentT].size()) {
                 TrackAttribute ta = getAttribute(currentT, idx);
                 TrackAttribute taPrev = idx<populations[currentT-1].size() ? getAttribute(currentT-1, idx) : null;
-                CorLoop : while (((taPrev!=null && taPrev.errorCur) || ta.errorPrev) && nLoop<loopLimit) { // il y a une erreur à corriger
+                CorLoop : while (((taPrev!=null && (taPrev.errorCur || taPrev.sizeIncrementError)) || ta.errorPrev || ta.sizeIncrementError) && nLoop<loopLimit) { // il y a une erreur à corriger
                     if (currentRange == null) currentRange = new int[]{tMax, tMin};
                     TrackAssigner assigner = new TrackAssigner(currentT);
                     while (assigner.nextTrack() && assigner.idxEnd<=idx){} // idx > idxEnd 
@@ -516,6 +516,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (ta.errorPrev) o.setAttribute(StructureObject.trackErrorPrev, true);
             else o.setAttribute(StructureObject.trackErrorPrev, null);
             if (ta.errorCur) o.setAttribute(StructureObject.trackErrorNext, true);
+            else o.setAttribute(StructureObject.trackErrorNext, null);
             o.setAttribute("SizeIncrement", ta.sizeIncrement);
         }
     }
@@ -976,8 +977,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (trackAttributes[timePoint]!=null) for (TrackAttribute ta : trackAttributes[timePoint]) ta.resetTrackAttributes(true, false);
             if (trackAttributes[timePoint-1]!=null) for (TrackAttribute ta : trackAttributes[timePoint-1]) ta.resetTrackAttributes(false, true);
         }
+        
         public void assignCurrent(boolean noticeAll) {
             noticeAll=true;
+            
             int nPrev = idxPrevEnd-idxPrev;
             int nCur = idxEnd-idx;
             boolean error = nPrev>1 || nCur>2;
@@ -993,8 +996,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 if (noticeAll) {
                     taPrev.incompleteDivision = truncatedEndOfChannel();
                     if (!taPrev.incompleteDivision) taCur.sizeIncrementError = significantSizeIncrementError();
-                    if (taCur.sizeIncrementError && !taCur.errorPrev) taCur.errorPrev=true;
-                    if (taCur.sizeIncrementError && !taPrev.errorCur) taPrev.errorCur=true;
+                    if (setSIErrorsAsErrors && taCur.sizeIncrementError && !taCur.errorPrev) taCur.errorPrev=true;
+                    if (setSIErrorsAsErrors && taCur.sizeIncrementError && !taPrev.errorCur) taPrev.errorCur=true;
                     taCur.sizeIncrement=taCur.getSize()/taPrev.getSize();
                 }
             } else if (nPrev==1 && nCur>1) { // division
@@ -1013,8 +1016,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                         taPrev.incompleteDivision = truncatedEndOfChannel();
                         if (!taPrev.incompleteDivision) ta.sizeIncrementError = significantSizeIncrementError();
                         ta.sizeIncrement = size / sizePrev;
-                        if (ta.sizeIncrementError && !ta.errorPrev) ta.errorPrev=true;
-                        if (ta.sizeIncrementError && !taPrev.errorCur) taPrev.errorCur=true;
+                        if (setSIErrorsAsErrors && ta.sizeIncrementError && !ta.errorPrev) ta.errorPrev=true;
+                        if (setSIErrorsAsErrors && ta.sizeIncrementError && !taPrev.errorCur) taPrev.errorCur=true;
                     }
                 }
             } else if (nPrev>1 && nCur==1) { // merging
@@ -1526,7 +1529,79 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         }
         
     }
-    
+    protected class RearrangeObjects2 extends CorrectionScenario {
+        final List<Object3D> objectsPrev = new ArrayList(), objectsCur=new ArrayList();
+        final int idxMin, idxMax, idxPrevMin, idxPrevMax;
+        Map<Object3D, Pair<Pair<Object3D, Object3D>, Double>> splitMap = new HashMap();
+        Map<Pair<Object3D, Object3D>, Pair<Object3D, Double>> mergeMap = new HashMap();
+        Map<Object3D, double[]> rangeMap = new HashMap();
+        Map<Object3D, Double> objectSizes = new HashMap();
+        public RearrangeObjects2(int timePoint, int idxMin, int idxMaxIncluded, int idxPrevMin, int idxPrevMaxIncluded) {
+            super(timePoint, timePoint);
+            this.idxMin=idxMin;
+            this.idxMax=idxMaxIncluded;
+            this.idxPrevMin=idxPrevMin;
+            this.idxPrevMax=idxPrevMaxIncluded;
+            for (int i = idxMin; i<=idxMax; ++i) objectsCur.add(populations[timePointMin].get(i));
+            for (int i = idxPrevMin; i<=idxPrevMax; ++i) {
+                Object3D o = populations[timePointMin-1].get(i);
+                objectsPrev.add(o);
+                double[] sizeRange = new double[2];
+                double si = trackAttributes[timePoint-1].get(i).getLineageSizeIncrement();
+                double size = trackAttributes[timePoint-1].get(i).getSize();
+                objectSizes.put(o, size);
+                if (Double.isNaN(si)) {
+                    sizeRange[0] = minGR * size;
+                    sizeRange[1] = maxGR * size;
+                } else {
+                    sizeRange[0] = (si-maxSizeIncrementError/2) * size;
+                    sizeRange[1] = (si+maxSizeIncrementError/2) * size;
+                }
+                rangeMap.put(o, sizeRange);
+            }
+        }
+        private double size(Object3D o) {
+            Double res = objectSizes.get(o);
+            if (res==null) {
+                res = getObjectSize(o);
+                objectSizes.put(o, res);
+            }
+            return res;
+        }
+        private void sortObjects() {
+            Collections.sort(objectsPrev, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ));
+            Collections.sort(objectsCur, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ));
+        }
+        private void addSplit(Object3D source, Object3D val1, Object3D val2, double cost) {
+            Pair<Object3D, Object3D> valPair = new Pair(val1, val2);
+            splitMap.put(source, new Pair(valPair, cost));
+            mergeMap.put(valPair, new Pair(source, -cost));
+            if (rangeMap.containsKey(source)) { // previous object split -> compute new ranges
+                double[] sizeRange = rangeMap.get(source);
+                double sizeSource = size(source);
+                double sizeV1 = size(val1);
+                double sizeV2 = size(val2);
+                rangeMap.put(val1, new double[]{sizeRange[0]*sizeV1/sizeSource, sizeRange[1]*sizeV1/sizeSource});
+                rangeMap.put(val2, new double[]{sizeRange[0]*sizeV2/sizeSource, sizeRange[1]*sizeV2/sizeSource});
+            }
+        }
+        private void addMerge(Object3D source1, Object3D source2, Object3D value, double cost) {
+            Pair<Object3D, Object3D> sourcePair = new Pair(source1, source1);
+            splitMap.put(value, new Pair(sourcePair, -cost));
+            mergeMap.put(sourcePair, new Pair(value, cost));
+        }
+
+        @Override
+        protected CorrectionScenario getNextScenario() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        protected void applyScenario() {
+            throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+        
+    }
     protected class RearrangeObjects extends CorrectionScenario { 
         List<Object3D> allObjects;
         List<Assignement> assignements;

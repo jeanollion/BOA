@@ -165,6 +165,6 @@ public class TrackTreeController {
     }
     public void resetHighlight() {
         for (TrackTreeGenerator t : allGeneratorS.values()) t.resetHighlightedObjects();
-        for (TrackTreeGenerator t : this.displayedGeneratorS.values()) t.tree.updateUI();
+        for (TrackTreeGenerator t : this.displayedGeneratorS.values()) if (t.tree!=null) t.tree.updateUI();
     }
 }

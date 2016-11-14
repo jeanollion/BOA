@@ -672,7 +672,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
     }
     public ImageProperties getMaskProperties() {return getObject().getImageProperties();}
-    public ImageInteger getMask() {return getObject().getMask();}
+    public ImageInteger getMask() {return getObject().getMask().setName("Mask of:"+this);}
     public BoundingBox getBounds() {return getObject().getBounds();}
     protected void createObjectContainer() {this.objectContainer=object.getObjectContainer(this);}
     public void updateObjectContainer(){

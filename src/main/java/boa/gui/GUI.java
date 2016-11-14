@@ -1446,13 +1446,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (segmentAndTrack || trackOnly) {
             int[] selectedStructures = this.getSelectedStructures(true);
             Processor.processAndTrackStructures(db.getDao(fieldName), true, trackOnly, selectedStructures);
-            populateSelections();
         }
         if (measurements) {
             logger.info("Measurements: Field: {}", fieldName);
             if (deleteMeasurementsCheckBox.isSelected()) db.getDao(fieldName).deleteAllMeasurements();
             Processor.performMeasurements(db.getDao(fieldName));
         }
+        if (segmentAndTrack || trackOnly) populateSelections();
     }
     
     private void trackStructureJCBActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_trackStructureJCBActionPerformed
