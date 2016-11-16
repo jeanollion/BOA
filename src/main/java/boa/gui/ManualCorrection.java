@@ -43,6 +43,7 @@ import image.TypeConverter;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -58,9 +59,28 @@ import utils.Utils;
  * @author jollion
  */
 public class ManualCorrection {
+    private static List<StructureObject> getNext(StructureObject o) {
+        if (o.getParent().getNext()==null) return Collections.EMPTY_LIST;
+        List<StructureObject> res = new ArrayList(o.getParent().getNext().getChildren(o.getStructureIdx()));
+        res.removeIf(e -> e.getPrevious()!=o && o.getNext()!=e);
+        //logger.debug("next of : {} = {}", o, res);
+        return res;
+    }
+    private static List<StructureObject> getPrevious(StructureObject o) {
+        if (o.getParent().getPrevious()==null) return Collections.EMPTY_LIST;
+        List<StructureObject> res = new ArrayList(o.getParent().getPrevious().getChildren(o.getStructureIdx()));
+        res.removeIf(e -> e.getNext()!=o && o.getPrevious()!=e);
+        //logger.debug("prev of : {} = {}", o, res);
+        return res;
+    }
     public static void unlinkObject(StructureObject o, Collection<StructureObject> modifiedObjects) {
-        if (o.getNext()!=null) o.getNext().setTrackHead(o.getNext(), true, true, modifiedObjects);
+        for (StructureObject n : getNext(o) ) n.setTrackHead(n, true, true, modifiedObjects);
+        for (StructureObject p : getPrevious(o) ) if (p.getNext()==o) {
+            p.resetTrackLinks(false, true);
+            modifiedObjects.add(p);
+        }
         o.resetTrackLinks(true, true);
+        modifiedObjects.add(o);
         //logger.debug("unlinking: {}", o);
     }
     private static void removeError(StructureObject o, boolean next, boolean prev) {
@@ -73,14 +93,17 @@ public class ManualCorrection {
     public static void unlinkObjects(StructureObject prev, StructureObject next, Collection<StructureObject> modifiedObjects) {
         if (next.getTimePoint()<prev.getTimePoint()) unlinkObjects(next, prev, modifiedObjects);
         else {
-            prev.resetTrackLinks(false, prev.getNext()==next);
-            next.resetTrackLinks(next.getPrevious()==prev, false);
-            next.setTrackHead(next, false, true, modifiedObjects);
+            if (next.getPrevious()==prev) next.setTrackHead(next, true, true, modifiedObjects);
+            else prev.resetTrackLinks(false, prev.getNext()==next);
+            //next.resetTrackLinks(next.getPrevious()==prev, false);
             getManualCorrectionSelection(prev).addElement(next);
             getManualCorrectionSelection(prev).addElement(prev);
             saveManualCorrectionSelection(prev);
             //logger.debug("unlinking.. previous: {}, previous's next: {}", sel.get(1).getPrevious(), sel.get(0).getNext());
-            if (modifiedObjects!=null) modifiedObjects.add(prev);
+            if (modifiedObjects!=null) {
+                modifiedObjects.add(prev);
+                modifiedObjects.add(next);
+            }
             //logger.debug("unlinking: {} to {}", sel.get(0), sel.get(1));
         }
     }
@@ -352,8 +375,8 @@ public class ManualCorrection {
         Map<String, List<StructureObject>> objectsByFieldName = StructureObjectUtils.splitByFieldName(objects);
         for (String f : objectsByFieldName.keySet()) {
             ObjectDAO dao = db==null? null : db.getDao(f);
-            List<StructureObject> objectsToStore = new ArrayList<StructureObject>();
-            List<StructureObject> newObjects = new ArrayList<StructureObject>();
+            List<StructureObject> objectsToStore = new ArrayList<>();
+            List<StructureObject> newObjects = new ArrayList<>();
             for (StructureObject objectToSplit : objectsByFieldName.get(f)) {
                 splitter = xp.getStructure(structureIdx).getObjectSplitter();
                 splitter.setSplitVerboseMode(test);
@@ -363,7 +386,22 @@ public class ManualCorrection {
                     if (newObject==null) logger.warn("Object could not be splitted!");
                     else {
                         newObjects.add(newObject);
+                        objectToSplit.setAttribute(StructureObject.correctionSplit, true);
+                        StructureObject prev = objectToSplit.getPrevious();
+                        if (prev!=null) unlinkObjects(prev, objectToSplit, objectsToStore);
+                        List<StructureObject> nexts = getNext(objectToSplit);
+                        for (StructureObject n : nexts) unlinkObjects(objectToSplit, n, objectsToStore);
+                        StructureObject next = nexts.size()==1 ? nexts.get(0) : null;
                         objectToSplit.getParent().relabelChildren(objectToSplit.getStructureIdx(), objectsToStore);
+                        newObject.setAttribute(StructureObject.correctionSplitNew, true);
+                        /*if (prev!=null && objectToSplit.getExperiment().getStructure(objectToSplit.getStructureIdx()).allowSplit()) {
+                            linkObjects(prev, objectToSplit, objectsToStore);
+                            linkObjects(prev, newObject, objectsToStore);
+                        }
+                        if (next!=null && objectToSplit.getExperiment().getStructure(objectToSplit.getStructureIdx()).allowMerge()) {
+                            linkObjects(objectToSplit, next, objectsToStore);
+                            linkObjects(newObject, next, objectsToStore);
+                        }*/
                         objectsToStore.add(newObject);
                         objectsToStore.add(objectToSplit);
                     }
@@ -401,6 +439,28 @@ public class ManualCorrection {
             }
         }
     }
+    private static StructureObject getPreviousObject(List<StructureObject> list) {
+        if (list.isEmpty()) return null;
+        Iterator<StructureObject> it = list.iterator();
+        StructureObject prev = it.next().getPrevious();
+        if (prev==null) return null;
+        while (it.hasNext()) {
+            if (prev!=it.next().getPrevious()) return null;
+        }
+        return prev;
+    }
+    private static StructureObject getNextObject(List<StructureObject> list) {
+        if (list.isEmpty()) return null;
+        Iterator<StructureObject> it = list.iterator();
+        StructureObject cur = it.next();
+        StructureObject next = cur.getNext();
+        if (next!=null && getNext(cur).size()>1) return null;
+        while (it.hasNext()) {
+            List<StructureObject> l = getNext(it.next());
+            if (l.size()!=1 || l.get(0)!=next) return null;
+        }
+        return next;
+    }
     public static void mergeObjects(MasterDAO db, Collection<StructureObject> objects, boolean updateDisplay) {
         int structureIdx = StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(objects);
         String fieldName = StructureObjectUtils.keepOnlyObjectsFromSameMicroscopyField(objects);
@@ -412,14 +472,21 @@ public class ManualCorrection {
             List<StructureObject> objectsToMerge = objectsByParent.get(parent);
             if (objectsToMerge.size()<=1) logger.warn("Merge Objects: select several objects from same parent!");
             else {
-                StructureObject res = objectsToMerge.remove(0);
-                Set<StructureObject> modifiedObjects = new HashSet<StructureObject>();
+                StructureObject prev = getPreviousObject(objectsToMerge); // previous object if all objects have same previous object
+                StructureObject next = getNextObject(objectsToMerge); // next object if all objects have same next object
+                Set<StructureObject> modifiedObjects = new HashSet<>();
                 for (StructureObject o : objectsToMerge) unlinkObject(o, modifiedObjects);
-                for (StructureObject toMerge : objectsToMerge) {
-                    res.merge(toMerge);
-                    unlinkObject(toMerge, modifiedObjects);
-                }
+                StructureObject res = objectsToMerge.remove(0);               
+                for (StructureObject toMerge : objectsToMerge) res.merge(toMerge);
+                
+                if (prev!=null) linkObjects(prev, res, modifiedObjects);
+                if (next!=null) linkObjects(res, next, modifiedObjects);
                 newObjects.add(res);
+                res.setAttribute(correctionMerge, true);
+                res.setAttribute(trackErrorNext, null);
+                res.setAttribute(trackErrorPrev, null);
+                if (res.getPrevious()!=null) res.getPrevious().setAttribute(trackErrorNext, null);
+                if (res.getNext()!=null) res.getNext().setAttribute(trackErrorPrev, null);
                 dao.delete(objectsToMerge, true, true, true);
                 modifiedObjects.removeAll(objectsToMerge);
                 modifiedObjects.add(res);

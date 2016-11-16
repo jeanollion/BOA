@@ -201,7 +201,7 @@ public class Selection implements Comparable<Selection> {
     }
     
     private StructureObject getObject(int[] indices, int[] pathToRoot, List<StructureObject> roots) {
-        if (roots==null || roots.size()<indices[0]) return null;
+        if (roots==null || roots.size()<=indices[0]) return null;
         StructureObject elem = roots.get(indices[0]);
         for (int i= 1; i<indices.length; ++i) {
             /*if (elem.getChildren(pathToRoot[i-1]).size()<=indices[i]) {

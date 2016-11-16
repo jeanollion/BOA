@@ -95,7 +95,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             logger.warn("image: {} could not be set interactive", image.getName());
             return;
         }
-        canvas.addMouseListener(new MouseListener() {
+        MouseListener ml =  new MouseListener() {
 
             public void mouseClicked(MouseEvent e) {
                 //logger.trace("mouseclicked");
@@ -198,14 +198,20 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             public void mouseExited(MouseEvent e) {
                 //logger.trace("mousexited");
             }
-        });
+        };
+        canvas.addMouseListener(ml);
+        //return ml;
     }
     
     @Override public void setActive(Image image) {
         ImagePlus ip = this.displayer.getImage(image);
         if (ip!=null && ip.isVisible()) {
             IJ.selectWindow(image.getName());
-        } else displayer.showImage(image);
+        } else { // not visible -> show image
+            displayer.showImage(image);
+            addMouseListener(image);
+            displayer.updateImageRoiDisplay(image);
+        }
     }
     
     @Override
