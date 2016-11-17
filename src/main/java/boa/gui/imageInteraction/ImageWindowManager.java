@@ -30,6 +30,7 @@ import image.ImageInteger;
 import image.ImageOperations;
 import java.awt.Color;
 import java.lang.reflect.Field;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -42,6 +43,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
 import utils.HashMapGetCreate;
 import utils.HashMapGetCreate.Factory;
 import utils.HashMapGetCreate.SetFactory;
@@ -810,5 +813,65 @@ public abstract class ImageWindowManager<T, U, V> {
         
         return null;
     }
-    
+    protected JPopupMenu getMenu(Image image) {
+        List<StructureObject> sel =getSelectedLabileObjects(image);
+        if (sel.isEmpty()) return null;
+        else if (sel.size()==1) return getMenu(sel.get(0));
+        else return getMenu(sel);
+    }
+    private JPopupMenu getMenu(StructureObject o) {
+        JPopupMenu menu = new JPopupMenu();
+        menu.add(new JMenuItem(o.toString()));
+        DecimalFormat df = new DecimalFormat("#.####");
+        if (o.getAttributes()!=null && !o.getAttributes().isEmpty()) {
+            menu.addSeparator();
+            for (Entry<String, Object> en : o.getAttributes().entrySet()) {
+                if (en.getValue() instanceof Number) menu.add(new JMenuItem(en.getKey()+": "+df.format(en.getValue())));
+                else menu.add(new JMenuItem(en.getKey()+": "+en.getValue()));
+            }
+        }
+        if (o.hasMeasurements()) {
+            menu.addSeparator();
+            for (Entry<String, Object> en : o.getMeasurements().getValues().entrySet()) {
+                if (en.getValue() instanceof Number) menu.add(new JMenuItem(en.getKey()+": "+df.format(en.getValue())));
+                else menu.add(new JMenuItem(en.getKey()+": "+en.getValue()));
+            }
+        }
+        return menu;
+    }
+    private JPopupMenu getMenu(List<StructureObject> list) {
+        JPopupMenu menu = new JPopupMenu();
+        menu.add(new JMenuItem(Utils.toStringList(list)));
+        DecimalFormat df = new DecimalFormat("#.####");
+        // getAllAttributeKeys
+        Collection<String> attributeKeys = new HashSet();
+        Collection<String> mesKeys = new HashSet();
+        for (StructureObject o : list) {
+            if (o.getAttributes()!=null && !o.getAttributes().isEmpty()) attributeKeys.addAll(o.getAttributes().keySet());
+            if (o.hasMeasurements()) mesKeys.addAll(o.getMeasurements().getValues().keySet());
+        }
+        attributeKeys=new ArrayList(attributeKeys);
+        Collections.sort((List)attributeKeys);
+        mesKeys=new ArrayList(mesKeys);
+        Collections.sort((List)mesKeys);
+        
+        if (!attributeKeys.isEmpty()) {
+            menu.addSeparator();
+            for (String s : attributeKeys) {
+                List<Object> values = new ArrayList(list.size());
+                for (StructureObject o : list) values.add(o.getAttribute(s));
+                menu.add(new JMenuItem(s+": "+Utils.toStringList(values, v -> v instanceof Number?df.format(v) : v.toString() )));
+            }
+        }
+        if (!mesKeys.isEmpty()) {
+            menu.addSeparator();
+            for (String s : mesKeys) {
+                List<Object> values = new ArrayList(list.size());
+                for (StructureObject o : list) values.add(o.getMeasurements().getValue(s));
+                menu.add(new JMenuItem(s+": "+Utils.toStringList(values, v -> v instanceof Number?df.format(v) : v.toString() )));
+            }
+        }
+        return menu;
+    }
+
 }

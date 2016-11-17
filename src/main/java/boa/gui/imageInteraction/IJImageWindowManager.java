@@ -60,6 +60,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -67,6 +68,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.SwingUtilities;
 import org.scijava.vecmath.Vector2d;
 import utils.Pair;
 import utils.Utils;
@@ -103,7 +107,10 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
 
             public void mousePressed(MouseEvent e) {
                 //logger.debug("mousepressed");
-                
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    JPopupMenu menu = getMenu(image);
+                    menu.show(canvas, canvas.offScreenX(e.getX()), canvas.offScreenY(e.getY()));
+                } 
             }
 
             public void mouseReleased(MouseEvent e) {

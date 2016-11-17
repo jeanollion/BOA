@@ -160,13 +160,32 @@ public class Utils {
         res+=array[array.length-1]+"]";
         return res;
     }
+    public static <T> String toStringList(List<T> array) {
+        String res = "[";
+        for (int i = 0; i<array.size()-1; ++i) {
+            if (array.get(i)!=null) res+=array.get(i).toString()+"; ";
+            else res+="NA; ";
+        }
+        if (array.get(array.size()-1)!=null) res+=array.get(array.size()-1)+"]";
+        else res+="NA]";
+        return res;
+    }
     public static <T> String toStringArray(T[] array, Function<T, String> toString) {
         String res = "[";
         for (int i = 0; i<array.length-1; ++i) res+=toString.apply(array[i])+"; ";
         res+=toString.apply(array[array.length-1])+"]";
         return res;
     }
-    
+    public static <T> String toStringList(List<T> array, Function<T, String> toString) {
+        String res = "[";
+        for (int i = 0; i<array.size()-1; ++i) {
+            if (array.get(i)!=null) res+=toString.apply(array.get(i))+"; ";
+            else res+="NA; ";
+        }
+        if (array.get(array.size()-1)!=null) res+=toString.apply(array.get(array.size()-1))+"]";
+        else res+="NA]";
+        return res;
+    }
     public static <T> String toStringArray(int[] array) {
         return toStringArray(array, "[", "]", "; ");
     }

@@ -853,6 +853,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (attributes==null) return null;
         return attributes.getOrDefault(key, defaultValue);
     }
+    public Map<String, Object> getAttributes() {
+        if (this.attributes==null) attributes = new HashMap<>();
+        return attributes;
+    }
 
     public Measurements getMeasurements() {
         if (measurements==null) {

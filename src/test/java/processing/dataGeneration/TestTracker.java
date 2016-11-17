@@ -47,16 +47,18 @@ public class TestTracker {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
         //String dbName = "boa_mutH_140115";
-        final String dbName = "boa_phase140115mutH";
-        //String dbName = "boa_phase150616wt";
-        int fIdx = 0;
-        int mcIdx =1;
+        //final String dbName = "boa_phase140115mutH";
+        //final String dbName = "boa_phase150324mutH";
+        String dbName = "boa_phase150616wt";
+        int fIdx = 2;
+        int mcIdx =4;
         int structureIdx = 1;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
-        //testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 29, 31);
-        //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 246.28;
-        testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 29, 31); 
+        //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 298;
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 1000);
+        
+        //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 55, 66); 
         
         int[][] testsF_MC_TT = {
            {0, 3, 90, 100}, // 0
@@ -137,7 +139,7 @@ public class TestTracker {
             }
         }
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
-        BacteriaClosedMicrochannelTrackerLocalCorrections.debug=false;
+        BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.correctionStep=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;
         ps.segmentAndTrack(structureIdx, parentTrack);

@@ -251,7 +251,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         */
         float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null);
         int maxIdx = ArrayUtil.max(yProj);
-        int minIdx = ArrayUtil.min(yProj, maxIdx+1, yProj.length);
+        int minIdx = ArrayUtil.min(yProj, maxIdx+1, yProj.length-1);
         double peakHeight = yProj[maxIdx] - yProj[minIdx];
         float thld = (float)(peakHeight * peakProportion + yProj[minIdx] );
         int endOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, maxIdx, 0, thld, true, true);
