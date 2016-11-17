@@ -817,7 +817,10 @@ public abstract class ImageWindowManager<T, U, V> {
         List<StructureObject> sel =getSelectedLabileObjects(image);
         if (sel.isEmpty()) return null;
         else if (sel.size()==1) return getMenu(sel.get(0));
-        else return getMenu(sel);
+        else {
+            Collections.sort(sel);
+            return getMenu(sel);
+        }
     }
     private JPopupMenu getMenu(StructureObject o) {
         JPopupMenu menu = new JPopupMenu();
@@ -860,6 +863,7 @@ public abstract class ImageWindowManager<T, U, V> {
             for (String s : attributeKeys) {
                 List<Object> values = new ArrayList(list.size());
                 for (StructureObject o : list) values.add(o.getAttribute(s));
+                replaceRepetedValues(values);
                 menu.add(new JMenuItem(s+": "+Utils.toStringList(values, v -> v instanceof Number?df.format(v) : v.toString() )));
             }
         }
@@ -868,10 +872,21 @@ public abstract class ImageWindowManager<T, U, V> {
             for (String s : mesKeys) {
                 List<Object> values = new ArrayList(list.size());
                 for (StructureObject o : list) values.add(o.getMeasurements().getValue(s));
+                replaceRepetedValues(values);
                 menu.add(new JMenuItem(s+": "+Utils.toStringList(values, v -> v instanceof Number?df.format(v) : v.toString() )));
             }
         }
         return menu;
     }
-
+    private static void replaceRepetedValues(List list) {
+        if (list.size()<=1) return;
+        Object lastValue=list.get(0);
+        for (int i = 1; i<list.size(); ++i) {
+            if (lastValue==null) lastValue = list.get(i);
+            else if (lastValue.equals(list.get(i))) {
+                list.remove(i);
+                list.add(i, "%");
+            } else lastValue = list.get(i);
+        }
+    }
 }

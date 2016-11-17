@@ -23,9 +23,11 @@ import configuration.parameters.Parameter;
 import configuration.parameters.StructureParameter;
 import configuration.parameters.TextParameter;
 import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectUtils;
 import image.BoundingBox;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import measurement.MeasurementKey;
 import measurement.MeasurementKeyObject;
@@ -66,6 +68,7 @@ public class BacteriaLineageIndex implements Measurement {
     public void performMeasurement(StructureObject parentTrackHead) {
         int bIdx = structure.getSelectedIndex();
         String key = this.keyName.getValue();
+        //List<StructureObject> parentTrack = StructureObjectUtils.getTrack(parentTrackHead, false);
         List<StructureObject> bacteria = parentTrackHead.getChildren(bIdx);
         int trackHeadIdx = 0;
         for (StructureObject o : bacteria) {
@@ -88,6 +91,7 @@ public class BacteriaLineageIndex implements Measurement {
                 o.getMeasurements().setValue("NextDivisionFrame", nextTP>=0?nextTP:null );
             }
         }
+        //Map<StructureObject, List<StructureObject>> bacteriaTracks = StructureObjectUtils.getAllTracks(parentTrack, bIdx);
     }
     
     @Override 
@@ -96,6 +100,7 @@ public class BacteriaLineageIndex implements Measurement {
         res.add(new MeasurementKeyObject(keyName.getValue(), structure.getSelectedIndex()));
         res.add(new MeasurementKeyObject("NextDivisionFrame", structure.getSelectedIndex()));
         res.add(new MeasurementKeyObject("PreviousDivisionFrame", structure.getSelectedIndex()));
+        res.add(new MeasurementKeyObject("GrowthRate", structure.getSelectedIndex()));
         return res;
     }
     
