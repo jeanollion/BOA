@@ -1053,7 +1053,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     ta.next=taCur;
                     ta.errorCur=true;
                 }
-            } else if (nPrev>1 && nCur>1) { // algorithm assign first with first (or 2 first) or last with last (or 2 last) (the most likely) and recursive call.
+            } else if (nPrev>1 && nCur>1) { // algorithm assign first with first (or 2 first) or last with last (or 2 last) (the most likely) and recursive call. If last window -> do not consider 
                 TrackAssigner dup = duplicate(); // recursive algo. do not modify current trackAssigner!
                 TrackAssigner currentAssigner = duplicate();
                 TrackAttribute taCur1 = getAttribute(timePoint, idx);
@@ -1063,13 +1063,19 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 if (Double.isNaN(sizeIncrement1)) sizeIncrement1 = defaultSizeIncrement();
                 double score1 = Math.abs(taCur1.getSize()/taPrev1.getSize()-sizeIncrement1);
                 double scoreDiv = Math.abs((taCur1.getSize()+taCur2.getSize())/taPrev1.getSize()-sizeIncrement1);
-                TrackAttribute taCurEnd1 = getAttribute(timePoint, idxEnd-1);
-                TrackAttribute taCurEnd2 = getAttribute(timePoint, idxEnd-2);
-                TrackAttribute taPrevEnd = getAttribute(timePoint-1, idxPrevEnd-1);
-                double sizeIncrementEnd = taPrevEnd.getLineageSizeIncrement();
-                if (Double.isNaN(sizeIncrementEnd)) sizeIncrementEnd = defaultSizeIncrement();
-                double scoreEnd1 = Math.abs(taCurEnd1.getSize()/taPrevEnd.getSize()-sizeIncrementEnd);
-                double scoreEndDiv = Math.abs((taCurEnd1.getSize()+taCurEnd2.getSize())/taPrevEnd.getSize()-sizeIncrementEnd);
+                
+                boolean endOfChannel = idxPrevEnd==idxPrevLim; // idxEnd==idxLim ||  // if end of channel : assignement only from start 
+                TrackAttribute taCurEnd1, taCurEnd2, taPrevEnd;
+                double scoreEnd1=Double.POSITIVE_INFINITY, scoreEndDiv=Double.POSITIVE_INFINITY;
+                if (!endOfChannel) {
+                    taCurEnd1 = getAttribute(timePoint, idxEnd-1);
+                    taCurEnd2 = getAttribute(timePoint, idxEnd-2);
+                    taPrevEnd = getAttribute(timePoint-1, idxPrevEnd-1);
+                    double sizeIncrementEnd = endOfChannel ? 0 :  taPrevEnd.getLineageSizeIncrement();
+                    if (Double.isNaN(sizeIncrementEnd)) sizeIncrementEnd = defaultSizeIncrement();
+                    scoreEnd1 = Math.abs(taCurEnd1.getSize()/taPrevEnd.getSize()-sizeIncrementEnd);
+                    scoreEndDiv = Math.abs((taCurEnd1.getSize()+taCurEnd2.getSize())/taPrevEnd.getSize()-sizeIncrementEnd);
+                }
                 double score=Math.min(scoreEndDiv, Math.min(scoreEnd1, Math.min(score1, scoreDiv)));
                 if (score1==score) { // assign first with first
                     dup.idx++;
@@ -1555,16 +1561,21 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     protected class RearrangeObjects2 extends CorrectionScenario {
         final List<Object3D> objectsPrev = new ArrayList(), objectsCur=new ArrayList();
         final int idxMin, idxMax, idxPrevMin, idxPrevMax;
-        Map<Object3D, Pair<Pair<Object3D, Object3D>, Double>> splitMap = new HashMap();
-        Map<Pair<Object3D, Object3D>, Pair<Object3D, Double>> mergeMap = new HashMap();
-        Map<Object3D, double[]> rangeMap = new HashMap();
-        Map<Object3D, Double> objectSizes = new HashMap();
-        public RearrangeObjects2(int timePoint, int idxMin, int idxMaxIncluded, int idxPrevMin, int idxPrevMaxIncluded) {
-            super(timePoint, timePoint);
+        final Map<Object3D, Pair<Pair<Object3D, Object3D>, Double>> splitMap = new HashMap(); // TODO store split directly
+        final Map<Pair<Object3D, Object3D>, Pair<Object3D, Double>> mergeMap = new HashMap(); // todo store merge directly
+        final Map<Object3D, double[]> rangeMap = new HashMap();
+        final Map<Object3D, Double> objectSizes = new HashMap();
+        final boolean prev, next;
+        final boolean endOfChannel;
+        public RearrangeObjects2(int timePoint, int idxMin, int idxMaxIncluded, int idxPrevMin, int idxPrevMaxIncluded, boolean prev, boolean next) {
+            super(prev?timePoint-1:timePoint, next?timePoint:timePoint-1);
             this.idxMin=idxMin;
             this.idxMax=idxMaxIncluded;
             this.idxPrevMin=idxPrevMin;
             this.idxPrevMax=idxPrevMaxIncluded;
+            this.prev=prev;
+            this.next=next;
+            this.endOfChannel = idxPrevMaxIncluded ==populations[timePoint-1].size()-1; //idxMaxIncluded ==populations[timePoint].size()-1 ||
             for (int i = idxMin; i<=idxMax; ++i) objectsCur.add(populations[timePointMin].get(i));
             for (int i = idxPrevMin; i<=idxPrevMax; ++i) {
                 Object3D o = populations[timePointMin-1].get(i);
@@ -1582,7 +1593,128 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 }
                 rangeMap.put(o, sizeRange);
             }
+            
         }
+        private void process() { // but du process : faire des corrections qui permet le fit des ranges
+            // test 1 -> 1, 1 -> 1+2, 1+2->1 + idem@end if not end of channel 
+            // 1 -> [1-X] (if x>2 -> merge scenario)
+            // [1-X] -> 1 (if 
+            // 1 -> 1 + increase cur if (sizeCur too big -> split after vs merge before)
+            // try endOfChannel ? 
+            // laisser fractionner les objets pour les merge à la fin? -> allow negative score for merge & split in segmenter to reverse some fractioning
+            
+        }
+        private abstract class Correction {
+            final boolean prev;
+            Correction(boolean prev) {this.prev=prev;}
+            protected abstract double getScore();
+            protected abstract void apply();
+        }
+        private class Split extends Correction {
+            final Pair<Pair<Object3D, Object3D>, Double> value;
+            final Object3D source;
+            
+            Split(boolean before, Object3D source) {
+                super(before);
+                this.source=source;
+                Pair<Pair<Object3D, Object3D>, Double> split = splitMap.get(source);
+                if (split==null) {
+                    List<Object3D> ob = new ArrayList(2);
+                    double c = getSegmenter(prev?timePointMin:timePointMax).split(getImage(prev?timePointMin:timePointMax), source, ob);
+                    if (Double.isInfinite(c) || Double.isNaN(c) || ob.size()!=2) split = new Pair(new Pair(null, null), Double.POSITIVE_INFINITY);
+                    else split = new Pair(new Pair(ob.get(0), ob.get(1)), c);
+                    splitMap.put(source, split);
+                }
+                this.value=split;
+                if (prev) { // previous object split -> compute new ranges
+                    double[] sizeRange = rangeMap.get(source);
+                    double sizeSource = size(source);
+                    double sizeV1 = size(value.key.key);
+                    double sizeV2 = size(value.key.value);
+                    rangeMap.put(value.key.key, new double[]{sizeRange[0]*sizeV1/sizeSource, sizeRange[1]*sizeV1/sizeSource});
+                    rangeMap.put(value.key.value, new double[]{sizeRange[0]*sizeV2/sizeSource, sizeRange[1]*sizeV2/sizeSource});
+                }
+            }
+            @Override
+            protected double getScore() {
+                return value.value;
+            }
+
+            @Override
+            protected void apply() {
+                if (prev) {
+                    int i = objectsPrev.indexOf(source);
+                    if (i<0) throw new Error("add split "+(prev?"prev":"cur")+" object not found");
+                    objectsPrev.remove(i);
+                    objectsPrev.add(i, value.key.key); objectsPrev.add(i+1, value.key.value);}
+                else {
+                    int i = objectsCur.indexOf(source);
+                    if (i<0) throw new Error("add split "+(prev?"prev":"cur")+" object not found");
+                    objectsCur.remove(i);
+                    objectsCur.add(i, value.key.key); objectsCur.add(i+1, value.key.value);
+                }
+                splitMap.put(source, value);
+                mergeMap.put(value.key, new Pair(source, -value.value));
+                
+            }
+            
+        }
+        private class Merge extends Correction {
+            final Pair<Object3D, Object3D> source; 
+            final Pair<Object3D, Double> value;
+
+            public Merge(boolean prev, Pair<Object3D, Object3D> source) {
+                super(prev);
+                this.source = source;
+                Pair<Object3D, Double> merge = mergeMap.get(source);
+                if (merge==null) {
+                    List<Object3D> ob = new ArrayList(2); ob.add(source.key); ob.add(source.value);
+                    double c = getSegmenter(prev?timePointMin:timePointMax).computeMergeCost(getImage(prev?timePointMin:timePointMax), ob);
+                    List<Voxel> vox = new ArrayList(source.key.getVoxels().size()+source.value.getVoxels().size());
+                    vox.addAll(source.key.getVoxels()); vox.addAll(source.value.getVoxels());
+                    Object3D newOb = new Object3D(vox, source.key.getLabel(), source.key.getScaleXY(), source.key.getScaleZ());
+                    merge = new Pair(newOb, c);
+                    mergeMap.put(source, merge);
+                }
+                value=merge;
+                if (prev) { // previous object merge -> compute new ranges
+                    double[] sizeRange1 = rangeMap.get(source.key);
+                    double[] sizeRange2 = rangeMap.get(source.value);
+                    rangeMap.put(value.key, new double[]{sizeRange1[0]+sizeRange2[0], sizeRange1[1]+sizeRange2[1]});
+                }
+            }
+            
+
+            @Override
+            protected double getScore() {
+                return value.value;
+            }
+
+            @Override
+            protected void apply() {
+                if (prev) {
+                    int i = objectsPrev.indexOf(source.key);
+                    int i2 = objectsPrev.indexOf(source.value);
+                    if (i<0 || i2<0) throw new Error("add merge "+(prev?"prev":"cur")+" object not found");
+                    objectsPrev.remove(i);
+                    objectsPrev.remove(i2);
+                    objectsPrev.add(Math.min(i, i2), value.key); 
+                }
+                else {
+                    int i = objectsCur.indexOf(source.key);
+                    int i2 = objectsCur.indexOf(source.value);
+                    if (i<0 || i2<0) throw new Error("add merge "+(prev?"prev":"cur")+" object not found");
+                    objectsCur.remove(i);
+                    objectsCur.remove(i2);
+                    objectsCur.add(Math.min(i, i2), value.key);
+                }
+                
+                splitMap.put(value.key, new Pair(source, -value.value));
+                mergeMap.put(source, new Pair(value, value.value));
+            }
+            
+        }
+        
         private double size(Object3D o) {
             Double res = objectSizes.get(o);
             if (res==null) {
@@ -1591,28 +1723,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             }
             return res;
         }
-        private void sortObjects() {
-            Collections.sort(objectsPrev, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ));
-            Collections.sort(objectsCur, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ));
-        }
-        private void addSplit(Object3D source, Object3D val1, Object3D val2, double cost) {
-            Pair<Object3D, Object3D> valPair = new Pair(val1, val2);
-            splitMap.put(source, new Pair(valPair, cost));
-            mergeMap.put(valPair, new Pair(source, -cost));
-            if (rangeMap.containsKey(source)) { // previous object split -> compute new ranges
-                double[] sizeRange = rangeMap.get(source);
-                double sizeSource = size(source);
-                double sizeV1 = size(val1);
-                double sizeV2 = size(val2);
-                rangeMap.put(val1, new double[]{sizeRange[0]*sizeV1/sizeSource, sizeRange[1]*sizeV1/sizeSource});
-                rangeMap.put(val2, new double[]{sizeRange[0]*sizeV2/sizeSource, sizeRange[1]*sizeV2/sizeSource});
-            }
-        }
-        private void addMerge(Object3D source1, Object3D source2, Object3D value, double cost) {
-            Pair<Object3D, Object3D> sourcePair = new Pair(source1, source1);
-            splitMap.put(value, new Pair(sourcePair, -cost));
-            mergeMap.put(sourcePair, new Pair(value, cost));
-        }
+        
 
         @Override
         protected CorrectionScenario getNextScenario() {
@@ -1623,7 +1734,33 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         protected void applyScenario() {
             throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
-        
+        private class Assigner {
+            int idxPrev, idxPrevEnd, idx, idxEnd;
+            double size;
+            double[] sizeRange;
+            List<Correction> corr = new ArrayList();
+            public Assigner(int idxPrev, int idx) {
+                setIndices(idxPrev, idx);
+            }
+            public void setIndices(int idxPrev, int idx) {
+                corr.clear();
+                this.idxPrev=idxPrev;
+                this.idx=idx;
+                this.idxPrevEnd=idxPrev+1;
+                this.idxEnd = idx+1;
+                Object3D next = objectsCur.get(idx);
+                size=size(next);
+                sizeRange = rangeMap.get(objectsPrev.get(idxPrev));
+            }
+            
+            public boolean overSize() {
+                return size>sizeRange[1];
+            }
+            public boolean underSize() {
+                return size<sizeRange[0];
+            }
+            
+        }
     }
     protected class RearrangeObjects extends CorrectionScenario { 
         List<Object3D> allObjects;
