@@ -81,26 +81,33 @@ public class BacteriaLineageIndex implements Measurement {
             bacteria = parentTrackHead.getChildren(bIdx);
             for (StructureObject o : bacteria) {
                 if (o.getPrevious()==null) o.getMeasurements().setValue(key, getTrackHeadName(trackHeadIdx++));
-                else if (o.getDivisionSiblings(false)==null) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key));
-                else if (o.isTrackHead()) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[0]);
-                else o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[1]);
-                
+                else {
+                    if (o.getDivisionSiblings(false)==null && Boolean.FALSE.equals(o.getPrevious().getAttribute("TruncatedDivision", false))) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key));
+                    else if (o.isTrackHead()) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[1]);
+                    else o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[0]);
+                }
                 int prevTP = o.getPreviousDivisionTimePoint();
                 o.getMeasurements().setValue("PreviousDivisionFrame", prevTP>0 ? prevTP : null);
                 int nextTP = o.getNextDivisionTimePoint();
                 o.getMeasurements().setValue("NextDivisionFrame", nextTP>=0?nextTP:null );
             }
         }
-        //Map<StructureObject, List<StructureObject>> bacteriaTracks = StructureObjectUtils.getAllTracks(parentTrack, bIdx);
+        /*Map<StructureObject, List<StructureObject>> bacteriaTracks = StructureObjectUtils.getAllTracks(parentTrack, bIdx);
+        for (List<StructureObject> l : bacteriaTracks.values()) {
+            if (l.size()>=2) {
+                double[] frame = new double[l.size()]; // calibrate size
+                double[] length = new double[frame.length]; // getLength from measurements or compute it de novo
+            }
+        }*/
     }
     
     @Override 
     public ArrayList<MeasurementKey> getMeasurementKeys() {
-        ArrayList<MeasurementKey> res = new ArrayList<MeasurementKey>(1);
+        ArrayList<MeasurementKey> res = new ArrayList<>(4);
         res.add(new MeasurementKeyObject(keyName.getValue(), structure.getSelectedIndex()));
         res.add(new MeasurementKeyObject("NextDivisionFrame", structure.getSelectedIndex()));
         res.add(new MeasurementKeyObject("PreviousDivisionFrame", structure.getSelectedIndex()));
-        res.add(new MeasurementKeyObject("GrowthRate", structure.getSelectedIndex()));
+        //res.add(new MeasurementKeyObject("GrowthRate", structure.getSelectedIndex()));
         return res;
     }
     

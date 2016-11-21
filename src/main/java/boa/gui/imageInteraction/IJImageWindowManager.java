@@ -19,6 +19,7 @@ package boa.gui.imageInteraction;
 
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
+import boa.gui.ManualCorrection;
 import boa.gui.imageInteraction.IJImageWindowManager.Roi3D;
 import boa.gui.imageInteraction.IJImageWindowManager.TrackRoi;
 import static boa.gui.imageInteraction.ImageWindowManager.displayTrackMode;
@@ -40,6 +41,7 @@ import ij.gui.Roi;
 import ij.gui.Toolbar;
 import ij.plugin.OverlayLabels;
 import ij.plugin.filter.ThresholdToSelection;
+import ij.process.FloatPolygon;
 import ij.process.ImageProcessor;
 import image.BoundingBox;
 import image.IJImageWrapper;
@@ -72,6 +74,8 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 import org.scijava.vecmath.Vector2d;
+import plugins.ObjectSplitter;
+import utils.ArrayUtil;
 import utils.Pair;
 import utils.Utils;
 
@@ -109,17 +113,17 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 //logger.debug("mousepressed");
                 if (SwingUtilities.isRightMouseButton(e)) {
                     JPopupMenu menu = getMenu(image);
-                    menu.show(canvas, canvas.offScreenX(e.getX()), canvas.offScreenY(e.getY()));
+                    if (menu!=null) menu.show(canvas, canvas.offScreenX(e.getX()), canvas.offScreenY(e.getY()));
                 } 
             }
 
             public void mouseReleased(MouseEvent e) {
                 //logger.debug("tool : {}", IJ.getToolName());
-                if (IJ.getToolName().equals("zoom") || IJ.getToolName().equals("hand") || IJ.getToolName().equals("multipoint") || IJ.getToolName().equals("point")) return;
-                //int m = e.getModifiers();
-                //boolean addToSelection = (m & ActionEvent.CTRL_MASK) == ActionEvent.CTRL_MASK;
-                //boolean displayTrack = (m & ActionEvent.SHIFT_MASK) == ActionEvent.SHIFT_MASK;
-                boolean addToSelection = e.isShiftDown();
+                if (IJ.getToolName().equals("zoom") || IJ.getToolName().equals("hand") || IJ.getToolName().equals("multipoint") || IJ.getToolName().equals("point")) return;            
+                boolean ctrl = e.isControlDown();
+                boolean freeHandSplit = ( IJ.getToolName().equals("freeline")) && ctrl;
+                logger.debug("ctrl: {}, tool : {}, freeHandSplit: {}", ctrl, IJ.getToolName(), freeHandSplit);
+                boolean addToSelection = e.isShiftDown() && !freeHandSplit;
                 boolean displayTrack = displayTrackMode;
                 //logger.debug("button ctrl: {}, shift: {}, alt: {}, meta: {}, altGraph: {}, alt: {}", e.isControlDown(), e.isShiftDown(), e.isAltDown(), e.isMetaDown(), e.isAltGraphDown(), displayTrackMode);
                 ImageObjectInterface i = getImageObjectInterface(image);
@@ -159,7 +163,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                             }
                             //logger.debug("after remove, contained: {}", selectedObjects.size());
                         }
-                        ip.deleteRoi();
+                        if (!freeHandSplit) ip.deleteRoi();
                     }
                 }
                 //if (fromSelection || r==null) 
@@ -176,7 +180,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                     } else return;
                     if (r!=null && r.getType()==Roi.TRACED_ROI) {
                         logger.debug("Will delete Roi: type: {}, class: {}", r.getTypeAsString(), r.getClass().getSimpleName());
-                        ip.deleteRoi();
+                        if (!freeHandSplit) ip.deleteRoi();
                     }
                 }
                 if (!displayTrack) {
@@ -195,6 +199,17 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                         displayTrack(image, i, i.pairWithOffset(track), ImageWindowManager.getColor(), true);
                     }
                     if (listener!=null) listener.fireTracksSelected(trackHeads, true);
+                }
+                if (freeHandSplit && r!=null && !selectedObjects.isEmpty()) {
+                    // remove if there are several objects per parent
+                    List<StructureObject> objects = Pair.unpairKeys(selectedObjects);
+                    Map<StructureObject, List<StructureObject>> byParent = StructureObjectUtils.splitByParent(objects);
+                    objects.removeIf(o -> byParent.get(o.getParent()).size()>1);
+                    // get line & split
+                    FloatPolygon p = r.getInterpolatedPolygon(1, false);
+                    ObjectSplitter splitter = new FreeLineSplitter(selectedObjects, ArrayUtil.toInt(p.xpoints), ArrayUtil.toInt(p.ypoints));
+                    ManualCorrection.splitObjects(GUI.getDBConnection(), objects, true, false, splitter);
+                    
                 }
             }
 

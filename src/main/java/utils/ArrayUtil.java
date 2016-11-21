@@ -336,4 +336,9 @@ public class ArrayUtil {
         else res=(list.get(list.size()/2)+list.get(list.size()/2-1))/2.0;
         return res;
     }
+    public static int[] toInt(float[] array) {
+        int[] res= new int[array.length];
+        for (int i = 0; i<array.length; ++i) res[i] = Math.round(array[i]);
+        return res;
+    }
 }

@@ -29,6 +29,10 @@ import image.Image;
 import image.ImageInteger;
 import image.ImageOperations;
 import java.awt.Color;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
+import java.awt.event.ActionEvent;
 import java.lang.reflect.Field;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -43,6 +47,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
+import javax.swing.AbstractAction;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import utils.HashMapGetCreate;
@@ -825,19 +830,36 @@ public abstract class ImageWindowManager<T, U, V> {
     private JPopupMenu getMenu(StructureObject o) {
         JPopupMenu menu = new JPopupMenu();
         menu.add(new JMenuItem(o.toString()));
+        menu.add(new JMenuItem("IsTrackHead: "+o.isTrackHead()));
         DecimalFormat df = new DecimalFormat("#.####");
         if (o.getAttributes()!=null && !o.getAttributes().isEmpty()) {
             menu.addSeparator();
             for (Entry<String, Object> en : o.getAttributes().entrySet()) {
-                if (en.getValue() instanceof Number) menu.add(new JMenuItem(en.getKey()+": "+df.format(en.getValue())));
-                else menu.add(new JMenuItem(en.getKey()+": "+en.getValue()));
+                JMenuItem item = (en.getValue() instanceof Number) ? new JMenuItem(en.getKey()+": "+df.format(en.getValue())) : new JMenuItem(en.getKey()+": "+en.getValue());
+                menu.add(item);
+                item.setAction(new AbstractAction(item.getActionCommand()) {
+                    @Override
+                        public void actionPerformed(ActionEvent ae) {
+                            java.awt.datatransfer.Transferable stringSelection = new StringSelection(en.getValue().toString());
+                            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                            clipboard.setContents(stringSelection, null);
+                        }
+                });
             }
         }
         if (o.hasMeasurements()) {
             menu.addSeparator();
             for (Entry<String, Object> en : o.getMeasurements().getValues().entrySet()) {
-                if (en.getValue() instanceof Number) menu.add(new JMenuItem(en.getKey()+": "+df.format(en.getValue())));
-                else menu.add(new JMenuItem(en.getKey()+": "+en.getValue()));
+                JMenuItem item = (en.getValue() instanceof Number) ? new JMenuItem(en.getKey()+": "+df.format(en.getValue())) : new JMenuItem(en.getKey()+": "+en.getValue());
+                menu.add(item);
+                item.setAction(new AbstractAction(item.getActionCommand()) {
+                    @Override
+                        public void actionPerformed(ActionEvent ae) {
+                            java.awt.datatransfer.Transferable stringSelection = new StringSelection(en.getValue().toString());
+                            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                            clipboard.setContents(stringSelection, null);
+                        }
+                });
             }
         }
         return menu;

@@ -74,7 +74,10 @@ public class ManualCorrection {
         return res;
     }
     public static void unlinkObject(StructureObject o, Collection<StructureObject> modifiedObjects) {
-        for (StructureObject n : getNext(o) ) n.setTrackHead(n, true, true, modifiedObjects);
+        for (StructureObject n : getNext(o) ) {
+            n.resetTrackLinks(true, false);
+            n.setTrackHead(n, true, true, modifiedObjects);
+        }
         for (StructureObject p : getPrevious(o) ) if (p.getNext()==o) {
             p.resetTrackLinks(false, true);
             modifiedObjects.add(p);
@@ -93,7 +96,10 @@ public class ManualCorrection {
     public static void unlinkObjects(StructureObject prev, StructureObject next, Collection<StructureObject> modifiedObjects) {
         if (next.getTimePoint()<prev.getTimePoint()) unlinkObjects(next, prev, modifiedObjects);
         else {
-            if (next.getPrevious()==prev) next.setTrackHead(next, true, true, modifiedObjects);
+            if (next.getPrevious()==prev) {
+                next.resetTrackLinks(true, false);
+                next.setTrackHead(next, true, true, modifiedObjects);
+            }
             else prev.resetTrackLinks(false, prev.getNext()==next);
             //next.resetTrackLinks(next.getPrevious()==prev, false);
             getManualCorrectionSelection(prev).addElement(next);
@@ -363,11 +369,14 @@ public class ManualCorrection {
         }
     }
     public static void splitObjects(MasterDAO db, Collection<StructureObject> objects, boolean updateDisplay, boolean test) {
+        splitObjects(db, objects, updateDisplay, test, null);
+    }
+    public static void splitObjects(MasterDAO db, Collection<StructureObject> objects, boolean updateDisplay, boolean test, ObjectSplitter defaultSplitter) {
         int structureIdx = StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(objects);
         if (objects.isEmpty()) return;
         if (db==null) test = true;
         Experiment xp = db!=null ? db.getExperiment() : objects.iterator().next().getExperiment();
-        ObjectSplitter splitter = xp.getStructure(structureIdx).getObjectSplitter();
+        ObjectSplitter splitter = defaultSplitter==null ? xp.getStructure(structureIdx).getObjectSplitter() : defaultSplitter;
         if (splitter==null) {
             logger.warn("No splitter configured");
             return;
@@ -378,7 +387,7 @@ public class ManualCorrection {
             List<StructureObject> objectsToStore = new ArrayList<>();
             List<StructureObject> newObjects = new ArrayList<>();
             for (StructureObject objectToSplit : objectsByFieldName.get(f)) {
-                splitter = xp.getStructure(structureIdx).getObjectSplitter();
+                if (defaultSplitter==null) splitter = xp.getStructure(structureIdx).getObjectSplitter();
                 splitter.setSplitVerboseMode(test);
                 if (test) splitter.splitObject(objectToSplit.getRawImage(objectToSplit.getStructureIdx()), objectToSplit.getObject());
                 else {

@@ -32,6 +32,7 @@ import measurement.BasicMeasurements;
 import measurement.GeometricalMeasurements;
 import measurement.MeasurementKey;
 import measurement.MeasurementKeyObject;
+import org.apache.commons.math3.linear.RealMatrix;
 import plugins.Measurement;
 
 /**
@@ -70,7 +71,7 @@ public class BacteriaTransMeasurements implements Measurement {
         res.add(new MeasurementKeyObject(StructureObject.trackErrorNext, structureIdx));
         res.add(new MeasurementKeyObject("SizeIncrement", structureIdx));
         res.add(new MeasurementKeyObject("TrackErrorSizeIncrement", structureIdx));
-
+        
         return res;
     }
 

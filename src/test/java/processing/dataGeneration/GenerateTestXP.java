@@ -231,8 +231,8 @@ public class GenerateTestXP {
         transSingleFileImport=false;
         scaleXY = 0.06289;
         flipArray = fillRange(getBooleanArray(96, false), 61, 95, true); //pos 62 - 96 -> flip = true
+        deletePositions = fillRange(getBooleanArray(991, false), 14, 14, true);
         */
-        
         /*
         ////////////////////////////
         // Ordi Portable

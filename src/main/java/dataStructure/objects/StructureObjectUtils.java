@@ -348,13 +348,15 @@ public class StructureObjectUtils {
     }
     
     public static Set<StructureObject> getParents(Collection<StructureObject> objects) {
-        Set<StructureObject> res = new HashSet<StructureObject>();
+        if (objects==null || objects.isEmpty()) return Collections.EMPTY_SET;
+        Set<StructureObject> res = new HashSet<>();
         for (StructureObject o : objects) res.add(o.getParent());
         return res;
     }
     
     public static Set<StructureObject> getParents(Collection<StructureObject> objects, int parentStructureIdx, boolean strictParent) {
-        Set<StructureObject> res = new HashSet<StructureObject>();
+        if (objects==null || objects.isEmpty()) return Collections.EMPTY_SET;
+        Set<StructureObject> res = new HashSet<>();
         for (StructureObject o : objects) {
             if (strictParent && o.getStructureIdx()==parentStructureIdx) continue;
             StructureObject p = o.getParent(parentStructureIdx);
@@ -364,7 +366,8 @@ public class StructureObjectUtils {
     }
     
     public static Set<StructureObject> getParentTrackHeads(Collection<StructureObject> objects, int parentStructureIdx, boolean strictParent) {
-        Set<StructureObject> res = new HashSet<StructureObject>();
+        if (objects==null || objects.isEmpty()) return Collections.EMPTY_SET;
+        Set<StructureObject> res = new HashSet<>();
         for (StructureObject o : objects) {
             if (strictParent && o.getStructureIdx()==parentStructureIdx) continue;
             if (parentStructureIdx>o.getStructureIdx()) continue;
@@ -375,7 +378,8 @@ public class StructureObjectUtils {
     }
     
     public static Set<StructureObject> getParentTrackHeads(Collection<StructureObject> objects) {
-        Set<StructureObject> res = new HashSet<StructureObject>();
+        if (objects==null || objects.isEmpty()) return Collections.EMPTY_SET;
+        Set<StructureObject> res = new HashSet<>();
         for (StructureObject o : objects) res.add(o.getParent().getTrackHead());
         return res;
     }

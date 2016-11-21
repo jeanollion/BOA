@@ -461,7 +461,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     private void cleanTracks(int t) {
         if (populations[t]==null || populations[t].isEmpty()) return;
         TrackAttribute lastO = getAttribute(t, populations[t].size()-1); 
-        if (lastO.prev!=null && lastO.prev.incompleteDivision) { // remove incomplete divisions
+        if (lastO.prev!=null && lastO.prev.truncatedDivision && lastO.idx>0) { // remove incomplete divisions
             if (debugCorr) logger.debug("incomplete division at: {}", lastO);
             removeTrack(lastO);
         } 
@@ -527,6 +527,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (ta.errorCur) o.setAttribute(StructureObject.trackErrorNext, true);
             else o.setAttribute(StructureObject.trackErrorNext, null);
             o.setAttribute("SizeIncrement", ta.sizeIncrement);
+            if (ta.truncatedDivision) o.setAttribute("TruncatedDivision", true);
         }
     }
     
@@ -673,7 +674,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         TrackAttribute prev;
         TrackAttribute next;
         Flag flag;
-        boolean errorPrev, errorCur, incompleteDivision, sizeIncrementError;
+        boolean errorPrev, errorCur, truncatedDivision, sizeIncrementError;
         double sizeIncrement=Double.NaN;
         int nPrev;
         Object3D o;
@@ -700,7 +701,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 this.next=null;
                 errorCur=false;
                 division=false;
-                incompleteDivision=false;
+                truncatedDivision=false;
             }
         }
         public double getSize() {
@@ -712,7 +713,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             TrackAttribute ta = this.prev;
             List<TrackAttribute> bucket = new ArrayList<>(3);
             WL: while(res.size()<sizeIncrementFrameNumber && ta!=null) {
-                if (!ta.errorCur) {
+                if (!ta.errorCur && !ta.truncatedDivision) {
                     if (ta.next==null) logger.error("Prev's NEXT NULL ta: {}: prev: {}", this, this.prev);
                     if (ta.division) {
                         double nextSize = 0;
@@ -1011,11 +1012,14 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 taPrev.errorCur=error;
                 taCur.nPrev=nPrev;
                 if (noticeAll) {
-                    taPrev.incompleteDivision = truncatedEndOfChannel();
-                    if (!taPrev.incompleteDivision) taCur.sizeIncrementError = significantSizeIncrementError();
+                    taPrev.truncatedDivision = truncatedEndOfChannel();
+                    if (!taPrev.truncatedDivision) {
+                        taCur.sizeIncrementError = significantSizeIncrementError();
+                        taCur.sizeIncrement=taCur.getSize()/taPrev.getSize();
+                    } else taCur.sizeIncrement=Double.NaN;
                     if (setSIErrorsAsErrors && taCur.sizeIncrementError && !taCur.errorPrev) taCur.errorPrev=true;
                     if (setSIErrorsAsErrors && taCur.sizeIncrementError && !taPrev.errorCur) taPrev.errorCur=true;
-                    taCur.sizeIncrement=taCur.getSize()/taPrev.getSize();
+                                        
                 }
             } else if (nPrev==1 && nCur>1) { // division
                 TrackAttribute taPrev = getAttribute(timePoint-1, idxPrev);
@@ -1030,9 +1034,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     ta.errorPrev=error;
                     ta.nPrev=nPrev;
                     if (noticeAll) {
-                        taPrev.incompleteDivision = truncatedEndOfChannel();
-                        if (!taPrev.incompleteDivision) ta.sizeIncrementError = significantSizeIncrementError();
-                        ta.sizeIncrement = size / sizePrev;
+                        taPrev.truncatedDivision = truncatedEndOfChannel();
+                        if (!taPrev.truncatedDivision) {
+                            ta.sizeIncrementError = significantSizeIncrementError();
+                            ta.sizeIncrement = size / sizePrev;
+                        } else ta.sizeIncrement=Double.NaN;
                         if (setSIErrorsAsErrors && ta.sizeIncrementError && !ta.errorPrev) ta.errorPrev=true;
                         if (setSIErrorsAsErrors && ta.sizeIncrementError && !taPrev.errorCur) taPrev.errorCur=true;
                     }
@@ -1045,8 +1051,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 taCur.nPrev=nPrev;
                 boolean truncated = truncatedEndOfChannel();
                 if (noticeAll) {
-                    if (!truncated) taCur.sizeIncrementError = significantSizeIncrementError();
-                    taCur.sizeIncrement=size/sizePrev;
+                    if (!truncated) {
+                        taCur.sizeIncrementError = significantSizeIncrementError();
+                        taCur.sizeIncrement=size/sizePrev;
+                    } else taCur.sizeIncrement=Double.NaN;
+                    
                 }
                 for (int i = idxPrev; i<idxPrevEnd; ++i) {
                     TrackAttribute ta = getAttribute(timePoint-1, i);
