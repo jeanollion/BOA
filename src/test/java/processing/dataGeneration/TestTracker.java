@@ -48,17 +48,17 @@ public class TestTracker {
         new ImageJ();
         //String dbName = "boa_mutH_140115";
         //final String dbName = "boa_phase140115mutH";
-        final String dbName = "boa_phase150324mutH";
-        //String dbName = "boa_phase150616wt";
-        int fIdx = 0;
-        int mcIdx =0;
+        //final String dbName = "boa_phase150324mutH";
+        String dbName = "boa_phase150616wt";
+        int fIdx = 14;
+        int mcIdx =4;
         int structureIdx = 1;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 298;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 15, 20);
+        //testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 710, 726);
         
-        //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 55, 66); 
+        testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 710, 725); 
         
         int[][] testsF_MC_TT = {
            {0, 3, 90, 100}, // 0

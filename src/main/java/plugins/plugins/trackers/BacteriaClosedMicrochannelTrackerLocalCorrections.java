@@ -252,7 +252,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             thresholdValue = debugThreshold;
             logger.debug("Threshold used: {}", thresholdValue);
         }
-        
+
         // 1) assign all. Limit to first continuous segment of cells
         minT = 0;
         while (minT<populations.length && getObjects(minT).isEmpty()) minT++;
@@ -520,14 +520,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 }
             }
             StructureObject o = children.get(i);
-            if (ta.sizeIncrementError) o.setAttribute("TrackErrorSizeIncrement", true);
-            else o.setAttribute("TrackErrorSizeIncrement", null);
-            if (ta.errorPrev) o.setAttribute(StructureObject.trackErrorPrev, true);
-            else o.setAttribute(StructureObject.trackErrorPrev, null);
-            if (ta.errorCur) o.setAttribute(StructureObject.trackErrorNext, true);
-            else o.setAttribute(StructureObject.trackErrorNext, null);
+            o.setAttribute("TrackErrorSizeIncrement", ta.sizeIncrementError);
+            o.setAttribute(StructureObject.trackErrorPrev, ta.errorPrev);
+            o.setAttribute(StructureObject.trackErrorNext, ta.errorCur);
             o.setAttribute("SizeIncrement", ta.sizeIncrement);
-            if (ta.truncatedDivision) o.setAttribute("TruncatedDivision", true);
+            o.setAttribute("TruncatedDivision", ta.truncatedDivision);
         }
     }
     
@@ -714,7 +711,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             List<TrackAttribute> bucket = new ArrayList<>(3);
             WL: while(res.size()<sizeIncrementFrameNumber && ta!=null) {
                 if (!ta.errorCur && !ta.truncatedDivision) {
-                    if (ta.next==null) logger.error("Prev's NEXT NULL ta: {}: prev: {}", this, this.prev);
+                    if (ta.next==null) logger.error("Prev's NEXT NULL ta: {}: prev: {}, parent th: {}", this, this.prev, parents.get(0));
                     if (ta.division) {
                         double nextSize = 0;
                         bucket.clear();
@@ -1202,7 +1199,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             }
             if (idxPrevEnd-idxPrev>2 && idxEnd-idx<=2) scenarios.add(new MergeScenario(idxPrev, idxPrevEnd-1, timePoint-1)); // merge all previous objects
             //scenarios.add(new RearrangeObjects(timePoint, idx, idxEnd-1, idxPrev, idxPrevEnd-1));
-            if (Math.abs(sizeInc1-expectedInc1)>significativeSIErrorThld) {
+            if ( Math.abs(sizeInc1-expectedInc1)>significativeSIErrorThld) {
                 
                 if (sizeInc1>expectedInc1) { // split after VS merge before & split
                     if (idxPrevEnd-idxPrev>1) scenarios.add(new SplitAndMerge(timePoint-1, idxPrev, false, true));
