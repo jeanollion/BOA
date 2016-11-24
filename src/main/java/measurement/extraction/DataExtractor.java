@@ -87,6 +87,7 @@ public class DataExtractor {
     }
     public static void extractMeasurementObjects(MasterDAO db, String outputFile, List<String> positions, Map<Integer, String[]> allMeasurements) {
         TreeMap<Integer, String[]> allMeasurementsSort = new TreeMap<Integer, String[]>(allMeasurements);
+        if (allMeasurementsSort.isEmpty()) return;
         DataExtractor de= new DataExtractor(db, allMeasurementsSort.lastKey());
         de.extractMeasurementObjects(outputFile, positions, allMeasurementsSort);
     }

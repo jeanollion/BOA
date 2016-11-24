@@ -731,6 +731,68 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             }
             return res;
         }
+        private List<TrackAttribute> getPreviousTrack(int sizeLimit, boolean reverseOrder) {
+            List<TrackAttribute> track = new ArrayList<>();
+            track.add(this);
+            TrackAttribute p = this.prev;
+            while(p!=null && track.size()<sizeLimit) {
+                track.add(p);
+                p=p.prev;
+            }
+            if (!reverseOrder) Collections.reverse(track);
+            return track;
+        }
+        private List<TrackAttribute> getTrackToPreviousDivision(boolean reverseOrder, List<TrackAttribute> bucket) {
+            if (bucket==null) bucket = new ArrayList<>();
+            bucket.add(this);
+            TrackAttribute p = this.prev;
+            while(p!=null && !p.division) {
+                bucket.add(p);
+                p=p.prev;
+            }
+            if (!reverseOrder) Collections.reverse(bucket);
+            return bucket;
+        }
+        /*private double getLineageSizeProportionFromPreviousDivision(List<TrackAttribute> bucket) {
+            // get previous track until previous parent
+            if (bucket==null) bucket=new ArrayList<>();
+            List<TrackAttribute> track = getTrackToPreviousDivision(false, bucket);
+            if (track.isEmpty() || !track.get(0).division) return Double.NaN;
+            List<TrackAttribute> siblings = new ArrayList<>(3);
+            List<TrackAttribute> n = div.getNext(siblings);
+        }
+        private Map<Integer, Double> getLineagePreviousSizes() { // frame -> size
+            List<TrackAttribute> track = getPreviousTrack(sizeIncrementFrameNumber, true); // starts with current element
+            Map<Integer, Double> res=  new HashMap<>(sizeIncrementFrameNumber);
+            
+            if (!track.get(0).division) return null;
+            Map<Integer, Double> siblingsSize=  new HashMap<>(sizeIncrementFrameNumber);
+            
+            TrackAttribute ta = this.prev;
+            List<TrackAttribute> bucket = new ArrayList<>(3);
+            WL: while(res.size()<sizeIncrementFrameNumber && ta!=null) {
+                if (!ta.errorCur && !ta.truncatedDivision) {
+                    if (ta.next==null) logger.error("Prev's NEXT NULL ta: {}: prev: {}, parent th: {}", this, this.prev, parents.get(0));
+                    if (ta.division) {
+                        double nextSize = 0;
+                        bucket.clear();
+                        List<TrackAttribute> n = ta.getNext(bucket);
+                        if (n.size()>1) {
+                            //boolean touch = false;
+                            for (TrackAttribute t : n) {
+                                nextSize+=t.getSize();
+                                //if (t.touchEndOfChannel) touch=true;
+                            }
+                            res.add(nextSize/ta.getSize()); //if (!touch) 
+                        } 
+                        //if (debug) logger.debug("division: {}, next: {}, nextSize: {}", ta, n, nextSize);
+                    } else res.add(ta.next.getSize()/ta.getSize()); //if (!ta.next.touchEndOfChannel) 
+                }
+                ta = ta.prev;
+            }
+            return res;
+        }*/
+        
         public double getLineageSizeIncrement() {
             List<Double> list = getLineageSizeIncrementList();
             if (list.isEmpty()) return Double.NaN;
@@ -740,9 +802,14 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             //if (debug) logger.debug("getSizeIncrement for {}-{}: {} list:{}", timePoint, idx, res, list);
             return res;
         }
+        
+        /*public double[] getLineageSizeRangeAndEstimation() {
+            
+        }*/
+        
         public List<TrackAttribute> getNext(List<TrackAttribute> res) {
             if (trackAttributes.length-1<=timePoint) return res!=null ? res : Collections.EMPTY_LIST;
-            if (true) {
+            if (division) {
                 if (res==null) res = new ArrayList<>(3);
                 for (TrackAttribute t : getAttributes(timePoint+1)) if (t.prev==this) res.add(t);
                 return res;
@@ -752,10 +819,13 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 return res;
             } else return res!=null ? res : Collections.EMPTY_LIST;
         }
+        
         @Override public String toString() {
             return timePoint+"-"+idx+"(s:"+getSize()+"/th:"+this.trackHead+"/div:"+division+"/nPrev:"+nPrev+")";
         }
     }
+
+    
     public static int verboseLevelLimit = 2;
     private static enum AssignerMode {ADAPTATIVE, RANGE};
     protected class TrackAssigner {

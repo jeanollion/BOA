@@ -32,6 +32,7 @@ import java.util.Set;
 import measurement.MeasurementKey;
 import measurement.MeasurementKeyObject;
 import plugins.Measurement;
+import utils.HashMapGetCreate;
 
 /**
  *
@@ -42,7 +43,7 @@ public class BacteriaLineageIndex implements Measurement {
     protected TextParameter keyName = new TextParameter("Lineage Index Name", "LineageIndex", false);
     protected Parameter[] parameters = new Parameter[]{structure, keyName};
     public static char[] lineageName = new char[]{'H', 'T'};
-    
+    public static char lineageError = '*';
     public BacteriaLineageIndex() {}
     
     public BacteriaLineageIndex(int structureIdx) {
@@ -76,14 +77,19 @@ public class BacteriaLineageIndex implements Measurement {
             int nextTP = o.getNextDivisionTimePoint();
             o.getMeasurements().setValue("NextDivisionFrame", nextTP>=0?nextTP:null );
         }
+        HashMapGetCreate<StructureObject, List<StructureObject>> siblings = new HashMapGetCreate<>(o -> StructureObjectUtils.getAllNext(o, null));
         while(parentTrackHead.getNext()!=null) {
             parentTrackHead = parentTrackHead.getNext();
             bacteria = parentTrackHead.getChildren(bIdx);
             for (StructureObject o : bacteria) {
                 if (o.getPrevious()==null) o.getMeasurements().setValue(key, getTrackHeadName(trackHeadIdx++));
                 else {
-                    if (o.getDivisionSiblings(false)==null && Boolean.FALSE.equals(o.getPrevious().getAttribute("TruncatedDivision", false))) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key));
-                    else if (o.isTrackHead()) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[1]);
+                    List<StructureObject> sib = siblings.getAndCreateIfNecessary(o.getPrevious());
+                    if (sib.size()==1 && Boolean.FALSE.equals(o.getPrevious().getAttribute("TruncatedDivision", false))) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key));
+                    else if (o.isTrackHead()) {
+                        if (sib.size()>2 || sib.isEmpty()) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageError);
+                        else o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[1]);
+                    }
                     else o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[0]);
                 }
                 int prevTP = o.getPreviousDivisionTimePoint();
@@ -91,6 +97,7 @@ public class BacteriaLineageIndex implements Measurement {
                 int nextTP = o.getNextDivisionTimePoint();
                 o.getMeasurements().setValue("NextDivisionFrame", nextTP>=0?nextTP:null );
             }
+            siblings.clear();
         }
         /*Map<StructureObject, List<StructureObject>> bacteriaTracks = StructureObjectUtils.getAllTracks(parentTrack, bIdx);
         for (List<StructureObject> l : bacteriaTracks.values()) {

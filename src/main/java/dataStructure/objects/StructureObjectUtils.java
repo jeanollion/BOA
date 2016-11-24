@@ -44,6 +44,14 @@ import utils.Utils;
  */
 public class StructureObjectUtils {
     
+    public static List<StructureObject> getAllNext(StructureObject o, List<StructureObject> bucket) { // look only in next timePoint
+        if (bucket==null) bucket=new ArrayList<>();
+        StructureObject nextParent = o.getParent().getNext();
+        if (nextParent==null) return bucket;
+        for (StructureObject n : nextParent.getChildren(o.getStructureIdx())) if (n.getPrevious()==o) bucket.add(n);
+        return bucket;
+    }
+    
     public static void setTrackLinks(StructureObject previous, StructureObject next, boolean setPrevious, boolean setNext) {
         if (previous==null && next==null) return;
         else if (previous==null && next!=null) {

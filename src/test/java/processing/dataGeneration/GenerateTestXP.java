@@ -195,23 +195,26 @@ public class GenerateTestXP {
         scaleXY = 0.06289;*/
         
         
-        /*String dbName = "boa_phase141107wt";
+        String dbName = "boa_phase141107wt";
         String inputDir = "/data/Images/Phase/141107_mg6300_wt/mg6300WT-lb-lr62replic1-7-11-14/";
         String outputDir = "/data/Images/Phase/141107_mg6300_wt/Output";
+        trimStart = 122;
+        trimEnd = 990;
         boolean flip = true;
         boolean fluo = false;
         transSingleFileImport=false;
-        scaleXY = 0.06289;*/
+        scaleXY = 0.06289;
         
-        /*String dbName = "boa_phase141113wt";
+        /*
+        // beaucoup de files corrompue, pas d'intervalle.. 
+        String dbName = "boa_phase141113wt";
         String inputDir = "/data/Images/Phase/141113_mg6300_wt/mg6300wt-lb-lr62/";
         String outputDir = "/data/Images/Phase/141113_mg6300_wt/Output";
-        trimFrameStart = 40;
-        trimFrameEnd = 561;
         boolean flip = true;
         boolean fluo = false;
         transSingleFileImport=false;
-        scaleXY = 0.06289;*/
+        scaleXY = 0.06289;
+        */
         
         /*String dbName = "boa_phase150324mutH";
         String inputDir = "/data/Images/Phase/150324_6300_mutH/6300_mutH_LB_LR62silicium-24032015-tif/";
@@ -284,14 +287,14 @@ public class GenerateTestXP {
         boolean fluo = false;
         transSingleFileImport = false;*/
         
-        String dbName = "boa_phase141107wt";
+        /*String dbName = "boa_phase141107wt";
         String inputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase141107/mg6300WT-lb-lr62replic1-7-11-14/";
         String outputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase141107/Output";
         boolean flip = true;
         boolean fluo = false;
         transSingleFileImport = false;
         deletePositions = fillRange(getBooleanArray(991, true), 120, 990, false);
-        
+        */
         boolean performProcessing = false;
         
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);

@@ -38,7 +38,7 @@ import utils.Utils;
  */
 public class AnalyseImageCorruption {
     public static void main(String[] args) {
-        String[] dbList = new String[]{"boa_phase141113wt"}; //boa_phase141113wt //boa_phase141107wt
+        String[] dbList = new String[]{"boa_phase141107wt"}; //boa_phase141113wt //boa_phase141107wt
         List<Map<String, int[]>> errors = new ArrayList<>();
         List<int[]> errorRange = new ArrayList<>();
         for (String db : dbList) {
@@ -76,11 +76,12 @@ public class AnalyseImageCorruption {
         Experiment xp = mDAO.getExperiment();
         logger.debug("errors for xp: {}", dbName);
         Map<String, int[]> errors = new HashMap<>();
-        int count = 0;
+        int positionCount = 0;
         for (String position : xp.getPositionsAsString()) {
             errors.put(position, getCorruptedFrames(xp, position));
             xp.getPosition(position).flushImages();
-            logger.debug("POSITION: {}/{}", ++count, xp.getPositionCount());
+            logger.debug("POSITION: {}/{}", ++positionCount, xp.getPositionCount());
+            //if (positionCount>0) return errors;
         }
         return errors;
     }
@@ -112,7 +113,7 @@ public class AnalyseImageCorruption {
             int idxMin=-1; // first point inferior or equal, -1 => frame 0
             while(idxMin+1<withRanges.length && withRanges[idxMin+1]<range[0]) ++idxMin;
             int idxMax = 0; //first point superior or equal
-            while(idxMax<withRanges.length && withRanges[idxMax]<range[1]) ++idxMax;
+            while(idxMax<withRanges.length-1 && withRanges[idxMax]<range[1]) ++idxMax;
             int[] bestRange = idxMin>=0 ? new int[]{Math.max(range[0], withRanges[idxMin]), Math.min(range[1], withRanges[idxMin+1])} : new int[]{Math.max(range[0], 0), Math.min(range[1], withRanges[0])};
             for (int i = idxMin+1; i<idxMax; ++i) {
                 int[] r = new int[]{Math.max(range[0], withRanges[i]), Math.min(range[1], withRanges[i+1])};
