@@ -46,12 +46,10 @@ public class TaskRunner {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         List<Task> tasks = new ArrayList<Task>() {{
-            add(new Task("boa_fluo151127").setActions(false, false, false, true).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 1).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 2));
-            add(new Task("boa_fluo160428").setActions(false, false, false, true).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 1).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 2));
-            add(new Task("boa_fluo160501").setActions(false, false, false, true).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 1).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 2));
-            add(new Task("boa_phase141107wt").setAllActions().setPositions(ArrayUtil.generateIntegerArray(35, 60)).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/Trans/", 1));
-            add(new Task("boa_phase150616wt").setActions(false, false, false, true).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/Trans/", 1));
-            add(new Task("boa_phase150324mutH").setActions(false, false, false, true).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/Trans/", 1));
+            add(new Task("boa_fluo160428").setPositions(1, 2, 23, 3, 4, 5, 6).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 1).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 2));
+            //add(new Task("boa_phase141107wt").setAllActions().setPositions(ArrayUtil.generateIntegerArray(35, 60)).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/Trans/", 1));
+            //add(new Task("boa_phase150616wt").setActions(false, false, false, true).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/Trans/", 1));
+            //add(new Task("boa_phase150324mutH").setActions(false, false, false, true).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/Trans/", 1));
         }};
 
         //for (Task t : tasks) t.isValid();
@@ -60,6 +58,15 @@ public class TaskRunner {
         for (Task t : tasks) t.printErrors();
     }
     
+    
+    public static List<Task> extractMeasurementOnFluoXP() {
+        List<Task> tasks = new ArrayList<Task>() {{
+            add(new Task("boa_fluo151127").setPositions(1, 2, 3, 4).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 1).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 2));
+            add(new Task("boa_fluo160428").setPositions(1, 2, 23, 3, 4, 5, 6).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 1).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 2));
+            add(new Task("boa_fluo160501").setPositions(1, 2, 4).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 1).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 2));
+        }};
+        return tasks;
+    }
     
     public static class Task {
         final String dbName;
