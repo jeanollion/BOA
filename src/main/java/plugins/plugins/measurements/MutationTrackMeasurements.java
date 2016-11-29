@@ -115,7 +115,7 @@ public class MutationTrackMeasurements implements Measurement {
         
         if (object.isTrackHead()) {
             List<StructureObject> track = StructureObjectUtils.getTrack(object, false);
-            object.getMeasurements().setValue("TrackLength", track.get(track.size()-1).getTimePoint() - object.getTimePoint()+1);
+            object.getMeasurements().setValue("TrackLength", track.get(track.size()-1).getFrame() - object.getFrame()+1);
             object.getMeasurements().setValue("MutationNumber", track.size());
         }
     }

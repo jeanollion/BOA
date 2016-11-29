@@ -168,6 +168,9 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
             else return 1;
         } else return (float)preProcessingChain.getScaleZ();
     }
+    public double getFrameDuration() {
+        return preProcessingChain.getFrameDuration();
+    }
     
     public int getTimePointNumber(boolean useRawInputFrames) {
         if (images!=null) {

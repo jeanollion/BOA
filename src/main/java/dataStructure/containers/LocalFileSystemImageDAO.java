@@ -171,7 +171,7 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         return xp.getOutputImageDirectory()+File.separator+fieldName+File.separator+"processed";
     }
     private static String getProcessedImageDirectoryRoot(StructureObject root) {
-        return getFieldDirectory(root.getExperiment(), root.getFieldName())+File.separator+"t"+Utils.formatInteger(5, root.getTimePoint());
+        return getFieldDirectory(root.getExperiment(), root.getFieldName())+File.separator+"t"+Utils.formatInteger(5, root.getFrame());
     }
     private static String getImageFileName(StructureObject object, int idx) {
         return "s"+Utils.formatInteger(2, object.getStructureIdx())+"_idx"+Utils.formatInteger(idxZeros, idx);

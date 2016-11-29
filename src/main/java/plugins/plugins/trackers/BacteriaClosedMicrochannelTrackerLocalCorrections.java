@@ -473,8 +473,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         trackAttributes[o.timePoint].remove(o);
         resetIndices(o.timePoint);
         if (o.next!=null) {
-            List<TrackAttribute> curO = new ArrayList<>(3);
-            List<TrackAttribute> nextO = new ArrayList<>(3);
+            List<TrackAttribute> curO = new ArrayList<>();
+            List<TrackAttribute> nextO = new ArrayList<>();
             List<TrackAttribute> switchList = null;
             o.getNext(nextO);
             while(!nextO.isEmpty()) {
@@ -525,6 +525,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             o.setAttribute(StructureObject.trackErrorNext, ta.errorCur);
             o.setAttribute("SizeIncrement", ta.sizeIncrement);
             o.setAttribute("TruncatedDivision", ta.truncatedDivision);
+            if (ta.endOfChannelContact>0) o.setAttribute("EndOfChannelContact", ta.endOfChannelContact);
         }
     }
     
@@ -659,7 +660,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         return false;
     }
     private static double getObjectSize(Object3D o) {
-        //this.objectSize=GeometricalMeasurements.getVolume(o);
+        
+        //this.objectSize=GeometricalMeasurements.getVolume(o); // ATTENTION SI VOLUME MODIFIER LA FONCTION GET WIDTH
         //this.objectSize = o.getBounds().getSizeY();
         return GeometricalMeasurements.getFeretMax(o);
         // TODO Pour le squelette: calculer le squelette et pour le fermet: prendre une extremité et chercher le point du contour le + eloingé et le relier a l'autre extremitée, idem pour l'autre extremité.
@@ -678,12 +680,20 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         boolean division=false, trackHead=true;
         private double objectSize=Double.NaN;
         
-        //final boolean touchEndOfChannel;
+        final boolean touchEndOfChannel;
+        double endOfChannelContact;
         protected TrackAttribute(Object3D o, int idx, int timePoint) {
             this.o=o;
             this.idx=idx;
             this.timePoint=timePoint;
-            //touchEndOfChannel=idx!=0 && o.getBounds().getyMax()==parents.get(timePoint).getBounds().getSizeY(); // TODO: error here -> problem absolute/relative landmark?
+            int lim = parents.get(timePoint).getBounds().getSizeY()-1;
+            if (o.getBounds().getyMax()==lim) {
+                double count = 0;
+                for (Voxel v : o.getVoxels()) if (v.y==lim) ++count;
+                endOfChannelContact = count/getWidth();
+                if (endOfChannelContact>0.45) touchEndOfChannel=true;
+                else touchEndOfChannel=false; 
+            } else  touchEndOfChannel=false; 
         }
         protected TrackAttribute setFlag(Flag flag) {this.flag=flag; return this;}
         public void resetTrackAttributes(boolean previous, boolean next) {
@@ -705,13 +715,16 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (Double.isNaN(objectSize)) objectSize = getObjectSize(o);
             return objectSize;
         }
+        private double getWidth() { // unscaled
+            return (double)o.getVoxels().size() * o.getScaleXY() / getSize(); // do not use getSize() if getSize() return area !!
+        }
         private List<Double> getLineageSizeIncrementList() {
             List<Double> res=  new ArrayList<>(sizeIncrementFrameNumber);
             TrackAttribute ta = this.prev;
             List<TrackAttribute> bucket = new ArrayList<>(3);
             WL: while(res.size()<sizeIncrementFrameNumber && ta!=null) {
-                if (!ta.errorCur && !ta.truncatedDivision) {
-                    if (ta.next==null) logger.error("Prev's NEXT NULL ta: {}: prev: {}, parent th: {}", this, this.prev, parents.get(0));
+                if (ta.next==null) logger.error("Prev's NEXT NULL ta: {}: prev: {}, parent th: {}", this, this.prev, parents.get(0));
+                if (!ta.errorCur && !ta.truncatedDivision && !ta.touchEndOfChannel && !ta.next.touchEndOfChannel) {
                     if (ta.division) {
                         double nextSize = 0;
                         bucket.clear();
@@ -725,7 +738,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                             res.add(nextSize/ta.getSize()); //if (!touch) 
                         }
                         //if (debug) logger.debug("division: {}, next: {}, nextSize: {}", ta, n, nextSize);
-                    } else res.add(ta.next.getSize()/ta.getSize()); //if (!ta.next.touchEndOfChannel) 
+                    } else res.add(ta.next.getSize()/ta.getSize()); 
                 }
                 ta = ta.prev;
             }

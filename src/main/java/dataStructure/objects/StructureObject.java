@@ -108,7 +108,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public String getFieldName() {return dao.getFieldName();}
     public int getPositionIdx() {return getExperiment().getPosition(getFieldName()).getIndex();}
     public int getStructureIdx() {return structureIdx;}
-    public int getTimePoint() {return timePoint;}
+    public int getFrame() {return timePoint;}
+    public double getCalibratedTimePoint() {return timePoint * getExperiment().getPosition(getFieldName()).getFrameDuration();}
     public int getIdx() {return idx;}
 
     @Override
@@ -302,7 +303,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public void setTrackLinks(StructureObject next, boolean setPrev, boolean setNext) {
         if (next==null) resetTrackLinks(setPrev, setNext);
         else {
-            if (next.getTimePoint()<=this.getTimePoint()) throw new RuntimeException("setLink should be of time>= "+(timePoint+1) +" but is: "+next.getTimePoint()+ " current: "+this+", next: "+next+ " parent: "+getParent()+", next parent: "+next.getParent());
+            if (next.getFrame()<=this.getFrame()) throw new RuntimeException("setLink should be of time>= "+(timePoint+1) +" but is: "+next.getFrame()+ " current: "+this+", next: "+next+ " parent: "+getParent()+", next parent: "+next.getParent());
             if (setPrev && setNext) { // double link: set trackHead
                 setNext(next);
                 next.setPrevious(this);
@@ -369,14 +370,14 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public StructureObject getInTrack(int timePoint) {
         StructureObject current;
-        if (timePoint>this.getTimePoint()) {
+        if (timePoint>this.getFrame()) {
             current = this;
-            while(current!=null && current.getTimePoint()<timePoint) current=current.getNext();
+            while(current!=null && current.getFrame()<timePoint) current=current.getNext();
         } else {
             current = this.getPrevious();
-            while(current!=null && current.getTimePoint()>timePoint) current=current.getPrevious();
+            while(current!=null && current.getFrame()>timePoint) current=current.getPrevious();
         }
-        if (current!=null && current.getTimePoint()==timePoint) return current;
+        if (current!=null && current.getFrame()==timePoint) return current;
         return null;
     }
     
@@ -498,7 +499,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public int getPreviousDivisionTimePoint() {
         StructureObject p = this.getPrevious();
         while (p!=null) {
-            if (p.divisionAtNextTimePoint()) return p.getTimePoint()+1;
+            if (p.divisionAtNextTimePoint()) return p.getFrame()+1;
             p=p.getPrevious();
         }
         return -1;
@@ -506,7 +507,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public int getNextDivisionTimePoint() {
         StructureObject p = this;
         while (p!=null) {
-            if (p.divisionAtNextTimePoint()) return p.getTimePoint()+1;
+            if (p.divisionAtNextTimePoint()) return p.getFrame()+1;
             p=p.getNext();
         }
         return -1;
@@ -850,7 +851,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return attributes.get(key);
     }
     public Object getAttribute(String key, Object defaultValue) {
-        if (attributes==null) return null;
+        if (attributes==null) return defaultValue;
         return attributes.getOrDefault(key, defaultValue);
     }
     public Map<String, Object> getAttributes() {
@@ -901,7 +902,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     @Override
     public int compareTo(StructureObject other) {
-        int comp = Integer.compare(getTimePoint(), other.getTimePoint());
+        int comp = Integer.compare(getFrame(), other.getFrame());
         if (comp!=0) return comp;
         comp = Integer.compare(getStructureIdx(), other.getStructureIdx());
         if (comp!=0) return comp;

@@ -675,7 +675,7 @@ public abstract class ImageWindowManager<T, U, V> {
             if (off==null) trackHeads = new ArrayList<StructureObject> (trackHeads);
             while(off==null) {
                 trackHeads.remove(nextError);
-                nextError = getNextObject(nextError.getTimePoint(), trackHeads, next);
+                nextError = getNextObject(nextError.getFrame(), trackHeads, next);
                 if (nextError==null) return;
                 off = tm.getObjectOffset(nextError);
             }
@@ -683,7 +683,7 @@ public abstract class ImageWindowManager<T, U, V> {
             if (mid+currentDisplayRange.getSizeX()/2>=trackImage.getSizeX()) mid = trackImage.getSizeX()-currentDisplayRange.getSizeX()/2;
             if (mid-currentDisplayRange.getSizeX()/2<0) mid = currentDisplayRange.getSizeX()/2;
             BoundingBox nextDisplayRange = new BoundingBox(mid-currentDisplayRange.getSizeX()/2, mid+currentDisplayRange.getSizeX()/2, currentDisplayRange.getyMin(), currentDisplayRange.getyMax(), currentDisplayRange.getzMin(), currentDisplayRange.getzMax());
-            logger.info("Error detected @ timepoint: {}, xMid: {}, update display range: {}", nextError.getTimePoint(), mid,  nextDisplayRange);
+            logger.info("Error detected @ timepoint: {}, xMid: {}, update display range: {}", nextError.getFrame(), mid,  nextDisplayRange);
             displayer.setDisplayRange(nextDisplayRange, trackImage);
         }
     }
@@ -732,7 +732,7 @@ public abstract class ImageWindowManager<T, U, V> {
             while(off==null) {
                 objects = new ArrayList<StructureObject>(objects);
                 objects.remove(nextObject);
-                nextObject = getNextObject(nextObject.getTimePoint(), objects, next);
+                nextObject = getNextObject(nextObject.getFrame(), objects, next);
                 if (nextObject==null) {
                     logger.info("No object detected {} timepoint: {}", next? "after" : "before", maxTimePoint);
                     return false;
@@ -744,7 +744,7 @@ public abstract class ImageWindowManager<T, U, V> {
             if (mid-currentDisplayRange.getSizeX()/2<0) mid = currentDisplayRange.getSizeX()/2;
             BoundingBox nextDisplayRange = new BoundingBox(mid-currentDisplayRange.getSizeX()/2, mid+currentDisplayRange.getSizeX()/2, currentDisplayRange.getyMin(), currentDisplayRange.getyMax(), currentDisplayRange.getzMin(), currentDisplayRange.getzMax());
             if (!nextDisplayRange.equals(currentDisplayRange)) {
-                logger.info("Object detected @ timepoint: {}, xMid: {}, update display range: {}", nextObject.getTimePoint(), mid,  nextDisplayRange);
+                logger.info("Object detected @ timepoint: {}, xMid: {}, update display range: {}", nextObject.getFrame(), mid,  nextDisplayRange);
                 displayer.setDisplayRange(nextDisplayRange, trackImage);
                 return true;
             } return false;
@@ -776,11 +776,11 @@ public abstract class ImageWindowManager<T, U, V> {
             for (int trackIdx = 0; trackIdx<trackArray.length; ++trackIdx) {
                 if (trackArray[trackIdx]!=null) {
                     remainTrack=true;
-                    if (trackArray[trackIdx].getTimePoint()<currentTimePoint) {
+                    if (trackArray[trackIdx].getFrame()<currentTimePoint) {
                         trackArray[trackIdx]=trackArray[trackIdx].getNext(); 
                         change=true;
                     }
-                    if (trackArray[trackIdx]!=null && trackArray[trackIdx].getTimePoint()==currentTimePoint && trackArray[trackIdx].hasTrackLinkError(true, true)) return trackArray[trackIdx];
+                    if (trackArray[trackIdx]!=null && trackArray[trackIdx].getFrame()==currentTimePoint && trackArray[trackIdx].hasTrackLinkError(true, true)) return trackArray[trackIdx];
                 }
             }
             if (!change) ++currentTimePoint;
@@ -793,8 +793,8 @@ public abstract class ImageWindowManager<T, U, V> {
         StructureObject[] trackArray = trackHeads.toArray(new StructureObject[trackHeads.size()]);
         // get all rois to maximal value < errorTimePoint
         for (int trackIdx = 0; trackIdx<trackArray.length; ++trackIdx) {
-            if (trackArray[trackIdx].getTimePoint()>=minTimePoint) trackArray[trackIdx] = null;
-            else while (trackArray[trackIdx].getNext()!=null && trackArray[trackIdx].getTimePoint()<minTimePoint-1) trackArray[trackIdx] = trackArray[trackIdx].getNext();
+            if (trackArray[trackIdx].getFrame()>=minTimePoint) trackArray[trackIdx] = null;
+            else while (trackArray[trackIdx].getNext()!=null && trackArray[trackIdx].getFrame()<minTimePoint-1) trackArray[trackIdx] = trackArray[trackIdx].getNext();
         }
         
         boolean change = true;
@@ -806,11 +806,11 @@ public abstract class ImageWindowManager<T, U, V> {
             for (int trackIdx = 0; trackIdx<trackArray.length; ++trackIdx) {
                 if (trackArray[trackIdx]!=null) {
                     remainTrack=true;
-                    if (trackArray[trackIdx].getTimePoint()>currentTimePoint) {
+                    if (trackArray[trackIdx].getFrame()>currentTimePoint) {
                         trackArray[trackIdx]=trackArray[trackIdx].getPrevious();
                         change=true;
                     }
-                    if (trackArray[trackIdx]!=null && trackArray[trackIdx].getTimePoint()==currentTimePoint && trackArray[trackIdx].hasTrackLinkError(true, true)) return trackArray[trackIdx];
+                    if (trackArray[trackIdx]!=null && trackArray[trackIdx].getFrame()==currentTimePoint && trackArray[trackIdx].hasTrackLinkError(true, true)) return trackArray[trackIdx];
                 }
             }
             if (!change) --currentTimePoint;
@@ -827,15 +827,16 @@ public abstract class ImageWindowManager<T, U, V> {
             return getMenu(sel);
         }
     }
+    
     private JPopupMenu getMenu(StructureObject o) {
         JPopupMenu menu = new JPopupMenu();
         menu.add(new JMenuItem(o.toString()));
         menu.add(new JMenuItem("IsTrackHead: "+o.isTrackHead()));
-        DecimalFormat df = new DecimalFormat("#.####");
+        //DecimalFormat df = new DecimalFormat("#.####");
         if (o.getAttributes()!=null && !o.getAttributes().isEmpty()) {
             menu.addSeparator();
             for (Entry<String, Object> en : o.getAttributes().entrySet()) {
-                JMenuItem item = (en.getValue() instanceof Number) ? new JMenuItem(en.getKey()+": "+df.format(en.getValue())) : new JMenuItem(en.getKey()+": "+en.getValue());
+                JMenuItem item = new JMenuItem(en.getKey()+": "+toString(en.getValue()));
                 menu.add(item);
                 item.setAction(new AbstractAction(item.getActionCommand()) {
                     @Override
@@ -850,7 +851,7 @@ public abstract class ImageWindowManager<T, U, V> {
         if (o.hasMeasurements()) {
             menu.addSeparator();
             for (Entry<String, Object> en : o.getMeasurements().getValues().entrySet()) {
-                JMenuItem item = (en.getValue() instanceof Number) ? new JMenuItem(en.getKey()+": "+df.format(en.getValue())) : new JMenuItem(en.getKey()+": "+en.getValue());
+                JMenuItem item = new JMenuItem(en.getKey()+": "+toString(en.getValue()));
                 menu.add(item);
                 item.setAction(new AbstractAction(item.getActionCommand()) {
                     @Override
@@ -867,7 +868,7 @@ public abstract class ImageWindowManager<T, U, V> {
     private JPopupMenu getMenu(List<StructureObject> list) {
         JPopupMenu menu = new JPopupMenu();
         menu.add(new JMenuItem(Utils.toStringList(list)));
-        DecimalFormat df = new DecimalFormat("#.####");
+        //DecimalFormat df = new DecimalFormat("#.####E0");
         // getAllAttributeKeys
         Collection<String> attributeKeys = new HashSet();
         Collection<String> mesKeys = new HashSet();
@@ -886,7 +887,7 @@ public abstract class ImageWindowManager<T, U, V> {
                 List<Object> values = new ArrayList(list.size());
                 for (StructureObject o : list) values.add(o.getAttribute(s));
                 replaceRepetedValues(values);
-                menu.add(new JMenuItem(s+": "+Utils.toStringList(values, v -> v instanceof Number?df.format(v) : v.toString() )));
+                menu.add(new JMenuItem(s+": "+Utils.toStringList(values, v -> toString(v))));
             }
         }
         if (!mesKeys.isEmpty()) {
@@ -895,7 +896,7 @@ public abstract class ImageWindowManager<T, U, V> {
                 List<Object> values = new ArrayList(list.size());
                 for (StructureObject o : list) values.add(o.getMeasurements().getValue(s));
                 replaceRepetedValues(values);
-                menu.add(new JMenuItem(s+": "+Utils.toStringList(values, v -> v instanceof Number?df.format(v) : v.toString() )));
+                menu.add(new JMenuItem(s+": "+Utils.toStringList(values, v -> toString(v) )));
             }
         }
         return menu;
@@ -909,6 +910,18 @@ public abstract class ImageWindowManager<T, U, V> {
                 list.remove(i);
                 list.add(i, "%");
             } else lastValue = list.get(i);
+        }
+    }
+    private static String toString(Object o) {
+        return o instanceof Number ? format((Number) o) : o.toString();
+    }
+    final static DecimalFormat df = new DecimalFormat("#.###");
+    private static String format(Number n) {
+        if (n instanceof Integer) return n.toString();
+        else {
+            double d = Math.abs(n.doubleValue());
+            if (d<1 || d>100) return String.format("%.3E", n);
+            else return df.format(n);
         }
     }
 }

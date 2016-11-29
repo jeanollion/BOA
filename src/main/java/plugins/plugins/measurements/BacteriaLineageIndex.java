@@ -19,6 +19,7 @@ package plugins.plugins.measurements;
 
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ChoiceParameter;
+import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.StructureParameter;
 import configuration.parameters.TextParameter;
@@ -29,10 +30,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import measurement.GeometricalMeasurements;
 import measurement.MeasurementKey;
 import measurement.MeasurementKeyObject;
 import plugins.Measurement;
 import utils.HashMapGetCreate;
+import utils.LinearRegression;
 
 /**
  *
@@ -69,19 +72,21 @@ public class BacteriaLineageIndex implements Measurement {
     public void performMeasurement(StructureObject parentTrackHead) {
         int bIdx = structure.getSelectedIndex();
         String key = this.keyName.getValue();
-        //List<StructureObject> parentTrack = StructureObjectUtils.getTrack(parentTrackHead, false);
-        List<StructureObject> bacteria = parentTrackHead.getChildren(bIdx);
+        
+        HashMapGetCreate<StructureObject, List<StructureObject>> siblings = new HashMapGetCreate<>(o -> StructureObjectUtils.getAllNext(o, null));
+        StructureObject currentParent = parentTrackHead;
+        List<StructureObject> bacteria = currentParent.getChildren(bIdx);
         int trackHeadIdx = 0;
         for (StructureObject o : bacteria) {
             o.getMeasurements().setValue(key, getTrackHeadName(trackHeadIdx++));
             int nextTP = o.getNextDivisionTimePoint();
             o.getMeasurements().setValue("NextDivisionFrame", nextTP>=0?nextTP:null );
         }
-        HashMapGetCreate<StructureObject, List<StructureObject>> siblings = new HashMapGetCreate<>(o -> StructureObjectUtils.getAllNext(o, null));
-        while(parentTrackHead.getNext()!=null) {
-            parentTrackHead = parentTrackHead.getNext();
-            bacteria = parentTrackHead.getChildren(bIdx);
+        while(currentParent.getNext()!=null) {
+            currentParent = currentParent.getNext();
+            bacteria = currentParent.getChildren(bIdx);
             for (StructureObject o : bacteria) {
+                
                 if (o.getPrevious()==null) o.getMeasurements().setValue(key, getTrackHeadName(trackHeadIdx++));
                 else {
                     List<StructureObject> sib = siblings.getAndCreateIfNecessary(o.getPrevious());
@@ -89,9 +94,9 @@ public class BacteriaLineageIndex implements Measurement {
                     else if (o.isTrackHead()) {
                         if (sib.size()>2 || sib.isEmpty()) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageError);
                         else o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[1]);
-                    }
-                    else o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[0]);
+                    } else o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[0]);
                 }
+                //if (currentParent.getFrame()<=10 && currentParent.getIdx()==0) logger.debug("o: {}, prev: {}, next: {}, lin: {}", o, o.getPrevious(), siblings.getAndCreateIfNecessary(o.getPrevious()), o.getMeasurements().getValueAsString(key));
                 int prevTP = o.getPreviousDivisionTimePoint();
                 o.getMeasurements().setValue("PreviousDivisionFrame", prevTP>0 ? prevTP : null);
                 int nextTP = o.getNextDivisionTimePoint();
@@ -99,13 +104,35 @@ public class BacteriaLineageIndex implements Measurement {
             }
             siblings.clear();
         }
-        /*Map<StructureObject, List<StructureObject>> bacteriaTracks = StructureObjectUtils.getAllTracks(parentTrack, bIdx);
+        
+        List<StructureObject> parentTrack = StructureObjectUtils.getTrack(parentTrackHead, false);
+        Map<StructureObject, List<StructureObject>> bacteriaTracks = StructureObjectUtils.getAllTracksSplitDiv(parentTrack, bIdx);
         for (List<StructureObject> l : bacteriaTracks.values()) {
             if (l.size()>=2) {
-                double[] frame = new double[l.size()]; // calibrate size
-                double[] length = new double[frame.length]; // getLength from measurements or compute it de novo
+                double[] frame = new double[l.size()];
+                double[] length = new double[frame.length];
+                int idx = 0;
+                for (StructureObject b : l) {
+                    frame[idx] = b.getCalibratedTimePoint();
+                    length[idx++] = Math.log(GeometricalMeasurements.getFeretMax(b.getObject()));
+                }
+                double[] beta = LinearRegression.run(frame, length);
+                double[] residuals = LinearRegression.getResiduals(frame, length, beta[0], beta[1]);
+                idx = 0;
+                for (StructureObject b : l) {
+                    b.getMeasurements().setValue("GrowthRate", beta[1] );
+                    b.getMeasurements().setValue("GrowthRateIntersection", beta[0] );
+                    b.getMeasurements().setValue("GrowthRateResidual", residuals[idx++] );
+                }
+                /*if (!debug && l.size()>=5) {
+                    debug = true;
+                    logger.debug("frames: {}", frame);
+                    logger.debug("length: {}", length);
+                    logger.debug("intersect: {}, slope: {}", beta[0], beta[1]);
+                    logger.debug("residuals: {}", residuals);
+                }*/
             }
-        }*/
+        }
     }
     
     @Override 
@@ -114,7 +141,9 @@ public class BacteriaLineageIndex implements Measurement {
         res.add(new MeasurementKeyObject(keyName.getValue(), structure.getSelectedIndex()));
         res.add(new MeasurementKeyObject("NextDivisionFrame", structure.getSelectedIndex()));
         res.add(new MeasurementKeyObject("PreviousDivisionFrame", structure.getSelectedIndex()));
-        //res.add(new MeasurementKeyObject("GrowthRate", structure.getSelectedIndex()));
+        res.add(new MeasurementKeyObject("GrowthRate", structure.getSelectedIndex()));
+        res.add(new MeasurementKeyObject("GrowthRateIntersection", structure.getSelectedIndex()));
+        res.add(new MeasurementKeyObject("GrowthRateResidual", structure.getSelectedIndex()));
         return res;
     }
     

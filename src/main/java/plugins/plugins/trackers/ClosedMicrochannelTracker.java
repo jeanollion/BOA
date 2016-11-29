@@ -56,7 +56,7 @@ public class ClosedMicrochannelTracker implements Tracker {
         double divCriterion = this.divCriterion.getValue().doubleValue();
         double maxGrowthRate = this.maxGrowthRate.getValue().doubleValue();
         double minGrowthRate = this.minGrowthRate.getValue().doubleValue();
-        logger.trace("closed microchanel tracker: assingPrevious: timepoint: {}, previous count: {}, next count: {}, divCriterion: {}, maxGrowthRate: {}", next.isEmpty()?"no element":next.get(0).getTimePoint(), previous.size(), next.size(), divCriterion, maxGrowthRate);
+        logger.trace("closed microchanel tracker: assingPrevious: timepoint: {}, previous count: {}, next count: {}, divCriterion: {}, maxGrowthRate: {}", next.isEmpty()?"no element":next.get(0).getFrame(), previous.size(), next.size(), divCriterion, maxGrowthRate);
         
         // get size for division criterion
         double[] previousSize = new double[previous.size()];

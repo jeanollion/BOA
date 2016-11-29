@@ -22,7 +22,7 @@ package dataStructure.objects;
  * @author jollion
  */
 public interface Track {
-    public int getTimePoint();
+    public int getFrame();
     public StructureObjectPreProcessing getParent();
     public StructureObjectPreProcessing getPrevious();
     public StructureObjectPreProcessing getNext();

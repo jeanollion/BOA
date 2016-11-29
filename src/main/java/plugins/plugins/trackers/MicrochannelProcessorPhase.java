@@ -124,31 +124,31 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
     private static void closeGaps(int structureIdx, List<StructureObject> parentTrack) {
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         Map<Integer, StructureObject> reference = getOneElementOfSize(allTracks, parentTrack.size());
-        int minParentFrame = parentTrack.get(0).getTimePoint();
+        int minParentFrame = parentTrack.get(0).getFrame();
         for (List<StructureObject> track : allTracks.values()) {
             Iterator<StructureObject> it = track.iterator();
             StructureObject prev = it.next();
             while (it.hasNext()) {
                 StructureObject cur = it.next();
-                if (cur.getTimePoint()>prev.getTimePoint()+1) {
+                if (cur.getFrame()>prev.getFrame()+1) {
                     if (debug) logger.debug("gap: {}->{}", prev, cur);
-                    Map<Integer, StructureObject> localReference = reference==null? getReference(allTracks,prev.getTimePoint(), cur.getTimePoint()) : reference;
+                    Map<Integer, StructureObject> localReference = reference==null? getReference(allTracks,prev.getFrame(), cur.getFrame()) : reference;
                     if (localReference==null) {
                         prev.resetTrackLinks(false, true);
                         cur.resetTrackLinks(true, false);
                     } else {
-                        StructureObject refPrev=localReference.get(prev.getTimePoint());
-                        StructureObject refNext=localReference.get(cur.getTimePoint());
+                        StructureObject refPrev=localReference.get(prev.getFrame());
+                        StructureObject refNext=localReference.get(cur.getFrame());
                         int deltaOffX = Math.round((prev.getBounds().getxMin()-refPrev.getBounds().getxMin() + cur.getBounds().getxMin()-refNext.getBounds().getxMin() )/2);
                         int deltaOffY = Math.round((prev.getBounds().getyMin()-refPrev.getBounds().getyMin() + cur.getBounds().getyMin()-refNext.getBounds().getyMin() ) /2);
                         int deltaOffZ = Math.round((prev.getBounds().getzMin()-refPrev.getBounds().getzMin() + cur.getBounds().getzMin()-refNext.getBounds().getzMin() ) /2);
                         int xSize = Math.round((prev.getBounds().getSizeX()+cur.getBounds().getSizeX())/2);
                         int ySize = Math.round((prev.getBounds().getSizeY()+cur.getBounds().getSizeY())/2);
                         int zSize = Math.round((prev.getBounds().getSizeZ()+cur.getBounds().getSizeZ())/2);
-                        int startFrame = prev.getTimePoint()+1;
-                        if (debug) logger.debug("mc close gap between: {}&{}, off: {}/{}/{}, size:{}/{}/{}", prev.getTimePoint(), cur.getTimePoint(), deltaOffX, deltaOffY, deltaOffZ, xSize, ySize, zSize);
+                        int startFrame = prev.getFrame()+1;
+                        if (debug) logger.debug("mc close gap between: {}&{}, off: {}/{}/{}, size:{}/{}/{}", prev.getFrame(), cur.getFrame(), deltaOffX, deltaOffY, deltaOffZ, xSize, ySize, zSize);
                         if (debug) logger.debug("reference: {}", localReference);
-                        for (int f = startFrame; f<cur.getTimePoint(); ++f) { 
+                        for (int f = startFrame; f<cur.getFrame(); ++f) { 
                             StructureObject ref=localReference.get(f);
                             if (debug) logger.debug("mc close gap: f:{}, ref: {}", f, ref);
                             int offX = deltaOffX + ref.getBounds().getxMin();
@@ -175,7 +175,7 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
     }
     private static Map<Integer, StructureObject> getOneElementOfSize(Map<StructureObject, List<StructureObject>> allTracks, int size) {
         for (Entry<StructureObject, List<StructureObject>> e : allTracks.entrySet()) if (e.getValue().size()==size) {
-            return e.getValue().stream().collect(Collectors.toMap(s->s.getTimePoint(), s->s));
+            return e.getValue().stream().collect(Collectors.toMap(s->s.getFrame(), s->s));
         }
         return null;
     }
@@ -188,8 +188,8 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
      */
     private static Map<Integer, StructureObject> getReference(Map<StructureObject, List<StructureObject>> allTracks, int fStart, int fEnd) { 
         for (Entry<StructureObject, List<StructureObject>> e : allTracks.entrySet()) {
-            if (e.getKey().getTimePoint()<=fStart && e.getValue().get(e.getValue().size()-1).getTimePoint()>=fEnd) {
-                if (isContinuousBetweenFrames(e.getValue(), fStart, fEnd)) return e.getValue().stream().collect(Collectors.toMap(s->s.getTimePoint(), s->s));
+            if (e.getKey().getFrame()<=fStart && e.getValue().get(e.getValue().size()-1).getFrame()>=fEnd) {
+                if (isContinuousBetweenFrames(e.getValue(), fStart, fEnd)) return e.getValue().stream().collect(Collectors.toMap(s->s.getFrame(), s->s));
             }
         }
         return null;
@@ -199,9 +199,9 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
         StructureObject prev=it.next();
         while (it.hasNext()) {
             StructureObject cur = it.next();
-            if (cur.getTimePoint()>=fStart) {
-                if (cur.getTimePoint()!=prev.getTimePoint()+1) return false;
-                if (cur.getTimePoint()>=fEnd) return true;
+            if (cur.getFrame()>=fStart) {
+                if (cur.getFrame()!=prev.getFrame()+1) return false;
+                if (cur.getFrame()>=fEnd) return true;
             }
             prev = cur;
         }

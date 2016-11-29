@@ -83,8 +83,8 @@ public class TestProcessMicrochannels {
         Iterator<StructureObject> it = rootTrack.iterator();
         while(it.hasNext()) {
             StructureObject o = it.next();
-            if (o.getTimePoint()<timePointMin) it.remove();
-            if (o.getTimePoint()>timePointMax) it.remove();
+            if (o.getFrame()<timePointMin) it.remove();
+            if (o.getFrame()>timePointMax) it.remove();
         }
         MicrochannelProcessor.debug=true;
         MicrochannelProcessor mp = new MicrochannelProcessor(new MicroChannelFluo2D());

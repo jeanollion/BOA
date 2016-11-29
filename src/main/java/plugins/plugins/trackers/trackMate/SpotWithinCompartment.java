@@ -50,7 +50,7 @@ public class SpotWithinCompartment extends Spot {
     
     public SpotWithinCompartment(Object3D object, int timePoint, SpotCompartiment compartiment, double[] scaledCenter, DistanceComputationParameters distanceParameters) {
         super(scaledCenter[0], scaledCenter[1], scaledCenter[2], 1, 1);
-        getFeatures().put(Spot.FRAME, (double)compartiment.object.getTimePoint());
+        getFeatures().put(Spot.FRAME, (double)compartiment.object.getFrame());
         getFeatures().put(Spot.QUALITY, object.getQuality());
         this.compartiment=compartiment;
         this.object=object;
@@ -111,11 +111,11 @@ public class SpotWithinCompartment extends Spot {
         if (s instanceof SpotWithinCompartment) {
             SpotWithinCompartment ss = (SpotWithinCompartment)s;
             //if (!isLinkable && !ss.isLinkable) return Double.POSITIVE_INFINITY; // no link allowed between to spots that are not linkable
-            if (this.compartiment.object.getTimePoint()>ss.compartiment.object.getTimePoint()) return ss.squareDistanceTo(this);
+            if (this.compartiment.object.getFrame()>ss.compartiment.object.getFrame()) return ss.squareDistanceTo(this);
             else {
                 if (compartiment.sameTrackOrDirectChildren(ss.compartiment)) { // spot in the same track or separated by one division at max
                     //if (ss.compartiment.previousDivisionTime>=compartiment.object.getTimePoint()) return getSquareDistanceDivision(ss);
-                    if (this.compartiment.nextDivisionTimePoint>=0 && this.compartiment.nextDivisionTimePoint<=ss.compartiment.object.getTimePoint()) return getSquareDistanceDivision(ss);
+                    if (this.compartiment.nextDivisionTimePoint>=0 && this.compartiment.nextDivisionTimePoint<=ss.compartiment.object.getFrame()) return getSquareDistanceDivision(ss);
                     else return getSquareDistanceCompartiments(ss);
                 } else return Double.POSITIVE_INFINITY; // spots in different tracks -> no link possible
             }

@@ -105,8 +105,8 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                 //Iterator<Entry<Integer, List<StructureObject>>> it = root.getRemainingTrackHeads().subMap(track.get(1).getTimePoint(), true, track.get(track.size()-1).getTimePoint(), true).entrySet().iterator();
                 Iterator<Entry<Integer, List<StructureObject>>> it = root.getRemainingTrackHeads().entrySet().iterator();
                 //logger.trace("looking for children for node: {} timePoint left: {} timePoint right:{}", toString(), track.get(1).getTimePoint(), track.get(track.size()-1).getTimePoint());
-                int leftLimit = track.get(1).getTimePoint();
-                int rightLimit = track.get(track.size()-1).getTimePoint();
+                int leftLimit = track.get(1).getFrame();
+                int rightLimit = track.get(track.size()-1).getFrame();
                 while (it.hasNext()) {
                     Entry<Integer, List<StructureObject>> entry = it.next();
                     if (entry.getKey()<leftLimit) continue;
@@ -151,7 +151,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
     // TreeNode implementation
     @Override public String toString() {
         if (trackHead==null) return "tracking should be re-run";
-        return "Track: Head idx="+trackHead.getIdx()+ " t="+trackHead.getTimePoint()+" length: "+(track!=null?track.size():"........."); 
+        return "Track: Head idx="+trackHead.getIdx()+ " t="+trackHead.getFrame()+" length: "+(track!=null?track.size():"........."); 
     }
     
     public TrackNode getChildAt(int childIndex) {

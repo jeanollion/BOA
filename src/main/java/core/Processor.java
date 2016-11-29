@@ -47,6 +47,7 @@ import plugins.TrackCorrector;
 import plugins.Tracker;
 import plugins.Transformation;
 import plugins.plugins.processingScheme.SegmentOnly;
+import utils.Pair;
 import utils.ThreadRunner;
 import utils.ThreadRunner.ThreadAction;
 import utils.Utils;
@@ -66,7 +67,7 @@ public class Processor {
         for (MultipleImageContainer c : images) {
             MicroscopyField f = xp.createPosition(c.getName());
             if (f!=null) {
-                f.setImages(c);
+                f.setImages(c); // TODO: bug when delete from gui just after creation
                 count++;
             } else if (relink) {
                 xp.getPosition(c.getName()).setImages(c);
@@ -133,7 +134,8 @@ public class Processor {
         }
     }
     
-    public static void processAndTrackStructures(ObjectDAO dao, boolean deleteObjects, boolean trackOnly, int... structures) {
+    public static List<Pair<String, Exception>> processAndTrackStructures(ObjectDAO dao, boolean deleteObjects, boolean trackOnly, int... structures) {
+        List<Pair<String, Exception>> errors = new ArrayList<>();
         Experiment xp = dao.getExperiment();
         if (deleteObjects) {
             if (structures.length==0 || structures.length==xp.getStructureCount()) dao.deleteAllObjects();
@@ -142,40 +144,45 @@ public class Processor {
         List<StructureObject> root = getOrCreateRootTrack(dao);
         if (root==null) {
             logger.error("Field: {} no pre-processed image found", dao.getFieldName());
-            return;
+            errors.add(new Pair(dao.getFieldName(), new Exception("no pre-processed image found")));
+            return errors;
         }
         if (structures.length==0) structures=xp.getStructuresInHierarchicalOrderAsArray();
         for (int s: structures) {
             if (!trackOnly) logger.info("Segmentation & Tracking: Field: {}, Structure: {}", dao.getFieldName(), s);
             else logger.info("Tracking: Field: {}, Structure: {}", dao.getFieldName(), s);
-            executeProcessingScheme(root, s, trackOnly, false);
+            List<Pair<String, Exception>> e = executeProcessingScheme(root, s, trackOnly, false);
+            errors.addAll(e);
             System.gc();
         }
-        
+        return errors;
     }
     
-    public static void executeProcessingScheme(List<StructureObject> parentTrack, final int structureIdx, final boolean trackOnly, final boolean deleteChildren) {
-        if (parentTrack.isEmpty()) return;
+    public static List<Pair<String, Exception>> executeProcessingScheme(List<StructureObject> parentTrack, final int structureIdx, final boolean trackOnly, final boolean deleteChildren) {
+        if (parentTrack.isEmpty()) return Collections.EMPTY_LIST;
         final ObjectDAO dao = parentTrack.get(0).getDAO();
         Experiment xp = parentTrack.get(0).getExperiment();
         final ProcessingScheme ps = xp.getStructure(structureIdx).getProcessingScheme();
         int parentStructure = xp.getStructure(structureIdx).getParentStructure();
-        if (trackOnly && ps instanceof SegmentOnly) return;
+        if (trackOnly && ps instanceof SegmentOnly) return Collections.EMPTY_LIST;
         //ArrayList<ArrayList<StructureObject>> objectsToStore = new ArrayList<ArrayList<StructureObject>>();
         //List<ArrayList<StructureObject>> objectsToStoreSync = Collections.synchronizedList(objectsToStore);
         
+        Map<StructureObject, List<StructureObject>> allParentTracks;
         if (parentStructure==-1 || parentTrack.get(0).getStructureIdx()==parentStructure) { // parents = roots
-            execute(ps, structureIdx, parentTrack, trackOnly, deleteChildren, dao);
+            allParentTracks = new HashMap<>(1);
+            allParentTracks.put(parentTrack.get(0), parentTrack);
         } else {
-            Map<StructureObject, List<StructureObject>> allParentTracks = StructureObjectUtils.getAllTracks(parentTrack, parentStructure);
-            logger.debug("ex ps: structure: {}, allParentTracks: {}", structureIdx, allParentTracks.size());
-            // one thread per track
-            ThreadAction<List<StructureObject>> ta = new ThreadAction<List<StructureObject>>() {
-                @Override
-                public void run(List<StructureObject> pt, int idx, int threadIdx) {execute(xp.getStructure(structureIdx).getProcessingScheme(), structureIdx, pt, trackOnly, deleteChildren, dao);}
-            };
-            ThreadRunner.execute(new ArrayList<List<StructureObject>> (allParentTracks.values()), ta);
+            allParentTracks = StructureObjectUtils.getAllTracks(parentTrack, parentStructure);
         }
+        logger.debug("ex ps: structure: {}, allParentTracks: {}", structureIdx, allParentTracks.size());
+        // one thread per track
+        ThreadAction<List<StructureObject>> ta = new ThreadAction<List<StructureObject>>() {
+            @Override
+            public void run(List<StructureObject> pt, int idx, int threadIdx) {execute(xp.getStructure(structureIdx).getProcessingScheme(), structureIdx, pt, trackOnly, deleteChildren, dao);}
+        };
+        List<Pair<String, Exception>> exceptions = ThreadRunner.execute(new ArrayList<List<StructureObject>> (allParentTracks.values()), ta);
+        
         ArrayList<StructureObject> children = new ArrayList<StructureObject>();
         for (StructureObject p : parentTrack) children.addAll(p.getChildren(structureIdx));
         dao.store(children, !(ps instanceof SegmentOnly));
@@ -189,6 +196,7 @@ public class Processor {
             errors.addElements(children);
             dao.getMasterDAO().getSelectionDAO().store(errors);
         }
+        return exceptions;
     }
     
     private static void execute(ProcessingScheme ps, int structureIdx, List<StructureObject> parentTrack, boolean trackOnly, boolean deleteChildren, ObjectDAO dao) {
@@ -210,29 +218,28 @@ public class Processor {
         }
     }
     
-    public static void performMeasurements(final ObjectDAO dao) {
+    public static List<Pair<String, Exception>> performMeasurements(final ObjectDAO dao) {
         long t0 = System.currentTimeMillis();
         List<StructureObject> roots = dao.getRoots();
-        final StructureObject[] rootArray = roots.toArray(new StructureObject[roots.size()]);
-        logger.debug("{} number of roots: {}", dao.getFieldName(), rootArray.length);
+        logger.debug("{} number of roots: {}", dao.getFieldName(), roots.size());
         final Map<Integer, List<Measurement>> measurements = dao.getExperiment().getMeasurementsByCallStructureIdx();
-        
+        Map<StructureObject, List<StructureObject>> rootTrack = new HashMap<>(1); rootTrack.put(roots.get(0), roots);
+        List<Pair<String, Exception>> errors = new ArrayList<>();
         for(Entry<Integer, List<Measurement>> e : measurements.entrySet()) {
+            Map<StructureObject, List<StructureObject>> allParentTracks;
             if (e.getKey()==-1) {
-                executeMeasurementsOnParentTrack(roots, e.getValue());
-                logger.debug("performing: #{} measurements", e.getValue().size());
+                allParentTracks= rootTrack;
             } else {
-                Map<StructureObject, List<StructureObject>> allParentTracks = StructureObjectUtils.getAllTracks(roots, e.getKey());
-                
-                logger.debug("performing: #{} measurements from parent: {} (#{} parentTracks)", e.getValue().size(), e.getKey(), allParentTracks.size());
-                ThreadAction<List<StructureObject>> ta = new ThreadAction<List<StructureObject>>() {
-                    @Override
-                    public void run(List<StructureObject> pt, int idx, int threadIdx) {executeMeasurementsOnParentTrack(pt, dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey()));} // re-instanciate measurement in case they are not thread safe
-                };
-                //for (List<StructureObject> tr : allParentTracks.values()) ta.run(tr, 0, 0);
-                ThreadRunner.execute(new ArrayList<List<StructureObject>> (allParentTracks.values()), ta); // todo : manage case of mutationTrackMeasurement: measurement on one single object: better root by root
-            }
-            
+                allParentTracks = StructureObjectUtils.getAllTracks(roots, e.getKey());
+            }    
+            logger.debug("performing: #{} measurements from parent: {} (#{} parentTracks)", e.getValue().size(), e.getKey(), allParentTracks.size());
+            ThreadAction<List<StructureObject>> ta = new ThreadAction<List<StructureObject>>() {
+                @Override
+                public void run(List<StructureObject> pt, int idx, int threadIdx) {executeMeasurementsOnParentTrack(pt, dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey()));} // re-instanciate measurement in case they are not thread safe
+            };
+            //for (List<StructureObject> tr : allParentTracks.values()) ta.run(tr, 0, 0);
+            List<Pair<String, Exception>> errorsLocal = ThreadRunner.execute(new ArrayList<List<StructureObject>> (allParentTracks.values()), ta); // todo : manage case of mutationTrackMeasurement: measurement on one single object: better root by root
+            errors.addAll(errorsLocal);
         }
         long t1 = System.currentTimeMillis();
         final Set<StructureObject> allModifiedObjects = new HashSet<>();
@@ -245,6 +252,7 @@ public class Processor {
         }
         logger.debug("measurements on field: {}: computation time: {}, #modified objects: {}", dao.getFieldName(), t1-t0, allModifiedObjects.size());
         dao.upsertMeasurements(allModifiedObjects);
+        return errors;
     }
     
     private static void executeMeasurementsOnParentTrack(List<StructureObject> parentTrack, List<Measurement> list) {

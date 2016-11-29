@@ -202,7 +202,7 @@ public class MutationTrackPostProcessing {
     }
     public void flagShortAndLongTracks(int shortTrackThreshold, int longTrackTreshold) {
         for (List<StructureObject> track : trackHeadTrackMap.values()) {
-            int trackLength = track.get(track.size()-1).getTimePoint()-track.get(0).getTimePoint();
+            int trackLength = track.get(track.size()-1).getFrame()-track.get(0).getFrame();
             if (trackLength<shortTrackThreshold || trackLength>longTrackTreshold) {
                 for (StructureObject o : track) o.setAttribute(StructureObject.trackErrorNext, true);
             }
@@ -258,8 +258,8 @@ public class MutationTrackPostProcessing {
     
     private static boolean overlappingInTime(List<StructureObject> track1, List<StructureObject> track2) {
         if (track1.isEmpty() || track2.isEmpty()) return false;
-        if (track1.get(0).getTimePoint()>track2.get(0).getTimePoint()) return overlappingInTime(track2, track1);
-        return track1.get(track1.size()-1).getTimePoint()>=track2.get(0).getTimePoint();
+        if (track1.get(0).getFrame()>track2.get(0).getFrame()) return overlappingInTime(track2, track1);
+        return track1.get(track1.size()-1).getFrame()>=track2.get(0).getFrame();
     }
     
     

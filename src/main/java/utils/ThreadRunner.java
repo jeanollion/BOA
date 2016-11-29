@@ -6,6 +6,7 @@ package utils;
 import static core.Processor.logger;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 /**
@@ -53,7 +54,7 @@ public class ThreadRunner {
     public final int start, end;
     public final Thread[] threads;
     public final AtomicInteger ai;
-    
+    public final List<Pair<String, Exception>> errors = new ArrayList<>();
     public ThreadRunner(int start, int end) {
         this(start, end, 0);
     }
@@ -117,19 +118,25 @@ public class ThreadRunner {
         return Runtime.getRuntime().availableProcessors();
     }
     
-    public static <T> void execute(final T[] array, final boolean setToNull, final ThreadAction<T> action) {
-        execute(array, setToNull, 0, action);
+    public static <T> List<Pair<String, Exception>> execute(final T[] array, final boolean setToNull, final ThreadAction<T> action) {
+        return execute(array, setToNull, 0, action);
     }
     
-    public static <T> void execute(final T[] array, final boolean setToNull, final int nThreadLimit, final ThreadAction<T> action) {
-        if (array==null) return;
-        if (array.length==0) return;
+    public static <T> List<Pair<String, Exception>> execute(final T[] array, final boolean setToNull, final int nThreadLimit, final ThreadAction<T> action) {
+        if (array==null) return Collections.EMPTY_LIST;
+        if (array.length==0) return Collections.EMPTY_LIST;
         if (array.length==1) {
             if (action instanceof ThreadAction2) ((ThreadAction2)action).setUp();
-            action.run(array[0], 0, 0);
+            List<Pair<String, Exception>> errors = new ArrayList<>(1);
+            try {
+                action.run(array[0], 0, 0);
+            } catch (Exception e) {
+                errors.add(new Pair(array[0].toString(), e));
+            }
             if (action instanceof ThreadAction2) ((ThreadAction2)action).tearDown();
-            return;
+            return errors;
         }
+        
         final ThreadRunner tr = new ThreadRunner(0, array.length, nThreadLimit);
         final AtomicInteger count = new AtomicInteger(0);
         for (int i = 0; i<tr.threads.length; i++) {
@@ -140,7 +147,13 @@ public class ThreadRunner {
                     public void run() { 
                         if (action instanceof ThreadAction2) ((ThreadAction2)action).setUp();
                         for (int idx = tr.ai.getAndIncrement(); idx<tr.end; idx = tr.ai.getAndIncrement()) {
-                            action.run(array[idx], idx,threadIdx );
+                            try {
+                                action.run(array[idx], idx,threadIdx );
+                            } catch (Exception e) {
+                                synchronized(tr.errors) {
+                                    tr.errors.add(new Pair(array[idx].toString(), e));
+                                }
+                            }
                             int currentCount = count.incrementAndGet();
                             //logger.debug("Processed: {}/{}", currentCount, array.length);
                             if (setToNull) array[idx]=null;
@@ -151,15 +164,21 @@ public class ThreadRunner {
             );
         }
         tr.startAndJoin();
+        return tr.errors;
     }
-    public static <T> void execute(Collection<T> array, final ThreadAction<T> action) {
-        if (array==null) return;
-        if (array.isEmpty()) return;
+    public static <T> List<Pair<String, Exception>> execute(Collection<T> array, final ThreadAction<T> action) {
+        if (array==null) return Collections.EMPTY_LIST;
+        if (array.isEmpty()) return Collections.EMPTY_LIST;
         if (array.size()==1) {
             if (action instanceof ThreadAction2) ((ThreadAction2)action).setUp();
-            action.run(array.iterator().next(), 0, 0);
+            List<Pair<String, Exception>> errors = new ArrayList<>(1);
+            try {
+                action.run(array.iterator().next(), 0, 0);
+            } catch (Exception e) {              
+                errors.add(new Pair(array.iterator().next().toString(), e));           
+            }
             if (action instanceof ThreadAction2) ((ThreadAction2)action).tearDown();
-            return;
+            return errors;
         }
         final List<T> list = (array instanceof List) ? (List)array : new ArrayList(array);
         final ThreadRunner tr = new ThreadRunner(0, list.size(), 0);
@@ -171,7 +190,13 @@ public class ThreadRunner {
                     public void run() { 
                         if (action instanceof ThreadAction2) ((ThreadAction2)action).setUp();
                         for (int idx = tr.ai.getAndIncrement(); idx<tr.end; idx = tr.ai.getAndIncrement()) {
-                            action.run(list.get(idx), idx, threadIdx);
+                            try {
+                                action.run(list.get(idx), idx, threadIdx);
+                            } catch (Exception e) {
+                                synchronized(tr.errors) {
+                                    tr.errors.add(new Pair(list.get(idx).toString(), e));
+                                }
+                            }
                         }
                         if (action instanceof ThreadAction2) ((ThreadAction2)action).tearDown();
                     }
@@ -179,6 +204,7 @@ public class ThreadRunner {
             );
         }
         tr.startAndJoin();
+        return tr.errors;
     }
     
     public static interface ThreadAction<T> {

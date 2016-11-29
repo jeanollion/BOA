@@ -291,7 +291,7 @@ public class TrackTreeGenerator {
         //o = db.getDao(o.getFieldName()).getById(o.getTrackHeadId());
         o = o.getTrackHead();
         res.add(o);
-        while(o.getTimePoint()>0 && o.getPrevious()!=null) {
+        while(o.getFrame()>0 && o.getPrevious()!=null) {
             //o = db.getDao(o.getFieldName()).getById(o.getPrevious().getTrackHeadId());
             o = o.getPrevious().getTrackHead();
             res.add(o);

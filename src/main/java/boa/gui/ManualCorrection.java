@@ -94,7 +94,7 @@ public class ManualCorrection {
         }
     }
     public static void unlinkObjects(StructureObject prev, StructureObject next, Collection<StructureObject> modifiedObjects) {
-        if (next.getTimePoint()<prev.getTimePoint()) unlinkObjects(next, prev, modifiedObjects);
+        if (next.getFrame()<prev.getFrame()) unlinkObjects(next, prev, modifiedObjects);
         else {
             if (next.getPrevious()==prev) {
                 next.resetTrackLinks(true, false);
@@ -120,7 +120,7 @@ public class ManualCorrection {
         o.getDAO().getMasterDAO().getSelectionDAO().store(getManualCorrectionSelection(o));
     }
     public static void linkObjects(StructureObject prev, StructureObject next, Collection<StructureObject> modifiedObjects) {
-        if (next.getTimePoint()<prev.getTimePoint()) linkObjects(next, prev, modifiedObjects);
+        if (next.getFrame()<prev.getFrame()) linkObjects(next, prev, modifiedObjects);
         else {
             boolean allowMerge = prev.getExperiment().getStructure(prev.getStructureIdx()).allowMerge();
             boolean allowSplit = prev.getExperiment().getStructure(prev.getStructureIdx()).allowSplit();
@@ -189,7 +189,7 @@ public class ManualCorrection {
         for (StructureObject currentParent : objectsByParent.keySet()) {
             List<StructureObject> l = objectsByParent.get(currentParent);
             logger.debug("prevParent: {}, currentParent: {}, #objects: {}", prevParent, currentParent, l.size());
-            if (l.size()==1 && (prevParent==null || prevParent.getTimePoint()<currentParent.getTimePoint())) {
+            if (l.size()==1 && (prevParent==null || prevParent.getFrame()<currentParent.getFrame())) {
                 if (prev!=null) logger.debug("prev: {}, prevTh: {}, prevIsTh: {}, prevPrev: {}, prevNext: {}", prev, prev.getTrackHead(), prev.isTrackHead(), prev.getPrevious(), prev.getNext());
                 if (prevParent!=null && prev!=null) {
                     StructureObject current = l.get(0);

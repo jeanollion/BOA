@@ -43,7 +43,7 @@ public class BlankStructureObject implements StructureObjectProcessing {
         return null;
     }
 
-    public int getTimePoint() {
+    public int getFrame() {
         return 0;
     }
 

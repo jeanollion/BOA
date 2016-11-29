@@ -48,7 +48,7 @@ public class Measurements implements Comparable<Measurements>{
     final static String NA_STRING = "NA";
     public Measurements(StructureObject o) {
         this.fieldName=o.getFieldName();
-        this.timePoint=o.getTimePoint();
+        this.timePoint=o.getFrame();
         this.structureIdx=o.getStructureIdx();
         this.isTrackHead=o.isTrackHead;
         this.values=new HashMap<String, Object>();

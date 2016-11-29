@@ -23,7 +23,7 @@ package utils;
  */
 public class LinearRegression { 
 
-    public static double[] main(double[] x, double[] y) { 
+    public static double[] run(double[] x, double[] y) { 
         if (x.length!=y.length) throw new IllegalArgumentException("x & y should be of same length");
         if (x.length<=1) return new double[]{Double.NaN, Double.NaN};
         // first pass: compute xbar and ybar
@@ -72,4 +72,10 @@ public class LinearRegression {
         //"SSR  = " + ssr
                 */
     }
+    public static double[] getResiduals(double[] x, double[] y, double intersect, double slope) {
+        double[] res = new double[x.length];
+        for (int i = 0; i<x.length; ++i) res[i] = y[i] - (intersect + x[i] * slope);
+        return res;
+    }
+
 }

@@ -120,17 +120,17 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
                 logger.debug("structure: {} no trackHeads found", structureIdx);
             } else {
                 logger.debug("structure: {} nb trackHeads found: {}", structureIdx, trackHeads.size());
-                HashMap<Integer, List<StructureObject>> map  = new HashMap<Integer, List<StructureObject>> (trackHeads.get(trackHeads.size()-1).getTimePoint()-trackHeads.get(0).getTimePoint()+1);
-                int currentTimePoint = trackHeads.get(0).getTimePoint();
+                HashMap<Integer, List<StructureObject>> map  = new HashMap<Integer, List<StructureObject>> (trackHeads.get(trackHeads.size()-1).getFrame()-trackHeads.get(0).getFrame()+1);
+                int currentTimePoint = trackHeads.get(0).getFrame();
                 int lastIdx = 0;
                 int currentIdx = 1;
                 while (currentIdx<trackHeads.size()) {
-                    if (trackHeads.get(currentIdx).getTimePoint()>currentTimePoint) {
+                    if (trackHeads.get(currentIdx).getFrame()>currentTimePoint) {
                         //ArrayList<StructureObject> currentHeads = new ArrayList<StructureObject>(currentIdx-lastIdx);
                         //for (int i = lastIdx; i<currentIdx; ++i) currentHeads.add(trackHeads.get(i));
                         map.put(currentTimePoint, new ArrayList<StructureObject>(trackHeads.subList(lastIdx, currentIdx)));
                         lastIdx=currentIdx;
-                        currentTimePoint = trackHeads.get(currentIdx).getTimePoint();
+                        currentTimePoint = trackHeads.get(currentIdx).getFrame();
                     }
                     currentIdx++;
                 }

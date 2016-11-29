@@ -63,7 +63,7 @@ public class BasicObjectDAO implements ObjectDAO {
     }
 
     public List<StructureObject> getChildren(StructureObject parent, int structureIdx) {
-        return this.rootTrack.get(parent.getTimePoint()).getChildren(structureIdx);
+        return this.rootTrack.get(parent.getFrame()).getChildren(structureIdx);
     }
     
     @Override 
@@ -100,7 +100,7 @@ public class BasicObjectDAO implements ObjectDAO {
      * @param deleteChildren not used in this DAO, chilren are always deleted
      */
     public void delete(StructureObject o, boolean deleteChildren, boolean deleteFromParent, boolean relabelSiblings) {
-        if (o.getStructureIdx()==-1) rootTrack.set(null, o.getTimePoint());
+        if (o.getStructureIdx()==-1) rootTrack.set(null, o.getFrame());
         else {
             if (o.getParent()!=null) o.getParent().getChildren(o.getStructureIdx()).remove(o);
             if (relabelSiblings && o.getParent()!=null) o.getParent().relabelChildren(o.getStructureIdx());
@@ -114,7 +114,7 @@ public class BasicObjectDAO implements ObjectDAO {
     public void store(StructureObject object, boolean updateTrackAttributes) {
         object.dao=this;
         if (object.structureIdx==-1) {
-            rootTrack.set(object, object.getTimePoint());
+            rootTrack.set(object, object.getFrame());
         } else {
             List<StructureObject> children = object.getParent().getChildren(object.getStructureIdx());
             if (children == null) {
@@ -128,7 +128,7 @@ public class BasicObjectDAO implements ObjectDAO {
 
     public void store(Collection<StructureObject> objects, boolean updateTrackAttributes) {
         int needToExtend = -1;
-        for (StructureObject o : objects) if (o.getStructureIdx()==-1 && o.getTimePoint()>needToExtend) needToExtend = o.getTimePoint();
+        for (StructureObject o : objects) if (o.getStructureIdx()==-1 && o.getFrame()>needToExtend) needToExtend = o.getFrame();
         if (needToExtend>0) rootTrack.extend(needToExtend);
         for (StructureObject o : objects) store(o, updateTrackAttributes);
     }
@@ -146,10 +146,10 @@ public class BasicObjectDAO implements ObjectDAO {
         ArrayList<StructureObject> res = new ArrayList<StructureObject>();
         res.add(trackHead);
         int max = rootTrack.getBucketSize();
-        while(trackHead.getTimePoint()+1<max && rootTrack.get(trackHead.getTimePoint()+1)!=null) {
+        while(trackHead.getFrame()+1<max && rootTrack.get(trackHead.getFrame()+1)!=null) {
             if (trackHead.getNext()!=null) trackHead = trackHead.getNext();
             else { // look for next:
-                List<StructureObject> candidates = rootTrack.getQuick(trackHead.getTimePoint()+1).getChildren(trackHead.getStructureIdx());
+                List<StructureObject> candidates = rootTrack.getQuick(trackHead.getFrame()+1).getChildren(trackHead.getStructureIdx());
                 StructureObject next = null;
                 for (StructureObject c : candidates) {
                     if (c.getPrevious()==trackHead) {

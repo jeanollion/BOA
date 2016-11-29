@@ -29,7 +29,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import net.imglib2.KDTree;
 import net.imglib2.RealPoint;
@@ -46,6 +48,10 @@ public class StructureObjectUtils {
     
     public static List<StructureObject> getAllNext(StructureObject o, List<StructureObject> bucket) { // look only in next timePoint
         if (bucket==null) bucket=new ArrayList<>();
+        if (o.getParent()==null) {
+            logger.error("parent null for: {}", o);
+            return bucket;
+        }
         StructureObject nextParent = o.getParent().getNext();
         if (nextParent==null) return bucket;
         for (StructureObject n : nextParent.getChildren(o.getStructureIdx())) if (n.getPrevious()==o) bucket.add(n);
@@ -59,7 +65,7 @@ public class StructureObjectUtils {
         } else if (previous!=null && next==null) {
             previous.resetTrackLinks(false, setNext);
         }
-        else if (next.getTimePoint()<=previous.getTimePoint()) throw new RuntimeException("setLink should be of time>= "+(previous.getTimePoint()+1) +" but is: "+next.getTimePoint()+ " current: "+previous+", next: "+next);
+        else if (next.getFrame()<=previous.getFrame()) throw new RuntimeException("setLink should be of time>= "+(previous.getFrame()+1) +" but is: "+next.getFrame()+ " current: "+previous+", next: "+next);
         else {
             if (setPrevious && setNext) { // double link: set trackHead
                     previous.setNext(next);
@@ -205,14 +211,14 @@ public class StructureObjectUtils {
     
     
     public static int[] getIndexTree(StructureObject o) {
-        if (o.isRoot()) return new int[]{o.getTimePoint()};
+        if (o.isRoot()) return new int[]{o.getFrame()};
         ArrayList<Integer> al = new ArrayList<Integer>();
         al.add(o.getIdx());
         while(!o.getParent().isRoot()) {
             o=o.getParent();
             al.add(o.getIdx());
         }
-        al.add(o.getTimePoint());
+        al.add(o.getFrame());
         return Utils.toArray(al, true);
     }
     public static String getIndices(StructureObject o) {
@@ -238,7 +244,23 @@ public class StructureObjectUtils {
         //for (List<StructureObject> l : res.values()) setTrackLinks(l);
         return res;
     }
-    
+    public static Map<StructureObject, List<StructureObject>> getAllTracksSplitDiv(List<StructureObject> parentTrack, int structureIdx) {
+        Map<StructureObject, List<StructureObject>> res = getAllTracks(parentTrack, structureIdx);
+        TreeMap<StructureObject, List<StructureObject>>  tm = new TreeMap(res);
+        for (StructureObject o : tm.descendingKeySet()) {
+            if (o.getPrevious()==null || o.getPrevious().getNext()==null) continue;
+            StructureObject th = o.getPrevious().getNext();
+            if (!res.containsKey(th)) {
+                List<StructureObject> track = res.get(o.getPrevious().getTrackHead());
+                int i = track.indexOf(th);
+                if (i>=0) {
+                    res.put(th, track.subList(i, track.size()));
+                    res.put(o.getPrevious().getTrackHead(), track.subList(0, i));
+                }
+            }
+        }
+        return res;
+    }
     
     
     public static List<StructureObject> getTrack(StructureObject trackHead, boolean extend) {
@@ -395,7 +417,7 @@ public class StructureObjectUtils {
     public static Comparator<StructureObject> getStructureObjectComparator() {
         return new Comparator<StructureObject>() {
             public int compare(StructureObject arg0, StructureObject arg1) {
-                int comp = Integer.compare(arg0.getTimePoint(), arg1.getTimePoint());
+                int comp = Integer.compare(arg0.getFrame(), arg1.getFrame());
                 if (comp == 0) {
                     comp = Integer.compare(arg0.getStructureIdx(), arg1.getStructureIdx());
                     if (comp == 0) {
@@ -417,7 +439,7 @@ public class StructureObjectUtils {
     }
     static Comparator<StructureObject> timePointComparator = new Comparator<StructureObject>() {
         public int compare(StructureObject arg0, StructureObject arg1) {
-            return  Integer.compare(arg0.getTimePoint(), arg1.getTimePoint());
+            return  Integer.compare(arg0.getFrame(), arg1.getFrame());
         }
     };
     public static Comparator<StructureObject> timePointComparator() {

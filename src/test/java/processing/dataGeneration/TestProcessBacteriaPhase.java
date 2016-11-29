@@ -124,7 +124,7 @@ public class TestProcessBacteriaPhase {
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
         MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         List<StructureObject> rootTrack = mDAO.getDao(f.getName()).getRoots();
-        rootTrack.removeIf(o -> o.getTimePoint()<timePointMin || o.getTimePoint()>timePointMax);
+        rootTrack.removeIf(o -> o.getFrame()<timePointMin || o.getFrame()>timePointMax);
         List<StructureObject> parentTrack = new ArrayList<StructureObject>();
         for (StructureObject root : rootTrack) {
             StructureObject mc = root.getChildren(0).get(microChannel);
@@ -134,7 +134,7 @@ public class TestProcessBacteriaPhase {
             BacteriaTrans seg = new BacteriaTrans();
             if (!Double.isNaN(thld)) seg.setThresholdValue(thld);
             mc.setChildrenObjects(seg.runSegmenter(input, 1, mc), 1);
-            logger.debug("seg: tp {}, #objects: {}", mc.getTimePoint(), mc.getChildren(1).size());
+            logger.debug("seg: tp {}, #objects: {}", mc.getFrame(), mc.getChildren(1).size());
         }
         GUI.getInstance(); // for hotkeys...
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();

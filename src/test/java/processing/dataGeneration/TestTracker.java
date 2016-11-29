@@ -50,15 +50,15 @@ public class TestTracker {
         //final String dbName = "boa_phase140115mutH";
         //final String dbName = "boa_phase150324mutH";
         String dbName = "boa_phase150616wt";
-        int fIdx = 14;
-        int mcIdx =4;
-        int structureIdx = 1;
+        int fIdx = 91;
+        int mcIdx =0;
+        int structureIdx = 0;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 298;
-        //testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 710, 726);
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 2);
         
-        testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 710, 725); 
+        //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 710, 725); 
         
         int[][] testsF_MC_TT = {
            {0, 3, 90, 100}, // 0
@@ -86,22 +86,22 @@ public class TestTracker {
         List<StructureObject> parentTrack=null;
         if (structureIdx==0) {
             parentTrack = roots;
-            roots.removeIf(o -> o.getTimePoint()<tStart || o.getTimePoint()>tEnd);
+            roots.removeIf(o -> o.getFrame()<tStart || o.getFrame()>tEnd);
         }
         else {
             Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(roots, 0);
             for (StructureObject th : allTracks.keySet()) {
-                if (th.getIdx()==mcIdx && th.getTimePoint()<tEnd) {
+                if (th.getIdx()==mcIdx && th.getFrame()<tEnd) {
                     if (parentTrack==null || parentTrack.isEmpty()) {
                         parentTrack = allTracks.get(th);
-                        parentTrack.removeIf(o -> o.getTimePoint()<tStart || o.getTimePoint()>tEnd);
+                        parentTrack.removeIf(o -> o.getFrame()<tStart || o.getFrame()>tEnd);
                     }
                 }
             }
         }
         MicrochannelProcessorPhase.debug=true;
-        BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
-        BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
+        //BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
+        //BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;
         ps.segmentAndTrack(structureIdx, parentTrack);
         logger.debug("children: {}", StructureObjectUtils.getAllTracks(parentTrack, 0));
@@ -123,15 +123,15 @@ public class TestTracker {
         List<StructureObject> parentTrack=null;
         if (structureIdx==0) {
             parentTrack = roots;
-            roots.removeIf(o -> o.getTimePoint()<tStart || o.getTimePoint()>tEnd);
+            roots.removeIf(o -> o.getFrame()<tStart || o.getFrame()>tEnd);
         }
         else {
             Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(roots, 0);
             for (StructureObject th : allTracks.keySet()) {
-                if (th.getIdx()==mcIdx && th.getTimePoint()<tEnd) {
+                if (th.getIdx()==mcIdx && th.getFrame()<tEnd) {
                     if (parentTrack==null || parentTrack.isEmpty()) {
                         parentTrack = allTracks.get(th);
-                        parentTrack.removeIf(o -> o.getTimePoint()<tStart || o.getTimePoint()>tEnd);
+                        parentTrack.removeIf(o -> o.getFrame()<tStart || o.getFrame()>tEnd);
                         //logger.debug("parents: {}", parentTrack);
                         //return;
                     }

@@ -227,6 +227,7 @@ public class GenerateTestXP {
         */
         
         /*String dbName = "boa_phase150616wt";
+        // cette manip contient des images hors focus frames >770
         String inputDir = "/data/Images/Phase/150616_6300_wt/6300_WT_LB_LR62silicium_16062015_tif/";
         String outputDir = "/data/Images/Phase/150616_6300_wt/Output";
         boolean flip = false;
@@ -234,7 +235,7 @@ public class GenerateTestXP {
         transSingleFileImport=false;
         scaleXY = 0.06289;
         flipArray = fillRange(getBooleanArray(96, false), 61, 95, true); //pos 62 - 96 -> flip = true
-        deletePositions = fillRange(getBooleanArray(991, false), 14, 14, true);
+        deletePositions = setValues(getBooleanArray(991, false), true, 5, 11, 14, 29, 43, 47, 61); // xy06 xy44 xy48 xy62  -> seulement un frame OOF, les autres beaucoup de frames
         */
         /*
         ////////////////////////////
@@ -417,6 +418,10 @@ public class GenerateTestXP {
     }
     private static boolean[] fillRange(boolean[] array, int idxMinIncluded, int idxMaxIncluded, boolean value) {
         for (int i = idxMinIncluded; i<=idxMaxIncluded; ++i) array[i] = value;
+        return array;
+    }
+    private static boolean[] setValues(boolean[] array, boolean value, int... indices) {
+        for (int i : indices) array[i]=value;
         return array;
     }
 }

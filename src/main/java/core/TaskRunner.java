@@ -45,25 +45,30 @@ public class TaskRunner {
     
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        List<Task> tasks = new ArrayList<Task>() {{
-            add(new Task("boa_fluo160428").setPositions(1, 2, 23, 3, 4, 5, 6).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 1).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 2));
-            //add(new Task("boa_phase141107wt").setAllActions().setPositions(ArrayUtil.generateIntegerArray(35, 60)).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/Trans/", 1));
-            //add(new Task("boa_phase150616wt").setActions(false, false, false, true).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/Trans/", 1));
-            //add(new Task("boa_phase150324mutH").setActions(false, false, false, true).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/Trans/", 1));
-        }};
-
+        
+        //List<Task> tasks = extractMeasurementOnFluoXP(true);
+        List<Task> tasks = getTasks();
         //for (Task t : tasks) t.isValid();
         for (Task t : tasks) if (t.isValid()) t.run();
         logger.info("All tasks performed! See errors below:");
         for (Task t : tasks) t.printErrors();
     }
-    
-    
-    public static List<Task> extractMeasurementOnFluoXP() {
+    public static List<Task> getTasks() {
         List<Task> tasks = new ArrayList<Task>() {{
-            add(new Task("boa_fluo151127").setPositions(1, 2, 3, 4).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 1).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 2));
-            add(new Task("boa_fluo160428").setPositions(1, 2, 23, 3, 4, 5, 6).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 1).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 2));
-            add(new Task("boa_fluo160501").setPositions(1, 2, 4).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 1).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 2));
+            //add(new Task("boa_fluo160428").setPositions(1, 2, 23, 3, 4, 5, 6).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 1).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 2));
+            //add(new Task("boa_phase150616wt").setActions(false, true, true, true).setStructures(1).setPositions(ArrayUtil.generateIntegerArray(4, 94)));
+            add(new Task("boa_phase150616wt").setPositions(ArrayUtil.generateIntegerArray(1, 26)).addExtractMeasurementDir("/data/Images/Phase/150616_6300_wt/", 1));
+            //add(new Task("boa_phase141107wt").setActions(false, true, true, true).setStructures(1).addExtractMeasurementDir("/data/Images/Phase/141107_mg6300_wt/", 1));
+            //add(new Task("boa_phase150324mutH").setActions(false, true, true, true).setStructures(1).addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 1));
+        }};
+        return tasks;
+    }
+    
+    public static List<Task> extractMeasurementOnFluoXP(boolean runMeas) {
+        List<Task> tasks = new ArrayList<Task>() {{
+            add(new Task("boa_fluo151127").setActions(false, false, false, runMeas).setPositions(1, 2, 3, 4).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 1).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 2));
+            add(new Task("boa_fluo160428").setActions(false, false, false, runMeas).setPositions(1, 2, 23, 3, 4, 5, 6).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 1).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 2));
+            add(new Task("boa_fluo160501").setActions(false, false, false, runMeas).setPositions(1, 2, 4).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 1).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 2));
         }};
         return tasks;
     }
@@ -74,7 +79,7 @@ public class TaskRunner {
         int[] positions;
         int[] structures;
         List<Pair<String, int[]>> extrackMeasurementDir = new ArrayList<>();
-        Map<String, Exception> errors = new HashMap<>();
+        List<Pair<String, Exception>> errors = new ArrayList<>();
         MasterDAO db;
         
         public Task(String dbName) {
@@ -113,7 +118,7 @@ public class TaskRunner {
         public boolean isValid() {
             db = new MorphiumMasterDAO(dbName);
             if (db.getExperiment()==null) {
-                errors.put(dbName, new Exception("DB: "+ dbName+ " not found"));
+                errors.add(new Pair(dbName, new Exception("DB: "+ dbName+ " not found")));
                 printErrors();
                 db = null;
                 return false;
@@ -123,24 +128,24 @@ public class TaskRunner {
                 // check files
                 for (Pair<String, int[]> e : extrackMeasurementDir) {
                     File f= new File(e.key);
-                    if (!f.exists()) errors.put(dbName, new Exception("File: "+ e.key+ " not found"));
-                    else if (!f.isDirectory()) errors.put(dbName, new Exception("File: "+ e.key+ " is not a directory"));
+                    if (!f.exists()) errors.add(new Pair(dbName, new Exception("File: "+ e.key+ " not found")));
+                    else if (!f.isDirectory()) errors.add(new Pair(dbName, new Exception("File: "+ e.key+ " is not a directory")));
                     else if (e.value!=null) checkArray(e.value, db.getExperiment().getStructureCount(), "Extract structure for dir: "+e.value+": Invalid structure: ");
                 }
             }
-            if (!measurements && !preProcess && !segmentAndTrack && ! trackOnly && extrackMeasurementDir.isEmpty()) errors.put(dbName, new Exception("No action to run!"));
+            if (!measurements && !preProcess && !segmentAndTrack && ! trackOnly && extrackMeasurementDir.isEmpty()) errors.add(new Pair(dbName, new Exception("No action to run!")));
             db=null;
             printErrors();
             logger.info("task : {}, isValid: {}", dbName, errors.isEmpty());
             return errors.isEmpty();
         }
         private void checkArray(int[] array, int maxValue, String message) {
-            if (array[ArrayUtil.max(array)]>=maxValue) errors.put(dbName, new Exception(message + array[ArrayUtil.max(array)]+ " not found"));
-            if (array[ArrayUtil.min(array)]<0) errors.put(dbName, new Exception(message + array[ArrayUtil.min(array)]+ " not found"));
+            if (array[ArrayUtil.max(array)]>=maxValue) errors.add(new Pair(dbName, new Exception(message + array[ArrayUtil.max(array)]+ " not found")));
+            if (array[ArrayUtil.min(array)]<0) errors.add(new Pair(dbName, new Exception(message + array[ArrayUtil.min(array)]+ " not found")));
         }
         public void printErrors() {
-            for (Entry<String, Exception> e : errors.entrySet()) {
-                logger.error(e.getKey(), e.getValue());
+            for (Pair<String, Exception> e : errors) {
+                logger.error(e.key, e.value);
             }
         }
         public void run() {
@@ -159,7 +164,7 @@ public class TaskRunner {
                 try {
                     run(position, deleteAllField);
                 } catch (Exception e) {
-                    errors.put(position, e);
+                    errors.add(new Pair(position, e));
                 }
             }
             
@@ -168,7 +173,7 @@ public class TaskRunner {
             db=null;
         }
         private void run(String position, boolean deleteAllField) {
-
+            
             if (deleteAllField) db.getDao(position).deleteAllObjects();
             
             if (preProcess) {
@@ -177,12 +182,14 @@ public class TaskRunner {
             }
             if (segmentAndTrack || trackOnly) {
                 logger.info("Processing: Position: {}", position);
-                Processor.processAndTrackStructures(db.getDao(position), true, trackOnly, structures);
+                List<Pair<String, Exception>> e = Processor.processAndTrackStructures(db.getDao(position), true, trackOnly, structures);
+                errors.addAll(e);
             }
             if (measurements) {
                 logger.info("Measurements: Field: {}", position);
                 db.getDao(position).deleteAllMeasurements();
-                Processor.performMeasurements(db.getDao(position));
+                List<Pair<String, Exception>> e = Processor.performMeasurements(db.getDao(position));
+                errors.addAll(e);
             }
             if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field
             db.getDao(position).clearCache();

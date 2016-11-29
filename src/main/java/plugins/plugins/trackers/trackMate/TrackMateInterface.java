@@ -79,7 +79,7 @@ public class TrackMateInterface<S extends Spot> {
     }
     public void addObjects(List<StructureObject> parentTrack, int structureIdx) {
         for (StructureObject p : parentTrack) {
-            for (StructureObject c : p.getChildren(structureIdx)) addObject(c.getObject(), c.getTimePoint());
+            for (StructureObject c : p.getChildren(structureIdx)) addObject(c.getObject(), c.getFrame());
         }
     }
     
@@ -180,7 +180,7 @@ public class TrackMateInterface<S extends Spot> {
         logger.debug("number of links: {}", graph.edgeSet().size());
         HashMap<Integer, StructureObject> parentT = new HashMap<>(parentTrack.size());
         for (StructureObject p : parentTrack) {
-            parentT.put(p.getTimePoint(), p);
+            parentT.put(p.getFrame(), p);
             for (StructureObject s : p.getChildren(structureIdx)) s.resetTrackLinks(true, true);
         }
         TreeSet<DefaultWeightedEdge> nextEdges = new TreeSet(new Comparator<DefaultWeightedEdge>() {

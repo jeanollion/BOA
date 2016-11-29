@@ -60,6 +60,7 @@ public class PreProcessingChain extends SimpleContainerParameter {
     BooleanParameter useImageScale;
     BoundedNumberParameter scaleXY;
     BoundedNumberParameter scaleZ;
+    BoundedNumberParameter frameDuration;
     @Transient ConditionalParameter imageScaleCond;
     TimePointParameter trimFramesStart, trimFramesEnd;
     SimpleListParameter<TransformationPluginParameter<Transformation>> transformations;
@@ -80,6 +81,8 @@ public class PreProcessingChain extends SimpleContainerParameter {
             scaleXY.setParent(this);
             scaleZ.setParent(this);
             useImageScale.setParent(this);
+            frameDuration= new BoundedNumberParameter("Frame Duration", 4, 4, 0, null);
+            frameDuration.setParent(this);
         }
         if (initCond) {
             imageScaleCond = new ConditionalParameter(useImageScale).setActionParameters("Custom Calibration", new Parameter[]{scaleXY, scaleZ});
@@ -98,7 +101,7 @@ public class PreProcessingChain extends SimpleContainerParameter {
     public boolean useCustomScale() {return !useImageScale.getSelected();}
     public double getScaleXY() {return scaleXY.getValue().doubleValue();}
     public double getScaleZ() {return scaleZ.getValue().doubleValue();}
-    
+    public double getFrameDuration() {return frameDuration.getValue().doubleValue();}
     @Override
     protected void initChildList() {
         //logger.debug("PreProc chain: {}, init list..", name);
@@ -107,7 +110,8 @@ public class PreProcessingChain extends SimpleContainerParameter {
         else trimFramesStart.setUseRawInputFrames(true); //avoid edless loop //TODO for retrocompatibility
         if (trimFramesEnd==null) trimFramesEnd = new TimePointParameter("Trim Frames Stop Position (0=no trimming)", 0, true);
         else trimFramesEnd.setUseRawInputFrames(true); //avoid edless loop //TODO for retrocompatibility
-        super.initChildren(imageScaleCond, transformations, trimFramesStart, trimFramesEnd);
+        if (frameDuration==null) frameDuration=new BoundedNumberParameter("Frame Duration", 4, 4, 0, null); //TODO for retrocompatibility
+        super.initChildren(imageScaleCond, transformations, trimFramesStart, trimFramesEnd, frameDuration);
     }
     
     public List<TransformationPluginParameter<Transformation>> getTransformations(boolean onlyActivated) {

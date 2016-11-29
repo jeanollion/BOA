@@ -105,9 +105,26 @@ public class SelectionUtils {
         List<String> p = new ArrayList<>(getPositions(selections));
         Collections.sort(p);
         logger.debug("getNext pos: {}, cur: {}", p, position);
-        int idx = p.indexOf(position) + (next?1:-1);
-        if (idx==-1 || idx==p.size()) return null;
-        else return p.get(idx);
+        int idx = Collections.binarySearch(p, position);
+        if (idx==-1) {
+            if (next) return p.get(0);
+            else return null;
+        } else if (idx<0) {
+            idx = -idx-1;
+            if (!next) {
+                if (idx>0) idx--;
+                else return null;
+            }
+        } else {
+            if (next) {
+                if (idx==p.size()-1) return null;
+                else idx = p.size()-1;
+            } else {
+                if (idx>0) idx--;
+                else return null;
+            }
+        }
+        return p.get(idx);
     }
     
     public static Selection getSelection(MasterDAO db, String name, boolean createIfNonExisting) {

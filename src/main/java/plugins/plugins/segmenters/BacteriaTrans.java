@@ -136,7 +136,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     GroupParameter angleParameters = new GroupParameter("Constaint on angles", aspectRatioThreshold, angleThreshold);
     */
     NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 5, 0, null);
-    NumberParameter minSizeFusion = new BoundedNumberParameter("Minimum Object size (fusion)", 0, 200, 5, null);
+    NumberParameter minSizeFusion = new BoundedNumberParameter("Minimum Object size (fusion)", 0, 100, 5, null);
+    NumberParameter minSizeFusionCost = new BoundedNumberParameter("Minimum Object size (fusion cost)", 0, 300, 5, null); // TODO ADD IN PARAMETERS
     NumberParameter minSize = new BoundedNumberParameter("Minimum Object size", 0, 100, 5, null);
     NumberParameter minSizeChannelEnd = new BoundedNumberParameter("Minimum Object size (end of channel)", 0, 300, 5, null);
     NumberParameter minXSize = new BoundedNumberParameter("Minimum X-Thickness", 0, 7, 1, null);
@@ -256,7 +257,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         }
         
         ObjectPopulation pop = getSeparatedObjects(pv, pv.getSegmentationMask(), minSizePropagation.getValue().intValue(), 0, debug);
-        if (contactLimit.getValue().intValue()>0) pop.filter(new ObjectPopulation.ContactBorder(contactLimit.getValue().intValue(), parent.getMask(), ObjectPopulation.ContactBorder.Border.YDown));
+        //if (contactLimit.getValue().intValue()>0) pop.filter(new ObjectPopulation.ContactBorder(contactLimit.getValue().intValue(), parent.getMask(), ObjectPopulation.ContactBorder.Border.YDown));
         
         if (!pop.getObjects().isEmpty()&& pop.getObjects().get(pop.getObjects().size()-1).getSize()<minSizeChannelEnd.getValue().intValue()) pop.getObjects().remove(pop.getObjects().size()-1); // remove small objects at the end of channel? // si plusieurs somme des tailles inférieurs?
         pop.filter(new ObjectPopulation.Size().setMin(minSize.getValue().intValue()));
@@ -400,6 +401,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
 
     @Override public double computeMergeCost(Image input, List<Object3D> objects) {
         if (objects.isEmpty() || objects.size()==1) return 0;
+        double minSize= minSizeFusionCost.getValue().doubleValue();
         ObjectPopulation mergePop = new ObjectPopulation(objects, input, false);
         pv = getProcessingVariables(input, mergePop.getLabelMap());
         pv.segMask=mergePop.getLabelMap();
@@ -407,15 +409,22 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         Object3DCluster c = new Object3DCluster(mergePop, false, true, pv.getFactory());
         List<Set<Object3D>> clusters = c.getClusters();
         //logger.debug("compute merge cost: {} objects in {} clusters", objects.size(), clusters.size());
-        if (clusters.size()>1) { // merge impossible : presence of disconnected objects
+        if (clusters.size()>1) { // merge impossible : presence of disconnected objects / except if small objects
+            // if at least all clusters but one are small -> can merge without cost 
+            int nSmall = 0;
+            for (Set<Object3D> cl : clusters) {
+                double size = 0;
+                for (Object3D o : cl) size+=o.getSize();
+                if (size<=minSize) ++nSmall;
+            }
+            if (nSmall>=clusters.size()-1) return 0;
             if (debug) logger.debug("merge impossible: {} disconnected clusters detected", clusters.size());
             return Double.POSITIVE_INFINITY;
         } 
         Set<InterfaceBT> allInterfaces = c.getInterfaces(clusters.get(0));
-        double minSize= minSizeFusion.getValue().doubleValue();
         for (InterfaceBT i : allInterfaces) { // get the min curvature value = worst case
             i.updateSortValue();
-            if (i.getE1().getSize()<=minSize || i.getE2().getSize()<=minSize) {
+            if (i.getE1().getSize()<=minSize || i.getE2().getSize()<=minSize) { // small objects can merge without cost
                 if (minCurv>0) minCurv=pv.curvatureThreshold;
             } else if (i.curvatureValue<minCurv) minCurv = i.curvatureValue;
         }

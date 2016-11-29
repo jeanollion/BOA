@@ -207,7 +207,7 @@ public class SpotCompartiment {
     
     public boolean sameTrackOrDirectChildren(SpotCompartiment nextCompartiment) {
         return (object.getTrackHead()==nextCompartiment.object.getTrackHead() || // same track
-                nextCompartiment.object.getTrackHead().getTimePoint()>object.getTimePoint() &&  // from a posterior division
+                nextCompartiment.object.getTrackHead().getFrame()>object.getFrame() &&  // from a posterior division
                     nextCompartiment.object.getTrackHead().getPrevious()!=null &&
                     nextCompartiment.object.getTrackHead().getPrevious().getTrackHead()==object.getTrackHead());
         }

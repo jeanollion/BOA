@@ -131,9 +131,9 @@ public class MicrochannelProcessor implements TrackerSegmenter {
     }
     
     private static StructureObject getRefTimePoint(int refTimePoint, List<StructureObject> track) {
-        if (track.get(0).getTimePoint()>=refTimePoint) return track.get(0);
-        else if (track.get(track.size()-1).getTimePoint()<=refTimePoint) return track.get(track.size()-1);
-        for (StructureObject t: track) if (t.getTimePoint()==refTimePoint) return t;
+        if (track.get(0).getFrame()>=refTimePoint) return track.get(0);
+        else if (track.get(track.size()-1).getFrame()<=refTimePoint) return track.get(track.size()-1);
+        for (StructureObject t: track) if (t.getFrame()==refTimePoint) return t;
         return track.get(0);
     }
 
