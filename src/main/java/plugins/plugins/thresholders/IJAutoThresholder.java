@@ -71,6 +71,12 @@ public class IJAutoThresholder implements Thresholder {
         return threshold256 * (minAndMax[1] - minAndMax[0]) / 256.0 + minAndMax[0];
     }
     
+    public static int convertTo256Threshold(double threshold, double[] minAndMax) {
+        int res = (int)Math.round((threshold - minAndMax[0])* 256 / ((minAndMax[1] - minAndMax[0])));
+        if (res>=256) res = 255;
+        return res;
+    }
+    
     public static double convertHisto256Threshold(double threshold256, Image input, ImageMask mask, BoundingBox limits) {
         if (mask == null) mask = new BlankMask("", input);
         double[] mm = input.getMinAndMax(mask, limits);

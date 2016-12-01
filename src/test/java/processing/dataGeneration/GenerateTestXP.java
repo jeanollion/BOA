@@ -41,6 +41,7 @@ import plugins.plugins.measurements.MeasurementObject;
 import plugins.plugins.measurements.MutationMeasurements;
 import plugins.plugins.measurements.MutationTrackMeasurements;
 import plugins.plugins.measurements.ObjectInclusionCount;
+import plugins.plugins.measurements.TrackLength;
 import plugins.plugins.measurements.objectFeatures.SNR;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.preFilter.Median;
@@ -52,7 +53,7 @@ import plugins.plugins.segmenters.BacteriaTrans;
 import plugins.plugins.segmenters.MicroChannelPhase2D;
 import plugins.plugins.segmenters.MutationSegmenter;
 import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
-import plugins.plugins.trackers.BacteriaClosedMicrochannelTrackerLocalCorrections;
+import plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import plugins.plugins.trackers.LAPTracker;
 import plugins.plugins.trackers.MicrochannelProcessor;
 import plugins.plugins.trackers.MicrochannelProcessorPhase;
@@ -390,17 +391,7 @@ public class GenerateTestXP {
         Structure mc = new Structure("Microchannel", -1, 0);
         Structure bacteria = new Structure("Bacteria", 0, 0).setAllowSplit(true);
         xp.getStructures().insert(mc, bacteria);
-        mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessorPhase()));
-        bacteria.setProcessingScheme(
-                new SegmentAndTrack(
-                        new BacteriaClosedMicrochannelTrackerLocalCorrections(
-                                new BacteriaTrans()
-                        ).setCostParameters(1.5, 3)
-                )
-        );
-        
-        xp.addMeasurement(new BacteriaLineageIndex(1));
-        xp.addMeasurement(new BacteriaTransMeasurements(1));
+        setParametersTrans(xp, true, true);
         if (setUpPreProcessing) { // preProcessing 
             if (!Double.isNaN(scaleXY)) xp.getPreProcessingTemplate().setCustomScale(scaleXY, 1);
             xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(0.3, true, false, true, true)));
@@ -411,6 +402,28 @@ public class GenerateTestXP {
         }
         return xp;
     }
+    
+    public static void setParametersTrans(Experiment xp, boolean processing, boolean measurements) {
+        Structure mc = xp.getStructure(0);
+        Structure bacteria = xp.getStructure(1);
+        if (processing) {
+            mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessorPhase()));
+            bacteria.setProcessingScheme(
+                    new SegmentAndTrack(
+                            new BacteriaClosedMicrochannelTrackerLocalCorrections(
+                                    new BacteriaTrans()
+                            ).setCostParameters(1.5, 3)
+                    )
+            );
+        }
+        if (measurements) {
+            xp.clearMeasurements();
+            xp.addMeasurement(new BacteriaLineageIndex(1));
+            xp.addMeasurement(new BacteriaTransMeasurements(1));
+            xp.addMeasurement(new TrackLength(0));
+        }
+    }
+    
     private static boolean[] getBooleanArray(int N, boolean defaultValue) {
         boolean[] res= new boolean[N];
         if (defaultValue) Arrays.fill(res, true);

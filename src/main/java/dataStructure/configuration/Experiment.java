@@ -153,7 +153,9 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     public void setOutputImageDirectory(String outputPath) {
         imagePath.setSelectedFilePath(outputPath);
     }
-    
+    public void clearMeasurements() {
+        this.measurements.removeAllElements();
+    }
     public void addMeasurement(Measurement... measurements) {
         for (Measurement m : measurements) this.measurements.insert(new PluginParameter<Measurement>("Measurement", Measurement.class, m, false));
     }

@@ -35,7 +35,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import plugins.PluginFactory;
 import plugins.ProcessingScheme;
-import plugins.plugins.trackers.BacteriaClosedMicrochannelTrackerLocalCorrections;
+import plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import plugins.plugins.trackers.MicrochannelProcessorPhase;
 
 /**
@@ -50,15 +50,15 @@ public class TestTracker {
         //final String dbName = "boa_phase140115mutH";
         //final String dbName = "boa_phase150324mutH";
         String dbName = "boa_phase150616wt";
-        int fIdx = 91;
-        int mcIdx =0;
-        int structureIdx = 0;
+        int fIdx = 0;
+        int mcIdx =9;
+        int structureIdx = 1;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 298;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 2);
+        //testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 1000);
         
-        //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 710, 725); 
+        testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 1000); 
         
         int[][] testsF_MC_TT = {
            {0, 3, 90, 100}, // 0
