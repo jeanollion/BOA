@@ -28,12 +28,14 @@ import image.ImageLabeller;
 import image.ImageShort;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import processing.neighborhood.EllipsoidalNeighborhood;
 
 /**
@@ -56,9 +58,9 @@ public class Object3DCluster<I extends InterfaceObject3D<I>> extends ClusterColl
     
     
     protected void setInterfaces(boolean background, boolean lowConnectivity) {
-        Map<Integer, Object3D> objects = new HashMap<Integer, Object3D>();
+        Map<Integer, Object3D> objects = new HashMap<>();
         for (Object3D o : population.getObjects()) objects.put(o.getLabel(), o);
-        if (background) objects.put(0, new Object3D(new ArrayList<Voxel>(), 0, population.getImageProperties().getBoundingBox(), population.getImageProperties().getScaleXY(), population.getImageProperties().getScaleZ()));
+        if (background) objects.put(0, new Object3D(new ArrayList<>(), 0, population.getImageProperties().getBoundingBox(), population.getImageProperties().getScaleXY(), population.getImageProperties().getScaleZ()));
         ImageInteger inputLabels = population.getLabelMap();
         Voxel n;
         int otherLabel;
@@ -185,8 +187,31 @@ public class Object3DCluster<I extends InterfaceObject3D<I>> extends ClusterColl
         return population.getObjects();
     }
     
+    public void mergeSmallObjects(double sizeLimit, int numberOfObjecsToKeep) {
+        if (numberOfObjecsToKeep<0) numberOfObjecsToKeep=0;
+        for (I i : interfaces) i.updateSortValue();
+        TreeSet<Object3D> queue = new TreeSet<Object3D>((e1, e2) -> Integer.compare(e1.getSize(), e2.getSize()));
+        queue.addAll(allElements);
+        while(queue.size()>numberOfObjecsToKeep) {
+            Object3D s = queue.pollFirst();
+            if (s.getSize()<sizeLimit) {
+                TreeSet<I> inter = new TreeSet(getInterfaces(s));
+                if (!inter.isEmpty()) {
+                    I strongestInterface = inter.first();
+                    if (verbose) logger.debug("mergeSmallObjects: {}, size: {}, interface: {}, all: {}", s.getLabel(), s.getSize(), strongestInterface, inter);
+                    strongestInterface.performFusion();
+                    updateInterfacesAfterFusion(strongestInterface);
+                    allElements.remove(strongestInterface.getE2());
+                    interfaces.remove(strongestInterface);
+                    queue.remove(strongestInterface.getE2());
+                    queue.add(strongestInterface.getE1());
+                }
+            } else break;
+        }
+    }
+    
     public static <I extends InterfaceVoxels<I>> ImageShort drawInterfaces(Object3DCluster<I> cluster) {
-        ImageShort im = new ImageShort("Iterfaces", cluster.population.getImageProperties());
+        ImageShort im = new ImageShort("Interfaces", cluster.population.getImageProperties());
         for (I i : cluster.interfaces) {
             logger.debug("Interface: {}+{}, size: {}", i.getE1().getLabel(), i.getE2().getLabel(), i.getVoxels().size());
             for (Voxel v : i.getVoxels()) {

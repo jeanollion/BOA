@@ -78,6 +78,9 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
         });
         return res;
     }
+    public Set<I> getAllInterfaces() {
+        return interfaces;
+    }
     
     public Set<I> getInterfaces(E e) {
         if (interfaceByElement.containsKey(e)) return interfaceByElement.get(e);
@@ -99,7 +102,7 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
     }
     
     public List<Set<E>> getClusters() {
-        List<Set<I>> interfaceClusters = new ArrayList<Set<I>>();
+        List<Set<I>> interfaceClusters = new ArrayList<>();
         Set<I> currentCluster;
         //logger.debug("get interfaceClusters: # of interfaces {}", interfaces.size());
         for (I i : interfaces) {
@@ -107,7 +110,7 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
             Collection<I> l1 = interfaceByElement.getAndCreateIfNecessary(i.getE1());
             Collection<I> l2 = interfaceByElement.getAndCreateIfNecessary(i.getE2());
             if (interfaceClusters.isEmpty()) {
-                currentCluster = new HashSet<I>(l1.size()+ l2.size()-1);
+                currentCluster = new HashSet<>(l1.size()+ l2.size()-1);
                 currentCluster.addAll(l1);
                 currentCluster.addAll(l2);
                 interfaceClusters.add(currentCluster);
@@ -125,7 +128,7 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
                     }
                 }
                 if (currentCluster==null) {
-                    currentCluster = new HashSet<I>(l1.size()+ l2.size()-1);
+                    currentCluster = new HashSet<I>(l1.size()+ l2.size());
                     currentCluster.addAll(l1);
                     currentCluster.addAll(l2);
                     interfaceClusters.add(currentCluster);
@@ -142,7 +145,7 @@ public class ClusterCollection<E, I extends Interface<E, I> > {
             }
             clusters.add(eSet);
         }
-        // ajout des elements sans interfaces
+        // ajout des elements isolés
         for (E e : allElements) if (!interfaceByElement.containsKey(e) || interfaceByElement.get(e).isEmpty()) clusters.add(new HashSet<E>(){{add(e);}});
         return clusters;
     }

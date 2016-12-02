@@ -237,6 +237,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                         ++fMin;
                         thresholdValueT[fMin+adaptativeThresholdHalfWindow] = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo, minAndMax, planes.get(0) instanceof ImageByte);
                         thresholdValueT[fMin+adaptativeThresholdHalfWindow] = (thresholdValueT[fMin+adaptativeThresholdHalfWindow] + thresholdValue) * 0.5;
+                        /*if (fMin+adaptativeThresholdHalfWindow==521) {
+                            logger.debug("thld: {}", thresholdValueT[fMin+adaptativeThresholdHalfWindow]);
+                            return;
+                        }*/
                     }
                     for (int f = fMin+adaptativeThresholdHalfWindow+1; f<=frameWindow[1]; ++f) thresholdValueT[f] = thresholdValueT[fMin+adaptativeThresholdHalfWindow]; // this histo is valid until last frame
                     long t5 = System.currentTimeMillis();
@@ -665,11 +669,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         return (minGR+maxGR)/2.0;
     }
     
-    protected int getErrorNumber(int tpMin, int tpMax, boolean assign) {
+    protected int getErrorNumber(int tpMin, int tpMaxIncluded, boolean assign) {
         if (tpMin<1) tpMin = 1;
-        if (tpMax>=populations.length) tpMax = populations.length-1;
+        if (tpMaxIncluded>=populations.length) tpMaxIncluded = populations.length-1;
         int res = 0;
-        for (int t = tpMin; t<=tpMax; ++t) {
+        for (int t = tpMin; t<=tpMaxIncluded; ++t) {
             TrackAssigner ta = new TrackAssigner(t).verboseLevel(verboseLevelLimit); //verboseLevelLimit
             while(ta.nextTrack()) {
                 res+=ta.getErrorCount();
@@ -1058,7 +1062,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             return score;
         }
         protected boolean canMerge(int i, int iLim, int tp) {
-            return Double.isFinite(new MergeScenario(i, iLim-1, tp).cost);
+            return Double.isFinite(new MergeScenario(BacteriaClosedMicrochannelTrackerLocalCorrections.this , i, iLim-1, tp).cost);
         }
         private int compareScores(double[] s1, double[] s2, boolean useScore) { // 0 = nb errors / 1 = score value. return -1 if first is better
             if (!useScore) return Double.compare(s1[0], s2[0]);
@@ -1243,13 +1247,13 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             //else return null;
         }
         private int[] performCorrectionSplitOrMergeOverMultipleTime() {
-            MergeScenario m = new MergeScenario(idxPrev, idxPrevEnd-1, timePoint-1);
+            MergeScenario m = new MergeScenario(BacteriaClosedMicrochannelTrackerLocalCorrections.this, idxPrev, idxPrevEnd-1, timePoint-1);
             //if (Double.isInfinite(m.cost)) return -1; //cannot merge
             List<CorrectionScenario> merge = m.getWholeScenario(maxCorrectionLength, costLim, cumCostLim); // merge scenario
             double[] mergeCost = new double[]{Double.POSITIVE_INFINITY, 0}; for (CorrectionScenario c : merge) mergeCost[1]+=c.cost; if (merge.isEmpty()) mergeCost[1]=Double.POSITIVE_INFINITY;
-            SplitScenario ss = new SplitScenario(getAttribute(timePoint, idx), timePoint);
+            SplitScenario ss = new SplitScenario(BacteriaClosedMicrochannelTrackerLocalCorrections.this, getAttribute(timePoint, idx), timePoint);
             for (int i = idx+1; i<idxEnd; ++i) {
-                SplitScenario sss = new SplitScenario(getAttribute(timePoint, i), timePoint);
+                SplitScenario sss = new SplitScenario(BacteriaClosedMicrochannelTrackerLocalCorrections.this, getAttribute(timePoint, i), timePoint);
                 if (sss.cost<ss.cost) ss=sss;
             }
             List<CorrectionScenario> split =ss.getWholeScenario(maxCorrectionLength, costLim, cumCostLim);
@@ -1303,30 +1307,32 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         private int[] performCorrectionMultipleObjects() {
             double sizeInc1 = getAttribute(timePoint, idx).getSize()/getAttribute(timePoint-1, idxPrev).getSize();
             double expectedInc1 = getAttribute(timePoint-1, idxPrev).getLineageSizeIncrement();
-            // TODO : plus de scenarios: merge all but one... 
             if (debugCorr) logger.debug("performing correction multiple objects: {}", this);
             
             List<CorrectionScenario> scenarios = new ArrayList<>();
             for (int iMerge = idxPrev; iMerge+1<idxPrevEnd; ++iMerge) {
-                scenarios.add(new MergeScenario(iMerge, iMerge+1, timePoint-1)); // merge one @ previous
+                scenarios.add(new MergeScenario(BacteriaClosedMicrochannelTrackerLocalCorrections.this, iMerge, iMerge+1, timePoint-1)); // merge one @ previous
             }
-            if (idxPrevEnd-idxPrev>2 && idxEnd-idx<=2) scenarios.add(new MergeScenario(idxPrev, idxPrevEnd-1, timePoint-1)); // merge all previous objects
-            //scenarios.add(new RearrangeObjects(timePoint, idx, idxEnd-1, idxPrev, idxPrevEnd-1));
-            if ( Math.abs(sizeInc1-expectedInc1)>significativeSIErrorThld) {
+            if (idxPrevEnd-idxPrev>2 && idxEnd-idx<=2) scenarios.add(new MergeScenario(BacteriaClosedMicrochannelTrackerLocalCorrections.this, idxPrev, idxPrevEnd-1, timePoint-1)); // merge all previous objects
+            
+            // Todo : rearrange objects from next au lieu de toutes les combinaisons de merge..
+            //scenarios.add(new RearrangeObjectsFromPrev(BacteriaClosedMicrochannelTrackerLocalCorrections.this, timePoint, idx, idxEnd-1, idxPrev, idxPrevEnd-1));
+            
+            /*if ( Math.abs(sizeInc1-expectedInc1)>significativeSIErrorThld) {
                 
                 if (sizeInc1>expectedInc1) { // split after VS merge before & split
-                    if (idxPrevEnd-idxPrev>1) scenarios.add(new SplitAndMerge(timePoint-1, idxPrev, false, true));
+                    if (idxPrevEnd-idxPrev>1) scenarios.add(new SplitAndMerge(BacteriaClosedMicrochannelTrackerLocalCorrections.this, timePoint-1, idxPrev, false, true));
                     else scenarios.add(new SplitScenario(getAttribute(timePoint-1, idxPrev), timePoint-1));
                     scenarios.add(new SplitAndMerge(timePoint, idx, true, true));
                     scenarios.add(new SplitScenario(getAttribute(timePoint, idx), timePoint));
                     
                 } else { // merge & split before vs split & merge after
                     if (idxPrevEnd-idxPrev>1) scenarios.add(new SplitAndMerge(timePoint-1, idxPrev, true, true));
-                    else scenarios.add(new SplitScenario(getAttribute(timePoint-1, idxPrev), timePoint-1));
+                    else scenarios.add(new SplitScenario(BacteriaClosedMicrochannelTrackerLocalCorrections.this, getAttribute(timePoint-1, idxPrev), timePoint-1));
                     scenarios.add(new SplitAndMerge(timePoint, idx, false, true));
                     scenarios.add(new SplitScenario(getAttribute(timePoint, idx+1), timePoint));
                 }
-            }
+            }*/
             
             //scenarios.add(new RearrangeObjects(timePoint, idx, idxEnd-1, idxPrev, idxPrevEnd-1)); // TODO: TEST INSTEAD OF SPLIT / SPLITANDMERGE
             
@@ -1730,8 +1736,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     protected class MultipleScenario extends CorrectionScenario {
         final List<CorrectionScenario> scenarios;
 
-        public MultipleScenario(List<CorrectionScenario> sortedScenarios) {
-            super(sortedScenarios.isEmpty()? 0 :sortedScenarios.get(0).timePointMin, sortedScenarios.isEmpty()? 0 : sortedScenarios.get(sortedScenarios.size()-1).timePointMax);
+        public MultipleScenario(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, List<CorrectionScenario> sortedScenarios) {
+            super(sortedScenarios.isEmpty()? 0 :sortedScenarios.get(0).timePointMin, sortedScenarios.isEmpty()? 0 : sortedScenarios.get(sortedScenarios.size()-1).timePointMax, tracker);
             this.scenarios = sortedScenarios;
         }
         

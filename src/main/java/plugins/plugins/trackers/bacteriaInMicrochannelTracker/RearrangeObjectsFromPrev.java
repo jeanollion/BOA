@@ -27,24 +27,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.BiFunction;
 import static plugins.Plugin.logger;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.getObjectSize;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.significativeSIErrorThld;
-import plugins.plugins.trackers.bacteriaInMicrochannelTracker.ObjectCorrector.Split;
+import plugins.plugins.trackers.bacteriaInMicrochannelTracker.ObjectModifier.Split;
 import utils.Pair;
 
 /**
  *
  * @author jollion
  */
-public class RearrangeObjects extends ObjectCorrector {
+public class RearrangeObjectsFromPrev extends ObjectModifier {
     List<Assignement> assignements;
     int idxMin, idxMax;
     
-    public RearrangeObjects(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, int frame, int idxMin, int idxMaxIncluded, int idxPrevMin, int idxPrevMaxIncluded) { // idxMax included
+    public RearrangeObjectsFromPrev(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, int frame, int idxMin, int idxMaxIncluded, int idxPrevMin, int idxPrevMaxIncluded) { // idxMax included
         super(frame, frame, tracker);
         this.idxMin=idxMin;
         this.idxMax=idxMaxIncluded;
@@ -62,7 +63,7 @@ public class RearrangeObjects extends ObjectCorrector {
                 sizeRange[0] = (si-significativeSIErrorThld/2) * size;
                 sizeRange[1] = (si+significativeSIErrorThld/2) * size;
             }
-            assignements.add(new Assignement(sizeRange));
+            assignements.add(new Assignement(tracker.populations[frame-1].get(i), sizeRange));
         }
         // split phase
         Assignement a = needToSplit();
@@ -77,61 +78,88 @@ public class RearrangeObjects extends ObjectCorrector {
                 if (ass.objects.size()>2) ass.merge();
             }
         }
-        if (tracker.debugCorr) logger.debug("Rearrange scenario: tp: {}, idx: [{};{}], cost: {}", timePointMin, idxMin, idxMax, cost);
+        if (debugCorr) logger.debug("Rearrange scenario: tp: {}, idx: [{};{}], cost: {}", timePointMax, idxMin, idxMax, cost);
     }
 
+    private int getNextVoidAssignementIndex() {
+        for (int i = 0; i<assignements.size(); ++i) if (assignements.get(i).isEmpty()) return i;
+        return -1;
+    }
+    
+    protected Assignement getAssignement(Object3D o, boolean prev, boolean reset) {
+        if (prev) return assignUntil(reset, (a, i) -> a.prevObject==o ? a : null);
+        else return assignUntil(reset, (a, i) -> a.contains(o) ? a : null);
+    }
           
-    private Assignement needToSplit() { // assigns from start and check range size
-        List<Object3D> allObjects = getObjects(timePointMin);
-        for (int rangeIdx = 0; rangeIdx<assignements.size(); ++rangeIdx) assignements.get(rangeIdx).clear();
+    protected Assignement needToSplit() { // assigns from start and check range size
+        return assignUntil(true, (a, i) -> a.overSize() ? a : ((a.underSize() && i>0) ? assignements.get(i-1) : null)); // if oversize: return current, if undersize return previous
+    }
+        
+    protected Assignement assignUntil(boolean reset, BiFunction<Assignement, Integer, Assignement> exitFunction) { // assigns from start with custom exit function -> if return non null value -> exit assignment loop with value
+        List<Object3D> allObjects = getObjects(timePointMax);
+        if (reset) for (int rangeIdx = 0; rangeIdx<assignements.size(); ++rangeIdx) assignements.get(rangeIdx).clear();
         int currentOIdx = 0;
+        if (!reset) {
+            int idx = getNextVoidAssignementIndex();
+            if (idx>0) currentOIdx = allObjects.indexOf(assignements.get(idx-1).getLastObject());
+        }
         for (int rangeIdx = 0; rangeIdx<assignements.size(); ++rangeIdx) {
             Assignement cur = assignements.get(rangeIdx);
-            while(currentOIdx<allObjects.size() && cur.underSize()) assignements.get(rangeIdx).add(allObjects.get(currentOIdx++));
-            if (cur.overSize()) return cur;
-            if (cur.underSize() && rangeIdx>0) return assignements.get(rangeIdx-1); // split in previous
+            if (cur.isEmpty()) {
+                while(currentOIdx<allObjects.size() && cur.underSize()) assignements.get(rangeIdx).add(allObjects.get(currentOIdx++));
+            }
+            Assignement a = exitFunction.apply(cur, rangeIdx);
+            if (a!=null) return a;
         }
         return null;
     }
-        
 
-    @Override protected RearrangeObjects getNextScenario() { 
+    @Override protected RearrangeObjectsFromPrev getNextScenario() { 
         return null;
     }
 
     @Override
     protected void applyScenario() {
         for (int i = idxMax; i>=idxMin; --i) {
-            tracker.populations[timePointMin].remove(i);
-            tracker.trackAttributes[timePointMin].remove(i);
+            tracker.populations[timePointMax].remove(i);
+            tracker.trackAttributes[timePointMax].remove(i);
         }
-        List<Object3D> allObjects = getObjects(timePointMin);
+        List<Object3D> allObjects = getObjects(timePointMax);
         Collections.sort(allObjects, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ)); // sort by increasing Y position
         int idx = idxMin;
         for (Object3D o : allObjects) {
-            tracker.populations[timePointMin].add(idx, o);
-            tracker.trackAttributes[timePointMin].add(idx, tracker.new TrackAttribute(o, idx, timePointMin));
+            tracker.populations[timePointMax].add(idx, o);
+            tracker.trackAttributes[timePointMax].add(idx, tracker.new TrackAttribute(o, idx, timePointMax));
             idx++;
         }
-        tracker.resetIndices(timePointMin);
+        tracker.resetIndices(timePointMax);
     }
+    
     @Override 
     public String toString() {
-        return "Readange@"+timePointMin+"["+idxMin+";"+idxMax+"]/c="+cost;
+        return "Rearrange@"+timePointMax+"["+idxMin+";"+idxMax+"]/c="+cost;
     }
     
 
     private class Assignement {
         final List<Object3D> objects;
+        final Object3D prevObject;
         final double[] sizeRange;
         double size;
-        public Assignement(double[] sizeRange) {
+        public Assignement(Object3D prevObject, double[] sizeRange) {
+            this.prevObject=prevObject;
             this.sizeRange=sizeRange;
             this.objects = new ArrayList<>(3);
         }
         public void add(Object3D o) {
             this.objects.add(o);
             this.size+=getObjectSize(o);
+        }
+        public boolean isEmpty() {
+            return objects.isEmpty();
+        }
+        public boolean contains(Object3D o) {
+            return objects.contains(o);
         }
         public void clear() {
             size=0;
@@ -143,15 +171,19 @@ public class RearrangeObjects extends ObjectCorrector {
         public boolean underSize() {
             return size<sizeRange[0];
         }
+        public Object3D getLastObject() {
+            if (objects.isEmpty()) return null;
+            return objects.get(objects.size()-1);
+        }
         public boolean split() { 
             TreeSet<Split> res = new TreeSet<>();
             for (Object3D o : objects) {
-                Split s = getSplit(timePointMin, o);
+                Split s = getSplit(timePointMax, o);
                 if (Double.isFinite(s.cost)) res.add(s);
             }
             if (res.isEmpty()) return false;
             Split s = res.first(); // lowest cost
-            List<Object3D> allObjects = getObjects(timePointMin);
+            List<Object3D> allObjects = getObjects(timePointMax);
             if (debugCorr) logger.debug("rearrange: split: {}, cost: {}", allObjects.indexOf(s.source)+idxMin, s.cost);
             s.apply();
             cost+=s.cost;
@@ -160,33 +192,23 @@ public class RearrangeObjects extends ObjectCorrector {
         }
         public void merge() {
             Collections.sort(objects, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ));
-            TreeMap<Double, List<Object3D>> costMap = new TreeMap();
+            TreeSet<Merge> res = new TreeSet();
             for (int i = 0; i<objects.size()-1; ++i) {
                 for (int j = i+1; j<objects.size(); ++j) {
-                    List<Object3D> l = new ArrayList<>(2);
-                    l.add(objects.get(i));
-                    l.add(objects.get(j));
-                    double c = tracker.getSegmenter(timePointMin).computeMergeCost(getImage(timePointMin), l);
-                    if (Double.isFinite(c) && !Double.isNaN(c)) costMap.put(c, l);
+                    Merge m = getMerge(timePointMax, new Pair(objects.get(i), objects.get(j)));
+                    if (Double.isFinite(m.cost)) res.add(m);
                 }
             }
-            while(objects.size()>2) {
-                Map.Entry<Double, List<Object3D>> e = costMap.pollFirstEntry();
-                List<Voxel> vox = new ArrayList<>();
-                for (Object3D o : e.getValue()) {
-                    vox.addAll(o.getVoxels());
-                    objects.remove(o);
-                    allObjects.remove(o);
-                }
-                Object3D merged = new Object3D(vox, e.getValue().get(0).getLabel(), e.getValue().get(0).getScaleXY(), e.getValue().get(0).getScaleZ());
-                objects.add(merged);
-                allObjects.add(merged);
-                cost-=e.getKey();
+            while(objects.size()>2) { // critère merge = cout le plus bas. // TODO: inclure les objets suivants
+                Merge m = res.first();
+                m.apply();
+                cost+=m.cost;
             }
         }
-            @Override public String toString() {
-                return ""+objects.size();
-            }
+        
+        @Override public String toString() {
+            return "["+tracker.populations[timePointMax-1].indexOf(this.prevObject)+"]->#"+objects.size()+"/size: "+size+"/cost: "+cost+ "/sizeRange: ["+this.sizeRange[0]+";"+this.sizeRange[1]+"]";
+        }
         }
 
 }

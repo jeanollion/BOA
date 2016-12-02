@@ -30,11 +30,11 @@ import utils.Pair;
  *
  * @author jollion
  */
-public abstract class ObjectCorrector extends CorrectionScenario {
+public abstract class ObjectModifier extends CorrectionScenario {
     protected final Map<Object3D, Split> splitMap = new HashMap<>();
     protected final Map<Pair<Object3D, Object3D>, Merge> mergeMap = new HashMap<>();
     protected final Map<Integer, List<Object3D>> objects = new HashMap<>();
-    public ObjectCorrector(int frameMin, int frameMax, BacteriaClosedMicrochannelTrackerLocalCorrections tracker) {
+    public ObjectModifier(int frameMin, int frameMax, BacteriaClosedMicrochannelTrackerLocalCorrections tracker) {
         super(frameMin, frameMax, tracker);
     }
     public List<Object3D> getObjects(int frame) {
