@@ -113,7 +113,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     // hidden parameters! 
     // segmentation thld
     final static boolean adaptativeThreshold= true;
-    final static int adaptativeThresholdHalfWindow = 10;
+    final static double adaptativeCoefficient = 0.75;
+    final static int adaptativeThresholdHalfWindow = 5;
     // sizeIncrement -> adaptative SI
     final static int sizeIncrementFrameNumber = 7; // number of frames for sizeIncrement computation
     final static double significativeSIErrorThld = 0.3; // size increment difference > to this value lead to an error
@@ -228,7 +229,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     int[] histo = new int[256];
                     for (int f = fMin; f<=fMax; ++f) ImageOperations.addHisto(histos.get(f), histo, true);
                     //for (int i = higthThldLimit256; i<256; ++i) histo[i]=0; // saturate histogram to remove device aberations 
-                    double t = 0.5 * (thresholdValue + IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo, minAndMax, planes.get(0) instanceof ImageByte));
+                    double t = (1-adaptativeCoefficient) * thresholdValue + adaptativeCoefficient * IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo, minAndMax, planes.get(0) instanceof ImageByte);
                     for (int f = fMin; f<=fMin+adaptativeThresholdHalfWindow; ++f) thresholdValueT[f] = t; // this histo is valid until fMin + window
                     while (fMax<frameRange[1]) {
                         ++fMax;
@@ -237,7 +238,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                         //for (int i = higthThldLimit256; i<256; ++i) histo[i]=0; // saturate histogram to remove device aberations 
                         ++fMin;
                         thresholdValueT[fMin+adaptativeThresholdHalfWindow] = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo, minAndMax, planes.get(0) instanceof ImageByte);
-                        thresholdValueT[fMin+adaptativeThresholdHalfWindow] = (thresholdValueT[fMin+adaptativeThresholdHalfWindow] + thresholdValue) * 0.5;
+                        thresholdValueT[fMin+adaptativeThresholdHalfWindow] = adaptativeCoefficient * thresholdValueT[fMin+adaptativeThresholdHalfWindow] + (1-adaptativeCoefficient) * thresholdValue;
                         /*if (fMin+adaptativeThresholdHalfWindow==521) {
                             logger.debug("thld: {}", thresholdValueT[fMin+adaptativeThresholdHalfWindow]);
                             return;
@@ -246,9 +247,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     for (int f = fMin+adaptativeThresholdHalfWindow+1; f<=frameRange[1]; ++f) thresholdValueT[f] = thresholdValueT[fMin+adaptativeThresholdHalfWindow]; // this histo is valid until last frame
                     long t5 = System.currentTimeMillis();
                     if (debug || debugCorr) {
-                        logger.debug("framewindow: {}, thresholds: {}", frameRange, thresholdValueT);
+                        logger.debug("framewindow: {}", frameRange);
+                        Utils.plotProfile("Thresholds", thresholdValueT);
                         logger.debug("getHistos: {}ms, compute 1st thld: {}ms, getFrameWindow: {}ms, compute new Min&Max: {}ms, compute threshold window: {}ms", t1-t0, t2-t1, t3-t2, t4-t3, t5-t4);
-                        //logger.debug("77: {}, 81: {}, 82: {}", thresholdValueT[77], thresholdValueT[81], thresholdValueT[82]);
                     }
                 }
             } else { // non-adaptative threshold
