@@ -27,7 +27,7 @@ import plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicr
  * @author jollion
  */
 public abstract class CorrectionScenario {
-        double cost=Double.POSITIVE_INFINITY;
+        double cost=0;
         final int timePointMin, timePointMax;
         final BacteriaClosedMicrochannelTrackerLocalCorrections tracker;
         protected CorrectionScenario(int timePointMin, int timePointMax, BacteriaClosedMicrochannelTrackerLocalCorrections tracker) {

@@ -1334,7 +1334,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 }
             }*/
             
-            //scenarios.add(new RearrangeObjects(timePoint, idx, idxEnd-1, idxPrev, idxPrevEnd-1)); // TODO: TEST INSTEAD OF SPLIT / SPLITANDMERGE
+            scenarios.add(new RearrangeObjectsFromPrev(BacteriaClosedMicrochannelTrackerLocalCorrections.this, timePoint, idx, idxEnd-1, idxPrev, idxPrevEnd-1)); // TODO: TEST INSTEAD OF SPLIT / SPLITANDMERGE
             
             scenarios.removeIf(c -> c.cost>costLim);
             if (scenarios.isEmpty()) return null;

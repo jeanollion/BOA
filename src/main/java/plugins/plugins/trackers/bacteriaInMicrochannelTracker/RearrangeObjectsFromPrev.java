@@ -68,7 +68,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
         // split phase
         Assignement a = needToSplit();
         while(a!=null) {
-            logger.debug("assignments: {}", assignements);
+            if (debugCorr) logger.debug("RO: assignments: {}", assignements);
             if (!a.split()) break;
             a = needToSplit();
         }
@@ -78,7 +78,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
                 if (ass.objects.size()>2) ass.merge();
             }
         }
-        if (debugCorr) logger.debug("Rearrange scenario: tp: {}, idx: [{};{}], cost: {}", timePointMax, idxMin, idxMax, cost);
+        if (debugCorr) logger.debug("Rearrange objects: tp: {}, idx: [{};{}], cost: {}", timePointMax, idxMin, idxMax, cost);
     }
 
     private int getNextVoidAssignementIndex() {
@@ -184,7 +184,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
             if (res.isEmpty()) return false;
             Split s = res.first(); // lowest cost
             List<Object3D> allObjects = getObjects(timePointMax);
-            if (debugCorr) logger.debug("rearrange: split: {}, cost: {}", allObjects.indexOf(s.source)+idxMin, s.cost);
+            if (debugCorr) logger.debug("RO: split: {}, cost: {}", allObjects.indexOf(s.source)+idxMin, s.cost);
             s.apply();
             cost+=s.cost;
             Collections.sort(allObjects, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ));
@@ -207,7 +207,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
         }
         
         @Override public String toString() {
-            return "["+tracker.populations[timePointMax-1].indexOf(this.prevObject)+"]->#"+objects.size()+"/size: "+size+"/cost: "+cost+ "/sizeRange: ["+this.sizeRange[0]+";"+this.sizeRange[1]+"]";
+            return "RO:["+tracker.populations[timePointMax-1].indexOf(this.prevObject)+"]->#"+objects.size()+"/size: "+size+"/cost: "+cost+ "/sizeRange: ["+this.sizeRange[0]+";"+this.sizeRange[1]+"]";
         }
         }
 
