@@ -15,9 +15,8 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package processing.dataGeneration;
+package core;
 
-import static TestUtils.Utils.logger;
 import boa.gui.DBUtil;
 import boa.gui.GUI;
 import configuration.parameters.TransformationPluginParameter;
@@ -31,6 +30,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import plugins.PluginFactory;
 import plugins.Transformation;
 import plugins.plugins.measurements.BacteriaFluoMeasurements;
@@ -77,7 +78,8 @@ import processing.ImageTransformation;
  *
  * @author jollion
  */
-public class GenerateTestXP {
+public class GenerateXP {
+    public static final Logger logger = LoggerFactory.getLogger(GenerateXP.class);
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         /*String dbName = "dummyXP";

@@ -42,8 +42,8 @@ import utils.Pair;
  * @author jollion
  */
 public class RearrangeObjectsFromPrev extends ObjectModifier {
-    List<Assignement> assignements;
-    int idxMin, idxMax;
+    protected List<Assignement> assignements;
+    protected int idxMin, idxMax;
     
     public RearrangeObjectsFromPrev(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, int frame, int idxMin, int idxMaxIncluded, int idxPrevMin, int idxPrevMaxIncluded) { // idxMax included
         super(frame, frame, tracker);
@@ -65,6 +65,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
             }
             assignements.add(new Assignement(tracker.populations[frame-1].get(i), sizeRange));
         }
+        // TODO: take into acount endo-of-channel
         // split phase
         Assignement a = needToSplit();
         while(a!=null) {
@@ -73,12 +74,17 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
             a = needToSplit();
         }
         // merge phase: merge until 2 objects per assignment & remove each merge cost to global cost
-        if (a==null) {
+        if (a==null) { // TODO use next objects to merge
             for (Assignement ass : assignements) {
                 if (ass.objects.size()>2) ass.merge();
             }
         }
         if (debugCorr) logger.debug("Rearrange objects: tp: {}, idx: [{};{}], cost: {}", timePointMax, idxMin, idxMax, cost);
+    }
+    protected RearrangeObjectsFromPrev(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, int frame, int idxMin, int idxMaxIncluded) {
+        super(frame, frame, tracker);
+        this.idxMin=idxMin;
+        this.idxMax=idxMaxIncluded;
     }
 
     private int getNextVoidAssignementIndex() {
@@ -140,8 +146,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
         return "Rearrange@"+timePointMax+"["+idxMin+";"+idxMax+"]/c="+cost;
     }
     
-
-    private class Assignement {
+    protected class Assignement {
         final List<Object3D> objects;
         final Object3D prevObject;
         final double[] sizeRange;
@@ -185,12 +190,23 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
             Split s = res.first(); // lowest cost
             List<Object3D> allObjects = getObjects(timePointMax);
             if (debugCorr) logger.debug("RO: split: {}, cost: {}", allObjects.indexOf(s.source)+idxMin, s.cost);
-            s.apply();
+            s.apply(objects);
+            s.apply(getObjects(s.frame));
             cost+=s.cost;
             Collections.sort(allObjects, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ));
             return true;
         }
         public void merge() {
+            while(objects.size()>2) { // critère merge = cout le plus bas. // TODO: inclure les objets du temps suivants
+                Merge m = getBestMerge();
+                if (m!=null) {
+                    m.apply(objects);
+                    m.apply(getObjects(m.frame));
+                    cost+=m.cost;
+                } else break;
+            }
+        }
+        private Merge getBestMerge() {
             Collections.sort(objects, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ));
             TreeSet<Merge> res = new TreeSet();
             for (int i = 0; i<objects.size()-1; ++i) {
@@ -199,16 +215,13 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
                     if (Double.isFinite(m.cost)) res.add(m);
                 }
             }
-            while(objects.size()>2) { // critère merge = cout le plus bas. // TODO: inclure les objets suivants
-                Merge m = res.first();
-                m.apply();
-                cost+=m.cost;
-            }
+            if (res.isEmpty()) return null;
+            else return res.first();
         }
         
         @Override public String toString() {
             return "RO:["+tracker.populations[timePointMax-1].indexOf(this.prevObject)+"]->#"+objects.size()+"/size: "+size+"/cost: "+cost+ "/sizeRange: ["+this.sizeRange[0]+";"+this.sizeRange[1]+"]";
         }
-        }
+    }
 
 }

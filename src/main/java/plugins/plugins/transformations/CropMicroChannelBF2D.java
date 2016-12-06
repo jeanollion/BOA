@@ -53,7 +53,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
     NumberParameter microChannelWidth = new BoundedNumberParameter("Microchannel Width (pix)", 0, 20, 5, null);
     NumberParameter microChannelWidthMin = new BoundedNumberParameter("MicroChannel Width Min(pixels)", 0, 15, 5, null);
     NumberParameter microChannelWidthMax = new BoundedNumberParameter("MicroChannel Width Max(pixels)", 0, 28, 5, null);
-    NumberParameter yEndMargin = new BoundedNumberParameter("Distance between end of channel and optical aberration", 0, 40, 0, null);
+    NumberParameter yEndMargin = new BoundedNumberParameter("Distance between end of channel and optical aberration", 0, 30, 0, null);
     NumberParameter localDerExtremaThld = new BoundedNumberParameter("X-Derivative Threshold (absolute value)", 1, 10, 0, null);
     Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, microChannelWidth, microChannelWidthMin, microChannelWidthMax, localDerExtremaThld, yEndMargin, xStart, xStop, yStart, yStop, number};
     public final static double betterPeakRelativeThreshold = 0.6;
@@ -251,7 +251,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         */
         float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null);
         int maxIdx = ArrayUtil.max(yProj);
-        int minIdx = ArrayUtil.min(yProj, maxIdx+1, yProj.length-1);
+        int minIdx = ArrayUtil.min(yProj); //, maxIdx+1, yProj.length-1 // in case peak is touching edge of image no min after aberration: seach for min in whole y axis
         double peakHeight = yProj[maxIdx] - yProj[minIdx];
         float thld = (float)(peakHeight * peakProportion + yProj[minIdx] );
         int endOfPeakIdx = ArrayUtil.getFirstOccurence(yProj, maxIdx, 0, thld, true, true);
@@ -275,7 +275,7 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
             new IJImageDisplayer().showImage(image);
             Utils.plotProfile("yProj", yProj);
             //Utils.plotProfile("Sliding sigma", slidingSigma);
-            logger.debug("minIdx: {}, maxIdx: {}, peakHeightThld: {}, enfOfPeak: {}, low limit of Mc: {}", minIdx, maxIdx, thld, endOfPeakIdx, startOfMicroChannel);
+            logger.debug("Optical Aberration detection: minIdx: {}, maxIdx: {}, peakHeightThld: {}, enfOfPeak: {}, low limit of Mc: {}", minIdx, maxIdx, thld, endOfPeakIdx, startOfMicroChannel);
         }
         return startOfMicroChannel;
     }

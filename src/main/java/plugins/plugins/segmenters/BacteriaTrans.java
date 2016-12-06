@@ -382,7 +382,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         double minCurv = Double.POSITIVE_INFINITY;
         Object3DCluster c = new Object3DCluster(mergePop, false, true, pv.getFactory());
         List<Set<Object3D>> clusters = c.getClusters();
-        logger.debug("compute merge cost: {} objects in {} clusters", objects.size(), clusters.size());
+        //logger.debug("compute merge cost: {} objects in {} clusters", objects.size(), clusters.size());
         if (clusters.size()>1) { // merge impossible : presence of disconnected objects / except if small objects
             // if at least all clusters but one are small -> can merge without cost 
             int nSmall = 0;
@@ -399,7 +399,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         Set<InterfaceBT> allInterfaces = c.getInterfaces(clusters.get(0));
         for (InterfaceBT i : allInterfaces) { // get the min curvature value = worst case
             i.updateSortValue();
-            logger.debug("interface: {}", i);
+            //logger.debug("interface: {}", i);
             if (Double.isInfinite(minCurv) && (i.getE1().getSize()<=minSize || i.getE2().getSize()<=minSize)) { // small objects can merge without cost
                 minCurv=pv.curvatureThreshold;
             } else if (i.curvatureValue<minCurv) minCurv = i.curvatureValue;

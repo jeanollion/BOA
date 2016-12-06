@@ -56,11 +56,12 @@ public class TestPreProcessPhase {
         String dbName = "boa_phase150616wt";
         boolean flip = false;
         int field = 0;
+        String fieldName = "xy01";
         int time = 998;
         //testRotation(dbName, 0, 0, time);
         //CropMicroChannelBF2D.debug=true;
         //testPreProcessing(dbName, field, 0, -1, 0, 2);
-        testCrop(dbName, field, time, flip);
+        testCrop(dbName, field, fieldName, time, flip);
         //testStabilizer(dbName, field, 0, 20, 19, flip);
     }
     
@@ -96,9 +97,9 @@ public class TestPreProcessPhase {
         disp.showImage(res.setName("rotated"));
     }
     
-    public static void testCrop(String dbName, int fieldIdx, int time, boolean flip) {
+    public static void testCrop(String dbName, int fieldIdx, String positionName, int time, boolean flip) {
         MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
-        MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
+        MicroscopyField f = positionName ==null ? db.getExperiment().getPosition(fieldIdx): db.getExperiment().getPosition(positionName);
         f.getPreProcessingChain().removeAllTransformations();
         f.getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(0.3, true, false, true, false)));
         if (flip) f.getPreProcessingChain().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));

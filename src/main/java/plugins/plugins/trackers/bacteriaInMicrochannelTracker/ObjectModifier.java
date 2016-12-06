@@ -65,7 +65,7 @@ public abstract class ObjectModifier extends CorrectionScenario {
         double cost = Double.NaN;
         Correction(int frame) {this.frame=frame;}
         protected double getCost() {return cost;}
-        protected abstract void apply();
+        protected abstract void apply(List<Object3D> list);
         @Override public int compareTo(Correction other) {
             return Double.compare(cost, other.cost);
         }
@@ -92,8 +92,7 @@ public abstract class ObjectModifier extends CorrectionScenario {
         }
 
         @Override
-        protected void apply() {
-            List<Object3D> currentObjects = getObjects(frame);
+        protected void apply(List<Object3D> currentObjects) {
             int i = currentObjects.indexOf(source);
             if (i<0) throw new Error("add split "+(frame)+" object not found");
             currentObjects.set(i, values.get(0));
@@ -128,11 +127,11 @@ public abstract class ObjectModifier extends CorrectionScenario {
         }
 
         @Override
-        protected void apply() {
-            List<Object3D> currentObjects = getObjects(frame);
+        protected void apply(List<Object3D> currentObjects) {
             int i = currentObjects.indexOf(source.key);
             int i2 = currentObjects.indexOf(source.value);
-            if (i<0 || i2<0) throw new Error("add merge "+(frame)+" object not found");
+            if (i<0) throw new Error("merge frame:"+(frame)+" object 1 not found");
+            if (i2<0) throw new Error("merge frame:"+(frame)+" object 2 not found");
             currentObjects.set(Math.min(i, i2), value);
             currentObjects.remove(Math.max(i, i2));
         }

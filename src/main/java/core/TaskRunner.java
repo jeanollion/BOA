@@ -55,7 +55,7 @@ public class TaskRunner {
     }
     public static List<Task> getTasks() {
         List<Task> tasks = new ArrayList<Task>() {{
-            //add(new Task("boa_fluo160428").setPositions(1, 2, 23, 3, 4, 5, 6).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 1).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 2));
+            add(new Task("boa_phase150616wt").setAllActions().setPositions("xy85", "xy87", "xy90", "xy93", "xy94"));
             add(new Task("boa_phase150616wt").setActions(false, true, true, true).setStructures(1).addExtractMeasurementDir("/data/Images/Phase/150616_6300_wt/", 1).addExtractMeasurementDir("/data/Images/Phase/150616_6300_wt/", 0));
             add(new Task("boa_phase141107wt").setActions(false, true, true, true).setStructures(1).addExtractMeasurementDir("/data/Images/Phase/141107_mg6300_wt/", 1).addExtractMeasurementDir("/data/Images/Phase/141107_mg6300_wt/", 0));
             add(new Task("boa_phase150324mutH").setActions(false, true, true, true).setStructures(1).addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 1).addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 0));
@@ -103,6 +103,18 @@ public class TaskRunner {
             if (positions!=null && positions.length>0) this.positions=positions;
             return this;
         }
+        private void initDB() {
+            db = new MorphiumMasterDAO(dbName);
+        }
+        public Task setPositions(String... positions) {
+            if (positions!=null && positions.length>0) {
+                initDB();
+                this.positions=new int[positions.length];
+                for (int i = 0; i<positions.length; ++i) this.positions[i] =  db.getExperiment().getPositionIdx(positions[i]);
+                db=null;
+            }
+            return this;
+        }
         
         public Task setStructures(int... structures) {
             if (structures!=null && structures.length>0) this.structures=structures;
@@ -115,7 +127,7 @@ public class TaskRunner {
             return this;
         }
         public boolean isValid() {
-            db = new MorphiumMasterDAO(dbName);
+            initDB();
             if (db.getExperiment()==null) {
                 errors.add(new Pair(dbName, new Exception("DB: "+ dbName+ " not found")));
                 printErrors();
@@ -148,7 +160,7 @@ public class TaskRunner {
             }
         }
         public void run() {
-            db = new MorphiumMasterDAO(dbName);
+            initDB();
             if (positions==null) positions=ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount());
             if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
             

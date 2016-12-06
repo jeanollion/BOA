@@ -15,20 +15,21 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package processing.dataGeneration;
+package core;
 
-import static TestUtils.Utils.logger;
-import dataStructure.configuration.Experiment;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MorphiumMasterDAO;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author jollion
  */
 public class ResetXPParameters {
+    public static final Logger logger = LoggerFactory.getLogger(ResetXPParameters.class);
     public static void main(String[] args) {
         String[] dbs = new String[]{"boa_phase150616wt", "boa_phase141107wt", "boa_phase150324mutH"};
         for (String db:dbs) resetParameters(db, true, true);
@@ -36,7 +37,7 @@ public class ResetXPParameters {
     }
     public static void resetParameters(String dbName, boolean processing, boolean measurements) {
         MasterDAO db = new MorphiumMasterDAO(dbName);
-        GenerateTestXP.setParametersTrans(db.getExperiment(), processing, measurements);
+        GenerateXP.setParametersTrans(db.getExperiment(), processing, measurements);
         db.updateExperiment();
     }
 }
