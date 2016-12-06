@@ -382,7 +382,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         double minCurv = Double.POSITIVE_INFINITY;
         Object3DCluster c = new Object3DCluster(mergePop, false, true, pv.getFactory());
         List<Set<Object3D>> clusters = c.getClusters();
-        //logger.debug("compute merge cost: {} objects in {} clusters", objects.size(), clusters.size());
+        logger.debug("compute merge cost: {} objects in {} clusters", objects.size(), clusters.size());
         if (clusters.size()>1) { // merge impossible : presence of disconnected objects / except if small objects
             // if at least all clusters but one are small -> can merge without cost 
             int nSmall = 0;
@@ -394,12 +394,14 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             if (nSmall>=clusters.size()-1) return 0;
             if (debug) logger.debug("merge impossible: {} disconnected clusters detected", clusters.size());
             return Double.POSITIVE_INFINITY;
-        } 
+        }
+        pv.updateCurvature(clusters);
         Set<InterfaceBT> allInterfaces = c.getInterfaces(clusters.get(0));
         for (InterfaceBT i : allInterfaces) { // get the min curvature value = worst case
             i.updateSortValue();
-            if (i.getE1().getSize()<=minSize || i.getE2().getSize()<=minSize) { // small objects can merge without cost
-                if (minCurv>0) minCurv=pv.curvatureThreshold;
+            logger.debug("interface: {}", i);
+            if (Double.isInfinite(minCurv) && (i.getE1().getSize()<=minSize || i.getE2().getSize()<=minSize)) { // small objects can merge without cost
+                minCurv=pv.curvatureThreshold;
             } else if (i.curvatureValue<minCurv) minCurv = i.curvatureValue;
         }
         if (minCurv==Double.POSITIVE_INFINITY || minCurv==Double.NaN) return Double.POSITIVE_INFINITY;
@@ -596,15 +598,6 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 if (debug) disp.showImage(pop1.getLabelMap().duplicate("objects after adjust contour2"));
                 */
                 thresh = pop1.getLabelMap();
-                
-                /*if (openRadius>=1) {
-                    if (debug) disp.showImage(thresh.duplicate("before open"));
-                    Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(openRadius, openRadius, thresh));
-                    if (debug) disp.showImage(thresh.duplicate("after open"));
-                    //thresh = Filters.binaryClose(thresh, Filters.getNeighborhood(openRadius, openRadius, thresh)); // no close -> create errors with curvature
-                    //if (debug) disp.showImage(thresh.duplicate("after close"));
-                } else Filters.binaryOpen(thresh, thresh, Filters.getNeighborhood(1, 1, thresh)); // remove pixels only connected by diagonal -> otherwise curvature cannot be computed
-                */
                 ImageInteger open = Filters.binaryOpen(thresh, null, Filters.getNeighborhood(openRadius, openRadius, thresh));
                 ImageOperations.xor(open, thresh, open);
                 ObjectPopulation openPop = new ObjectPopulation(open, false);
@@ -631,7 +624,6 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 pop1.filter(new ContrastIntensity(-contrastThreshold, contrastRadius,0,false, getIntensityMap()));
                 if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK AFTER  REMOVE CONTRAST"));
                 segMask = pop1.getLabelMap();
-                //throw new Error();
             }
             return segMask;
         }
@@ -640,6 +632,20 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 distanceMap = EDT.transform(getSegmentationMask(), true, 1, input.getScaleZ()/input.getScaleXY(), 1);
             }
             return distanceMap;
+        }
+        protected void updateCurvature(List<Set<Object3D>> clusters) { // need to be called in order to use curvature in InterfaceBT
+            curvatureMap.clear();
+            ImageByte clusterMap = new ImageByte("cluster map", segMask).resetOffset();
+            Iterator<Set<Object3D>> it = clusters.iterator();
+            while(it.hasNext()) {
+                Set<Object3D> clust = it.next();
+                for (Object3D o : clust) o.draw(clusterMap, 1);
+                KDTree<Double> curv = Curvature.computeCurvature(clusterMap, curvatureScale);
+                for (Object3D o : clust) {
+                    curvatureMap.put(o, curv);
+                    if (it.hasNext()) o.draw(clusterMap, 0);
+                }
+            }
         }
         protected ObjectPopulation splitAndMergeObjects(ImageInteger segmentationMask, int minSize, int objectMergeLimit, boolean endOfChannel, boolean debug) {
             //if (BacteriaTrans.debug) debug=true;
@@ -654,37 +660,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             // merge using the criterion
             Object3DCluster.verbose=debug;
             //res.setVoxelIntensities(pv.getEDM());// for merging // useless if watershed transform on EDM has been called just before
-
-            // compute curvature for each cluster and associate each separated object to a given curvature map
-            curvatureMap.clear();
             Object3DCluster<InterfaceBT> c = new Object3DCluster(res, false, true, getFactory());
-            
-            List<Set<Object3D>> clusters = c.getClusters();
-            //if (debug || splitVerbose) new IJImageDisplayer().showImage(Object3DCluster.drawInterfaces(c));
-            ImageByte clusterMap = new ImageByte("cluster map", res.getImageProperties()).resetOffset();
-            for (Set<Object3D> clust : clusters) {
-                for (Object3D o : clust) o.draw(clusterMap, 1);
-                KDTree<Double> curv = Curvature.computeCurvature(clusterMap, curvatureScale);
-                for (Object3D o : clust) {
-                    curvatureMap.put(o, curv);
-                    o.draw(clusterMap, 0);
-                }
-            }
+            updateCurvature(c.getClusters());
             if (minSize>0) c.mergeSmallObjects(minSize, objectMergeLimit);
             c.mergeSort(objectMergeLimit<=1, 0, objectMergeLimit);
-
-
-            //res.filterAndMergeWithConnected(new ObjectPopulation.Thickness().setX(minXSize).setY(2)); // remove thin objects
-            //res.filterAndMergeWithConnected(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
-            if (debug) {
-                disp.showImage(getIntensityMap().setName("DOG"));
-                //disp.showImage(pv.getEDM());
-                //disp.showImage(res.getLabelMap().setName("seg map after fusion"));
-                //disp.showImage(cluster.drawInterfacesSortValue(sm));
-                //disp.showImage(cluster.drawInterfaces());
-                //FitEllipse.fitEllipse2D(pop1.getObjects().get(0));
-                //FitEllipse.fitEllipse2D(pop1.getObjects().get(1));
-            }
             return res;
         }
         
