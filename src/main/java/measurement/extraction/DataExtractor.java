@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.function.Function;
 import utils.Utils;
 
 /**
@@ -49,6 +50,19 @@ public class DataExtractor {
     final static String NaN = "NaN";
     int structureIdx;
     MasterDAO db;
+    public static Function<Number, String> numberFormater = (Number n) -> { // precision
+        if (n instanceof Integer) {
+            return n.toString();
+        } else {
+            double d = Math.abs(n.doubleValue());
+            if (d==0) return "0";
+            else if (d < 1 || d > 100) {
+                return String.format(java.util.Locale.US, "%.4E", n);
+            } else {
+                return String.format(java.util.Locale.US, "%.4f", n);
+            }
+        }
+    };
     public DataExtractor(MasterDAO db, int structureIdx) {
         this.db=db;
         this.structureIdx=structureIdx;
@@ -128,11 +142,11 @@ public class DataExtractor {
                         if (pIdx==-1) for (String pMeasName : allMeasurementsSort.get(e.getKey())) line+=separator+NaN; // parent not found, adds only NaN
                         else {
                             key = e.getValue().get(pIdx);
-                            for (String pMeasName : allMeasurementsSort.get(e.getKey())) line+=separator+key.getValueAsString(pMeasName);
+                            for (String pMeasName : allMeasurementsSort.get(e.getKey())) line+=separator+key.getValueAsString(pMeasName, numberFormater);
                         }
                     }
                     //add measurements from the current structure
-                    for (String mName : currentMeasurementNames) line+=separator+m.getValueAsString(mName);
+                    for (String mName : currentMeasurementNames) line+=separator+m.getValueAsString(mName, numberFormater);
                     out.newLine();
                     out.write(line);
                     ++count;

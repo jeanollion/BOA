@@ -507,4 +507,17 @@ public class Utils {
 
         return version;
     } 
+
+    public static String format(Number n, int digits) {
+        if (n instanceof Integer) {
+            return n.toString();
+        } else {
+            double d = Math.abs(n.doubleValue());
+            if (d < 1 || d > 100) {
+                return String.format(java.util.Locale.US, "%."+ digits+ "E", n);
+            } else {
+                return String.format(java.util.Locale.US, "%."+ digits+"f", n);
+            }
+        }
+    }
 }

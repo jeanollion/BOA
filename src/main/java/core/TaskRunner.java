@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import measurement.MeasurementKeyObject;
 import measurement.extraction.DataExtractor;
+import org.apache.commons.lang.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plugins.PluginFactory;
@@ -48,14 +49,13 @@ public class TaskRunner {
         
         //List<Task> tasks = extractMeasurementOnFluoXP(true);
         List<Task> tasks = getTasks();
-        //for (Task t : tasks) t.isValid();
-        for (Task t : tasks) if (t.isValid()) t.run();
+        for (Task t : tasks) t.isValid();
+        //for (Task t : tasks) if (t.isValid()) t.run();
         logger.info("All tasks performed! See errors below:");
         for (Task t : tasks) t.printErrors();
     }
     public static List<Task> getTasks() {
         List<Task> tasks = new ArrayList<Task>() {{
-            add(new Task("boa_phase150616wt").setAllActions().setPositions("xy85", "xy87", "xy90", "xy93", "xy94"));
             add(new Task("boa_phase150616wt").setActions(false, true, true, true).setStructures(1).addExtractMeasurementDir("/data/Images/Phase/150616_6300_wt/", 1).addExtractMeasurementDir("/data/Images/Phase/150616_6300_wt/", 0));
             add(new Task("boa_phase141107wt").setActions(false, true, true, true).setStructures(1).addExtractMeasurementDir("/data/Images/Phase/141107_mg6300_wt/", 1).addExtractMeasurementDir("/data/Images/Phase/141107_mg6300_wt/", 0));
             add(new Task("boa_phase150324mutH").setActions(false, true, true, true).setStructures(1).addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 1).addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 0));
@@ -155,9 +155,8 @@ public class TaskRunner {
             if (array[ArrayUtil.min(array)]<0) errors.add(new Pair(dbName, new Exception(message + array[ArrayUtil.min(array)]+ " not found")));
         }
         public void printErrors() {
-            for (Pair<String, Exception> e : errors) {
-                logger.error(e.key, e.value);
-            }
+            if (!errors.isEmpty()) logger.error("Errors for Task: {}", toString());
+            for (Pair<String, Exception> e : errors) logger.error(e.key, e.value);
         }
         public void run() {
             initDB();
@@ -188,23 +187,25 @@ public class TaskRunner {
             if (deleteAllField) db.getDao(position).deleteAllObjects();
             
             if (preProcess) {
-                logger.info("Pre-Processing: Position: {}", position);
+                logger.info("Pre-Processing: DB: {}, Position: {}", dbName, position);
                 Processor.preProcessImages(db.getExperiment().getPosition(position), db.getDao(position), true, preProcess);
+                db.getExperiment().getPosition(position).flushImages(true, false);
             }
             if (segmentAndTrack || trackOnly) {
-                logger.info("Processing: Position: {}", position);
+                logger.info("Processing: DB: {}, Position: {}", dbName, position);
                 List<Pair<String, Exception>> e = Processor.processAndTrackStructures(db.getDao(position), true, trackOnly, structures);
                 errors.addAll(e);
             }
             if (measurements) {
-                logger.info("Measurements: Field: {}", position);
+                logger.info("Measurements: DB: {}, Field: {}", dbName, position);
                 db.getDao(position).deleteAllMeasurements();
                 List<Pair<String, Exception>> e = Processor.performMeasurements(db.getDao(position));
                 errors.addAll(e);
             }
             if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field
             db.getDao(position).clearCache();
-            db.getExperiment().getPosition(position).flushImages();
+            db.getExperiment().getPosition(position).flushImages(true, true);
+            System.gc();
         }
         private void extract(String dir, int[] structures) {
             if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
@@ -217,6 +218,21 @@ public class TaskRunner {
             if (positions==null) positions=ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount());
             List<String> res = new ArrayList<>(positions.length);
             for (int i = 0; i<positions.length; ++i) res.add(db.getExperiment().getPosition(positions[i]).getName());
+            return res;
+        }
+        @Override public String toString() {
+            String res =  "db: "+dbName;
+            if (preProcess) res+="/preProcess/";
+            if (segmentAndTrack) res+="/segmentAndTrack/";
+            else if (trackOnly) res+="/trackOnly/";
+            if (measurements) res+="/measurements/";
+            if (structures!=null) res+="/structures:"+ArrayUtils.toString(structures)+"/";
+            if (positions!=null) res+="/positions:"+ArrayUtils.toString(positions)+"/";
+            if (!extrackMeasurementDir.isEmpty()) {
+                res+= "/Extract: ";
+                for (Pair<String, int[]> p : this.extrackMeasurementDir) res+=p.key+ "="+ArrayUtils.toString(res);
+                res+="/";
+            }
             return res;
         }
     }

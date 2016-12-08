@@ -79,7 +79,7 @@ public class AnalyseImageCorruption {
         int positionCount = 0;
         for (String position : xp.getPositionsAsString()) {
             errors.put(position, getCorruptedFrames(xp, position));
-            xp.getPosition(position).flushImages();
+            xp.getPosition(position).flushImages(true, true);
             logger.debug("POSITION: {}/{}", ++positionCount, xp.getPositionCount());
             //if (positionCount>0) return errors;
         }

@@ -253,6 +253,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
             openPreprocessedFrame.setAction(new AbstractAction(openPreprocessedFrame.getActionCommand()) {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
+                        generator.db.getExperiment().flushImages(true, true, fieldName);
                         int channels = generator.db.getExperiment().getChannelImageCount();
                         Image[][] imagesTC = new Image[1][channels];
                         MicroscopyField f = generator.db.getExperiment().getPosition(fieldName);
@@ -260,7 +261,6 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
                             imagesTC[0][channel] = generator.db.getExperiment().getImageDAO().openPreProcessedImage(channel, f.getDefaultTimePoint(), fieldName);
                             if (imagesTC[0][channel]==null) return;
                         }
-                        f.flushImages();
                         ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("PreProcessed Image of Position: "+fieldName+ " Frame: "+f.getDefaultTimePoint(), imagesTC);
                     }
                 }
@@ -270,6 +270,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
             openPreprocessedAllFrames.setAction(new AbstractAction(openPreprocessedAllFrames.getActionCommand()) {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
+                        generator.db.getExperiment().flushImages(true, true, fieldName);
                         MicroscopyField f = generator.db.getExperiment().getPosition(fieldName);
                         int channels = generator.db.getExperiment().getChannelImageCount();
                         int frames = f.getTimePointNumber(false);
@@ -280,7 +281,6 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
                                 if (imagesTC[frame][channel]==null) return;
                             }
                         }
-                        f.flushImages();
                         ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("PreProcessed Images of Position: "+fieldName, imagesTC);
                     }
                 }

@@ -125,9 +125,12 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         return inputImages;
     }
     
-    public void flushImages() {
-        if (inputImages!=null) inputImages.flush();
-        if (images!=null) images.close();
+    public void flushImages(boolean raw, boolean preProcessed) {
+        if (raw && inputImages!=null) {
+            inputImages.flush();
+            inputImages = null;
+        }
+        if (preProcessed && images!=null) images.close();
     }
     
     public BlankMask getMask() {
@@ -242,13 +245,13 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
             openRawFrame.setAction(new AbstractAction(openRawFrame.getActionCommand()) {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
+                    getExperiment().flushImages(true, true, name);
                     int channels = getExperiment().getChannelImageCount();
                     Image[][] imagesTC = new Image[1][channels];
                     for (int channelIdx = 0; channelIdx<channels; ++channelIdx) {
                         imagesTC[0][channelIdx] = getInputImages().getImage(channelIdx, defaultTimePoint.getSelectedTimePoint()).setName("Channel: "+channelIdx+" Frame: "+defaultTimePoint.getSelectedTimePoint());
                         if (imagesTC[0][channelIdx]==null) return;
                     }
-                    flushImages();
                     ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Raw Image of Position: "+name+ " Frame: "+defaultTimePoint.getSelectedTimePoint(), imagesTC);
                 }
             }
@@ -259,6 +262,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
             openRawAllFrames.setAction(new AbstractAction(openRawAllFrames.getActionCommand()) {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
+                    getExperiment().flushImages(true, true, name);
                     int channels = getExperiment().getChannelImageCount();
                     int frames = getTimePointNumber(true);
                     Image[][] imagesTC = new Image[frames][channels];
@@ -271,7 +275,6 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
                             }
                         }
                     }
-                    flushImages();
                     ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Raw Image of Position: "+name, imagesTC);
                 }
             }
@@ -299,13 +302,13 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
             openPreprocessedFrame.setAction(new AbstractAction(openPreprocessedFrame.getActionCommand()) {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
+                        getExperiment().flushImages(true, true, name);
                         int channels = getExperiment().getChannelImageCount();
                         Image[][] imagesTC = new Image[1][channels];
                         for (int channel = 0; channel<channels; ++channel) {
                             imagesTC[0][channel] = getExperiment().getImageDAO().openPreProcessedImage(channel, defaultTimePoint.getSelectedTimePoint(), name);
                             if (imagesTC[0][channel]==null) return;
                         }
-                        flushImages();
                         ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("PreProcessed Image of Position: "+name+ " Frame: "+defaultTimePoint.getSelectedTimePoint(), imagesTC);
                     }
                 }
@@ -315,6 +318,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
             openPreprocessedAllFrames.setAction(new AbstractAction(openPreprocessedAllFrames.getActionCommand()) {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
+                        getExperiment().flushImages(true, true, name);
                         int channels = getExperiment().getChannelImageCount();
                         int frames = getTimePointNumber(false);
                         Image[][] imagesTC = new Image[frames][channels];
@@ -324,7 +328,6 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
                                 if (imagesTC[frame][channel]==null) return;
                             }
                         }
-                        flushImages();
                         ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("PreProcessed Images of Position: "+name, imagesTC);
                     }
                 }

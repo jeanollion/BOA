@@ -185,6 +185,7 @@ public class Selection implements Comparable<Selection> {
         retrievedTrackHeads.remove(fieldName);
         List<StructureObject> roots = dao.getRoots();
         long t0 = System.currentTimeMillis();
+        List<int[]> notFound = logger.isWarnEnabled() ? new ArrayList<>() : null;
         for (String s : indiciesList) {
             int[] indicies = parseIndicies(s);
             if (indicies.length-1!=pathToRoot.length) {
@@ -193,10 +194,11 @@ public class Selection implements Comparable<Selection> {
             }
             StructureObject elem = getObject(indicies, pathToRoot, roots);
             if (elem!=null) res.add(elem);
-            else logger.warn("Selection: object not found: {}", indicies);
+            else if (notFound!=null) notFound.add(indicies); 
         }
         long t1 = System.currentTimeMillis();
         logger.debug("Selection: {}, #{} elements retrieved in: {}", this.id, res.size(), t1-t0);
+        if (notFound!=null && !notFound.isEmpty()) logger.warn("Selection: {} objects not found: {}", getName(), notFound);
         return res;
     }
     

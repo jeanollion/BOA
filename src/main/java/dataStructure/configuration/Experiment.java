@@ -36,6 +36,7 @@ import de.caluga.morphium.annotations.Id;
 import de.caluga.morphium.annotations.Index;
 import de.caluga.morphium.annotations.Transient;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -134,6 +135,12 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         checkInit();
         return fields.getChildAt(fieldIdx);
     }   
+    
+    public void flushImages(boolean raw, boolean preProcessed, String... excludePositions) {
+        List<String> pos = new ArrayList<>(Arrays.asList(getPositionsAsString()));
+        pos.removeAll(Arrays.asList(excludePositions));
+        for (String p : pos)  getPosition(p).flushImages(raw, preProcessed);
+    }
    
     public ObjectId getId() {return id;}
     

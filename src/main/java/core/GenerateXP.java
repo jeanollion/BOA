@@ -198,7 +198,7 @@ public class GenerateXP {
         scaleXY = 0.06289;*/
         
         
-        String dbName = "boa_phase141107wt";
+        /*String dbName = "boa_phase141107wt";
         String inputDir = "/data/Images/Phase/141107_mg6300_wt/mg6300WT-lb-lr62replic1-7-11-14/";
         String outputDir = "/data/Images/Phase/141107_mg6300_wt/Output";
         trimStart = 122;
@@ -207,7 +207,7 @@ public class GenerateXP {
         boolean fluo = false;
         transSingleFileImport=false;
         scaleXY = 0.06289;
-        
+        */
         /*
         // beaucoup de files corrompue, pas d'intervalle.. 
         String dbName = "boa_phase141113wt";
@@ -229,8 +229,8 @@ public class GenerateXP {
         scaleXY = 0.06289;
         */
         
-        /*String dbName = "boa_phase150616wt";
-        // cette manip contient des images hors focus frames >770
+        String dbName = "boa_phase150616wt";
+        // cette manip contient des images hors focus
         String inputDir = "/data/Images/Phase/150616_6300_wt/6300_WT_LB_LR62silicium_16062015_tif/";
         String outputDir = "/data/Images/Phase/150616_6300_wt/Output";
         boolean flip = false;
@@ -238,8 +238,8 @@ public class GenerateXP {
         transSingleFileImport=false;
         scaleXY = 0.06289;
         flipArray = fillRange(getBooleanArray(96, false), 61, 95, true); //pos 62 - 96 -> flip = true
-        deletePositions = setValues(getBooleanArray(991, false), true, 5, 11, 14, 29, 43, 47, 61); // xy06 xy44 xy48 xy62  -> seulement un frame OOF, les autres beaucoup de frames
-        */
+        deletePositions = setValues(getBooleanArray(96, false), true, 5, 11, 14, 29, 43, 45, 47, 61, 65); // xy06 xy44 xy48 xy62  -> seulement un frame OOF, les autres beaucoup de frames
+        
         /*
         ////////////////////////////
         // Ordi Portable

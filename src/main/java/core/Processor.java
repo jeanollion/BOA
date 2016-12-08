@@ -130,7 +130,7 @@ public class Processor {
         for (String fieldName : xp.getPositionsAsString()) {
             processAndTrackStructures(db.getDao(fieldName), deleteObjects, false, structures);
             db.getDao(fieldName).clearCache();
-            db.getExperiment().getPosition(fieldName).flushImages();
+            db.getExperiment().getPosition(fieldName).flushImages(true, true);
         }
     }
     
@@ -142,9 +142,9 @@ public class Processor {
             else dao.deleteObjectsByStructureIdx(structures);
         } 
         List<StructureObject> root = getOrCreateRootTrack(dao);
-        if (root==null) {
+        if (root==null || root.isEmpty()) {
             logger.error("Field: {} no pre-processed image found", dao.getFieldName());
-            errors.add(new Pair(dao.getFieldName(), new Exception("no pre-processed image found")));
+            errors.add(new Pair("db: "+dao.getMasterDAO().getDBName()+" pos: "+dao.getFieldName(), new Exception("no pre-processed image found")));
             return errors;
         }
         if (structures.length==0) structures=xp.getStructuresInHierarchicalOrderAsArray();
@@ -214,7 +214,7 @@ public class Processor {
             performMeasurements(db.getDao(fieldName));
             //if (dao!=null) dao.clearCacheLater(xp.getMicroscopyField(i).getName());
             db.getDao(fieldName).clearCache();
-            db.getExperiment().getPosition(fieldName).flushImages();
+            db.getExperiment().getPosition(fieldName).flushImages(true, true);
         }
     }
     
@@ -223,8 +223,13 @@ public class Processor {
         List<StructureObject> roots = dao.getRoots();
         logger.debug("{} number of roots: {}", dao.getFieldName(), roots.size());
         final Map<Integer, List<Measurement>> measurements = dao.getExperiment().getMeasurementsByCallStructureIdx();
-        Map<StructureObject, List<StructureObject>> rootTrack = new HashMap<>(1); rootTrack.put(roots.get(0), roots);
         List<Pair<String, Exception>> errors = new ArrayList<>();
+        if (roots.isEmpty()) {
+            errors.add(new Pair("db: "+dao.getMasterDAO().getDBName()+" position: "+dao.getFieldName(), new Exception("no root")));
+            return errors;
+        }
+        Map<StructureObject, List<StructureObject>> rootTrack = new HashMap<>(1); rootTrack.put(roots.get(0), roots);
+        
         for(Entry<Integer, List<Measurement>> e : measurements.entrySet()) {
             Map<StructureObject, List<StructureObject>> allParentTracks;
             if (e.getKey()==-1) {

@@ -257,9 +257,7 @@ public class ObjectPopulation {
     public void relabel() {relabel(true);}
     public void relabel(boolean fillImage) {
         int idx = 1;
-        for (Object3D o : getObjects()) {
-            o.label = idx++;
-        }
+        for (Object3D o : getObjects()) o.label = idx++;
         if (objects == null || objects.isEmpty()) return;
         redrawLabelMap(fillImage);
     }
@@ -319,8 +317,6 @@ public class ObjectPopulation {
         return res;
     }
     
-    
-
     /*public void fitToEdges(Image edgeMap, ImageMask mask) {
      // 1st pass: increase foreground
      WatershedTransform wt = new WatershedTransform(edgeMap, mask, objects, false, null, null);

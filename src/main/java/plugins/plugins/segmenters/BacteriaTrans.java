@@ -78,6 +78,7 @@ import plugins.plugins.segmenters.BacteriaTrans.ProcessingVariables.InterfaceBT;
 import plugins.plugins.thresholders.ConstantValue;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.trackers.ObjectIdxTracker;
+import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
 import processing.Curvature;
 import processing.EDT;
 import processing.FillHoles2D;
@@ -120,7 +121,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     NumberParameter subBackScale = new BoundedNumberParameter("Subtract Background scale", 1, 100, 0.1, null);
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
     PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Threshold (separation from background)", Thresholder.class, new ConstantValue(423), false); // //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
-    PluginParameter<Thresholder> thresholdContrast = new PluginParameter<Thresholder>("Threshold for false positive", Thresholder.class, new ConstantValue(100), false); // 125 for xp with bad contrast? 
+    PluginParameter<Thresholder> thresholdContrast = new PluginParameter<Thresholder>("Threshold for false positive", Thresholder.class, new ConstantValue(125), false); // 125 for xp with bad contrast? 
     GroupParameter backgroundSeparation = new GroupParameter("Separation from background", threshold, thresholdContrast, openRadius, closeRadius, fillHolesBackgroundContactProportion);
     
     NumberParameter relativeThicknessThreshold = new BoundedNumberParameter("Relative Thickness Threshold (lower: split more)", 2, 0.7, 0, 1);
@@ -615,13 +616,12 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 FillHoles2D.fillHolesClosing(thresh, closeRadius, fillHolesBckProp, minSizeFusion);
                 
                 pop1 = new ObjectPopulation(thresh).setLabelImage(thresh, false, true);
-                
-                //if (debug) disp.showImage(pop1.getLabelMap().duplicate("objects after adjust contour"));
                 pop1.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
                 pop1.filter(new ObjectPopulation.Thickness().setX(minXSize).setY(2)); // remove thin objects
-                
+                Collections.sort(pop1.getObjects(), getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ)); // sort by increasing Y position
+                pop1.relabel(false);
                 if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK"));
-                pop1.filter(new ContrastIntensity(-contrastThreshold, contrastRadius,0,false, getIntensityMap()));
+                pop1.filter(new ContrastIntensity(-contrastThreshold, contrastRadius, 0, false, getIntensityMap()));
                 if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK AFTER  REMOVE CONTRAST"));
                 segMask = pop1.getLabelMap();
             }
@@ -664,6 +664,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             updateCurvature(c.getClusters());
             if (minSize>0) c.mergeSmallObjects(minSize, objectMergeLimit);
             c.mergeSort(objectMergeLimit<=1, 0, objectMergeLimit);
+            Collections.sort(res.getObjects(), getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ)); // sort by increasing Y position
+            res.relabel(true);
             return res;
         }
         
@@ -871,7 +873,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         final Image intensityMap;
         final boolean keepOverThreshold;
         Map<Object3D, Object3D> dilatedObjects;
-        
+        boolean computeOutsideMeanForEachObject = true;
+        double meanOut;
         public ContrastIntensity(double threshold, double dilatationRadiusXY, double dilatationRadiusZ, boolean keepOverThreshold, Image intensityMap) {
             this.threshold = threshold;
             this.intensityMap = intensityMap;
@@ -880,16 +883,28 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             this.keepOverThreshold=keepOverThreshold;
         }
         
+        public ContrastIntensity setComputeOutsideMeanForEachObject(boolean computeOutsideMeanForEachObject) {
+            this.computeOutsideMeanForEachObject = computeOutsideMeanForEachObject;
+            return this;
+        }
+        
         @Override
         public void init(ObjectPopulation population) {
-            dilatedObjects = population.getDilatedObjects(dilRadiusXY, dilRadiusZ, true);
+            if (!computeOutsideMeanForEachObject) {
+                ImageByte res = ImageOperations.getDilatedMask(population.getLabelMap(), dilRadiusXY, dilRadiusZ, ImageOperations.not(population.getLabelMap(), new ImageByte("", 0, 0, 0)), true);
+                new IJImageDisplayer().showImage(res.setName("dil mask"));
+                Object3D dilO = new Object3D(res, 1);
+                meanOut = BasicMeasurements.getMeanValue(dilO, intensityMap, true);
+            } else dilatedObjects = population.getDilatedObjects(dilRadiusXY, dilRadiusZ, true);
         }
 
         @Override
         public boolean keepObject(Object3D object) {
-            Object3D dil = dilatedObjects.get(object);
-            double mean = BasicMeasurements.getMeanValue(object, intensityMap, false);
-            double meanOut = BasicMeasurements.getMeanValue(dil, intensityMap, false);
+            Object3D dup = object.duplicate();
+            dup.erode(Filters.getNeighborhood(dilRadiusXY, dilRadiusZ, intensityMap));
+            if (dup.getVoxels().isEmpty()) dup = object;
+            double mean = BasicMeasurements.getMeanValue(dup, intensityMap, false);
+            double meanOut = computeOutsideMeanForEachObject ? BasicMeasurements.getMeanValue(dilatedObjects.get(object), intensityMap, false) : this.meanOut;
             if (debug) logger.debug("object: {}, mean: {}, mean out: {}, diff: {}, thld: {}, keep? {}", object.getLabel(), mean, meanOut, mean-meanOut, threshold, mean-meanOut >= threshold == keepOverThreshold);
             return mean-meanOut >= threshold == keepOverThreshold;
         }

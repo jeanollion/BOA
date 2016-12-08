@@ -50,6 +50,7 @@ import java.util.Set;
 import javax.swing.AbstractAction;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
+import utils.ArrayFileWriter;
 import utils.HashMapGetCreate;
 import utils.HashMapGetCreate.Factory;
 import utils.HashMapGetCreate.SetFactory;
@@ -913,15 +914,7 @@ public abstract class ImageWindowManager<T, U, V> {
         }
     }
     private static String toString(Object o) {
-        return o instanceof Number ? format((Number) o) : o.toString();
+        return o instanceof Number ? Utils.format((Number) o, 3) : o.toString();
     }
-    final static DecimalFormat df = new DecimalFormat("#.###");
-    private static String format(Number n) {
-        if (n instanceof Integer) return n.toString();
-        else {
-            double d = Math.abs(n.doubleValue());
-            if (d<1 || d>100) return String.format("%.3E", n);
-            else return df.format(n);
-        }
-    }
+    
 }

@@ -37,6 +37,7 @@ import java.util.logging.Logger;
  */
 public class ArrayFileWriter {
     final static String separator =";";
+
     Map<String, Object> arrays = new LinkedHashMap<String, Object>();
     public ArrayFileWriter addArray(String columnName, float[] array) {
         arrays.put(columnName, array);

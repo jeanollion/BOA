@@ -98,7 +98,7 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
 
     @Override
     public void close() {
-        
+        fileCT=null;
     }
 
     @Override

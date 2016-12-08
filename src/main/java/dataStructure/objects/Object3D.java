@@ -314,7 +314,11 @@ public class Object3D {
         //logger.debug("contour: {} (total: {})", res.size(), getVoxels().size());
         return res; 
     }
-    
+    public void erode(Neighborhood neigh) {
+        mask = Filters.min(getMask(), null, neigh);
+        voxels = null; // reset voxels
+        // TODO reset bounds?
+    }
     public void erodeContours(Image image, double threshold, boolean removeIfLowerThanThreshold, List<Voxel> contour) {
         if (contour==null || contour.isEmpty()) contour = getContour();
         Set<Voxel> heap = new HashSet<>(contour);

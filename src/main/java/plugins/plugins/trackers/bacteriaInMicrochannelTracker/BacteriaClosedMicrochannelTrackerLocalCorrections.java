@@ -443,6 +443,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     }
     
     private void step(String name, boolean increment) {
+        if (step>5) return;
         if (name==null) {
             if (increment) name = "End of Step: "+step;
             else name = "Step: "+step;
@@ -521,8 +522,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 if (frame+1<populations.length && nextO.size()==populations[frame+1].size()) {
                     nextO.clear(); // stop while loop
                     for (int f = frame+1; f<populations.length; ++f) { // remove all objects from frame
-                        populations[f].clear();
-                        trackAttributes[f].clear();
+                        if (populations[f]!=null) populations[f].clear();
+                        if (trackAttributes[f]!=null) trackAttributes[f].clear();
                     }
                 }
             }
@@ -678,6 +679,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         int res = 0;
         for (int t = tpMin; t<=tpMaxIncluded; ++t) {
             TrackAssigner ta = new TrackAssigner(t).verboseLevel(verboseLevelLimit); //verboseLevelLimit
+            ta.resetTrackAttributes();
             while(ta.nextTrack()) {
                 res+=ta.getErrorCount();
                 if (debugCorr && ta.getErrorCount()>0) logger.debug(ta.toString());
@@ -760,22 +762,18 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             TrackAttribute ta = this.prev;
             Set<TrackAttribute> bucket = new HashSet<>(3);
             WL: while(res.size()<sizeIncrementFrameNumber && ta!=null) {
-                if (ta.next==null) logger.error("Prev's NEXT NULL ta: {}: prev: {}, parent th: {}", this, this.prev, parents.get(0));
-                if (!ta.errorCur && !ta.truncatedDivision && !ta.touchEndOfChannel && !ta.next.touchEndOfChannel) {
-                    if (ta.division) {
+                if (ta.next==null) logger.error("Prev's NEXT NULL db:{}, position: {}, parent: {}, current: {}: ta with no next: {}, last of channel: {}", parents.get(0).getDAO().getMasterDAO().getDBName(), parents.get(0).getDAO().getFieldName(), parents.get(0), this, ta, ta.idx==populations[ta.timePoint].size()-1);
+                if (!ta.errorCur && !ta.truncatedDivision && !ta.touchEndOfChannel) {
+                    if (ta.division || ta.next==null) {
                         double nextSize = 0;
                         bucket.clear();
                         Set<TrackAttribute> n = ta.getNext(bucket);
-                        if (n.size()>1) {
-                            //boolean touch = false;
-                            for (TrackAttribute t : n) {
-                                nextSize+=t.getSize();
-                                //if (t.touchEndOfChannel) touch=true;
-                            }
-                            res.add(nextSize/ta.getSize()); //if (!touch) 
+                        for (TrackAttribute t: n) if (t.touchEndOfChannel) {n.clear();break;} // do not take into acount if touches end of channel
+                        if ((ta.division && n.size()>1) || (!ta.division && n.size()==1)) {
+                            for (TrackAttribute t : n) nextSize+=t.getSize();
+                            res.add(nextSize/ta.getSize()); 
                         }
-                        //if (debug) logger.debug("division: {}, next: {}, nextSize: {}", ta, n, nextSize);
-                    } else res.add(ta.next.getSize()/ta.getSize()); 
+                    } else if (!ta.next.touchEndOfChannel) res.add(ta.next.getSize()/ta.getSize()); 
                 }
                 ta = ta.prev;
             }
@@ -1122,6 +1120,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (nPrev==1 && nCur==1) {
                 TrackAttribute taCur = getAttribute(timePoint, idx);
                 TrackAttribute taPrev = getAttribute(timePoint-1, idxPrev);
+                taPrev.division=false;
                 taCur.prev=taPrev;
                 taPrev.next=taCur;
                 taCur.trackHead=false;
@@ -1226,7 +1225,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 }
                 dup.updateSizes();
                 currentAssigner.updateSizes();
-                if (debug && verboseLevel<verboseLevelLimit) logger.debug("assignment {} with {} objects, assign {}, div:{}", nPrev, nCur, (score==score1||score==scoreDiv) ? "first" : "last", (score==scoreDiv||score==scoreEndDiv));
+                if (debug && verboseLevel<verboseLevelLimit) logger.debug("assignment {} with {} objects, assign {}, div:{} / ass1={}->{}, ass2={}->{} ", nPrev, nCur, (score==score1||score==scoreDiv) ? "first" : "last", (score==scoreDiv||score==scoreEndDiv), currentAssigner.idxPrevEnd-currentAssigner.idxPrev, currentAssigner.idxEnd-currentAssigner.idx, dup.idxPrevEnd-dup.idxPrev, dup.idxEnd-dup.idx);
                 currentAssigner.assignCurrent(noticeAll); // perform current assignement
                 dup.assignCurrent(noticeAll); // recursive call
             } else if (nPrev==1 && nCur==0) { // end of lineage

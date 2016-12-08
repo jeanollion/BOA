@@ -42,8 +42,9 @@ import static utils.Utils.removeFromMap;
 public class TestClass {
     @Test
     public void testDIv() {
-        int a = 1;
-        logger.debug("1/2: {}", a/2);
+        double a = 100.12;
+        int digits = 3;
+        logger.debug("a: {}, formatted: {}", a, String.format("%."+digits+"f", a));
     }
     //@Test
     public void testNaN() {

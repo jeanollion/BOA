@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 import org.bson.types.ObjectId;
 import utils.Utils;
 
@@ -108,6 +109,13 @@ public class Measurements implements Comparable<Measurements>{
     public String getValueAsString(String name) {
         Object o = values.get(name);
         if (o instanceof Number || o instanceof String || o instanceof Boolean) return o.toString();
+        else return NA_STRING;
+    }
+    
+    public String getValueAsString(String name, Function<Number, String> numberFormater) {
+        Object o = values.get(name);
+        if (o instanceof Number) return numberFormater.apply((Number)o);
+        else if (o instanceof String || o instanceof Boolean) return o.toString();
         else return NA_STRING;
     }
     
