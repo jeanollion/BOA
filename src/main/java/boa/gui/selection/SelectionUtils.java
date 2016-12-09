@@ -105,7 +105,7 @@ public class SelectionUtils {
         List<String> p = new ArrayList<>(getPositions(selections));
         Collections.sort(p);
         logger.debug("getNext pos: {}, cur: {}", p, position);
-        int idx = Collections.binarySearch(p, position);
+        int idx = position ==null ? -1 : Collections.binarySearch(p, position);
         if (idx==-1) {
             if (next) return p.get(0);
             else return null;

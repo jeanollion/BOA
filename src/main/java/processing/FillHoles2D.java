@@ -25,6 +25,7 @@ import ij.ImageStack;
 import ij.process.FloodFiller;
 import ij.process.ImageProcessor;
 import image.IJImageWrapper;
+import image.Image;
 import image.ImageInteger;
 import image.ImageOperations;
 import java.util.ArrayList;
@@ -103,13 +104,11 @@ public class FillHoles2D {
             if (ip.getPixel(x,0)==background) ff.fill(x, 0);
             if (ip.getPixel(x,height-1)==background) ff.fill(x, height-1);
         }
-        byte[] pix = (byte[])ip.getPixels();
+        ImageInteger im = (ImageInteger)Image.createImageFrom2DPixelArray("", ip.getPixels(), width);
         int n = width*height;
-        for (int i=0; i<n; i++) {
-        if (pix[i]==127)
-            pix[i] = (byte)background;
-        else
-            pix[i] = (byte)foreground;
+        for (int xy = 0;xy<n; ++xy) {
+            if (im.getPixelInt(xy, 0)==127) im.setPixel(xy, 0, background);
+            else im.setPixel(xy, 0, foreground);
         }
     }
     
@@ -126,11 +125,11 @@ public class FillHoles2D {
             if (ip.getPixel(x,0)==0) ff.fill(x, 0);
             if (ip.getPixel(x,height-1)==0) ff.fill(x, height-1);
         }
-        byte[] pix = (byte[])ip.getPixels();
+        ImageInteger im = (ImageInteger)Image.createImageFrom2DPixelArray("", ip.getPixels(), width);
         int n = width*height;
-        for (int i=0; i<n; i++) {
-            if (pix[i]==midValue) pix[i] = 0;
-            else pix[i] = 1;
+        for (int xy = 0;xy<n; ++xy) {
+            if (im.getPixelInt(xy, 0)==midValue) im.setPixel(xy, 0, 0);
+            else im.setPixel(xy, 0, 1);
         }
     }
     private static class InterfaceSizeFilter implements ObjectPopulation.Filter {

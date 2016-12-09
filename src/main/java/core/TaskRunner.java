@@ -49,8 +49,8 @@ public class TaskRunner {
         
         //List<Task> tasks = extractMeasurementOnFluoXP(true);
         List<Task> tasks = getTasks();
-        for (Task t : tasks) t.isValid();
-        //for (Task t : tasks) if (t.isValid()) t.run();
+        //for (Task t : tasks) t.isValid();
+        for (Task t : tasks) if (t.isValid()) t.run();
         logger.info("All tasks performed! See errors below:");
         for (Task t : tasks) t.printErrors();
     }

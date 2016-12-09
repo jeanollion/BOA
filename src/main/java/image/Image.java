@@ -55,12 +55,20 @@ public abstract class Image implements ImageProperties {
     
     public ImageProperties getProperties() {return new BlankMask(name, this);}
     
-    public static <T> T createEmptyImage(String name, T imageType, ImageProperties properties) {
+    public static <T extends Image> T createEmptyImage(String name, T imageType, ImageProperties properties) {
         if (imageType instanceof ImageByte) return (T)new ImageByte(name, properties);
         else if (imageType instanceof ImageShort) return (T)new ImageShort(name, properties);
         else if (imageType instanceof ImageInt) return (T)new ImageInt(name, properties);
         else if (imageType instanceof ImageFloat) return (T)new ImageFloat(name, properties);
         else return (T)new BlankMask(name, properties);
+    }
+    
+    public static <T extends Image> T createImageFrom2DPixelArray(String name, Object pixelArray, int sizeX) {
+        if (pixelArray instanceof byte[]) return (T)new ImageByte(name, sizeX, (byte[])pixelArray);
+        else if (pixelArray instanceof short[]) return (T)new ImageShort(name, sizeX, (short[])pixelArray);
+        else if (pixelArray instanceof float[]) return (T)new ImageFloat(name, sizeX, (float[])pixelArray);
+        else if (pixelArray instanceof int[]) return (T)new ImageInt(name, sizeX, (int[])pixelArray);
+        else throw new IllegalArgumentException("Pixel Array should be of type byte, short, float or int");
     }
     
     public abstract <T extends Image> T getZPlane(int idxZ);
