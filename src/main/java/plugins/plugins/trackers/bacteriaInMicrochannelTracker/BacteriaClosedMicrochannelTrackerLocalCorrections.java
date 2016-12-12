@@ -48,6 +48,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Function;
 import measurement.GeometricalMeasurements;
 import static plugins.Plugin.logger;
 import plugins.Segmenter;
@@ -57,6 +58,7 @@ import plugins.TrackerSegmenter;
 import plugins.UseThreshold;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.thresholders.IJAutoThresholder;
+import plugins.plugins.thresholders.SigmaMuThresholder;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
 import utils.ArrayUtil;
@@ -123,9 +125,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     final static double SIQuiescentThld = 1.05; // under this value we consider cells are not growing -> if break in lineage no error count (cell dies)
     final static boolean setSIErrorsAsErrors = false; // SI errors are set as tracking errors in object attributes
     
-    final static double maxFusionSize=200;
-    final static int maxCorrectionLength = 20;
-    
+    final static int maxCorrectionLength = 20000;
+    private static final double beheadedCellsSizeLimit = 300;
     
     public BacteriaClosedMicrochannelTrackerLocalCorrections() {}
     
@@ -179,10 +180,14 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         this.correction=performCorrection;
         if (correction) inputImages=new Image[populations.length];
         // 0) optional compute threshold for all images
+        
         if (Double.isNaN(debugThreshold) && getSegmenter() instanceof UseThreshold) {
             List<Image> planes = new ArrayList<>();
             // TODO -> record segmenters at this step in order not to have to process.. & erase after segmentation.
             for (int t = 0; t<populations.length; ++t) planes.add(((UseThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, parents.get(t)));
+            //double[] sigmaMuThresholds = new double[populations.length];
+            //for (int t = 0; t<populations.length; ++t) sigmaMuThresholds[t] = SigmaMuThresholder.getThreshold(planes.get(t));
+            //Utils.plotProfile("SigmaMu Thresholds", sigmaMuThresholds);
             double[] minAndMax = new double[2];
             if (adaptativeThreshold) {
                 long t0 = System.currentTimeMillis();
@@ -297,9 +302,14 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             for (StructureObject p : parents) p.setChildren(null, structureIdx);
             return;
         } else for (int t = maxT; t<populations.length; ++t) if (populations[t]!=null) populations[t].clear();
-                
-        // 2) perform corrections idx-wise
+        
         if (correctionStep) step(null, true);
+        
+        // correct beheaded cells bias
+        correctBeheadedCells();
+        if (correctionStep) step("after correct beheaded cells", true);
+        // 2) perform corrections idx-wise
+        
         ///if (true) return;
         
         int idxMax=0;
@@ -478,7 +488,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     for (Object3D o : populations[t]) cObjects.add(o.duplicate());
                 } else {
                     cObjects = populations[t];
-                    cleanTracks(t);
+                    //RemoveIncompleteDivisions(t);
                 }
                 children = parent.setChildrenObjects(new ObjectPopulation(cObjects, null), structureIdx); // will translate all voxels
                 setAttributes(t, children, childrenPrev);
@@ -488,7 +498,60 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         }
         if (debug) logger.debug("Errors: {}", errors);
     }
-    private void cleanTracks(int t) {
+    
+    private boolean correctBeheadedCells() {
+        List<TrackAttribute> bucket = new ArrayList<>();
+        Set<TrackAttribute> getBucket = new HashSet<>();
+        boolean correctionsHaveBeenPerformed = false;
+        for (int f = minT+1; f<maxT; ++f) {
+            if(!populations[f].isEmpty()) {
+                boolean hasMerged = false;
+                List<TrackAttribute> track = trackAttributes[f].get(0).getTrackToNextDivision(bucket, ta -> ta.errorCur ? 1 : 0);
+                if (debugCorr) logger.debug("Merge beheaded cells candidate frames: [{}->{}], sizes: {}", track.get(0).timePoint, track.get(track.size()-1).timePoint, Utils.toStringList(track, ta -> ""+ta.o.getSize()));
+                int trackSize = track.size();
+                track.removeIf( ta -> ta.idx!=0 || ta.o.getSize()>2*beheadedCellsSizeLimit);
+                //if (debugCorr) logger.debug("Merge beheaded cells: remove {} -> {}", trackSize, track.size());
+                if (track.size()==trackSize) { // all objects verify beheaded conditions
+                    TrackAttribute end = track.get(track.size()-1);
+                    getBucket.clear();
+                    boolean canMerge = end.next!=null && end.next.getPrevious(getBucket).size()>1;
+                    if (debugCorr && canMerge) logger.debug("Merge beheaded cells candidate frames: [{}->{}] ends with merge", track.get(0).timePoint, track.get(track.size()-1).timePoint);
+                    if (!canMerge) {// end: merge with next object
+                        if (track.get(0).prev!=null && track.get(0).prev.division) { //start with division with error
+                            getBucket.clear();
+                            if (track.get(0).prev.getNext(getBucket).size()>2) canMerge=true;
+                        }
+                        if (debugCorr && canMerge) logger.debug("Merge beheaded cells candidate frames: [{}->{}] starts with division", track.get(0).timePoint, track.get(track.size()-1).timePoint);
+                    }
+                    if (canMerge) { // create merge scenario
+                        List<MergeScenario> merge = new ArrayList<>(track.size());
+                        for (TrackAttribute ta : track) {
+                            if (trackAttributes[ta.timePoint].size()>1) {
+                                MergeScenario m = new MergeScenario(this, 0, 1, ta.timePoint);
+                                if ((ta.o.getSize()<beheadedCellsSizeLimit && Double.isFinite(m.cost)) || m.cost<=costLim) merge.add(m);
+                                else {
+                                    merge.clear();
+                                    break;
+                                }
+                            }
+                        }
+                        if (!merge.isEmpty()) {
+                            correctionsHaveBeenPerformed=true;
+                            if (debugCorr) logger.debug("Merge beheaded cells frames: [{}->{}]", track.get(0).timePoint, track.get(track.size()-1).timePoint);
+                            for (MergeScenario m : merge) m.applyScenario();
+                            for (int ff = f; ff<Math.min(maxT, f+trackSize+1); ++ff) assignPrevious(ff, false, false);
+                            hasMerged = true;
+                        }
+                    }
+                }
+                if (hasMerged) f-=1; // for overfragemented cells -> go back
+                else f+=track.size();
+            }
+        }
+        return correctionsHaveBeenPerformed;
+    }
+        
+    private void RemoveIncompleteDivisions(int t) {
         if (populations[t]==null || populations[t].isEmpty()) return;
         TrackAttribute lastO = getAttribute(t, populations[t].size()-1); 
         if (lastO.prev!=null && lastO.prev.truncatedDivision && lastO.idx>0) { // remove incomplete divisions
@@ -801,6 +864,21 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (!reverseOrder) Collections.reverse(bucket);
             return bucket;
         }
+        private List<TrackAttribute> getTrackToNextDivision(List<TrackAttribute> bucket, Function<TrackAttribute, Integer> stopCondition) { // -1 stop without adding last element, 0 continue, 1 stop after adding last element
+        if (bucket==null) bucket = new ArrayList<>();
+        else bucket.clear();
+        Integer stop = stopCondition.apply(this);
+        if (stop>=0) bucket.add(this);
+        if (stop>0) return bucket;
+        TrackAttribute ta= this;
+        while(!ta.division && ta.next!=null) {
+            ta = ta.next;
+            stop = stopCondition.apply(ta);
+            if (stop>=0) bucket.add(ta);
+            if (stop>0) return bucket;
+        }
+        return bucket;
+    }
         /*private double getLineageSizeProportionFromPreviousDivision(List<TrackAttribute> bucket) {
             // get previous track until previous parent
             if (bucket==null) bucket=new ArrayList<>();
@@ -860,6 +938,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             if (division) {
                 if (res==null) res = new HashSet<>();
                 for (TrackAttribute t : getAttributes(timePoint+1)) if (t.prev==this) res.add(t);
+                res.add(next);
                 return res;
             } else if (next!=null) {
                 if (res==null) res = new HashSet<>();
@@ -868,6 +947,14 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             } else return res!=null ? res : Collections.EMPTY_SET;
         }
         
+        public Set<TrackAttribute> getPrevious(Set<TrackAttribute> res) {
+            if (timePoint==minT) return res!=null ? res : Collections.EMPTY_SET;
+            if (res==null) res = new HashSet<>();
+            for (TrackAttribute t : getAttributes(timePoint-1)) if (t.next==this) res.add(t);
+            res.add(prev);
+            return res;
+        }
+                
         @Override public String toString() {
             return timePoint+"-"+idx+"(s:"+getSize()+"/th:"+this.trackHead+"/div:"+division+"/nPrev:"+nPrev+")";
         }
@@ -964,9 +1051,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             //if (debug && verboseLevel<verboseLevelLimit) logger.debug("current: {}, next: {}", this, nextSolution);
             // compare the current & new solution
             double[] newScore = nextSolution.getCurrentScore();
-            newScore[1]+=SIIncreaseThld; // increment only if significative improvement
+            double curSIIncreaseThld = SIIncreaseThld; // increment only if significative improvement OR objects come from a division at previous timePoint & improvement
+            if (incrementPrev && getAttribute(timePoint-1, nextSolution.idxPrevEnd-1).prev==getAttribute(timePoint-1, idxPrevEnd-1).prev) curSIIncreaseThld=0;
+            newScore[1]+=curSIIncreaseThld; 
             if (compareScores(getCurrentScore(), newScore, mode!=AssignerMode.RANGE)<=0) return false;
-            newScore[1]-=SIIncreaseThld;
+            newScore[1]-=curSIIncreaseThld;
             this.idxEnd=nextSolution.idxEnd;
             this.idxPrevEnd=nextSolution.idxPrevEnd;
             this.size=nextSolution.size;
@@ -1051,12 +1140,16 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             double[] score = getCurrentAssignmentScore();
             if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{}, t:{}, [{};{}]->[{};{}] score start:{}", verboseLevel, timePoint, idxPrev, idxPrevEnd-1, idx, idxEnd-1, score);
             //if (Double.isNaN(score[1])) return score;
-            while(nextTrack() && !truncatedEndOfChannel() && (idxEnd<=idxLimit || idxPrevEnd<=idxPrevLimit)) { // worst case scenario cannot be incomplete division
+            int count = 0;
+            while(nextTrack() && !truncatedEndOfChannel() && (idxEnd<=idxLimit || idxPrevEnd<=idxPrevLimit)) { // do not take into account score of incomplete division
                 double[] newScore=getCurrentAssignmentScore();
-                score[1] = Math.max(score[1], newScore[1]); // maximum score = worst case scenario
+                //score[1] = Math.max(score[1], newScore[1]); // maximum score = worst case scenario
+                score[1] += newScore[1];
+                ++count;
                 score[0]+=newScore[0];
                 if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{} score for whole scenario: new score for [{};{}]->[{};{}]={}, wcs: {}", verboseLevel, idxPrev, idxPrevEnd-1, idx, idxEnd-1, newScore, score);
             }
+            score[1] /=count;
             // add unlinked cells
             if (idxPrevLimit==idxPrevLim && idxPrevEnd<idxPrevLim-1) score[0]+=idxPrevLim-1 - idxPrevEnd; // # of unlinked cells, except the last one
             if (idxLimit==idxLim && idxEnd<idxLim-1) score[0]+=idxLim-1 - idxEnd;
@@ -1113,7 +1206,6 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         
         public void assignCurrent(boolean noticeAll) {
             noticeAll=true;
-            
             int nPrev = idxPrevEnd-idxPrev;
             int nCur = idxEnd-idx;
             boolean error = nPrev>1 || nCur>2;
@@ -1162,7 +1254,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             } else if (nPrev>1 && nCur==1) { // merging
                 TrackAttribute taCur = getAttribute(timePoint, idx);
                 taCur.trackHead=false;
-                taCur.prev=getAttribute(timePoint-1, idxPrev);
+                TrackAttribute prev= getAttribute(timePoint-1, idxPrev); // assign prev -> biggest object
+                for (int i = idxPrev+1; i<idxPrevEnd; ++i) if (getAttribute(timePoint-1, i).getSize()>prev.getSize()) prev= getAttribute(timePoint-1, i);
+                taCur.prev=prev;
                 taCur.errorPrev=true;
                 taCur.nPrev=nPrev;
                 boolean truncated = truncatedEndOfChannel();
@@ -1171,7 +1265,6 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                         taCur.sizeIncrementError = significantSizeIncrementError();
                         taCur.sizeIncrement=size/sizePrev;
                     } else taCur.sizeIncrement=Double.NaN;
-                    
                 }
                 for (int i = idxPrev; i<idxPrevEnd; ++i) {
                     TrackAttribute ta = getAttribute(timePoint-1, i);
@@ -1202,32 +1295,41 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                     scoreEndDiv = Math.abs((taCurEnd1.getSize()+taCurEnd2.getSize())/taPrevEnd.getSize()-sizeIncrementEnd);
                 }
                 double score=Math.min(scoreEndDiv, Math.min(scoreEnd1, Math.min(score1, scoreDiv)));
+                int nextIdxError = -1;
                 if (score1==score) { // assign first with first
                     dup.idx++;
                     dup.idxPrev++;
                     currentAssigner.idxEnd=dup.idx;
                     currentAssigner.idxPrevEnd=dup.idxPrev;
+                    if (dup.idxEnd == dup.idx) nextIdxError = dup.idx-1;
                 } else if (score==scoreEnd1) { // assign last with last
                     dup.idxEnd--;
                     dup.idxPrevEnd--;
                     currentAssigner.idx=dup.idxEnd;
                     currentAssigner.idxPrev=dup.idxPrevEnd;
+                    if (dup.idxEnd == dup.idx) nextIdxError = dup.idxEnd+1;
                 } else if (scoreDiv==score) { // assign first with 2 first
                     dup.idx+=2;
                     dup.idxPrev++;
                     currentAssigner.idxEnd=dup.idx;
                     currentAssigner.idxPrevEnd=dup.idxPrev;
+                    if (dup.idxEnd == dup.idx) nextIdxError = dup.idx-1;
                 } else { // assign last with 2 lasts
                     dup.idxEnd-=2;
                     dup.idxPrevEnd--;
                     currentAssigner.idx=dup.idxEnd;
                     currentAssigner.idxPrev=dup.idxPrevEnd;
+                    if (dup.idxEnd == dup.idx) nextIdxError = dup.idxEnd+1;
                 }
                 dup.updateSizes();
                 currentAssigner.updateSizes();
                 if (debug && verboseLevel<verboseLevelLimit) logger.debug("assignment {} with {} objects, assign {}, div:{} / ass1={}->{}, ass2={}->{} ", nPrev, nCur, (score==score1||score==scoreDiv) ? "first" : "last", (score==scoreDiv||score==scoreEndDiv), currentAssigner.idxPrevEnd-currentAssigner.idxPrev, currentAssigner.idxEnd-currentAssigner.idx, dup.idxPrevEnd-dup.idxPrev, dup.idxEnd-dup.idx);
                 currentAssigner.assignCurrent(noticeAll); // perform current assignement
                 dup.assignCurrent(noticeAll); // recursive call
+                if (nextIdxError>=0) { // corect assignement 1 with 0
+                    getAttribute(dup.timePoint-1, dup.idxPrev).next = getAttribute(dup.timePoint, nextIdxError);
+                    getAttribute(dup.timePoint-1, dup.idxPrev).errorCur=true;
+                }
             } else if (nPrev==1 && nCur==0) { // end of lineage
                 TrackAttribute ta = getAttribute(timePoint-1, idxPrev);
                 ta.resetTrackAttributes(false, true);

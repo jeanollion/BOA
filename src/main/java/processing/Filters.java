@@ -45,6 +45,11 @@ public class Filters {
         return applyFilter(image, output, new Mean(), neighborhood);
     }
     
+    public static <T extends Image> T sigmaMu(Image image, T output, Neighborhood neighborhood) {
+        if (output==null) output = (T)new ImageFloat(SigmaMu.class.getSimpleName()+" of: "+image.getName(), image);
+        return applyFilter(image, output, new SigmaMu(), neighborhood);
+    }
+    
     public static <T extends Image> T median(Image image, T output, Neighborhood neighborhood) {
         return applyFilter(image, output, new Median(), neighborhood);
     }
@@ -181,6 +186,21 @@ public class Filters {
             double mean = 0;
             for (int i = 0; i<neighborhood.getValueCount(); ++i) mean+=neighborhood.getPixelValues()[i];
             return (float)(mean/neighborhood.getValueCount());
+        }
+    }
+    private static class SigmaMu extends Filter {
+        @Override public float applyFilter(int x, int y, int z) {
+            neighborhood.setPixels(x, y, z, image);
+            if (neighborhood.getValueCount()==0) return 0;
+            double mean = 0;
+            double values2 = 0;
+            for (int i = 0; i<neighborhood.getValueCount(); ++i) {
+                mean+=neighborhood.getPixelValues()[i];
+                values2+=Math.pow(neighborhood.getPixelValues()[i], 2);
+            }
+            mean/=neighborhood.getValueCount();
+            values2/=neighborhood.getValueCount();
+            return (float)(Math.sqrt(values2 - mean * mean) / mean);
         }
     }
     private static class Median extends Filter {

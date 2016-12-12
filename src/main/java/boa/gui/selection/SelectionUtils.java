@@ -118,7 +118,7 @@ public class SelectionUtils {
         } else {
             if (next) {
                 if (idx==p.size()-1) return null;
-                else idx = p.size()-1;
+                else idx += 1;
             } else {
                 if (idx>0) idx--;
                 else return null;

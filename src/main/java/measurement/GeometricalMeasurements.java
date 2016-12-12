@@ -52,6 +52,18 @@ public class GeometricalMeasurements {
     public static double getDistance(Object3D o1, Object3D o2) {
         return getDistance(o1.getCenter(false), o2.getCenter(false), o1.getScaleXY(), o1.getScaleZ());
     }
+    public static double getDistanceBB(Object3D o1, Object3D o2, boolean scaled) {
+        double dMin = Double.POSITIVE_INFINITY;
+        double sXY = scaled ? o1.getScaleXY():1;
+        double sZ = scaled ? o1.getScaleZ():1;
+        for (Voxel v1 : o1.getContour()) {
+            for (Voxel v2 : o2.getContour()) {
+                double d = v1.getDistanceSquare(v2, sXY, sZ);
+                if (d<dMin) dMin =d;
+            }
+        }
+        return Math.sqrt(dMin);
+    }
     public static double getDistance(Object3D o1, Object3D o2, Image im1, Image im2) {
         return getDistance(o1.getCenter(im1, false), o2.getCenter(im2, false), o1.getScaleXY(), o1.getScaleZ());
     }

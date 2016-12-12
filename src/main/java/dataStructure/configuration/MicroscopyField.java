@@ -264,11 +264,12 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
                 public void actionPerformed(ActionEvent ae) {
                     getExperiment().flushImages(true, true, name);
                     int channels = getExperiment().getChannelImageCount();
-                    int frames = getTimePointNumber(true);
+                    int frames = getTimePointNumber(false);
                     Image[][] imagesTC = new Image[frames][channels];
+                    int start = getStartTrimFrame();
                     for (int channelIdx = 0; channelIdx<channels; ++channelIdx) {
-                        for (int frame = 0; frame<frames; ++frame) {
-                            imagesTC[frame][channelIdx] = images.getImage(frame, channelIdx);
+                        for (int frame =  0; frame<frames; ++frame) {
+                            imagesTC[frame][channelIdx] = images.getImage(frame+start, channelIdx);
                             if (imagesTC[frame][channelIdx]==null) {
                                 logger.error("Could not open image: channel: {} frame: {}", channelIdx, frame);
                                 return;

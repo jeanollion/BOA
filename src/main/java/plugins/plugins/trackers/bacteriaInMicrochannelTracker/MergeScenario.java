@@ -32,23 +32,23 @@ import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClo
 public class MergeScenario extends CorrectionScenario {
         int idxMin, idxMax;
         ArrayList<Object3D> listO;
-        public MergeScenario(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, int idxMin, int idxMax, int timePoint) { // idxMax included
+        public MergeScenario(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, int idxMin, int idxMaxIncluded, int timePoint) { // idxMax included
             super(timePoint, timePoint, tracker);
-            this.idxMax=idxMax;
+            this.idxMax=idxMaxIncluded;
             this.idxMin = idxMin;
-            listO = new ArrayList<>(idxMax - idxMin +1 );
-            for (int i = idxMin; i<=idxMax; ++i) {
+            listO = new ArrayList<>(idxMaxIncluded - idxMin +1 );
+            for (int i = idxMin; i<=idxMaxIncluded; ++i) {
                 BacteriaClosedMicrochannelTrackerLocalCorrections.TrackAttribute ta = tracker.getAttribute(timePoint, i);
                 listO.add(ta.o);
             }
             if (!listO.isEmpty()) {
                 this.cost = tracker.getSegmenter(timePoint).computeMergeCost(tracker.getImage(timePoint), listO);
                 // check for small objects
-                if (Double.isFinite(cost)) { // could merge
+                /*if (Double.isFinite(cost)) { // could merge
                     int nSmall = 0;
                     for (Object3D o :  listO) if (o.getSize()<tracker.maxFusionSize) ++nSmall;
                     if (nSmall>=listO.size()-1) cost = 0;
-                }
+                }*/
             } else cost = Double.POSITIVE_INFINITY;
             if (debugCorr) logger.debug("Merge scenario: tp: {}, idxMin: {}, #objects: {}, cost: {}", timePoint, idxMin, listO.size(), cost);
         }
