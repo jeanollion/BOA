@@ -142,8 +142,8 @@ public class BacteriaLineageIndex implements Measurement {
         res.add(new MeasurementKeyObject("NextDivisionFrame", structure.getSelectedIndex()));
         res.add(new MeasurementKeyObject("PreviousDivisionFrame", structure.getSelectedIndex()));
         res.add(new MeasurementKeyObject("GrowthRate", structure.getSelectedIndex()));
-        res.add(new MeasurementKeyObject("GrowthRateIntersection", structure.getSelectedIndex()));
-        res.add(new MeasurementKeyObject("GrowthRateResidual", structure.getSelectedIndex()));
+        //res.add(new MeasurementKeyObject("GrowthRateIntersection", structure.getSelectedIndex()));
+        //res.add(new MeasurementKeyObject("GrowthRateResidual", structure.getSelectedIndex()));
         return res;
     }
     

@@ -43,7 +43,6 @@ public class BacteriaTransMeasurements implements Measurement {
     protected StructureParameter bacteria = new StructureParameter("Bacteria Structure", 1, false, false);
     protected Parameter[] parameters = new Parameter[]{bacteria};
     
-    
     public BacteriaTransMeasurements(){}
     
     public BacteriaTransMeasurements(int bacteriaStructureIdx){

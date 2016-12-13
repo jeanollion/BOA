@@ -61,12 +61,12 @@ public class TestProcessBacteriaPhase {
         //String dbName = "boa_mutH_140115";
         //String dbName = "boa_phase140115mutH";
         //String dbName = "boa_phase150324mutH";
-        String dbName = "boa_phase150616wt";
-        //String dbName = "boa_phase141107wt";
-        int field = 6;
-        int microChannel =12;
-        int time =720;
-        thld = 293;
+        //String dbName = "boa_phase150616wt";
+        String dbName = "boa_phase141107wt";
+        int field = 0;
+        int microChannel =0;
+        int time =92;
+        thld = 335;
         
         testSegBacteriesFromXP(dbName, field, time, microChannel);
         //testSegBacteriesFromXP(dbName, field, microChannel, 0, 400);

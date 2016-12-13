@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.BiFunction;
 import processing.neighborhood.EllipsoidalNeighborhood;
 
 /**
@@ -187,7 +188,7 @@ public class Object3DCluster<I extends InterfaceObject3D<I>> extends ClusterColl
         return population.getObjects();
     }
     
-    public void mergeSmallObjects(double sizeLimit, int numberOfObjecsToKeep) {
+    public void mergeSmallObjects(double sizeLimit, int numberOfObjecsToKeep, BiFunction<Object3D, Set<Object3D>, Object3D> noInterfaceCase) {
         if (numberOfObjecsToKeep<0) numberOfObjecsToKeep=0;
         for (I i : interfaces) i.updateSortValue();
         TreeSet<Object3D> queue = new TreeSet<Object3D>((e1, e2) -> Integer.compare(e1.getSize(), e2.getSize()));
@@ -196,8 +197,13 @@ public class Object3DCluster<I extends InterfaceObject3D<I>> extends ClusterColl
             Object3D s = queue.pollFirst();
             if (s.getSize()<sizeLimit) {
                 TreeSet<I> inter = new TreeSet(getInterfaces(s));
-                if (!inter.isEmpty()) {
-                    I strongestInterface = inter.first();
+                I strongestInterface = null;
+                if (!inter.isEmpty()) strongestInterface = inter.first();
+                else if (noInterfaceCase!=null) {
+                    Object3D other = noInterfaceCase.apply(s, queue);
+                    if (other!=null) strongestInterface = interfaceFactory.create(s, other, object3DComparator);
+                }
+                if (strongestInterface!=null) {
                     if (verbose) logger.debug("mergeSmallObjects: {}, size: {}, interface: {}, all: {}", s.getLabel(), s.getSize(), strongestInterface, inter);
                     strongestInterface.performFusion();
                     updateInterfacesAfterFusion(strongestInterface);

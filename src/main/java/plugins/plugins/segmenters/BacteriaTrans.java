@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.BiFunction;
 import measurement.BasicMeasurements;
 import measurement.GeometricalMeasurements;
 import net.imglib2.KDTree;
@@ -141,14 +142,16 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     GroupParameter angleParameters = new GroupParameter("Constaint on angles", aspectRatioThreshold, angleThreshold);
     */
     NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 5, 0, null);
-    NumberParameter minSizeFusionCost = new BoundedNumberParameter("Minimum Object size (fusion cost)", 0, 300, 5, null); // TODO ADD IN PARAMETERS
-    NumberParameter minSize = new BoundedNumberParameter("Minimum Object size", 0, 200, 5, null);
+    NumberParameter minSizeFusionCost = new BoundedNumberParameter("Minimum Object size (fusion cost)", 0, 300, 5, null); 
+    NumberParameter minSizeFusion = new BoundedNumberParameter("Minimum Object size (fusion)", 0, 200, 5, null);
+    NumberParameter minSize = new BoundedNumberParameter("Minimum Object size", 0, 100, 5, null);
     NumberParameter minSizeChannelEnd = new BoundedNumberParameter("Minimum Object size (end of channel)", 0, 300, 5, null);
     NumberParameter minXSize = new BoundedNumberParameter("Minimum X-Thickness", 0, 7, 1, null);
-    GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSize, minXSize, minSizeFusionCost, minSizeChannelEnd, contactLimit);
+    GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSize, minXSize, minSizeFusion, minSizeFusionCost, minSizeChannelEnd, contactLimit);
     
     Parameter[] parameters = new Parameter[]{backgroundSeparation, thicknessParameters, curvatureParameters, objectParameters};
-    private final static double maxMergeDistanceBB = 5; // distance in pixel for merging small objects
+    private final static double maxMergeCostDistanceBB = 5; // distance in pixel for merging small objects
+    private final static double maxMergeDistanceBB = 3; // distance in pixel for merging small objects
     // ParameterSetup interface
     @Override public boolean canBeTested(Parameter p) {
         List canBeTested = new ArrayList(){{add(threshold); add(curvatureScale); add(subBackScale); add(relativeThicknessThreshold);}};
@@ -237,7 +240,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 thresholdContrast.getValue().doubleValue(), contrastRadius.getValue().doubleValue(),
                 relativeThicknessThreshold.getValue().doubleValue(), relativeThicknessMaxDistance.getValue().doubleValue(), 
                 subBackScale.getValue().doubleValue(), openRadius.getValue().doubleValue(), closeRadius.getValue().doubleValue(), this.fillHolesBackgroundContactProportion.getValue().doubleValue(),
-                minSize.getValue().intValue(), minXSize.getValue().intValue(), minSizePropagation.getValue().intValue(), minSize.getValue().intValue(),
+                minSize.getValue().intValue(), minXSize.getValue().intValue(), minSizePropagation.getValue().intValue(), minSizeFusion.getValue().intValue(),
                 curvatureScale.getValue().intValue(), curvatureThreshold.getValue().doubleValue(), curvatureSearchRadius.getValue().doubleValue());
     }
     
@@ -407,7 +410,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                         if (d>maxD) maxD = d;
                     }
                 }
-                if (maxD<=maxMergeDistanceBB) return 0;
+                if (maxD<=maxMergeCostDistanceBB) return 0;
             } // todo : add distance constraint (2-3 pixels)
             if (debug) logger.debug("merge impossible: {} disconnected clusters detected", clusters.size());
             return Double.POSITIVE_INFINITY;
@@ -705,8 +708,18 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             //res.setVoxelIntensities(pv.getEDM());// for merging // useless if watershed transform on EDM has been called just before
             Object3DCluster<InterfaceBT> c = new Object3DCluster(res, false, true, getFactory());
             updateCurvature(c.getClusters());
-            if (minSize>0) c.mergeSmallObjects(minSize, objectMergeLimit);
+            if (minSize>0) c.mergeSmallObjects(minSize, objectMergeLimit, null);
             c.mergeSort(objectMergeLimit<=1, 0, objectMergeLimit);
+            if (minSize>0) {
+                BiFunction<Object3D, Set<Object3D>, Object3D> noInterfaceCase = (smallO, set) -> {
+                    Object3D closest = Collections.min(set, (o1, o2) -> Double.compare(o1.getBounds().getDistance(smallO.getBounds()), o2.getBounds().getDistance(smallO.getBounds())));
+                    double d = GeometricalMeasurements.getDistanceBB(closest, smallO, false);
+                    if (debug) logger.debug("merge small objects with no interface: min distance: {} to {} = {}", smallO.getLabel(), closest.getLabel(), d);
+                    if (d<maxMergeDistanceBB) return closest;
+                    else return null;
+                }; 
+                c.mergeSmallObjects(minSize, objectMergeLimit, noInterfaceCase);
+            }
             Collections.sort(res.getObjects(), getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ)); // sort by increasing Y position
             res.relabel(true);
             return res;

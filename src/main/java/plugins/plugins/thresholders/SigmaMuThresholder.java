@@ -21,8 +21,10 @@ import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObjectProcessing;
 import image.BoundingBox.LoopFunction;
 import image.Image;
+import java.util.List;
 import plugins.Thresholder;
 import processing.Filters;
+import utils.Utils;
 
 /**
  *
@@ -52,6 +54,50 @@ public class SigmaMuThresholder implements Thresholder {
         });
         return meanCount[0];
     }
+    
+    public static double[][] getStatistics(List<Image> images, int binSize, double threshold, boolean overThreshold) { // return mean, sigma, count
+        // 1  get max y 
+        int yMax = 0;
+        for (Image i : images) if (i.getSizeY()>yMax) yMax = i.getSizeY();
+        double[][] stats = new double[yMax/binSize+1][3]; // 0 sum, 1 sum2, 3 count
+        for (Image i : images) {
+            i.getBoundingBox().translateToOrigin().loop(new LoopFunction() {
+                @Override
+                public void setUp() {}
+                @Override
+                public void tearDown() {
+                    for (int i = 0; i<stats.length; ++i) {
+                        stats[i][0]/=stats[i][2];
+                        stats[i][1]/=stats[i][2];
+                        stats[i][1] = Math.sqrt(stats[i][1] - stats[i][0] * stats[i][0]);
+                    }
+                }
+                @Override
+                public void loop(int x, int y, int z) {
+                    int idx = y/binSize;
+                    double v = i.getPixel(x, y, z);
+                    if (v>threshold == overThreshold) {
+                        stats[idx][0] +=v;
+                        stats[idx][1] +=v*v;
+                        ++stats[idx][2];
+                    }
+                }
+            });
+        }
+        double[] yMean = new double[yMax];
+        double[] ySd = new double[yMax];
+        double[] yCount  = new double[yMax];
+        for (int i = 0; i<yMax; ++i) {
+            yMean[i] = stats[i / binSize][0];
+            ySd[i] = stats[i / binSize][1];
+            yCount[i] = stats[i / binSize][2];
+        }
+        Utils.plotProfile("Y background profile", yMean);
+        Utils.plotProfile("Y sd profile", ySd);
+        Utils.plotProfile("Y count profile", yCount);
+        return stats;
+    }
+    
     @Override
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
         return getThreshold(input);
