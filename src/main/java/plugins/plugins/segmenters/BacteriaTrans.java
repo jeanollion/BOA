@@ -124,7 +124,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
     PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Threshold (separation from background)", Thresholder.class, new ConstantValue(423), false); // //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
     NumberParameter thresholdContrast = new BoundedNumberParameter("Contrast Threshold (separation from background)", 2, 0.5, 0.01, 0.99);
-    GroupParameter backgroundSeparation = new GroupParameter("Separation from background", threshold, thresholdContrast, openRadius, closeRadius, fillHolesBackgroundContactProportion);
+    NumberParameter contrastRadius = new BoundedNumberParameter("Radius for Contrast computation", 1, 9, 2, null);
+    GroupParameter backgroundSeparation = new GroupParameter("Separation from background", threshold, thresholdContrast, contrastRadius, openRadius, closeRadius, fillHolesBackgroundContactProportion);
     
     NumberParameter relativeThicknessThreshold = new BoundedNumberParameter("Relative Thickness Threshold (lower: split more)", 2, 0.7, 0, 1);
     NumberParameter relativeThicknessMaxDistance = new BoundedNumberParameter("Max Distance for Relative Thickness normalization factor (calibrated)", 2, 1, 0, null);
@@ -140,15 +141,13 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     GroupParameter angleParameters = new GroupParameter("Constaint on angles", aspectRatioThreshold, angleThreshold);
     */
     NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 5, 0, null);
-    NumberParameter minSizeFusion = new BoundedNumberParameter("Minimum Object size (fusion)", 0, 100, 5, null);
     NumberParameter minSizeFusionCost = new BoundedNumberParameter("Minimum Object size (fusion cost)", 0, 300, 5, null); // TODO ADD IN PARAMETERS
-    NumberParameter minSize = new BoundedNumberParameter("Minimum Object size", 0, 100, 5, null);
+    NumberParameter minSize = new BoundedNumberParameter("Minimum Object size", 0, 200, 5, null);
     NumberParameter minSizeChannelEnd = new BoundedNumberParameter("Minimum Object size (end of channel)", 0, 300, 5, null);
     NumberParameter minXSize = new BoundedNumberParameter("Minimum X-Thickness", 0, 7, 1, null);
-    GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSize, minXSize, minSizeFusion, minSizeChannelEnd, contactLimit);
+    GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSize, minXSize, minSizeFusionCost, minSizeChannelEnd, contactLimit);
     
     Parameter[] parameters = new Parameter[]{backgroundSeparation, thicknessParameters, curvatureParameters, objectParameters};
-    private final static int contrastRadius = 4; // for contrast removal of objects
     private final static double maxMergeDistanceBB = 5; // distance in pixel for merging small objects
     // ParameterSetup interface
     @Override public boolean canBeTested(Parameter p) {
@@ -212,10 +211,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         this.relativeThicknessThreshold.setValue(relativeThicknessThreshold);
         return this;
     }
-    public BacteriaTrans setMinSize(int minSize) {
-        this.minSizeFusion.setValue(minSize);
-        return this;
-    }
+
     /*public BacteriaTrans setSmoothScale(double smoothScale) {
         this.smoothScale.setValue(smoothScale);
         return this;
@@ -238,9 +234,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     
     public ProcessingVariables getProcessingVariables(Image input, ImageMask segmentationMask) {
         return new ProcessingVariables(input, segmentationMask,
+                thresholdContrast.getValue().doubleValue(), contrastRadius.getValue().doubleValue(),
                 relativeThicknessThreshold.getValue().doubleValue(), relativeThicknessMaxDistance.getValue().doubleValue(), 
                 subBackScale.getValue().doubleValue(), openRadius.getValue().doubleValue(), closeRadius.getValue().doubleValue(), this.fillHolesBackgroundContactProportion.getValue().doubleValue(),
-                minSize.getValue().intValue(), minXSize.getValue().intValue(), minSizePropagation.getValue().intValue(), minSizeFusion.getValue().intValue(),
+                minSize.getValue().intValue(), minXSize.getValue().intValue(), minSizePropagation.getValue().intValue(), minSize.getValue().intValue(),
                 curvatureScale.getValue().intValue(), curvatureThreshold.getValue().doubleValue(), curvatureSearchRadius.getValue().doubleValue());
     }
     
@@ -255,7 +252,6 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         pv = getProcessingVariables(input, parent.getMask());
         if (Double.isNaN(thresholdValue)) pv.threshold = this.threshold.instanciatePlugin().runThresholder(pv.getIntensityMap(), parent);
         else pv.threshold=thresholdValue;
-        pv.contrastThreshold = this.thresholdContrast.getValue().doubleValue();
         if (debug) {
             new IJImageDisplayer().showImage(input.setName("input"));
             logger.debug("threshold: {}", pv.threshold);
@@ -547,13 +543,15 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         int minSizeFusion;
         final double curvatureSearchScale;
         final double curvatureThreshold;
-        double contrastThreshold;
+        final double contrastThreshold, contrastRadius;
         Object3DCluster.InterfaceFactory<Object3D, InterfaceBT> factory;
         protected final HashMap<Object3D, KDTree<Double>> curvatureMap = new HashMap<>();
         private double yLimLastObject = Double.NaN;
-        private ProcessingVariables(Image input, ImageMask mask, double splitThresholdValue, double relativeThicknessMaxDistance, double dogScale, double openRadius, double closeRadius, double fillHolesBckProp, int minSize, int minXSize, int minSizePropagation, int minSizeFusion, int curvatureScale, double curvatureThreshold, double curvatureSearchRadius) {
+        private ProcessingVariables(Image input, ImageMask mask, double contrastThreshold, double contrastRadius, double splitThresholdValue, double relativeThicknessMaxDistance, double dogScale, double openRadius, double closeRadius, double fillHolesBckProp, int minSize, int minXSize, int minSizePropagation, int minSizeFusion, int curvatureScale, double curvatureThreshold, double curvatureSearchRadius) {
             this.input=input;
             this.mask=mask;
+            this.contrastRadius=contrastRadius;
+            this.contrastThreshold=contrastThreshold;
             this.relativeThicknessThreshold=splitThresholdValue;
             this.relativeThicknessMaxDistance=relativeThicknessMaxDistance;
             //this.smoothScale=smoothScale;

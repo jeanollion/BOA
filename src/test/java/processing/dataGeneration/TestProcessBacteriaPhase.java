@@ -58,15 +58,16 @@ public class TestProcessBacteriaPhase {
     static double thld = Double.NaN;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        int field = 0;
-        int microChannel =3;
-        int time =117;
-        thld = 400;
         //String dbName = "boa_mutH_140115";
         //String dbName = "boa_phase140115mutH";
         //String dbName = "boa_phase150324mutH";
-        //String dbName = "boa_phase150616wt";
-        String dbName = "boa_phase141107wt";
+        String dbName = "boa_phase150616wt";
+        //String dbName = "boa_phase141107wt";
+        int field = 6;
+        int microChannel =12;
+        int time =720;
+        thld = 293;
+        
         testSegBacteriesFromXP(dbName, field, time, microChannel);
         //testSegBacteriesFromXP(dbName, field, microChannel, 0, 400);
         //testSplit(dbName, field, time, microChannel, 1, true);

@@ -503,13 +503,17 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         List<TrackAttribute> bucket = new ArrayList<>();
         Set<TrackAttribute> getBucket = new HashSet<>();
         boolean correctionsHaveBeenPerformed = false;
+        Function<TrackAttribute, Boolean> isCandidate = ta -> ta.idx==0 && ta.o.getSize()<=2*beheadedCellsSizeLimit && 
+                (populations[ta.timePoint].size()==1 || // no other cell
+                ta.o.getSize() < 2 * populations[ta.timePoint].get(1).getSize()) || // head < 1/3 of total size
+                (populations[ta.timePoint].size()>2 && populations[ta.timePoint].get(1).getSize()<beheadedCellsSizeLimit); // case of fractionated cells: follwing object is small -> will be able to merge several times
         for (int f = minT+1; f<maxT; ++f) {
-            if(!populations[f].isEmpty()) {
+            if(!populations[f].isEmpty() && isCandidate.apply(trackAttributes[f].get(0))) {
                 boolean hasMerged = false;
                 List<TrackAttribute> track = trackAttributes[f].get(0).getTrackToNextDivision(bucket, ta -> ta.errorCur ? 1 : 0);
                 if (debugCorr) logger.debug("Merge beheaded cells candidate frames: [{}->{}], sizes: {}", track.get(0).timePoint, track.get(track.size()-1).timePoint, Utils.toStringList(track, ta -> ""+ta.o.getSize()));
                 int trackSize = track.size();
-                track.removeIf( ta -> ta.idx!=0 || ta.o.getSize()>2*beheadedCellsSizeLimit);
+                track.removeIf( ta -> !isCandidate.apply(ta));
                 //if (debugCorr) logger.debug("Merge beheaded cells: remove {} -> {}", trackSize, track.size());
                 if (track.size()==trackSize) { // all objects verify beheaded conditions
                     TrackAttribute end = track.get(track.size()-1);
@@ -742,11 +746,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         int res = 0;
         for (int t = tpMin; t<=tpMaxIncluded; ++t) {
             TrackAssigner ta = new TrackAssigner(t).verboseLevel(verboseLevelLimit); //verboseLevelLimit
-            ta.resetTrackAttributes();
+            if (assign) ta.resetTrackAttributes();
             while(ta.nextTrack()) {
                 res+=ta.getErrorCount();
                 if (debugCorr && ta.getErrorCount()>0) logger.debug(ta.toString());
-                ta.assignCurrent(false);
+                if (assign) ta.assignCurrent(true);
             }
             
             //for (int i = 0; i<=Math.min(ta.idxPrevLim-2, ta.idxPrevEnd); ++i) if (getAttribute(t-1, i).next==null && getAttribute(t-1, i).errorCur ) {++res;}  // # of lineage terminaisons cells @t-1 with links index. if cell is not growing -> no error
@@ -1136,11 +1140,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         }
 
         protected double[] getAssignmentScoreForWholeScenario(int idxPrevLimit, int idxLimit) { // will modify the current scenario!!
-            if (truncatedEndOfChannel()) return new double[]{0, 0}; 
+            if (truncatedEndOfChannel()) return new double[]{getErrorCount(), 0}; 
             double[] score = getCurrentAssignmentScore();
             if (debug && verboseLevel<verboseLevelLimit) logger.debug("L:{}, t:{}, [{};{}]->[{};{}] score start:{}", verboseLevel, timePoint, idxPrev, idxPrevEnd-1, idx, idxEnd-1, score);
             //if (Double.isNaN(score[1])) return score;
-            int count = 0;
+            int count = 1;
             while(nextTrack() && !truncatedEndOfChannel() && (idxEnd<=idxLimit || idxPrevEnd<=idxPrevLimit)) { // do not take into account score of incomplete division
                 double[] newScore=getCurrentAssignmentScore();
                 //score[1] = Math.max(score[1], newScore[1]); // maximum score = worst case scenario
@@ -1371,6 +1375,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             ObjectAndAttributeSave saveMerge=null, saveSplit=null;
             if (Double.isFinite(splitCost[1])) {
                 for (CorrectionScenario c : split) c.applyScenario();
+                if (debugCorr) logger.debug("getting errors for split... {}->{}", tMin, tMax);
                 splitCost[0] = getErrorNumber(tMin, tMax, true);
                 saveSplit = new ObjectAndAttributeSave(timePoint, timePoint+split.size()-1);
                 if (correctionStep) step("step:"+step+"/split scenario ["+timePoint+";"+(timePoint+split.size()-1)+"]", false);
