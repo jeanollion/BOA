@@ -124,7 +124,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     NumberParameter subBackScale = new BoundedNumberParameter("Subtract Background scale", 1, 100, 0.1, null);
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
     PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Threshold (separation from background)", Thresholder.class, new ConstantValue(423), false); // //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
-    NumberParameter thresholdContrast = new BoundedNumberParameter("Contrast Threshold (separation from background)", 2, 0.5, 0.01, 0.99);
+    NumberParameter thresholdContrast = new BoundedNumberParameter("Contrast Threshold (separation from background)", 3, 0.4, 0.001, 0.999);
     NumberParameter contrastRadius = new BoundedNumberParameter("Radius for Contrast computation", 1, 9, 2, null);
     GroupParameter backgroundSeparation = new GroupParameter("Separation from background", threshold, thresholdContrast, contrastRadius, openRadius, closeRadius, fillHolesBackgroundContactProportion);
     
@@ -150,8 +150,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     GroupParameter objectParameters = new GroupParameter("Constaint on segmented Objects", minSize, minXSize, minSizeFusion, minSizeFusionCost, minSizeChannelEnd, contactLimit);
     
     Parameter[] parameters = new Parameter[]{backgroundSeparation, thicknessParameters, curvatureParameters, objectParameters};
-    private final static double maxMergeCostDistanceBB = 5; // distance in pixel for merging small objects
-    private final static double maxMergeDistanceBB = 3; // distance in pixel for merging small objects
+    private final static double maxMergeCostDistanceBB = 10; // distance in pixel for cost computation for merging small objects (during correction)
+    private final static double maxMergeDistanceBB = 3; // distance in pixel for merging small objects during main process
     // ParameterSetup interface
     @Override public boolean canBeTested(Parameter p) {
         List canBeTested = new ArrayList(){{add(threshold); add(curvatureScale); add(subBackScale); add(relativeThicknessThreshold);}};
@@ -712,6 +712,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             c.mergeSort(objectMergeLimit<=1, 0, objectMergeLimit);
             if (minSize>0) {
                 BiFunction<Object3D, Set<Object3D>, Object3D> noInterfaceCase = (smallO, set) -> {
+                    if (set.isEmpty()) return null;
                     Object3D closest = Collections.min(set, (o1, o2) -> Double.compare(o1.getBounds().getDistance(smallO.getBounds()), o2.getBounds().getDistance(smallO.getBounds())));
                     double d = GeometricalMeasurements.getDistanceBB(closest, smallO, false);
                     if (debug) logger.debug("merge small objects with no interface: min distance: {} to {} = {}", smallO.getLabel(), closest.getLabel(), d);

@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -35,6 +36,7 @@ import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClo
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.getObjectSize;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.significativeSIErrorThld;
 import plugins.plugins.trackers.bacteriaInMicrochannelTracker.ObjectModifier.Split;
+import utils.HashMapGetCreate;
 import utils.Pair;
 
 /**
@@ -44,7 +46,7 @@ import utils.Pair;
 public class RearrangeObjectsFromPrev extends ObjectModifier {
     protected List<Assignement> assignements;
     protected int idxMin, idxMax;
-    
+    protected HashMapGetCreate<Object3D, Double> sizeMap = new HashMapGetCreate<>(o -> getObjectSize(o));
     public RearrangeObjectsFromPrev(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, int frame, int idxMin, int idxMaxIncluded, int idxPrevMin, int idxPrevMaxIncluded) { // idxMax included
         super(frame, frame, tracker);
         this.idxMin=idxMin;
@@ -74,13 +76,17 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
             a = needToSplit();
         }
         // merge phase: merge until 2 objects per assignment & remove each merge cost to global cost
-        if (a==null) { // TODO use next objects to merge
-            for (Assignement ass : assignements) {
-                if (ass.objects.size()>2) ass.merge();
-            }
+        if (a==null) { 
+            if (frame+1<tracker.maxT) {
+                List<PrevToNextObjects> ptn = assignLists(objects.get(frame), tracker.getObjects(frame+1));
+                for (Assignement ass : assignements) ass.mergeUsingNext(ptn);
+            } else for (Assignement ass : assignements) if (ass.objects.size()>2) ass.mergeUntil(2);
         }
         if (debugCorr) logger.debug("Rearrange objects: tp: {}, idx: [{};{}], cost: {}", timePointMax, idxMin, idxMax, cost);
     }
+    
+    
+    
     protected RearrangeObjectsFromPrev(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, int frame, int idxMin, int idxMaxIncluded) {
         super(frame, frame, tracker);
         this.idxMin=idxMin;
@@ -141,6 +147,59 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
         tracker.resetIndices(timePointMax);
     }
     
+    public static PrevToNextObjects searchInPrev(Object3D o, List<PrevToNextObjects> assignments) {
+        for (PrevToNextObjects ptn : assignments) if (ptn.prev.contains(o)) return ptn;
+        return null;
+    }
+    public static class PrevToNextObjects {
+        List<Object3D> prev;
+        List<Object3D> next;
+        boolean overGrowing, underGrowing;
+        public PrevToNextObjects(List<Object3D> prev, List<Object3D> next, boolean overGrowing, boolean underGrowing) {
+            this.overGrowing=overGrowing;
+            this.underGrowing=underGrowing;
+            this.prev = prev;
+            this.next = next;
+        }
+    }
+    protected List<PrevToNextObjects> assignLists(List<Object3D> prev, List<Object3D> next) { // [0] -> stop idx excluded, [2] -> 0 verifie inegalité, sinon non
+        List<PrevToNextObjects> res=  new ArrayList();
+        int currentNext = 0;
+        int currentPrev = 0;
+        int lastNext = 0;
+        int lastPrev = 0;
+        double sizePrev = sizeMap.getAndCreateIfNecessary(prev.get(currentPrev++));
+        double sizeNext = sizeMap.getAndCreateIfNecessary(next.get(currentNext++));
+        do {
+            while(sizePrev * tracker.minGR > sizeNext || sizeNext > sizePrev * tracker.maxGR) {
+                if (sizePrev * tracker.maxGR < sizeNext) {
+                    if (currentPrev<prev.size()) {
+                        sizePrev += sizeMap.getAndCreateIfNecessary(prev.get(currentPrev++));
+                    } else {
+                        res.add(new PrevToNextObjects(prev.subList(lastPrev, currentPrev), next.subList(lastNext, currentNext), true, false));
+                        return res;
+                    }
+                } else if (sizePrev * tracker.minGR > sizeNext) {
+                    if (currentNext<next.size()) {
+                        sizeNext += sizeMap.getAndCreateIfNecessary(next.get(currentNext++));
+                    } else {
+                        res.add(new PrevToNextObjects(prev.subList(lastPrev, currentPrev), next.subList(lastNext, currentNext), false, true));
+                        return res;
+                    }
+                }
+            }
+            res.add(new PrevToNextObjects(prev.subList(lastPrev, currentPrev), next.subList(lastNext, currentNext), false, false));
+            lastNext = currentNext;
+            lastPrev = currentPrev;
+            if (currentNext<next.size() && currentPrev<prev.size()) {
+                sizePrev = sizeMap.getAndCreateIfNecessary(prev.get(currentPrev++));
+                sizeNext = sizeMap.getAndCreateIfNecessary(next.get(currentNext++));
+            } else return res;
+            logger.debug("lastPrev: {}/{}, lastNext: {}/{}, ass:{}", lastPrev, prev.size(), lastNext, next.size(), res.size());
+        } while (true);
+    }
+    
+    
     @Override 
     public String toString() {
         return "Rearrange@"+timePointMax+"["+idxMin+";"+idxMax+"]/c="+cost;
@@ -158,7 +217,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
         }
         public void add(Object3D o) {
             this.objects.add(o);
-            this.size+=getObjectSize(o);
+            this.size+=sizeMap.getAndCreateIfNecessary(o);
         }
         public boolean isEmpty() {
             return objects.isEmpty();
@@ -196,24 +255,50 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
             Collections.sort(allObjects, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ));
             return true;
         }
-        public void merge() {
-            while(objects.size()>2) { // critère merge = cout le plus bas. // TODO: inclure les objets du temps suivants
+        public void mergeUsingNext(List<PrevToNextObjects> assignments) {
+            if (objects.size()<=1) return;
+            Iterator<Object3D> it = objects.iterator();
+            Object3D lastO = it.next();
+            PrevToNextObjects lastPTN = searchInPrev(lastO, assignments);
+            while(it.hasNext()) {
+                Object3D currentO = it.next();
+                PrevToNextObjects p = searchInPrev(currentO, assignments);
+                if (p == lastPTN && p.next.size()==1) {
+                    Merge m = getMerge(timePointMax, new Pair(lastO, currentO));
+                    if (Double.isFinite(m.cost)) {
+                        m.apply(objects);
+                        m.apply(getObjects(m.frame));
+                        p.prev.set(p.prev.indexOf(lastO), m.value);
+                        p.prev.remove(currentO);
+                        currentO = m.value;
+                    }
+                }
+                lastO = currentO;
+                lastPTN = p;
+            }
+        }
+        public void mergeUntil(int limit) {
+            double additionalCost = Double.NEGATIVE_INFINITY;
+            while(objects.size()>limit) { // critère merge = cout le plus bas. // TODO: inclure les objets du temps suivants dans les contraintes
                 Merge m = getBestMerge();
                 if (m!=null) {
                     m.apply(objects);
                     m.apply(getObjects(m.frame));
-                    cost+=m.cost;
+                    if (m.cost>additionalCost) additionalCost=m.cost;
                 } else break;
             }
+            if (Double.isFinite(additionalCost)) cost+=additionalCost;
         }
         private Merge getBestMerge() {
             Collections.sort(objects, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ));
             TreeSet<Merge> res = new TreeSet();
-            for (int i = 0; i<objects.size()-1; ++i) {
-                for (int j = i+1; j<objects.size(); ++j) {
-                    Merge m = getMerge(timePointMax, new Pair(objects.get(i), objects.get(j)));
-                    if (Double.isFinite(m.cost)) res.add(m);
-                }
+            Iterator<Object3D> it = objects.iterator();
+            Object3D lastO = it.next();
+            while (it.hasNext()) {
+                Object3D currentO = it.next();
+                Merge m = getMerge(timePointMax, new Pair(lastO, currentO));
+                if (Double.isFinite(m.cost)) res.add(m);
+                lastO = currentO;
             }
             if (res.isEmpty()) return null;
             else return res.first();
@@ -222,6 +307,8 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
         @Override public String toString() {
             return "RO:["+tracker.populations[timePointMax-1].indexOf(this.prevObject)+"]->#"+objects.size()+"/size: "+size+"/cost: "+cost+ "/sizeRange: ["+this.sizeRange[0]+";"+this.sizeRange[1]+"]";
         }
+        
+        
     }
 
 }

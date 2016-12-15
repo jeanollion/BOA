@@ -65,7 +65,7 @@ public class TestProcessBacteriaPhase {
         String dbName = "boa_phase141107wt";
         int field = 0;
         int microChannel =0;
-        int time =92;
+        int time =832;
         thld = 335;
         
         testSegBacteriesFromXP(dbName, field, time, microChannel);

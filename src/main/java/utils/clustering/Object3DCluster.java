@@ -199,7 +199,7 @@ public class Object3DCluster<I extends InterfaceObject3D<I>> extends ClusterColl
                 TreeSet<I> inter = new TreeSet(getInterfaces(s));
                 I strongestInterface = null;
                 if (!inter.isEmpty()) strongestInterface = inter.first();
-                else if (noInterfaceCase!=null) {
+                else if (noInterfaceCase!=null && !queue.isEmpty()) {
                     Object3D other = noInterfaceCase.apply(s, queue);
                     if (other!=null) strongestInterface = interfaceFactory.create(s, other, object3DComparator);
                 }
