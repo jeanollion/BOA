@@ -37,20 +37,20 @@ import utils.Pair;
  * @author jollion
  */
 public class SplitScenario extends CorrectionScenario {
-        BacteriaClosedMicrochannelTrackerLocalCorrections.TrackAttribute o;
+        Object3D o;
         List<Object3D> splitObjects;
-        public SplitScenario(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, TrackAttribute o, int timePoint) {
-            super(timePoint, timePoint, tracker);
+        public SplitScenario(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, Object3D o, int frame) {
+            super(frame, frame, tracker);
             this.o=o;
             splitObjects= new ArrayList<>();
-            cost = tracker.getSegmenter(timePoint).split(tracker.getImage(timePoint), o.o, splitObjects);
-            if (debugCorr) logger.debug("Split scenario: tp: {}, idx: {}, cost: {} # objects: {}", timePoint, o.idx, cost, splitObjects.size());
+            cost = tracker.getSegmenter(frame).split(tracker.getImage(frame), o, splitObjects);
+            if (debugCorr) logger.debug("Split scenario: tp: {}, idx: {}, cost: {} # objects: {}", frame, tracker.populations[frame].indexOf(o), cost, splitObjects.size());
         }
-        public SplitScenario(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, TrackAttribute o, int timePoint, int objectNumber) {
-            super(timePoint, timePoint, tracker);
+        public SplitScenario(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, Object3D o, int frame, int objectNumber) {
+            super(frame, frame, tracker);
             this.o=o;
             splitObjects= new ArrayList<>();
-            cost = tracker.getSegmenter(timePoint).split(tracker.getImage(timePoint), o.o, splitObjects);
+            cost = tracker.getSegmenter(frame).split(tracker.getImage(frame), o, splitObjects);
             if (splitObjects.size()>=2 && Double.isFinite(cost) && !Double.isNaN(cost)) {
                 while(splitObjects.size()<objectNumber) {
                     //Collections.sort(splitObjects, (o1, o2) -> Integer.compare(o2.getSize(), o1.getSize())); // biggest object first
@@ -64,7 +64,7 @@ public class SplitScenario extends CorrectionScenario {
                     }
                 }
             }
-            if (debugCorr) logger.debug("Split scenario: tp: {}, idx: {}, cost: {} # objects: {}", timePoint, o.idx, cost, splitObjects.size());
+            if (debugCorr) logger.debug("Split scenario: tp: {}, idx: {}, cost: {} # objects: {}", frame, tracker.populations[frame].indexOf(o), cost, splitObjects.size());
         }
         
         private TreeMap<Pair<Double, Object3D>, List<Object3D>> split(List<Object3D> objects) {
@@ -79,13 +79,15 @@ public class SplitScenario extends CorrectionScenario {
         }
         @Override protected SplitScenario getNextScenario() { // until next division event OR reach end of channel & division with 2n sister lost
             if (timePointMin == tracker.populations.length-1) return null;
-            if (o.next==null) {
+            TrackAttribute ta = tracker.objectAttributeMap.get(o);
+            if (ta==null) return null;
+            if (ta.next==null) {
                 if (debugCorr) logger.debug("getNextScenario: assign @:{}", timePointMin+1);
-                tracker.assignPrevious(timePointMin+1, false, false);
+                tracker.setAssignmentToTrackAttributes(timePointMin+1, false);
             }
-            if (o.next!=null) {
-                if (o.division || (o.next.idx==tracker.getObjects(timePointMin+1).size()-1 && o.getSize() * tracker.minGR > o.next.getSize())) return null;
-                else return new SplitScenario(tracker, o.next, timePointMin+1);
+            if (ta.next!=null) {
+                if (ta.division || (ta.next.idx==tracker.getObjects(timePointMin+1).size()-1 && o.getSize() * tracker.minGR > ta.next.getSize())) return null;
+                else return new SplitScenario(tracker, ta.next.o, timePointMin+1);
             }
             else return null;
         }
@@ -93,18 +95,16 @@ public class SplitScenario extends CorrectionScenario {
         @Override
         protected void applyScenario() {
             Collections.sort(splitObjects, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ)); // sort by increasing Y position
-            tracker.populations[timePointMin].remove(o.idx);
-            tracker.populations[timePointMin].addAll(o.idx, splitObjects);
-            tracker.trackAttributes[timePointMin].remove(o.idx);
-            int curIdx = o.idx;
-            for (Object3D splitObject : splitObjects) {
-                tracker.trackAttributes[timePointMin].add(curIdx, tracker.new TrackAttribute(splitObject, curIdx, timePointMin).setFlag(Flag.correctionSplit));
-                ++curIdx;
-            }
+            int idx = tracker.populations[timePointMin].indexOf(o);
+            tracker.populations[timePointMin].remove(idx);
+            tracker.populations[timePointMin].addAll(idx, splitObjects);
+            tracker.objectAttributeMap.remove(o);
+            int curIdx = idx;
+            for (Object3D splitObject : splitObjects) tracker.objectAttributeMap.put(splitObject, tracker.new TrackAttribute(splitObject, curIdx++, timePointMin).setFlag(Flag.correctionSplit));
             tracker.resetIndices(timePointMin);
         }
         @Override 
         public String toString() {
-            return "Split@"+timePointMin+"["+o.idx+"]/c="+cost;
+            return "Split@"+timePointMin+"["+tracker.populations[timePointMin].indexOf(o)+"]/c="+cost;
         }
     }

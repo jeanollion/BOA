@@ -20,9 +20,11 @@ package plugins.plugins.trackers.bacteriaInMicrochannelTracker;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.Voxel;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import static plugins.Plugin.logger;
 import plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
+import plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.TrackAttribute;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr;
 
 /**
@@ -31,42 +33,30 @@ import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClo
  */
 public class MergeScenario extends CorrectionScenario {
         int idxMin, idxMax;
-        ArrayList<Object3D> listO;
-        public MergeScenario(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, int idxMin, int idxMaxIncluded, int timePoint) { // idxMax included
-            super(timePoint, timePoint, tracker);
-            this.idxMax=idxMaxIncluded;
+        List<Object3D> listO;
+        public MergeScenario(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, int idxMin, List<Object3D> objects, int frame) { // idxMax included
+            super(frame, frame, tracker);
+            this.idxMax=idxMin+objects.size()-1;
             this.idxMin = idxMin;
-            listO = new ArrayList<>(idxMaxIncluded - idxMin +1 );
-            for (int i = idxMin; i<=idxMaxIncluded; ++i) {
-                BacteriaClosedMicrochannelTrackerLocalCorrections.TrackAttribute ta = tracker.getAttribute(timePoint, i);
-                listO.add(ta.o);
-            }
+            listO = objects;
             if (!listO.isEmpty()) {
-                this.cost = tracker.getSegmenter(timePoint).computeMergeCost(tracker.getImage(timePoint), listO);
-                // check for small objects
-                /*if (Double.isFinite(cost)) { // could merge
-                    int nSmall = 0;
-                    for (Object3D o :  listO) if (o.getSize()<tracker.maxFusionSize) ++nSmall;
-                    if (nSmall>=listO.size()-1) cost = 0;
-                }*/
+                this.cost = tracker.getSegmenter(frame).computeMergeCost(tracker.getImage(frame), listO);
             } else cost = Double.POSITIVE_INFINITY;
-            if (debugCorr) logger.debug("Merge scenario: tp: {}, idxMin: {}, #objects: {}, cost: {}", timePoint, idxMin, listO.size(), cost);
+            if (debugCorr) logger.debug("Merge scenario: tp: {}, idxMin: {}, #objects: {}, cost: {}", frame, idxMin, listO.size(), cost);
         }
         @Override protected MergeScenario getNextScenario() { // @ previous time, until there is one single parent ie no more bacteria to merge
             if (timePointMin==0 || idxMin==idxMax) return null;
             int iMin = Integer.MAX_VALUE;
             int iMax = -1;
-            for (int i = idxMin; i<=idxMax; ++i) { // get all connected trackAttributes from previous timePoint
-                BacteriaClosedMicrochannelTrackerLocalCorrections.TrackAttribute ta = tracker.getAttribute(timePointMin, i).prev;
+            for (Object3D o : listO) {
+                TrackAttribute ta = tracker.objectAttributeMap.get(o).prev;
                 if (ta==null) continue;
-                //if (ta.division) for (TrackAttribute taDiv : ta.getNext()) if (taDiv.idx<idxMin || taDiv.idx>=idxMax) return null; // if division & on of the divided objects is not in the current objects to merge: stop
                 if (iMin>ta.idx) iMin = ta.idx;
                 if (iMax<ta.idx) iMax = ta.idx;
-                if (ta.idx != tracker.trackAttributes[timePointMin-1].indexOf(ta)) logger.error("BCMTLC: inconsistent data: t: {}, expected idx: {}, actual: {}", timePointMin-1, ta.idx, tracker.trackAttributes[timePointMin-1].indexOf(ta));
             }
             if (iMin==iMax) return null; // no need to merge
             if (iMin==Integer.MAX_VALUE || iMax==-1) return null; // no previous objects 
-            return new MergeScenario(tracker, iMin,iMax, timePointMin-1);
+            return new MergeScenario(tracker, iMin,tracker.getObjects(timePointMin-1).subList(iMin, iMax+1), timePointMin-1);
         }
 
         @Override
@@ -76,11 +66,11 @@ public class MergeScenario extends CorrectionScenario {
             for (int i = idxMax; i>=idxMin; --i) {
                 Object3D rem = tracker.populations[timePointMin].remove(i);
                 vox.addAll(rem.getVoxels());
-                tracker.trackAttributes[timePointMin].remove(i);
+                tracker.objectAttributeMap.remove(rem);
             }
             Object3D merged = new Object3D(vox, idxMin+1, o.getScaleXY(), o.getScaleZ());
             tracker.populations[timePointMin].add(idxMin, merged);
-            tracker.trackAttributes[timePointMin].add(idxMin, tracker.new TrackAttribute(merged, idxMin, timePointMin));
+            tracker.objectAttributeMap.put(merged, tracker.new TrackAttribute(merged, idxMin, timePointMin));
             tracker.resetIndices(timePointMin);
         }
         @Override 

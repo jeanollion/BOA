@@ -136,8 +136,8 @@ public class Threshold {
         else histo256[255] = 0; // assumes has been computed with maxValue = saturateValue
     }
     
-    public void setAdaptativeByY(int yHalfWindow) {
+    /*public void setAdaptativeByY(int yHalfWindow) {
         
-    }
+    }*/
     
 }

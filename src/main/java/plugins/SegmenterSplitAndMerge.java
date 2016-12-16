@@ -19,6 +19,7 @@ package plugins;
 
 import dataStructure.objects.Object3D;
 import image.Image;
+import java.util.Collection;
 import java.util.List;
 
 /**

@@ -59,7 +59,7 @@ public class TestTracker {
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 159;
         //testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 1000);
         
-        testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 88, 91); 
+        testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 88, 91); // 91 to test rearrange objects 
         
         int[][] testsF_MC_TT = {
            {0, 3, 90, 100}, // 0
@@ -140,9 +140,9 @@ public class TestTracker {
             }
         }
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
-        //BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
+        BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.correctionStep=true;
-        BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=0;
+        BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;
         ps.segmentAndTrack(structureIdx, parentTrack);
         //ps.trackOnly(structureIdx, parentTrack);
         GUI.getInstance();
