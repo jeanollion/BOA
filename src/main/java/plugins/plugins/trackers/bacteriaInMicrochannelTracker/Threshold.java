@@ -68,12 +68,12 @@ public class Threshold {
         int[] histoAll = new int[256];
         for (int[] h : histos) ImageOperations.addHisto(h, histoAll, true);
         // saturate histogram to remove device aberations 
-        saturateValue256 = (int)IJAutoThresholder.runThresholder(AutoThresholder.Method.MaxEntropy, histoAll, minAndMax, true); // byteImage=true to get a 8-bit value
+        saturateValue256 = (int)IJAutoThresholder.runThresholder(AutoThresholder.Method.Shanbhag, histoAll, minAndMax, true); // byteImage=true to get a 8-bit value
         saturateValue =  byteHisto ? saturateValue256 : IJAutoThresholder.convertHisto256Threshold(saturateValue256, minAndMax);
         for (int i = saturateValue256; i<256; ++i) histoAll[i]=0;
         thresholdValue = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histoAll, minAndMax, byteHisto);
         long t2 = System.currentTimeMillis();
-        if (debug || debugCorr) logger.debug("Threshold Value over all time: {}, minAndMax: {}, byte?{}, saturate value: {} ()", thresholdValue, minAndMax, byteHisto, saturateValue256, saturateValue);
+        if (debug || debugCorr) logger.debug("Threshold Value over all time: {}, minAndMax: {}, byte?{}, saturate value: {} ({})", thresholdValue, minAndMax, byteHisto, saturateValue256, saturateValue);
         if (debug || debugCorr) logger.debug("getHistos: {}ms, compute 1st thld: {}ms", t1-t0, t2-t1);
     }
     public void setFrameRange(int[] frameRange) {

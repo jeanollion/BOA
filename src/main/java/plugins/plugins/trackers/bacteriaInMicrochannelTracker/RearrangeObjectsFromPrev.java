@@ -23,12 +23,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import static plugins.Plugin.logger;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
@@ -39,6 +42,7 @@ import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClo
 import plugins.plugins.trackers.bacteriaInMicrochannelTracker.ObjectModifier.Split;
 import utils.HashMapGetCreate;
 import utils.Pair;
+import utils.Utils;
 
 /**
  *
@@ -76,18 +80,30 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
             a = needToSplit();
         }
         // merge phase: merge until 2 objects per assignment & remove each merge cost to global cost
-        if (a==null) { 
-            if (frame+1<tracker.maxT) {
+        if (a==null && needToMerge()) { 
+            if (frame+1<tracker.maxT) { 
                 TrackAssigner ta = tracker.getTrackAssigner(frame+1).setVerboseLevel(verboseLevelLimit);
-                ta.assignUntil(assignment.nextObjects.get(assignment.nextObjects.size()-1), true);
-                Set<Object3D> nextObjects = new HashSet<>();
-                find next objects -> si correspond exactement au cadre -> utiliser pour merge
-                ta.sizeIncrementFunction = o -> { // return size increment of previous object
-                    RearrangeAssignment ra = getAssignement(o, false, false);
-                    if (ra==null) return Double.NaN;
-                    else return tracker.sizeIncrementFunction.apply(ra.prevObject);
-                };
-                if (ta.assignUntil(assignment.nextObjects.get(assignment.nextObjects.size()-1), true)) {
+                ta.assignUntil(assignment.getLastObject(false), true);
+                // check that ta's has assignments included in current assignments
+                if (debugCorr) logger.debug("RO: merge from next: current sizes: {}", Utils.toStringList(getObjects(frame), o->""+tracker.sizeFunction.apply(o)));
+                if (debugCorr) logger.debug("RO: merge from next: current assignment: [{}->{}] assignment with next: {}", assignment.idxNext, assignment.idxNextEnd()-1, ta.toString());
+                Assignment ass1 = ta.getAssignmentContaining(assignment.nextObjects.get(0), true);
+                if (ta.currentAssignment.getLastObject(true)==assignment.getLastObject(false) && ass1.prevObjects.get(0)==assignment.nextObjects.get(0)) {
+                    // functions for track assigner -> use prev object assigned to next object
+                    Function<Object3D, Double> sizeIncrementFunction = o -> { 
+                        RearrangeAssignment ra = getAssignement(o, false, false);
+                        if (ra==null) return Double.NaN;
+                        else return tracker.sizeIncrementFunction.apply(ra.prevObject);
+                    };
+                    BiFunction<Object3D, Object3D, Boolean> areFromSameLine = (o1, o2) -> {
+                        RearrangeAssignment ra1 = getAssignement(o1, false, false);
+                        if (ra1==null) return false;
+                        RearrangeAssignment ra2 = getAssignement(o2, false, false);
+                        if (ra2==null) return false;
+                        return tracker.areFromSameLine.apply(ra1.prevObject, ra2.prevObject);
+                    };
+                    ta = new TrackAssigner(getObjects(frame), tracker.getObjects(frame+1).subList(ass1.idxNext, ta.currentAssignment.idxNextEnd()), tracker.baseGrowthRate, assignment.truncatedEndOfChannel(), tracker.sizeFunction, sizeIncrementFunction, areFromSameLine).setVerboseLevel(ta.verboseLevel);
+                    ta.assignAll();
                     for (RearrangeAssignment ass : assignements) ass.mergeUsingNext(ta);
                 }
             } 
@@ -96,6 +112,10 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
         if (debugCorr) logger.debug("Rearrange objects: tp: {}, {}, cost: {}", timePointMax, assignment.toString(false), cost);
     }
     
+    private boolean needToMerge() {
+        for (RearrangeAssignment ass : assignements) if (ass.objects.size()>2) return true;
+        return false;
+    }
 
     private int getNextVoidAssignementIndex() {
         for (int i = 0; i<assignements.size(); ++i) if (assignements.get(i).isEmpty()) return i;
@@ -138,7 +158,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
     protected void applyScenario() {
         for (int i = this.assignment.idxNextEnd()-1; i>=assignment.idxNext; --i) tracker.objectAttributeMap.remove(tracker.populations[timePointMax].remove(i));
         List<Object3D> allObjects = getObjects(timePointMax);
-        Collections.sort(allObjects, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ)); // sort by increasing Y position
+        sortAndRelabel();
         int idx = assignment.idxNext;
         for (Object3D o : allObjects) {
             tracker.populations[timePointMax].add(idx, o);
@@ -146,6 +166,12 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
             idx++;
         }
         tracker.resetIndices(timePointMax);
+    }
+    
+    public void sortAndRelabel() {
+        List<Object3D> allObjects = getObjects(timePointMax);
+        Collections.sort(allObjects, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ));
+        for (int i = 0; i<allObjects.size(); ++i) allObjects.get(i).setLabel(i+1);
     }
     
     @Override 
@@ -200,30 +226,43 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
             s.apply(objects);
             s.apply(getObjects(s.frame));
             cost+=s.cost;
-            Collections.sort(allObjects, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ));
+            sortAndRelabel();
             return true;
         }
+        
         public void mergeUsingNext(TrackAssigner assignments) {
-            if (debugCorr) logger.debug("RO: merge using next assignments: {}", assignments);
+            if (debugCorr) logger.debug("RO: merge using next: current: {} all assignments: {}", this, assignments);
             if (objects.size()<=1) return;
             Iterator<Object3D> it = objects.iterator();
             Object3D lastO = it.next();
             Assignment lastAss = assignments.getAssignmentContaining(lastO, true);
+            boolean reset = false;
             while(it.hasNext()) {
                 Object3D currentO = it.next();
                 Assignment ass = assignments.getAssignmentContaining(currentO, true);
-                if (ass!=null && ass == lastAss && ass.sizeNext()==1) {
+                if (ass!=null && ass == lastAss && (ass.sizeNext()<ass.sizePrev())) {
                     Merge m = getMerge(timePointMax, new Pair(lastO, currentO));
-                    if (Double.isFinite(m.cost)) {
-                        if (debugCorr) logger.debug("RO: merge using next: {}", ass);
+                    if (debugCorr) logger.debug("RO: merge using next: cost: {} assignement containing objects {}", m.cost, ass);
+                    if (true || Double.isFinite(m.cost)) {
                         m.apply(objects);
                         m.apply(getObjects(m.frame));
-                        m.apply(ass.prevObjects);
+                        m.apply(ass.prevObjects); 
+                        ass.ta.resetIndices(true); // merging modifies following prev indices
                         currentO = m.value;
+                        reset = true;
                     }
                 }
-                lastO = currentO;
-                lastAss = ass;
+                if (reset) {
+                    if (objects.size()<=1) return;
+                    it = objects.iterator();
+                    lastO = it.next();
+                    lastAss = assignments.getAssignmentContaining(lastO, true);
+                    reset = false;
+                } else {
+                    lastO = currentO;
+                    lastAss = ass;
+                }
+                
             }
         }
         public void mergeUntil(int limit) {
@@ -239,7 +278,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
             if (Double.isFinite(additionalCost)) cost+=additionalCost;
         }
         private Merge getBestMerge() {
-            Collections.sort(objects, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ));
+            sortAndRelabel();
             TreeSet<Merge> res = new TreeSet();
             Iterator<Object3D> it = objects.iterator();
             Object3D lastO = it.next();
@@ -254,7 +293,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
         }
         
         @Override public String toString() {
-            return "RO:["+tracker.populations[timePointMax-1].indexOf(this.prevObject)+"]->#"+objects.size()+"/size: "+size+"/cost: "+cost+ "/sizeRange: ["+this.sizeRange[0]+";"+this.sizeRange[1]+"]";
+            return "RO:["+tracker.populations[timePointMax-1].indexOf(this.prevObject)+"]->["+(objects.isEmpty()? "" : getObjects(timePointMax).indexOf(objects.get(0))+";"+getObjects(timePointMax).indexOf(getLastObject()))+"]/size: "+size+"/cost: "+cost+ "/sizeRange: ["+this.sizeRange[0]+";"+this.sizeRange[1]+"]";
         }
         
         

@@ -56,10 +56,10 @@ public class TestTracker {
         int structureIdx = 1;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
-        BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 159;
-        //testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 1000);
+        //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 160;
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 200);
         
-        testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 88, 91); // 91 to test rearrange objects 
+        //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 82, 91); // 91 to test rearrange objects 
         
         int[][] testsF_MC_TT = {
            {0, 3, 90, 100}, // 0

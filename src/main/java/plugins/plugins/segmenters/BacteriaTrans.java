@@ -376,16 +376,20 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         }*/
     }
 
-    @Override public double computeMergeCost(Image input, List<Object3D> objects) {
+    @Override public double computeMergeCost(Image input, List<Object3D> objects) { // si les objets ont un label identique -> bug -> check?
         if (objects.isEmpty() || objects.size()==1) return 0;
         double minSize= minSizeFusionCost.getValue().doubleValue();
         ObjectPopulation mergePop = new ObjectPopulation(objects, input, false);
+        
         pv = getProcessingVariables(input, mergePop.getLabelMap());
         pv.segMask=mergePop.getLabelMap();
         double minCurv = Double.POSITIVE_INFINITY;
         Object3DCluster c = new Object3DCluster(mergePop, false, true, pv.getFactory());
         List<Set<Object3D>> clusters = c.getClusters();
-        //logger.debug("compute merge cost: {} objects in {} clusters", objects.size(), clusters.size());
+        if (debug) {
+            logger.debug("compute merge cost: {} objects in {} clusters, sizes: {}", objects.size(), clusters.size(), Utils.toStringList(objects, o-> o.getLabel()+"->"+o.getSize()));
+            //ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(mergePop.getLabelMap().duplicate("merge image"));
+        }
         if (clusters.size()>1) { // merge impossible : presence of disconnected objects / except if small objects
             // if at least all clusters but one are small -> can merge without cost 
             int nSmall = 0;

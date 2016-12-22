@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import plugins.plugins.segmenters.BacteriaTrans;
+import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.logger;
 import utils.HashMapGetCreate;
 import utils.Pair;
 
@@ -55,6 +57,7 @@ public abstract class ObjectModifier extends CorrectionScenario {
         Merge res = mergeMap.get(o);
         if (res==null) {
             res = new Merge(frame, o);
+            logger.debug("{} computing merge cost: {}", this, res.cost);
             mergeMap.put(o, res);
             splitMap.put(res.value, new Split(frame, res.value, res.listSource(), -res.cost));
         }
@@ -111,7 +114,9 @@ public abstract class ObjectModifier extends CorrectionScenario {
         public Merge(int frame, Pair<Object3D, Object3D> source) {
             super(frame);
             this.source = source;
+            BacteriaTrans.debug=true;
             cost = tracker.getSegmenter(frame).computeMergeCost(tracker.getImage(frame), listSource());
+            BacteriaTrans.debug=false;
             List<Voxel> vox = new ArrayList(source.key.getVoxels().size()+source.value.getVoxels().size());
             vox.addAll(source.key.getVoxels()); vox.addAll(source.value.getVoxels());
             value =new Object3D(vox, source.key.getLabel(), source.key.getScaleXY(), source.key.getScaleZ());

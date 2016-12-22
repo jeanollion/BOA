@@ -128,6 +128,7 @@ public class ObjectPopulation {
         if (properties!=null) this.properties = new BlankMask("", properties);
         this.absoluteLandmark=absoluteLandmark;
         for (Object3D o : objects) o.setIsAbsoluteLandmark(absoluteLandmark);
+        //checkForDuplicateLabel();
     }
     
     public ObjectPopulation(List<Object3D> objects, ImageInteger labelMap, ImageProperties properties, boolean absoluteLandmark) {
@@ -142,6 +143,18 @@ public class ObjectPopulation {
         for (Object3D o : objects) o.setIsAbsoluteLandmark(absoluteLandmark);
         labelImage = labelMap;
         this.relabel(true);
+    }
+    
+    public boolean checkForDuplicateLabel() {
+        for (int i = 0; i<objects.size()-1; ++i) {
+            for (int j = i+1; j<objects.size(); ++j) {
+                if (objects.get(i).getLabel()==objects.get(j).getLabel()) {
+                    //throw new IllegalArgumentException("Duplicate label: idx:"+i+"&"+j+" label:"+objects.get(j).getLabel());
+                    return true;
+                }
+            }
+        }
+        return false;
     }
     
     public ObjectPopulation duplicate() {

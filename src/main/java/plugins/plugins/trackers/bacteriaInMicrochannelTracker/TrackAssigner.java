@@ -51,7 +51,7 @@ public class TrackAssigner {
     final protected List<Assignment> assignments = new ArrayList();
     protected Assignment currentAssignment;
     double[] baseSizeIncrement;
-    final boolean truncatedChannel;
+    protected boolean truncatedChannel;
     protected TrackAssigner(List<Object3D> prev, List<Object3D> next, double[] baseGrowthRate, boolean truncatedChannel, Function<Object3D, Double> sizeFunction, Function<Object3D, Double> sizeIncrementFunction, BiFunction<Object3D, Object3D, Boolean> areFromSameLine) {
         idxPrevLim = prev.size();
         idxNextLim = next.size();
@@ -70,6 +70,10 @@ public class TrackAssigner {
     }
     public TrackAssigner setMode(AssignerMode mode) {
         this.mode = mode;
+        return this;
+    }
+    public TrackAssigner setAllowTruncatedChannel(boolean allow) {
+        this.truncatedChannel=allow;
         return this;
     }
     protected TrackAssigner duplicate(boolean duplicateCurrentAssignment) {
@@ -110,7 +114,13 @@ public class TrackAssigner {
             return currentAssignment.nextObjects.contains(o);
         }
     }
-    
+    public void resetIndices(boolean prev) {
+        if (prev) {
+            for (Assignment a : assignments) if (!a.prevObjects.isEmpty()) a.idxPrev = this.prev.indexOf(a.prevObjects.get(0));
+        } else {
+            for (Assignment a : assignments) if (!a.nextObjects.isEmpty()) a.idxNext = this.next.indexOf(a.nextObjects.get(0));
+        }
+    }
     public void assignAll() {
         while(nextTrack()) {}
     }
@@ -191,12 +201,13 @@ public class TrackAssigner {
             score[1] += newScore[1];
             ++count;
             score[0]+=newScore[0];
-            if (debug && verboseLevel-1<verboseLevelLimit) logger.debug("L:{} score for whole scenario: new score for {}, wcs: {}", verboseLevel-1, currentAssignment, newScore, score);
+            if (debug && verboseLevel-1<verboseLevelLimit) logger.debug("L:{} score for whole scenario: new score for {}, currentScore: {}", verboseLevel-1, currentAssignment, newScore, score);
         }
         score[1] /=count;
-        // add unlinked cells
-        if (idxPrevLimit==idxPrevLim && currentAssignment.idxPrevEnd()<idxPrevLim-1) score[0]+=idxPrevLim-1 - currentAssignment.idxPrevEnd(); // # of unlinked cells, except the last one
-        if (idxLimit==idxNextLim && currentAssignment.idxNextEnd()<idxNextLim-1) score[0]+=idxNextLim-1 - currentAssignment.idxNextEnd();
+        // # of unlinked cells, except the last one if truncatedChannel
+        int trunc = truncatedChannel ? 1 : 0;
+        if (idxPrevLimit==idxPrevLim && currentAssignment.idxPrevEnd()<idxPrevLim-trunc) score[0]+=idxPrevLim-trunc - currentAssignment.idxPrevEnd(); 
+        if (idxLimit==idxNextLim && currentAssignment.idxNextEnd()<idxNextLim-trunc) score[0]+=idxNextLim-trunc - currentAssignment.idxNextEnd();
 
         // revert to previous state
         verboseLevel--;

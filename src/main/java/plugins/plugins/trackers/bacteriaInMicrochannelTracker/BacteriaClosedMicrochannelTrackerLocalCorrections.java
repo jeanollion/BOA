@@ -51,8 +51,8 @@ import java.util.TreeMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import measurement.GeometricalMeasurements;
-import static plugins.Plugin.logger;
-import plugins.Segmenter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import plugins.SegmenterSplitAndMerge;
 import plugins.Tracker;
 import plugins.TrackerSegmenter;
@@ -67,11 +67,11 @@ import utils.Utils;
  * @author jollion
  */
 public class BacteriaClosedMicrochannelTrackerLocalCorrections implements TrackerSegmenter {
-    
+    public final static Logger logger = LoggerFactory.getLogger(BacteriaClosedMicrochannelTrackerLocalCorrections.class);
     // parametrization-related attributes
     protected PluginParameter<SegmenterSplitAndMerge> segmenter = new PluginParameter<>("Segmentation algorithm", SegmenterSplitAndMerge.class, false);
     BoundedNumberParameter maxGrowthRate = new BoundedNumberParameter("Maximum Size Increment", 2, 1.5, 1, null);
-    BoundedNumberParameter minGrowthRate = new BoundedNumberParameter("Minimum size increment", 2, 0.8, 0.01, null);
+    BoundedNumberParameter minGrowthRate = new BoundedNumberParameter("Minimum size increment", 2, 0.85, 0.01, null); // augmenter à 0.9 ?
     //BoundedNumberParameter divisionCriterion = new BoundedNumberParameter("Division Criterion", 2, 0.80, 0.01, 1);
     BoundedNumberParameter costLimit = new BoundedNumberParameter("Correction: operation cost limit", 3, 1.5, 0, null);
     BoundedNumberParameter cumCostLimit = new BoundedNumberParameter("Correction: cumulative cost limit", 3, 5, 0, null);
@@ -114,8 +114,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     // hidden parameters! 
     // segmentation thld
     final static boolean adaptativeThreshold= true;
-    final static double adaptativeCoefficient = 0.75;
-    final static int adaptativeThresholdHalfWindow = 5;
+    final static double adaptativeCoefficient = 1;
+    final static int adaptativeThresholdHalfWindow = 10;
     // sizeIncrement -> adaptative SI
     final static int sizeIncrementFrameNumber = 7; // number of frames for sizeIncrement computation
     final static double significativeSIErrorThld = 0.3; // size increment difference > to this value lead to an error
@@ -197,7 +197,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 t.setAdaptativeThreshold(adaptativeCoefficient, adaptativeThresholdHalfWindow);
                 thresholdValueT=t.thresholdF;
             }
-            
+            return;
             // TODO : adaptative by Y
             
             //double[] sigmaMuThresholds = new double[populations.length];
@@ -379,7 +379,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         return !outRanges.isEmpty();
     }
     
-    private void step(String name, boolean increment) {
+    protected void step(String name, boolean increment) {
         if (step>5) return;
         if (name==null) {
             if (increment) name = "End of Step: "+step;
@@ -389,7 +389,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         for (StructureObject p : parents) newParents.add(p.duplicate());
         stepParents.put(name, newParents);
         // perform assignment without corrections?
-        for (int t = 1; t<populations.length; ++t)  setAssignmentToTrackAttributes(t, true);
+        for (int t = 1; t<populations.length; ++t)  setAssignmentToTrackAttributes(t, false);
         applyLinksToParents(newParents);
         if (increment) {
             ++step;
@@ -822,7 +822,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         
         public double getLineageSizeIncrement() {
             List<Double> list = getLineageSizeIncrementList();
-            if (list.isEmpty()) return Double.NaN;
+            if (list.size()<=1) return Double.NaN;
             double res = ArrayUtil.median(list);
             if (res<minGR) res = minGR;
             else if (res>maxGR) res = maxGR;
@@ -875,7 +875,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         TrackAssigner assigner = getTrackAssigner(frame).setVerboseLevel(0);
         assigner.assignAll();
         if (debug) logger.debug("L: {} assign previous frame: {}, number of assignments: {}, : {}", assigner.verboseLevel, frame, assigner.assignments.size(), Utils.toStringList(assigner.assignments, a -> a.toString(true)));
-        for (Assignment ass : assigner.assignments) setAssignmentToTrackAttributes(ass, frame, lastAssignment);
+        for (Assignment ass : assigner.assignments) setAssignmentToTrackAttributes(ass, frame, false, lastAssignment);
     }
     
     public void resetTrackAttributes(int frame) {
@@ -883,8 +883,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (populations[frame-1]!=null) for (Object3D o : populations[frame-1]) if (objectAttributeMap.containsKey(o)) objectAttributeMap.get(o).resetTrackAttributes(false, true);
     }
     
-    private void setAssignmentToTrackAttributes(Assignment a, int frame, boolean lastAssignment) {
-        boolean error = a.sizePrev()>1 || a.sizeNext()>2;
+    private void setAssignmentToTrackAttributes(Assignment a, int frame, boolean forceError, boolean lastAssignment) {
+        boolean error = forceError || a.sizePrev()>1 || a.sizeNext()>2;
         if (a.sizePrev()==1 && a.sizeNext()==1) {
             TrackAttribute taCur = getAttribute(frame, a.idxNext);
             TrackAttribute taPrev = getAttribute(frame-1, a.idxPrev);
@@ -902,8 +902,6 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             } else taCur.sizeIncrement=Double.NaN;
             if (setSIErrorsAsErrors && taCur.sizeIncrementError && !taCur.errorPrev) taCur.errorPrev=true;
             if (setSIErrorsAsErrors && taCur.sizeIncrementError && !taPrev.errorCur) taPrev.errorCur=true;
-
-
         } else if (a.sizePrev()==1 && a.sizeNext()>1) { // division
             TrackAttribute taPrev = getAttribute(frame-1, a.idxPrev);
             TrackAttribute taCur = getAttribute(frame, a.idxNext);
@@ -928,8 +926,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         } else if (a.sizePrev()>1 && a.sizeNext()==1) { // merging
             TrackAttribute taCur = getAttribute(frame, a.idxNext);
             taCur.trackHead=false;
-            TrackAttribute prev= getAttribute(frame-1, a.idxPrev); // assign prev -> biggest object
-            if (!lastAssignment) for (int i = a.idxPrev+1; i<a.idxPrevEnd(); ++i) if (getAttribute(frame-1, i).getSize()>prev.getSize()) prev= getAttribute(frame-1, i);
+            TrackAttribute prev= getAttribute(frame-1, a.idxPrev); 
+            if (!lastAssignment) { // assign biggest prev object to current
+                for (int i = a.idxPrev+1; i<a.idxPrevEnd(); ++i) if (getAttribute(frame-1, i).getSize()>prev.getSize()) prev= getAttribute(frame-1, i);
+            }
             taCur.prev=prev;
             taCur.errorPrev=true;
             taCur.nPrev=a.sizePrev();
@@ -994,9 +994,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 currentAssigner.removeUntil(false, true, 2);
                 if (dup.idxNextEnd() == dup.idxNext) nextIdxError = dup.idxNextEnd()+1;
             }
-            if (debug && a.ta.verboseLevel<verboseLevelLimit) logger.debug("assignment {} with {} objects, assign {}, div:{} / ass1={}->{}, ass2={}->{} ", a.sizePrev(), a.sizeNext(), (score==score1||score==scoreDiv) ? "first" : "last", (score==scoreDiv||score==scoreEndDiv), currentAssigner.sizePrev(), currentAssigner.sizeNext(), dup.sizePrev(), dup.sizeNext());
-            setAssignmentToTrackAttributes(currentAssigner, frame, lastAssignment); // perform current assignement
-            setAssignmentToTrackAttributes(dup, frame, lastAssignment); // recursive call
+            if (debug && a.ta.verboseLevel<verboseLevelLimit) logger.debug("assignment {} with {} objects, assign {}, div:{} / ass1={}, ass2={}", a.sizePrev(), a.sizeNext(), (score==score1||score==scoreDiv) ? "first" : "last", (score==scoreDiv||score==scoreEndDiv), currentAssigner.toString(false), dup.toString(false));
+            setAssignmentToTrackAttributes(currentAssigner, frame, true, lastAssignment); // perform current assignement
+            setAssignmentToTrackAttributes(dup, frame, true, lastAssignment); // recursive call
             if (nextIdxError>=0) { // case of assignemnet 1 with O in dup : set next & signal error
                 getAttribute(frame-1, dup.idxPrev).next = getAttribute(frame, nextIdxError);
                 getAttribute(frame-1, dup.idxPrev).errorCur=true;
