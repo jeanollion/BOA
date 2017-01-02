@@ -207,6 +207,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     @Override public Image getThresholdImage(Image input, int structureIdx, StructureObjectProcessing parent) {
         return getProcessingVariables(input, parent.getMask()).getIntensityMap(); // TODO for all methdos with these argument : check if pv exists and has same input & parent ...
     }
+    ImageInteger mask=null;
+    @Override public void setThresholdedImage(ImageInteger thresholdedImage) {
+        mask = thresholdedImage;
+    }
     //segmentation-related attributes (kept for split and merge methods)
     ProcessingVariables pv;
     
@@ -253,8 +257,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             
         */
         pv = getProcessingVariables(input, parent.getMask());
-        if (Double.isNaN(thresholdValue)) pv.threshold = this.threshold.instanciatePlugin().runThresholder(pv.getIntensityMap(), parent);
-        else pv.threshold=thresholdValue;
+        if (mask==null) {
+            if (Double.isNaN(thresholdValue)) pv.threshold = this.threshold.instanciatePlugin().runThresholder(pv.getIntensityMap(), parent);
+            else pv.threshold=thresholdValue;
+        } else pv.thresh=mask;
         if (debug) {
             new IJImageDisplayer().showImage(input.setName("input"));
             logger.debug("threshold: {}", pv.threshold);
@@ -538,7 +544,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     protected static class ProcessingVariables {
         public boolean splitVerbose;
         private Image distanceMap;
-        private ImageInteger segMask;
+        private ImageInteger segMask, thresh;
         final ImageMask mask;
         final Image input;
         private Image intensityMap;
@@ -614,9 +620,9 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         }
         private ImageInteger getSegmentationMask() {
             if (segMask == null) {
-                if (Double.isNaN(threshold)) throw new Error("Threshold not set");
+                if (thresh==null && Double.isNaN(threshold)) throw new Error("Threshold not set");
                 IJImageDisplayer disp = debug?new IJImageDisplayer():null;
-                ImageInteger thresh = ImageOperations.threshold(getIntensityMap(), threshold, false, false);
+                if (thresh==null) thresh = ImageOperations.threshold(getIntensityMap(), threshold, false, false);
                 ImageOperations.and(mask, thresh, thresh);
                 thresh = Filters.applyFilter(thresh, null, new RemoveThinBorder(), null); // aberation: borders of microchannels can be segemented -> fill holes would create aberations
                 ObjectPopulation pop1 = new ObjectPopulation(thresh).setLabelImage(thresh, false, false); // high connectivity for fill holes to fill holes between close cells?
@@ -673,6 +679,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 pop1.filter(new SigmaMu(contrastThreshold, contrastRadius, contrastRadius, getIntensityMap()));
                 if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK AFTER  REMOVE CONTRAST"));
                 segMask = pop1.getLabelMap();
+                thresh = null; // no need to keep
             }
             return segMask;
         }

@@ -218,7 +218,7 @@ public class ImageShort extends ImageInteger {
         double[] minAndMax = getMinAndMax(mask);
         return getHisto256(minAndMax[0], minAndMax[1], mask, limits);
     }
-    @Override int[] getHisto256(double min, double max, ImageMask mask, BoundingBox limits) {
+    @Override public int[] getHisto256(double min, double max, ImageMask mask, BoundingBox limits) {
         if (mask == null) mask = new BlankMask("", this);
         if (limits==null) limits = mask.getBoundingBox().translateToOrigin();
         double coeff = 256d / (max - min);

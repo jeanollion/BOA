@@ -79,14 +79,16 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
 
     @Override public SegmenterSplitAndMerge getSegmenter() {
         SegmenterSplitAndMerge s= segmenter.instanciatePlugin();
-        if (!Double.isNaN(thresholdValue)) ((UseThreshold)s).setThresholdValue(thresholdValue);
+        ((UseThreshold)s).setThresholdValue(threshold!= null ? threshold.getThreshold(): debugThreshold);
         return s;
     }
 
-    protected SegmenterSplitAndMerge getSegmenter(int frame) {
+    protected SegmenterSplitAndMerge getSegmenter(int frame, boolean setMask) {
         SegmenterSplitAndMerge s= segmenter.instanciatePlugin();
-        if (thresholdValueT!=null) ((UseThreshold)s).setThresholdValue(thresholdValueT[frame]);
-        else if (!Double.isNaN(thresholdValue)) ((UseThreshold)s).setThresholdValue(thresholdValue);
+        if (threshold!=null) {
+            if (setMask) ((UseThreshold)s).setThresholdedImage(threshold.getThresholdedPlane(frame, false));
+            else ((UseThreshold)s).setThresholdValue(threshold.getThreshold(frame));
+        } else ((UseThreshold)s).setThresholdValue(debugThreshold);
         return s;
     }
     
@@ -104,7 +106,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     double[] baseGrowthRate;
     PreFilterSequence preFilters; 
     PostFilterSequence postFilters;
-    
+    Threshold threshold;
     
     static int loopLimit=3;
     public static boolean debug=false, debugCorr=false;
@@ -178,8 +180,6 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     public static boolean correctionStep;
     public static Map<String, List<StructureObject>> stepParents;
     private static int step = 0;
-    double thresholdValue = Double.NaN;
-    double[] thresholdValueT;
     
     protected void segmentAndTrack(boolean performCorrection) {
         if (performCorrection && correctionStep) stepParents = new LinkedHashMap<>();
@@ -190,14 +190,15 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (Double.isNaN(debugThreshold) && getSegmenter() instanceof UseThreshold) {
             List<Image> planes = new ArrayList<>();
             for (int t = 0; t<populations.length; ++t) planes.add(((UseThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, parents.get(t)));
-            Threshold t = new Threshold(planes);
-            this.thresholdValue=t.thresholdValue;
+            Threshold t = new ThresholdHisto(planes);
             t.setFrameRange(getFrameRangeContainingCells());
             if (adaptativeThreshold && adaptativeCoefficient>0) {
                 t.setAdaptativeThreshold(adaptativeCoefficient, adaptativeThresholdHalfWindow);
-                thresholdValueT=t.thresholdF;
             }
             return;
+            test sliding (used in adptative by plane)
+            test adaptative by Y
+            test sigmaMu
             // TODO : adaptative by Y
             
             //double[] sigmaMuThresholds = new double[populations.length];
@@ -207,8 +208,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             
             
         } else if (!Double.isNaN(debugThreshold)) {
-            thresholdValue = debugThreshold;
-            logger.debug("Threshold used: {}", thresholdValue);
+            logger.debug("Threshold used: {}", debugThreshold);
         }
         //if (true) return;
         // 1) assign all. Limit to first continuous segment of cells
@@ -218,7 +218,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         for (int t = minT+1; t<populations.length; ++t) {
             if (getObjects(t).isEmpty()) {
                 maxT=t;
-                if (debug || debugCorr) logger.debug("no objects @frame: {}, threhsold: {}", maxT, this.thresholdValueT[maxT]);
+                if ((debug || debugCorr)) logger.debug("no objects @frame: {}, threhsold: {}", maxT, threshold!=null ? threshold.getThreshold(maxT) : debugThreshold);
                 break;
             }
             setAssignmentToTrackAttributes(t, false);
@@ -608,7 +608,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             } else {
                 //logger.debug("tp: {}, seg null? {} image null ? {}", timePoint, getSegmenter(timePoint)==null, parent.getRawImage(structureIdx)==null);
                 Image input = preFilters.filter(parent.getRawImage(structureIdx), parent);
-                ObjectPopulation pop= getSegmenter(timePoint).runSegmenter(input, structureIdx, parent);
+                ObjectPopulation pop= getSegmenter(timePoint, true).runSegmenter(input, structureIdx, parent);
                 pop = postFilters.filter(pop, structureIdx, parent);
                 if (pop!=null) populations[timePoint] = pop.getObjects();
                 else populations[timePoint] = new ArrayList<>(0);

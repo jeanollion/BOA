@@ -43,14 +43,14 @@ public class SplitScenario extends CorrectionScenario {
             super(frame, frame, tracker);
             this.o=o;
             splitObjects= new ArrayList<>();
-            cost = tracker.getSegmenter(frame).split(tracker.getImage(frame), o, splitObjects);
+            cost = tracker.getSegmenter(frame, false).split(tracker.getImage(frame), o, splitObjects);
             if (debugCorr) logger.debug("Split scenario: tp: {}, idx: {}, cost: {} # objects: {}", frame, tracker.populations[frame].indexOf(o), cost, splitObjects.size());
         }
         public SplitScenario(BacteriaClosedMicrochannelTrackerLocalCorrections tracker, Object3D o, int frame, int objectNumber) {
             super(frame, frame, tracker);
             this.o=o;
             splitObjects= new ArrayList<>();
-            cost = tracker.getSegmenter(frame).split(tracker.getImage(frame), o, splitObjects);
+            cost = tracker.getSegmenter(frame, false).split(tracker.getImage(frame), o, splitObjects);
             if (splitObjects.size()>=2 && Double.isFinite(cost) && !Double.isNaN(cost)) {
                 while(splitObjects.size()<objectNumber) {
                     //Collections.sort(splitObjects, (o1, o2) -> Integer.compare(o2.getSize(), o1.getSize())); // biggest object first
@@ -72,7 +72,7 @@ public class SplitScenario extends CorrectionScenario {
             TreeMap<Pair<Double, Object3D>, List<Object3D>> res = new TreeMap(comp);
             for (Object3D oo : objects) {
                 List<Object3D> so= new ArrayList<>();
-                double c = tracker.getSegmenter(timePointMin).split(tracker.getImage(timePointMin), oo, so);
+                double c = tracker.getSegmenter(timePointMin, false).split(tracker.getImage(timePointMin), oo, so);
                 if (so.size()>=2 && Double.isFinite(c) && !Double.isNaN(c)) res.put(new Pair(c, oo), so);
             }
             return res;

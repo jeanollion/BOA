@@ -387,9 +387,8 @@ public class BoundingBox {
     public String toString() {
         return "xMin: "+xMin+" xMax: "+xMax+" yMin: "+yMin+" yMax: "+yMax+" zMin: "+zMin+" zMax: "+zMax;
     }
-    
     public void loop(LoopFunction function) {
-        function.setUp();
+        if (function instanceof LoopFunction2) ((LoopFunction2)function).setUp();
         for (int z = zMin; z<=zMax; ++z) {
             for (int y = yMin; y<=yMax; ++y) {
                 for (int x=xMin; x<=xMax; ++x) {
@@ -397,14 +396,14 @@ public class BoundingBox {
                 }
             }
         }
-        function.tearDown();
+        if (function instanceof LoopFunction2) ((LoopFunction2)function).tearDown();
     }
     
-    public static interface LoopFunction {
+    public static interface LoopFunction2 extends LoopFunction {
         public void setUp();
         public void tearDown();
+    }
+    public static interface LoopFunction {
         public void loop(int x, int y, int z);
     }
-
-    
 }

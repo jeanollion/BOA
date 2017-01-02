@@ -25,6 +25,7 @@ import static image.ImageOperations.Axis.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Function;
 import processing.Filters;
 
 /**
@@ -657,7 +658,7 @@ public class ImageOperations {
         return min;
     }
     
-    public static double[] getMeanAndSigma(Image image, ImageMask mask) {
+    public static double[] getMeanAndSigma(Image image, ImageMask mask, Function<Double, Boolean> useValue) {
         if (mask==null) mask = new BlankMask(image);
         double mean = 0;
         double count = 0;
@@ -667,15 +668,17 @@ public class ImageOperations {
             for (int xy = 0; xy < image.getSizeXY(); ++xy) {
                 if (mask.insideMask(xy, z)) {
                     value = image.getPixel(xy, z);
-                    mean += value;
-                    count++;
-                    values2 += value * value;
+                    if (useValue==null || useValue.apply(value)) {
+                        mean += value;
+                        count++;
+                        values2 += value * value;
+                    }
                 }
             }
         }
         mean /= count;
         values2 /= count;
-        return new double[]{mean, Math.sqrt(values2 - mean * mean)};
+        return new double[]{mean, Math.sqrt(values2 - mean * mean), count};
     }
     
     /**

@@ -31,6 +31,7 @@ import image.ImageMask;
 import image.ImageOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.function.Function;
 import static plugins.Plugin.logger;
 import plugins.Transformation;
 import utils.ThreadRunner;
@@ -131,7 +132,8 @@ public class ScaleHistogramSignalExclusion implements Transformation {
             if (vertical) homogenizeVerticalLines(exclusionMask);
         }
         else exclusionMask = new BlankMask(image);
-        double[] res=  excludeZero? getMeanAndSigmaExcludeZero(image, exclusionMask) : ImageOperations.getMeanAndSigma(image, exclusionMask);
+        Function<Double, Boolean> func = excludeZero ? v -> v!=0: null;
+        double[] res=  ImageOperations.getMeanAndSigma(image, exclusionMask, func);
         long t1 = System.currentTimeMillis();
         //logger.debug("ScaleHistogram signal exclusion: timePoint: {}, mean sigma: {}, signal exclusion? {}, processing time: {}", timePoint, res, exclusionSignal!=null, t1-t0);
         return new Double[]{res[0], res[1]};
@@ -148,30 +150,7 @@ public class ScaleHistogramSignalExclusion implements Transformation {
             }
         }
     }
-    
-    public static double[] getMeanAndSigmaExcludeZero(Image image, ImageMask mask) {
-        if (mask==null) mask = new BlankMask(image);
-        double mean = 0;
-        double count = 0;
-        double values2 = 0;
-        double value;
-        for (int z = 0; z < image.getSizeZ(); ++z) {
-            for (int xy = 0; xy < image.getSizeXY(); ++xy) {
-                if (mask.insideMask(xy, z)) {
-                    value = image.getPixel(xy, z);
-                    if (value!=0) {
-                        mean += value;
-                        count++;
-                        values2 += value * value;
-                    }
-                }
-            }
-        }
-        mean /= count;
-        values2 /= count;
-        return new double[]{mean, Math.sqrt(values2 - mean * mean)};
-    }
-    
+        
     public ImageFloat applyTransformation(int channelIdx, int timePoint, Image image) {
         if (meanSigmaT==null || meanSigmaT.isEmpty() || meanSigmaT.size()<timePoint) throw new Error("ScaleHistogram transformation not configured: "+ (meanSigmaT==null?"null":  meanSigmaT.size()));
         ArrayList<Double> muSig = this.meanSigmaT.get(timePoint);

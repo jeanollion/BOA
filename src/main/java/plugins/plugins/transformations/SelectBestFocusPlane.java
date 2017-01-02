@@ -85,7 +85,7 @@ public class SelectBestFocusPlane implements Transformation {
     
     private static double eval(Image plane, double scale) {
         Image gradient = ImageFeatures.getGradientMagnitude(plane, scale, false);
-        return ImageOperations.getMeanAndSigma(gradient, null)[0];
+        return ImageOperations.getMeanAndSigma(gradient, null, null)[0];
     }
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {

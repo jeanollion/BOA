@@ -81,7 +81,7 @@ public abstract class ObjectModifier extends CorrectionScenario {
             super(frame);
             this.source=source;
             values = new ArrayList(2);
-            cost = tracker.getSegmenter(frame).split(tracker.getImage(frame), source, values);
+            cost = tracker.getSegmenter(frame, false).split(tracker.getImage(frame), source, values);
             if (Double.isInfinite(cost) || Double.isNaN(cost) || values.size()!=2) {
                 cost = Double.POSITIVE_INFINITY;
                 values.clear();
@@ -115,7 +115,7 @@ public abstract class ObjectModifier extends CorrectionScenario {
             super(frame);
             this.source = source;
             BacteriaTrans.debug=true;
-            cost = tracker.getSegmenter(frame).computeMergeCost(tracker.getImage(frame), listSource());
+            cost = tracker.getSegmenter(frame, false).computeMergeCost(tracker.getImage(frame), listSource());
             BacteriaTrans.debug=false;
             List<Voxel> vox = new ArrayList(source.key.getVoxels().size()+source.value.getVoxels().size());
             vox.addAll(source.key.getVoxels()); vox.addAll(source.value.getVoxels());

@@ -17,127 +17,68 @@
  */
 package plugins.plugins.trackers.bacteriaInMicrochannelTracker;
 
-import ij.process.AutoThresholder;
+import image.BoundingBox;
 import image.Image;
 import image.ImageByte;
-import image.ImageOperations;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import static plugins.Plugin.logger;
-import plugins.plugins.thresholders.IJAutoThresholder;
-import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.adaptativeThresholdHalfWindow;
-import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debug;
-import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr;
-import utils.Utils;
 
 /**
  *
  * @author jollion
  */
-public class Threshold {
-
-    double thresholdValue;
-    final double saturateValue;
-    final int saturateValue256;
-    double minAndMax[];
-    final boolean byteHisto;
-    double[] thresholdF;
-    BiFunction<Integer, Integer, Double> getTimeYThreshold;
-    final List<int[]> histos;
+public abstract class Threshold {
     final List<Image> planes;
-    int[] frameRange;
-    public double getThreshold(int frame) {
-        if (thresholdF==null) return thresholdValue;
-        else return thresholdF[frame];
-    }
-    public double getThreshold(int frame, int y) {
-        if (getTimeYThreshold==null) return getThreshold(frame);
-        return getTimeYThreshold.apply(frame, y);
-    }
-    
-    
     public Threshold(List<Image> planes) {
         this.planes=planes;
-        this.frameRange=new int[]{0, planes.size()-1};
-        byteHisto = planes.get(0) instanceof ImageByte;
-        long t0 = System.currentTimeMillis();
-        minAndMax = new double[2];
-        histos = ImageOperations.getHisto256AsList(planes, minAndMax);
-        long t1 = System.currentTimeMillis();
-        int[] histoAll = new int[256];
-        for (int[] h : histos) ImageOperations.addHisto(h, histoAll, true);
-        // saturate histogram to remove device aberations 
-        saturateValue256 = (int)IJAutoThresholder.runThresholder(AutoThresholder.Method.Shanbhag, histoAll, minAndMax, true); // byteImage=true to get a 8-bit value
-        saturateValue =  byteHisto ? saturateValue256 : IJAutoThresholder.convertHisto256Threshold(saturateValue256, minAndMax);
-        for (int i = saturateValue256; i<256; ++i) histoAll[i]=0;
-        thresholdValue = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histoAll, minAndMax, byteHisto);
-        long t2 = System.currentTimeMillis();
-        if (debug || debugCorr) logger.debug("Threshold Value over all time: {}, minAndMax: {}, byte?{}, saturate value: {} ({})", thresholdValue, minAndMax, byteHisto, saturateValue256, saturateValue);
-        if (debug || debugCorr) logger.debug("getHistos: {}ms, compute 1st thld: {}ms", t1-t0, t2-t1);
     }
-    public void setFrameRange(int[] frameRange) {
-        if (frameRange==null) return;
-        this.frameRange=frameRange;
-        if (saturateValue256<255 || frameRange[0]>0 || frameRange[1]<planes.size()-1) { // update min and max if necessary
-            List<Image> planesSub = planes.subList(frameRange[0], frameRange[1]+1);
-            double[] minAndMaxNew = ImageOperations.getMinAndMax(planesSub);
-            minAndMaxNew[1] = saturateValue;
-            if (minAndMaxNew[0]!=minAndMax[0] || minAndMaxNew[1]!=minAndMax[1]) {
-                minAndMax = minAndMaxNew;
-                List<int[]> histosSub = ImageOperations.getHisto256AsList(planesSub, minAndMax);
-                for (int i = 0; i<histosSub.size(); ++i) {
-                    saturateHistogram(histosSub.get(i));
-                    histos.set(i+frameRange[0], histosSub.get(i)); // replace new histograms
-                }
-                int[] histoAll = new int[256];
-                for (int[] h : histosSub) ImageOperations.addHisto(h, histoAll, true);
-                thresholdValue = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histoAll, minAndMax, byteHisto);
-                if (debug || debugCorr) logger.debug("new threshold value: {}", thresholdValue);
-            }
+    public abstract void setFrameRange(int[] frameRange);
+    public abstract double getThreshold(int frame);
+    public abstract double getThreshold(int frame, int y);
+    public ImageByte getThresholdedPlane(int frame, boolean backgroundUnderThreshold) {
+        Image im = planes.get(frame);
+        ImageByte res=  new ImageByte("thld", im);
+        res.getBoundingBox().translateToOrigin().loop((int x, int y, int z) -> {
+            if (im.getPixel(x, y, z) > getThreshold(frame, y) == backgroundUnderThreshold) res.setPixel(x, y, z, 1);
+        });
+        return res;
+    }
+    public abstract void setAdaptativeByY(int yHalfWindow);
+    public abstract void setAdaptativeThreshold(double adaptativeCoefficient, int adaptativeThresholdHalfWindow);
+    public abstract double getThreshold();
+    public static double[] interpolate(double[] values, int interval, int length) {
+        double[] res = new double[length];
+        Arrays.fill(res, 0, interval+1, values[0]);
+        Arrays.fill(res, values.length*interval, length, values[values.length-1]);
+        for (int i = interval+1; i<values.length*interval; ++i) { // smooth: linear approx between points
+            int idx = i/interval;
+            double d = (double)i%interval / (double)interval;
+            res[i] = (values[idx] * (1-d) + values[idx+1] * d);
         }
+        return res;
     }
-    public void setAdaptativeThreshold(double adaptativeCoefficient, int adaptativeThresholdHalfWindow) {
-        //SigmaMuThresholder.getStatistics(planes, 20, thresholdValue, true);
-        //if (true) return;
-        
-        long t4 = System.currentTimeMillis();
-        // adaptative threhsold on sliding window histo mean
-        if (adaptativeThresholdHalfWindow*2 < frameRange[1] - frameRange[0] ) {
-            thresholdF = new double[planes.size()];
-            int fMin = frameRange[0]; 
-            int fMax = fMin+2*adaptativeThresholdHalfWindow;
-            int[] histo = new int[256];
-            for (int f = fMin; f<=fMax; ++f) ImageOperations.addHisto(histos.get(f), histo, true);
-            //for (int i = higthThldLimit256; i<256; ++i) histo[i]=0; // saturate histogram to remove device aberations 
-            double t = (1-adaptativeCoefficient) * thresholdValue + adaptativeCoefficient * IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo, minAndMax, planes.get(0) instanceof ImageByte);
-            for (int f = fMin; f<=fMin+adaptativeThresholdHalfWindow; ++f) thresholdF[f] = t; // this histo is valid until fMin + window
-            while (fMax<frameRange[1]) {
-                ++fMax;
-                ImageOperations.addHisto(histos.get(fMax), histo, true); 
-                ImageOperations.addHisto(histos.get(fMin), histo, false);
-                //for (int i = higthThldLimit256; i<256; ++i) histo[i]=0; // saturate histogram to remove device aberations 
-                ++fMin;
-                thresholdF[fMin+adaptativeThresholdHalfWindow] = IJAutoThresholder.runThresholder(AutoThresholder.Method.Otsu, histo, minAndMax, planes.get(0) instanceof ImageByte);
-                thresholdF[fMin+adaptativeThresholdHalfWindow] = adaptativeCoefficient * thresholdF[fMin+adaptativeThresholdHalfWindow] + (1-adaptativeCoefficient) * thresholdValue;
-            }
-            for (int f = fMin+adaptativeThresholdHalfWindow+1; f<=frameRange[1]; ++f) thresholdF[f] = thresholdF[fMin+adaptativeThresholdHalfWindow]; // this histo is valid until last frame
-            long t5 = System.currentTimeMillis();
-            if (debug || debugCorr) {
-                logger.debug("framewindow: {}", frameRange);
-                Utils.plotProfile("Thresholds", thresholdF);
-                logger.debug("compute threshold window: {}ms", t5-t4);
-            }
-        } 
+    public static <T, A, R> List<R> slide(List<T> list, int halfWindow, SlidingOperator<T, A, R> operator) {
+        if (list.isEmpty()) return Collections.EMPTY_LIST;
+        if (list.size()<2*halfWindow+1) halfWindow = (list.size()-1)/2;
+        A acc = operator.instanciateAccumulator();
+        List<R> res = new ArrayList<>(list.size());
+        for (int i = 0; i<=2*halfWindow+1; ++i) operator.slide(null, list.get(i), acc);
+        R start = operator.compute(acc);
+        for (int i = 0; i<=halfWindow; ++i) res.add(start);
+        T lastE = list.get(halfWindow);
+        for (int i = halfWindow+1; i<=list.size()-halfWindow; ++i) {
+            operator.slide(lastE, lastE=list.get(i), acc);
+            res.add(operator.compute(acc));
+        }
+        R end = res.get(res.size()-1);
+        for (int i = list.size()-halfWindow+1; i<list.size(); ++i) res.add(end);
+        return res;
     }
-    
-    private void saturateHistogram(int[] histo256) {
-        if (byteHisto) for (int i = saturateValue256; i<256; ++i) histo256[i] = 0;
-        else histo256[255] = 0; // assumes has been computed with maxValue = saturateValue
+    public static interface SlidingOperator<T, A, R> {
+        public A instanciateAccumulator();
+        public void slide(T removeElement, T addElement, A accumulator);
+        public R compute(A accumulator);
     }
-    
-    /*public void setAdaptativeByY(int yHalfWindow) {
-        
-    }*/
-    
 }
