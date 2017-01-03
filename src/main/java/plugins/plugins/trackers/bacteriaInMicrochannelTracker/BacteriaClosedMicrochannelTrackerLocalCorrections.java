@@ -190,15 +190,15 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (Double.isNaN(debugThreshold) && getSegmenter() instanceof UseThreshold) {
             List<Image> planes = new ArrayList<>();
             for (int t = 0; t<populations.length; ++t) planes.add(((UseThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, parents.get(t)));
-            Threshold t = new ThresholdHisto(planes);
-            t.setFrameRange(getFrameRangeContainingCells());
+            threshold = new ThresholdHisto(planes);
+            //Threshold t = new ThresholdSigmaMu(planes);
+            threshold.setFrameRange(getFrameRangeContainingCells());
             if (adaptativeThreshold && adaptativeCoefficient>0) {
-                t.setAdaptativeThreshold(adaptativeCoefficient, adaptativeThresholdHalfWindow);
+                threshold.setAdaptativeThreshold(adaptativeCoefficient, adaptativeThresholdHalfWindow);
+                threshold.setAdaptativeByY(30);
             }
-            return;
-            test sliding (used in adptative by plane)
-            test adaptative by Y
-            test sigmaMu
+            //return;
+            //test sigmaMu
             // TODO : adaptative by Y
             
             //double[] sigmaMuThresholds = new double[populations.length];
@@ -283,7 +283,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (maxT<=minT) return null;
         if (inc>1) while (maxT<populations.length-1 && !getObjects(maxT+1).isEmpty()) maxT++; // forward
         
-        if (maxT<populations.length-1 || minT>0) for (int i = minT; i<=maxT; ++i) populations[i]=null; // reset objects
+        for (int i = 0; i<populations.length; ++i) populations[i]=null; // reset objects
         
         return new int[]{minT, maxT};
     }
@@ -612,6 +612,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 pop = postFilters.filter(pop, structureIdx, parent);
                 if (pop!=null) populations[timePoint] = pop.getObjects();
                 else populations[timePoint] = new ArrayList<>(0);
+                
             }
             //logger.debug("get object @ {}, size: {}", timePoint, populations[timePoint].size());
             createAttributes(timePoint);

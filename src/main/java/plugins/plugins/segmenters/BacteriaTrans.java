@@ -775,10 +775,10 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             }
             
             @Override public void updateSortValue() {
-                if (voxels.size()<=2) curvatureValue=Double.NEGATIVE_INFINITY; // when border is too small curvature may not be computable, but objects should not be merged
+                if (voxels.size()<=-1) curvatureValue=Double.NEGATIVE_INFINITY; // when border is too small curvature may not be computable, but objects should not be merged
                 else if (getCurvature()!=null) {
                     curvatureValue = getMeanOfMinCurvature();
-                } 
+                } //else logger.debug("no curvature found for: {}", this);
                 if (Double.isNaN(curvatureValue)) curvatureValue = Double.NEGATIVE_INFINITY; // curvature cannot be computed for objects too small
                 //else logger.debug("curvature null");
             }
@@ -806,7 +806,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 
                 // criterion on curvature
                 // curvature has been computed @ upadateSortValue
-                if (debug) logger.debug("interface: {}+{}, Mean curvature: {}, Threshold: {}", e1.getLabel(), e2.getLabel(), curvatureValue, curvatureThreshold);
+                if (debug| ProcessingVariables.this.splitVerbose) logger.debug("interface: {}+{}, Mean curvature: {}, Threshold: {}", e1.getLabel(), e2.getLabel(), curvatureValue, curvatureThreshold);
                 if (curvatureValue<curvatureThreshold) return false;
                 
                 double max1 = Double.NEGATIVE_INFINITY;
@@ -850,14 +850,14 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 return min;
             }
             public double getMeanOfMinCurvature() {
-                //logger.debug("size mean of min: b1: {}, b2: {}", borderVoxels.size(), borderVoxels2.size());
                 if (borderVoxels.isEmpty() && borderVoxels2.isEmpty()) {
+                    if (debug| ProcessingVariables.this.splitVerbose) logger.debug("{} : NO BORDER VOXELS");
                     if (voxels.isEmpty()) return Double.NEGATIVE_INFINITY;
                     else return Double.POSITIVE_INFINITY;
                 }
                 else {    
                     if (borderVoxels2.isEmpty()) {
-                        //logger.debug("mean of min: b1: {}", getMinCurvature(borderVoxels));
+                        if (debug| ProcessingVariables.this.splitVerbose) logger.debug("{}, GET CURV: {}, borderVoxels: {}", this, getMinCurvature(borderVoxels), borderVoxels.size());
                         return getMinCurvature(borderVoxels);
                     }
                     else {
@@ -865,8 +865,9 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                         //return 0.5 * (getMinCurvature(borderVoxels)+ getMinCurvature(borderVoxels2));
                         double min1 = getMinCurvature(borderVoxels);
                         double min2 = getMinCurvature(borderVoxels2);
-                        if (Math.abs(min1-min2)>2*Math.abs(curvatureThreshold)) return Math.max(min1, min2); // when one side has a curvature very different from the other -> hole -> do not take into acount // TODO: check generality of criterion. put parameter? 
-                        else return 0.5 * (min1 + min2);
+                        double res = (Math.abs(min1-min2)>2*Math.abs(curvatureThreshold)) ? Math.max(min1, min2) : 0.5 * (min1 + min2); // when one side has a curvature very different from the other -> hole -> do not take into acount // TODO: check generality of criterion. put parameter? 
+                        if (debug | ProcessingVariables.this.splitVerbose) logger.debug("{}, GET CURV: {}&{} -> {} , borderVoxels: {}&{}", this, min1, min2, res, borderVoxels.size(), borderVoxels2.size());
+                        return res;
                     }
                 }
             }
@@ -892,17 +893,17 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 ImageInteger mask = getJoinedMask();
                 Set<Voxel> allBorderVoxels = new HashSet<>();
                 for (Voxel v : voxels) if (borderNeigh.hasNullValue(v.x-mask.getOffsetX(), v.y-mask.getOffsetY(), v.z-mask.getOffsetZ(), mask, true)) allBorderVoxels.add(v);
+                if ((debug| ProcessingVariables.this.splitVerbose) && allBorderVoxels.isEmpty()) ImageWindowManagerFactory.showImage(mask.duplicate("joindedMask "+this));
                 //logger.debug("all border voxels: {}", allBorderVoxels.size());
                 populateBoderVoxel(allBorderVoxels);
             }
             
             private void populateBoderVoxel(Collection<Voxel> allBorderVoxels) {
-                borderVoxels2.clear();
                 if (allBorderVoxels.isEmpty()) return;
-                else if (allBorderVoxels.size() >= Math.min(e1.getVoxels().size(), e2.getVoxels().size())/2) {
+                /*else if (allBorderVoxels.size() >= Math.min(e1.getVoxels().size(), e2.getVoxels().size())/2) {
                     curvatureValue=Double.NEGATIVE_INFINITY;
                     return;
-                }
+                }*/
                 BoundingBox b = new BoundingBox();
                 for (Voxel v : allBorderVoxels) b.expand(v);
                 ImageByte mask = new ImageByte("", b.getImageProperties());
@@ -910,7 +911,6 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 ObjectPopulation pop = new ObjectPopulation(mask, false);
                 pop.translate(b, false);
                 List<Object3D> l = pop.getObjects();
-                borderVoxels.clear();
                 if (l.isEmpty()) logger.error("interface: {}, no side found", this);
                 else if (l.size()>=1) { // case of small borders -> only one distinct side
                     borderVoxels.addAll(l.get(0).getVoxels());   

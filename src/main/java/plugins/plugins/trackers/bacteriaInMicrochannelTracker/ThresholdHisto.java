@@ -106,13 +106,10 @@ public class ThresholdHisto extends Threshold {
         }
     }
     @Override public void setAdaptativeThreshold(double adaptativeCoefficient, int adaptativeThresholdHalfWindow) {
-        //SigmaMuThresholder.getStatistics(planes, 20, thresholdValue, true);
-        //if (true) return;
-        
         long t4 = System.currentTimeMillis();
         // adaptative threhsold on sliding window histo mean
         if (adaptativeThresholdHalfWindow*2 < frameRange[1] - frameRange[0] ) {
-            List<Double> slide = Threshold.slide(histos, adaptativeThresholdHalfWindow, new SlidingOperator<int[], int[], Double>() {
+            List<Double> slide = Threshold.slide(histos.subList(frameRange[0], frameRange[1]+1), adaptativeThresholdHalfWindow, new SlidingOperator<int[], int[], Double>() {
                 @Override
                 public int[] instanciateAccumulator() {
                     return new int[256];
@@ -128,30 +125,16 @@ public class ThresholdHisto extends Threshold {
                     return adaptativeCoefficient * thld + (1-adaptativeCoefficient) * thresholdValue;
                 }
             });
-            thresholdF = ArrayUtil.toPrimitive(slide);
-            /*
-            thresholdF = new double[planes.size()];
-            int fMin = frameRange[0]; 
-            int fMax = fMin+2*adaptativeThresholdHalfWindow;
-            int[] histo = new int[256];
-            for (int f = fMin; f<=fMax; ++f) ImageOperations.addHisto(histos.get(f), histo, true);
-            //for (int i = higthThldLimit256; i<256; ++i) histo[i]=0; // saturate histogram to remove device aberations 
-            double t = (1-adaptativeCoefficient) * thresholdValue + adaptativeCoefficient * IJAutoThresholder.runThresholder(thldMethod, histo, minAndMax, byteHisto);
-            for (int f = fMin; f<=fMin+adaptativeThresholdHalfWindow; ++f) thresholdF[f] = t; // this histo is valid until fMin + window
-            while (fMax<frameRange[1]) {
-                ++fMax;
-                ImageOperations.addHisto(histos.get(fMax), histo, true); 
-                ImageOperations.addHisto(histos.get(fMin), histo, false);
-                //for (int i = higthThldLimit256; i<256; ++i) histo[i]=0; // saturate histogram to remove device aberations 
-                ++fMin;
-                thresholdF[fMin+adaptativeThresholdHalfWindow] = IJAutoThresholder.runThresholder(thldMethod, histo, minAndMax, byteHisto);
-                thresholdF[fMin+adaptativeThresholdHalfWindow] = adaptativeCoefficient * thresholdF[fMin+adaptativeThresholdHalfWindow] + (1-adaptativeCoefficient) * thresholdValue;
+            if (frameRange[0]>0) {  // slide indices to initial range
+                Double[] start = new Double[frameRange[0]];
+                Arrays.fill(start, slide.get(0));
+                slide.addAll(0, Arrays.asList(start));
             }
-            for (int f = fMin+adaptativeThresholdHalfWindow+1; f<=frameRange[1]; ++f) thresholdF[f] = thresholdF[fMin+adaptativeThresholdHalfWindow]; // this histo is valid until last frame
-            */
+            thresholdF = ArrayUtil.toPrimitive(slide);
+            
             long t5 = System.currentTimeMillis();
             if (debug || debugCorr) {
-                logger.debug("framewindow: {}", frameRange);
+                logger.debug("framewindow: {}, subList: {}, thlds length: {}", frameRange, histos.subList(frameRange[0], frameRange[1]+1).size(), slide.size());
                 Utils.plotProfile("Thresholds", thresholdF);
                 logger.debug("compute threshold window: {}ms", t5-t4);
             }
@@ -172,8 +155,10 @@ public class ThresholdHisto extends Threshold {
             if (i.getSizeY()>yMax) yMax = i.getSizeY();
         }
         yMean/=planes.size();
-        double[] coeffs = new double[(int)(yMean / 2*yHalfWindow)];
-        for (int i = 0; i<coeffs.length; ++i) coeffs[i] = getThld(2*i*yHalfWindow, (2*i+1)*yHalfWindow) / thresholdValue;
+        double[] coeffs = new double[(int)(yMean / yHalfWindow)+1];
+        for (int i = 1; i<coeffs.length-1; ++i) coeffs[i] = getThld((i-1) * yHalfWindow, (i+1)*yHalfWindow) / thresholdValue;
+        coeffs[0] = coeffs[1];
+        coeffs[coeffs.length-1]=getThld((coeffs.length-2)*yHalfWindow, yMax) / thresholdValue;
         thldCoeffY = interpolate(coeffs, yHalfWindow, yMax);
         long t2 = System.currentTimeMillis();
         if (debug || debugCorr) {
@@ -183,8 +168,8 @@ public class ThresholdHisto extends Threshold {
     }
     private double getThld(int yMin, int yMax) {
         int[] histo = new int[256];
-        for (Image i : planes) {
-            int[] h = i.getHisto256(minAndMax[0], minAndMax[1], null, new BoundingBox(0, i.getSizeX()-1, yMin, Math.min(i.getSizeY(), yMax), 0, i.getSizeZ()-1));
+        for (Image i : planes.subList(frameRange[0], frameRange[1]+1)) {
+            int[] h = i.getHisto256(minAndMax[0], minAndMax[1], null, new BoundingBox(0, i.getSizeX()-1, yMin, Math.min(i.getSizeY()-1, yMax), 0, i.getSizeZ()-1));
             saturateHistogram(h);
             for (int j = 0; j < 256; ++j) histo[j] += h[j];   
         }

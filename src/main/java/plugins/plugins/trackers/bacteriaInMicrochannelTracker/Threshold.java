@@ -17,6 +17,7 @@
  */
 package plugins.plugins.trackers.bacteriaInMicrochannelTracker;
 
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import image.BoundingBox;
 import image.Image;
 import image.ImageByte;
@@ -24,6 +25,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.logger;
+import utils.Utils;
 
 /**
  *
@@ -37,12 +40,21 @@ public abstract class Threshold {
     public abstract void setFrameRange(int[] frameRange);
     public abstract double getThreshold(int frame);
     public abstract double getThreshold(int frame, int y);
+    //public static boolean showOne = false;
     public ImageByte getThresholdedPlane(int frame, boolean backgroundUnderThreshold) {
         Image im = planes.get(frame);
         ImageByte res=  new ImageByte("thld", im);
         res.getBoundingBox().translateToOrigin().loop((int x, int y, int z) -> {
             if (im.getPixel(x, y, z) > getThreshold(frame, y) == backgroundUnderThreshold) res.setPixel(x, y, z, 1);
         });
+        /*if (showOne) {
+            double[] thld = new double[im.getSizeY()];
+            for (int y = 0; y<thld.length; ++y) thld[y] = getThreshold(frame, y);
+            Utils.plotProfile("thld Y", thld);
+            showOne = false;
+            ImageWindowManagerFactory.showImage(im.duplicate("image to be thlded"));
+            ImageWindowManagerFactory.showImage(res.duplicate("thlded mask"));
+        }*/
         return res;
     }
     public abstract void setAdaptativeByY(int yHalfWindow);
@@ -50,9 +62,8 @@ public abstract class Threshold {
     public abstract double getThreshold();
     public static double[] interpolate(double[] values, int interval, int length) {
         double[] res = new double[length];
-        Arrays.fill(res, 0, interval+1, values[0]);
-        Arrays.fill(res, values.length*interval, length, values[values.length-1]);
-        for (int i = interval+1; i<values.length*interval; ++i) { // smooth: linear approx between points
+        Arrays.fill(res, (values.length-1)*interval, length, values[values.length-1]);
+        for (int i = 0; i<(values.length-1)*interval; ++i) { // smooth: linear approx between points
             int idx = i/interval;
             double d = (double)i%interval / (double)interval;
             res[i] = (values[idx] * (1-d) + values[idx+1] * d);
@@ -64,16 +75,15 @@ public abstract class Threshold {
         if (list.size()<2*halfWindow+1) halfWindow = (list.size()-1)/2;
         A acc = operator.instanciateAccumulator();
         List<R> res = new ArrayList<>(list.size());
-        for (int i = 0; i<=2*halfWindow+1; ++i) operator.slide(null, list.get(i), acc);
+        for (int i = 0; i<=2*halfWindow; ++i) operator.slide(null, list.get(i), acc);
         R start = operator.compute(acc);
         for (int i = 0; i<=halfWindow; ++i) res.add(start);
-        T lastE = list.get(halfWindow);
-        for (int i = halfWindow+1; i<=list.size()-halfWindow; ++i) {
-            operator.slide(lastE, lastE=list.get(i), acc);
+        for (int i = halfWindow+1; i<list.size()-halfWindow; ++i) {
+            operator.slide(list.get(i-halfWindow-1), list.get(i+halfWindow), acc);
             res.add(operator.compute(acc));
         }
         R end = res.get(res.size()-1);
-        for (int i = list.size()-halfWindow+1; i<list.size(); ++i) res.add(end);
+        for (int i = list.size()-halfWindow; i<list.size(); ++i) res.add(end);
         return res;
     }
     public static interface SlidingOperator<T, A, R> {

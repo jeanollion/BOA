@@ -19,6 +19,7 @@ package boa.gui.imageInteraction;
 
 import boa.gui.GUI;
 import static boa.gui.imageInteraction.ImageWindowManagerFactory.ImageEnvironnement.IJ;
+import image.Image;
 
 /**
  *
@@ -33,6 +34,9 @@ public class ImageWindowManagerFactory {
             if (currentImageDisplayerType.equals(IJ)) currentImageManager = new IJImageWindowManager(GUI.hasInstance()?GUI.getInstance():null);
         }
         return currentImageManager;
+    }
+    public static void showImage(Image image) {
+        getImageManager().getDisplayer().showImage(image);
     }
     public static ImageDisplayer instanciateDisplayer() {
         if (currentImageDisplayerType.equals(IJ)) return new IJImageDisplayer();

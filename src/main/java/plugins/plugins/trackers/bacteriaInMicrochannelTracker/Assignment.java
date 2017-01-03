@@ -116,10 +116,7 @@ public class Assignment {
             if (prev) {
                 if (!prevObjects.isEmpty()) {
                     sizePrev-=ta.sizeFunction.apply(prevObjects.remove(removeFirst ? 0 : prevObjects.size()-1));
-                    if (removeFirst) {
-                        if (prev) idxPrev++;
-                        else idxNext++;
-                    }
+                    if (removeFirst) idxPrev++;
                     previousSizeIncrement = Double.NaN;
                     currentScore=null;
                     return true;
@@ -127,6 +124,7 @@ public class Assignment {
             } else {
                 if (!nextObjects.isEmpty()) {
                     sizeNext-=ta.sizeFunction.apply(nextObjects.remove(removeFirst ? 0 : nextObjects.size()-1));
+                    if (removeFirst) idxNext++;
                     return true;
                 } else return false;
             }
@@ -221,8 +219,8 @@ public class Assignment {
         }
         
         public int getErrorCount() {
-            int res =  Math.max(0, nextObjects.size()-2) + // division in more than 2
-                    prevObjects.size()-1; // merging
+            int res = Math.max(Math.max(0, nextObjects.size()-2), prevObjects.size()-1);
+            //int res =  Math.max(0, nextObjects.size()-2) + prevObjects.size()-1; // division in more than 2 + merging
             //if ((!verifyInequality() || significantSizeIncrementError()) && !truncatedEndOfChannel()) ++res; // bad size increment
             if (!truncatedEndOfChannel()) {
                 if (!verifyInequality()) res+=1;
