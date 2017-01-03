@@ -37,24 +37,25 @@ public abstract class Threshold {
     public Threshold(List<Image> planes) {
         this.planes=planes;
     }
+    public abstract int[] getFrameRange();
     public abstract void setFrameRange(int[] frameRange);
     public abstract double getThreshold(int frame);
     public abstract double getThreshold(int frame, int y);
-    //public static boolean showOne = false;
+    public static boolean showOne = false;
     public ImageByte getThresholdedPlane(int frame, boolean backgroundUnderThreshold) {
         Image im = planes.get(frame);
         ImageByte res=  new ImageByte("thld", im);
         res.getBoundingBox().translateToOrigin().loop((int x, int y, int z) -> {
             if (im.getPixel(x, y, z) > getThreshold(frame, y) == backgroundUnderThreshold) res.setPixel(x, y, z, 1);
         });
-        /*if (showOne) {
+        if (showOne) {
             double[] thld = new double[im.getSizeY()];
             for (int y = 0; y<thld.length; ++y) thld[y] = getThreshold(frame, y);
             Utils.plotProfile("thld Y", thld);
             showOne = false;
             ImageWindowManagerFactory.showImage(im.duplicate("image to be thlded"));
             ImageWindowManagerFactory.showImage(res.duplicate("thlded mask"));
-        }*/
+        }
         return res;
     }
     public abstract void setAdaptativeByY(int yHalfWindow);

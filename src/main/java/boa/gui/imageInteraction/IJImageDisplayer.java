@@ -55,7 +55,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
             ij.ImageJ.main(new String[0]);
             //new ImageJ();
         }
-        if (imageExistButHasBeenClosed(image)) {
+        if (imageExistsButHasBeenClosed(image)) {
             displayedImagesInv.remove(displayedImages.get(image));
             displayedImages.remove(image);
         }
@@ -77,6 +77,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         else zoom(ip, ImageDisplayer.zoomMagnitude);
         return ip;
     }
+    
     public void flush() {
         for (ImagePlus ip : displayedImages.values()) if (ip.isVisible()) ip.close();
         displayedImages.clear();
@@ -85,7 +86,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
     /*@Override public boolean isVisible(Image image) {
         return displayedImages.containsKey(image) && displayedImages.get(image).isVisible();
     }*/
-    private boolean imageExistButHasBeenClosed(Image image) {
+    private boolean imageExistsButHasBeenClosed(Image image) {
         return displayedImages.get(image)!=null && displayedImages.get(image).getCanvas()==null;
     }
     

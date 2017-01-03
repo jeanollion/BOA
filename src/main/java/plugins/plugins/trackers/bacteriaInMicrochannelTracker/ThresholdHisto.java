@@ -30,6 +30,7 @@ import java.util.function.Function;
 import org.apache.commons.lang.ArrayUtils;
 import static plugins.Plugin.logger;
 import plugins.plugins.thresholders.IJAutoThresholder;
+import plugins.plugins.thresholders.Percentage;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.adaptativeThresholdHalfWindow;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debug;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr;
@@ -44,7 +45,7 @@ public class ThresholdHisto extends Threshold {
 
     double thresholdValue;
     final double saturateValue;
-    final int saturateValue256;
+    int saturateValue256;
     double minAndMax[];
     final boolean byteHisto;
     double[] thresholdF;
@@ -52,7 +53,8 @@ public class ThresholdHisto extends Threshold {
     final List<int[]> histos;
     int[] frameRange;
     final static AutoThresholder.Method thldMethod = AutoThresholder.Method.Otsu;
-    final static AutoThresholder.Method saturateMethod = AutoThresholder.Method.Shanbhag;
+    final static AutoThresholder.Method saturateMethod = AutoThresholder.Method.Shanbhag; // Avec sub: shanbhag. Pas de sub: : MaxEntropy / Triangle
+    final static double saturateProportion = 0.02;
     @Override public double getThreshold() {
         return thresholdValue;
     }
@@ -74,9 +76,12 @@ public class ThresholdHisto extends Threshold {
         histos = ImageOperations.getHisto256AsList(planes, minAndMax);
         long t1 = System.currentTimeMillis();
         int[] histoAll = new int[256];
-        for (int[] h : histos) ImageOperations.addHisto(h, histoAll, true);
+        for (int[] h : histos) ImageOperations.addHisto(h, histoAll, false);
         // saturate histogram to remove device aberations 
         saturateValue256 = (int)IJAutoThresholder.runThresholder(saturateMethod, histoAll, minAndMax, true); // byteImage=true to get a 8-bit value
+        // limit to saturagePercentage
+        int satPer = Percentage.getBinAtPercentage(histoAll, saturateProportion);
+        if (satPer>saturateValue256) saturateValue256 = satPer;
         saturateValue =  byteHisto ? saturateValue256 : IJAutoThresholder.convertHisto256Threshold(saturateValue256, minAndMax);
         for (int i = saturateValue256; i<256; ++i) histoAll[i]=0;
         thresholdValue = IJAutoThresholder.runThresholder(thldMethod, histoAll, minAndMax, byteHisto);
@@ -87,10 +92,12 @@ public class ThresholdHisto extends Threshold {
     @Override public void setFrameRange(int[] frameRange) { // will recompute threshold value, min&max, saturateValue
         if (frameRange==null) return;
         this.frameRange=frameRange;
+        if (debug || debugCorr) logger.debug("set frame range: sat: {}, fr: {}", saturateValue256, frameRange);
         if (saturateValue256<255 || frameRange[0]>0 || frameRange[1]<planes.size()-1) { // update min and max if necessary
             List<Image> planesSub = planes.subList(frameRange[0], frameRange[1]+1);
             double[] minAndMaxNew = ImageOperations.getMinAndMax(planesSub);
-            minAndMaxNew[1] = saturateValue;
+            if (saturateValue<minAndMaxNew[1]) minAndMaxNew[1] = saturateValue;
+            if (debug || debugCorr) logger.debug("set frame range, old mm: {}, new mm: {}", minAndMax, minAndMaxNew);
             if (minAndMaxNew[0]!=minAndMax[0] || minAndMaxNew[1]!=minAndMax[1]) {
                 minAndMax = minAndMaxNew;
                 List<int[]> histosSub = ImageOperations.getHisto256AsList(planesSub, minAndMax);
@@ -174,6 +181,11 @@ public class ThresholdHisto extends Threshold {
             for (int j = 0; j < 256; ++j) histo[j] += h[j];   
         }
         return IJAutoThresholder.runThresholder(thldMethod, histo, minAndMax, byteHisto);
+    }
+
+    @Override
+    public int[] getFrameRange() {
+        return this.frameRange;
     }
     
     

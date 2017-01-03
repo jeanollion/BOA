@@ -52,7 +52,7 @@ public class TrackMask extends ImageObjectInterface {
     int maxParentY, maxParentZ;
     static final int updateImageFrequency=10;
     static final int intervalX=0; //5
-    static final float displayMinMaxFraction = 0.6f;
+    static final float displayMinMaxFraction = 0.9f;
     List<StructureObject> parentTrack;
     
     public TrackMask(List<StructureObject> parentTrack, int childStructureIdx) {
@@ -216,6 +216,7 @@ public class TrackMask extends ImageObjectInterface {
                         count=0;
                     } else count++;
                 }
+                // autodisplay
                 ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage, minAndMax[0], (float)((1-displayMinMaxFraction) * minAndMax[0] + displayMinMaxFraction*minAndMax[1]));
             }
         });

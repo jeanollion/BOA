@@ -57,6 +57,7 @@ import plugins.SegmenterSplitAndMerge;
 import plugins.Tracker;
 import plugins.TrackerSegmenter;
 import plugins.UseThreshold;
+import plugins.plugins.segmenters.BacteriaTrans;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.TrackAssigner.compareScores;
 import utils.ArrayUtil;
 import utils.Pair;
@@ -191,13 +192,18 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             List<Image> planes = new ArrayList<>();
             for (int t = 0; t<populations.length; ++t) planes.add(((UseThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, parents.get(t)));
             threshold = new ThresholdHisto(planes);
+            
+            
             //Threshold t = new ThresholdSigmaMu(planes);
             threshold.setFrameRange(getFrameRangeContainingCells());
             if (adaptativeThreshold && adaptativeCoefficient>0) {
                 threshold.setAdaptativeThreshold(adaptativeCoefficient, adaptativeThresholdHalfWindow);
-                threshold.setAdaptativeByY(30);
+                threshold.setAdaptativeByY(40);
             }
-            //return;
+            Threshold.showOne=true;
+            BacteriaTrans.debug=true;
+            logger.debug("obejcts: {}", getObjects(830).size());
+            return;
             //test sigmaMu
             // TODO : adaptative by Y
             
@@ -212,10 +218,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         }
         //if (true) return;
         // 1) assign all. Limit to first continuous segment of cells
-        minT = 0;
+        minT = threshold!=null?threshold.getFrameRange()[0]: 0;
         while (minT<populations.length && getObjects(minT).isEmpty()) minT++;
-        maxT = populations.length;
-        for (int t = minT+1; t<populations.length; ++t) {
+        maxT = threshold!=null?threshold.getFrameRange()[1]+1: populations.length;
+        for (int t = minT+1; t<maxT; ++t) {
             if (getObjects(t).isEmpty()) {
                 maxT=t;
                 if ((debug || debugCorr)) logger.debug("no objects @frame: {}, threhsold: {}", maxT, threshold!=null ? threshold.getThreshold(maxT) : debugThreshold);

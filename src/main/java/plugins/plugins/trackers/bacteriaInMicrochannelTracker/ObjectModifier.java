@@ -114,9 +114,7 @@ public abstract class ObjectModifier extends CorrectionScenario {
         public Merge(int frame, Pair<Object3D, Object3D> source) {
             super(frame);
             this.source = source;
-            BacteriaTrans.debug=true;
             cost = tracker.getSegmenter(frame, false).computeMergeCost(tracker.getImage(frame), listSource());
-            BacteriaTrans.debug=false;
             List<Voxel> vox = new ArrayList(source.key.getVoxels().size()+source.value.getVoxels().size());
             vox.addAll(source.key.getVoxels()); vox.addAll(source.value.getVoxels());
             value =new Object3D(vox, source.key.getLabel(), source.key.getScaleXY(), source.key.getScaleZ());

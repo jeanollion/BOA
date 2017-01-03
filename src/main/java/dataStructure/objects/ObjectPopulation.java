@@ -639,6 +639,115 @@ public class ObjectPopulation {
 
         public void init(ObjectPopulation population) {}
     }
+    
+    public static class MeanThickness implements Filter {
+
+        double tX = -1, tY = -1, tZ = -1;
+
+        public MeanThickness setX(double minX) {
+            this.tX = minX;
+            return this;
+        }
+
+        public MeanThickness setY(double minY) {
+            this.tY = minY;
+            return this;
+        }
+
+        public MeanThickness setZ(double minZ) {
+            this.tZ = minZ;
+            return this;
+        }
+        
+        @Override
+        public boolean keepObject(Object3D object) {
+            return (tX < 0 || (object.getBounds().getSizeX() > tX && meanThicknessX(object)>tX)) && (tY < 0 || (object.getBounds().getSizeY() > tY && meanThicknessY(object)>tY)) && (tZ < 0 || (object.getBounds().getSizeZ() > tZ && meanThicknessZ(object)>tZ));
+        }
+        private double meanThicknessX(Object3D object) {
+            double mean = 0;
+            double count = 0;
+            for (int z = 0; z<object.getBounds().getSizeZ(); ++z) {
+                for (int y = 0; y<object.getBounds().getSizeY(); ++y) {
+                    int min = -1, max = -1;
+                    for (int x=0; x<object.getBounds().getSizeX(); ++x) {
+                        if (object.getMask().insideMask(x, y, z)) {
+                            min=x;
+                            break;
+                        }
+                    }
+                    for (int x=object.getBounds().getSizeX()-1; x>=0; --x) {
+                        if (object.getMask().insideMask(x, y, z)) {
+                            max=x;
+                            break;
+                        }
+                    }
+                    if (min>=0) {
+                        mean +=max-min+1;
+                        ++count;
+                    }
+                }
+            }
+            if (count>0) mean/=count;
+            //logger.debug("mean thicknessX: {}", mean);
+            return mean;
+        }
+        private double meanThicknessY(Object3D object) {
+            double mean = 0;
+            double count = 0;
+            for (int z = 0; z<object.getBounds().getSizeZ(); ++z) {
+                for (int x = 0; x<object.getBounds().getSizeX(); ++x) {
+                    int min = -1, max = -1;
+                    for (int y=0; y<object.getBounds().getSizeY(); ++y) {
+                        if (object.getMask().insideMask(x, y, z)) {
+                            min=y;
+                            break;
+                        }
+                    }
+                    for (int y=object.getBounds().getSizeY()-1; y>=0; --y) {
+                        if (object.getMask().insideMask(x, y, z)) {
+                            max=y;
+                            break;
+                        }
+                    }
+                    if (min>=0) {
+                        mean +=max-min+1;
+                        ++count;
+                    }
+                }
+            }
+            if (count>0) mean/=count;
+            return mean;
+        }
+        private double meanThicknessZ(Object3D object) {
+            double mean = 0;
+            double count = 0;
+            for (int y = 0; y<object.getBounds().getSizeY(); ++y) {
+                for (int x = 0; x<object.getBounds().getSizeX(); ++x) {
+                    int min = -1, max = -1;
+                    for (int z=0; z<object.getBounds().getSizeZ(); ++z) {
+                        if (object.getMask().insideMask(x, y, z)) {
+                            min=z;
+                            break;
+                        }
+                    }
+                    for (int z=object.getBounds().getSizeZ()-1; z>=0; --z) {
+                        if (object.getMask().insideMask(x, y, z)) {
+                            max=z;
+                            break;
+                        }
+                    }
+                    if (min>=0) {
+                        mean +=max-min+1;
+                        ++count;
+                    }
+                }
+            }
+            if (count>0) mean/=count;
+            return mean;
+        }
+
+        public void init(ObjectPopulation population) {}
+    }
 
     public static class RemoveFlatObjects extends Thickness {
 

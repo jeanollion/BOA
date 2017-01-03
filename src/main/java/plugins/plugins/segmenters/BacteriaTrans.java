@@ -124,8 +124,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     NumberParameter subBackScale = new BoundedNumberParameter("Subtract Background scale", 1, 100, 0.1, null);
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
     PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Threshold (separation from background)", Thresholder.class, new ConstantValue(423), false); // //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
-    NumberParameter thresholdContrast = new BoundedNumberParameter("Contrast Threshold (separation from background)", 3, 0.4, 0.001, 0.999);
-    NumberParameter contrastRadius = new BoundedNumberParameter("Radius for Contrast computation", 1, 9, 2, null);
+    NumberParameter thresholdContrast = new BoundedNumberParameter("Contrast Threshold (separation from background)", 3, 0.4, 0.001, 0.999); //0.4 si sub bck, 0.075 sinon
+    NumberParameter contrastRadius = new BoundedNumberParameter("Radius for Contrast computation", 1, 9, 2, null); //9 si sub bck 7 ou 9 sinon
     GroupParameter backgroundSeparation = new GroupParameter("Separation from background", threshold, thresholdContrast, contrastRadius, openRadius, closeRadius, fillHolesBackgroundContactProportion);
     
     NumberParameter relativeThicknessThreshold = new BoundedNumberParameter("Relative Thickness Threshold (lower: split more)", 2, 0.7, 0, 1);
@@ -542,7 +542,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     }
     
     protected static class ProcessingVariables {
-        public boolean splitVerbose;
+        public boolean splitVerbose=false;
         private Image distanceMap;
         private ImageInteger segMask, thresh;
         final ImageMask mask;
@@ -668,10 +668,11 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 }
                 FillHoles2D.debug=debug;
                 FillHoles2D.fillHolesClosing(thresh, closeRadius, fillHolesBckProp, minSizeFusion);
-                
+                //if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK AFTER Morpho"));
                 pop1 = new ObjectPopulation(thresh).setLabelImage(thresh, false, true);
                 pop1.filter(new ObjectPopulation.Size().setMin(minSize)); // remove small objects
-                pop1.filter(new ObjectPopulation.Thickness().setX(minXSize).setY(2)); // remove thin objects
+                pop1.filter(new ObjectPopulation.MeanThickness().setX(minXSize)); // remove thin objects
+                pop1.filter(new ObjectPopulation.Thickness().setY(2));
                 Collections.sort(pop1.getObjects(), getComparatorObject3D(ObjectIdxTracker.IndexingOrder.YXZ)); // sort by increasing Y position
                 pop1.relabel(false);
                 if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK"));
@@ -900,10 +901,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             
             private void populateBoderVoxel(Collection<Voxel> allBorderVoxels) {
                 if (allBorderVoxels.isEmpty()) return;
-                /*else if (allBorderVoxels.size() >= Math.min(e1.getVoxels().size(), e2.getVoxels().size())/2) {
-                    curvatureValue=Double.NEGATIVE_INFINITY;
-                    return;
-                }*/
+                
                 BoundingBox b = new BoundingBox();
                 for (Voxel v : allBorderVoxels) b.expand(v);
                 ImageByte mask = new ImageByte("", b.getImageProperties());
@@ -984,6 +982,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         
         public SigmaMu(double threshold, double radiusXY, double radiusZ, Image intensityMap) {
             this.threshold = threshold;
+            //intensityMap = IJSubtractBackground.filter(intensityMap, 0.3, true, false, true, false);
             this.intensityMap = Filters.sigmaMu(intensityMap, null, Filters.getNeighborhood(radiusXY, radiusZ, intensityMap));
             if (debug) new IJImageDisplayer().showImage(this.intensityMap.setName("sigma mu"));
         }

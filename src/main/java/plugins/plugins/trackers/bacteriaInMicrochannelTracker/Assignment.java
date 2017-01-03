@@ -219,7 +219,7 @@ public class Assignment {
         }
         
         public int getErrorCount() {
-            int res = Math.max(Math.max(0, nextObjects.size()-2), prevObjects.size()-1);
+            int res = Math.max(Math.max(0, nextObjects.size()-2), prevObjects.size()-1); // max erro @ prev OU @ next
             //int res =  Math.max(0, nextObjects.size()-2) + prevObjects.size()-1; // division in more than 2 + merging
             //if ((!verifyInequality() || significantSizeIncrementError()) && !truncatedEndOfChannel()) ++res; // bad size increment
             if (!truncatedEndOfChannel()) {

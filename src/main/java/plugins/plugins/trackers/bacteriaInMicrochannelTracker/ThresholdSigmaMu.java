@@ -32,15 +32,16 @@ public class ThresholdSigmaMu extends Threshold {
     ThresholdHisto thld;
     double[] thresholdF;
     double[] thldCoeffY;
-    
+    int[] frameRange;
     
     public ThresholdSigmaMu(List<Image> planes) {
         super(planes);
         this.thld = new ThresholdHisto(planes);
+        this.frameRange=new int[]{0, planes.size()-1};
     }
     @Override
     public void setFrameRange(int[] frameRange) {
-        
+        this.frameRange=frameRange;
     }
 
     @Override public double getThreshold() {
@@ -93,6 +94,9 @@ public class ThresholdSigmaMu extends Threshold {
         });
         return ArrayUtil.toPrimitive(res);
     }
-    
+    @Override
+    public int[] getFrameRange() {
+        return this.frameRange;
+    }
     
 }

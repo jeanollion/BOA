@@ -75,8 +75,8 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
         ThreadAction<StructureObject> ta = new ThreadAction<StructureObject>() {
             @Override
             public void run(StructureObject parent, int idx, int threadIdx) {
-                boundingBoxes[idx] = segmenter.segment(parent.getRawImage(structureIdx));
-                parent.setChildrenObjects(boundingBoxes[idx].getObjectPopulation(parent.getRawImage(structureIdx), false), structureIdx); // no shift here because the mean shift is added afterwards
+                boundingBoxes[idx] = segmenter.segment(preFilters.filter(parent.getRawImage(structureIdx), parent));
+                parent.setChildrenObjects(postFilters.filter(boundingBoxes[idx].getObjectPopulation(parent.getRawImage(structureIdx), false), structureIdx, parent), structureIdx); // no Y - shift here because the mean shift is added afterwards
             }
         };
         ThreadRunner.execute(parentTrack, ta);
