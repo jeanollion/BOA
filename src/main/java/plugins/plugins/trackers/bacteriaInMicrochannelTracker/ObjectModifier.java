@@ -57,7 +57,6 @@ public abstract class ObjectModifier extends CorrectionScenario {
         Merge res = mergeMap.get(o);
         if (res==null) {
             res = new Merge(frame, o);
-            logger.debug("{} computing merge cost: {}", this, res.cost);
             mergeMap.put(o, res);
             splitMap.put(res.value, new Split(frame, res.value, res.listSource(), -res.cost));
         }

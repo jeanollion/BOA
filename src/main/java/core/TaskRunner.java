@@ -56,12 +56,9 @@ public class TaskRunner {
     }
     public static List<Task> getTasks() {
         List<Task> tasks = new ArrayList<Task>() {{
-            add(new Task("boa_phase141107wtBis").setAllActions().setPositions(ArrayUtil.generateIntegerArray(10)));
-            add(new Task("boa_phase141107wtSub2").setAllActions().setPositions(ArrayUtil.generateIntegerArray(10)));
-            add(new Task("boa_phase141107wt").setAllActions().setPositions(ArrayUtil.generateIntegerArray(10)));
-            add(new Task("boa_phase150616wtBis").setAllActions().setPositions(ArrayUtil.generateIntegerArray(10)));
-            add(new Task("boa_phase150616wt").setAllActions().setPositions(ArrayUtil.generateIntegerArray(10)));
-            add(new Task("boa_phase150616wtSub2").setAllActions().setPositions(ArrayUtil.generateIntegerArray(10)));
+            add(new Task("boa_phase141107wt").setAllActions().addExtractMeasurementDir("/data/Images/Phase/141107_mg6300_wt/", 1).addExtractMeasurementDir("/data/Images/Phase/141107_mg6300_wt/", 0));
+            add(new Task("boa_phase150616wt").setAllActions().addExtractMeasurementDir("/data/Images/Phase/150616_6300_wt/", 1).addExtractMeasurementDir("/data/Images/Phase/150616_6300_wt/", 0));
+            add(new Task("boa_phase150324mutH").setAllActions().addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 1).addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 0));
             //add(new Task("boa_phase141107wt").setActions(false, true, true, true).setStructures(1).addExtractMeasurementDir("/data/Images/Phase/141107_mg6300_wt/", 1).addExtractMeasurementDir("/data/Images/Phase/141107_mg6300_wt/", 0));
             //add(new Task("boa_phase150616wt").setActions(false, true, true, true).setStructures(1).addExtractMeasurementDir("/data/Images/Phase/150616_6300_wt/", 1).addExtractMeasurementDir("/data/Images/Phase/150616_6300_wt/", 0));
             //add(new Task("boa_phase150324mutH").setActions(false, true, true, true).setStructures(1).addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 1).addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 0));

@@ -54,7 +54,7 @@ public class ThresholdHisto extends Threshold {
     int[] frameRange;
     final static AutoThresholder.Method thldMethod = AutoThresholder.Method.Otsu;
     final static AutoThresholder.Method saturateMethod = AutoThresholder.Method.Shanbhag; // Avec sub: shanbhag. Pas de sub: : MaxEntropy / Triangle
-    final static double saturateProportion = 0.02;
+    final static double maxSaturationProportion = 0.03;
     @Override public double getThreshold() {
         return thresholdValue;
     }
@@ -80,7 +80,7 @@ public class ThresholdHisto extends Threshold {
         // saturate histogram to remove device aberations 
         saturateValue256 = (int)IJAutoThresholder.runThresholder(saturateMethod, histoAll, minAndMax, true); // byteImage=true to get a 8-bit value
         // limit to saturagePercentage
-        int satPer = Percentage.getBinAtPercentage(histoAll, saturateProportion);
+        int satPer = Percentage.getBinAtPercentage(histoAll, maxSaturationProportion);
         if (satPer>saturateValue256) saturateValue256 = satPer;
         saturateValue =  byteHisto ? saturateValue256 : IJAutoThresholder.convertHisto256Threshold(saturateValue256, minAndMax);
         for (int i = saturateValue256; i<256; ++i) histoAll[i]=0;

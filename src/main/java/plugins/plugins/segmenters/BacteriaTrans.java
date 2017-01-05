@@ -124,7 +124,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     NumberParameter subBackScale = new BoundedNumberParameter("Subtract Background scale", 1, 100, 0.1, null);
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
     PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Threshold (separation from background)", Thresholder.class, new ConstantValue(423), false); // //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
-    NumberParameter thresholdContrast = new BoundedNumberParameter("Contrast Threshold (separation from background)", 3, 0.4, 0.001, 0.999); //0.4 si sub bck, 0.075 sinon
+    NumberParameter thresholdContrast = new BoundedNumberParameter("Contrast Threshold (separation from background)", 3, 0.6, 0.001, 0.999); //0.6 si sub bck = 0.3 en prefilters
     NumberParameter contrastRadius = new BoundedNumberParameter("Radius for Contrast computation", 1, 9, 2, null); //9 si sub bck 7 ou 9 sinon
     GroupParameter backgroundSeparation = new GroupParameter("Separation from background", threshold, thresholdContrast, contrastRadius, openRadius, closeRadius, fillHolesBackgroundContactProportion);
     
@@ -982,7 +982,6 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         
         public SigmaMu(double threshold, double radiusXY, double radiusZ, Image intensityMap) {
             this.threshold = threshold;
-            //intensityMap = IJSubtractBackground.filter(intensityMap, 0.3, true, false, true, false);
             this.intensityMap = Filters.sigmaMu(intensityMap, null, Filters.getNeighborhood(radiusXY, radiusZ, intensityMap));
             if (debug) new IJImageDisplayer().showImage(this.intensityMap.setName("sigma mu"));
         }

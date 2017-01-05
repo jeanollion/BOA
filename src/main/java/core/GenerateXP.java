@@ -81,7 +81,7 @@ import processing.ImageTransformation;
 public class GenerateXP {
     public static final Logger logger = LoggerFactory.getLogger(GenerateXP.class);
     static boolean subTransPre = true;
-    static double subRad = 0.3;
+
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         /*String dbName = "dummyXP";
@@ -198,21 +198,6 @@ public class GenerateXP {
         boolean fluo = false;
         transSingleFileImport=false;
         scaleXY = 0.06289;*/
-        
-        
-        /*String dbName = "boa_phase141107wt";
-        String inputDir = "/data/Images/Phase/141107_mg6300_wt/mg6300WT-lb-lr62replic1-7-11-14/";
-        String outputDir = "/data/Images/Phase/141107_mg6300_wt/Output";
-        trimStart = 122;
-        trimEnd = 990;
-        boolean flip = true;
-        boolean fluo = false;
-        transSingleFileImport=false;
-        scaleXY = 0.06289;
-        */
-        
-        
-        
         /*
         // beaucoup de files corrompue, pas d'intervalle.. 
         String dbName = "boa_phase141113wt";
@@ -223,6 +208,18 @@ public class GenerateXP {
         transSingleFileImport=false;
         scaleXY = 0.06289;
         */
+        
+        String dbName = "boa_phase141107wt";
+        String inputDir = "/data/Images/Phase/141107_mg6300_wt/mg6300WT-lb-lr62replic1-7-11-14/";
+        String outputDir = "/data/Images/Phase/141107_mg6300_wt/Output";
+        trimStart = 122;
+        trimEnd = 990;
+        boolean flip = true;
+        boolean fluo = false;
+        transSingleFileImport=false;
+        scaleXY = 0.06289;
+        
+        
         
         /*String dbName = "boa_phase150324mutH";
         String inputDir = "/data/Images/Phase/150324_6300_mutH/6300_mutH_LB_LR62silicium-24032015-tif/";
@@ -245,56 +242,6 @@ public class GenerateXP {
         flipArray = fillRange(getBooleanArray(96, false), 61, 95, true); //pos 62 - 96 -> flip = true
         deletePositions = setValues(getBooleanArray(96, false), true, 5, 11, 14, 29, 43, 45, 47, 61, 65); // xy06 xy44 xy48 xy62  -> seulement un frame OOF, les autres beaucoup de frames
         */
-        
-        /*String dbName = "boa_phase150616wt";
-        // cette manip contient des images hors focus
-        String inputDir = "/data/Images/Phase/150616_6300_wt/6300_WT_LB_LR62silicium_16062015_tif/";
-        String outputDir = "/data/Images/Phase/150616_6300_wt/Output";
-        boolean flip = false;
-        boolean fluo = false;
-        transSingleFileImport=false;
-        scaleXY = 0.06289;
-        flipArray = fillRange(getBooleanArray(96, false), 61, 95, true); //pos 62 - 96 -> flip = true
-        deletePositions = setValues(getBooleanArray(96, false), true, 5, 11, 14, 29, 43, 45, 47, 61, 65); // xy06 xy44 xy48 xy62  -> seulement un frame OOF, les autres beaucoup de frames
-        subTransPre = false;*/
-        
-        String dbName = "boa_phase150616wt";
-        // cette manip contient des images hors focus
-        String inputDir = "/data/Images/Phase/150616_6300_wt/6300_WT_LB_LR62silicium_16062015_tif/";
-        String outputDir = "/data/Images/Phase/150616_6300_wt/Output";
-        boolean flip = false;
-        boolean fluo = false;
-        transSingleFileImport=false;
-        scaleXY = 0.06289;
-        flipArray = fillRange(getBooleanArray(96, false), 61, 95, true); //pos 62 - 96 -> flip = true
-        deletePositions = setValues(getBooleanArray(96, false), true, 5, 11, 14, 29, 43, 45, 47, 61, 65); // xy06 xy44 xy48 xy62  -> seulement un frame OOF, les autres beaucoup de frames
-        subRad=2;
-        
-        /*String dbName = "boa_phase141107wtBis";
-        String inputDir = "/data/Images/Phase/141107_mg6300_wt/mg6300WT-lb-lr62replic1-7-11-14/";
-        String outputDir = "/data/Images/Phase/141107_mg6300_wt/OutputBis";
-        trimStart = 122;
-        trimEnd = 990;
-        boolean flip = true;
-        boolean fluo = false;
-        transSingleFileImport=false;
-        scaleXY = 0.06289;
-        subTransPre = false;*/
-        
-        /*String dbName = "boa_phase141107wtSub2";
-        String inputDir = "/data/Images/Phase/141107_mg6300_wt/mg6300WT-lb-lr62replic1-7-11-14/";
-        String outputDir = "/data/Images/Phase/141107_mg6300_wt/OutputSub2";
-        trimStart = 122;
-        trimEnd = 990;
-        boolean flip = true;
-        boolean fluo = false;
-        transSingleFileImport=false;
-        scaleXY = 0.06289;
-        subRad=2;
-        */
-        
-        
-        
         /*
         ////////////////////////////
         // Ordi Portable
@@ -454,7 +401,7 @@ public class GenerateXP {
             xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXARTEFACT).setPrefilters(new IJSubtractBackground(0.3, true, false, true, true)));
             xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
             xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannelBF2D());
-            if (subTransPre) xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(subRad, true, false, true, true)); // subtract after crop in order to detect optical aberation
+            if (subTransPre) xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(0.3, true, false, true, false)); // subtract after crop because subtract alter optical aberation detection. Optimization: paraboloid = true / range=03-05 best = 0.3 
             xp.getPreProcessingTemplate().setTrimFrames(trimFramesStart, trimFramesEnd);
         }
         return xp;
@@ -464,7 +411,7 @@ public class GenerateXP {
         Structure mc = xp.getStructure(0);
         Structure bacteria = xp.getStructure(1);
         if (processing) {
-            if (!subTransPre) mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessorPhase()).addPreFilters(new IJSubtractBackground(0.3, true, false, true, true)));
+            if (!subTransPre) mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessorPhase()).addPreFilters(new IJSubtractBackground(0.3, true, false, true, false)));
             else mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessorPhase()));
             bacteria.setProcessingScheme(
                     new SegmentAndTrack(

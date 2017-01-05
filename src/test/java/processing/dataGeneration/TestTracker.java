@@ -50,9 +50,9 @@ public class TestTracker {
         //final String dbName = "boa_phase140115mutH";
         //final String dbName = "boa_phase150324mutH";
         //String dbName = "boa_phase150616wt";
-        String dbName = "boa_phase141107wtBis";
+        String dbName = "boa_phase141107wt";
         int fIdx = 0;
-        int mcIdx =0;
+        int mcIdx =4;
         int structureIdx = 1;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
