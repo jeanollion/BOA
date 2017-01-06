@@ -191,26 +191,30 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (Double.isNaN(debugThreshold) && getSegmenter() instanceof UseThreshold) {
             List<Image> planes = new ArrayList<>();
             for (int t = 0; t<populations.length; ++t) planes.add(((UseThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, parents.get(t)));
-            threshold = new ThresholdHisto(planes);
+            //threshold = new ThresholdHisto(planes);
             
             
-            //Threshold t = new ThresholdSigmaMu(planes);
+            threshold = new ThresholdLocalContrast(planes, 0.06); 
             threshold.setFrameRange(getFrameRangeContainingCells());
             if (adaptativeThreshold && adaptativeCoefficient>0) {
                 threshold.setAdaptativeThreshold(adaptativeCoefficient, adaptativeThresholdHalfWindow);
-                threshold.setAdaptativeByY(40);
+                threshold.setAdaptativeByY(30); // 40 pour seuillage histogram
             }
+            //((ThresholdLocalContrast)threshold).setAdaptativeByFY(adaptativeThresholdHalfWindow, 30);
+            
+            threshold.freeMemory();
             /*Threshold.showOne=true;
-            BacteriaTrans.debug=true;
-            logger.debug("obejcts: {}", getObjects(38).size());
-            return;*/
-            //test sigmaMu
-            // TODO : adaptative by Y
+            BacteriaTrans.debug=false;
+            logger.debug("obejcts: {}", getObjects(10).size());
+            Threshold.showOne=true;
+            logger.debug("obejcts: {}", getObjects(20).size());
+            Threshold.showOne=true;
+            logger.debug("obejcts: {}", getObjects(30).size());
+            Threshold.showOne=true;
+            logger.debug("obejcts: {}", getObjects(40).size());
+            return;
             
-            //double[] sigmaMuThresholds = new double[populations.length];
-            //for (int t = 0; t<populations.length; ++t) sigmaMuThresholds[t] = SigmaMuThresholder.getThreshold(planes.get(t));
-            //Utils.plotProfile("SigmaMu Thresholds", sigmaMuThresholds);
-            
+            */
             
             
         } else if (!Double.isNaN(debugThreshold)) {

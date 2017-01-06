@@ -675,7 +675,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 pop1.relabel(false);
                 if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK"));
                 //pop1.filter(new ContrastIntensity(-contrastThreshold, contrastRadius, 0, false, getIntensityMap()));
-                pop1.filter(new SigmaMu(contrastThreshold, contrastRadius, contrastRadius, getIntensityMap()));
+                pop1.filter(new LocalContrast(contrastThreshold, contrastRadius, contrastRadius, getIntensityMap()));
                 if (debug) disp.showImage(pop1.getLabelMap().duplicate("SEG MASK AFTER  REMOVE CONTRAST"));
                 segMask = pop1.getLabelMap();
                 thresh = null; // no need to keep
@@ -974,11 +974,11 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         }
         
     }
-    public static class SigmaMu implements Filter {
+    public static class LocalContrast implements Filter {
         final double threshold;
         final Image intensityMap;
         
-        public SigmaMu(double threshold, double radiusXY, double radiusZ, Image intensityMap) {
+        public LocalContrast(double threshold, double radiusXY, double radiusZ, Image intensityMap) {
             this.threshold = threshold;
             //this.intensityMap = Filters.sigmaMu(intensityMap, null, Filters.getNeighborhood(radiusXY, radiusZ, intensityMap));
             this.intensityMap=ImageFeatures.getGradientMagnitude(intensityMap, radiusXY, false);

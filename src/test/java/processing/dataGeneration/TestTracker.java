@@ -48,8 +48,8 @@ public class TestTracker {
         new ImageJ();
         //String dbName = "boa_mutH_140115";
         //final String dbName = "boa_phase140115mutH";
-        final String dbName = "boa_phase150324mutH";
-        //String dbName = "boa_phase150616wt";
+        //final String dbName = "boa_phase150324mutH";
+        String dbName = "boa_phase150616wt";
         //String dbName = "boa_phase141107wt";
         int fIdx = 0;
         int mcIdx =0;

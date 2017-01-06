@@ -187,6 +187,11 @@ public class ThresholdHisto extends Threshold {
     public int[] getFrameRange() {
         return this.frameRange;
     }
+
+    @Override
+    public void freeMemory() {
+        
+    }
     
     
     

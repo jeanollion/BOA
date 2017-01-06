@@ -41,6 +41,7 @@ public abstract class Threshold {
     public abstract void setFrameRange(int[] frameRange);
     public abstract double getThreshold(int frame);
     public abstract double getThreshold(int frame, int y);
+    public abstract void freeMemory();
     public static boolean showOne = false;
     public ImageByte getThresholdedPlane(int frame, boolean backgroundUnderThreshold) {
         Image im = planes.get(frame);
@@ -87,6 +88,23 @@ public abstract class Threshold {
         for (int i = list.size()-halfWindow; i<list.size(); ++i) res.add(end);
         return res;
     }
+    /*public static <T, A, R> R[] slideArray(T[] list, int halfWindow, SlidingOperator<T, A, R> operator) {
+        R[] res = (R[])new Object[list.length];
+        if (list.length==0) return res;
+        if (list.length<2*halfWindow+1) halfWindow = (list.length-1)/2;
+        A acc = operator.instanciateAccumulator();
+        
+        for (int i = 0; i<=2*halfWindow; ++i) operator.slide(null, list.get(i), acc);
+        R start = operator.compute(acc);
+        for (int i = 0; i<=halfWindow; ++i) res.add(start);
+        for (int i = halfWindow+1; i<list.size()-halfWindow; ++i) {
+            operator.slide(list.get(i-halfWindow-1), list.get(i+halfWindow), acc);
+            res.add(operator.compute(acc));
+        }
+        R end = res.get(res.size()-1);
+        for (int i = list.size()-halfWindow; i<list.size(); ++i) res.add(end);
+        return res;
+    }*/
     public static interface SlidingOperator<T, A, R> {
         public A instanciateAccumulator();
         public void slide(T removeElement, T addElement, A accumulator);

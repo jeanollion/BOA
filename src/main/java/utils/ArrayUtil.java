@@ -318,9 +318,9 @@ public class ArrayUtil {
         </dependency>
         */
     }
-    public static int[] generateIntegerArray(int start, int stop) {
-        int[] res = new int[stop-start];
-        for (int i = start; i<stop; ++i) res[i-start]=i;
+    public static int[] generateIntegerArray(int start, int stopExcl) {
+        int[] res = new int[stopExcl-start];
+        for (int i = start; i<stopExcl; ++i) res[i-start]=i;
         return res;
     }
     public static int[] generateIntegerArray(int size) {

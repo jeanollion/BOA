@@ -231,5 +231,11 @@ public class BasicObjectDAO implements ObjectDAO {
         return this.masterDAO;
     }
 
+    @Override
+    public void setRoos(List<StructureObject> roots) {
+        this.rootTrack=new SmallArray(roots.size());
+        for (int i = 0; i<roots.size(); ++i) rootTrack.setQuick(roots.get(i), i);
+    }
+
     
 }
