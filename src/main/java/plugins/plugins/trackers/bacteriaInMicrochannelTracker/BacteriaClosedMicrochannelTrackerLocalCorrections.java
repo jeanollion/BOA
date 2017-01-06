@@ -202,7 +202,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             }
             /*Threshold.showOne=true;
             BacteriaTrans.debug=true;
-            logger.debug("obejcts: {}", getObjects(31).size());
+            logger.debug("obejcts: {}", getObjects(38).size());
             return;*/
             //test sigmaMu
             // TODO : adaptative by Y
@@ -218,9 +218,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         }
         //if (true) return;
         // 1) assign all. Limit to first continuous segment of cells
-        minT = threshold!=null?threshold.getFrameRange()[0]: 0;
-        while (minT<populations.length && getObjects(minT).isEmpty()) minT++;
         maxT = threshold!=null?threshold.getFrameRange()[1]+1: populations.length;
+        minT = threshold!=null?threshold.getFrameRange()[0]: 0;
+        while (minT<maxT && getObjects(minT).isEmpty()) minT++;
+        
         for (int t = minT+1; t<maxT; ++t) {
             if (getObjects(t).isEmpty()) {
                 maxT=t;
@@ -320,8 +321,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                             for (int t = corrT[0]; t<=corrT[1]; ++t)  setAssignmentToTrackAttributes(t, false);
                             if (correctionStep) {
                                 step(null, true);
-                                //if (stepParents.size()>=12) return true;
                             }
+                            if (idx>=populations[currentT].size()) break CorLoop; // merge in correction -> idx is not reached anymore
                             ta = getAttribute(currentT, idx); // in case of correction, attributes may have changed
                             taPrev = idx<populations[currentT-1].size() ? getAttribute(currentT-1, idx) : null;
                         } else break CorLoop;

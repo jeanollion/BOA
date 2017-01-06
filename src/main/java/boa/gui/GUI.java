@@ -1481,6 +1481,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (sels.isEmpty()) ImageWindowManagerFactory.getImageManager().goToNextTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads(), next);
         else {
             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null);
+            if (i.getParent().getExperiment()!=db.getExperiment()) i=null;
             String position = i==null? null:i.getParent().getFieldName();
             if (i==null || nextPosition) navigateCount=2;
             else {

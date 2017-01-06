@@ -209,7 +209,7 @@ public class GenerateXP {
         scaleXY = 0.06289;
         */
         
-        String dbName = "boa_phase141107wt";
+        /*String dbName = "boa_phase141107wt";
         String inputDir = "/data/Images/Phase/141107_mg6300_wt/mg6300WT-lb-lr62replic1-7-11-14/";
         String outputDir = "/data/Images/Phase/141107_mg6300_wt/Output";
         trimStart = 122;
@@ -218,7 +218,7 @@ public class GenerateXP {
         boolean fluo = false;
         transSingleFileImport=false;
         scaleXY = 0.06289;
-        
+        */
         
         
         /*String dbName = "boa_phase150324mutH";
@@ -230,6 +230,16 @@ public class GenerateXP {
         transSingleFileImport=false;
         scaleXY = 0.06289;
         */
+        
+        String dbName = "boa_phase150324mutHNoSub";
+        String inputDir = "/data/Images/Phase/150324_6300_mutH/6300_mutH_LB_LR62silicium-24032015-tif/";
+        String outputDir = "/data/Images/Phase/150324_6300_mutH/OutputNoSub";
+        boolean flip = false;
+        flipArray = fillRange(getBooleanArray(100, false), 63, 99, true);
+        boolean fluo = false;
+        transSingleFileImport=false;
+        scaleXY = 0.06289;
+        subTransPre = false;
         
         /*String dbName = "boa_phase150616wt";
         // cette manip contient des images hors focus

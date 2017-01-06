@@ -31,8 +31,8 @@ import org.slf4j.LoggerFactory;
 public class ResetXPParameters {
     public static final Logger logger = LoggerFactory.getLogger(ResetXPParameters.class);
     public static void main(String[] args) {
-        //String[] dbs = new String[]{"boa_phase150616wt", "boa_phase141107wt", "boa_phase150324mutH"};
-        String[] dbs = new String[]{"boa_phase150616wtBis", "boa_phase141107wtBis"};
+        String[] dbs = new String[]{"boa_phase150616wt", "boa_phase141107wt", "boa_phase150324mutH"};
+        //String[] dbs = new String[]{"boa_phase150616wtBis", "boa_phase141107wtBis"};
         for (String db:dbs) resetParameters(db, true, true);
         logger.debug("done!");
     }

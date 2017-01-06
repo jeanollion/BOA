@@ -122,11 +122,9 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     NumberParameter fillHolesBackgroundContactProportion = new BoundedNumberParameter("Fill holes background contact proportion", 2, 0.25, 0, 1);
     NumberParameter minSizePropagation = new BoundedNumberParameter("Minimum size (propagation)", 0, 5, 5, null); // too high -> bad separation, too low: objects shape too far away from bact -> random merging
     NumberParameter subBackScale = new BoundedNumberParameter("Subtract Background scale", 1, 100, 0.1, null);
-    //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("DoG Threshold (separation from background)", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
     PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Threshold (separation from background)", Thresholder.class, new ConstantValue(423), false); // //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
-    NumberParameter thresholdContrast = new BoundedNumberParameter("Contrast Threshold (separation from background)", 3, 0.6, 0.001, 0.999); //0.6 si sub bck = 0.3 en prefilters
-    NumberParameter contrastRadius = new BoundedNumberParameter("Radius for Contrast computation", 1, 9, 2, null); //9 si sub bck 7 ou 9 sinon
-    GroupParameter backgroundSeparation = new GroupParameter("Separation from background", threshold, thresholdContrast, contrastRadius, openRadius, closeRadius, fillHolesBackgroundContactProportion);
+    NumberParameter thresholdContrast = new BoundedNumberParameter("Contrast Threshold (separation from background)", 3, 0.13, 0.001, 0.999); //minFN=0.199 (150324/0/0/tp44/th=318) / maxFP=0.071(141107/0/0/tp796/th=265)
+    GroupParameter backgroundSeparation = new GroupParameter("Separation from background", threshold, thresholdContrast, openRadius, closeRadius, fillHolesBackgroundContactProportion);
     
     NumberParameter relativeThicknessThreshold = new BoundedNumberParameter("Relative Thickness Threshold (lower: split more)", 2, 0.7, 0, 1);
     NumberParameter relativeThicknessMaxDistance = new BoundedNumberParameter("Max Distance for Relative Thickness normalization factor (calibrated)", 2, 1, 0, null);
@@ -241,7 +239,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     
     public ProcessingVariables getProcessingVariables(Image input, ImageMask segmentationMask) {
         return new ProcessingVariables(input, segmentationMask,
-                thresholdContrast.getValue().doubleValue(), contrastRadius.getValue().doubleValue(),
+                thresholdContrast.getValue().doubleValue(), 2, // contrast radius optimized = 2
                 relativeThicknessThreshold.getValue().doubleValue(), relativeThicknessMaxDistance.getValue().doubleValue(), 
                 subBackScale.getValue().doubleValue(), openRadius.getValue().doubleValue(), closeRadius.getValue().doubleValue(), this.fillHolesBackgroundContactProportion.getValue().doubleValue(),
                 minSize.getValue().intValue(), minXSize.getValue().intValue(), minSizePropagation.getValue().intValue(), minSizeFusion.getValue().intValue(),
@@ -982,7 +980,11 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         
         public SigmaMu(double threshold, double radiusXY, double radiusZ, Image intensityMap) {
             this.threshold = threshold;
-            this.intensityMap = Filters.sigmaMu(intensityMap, null, Filters.getNeighborhood(radiusXY, radiusZ, intensityMap));
+            //this.intensityMap = Filters.sigmaMu(intensityMap, null, Filters.getNeighborhood(radiusXY, radiusZ, intensityMap));
+            this.intensityMap=ImageFeatures.getGradientMagnitude(intensityMap, radiusXY, false);
+            Image smooth = ImageFeatures.gaussianSmooth(intensityMap, radiusXY, radiusZ, false);
+            ImageOperations.divide(this.intensityMap, smooth, this.intensityMap);
+            
             if (debug) new IJImageDisplayer().showImage(this.intensityMap.setName("sigma mu"));
         }
                 

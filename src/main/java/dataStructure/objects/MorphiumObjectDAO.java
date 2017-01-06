@@ -61,7 +61,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
     final MorphiumMasterDAO masterDAO;
     MeasurementsDAO measurementsDAO;
     ConcurrentHashMap<ObjectId, StructureObject> idCache;
-    List<StructureObject> roots;
+    public List<StructureObject> roots;
     public final String fieldName, collectionName;
     public MorphiumObjectDAO(MorphiumMasterDAO masterDAO, String fieldName) {
         this.masterDAO=masterDAO;
@@ -575,6 +575,9 @@ public class MorphiumObjectDAO implements ObjectDAO {
         return roots;
     }
     
+    @Override public void setRoos(List<StructureObject> roots) {
+        this.roots = roots;
+    }
     // measurement-specific methds
 
     
@@ -628,7 +631,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
     @Override
     public void deleteAllMeasurements() {
         measurementsDAO.deleteAllObjects();
-        for (StructureObject o : this.idCache.values()) {
+        for (StructureObject o : this.idCache.values()) { // TODO: need to update measurementId field in all objects?
             o.measurements=null;
             o.measurementsId=null;
         }

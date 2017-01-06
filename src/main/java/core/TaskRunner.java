@@ -19,6 +19,7 @@ package core;
 
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MorphiumMasterDAO;
+import dataStructure.objects.MorphiumObjectDAO;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,9 +57,9 @@ public class TaskRunner {
     }
     public static List<Task> getTasks() {
         List<Task> tasks = new ArrayList<Task>() {{
-            add(new Task("boa_phase141107wt").setAllActions().addExtractMeasurementDir("/data/Images/Phase/141107_mg6300_wt/", 1).addExtractMeasurementDir("/data/Images/Phase/141107_mg6300_wt/", 0));
-            add(new Task("boa_phase150616wt").setAllActions().addExtractMeasurementDir("/data/Images/Phase/150616_6300_wt/", 1).addExtractMeasurementDir("/data/Images/Phase/150616_6300_wt/", 0));
-            add(new Task("boa_phase150324mutH").setAllActions().addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 1).addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 0));
+            add(new Task("boa_phase150324mutHNoSub").setActions(true, true, true, false).setStructures(0).setPositions(0));
+            //add(new Task("boa_phase150616wt").setAllActions().addExtractMeasurementDir("/data/Images/Phase/150616_6300_wt/", 1).addExtractMeasurementDir("/data/Images/Phase/150616_6300_wt/", 0));
+            //add(new Task("boa_phase150324mutH").setAllActions().addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 1).addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 0));
             //add(new Task("boa_phase141107wt").setActions(false, true, true, true).setStructures(1).addExtractMeasurementDir("/data/Images/Phase/141107_mg6300_wt/", 1).addExtractMeasurementDir("/data/Images/Phase/141107_mg6300_wt/", 0));
             //add(new Task("boa_phase150616wt").setActions(false, true, true, true).setStructures(1).addExtractMeasurementDir("/data/Images/Phase/150616_6300_wt/", 1).addExtractMeasurementDir("/data/Images/Phase/150616_6300_wt/", 0));
             //add(new Task("boa_phase150324mutH").setActions(false, true, true, true).setStructures(1).addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 1).addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 0));
@@ -188,7 +189,6 @@ public class TaskRunner {
         private void run(String position, boolean deleteAllField) {
             
             if (deleteAllField) db.getDao(position).deleteAllObjects();
-            
             if (preProcess) {
                 logger.info("Pre-Processing: DB: {}, Position: {}", dbName, position);
                 Processor.preProcessImages(db.getExperiment().getPosition(position), db.getDao(position), true, preProcess);

@@ -116,7 +116,8 @@ public class Processor {
         List<StructureObject> res = dao.getRoots();
         if (res==null || res.isEmpty()) {
             res = dao.getExperiment().getPosition(dao.getFieldName()).createRootObjects(dao);
-            for (StructureObject o : res) dao.store(o, true);
+            dao.store(res, true);
+            dao.setRoos(res);
         }
         return res;
     }
@@ -153,7 +154,6 @@ public class Processor {
             else logger.info("Tracking: Field: {}, Structure: {}", dao.getFieldName(), s);
             List<Pair<String, Exception>> e = executeProcessingScheme(root, s, trackOnly, false);
             errors.addAll(e);
-            System.gc();
         }
         return errors;
     }
