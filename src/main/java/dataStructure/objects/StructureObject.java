@@ -890,7 +890,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     @Override
     public String toString() {
-        return "P:"+getPositionIdx()+"/S:"+structureIdx+"/I:"+Selection.indiciesToString(StructureObjectUtils.getIndexTree(this));//+"/id:"+id;
+        return "P:"+getPositionIdx()+"/S:"+structureIdx+"/I:"+Selection.indicesToString(StructureObjectUtils.getIndexTree(this));//+"/id:"+id;
         //if (isRoot()) return "F:"+getPositionIdx() + ",T:"+timePoint;
         //else return "F:"+getPositionIdx()+ ",T:"+timePoint+ ",S:"+structureIdx+ ",Idx:"+idx+ ",P:["+getParent().toStringShort()+"]" + (flag==null?"":"{"+flag+"}") ;
     }

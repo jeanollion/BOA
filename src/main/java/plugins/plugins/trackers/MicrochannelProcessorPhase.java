@@ -46,6 +46,8 @@ import plugins.plugins.segmenters.MicroChannelPhase2D;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparator;
 import plugins.plugins.trackers.trackMate.TrackMateInterface;
 import plugins.plugins.transformations.CropMicroChannels.Result;
+import utils.SlidingOperator;
+import static utils.SlidingOperator.performSlide;
 import utils.ThreadRunner;
 import utils.ThreadRunner.ThreadAction;
 
@@ -89,26 +91,28 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
         // compute mean of Y-shifts & width for each microchannel and modify objects
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         logger.debug("trackHead number: {}", allTracks.size());
-        for (List<StructureObject> track : allTracks.values()) {
+        for (List<StructureObject> track : allTracks.values()) { // compute median shift on the whole track + mean width
             if (track.isEmpty()) continue;
-            // compute mean shift on the whole track + mean width
             List<Integer> shifts = new ArrayList<>(track.size());
-            List<Integer> widths = new ArrayList<>(track.size());
+            List<Double> widths = new ArrayList<>(track.size());
             for (StructureObject o : track) {
                 Result r = parentBBMap.get(o.getParent());
                 if (o.getIdx()>=r.size()) continue; // exclude objects created from gap closing 
                 shifts.add(r.yMinShift[o.getIdx()]);
-                widths.add(r.getXWidth(o.getIdx()));
+                widths.add((double)r.getXWidth(o.getIdx()));
             }
-            Collections.sort(widths);
             Collections.sort(shifts);
+            int shift = shifts.get(shifts.size()/2); // median shift
+            widths = performSlide(widths, 10, SlidingOperator.slidingMean()); // sliding and not global mean because if channels gets empty -> width too small 
             
-            int shift = shifts.get(shifts.size()/2);
-            int width = widths.get(widths.size()/2);
-            if (debug) logger.debug("track: {} ymin-shift: {}, width: {}", track.get(0), shift, width);
+            if (debug) {
+                logger.debug("track: {} ymin-shift: {}, width: {}", track.get(0), shift, widths);
+            }
             // modify all objects of the track with the shift
-            for (StructureObject o : track) {
+            for (int i = 0; i<track.size(); ++i) {
+                StructureObject o = track.get(i);
                 BoundingBox b = o.getBounds();
+                int width = (int)Math.round(widths.get(i));
                 int offX = b.getxMin() + (int)Math.round((b.getSizeX()-width)/2d + Double.MIN_VALUE); // if width change -> offset X change
                 int offY = b.getyMin() + shift; // shift was not included before
                 BoundingBox parentBounds = o.getParent().getBounds();

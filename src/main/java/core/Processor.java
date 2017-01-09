@@ -189,7 +189,11 @@ public class Processor {
         // create error selection
         Selection errors = dao.getMasterDAO().getSelectionDAO().getOrCreate(dao.getExperiment().getStructure(structureIdx).getName()+"_TrackingErrors", false);
         boolean hadObjectsBefore=errors.count(dao.getFieldName())>0;
-        if (hadObjectsBefore) errors.removeChildrenOf(parentTrack); // if selection already exists: remove children of parentTrack
+        if (hadObjectsBefore) {
+            int nBefore = errors.count(dao.getFieldName());
+            errors.removeChildrenOf(parentTrack);
+            logger.debug("remove childre: count before: {} after: {}", nBefore, errors.count(dao.getFieldName()));
+        } // if selection already exists: remove children of parentTrack
         children.removeIf(o -> !o.hasTrackLinkError(true, true));
         logger.debug("errors: {}", children.size());
         if (hadObjectsBefore || !children.isEmpty()) {

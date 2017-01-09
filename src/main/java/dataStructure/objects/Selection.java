@@ -231,7 +231,11 @@ public class Selection implements Comparable<Selection> {
         return res;
     }
     
-    public static String indiciesToString(int[] indicies) {
+    public static String indicesString(StructureObject o) {
+        return indicesToString(StructureObjectUtils.getIndexTree(o));
+    }
+    
+    public static String indicesToString(int[] indicies) {
         return Utils.toStringArray(indicies, "", "", indexSeparator);
     }
     
@@ -244,7 +248,7 @@ public class Selection implements Comparable<Selection> {
         }
         Collection<String> indiciesList = get(fieldName, true);
         indiciesList.clear();
-        for (StructureObject o : objectList) indiciesList.add(indiciesToString(StructureObjectUtils.getIndexTree(o)));
+        for (StructureObject o : objectList) indiciesList.add(indicesString(o));
     }
     
     public void addElement(StructureObject elementToAdd) {
@@ -265,7 +269,7 @@ public class Selection implements Comparable<Selection> {
             }
             // update DB refs
             Collection<String> els = get(elementToAdd.getFieldName(), true);
-            els.add(indiciesToString(StructureObjectUtils.getIndexTree(elementToAdd)));
+            els.add(indicesString(elementToAdd));
             if (false && els.size()!=list.size()) {
                 logger.error("unconsitancy in selection: {}, {} vs: {}", this.toString(), list.size(), els.size());
                 if (els.size()<=10) {
@@ -284,13 +288,12 @@ public class Selection implements Comparable<Selection> {
         Set<StructureObject> list = getElements(elementToRemove.getFieldName());
         if (list!=null) {
             list.remove(elementToRemove);
-            String ref= indiciesToString(StructureObjectUtils.getIndexTree(elementToRemove));
             Collection<String> els = get(elementToRemove.getFieldName(), false);
-            if (els!=null) els.remove(ref);
+            if (els!=null) els.remove(indicesString(elementToRemove));
         }
         return false;
     }
-    public synchronized void removeElements(List<StructureObject> elementsToRemove) {
+    public synchronized void removeElements(Collection<StructureObject> elementsToRemove) {
         if (elementsToRemove==null || elementsToRemove.isEmpty()) return;
         for (StructureObject o : elementsToRemove) removeElement(o);
     }
@@ -302,6 +305,7 @@ public class Selection implements Comparable<Selection> {
             List<StructureObject> toRemove = new ArrayList<>();
             for (StructureObject parent : parentsByPosition.get(position)) if (elementsByParent.containsKey(parent)) toRemove.addAll(elementsByParent.get(parent));
             removeElements(toRemove);
+            logger.debug("sel : {}, remove children of: {}", this.id, toRemove);
         }
     }
     public synchronized void clear() {

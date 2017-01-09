@@ -369,12 +369,19 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     }
     
     @Override public ObjectPopulation splitObject(Image input, Object3D object) {
+        if (!input.sameSize(object.getMask())) {
+            input = input.crop(object.getBounds());
+            //mask = mask.crop(input.getBoundingBox()); // problem with crop & offsets when bb is larger & has an offset
+        }
         // avoid border effects: dilate image
         int ext = (int)this.hessianScale.getValue().doubleValue()+1;
         BoundingBox extent = new BoundingBox(-ext, ext, -ext, ext, 0, 0);
+       
         Image inExt = input.extend(extent);
         ImageInteger maskExt = object.getMask().extend(extent);
         pv = initializeVariables(inExt);
+        // ici -> bug avec offsets? 
+        logger.debug("in off: {}, object off: {}, inExt off: {}, maskExt off: {}", input.getBoundingBox(), object.getMask().getBoundingBox(), inExt.getBoundingBox(), maskExt.getBoundingBox());
         ObjectPopulation res = getSeparatedObjects(maskExt, pv, minSizePropagation.getValue().intValue(), minSize.getValue().intValue(), 2, splitVerbose);
         extent = new BoundingBox(ext, -ext, ext, -ext, 0, 0);
         ImageInteger labels = res.getLabelMap().extend(extent);

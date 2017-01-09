@@ -46,40 +46,22 @@ public class TestTracker {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
+        String dbName = "boa_fluo151127_test";
         //String dbName = "boa_mutH_140115";
         //final String dbName = "boa_phase140115mutH";
         //final String dbName = "boa_phase150324mutH";
-        String dbName = "boa_phase150616wt";
+        //String dbName = "boa_phase150616wt";
         //String dbName = "boa_phase141107wt";
         int fIdx = 0;
-        int mcIdx =0;
-        int structureIdx = 1;
+        int mcIdx =1;
+        int structureIdx = 2;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 1000);
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 10);
         
         //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 37, 38); // 91 to test rearrange objects 
         
-        int[][] testsF_MC_TT = {
-           {0, 3, 90, 100}, // 0
-           {0, 5, 48, 52}, // 1
-           {0, 5, 103, 107}, // 2
-           {0, 7, 716, 721}, // 3 cas cellules qui ne croissent plus + cellule mère morte
-           {0, 14, 150, 166}, // 4
-           {1, 2, 90, 94}, // 5 cas division de longue bacterie non reconnu car petite erreur de segmentation
-           {1, 2, 195, 199}, // 6 petits objects avec découpage aléatoire. si on limite les scenario pas de bug
-           {0, 3, 62, 64}, // 7
-           {1, 2, 113, 115}, // 8 cas petite erreur de seg qui cree une fausse division
-           {0, 3, 138, 140}, // 9
-           {0, 9, 249, 250}, // 10 cas besoin d'incrementer prev et cur en même temps
-           {0, 9, 425, 427}, // 11 cas split scenario doit s'arreter avt car division non detectee (au bout d'un channel avec soeur non detectee)
-           {0, 0, 416, 443}, // 12 accumulation, emballement des réparations 
-           {0, 0, 78, 80} // 13 split and merge
-        };
-        int idxStartInc = 5; // for adaptative sizeIncrement Estimation
-        int idx =13;
-        //testSegmentationAndTracking(db.getDao(db.getExperiment().getMicroscopyField(testsF_MC_TT[idx][0]).getName()), ps, structureIdx, testsF_MC_TT[idx][1], Math.max(0, testsF_MC_TT[idx][2]-idxStartInc), testsF_MC_TT[idx][3]);
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
         List<StructureObject> roots = dao.getRoots();
@@ -100,6 +82,7 @@ public class TestTracker {
                 }
             }
         }
+        
         MicrochannelProcessorPhase.debug=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;

@@ -52,6 +52,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import plugins.ManualSegmenter;
 import plugins.ObjectSplitter;
+import utils.Pair;
 import utils.Utils;
 
 /**
@@ -633,6 +634,17 @@ public class ManualCorrection {
         }
         Utils.removeDuplicates(modifiedObjects, false);
         dao.store(modifiedObjects, true);
+    }
+    
+    public static void deleteAllObjectsFromFrame(MasterDAO db, boolean after) {
+        List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        if (!selList.isEmpty()) {
+            StructureObject first = Collections.min(selList, (o1, o2) -> Integer.compare(o1.getFrame(), o2.getFrame()));
+            List<StructureObject> toDelete = Pair.unpairKeys(ImageWindowManagerFactory.getImageManager().getCurrentImageObjectInterface().getObjects());
+            if (after) toDelete.removeIf(o -> o.getFrame()<first.getFrame());
+            else toDelete.removeIf(o -> o.getFrame()>first.getFrame());
+            deleteObjects(db, toDelete, true);
+        }
     }
     
 }

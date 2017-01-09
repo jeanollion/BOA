@@ -84,6 +84,7 @@ import javax.swing.DefaultListModel;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
+import javax.swing.JPopupMenu;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JTree;
 import javax.swing.KeyStroke;
@@ -873,7 +874,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(actionMicroscopyFieldJSP)
                     .addGroup(actionPanelLayout.createSequentialGroup()
-                        .addComponent(actionStructureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 443, Short.MAX_VALUE)
+                        .addComponent(actionStructureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 498, Short.MAX_VALUE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(actionJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 163, javax.swing.GroupLayout.PREFERRED_SIZE))
                     .addGroup(actionPanelLayout.createSequentialGroup()
@@ -893,7 +894,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         configurationPanelLayout.setVerticalGroup(
             configurationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 636, Short.MAX_VALUE)
+            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 691, Short.MAX_VALUE)
         );
 
         tabs.addTab("Configuration", configurationPanel);
@@ -920,7 +921,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
-        nextTrackErrorButton.setText("Go to next track error");
+        nextTrackErrorButton.setText("Navigate Next (X)");
         nextTrackErrorButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 nextTrackErrorButtonActionPerformed(evt);
@@ -941,7 +942,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
-        previousTrackErrorButton.setText("Go to previous track error");
+        previousTrackErrorButton.setText("Navigate Previous (W)");
         previousTrackErrorButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 previousTrackErrorButtonActionPerformed(evt);
@@ -962,6 +963,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         });
 
         deleteObjectsButton.setText("Delete Objects (D)");
+        deleteObjectsButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                deleteObjectsButtonMousePressed(evt);
+            }
+        });
         deleteObjectsButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 deleteObjectsButtonActionPerformed(evt);
@@ -1105,7 +1111,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         StructurePanelLayout.setVerticalGroup(
             StructurePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(structureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 588, Short.MAX_VALUE)
+            .addComponent(structureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 643, Short.MAX_VALUE)
         );
 
         ObjectTreeJSP.setLeftComponent(StructurePanel);
@@ -1124,7 +1130,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         );
         trackPanelLayout.setVerticalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 590, Short.MAX_VALUE)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 643, Short.MAX_VALUE)
         );
 
         ObjectTreeJSP.setRightComponent(trackPanel);
@@ -1481,7 +1487,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (sels.isEmpty()) ImageWindowManagerFactory.getImageManager().goToNextTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads(), next);
         else {
             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null);
-            if (i.getParent().getExperiment()!=db.getExperiment()) i=null;
+            if (i!=null && i.getParent().getExperiment()!=db.getExperiment()) i=null;
             String position = i==null? null:i.getParent().getFieldName();
             if (i==null || nextPosition) navigateCount=2;
             else {
@@ -2012,6 +2018,29 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         }
     }//GEN-LAST:event_runActionAllXPMenuItemActionPerformed
+
+    private void deleteObjectsButtonMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_deleteObjectsButtonMousePressed
+        if (SwingUtilities.isRightMouseButton(evt)) {
+            JPopupMenu menu = new JPopupMenu();
+            Action delAfter = new AbstractAction("Delete All objects after first selected object") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    ManualCorrection.deleteAllObjectsFromFrame(db, true);
+                    logger.debug("will delete all after");
+                }
+            };
+            Action delBefore = new AbstractAction("Delete All objects before first selected object") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    ManualCorrection.deleteAllObjectsFromFrame(db, false);
+                    logger.debug("will delete all after");
+                }
+            };
+            menu.add(delAfter);
+            menu.add(delBefore);
+            menu.show(this.deleteObjectsButton, evt.getX(), evt.getY());
+        }
+    }//GEN-LAST:event_deleteObjectsButtonMousePressed
     private void updateMongoDBBinActions() {
         boolean enableDump = false, enableRestore = false;
         String mPath = PropertyUtils.get(PropertyUtils.MONGO_BIN_PATH);
@@ -2067,13 +2096,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     
     public static void setNavigationButtonNames(boolean selectionsSelected) {
         if (getInstance()==null) return;
-        if (selectionsSelected) {
+        /*if (selectionsSelected) {
             getInstance().nextTrackErrorButton.setText("Go to Next Object in Selection (X)");
             getInstance().previousTrackErrorButton.setText("Go to Prev. Object in Selection (W)");
         } else {
             getInstance().nextTrackErrorButton.setText("Go to Next Track Error (X)");
             getInstance().previousTrackErrorButton.setText("Go to Prev. TrackError (W)");
-        }
+        }*/
     } 
     
     /**

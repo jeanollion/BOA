@@ -28,6 +28,8 @@ import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClo
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.logger;
 import utils.ArrayUtil;
+import utils.SlidingOperator;
+import static utils.SlidingOperator.performSlide;
 import utils.Utils;
 
 /**
@@ -83,10 +85,10 @@ public class ThresholdLocalContrast extends Threshold {
         return getThreshold(frame) * thldCoeffY[y];
     }
     public void setAdaptativeByFY(int adaptativeThresholdHalfWindow, int yHalfWindow) {
-        List<double[][]> stats = Arrays.asList(getStatisticsLocalContrast(planes, lcImages, localContrastThreshold));
-        int ySize = stats.get(0)[0].length;
+        List<double[][]> stats = Arrays.asList(getStatisticsLocalContrast(planes.subList(frameRange[0], frameRange[1]+1), lcImages.subList(frameRange[0], frameRange[1]+1), localContrastThreshold));
+        int ySize = stats.get(0).length;
         long t0 = System.currentTimeMillis();
-        List<double[][]> slideByF = slide(stats, adaptativeThresholdHalfWindow, new SlidingOperator<double[][], double[][], double[][]>() {
+        List<double[][]> slideByF = performSlide(stats, adaptativeThresholdHalfWindow, new SlidingOperator<double[][], double[][], double[][]>() {
             @Override
             public double[][] instanciateAccumulator() {
                 return new double[ySize][2];
@@ -118,36 +120,46 @@ public class ThresholdLocalContrast extends Threshold {
             }
         });
         long t1 = System.currentTimeMillis();
-        List<double[]> res = new ArrayList<>(slideByF.size());
+        thldFY = new ArrayList<>(slideByF.size());
         for (double[][] s: slideByF) {
-            res.add(getSlidingMean(Arrays.asList(s), yHalfWindow));
+            thldFY.add(getSlidingMean(Arrays.asList(s), yHalfWindow));
+        }
+        if (frameRange[0]>0) {
+            for (int i = 0; i<frameRange[0]; ++i) thldFY.add(0, thldFY.get(0));
         }
         long t2 = System.currentTimeMillis();
         if (debug || debugCorr) logger.debug("slide by Frames: {}ms, slide by y: {}ms", t1-t0, t2-t1);
     }
     @Override
     public void setAdaptativeByY(int yHalfWindow) {
-        List<double[]> stats = Arrays.asList(getStatisticsLocalContrast(planes, lcImages, true, localContrastThreshold, true));
+        List<double[]> stats = Arrays.asList(getStatisticsLocalContrast(planes.subList(frameRange[0], frameRange[1]+1), lcImages.subList(frameRange[0], frameRange[1]+1), true, localContrastThreshold, true));
         thldCoeffY = getSlidingMean(stats, yHalfWindow);
+        if (frameRange[0]>0) thldCoeffY = slide(thldCoeffY, frameRange[0]);
         for (int i = 0; i<thldCoeffY.length; ++i) thldCoeffY[i]/=getThreshold();
         if (debug || debugCorr) {
             Utils.plotProfile("Threshold Coeff Y", thldCoeffY);
             //logger.debug("compute threshold coeff by Y: {}ms", t2-t1);
         }
     }
-
+    private static double[] slide(double[] array, int position) {
+        double[] res = new double[position+array.length];
+        System.arraycopy(array, 0, res, position, array.length);
+        Arrays.fill(res, 0, position, array[0]);
+        return res;
+    }
     @Override
     public void setAdaptativeThreshold(double adaptativeCoefficient, int adaptativeThresholdHalfWindow) {
-        List<double[]> stats = Arrays.asList(getStatisticsLocalContrast(planes, lcImages, false, localContrastThreshold, true));
+        List<double[]> stats = Arrays.asList(getStatisticsLocalContrast(planes.subList(frameRange[0], frameRange[1]+1), lcImages.subList(frameRange[0], frameRange[1]+1), false, localContrastThreshold, true));
         thresholdF = getSlidingMean(stats, adaptativeThresholdHalfWindow);
-        if (adaptativeCoefficient<1) for (int i = 0; i<thldCoeffY.length; ++i) thldCoeffY[i] = thldCoeffY[i] * adaptativeCoefficient + getThreshold() * (1-adaptativeCoefficient);
+        if (frameRange[0]>0) thresholdF = slide(thresholdF, frameRange[0]);
+        if (adaptativeCoefficient<1) for (int i = 0; i<thresholdF.length; ++i) thresholdF[i] = thresholdF[i] * adaptativeCoefficient + getThreshold() * (1-adaptativeCoefficient);
         if (debug || debugCorr) {
             Utils.plotProfile("Thresholdby Frame", thresholdF);
             //logger.debug("compute threshold coeff by Y: {}ms", t2-t1);
         }
     }
     private static double[] getSlidingMean(List<double[]> stats, int halfWindow) {
-        List<Double> res = slide(stats, halfWindow, new SlidingOperator<double[], double[], Double>() {
+        List<Double> res = performSlide(stats, halfWindow, new SlidingOperator<double[], double[], Double>() {
             @Override
             public double[] instanciateAccumulator() {
                 return new double[2];
@@ -217,8 +229,7 @@ public class ThresholdLocalContrast extends Threshold {
         for (Image i : images) {
             if (i.getSizeY()>yMax) yMax = i.getSizeY();
         }
-        
-        double[][][] stats = new double[images.size()][yMax][2]; // 0 sum, 2 count
+        double[][][] stats = new double[images.size()][yMax][2]; // 0 sum, 1 count
         for (int imIdx = 0; imIdx<images.size(); ++imIdx) {
             Image i = images.get(imIdx);
             Image lc = lcImages.get(imIdx);
@@ -285,5 +296,10 @@ public class ThresholdLocalContrast extends Threshold {
     @Override
     public void freeMemory() {
         this.lcImages=null;
+    }
+
+    @Override
+    public boolean hasAdaptativeByY() {
+        return this.thldCoeffY!=null||this.thldFY!=null;
     }
 }

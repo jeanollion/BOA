@@ -35,6 +35,8 @@ import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClo
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debug;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr;
 import utils.ArrayUtil;
+import utils.SlidingOperator;
+import static utils.SlidingOperator.performSlide;
 import utils.Utils;
 
 /**
@@ -116,7 +118,7 @@ public class ThresholdHisto extends Threshold {
         long t4 = System.currentTimeMillis();
         // adaptative threhsold on sliding window histo mean
         if (adaptativeThresholdHalfWindow*2 < frameRange[1] - frameRange[0] ) {
-            List<Double> slide = Threshold.slide(histos.subList(frameRange[0], frameRange[1]+1), adaptativeThresholdHalfWindow, new SlidingOperator<int[], int[], Double>() {
+            List<Double> slide = performSlide(histos.subList(frameRange[0], frameRange[1]+1), adaptativeThresholdHalfWindow, new SlidingOperator<int[], int[], Double>() {
                 @Override
                 public int[] instanciateAccumulator() {
                     return new int[256];
@@ -191,6 +193,11 @@ public class ThresholdHisto extends Threshold {
     @Override
     public void freeMemory() {
         
+    }
+
+    @Override
+    public boolean hasAdaptativeByY() {
+        return this.thldCoeffY!=null;
     }
     
     

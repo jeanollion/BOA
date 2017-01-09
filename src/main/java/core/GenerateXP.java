@@ -105,6 +105,12 @@ public class GenerateXP {
         boolean fluo = true;
         */
         
+        String dbName = "boa_fluo151127_test";
+        String outputDir = "/data/Images/Fluo/film151127/OutputTest";
+        String inputDir = "/data/Images/Fluo/film151127/ME121R-27112015-laser";
+        boolean flip = true; 
+        boolean fluo = true;
+        
         // mutH. blink
         /*String dbName = "boa_fluo151127";
         String outputDir = "/data/Images/Fluo/film151127/Output";
@@ -231,7 +237,7 @@ public class GenerateXP {
         scaleXY = 0.06289;
         */
         
-        String dbName = "boa_phase150324mutHNoSub";
+        /*String dbName = "boa_phase150324mutHNoSub";
         String inputDir = "/data/Images/Phase/150324_6300_mutH/6300_mutH_LB_LR62silicium-24032015-tif/";
         String outputDir = "/data/Images/Phase/150324_6300_mutH/OutputNoSub";
         boolean flip = false;
@@ -240,6 +246,7 @@ public class GenerateXP {
         transSingleFileImport=false;
         scaleXY = 0.06289;
         subTransPre = false;
+        */
         
         /*String dbName = "boa_phase150616wt";
         // cette manip contient des images hors focus

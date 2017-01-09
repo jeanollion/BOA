@@ -496,7 +496,9 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         Map<Pair<StructureObject, StructureObject>, V> map = labile ? labileParentTrackHeadTrackRoiMap : parentTrackHeadTrackRoiMap;
         if (canDisplayTrack) { 
-            if (i.getKey().childStructureIdx!=track.get(0).key.getStructureIdx()) i = imageObjectInterfaces.get(i.getKey().getKey(trackHead.getStructureIdx()));
+            if (i.getKey().childStructureIdx!=trackHead.getStructureIdx()) {
+                i = getImageObjectInterface(trackHead.getParent(), trackHead.getStructureIdx(), true);
+            }
             if (((TrackMask)i).getParent()==null) logger.error("Track mask parent null!!!");
             else if (((TrackMask)i).getParent().getTrackHead()==null) logger.error("Track mask parent trackHead null!!!");
             Pair<StructureObject, StructureObject> key = new Pair(((TrackMask)i).getParent().getTrackHead(), trackHead);

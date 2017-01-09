@@ -222,7 +222,7 @@ public class StructureObjectUtils {
         return Utils.toArray(al, true);
     }
     public static String getIndices(StructureObject o) {
-        return Selection.indiciesToString(getIndexTree(o));
+        return Selection.indicesToString(getIndexTree(o));
     }
     public static Map<StructureObject, List<StructureObject>> getAllTracks(List<StructureObject> parentTrack, int structureIdx) {
         HashMap<StructureObject, List<StructureObject>>  res = new HashMap<StructureObject, List<StructureObject>>();

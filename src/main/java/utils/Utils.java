@@ -332,16 +332,27 @@ public class Utils {
     }
     
     public static void plotProfile(String title, float[] values) {
+        if (values.length<=1) return;
+        float v = values[0];
+        int idx = 0; 
+        while (idx<values.length && values[idx]==v) ++idx;
+        if (idx==values.length) return;
         float[] x=new float[values.length];
         for (int i = 0; i<x.length; ++i) x[i]=i;
         new Plot(title, "coord", "value", x, values).show();
     }
     
     public static void plotProfile(String title, double[] values) {
+        if (values.length<=1) return;
+        double v = values[0];
+        int idx = 0; 
+        while (idx<values.length && values[idx]==v) ++idx;
+        if (idx==values.length) return; // cannot be ploted if one single value
         double[] x=new double[values.length];
         for (int i = 0; i<x.length; ++i) x[i]=i;
         new Plot(title, "coord", "value", x, values).show();
     }
+    
     
     public static void deleteDirectory(File dir) { //recursive delete, because java's native function wants the dir to be empty to delete it
         if (dir==null || !dir.exists()) return;

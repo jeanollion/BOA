@@ -49,20 +49,28 @@ public class TaskRunner {
         PluginFactory.findPlugins("plugins.plugins");
         
         //List<Task> tasks = extractMeasurementOnFluoXP(true);
-        List<Task> tasks = getTasks();
+        //List<Task> tasks = getTasks();
+        List<Task> tasks = getFluoTasks();
         //for (Task t : tasks) t.isValid();
         for (Task t : tasks) if (t.isValid()) t.run();
         logger.info("All tasks performed! See errors below:");
         for (Task t : tasks) t.printErrors();
     }
+    public static List<Task> getFluoTasks() {
+        List<Task> tasks = new ArrayList<Task>() {{
+            add(new Task("boa_fluo151127_test").setActions(false, true, true, false).setPositions(0).setStructures(1));
+        }};
+        return tasks;
+    }
+    
     public static List<Task> getTasks() {
         List<Task> tasks = new ArrayList<Task>() {{
-            add(new Task("boa_phase150324mutH").setActions(false, true, true, false).setPositions(0).setStructures(1));
-            add(new Task("boa_phase150324mutH").setActions(true, true, true, false).setPositions(ArrayUtil.generateIntegerArray(1, 10)));
-            add(new Task("boa_phase141107wt").setActions(true, true, true, false).setPositions(ArrayUtil.generateIntegerArray(0, 10)));
+            add(new Task("boa_phase150324mutH").setActions(false, true, true, true).setPositions(ArrayUtil.generateIntegerArray(14, 100)));
+            add(new Task("boa_phase141107wt").setActions(false, true, true, true));
+            add(new Task("boa_phase150616wt").setActions(false, true, true, true));
+            //add(new Task("boa_phase150324mutH").setActions(false, true, true, true).setStructures(1).addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 1).addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 0));
             //add(new Task("boa_phase141107wt").setActions(false, true, true, true).setStructures(1).addExtractMeasurementDir("/data/Images/Phase/141107_mg6300_wt/", 1).addExtractMeasurementDir("/data/Images/Phase/141107_mg6300_wt/", 0));
             //add(new Task("boa_phase150616wt").setActions(false, true, true, true).setStructures(1).addExtractMeasurementDir("/data/Images/Phase/150616_6300_wt/", 1).addExtractMeasurementDir("/data/Images/Phase/150616_6300_wt/", 0));
-            //add(new Task("boa_phase150324mutH").setActions(false, true, true, true).setStructures(1).addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 1).addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 0));
         }};
         return tasks;
     }
@@ -155,7 +163,7 @@ public class TaskRunner {
             return errors.isEmpty();
         }
         private void checkArray(int[] array, int maxValue, String message) {
-            if (array[ArrayUtil.max(array)]>=maxValue) errors.add(new Pair(dbName, new Exception(message + array[ArrayUtil.max(array)]+ " not found")));
+            if (array[ArrayUtil.max(array)]>=maxValue) errors.add(new Pair(dbName, new Exception(message + array[ArrayUtil.max(array)]+ " not found, max value: "+maxValue)));
             if (array[ArrayUtil.min(array)]<0) errors.add(new Pair(dbName, new Exception(message + array[ArrayUtil.min(array)]+ " not found")));
         }
         public void printErrors() {

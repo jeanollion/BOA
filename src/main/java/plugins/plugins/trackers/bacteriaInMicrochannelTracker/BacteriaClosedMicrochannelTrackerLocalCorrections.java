@@ -80,16 +80,18 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
 
     @Override public SegmenterSplitAndMerge getSegmenter() {
         SegmenterSplitAndMerge s= segmenter.instanciatePlugin();
-        ((UseThreshold)s).setThresholdValue(threshold!= null ? threshold.getThreshold(): debugThreshold);
+        if (s instanceof UseThreshold) ((UseThreshold)s).setThresholdValue(threshold!= null ? threshold.getThreshold(): debugThreshold);
         return s;
     }
 
     protected SegmenterSplitAndMerge getSegmenter(int frame, boolean setMask) {
         SegmenterSplitAndMerge s= segmenter.instanciatePlugin();
-        if (threshold!=null) {
-            if (setMask) ((UseThreshold)s).setThresholdedImage(threshold.getThresholdedPlane(frame, false));
-            else ((UseThreshold)s).setThresholdValue(threshold.getThreshold(frame));
-        } else ((UseThreshold)s).setThresholdValue(debugThreshold);
+        if (s instanceof UseThreshold) {
+            if (threshold!=null) {
+                if (setMask && threshold.hasAdaptativeByY()) ((UseThreshold)s).setThresholdedImage(threshold.getThresholdedPlane(frame, false));
+                else ((UseThreshold)s).setThresholdValue(threshold.getThreshold(frame));
+            } else ((UseThreshold)s).setThresholdValue(debugThreshold);
+        }
         return s;
     }
     
@@ -119,6 +121,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     final static boolean adaptativeThreshold= true;
     final static double adaptativeCoefficient = 1;
     final static int adaptativeThresholdHalfWindow = 10;
+    final static double contrastThreshold = 0.06;
     // sizeIncrement -> adaptative SI
     final static int sizeIncrementFrameNumber = 7; // number of frames for sizeIncrement computation
     final static double significativeSIErrorThld = 0.3; // size increment difference > to this value lead to an error
@@ -192,29 +195,30 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             List<Image> planes = new ArrayList<>();
             for (int t = 0; t<populations.length; ++t) planes.add(((UseThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, parents.get(t)));
             //threshold = new ThresholdHisto(planes);
-            
-            
-            threshold = new ThresholdLocalContrast(planes, 0.06); 
-            threshold.setFrameRange(getFrameRangeContainingCells());
-            if (adaptativeThreshold && adaptativeCoefficient>0) {
-                threshold.setAdaptativeThreshold(adaptativeCoefficient, adaptativeThresholdHalfWindow);
-                threshold.setAdaptativeByY(30); // 40 pour seuillage histogram
+            threshold = new ThresholdLocalContrast(planes, contrastThreshold); 
+            int[] fr = getFrameRangeContainingCells();
+            if (fr !=null) {
+                threshold.setFrameRange(fr);
+                ((ThresholdLocalContrast)threshold).setAdaptativeByFY(adaptativeThresholdHalfWindow, 30);
+                if (false && adaptativeThreshold && adaptativeCoefficient>0) {
+                    threshold.setAdaptativeThreshold(adaptativeCoefficient, adaptativeThresholdHalfWindow);
+                    threshold.setAdaptativeByY(30); // 40 pour seuillage histogram
+                }
             }
-            //((ThresholdLocalContrast)threshold).setAdaptativeByFY(adaptativeThresholdHalfWindow, 30);
             
             threshold.freeMemory();
             /*Threshold.showOne=true;
             BacteriaTrans.debug=false;
+            logger.debug("obejcts: {}", getObjects(0).size());
+            Threshold.showOne=true;
             logger.debug("obejcts: {}", getObjects(10).size());
             Threshold.showOne=true;
-            logger.debug("obejcts: {}", getObjects(20).size());
+            logger.debug("obejcts: {}", getObjects(100).size());
             Threshold.showOne=true;
-            logger.debug("obejcts: {}", getObjects(30).size());
-            Threshold.showOne=true;
-            logger.debug("obejcts: {}", getObjects(40).size());
-            return;
+            logger.debug("obejcts: {}", getObjects(200).size());
+            return;*/
             
-            */
+            
             
             
         } else if (!Double.isNaN(debugThreshold)) {
@@ -222,10 +226,9 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         }
         //if (true) return;
         // 1) assign all. Limit to first continuous segment of cells
-        maxT = threshold!=null?threshold.getFrameRange()[1]+1: populations.length;
-        minT = threshold!=null?threshold.getFrameRange()[0]: 0;
+        maxT = threshold!=null? (threshold.getFrameRange()!=null ?threshold.getFrameRange()[1]+1 : -1): populations.length;
+        minT = threshold!=null?(threshold.getFrameRange()!=null ?threshold.getFrameRange()[0] : -1) : 0;
         while (minT<maxT && getObjects(minT).isEmpty()) minT++;
-        
         for (int t = minT+1; t<maxT; ++t) {
             if (getObjects(t).isEmpty()) {
                 maxT=t;
@@ -1007,8 +1010,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 if (dup.idxNextEnd() == dup.idxNext) nextIdxError = dup.idxNextEnd()+1;
             }
             if (debug && a.ta.verboseLevel<verboseLevelLimit) logger.debug("assignment {} with {} objects, assign {}, div:{} / ass1={}, ass2={}", a.sizePrev(), a.sizeNext(), (score==score1||score==scoreDiv) ? "first" : "last", (score==scoreDiv||score==scoreEndDiv), currentAssigner.toString(false), dup.toString(false));
-            setAssignmentToTrackAttributes(currentAssigner, frame, true, lastAssignment); // perform current assignement
-            setAssignmentToTrackAttributes(dup, frame, true, lastAssignment); // recursive call
+            setAssignmentToTrackAttributes(currentAssigner, frame, !lastAssignment, lastAssignment); // perform current assignement
+            setAssignmentToTrackAttributes(dup, frame, !lastAssignment, lastAssignment); // recursive call
             if (nextIdxError>=0) { // case of assignemnet 1 with O in dup : set next & signal error
                 getAttribute(frame-1, dup.idxPrev).next = getAttribute(frame, nextIdxError);
                 getAttribute(frame-1, dup.idxPrev).errorCur=true;
