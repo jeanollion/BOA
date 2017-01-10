@@ -45,7 +45,7 @@ public interface SlidingOperator<E, A, R> {
                     --accumulator[1];
                 }
                 if (addElement!=null) {
-                    accumulator[0]+=removeElement;
+                    accumulator[0]+=addElement;
                     ++accumulator[1];
                 }
             }

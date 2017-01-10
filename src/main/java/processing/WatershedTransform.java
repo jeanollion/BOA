@@ -62,7 +62,7 @@ public class WatershedTransform {
     }
     public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion, boolean lowConnectivity) {
         ImageByte seeds = Filters.localExtrema(watershedMap, null, decreasingPropagation, Filters.getNeighborhood(1.5, 1.5, watershedMap));
-        if (mask!=null) ImageOperations.and(seeds, mask, seeds);
+        if (mask!=null) ImageOperations.and(seeds, mask, seeds); // no offset
         //new IJImageDisplayer().showImage(seeds.setName("seeds"));
         return watershed(watershedMap, mask, ImageLabeller.labelImageList(seeds), decreasingPropagation, propagationCriterion,fusionCriterion, lowConnectivity);
     }

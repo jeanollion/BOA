@@ -59,7 +59,7 @@ public class TestLAPTrackerMutations {
         final int fieldIdx = 0;
         //final String dbName = "boa_fluo160428";
         //final int fieldIdx = 0;
-        final int mcIdx = 1;
+        final int mcIdx = 0;
         TestLAPTrackerMutations t = new TestLAPTrackerMutations();
         
         t.init(dbName, fieldIdx, mcIdx, 0, 100);

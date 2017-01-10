@@ -257,7 +257,7 @@ public class ObjectPopulation {
         if (properties == null) {
             if (labelImage != null) {
                 properties = new BlankMask("", labelImage);
-            } else if (!objects.isEmpty()) { //unscaled, no offset for label image..
+            } else if (objects!=null && !objects.isEmpty()) { //unscaled, no offset for label image..
                 BoundingBox box = new BoundingBox();
                 for (Object3D o : objects) {
                     box.expand(o.getBounds());
@@ -276,7 +276,7 @@ public class ObjectPopulation {
     }
     public void redrawLabelMap(boolean fillImage) {
         if (hasImage()) {
-            int maxLabel = Collections.max(objects, (o1, o2) -> Integer.compare(o1.getLabel(), o2.getLabel())).getLabel();
+            int maxLabel = Collections.max(getObjects(), (o1, o2) -> Integer.compare(o1.getLabel(), o2.getLabel())).getLabel();
             if (maxLabel > ImageInteger.getMaxValue(labelImage, false)) {
                 labelImage = ImageInteger.createEmptyLabelImage(labelImage.getName(), maxLabel, properties);
             } else {
@@ -287,14 +287,14 @@ public class ObjectPopulation {
     }
     
     public void translate(int offsetX, int offsetY, int offsetZ , boolean absoluteLandmark) {
-        for (Object3D o : objects) {
+        for (Object3D o : getObjects()) {
             o.translate(offsetX, offsetY, offsetZ);
         }
         this.absoluteLandmark=absoluteLandmark;
     }
     
     public void translate(BoundingBox bounds, boolean absoluteLandmark) {
-        for (Object3D o : objects) {
+        for (Object3D o : getObjects()) {
             o.translate(bounds);
         }
         this.absoluteLandmark=absoluteLandmark;
@@ -423,7 +423,7 @@ public class ObjectPopulation {
     public ObjectPopulation filter(Filter filter, List<Object3D> removedObjects) {
         //int objectNumber = objects.size();
         filter.init(this);
-        Iterator<Object3D> it = objects.iterator();
+        Iterator<Object3D> it = getObjects().iterator();
         while (it.hasNext()) {
             Object3D o = it.next();
             if (!filter.keepObject(o)) {
@@ -455,7 +455,7 @@ public class ObjectPopulation {
     }
     
     public void keepOnlyLargestObject() {
-        if (objects.isEmpty()) {
+        if (getObjects().isEmpty()) {
             return;
         }
         if (labelImage!=null) {
@@ -480,7 +480,7 @@ public class ObjectPopulation {
     }
     
     public void mergeAll() {
-        if (objects.isEmpty()) return;
+        if (getObjects().isEmpty()) return;
         if (labelImage!=null) {
             for (Object3D o : getObjects()) draw(o, 1);
         }
@@ -495,6 +495,7 @@ public class ObjectPopulation {
     }
     private void mergeAllConnected(int fromLabel) {
         relabel(); // objects label start from 1 -> idx = label-1
+        getObjects();
         List<Object3D> toRemove = new ArrayList<Object3D>();
         ImageInteger inputLabels = getLabelMap();
         int otherLabel;

@@ -75,7 +75,7 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
     NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 3, 2.5, 1, null);
     NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 3, 1.5, 0, null);
     NumberParameter intensityThreshold = new BoundedNumberParameter("Intensity Threshold for Seeds", 2, 115, 0, null);
-    PostFilterSequence postFilters = new PostFilterSequence("Post-Filters").add(new FeatureFilter(new SNR().setBackgroundObjectStructureIdx(1), 0.75, true, true));
+    PostFilterSequence postFilters = new PostFilterSequence("Post-Filters"); //.add(new FeatureFilter(new SNR().setBackgroundObjectStructureIdx(1), 0.75, true, true));
     Parameter[] parameters;
     public List<Image> intermediateImages;
     public MutationSegmenterScaleSpace() {
@@ -84,6 +84,7 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         ObjectPopulation res= runPlaneHybrid(input, parent.getMask());
         if (intermediateImages!=null) intermediateImages.add(res.getLabelMap().duplicate("before post-filters"));
+        //return res;
         return postFilters.filter(res, structureIdx, (StructureObject)parent);
     }
     public PostFilterSequence getPostFilters() {return postFilters;}

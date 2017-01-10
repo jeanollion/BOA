@@ -247,7 +247,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     }
 
     @Override public double split(Image input, Object3D o, List<Object3D> result) {
-        ObjectPopulation pop =  splitObject(input, o);
+        ObjectPopulation pop =  splitObject(input, o); // init processing variables
         pop.translate(o.getBounds().duplicate().reverseOffset(), false);
         if (pop.getObjects().size()<=1) return Double.POSITIVE_INFINITY;
         else {
@@ -381,7 +381,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         ImageInteger maskExt = object.getMask().extend(extent);
         pv = initializeVariables(inExt);
         // ici -> bug avec offsets? 
-        logger.debug("in off: {}, object off: {}, inExt off: {}, maskExt off: {}", input.getBoundingBox(), object.getMask().getBoundingBox(), inExt.getBoundingBox(), maskExt.getBoundingBox());
+        //logger.debug("in off: {}, object off: {}, inExt off: {}, maskExt off: {}", input.getBoundingBox(), object.getMask().getBoundingBox(), inExt.getBoundingBox(), maskExt.getBoundingBox());
         ObjectPopulation res = getSeparatedObjects(maskExt, pv, minSizePropagation.getValue().intValue(), minSize.getValue().intValue(), 2, splitVerbose);
         extent = new BoundingBox(ext, -ext, ext, -ext, 0, 0);
         ImageInteger labels = res.getLabelMap().extend(extent);
@@ -434,7 +434,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         }
         
         public ImageByte getSplitMask() {
-            if (splitMask==null) splitMask = new ImageByte("split mask", intensityMap);
+            if (splitMask==null) splitMask = new ImageByte("split mask", rawIntensityMap);
             return splitMask;
         }
         private Image getNormalizedHessian() {
