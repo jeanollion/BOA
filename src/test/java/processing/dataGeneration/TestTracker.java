@@ -46,14 +46,14 @@ public class TestTracker {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
-        String dbName = "boa_fluo151127_test";
+        //String dbName = "boa_fluo151127_test";
         //String dbName = "boa_mutH_140115";
         //final String dbName = "boa_phase140115mutH";
-        //final String dbName = "boa_phase150324mutH";
+        final String dbName = "boa_phase150324mutH";
         //String dbName = "boa_phase150616wt";
         //String dbName = "boa_phase141107wt";
-        int fIdx = 0;
-        int mcIdx =2;
+        int fIdx = 27;
+        int mcIdx =0;
         int structureIdx = 1;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();

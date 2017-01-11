@@ -97,14 +97,18 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
             List<Double> widths = new ArrayList<>(track.size());
             for (StructureObject o : track) {
                 Result r = parentBBMap.get(o.getParent());
-                if (o.getIdx()>=r.size()) continue; // exclude objects created from gap closing 
-                shifts.add(r.yMinShift[o.getIdx()]);
-                widths.add((double)r.getXWidth(o.getIdx()));
+                if (o.getIdx()>=r.size()) { // object created from gap closing 
+                    if (!widths.isEmpty()) widths.add(widths.get(widths.size()-1)); // for index consitency
+                    else widths.add(null);
+                } else {
+                    shifts.add(r.yMinShift[o.getIdx()]);
+                    widths.add((double)r.getXWidth(o.getIdx()));
+                }
             }
             Collections.sort(shifts);
             int shift = shifts.get(shifts.size()/2); // median shift
-            widths = performSlide(widths, 10, SlidingOperator.slidingMean()); // sliding and not global mean because if channels gets empty -> width too small 
-            
+            double mean = 0, c=0; for (Double d : widths) if (d!=null) {mean+=d; ++c;} // global mean value
+            widths = performSlide(widths, 10, SlidingOperator.slidingMean(mean/c)); // sliding and not global mean because if channels gets empty -> width too small 
             if (debug) {
                 logger.debug("track: {} ymin-shift: {}, width: {}", track.get(0), shift, widths);
             }

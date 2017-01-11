@@ -195,15 +195,16 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             List<Image> planes = new ArrayList<>();
             for (int t = 0; t<populations.length; ++t) planes.add(((UseThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, parents.get(t)));
             //threshold = new ThresholdHisto(planes);
-            threshold = new ThresholdLocalContrast(planes, contrastThreshold); 
+            threshold = new ThresholdLocalContrast(planes, contrastThreshold);
+            threshold.setAdaptativeThreshold(adaptativeCoefficient, adaptativeThresholdHalfWindow); // global threshold not relevant for cell range computation if some channel are void
             int[] fr = getFrameRangeContainingCells();
             if (fr !=null) {
                 threshold.setFrameRange(fr);
                 ((ThresholdLocalContrast)threshold).setAdaptativeByFY(adaptativeThresholdHalfWindow, 30);
-                if (false && adaptativeThreshold && adaptativeCoefficient>0) {
+                /*if (false && adaptativeThreshold && adaptativeCoefficient>0) {
                     threshold.setAdaptativeThreshold(adaptativeCoefficient, adaptativeThresholdHalfWindow);
                     threshold.setAdaptativeByY(30); // 40 pour seuillage histogram
-                }
+                }*/
             }
             
             threshold.freeMemory();
@@ -665,10 +666,11 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     }
     
     protected int getErrorNumber(int tpMin, int tpMaxIncluded, boolean assign) {
-        if (tpMin<1) tpMin = 1;
+        if (tpMin<minT+1) tpMin = minT+1;
         if (tpMaxIncluded>=maxT) tpMaxIncluded = maxT-1;
         int res = 0;
         for (int t = tpMin; t<=tpMaxIncluded; ++t) {
+            //if (getObjects(t-1)==null) logger.debug("getError number: no objects prev @ t={}", t);
             TrackAssigner ta = getTrackAssigner(t).setVerboseLevel(verboseLevelLimit);
             if (assign) resetTrackAttributes(t);
             ta.assignAll();
