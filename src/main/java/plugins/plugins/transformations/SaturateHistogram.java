@@ -55,11 +55,6 @@ public class SaturateHistogram implements Transformation {
         final double add = thld * (1 - factor);
 
         image.getBoundingBox().translateToOrigin().loop(new LoopFunction() {
-
-            public void setUp() {}
-
-            public void tearDown() {}
-
             public void loop(int x, int y, int z) {
                 float value = image.getPixel(x, y, z);
                 if (value>thld) {

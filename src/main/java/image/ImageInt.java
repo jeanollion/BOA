@@ -235,5 +235,5 @@ public class ImageInt extends ImageInteger {
         }
         return histo;
     }
-    
+    @Override public int getBitDepth() {return 64;}
 }

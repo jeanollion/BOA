@@ -17,22 +17,8 @@
  */
 package plugins.plugins.measurements.objectFeatures;
 
-import boa.gui.imageInteraction.IJImageDisplayer;
-import configuration.parameters.Parameter;
-import configuration.parameters.SiblingStructureParameter;
-import configuration.parameters.StructureParameter;
 import dataStructure.objects.Object3D;
-import dataStructure.objects.ObjectPopulation;
-import dataStructure.objects.StructureObject;
-import dataStructure.objects.StructureObjectUtils;
 import image.BoundingBox;
-import image.BoundingBox.LoopFunction;
-import image.ImageByte;
-import image.ImageMask;
-import image.TypeConverter;
-import java.util.ArrayList;
-import java.util.HashMap;
-import plugins.objectFeature.IntensityMeasurement;
 import plugins.objectFeature.IntensityMeasurementCore.IntensityMeasurements;
 import utils.Utils;
 

@@ -226,7 +226,7 @@ public class ImageByte extends ImageInteger {
     
     @Override public int[] getHisto256(double min, double max, ImageMask mask, BoundingBox limit) {return getHisto256(mask);}
 
-    
+    @Override public int getBitDepth() {return 8;}
 
     
 

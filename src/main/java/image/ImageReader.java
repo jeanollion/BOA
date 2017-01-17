@@ -39,6 +39,7 @@ import loci.plugins.util.LociPrefs;
 import ome.units.quantity.Length;
 import static image.Image.logger;
 import java.util.Arrays;
+import org.joda.time.DateTimeZone;
 
 /**
  *
@@ -114,6 +115,7 @@ public class ImageReader {
             try {
                 meta = service.createOMEXMLMetadata();
                 reader.setMetadataStore(meta);
+                //logTimeAnnotations();
             } catch (ServiceException ex) {
                 logger.error(ex.getMessage(), ex);
             }
@@ -178,7 +180,6 @@ public class ImageReader {
             try {
                 if (coords.getBounds()==null || PNG.equals(extension)) {
                     ip = reader.openProcessors(reader.getIndex(locZ, coords.getChannel(), locT))[0];
-                    
                 } else {
                     ip = reader.openProcessors(reader.getIndex(locZ, coords.getChannel(), locT), coords.getBounds().getxMin(), coords.getBounds().getyMin(), coords.getBounds().getSizeX(), coords.getBounds().getSizeY())[0];
                 }
@@ -211,9 +212,29 @@ public class ImageReader {
                 if (lx!=null) res[0] = lx.value().doubleValue();
                 if (ly!=null) res[1] = ly.value().doubleValue();
                 if (lz!=null) res[2] = lz.value().doubleValue();
+                
             } catch(Exception e) {}
         } 
         return res;
+    }
+    
+    public void logTimeAnnotations() {
+        if (meta!=null) {
+            logger.debug("image count: {}", meta.getImageCount()); 
+            for (int i = 0; i<meta.getImageCount(); ++i) {
+                logger.debug("i:{}, time: {}, ", i, meta.getImageAcquisitionDate(i), meta.getImageAcquisitionDate(i).asDateTime(DateTimeZone.UTC), meta.getImageAcquisitionDate(i).asInstant());
+            }
+            /*int c = meta.getTimestampAnnotationCount();
+            for (int i = 0; i<c; ++c) {
+                logger.debug("time: i={}, time: {}({}/{}), ns={}, id={}, desc={}, annotator={}", i, meta.getTimestampAnnotationValue(i), meta.getTimestampAnnotationValue(i).asDateTime(DateTimeZone.UTC), meta.getTimestampAnnotationValue(i).asInstant(), meta.getTimestampAnnotationNamespace(i), meta.getTimestampAnnotationID(i), meta.getTimestampAnnotationDescription(i), meta.getTimestampAnnotationAnnotator(i));
+                
+                int cc = meta.getTimestampAnnotationAnnotationCount(i);
+                for (int ii = 0; ii<cc; ++ii) {
+                    logger.debug("time: i={}, ref.idx={}, ref={}", i, ii, meta.getTimestampAnnotationAnnotationRef(i, ii));
+                }
+            }*/
+        }
+        
     }
     
     /*private float[] getTifCalibrationIJ() {

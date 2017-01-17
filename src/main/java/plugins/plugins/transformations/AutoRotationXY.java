@@ -28,6 +28,7 @@ import configuration.parameters.PreFilterSequence;
 import static core.Processor.logger;
 import dataStructure.containers.InputImage;
 import dataStructure.containers.InputImages;
+import static dataStructure.containers.InputImages.getAverageFrame;
 import dataStructure.objects.StructureObjectPreProcessing;
 import image.Image;
 import image.ImageFloat;
@@ -56,8 +57,9 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     //NumberParameter filterScale = new BoundedNumberParameter("Object Scale", 0, 15, 2, null); //TODO: conditional parameter
     ChoiceParameter interpolation = new ChoiceParameter("Interpolation", Utils.toStringArray(ImageTransformation.InterpolationScheme.values()), ImageTransformation.InterpolationScheme.BSPLINE5.toString(), false);
     ChoiceParameter searchMethod = new ChoiceParameter("Search method", SearchMethod.getValues(), SearchMethod.MAXVAR.getName(), false);
+    NumberParameter refAverage = new BoundedNumberParameter("Number of frame to average around reference frame", 0, 0, 0, null);
     FilterSequence prefilters = new FilterSequence("Pre-Filters");
-    Parameter[] parameters = new Parameter[]{searchMethod, minAngle, maxAngle, precision1, precision2, interpolation, prefilters}; // prefilters -> problem : parent?
+    Parameter[] parameters = new Parameter[]{searchMethod, minAngle, maxAngle, precision1, precision2, interpolation, refAverage, prefilters}; // prefilters -> problem : parent?
     ArrayList<Double> internalParams=new ArrayList<Double>(1);
     public static boolean debug = false;
     public AutoRotationXY(double minAngle, double maxAngle, double precision1, double precision2, InterpolationScheme interpolation, SearchMethod method) {
@@ -71,6 +73,10 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     }
     public AutoRotationXY setPrefilters(plugins.Filter... filters) {
         prefilters.add(filters);
+        return this;
+    }
+    public AutoRotationXY setAverageReference(int frameNumber) {
+        this.refAverage.setValue(frameNumber);
         return this;
     }
     public AutoRotationXY() {}
@@ -95,8 +101,8 @@ public class AutoRotationXY implements TransformationTimeIndependent {
         return SelectionMode.ALL;
     }
 
-    public void computeConfigurationData(int channelIdx, InputImages inputImages) {
-        Image image = inputImages.getImage(channelIdx, inputImages.getDefaultTimePoint());
+    public void computeConfigurationData(int channelIdx, InputImages inputImages) {        
+        Image image = getAverageFrame(inputImages, channelIdx, inputImages.getDefaultTimePoint(), refAverage.getValue().intValue());
         image = prefilters.filter(image);
         double angle=0;
         if (this.searchMethod.getSelectedItem().equals(SearchMethod.MAXVAR.getName())) { 

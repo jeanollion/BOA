@@ -134,6 +134,9 @@ public class PreProcessingChain extends SimpleContainerParameter {
      * @param transformation 
      */
     public TransformationPluginParameter<Transformation> addTransformation(int inputChannel, int[] outputChannel, Transformation transformation) {
+        if (inputChannel<-1) throw new IllegalArgumentException("Input channel should be >=0");
+        Experiment xp = ParameterUtils.getExperiment(this);
+        if (xp!=null &&  inputChannel>=xp.getChannelImageCount()) throw new IllegalArgumentException("Input channel should be < channel image count ("+xp.getChannelImageCount()+")");
         TransformationPluginParameter<Transformation> tpp= new TransformationPluginParameter<Transformation>("Transformation", Transformation.class, false);
         transformations.insert(tpp);
         tpp.setPlugin(transformation);

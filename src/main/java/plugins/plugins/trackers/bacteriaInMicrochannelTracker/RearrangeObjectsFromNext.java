@@ -38,8 +38,8 @@ import utils.Pair;
  *
  * @author jollion
  */
-public class RearrangeObjectsFromNext extends ObjectModifier {
-    final int idxMin, idxMax, idxNextMin, idxNextMax;
+public class RearrangeObjectsFromNext  { //extends ObjectModifier
+    /*final int idxMin, idxMax, idxNextMin, idxNextMax;
     final boolean endOfChannel;
     final List<Assignement> assignements = new ArrayList<>();
     final Map<Object3D, double[]> sizeIncrementRangeMap = new HashMap<>();
@@ -264,5 +264,5 @@ public class RearrangeObjectsFromNext extends ObjectModifier {
             return "RO:["+tracker.populations[timePointMax-1].indexOf(this.prevObject)+"]->#"+objects.size()+"/size: "+size+"/cost: "+cost+ "/sizeRange: ["+this.sizeRange[0]+";"+this.sizeRange[1]+"]";
         }
     }
-    
+    */
 }

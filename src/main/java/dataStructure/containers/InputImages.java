@@ -18,6 +18,10 @@
 package dataStructure.containers;
 
 import image.Image;
+import image.ImageFloat;
+import image.ImageOperations;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -30,4 +34,15 @@ public interface InputImages {
     public int getDefaultTimePoint();
     public int getSizeZ(int channelIdx);
     public void flush();
+    
+    public static Image getAverageFrame(InputImages images, int channelIdx, int frame,  int numberOfFramesToAverage) {
+        if (numberOfFramesToAverage<=1) return images.getImage(channelIdx, frame);
+        List<Image> imagesToAv = new ArrayList<>(numberOfFramesToAverage);
+        int fMin = Math.max(0, frame-numberOfFramesToAverage/2);
+        int fMax = Math.min(images.getTimePointNumber(), fMin+numberOfFramesToAverage);
+        if (fMax-fMin<numberOfFramesToAverage) fMin = Math.max(0, fMax-numberOfFramesToAverage);
+        for (int f = fMin; f<fMax; ++f) imagesToAv.add(images.getImage(channelIdx, f));
+        return ImageOperations.meanZProjection(Image.mergeZPlanes(imagesToAv));
+    }
+    
 }

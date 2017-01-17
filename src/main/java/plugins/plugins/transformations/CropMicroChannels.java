@@ -20,6 +20,7 @@ package plugins.plugins.transformations;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import dataStructure.containers.InputImages;
+import static dataStructure.containers.InputImages.getAverageFrame;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import image.BlankMask;
@@ -51,12 +52,22 @@ public abstract class CropMicroChannels implements Transformation {
     protected NumberParameter margin = new BoundedNumberParameter("X-Margin", 0, 10, 0, null);
     protected NumberParameter channelHeight = new BoundedNumberParameter("Channel Height", 0, 375, 0, null);
     protected NumberParameter cropMargin = new BoundedNumberParameter("Crop Margin", 0, 45, 0, null);
-    NumberParameter number = new BoundedNumberParameter("Number of TimePoints", 0, 5, 1, null);
+    protected NumberParameter refAverage = new BoundedNumberParameter("Number of frame to average around reference frame", 0, 0, 0, null);
+    NumberParameter number = new BoundedNumberParameter("Number of Frames", 0, 5, 1, null);
+    
+    public CropMicroChannels setNumberOfFrames(int nb) {
+        this.number.setValue(nb);
+        return this;
+    }
+    
+    public CropMicroChannels setAvergeFrameNb(int nb) {
+        this.refAverage.setValue(nb);
+        return this;
+    }
     
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
         if (channelIdx<0) throw new IllegalArgumentException("Channel no configured");
-        int tp = inputImages.getDefaultTimePoint();
-        Image image = inputImages.getImage(channelIdx, tp);
+        Image image = inputImages.getImage(channelIdx, inputImages.getDefaultTimePoint());
         // check configuration validity
         if (xStop.getValue().intValue()==0 || xStop.getValue().intValue()>=image.getSizeX()) xStop.setValue(image.getSizeX()-1);
         if (xStart.getValue().intValue()>=xStop.getValue().intValue()) {
@@ -78,7 +89,7 @@ public abstract class CropMicroChannels implements Transformation {
             double delta = (double)inputImages.getTimePointNumber() / (double)(numb+2);
             for (int i = 0; i<=numb; ++i) {
                 int time = (int)(i * delta);
-                image = inputImages.getImage(channelIdx, time);
+                image = getAverageFrame(inputImages,channelIdx, inputImages.getDefaultTimePoint(), refAverage.getValue().intValue());
                 BoundingBox bb = getBoundingBox(image);
                 if (bb==null) continue;
                 if (b==null) b = bb;
@@ -87,7 +98,7 @@ public abstract class CropMicroChannels implements Transformation {
             }
         } else b = getBoundingBox(image);
         if (b==null) {
-            b=inputImages.getImage(channelIdx, tp).getBoundingBox();
+            b=image.getBoundingBox();
             logger.error("No Microchannels found");
         } else logger.debug("Crop Microchannel: image: {} timepoint: {} boundingBox: {}", image.getName(), inputImages.getDefaultTimePoint(), b);
         configurationData=new ArrayList<Integer>(4);

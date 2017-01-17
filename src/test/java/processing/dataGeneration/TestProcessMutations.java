@@ -39,7 +39,7 @@ import static image.ImageOperations.pasteImage;
 import java.util.ArrayList;
 import java.util.HashSet;
 import plugins.PluginFactory;
-import plugins.plugins.measurements.objectFeatures.DifferenceToLocalBackground;
+import plugins.plugins.measurements.objectFeatures.LocalSNR;
 import plugins.plugins.measurements.objectFeatures.SNR;
 import plugins.plugins.postFilters.FeatureFilter;
 import plugins.plugins.segmenters.BacteriaFluo;
@@ -66,7 +66,7 @@ public class TestProcessMutations {
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
-        t.testSegMutationsFromXP(fIdx, mcIdx, true, 0, 10);
+        t.testSegMutationsFromXP(fIdx, mcIdx, true, 0,100);
     }
     
     public void testSegMutation(StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
@@ -74,8 +74,8 @@ public class TestProcessMutations {
         ImageInteger parentMask = parent.getMask();
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
         MutationSegmenterScaleSpace seg = new MutationSegmenterScaleSpace();
-        seg.getPostFilters().removeAllElements();
-        seg.getPostFilters().add(new FeatureFilter(new DifferenceToLocalBackground().setBackgroundObjectStructureIdx(1), 0.75, true, true));
+        //seg.getPostFilters().removeAllElements();
+        //seg.getPostFilters().add(new FeatureFilter(new LocalSNR().setBackgroundObjectStructureIdx(1), 0.75, true, true));
         seg.intermediateImages=intermediateImages;
         ObjectPopulation popPF = seg.runSegmenter(input, 2, parent);
         

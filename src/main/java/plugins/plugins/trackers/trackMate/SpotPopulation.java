@@ -90,9 +90,9 @@ public class SpotPopulation {
             @Override public SpotCompartiment create(StructureObject s) {return new SpotCompartiment(s);}
         });
         for (Object3D o : objects) {
-            StructureObject parent = StructureObjectUtils.getInclusionParent(o, compartments, null);
+            StructureObject parent = StructureObjectUtils.getInclusionParent(o, compartments, null); 
             if (parent==null) {
-                logger.warn("no parent found for object @ center {}", o.getCenter(true));
+                logger.warn("no parent found for object @ center {}, parents: {}", o.getCenter(true), compartments);
                 continue;
             }
             SpotCompartiment compartiment = compartimentMap.getAndCreateIfNecessary(parent);

@@ -348,5 +348,5 @@ public abstract class Image implements ImageProperties {
         return name;
     }
     
-    
+    public abstract int getBitDepth();
 }

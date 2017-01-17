@@ -19,7 +19,6 @@ package plugins.plugins.trackers.bacteriaInMicrochannelTracker;
 
 import ij.process.AutoThresholder;
 import image.BoundingBox;
-import image.BoundingBox.LoopFunction;
 import image.Image;
 import image.ImageByte;
 import image.ImageOperations;

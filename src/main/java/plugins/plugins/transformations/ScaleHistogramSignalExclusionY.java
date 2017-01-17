@@ -69,6 +69,10 @@ public class ScaleHistogramSignalExclusionY implements Transformation {
         this.signalExclusion.setSelectedIndex(exclusionChannelIdx);
         return this;
     }
+    public ScaleHistogramSignalExclusionY setSignalExclusionThreshold(double thld) {
+        this.signalExclusionThreshold.setValue(thld);
+        return this;
+    }
     public void computeConfigurationData(final int channelIdx, final InputImages inputImages) {
         final int chExcl = signalExclusion.getSelectedIndex();
         final double exclThld = signalExclusionThreshold.getValue().doubleValue();

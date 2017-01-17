@@ -330,8 +330,6 @@ public class ImageOperations {
         final ImageInteger out = output;
         BoundingBox loopBound = output.getBoundingBox().trim(source1.getBoundingBox().expand(source2.getBoundingBox()));
         loopBound.loop(new LoopFunction() {
-            public void setUp() {}
-            public void tearDown() {}
             public void loop(int x, int y, int z) {
                 if ((!source1.containsWithOffset(x, y, z) || !source1.insideMaskWithOffset(x, y, z)) 
                         && (!source2.containsWithOffset(x, y, z) || !source2.insideMaskWithOffset(x, y, z))) out.setPixelWithOffset(x, y, z, 0);
@@ -347,8 +345,6 @@ public class ImageOperations {
         //logger.debug("output: {}, trimmed: {}", output.getBoundingBox(), output.getBoundingBox().trim(source1.getBoundingBox().expand(source2.getBoundingBox())));
         BoundingBox loopBound = output.getBoundingBox().trim(source1.getBoundingBox().expand(source2.getBoundingBox()));
         loopBound.loop(new LoopFunction() {
-            public void setUp() {}
-            public void tearDown() {}
             public void loop(int x, int y, int z) {
                 if ((source1.containsWithOffset(x, y, z) && source1.insideMaskWithOffset(x, y, z))!=(source2.containsWithOffset(x, y, z) && source2.insideMaskWithOffset(x, y, z))) out.setPixelWithOffset(x, y, z, 1);
                 else out.setPixelWithOffset(x, y, z, 0);
@@ -362,8 +358,6 @@ public class ImageOperations {
         final ImageInteger out = output;
         BoundingBox loopBound = output.getBoundingBox().trim(source1.getBoundingBox().expand(source2.getBoundingBox()));
         loopBound.loop(new LoopFunction() {
-            public void setUp() {}
-            public void tearDown() {}
             public void loop(int x, int y, int z) {
                 if ((source1.containsWithOffset(x, y, z) && source1.insideMaskWithOffset(x, y, z))&&(source2.containsWithOffset(x, y, z) && source2.insideMaskWithOffset(x, y, z))) out.setPixelWithOffset(x, y, z, 1);
                 else out.setPixelWithOffset(x, y, z, 0);

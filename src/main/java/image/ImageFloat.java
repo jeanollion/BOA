@@ -158,4 +158,5 @@ public class ImageFloat extends Image {
         }
         return histo;
     }
+    @Override public int getBitDepth() {return 32;}
 }

@@ -19,7 +19,6 @@ package plugins.plugins.thresholders;
 
 import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObjectProcessing;
-import image.BoundingBox.LoopFunction;
 import image.Image;
 import image.ImageOperations;
 import java.util.List;

@@ -48,6 +48,7 @@ import plugins.ObjectSplitter;
 import plugins.Segmenter;
 import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
 import plugins.plugins.measurements.objectFeatures.IntensityRatio;
+import plugins.plugins.measurements.objectFeatures.LocalSNR;
 import plugins.plugins.measurements.objectFeatures.SNR;
 import plugins.plugins.postFilters.FeatureFilter;
 import plugins.plugins.preFilter.IJSubtractBackground;
@@ -75,7 +76,7 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
     NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 3, 2.5, 1, null);
     NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 3, 1.5, 0, null);
     NumberParameter intensityThreshold = new BoundedNumberParameter("Intensity Threshold for Seeds", 2, 115, 0, null);
-    PostFilterSequence postFilters = new PostFilterSequence("Post-Filters"); //.add(new FeatureFilter(new SNR().setBackgroundObjectStructureIdx(1), 0.75, true, true));
+    PostFilterSequence postFilters = new PostFilterSequence("Post-Filters").add(new FeatureFilter(new LocalSNR().setBackgroundObjectStructureIdx(1), 1, true, true));
     Parameter[] parameters;
     public List<Image> intermediateImages;
     public MutationSegmenterScaleSpace() {

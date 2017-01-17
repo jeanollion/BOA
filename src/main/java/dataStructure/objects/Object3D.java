@@ -12,6 +12,7 @@ import dataStructure.containers.ObjectContainerVoxels;
 import image.BlankMask;
 import image.BoundingBox;
 import image.BoundingBox.LoopFunction;
+import image.BoundingBox.LoopFunction2;
 import image.Image;
 import image.ImageByte;
 import image.ImageInteger;
@@ -43,7 +44,7 @@ public class Object3D {
     protected int label;
     protected List<Voxel> voxels; //lazy -> use getter // coordonnées des voxel = coord dans l'image mask + offset du masque.  
     protected float scaleXY=1, scaleZ=1;
-    protected boolean absoluteLandmark=false; // flase = coordinates relative to the direct parent
+    protected boolean absoluteLandmark=false; // false = coordinates relative to the direct parent
     protected double quality;
     
     /**
@@ -437,7 +438,7 @@ public class Object3D {
             final int otherOffX = otherBounds.getxMin();
             final int otherOffY = otherBounds.getyMin();
             final int otherOffZ = otherBounds.getzMin();
-            inter.loop(new LoopFunction() {
+            inter.loop(new LoopFunction2() {
                 int c;
                 public void loop(int x, int y, int z) {if (mask.insideMask(x-offX, y-offY, z-offZ) && m.insideMask(x-otherOffX, y-otherOffY, z-otherOffZ)) c++;}
                 public void setUp() {c = 0;}

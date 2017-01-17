@@ -26,7 +26,6 @@ import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import image.BoundingBox;
-import image.BoundingBox.LoopFunction;
 import image.ImageByte;
 import image.ImageMask;
 import image.TypeConverter;
@@ -59,7 +58,7 @@ public class SNR extends IntensityMeasurement {
         super.setUp(parent, childStructureIdx, childPopulation);
         if (childPopulation.getObjects().isEmpty()) return this;
         if (!childPopulation.isAbsoluteLandmark()) childrenOffset = parent.getBounds(); // the step it still at processing, thus their offset of objects is related to their direct parent
-        else childrenOffset = new BoundingBox(0, 0, 0);
+        else childrenOffset = new BoundingBox(0, 0, 0); // absolute offsets
         parentOffsetRev = parent.getBounds().duplicate().reverseOffset();
         
         // get parents
@@ -85,7 +84,7 @@ public class SNR extends IntensityMeasurement {
             }
         }
         
-        // remove foreground objects from background mask & dilate it
+        // remove foreground objects from background mask & erodeit
         childrenParentMap = new HashMap<Object3D, Object3D>();
         for (Object3D p : parents) {
             ImageMask ref = p.getMask();
@@ -100,7 +99,8 @@ public class SNR extends IntensityMeasurement {
             
                 ImageByte maskErode = Filters.min(mask, null, Filters.getNeighborhood(1.5, 1.5, mask)); // erode mask // TODO dillate objects?
                 if (maskErode.count()==0) maskErode = mask;
-                for (Object3D o : children) childrenParentMap.put(o, new Object3D(maskErode, 1));
+                Object3D parentObject = new Object3D(maskErode, 1);
+                for (Object3D o : children) childrenParentMap.put(o, parentObject);
             }
             //new IJImageDisplayer().showImage(maskErode);
         }

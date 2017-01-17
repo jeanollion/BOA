@@ -84,7 +84,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     @Override
     protected void initChildList() {
         //logger.debug("MF: {}, init list..", name);
-        if (defaultTimePoint==null) defaultTimePoint = new TimePointParameter("Default TimePoint", defaultTP, false);
+        if (defaultTimePoint==null) defaultTimePoint = new TimePointParameter("Default Frame", defaultTP, false);
         initChildren(preProcessingChain, defaultTimePoint);
     }
     
@@ -185,6 +185,10 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     
     public int getDefaultTimePoint() {
         return defaultTimePoint.getSelectedTimePoint();
+    }
+    public MicroscopyField setDefaultFrame(int frame) {
+        this.defaultTimePoint.setTimePoint(frame);
+        return this;
     }
     
     public int getSizeZ(int channelIdx) {

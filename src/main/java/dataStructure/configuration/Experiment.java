@@ -134,7 +134,11 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     public MicroscopyField getPosition(int fieldIdx) {
         checkInit();
         return fields.getChildAt(fieldIdx);
-    }   
+    }
+    
+    public List<MicroscopyField> getPositions() {
+        return fields.getChildren();
+    }
     
     public void flushImages(boolean raw, boolean preProcessed, String... excludePositions) {
         List<String> pos = new ArrayList<>(Arrays.asList(getPositionsAsString()));

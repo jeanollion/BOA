@@ -101,8 +101,6 @@ public class Curvature {
         final EllipsoidalNeighborhood neigh = new EllipsoidalNeighborhood(1.5, true);
         // initialize with the border of objects
         mask.getBoundingBox().translateToOrigin().loop(new LoopFunction() {
-            public void setUp() {}
-            public void tearDown() {}
             public void loop(int x, int y, int z) {
                 if (mask.insideMask(x, y, z) && neigh.hasNullValue(x, y, z, mask, true)) {
                     double edmValue = edm.getPixel(x, y, z);

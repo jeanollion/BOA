@@ -189,7 +189,7 @@ public class StructureObjectUtils {
         return currentParent;
     }
     
-    public static StructureObject getInclusionParent(Object3D children, List<StructureObject> parents, BoundingBox offset) {
+    public static StructureObject getInclusionParent(Object3D children, Collection<StructureObject> parents, BoundingBox offset) {
         if (parents.isEmpty() || children==null) return null;
         StructureObject currentParent=null;
         int currentIntersection=-1;

@@ -15,11 +15,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
-package core;
+package core.generateXP;
 
 import boa.gui.DBUtil;
 import boa.gui.GUI;
 import configuration.parameters.TransformationPluginParameter;
+import core.Processor;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
@@ -326,30 +327,8 @@ public class GenerateXP {
         mDAO.setExperiment(xp);
         
         Processor.importFiles(xp, true, inputDir);
-        if (flipArray!=null) {
-            if (flipArray.length!=xp.getPositionCount()) logger.error("Flip array has {} elements and xp has: {} imported positions", flipArray.length, xp.getPositionCount());
-            else {
-                for (int i = 0; i<flipArray.length; ++i) {
-                    List<TransformationPluginParameter<Transformation>> transfo = xp.getPosition(i).getPreProcessingChain().getTransformations(false);
-                    for (TransformationPluginParameter<Transformation> tp : transfo) if (tp.instanciatePlugin().getClass()==Flip.class) {
-                        tp.setActivated(flipArray[i]);
-                        logger.debug("{} flip: {}", i, flipArray[i]);
-                    }
-                }
-            }
-        }
-        if (deletePositions!=null) {
-            if (deletePositions.length!=xp.getPositionCount()) logger.error("Delete array has {} elements and xp has: {} imported positions", deletePositions.length, xp.getPositionCount());
-            else {
-                List<String> toDelete = new ArrayList<>();
-                String[] names = xp.getPositionsAsString();
-                for (int i = 0; i<deletePositions.length; ++i) if (deletePositions[i]) toDelete.add(names[i]);
-                for (String p : toDelete) {
-                    xp.getPosition(p).eraseData(false); // deletes images - 
-                    xp.getPosition(p).removeFromParent(); // remove from parent
-                }
-            }
-        }
+        setFlip(xp, flipArray);
+        deletePositions(xp, deletePositions);
         if (performProcessing) {
             Processor.preProcessImages(mDAO, true);
             Processor.processAndTrackStructures(mDAO, true, 0);
@@ -423,7 +402,34 @@ public class GenerateXP {
         }
         return xp;
     }
-    
+    public static void deletePositions(Experiment xp, boolean[] deletePositions) {
+        if (deletePositions!=null) {
+            if (deletePositions.length!=xp.getPositionCount()) logger.error("Delete array has {} elements and xp has: {} imported positions", deletePositions.length, xp.getPositionCount());
+            else {
+                List<String> toDelete = new ArrayList<>();
+                String[] names = xp.getPositionsAsString();
+                for (int i = 0; i<deletePositions.length; ++i) if (deletePositions[i]) toDelete.add(names[i]);
+                for (String p : toDelete) {
+                    xp.getPosition(p).eraseData(false); // deletes images - 
+                    xp.getPosition(p).removeFromParent(); // remove from parent
+                }
+            }
+        }
+    }
+    public static void setFlip(Experiment xp, boolean[] flipArray) {
+        if (flipArray!=null) {
+            if (flipArray.length!=xp.getPositionCount()) logger.error("Flip array has {} elements and xp has: {} imported positions", flipArray.length, xp.getPositionCount());
+            else {
+                for (int i = 0; i<flipArray.length; ++i) {
+                    List<TransformationPluginParameter<Transformation>> transfo = xp.getPosition(i).getPreProcessingChain().getTransformations(false);
+                    for (TransformationPluginParameter<Transformation> tp : transfo) if (tp.instanciatePlugin().getClass()==Flip.class) {
+                        tp.setActivated(flipArray[i]);
+                        logger.debug("{} flip: {}", i, flipArray[i]);
+                    }
+                }
+            }
+        }
+    }
     public static void setParametersTrans(Experiment xp, boolean processing, boolean measurements) {
         Structure mc = xp.getStructure(0);
         Structure bacteria = xp.getStructure(1);
