@@ -37,15 +37,20 @@ public class SimpleTranslation implements TransformationTimeIndependent {
     NumberParameter X = new NumberParameter("dX", 3, 0);
     NumberParameter Y = new NumberParameter("dY", 3, 0);
     NumberParameter Z = new NumberParameter("dZ", 3, 0);
-    ChoiceParameter interpolation = new ChoiceParameter("Interpolation", Utils.toStringArray(ImageTransformation.InterpolationScheme.values()), ImageTransformation.InterpolationScheme.LINEAR.toString(), false);
+    ChoiceParameter interpolation = new ChoiceParameter("Interpolation", Utils.toStringArray(ImageTransformation.InterpolationScheme.values()), ImageTransformation.InterpolationScheme.BSPLINE5.toString(), false);
     Parameter[] parameters = new Parameter[]{X, Y, Z, interpolation};
 
     public SimpleTranslation() {}
     
-    public SimpleTranslation(float dX, float dY, float dZ) {
+    public SimpleTranslation(double dX, double dY, double dZ) {
         X.setValue(dX);
         Y.setValue(dY);
         Z.setValue(dZ);
+    }
+    
+    public SimpleTranslation setInterpolationScheme(ImageTransformation.InterpolationScheme scheme) {
+        this.interpolation.setSelectedItem(scheme.toString());
+        return this;
     }
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {

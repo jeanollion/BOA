@@ -23,6 +23,10 @@ package configuration.parameters;
  */
 public class ChannelImageParameter extends StructureParameter {
     
+    public ChannelImageParameter() {
+        this("");
+    }
+    
     public ChannelImageParameter(String name) {
         this(name, -1);
     }

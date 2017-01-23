@@ -292,7 +292,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         Object3DCluster c = new Object3DCluster(mergePop, false, true, pv.getFactory());
         List<Set<Object3D>> clusters = c.getClusters();
         double maxCost = Double.NEGATIVE_INFINITY;
-        logger.debug("compute merge cost: {} objects in {} clusters", objects.size(), clusters.size());
+        //logger.debug("compute merge cost: {} objects in {} clusters", objects.size(), clusters.size());
         if (clusters.size()>1) { // merge impossible : presence of disconnected objects
             if (debug) logger.debug("merge impossible: {} disconnected clusters detected", clusters.size());
             return Double.POSITIVE_INFINITY;

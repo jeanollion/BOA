@@ -46,28 +46,30 @@ public class Utils {
         ip.setDisplayRange(minAndMax[0], minAndMax[1]);
         ip.show();
     }
-
     public static <T extends Image> void assertImage(T expected, T actual, float precision) {
-        assertEquals("image comparison: sizeZ", expected.getSizeZ(), actual.getSizeZ());
-        if (expected instanceof ImageByte) assertImageByte((ImageByte)expected, (ImageByte)actual);
-        else if (expected instanceof ImageShort) assertImageShort((ImageShort)expected, (ImageShort)actual);
-        else if (expected instanceof ImageFloat) assertImageFloat((ImageFloat)expected, (ImageFloat)actual, precision);
+        assertImage("", expected, actual, precision);
+    }
+    public static <T extends Image> void assertImage(String message, T expected, T actual, float precision) {
+        assertEquals(message+" image comparison: sizeZ", expected.getSizeZ(), actual.getSizeZ());
+        if (expected instanceof ImageByte) assertImageByte(message, (ImageByte)expected, (ImageByte)actual);
+        else if (expected instanceof ImageShort) assertImageShort(message, (ImageShort)expected, (ImageShort)actual);
+        else if (expected instanceof ImageFloat) assertImageFloat(message, (ImageFloat)expected, (ImageFloat)actual, precision);
         else fail("wrong image type");
     }
     
-    private static void assertImageByte(ImageByte expected, ImageByte actual) {
+    private static void assertImageByte(String message, ImageByte expected, ImageByte actual) {
         for (int z = 0; z < expected.getSizeZ(); z++) {
-            assertArrayEquals("image comparison " + expected.getName() + " plane: " + z, expected.getPixelArray()[z], actual.getPixelArray()[z]);
+            assertArrayEquals(message+" image comparison " + expected.getName() + " plane: " + z, expected.getPixelArray()[z], actual.getPixelArray()[z]);
         }
     }
-    private static void assertImageShort(ImageShort expected, ImageShort actual) {
+    private static void assertImageShort(String message, ImageShort expected, ImageShort actual) {
         for (int z = 0; z < expected.getSizeZ(); z++) {
-            assertArrayEquals("image comparison " + expected.getName() + " plane: " + z, expected.getPixelArray()[z], actual.getPixelArray()[z]);
+            assertArrayEquals(message+" image comparison " + expected.getName() + " plane: " + z, expected.getPixelArray()[z], actual.getPixelArray()[z]);
         }
     }
-    private static void assertImageFloat(ImageFloat expected, ImageFloat actual, float precision) {
+    private static void assertImageFloat(String message, ImageFloat expected, ImageFloat actual, float precision) {
         for (int z = 0; z < expected.getSizeZ(); z++) {
-            assertArrayEquals("image comparison " + expected.getName() + " plane: " + z, expected.getPixelArray()[z], actual.getPixelArray()[z], precision);
+            assertArrayEquals(message+" image comparison " + expected.getName() + " plane: " + z, expected.getPixelArray()[z], actual.getPixelArray()[z], precision);
         }
     }
     

@@ -22,7 +22,7 @@ import static boa.gui.GUI.logger;
 import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
-import static dataStructure.objects.StructureObjectUtils.timePointComparator;
+import static dataStructure.objects.StructureObjectUtils.frameComparator;
 import ij.ImagePlus;
 import image.BoundingBox;
 import image.Image;
@@ -661,8 +661,8 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         if (trackHeads==null || trackHeads.isEmpty()) return;
         BoundingBox currentDisplayRange = this.displayer.getDisplayRange(trackImage);
-        int minTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMin());
-        int maxTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMax());
+        int minTimePoint = tm.getClosestFrame(currentDisplayRange.getxMin());
+        int maxTimePoint = tm.getClosestFrame(currentDisplayRange.getxMax());
         if (next) {
             if (maxTimePoint>minTimePoint+2) maxTimePoint-=2;
             else maxTimePoint--;
@@ -713,8 +713,8 @@ public abstract class ImageWindowManager<T, U, V> {
         if (objects==null || objects.isEmpty()) objects = Pair.unpairKeys(i.getObjects());
         if (objects==null || objects.isEmpty()) return false;
         BoundingBox currentDisplayRange = this.displayer.getDisplayRange(trackImage);
-        int minTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMin());
-        int maxTimePoint = tm.getClosestTimePoint(currentDisplayRange.getxMax());
+        int minTimePoint = tm.getClosestFrame(currentDisplayRange.getxMin());
+        int maxTimePoint = tm.getClosestFrame(currentDisplayRange.getxMax());
         if (next) {
             if (maxTimePoint>minTimePoint+2) maxTimePoint-=2;
             else maxTimePoint--;
@@ -723,7 +723,7 @@ public abstract class ImageWindowManager<T, U, V> {
             else minTimePoint++;
         }
         logger.debug("Current Display range: {}, maxTimePoint: {}, minTimePoint: {}, number of objects: {}", currentDisplayRange, maxTimePoint, minTimePoint, objects.size());
-        Collections.sort(objects, timePointComparator()); // sort by timePoint
+        Collections.sort(objects, frameComparator()); // sort by timePoint
         StructureObject nextObject = getNextObject(next? maxTimePoint: minTimePoint, objects, next);
         if (nextObject==null) {
             logger.info("No object detected {} timepoint: {}", next? "after" : "before", maxTimePoint);
@@ -756,7 +756,7 @@ public abstract class ImageWindowManager<T, U, V> {
     
     private static StructureObject getNextObject(int timePointLimit, List<StructureObject> objects, boolean next) {
         if (objects.isEmpty()) return null;
-        int idx = Collections.binarySearch(objects, new StructureObject(timePointLimit, null, null), timePointComparator());
+        int idx = Collections.binarySearch(objects, new StructureObject(timePointLimit, null, null), frameComparator());
         if (idx>=0) return objects.get(idx);
         int insertionPoint = -idx-1;
         if (next) {

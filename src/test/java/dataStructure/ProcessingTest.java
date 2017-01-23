@@ -62,6 +62,7 @@ import plugins.Segmenter;
 import plugins.plugins.processingScheme.SegmentThenTrack;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import plugins.plugins.transformations.SimpleTranslation;
+import processing.ImageTransformation;
 import utils.MorphiumUtils;
 
 /**
@@ -109,7 +110,7 @@ public class ProcessingTest {
         assertEquals("number of fields detected", 6-1-1, xp.getPositionCount()); // 6 - 1 (unique title) - 1 (channel number)
         assertTrue("field non null", xp.getPosition(title)!=null);
         assertTrue("images non null", xp.getPosition(title).getInputImages()!=null);
-        Utils.assertImage(images[0][0], xp.getPosition(title).getInputImages().getImage(0, 0), 0);
+        Utils.assertImage("import field test", images[0][0], xp.getPosition(title).getInputImages().getImage(0, 0), 0);
     }
     
     @Test
@@ -143,7 +144,7 @@ public class ProcessingTest {
         
         Processor.importFiles(xp, true, folder.getAbsolutePath());
         assertEquals("number of fields detected", 6-1-1-1, xp.getPositionCount()); // 6 - 1 (unique title) - 1 (channel number)-1(timepoint number)
-        Utils.assertImage(images[0][0], xp.getPosition(title).getInputImages().getImage(0, 0), 0);
+        Utils.assertImage("test import field keyword", images[0][0], xp.getPosition(title).getInputImages().getImage(0, 0), 0);
     }
     
     @Test
@@ -169,9 +170,9 @@ public class ProcessingTest {
         
         //set-up pre-processing chains
         PluginFactory.findPlugins("plugins.plugins.transformations");
-        SimpleTranslation t = new SimpleTranslation(1, 0, 0);
+        SimpleTranslation t = new SimpleTranslation(1, 0, 0).setInterpolationScheme(ImageTransformation.InterpolationScheme.LINEAR);;
         f.getPreProcessingChain().addTransformation(0, null, t);
-        SimpleTranslation t2 = new SimpleTranslation(0, 1, 0);
+        SimpleTranslation t2 = new SimpleTranslation(0, 1, 0).setInterpolationScheme(ImageTransformation.InterpolationScheme.LINEAR);;
         f.getPreProcessingChain().addTransformation(0, null, t2);
         
         //pre-process
@@ -182,9 +183,9 @@ public class ProcessingTest {
         ImageDAO dao = xp.getImageDAO();
         Image image = dao.openPreProcessedImage(0, 0, "field1");
         assertTrue("Image saved in DAO", image!=null);
-        SimpleTranslation tInv = new SimpleTranslation(-1, -1, 0);
+        SimpleTranslation tInv = new SimpleTranslation(-1, -1, 0).setInterpolationScheme(ImageTransformation.InterpolationScheme.LINEAR);
         Image imageInv = tInv.applyTransformation(0, 0, image);
-        Utils.assertImage(images[0][0], TypeConverter.toByte(imageInv, null), 0);
+        Utils.assertImage("preProcessing: simple translation", images[0][0], TypeConverter.toByte(imageInv, null), 0);
     }
     
     /*private static ImageByte getMask(StructureObject root, int[] pathToRoot) {

@@ -215,6 +215,7 @@ public class ImageReader {
                 
             } catch(Exception e) {}
         } 
+        //logger.debug("image: {} calibration: {}", this.fullPath, res);
         return res;
     }
     

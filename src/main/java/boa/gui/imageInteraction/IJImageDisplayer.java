@@ -32,6 +32,7 @@ import ij.ImageStack;
 import ij.WindowManager;
 import ij.gui.GUI;
 import ij.gui.ImageCanvas;
+import ij.measure.Calibration;
 import image.BoundingBox;
 import image.ImageByte;
 import image.ImageFloat;
@@ -168,6 +169,11 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         ip.setTitle(title);
         ip.setStack(stack, imageTC[0].length, imageTC[0][0].getSizeZ(), imageTC.length);
         ip.setOpenAsHyperStack(true);
+        Calibration cal = new Calibration();
+        cal.pixelWidth=imageTC[0][0].getScaleXY();
+        cal.pixelHeight=imageTC[0][0].getScaleXY();
+        cal.pixelDepth=imageTC[0][0].getScaleZ();
+        ip.setCalibration(cal);
         ip.show();
         logger.debug("image: {}, isDisplayedAsHyperStack: {}, is HP: {}, dim: {}", title, ip.isDisplayedHyperStack(), ip.isHyperStack(), ip.getDimensions());
     }

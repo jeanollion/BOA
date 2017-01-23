@@ -45,13 +45,15 @@ public class SaturateHistogram implements Transformation {
     }
 
     public Image applyTransformation(int channelIdx, int timePoint, final Image image) {
-        final double thld = threshold.getValue().doubleValue();
-        final double maxTarget = maxValue.getValue().doubleValue();
-        if (maxTarget<thld) throw new IllegalArgumentException("Saturate histogram transformation: configuration error: Maximum value should be superior to threhsold value");
+        saturate(threshold.getValue().doubleValue(), maxValue.getValue().doubleValue(), image);
+        return image;
+    }
+    public static void saturate(double thld, double thldMax, Image image) {
+        if (thldMax<thld) throw new IllegalArgumentException("Saturate histogram transformation: configuration error: Maximum value should be superior to threhsold value");
         double maxObs = image.getMinAndMax(null)[1];
-        if (maxObs<=thld) return image;
+        if (maxObs<=thld) return;
         
-        final double factor = (maxTarget - thld) / (maxObs - thld);
+        final double factor = (thldMax - thld) / (maxObs - thld);
         final double add = thld * (1 - factor);
 
         image.getBoundingBox().translateToOrigin().loop(new LoopFunction() {
@@ -62,7 +64,6 @@ public class SaturateHistogram implements Transformation {
                 }
             }
         });
-        return image;
     }
 
     public ArrayList getConfigurationData() {

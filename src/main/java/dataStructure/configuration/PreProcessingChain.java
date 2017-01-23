@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.scene.control.SelectionMode;
 import javax.swing.AbstractAction;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
@@ -141,6 +142,7 @@ public class PreProcessingChain extends SimpleContainerParameter {
         transformations.insert(tpp);
         tpp.setPlugin(transformation);
         tpp.setInputChannel(inputChannel);
+        if (outputChannel==null && (transformation.getOutputChannelSelectionMode()==Transformation.SelectionMode.MULTIPLE || transformation.getOutputChannelSelectionMode()==Transformation.SelectionMode.SINGLE) ) outputChannel = new int[]{inputChannel};
         tpp.setOutputChannel(outputChannel);
         return tpp;
     }

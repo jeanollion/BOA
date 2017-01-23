@@ -122,7 +122,7 @@ public class TrackMask extends ImageObjectInterface {
         for (int i = iMin; i<=iMax; ++i) trackObjects[i].addClickedObjects(selection, list);
     }
     
-    public int getClosestTimePoint(int x) {
+    public int getClosestFrame(int x) {
         int i = Arrays.binarySearch(trackOffset, new BoundingBox(x, x, 0, 0, 0, 0), new bbComparatorX());
         if (i<0) i=-i-2; // element inférieur à x puisqu'on compare les xmin des bounding box
         return trackObjects[i].parent.getFrame();
@@ -138,7 +138,7 @@ public class TrackMask extends ImageObjectInterface {
     }
     
     private int getTrackIndex(StructureObject object) {
-        //if (object.getTimePoint()<parent.getTimePoint()) logger.error("Object not in track : Object: {} parent: {}", object, parent);
+        //if (object.getFrame()<parent.getFrame()) logger.error("Object not in track : Object: {} parent: {}", object, parent);
         return object.getFrame()-parent.getFrame();
     }
     

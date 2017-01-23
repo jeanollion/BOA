@@ -95,6 +95,11 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
         return this;
     }
     
+    public MutationSegmenterScaleSpace setIntensityThreshold(double threshold) {
+        this.intensityThreshold.setValue(threshold);
+        return this;
+    }
+    
     /*public static ObjectPopulation runPlane(Image input, ImageMask mask, int minSpotSize, double thresholdSeeds, double thresholdPropagation, ArrayList<Image> intermediateImages) {
         if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
         double[] radii = new double[]{2, 2.5, 3, 3.5, 4.5, 7};
@@ -154,7 +159,7 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
         Image smooth = ImageFeatures.gaussianSmooth(input, 2, 2, false);
         //Image sb = IJSubtractBackground.filter(input, 6, false, false, true, false).setName("sub");
         Image scaleSpace = getScaleSpace(input, smooth, radii); 
-        ImageByte seedsSP = getSeedsScaleSpace(scaleSpace, thresholdHigh.getValue().doubleValue(), 1.5, maxScaleIdx);
+        ImageByte seedsSP = getSeedsScaleSpace(scaleSpace, thresholdHigh.getValue().doubleValue(), 1.5, maxScaleIdx); // si image non normalisee -> seuillage absolu + candidats restants -> seuillage en normalisant
         //new IJImageDisplayer().showImage(seedsSP.duplicate("before filter intensity"));
         //new IJImageDisplayer().showImage(smooth.duplicate("smoothed"));
         // filter by intensity : remove seeds with low intensity
@@ -172,18 +177,15 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
         if (intermediateImages!=null) {
             //intermediateImages.add(input);
             intermediateImages.add(scaleSpace);
-            intermediateImages.add(ImageFeatures.getScaleSpaceLaplacianNorm(input, radii, smooth));
             intermediateImages.add(ImageFeatures.getScaleSpaceLaplacian(input, radii).setName("lap"));
-            
-            Image sub = IJSubtractBackground.filter(input, 6, false, false, true, false).setName("sub");
+            Image sub = IJSubtractBackground.filter(input, 4, false, false, true, false).setName("sub"); // 3-6 / sliding ou pas
             intermediateImages.add(sub);
             intermediateImages.add(ImageFeatures.getScaleSpaceLaplacian(sub, radii).setName("lap sub"));
-            intermediateImages.add(ImageFeatures.getScaleSpaceLaplacianNorm(sub, radii, smooth).setName("lap sub norm"));
             intermediateImages.add(seedsSP);
         }
         
         
-        ObjectPopulation pop =  MultiScaleWatershedTransform.watershed(wsMaps, mask, seedMaps, true, new MultiScaleWatershedTransform.MultiplePropagationCriteria(new MultiScaleWatershedTransform.ThresholdPropagationOnWatershedMap(thresholdLow.getValue().doubleValue())), new MultiScaleWatershedTransform.SizeFusionCriterion(minSpotSize.getValue().intValue()));// minSpotSize->1 //, new MultiScaleWatershedTransform.MonotonalPropagation()
+        ObjectPopulation pop =  MultiScaleWatershedTransform.watershed(wsMaps, mask, seedMaps, true, new MultiScaleWatershedTransform.ThresholdPropagationOnWatershedMap(thresholdLow.getValue().doubleValue()), new MultiScaleWatershedTransform.SizeFusionCriterion(minSpotSize.getValue().intValue()));// minSpotSize->1 //, new MultiScaleWatershedTransform.MonotonalPropagation()
         
         pop.filter(new ObjectPopulation.RemoveFlatObjects(input));
         pop.filter(new ObjectPopulation.Size().setMin(minSpotSize.getValue().intValue()));

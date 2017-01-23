@@ -19,6 +19,7 @@ package processing.dataGeneration;
 
 import dataStructure.objects.MorphiumMasterDAO;
 import core.Processor;
+import core.Task;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.Structure;
@@ -38,15 +39,17 @@ public class MeasureChromaticShift {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         Experiment xp = generateXP(new double[]{125, 600}, "/data/Images/ChromaticShift/billes2", "/data/Images/ChromaticShift/billesOutput");
+        
+        
         MorphiumMasterDAO db = new MorphiumMasterDAO("chromaticShift");
         db.reset();
         db.setExperiment(xp);
-        Processor.preProcessImages(db, true);
-        Processor.processAndTrackStructures(db, false);
-        Processor.performMeasurements(db);
+        Task t = new Task("chromaticShift").setAllActions().addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/ChromaticShift", 0);
+        t.run();
     }
     private static Experiment generateXP(final double[] thresholds, String inputDirectory, String outputDirectory) {
         Experiment xp = new Experiment("Chromatic Shift");
+        xp.getPreProcessingTemplate().setCustomScale(0.06474, 0.1);
         for (int s = 0; s<thresholds.length; ++s) {
             xp.getChannelImages().insert(new ChannelImage("channel:"+s));
             Structure struc = new Structure("structure:"+s, -1, s);

@@ -28,6 +28,7 @@ import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.Morphium;
+import ij.ImageJ;
 import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
@@ -57,23 +58,26 @@ import utils.MorphiumUtils;
  */
 public class TestProcessMutations {
     MorphiumMasterDAO db;
+    static int intervalX = 0;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        //String dbName = "testSub60";
-        final String dbName = "boa_fluo151127_test";
+        new ImageJ();
+        String dbName = "boa_fluo170117_GammeMutTrack";
+        //final String dbName = "boa_fluo151127_test";
         int fIdx = 0;
-        int mcIdx =1;
+        int mcIdx =0;
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
-        t.testSegMutationsFromXP(fIdx, mcIdx, true, 0,100);
+        t.testSegMutationsFromXP(fIdx, mcIdx, true, 8,12);
     }
     
     public void testSegMutation(StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
         Image input = parent.getRawImage(2);
         ImageInteger parentMask = parent.getMask();
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
-        MutationSegmenterScaleSpace seg = new MutationSegmenterScaleSpace();
+        //MutationSegmenterScaleSpace seg = new MutationSegmenterScaleSpace().setIntensityThreshold(90);
+        MutationSegmenter seg = new MutationSegmenter().setIntensityThreshold(1.5).setThresholdSeeds(1.8).setSubtractBackgroundScale(6).setScale(3);
         //seg.getPostFilters().removeAllElements();
         //seg.getPostFilters().add(new FeatureFilter(new LocalSNR().setBackgroundObjectStructureIdx(1), 0.75, true, true));
         seg.intermediateImages=intermediateImages;
@@ -114,7 +118,7 @@ public class TestProcessMutations {
         }
     }
     
-    static int intervalX = 5;
+    
     public void testSegMutationsFromXP(int fieldIdx, int mcIdx, boolean parentMC, int tStart, int tEnd) {
         ArrayList<ImageInteger> mcMask = new ArrayList<ImageInteger>();
         ArrayList<ImageInteger> parentMask = new ArrayList<ImageInteger>();

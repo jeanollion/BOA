@@ -437,13 +437,13 @@ public class StructureObjectUtils {
             }
         };
     }
-    static Comparator<StructureObject> timePointComparator = new Comparator<StructureObject>() {
+    static Comparator<StructureObject> frameComparator = new Comparator<StructureObject>() {
         public int compare(StructureObject arg0, StructureObject arg1) {
             return  Integer.compare(arg0.getFrame(), arg1.getFrame());
         }
     };
-    public static Comparator<StructureObject> timePointComparator() {
-        return timePointComparator;
+    public static Comparator<StructureObject> frameComparator() {
+        return frameComparator;
     }
     
 }

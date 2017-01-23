@@ -105,8 +105,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     // structure-related methods
     public ObjectDAO getDAO() {return dao;}
     public ObjectId getId() {return id;}
-    public String getFieldName() {return dao.getFieldName();}
-    public int getPositionIdx() {return getExperiment().getPosition(getFieldName()).getIndex();}
+    public String getFieldName() {return dao==null? "?":dao.getFieldName();}
+    public int getPositionIdx() {return dao==null?-1 : getExperiment().getPosition(getFieldName()).getIndex();}
     public int getStructureIdx() {return structureIdx;}
     public int getFrame() {return timePoint;}
     public double getCalibratedTimePoint() {return timePoint * getExperiment().getPosition(getFieldName()).getFrameDuration();}

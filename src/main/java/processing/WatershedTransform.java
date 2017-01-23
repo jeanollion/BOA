@@ -31,6 +31,7 @@ import image.ImageMask;
 import image.ImageOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -158,7 +159,12 @@ public class WatershedTransform {
         for (Spot s : spots) if (s!=null) res.add(s.toObject3D(label++));
         return new ObjectPopulation(res, watershedMap).setConnectivity(lowConnectivity);
     }
-    
+    public Spot[] getSpotArray() {
+        return spots;
+    }
+    public TreeSet<Voxel> getHeap() {
+        return heap;
+    }
     protected Spot propagate(Spot currentSpot, Voxel currentVoxel, Voxel nextVox) { /// nextVox.value = 0 at this step
         int label = segmentedMap.getPixelInt(nextVox.x, nextVox.y, nextVox.z);
         if (label!=0) {

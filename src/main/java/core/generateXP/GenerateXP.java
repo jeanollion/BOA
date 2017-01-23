@@ -82,7 +82,7 @@ import processing.ImageTransformation;
 public class GenerateXP {
     public static final Logger logger = LoggerFactory.getLogger(GenerateXP.class);
     static boolean subTransPre = true;
-
+    static Experiment.ImportImageMethod importMethod = Experiment.ImportImageMethod.SINGLE_FILE;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         /*String dbName = "dummyXP";
@@ -94,30 +94,39 @@ public class GenerateXP {
         int trimStart=0, trimEnd=0;
         int[] cropXYdXdY=null;
         double scaleXY = Double.NaN;
-        boolean transSingleFileImport = true;
         boolean[] flipArray= null;
         boolean[] deletePositions = null;
         //////// FLUO
+        
+        String dbName = "boa_fluo170117_GammeMutTrack";
+        String inputDir = "/data/Images/FastMutTrack/170117GammeMutTrack/input";
+        String outputDir = "/data/Images/FastMutTrack/170117GammeMutTrack/output";
+        boolean flip = false; 
+        boolean fluo = true;
+        
         // Ordi LJP
         /*String dbName = "boa_fluo151130_OutputNewScaling";
         String outputDir = "/data/Images/Fluo/film151130/OutputNewScaling";
         String inputDir = "/data/Images/Fluo/film151130/ME120R63-30112015-lr62r1";
         boolean flip = true;
         boolean fluo = true;
+        importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD;
         */
         
-        String dbName = "boa_fluo151127_test";
+        /*String dbName = "boa_fluo151127_test";
         String outputDir = "/data/Images/Fluo/film151127/OutputTest";
         String inputDir = "/data/Images/Fluo/film151127/ME121R-27112015-laser";
         boolean flip = true; 
         boolean fluo = true;
-        
+        importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD;
+        */
         // mutH. blink
         /*String dbName = "boa_fluo151127";
         String outputDir = "/data/Images/Fluo/film151127/Output";
         String inputDir = "/data/Images/Fluo/film151127/ME121R-27112015-laser";
         boolean flip = true; 
         boolean fluo = true;
+        importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD;
         */
         
         /*String dbName = "boa_fluo160218";
@@ -125,6 +134,7 @@ public class GenerateXP {
         String outputDir = "/data/Images/Fluo/film160218/Output";
         boolean flip = false;
         boolean fluo = true;
+        importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD;
         */
         
         /*
@@ -133,6 +143,7 @@ public class GenerateXP {
         String outputDir = "/data/Images/Fluo/film160217/Output";
         boolean flip = false;
         boolean fluo = true;
+        importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD;
         // ATTENTION 10 champs (12->21) pour lesquels 115TP pour le fichier mutation et 114TP pour le fichier REF dans un dossier séparé
         */
         
@@ -142,6 +153,7 @@ public class GenerateXP {
         String outputDir = "/data/Images/Fluo/film160212/Output";
         boolean flip = true;
         boolean fluo = true;
+        importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD;
         */
         /*
         // moitié droite des cannaux hors focus + perte de focus après 700
@@ -152,6 +164,7 @@ public class GenerateXP {
         boolean fluo = true;
         trimEnd=800;
         cropXYdXdY=new int[]{0, 512, 512, 1024};
+        importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD;
         */
         /*
         // perte de focus seulement 300 frames
@@ -159,13 +172,16 @@ public class GenerateXP {
         String inputDir = "/data/Images/Fluo/film160314/ME121R-14032016-lr62r2/";
         String outputDir = "/data/Images/Fluo/film160314/Output/";
         boolean flip = true;
-        boolean fluo = true;*/
+        boolean fluo = true;
+        importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD;
+        */
         
         /*String dbName = "boa_fluo160407";
         String inputDir = "/data/Images/Fluo/film160407/me121r-lr62r2-07042016";
         String outputDir = "/data/Images/Fluo/film160407/Output/";
         boolean flip = false;
         boolean fluo = true;
+        importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD;
         */
         /*
         // bactérie sortent des cannaux
@@ -173,7 +189,9 @@ public class GenerateXP {
         String inputDir = "/data/Images/Fluo/film160408/me121r-laser1-08042016/";
         String outputDir = "/data/Images/Fluo/film160408/Output/";
         boolean flip = true;
-        boolean fluo = true;*/
+        boolean fluo = true;
+        importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD;
+        */
         
         
         /*String dbName = "boa_fluo160428";
@@ -181,13 +199,16 @@ public class GenerateXP {
         String outputDir = "/data/Images/Fluo/film160428/Output/";
         boolean flip = true;
         boolean fluo = true;
-        trimStart = 40;*/
+        trimStart = 40;
+        importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD;
+        */
         
         /*String dbName = "boa_fluo160501";
         String inputDir = "/data/Images/Fluo/film160501/me121r-lr62rep2-01052016/";
         String outputDir = "/data/Images/Fluo/film160501/Output";
         boolean flip = true;
         boolean fluo = true;
+        importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD;
         */
         //////////// Trans
        /* String dbName = "boa_testBF";
@@ -309,21 +330,22 @@ public class GenerateXP {
         String outputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase_mg6300wtlbl1/Output";
         boolean flip = true;
         boolean fluo = false;
-        transSingleFileImport = false;*/
+        importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_TIME_POSITION;*/
         
         /*String dbName = "boa_phase141107wt";
         String inputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase141107/mg6300WT-lb-lr62replic1-7-11-14/";
         String outputDir = "/media/jollion/4336E5641DA22135/LJP/phase/phase141107/Output";
         boolean flip = true;
         boolean fluo = false;
-        transSingleFileImport = false;
+        importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_TIME_POSITION;
+        
         deletePositions = fillRange(getBooleanArray(991, true), 120, 990, false);
         */
         boolean performProcessing = false;
         
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
         mDAO.reset();
-        Experiment xp = fluo ? generateXPFluo(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, flip, trimStart, trimEnd, scaleXY, cropXYdXdY) : generateXPTrans(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, flip, trimStart, trimEnd, scaleXY, transSingleFileImport); 
+        Experiment xp = fluo ? generateXPFluo(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, flip, trimStart, trimEnd, scaleXY, cropXYdXdY) : generateXPTrans(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, flip, trimStart, trimEnd, scaleXY); 
         mDAO.setExperiment(xp);
         
         Processor.importFiles(xp, true, inputDir);
@@ -340,7 +362,7 @@ public class GenerateXP {
     public static Experiment generateXPFluo(String name, String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY, int[] crop) {
         
         Experiment xp = new Experiment(name);
-        xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
+        xp.setImportImageMethod(importMethod);
         //xp.setImportImageMethod(Experiment.ImportImageMethod.SINGLE_FILE);
         xp.getChannelImages().insert(new ChannelImage("RFP", "_REF"), new ChannelImage("YFP", ""));
         xp.setOutputImageDirectory(outputDir);
@@ -380,11 +402,10 @@ public class GenerateXP {
         return xp;
     }
     
-    public static Experiment generateXPTrans(String name, String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY, boolean transSingleFileImport) {
+    public static Experiment generateXPTrans(String name, String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY) {
         
         Experiment xp = new Experiment(name);
-        if (transSingleFileImport) xp.setImportImageMethod(Experiment.ImportImageMethod.SINGLE_FILE);
-        else xp.setImportImageMethod(Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_TIME_POSITION);
+        xp.setImportImageMethod(importMethod);
         xp.getChannelImages().insert(new ChannelImage("BF", "c1"));
         xp.setOutputImageDirectory(outputDir);
         File f =  new File(outputDir); f.mkdirs(); //deleteDirectory(f);

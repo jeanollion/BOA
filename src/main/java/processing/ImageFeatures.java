@@ -52,7 +52,7 @@ public class ImageFeatures {
     }
     
     public static ImageFloat[] getStructure(Image image, double smoothScale, double integrationScale, boolean overrideIfFloat) {
-        ImageFloat[] res = new ImageFloat[image.getScaleZ()==1?2:3];
+        ImageFloat[] res = new ImageFloat[image.getSizeZ()<=1?2:3];
         boolean duplicate = !((image instanceof ImageFloat) && overrideIfFloat);
         imagescience.image.Image is = ImagescienceWrapper.getImagescience(image);
         double sscale = smoothScale;

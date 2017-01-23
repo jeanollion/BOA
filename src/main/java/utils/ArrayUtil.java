@@ -24,6 +24,7 @@ import image.ImageFloat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 import processing.ImageFeatures;
 
 /**
@@ -151,8 +152,47 @@ public class ArrayUtil {
         res[0] /= (double)(stop-start);
         res[1] = Math.sqrt(res[1] / (float)(stop-start) - res[0] * res[0]);
     }
-    
+    public static int getFirstOccurence(double[] array, int start, int stop, Function<Number, Boolean> verify) {
+        if (start<0) start=0;
+        if (stop<0) stop = 0;
+        if (stop>array.length) stop=array.length;
+        if (start>array.length) start = array.length;
+        int i = start;
+        if (start<=stop) {
+            while(i<stop-1 && !verify.apply(array[i])) ++i;
+            return i;
+        } else {
+            while (i>stop && !verify.apply(array[i])) --i;
+            return i;
+        }
+    }
     public static int getFirstOccurence(float[] array, int start, int stop, float value, boolean inferior, boolean strict) {
+        if (start<0) start=0;
+        if (stop>array.length) stop=array.length;
+        int i = start;
+        if (array[start]<value) { // increasing values
+            if (start<=stop) { // increasing indicies
+                while(i<stop-1 && array[i]<value) i++;
+                if (inferior && (strict?array[i]>=value:array[i]>value) && i>start) return i-1;
+                else return i;
+            } else { // decreasing indicies
+                while(i>stop && array[i]<value) i--;
+                if (inferior && (strict?array[i]>=value:array[i]>value) && i<start) return i+1;
+                else return i;
+            }
+        } else { // decreasing values
+            if (start<=stop) { // increasing indicies
+                while(i<stop-1 && array[i]>value) i++;
+                if (!inferior && (strict?array[i]<=value:array[i]<value) && i>start) return i-1;
+                else return i;
+            } else { // decreasing indicies
+                while(i>stop && array[i]>value) i--;
+                if (!inferior && (strict?array[i]<=value:array[i]<value) && i<start) return i+1;
+                else return i;
+            }
+        }
+    }
+    public static int getFirstOccurence(int[] array, int start, int stop, int value, boolean inferior, boolean strict) {
         if (start<0) start=0;
         if (stop>array.length) stop=array.length;
         int i = start;
