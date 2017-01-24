@@ -62,6 +62,12 @@ public class TaskRunner {
         }};
         return tasks;
     }
+    public static List<Task> getFastTrackTasks() {
+        List<Task> tasks = new ArrayList<Task>() {{
+            add(new Task("boa_fluo170117_GammeMutTrack").setAllActions().addExtractMeasurementDir("/data/Images/FastMutTrack/170117GammeMutTrack", 1).addExtractMeasurementDir("/data/Images/FastMutTrack/170117GammeMutTrack", 2));
+        }};
+        return tasks;
+    }
     
     public static List<Task> getTasks() {
         List<Task> tasks = new ArrayList<Task>() {{

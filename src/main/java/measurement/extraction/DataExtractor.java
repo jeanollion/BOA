@@ -51,17 +51,8 @@ public class DataExtractor {
     int structureIdx;
     MasterDAO db;
     public static Function<Number, String> numberFormater = (Number n) -> { // precision
-        if (n instanceof Integer) {
-            return n.toString();
-        } else {
-            double d = Math.abs(n.doubleValue());
-            if (d==0) return "0";
-            else if (d < 1 || d > 100) {
-                return String.format(java.util.Locale.US, "%.4E", n);
-            } else {
-                return String.format(java.util.Locale.US, "%.4f", n);
-            }
-        }
+        if (n.doubleValue()==0) return "0";
+        else return Utils.format(n, 4);
     };
     public DataExtractor(MasterDAO db, int structureIdx) {
         this.db=db;
@@ -70,7 +61,7 @@ public class DataExtractor {
     protected String getBaseHeader() { //TODO split Indicies column ...
         int[] path = db.getExperiment().getPathToRoot(structureIdx);
         String[] structureNames = db.getExperiment().getStructureNames(path);
-        String res =  "Position"+separator+"PositionIdx"+separator+"Indices"+separator+"Frame";
+        String res =  "Position"+separator+"PositionIdx"+separator+"Indices"+separator+"Frame"+separator+"Time";
         for (String s : structureNames) res+=separator+s+"Idx";
         return res;
     }
@@ -79,6 +70,7 @@ public class DataExtractor {
         int[] idx = m.getIndices();
         line+= Utils.toStringArray(idx, separator, "", Selection.indexSeparator);
         for (int i : idx) line+=separator+i; // separated columns ..
+        line+=m.getCalibratedTimePoint();
         return line;
     }
     

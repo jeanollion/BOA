@@ -47,6 +47,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
+import java.util.TreeMap;
 import javax.swing.AbstractAction;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -834,12 +835,12 @@ public abstract class ImageWindowManager<T, U, V> {
     private JPopupMenu getMenu(StructureObject o) {
         JPopupMenu menu = new JPopupMenu();
         menu.add(new JMenuItem(o.toString()));
-        menu.add(new JMenuItem("Time: "+toString(o.getCalibratedTimePoint())+"ms"));
+        menu.add(new JMenuItem("Time: "+toString(o.hasMeasurements() ? o.getCalibratedTimePoint() : o.getCalibratedTimePoint())+"ms"));
         menu.add(new JMenuItem("IsTrackHead: "+o.isTrackHead()));
         //DecimalFormat df = new DecimalFormat("#.####");
         if (o.getAttributes()!=null && !o.getAttributes().isEmpty()) {
             menu.addSeparator();
-            for (Entry<String, Object> en : o.getAttributes().entrySet()) {
+            for (Entry<String, Object> en : new TreeMap<>(o.getAttributes()).entrySet()) {
                 JMenuItem item = new JMenuItem(en.getKey()+": "+toString(en.getValue()));
                 menu.add(item);
                 item.setAction(new AbstractAction(item.getActionCommand()) {
@@ -854,7 +855,7 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         if (o.hasMeasurements()) {
             menu.addSeparator();
-            for (Entry<String, Object> en : o.getMeasurements().getValues().entrySet()) {
+            for (Entry<String, Object> en : new TreeMap<>(o.getMeasurements().getValues()).entrySet()) {
                 JMenuItem item = new JMenuItem(en.getKey()+": "+toString(en.getValue()));
                 menu.add(item);
                 item.setAction(new AbstractAction(item.getActionCommand()) {

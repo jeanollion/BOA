@@ -55,7 +55,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     // track-related attributes
     protected int timePoint;
-    protected double calibratedTimePoint;
     @Transient protected StructureObject previous, next; 
     private ObjectId nextId, previousId;
     private ObjectId parentTrackHeadId, trackHeadId; // TODO remove parentTrackHeadId ? useful for getTrackHeads
@@ -83,7 +82,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.parent=parent;
         this.parentId=parent.getId();
         if (this.parent!=null) this.dao=parent.dao;
-        setCalibratedTimePoint();
     }
     /**
      * Constructor for root objects only.
@@ -97,7 +95,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.structureIdx = -1;
         this.idx = 0;
         this.dao=dao;
-        setCalibratedTimePoint();
     }
     
     public StructureObject duplicate() {
@@ -112,14 +109,15 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public int getPositionIdx() {return dao==null?-1 : getExperiment().getPosition(getPositionName()).getIndex();}
     public int getStructureIdx() {return structureIdx;}
     @Override public int getFrame() {return timePoint;}
-    private void setCalibratedTimePoint() {
-        if (getExperiment()==null) return;
+    public double getCalibratedTimePoint() {
+        if (getExperiment()==null) return Double.NaN;
         MicroscopyField f = getExperiment().getPosition(getPositionName());
         int z = (int)Math.round(getObject().getBounds().getZMean());
-        calibratedTimePoint = f.getInputImages().getCalibratedTimePoint(getExperiment().getChannelImageIdx(structureIdx), timePoint, z);
-        if (Double.isNaN(calibratedTimePoint)) calibratedTimePoint = timePoint * f.getFrameDuration();
+        double res  = f.getInputImages().getCalibratedTimePoint(getExperiment().getChannelImageIdx(structureIdx), timePoint, z);
+        if (Double.isNaN(res)) res = timePoint * f.getFrameDuration();
+        return res;
     }
-    public double getCalibratedTimePoint() {return calibratedTimePoint;}
+    
     public int getIdx() {return idx;}
 
     @Override

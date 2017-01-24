@@ -42,12 +42,14 @@ public class Measurements implements Comparable<Measurements>{
     protected @Id ObjectId id;
     @Transient protected String fieldName;
     protected int timePoint, structureIdx;
+    protected double calibratedTimePoint;
     boolean isTrackHead;
     protected int[] indices;
     protected HashMap<String, Object> values;
     @Transient boolean modifications=false;
     final static String NA_STRING = "NA";
     public Measurements(StructureObject o) {
+        this.calibratedTimePoint=o.getCalibratedTimePoint();
         this.fieldName=o.getPositionName();
         this.timePoint=o.getFrame();
         this.structureIdx=o.getStructureIdx();
@@ -66,8 +68,12 @@ public class Measurements implements Comparable<Measurements>{
         return fieldName;
     }
 
-    public int getTimePoint() {
+    public int getFrame() {
         return timePoint;
+    }
+    
+    public double getCalibratedTimePoint() {
+        return calibratedTimePoint;
     }
 
     public int getStructureIdx() {

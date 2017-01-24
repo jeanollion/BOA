@@ -113,7 +113,9 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 //logger.debug("mousepressed");
                 if (SwingUtilities.isRightMouseButton(e)) {
                     JPopupMenu menu = getMenu(image);
-                    if (menu!=null) menu.show(canvas, canvas.offScreenX(e.getX()), canvas.offScreenY(e.getY()));
+                    if (menu!=null) {
+                        menu.show(canvas, e.getX(), e.getY());
+                    }
                 } 
             }
 

@@ -81,12 +81,10 @@ public class MutationTrackMeasurements implements Measurement {
         res.add(new MeasurementKeyObject("MeanIntensity", structureIdx));
         res.add(new MeasurementKeyObject("SumIntensity", structureIdx));
         
-        // track parameters (only computed for trackHeads
+        // track parameters (only computed for trackHeads)
         res.add(new MeasurementKeyObject("TrackLength", structureIdx));
         res.add(new MeasurementKeyObject("MutationNumber", structureIdx));
-        
-        
-        
+
         return res;
     }
 

@@ -140,7 +140,7 @@ public class MutationSegmenter implements Segmenter {
         if (intermediateImages!=null) intermediateImages.add(sub.duplicate("sub before scale"));
         Image smooth = ImageFeatures.gaussianSmooth(sub, scale, scale, false);
         final double thld = new ObjectCountThresholder(20).runThresholder(smooth, parent);
-        double[] ms = ImageOperations.getMeanAndSigma(sub, parent.getMask(), d -> d<thld);
+        double[] ms = ImageOperations.getMeanAndSigma(sub, parent.getMask(), d -> d<thld); //TODO : test with always true
         //double[] ms = ImageOperations.getMeanAndSigma(sub, parent.getMask(), d -> true);
         if (intermediateImages!=null) intermediateImages.add(smooth.duplicate("smooth before scale"));
         ImageOperations.affineOperation2(smooth, smooth, 1/ms[1], -ms[0]);
