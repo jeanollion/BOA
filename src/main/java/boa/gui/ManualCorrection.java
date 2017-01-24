@@ -212,7 +212,7 @@ public class ManualCorrection {
         }
         //repairLinkInconsistencies(db, modifiedObjects, modifiedObjects);
         Utils.removeDuplicates(modifiedObjects, false);
-        db.getDao(objects.get(0).getFieldName()).store(modifiedObjects, true);
+        db.getDao(objects.get(0).getPositionName()).store(modifiedObjects, true);
         if (updateDisplay) {
             // reload track-tree and update selection toDelete
             int parentStructureIdx = objects.get(0).getParent().getStructureIdx();
@@ -236,7 +236,7 @@ public class ManualCorrection {
         Map<StructureObject, List<StructureObject>> objectsByParentTh = StructureObjectUtils.splitByParentTrackHead(objects);
         for (StructureObject parentTh : objectsByParentTh.keySet()) {
             Selection sel = null;
-            String selName = "linkError_pIdx"+parentTh.getIdx()+"_Position"+parentTh.getFieldName();
+            String selName = "linkError_pIdx"+parentTh.getIdx()+"_Position"+parentTh.getPositionName();
             for (StructureObject o : objectsByParentTh.get(parentTh)) {
                 if (o.getNext()!=null && o.getNext().getPrevious()!=o) {
                     if (o.getNext().getPrevious()==null) linkObjects(o, o.getNext(), modifiedObjects);
@@ -275,7 +275,7 @@ public class ManualCorrection {
         List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
         for (StructureObject o : objects) ManualCorrection.unlinkObject(o, modifiedObjects);
         Utils.removeDuplicates(modifiedObjects, false);
-        db.getDao(objects.get(0).getFieldName()).store(modifiedObjects, true);
+        db.getDao(objects.get(0).getPositionName()).store(modifiedObjects, true);
         if (updateDisplay) {
             // reload track-tree and update selection toDelete
             int parentStructureIdx = objects.get(0).getParent().getStructureIdx();
@@ -349,7 +349,7 @@ public class ManualCorrection {
                     e.getKey().relabelChildren(structureIdx, modified);
                     modified.addAll(newChildren);
                     Utils.removeDuplicates(modified, false);
-                    db.getDao(e.getKey().getFieldName()).store(modified, true);
+                    db.getDao(e.getKey().getPositionName()).store(modified, true);
                     
                     //Update tree
                     ObjectNode node = GUI.getInstance().objectTreeGenerator.getObjectNode(e.getKey());

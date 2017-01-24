@@ -55,6 +55,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     // track-related attributes
     protected int timePoint;
+    protected double calibratedTimePoint;
     @Transient protected StructureObject previous, next; 
     private ObjectId nextId, previousId;
     private ObjectId parentTrackHeadId, trackHeadId; // TODO remove parentTrackHeadId ? useful for getTrackHeads
@@ -82,6 +83,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.parent=parent;
         this.parentId=parent.getId();
         if (this.parent!=null) this.dao=parent.dao;
+        setCalibratedTimePoint();
     }
     /**
      * Constructor for root objects only.
@@ -95,6 +97,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.structureIdx = -1;
         this.idx = 0;
         this.dao=dao;
+        setCalibratedTimePoint();
     }
     
     public StructureObject duplicate() {
@@ -105,11 +108,18 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     // structure-related methods
     public ObjectDAO getDAO() {return dao;}
     public ObjectId getId() {return id;}
-    public String getFieldName() {return dao==null? "?":dao.getFieldName();}
-    public int getPositionIdx() {return dao==null?-1 : getExperiment().getPosition(getFieldName()).getIndex();}
+    public String getPositionName() {return dao==null? "?":dao.getPositionName();}
+    public int getPositionIdx() {return dao==null?-1 : getExperiment().getPosition(getPositionName()).getIndex();}
     public int getStructureIdx() {return structureIdx;}
-    public int getFrame() {return timePoint;}
-    public double getCalibratedTimePoint() {return timePoint * getExperiment().getPosition(getFieldName()).getFrameDuration();}
+    @Override public int getFrame() {return timePoint;}
+    private void setCalibratedTimePoint() {
+        if (getExperiment()==null) return;
+        MicroscopyField f = getExperiment().getPosition(getPositionName());
+        int z = (int)Math.round(getObject().getBounds().getZMean());
+        calibratedTimePoint = f.getInputImages().getCalibratedTimePoint(getExperiment().getChannelImageIdx(structureIdx), timePoint, z);
+        if (Double.isNaN(calibratedTimePoint)) calibratedTimePoint = timePoint * f.getFrameDuration();
+    }
+    public double getCalibratedTimePoint() {return calibratedTimePoint;}
     public int getIdx() {return idx;}
 
     @Override
@@ -129,7 +139,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (dao==null) return null;
         return dao.getExperiment();
     }
-    public MicroscopyField getMicroscopyField() {return getExperiment()!=null?getExperiment().getPosition(getFieldName()):null;}
+    public MicroscopyField getMicroscopyField() {return getExperiment()!=null?getExperiment().getPosition(getPositionName()):null;}
     public float getScaleXY() {return getMicroscopyField()!=null?getMicroscopyField().getScaleXY():1;}
     public float getScaleZ() {return getMicroscopyField()!=null?getMicroscopyField().getScaleZ():1;}
     public StructureObject getParent() {
@@ -698,7 +708,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             synchronized(rawImagesC) {
                 if (rawImagesC.get(channelIdx)==null) {
                     if (isRoot()) {
-                        if (rawImagesC.getAndExtend(channelIdx)==null) rawImagesC.set(getExperiment().getImageDAO().openPreProcessedImage(channelIdx, timePoint, getFieldName()), channelIdx);
+                        if (rawImagesC.getAndExtend(channelIdx)==null) rawImagesC.set(getExperiment().getImageDAO().openPreProcessedImage(channelIdx, timePoint, getPositionName()), channelIdx);
                     } else {
                         StructureObject parentWithImage=getFirstParentWithOpenedRawImage(structureIdx);
                         if (parentWithImage!=null) {
@@ -723,7 +733,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     private void extendBoundsInZIfNecessary(int channelIdx, BoundingBox bounds) { //when the current structure is 2D but channel is 3D 
         //logger.debug("extends bounds if necessary: is2D: {}, bounds 2D: {}, sizeZ of image to open: {}", is2D(), bounds.getSizeZ(), getExperiment().getMicroscopyField(fieldName).getSizeZ(channelIdx));
         if (bounds.getSizeZ()==1 && is2D() && channelIdx!=this.getExperiment().getChannelImageIdx(structureIdx)) { 
-            int sizeZ = getExperiment().getPosition(getFieldName()).getSizeZ(channelIdx); //TODO no reliable if a transformation removes planes -> need to record the dimensions of the preProcessed Images
+            int sizeZ = getExperiment().getPosition(getPositionName()).getSizeZ(channelIdx); //TODO no reliable if a transformation removes planes -> need to record the dimensions of the preProcessed Images
             if (sizeZ>1) {
                 bounds.expandZ(sizeZ-1);
             }
@@ -738,7 +748,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         int channelIdx = getExperiment().getChannelImageIdx(structureIdx);
         Image res;
         if (rawImagesC.get(channelIdx)==null) {//opens only within bounds
-            res =  getExperiment().getImageDAO().openPreProcessedImage(channelIdx, timePoint, getFieldName(), bounds);
+            res =  getExperiment().getImageDAO().openPreProcessedImage(channelIdx, timePoint, getPositionName(), bounds);
             res.setCalibration(getScaleXY(), getScaleZ());
             //if (this.timePoint==0) logger.debug("open from: {} within bounds: {}, resultBounds: {}", this, bounds, res.getBoundingBox());
         } 

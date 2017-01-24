@@ -203,7 +203,7 @@ public class MutationTrackPostProcessing {
     public void flagShortAndLongTracks(int shortTrackThreshold, int longTrackTreshold) {
         for (List<StructureObject> track : trackHeadTrackMap.values()) {
             int trackLength = track.get(track.size()-1).getFrame()-track.get(0).getFrame();
-            if (trackLength<shortTrackThreshold || trackLength>longTrackTreshold) {
+            if ((shortTrackThreshold>0 && trackLength<shortTrackThreshold) || (longTrackTreshold>0 && trackLength>longTrackTreshold)) {
                 for (StructureObject o : track) o.setAttribute(StructureObject.trackErrorNext, true);
             }
         }

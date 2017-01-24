@@ -527,7 +527,7 @@ public class Utils {
             return n.toString();
         } else {
             double d = Math.abs(n.doubleValue());
-            if (d < 1 || d > 100) {
+            if (d > 100 || (d<1 && ((int)(d*1000))/1000d!=d)) {
                 return String.format(java.util.Locale.US, "%."+ digits+ "E", n);
             } else {
                 return String.format(java.util.Locale.US, "%."+ digits+"f", n);

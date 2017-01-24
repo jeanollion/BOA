@@ -70,7 +70,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
     }
     
     public List<StructureObject> getTrack() {
-        if (track==null) track=root.generator.getObjectDAO(this.trackHead.getFieldName()).getTrack(trackHead);
+        if (track==null) track=root.generator.getObjectDAO(this.trackHead.getPositionName()).getTrack(trackHead);
         if (track==null) logger.error("Could not retrieve track from trackHead: {}", trackHead);
         return track;
     }

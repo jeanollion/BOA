@@ -255,20 +255,20 @@ public class Selection implements Comparable<Selection> {
         if (this.structureIdx==-1) structureIdx=elementToAdd.getStructureIdx();
         else if (structureIdx!=elementToAdd.getStructureIdx()) return;
         
-        Set<StructureObject> list = getElements(elementToAdd.getFieldName());
+        Set<StructureObject> list = getElements(elementToAdd.getPositionName());
         if (list==null) {
             list=new HashSet<StructureObject>();
-            retrievedElements.put(elementToAdd.getFieldName(), list);
+            retrievedElements.put(elementToAdd.getPositionName(), list);
         }
         if (!list.contains(elementToAdd)) {
             list.add(elementToAdd);
             // update trackHeads
-            if (retrievedTrackHeads.containsKey(elementToAdd.getFieldName())) {
-                Set<StructureObject> th = this.getTrackHeads(elementToAdd.getFieldName());
+            if (retrievedTrackHeads.containsKey(elementToAdd.getPositionName())) {
+                Set<StructureObject> th = this.getTrackHeads(elementToAdd.getPositionName());
                 if (!th.contains(elementToAdd.getTrackHead())) th.add(elementToAdd.getTrackHead());
             }
             // update DB refs
-            Collection<String> els = get(elementToAdd.getFieldName(), true);
+            Collection<String> els = get(elementToAdd.getPositionName(), true);
             els.add(indicesString(elementToAdd));
             if (false && els.size()!=list.size()) {
                 logger.error("unconsitancy in selection: {}, {} vs: {}", this.toString(), list.size(), els.size());
@@ -285,10 +285,10 @@ public class Selection implements Comparable<Selection> {
     }
     
     public boolean removeElement(StructureObject elementToRemove) {
-        Set<StructureObject> list = getElements(elementToRemove.getFieldName());
+        Set<StructureObject> list = getElements(elementToRemove.getPositionName());
         if (list!=null) {
             list.remove(elementToRemove);
-            Collection<String> els = get(elementToRemove.getFieldName(), false);
+            Collection<String> els = get(elementToRemove.getPositionName(), false);
             if (els!=null) els.remove(indicesString(elementToRemove));
         }
         return false;

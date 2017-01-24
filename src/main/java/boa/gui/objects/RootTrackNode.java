@@ -62,7 +62,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
         this.generator = generator;
         this.parentTrackHead=parentTrackHead;
         this.structureIdx=structureIdx;
-        this.fieldName=parentTrackHead.getFieldName();
+        this.fieldName=parentTrackHead.getPositionName();
     }
     
     public RootTrackNode(TrackExperimentNode parent, String fieldName, int structureIdx) { // constructor when parent == root

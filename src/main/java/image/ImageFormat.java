@@ -24,8 +24,8 @@ package image;
 public enum ImageFormat {
         PNG(".png", true, false, false),
         TIF(".tif", false, true, false), // si on n'écrit pas avec le writer de bio-formats
-        OMETIF(".ome.tiff", false, true, true);
-
+        OMETIF(".ome.tiff", false, true, true),
+        DV(".dv", false, true, true);
         final private String extension;
         final private boolean invertTZ;
         final private boolean view;

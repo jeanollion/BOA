@@ -36,7 +36,7 @@ public class CountObjects {
         }
     }
     private static void countMicrochannels(ObjectDAO dao) {
-        logger.debug("Position: {}, mc: {}", dao.getFieldName(), dao.getTrackHeads(dao.getRoot(0), 0).size());
+        logger.debug("Position: {}, mc: {}", dao.getPositionName(), dao.getTrackHeads(dao.getRoot(0), 0).size());
         
     }
 }

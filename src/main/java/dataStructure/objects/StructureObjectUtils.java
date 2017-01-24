@@ -355,7 +355,7 @@ public class StructureObjectUtils {
     
     public static Map<String, List<StructureObject>> splitByFieldName(Collection<StructureObject> list) {
         if (list.isEmpty()) return Collections.EMPTY_MAP;
-        return list.stream().collect(Collectors.groupingBy(o -> o.getFieldName()));
+        return list.stream().collect(Collectors.groupingBy(o -> o.getPositionName()));
     }
         
     public static StructureObject keepOnlyObjectsFromSameParent(Collection<StructureObject> list, StructureObject... parent) {
@@ -372,8 +372,8 @@ public class StructureObjectUtils {
     }
     public static String keepOnlyObjectsFromSameMicroscopyField(Collection<StructureObject> list, String... fieldName) {
         if (list.isEmpty()) return null;
-        String fName = fieldName.length>=1 ? fieldName[0] : list.iterator().next().getFieldName();
-        list.removeIf(o -> !o.getFieldName().equals(fName));
+        String fName = fieldName.length>=1 ? fieldName[0] : list.iterator().next().getPositionName();
+        list.removeIf(o -> !o.getPositionName().equals(fName));
         return fName;
     }
     

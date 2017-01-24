@@ -220,7 +220,7 @@ public class ProcessingTest {
         db.getDao(f).clearCache();
         r2 = db.getDao(f).getById(r2.getId());
         assertTrue("r2 retrieved", r2!=null);
-        assertEquals("r retrieved 2", "test", r2.getFieldName());
+        assertEquals("r retrieved 2", "test", r2.getPositionName());
         //assertEquals("r previous ", r.getId(), r2.getPrevious().getId()); // not lazy anymore
         
         assertEquals("r unique instanciation query from fieldName & time point", r2, db.getDao(f).getRoot(1));

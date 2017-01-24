@@ -128,7 +128,7 @@ public class GenerateFastMutTrackingXP {
         
         mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessor()));
         bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo()).setCostParameters(0.1, 0.5)));
-        mutation.setProcessingScheme(new SegmentAndTrack(new LAPTracker().setCompartimentStructure(1).setSegmenter(new MutationSegmenter())));
+        mutation.setProcessingScheme(new SegmentAndTrack(new LAPTracker().setCompartimentStructure(1).setSegmenter(new MutationSegmenter()).setSpotQualityThreshold(3.5).setLinkingMaxDistance(0.75, 3).setTrackLength(10, 0)));
         xp.addMeasurement(new BacteriaLineageIndex(1, "BacteriaLineage"));
         xp.addMeasurement(new MutationTrackMeasurements(1, 2));
         xp.addMeasurement(new ObjectInclusionCount(1, 2, 10).setMeasurementName("MutationNumber"));

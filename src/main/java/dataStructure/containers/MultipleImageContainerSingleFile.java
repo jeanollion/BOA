@@ -52,6 +52,10 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
         return new MultipleImageContainerSingleFile(name, filePath, seriesIdx, timePointNumber, channelNumber, sizeZ, scaleXY, scaleZ);
     }
     
+    @Override public double getCalibratedTimePoint(int t, int c, int z) {
+        return getReader().getTimePoint(c, t, z);
+    }
+    
     public void setImagePath(String path) {
         this.filePath=path;
     }

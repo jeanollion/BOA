@@ -41,7 +41,7 @@ public class BasicObjectDAO implements ObjectDAO {
         this.rootTrack = new SmallArray<StructureObject>(rootTrack.size());
         int idx = 0;
         for (StructureObject r : rootTrack) this.rootTrack.setQuick(r, idx++);
-        this.fieldName=rootTrack.get(0).getFieldName();
+        this.fieldName=rootTrack.get(0).getPositionName();
     }
     
     public BasicObjectDAO(MasterDAO masterDAO, String fieldName) {
@@ -54,7 +54,7 @@ public class BasicObjectDAO implements ObjectDAO {
         return masterDAO.getExperiment();
     }
 
-    public String getFieldName() {
+    public String getPositionName() {
         return fieldName;
     }
 

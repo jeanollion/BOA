@@ -67,11 +67,11 @@ public class LAPTracker implements TrackerSegmenter {
     NumberParameter maxLinkingDistanceGC = new BoundedNumberParameter("Gap-closing Maximum Linking Distance (0=skip)", 2, 0.75, 0, null);
     NumberParameter gapPenalty = new BoundedNumberParameter("Gap Distance Penalty", 2, 0.25, 0, null);
     NumberParameter alternativeDistance = new BoundedNumberParameter("Alternative Distance (>maxLinkingDistance)", 2, 0.8, 0, null);
-    NumberParameter minimalDistanceForTrackSplittingPenalty = new BoundedNumberParameter("Minimal Distance For Track Splitting Penalty", 2, 0.2, 0, null);
-    NumberParameter maximalTrackSplittingPenalty = new BoundedNumberParameter("Maximal Track Splitting Penalty", 5, 0.00001, 0.01, 1);
-    NumberParameter minimalTrackFrameNumber = new BoundedNumberParameter("Minimal Track Frame Number", 0, 6, 1, null);
-    NumberParameter maximalTrackFrameNumber = new BoundedNumberParameter("Maximal Track Frame Number", 0, 15, 1, null);
-    GroupParameter trackSplittingParameters = new GroupParameter("Track Post-Processing", minimalTrackFrameNumber, maximalTrackFrameNumber, maximalTrackSplittingPenalty, minimalDistanceForTrackSplittingPenalty);
+    //NumberParameter minimalDistanceForTrackSplittingPenalty = new BoundedNumberParameter("Minimal Distance For Track Splitting Penalty", 2, 0.2, 0, null);
+    //NumberParameter maximalTrackSplittingPenalty = new BoundedNumberParameter("Maximal Track Splitting Penalty", 5, 0.00001, 0.01, 1);
+    NumberParameter minimalTrackFrameNumber = new BoundedNumberParameter("Minimal Track Frame Number", 0, 6, 0, null);
+    NumberParameter maximalTrackFrameNumber = new BoundedNumberParameter("Maximal Track Frame Number", 0, 15, 0, null);
+    GroupParameter trackSplittingParameters = new GroupParameter("Track Post-Processing", minimalTrackFrameNumber, maximalTrackFrameNumber);
     Parameter[] parameters = new Parameter[]{segmenter, compartirmentStructure, maxLinkingDistance, maxLinkingDistanceGC, maxGap, gapPenalty, alternativeDistance, spotQualityThreshold, trackSplittingParameters};
     
     public LAPTracker setCompartimentStructure(int compartimentStructureIdx) {
@@ -88,7 +88,13 @@ public class LAPTracker implements TrackerSegmenter {
         return this;
     }
     public LAPTracker setSegmenter(Segmenter s) {
+        
         segmenter.setPlugin(s);
+        return this;
+    }
+    public LAPTracker setTrackLength(double min, double max) {
+        this.minimalTrackFrameNumber.setValue(min);
+        this.maximalTrackFrameNumber.setValue(max);
         return this;
     }
     @Override public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {

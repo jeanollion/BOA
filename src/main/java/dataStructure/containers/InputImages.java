@@ -34,7 +34,7 @@ public interface InputImages {
     public int getDefaultTimePoint();
     public int getSizeZ(int channelIdx);
     public void flush();
-    
+    public double getCalibratedTimePoint(int c, int t, int z);
     public static Image getAverageFrame(InputImages images, int channelIdx, int frame,  int numberOfFramesToAverage) {
         if (numberOfFramesToAverage<=1) return images.getImage(channelIdx, frame);
         List<Image> imagesToAv = new ArrayList<>(numberOfFramesToAverage);

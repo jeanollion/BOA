@@ -743,7 +743,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             TrackAttribute ta = this.prev;
             Set<TrackAttribute> bucket = new HashSet<>(3);
             WL: while(res.size()<sizeIncrementFrameNumber && ta!=null) {
-                if (ta.next==null) logger.error("Prev's NEXT NULL db:{}, position: {}, parent: {}, current: {}: ta with no next: {}, last of channel: {}", parents.get(0).getDAO().getMasterDAO().getDBName(), parents.get(0).getDAO().getFieldName(), parents.get(0), this, ta, ta.idx==populations[ta.timePoint].size()-1);
+                if (ta.next==null) logger.error("Prev's NEXT NULL db:{}, position: {}, parent: {}, current: {}: ta with no next: {}, last of channel: {}", parents.get(0).getDAO().getMasterDAO().getDBName(), parents.get(0).getDAO().getPositionName(), parents.get(0), this, ta, ta.idx==populations[ta.timePoint].size()-1);
                 if (!ta.errorCur && !ta.truncatedDivision && !ta.touchEndOfChannel) {
                     if (ta.division || ta.next==null) {
                         double nextSize = 0;

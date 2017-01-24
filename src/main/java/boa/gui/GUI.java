@@ -817,6 +817,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         optionMenu = new javax.swing.JMenu();
         jMenu2 = new javax.swing.JMenu();
         deleteMeasurementsCheckBox = new javax.swing.JCheckBoxMenuItem();
+        miscMenu = new javax.swing.JMenu();
+        closeAllWindowsMenuItem = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
@@ -1427,6 +1429,18 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
         jMenuBar1.add(optionMenu);
 
+        miscMenu.setText("Misc");
+
+        closeAllWindowsMenuItem.setText("Close all windows");
+        closeAllWindowsMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                closeAllWindowsMenuItemActionPerformed(evt);
+            }
+        });
+        miscMenu.add(closeAllWindowsMenuItem);
+
+        jMenuBar1.add(miscMenu);
+
         setJMenuBar(jMenuBar1);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -1488,7 +1502,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         else {
             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null);
             if (i!=null && i.getParent().getExperiment()!=db.getExperiment()) i=null;
-            String position = i==null? null:i.getParent().getFieldName();
+            String position = i==null? null:i.getParent().getPositionName();
             if (i==null || nextPosition) navigateCount=2;
             else {
                 boolean move = ImageWindowManagerFactory.getImageManager().goToNextObject(null, SelectionUtils.getStructureObjects(sels, position), next);
@@ -1529,7 +1543,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 } else {
                     StructureObject nextParent = parents.get(nextParentIdx);
                     logger.debug("next parent: {}", nextParent);
-                    List track = db.getDao(nextParent.getFieldName()).getTrack(nextParent);
+                    List track = db.getDao(nextParent.getPositionName()).getTrack(nextParent);
                     ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
                     ImageObjectInterface nextI = iwm.getImageTrackObjectInterface(track, childStructureIdx);
                     Image im = iwm.getImage(nextI, false);
@@ -2041,6 +2055,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             menu.show(this.deleteObjectsButton, evt.getX(), evt.getY());
         }
     }//GEN-LAST:event_deleteObjectsButtonMousePressed
+
+    private void closeAllWindowsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeAllWindowsMenuItemActionPerformed
+        ImageWindowManagerFactory.getImageManager().flush();
+    }//GEN-LAST:event_closeAllWindowsMenuItemActionPerformed
     private void updateMongoDBBinActions() {
         boolean enableDump = false, enableRestore = false;
         String mPath = PropertyUtils.get(PropertyUtils.MONGO_BIN_PATH);
@@ -2149,6 +2167,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JPanel actionPanel;
     private javax.swing.JScrollPane actionStructureJSP;
     private javax.swing.JRadioButtonMenuItem bsonFormatMenuItem;
+    private javax.swing.JMenuItem closeAllWindowsMenuItem;
     private javax.swing.JButton collapseAllObjectButton;
     private javax.swing.JScrollPane configurationJSP;
     private javax.swing.JPanel configurationPanel;
@@ -2189,6 +2208,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JButton manualSegmentButton;
     private javax.swing.JButton mergeObjectsButton;
     private javax.swing.JList microscopyFieldList;
+    private javax.swing.JMenu miscMenu;
     private javax.swing.JMenuItem newXPMenuItem;
     private javax.swing.JButton nextTrackErrorButton;
     private javax.swing.JMenu optionMenu;

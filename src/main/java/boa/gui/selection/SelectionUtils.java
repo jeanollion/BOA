@@ -137,7 +137,7 @@ public class SelectionUtils {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (i==null) i = iwm.getCurrentImageObjectInterface();
         if (i!=null) {
-            String fieldName = i.getParent().getFieldName();
+            String fieldName = i.getParent().getPositionName();
             Set<StructureObject> objects = s.getElements(fieldName);
             if (objects!=null) {
                 iwm.displayObjects(null, i.pairWithOffset(objects), s.getColor(true), false, false);
@@ -149,7 +149,7 @@ public class SelectionUtils {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (i==null) i = iwm.getCurrentImageObjectInterface();
         if (i!=null) {
-            String fieldName = i.getParent().getFieldName();
+            String fieldName = i.getParent().getPositionName();
             Set<StructureObject> objects = s.getElements(fieldName);
             if (objects!=null) {
                 iwm.hideObjects(null, i.pairWithOffset(objects), false);
@@ -160,7 +160,7 @@ public class SelectionUtils {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (i==null) i = iwm.getCurrentImageObjectInterface();
         if (i!=null) {
-            String fieldName = i.getParent().getFieldName();
+            String fieldName = i.getParent().getPositionName();
             Set<StructureObject> tracks = s.getTrackHeads(fieldName);
             if (tracks==null) return;
             for (StructureObject trackHead : tracks) {
@@ -173,7 +173,7 @@ public class SelectionUtils {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (i==null)  i = iwm.getCurrentImageObjectInterface();
         if (i!=null) {
-            String fieldName = i.getParent().getFieldName();
+            String fieldName = i.getParent().getPositionName();
             Set<StructureObject> tracks = s.getTrackHeads(fieldName);
             if (tracks==null) return;
             iwm.hideTracks(null, i, tracks, false);

@@ -37,6 +37,7 @@ public abstract class MultipleImageContainer {
     public abstract String getName();
     public float getScaleXY() {return (float)scaleXY;}
     public float getScaleZ() {return (float)scaleZ;}
+    public abstract double getCalibratedTimePoint(int t, int c, int z);
     public abstract MultipleImageContainer duplicate();
 
     public MultipleImageContainer(double scaleXY, double scaleZ) {

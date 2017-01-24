@@ -161,7 +161,7 @@ public class StructureObjectTreeGenerator {
     public TreePath getObjectTreePath(StructureObject object) {
         ArrayList<TreeNode> path = new ArrayList<TreeNode>(); 
         path.add(experimentNode);
-        FieldNode f = experimentNode.getFieldNode(object.getFieldName());
+        FieldNode f = experimentNode.getFieldNode(object.getPositionName());
         path.add(f);
         TimePointNode t = f.getChildren()[object.getFrame()];
         path.add(t);
@@ -180,7 +180,7 @@ public class StructureObjectTreeGenerator {
     
     
     public ObjectNode getObjectNode(StructureObject object) {
-        FieldNode f = experimentNode.getFieldNode(object.getFieldName());
+        FieldNode f = experimentNode.getFieldNode(object.getPositionName());
         TimePointNode t = f.getChildren()[object.getFrame()];
         ArrayList<StructureObject> objectPath = getObjectPath(object);
         StructureNodeContainer lastStructureContainer = t;
@@ -193,7 +193,7 @@ public class StructureObjectTreeGenerator {
     }
     
     public StructureNode getStructureNode(StructureObject object) {
-        FieldNode f = experimentNode.getFieldNode(object.getFieldName());
+        FieldNode f = experimentNode.getFieldNode(object.getPositionName());
         TimePointNode t = f.getChildren()[object.getFrame()];
         ArrayList<StructureObject> objectPath = getObjectPath(object);
         StructureNodeContainer lastStructureContainer = t;

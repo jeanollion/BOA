@@ -17,6 +17,7 @@
  */
 package image;
 
+import static dataStructure.containers.ImportImageUtils.paseDVLogFile;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.io.FileInfo;
@@ -39,6 +40,8 @@ import loci.plugins.util.LociPrefs;
 import ome.units.quantity.Length;
 import static image.Image.logger;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import org.joda.time.DateTimeZone;
 
 /**
@@ -49,8 +52,8 @@ public class ImageReader {
     ImageFormat extension;
     String path;
     String imageTitle;
-    String fullPath;
-    
+    private String fullPath;
+    List<Double> timePoints;
     //BioFormats
     ImageProcessorReader reader;
     IMetadata meta;
@@ -174,14 +177,13 @@ public class ImageReader {
         //logger.debug("open image: {}, sizeX: {}, sizeY: {}, sizeZ: {}, zMin: {}, zMax: {}", this.getImagePath(), sizeX, sizeY, sizeZ, zMin, zMax);
         ImageStack stack = new ImageStack(sizeX, sizeY);
         for (int z = zMin; z <= zMax; z++) {
-            int locZ = invertTZ?coords.getTimePoint():z;
-            int locT = invertTZ?z:coords.getTimePoint();
+            int idx = getIndex(coords.getChannel(), coords.getTimePoint(), z);
             ImageProcessor ip;
             try {
-                if (coords.getBounds()==null || PNG.equals(extension)) {
-                    ip = reader.openProcessors(reader.getIndex(locZ, coords.getChannel(), locT))[0];
+                if (coords.getBounds()==null || !supportView) {
+                    ip = reader.openProcessors(idx)[0];
                 } else {
-                    ip = reader.openProcessors(reader.getIndex(locZ, coords.getChannel(), locT), coords.getBounds().getxMin(), coords.getBounds().getyMin(), coords.getBounds().getSizeX(), coords.getBounds().getSizeY())[0];
+                    ip = reader.openProcessors(idx, coords.getBounds().getxMin(), coords.getBounds().getyMin(), coords.getBounds().getSizeX(), coords.getBounds().getSizeY())[0];
                 }
                 stack.addSlice("" + (z + 1), ip);
                 res = IJImageWrapper.wrap(new ImagePlus("", stack));
@@ -199,6 +201,10 @@ public class ImageReader {
             }
         }
         return res;
+    }
+    
+    private int getIndex(int c, int t, int z) {
+        return invertTZ ? reader.getIndex(t, c, z) : reader.getIndex(z, c, t);
     }
     
     public double[] getScaleXYZ(double defaultValue) {
@@ -219,13 +225,26 @@ public class ImageReader {
         return res;
     }
     
-    public void logTimeAnnotations() {
+    public double getTimePoint(int c, int t, int z) {
+        if (timePoints==null) {
+            if (this.extension == ImageFormat.DV) { // look for log file
+                int deconvIdx = getImagePath().indexOf("_D3D");
+                String logPath = deconvIdx>0 ? getImagePath().substring(0, deconvIdx)+".dv.log" : getImagePath()+".log";
+                timePoints = paseDVLogFile(logPath, "Time Point: ");
+            }
+        }
+        if (timePoints!=null) {
+            return timePoints.get(getIndex(c, t, z));
+        } else return Double.NaN;
+    }
+    
+    /*public void logTimeAnnotations() {
         if (meta!=null) {
             logger.debug("image count: {}", meta.getImageCount()); 
             for (int i = 0; i<meta.getImageCount(); ++i) {
                 logger.debug("i:{}, time: {}, ", i, meta.getImageAcquisitionDate(i), meta.getImageAcquisitionDate(i).asDateTime(DateTimeZone.UTC), meta.getImageAcquisitionDate(i).asInstant());
             }
-            /*int c = meta.getTimestampAnnotationCount();
+            int c = meta.getTimestampAnnotationCount();
             for (int i = 0; i<c; ++c) {
                 logger.debug("time: i={}, time: {}({}/{}), ns={}, id={}, desc={}, annotator={}", i, meta.getTimestampAnnotationValue(i), meta.getTimestampAnnotationValue(i).asDateTime(DateTimeZone.UTC), meta.getTimestampAnnotationValue(i).asInstant(), meta.getTimestampAnnotationNamespace(i), meta.getTimestampAnnotationID(i), meta.getTimestampAnnotationDescription(i), meta.getTimestampAnnotationAnnotator(i));
                 
@@ -233,10 +252,10 @@ public class ImageReader {
                 for (int ii = 0; ii<cc; ++ii) {
                     logger.debug("time: i={}, ref.idx={}, ref={}", i, ii, meta.getTimestampAnnotationAnnotationRef(i, ii));
                 }
-            }*/
+            }
         }
         
-    }
+    }*/
     
     /*private float[] getTifCalibrationIJ() {
         try {

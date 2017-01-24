@@ -73,13 +73,13 @@ public class MutationSegmenter implements Segmenter {
     public List<Image> intermediateImages;
     public static boolean debug = false;
     public static boolean displayImages = false;
-    NumberParameter scale = new BoundedNumberParameter("Scale", 1, 2, 1.5, 5);
-    NumberParameter subtractBackgroundScale = new BoundedNumberParameter("Subtract Background Scale", 1, 6, 3, 20);
+    NumberParameter scale = new BoundedNumberParameter("Scale", 1, 2.5, 1.5, 5);
+    NumberParameter subtractBackgroundScale = new BoundedNumberParameter("Subtract Background Scale", 1, 6, 2, 30);
     NumberParameter minSpotSize = new BoundedNumberParameter("Min. Spot Size (Voxels)", 0, 5, 1, null);
-    NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 2, 3, 1, null);
-    PluginParameter<Thresholder> thresholdLow = new PluginParameter<Thresholder>("Threshold for propagation", Thresholder.class, new ObjectCountThresholder(20), false);
-    //NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 2, 2, 0, null);
-    NumberParameter intensityThreshold = new BoundedNumberParameter("Intensity Threshold for Seeds", 2, 2, 0, null);
+    NumberParameter thresholdHigh = new BoundedNumberParameter("Threshold for Seeds", 2, 1.5, 1, null);
+    //PluginParameter<Thresholder> thresholdLow = new PluginParameter<Thresholder>("Threshold for propagation", Thresholder.class, new ObjectCountThresholder(20), false);
+    NumberParameter thresholdLow = new BoundedNumberParameter("Threshold for propagation", 2, 1, 0, null);
+    NumberParameter intensityThreshold = new BoundedNumberParameter("Intensity Threshold for Seeds", 2, 1.5, 0, null);
     Parameter[] parameters = new Parameter[]{scale, subtractBackgroundScale, minSpotSize, thresholdHigh,  thresholdLow, intensityThreshold};
     
     public MutationSegmenter setThresholdSeeds(double threshold) {
@@ -88,7 +88,8 @@ public class MutationSegmenter implements Segmenter {
     }
     
     public MutationSegmenter setThresholdPropagation(double threshold) {
-        this.thresholdLow.setPlugin(new ConstantValue(threshold));
+        //this.thresholdLow.setPlugin(new ConstantValue(threshold));
+        this.thresholdLow.setValue(threshold);
         return this;
     }
     
@@ -108,10 +109,10 @@ public class MutationSegmenter implements Segmenter {
     }
     
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        return run(input, parent, scale.getValue().doubleValue(), subtractBackgroundScale.getValue().doubleValue(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.instanciatePlugin(), intensityThreshold.getValue().doubleValue(), intermediateImages);
+        return run(input, parent, scale.getValue().doubleValue(), subtractBackgroundScale.getValue().doubleValue(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), intensityThreshold.getValue().doubleValue(), intermediateImages);
     }
     
-    public static ObjectPopulation run(Image input, StructureObjectProcessing parent, double scale, double subtractBackgroundScale, int minSpotSize, double thresholdHigh , Thresholder thresholdLow, double intensityThreshold, List<Image> intermediateImages) {
+    public static ObjectPopulation run(Image input, StructureObjectProcessing parent, double scale, double subtractBackgroundScale, int minSpotSize, double thresholdHigh , double thresholdLow, double intensityThreshold, List<Image> intermediateImages) {
         if (input.getSizeZ()>1) {
             // tester sur average, max, ou plan par plan
             ArrayList<Image> planes = input.splitZPlanes();
@@ -129,22 +130,32 @@ public class MutationSegmenter implements Segmenter {
         } else return runPlane(input, parent, scale, subtractBackgroundScale, minSpotSize, thresholdHigh, thresholdLow, intensityThreshold, intermediateImages);
     }
     
-    public static ObjectPopulation runPlane(Image input, StructureObjectProcessing parent, double scale, double subtractBackgroundScale, int minSpotSize, double thresholdSeeds, Thresholder segThresholdPropagation, double intensityThreshold, List<Image> intermediateImages) {
+    public static ObjectPopulation runPlane(Image input, StructureObjectProcessing parent, double scale, double subtractBackgroundScale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, double intensityThreshold, List<Image> intermediateImages) {
         if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
         Image sub  = IJSubtractBackground.filter(input, subtractBackgroundScale, true, false, true, false);
         //Image sub = input;
-        Image smooth = ImageFeatures.gaussianSmooth(sub, scale, scale, false);
-        Image lap = ImageFeatures.getLaplacian(sub, scale, true, false).setName("laplacian: "+scale);
+        
+        //Image lap = ImageFeatures.getLaplacian(sub, scale, true, false).setName("laplacian: "+scale);
         //ImageOperations.divide(lap, smooth, lap);
-        double thresholdPropagation = segThresholdPropagation.runThresholder(lap, parent);
-        if (debug) logger.debug("mutation segmenter: propagation thld: {}", thresholdPropagation);
+        if (intermediateImages!=null) intermediateImages.add(sub.duplicate("sub before scale"));
+        Image smooth = ImageFeatures.gaussianSmooth(sub, scale, scale, false);
+        final double thld = new ObjectCountThresholder(20).runThresholder(smooth, parent);
+        double[] ms = ImageOperations.getMeanAndSigma(sub, parent.getMask(), d -> d<thld);
+        //double[] ms = ImageOperations.getMeanAndSigma(sub, parent.getMask(), d -> true);
+        if (intermediateImages!=null) intermediateImages.add(smooth.duplicate("smooth before scale"));
+        ImageOperations.affineOperation2(smooth, smooth, 1/ms[1], -ms[0]);
+        ImageOperations.affineOperation2(sub, sub, 1/ms[1], -ms[0]);
+        //thresholdPropagation = (thresholdPropagation-ms[0]) / ms[1];
+        
+        Image lap = ImageFeatures.getLaplacian(sub, scale, true, false).setName("laplacian: "+scale);
+        if (debug) logger.debug("mutation segmenter: seed thld: {}, propagation thld: {} ({}), scale: {}", thresholdSeeds, thresholdPropagation, thld, ms);
         //new ObjectCountThresholder().setMaxObjectNumber(10).runThresholder(smooth, null);
         //new ObjectCountThresholder().setMaxObjectNumber(10).runThresholder(lap, null); //-> seuil propagation ? 
         if (intermediateImages!=null) {
-            intermediateImages.add(input.setName("input"));
             intermediateImages.add(smooth.setName("smooth"));
+            intermediateImages.add(lap.setName("lap"));
             intermediateImages.add(sub.setName("sub"));
-            intermediateImages.add(lap);
+            //intermediateImages.add(lap);
         }
         ImageByte seeds = Filters.localExtrema(lap, null, true, thresholdSeeds, Filters.getNeighborhood(scale, scale, input));
         for (int z = 0; z<seeds.getSizeZ(); ++z) {

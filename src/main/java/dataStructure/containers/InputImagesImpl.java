@@ -38,11 +38,13 @@ public class InputImagesImpl implements InputImages {
         this.defaultTimePoint= defaultTimePoint;
     }
     
-    public int getTimePointNumber() {return imageTC.length;}
-    public int getChannelNumber() {return imageTC[0].length;}
-    public int getDefaultTimePoint() {return defaultTimePoint;}
+    @Override public int getTimePointNumber() {return imageTC.length;}
+    @Override public int getChannelNumber() {return imageTC[0].length;}
+    @Override public int getDefaultTimePoint() {return defaultTimePoint;}
     @Override public int getSizeZ(int channelIdx) {return imageTC[0][channelIdx].imageSources.getSizeZ(channelIdx);}
-    
+    @Override public double getCalibratedTimePoint(int c, int t, int z) {
+        return imageTC[t][c].imageSources.getCalibratedTimePoint(t, c, z);
+    }
     public void addTransformation(int inputChannel, int[] channelIndicies, Transformation transfo) {
         if (channelIndicies!=null) for (int c : channelIndicies) addTransformation(c, transfo);
         else {

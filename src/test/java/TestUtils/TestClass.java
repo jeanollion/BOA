@@ -18,6 +18,7 @@
 package TestUtils;
 
 import static TestUtils.Utils.logger;
+import dataStructure.containers.ImportImageUtils;
 import image.ImageReader;
 import java.io.File;
 import java.util.ArrayList;
@@ -40,11 +41,22 @@ import static utils.Utils.removeFromMap;
  * @author jollion
  */
 public class TestClass {
-    @Test
+    //@Test
+    public void testGetTimePoint() {
+        String path = "/data/Images/FastMutTrack/180117ZMutTrack/180117ZMutTrack01_R3D.dv";
+        ImageReader r = new ImageReader(path);
+        logger.debug("extension: {}, file: {}", r.getExtension(), new File(path).exists());
+        long t0 = System.currentTimeMillis();
+        r.getTimePoint(0, 0, 0);
+        long t1 = System.currentTimeMillis();
+        logger.debug("time: {}ms, Image 1: {}, 2: {}, 3: {}, 4:{}, 7:{}", t1-t0, r.getTimePoint(0, 0, 0), r.getTimePoint(1, 0, 0), r.getTimePoint(0, 0, 1), r.getTimePoint(1, 0, 1), r.getTimePoint(0, 1, 0));
+    }
+    //@Test
     public void testDIv() {
         double a = 100.12;
+        double aa = ((int)a*1000)/1000d;
         int digits = 3;
-        logger.debug("a: {}, formatted: {}", a, String.format("%."+digits+"f", a));
+        logger.debug("a: {}, a cut: {}, formatted: {}", a, aa, String.format("%."+digits+"f", a));
     }
     //@Test
     public void testNaN() {

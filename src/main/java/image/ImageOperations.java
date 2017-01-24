@@ -281,6 +281,43 @@ public class ImageOperations {
         }
         return output;
     }
+    /**
+     * 
+     * @param source1
+     * @param output
+     * @param multiplicativeCoefficient
+     * @param additiveCoefficient
+     * @return additive coeff first then multiplicative
+     */
+    public static Image affineOperation2(Image source1, Image output, double multiplicativeCoefficient, double additiveCoefficient) {
+        String name = "("+source1.getName()+ " + "+additiveCoefficient+") "+" x "+multiplicativeCoefficient ;
+        if (output==null) {
+            if (multiplicativeCoefficient<0 || (int)multiplicativeCoefficient != multiplicativeCoefficient || additiveCoefficient<0) output = new ImageFloat(name, source1);
+            else output = Image.createEmptyImage(name, source1, source1);
+        } else if (!output.sameSize(source1)) output = Image.createEmptyImage(name, output, source1);
+        double end = output instanceof ImageInteger?0.5:0;
+        if (additiveCoefficient!=0 && multiplicativeCoefficient!=1) {
+            for (int z = 0; z<output.sizeZ; ++z) {
+                for (int xy=0; xy<output.sizeXY; ++xy) {
+                    output.setPixel(xy, z, (source1.getPixel(xy, z)+additiveCoefficient)*multiplicativeCoefficient+end);
+                }
+            } 
+        } else if (additiveCoefficient==0) {
+            for (int z = 0; z<output.sizeZ; ++z) {
+                for (int xy=0; xy<output.sizeXY; ++xy) {
+                    output.setPixel(xy, z, source1.getPixel(xy, z)*multiplicativeCoefficient+end);
+                }
+            } 
+        } else {
+            additiveCoefficient+=end;
+            for (int z = 0; z<output.sizeZ; ++z) {
+                for (int xy=0; xy<output.sizeXY; ++xy) {
+                    output.setPixel(xy, z, source1.getPixel(xy, z) +additiveCoefficient );
+                }
+            } 
+        }
+        return output;
+    }
     
     public static <T extends Image> T multiply(Image source1, Image source2, T output) {
         if (!source1.sameSize(source2)) throw new IllegalArgumentException("cannot multiply images of different sizes");

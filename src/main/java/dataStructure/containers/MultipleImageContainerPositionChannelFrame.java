@@ -58,6 +58,14 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
         this.frameNumber = frameNumber;
     }
     
+    @Override public double getCalibratedTimePoint(int t, int c, int z) {
+        if (fileCT==null) createFileMap();
+        ImageReader reader = new ImageReader(fileCT.get(c).get(t));
+        double res= reader.getTimePoint(0, 0, z);
+        reader.closeReader();
+        return res;
+    }
+    
     @Override
     public int getTimePointNumber() {
         return frameNumber;

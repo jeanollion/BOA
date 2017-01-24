@@ -30,7 +30,7 @@ import org.bson.types.ObjectId;
 public interface ObjectDAO {
     public MasterDAO getMasterDAO();
     public Experiment getExperiment();
-    public String getFieldName();
+    public String getPositionName();
     public void clearCache();
     public List<StructureObject> getChildren(StructureObject parent, int structureIdx); // needs indicies: structureIdx & parent
     /**

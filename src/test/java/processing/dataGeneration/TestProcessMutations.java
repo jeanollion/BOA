@@ -69,7 +69,7 @@ public class TestProcessMutations {
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
-        t.testSegMutationsFromXP(fIdx, mcIdx, true, 8,12);
+        t.testSegMutationsFromXP(fIdx, mcIdx, true, 0,100);
     }
     
     public void testSegMutation(StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
@@ -77,7 +77,8 @@ public class TestProcessMutations {
         ImageInteger parentMask = parent.getMask();
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
         //MutationSegmenterScaleSpace seg = new MutationSegmenterScaleSpace().setIntensityThreshold(90);
-        MutationSegmenter seg = new MutationSegmenter().setIntensityThreshold(1.5).setThresholdSeeds(1.8).setSubtractBackgroundScale(6).setScale(3);
+        MutationSegmenter.debug=true;
+        MutationSegmenter seg = new MutationSegmenter().setIntensityThreshold(1.5).setThresholdSeeds(1.5).setThresholdPropagation(1).setSubtractBackgroundScale(6).setScale(2.5);
         //seg.getPostFilters().removeAllElements();
         //seg.getPostFilters().add(new FeatureFilter(new LocalSNR().setBackgroundObjectStructureIdx(1), 0.75, true, true));
         seg.intermediateImages=intermediateImages;
@@ -106,6 +107,7 @@ public class TestProcessMutations {
     public void testSegMutationsFromXP(int fieldIdx, int mcIdx, boolean parentMC, int time, ArrayList<ImageInteger> mcMask_, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         StructureObject root = db.getDao(f.getName()).getRoot(time);
+        if (root==null) return;
         //logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(mcIdx);
         if (mcMask_!=null) mcMask_.add(mc.getMask());

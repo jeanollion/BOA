@@ -54,7 +54,7 @@ public class TrackExperimentNode implements TreeNode, UIContainer {
     
     public RootTrackNode getRootNodeOf(StructureObject s) {
         for (RootTrackNode r : getChildren()) {
-            if (r.fieldName.equals(s.getFieldName())) return r;
+            if (r.fieldName.equals(s.getPositionName())) return r;
         }
         return null;
     }

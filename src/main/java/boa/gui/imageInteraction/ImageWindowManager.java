@@ -834,6 +834,7 @@ public abstract class ImageWindowManager<T, U, V> {
     private JPopupMenu getMenu(StructureObject o) {
         JPopupMenu menu = new JPopupMenu();
         menu.add(new JMenuItem(o.toString()));
+        menu.add(new JMenuItem("Time: "+toString(o.getCalibratedTimePoint())+"ms"));
         menu.add(new JMenuItem("IsTrackHead: "+o.isTrackHead()));
         //DecimalFormat df = new DecimalFormat("#.####");
         if (o.getAttributes()!=null && !o.getAttributes().isEmpty()) {
@@ -917,6 +918,5 @@ public abstract class ImageWindowManager<T, U, V> {
     }
     private static String toString(Object o) {
         return o instanceof Number ? Utils.format((Number) o, 3) : o.toString();
-    }
-    
+    }   
 }

@@ -48,7 +48,7 @@ public class Measurements implements Comparable<Measurements>{
     @Transient boolean modifications=false;
     final static String NA_STRING = "NA";
     public Measurements(StructureObject o) {
-        this.fieldName=o.getFieldName();
+        this.fieldName=o.getPositionName();
         this.timePoint=o.getFrame();
         this.structureIdx=o.getStructureIdx();
         this.isTrackHead=o.isTrackHead;

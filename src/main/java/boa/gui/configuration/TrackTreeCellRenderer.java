@@ -63,7 +63,7 @@ public class TrackTreeCellRenderer extends DefaultTreeCellRenderer {
         
         if (value instanceof TrackNode) {
             TrackNode tn = (TrackNode)value;
-            if (generator.getHighlightedObjects(tn.getTrackHead().getFieldName()).contains(tn.getTrackHead())) ret.setForeground(highlightColor);
+            if (generator.getHighlightedObjects(tn.getTrackHead().getPositionName()).contains(tn.getTrackHead())) ret.setForeground(highlightColor);
         } else if (node instanceof RootTrackNode) {
             if (generator.isHighlightedPosition(((RootTrackNode)node).getFieldName())) ret.setForeground(highlightColor);
         }

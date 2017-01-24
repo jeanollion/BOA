@@ -51,6 +51,10 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
         return new MultipleImageContainerChannelSerie(name, filePathC, timePointNumber, sizeZC, scaleXY, scaleZ);
     }
     
+    @Override public double getCalibratedTimePoint(int t, int c, int z) {
+        return getReader(c).getTimePoint(0, t, z);
+    }
+    
     public void setImagePath(String[] path) {
         this.filePathC=path;
         this.reader=new ImageReader[filePathC.length];

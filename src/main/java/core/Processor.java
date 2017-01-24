@@ -89,7 +89,7 @@ public class Processor {
     }
     
     public static void preProcessImages(MicroscopyField field, ObjectDAO dao, boolean deleteObjects, boolean computeConfigurationData) {
-        if (!dao.getFieldName().equals(field.getName())) throw new IllegalArgumentException("field name should be equal");
+        if (!dao.getPositionName().equals(field.getName())) throw new IllegalArgumentException("field name should be equal");
         InputImagesImpl images = field.getInputImages();
         images.deleteFromDAO(); // delete images if existing in imageDAO
         setTransformations(field, computeConfigurationData);
@@ -115,7 +115,7 @@ public class Processor {
     public static List<StructureObject> getOrCreateRootTrack(ObjectDAO dao) {
         List<StructureObject> res = dao.getRoots();
         if (res==null || res.isEmpty()) {
-            res = dao.getExperiment().getPosition(dao.getFieldName()).createRootObjects(dao);
+            res = dao.getExperiment().getPosition(dao.getPositionName()).createRootObjects(dao);
             dao.store(res, true);
             dao.setRoos(res);
         }
@@ -144,14 +144,14 @@ public class Processor {
         } 
         List<StructureObject> root = getOrCreateRootTrack(dao);
         if (root==null || root.isEmpty()) {
-            logger.error("Field: {} no pre-processed image found", dao.getFieldName());
-            errors.add(new Pair("db: "+dao.getMasterDAO().getDBName()+" pos: "+dao.getFieldName(), new Exception("no pre-processed image found")));
+            logger.error("Field: {} no pre-processed image found", dao.getPositionName());
+            errors.add(new Pair("db: "+dao.getMasterDAO().getDBName()+" pos: "+dao.getPositionName(), new Exception("no pre-processed image found")));
             return errors;
         }
         if (structures.length==0) structures=xp.getStructuresInHierarchicalOrderAsArray();
         for (int s: structures) {
-            if (!trackOnly) logger.info("Segmentation & Tracking: Field: {}, Structure: {}", dao.getFieldName(), s);
-            else logger.info("Tracking: Field: {}, Structure: {}", dao.getFieldName(), s);
+            if (!trackOnly) logger.info("Segmentation & Tracking: Field: {}, Structure: {}", dao.getPositionName(), s);
+            else logger.info("Tracking: Field: {}, Structure: {}", dao.getPositionName(), s);
             List<Pair<String, Exception>> e = executeProcessingScheme(root, s, trackOnly, false);
             errors.addAll(e);
         }
@@ -188,11 +188,11 @@ public class Processor {
         dao.store(children, !(ps instanceof SegmentOnly));
         // create error selection
         Selection errors = dao.getMasterDAO().getSelectionDAO().getOrCreate(dao.getExperiment().getStructure(structureIdx).getName()+"_TrackingErrors", false);
-        boolean hadObjectsBefore=errors.count(dao.getFieldName())>0;
+        boolean hadObjectsBefore=errors.count(dao.getPositionName())>0;
         if (hadObjectsBefore) {
-            int nBefore = errors.count(dao.getFieldName());
+            int nBefore = errors.count(dao.getPositionName());
             errors.removeChildrenOf(parentTrack);
-            logger.debug("remove childre: count before: {} after: {}", nBefore, errors.count(dao.getFieldName()));
+            logger.debug("remove childre: count before: {} after: {}", nBefore, errors.count(dao.getPositionName()));
         } // if selection already exists: remove children of parentTrack
         children.removeIf(o -> !o.hasTrackLinkError(true, true));
         logger.debug("errors: {}", children.size());
@@ -225,11 +225,11 @@ public class Processor {
     public static List<Pair<String, Exception>> performMeasurements(final ObjectDAO dao) {
         long t0 = System.currentTimeMillis();
         List<StructureObject> roots = dao.getRoots();
-        logger.debug("{} number of roots: {}", dao.getFieldName(), roots.size());
+        logger.debug("{} number of roots: {}", dao.getPositionName(), roots.size());
         final Map<Integer, List<Measurement>> measurements = dao.getExperiment().getMeasurementsByCallStructureIdx();
         List<Pair<String, Exception>> errors = new ArrayList<>();
         if (roots.isEmpty()) {
-            errors.add(new Pair("db: "+dao.getMasterDAO().getDBName()+" position: "+dao.getFieldName(), new Exception("no root")));
+            errors.add(new Pair("db: "+dao.getMasterDAO().getDBName()+" position: "+dao.getPositionName(), new Exception("no root")));
             return errors;
         }
         Map<StructureObject, List<StructureObject>> rootTrack = new HashMap<>(1); rootTrack.put(roots.get(0), roots);
@@ -259,7 +259,7 @@ public class Processor {
                 }
             }
         }
-        logger.debug("measurements on field: {}: computation time: {}, #modified objects: {}", dao.getFieldName(), t1-t0, allModifiedObjects.size());
+        logger.debug("measurements on field: {}: computation time: {}, #modified objects: {}", dao.getPositionName(), t1-t0, allModifiedObjects.size());
         dao.upsertMeasurements(allModifiedObjects);
         return errors;
     }
