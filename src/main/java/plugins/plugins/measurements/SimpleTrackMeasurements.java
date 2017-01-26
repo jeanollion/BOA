@@ -79,7 +79,7 @@ public class SimpleTrackMeasurements implements Measurement {
         if (object.isTrackHead()) {
             List<StructureObject> track = StructureObjectUtils.getTrack(object, false);
             object.getMeasurements().setValue("TrackLength", track.get(track.size()-1).getFrame() - object.getFrame()+1);
-            object.getMeasurements().setValue("ObjectCount", track.size());
+            object.getMeasurements().setValue("TrackObjectCount", track.size());
         }
     }
 

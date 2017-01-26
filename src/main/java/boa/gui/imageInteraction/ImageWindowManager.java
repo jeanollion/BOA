@@ -835,7 +835,7 @@ public abstract class ImageWindowManager<T, U, V> {
     private JPopupMenu getMenu(StructureObject o) {
         JPopupMenu menu = new JPopupMenu();
         menu.add(new JMenuItem(o.toString()));
-        menu.add(new JMenuItem("Time: "+toString(o.hasMeasurements() ? o.getCalibratedTimePoint() : o.getCalibratedTimePoint())+"ms"));
+        menu.add(new JMenuItem("Time: "+toString(o.hasMeasurements() ? o.getMeasurements().getCalibratedTimePoint() : o.getCalibratedTimePoint())+"ms"));
         menu.add(new JMenuItem("IsTrackHead: "+o.isTrackHead()));
         //DecimalFormat df = new DecimalFormat("#.####");
         if (o.getAttributes()!=null && !o.getAttributes().isEmpty()) {

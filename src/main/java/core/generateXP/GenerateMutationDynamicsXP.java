@@ -69,7 +69,7 @@ import processing.ImageTransformation;
  *
  * @author jollion
  */
-public class GenerateFastMutTrackingXP {
+public class GenerateMutationDynamicsXP {
     static double scaleXY = Double.NaN;
     static Experiment.ImportImageMethod importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD;
     static boolean flip = false;
@@ -82,14 +82,14 @@ public class GenerateFastMutTrackingXP {
         int trimStart=0, trimEnd=0;
         int[] cropXYdXdY=null;
         
-        /*String dbName = "boa_170111FastMutTrack";
-        String inputDir = "/data/Images/FastMutTrack/170111/input";
-        String outputDir = "/data/Images/FastMutTrack/170111/output";
+        /*String dbName = "boa_170111MutationDynamics";
+        String inputDir = "/data/Images/MutationDynamics/170111/input";
+        String outputDir = "/data/Images/MutationDynamics/170111/output";
         */
         
         String dbName = "boa_fluo170117_GammeMutTrack";
-        String inputDir = "/data/Images/FastMutTrack/170117GammeMutTrack/input";
-        String outputDir = "/data/Images/FastMutTrack/170117GammeMutTrack/output";
+        String inputDir = "/data/Images/MutationDynamics/170117GammeMutTrack/input";
+        String outputDir = "/data/Images/MutationDynamics/170117GammeMutTrack/output";
         importMethod = Experiment.ImportImageMethod.SINGLE_FILE;
         invertChannels = true;
         mutThld = 90;

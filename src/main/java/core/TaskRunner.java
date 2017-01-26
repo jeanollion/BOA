@@ -49,7 +49,8 @@ public class TaskRunner {
         PluginFactory.findPlugins("plugins.plugins");
         
         //List<Task> tasks = extractMeasurementOnFluoXP(true);
-        List<Task> tasks = getTasks();
+        List<Task> tasks = getFastTrackTasks();
+        //List<Task> tasks = getTasks();
         //List<Task> tasks = getFluoTasks();
         //for (Task t : tasks) t.isValid();
         for (Task t : tasks) if (t.isValid()) t.run();
@@ -64,7 +65,8 @@ public class TaskRunner {
     }
     public static List<Task> getFastTrackTasks() {
         List<Task> tasks = new ArrayList<Task>() {{
-            add(new Task("boa_fluo170117_GammeMutTrack").setAllActions().addExtractMeasurementDir("/data/Images/FastMutTrack/170117GammeMutTrack", 1).addExtractMeasurementDir("/data/Images/FastMutTrack/170117GammeMutTrack", 2));
+            //add(new Task("boa_fluo170117_GammeMutTrack").setAllActions().addExtractMeasurementDir("/data/Images/MutationDynamics/170117GammeMutTrack", 1).addExtractMeasurementDir("/data/Images/MutationDynamics/170117GammeMutTrack", 2));
+            add(new Task("boa_fluo170117_GammeMutTrack").setActions(false, false, false, false).addExtractMeasurementDir("/data/Images/MutationDynamics/170117GammeMutTrack", 1).addExtractMeasurementDir("/data/Images/MutationDynamics/170117GammeMutTrack", 2));
         }};
         return tasks;
     }

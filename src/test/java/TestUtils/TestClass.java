@@ -43,7 +43,7 @@ import static utils.Utils.removeFromMap;
 public class TestClass {
     //@Test
     public void testGetTimePoint() {
-        String path = "/data/Images/FastMutTrack/180117ZMutTrack/180117ZMutTrack01_R3D.dv";
+        String path = "/data/Images/MutationDynamics/180117ZMutTrack/180117ZMutTrack01_R3D.dv";
         ImageReader r = new ImageReader(path);
         logger.debug("extension: {}, file: {}", r.getExtension(), new File(path).exists());
         long t0 = System.currentTimeMillis();

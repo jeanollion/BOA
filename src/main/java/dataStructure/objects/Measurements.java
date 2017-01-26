@@ -54,7 +54,7 @@ public class Measurements implements Comparable<Measurements>{
         this.timePoint=o.getFrame();
         this.structureIdx=o.getStructureIdx();
         this.isTrackHead=o.isTrackHead;
-        this.values=new HashMap<String, Object>();
+        this.values=new HashMap<>();
         updateObjectProperties(o);
     }
     
@@ -85,7 +85,7 @@ public class Measurements implements Comparable<Measurements>{
     }
         
     static String[] getBaseFields() {
-        return new String[]{"time_point", "structure_idx", "indices", "is_track_head"};
+        return new String[]{"time_point", "structure_idx", "indices", "is_track_head", "calibrated_time_point"};
     }
     static String[] getReturnedFields(String... measurements) {
         String[] baseReturnedFields = getBaseFields();
