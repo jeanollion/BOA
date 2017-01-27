@@ -83,23 +83,27 @@ public class RelativePosition implements Measurement {
 
     @Override
     public void performMeasurement(StructureObject object) {
-        StructureObject refObject;
-        if (object.getExperiment().isChildOf(reference.getSelectedStructureIdx(), objects.getSelectedStructureIdx()))  refObject = object.getParent(reference.getSelectedStructureIdx());
-        else {
-            int refParent = reference.getFirstCommonParentStructureIdx(objects.getSelectedStructureIdx());
-            refObject = StructureObjectUtils.getInclusionParent(object.getObject(), object.getParent(refParent).getChildren(reference.getSelectedStructureIdx()), null);
+        StructureObject refObject=null;
+        if (reference.getSelectedStructureIdx()>=0) {
+            if (object.getExperiment().isChildOf(reference.getSelectedStructureIdx(), objects.getSelectedStructureIdx()))  refObject = object.getParent(reference.getSelectedStructureIdx());
+            else {
+                int refParent = reference.getFirstCommonParentStructureIdx(objects.getSelectedStructureIdx());
+                refObject = StructureObjectUtils.getInclusionParent(object.getObject(), object.getParent(refParent).getChildren(reference.getSelectedStructureIdx()), null);
+            }
         }
-        if (refObject == null) return;
+        if (refObject == null && reference.getSelectedStructureIdx()>=0) return;
         double[] objectCenter = objectMassCenter.getSelected() ? object.getObject().getCenter(object.getParent().getRawImage(object.getStructureIdx()), true) : object.getObject().getCenter(true);
         double[] refPoint;
-        if (this.refPoint.getSelectedIndex()==0) refPoint = refObject.getObject().getCenter(refObject.isRoot() ? refObject.getRawImage(refObject.getStructureIdx()) : refObject.getParent().getRawImage(refObject.getStructureIdx()), true);
-        else if (this.refPoint.getSelectedIndex()==1) refPoint = refObject.getObject().getCenter(true);
-        else { // corner
-            refPoint = new double[3];
-            refPoint[0] = refObject.getBounds().getxMin() * refObject.getScaleXY();
-            refPoint[1] = refObject.getBounds().getyMin() * refObject.getScaleXY();
-            refPoint[2] = refObject.getBounds().getzMin() * refObject.getScaleZ();
-        }
+        if (refObject!=null) {
+            if (this.refPoint.getSelectedIndex()==0) refPoint = refObject.getObject().getCenter(refObject.isRoot() ? refObject.getRawImage(refObject.getStructureIdx()) : refObject.getParent().getRawImage(refObject.getStructureIdx()), true);
+            else if (this.refPoint.getSelectedIndex()==1) refPoint = refObject.getObject().getCenter(true);
+            else { // corner
+                refPoint = new double[3];
+                refPoint[0] = refObject.getBounds().getxMin() * refObject.getScaleXY();
+                refPoint[1] = refObject.getBounds().getyMin() * refObject.getScaleXY();
+                refPoint[2] = refObject.getBounds().getzMin() * refObject.getScaleZ();
+            }
+        } else refPoint = new double[3];
         object.getMeasurements().setValue(getKey("X"), (objectCenter[0]-refPoint[0]));
         object.getMeasurements().setValue(getKey("Y"), (objectCenter[1]-refPoint[1]));
         object.getMeasurements().setValue(getKey("Z"), (objectCenter[2]-refPoint[2]));

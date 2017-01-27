@@ -143,6 +143,10 @@ public class GenerateMutationDynamicsXP {
         xp.addMeasurement(new RelativePosition(2, 1, true, 1).setMeasurementName("CoordMassToBacteriaGeom"));
         xp.addMeasurement(new RelativePosition(2, 0, true, 2).setMeasurementName("CoordMassToMC"));
         xp.addMeasurement(new RelativePosition(2, 0, false, 2).setMeasurementName("CoordGeomToMC"));
+        xp.addMeasurement(new RelativePosition(2, -1, true, 2).setMeasurementName("CoordMass"));
+        xp.addMeasurement(new RelativePosition(2, -1, false, 2).setMeasurementName("CoordGeom"));
+        xp.addMeasurement(new RelativePosition(1, -1, false, 2).setMeasurementName("CoordGeom"));
+        xp.addMeasurement(new RelativePosition(1, -1, true, 2).setMeasurementName("CoordMass"));
         
         if (setUpPreProcessing) {// preProcessing 
             //xp.getPreProcessingTemplate().addTransformation(0, null, new SuppressCentralHorizontalLine(6)).setActivated(false);
