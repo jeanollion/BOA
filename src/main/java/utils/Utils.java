@@ -534,4 +534,25 @@ public class Utils {
             }
         }
     }
+    
+    public static <T> T getFirst(Collection<T> coll, Function<T, Boolean> fun) {
+        for (T t : coll) if (fun.apply(t)) return t;
+        return null;
+    }
+    public static <K, V> V getFirst(Map<K, V> map, Function<K, Boolean> fun) {
+        for (K t : map.keySet()) if (fun.apply(t)) return map.get(t);
+        return null;
+    }
+    public static <K, V> void removeIf(Map<K, V> map, BiFunction<K, V, Boolean> fun) {
+        Iterator<Entry<K, V>> it = map.entrySet().iterator();
+        while(it.hasNext()) {
+            Entry<K, V> e = it.next();
+            if (fun.apply(e.getKey(), e.getValue())) it.remove();
+        }
+    }
+    public static <V> List<V> flattenMap(Map<?, ? extends Collection<V>> map) {
+        List<V> l = new ArrayList<>();
+        for (Collection<V> c : map.values()) l.addAll(c);
+        return l;
+    }
 }

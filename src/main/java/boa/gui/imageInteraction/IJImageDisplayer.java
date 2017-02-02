@@ -151,7 +151,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         image.show();
     }*/
     
-    @Override public void showImage5D(String title, Image[][] imageTC) {
+    @Override public ImagePlus showImage5D(String title, Image[][] imageTC) {
         if (IJ.getInstance()==null) new ImageJ();
         /*Image5D res = new Image5D(title, getImageStack(imageTC), imageTC[0].length, imageTC[0][0].getSizeZ(), imageTC.length);
         for (int i = 0; i < imageTC[0].length; i++) {
@@ -178,6 +178,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         ip.setCalibration(cal);
         ip.show();
         logger.debug("image: {}, isDisplayedAsHyperStack: {}, is HP: {}, dim: {}", title, ip.isDisplayedHyperStack(), ip.isHyperStack(), ip.getDimensions());
+        return ip;
     }
     
     protected static ImageStack getImageStack(Image[][] imageTC) { // suppose same number of channel & sizeZ for all channels & times

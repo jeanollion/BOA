@@ -38,8 +38,8 @@ public class Palette implements Cloneable {
 	
         private final static Palette palette = Palette.makeDefaultPalette(Palette.Spectrum);
         //private final static Random r = new Random();
-        private final static double increment = 1d/50d;
-        private static double currentColorIdx = 0;
+        public static double increment = 1d/50d;
+        public static double currentColorIdx = 0;
         public static synchronized Color getColor(int transparency, Color... avoidColors) {
             Color c = getCol();
             if (avoidColors.length>0) {

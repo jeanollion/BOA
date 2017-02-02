@@ -38,6 +38,7 @@ import plugins.plugins.transformations.Flip;
 import plugins.plugins.transformations.ImageStabilizerCore;
 import static plugins.plugins.transformations.ImageStabilizerXY.testTranslate;
 import plugins.plugins.transformations.SaturateHistogram;
+import plugins.plugins.transformations.SaturateHistogramAuto;
 import plugins.plugins.transformations.SimpleRotationXY;
 import processing.ImageTransformation;
 
@@ -48,16 +49,17 @@ import processing.ImageTransformation;
 public class TestPreProcess {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        String dbName= "boa_fluo160428";
+        //String dbName= "boa_fluo160428";
         //String dbName= "fluo151127";
+        String dbName = "boa_fluo170117_GammeMutTrack";
         // 12 -> flip = true
-        boolean flip = true;
-        int field = 5;
-        testTransformation(dbName, 0, 0, 0);
+        boolean flip = false;
+        int field = 9;
+        //testTransformation(dbName, 0, 0, 0);
         //testPreProcessing(dbName, field, 0, -1, 0, 150);
         //testCrop(dbName, field, 0, flip);
         //displayPreProcessed(dbName, field, 2, 0, 680);
-        //testStabilizer(dbName, field, 0, 19, 0, flip);
+        testStabilizer(dbName, field, 0, 19, 0, flip);
     }
     
     public static void testTransformation(String dbName, int fieldIdx, int channelIdx, int time) {
@@ -143,20 +145,18 @@ public class TestPreProcess {
         MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         f.getPreProcessingChain().removeAllTransformations();
-        f.getPreProcessingChain().addTransformation(0, null, new SaturateHistogram(350, 450));
-        f.getPreProcessingChain().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
-        f.getPreProcessingChain().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
-        if (flip) f.getPreProcessingChain().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y));
-        f.getPreProcessingChain().addTransformation(0, null, new CropMicroChannels2D());
+        int bactChann = 1;
+        f.getPreProcessingChain().addTransformation(bactChann, null, new SaturateHistogramAuto());
+        f.getPreProcessingChain().addTransformation(bactChann, null, new IJSubtractBackground(20, true, false, true, false));
+        f.getPreProcessingChain().addTransformation(bactChann, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
+        if (flip) f.getPreProcessingChain().addTransformation(bactChann, null, new Flip(ImageTransformation.Axis.Y));
+        f.getPreProcessingChain().addTransformation(bactChann, null, new CropMicroChannels2D());
         setTransformations(f, true);
         
         InputImagesImpl images = f.getInputImages();
         Image ref = images.getImage(channelIdx, tRef).setName("tRef");
-        Image im = images.getImage(channelIdx, t).setName("to translate");
-        Image trans = testTranslate(ref, im, 1000, 1e-7, 1).setName("translated");
         IJImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(ref);
-        disp.showImage(im);
-        disp.showImage(trans);
+        
     }
 }

@@ -466,7 +466,11 @@ public abstract class ImageWindowManager<T, U, V> {
             image = displayer.getCurrentImage2();
             if (image==null) return;
         }
-        if (i ==null) i = this.getImageObjectInterface(image);
+        if (i ==null) {
+            i = this.getImageObjectInterface(image);
+            
+        }
+        logger.debug("image: {}, OI: {}", image.getName(), i.getClass().getSimpleName());
         for (List<StructureObject> track : tracks) {
             displayTrack(image, i, i.pairWithOffset(track), getColor() , labile);
         }
@@ -484,6 +488,7 @@ public abstract class ImageWindowManager<T, U, V> {
         if (dispImage==null || image==null) return;
         if (i==null) {
             i=this.getImageObjectInterface(image);
+            //logger.debug("image: {}, OI: {}", image.getName(), i.getClass().getSimpleName());
             if (i==null) return;
         }
         StructureObject trackHead = track.get(track.size()>1 ? 1 : 0).key.getTrackHead(); // idx = 1 because track might begin with previous object
@@ -498,7 +503,7 @@ public abstract class ImageWindowManager<T, U, V> {
         Map<Pair<StructureObject, StructureObject>, V> map = labile ? labileParentTrackHeadTrackRoiMap : parentTrackHeadTrackRoiMap;
         if (canDisplayTrack) { 
             if (i.getKey().childStructureIdx!=trackHead.getStructureIdx()) {
-                i = getImageObjectInterface(trackHead.getParent(), trackHead.getStructureIdx(), true);
+                i = getImageTrackObjectInterface(((TrackMask)i).parentTrack, trackHead.getStructureIdx());
             }
             if (((TrackMask)i).getParent()==null) logger.error("Track mask parent null!!!");
             else if (((TrackMask)i).getParent().getTrackHead()==null) logger.error("Track mask parent trackHead null!!!");

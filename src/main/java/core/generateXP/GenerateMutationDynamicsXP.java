@@ -76,6 +76,7 @@ public class GenerateMutationDynamicsXP {
     static boolean singleChannel = false;
     static boolean invertChannels = false;
     static double mutThld = 115;
+    static boolean stabilizer = false;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
 
@@ -87,12 +88,13 @@ public class GenerateMutationDynamicsXP {
         String outputDir = "/data/Images/MutationDynamics/170111/output";
         */
         
-        String dbName = "boa_fluo170117_GammeMutTrack";
+        String dbName = "boa_fluo170117_GammeMutTrackStab";
         String inputDir = "/data/Images/MutationDynamics/170117GammeMutTrack/input";
         String outputDir = "/data/Images/MutationDynamics/170117GammeMutTrack/output";
         importMethod = Experiment.ImportImageMethod.SINGLE_FILE;
         invertChannels = true;
         mutThld = 90;
+        stabilizer = true;
         
         boolean performProcessing = false;
         
@@ -134,6 +136,7 @@ public class GenerateMutationDynamicsXP {
         bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo()).setCostParameters(0.1, 0.5)));
         mutation.setProcessingScheme(new SegmentAndTrack(new LAPTracker().setCompartimentStructure(1).setSegmenter(new MutationSegmenter()).setSpotQualityThreshold(3.5).setLinkingMaxDistance(0.75, 3).setTrackLength(10, 0)));
         
+        xp.addMeasurement(new SimpleTrackMeasurements(1));
         xp.addMeasurement(new SimpleTrackMeasurements(2));
         xp.addMeasurement(new InclusionObjectIdx(2, 1).setMeasurementName("BacteriaIdx"));
         xp.addMeasurement(new ObjectInclusionCount(1, 2, 10).setMeasurementName("MutationCount"));
@@ -147,6 +150,7 @@ public class GenerateMutationDynamicsXP {
         xp.addMeasurement(new RelativePosition(2, -1, false, 2).setMeasurementName("CoordGeom"));
         xp.addMeasurement(new RelativePosition(1, -1, false, 2).setMeasurementName("CoordGeom"));
         xp.addMeasurement(new RelativePosition(1, -1, true, 2).setMeasurementName("CoordMass"));
+        xp.addMeasurement(new RelativePosition(1, 0, true, 2).setMeasurementName("CoordMassToMC"));
         
         if (setUpPreProcessing) {// preProcessing 
             //xp.getPreProcessingTemplate().addTransformation(0, null, new SuppressCentralHorizontalLine(6)).setActivated(false);
@@ -160,9 +164,9 @@ public class GenerateMutationDynamicsXP {
             xp.getPreProcessingTemplate().addTransformation(bactChan, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
             xp.getPreProcessingTemplate().addTransformation(bactChan, null, new CropMicroChannelFluo2D(30, 45, 200, 0.6, 5));
             //xp.getPreProcessingTemplate().addTransformation(mutChan, null, new ScaleHistogramSignalExclusionY().setExclusionChannel(0)); // to remove blinking / homogenize on Y direction
-            xp.getPreProcessingTemplate().addTransformation(bactChan, null, new SelectBestFocusPlane(3)).setActivated(false); // faster after crop, but previous transformation might be aftected if the first plane is really out of focus
-            xp.getPreProcessingTemplate().addTransformation(bactChan, new int[]{bactChan}, new SimpleTranslation(0.477, 0.362, 0)); // 0.19 microns en Z
-            //xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY(0, 1000, 5e-8, 20).setAdditionalTranslation(1, -0.477, -0.362)); // additional translation to correct chromatic shift
+            //xp.getPreProcessingTemplate().addTransformation(bactChan, null, new SelectBestFocusPlane(3)).setActivated(false); // faster after crop, but previous transformation might be aftected if the first plane is really out of focus
+            if (!stabilizer) xp.getPreProcessingTemplate().addTransformation(bactChan, new int[]{bactChan}, new SimpleTranslation(0.477, 0.362, 0)); // 0.19 microns en Z
+            if (stabilizer) xp.getPreProcessingTemplate().addTransformation(bactChan, null, new ImageStabilizerXY(0, 1000, 5e-8, 20).setAdditionalTranslation(bactChan, 0.477, 0.362)); // additional translation to correct chromatic shift
         }
         return xp;
     }

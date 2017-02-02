@@ -208,6 +208,31 @@ public class StructureObjectUtils {
         return currentParent;
     }
     
+    public static Map<StructureObject, StructureObject> getInclusionParentMap(Collection<StructureObject> objectsFromSameStructure, int inclusionStructureIdx) {
+        if (objectsFromSameStructure.isEmpty()) return Collections.EMPTY_MAP;
+        StructureObject o = objectsFromSameStructure.iterator().next();
+        Map<StructureObject, StructureObject>  res= new HashMap<>();
+        if (o.getExperiment().isChildOf(inclusionStructureIdx, o.getStructureIdx())) {
+            for (StructureObject oo : objectsFromSameStructure) res.put(oo, oo.getParent(inclusionStructureIdx));
+            return res;
+        }
+        int closestParentStructureIdx = o.getExperiment().getFirstCommonParentStructureIdx(o.getStructureIdx(), inclusionStructureIdx);
+        for (StructureObject oo : objectsFromSameStructure) {
+            StructureObject i = getInclusionParent(oo.getObject(), oo.getParent(closestParentStructureIdx).getChildren(inclusionStructureIdx), null);
+            res.put(oo, i);
+        }
+        return res;
+    }
+    
+    public static Map<StructureObject, StructureObject> getInclusionParentMap(Collection<StructureObject> objectsFromSameStructure, Collection<StructureObject> inclusionObjects) {
+        if (objectsFromSameStructure.isEmpty()) return Collections.EMPTY_MAP;
+        Map<StructureObject, StructureObject>  res= new HashMap<>();
+        for (StructureObject oo : objectsFromSameStructure) {
+            StructureObject i = getInclusionParent(oo.getObject(), inclusionObjects, null);
+            res.put(oo, i);
+        }
+        return res;
+    }
     
     
     public static int[] getIndexTree(StructureObject o) {

@@ -40,7 +40,7 @@ import utils.ArrayUtil;
  *
  * @author jollion
  */
-public class DisplayFilms {
+public class GenerateFilms {
     public static void main(String[] args) {
         // WT
         /*String dbName = "fluo160218";
@@ -84,6 +84,9 @@ public class DisplayFilms {
         
         arrangeFilm(imageFTC[0], cropBB, saturateChannel1);
     }
+    
+    
+    
     private static void arrangeFilm(Image[][] imageTC, BoundingBox cropBB, float saturateChannel1) {
         
         // normalize intensities 

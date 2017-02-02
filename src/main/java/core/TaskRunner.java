@@ -65,8 +65,8 @@ public class TaskRunner {
     }
     public static List<Task> getFastTrackTasks() {
         List<Task> tasks = new ArrayList<Task>() {{
-            //add(new Task("boa_fluo170117_GammeMutTrack").setAllActions().addExtractMeasurementDir("/data/Images/MutationDynamics/170117GammeMutTrack", 1).addExtractMeasurementDir("/data/Images/MutationDynamics/170117GammeMutTrack", 2));
-            add(new Task("boa_fluo170117_GammeMutTrack").setActions(false, false, false, true).addExtractMeasurementDir("/data/Images/MutationDynamics/170117GammeMutTrack", 1).addExtractMeasurementDir("/data/Images/MutationDynamics/170117GammeMutTrack", 2));
+            add(new Task("boa_fluo170117_GammeMutTrack").setAllActions().addExtractMeasurementDir("/data/Images/MutationDynamics/170117GammeMutTrack", 1).addExtractMeasurementDir("/data/Images/MutationDynamics/170117GammeMutTrack", 2));
+            //add(new Task("boa_fluo170117_GammeMutTrack").setActions(false, false, false, true).addExtractMeasurementDir("/data/Images/MutationDynamics/170117GammeMutTrack", 1).addExtractMeasurementDir("/data/Images/MutationDynamics/170117GammeMutTrack", 2));
         }};
         return tasks;
     }
