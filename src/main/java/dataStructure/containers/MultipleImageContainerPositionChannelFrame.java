@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
  *
  * @author jollion
  */
-public class MultipleImageContainerPositionChannelFrame extends MultipleImageContainer {
+public class MultipleImageContainerPositionChannelFrame extends MultipleImageContainer { // one file per channel & per frame
     
     final String inputDir, extension, positionKey, timeKeyword;
     final int frameNumber;
@@ -67,7 +67,7 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
     }
     
     @Override
-    public int getTimePointNumber() {
+    public int getFrameNumber() {
         return frameNumber;
     }
 
@@ -161,5 +161,10 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
     public static int getKeywordIdx(String s, String[] keywords) {
         for (int i = 0; i<keywords.length; ++i) if (s.contains(keywords[i])) return i;
         return -1;
+    }
+
+    @Override
+    public boolean singleFrame(int channel) {
+        return false;
     }
 }

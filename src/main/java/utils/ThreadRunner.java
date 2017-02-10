@@ -150,6 +150,7 @@ public class ThreadRunner {
                             try {
                                 action.run(array[idx], idx,threadIdx );
                             } catch (Exception e) {
+                                //logger.debug("ta {}", e);
                                 synchronized(tr.errors) {
                                     tr.errors.add(new Pair(array[idx].toString(), e));
                                 }

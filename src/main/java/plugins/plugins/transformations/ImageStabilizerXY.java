@@ -39,7 +39,9 @@ import image.TypeConverter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import static plugins.Plugin.logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import plugins.Plugin;
 import plugins.Transformation;
 import static plugins.plugins.transformations.ImageStabilizerCore.combine;
 import static plugins.plugins.transformations.ImageStabilizerCore.copy;
@@ -53,16 +55,17 @@ import utils.ThreadRunner.ThreadAction;
  * @author nasique
  */
 public class ImageStabilizerXY implements Transformation {
+    public final static Logger logger = LoggerFactory.getLogger(ImageStabilizerXY.class);
     ChoiceParameter transformationType = new ChoiceParameter("Transformation", new String[]{"Translation"}, "Translation", false); //, "Affine"
     ChoiceParameter pyramidLevel = new ChoiceParameter("Pyramid Level", new String[]{"0", "1", "2", "3", "4"}, "1", false);
     BoundedNumberParameter alpha = new BoundedNumberParameter("Template Update Coefficient", 2, 1, 0, 1);
     BoundedNumberParameter maxIter = new BoundedNumberParameter("Maximum Iterations", 0, 1000, 1, null);
     BoundedNumberParameter segmentLength = new BoundedNumberParameter("Segment length", 0, 20, 2, null);
-    NumberParameter tol = new BoundedNumberParameter("Error Tolerance", 10, 5e-8, 0, null);
+    NumberParameter tol = new BoundedNumberParameter("Error Tolerance", 12, 5e-8, 0, null);
     SimpleListParameter<GroupParameter> additionalTranslation = new SimpleListParameter<GroupParameter>("Additional Translation", new GroupParameter("Channel Translation", new ChannelImageParameter("Channel"), new NumberParameter("dX", 3, 0), new NumberParameter("dY", 3, 0), new NumberParameter("dZ", 3, 0)));
     Parameter[] parameters = new Parameter[]{maxIter, tol, pyramidLevel, segmentLength, additionalTranslation}; //alpha
     ArrayList<ArrayList<Double>> translationTXY = new ArrayList<ArrayList<Double>>();
-    
+    public static boolean debug=false;
     public ImageStabilizerXY(){}
     
     public ImageStabilizerXY(int pyramidLevel, int maxIterations, double tolerance, int segmentLength) {
@@ -76,6 +79,7 @@ public class ImageStabilizerXY implements Transformation {
         if (getAdditionalTranslationParameter(channelIdx, false)!=null) throw new IllegalArgumentException("Translation already set for channel: "+channelIdx);
         GroupParameter g = additionalTranslation.createChildInstance();
         additionalTranslation.insert(g);
+        ((ChannelImageParameter)g.getChildAt(0)).setSelectedStructureIdx(channelIdx);
         for (int i = 0; i<Math.min(3, deltas.length); ++i) ((NumberParameter)g.getChildAt(i+ 1)).setValue(deltas[i]);
         return this;
     }
@@ -121,12 +125,14 @@ public class ImageStabilizerXY implements Transformation {
     protected void ccdSegments(final int channelIdx, final InputImages inputImages, int segmentLength, int tRef, final Double[][] translationTXYArray, final int maxIterations, final double tolerance) {
         if (segmentLength<2) segmentLength = 2;
         int nSegments = (int)(0.5 +(double)(inputImages.getTimePointNumber()-1) / (double)segmentLength) ;
+        if (nSegments<1) nSegments=1;
         int[][] segments = new int[nSegments][4]; // tStart, tEnd, tRef, nThreads
+        if (debug) logger.debug("n segment: {}, {}", segments.length);
         for (int i = 0; i<nSegments; ++i) {
             segments[i][0] = i==0 ? 0 : segments[i-1][1]+1;
             segments[i][1] = i==segments.length-1 ? inputImages.getTimePointNumber()-1 : segments[i][0]+segmentLength-1;
             segments[i][2] = i==0 ? Math.min(Math.max(0, tRef), segments[i][1]) : segments[i-1][1]; 
-            //logger.debug("segment: {}, {}", i, segments[i]);
+            if (debug) logger.debug("segment: {}, {}", i, segments[i]);
         }
         // process each segment
         int nCPUs = ThreadRunner.getMaxCPUs();
@@ -159,7 +165,7 @@ public class ImageStabilizerXY implements Transformation {
                 translationTXYArray[t][0]+=ref[0];
                 translationTXYArray[t][1]+=ref[1];
             }
-            //logger.debug("ref: {}, tp: {}, trans: {}", i,segments[i][2], ref);
+            if (debug) logger.debug("ref: {}, tp: {}, trans: {}", i,segments[i][2], ref);
         }
     }
     
@@ -184,7 +190,7 @@ public class ImageStabilizerXY implements Transformation {
                             double[] outParams = new double[2];
                             if (t==tRef) translationTXYArray[t] = new Double[]{0d, 0d};
                             else translationTXYArray[t] = performCorrection(channelIdx, inputImages, t, pyramids[trIdx], outParams);
-                            //logger.debug("t: {}, tRef: {}, dX: {}, dY: {}, rmse: {}, iterations: {}", t, tRef, translationTXYArray[t][0], translationTXYArray[t][1], outParams[0], outParams[1]);
+                            if (debug) logger.debug("t: {}, tRef: {}, dX: {}, dY: {}, rmse: {}, iterations: {}", t, tRef, translationTXYArray[t][0], translationTXYArray[t][1], outParams[0], outParams[1]);
                         }
                     }
                 }

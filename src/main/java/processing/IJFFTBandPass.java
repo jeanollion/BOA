@@ -28,9 +28,16 @@ import image.ImageFloat;
  * @author jollion
  */
 public class IJFFTBandPass {
-    public static Image bandPass(Image input, double min, double max) {
+    public static Image bandPass(Image input, double min, double max, int stripes) {
         ImagePlus ip = IJImageWrapper.getImagePlus(input);
-        FftBandPassFilter fftBandPassFilter = new FftBandPassFilter(min, max, ip);
+        FftBandPassFilter fftBandPassFilter = new FftBandPassFilter(ip, min, max, stripes);
+        
+        ImageProcessor imp=fftBandPassFilter.run(ip.getProcessor());
+        return IJImageWrapper.wrap(new ImagePlus("FFT of "+input.getName(), imp));
+    }
+    public static Image suppressHorizontalStripes(Image input) {
+        ImagePlus ip = IJImageWrapper.getImagePlus(input);
+        FftBandPassFilter fftBandPassFilter = new FftBandPassFilter(ip, 0, 200, 1);
         
         ImageProcessor imp=fftBandPassFilter.run(ip.getProcessor());
         return IJImageWrapper.wrap(new ImagePlus("FFT of "+input.getName(), imp));

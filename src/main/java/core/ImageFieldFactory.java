@@ -251,6 +251,7 @@ public class ImageFieldFactory {
         //checks timepoint number is equal for all channels
         int timePointNumber=0;
         int[] sizeZC = new int[imageC.length];
+        boolean[] singleFile = new boolean[imageC.length];
         double[] scaleXYZ=null;
         for (int c = 0; c< imageC.length; ++c) {
             ImageReader reader = null;
@@ -264,16 +265,20 @@ public class ImageFieldFactory {
                 if (stc.length>1) logger.warn("Import method selected = one file per channel and per microscopy field, but file: {} contains {} series", imageC[c], stc.length);
                 if (stc[0][1]>1) logger.warn("Import method selected = one file per channel and per microscopy field, but file: {} contains {} channels", imageC[c], stc[0][1]);
                 if (c==0) timePointNumber=stc[0][0];
-                else if (stc[0][0]!=timePointNumber) {
-                    logger.warn("Warning: invalid file: {}. Contains {} time points whereas file: {} contains: {} time points", imageC[c], stc[0][0], imageC[0], timePointNumber);
-                    return;
+                else {
+                    if (timePointNumber==1 && stc[0][0]>1) timePointNumber = stc[0][0];
+                    if (stc[0][0]!=timePointNumber && stc[0][0]!=1) {
+                        logger.warn("Warning: invalid file: {}. Contains {} time points whereas file: {} contains: {} time points", imageC[c], stc[0][0], imageC[0], timePointNumber);
+                        return;
+                    }
                 }
+                singleFile[c] = stc[0][0] == 1;
                 sizeZC[c] = stc[0][4];
                 if (c==0) scaleXYZ = reader.getScaleXYZ(1);
             }
         }
         if (timePointNumber>0) {
-            MultipleImageContainerChannelSerie c = new MultipleImageContainerChannelSerie(fieldName, imageC, timePointNumber, sizeZC, scaleXYZ[0], scaleXYZ[2]);
+            MultipleImageContainerChannelSerie c = new MultipleImageContainerChannelSerie(fieldName, imageC, timePointNumber, singleFile, sizeZC, scaleXYZ[0], scaleXYZ[2]);
             containersTC.add(c);
         }
         

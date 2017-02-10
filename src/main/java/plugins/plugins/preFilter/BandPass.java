@@ -1,0 +1,86 @@
+/*
+ * Copyright (C) 2015 jollion
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+package plugins.plugins.preFilter;
+
+import configuration.parameters.BooleanParameter;
+import configuration.parameters.BoundedNumberParameter;
+import configuration.parameters.ChoiceParameter;
+import configuration.parameters.NumberParameter;
+import configuration.parameters.Parameter;
+import dataStructure.containers.InputImages;
+import dataStructure.objects.StructureObjectPreProcessing;
+import image.Image;
+import java.util.ArrayList;
+import plugins.Filter;
+import plugins.PreFilter;
+import plugins.TransformationTimeIndependent;
+import processing.Filters;
+import processing.IJFFTBandPass;
+import processing.neighborhood.EllipsoidalNeighborhood;
+
+/**
+ *
+ * @author jollion
+ */
+public class BandPass implements PreFilter, Filter {
+    NumberParameter min = new BoundedNumberParameter("Remove structures under size (pixels)", 1, 0, 1, null);
+    NumberParameter max = new BoundedNumberParameter("Remove structures over size (pixels)", 1, 100, 0, null); //TODO: conditional parameter that allow to automatically take in account z-anisotropy
+    ChoiceParameter removeStripes = new ChoiceParameter("Remove Stripes", new String[]{"None", "Horizontal", "Vertical"}, "None", false);
+    Parameter[] parameters = new Parameter[]{min, max, removeStripes};
+    public BandPass() {}
+    public BandPass(double min, double max) {
+        this(min, max, 0);
+    }
+    public BandPass(double min, double max, int removeStripes) {
+        this.min.setValue(min);
+        this.max.setValue(max);
+        this.removeStripes.setSelectedIndex(removeStripes);
+    }
+    public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
+        return filter(input, max.getValue().doubleValue(), max.getValue().doubleValue(), removeStripes.getSelectedIndex());
+    }
+    
+    private static Image filter(Image input, double min, double max, int stripes) {
+        return IJFFTBandPass.bandPass(input, min, max, stripes);
+    }
+
+    public Parameter[] getParameters() {
+        return parameters;
+    }
+
+    public boolean does3D() {
+        return true;
+    }
+
+    public SelectionMode getOutputChannelSelectionMode() {
+        return SelectionMode.SAME;
+    }
+
+    public void computeConfigurationData(int channelIdx, InputImages inputImages) { }
+    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
+        return true;
+    }
+    public Image applyTransformation(int channelIdx, int timePoint, Image image) {
+        return filter(image, min.getValue().doubleValue(), max.getValue().doubleValue(), removeStripes.getSelectedIndex());
+    }
+
+    public ArrayList getConfigurationData() {
+        return null;
+    }
+    
+}

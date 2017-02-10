@@ -31,6 +31,7 @@ import plugins.PreFilter;
 import plugins.ProcessingScheme;
 import plugins.Segmenter;
 import plugins.Tracker;
+import utils.ThreadRunner;
 
 /**
  *
@@ -79,7 +80,7 @@ public class SegmentThenTrack implements ProcessingScheme {
             logger.info("No tracker set for structure: {}", structureIdx);
             return;
         }
-        for (StructureObject parent : parentTrack) segment(parent, structureIdx);
+        segmentOnly(structureIdx, parentTrack);
         Tracker t = tracker.instanciatePlugin();
         t.track(structureIdx, parentTrack);
     }
@@ -88,16 +89,28 @@ public class SegmentThenTrack implements ProcessingScheme {
             logger.info("No segmenter set for structure: {}", structureIdx);
             return;
         }
-        for (StructureObject parent : parentTrack) segment(parent, structureIdx);
+        if (parentTrack.isEmpty()) return;
+        if (parentTrack.get(0).getMicroscopyField().singleFrame(structureIdx)) {
+            ObjectPopulation pop = segment(parentTrack.get(0), structureIdx);
+            for (StructureObject parent : parentTrack) parent.setChildrenObjects(pop.duplicate(), structureIdx);
+        } else {
+            ThreadRunner.ThreadAction<StructureObject> ta = new ThreadRunner.ThreadAction<StructureObject>() {
+                @Override public void run(StructureObject parent, int idx, int threadIdx) {
+                    parent.setChildrenObjects(segment(parent, structureIdx), structureIdx);
+                }
+            };
+            ThreadRunner.execute(parentTrack, ta);
+            //for (StructureObject parent : parentTrack) parent.setChildrenObjects(segment(parent, structureIdx), structureIdx);
+        }
     }
     
-    public void segment(StructureObject parent, int structureIdx) {
+    private ObjectPopulation segment(StructureObject parent, int structureIdx) {
         Segmenter s = segmenter.instanciatePlugin();
         if (s==null) throw new Error("No Segmenter Found for structure: "+structureIdx);
         Image input = preFilters.filter(parent.getRawImage(structureIdx), parent);
         ObjectPopulation pop = s.runSegmenter(input, structureIdx, parent);
         pop = postFilters.filter(pop, structureIdx, parent);
-        parent.setChildrenObjects(pop, structureIdx);
+        return pop;
     }
 
     @Override

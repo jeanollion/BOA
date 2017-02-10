@@ -45,6 +45,7 @@ import plugins.plugins.measurements.MutationTrackMeasurements;
 import plugins.plugins.measurements.ObjectInclusionCount;
 import plugins.plugins.measurements.TrackLength;
 import plugins.plugins.measurements.objectFeatures.SNR;
+import plugins.plugins.preFilter.BandPass;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.preFilter.Median;
 import plugins.plugins.processingScheme.SegmentAndTrack;
@@ -390,8 +391,10 @@ public class GenerateXP {
             if (crop!=null) xp.getPreProcessingTemplate().addTransformation(0, null, new SimpleCrop(crop));
             xp.getPreProcessingTemplate().setTrimFrames(trimFramesStart, trimFramesEnd);
             xp.getPreProcessingTemplate().addTransformation(0, null, new SaturateHistogram(350, 450));
-            xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1, 0)).setActivated(true); // to remove salt and pepper noise
-            xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false));
+            xp.getPreProcessingTemplate().addTransformation(1, null, new BandPass(0, 40, 1)); // remove horizontal lines // min ==1 ? 
+            //xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1, 0)).setActivated(true); // to remove salt and pepper noise before rotation
+            //xp.getPreProcessingTemplate().addTransformation(0, null, new BandPass(0, 40, 1)); // remplacer le subtractBackground..-> determiner l'echelle
+            xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false)); 
             xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
             xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
             xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannelFluo2D(30, 45, 200, 0.6, 5));
@@ -473,16 +476,16 @@ public class GenerateXP {
         }
     }
     
-    private static boolean[] getBooleanArray(int N, boolean defaultValue) {
+    public static boolean[] getBooleanArray(int N, boolean defaultValue) {
         boolean[] res= new boolean[N];
         if (defaultValue) Arrays.fill(res, true);
         return res;
     }
-    private static boolean[] fillRange(boolean[] array, int idxMinIncluded, int idxMaxIncluded, boolean value) {
+    public static boolean[] fillRange(boolean[] array, int idxMinIncluded, int idxMaxIncluded, boolean value) {
         for (int i = idxMinIncluded; i<=idxMaxIncluded; ++i) array[i] = value;
         return array;
     }
-    private static boolean[] setValues(boolean[] array, boolean value, int... indices) {
+    public static boolean[] setValues(boolean[] array, boolean value, int... indices) {
         for (int i : indices) array[i]=value;
         return array;
     }

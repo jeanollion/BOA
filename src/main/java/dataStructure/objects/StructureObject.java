@@ -706,7 +706,11 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             synchronized(rawImagesC) {
                 if (rawImagesC.get(channelIdx)==null) {
                     if (isRoot()) {
-                        if (rawImagesC.getAndExtend(channelIdx)==null) rawImagesC.set(getExperiment().getImageDAO().openPreProcessedImage(channelIdx, timePoint, getPositionName()), channelIdx);
+                        if (rawImagesC.getAndExtend(channelIdx)==null) {
+                            if (getMicroscopyField().singleFrame(structureIdx) && timePoint>0 && trackHead!=null) { // getImage from trackHead
+                                rawImagesC.set(trackHead.getRawImage(structureIdx), channelIdx);
+                            } else rawImagesC.set(getExperiment().getImageDAO().openPreProcessedImage(channelIdx, getMicroscopyField().singleFrame(structureIdx) ? 0 : timePoint, getPositionName()), channelIdx);
+                        }
                     } else {
                         StructureObject parentWithImage=getFirstParentWithOpenedRawImage(structureIdx);
                         if (parentWithImage!=null) {
@@ -746,9 +750,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         int channelIdx = getExperiment().getChannelImageIdx(structureIdx);
         Image res;
         if (rawImagesC.get(channelIdx)==null) {//opens only within bounds
-            res =  getExperiment().getImageDAO().openPreProcessedImage(channelIdx, timePoint, getPositionName(), bounds);
-            res.setCalibration(getScaleXY(), getScaleZ());
-            //if (this.timePoint==0) logger.debug("open from: {} within bounds: {}, resultBounds: {}", this, bounds, res.getBoundingBox());
+            if (getMicroscopyField().singleFrame(structureIdx) && timePoint>0 && trackHead!=null) {
+                res = trackHead.openRawImage(structureIdx, bounds); // TODO check ???
+            } else {
+                res =  getExperiment().getImageDAO().openPreProcessedImage(channelIdx, getMicroscopyField().singleFrame(structureIdx) ? 0 : timePoint, getPositionName(), bounds);
+                res.setCalibration(getScaleXY(), getScaleZ());
+                //if (this.timePoint==0) logger.debug("open from: {} within bounds: {}, resultBounds: {}", this, bounds, res.getBoundingBox());
+            }
         } 
         else {
             res = rawImagesC.get(channelIdx).crop(bounds);

@@ -28,7 +28,7 @@ import image.Image;
 @Embedded(polymorph=true)
 public abstract class MultipleImageContainer {
     final double scaleXY, scaleZ;
-    public abstract int getTimePointNumber();
+    public abstract int getFrameNumber();
     public abstract int getChannelNumber();
     public abstract int getSizeZ(int channel);
     public abstract Image getImage(int timePoint, int channel);
@@ -39,7 +39,7 @@ public abstract class MultipleImageContainer {
     public float getScaleZ() {return (float)scaleZ;}
     public abstract double getCalibratedTimePoint(int t, int c, int z);
     public abstract MultipleImageContainer duplicate();
-
+    public abstract boolean singleFrame(int channel);
     public MultipleImageContainer(double scaleXY, double scaleZ) {
         this.scaleXY = scaleXY;
         this.scaleZ = scaleZ;

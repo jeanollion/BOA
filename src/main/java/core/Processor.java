@@ -165,8 +165,6 @@ public class Processor {
         final ProcessingScheme ps = xp.getStructure(structureIdx).getProcessingScheme();
         int parentStructure = xp.getStructure(structureIdx).getParentStructure();
         if (trackOnly && ps instanceof SegmentOnly) return Collections.EMPTY_LIST;
-        //ArrayList<ArrayList<StructureObject>> objectsToStore = new ArrayList<ArrayList<StructureObject>>();
-        //List<ArrayList<StructureObject>> objectsToStoreSync = Collections.synchronizedList(objectsToStore);
         
         Map<StructureObject, List<StructureObject>> allParentTracks;
         if (parentStructure==-1 || parentTrack.get(0).getStructureIdx()==parentStructure) { // parents = roots

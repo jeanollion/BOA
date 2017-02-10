@@ -69,16 +69,26 @@ public class SegmentOnly implements ProcessingScheme {
             logger.info("No segmenter set for structure: {}", structureIdx);
             return;
         }
-        ThreadAction<StructureObject> ta = new ThreadAction<StructureObject>() {
-            @Override public void run(StructureObject parent, int idx, int threadIdx) {
-                Segmenter s = segmenter.instanciatePlugin();
-                Image input = preFilters.filter(parent.getRawImage(structureIdx), parent);
-                ObjectPopulation pop = s.runSegmenter(input, structureIdx, parent);
-                pop = postFilters.filter(pop, structureIdx, parent);
-                parent.setChildrenObjects(pop, structureIdx);
-            }
-        };
-        ThreadRunner.execute(parentTrack, ta);
+        if (parentTrack.isEmpty()) return;
+        if (parentTrack.get(0).getMicroscopyField().singleFrame(structureIdx)) {
+            ObjectPopulation pop = segment(parentTrack.get(0), structureIdx);
+            for (StructureObject parent : parentTrack) parent.setChildrenObjects(pop.duplicate(), structureIdx);
+        } else {
+            ThreadAction<StructureObject> ta = new ThreadAction<StructureObject>() {
+                @Override public void run(StructureObject parent, int idx, int threadIdx) {
+                    parent.setChildrenObjects(segment(parent, structureIdx), structureIdx);
+                }
+            };
+            ThreadRunner.execute(parentTrack, ta);
+            //for (StructureObject parent : parentTrack) parent.setChildrenObjects(segment(parent, structureIdx), structureIdx);
+        }
+    }
+    
+    private ObjectPopulation segment(StructureObject parent, int structureIdx) {
+        Segmenter s = segmenter.instanciatePlugin();
+        Image input = preFilters.filter(parent.getRawImage(structureIdx), parent);
+        ObjectPopulation pop = s.runSegmenter(input, structureIdx, parent);
+        return postFilters.filter(pop, structureIdx, parent);
     }
 
     @Override public void trackOnly(int structureIdx, List<StructureObject> parentTrack) {}

@@ -34,7 +34,7 @@ public class FftBandPassFilter {
 	
 	private double filterLargeDia = 100.0;
 	private double  filterSmallDia = 3;
-	private static int choiceIndex = 0;
+	private int suppressStripes = 0;
 	private static String[] choices = {"None","Horizontal","Vertical"};
 	private static String choiceDia = choices[0];
 	private static double toleranceDia = 5.0;
@@ -44,14 +44,21 @@ public class FftBandPassFilter {
 	private static boolean processStack;
 
         
-        
-	public FftBandPassFilter(double small, double large, ImagePlus imp) {
+        /**
+         * 
+         * @param imp
+         * @param small
+         * @param large
+         * @param stripes 0 no suppress / 1 suppress horizontal stripes / 2 suppress vertical stripes
+         */
+	public FftBandPassFilter(ImagePlus imp, double small, double large, int stripes) {
 		
  		this.imp = imp;
  		
  		stackSize = imp.getStackSize();
 		filterLargeDia = large;
                 filterSmallDia = small;
+                suppressStripes = stripes;
 		
 	}
 
@@ -108,7 +115,7 @@ public class FftBandPassFilter {
 
 		// filter out large and small structures
 		//showStatus("Filter in frequency domain");
-		filterLargeSmall(fht, filterLarge, filterSmall, choiceIndex, sharpness);
+		filterLargeSmall(fht, filterLarge, filterSmall, suppressStripes, sharpness);
 		//new ImagePlus("filter",ip2.crop()).show();
 		//IJ.showProgress(11,20);
 
@@ -430,8 +437,8 @@ public class FftBandPassFilter {
 		}				
 		filterLargeDia = gd.getNextNumber();
 		filterSmallDia = gd.getNextNumber();	
-		choiceIndex = gd.getNextChoiceIndex();
-		choiceDia = choices[choiceIndex];
+		suppressStripes = gd.getNextChoiceIndex();
+		choiceDia = choices[suppressStripes];
 		toleranceDia = gd.getNextNumber();
 		doScalingDia = gd.getNextBoolean();
 		saturateDia = gd.getNextBoolean();

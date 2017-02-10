@@ -258,7 +258,8 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
                         Image[][] imagesTC = new Image[1][channels];
                         MicroscopyField f = generator.db.getExperiment().getPosition(fieldName);
                         for (int channel = 0; channel<channels; ++channel) {
-                            imagesTC[0][channel] = generator.db.getExperiment().getImageDAO().openPreProcessedImage(channel, f.getDefaultTimePoint(), fieldName);
+                            int fr = f.singleFrameChannel(channel) ? 0 : f.getDefaultTimePoint();
+                            imagesTC[0][channel] = generator.db.getExperiment().getImageDAO().openPreProcessedImage(channel, fr, fieldName);
                             if (imagesTC[0][channel]==null) return;
                         }
                         ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("PreProcessed Image of Position: "+fieldName+ " Frame: "+f.getDefaultTimePoint(), imagesTC);
@@ -277,7 +278,8 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
                         Image[][] imagesTC = new Image[frames][channels];
                         for (int channel = 0; channel<channels; ++channel) {
                             for (int frame = 0; frame<frames; ++frame) {
-                                imagesTC[frame][channel] = generator.db.getExperiment().getImageDAO().openPreProcessedImage(channel, frame, fieldName);
+                                int fr = f.singleFrameChannel(channel) ? 0 : frame;
+                                imagesTC[frame][channel] = generator.db.getExperiment().getImageDAO().openPreProcessedImage(channel, fr, fieldName);
                                 if (imagesTC[frame][channel]==null) return;
                             }
                         }

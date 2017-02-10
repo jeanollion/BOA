@@ -64,13 +64,19 @@ public class MultipleImageContainerSingleFile extends MultipleImageContainer {
     
     public String getName(){return name;}
 
-    public int getTimePointNumber() {
+    public int getFrameNumber() {
         return timePointNumber;
     }
 
     public int getChannelNumber() {
         return channelNumber;
     }
+    
+    @Override
+    public boolean singleFrame(int channel) {
+        return false;
+    }
+    
     /**
      * 
      * @param channelNumber ignored for this time of image container

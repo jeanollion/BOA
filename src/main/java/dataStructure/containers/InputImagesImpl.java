@@ -30,63 +30,66 @@ import utils.ThreadRunner.ThreadAction2;
  * @author jollion
  */
 public class InputImagesImpl implements InputImages {
-    InputImage[][] imageTC;
+    InputImage[][] imageCT;
     int defaultTimePoint;
+    int frameNumber;
     
     public InputImagesImpl(InputImage[][] imageTC, int defaultTimePoint) {
-        this.imageTC = imageTC;
+        this.imageCT = imageTC;
         this.defaultTimePoint= defaultTimePoint;
+        for (int c = 0; c<imageTC.length; ++c) if (imageTC[c].length>frameNumber) frameNumber = imageTC[c].length;
     }
     
-    @Override public int getTimePointNumber() {return imageTC.length;}
-    @Override public int getChannelNumber() {return imageTC[0].length;}
+    @Override public int getTimePointNumber() {return frameNumber;}
+    @Override public int getChannelNumber() {return imageCT.length;}
     @Override public int getDefaultTimePoint() {return defaultTimePoint;}
-    @Override public int getSizeZ(int channelIdx) {return imageTC[0][channelIdx].imageSources.getSizeZ(channelIdx);}
+    @Override public int getSizeZ(int channelIdx) {return imageCT[channelIdx][0].imageSources.getSizeZ(channelIdx);}
     @Override public double getCalibratedTimePoint(int c, int t, int z) {
-        return imageTC[t][c].imageSources.getCalibratedTimePoint(t, c, z);
+        return imageCT[c][t].imageSources.getCalibratedTimePoint(t, c, z);
+    }
+    @Override public boolean singleFrameChannel(int channelIdx) {
+        return imageCT[channelIdx].length==1;
     }
     public void addTransformation(int inputChannel, int[] channelIndicies, Transformation transfo) {
         if (channelIndicies!=null) for (int c : channelIndicies) addTransformation(c, transfo);
         else {
             if (transfo instanceof Transformation &&  ((Transformation)transfo).getOutputChannelSelectionMode()==Transformation.SelectionMode.SAME) addTransformation(inputChannel, transfo);
-            else for (int c = 0; c<imageTC[0].length; ++c) addTransformation(c, transfo);
+            else for (int c = 0; c<getChannelNumber(); ++c) addTransformation(c, transfo);
         }
     }
     
     public void addTransformation(int channelIdx, Transformation transfo) {
-        for (int t = 0; t<this.imageTC.length; ++t) {
-            imageTC[t][channelIdx].addTransformation(transfo);
+        for (int t = 0; t<this.imageCT[channelIdx].length; ++t) {
+            imageCT[channelIdx][t].addTransformation(transfo);
         }
     }
 
-    public Image getImage(int channelIdx, int timePoint) { 
+    @Override public Image getImage(int channelIdx, int timePoint) { 
         // TODO: gestion de la memoire: si besoin save & close d'une existante. Attention a signal & réouvrir depuis le DAO et non depuis l'original
-        return imageTC[timePoint][channelIdx].getImage();
+        if (imageCT[channelIdx].length==1) timePoint = 0;
+        return imageCT[channelIdx][timePoint].getImage();
     }
     
     public void applyTranformationsSaveAndClose() {
         long tStart = System.currentTimeMillis();
         final int cCount = getChannelNumber();
-        ThreadRunner.execute(imageTC, false, new ThreadAction2<InputImage[]>() {
-            //MultipleImageContainer container;
-            @Override public void setUp() {
-                //container = imageTC[0][0].duplicateContainer();
-                //logger.debug("Creating container for thread: {}, id: {}", Thread.currentThread(), container);
-            }
-            @Override public void tearDown() {
-                //container.close();
-            };
+        /*ThreadAction<InputImage> ta = (InputImage image, int idx, int threadIdx) -> {
+            image.getImage();
+            image.closeImage();
+            logger.debug("apply transfo: frame {}", idx);
+        };*/
+        ThreadAction<InputImage> ta = new ThreadAction<InputImage>() {
             @Override
-            public void run(InputImage[] imageC, int idx, int threadIdx) {
-                //long tStart = System.currentTimeMillis();
-                for (int c = 0; c<cCount; ++c) {
-                    imageC[c].getImage();
-                    imageC[c].closeImage();
-                }
-                //long tEnd = System.currentTimeMillis();
-                //logger.debug("apply transformation & save: {}", tEnd-tStart);
+            public void run(InputImage image, int idx, int threadIdx) {
+                image.getImage();
+                image.closeImage();
+                //logger.debug("apply transfo: frame {}", idx);
             }
-        });
+        };
+        for (int c = 0; c<getChannelNumber(); ++c) {
+            //logger.debug("apply transfo: channel {}", c);
+            ThreadRunner.execute(imageCT[c], false, ta);
+        }
         
         /*
         int tCount = getTimePointNumber();
@@ -103,21 +106,17 @@ public class InputImagesImpl implements InputImages {
     }
     
     public void deleteFromDAO() {
-        int tCount = getTimePointNumber();
-        int cCount = getChannelNumber();
-        for (int t = 0; t<tCount; ++t) {
-            for (int c = 0; c<cCount; ++c) {
-                imageTC[t][c].deleteFromDAO();
+        for (int c = 0; c<getChannelNumber(); ++c) {
+            for (int t = 0; t<imageCT[c].length; ++t) {
+                imageCT[c][t].deleteFromDAO();
             }
         }
     }
     
     @Override public void flush() {
-        int tCount = getTimePointNumber();
-        int cCount = getChannelNumber();
-        for (int t = 0; t<tCount; ++t) {
-            for (int c = 0; c<cCount; ++c) {
-                imageTC[t][c].flush();
+        for (int c = 0; c<getChannelNumber(); ++c) {
+            for (int t = 0; t<imageCT[c].length; ++t) {
+                imageCT[c][t].flush();
             }
         }
     }
@@ -129,18 +128,25 @@ public class InputImagesImpl implements InputImages {
      */
     public void subSetTimePoints(int tStart, int tEnd) {
         if (tStart<0) tStart=0; 
-        if (tEnd>=imageTC.length) tEnd = imageTC.length-1;
-        InputImage[][] newImageTC = new InputImage[tEnd-tStart+1][imageTC[0].length];
-        for (int t=tStart; t<=tEnd; ++t) {
-            for (int c=0; c<imageTC[0].length; ++c) {
-                newImageTC[t-tStart][c] = imageTC[t][c];
-                imageTC[t][c].setTimePoint(t-tStart);
+        if (tEnd>=getTimePointNumber()) tEnd = getTimePointNumber()-1;
+        InputImage[][] newImageCT = new InputImage[this.getChannelNumber()][];
+        
+        for (int c=0; c<getChannelNumber(); ++c) {
+            if (imageCT[c].length==1) {
+                newImageCT[c] = new InputImage[1];
+                newImageCT[c][0] = imageCT[c][0];
+            } else {
+                newImageCT[c] = new InputImage[tEnd-tStart+1];
+                for (int t=tStart; t<=tEnd; ++t) {
+                    newImageCT[c][t-tStart] = imageCT[c][t];
+                    imageCT[c][t].setTimePoint(t-tStart);
+                }
             }
         }
         if (this.defaultTimePoint<tStart) defaultTimePoint = 0;
         if (this.defaultTimePoint>tEnd-tStart) defaultTimePoint = tEnd-tStart;
         logger.debug("default time Point: {}", defaultTimePoint);
-        this.imageTC=newImageTC;
+        this.imageCT=newImageCT;
     }
 
 }

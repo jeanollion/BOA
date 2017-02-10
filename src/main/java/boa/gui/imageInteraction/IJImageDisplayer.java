@@ -83,8 +83,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         for (ImagePlus ip : displayedImages.values()) if (ip.isVisible()) ip.close();
         displayedImages.clear();
         displayedImagesInv.clear();
-        // also close all opened windows
-        while (WindowManager.getCurrentImage()!=null) WindowManager.getCurrentImage().close();
+        WindowManager.closeAllWindows(); // also close all opened windows
     }
     /*@Override public boolean isVisible(Image image) {
         return displayedImages.containsKey(image) && displayedImages.get(image).isVisible();

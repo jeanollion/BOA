@@ -37,18 +37,22 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
     int[] sizeZC;
     BoundingBox bounds;
     @Transient private ImageReader reader[];
+    @Transient private Image[] singleFrameImages;
+    boolean[] singleFrameC;
     
-    public MultipleImageContainerChannelSerie(String name, String[] imagePathC, int timePointNumber, int[] sizeZC, double scaleXY, double scaleZ) {
+    public MultipleImageContainerChannelSerie(String name, String[] imagePathC, int frameNumber, boolean[] singleFrameC, int[] sizeZC, double scaleXY, double scaleZ) {
         super(scaleXY, scaleZ);
         this.name = name;
         filePathC = imagePathC;
-        this.timePointNumber = timePointNumber;
+        this.singleFrameC = singleFrameC;
+        this.timePointNumber=frameNumber;
         this.reader=new ImageReader[imagePathC.length];
+        this.singleFrameImages = new Image[imagePathC.length];
         this.sizeZC= sizeZC;
     }
     
-    public MultipleImageContainerChannelSerie duplicate() {
-        return new MultipleImageContainerChannelSerie(name, filePathC, timePointNumber, sizeZC, scaleXY, scaleZ);
+    @Override public MultipleImageContainerChannelSerie duplicate() {
+        return new MultipleImageContainerChannelSerie(name, filePathC, timePointNumber, singleFrameC, sizeZC, scaleXY, scaleZ);
     }
     
     @Override public double getCalibratedTimePoint(int t, int c, int z) {
@@ -64,12 +68,17 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
     
     public String getName(){return name;}
 
-    public int getTimePointNumber() {
+    public int getFrameNumber() {
         return timePointNumber;
     }
 
     public int getChannelNumber() {
         return filePathC!=null?filePathC.length:0;
+    }
+    
+    @Override
+    public boolean singleFrame(int channel) {
+        return this.singleFrameC[channel];
     }
     
     @Override
@@ -83,29 +92,50 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
         return new ImageIOCoordinates(0, 0, timePoint);
     }
     
-    protected ImageReader getReader(int channelIdx) {
-        if (getImageReaders()[channelIdx]==null) reader[channelIdx] = new ImageReader(filePathC[channelIdx]);
+    protected synchronized ImageReader getReader(int channelIdx) {
+        if (getImageReaders()[channelIdx]==null) {
+            synchronized(this) {
+                if (getImageReaders()[channelIdx]==null) {
+                    reader[channelIdx] = new ImageReader(filePathC[channelIdx]);
+                }
+            }
+        }
         return reader[channelIdx];
     }
     
     protected ImageReader[] getImageReaders() {
-        if (reader==null) reader=new ImageReader[filePathC.length];
+        if (reader==null) {
+            synchronized(this) {
+                if (reader==null) reader=new ImageReader[filePathC.length];
+            }
+        }
         return reader;
     }
     
     @Override
-    public synchronized Image getImage(int timePoint, int channel) {
-        //logger.debug("getImage calling thread: {}", Thread.currentThread());
-        if (this.timePointNumber==1) timePoint=0;
+    public Image getImage(int timePoint, int channel) {
+        if (singleFrame(channel)) timePoint=0;
         ImageIOCoordinates ioCoordinates = getImageIOCoordinates(timePoint);
         if (bounds!=null) ioCoordinates.setBounds(bounds);
-        Image image = getReader(channel).openImage(ioCoordinates);
-        /*if (scaleXY!=0 && scaleZ!=0) image.setCalibration((float)scaleXY, (float)scaleZ);
-        else {
-            scaleXY = image.getScaleXY();
-            scaleZ = image.getScaleZ();
-        }*/
-        return image;
+        if (singleFrameC[channel]) {
+            if (singleFrameImages==null) {
+                synchronized(this) {
+                    if (singleFrameImages==null) singleFrameImages = new Image[filePathC.length];
+                }
+            }
+            if (singleFrameImages[channel]==null) {
+                synchronized(singleFrameImages) {
+                    if (singleFrameImages[channel]==null) singleFrameImages[channel] = getReader(channel).openImage(ioCoordinates);
+                }
+            }
+            return singleFrameImages[channel];
+        } else {
+            ImageReader r= getReader(channel);
+            synchronized(r) {
+                Image image = getReader(channel).openImage(ioCoordinates);
+                return image;
+            }
+        }
     }
     
     @Override
@@ -129,6 +159,7 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
         for (int i = 0; i<this.getChannelNumber(); ++i) {
             if (getImageReaders()[i]!=null) reader[i].closeReader();
             reader [i] = null;
+            if (singleFrameImages!=null) singleFrameImages[i]=null;
         }
     }
 }

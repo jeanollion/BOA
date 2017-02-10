@@ -96,13 +96,21 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         return preProcessingChain;
     }
     private int getEndTrimFrame() {
-        if (preProcessingChain.trimFramesEnd.getSelectedTimePoint()==0) preProcessingChain.trimFramesEnd.setTimePoint(images.getTimePointNumber()-1);
+        if (preProcessingChain.trimFramesEnd.getSelectedTimePoint()==0) preProcessingChain.trimFramesEnd.setTimePoint(images.getFrameNumber()-1);
         return preProcessingChain.trimFramesEnd.getSelectedTimePoint();
     }
     private int getStartTrimFrame() {
-        if (preProcessingChain.trimFramesEnd.getSelectedTimePoint()==0) preProcessingChain.trimFramesEnd.setTimePoint(images.getTimePointNumber()-1);
+        if (preProcessingChain.trimFramesEnd.getSelectedTimePoint()==0) preProcessingChain.trimFramesEnd.setTimePoint(images.getFrameNumber()-1);
         if (preProcessingChain.trimFramesStart.getSelectedTimePoint()>preProcessingChain.trimFramesEnd.getSelectedTimePoint()) preProcessingChain.trimFramesStart.setTimePoint(preProcessingChain.trimFramesEnd.getSelectedTimePoint());
         return preProcessingChain.trimFramesStart.getSelectedTimePoint();
+    }
+    public boolean singleFrame(int structureIdx) {
+        if (images==null) return false;
+        int channelIdx = getExperiment().getChannelImageIdx(structureIdx);
+        return singleFrameChannel(channelIdx);
+    }
+    public boolean singleFrameChannel(int channelIdx) {
+        return images.singleFrame(channelIdx);
     }
     public InputImagesImpl getInputImages() {
         if (inputImages==null) {
@@ -110,10 +118,11 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
             if (dao==null || images==null) return null;
             int tpOff = getStartTrimFrame();
             int tpNp = getEndTrimFrame() - tpOff+1;
-            InputImage[][] res = new InputImage[tpNp][images.getChannelNumber()];
-            for (int t = 0; t<res.length; ++t) {
-               for (int c = 0; c<res[0].length; ++c) {
-                   res[t][c] = new InputImage(c, t+tpOff, t, name, images, dao);
+            InputImage[][] res = new InputImage[images.getChannelNumber()][];
+            for (int c = 0; c<images.getChannelNumber(); ++c) {
+                res[c] = images.singleFrame(c) ? new InputImage[1] : new InputImage[images.getFrameNumber()];
+                for (int t = 0; t<res[c].length; ++t) {
+                    res[c][t] = new InputImage(c, t+tpOff, t, name, images, dao);
                 } 
             }
             int defTp = defaultTimePoint.getSelectedTimePoint()-tpOff;
@@ -177,7 +186,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     
     public int getTimePointNumber(boolean useRawInputFrames) {
         if (images!=null) {
-            if (useRawInputFrames) return images.getTimePointNumber();
+            if (useRawInputFrames) return images.getFrameNumber();
             else return getEndTrimFrame() - getStartTrimFrame()+1;
         }
         else return 0;
@@ -311,7 +320,8 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
                         int channels = getExperiment().getChannelImageCount();
                         Image[][] imagesTC = new Image[1][channels];
                         for (int channel = 0; channel<channels; ++channel) {
-                            imagesTC[0][channel] = getExperiment().getImageDAO().openPreProcessedImage(channel, defaultTimePoint.getSelectedTimePoint(), name);
+                            int frame = singleFrameChannel(channel) ? 0 :defaultTimePoint.getSelectedTimePoint();
+                            imagesTC[0][channel] = getExperiment().getImageDAO().openPreProcessedImage(channel, frame, name);
                             if (imagesTC[0][channel]==null) return;
                         }
                         ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("PreProcessed Image of Position: "+name+ " Frame: "+defaultTimePoint.getSelectedTimePoint(), imagesTC);
@@ -329,7 +339,8 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
                         Image[][] imagesTC = new Image[frames][channels];
                         for (int channel = 0; channel<channels; ++channel) {
                             for (int frame = 0; frame<frames; ++frame) {
-                                imagesTC[frame][channel] = getExperiment().getImageDAO().openPreProcessedImage(channel, frame, name);
+                                int fr = singleFrameChannel(channel) ? 0 :frame;
+                                imagesTC[frame][channel] = getExperiment().getImageDAO().openPreProcessedImage(channel, fr, name);
                                 if (imagesTC[frame][channel]==null) return;
                             }
                         }
