@@ -48,7 +48,7 @@ public class InputImagesImpl implements InputImages {
         if (singleFrameChannel(c)) { // adjecent channel
             if (c>0) c--;
             else c++;
-            if (imageCT.length>=c) return Double.NaN;
+            if (imageCT.length<=c) return Double.NaN;
         }
         return imageCT[c][t].imageSources.getCalibratedTimePoint(t, c, z);
     }

@@ -526,8 +526,9 @@ public class Utils {
         if (n instanceof Integer) {
             return n.toString();
         } else {
-            double d = Math.abs(n.doubleValue());
-            if (d > 100 || (d<1 && ((int)(d*1000))/1000d!=d)) {
+            double abs = Math.abs(n.doubleValue());
+            double pow = Math.pow(10, digits);
+            if (abs > 1000 || (abs<0.1 && ((int)(abs*pow))/pow!=abs)) {
                 return String.format(java.util.Locale.US, "%."+ digits+ "E", n);
             } else {
                 return String.format(java.util.Locale.US, "%."+ digits+"f", n);

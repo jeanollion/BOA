@@ -753,6 +753,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 res = trackHead.openRawImage(structureIdx, bounds);
             } else {
                 res =  getExperiment().getImageDAO().openPreProcessedImage(channelIdx, getMicroscopyField().singleFrame(structureIdx) ? 0 : timePoint, getPositionName(), bounds);
+                if (res==null) throw new RuntimeException("No image found for object: "+this+" structure: "+structureIdx);
                 res.setCalibration(getScaleXY(), getScaleZ());
                 //if (this.timePoint==0) logger.debug("open from: {} within bounds: {}, resultBounds: {}", this, bounds, res.getBoundingBox());
             }
