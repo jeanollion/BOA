@@ -221,7 +221,9 @@ public class BoundingBox {
         if (zMax>properties.zMax) zMax=properties.zMax;
         return this;
     }
-    
+    public boolean sameBounds(BoundingBox bounds) {
+        return this.equals(bounds);
+    }
     public boolean sameBounds(ImageProperties properties) {
         return xMin==properties.getOffsetX() && yMin==properties.getOffsetY() && zMin==properties.getOffsetZ() && xMax==(properties.getSizeX()-1+properties.getOffsetX()) && yMax==(properties.getSizeY()-1+properties.getOffsetY()) && zMax==(properties.getSizeZ()-1+properties.getOffsetZ());
     }

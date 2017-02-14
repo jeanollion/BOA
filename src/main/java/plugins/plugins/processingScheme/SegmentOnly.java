@@ -64,6 +64,15 @@ public class SegmentOnly implements ProcessingScheme {
         postFilters.add(postFilter);
         return this;
     }
+    
+    @Override public PreFilterSequence getPreFilters() {
+        return preFilters;
+    }
+    
+    @Override public PostFilterSequence getPostFilters() {
+        return postFilters;
+    }
+    
     @Override public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack) {
         if (!segmenter.isOnePluginSet()) {
             logger.info("No segmenter set for structure: {}", structureIdx);

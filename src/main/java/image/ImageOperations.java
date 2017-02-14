@@ -712,6 +712,27 @@ public class ImageOperations {
         return new double[]{mean, Math.sqrt(values2 - mean * mean), count};
     }
     
+    public static double[] getMeanAndSigma(Image image, ImageMask mask) {
+        if (mask==null) mask = new BlankMask(image);
+        double mean = 0;
+        double count = 0;
+        double values2 = 0;
+        double value;
+        for (int z = 0; z < image.getSizeZ(); ++z) {
+            for (int xy = 0; xy < image.getSizeXY(); ++xy) {
+                if (mask.insideMask(xy, z)) {
+                    value = image.getPixel(xy, z);
+                    mean += value;
+                    count++;
+                    values2 += value * value;
+                }
+            }
+        }
+        mean /= count;
+        values2 /= count;
+        return new double[]{mean, Math.sqrt(values2 - mean * mean), count};
+    }
+    
     /**
      * 
      * @param image

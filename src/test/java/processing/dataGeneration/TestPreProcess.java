@@ -18,6 +18,7 @@
 package processing.dataGeneration;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
+import configuration.parameters.TransformationPluginParameter;
 import core.Processor;
 import static core.Processor.setTransformations;
 import dataStructure.configuration.MicroscopyField;
@@ -36,6 +37,7 @@ import plugins.plugins.transformations.CropMicroChannelFluo2D;
 import plugins.plugins.transformations.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
 import plugins.plugins.transformations.ImageStabilizerCore;
+import plugins.plugins.transformations.ImageStabilizerXY;
 import static plugins.plugins.transformations.ImageStabilizerXY.testTranslate;
 import plugins.plugins.transformations.SaturateHistogram;
 import plugins.plugins.transformations.SaturateHistogramAuto;
@@ -49,9 +51,10 @@ import processing.ImageTransformation;
 public class TestPreProcess {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
+        ImageStabilizerXY.debug=true;
         //String dbName= "boa_fluo160428";
         //String dbName= "fluo151127";
-        String dbName = "boa_fluo170117_GammeMutTrack";
+        String dbName = "boa_fluo170117_GammeMutTrackStab";
         // 12 -> flip = true
         boolean flip = false;
         int field = 9;
@@ -59,7 +62,8 @@ public class TestPreProcess {
         //testPreProcessing(dbName, field, 0, -1, 0, 150);
         //testCrop(dbName, field, 0, flip);
         //displayPreProcessed(dbName, field, 2, 0, 680);
-        testStabilizer(dbName, field, 0, 19, 0, flip);
+        //testStabilizer(dbName, field, 0, 19, 0, flip);
+        testStabFromXP(dbName, field, 1, 0, 40);
     }
     
     public static void testTransformation(String dbName, int fieldIdx, int channelIdx, int time) {
@@ -121,6 +125,38 @@ public class TestPreProcess {
             disp.showImage(Image.mergeZPlanes(input).setName("input"));
             disp.showImage(Image.mergeZPlanes(output).setName("output"));
         }
+    }
+    
+    public static void testStabFromXP(String dbName, int fieldIdx, int channelIdx,int tStart, int tEnd) {
+        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+        MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
+        List<TransformationPluginParameter<Transformation>> tr = new ArrayList<>(f.getPreProcessingChain().getTransformations(false));
+        TransformationPluginParameter<Transformation> stab=null;
+        for (int i = 0; i<tr.size(); ++i) {
+            if (tr.get(i).instanciatePlugin() instanceof ImageStabilizerXY) {
+                stab = tr.get(i);
+                tr = tr.subList(0, i);
+                break;
+            }
+        }
+        if (stab==null) throw new IllegalArgumentException("No stabilizer in XP");
+        f.getPreProcessingChain().removeAllTransformations();
+        for (TransformationPluginParameter<Transformation> t : tr) f.getPreProcessingChain().addTransformation(t.getInputChannel(), t.getOutputChannels(), t.instanciatePlugin());
+        InputImagesImpl images = f.getInputImages();
+        images.subSetTimePoints(tStart, tEnd);
+        IJImageDisplayer disp = new IJImageDisplayer();
+        Processor.setTransformations(f, true);
+        List<Image> input = new ArrayList<Image>(tEnd-tStart+1);
+        for (int t = 0; t<=(tEnd-tStart); ++t) input.add(images.getImage(channelIdx, t).duplicate("input"+t));
+        Transformation stabilizer = stab.instanciatePlugin();
+        stabilizer.computeConfigurationData(stab.getInputChannel(), images);
+        stab.setConfigurationData(stabilizer.getConfigurationData());
+        images.addTransformation(stab.getInputChannel(), stab.getOutputChannels(), stabilizer);
+        List<Image> output = new ArrayList<Image>(tEnd-tStart+1);
+        for (int t = 0; t<=(tEnd-tStart); ++t) output.add(images.getImage(channelIdx, t).duplicate("output"+t));
+        disp.showImage(Image.mergeZPlanes(input).setName("input"));
+        disp.showImage(Image.mergeZPlanes(output).setName("output"));
+        
     }
     
     public static void displayPreProcessed(String dbName, int fieldIdx, int structureIdx, int tStart, int tEnd) {

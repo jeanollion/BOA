@@ -66,6 +66,13 @@ public class SegmentThenTrack implements ProcessingScheme {
         postFilters.add(postFilter);
         return this;
     }
+    @Override public PreFilterSequence getPreFilters() {
+        return preFilters;
+    }
+    
+    @Override public PostFilterSequence getPostFilters() {
+        return postFilters;
+    }
     @Override
     public Segmenter getSegmenter() {return segmenter.instanciatePlugin();}
     public Tracker getTracker() {return tracker.instanciatePlugin();}
@@ -107,6 +114,7 @@ public class SegmentThenTrack implements ProcessingScheme {
     private ObjectPopulation segment(StructureObject parent, int structureIdx) {
         Segmenter s = segmenter.instanciatePlugin();
         if (s==null) throw new Error("No Segmenter Found for structure: "+structureIdx);
+        //logger.debug("Segment Then Track: structure: {} from {}, #prefilters: {}", structureIdx, parent, preFilters.getChildCount());
         Image input = preFilters.filter(parent.getRawImage(structureIdx), parent);
         ObjectPopulation pop = s.runSegmenter(input, structureIdx, parent);
         pop = postFilters.filter(pop, structureIdx, parent);

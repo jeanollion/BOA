@@ -40,7 +40,10 @@ public class PreFilterSequence extends PluginParameterList<PreFilter> {
     
     public Image filter(Image input, StructureObjectPreProcessing parent) {
         ImageProperties prop = input.getProperties();
-        for (PreFilter p : get()) input = p.runPreFilter(input, parent);
+        for (PreFilter p : get()) {
+            input = p.runPreFilter(input, parent);
+            //logger.debug("prefilter: {}", p.getClass().getSimpleName());
+        }
         input.setCalibration(prop);
         if (input.sameSize(prop)) input.resetOffset().addOffset(prop);
         return input;

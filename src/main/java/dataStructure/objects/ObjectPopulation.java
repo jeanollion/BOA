@@ -161,11 +161,11 @@ public class ObjectPopulation {
         if (objects!=null) {
             ArrayList<Object3D> ob = new ArrayList<Object3D>(objects.size());
             for (Object3D o : objects) ob.add(o.duplicate());
-            return new ObjectPopulation(objects, properties, absoluteLandmark);
+            return new ObjectPopulation(ob, properties, absoluteLandmark).setConnectivity(lowConnectivity);
         } else if (labelImage!=null) {
-            return new ObjectPopulation((ImageInteger)labelImage.duplicate(""), true);
+            return new ObjectPopulation((ImageInteger)labelImage.duplicate(""), true).setConnectivity(lowConnectivity);
         }
-        return new ObjectPopulation(null , properties, absoluteLandmark);
+        return new ObjectPopulation(null , properties, absoluteLandmark).setConnectivity(lowConnectivity);
     }
     
     /**
@@ -296,6 +296,7 @@ public class ObjectPopulation {
     public void translate(BoundingBox bounds, boolean absoluteLandmark) {
         for (Object3D o : getObjects()) {
             o.translate(bounds);
+            if (absoluteLandmark) o.setIsAbsoluteLandmark(true);
         }
         this.absoluteLandmark=absoluteLandmark;
     }

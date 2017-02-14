@@ -391,7 +391,7 @@ public class GenerateXP {
             if (crop!=null) xp.getPreProcessingTemplate().addTransformation(0, null, new SimpleCrop(crop));
             xp.getPreProcessingTemplate().setTrimFrames(trimFramesStart, trimFramesEnd);
             xp.getPreProcessingTemplate().addTransformation(0, null, new SaturateHistogram(350, 450));
-            xp.getPreProcessingTemplate().addTransformation(1, null, new BandPass(0, 40, 1)); // remove horizontal lines // min ==1 ? 
+            xp.getPreProcessingTemplate().addTransformation(1, null, new BandPass(0, 40, 1, 0)); // remove horizontal lines // min ==1 ? 
             //xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1, 0)).setActivated(true); // to remove salt and pepper noise before rotation
             //xp.getPreProcessingTemplate().addTransformation(0, null, new BandPass(0, 40, 1)); // remplacer le subtractBackground..-> determiner l'echelle
             xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false)); 
@@ -448,7 +448,7 @@ public class GenerateXP {
                     List<TransformationPluginParameter<Transformation>> transfo = xp.getPosition(i).getPreProcessingChain().getTransformations(false);
                     for (TransformationPluginParameter<Transformation> tp : transfo) if (tp.instanciatePlugin().getClass()==Flip.class) {
                         tp.setActivated(flipArray[i]);
-                        logger.debug("{} flip: {}", i, flipArray[i]);
+                        //logger.debug("{} flip: {}", i, flipArray[i]);
                     }
                 }
             }

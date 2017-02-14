@@ -45,7 +45,7 @@ public class Object3D {
     protected List<Voxel> voxels; //lazy -> use getter // coordonnées des voxel = coord dans l'image mask + offset du masque.  
     protected float scaleXY=1, scaleZ=1;
     protected boolean absoluteLandmark=false; // false = coordinates relative to the direct parent
-    protected double quality;
+    protected double quality=Double.NaN;
     
     /**
      * Voxel
@@ -91,12 +91,12 @@ public class Object3D {
     }
     
     public Object3D duplicate() {
-        if (this.mask!=null) return new Object3D((ImageInteger)mask.duplicate(""), label).setIsAbsoluteLandmark(absoluteLandmark);
+        if (this.mask!=null) return new Object3D((ImageInteger)mask.duplicate(""), label).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality);
         else if (this.voxels!=null) {
             ArrayList<Voxel> vox = new ArrayList<> (voxels.size());
             for (Voxel v : voxels) vox.add(v.duplicate());
-            if (bounds==null) return new Object3D(voxels, label, scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark);
-            else return new Object3D(vox, label, bounds.duplicate(), scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark);
+            if (bounds==null) return new Object3D(vox, label, scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality);
+            else return new Object3D(vox, label, bounds.duplicate(), scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality);
         }
         return null;
     }
@@ -188,31 +188,44 @@ public class Object3D {
         return center;
     }
     public double[] getCenter(Image image, boolean scaled) {
-        double[] center = new double[3];
-        double count = 0;
-        double value;
-        for (Voxel v : getVoxels()) {
+        getVoxels();
+        synchronized(voxels) {
+            double[] center = new double[3];
+            double count = 0;
+            double value;
             if (absoluteLandmark) {
-                if (image.containsWithOffset(v.x, v.y, v.z)) value = image.getPixelWithOffset(v.x, v.y, v.z);
-                else continue;
+                for (Voxel v : voxels) {
+                    if (image.containsWithOffset(v.x, v.y, v.z)) {
+                        v.value=image.getPixelWithOffset(v.x, v.y, v.z);
+                    } else v.value = Float.NaN;
+                } 
             } else {
-                if (image.contains(v.x, v.y, v.z)) value = image.getPixel(v.x, v.y, v.z);
-                else continue;
+                for (Voxel v : voxels) {
+                    if (image.contains(v.x, v.y, v.z)) {
+                        v.value=image.getPixel(v.x, v.y, v.z);
+                    } else v.value = Float.NaN;
+                } 
             }
-            center[0] += v.x * value;
-            center[1] += v.y * value;
-            center[2] += v.z * value;
-            count+=value;
+            Voxel minValue = Collections.min(voxels, (v1, v2) -> Double.compare(v1.value, v2.value));
+            for (Voxel v : getVoxels()) {
+                if (!Float.isNaN(v.value)) {
+                    v.value-=minValue.value;
+                    center[0] += v.x * v.value;
+                    center[1] += v.y * v.value;
+                    center[2] += v.z * v.value;
+                    count+=v.value;
+                }
+            }
+            center[0]/=count;
+            center[1]/=count;
+            center[2]/=count;
+            if (scaled) {
+                center[0] *=this.getScaleXY();
+                center[1] *=this.getScaleXY();
+                center[2] *=this.getScaleZ();
+            }
+            return center;
         }
-        center[0]/=count;
-        center[1]/=count;
-        center[2]/=count;
-        if (scaled) {
-            center[0] *=this.getScaleXY();
-            center[1] *=this.getScaleXY();
-            center[2] *=this.getScaleZ();
-        }
-        return center;
     }
     
     public synchronized void addVoxels(List<Voxel> voxelsToAdd) {

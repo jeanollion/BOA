@@ -62,7 +62,7 @@ public class TestProcessMutations {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
-        String dbName = "boa_fluo170117_GammeMutTrack";
+        String dbName = "boa_fluo170207_150ms";
         //final String dbName = "boa_fluo151127_test";
         int fIdx = 0;
         int mcIdx =0;
@@ -74,11 +74,12 @@ public class TestProcessMutations {
     
     public void testSegMutation(StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
         Image input = parent.getRawImage(2);
+        input = parent.getExperiment().getStructure(2).getProcessingScheme().getPreFilters().filter(input, parent);
         ImageInteger parentMask = parent.getMask();
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
         //MutationSegmenterScaleSpace seg = new MutationSegmenterScaleSpace().setIntensityThreshold(90);
         MutationSegmenter.debug=true;
-        MutationSegmenter seg = new MutationSegmenter().setIntensityThreshold(1.5).setThresholdSeeds(1.5).setThresholdPropagation(1).setSubtractBackgroundScale(6).setScale(2.5);
+        MutationSegmenter seg = new MutationSegmenter().setIntensityThreshold(0.4).setThresholdSeeds(0.6).setThresholdPropagation(0.4).setSubtractBackgroundScale(6).setScale(2.5);
         //seg.getPostFilters().removeAllElements();
         //seg.getPostFilters().add(new FeatureFilter(new LocalSNR().setBackgroundObjectStructureIdx(1), 0.75, true, true));
         seg.intermediateImages=intermediateImages;

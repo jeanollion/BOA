@@ -129,7 +129,7 @@ public class LAPTracker implements TrackerSegmenter {
         //if (s1!=null &&  s2!=null) logger.debug("distance 1-2: {}, scale 1: {}, 1 isAbsolute: {}, cent1: {}, cent2: {}", s1.squareDistanceTo(s2), s1.getObject().getScaleXY(), s1.getObject().isAbsoluteLandMark(), s1.getObject().getCenter(true), s2.getObject().getCenter(true));
         
         long t1 = System.currentTimeMillis();
-        logger.debug("LAP Tracker: {}, spot HQ: {}, #spots LQ: {}, time: {}", parentTrack.get(0), spotCollection.getSpotSet(true, false).size(), spotCollection.getSpotSet(false, true).size(), t1-t0);
+        logger.debug("LAP Tracker: {}, spot HQ: {}, #spots LQ: {} (thld: {}), time: {}", parentTrack.get(0), spotCollection.getSpotSet(true, false).size(), spotCollection.getSpotSet(false, true).size(), spotQualityThreshold, t1-t0);
         LAPTrackerCore core = new LAPTrackerCore(spotCollection);
         boolean processOk = true;
         
@@ -139,11 +139,11 @@ public class LAPTracker implements TrackerSegmenter {
             processOk = processOk && core.processFTF(maxD, true, false); //FTF only with HQ
             processOk = processOk && core.processFTF(maxD, true, true); // FTF HQ+LQ
             processOk = processOk && core.processGC(maxD, maxGap, true, false); // GC HQ
-            processOk = processOk && core.processGC(maxD, 2, true, true); // GC HQ + LQ // only one gap for LQ spots
+            processOk = processOk && core.processGC(maxD, Math.min(2, maxGap), true, true); // GC HQ + LQ // maximum one gap for LQ spots
             if (!processOk) logger.error("LAPTracker error : {}", core.getErrorMessage());
             else {
                 spotCollection.setTrackLinks(parentTrack, structureIdx, core.getEdges());
-                spotCollection.removeLQSpotsUnlinkedToHQSpots(parentTrack, structureIdx, true);
+                spotCollection.removeLQSpotsUnlinkedToHQSpots(parentTrack, structureIdx, true); // needs set trackLinks
             }
             core.resetEdges();
         }
@@ -154,12 +154,13 @@ public class LAPTracker implements TrackerSegmenter {
         if (!processOk) logger.error("LAPTracker error : {}", core.getErrorMessage());
         else {
             spotCollection.setTrackLinks(parentTrack, structureIdx, core.getEdges());
-            
+            spotCollection.removeLQSpotsUnlinkedToHQSpots(parentTrack, structureIdx, true);
         }
         
         // post-processing
         MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, spotCollection);
         postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC);
+        
         //distParams.setGapDistancePenalty(gapPenalty*2); // double penalty  
         //postProcessor.printDistancesOnOverlay();
         //postProcessor.splitLongTracks(4, minimalTrackFrameNumber.getValue().intValue()-1, minimalDistanceForTrackSplittingPenalty.getValue().doubleValue(), maxLinkingDistanceGC, maximalTrackSplittingPenalty.getValue().doubleValue());

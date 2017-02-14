@@ -37,7 +37,7 @@ public class FftBandPassFilter {
 	private int suppressStripes = 0;
 	private static String[] choices = {"None","Horizontal","Vertical"};
 	private static String choiceDia = choices[0];
-	private static double toleranceDia = 5.0;
+	private double toleranceDia = 5.0;
 	private static boolean doScalingDia = false; //true
 	private static boolean saturateDia = false; //true
 	private static boolean displayFilter;
@@ -50,8 +50,9 @@ public class FftBandPassFilter {
          * @param small
          * @param large
          * @param stripes 0 no suppress / 1 suppress horizontal stripes / 2 suppress vertical stripes
+        * @param stripeTolerance % of tolerance for stripe removal
          */
-	public FftBandPassFilter(ImagePlus imp, double small, double large, int stripes) {
+	public FftBandPassFilter(ImagePlus imp, double small, double large, int stripes, double stripeTolerance) {
 		
  		this.imp = imp;
  		
@@ -59,7 +60,7 @@ public class FftBandPassFilter {
 		filterLargeDia = large;
                 filterSmallDia = small;
                 suppressStripes = stripes;
-		
+		toleranceDia = stripeTolerance;
 	}
 
 	public ImageProcessor run(ImageProcessor ip) {

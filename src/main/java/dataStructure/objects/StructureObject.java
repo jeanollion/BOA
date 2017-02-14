@@ -234,7 +234,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     @Override public List<StructureObject> setChildrenObjects(ObjectPopulation population, int structureIdx) {
         population.relabel();
         population.translate(getBounds(), true); // from parent-relative coordinates to absolute coordinates
-        for (Object3D o : population.getObjects()) o.setIsAbsoluteLandmark(true);
         ArrayList<StructureObject> res = new ArrayList<StructureObject>(population.getObjects().size());
         childrenSM.set(res, structureIdx);
         int i = 0;
@@ -750,8 +749,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         int channelIdx = getExperiment().getChannelImageIdx(structureIdx);
         Image res;
         if (rawImagesC.get(channelIdx)==null) {//opens only within bounds
-            if (getMicroscopyField().singleFrame(structureIdx) && timePoint>0 && trackHead!=null) {
-                res = trackHead.openRawImage(structureIdx, bounds); // TODO check ???
+            if (getMicroscopyField().singleFrame(structureIdx) && timePoint>0 && trackHead!=null && trackHead.getBounds().sameBounds(getBounds())) {
+                res = trackHead.openRawImage(structureIdx, bounds);
             } else {
                 res =  getExperiment().getImageDAO().openPreProcessedImage(channelIdx, getMicroscopyField().singleFrame(structureIdx) ? 0 : timePoint, getPositionName(), bounds);
                 res.setCalibration(getScaleXY(), getScaleZ());

@@ -42,6 +42,7 @@ import static plugins.Plugin.logger;
 import utils.HashMapGetCreate;
 import utils.HashMapGetCreate.Factory;
 import utils.Pair;
+import utils.Utils;
 
 /**
  *
@@ -92,7 +93,7 @@ public class SpotPopulation {
         for (Object3D o : objects) {
             StructureObject parent = StructureObjectUtils.getInclusionParent(o, compartments, null); 
             if (parent==null) {
-                logger.warn("no parent found for object @ center {}, parents: {}", o.getCenter(true), compartments);
+                //logger.warn("no parent found for object @ center {}, parents: {}", o.getCenter(true), compartments);
                 continue;
             }
             SpotCompartiment compartiment = compartimentMap.getAndCreateIfNecessary(parent);
@@ -110,7 +111,10 @@ public class SpotPopulation {
         HashMap<Integer, StructureObject> parentT = new HashMap<Integer, StructureObject>(parentTrack.size());
         for (StructureObject p : parentTrack) {
             parentT.put(p.getFrame(), p);
-            for (StructureObject s : p.getChildren(structureIdx)) s.resetTrackLinks(true, true);
+            for (StructureObject s : p.getChildren(structureIdx)) {
+                s.resetTrackLinks(true, true);
+                s.setAttribute("Quality", s.getObject().getQuality());
+            }
         }
         TreeSet<DefaultWeightedEdge> nextEdges = new TreeSet(new Comparator<DefaultWeightedEdge>() {
             public int compare(DefaultWeightedEdge arg0, DefaultWeightedEdge arg1) {
@@ -146,7 +150,7 @@ public class SpotPopulation {
         for (List<StructureObject> list : allTracks.values()) {
             boolean hQ = false;
             for (StructureObject o : list) {
-                if (o.getObject().getQuality()>this.distanceParameters.qualityThreshold) {
+                if (o.getObject().getQuality()>=this.distanceParameters.qualityThreshold && (list.size()>1 || objectSpotMap.containsKey(o.getObject()))) {
                     hQ = true;
                     break;
                 }

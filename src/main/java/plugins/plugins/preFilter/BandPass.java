@@ -41,25 +41,27 @@ public class BandPass implements PreFilter, Filter {
     NumberParameter min = new BoundedNumberParameter("Remove structures under size (pixels)", 1, 0, 1, null);
     NumberParameter max = new BoundedNumberParameter("Remove structures over size (pixels)", 1, 100, 0, null); //TODO: conditional parameter that allow to automatically take in account z-anisotropy
     ChoiceParameter removeStripes = new ChoiceParameter("Remove Stripes", new String[]{"None", "Horizontal", "Vertical"}, "None", false);
-    Parameter[] parameters = new Parameter[]{min, max, removeStripes};
+    NumberParameter stripeTolerance = new BoundedNumberParameter("Stripes tolerance (%)", 1, 100, 0, 100);
+    Parameter[] parameters = new Parameter[]{min, max, removeStripes, stripeTolerance};
     public BandPass() {}
     public BandPass(double min, double max) {
-        this(min, max, 0);
+        this(min, max, 0, 0);
     }
-    public BandPass(double min, double max, int removeStripes) {
+    public BandPass(double min, double max, int removeStripes, double stripeTolerance) {
         this.min.setValue(min);
         this.max.setValue(max);
         this.removeStripes.setSelectedIndex(removeStripes);
+        this.stripeTolerance.setValue(stripeTolerance);
     }
-    public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
-        return filter(input, max.getValue().doubleValue(), max.getValue().doubleValue(), removeStripes.getSelectedIndex());
+    @Override public Image runPreFilter(Image input, StructureObjectPreProcessing structureObject) {
+        return filter(input, min.getValue().doubleValue(), max.getValue().doubleValue(), removeStripes.getSelectedIndex(), stripeTolerance.getValue().doubleValue());
     }
     
-    private static Image filter(Image input, double min, double max, int stripes) {
-        return IJFFTBandPass.bandPass(input, min, max, stripes);
+    private static Image filter(Image input, double min, double max, int stripes, double stripeTolerance) {
+        return IJFFTBandPass.bandPass(input, min, max, stripes, stripeTolerance);
     }
 
-    public Parameter[] getParameters() {
+    @Override public Parameter[] getParameters() {
         return parameters;
     }
 
@@ -67,19 +69,19 @@ public class BandPass implements PreFilter, Filter {
         return true;
     }
 
-    public SelectionMode getOutputChannelSelectionMode() {
+    @Override public SelectionMode getOutputChannelSelectionMode() {
         return SelectionMode.SAME;
     }
 
-    public void computeConfigurationData(int channelIdx, InputImages inputImages) { }
-    public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
+    @Override public void computeConfigurationData(int channelIdx, InputImages inputImages) { }
+    @Override public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
         return true;
     }
-    public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        return filter(image, min.getValue().doubleValue(), max.getValue().doubleValue(), removeStripes.getSelectedIndex());
+    @Override public Image applyTransformation(int channelIdx, int timePoint, Image image) {
+        return filter(image, min.getValue().doubleValue(), max.getValue().doubleValue(), removeStripes.getSelectedIndex(), stripeTolerance.getValue().doubleValue());
     }
 
-    public ArrayList getConfigurationData() {
+    @Override public ArrayList getConfigurationData() {
         return null;
     }
     

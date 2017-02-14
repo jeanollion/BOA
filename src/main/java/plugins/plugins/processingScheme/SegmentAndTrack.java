@@ -65,12 +65,20 @@ public class SegmentAndTrack implements ProcessingScheme {
         postFilters.add(postFilter);
         return this;
     }
+    @Override public PreFilterSequence getPreFilters() {
+        return preFilters;
+    }
+    
+    @Override public PostFilterSequence getPostFilters() {
+        return postFilters;
+    }
     @Override
     public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack) {
         if (!tracker.isOnePluginSet()) {
             logger.info("No tracker set for structure: {}", structureIdx);
             return;
         }
+        //logger.debug("segmentAndTrack: # prefilters: {}", preFilters.getChildCount());
         TrackerSegmenter t = tracker.instanciatePlugin();
         t.segmentAndTrack(structureIdx, parentTrack, preFilters, postFilters);
     }
