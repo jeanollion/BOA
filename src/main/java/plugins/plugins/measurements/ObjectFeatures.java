@@ -37,12 +37,12 @@ import plugins.objectFeature.ObjectFeatureWithCore;
  *
  * @author jollion
  */
-public class MeasurementObject implements Measurement {
+public class ObjectFeatures implements Measurement {
     StructureParameter structure = new StructureParameter("Structure", -1, false, false);
     PluginParameter<ObjectFeature> def = new PluginParameter<ObjectFeature>("Feature", ObjectFeature.class, false).setAdditionalParameters(new TextParameter("Key", "", false));
     SimpleListParameter<PluginParameter<ObjectFeature>> features = new SimpleListParameter<PluginParameter<ObjectFeature>>("Features", 0, def);
     Parameter[] parameters = new Parameter[]{structure, features};
-    public MeasurementObject() {
+    public ObjectFeatures() {
         // 
         def.addListener(new ParameterListener() {
             public void fire(Parameter sourceParameter) {
@@ -53,16 +53,16 @@ public class MeasurementObject implements Measurement {
             }
         });
     }
-    public MeasurementObject(int structureIdx) {
+    public ObjectFeatures(int structureIdx) {
         this();
         this.structure.setSelectedIndex(structureIdx);
     }
-    public MeasurementObject addFeatures(ObjectFeature... features) {
+    public ObjectFeatures addFeatures(ObjectFeature... features) {
         if (features==null) return this;
         for (ObjectFeature f : features) this.features.insert(def.duplicate().setPlugin(f));
         return this;
     }
-    public MeasurementObject addFeature(ObjectFeature feature, String key) {
+    public ObjectFeatures addFeature(ObjectFeature feature, String key) {
         PluginParameter<ObjectFeature> f = def.duplicate().setPlugin(feature);
         ((TextParameter)f.getAdditionalParameters().get(0)).setValue(key);
         this.features.insert(f);

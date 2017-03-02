@@ -49,7 +49,9 @@ public class SNR extends IntensityMeasurement {
     BoundingBox childrenOffset;
     BoundingBox parentOffsetRev;
     public SNR() {}
-    
+    public SNR(int backgroundStructureIdx) {
+        backgroundObject.setSelectedStructureIdx(backgroundStructureIdx);
+    }
     public SNR setBackgroundObjectStructureIdx(int structureIdx) {
         backgroundObject.setSelectedStructureIdx(structureIdx);
         return this;

@@ -192,7 +192,6 @@ public class Object3D {
         synchronized(voxels) {
             double[] center = new double[3];
             double count = 0;
-            double value;
             if (absoluteLandmark) {
                 for (Voxel v : voxels) {
                     if (image.containsWithOffset(v.x, v.y, v.z)) {

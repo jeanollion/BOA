@@ -39,7 +39,7 @@ import plugins.plugins.measurements.BacteriaFluoMeasurements;
 import plugins.plugins.measurements.BacteriaLineageIndex;
 import plugins.plugins.measurements.BacteriaMeasurementsWoleMC;
 import plugins.plugins.measurements.BacteriaTransMeasurements;
-import plugins.plugins.measurements.MeasurementObject;
+import plugins.plugins.measurements.ObjectFeatures;
 import plugins.plugins.measurements.MutationMeasurements;
 import plugins.plugins.measurements.MutationTrackMeasurements;
 import plugins.plugins.measurements.ObjectInclusionCount;

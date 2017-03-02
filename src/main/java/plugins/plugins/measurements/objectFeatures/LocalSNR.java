@@ -19,6 +19,7 @@ package plugins.plugins.measurements.objectFeatures;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.SiblingStructureParameter;
 import configuration.parameters.StructureParameter;
@@ -44,15 +45,29 @@ import utils.Utils;
  * @author jollion
  */
 public class LocalSNR extends SNR {
-    
+    protected BoundedNumberParameter backgroundProportion = new BoundedNumberParameter("Background proportion", 1, 2, 1, null);
+    @Override public Parameter[] getParameters() {return new Parameter[]{intensity, backgroundObject, backgroundProportion};}
     public LocalSNR() {}
+    
+    public LocalSNR(int backgroundStructureIdx) {
+        super(backgroundStructureIdx);
+    }
     
     @Override public double performMeasurement(final Object3D object, BoundingBox offset) {
         if (core==null) synchronized(this) {setUpOrAddCore(null);}
+        if (offset==null) offset=new BoundingBox(0, 0, 0);
         final Object3D parentObject; 
         if (childrenParentMap==null) parentObject = super.parent.getObject();
         else parentObject=this.childrenParentMap.get(object);
         if (parentObject==null) return 0;
+        
+        // create mask
+        //ImageByte innerMask  = TypeConverter.toByteMask(object.getMask(), null, 1).setName("mask:");
+        //innerMask.addOffset(offset);
+        //innerMask = Filters.binaryMax(innerMask, null, Filters.getNeighborhood(2, 2, innerMask), true, true);
+        
+        // TODO...
+        
         // iterate into parent to get local background values
         final double[] objectCenter = object.getCenter(intensityMap, false);
         objectCenter[0]+=offset.getxMin();
@@ -65,7 +80,8 @@ public class LocalSNR extends SNR {
         //final ImageByte test = new ImageByte("test object: "+object.getLabel(), parentObject.getImageProperties());
         List<Voxel> localBack = new ArrayList<Voxel>();
         int lastSize = -1;
-        while(localBack.size()<2*object.getMask().count() && lastSize<localBack.size()) {
+        double bckProp = backgroundProportion.getValue().doubleValue();
+        while(localBack.size()<bckProp*object.getMask().count() && lastSize<localBack.size()) {
             lastSize = localBack.size();
             final double rad2=rad*rad;
             localBack.clear();
