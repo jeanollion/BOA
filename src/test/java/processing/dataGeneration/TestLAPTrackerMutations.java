@@ -55,14 +55,14 @@ public class TestLAPTrackerMutations {
     static final int mutationIdx = 2;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        final String dbName = "boa_fluo151127_test";
-        final int fieldIdx = 0;
+        final String dbName = "boa_fluo170207_150ms";
+        final int fieldIdx = 98;
         //final String dbName = "boa_fluo160428";
         //final int fieldIdx = 0;
         final int mcIdx = 0;
         TestLAPTrackerMutations t = new TestLAPTrackerMutations();
         
-        t.init(dbName, fieldIdx, mcIdx, 0, 100);
+        t.init(dbName, fieldIdx, mcIdx, 0, 10);
         t.testLAPTracking();
         
         // multithread version testing

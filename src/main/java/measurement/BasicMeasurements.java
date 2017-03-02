@@ -20,7 +20,9 @@ package measurement;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.Voxel;
 import image.BoundingBox;
+import image.BoundingBox.LoopFunction;
 import image.Image;
+import image.ImageInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -92,6 +94,7 @@ public class BasicMeasurements {
             return new double[] {value, Math.sqrt(value2-value*value)};
         } else return null;
     }
+
     /**
      * 
      * @param foreground

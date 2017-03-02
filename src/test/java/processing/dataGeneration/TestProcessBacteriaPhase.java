@@ -149,7 +149,7 @@ public class TestProcessBacteriaPhase {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, 1);
         Image im = i.generateRawImage(1);
-        iwm.addImage(im, i, false, true);
+        iwm.addImage(im, i, 1, false, true);
         iwm.setInteractiveStructure(1);
         iwm.displayAllObjects(im);
     }

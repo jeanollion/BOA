@@ -39,6 +39,7 @@ import com.sun.java.swing.plaf.motif.MotifMenuItemUI;
 import configuration.parameters.FileChooser;
 import configuration.parameters.NumberParameter;
 import core.Processor;
+import core.PythonGateway;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.MorphiumMasterDAO;
@@ -136,7 +137,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     DefaultListModel<String> experimentModel = new DefaultListModel();
     DefaultListModel<String> actionMicroscopyFieldModel;
     DefaultListModel<Selection> selectionModel;
-    
+    PythonGateway pyGtw;
     // shortcuts
     private HashMap<KeyStroke, Action> actionMap = new HashMap<KeyStroke, Action>();
     KeyboardFocusManager kfm;
@@ -163,6 +164,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         deleteMeasurementsCheckBox.setSelected(PropertyUtils.get(PropertyUtils.DELETE_MEASUREMENTS, true));
         logger.debug("del meas: {}, {} isSel: {}", PropertyUtils.get(PropertyUtils.DELETE_MEASUREMENTS, true), PropertyUtils.get(PropertyUtils.DELETE_MEASUREMENTS, "true"), deleteMeasurementsCheckBox.isSelected());
         PluginFactory.findPlugins("plugins.plugins");
+        
+        pyGtw = new PythonGateway();
+        pyGtw.startGateway();
         
         // selections
         selectionModel = new DefaultListModel<Selection>();
@@ -387,6 +391,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (image==null) {
             return; // todo -> actions on all images?
         }
+        ImageWindowManagerFactory.getImageManager().hideAllRois(image, false, true);
         //logger.debug("updateSelectionsDisplay");
         Enumeration<Selection> sels = instance.selectionModel.elements();
         while (sels.hasMoreElements()) {
@@ -399,6 +404,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     
     public void setDBConnection(String dbName, String hostname) {
         long t0 = System.currentTimeMillis();
+        if (hostname==null) hostname = getHostName();
         Morphium m=MorphiumUtils.createMorphium(hostname, 27017, dbName);
         long t1 = System.currentTimeMillis();
         if (m==null) {
@@ -484,6 +490,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     public List<Selection> getSelectedSelections() {
         return selectionList.getSelectedValuesList();
     }
+    
+    public void setSelectedSelection(Selection sel) {
+        this.selectionList.setSelectedValue(sel, false);
+    }
+    
     public List<Selection> getSelections() {
         return Utils.asList(selectionModel);
     }
@@ -558,6 +569,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (returnAllIfNoneSelected && microscopyFieldList.getSelectedIndex()<0) return new ArrayList<String>(Arrays.asList(db.getExperiment().getPositionsAsString()));
         else return microscopyFieldList.getSelectedValuesList();
     }
+    
+    public void setSelectedTab(int tabIndex) {
+        this.tabs.setSelectedIndex(tabIndex);
+        if (reloadObjectTrees && tabs.getSelectedComponent()==dataPanel) {
+            reloadObjectTrees=false;
+            loadObjectTrees();
+        }
+    }
+    
     
     public static GUI getInstance() {
         if (instance==null) new GUI();
@@ -1496,12 +1516,21 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         //GUI.updateRoiDisplayForSelections(null, null);
     }//GEN-LAST:event_selectAllTracksButtonActionPerformed
     private int navigateCount = 0;
-    private void navigateToNextObjects(boolean next, boolean nextPosition) {
+    public void navigateToNextObjects(boolean next, boolean nextPosition, int structureDisplay, boolean setInteractiveStructure) {
         List<Selection> sels = selectionList.getSelectedValuesList();
         if (sels.isEmpty()) ImageWindowManagerFactory.getImageManager().goToNextTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads(), next);
         else {
             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null);
             if (i!=null && i.getParent().getExperiment()!=db.getExperiment()) i=null;
+            if (structureDisplay==-1 && i!=null) {
+                Image im = ImageWindowManagerFactory.getImageManager().getDisplayer().getCurrentImage2();
+                if (im!=null) {
+                    ImageObjectInterfaceKey key = ImageWindowManagerFactory.getImageManager().getImageObjectInterfaceKey(im);
+                    if (key!=null) {
+                        structureDisplay = key.displayedStructureIdx;
+                    }
+                }
+            }
             String position = i==null? null:i.getParent().getPositionName();
             if (i==null || nextPosition) navigateCount=2;
             else {
@@ -1537,9 +1566,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                     nextParentIdx = next ? 0 : parents.size()-1;
                 }
                 int childStructureIdx = i==null? l.get(0).getStructureIdx() : i.getChildStructureIdx();
+                if (structureDisplay<0) structureDisplay = childStructureIdx;
                 if ((nextParentIdx<0 || nextParentIdx>=parents.size())) {
                     logger.warn("current parent {} not found in objects parents: {}", i==null?null : i.getParent(), parents);
-                    navigateToNextObjects(next, true);
+                    navigateToNextObjects(next, true, structureDisplay, setInteractiveStructure);
                 } else {
                     StructureObject nextParent = parents.get(nextParentIdx);
                     logger.debug("next parent: {}", nextParent);
@@ -1547,21 +1577,22 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                     ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
                     ImageObjectInterface nextI = iwm.getImageTrackObjectInterface(track, childStructureIdx);
                     Image im = iwm.getImage(nextI, false);
-                    if (im==null) iwm.addImage(nextI.generateRawImage(childStructureIdx), nextI, false, true);
+                    if (im==null) iwm.addImage(nextI.generateRawImage(structureDisplay), nextI, structureDisplay, false, true);
                     else ImageWindowManagerFactory.getImageManager().setActive(im);
                     navigateCount=0;
-                    if (i==null) { // new image open -> set interactive structure & navigate to next object in newly opened image
+                    if (i==null && setInteractiveStructure) { // new image open -> set interactive structure & navigate to next object in newly opened image
+                        setInteractiveStructureIdx(childStructureIdx);
                         interactiveStructure.setSelectedIndex(childStructureIdx);
                         interactiveStructureActionPerformed(null);
                     }
-                    if (im==null) navigateToNextObjects(next, false);
+                    if (im==null) navigateToNextObjects(next, false, structureDisplay, setInteractiveStructure);
                 }
             }
         }
     }
     private void nextTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextTrackErrorButtonActionPerformed
         if (!checkConnection()) return;
-        navigateToNextObjects(true, false);
+        navigateToNextObjects(true, false, -1, true);
     }//GEN-LAST:event_nextTrackErrorButtonActionPerformed
 
     private void splitObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_splitObjectsButtonActionPerformed
@@ -1579,7 +1610,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void previousTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_previousTrackErrorButtonActionPerformed
         if (!checkConnection()) return;
-        navigateToNextObjects(false, false);
+        navigateToNextObjects(false, false, -1, true);
     }//GEN-LAST:event_previousTrackErrorButtonActionPerformed
 
     private void interactiveStructureActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_interactiveStructureActionPerformed
@@ -2098,18 +2129,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         return getInstance().db;
     }
     
-    public static void setInteractiveStructureIdx(int structureIdx) {
-        if (getInstance()==null) return;
-        logger.debug("set interactive structure: {}", structureIdx);
-        getInstance().interactiveStructure.setSelectedIndex(structureIdx);
-        getInstance().interactiveStructureActionPerformed(null);
+    public void setInteractiveStructureIdx(int structureIdx) {
+        if (interactiveStructure.getItemCount()<=structureIdx) logger.error("Error set interactive structure out of bounds: max: {}, current: {}, asked: {}", interactiveStructure.getItemCount(), interactiveStructure.getSelectedIndex(), structureIdx );
+        interactiveStructure.setSelectedIndex(structureIdx);
+        interactiveStructureActionPerformed(null);
     }
     
-    public static void setTrackStructureIdx(int structureIdx) {
-        if (getInstance()==null) return;
-        logger.debug("set track structure: {}", structureIdx);
-        getInstance().trackStructureJCB.setSelectedIndex(structureIdx);
-        getInstance().trackStructureJCBActionPerformed(null);
+    public void setTrackStructureIdx(int structureIdx) {
+        trackStructureJCB.setSelectedIndex(structureIdx);
+        trackStructureJCBActionPerformed(null);
     }
     
     public static void setNavigationButtonNames(boolean selectionsSelected) {

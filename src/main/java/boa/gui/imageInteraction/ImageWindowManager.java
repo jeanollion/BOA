@@ -82,6 +82,7 @@ public abstract class ImageWindowManager<T, U, V> {
     protected final HashMap<ImageObjectInterfaceKey, ImageObjectInterface> imageObjectInterfaces;
     protected final HashMap<Image, ImageObjectInterfaceKey> imageObjectInterfaceMap;
     protected final HashMap<Image, Boolean> isLabelImage;
+    protected final HashMapGetCreate<StructureObject, List<List<StructureObject>>> trackHeadTrackMap;
     final ImageObjectListener listener;
     final ImageDisplayer<T> displayer;
     int interactiveStructureIdx;
@@ -100,6 +101,7 @@ public abstract class ImageWindowManager<T, U, V> {
         imageObjectInterfaceMap = new HashMap<Image, ImageObjectInterfaceKey>();
         isLabelImage = new HashMap<Image, Boolean>();
         imageObjectInterfaces = new HashMap<ImageObjectInterfaceKey, ImageObjectInterface>();
+        trackHeadTrackMap = new HashMapGetCreate<>(new HashMapGetCreate.ListFactory());
     }
     
     public void flush() {
@@ -113,6 +115,7 @@ public abstract class ImageWindowManager<T, U, V> {
         imageObjectInterfaces.clear();
         imageObjectInterfaceMap.clear();
         isLabelImage.clear();
+        trackHeadTrackMap.clear();
     }
     
     public ImageDisplayer<T> getDisplayer() {return displayer;}
@@ -123,34 +126,46 @@ public abstract class ImageWindowManager<T, U, V> {
         this.interactiveStructureIdx=structureIdx;
     }
     
+    public int getInteractiveStructure() {
+        return interactiveStructureIdx;
+    }
+    
     public Image getImage(ImageObjectInterface i, boolean labelImage) {
-        List<Image> list = Utils.getKeys(imageObjectInterfaceMap, new ImageObjectInterfaceKey(i.parent, i.childStructureIdx, i.isTimeImage()));
+        List<Image> list = Utils.getKeys(imageObjectInterfaceMap, new ImageObjectInterfaceKey(i.parents, i.childStructureIdx, i.isTimeImage()));
         list.removeIf(im -> isLabelImage.get(im)!=labelImage);
+        if (list.isEmpty()) return null;
+        else return list.get(0);
+    }
+    public Image getImage(ImageObjectInterface i, int displayStructureIdx) {
+        List<Image> list = Utils.getKeys(imageObjectInterfaceMap, new ImageObjectInterfaceKey(i.parents, displayStructureIdx, i.isTimeImage()));
+        list.removeIf(im -> isLabelImage.get(im));
         if (list.isEmpty()) return null;
         else return list.get(0);
     }
     
     public abstract void setActive(Image image);
     
-    public void addImage(Image image, ImageObjectInterface i, boolean labelImage, boolean displayImage) {
+    public void addImage(Image image, ImageObjectInterface i, int displayedStructureIdx, boolean labelImage, boolean displayImage) {
         //ImageObjectInterface i = getImageObjectInterface(parent, childStructureIdx, timeImage);
         if (!imageObjectInterfaces.containsValue(i)) throw new RuntimeException("image object interface should be created through the manager");
         //T dispImage = getImage(image);
-        imageObjectInterfaceMap.put(image, new ImageObjectInterfaceKey(i.parent, i.childStructureIdx, i.isTimeImage()));
+        imageObjectInterfaceMap.put(image, new ImageObjectInterfaceKey(i.parents, displayedStructureIdx, i.isTimeImage()));
         isLabelImage.put(image, labelImage);
-        if (displayImage) {
-            displayer.showImage(image);
-            addMouseListener(image);
-            GUI.updateRoiDisplayForSelections(image, i);
-        }
+        if (displayImage) displayImage(image, i);
+    }
+    
+    public void displayImage(Image image, ImageObjectInterface i) {
+        displayer.showImage(image);
+        addMouseListener(image);
+        GUI.updateRoiDisplayForSelections(image, i);
     }
     
     public void resetImageObjectInterface(StructureObject parent, int childStructureIdx) {
-        imageObjectInterfaces.remove(new ImageObjectInterfaceKey(parent, childStructureIdx, false));
+        imageObjectInterfaces.remove(new ImageObjectInterfaceKey(new ArrayList<StructureObject>(1){{add(parent);}}, childStructureIdx, false));
     }
     
     public ImageObjectInterface getImageObjectInterface(StructureObject parent, int childStructureIdx, boolean createIfNotExisting) {
-        ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parent, childStructureIdx, false));
+        ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(new ArrayList<StructureObject>(1){{add(parent);}}, childStructureIdx, false));
         if (i==null && createIfNotExisting) {
             i= new StructureObjectMask(parent, childStructureIdx);
             imageObjectInterfaces.put(i.getKey(), i);
@@ -163,25 +178,40 @@ public abstract class ImageWindowManager<T, U, V> {
             logger.warn("cannot open track image of length == 0" );
             return null;
         }
-        ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parentTrack.get(0), childStructureIdx, true));
+        ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parentTrack, childStructureIdx, true));
         if (i==null) {
             i = new TrackMask(parentTrack, childStructureIdx);
             imageObjectInterfaces.put(i.getKey(), i);
+            trackHeadTrackMap.getAndCreateIfNecessary(parentTrack.get(0)).add(parentTrack);
             i.setGUIMode(GUI.hasInstance());
         } 
         return i;
     }
     
     public ImageObjectInterface getImageTrackObjectInterfaceIfExisting(StructureObject parentTrackHead, int childStructureIdx) {
-        return imageObjectInterfaces.get(new ImageObjectInterfaceKey(parentTrackHead.getTrackHead(), childStructureIdx, true));
+        List<StructureObject> track = getTrack(parentTrackHead);
+        if (track==null) return null;
+        return imageObjectInterfaces.get(new ImageObjectInterfaceKey(track, childStructureIdx, true));
     }
     
-    protected void reloadObjects_(StructureObject parent, int childStructureIdx, boolean track) {
-        if (track) parent=parent.getTrackHead();
-        ImageObjectInterfaceKey key = new ImageObjectInterfaceKey(parent, childStructureIdx, track);
+    private List<StructureObject> getTrack(StructureObject trackHead) {
+        List<List<StructureObject>> tracks = this.trackHeadTrackMap.get(trackHead);
+        if (tracks==null || tracks.isEmpty()) return null;
+        if (tracks.size()>1) {
+            for (List<StructureObject> track : tracks) {
+                for (StructureObject o : track) {
+                    if (o.getTrackHead()!=trackHead) break; // not a real track
+                }
+                return track;
+            }
+        }
+        return null;
+    }
+    protected void reloadObjects__(ImageObjectInterfaceKey key, boolean track) {
+        
         ImageObjectInterface i = imageObjectInterfaces.get(key);
         if (i!=null) {
-            logger.debug("reloading object for parentTrackHead: {} structure: {}", parent, childStructureIdx);
+            logger.debug("reloading object for parentTrackHead: {} structure: {}", key.parent.get(0), key.displayedStructureIdx);
             i.reloadObjects();
             for (Entry<Image, ImageObjectInterfaceKey> e : imageObjectInterfaceMap.entrySet()) if (e.getValue().equals(key)) {
                 //logger.debug("updating image: {}", e.getKey().getName());
@@ -193,6 +223,20 @@ public abstract class ImageWindowManager<T, U, V> {
                 if (!track) getDisplayer().updateImageDisplay(e.getKey());
             }
         }
+    }
+    protected void reloadObjects_(StructureObject parent, int childStructureIdx, boolean track) {
+        if (track) parent=parent.getTrackHead();
+        if (!trackHeadTrackMap.containsKey(parent)) {
+            final StructureObject p = parent;
+            reloadObjects__(new ImageObjectInterfaceKey(new ArrayList<StructureObject>(1){{add(p);}}, childStructureIdx, track), track);
+        } else {
+            for (List<StructureObject> l : trackHeadTrackMap.get(parent)) {
+                reloadObjects__(new ImageObjectInterfaceKey(l, childStructureIdx, track), track);
+            }
+        }
+        
+        
+        
     }
     
     public void reloadObjects(StructureObject parent, int childStructureIdx, boolean wholeTrack) {
@@ -237,13 +281,16 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         ImageObjectInterfaceKey key = imageObjectInterfaceMap.get(image);
         if (key==null) return null;
-        if (key.parent.getStructureIdx()>structureIdx) return null;
+        if (key.parent.get(0).getStructureIdx()>structureIdx) return null;
         ImageObjectInterface i = this.imageObjectInterfaces.get(key.getKey(structureIdx));
         if (i==null) {
-            ImageObjectInterface ref = this.imageObjectInterfaces.get(key);
+            ImageObjectInterface ref = ImageObjectInterfaceKey.getOneElementEqualsNoStructure(key, imageObjectInterfaces);
+            if (ref==null) {
+                logger.error("IOI not found: ref: {} ({}), all IOI: {}", key, key.getKey(-1), imageObjectInterfaces.keySet());
+            }
             // create imageObjectInterface
-            if (ref.isTimeImage()) i = this.getImageTrackObjectInterface(((TrackMask)ref).parentTrack, structureIdx);
-            else i = this.getImageObjectInterface(ref.parent, structureIdx, true);
+            if (ref.isTimeImage()) i = this.getImageTrackObjectInterface(((TrackMask)ref).parents, structureIdx);
+            else i = this.getImageObjectInterface(ref.parents.get(0), structureIdx, true);
             this.imageObjectInterfaces.put(i.getKey(), i);
         }
         return i;
@@ -502,8 +549,8 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         Map<Pair<StructureObject, StructureObject>, V> map = labile ? labileParentTrackHeadTrackRoiMap : parentTrackHeadTrackRoiMap;
         if (canDisplayTrack) { 
-            if (i.getKey().childStructureIdx!=trackHead.getStructureIdx()) {
-                i = getImageTrackObjectInterface(((TrackMask)i).parentTrack, trackHead.getStructureIdx());
+            if (i.getKey().displayedStructureIdx!=trackHead.getStructureIdx()) {
+                i = getImageTrackObjectInterface(((TrackMask)i).parents, trackHead.getStructureIdx());
             }
             if (((TrackMask)i).getParent()==null) logger.error("Track mask parent null!!!");
             else if (((TrackMask)i).getParent().getTrackHead()==null) logger.error("Track mask parent trackHead null!!!");

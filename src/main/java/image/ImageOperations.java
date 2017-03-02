@@ -733,6 +733,24 @@ public class ImageOperations {
         return new double[]{mean, Math.sqrt(values2 - mean * mean), count};
     }
     
+    public static double[] getMeanAndSigmaWithOffset(Image image, ImageMask mask) {
+        if (mask==null) mask = new BlankMask(image);
+        final ImageMask mask2 = mask;
+        double[] vv2c = new double[3];
+        BoundingBox intersect = mask.getBoundingBox().getIntersection(image.getBoundingBox());
+        intersect.loop((int x, int y, int z) -> {
+            if (mask2.insideMaskWithOffset(x, y, z)) {
+                double tmp = image.getPixelWithOffset(x, y, z);
+                vv2c[0] += tmp;
+                vv2c[1] += tmp * tmp;
+                ++vv2c[2];
+            }
+        });
+        double mean = vv2c[0] / vv2c[2];
+        double values2 = vv2c[1] / vv2c[2];
+        return new double[]{mean, Math.sqrt(values2 - mean * mean), vv2c[2]};
+    }
+    
     /**
      * 
      * @param image

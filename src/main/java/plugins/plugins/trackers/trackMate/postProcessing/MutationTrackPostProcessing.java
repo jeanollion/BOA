@@ -100,10 +100,10 @@ public class MutationTrackPostProcessing {
                 //if (trackHeadTrackMap.get(headTrackTail.getTrackHead()).size()>=maxTrackSize) continue;
                 SpotWithinCompartment sHeadTrackTail  = (SpotWithinCompartment)objectSpotMap.get(headTrackTail.getObject());
                 SpotWithinCompartment sHeadTrackPrev = (SpotWithinCompartment)objectSpotMap.get(headTrackTail.getPrevious().getObject());
+                if (!sTailTrackHead.lowQuality && !sHeadTrackTail.lowQuality) continue;
                 double dTailToHeadNext = sHeadTrackTail.squareDistanceTo(sTailTrackNext);
                 double dTailPrevToHead = sHeadTrackPrev.squareDistanceTo(sTailTrackHead);
                 if (dTailToHeadNext>maxSqDist && dTailPrevToHead>maxSqDist) continue;
-                if (!sTailTrackHead.lowQuality && !sHeadTrackTail.lowQuality) continue;
                 if (sTailTrackHead.lowQuality && sHeadTrackTail.lowQuality) { // 2 LQ spots: compare distances
                     if (dTailToHeadNext<dTailPrevToHead) {
                         if (bestCandidate==null || minDist>dTailToHeadNext) {
@@ -131,6 +131,7 @@ public class MutationTrackPostProcessing {
                         bestCandidate = headTrackTail;
                     }
                 }
+                //logger.debug("link Tracks: candidate: d2 t->hn: {}, d2tp->h: {}", dTailToHeadNext, dTailPrevToHead);
             }
             if (bestCandidate!=null) { // link the 2 tracks
                 StructureObject objectToRemove = null;

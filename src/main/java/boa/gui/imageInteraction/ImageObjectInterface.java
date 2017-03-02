@@ -17,6 +17,7 @@
  */
 package boa.gui.imageInteraction;
 
+import boa.gui.GUI;
 import dataStructure.objects.StructureObject;
 import image.BoundingBox;
 import image.Image;
@@ -33,17 +34,22 @@ import utils.Pair;
  * @author jollion
  */
 public abstract class ImageObjectInterface {
-    final protected StructureObject parent;
+    final protected List<StructureObject> parents;
+    final protected int parentStructureIdx;
     final protected int childStructureIdx;
     final protected boolean is2D;
     protected boolean guiMode = true;
-    public ImageObjectInterface(StructureObject parent, int childStructureIdx) {
-        if (parent.getStructureIdx()>childStructureIdx) throw new IllegalArgumentException("Structure: "+childStructureIdx +" cannot be child of structure: "+parent.getStructureIdx());
-        this.parent = parent;
+    public ImageObjectInterface(List<StructureObject> parents, int childStructureIdx) {
+        if (parents.isEmpty()) throw new IllegalArgumentException("Empty parent list");
+        parentStructureIdx = parents.get(0).getStructureIdx();
+        if (parents.size()>1) for (StructureObject p : parents) if (p.getStructureIdx()!=parentStructureIdx) throw new IllegalArgumentException("Parents must be of same structure");
+        if (parentStructureIdx>childStructureIdx) throw new IllegalArgumentException("Structure: "+childStructureIdx +" cannot be child of structure: "+parents.get(0).getStructureIdx());
+        this.parents = parents;
         this.childStructureIdx = childStructureIdx;
-        is2D = this.parent.is2D();
+        is2D = this.parents.get(0).is2D();
     }
-    public StructureObject getParent() {return parent;}
+    public StructureObject getParent() {return parents.get(0);}
+    public List<StructureObject> getParents() {return parents;}
     public abstract ImageObjectInterfaceKey getKey();
     public abstract void reloadObjects();
     public abstract Pair<StructureObject, BoundingBox> getClickedObject(int x, int y, int z);
@@ -56,12 +62,10 @@ public abstract class ImageObjectInterface {
     public int getChildStructureIdx() {return childStructureIdx;}
     public abstract List<Pair<StructureObject, BoundingBox>> getObjects();
     public List<Pair<StructureObject, BoundingBox>> pairWithOffset(Collection<StructureObject> objects) {
-        List<Pair<StructureObject, BoundingBox>> res = new ArrayList<Pair<StructureObject, BoundingBox>>(objects.size());
+        List<Pair<StructureObject, BoundingBox>> res = new ArrayList<>(objects.size());
         for (StructureObject o : objects) {
             BoundingBox b = this.getObjectOffset(o);
-            if (b!=null) {
-                res.add(new Pair(o, b));
-            }
+            if (b!=null) res.add(new Pair(o, b));
         }
         return res;
     }
@@ -74,14 +78,14 @@ public abstract class ImageObjectInterface {
     }
     @Override
     public boolean equals(Object o) {
-        if (o instanceof ImageObjectInterface) return ((ImageObjectInterface)o).parent.equals(parent) && ((ImageObjectInterface)o).childStructureIdx==childStructureIdx;
+        if (o instanceof ImageObjectInterface) return ((ImageObjectInterface)o).parents.equals(parents) && ((ImageObjectInterface)o).childStructureIdx==childStructureIdx;
         else return false;
     }
 
     @Override
     public int hashCode() {
         int hash = 3;
-        hash = 73 * hash + (this.parent != null ? this.parent.hashCode() : 0);
+        hash = 73 * hash + (this.parents != null ? this.parents.hashCode() : 0);
         hash = 73 * hash + this.childStructureIdx;
         return hash;
     }

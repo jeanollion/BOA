@@ -41,21 +41,24 @@ public class StructureObjectMask extends ImageObjectInterface {
 
     BoundingBox[] offsets;
     List<StructureObject> objects;
+    final StructureObject parent;
     BoundingBox additionalOffset;
-
+    
     public StructureObjectMask(StructureObject parent, int childStructureIdx) {
-        super(parent, childStructureIdx);
+        super(new ArrayList<StructureObject>(1){{add(parent);}}, childStructureIdx);
+        this.parent= parent;
         this.additionalOffset = new BoundingBox(0, 0, 0);
     }
 
     public StructureObjectMask(StructureObject parent, int childStructureIdx, BoundingBox additionalOffset) {
-        super(parent, childStructureIdx);
+        super(new ArrayList<StructureObject>(1){{add(parent);}}, childStructureIdx);
+        this.parent= parent;
         this.additionalOffset = additionalOffset;
     }
 
     @Override
     public ImageObjectInterfaceKey getKey() {
-        return new ImageObjectInterfaceKey(parent, childStructureIdx, false);
+        return new ImageObjectInterfaceKey(parents, childStructureIdx, false);
     }
 
     public BoundingBox[] getOffsets() {
@@ -64,13 +67,12 @@ public class StructureObjectMask extends ImageObjectInterface {
     }
     
     public void reloadObjects() {
-        if (childStructureIdx == parent.getStructureIdx()) {
-            objects = new ArrayList<StructureObject>(1);
-            objects.add(parent);
+        if (childStructureIdx == parentStructureIdx) {
+            objects = this.parents;
             offsets = new BoundingBox[1];
             offsets[0] = parent.getRelativeBoundingBox(parent).translate(additionalOffset);
         } else {
-            objects = parent.getChildren(childStructureIdx);
+            objects = parents.get(0).getChildren(childStructureIdx);
             offsets = new BoundingBox[objects.size()];
             for (int i = 0; i < offsets.length; ++i) {
                 offsets[i] = objects.get(i).getRelativeBoundingBox(parent).translate(additionalOffset);

@@ -63,7 +63,7 @@ public class SimpleIntensityMeasurement implements Measurement {
         int structureIdx = structureObject.getSelectedStructureIdx();
         ArrayList<MeasurementKey> res = new ArrayList<>();
         res.add(new MeasurementKeyObject(prefix.getValue()+"Mean", structureIdx));
-        res.add(new MeasurementKeyObject(prefix.getValue()+"Sum", structureIdx));
+        res.add(new MeasurementKeyObject(prefix.getValue()+"Sigma", structureIdx));
         //res.add(new MeasurementKeyObject("SigmaIntensity", structureIdx));
         return res;
     }
@@ -71,9 +71,9 @@ public class SimpleIntensityMeasurement implements Measurement {
     @Override public void performMeasurement(StructureObject object) {
         StructureObject parent = object.isRoot() ? object : object.getParent();
         Image image = parent.getRawImage(structureImage.getSelectedStructureIdx());
-        double mean = BasicMeasurements.getMeanValue(object.getObject(), image, true);
-        object.getMeasurements().setValue(prefix.getValue()+"Mean", mean);
-        object.getMeasurements().setValue(prefix.getValue()+"Sum", mean * object.getObject().getSize());
+        double[] meanSd = BasicMeasurements.getMeanSdValue(object.getObject().getVoxels(), image, true);
+        object.getMeasurements().setValue(prefix.getValue()+"Mean", meanSd[0]);
+        object.getMeasurements().setValue(prefix.getValue()+"Sigma", meanSd[1]);
     }
 
     @Override public Parameter[] getParameters() {

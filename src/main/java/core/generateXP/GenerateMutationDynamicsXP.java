@@ -44,6 +44,7 @@ import plugins.plugins.measurements.MutationTrackMeasurements;
 import plugins.plugins.measurements.ObjectInclusionCount;
 import plugins.plugins.measurements.RelativePosition;
 import plugins.plugins.measurements.SimpleIntensityMeasurement;
+import plugins.plugins.measurements.SimpleIntensityMeasurementStructureExclusion;
 import plugins.plugins.preFilter.BandPass;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.preFilter.Median;
@@ -155,14 +156,21 @@ public class GenerateMutationDynamicsXP {
         mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessor()));
         //bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo()).setCostParameters(0.1, 0.5)));
         bacteria.setProcessingScheme(new SegmentThenTrack(new BacteriaFluo(), new BacteriaClosedMicrochannelTrackerLocalCorrections().setCostParameters(0.1, 0.5)));
-        mutation.setProcessingScheme(new SegmentAndTrack(new LAPTracker().setCompartimentStructure(1).setSegmenter(new MutationSegmenter(0.6, 0.4, 0.4).setScale(2.5)).setSpotQualityThreshold(1.2).setLinkingMaxDistance(0.75, 3).setTrackLength(10, 0)).addPreFilters(new BandPass(0, 10, 2, 5)));
+        mutation.setProcessingScheme(new SegmentAndTrack(
+                new LAPTracker().setCompartimentStructure(1).setSegmenter(
+                        new MutationSegmenter(0.6, 0.4, 0.4).setScale(2.5)
+                ).setSpotQualityThreshold(1).setLinkingMaxDistance(0.4, 0.8).setGapParameters(0.4, 0.1, 2).setTrackLength(10, 0)
+        ).addPreFilters(new BandPass(0, 10, 2, 5)));
         
         xp.addMeasurement(new SimpleTrackMeasurements(1));
         xp.addMeasurement(new SimpleTrackMeasurements(2));
         xp.addMeasurement(new InclusionObjectIdx(2, 1).setMeasurementName("BacteriaIdx"));
         xp.addMeasurement(new ObjectInclusionCount(1, 2, 10).setMeasurementName("MutationCount"));
-        xp.addMeasurement(new SimpleIntensityMeasurement(1, 2));
-        xp.addMeasurement(new SimpleIntensityMeasurement(2, 2));
+        xp.addMeasurement(new SimpleIntensityMeasurementStructureExclusion(0, 2, 1).setPrefix("YfpBactExcl").setRadii(2, 0));
+        xp.addMeasurement(new SimpleIntensityMeasurement(1, 2).setPrefix("Yfp"));
+        xp.addMeasurement(new SimpleIntensityMeasurement(1, 1).setPrefix("Rfp"));
+        xp.addMeasurement(new SimpleIntensityMeasurementStructureExclusion(1, 2, 2).setPrefix("YfpMutExcl").setRadii(2, 2));
+        xp.addMeasurement(new SimpleIntensityMeasurement(2, 2).setPrefix("Yfp"));
         xp.addMeasurement(new RelativePosition(2, 1, true, 0).setMeasurementName("CoordMassToBacteriaMass"));
         xp.addMeasurement(new RelativePosition(2, 1, true, 1).setMeasurementName("CoordMassToBacteriaGeom"));
         xp.addMeasurement(new RelativePosition(2, 0, true, 2).setMeasurementName("CoordMassToMC"));

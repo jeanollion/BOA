@@ -287,6 +287,11 @@ public class StructureObjectUtils {
         return res;
     }
     
+    public static Set<String> getPositions(Collection<StructureObject> l) {
+        Set<String> res = new HashSet<>();
+        for (StructureObject o : l) res.add(o.getPositionName());
+        return res;
+    }
     
     public static List<StructureObject> getTrack(StructureObject trackHead, boolean extend) {
         if (trackHead==null) return Collections.EMPTY_LIST;

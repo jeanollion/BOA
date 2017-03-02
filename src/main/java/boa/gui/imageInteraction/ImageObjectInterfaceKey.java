@@ -18,6 +18,8 @@
 package boa.gui.imageInteraction;
 
 import dataStructure.objects.StructureObject;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -25,13 +27,13 @@ import dataStructure.objects.StructureObject;
  */
 public class ImageObjectInterfaceKey {
     public final boolean timeImage;
-    public final StructureObject parent;
-    public final int childStructureIdx;
+    public final List<StructureObject> parent;
+    public final int displayedStructureIdx;
 
-    public ImageObjectInterfaceKey(StructureObject parent, int childStructureIdx, boolean timeImage) {
+    public ImageObjectInterfaceKey(List<StructureObject> parent, int displayedStructureIdx, boolean timeImage) {
         this.timeImage = timeImage;
         this.parent = parent;
-        this.childStructureIdx = childStructureIdx;
+        this.displayedStructureIdx = displayedStructureIdx;
     }
     
     public ImageObjectInterfaceKey getKey(int childStructureIdx) {
@@ -43,10 +45,11 @@ public class ImageObjectInterfaceKey {
         int hash = 7;
         hash = 71 * hash + (this.timeImage ? 1 : 0);
         hash = 71 * hash + (this.parent != null ? this.parent.hashCode() : 0);
-        hash = 71 * hash + this.childStructureIdx;
+        hash = 71 * hash + this.displayedStructureIdx;
         return hash;
     }
 
+    
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
@@ -59,10 +62,37 @@ public class ImageObjectInterfaceKey {
         if (this.timeImage != other.timeImage) {
             return false;
         }
-        if (this.parent != other.parent && (this.parent == null || !this.parent.getId().equals(other.parent.getId()))) {
+        if (this.parent != other.parent && (this.parent == null || !this.parent.equals(other.parent))) {
             return false;
         }
-        return (other.childStructureIdx<0 || childStructureIdx<0 || this.childStructureIdx == other.childStructureIdx); // key with structureIdx==-1 equals to all keys
+        return this.displayedStructureIdx == other.displayedStructureIdx; 
     }
     
+    @Override
+    public String toString() {
+        return parent.toString()+"/S="+displayedStructureIdx+"/Track="+timeImage;
+    }
+    
+    public boolean equalsNoStructure(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final ImageObjectInterfaceKey other = (ImageObjectInterfaceKey) obj;
+        if (this.timeImage != other.timeImage) {
+            return false;
+        }
+        if (this.parent != other.parent && (this.parent == null || !this.parent.equals(other.parent))) {
+            return false;
+        }
+        return true;
+    }
+    public static <T> T getOneElementEqualsNoStructure(ImageObjectInterfaceKey key, Map<ImageObjectInterfaceKey, T> map) {
+        for (ImageObjectInterfaceKey k : map.keySet()) {
+            if (k.equalsNoStructure(key)) return map.get(k);
+        }
+        return null;
+    }
 }

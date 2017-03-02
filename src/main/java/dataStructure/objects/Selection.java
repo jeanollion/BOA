@@ -58,7 +58,6 @@ public class Selection implements Comparable<Selection> {
     @Transient Map<String, Set<StructureObject>> retrievedElements= new HashMap<>();
     @Transient Map<String, Set<StructureObject>> retrievedTrackHeads = new HashMap<>();
     @Transient MasterDAO mDAO;
-    @Transient boolean elementsTypeChecked=false;
     
     public Selection(String name, MasterDAO mDAO) {
         this.id=name;
@@ -119,7 +118,7 @@ public class Selection implements Comparable<Selection> {
     }
     
     public Set<StructureObject> getAllElements() {
-        Set<StructureObject> res = new HashSet<StructureObject>();
+        Set<StructureObject> res = new HashSet<>();
         for (String f : elements.keySet()) res.addAll(getElements(f));
         return res;
     }
@@ -136,6 +135,14 @@ public class Selection implements Comparable<Selection> {
         return res;
     }
     
+    public Set<StructureObject> getElements(Collection<String> positions) {
+        Set<StructureObject> res = new HashSet<>();
+        positions = new ArrayList<>(positions);
+        positions.retainAll(elements.keySet());
+        for (String f : positions) res.addAll(getElements(f));
+        return res;
+    }
+    
     public Set<StructureObject> getTrackHeads(String fieldName) {
         Set<StructureObject> res = this.retrievedTrackHeads.get(fieldName);
         if (res==null) {
@@ -148,6 +155,15 @@ public class Selection implements Comparable<Selection> {
         }
         return res;
     }
+    
+    public Set<StructureObject> getTrackHeads(Collection<String> positions) {
+        Set<StructureObject> res = new HashSet<>();
+        positions = new ArrayList<>(positions);
+        positions.retainAll(elements.keySet());
+        for (String p : positions) res.addAll(getTrackHeads(p));
+        return res;
+    }
+    
     protected Collection<String> get(String fieldName, boolean createIfNull) {
         Object indiciesList = elements.get(fieldName);
         if (indiciesList==null) {
@@ -173,14 +189,15 @@ public class Selection implements Comparable<Selection> {
         return (Collection<String>)indiciesList;
     }
     protected synchronized Set<StructureObject> retrieveElements(String fieldName) {
-        if (fieldName==null) throw new IllegalArgumentException("FieldName cannot be null");
+        if (fieldName==null) throw new IllegalArgumentException("Position cannot be null");
         Collection<String> indiciesList = get(fieldName, false);
         if (indiciesList==null) {
-            return null;
+            logger.debug("position: {} absent from sel: {}", fieldName, id);
+            return Collections.EMPTY_SET;
         }
         ObjectDAO dao = mDAO.getDao(fieldName);
         int[] pathToRoot = mDAO.getExperiment().getPathToRoot(structureIdx);
-        Set<StructureObject> res = new HashSet<StructureObject>(indiciesList.size());
+        Set<StructureObject> res = new HashSet<>(indiciesList.size());
         retrievedElements.put(fieldName, res);
         retrievedTrackHeads.remove(fieldName);
         List<StructureObject> roots = dao.getRoots();
@@ -197,7 +214,7 @@ public class Selection implements Comparable<Selection> {
             else if (notFound!=null) notFound.add(indicies); 
         }
         long t1 = System.currentTimeMillis();
-        logger.debug("Selection: {}, #{} elements retrieved in: {}", this.id, res.size(), t1-t0);
+        //logger.debug("Selection: {}, #{} elements retrieved in: {}", this.id, res.size(), t1-t0);
         if (notFound!=null && !notFound.isEmpty()) logger.warn("Selection: {} objects not found: {}", getName(), notFound);
         return res;
     }
@@ -347,4 +364,13 @@ public class Selection implements Comparable<Selection> {
     // morphium
     public Selection() {}
 
+    public static Selection generateSelection(String name, int structureIdx, Map<String, List<String>> elements) {
+        Selection res= new Selection();
+        if (name==null) name="current";
+        res.id=name;
+        res.structureIdx=structureIdx;
+        res.elements=elements;
+        return res;
+    }
+    
 }

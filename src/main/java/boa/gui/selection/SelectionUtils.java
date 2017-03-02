@@ -30,6 +30,7 @@ import dataStructure.objects.Selection;
 import dataStructure.objects.SelectionDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
+import image.BoundingBox;
 import image.Image;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
@@ -133,12 +134,14 @@ public class SelectionUtils {
         return res;
     }
     
+    
+    
     public static void displayObjects(Selection s, ImageObjectInterface i) {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (i==null) i = iwm.getCurrentImageObjectInterface();
         if (i!=null) {
-            String fieldName = i.getParent().getPositionName();
-            Set<StructureObject> objects = s.getElements(fieldName);
+            Set<StructureObject> objects = s.getElements(StructureObjectUtils.getPositions(i.getParents()));
+            //logger.debug("disp objects: #positions: {}, #objects: {}", StructureObjectUtils.getPositions(i.getParents()).size(), objects.size() );
             if (objects!=null) {
                 iwm.displayObjects(null, i.pairWithOffset(objects), s.getColor(true), false, false);
             }
@@ -149,8 +152,7 @@ public class SelectionUtils {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (i==null) i = iwm.getCurrentImageObjectInterface();
         if (i!=null) {
-            String fieldName = i.getParent().getPositionName();
-            Set<StructureObject> objects = s.getElements(fieldName);
+            Set<StructureObject> objects = s.getElements(StructureObjectUtils.getPositions(i.getParents()));
             if (objects!=null) {
                 iwm.hideObjects(null, i.pairWithOffset(objects), false);
             }
@@ -160,8 +162,7 @@ public class SelectionUtils {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (i==null) i = iwm.getCurrentImageObjectInterface();
         if (i!=null) {
-            String fieldName = i.getParent().getPositionName();
-            Set<StructureObject> tracks = s.getTrackHeads(fieldName);
+            Set<StructureObject> tracks = s.getTrackHeads(StructureObjectUtils.getPositions(i.getParents()));
             if (tracks==null) return;
             for (StructureObject trackHead : tracks) {
                 List<StructureObject> track = StructureObjectUtils.getTrack(trackHead, true);
@@ -173,11 +174,22 @@ public class SelectionUtils {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (i==null)  i = iwm.getCurrentImageObjectInterface();
         if (i!=null) {
-            String fieldName = i.getParent().getPositionName();
-            Set<StructureObject> tracks = s.getTrackHeads(fieldName);
+            Set<StructureObject> tracks = s.getTrackHeads(StructureObjectUtils.getPositions(i.getParents()));
             if (tracks==null) return;
             iwm.hideTracks(null, i, tracks, false);
         }
+    }
+    
+    public static void displaySelection(Selection s, int parentStructureIdx, int displayStructureIdx) {
+        // get all parent & create pseudo-track
+        HashSet<StructureObject> parents = new HashSet<>();
+        if (parentStructureIdx>=-1) for (StructureObject o : s.getAllElements()) parents.add(o.getParent(parentStructureIdx));
+        else for (StructureObject o : s.getAllElements()) parents.add(o.getParent());
+        List<StructureObject> parentList = new ArrayList<>(parents);
+        Collections.sort(parentList);
+        
+        ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(parentList, s.getStructureIdx());
+        ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(displayStructureIdx), i, displayStructureIdx, false, true);
     }
         
     public static void setMouseAdapter(final JList list) {
@@ -208,8 +220,17 @@ public class SelectionUtils {
             if (s.isDisplayingTracks()) dispTracks++;
             if (s.isHighlightingTracks()) highTracks++;
         }
-        final JCheckBoxMenuItem displayObjects = new JCheckBoxMenuItem("Display Objects");
         final SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
+        if (selectedValues.size()==1) {
+            final JCheckBoxMenuItem showImage = new JCheckBoxMenuItem("Show Selection in Image");
+            showImage.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    SelectionUtils.displaySelection(selectedValues.get(0), -2, ImageWindowManagerFactory.getImageManager().getInteractiveStructure());
+                }
+            });
+            menu.add(showImage);
+        }
+        final JCheckBoxMenuItem displayObjects = new JCheckBoxMenuItem("Display Objects");
         displayObjects.setSelected(dispObjects==selectedValues.size());
         displayObjects.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {

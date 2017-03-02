@@ -53,13 +53,13 @@ public class TestTracker {
         //String dbName = "boa_phase150616wt";
         //String dbName = "boa_phase141107wt";
         String dbName = "boa_fluo170207_150ms";
-        int fIdx = 0;
+        int fIdx = 98;
         int mcIdx =0;
         int structureIdx = 2;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 100);
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 10);
         
         //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 37, 38); // 91 to test rearrange objects 
         
@@ -96,7 +96,7 @@ public class TestTracker {
         
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, structureIdx);
         Image im = i.generateRawImage(structureIdx);
-        iwm.addImage(im, i, false, true);
+        iwm.addImage(im, i, structureIdx, false, true);
         iwm.setInteractiveStructure(structureIdx);
         iwm.displayAllObjects(im);
         iwm.displayAllTracks(im);
@@ -136,7 +136,7 @@ public class TestTracker {
             ImageObjectInterface i = iwm.getImageTrackObjectInterface(pt, structureIdx);
             Image im = i.generateRawImage(structureIdx);
             im.setName(name);
-            iwm.addImage(im, i, false, true);
+            iwm.addImage(im, i, structureIdx, false, true);
             iwm.setInteractiveStructure(structureIdx);
             iwm.displayAllObjects(im);
             iwm.displayAllTracks(im);

@@ -71,6 +71,7 @@ public class MorphiumSelectionDAO implements SelectionDAO {
     }
     
     @Override public synchronized void store(Selection s) {
+        s.setMasterDAO(masterDAO);
         long t0 = System.currentTimeMillis();
         masterDAO.m.storeNoCache(s, collectionName, null);
         long t1 = System.currentTimeMillis();

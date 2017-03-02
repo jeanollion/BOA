@@ -78,9 +78,15 @@ public class LAPTracker implements TrackerSegmenter {
         this.compartirmentStructure.setSelectedStructureIdx(compartimentStructureIdx);
         return this;
     }
-    public LAPTracker setLinkingMaxDistance(double maxDist, double maxDistGapClosing) {
+    public LAPTracker setLinkingMaxDistance(double maxDist, double alternativeLinking) {
         maxLinkingDistance.setValue(maxDist);
-        maxLinkingDistanceGC.setValue(maxDistGapClosing);
+        alternativeDistance.setValue(alternativeLinking);
+        return this;
+    }
+    public LAPTracker setGapParameters(double maxDistGapClosing, double gapPenalty, int maxFrameGap) {
+        this.maxLinkingDistanceGC.setValue(maxDistGapClosing);
+        this.gapPenalty.setValue(gapPenalty);
+        this.maxGap.setValue(maxFrameGap);
         return this;
     }
     public LAPTracker setSpotQualityThreshold(double threshold) {

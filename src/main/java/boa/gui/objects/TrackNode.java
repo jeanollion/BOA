@@ -267,9 +267,9 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                             //int[] path = trackNode.trackHead.getExperiment().getPathToStructure(trackNode.trackHead.getStructureIdx(), getStructureIdx(ae.getActionCommand(), openRaw));
                             //trackNode.loadAllTrackObjects(path);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(getTrack(), structureIdx);
-                            if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true, true);
-                            GUI.setInteractiveStructureIdx(structureIdx);
-                            GUI.setTrackStructureIdx(structureIdx);
+                            if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, i.getChildStructureIdx(), true, true);
+                            GUI.getInstance().setInteractiveStructureIdx(structureIdx);
+                            GUI.getInstance().setTrackStructureIdx(structureIdx);
                             /* for the 1st
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, trackHead.getStructureIdx());
                             ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, true);
@@ -290,9 +290,9 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                             //trackNode.loadAllTrackObjects(path);
                             int structureIdx = getStructureIdx(ae.getActionCommand(), openRaw);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(getTrack(), structureIdx);
-                            if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(structureIdx), i, false, true);
-                            GUI.setInteractiveStructureIdx(structureIdx);
-                            GUI.setTrackStructureIdx(structureIdx);
+                            if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(structureIdx), i, structureIdx, false, true);
+                            GUI.getInstance().setInteractiveStructureIdx(structureIdx);
+                            GUI.getInstance().setTrackStructureIdx(structureIdx);
                         }
                     }
                 );

@@ -308,7 +308,7 @@ public class ManualCorrection {
             logger.warn("Current image is not registered");
             return;
         }
-        int structureIdx = key.childStructureIdx;
+        int structureIdx = key.displayedStructureIdx;
         int parentStructureIdx = db.getExperiment().getStructure(structureIdx).getParentStructure();
         ManualSegmenter segmenter = db.getExperiment().getStructure(structureIdx).getManualSegmenter();
         

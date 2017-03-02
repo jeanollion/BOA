@@ -32,6 +32,7 @@ import image.ImageOperations;
 import static image.ImageOperations.pasteImage;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -53,12 +54,10 @@ public class TrackMask extends ImageObjectInterface {
     static final int updateImageFrequency=10;
     static final int intervalX=0; //5
     static final float displayMinMaxFraction = 0.9f;
-    List<StructureObject> parentTrack;
     
     public TrackMask(List<StructureObject> parentTrack, int childStructureIdx) {
-        super(parentTrack.get(0), childStructureIdx);
+        super(parentTrack, childStructureIdx);
         //logger.debug("creating track mask from head: {}, size: {}", parentTrack.get(0), parentTrack.size());
-        this.parentTrack=parentTrack;
         trackOffset = new BoundingBox[parentTrack.size()];
         trackObjects = new StructureObjectMask[parentTrack.size()];
         int maxY=0, maxZ=0;
@@ -87,13 +86,14 @@ public class TrackMask extends ImageObjectInterface {
             });
             t.start();
         } else for (StructureObjectMask m : trackObjects) m.getObjects();
-        
-        
     }
     
+    @Override public List<StructureObject> getParents() {
+        return this.parents;
+    }
     
     @Override public ImageObjectInterfaceKey getKey() {
-        return new ImageObjectInterfaceKey(parent, childStructureIdx, true);
+        return new ImageObjectInterfaceKey(parents, childStructureIdx, true);
     }
     
     @Override
@@ -131,20 +131,36 @@ public class TrackMask extends ImageObjectInterface {
     @Override
     public BoundingBox getObjectOffset(StructureObject object) {
         if (object==null) return null;
-        int i = getTrackIndex(object);
-        if (i<0) return null;
-        if (i>=trackObjects.length) return null;
-        return trackObjects[i].getObjectOffset(object);
+        
+        //if (object.getFrame()<parent.getFrame()) logger.error("Object not in track : Object: {} parent: {}", object, parent);
+        int idx = object.getFrame()-parents.get(0).getFrame();
+        if (idx<trackObjects.length && idx>0 && parents.get(idx).getFrame()==object.getFrame()) return trackObjects[idx].getObjectOffset(object);
+        else { // case of uncontinuous tracks -> search whole track
+            idx = Collections.binarySearch(parents, object, (o1, o2) -> Integer.compare(o1.getFrame(), o2.getFrame()));
+            if (idx<0) return null;
+            BoundingBox res =  trackObjects[idx].getObjectOffset(object);
+            if (res!=null) return res;
+            int idx2 = idx-1;
+            while (idx2>=0 && parents.get(idx2).getFrame()==object.getFrame()) {
+                res =  trackObjects[idx2].getObjectOffset(object);
+                if (res!=null) return res;
+                --idx2;
+            }
+            idx2=idx+1;
+            while (idx2<trackObjects.length && parents.get(idx2).getFrame()==object.getFrame()) {
+                res=  trackObjects[idx2].getObjectOffset(object);
+                if (res!=null) return res;
+                ++idx2;
+            }
+        } 
+        return null;
     }
     
-    private int getTrackIndex(StructureObject object) {
-        //if (object.getFrame()<parent.getFrame()) logger.error("Object not in track : Object: {} parent: {}", object, parent);
-        return object.getFrame()-parent.getFrame();
-    }
+
     
     public void trimTrack(List<Pair<StructureObject, BoundingBox>> track) {
-        int tpMin = parent.getFrame();
-        int tpMax = parentTrack.get(parentTrack.size()-1).getFrame();
+        int tpMin = parents.get(0).getFrame();
+        int tpMax = parents.get(parents.size()-1).getFrame();
         track.removeIf(o -> o.key.getFrame()<tpMin || o.key.getFrame()>tpMax);
     }
 
@@ -158,7 +174,7 @@ public class TrackMask extends ImageObjectInterface {
         String structureName;
         if (GUI.hasInstance() && GUI.getDBConnection()!=null && GUI.getDBConnection().getExperiment()!=null) structureName = GUI.getDBConnection().getExperiment().getStructure(childStructureIdx).getName(); 
         else structureName= childStructureIdx+"";
-        final ImageInteger displayImage = ImageInteger.createEmptyLabelImage("Track: Parent:"+parent+" Segmented Image of: "+structureName, maxLabel, new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, this.maxParentZ).setCalibration(parent.getMaskProperties().getScaleXY(), parent.getMaskProperties().getScaleZ()));
+        final ImageInteger displayImage = ImageInteger.createEmptyLabelImage("Track: Parent:"+parents+" Segmented Image of: "+structureName, maxLabel, new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, this.maxParentZ).setCalibration(parents.get(0).getMaskProperties().getScaleXY(), parents.get(0).getMaskProperties().getScaleZ()));
         draw(displayImage);
         return displayImage;
     }
@@ -196,7 +212,7 @@ public class TrackMask extends ImageObjectInterface {
         String structureName;
         if (GUI.hasInstance() && GUI.getDBConnection()!=null && GUI.getDBConnection().getExperiment()!=null) structureName = GUI.getDBConnection().getExperiment().getStructure(structureIdx).getName(); 
         else structureName= structureIdx+"";
-        final Image displayImage =  Image.createEmptyImage("Track: Parent:"+parent+" Raw Image of"+structureName, image0, new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, Math.max(image0.getSizeZ(), this.maxParentZ)).setCalibration(parent.getMaskProperties().getScaleXY(), parent.getMaskProperties().getScaleZ()));
+        final Image displayImage =  Image.createEmptyImage("Track: Parent:"+parents+" Raw Image of"+structureName, image0, new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, Math.max(image0.getSizeZ(), this.maxParentZ)).setCalibration(parents.get(0).getMaskProperties().getScaleXY(), parents.get(0).getMaskProperties().getScaleZ()));
         pasteImage(image0, displayImage, trackOffset[0]);
         final double[] minAndMax = image0.getMinAndMax(null);
         // draw image in another thread..
@@ -230,8 +246,8 @@ public class TrackMask extends ImageObjectInterface {
     }
     
     public boolean containsTrack(StructureObject trackHead) {
-        if (childStructureIdx==parent.getStructureIdx()) return trackHead.getStructureIdx()==this.childStructureIdx && trackHead.getTrackHeadId().equals(this.parent.getId());
-        else return trackHead.getStructureIdx()==this.childStructureIdx && trackHead.getParentTrackHeadId().equals(this.parent.getId());
+        if (childStructureIdx==parentStructureIdx) return trackHead.getStructureIdx()==this.childStructureIdx && trackHead.getTrackHeadId().equals(this.parents.get(0).getId());
+        else return trackHead.getStructureIdx()==this.childStructureIdx && trackHead.getParentTrackHeadId().equals(this.parents.get(0).getId());
     }
 
     @Override
