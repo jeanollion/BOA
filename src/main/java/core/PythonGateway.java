@@ -39,8 +39,10 @@ public class PythonGateway {
     }
     
     public void startGateway() {
+        try {
         server = new GatewayServer(this);
         server.start();
+        } catch(Exception e) {}
     }
     public void setExperimentToGUI(String xpName) {
         GUI.getInstance().setDBConnection(xpName, null);

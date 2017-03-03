@@ -20,6 +20,7 @@ package processing.dataGeneration;
 import static TestUtils.Utils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
+import configuration.parameters.PostFilterSequence;
 import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
@@ -39,6 +40,7 @@ import image.ImageOperations;
 import static image.ImageOperations.pasteImage;
 import java.util.ArrayList;
 import java.util.HashSet;
+import plugins.ObjectFeature;
 import plugins.PluginFactory;
 import plugins.plugins.measurements.objectFeatures.LocalSNR;
 import plugins.plugins.measurements.objectFeatures.SNR;
@@ -64,12 +66,12 @@ public class TestProcessMutations {
         new ImageJ();
         String dbName = "boa_fluo170207_150ms";
         //final String dbName = "boa_fluo151127_test";
-        int fIdx = 0;
+        int fIdx = 103;
         int mcIdx =0;
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
-        t.testSegMutationsFromXP(fIdx, mcIdx, true, 0,100);
+        t.testSegMutationsFromXP(fIdx, mcIdx, true, 0,10);
     }
     
     public void testSegMutation(StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
@@ -79,19 +81,26 @@ public class TestProcessMutations {
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
         //MutationSegmenterScaleSpace seg = new MutationSegmenterScaleSpace().setIntensityThreshold(90);
         MutationSegmenter.debug=true;
-        MutationSegmenter seg = new MutationSegmenter().setIntensityThreshold(0.4).setThresholdSeeds(0.6).setThresholdPropagation(0.4).setSubtractBackgroundScale(6).setScale(2.5);
+        //LocalSNR.debug=true;
+        MutationSegmenter seg = new MutationSegmenter().setIntensityThreshold(0.45).setThresholdSeeds(0.7).setThresholdPropagation(0.5).setSubtractBackgroundScale(6).setScale(2.5);
         //seg.getPostFilters().removeAllElements();
-        //seg.getPostFilters().add(new FeatureFilter(new LocalSNR().setBackgroundObjectStructureIdx(1), 0.75, true, true));
+        
         seg.intermediateImages=intermediateImages;
-        ObjectPopulation popPF = seg.runSegmenter(input, 2, parent);
+        ObjectPopulation pop = seg.runSegmenter(input, 2, parent);
+        
+        PostFilterSequence pf = new PostFilterSequence("pf"); 
+        pf.add(new FeatureFilter(new LocalSNR().setLocalBackgroundRadius(6).setBackgroundObjectStructureIdx(1).setRadii(2, 2), 1, true, true));
+        //pf.add(new FeatureFilter(new SNR().setBackgroundObjectStructureIdx(1).setRadii(2, 2), 1, true, true));
+        //ObjectPopulation popPF = pf.filter(pop.duplicate(), 2, parent);
+        
         
         //ObjectPopulation pop = MutationSegmenterScaleSpace.runPlane(input.getZPlane(0), parentMask, 5, 4, 0.75, intermediateImages);
         if (parentMask_!=null) parentMask_.add(parentMask);
         if (input_!=null) input_.add(input);
-        if (outputLabel!=null) outputLabel.add(popPF.getLabelMap());
-        //if (outputLabel!=null) outputLabel.add(beforePF);
+        if (outputLabel!=null) outputLabel.add(pop.getLabelMap().setName("before PF"));
+        //if (outputLabel!=null) outputLabel.add(popPF.getLabelMap().setName("after PF"));
         if (intermediateImages_!=null) {
-            //intermediateImages.add(beforePF);
+            intermediateImages.add(pop.getLabelMap().setName("before PF"));
             intermediateImages.add(parent.getObjectPopulation(1).getLabelMap().setName("bacteria"));
             intermediateImages_.add(intermediateImages);
         }

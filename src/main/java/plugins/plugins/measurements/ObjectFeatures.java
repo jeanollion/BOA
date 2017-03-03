@@ -43,7 +43,6 @@ public class ObjectFeatures implements Measurement {
     SimpleListParameter<PluginParameter<ObjectFeature>> features = new SimpleListParameter<PluginParameter<ObjectFeature>>("Features", 0, def);
     Parameter[] parameters = new Parameter[]{structure, features};
     public ObjectFeatures() {
-        // 
         def.addListener(new ParameterListener() {
             public void fire(Parameter sourceParameter) {
                 PluginParameter<ObjectFeature> s = (PluginParameter<ObjectFeature>)sourceParameter;
@@ -85,6 +84,7 @@ public class ObjectFeatures implements Measurement {
 
     public void performMeasurement(StructureObject object) {
         int structureIdx = structure.getSelectedIndex();
+        //logger.debug("performing features on object: {} (children: {})", object, object.getChildren(structureIdx).size());
         ArrayList<ObjectFeatureCore> cores = new ArrayList<ObjectFeatureCore>();
         for (PluginParameter<ObjectFeature> ofp : features.getActivatedChildren()) {
             ObjectFeature f = ofp.instanciatePlugin();

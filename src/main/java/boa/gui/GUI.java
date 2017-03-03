@@ -256,6 +256,18 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
         
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_I, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Change Interactive structure") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (interactiveStructure.getItemCount()>0) {
+                    int s = interactiveStructure.getSelectedIndex();
+                    s = (s+1) % interactiveStructure.getItemCount();
+                    setInteractiveStructureIdx(s);
+                }
+                logger.debug("Current interactive structure: {}", interactiveStructure.getSelectedIndex());
+            }
+        });
+        
         actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_T, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Track mode") {
             @Override
             public void actionPerformed(ActionEvent e) {

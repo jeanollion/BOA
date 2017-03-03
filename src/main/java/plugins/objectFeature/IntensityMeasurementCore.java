@@ -53,6 +53,7 @@ public class IntensityMeasurementCore implements ObjectFeatureCore {
     
     public class IntensityMeasurements {
         public double mean=0, sd=0, min=Double.MAX_VALUE, max=-Double.MAX_VALUE, count=0;
+        int[] maxCoords = new int[3];
         BoundingBox offset;
         Object3D o;
         
@@ -65,8 +66,10 @@ public class IntensityMeasurementCore implements ObjectFeatureCore {
                 int offY=offset.getyMin()-intensityMap.getOffsetY();
                 int offZ=offset.getzMin()-intensityMap.getOffsetZ();
                 //logger.debug("intensity measurements: offX: {}, offY: {}, offZ: {}", offX, offY, offZ);
-                for (Voxel v : o.getVoxels()) increment(intensityMap.getPixel(v.x+offX, v.y+offY, v.z+offZ));
-                
+                for (Voxel v : o.getVoxels()) increment(intensityMap.getPixel(v.x+offX, v.y+offY, v.z+offZ), v.x, v.y, v.z);
+                maxCoords[0]+=offset.getxMin();
+                maxCoords[1]+=offset.getyMin();
+                maxCoords[2]+=offset.getzMin();
             } else {
                 ImageInteger mask = o.getMask();
                 int offX = offset.getxMin()+mask.getOffsetX()-intensityMap.getOffsetX();
@@ -76,10 +79,13 @@ public class IntensityMeasurementCore implements ObjectFeatureCore {
                 for (int z= 0; z<mask.getSizeZ(); ++z) {
                     for (int y= 0; y<mask.getSizeY(); ++y) {
                         for (int x= 0; x<mask.getSizeX(); ++x) {
-                            if (mask.insideMask(x, y, z)) increment(intensityMap.getPixel(x+offX, y+offY, z+offZ));
+                            if (mask.insideMask(x, y, z)) increment(intensityMap.getPixel(x+offX, y+offY, z+offZ), x, y, z);
                         }
                     }
                 }
+                maxCoords[0]+=offset.getxMin()+mask.getOffsetX();
+                maxCoords[1]+=offset.getyMin()+mask.getOffsetY();
+                maxCoords[2]+=offset.getzMin()+mask.getOffsetZ();
             }
             if (count==0) {
                 max=Double.NaN;
@@ -91,11 +97,16 @@ public class IntensityMeasurementCore implements ObjectFeatureCore {
                 sd = Math.sqrt(sd/count-mean*mean);
             }
         }
-        private void increment(double value) {
+        private void increment(double value, int x, int y , int z) {
             mean+=value;
             sd+=value*value;
             count++;
-            if (value>max) max=value;
+            if (value>max) {
+                max=value;
+                maxCoords[0]=x;
+                maxCoords[1]=y;
+                maxCoords[2]=z;
+            }
             if (value<min) min=value; 
         }
     }

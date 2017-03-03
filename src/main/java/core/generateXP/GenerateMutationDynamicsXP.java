@@ -162,8 +162,8 @@ public class GenerateMutationDynamicsXP {
         bacteria.setProcessingScheme(new SegmentThenTrack(new BacteriaFluo(), new BacteriaClosedMicrochannelTrackerLocalCorrections().setCostParameters(0.1, 0.5)));
         mutation.setProcessingScheme(new SegmentAndTrack(
                 new LAPTracker().setCompartimentStructure(1).setSegmenter(
-                        new MutationSegmenter(0.6, 0.4, 0.4).setScale(2.5)
-                ).setSpotQualityThreshold(1).setLinkingMaxDistance(0.4, 0.8).setGapParameters(0.4, 0.1, 2).setTrackLength(10, 0)
+                        new MutationSegmenter(0.7, 0.5, 0.45).setScale(2.5) // was 0.6 0.5 0.45
+                ).setSpotQualityThreshold(0.7).setLinkingMaxDistance(0.4, 0.5).setGapParameters(0.4, 0.1, 3).setTrackLength(10, 0)
         ).addPreFilters(new BandPass(0, 10, 2, 5)));
         
         xp.addMeasurement(new SimpleTrackMeasurements(1));

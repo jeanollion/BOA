@@ -18,6 +18,8 @@
 package plugins.plugins.measurements.objectFeatures;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.SiblingStructureParameter;
 import configuration.parameters.StructureParameter;
@@ -27,6 +29,7 @@ import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import image.BoundingBox;
 import image.ImageByte;
+import image.ImageInteger;
 import image.ImageMask;
 import image.TypeConverter;
 import java.util.ArrayList;
@@ -35,6 +38,8 @@ import java.util.List;
 import plugins.objectFeature.IntensityMeasurement;
 import plugins.objectFeature.IntensityMeasurementCore.IntensityMeasurements;
 import processing.Filters;
+import utils.HashMapGetCreate;
+import utils.Pair;
 import utils.Utils;
 
 /**
@@ -43,8 +48,9 @@ import utils.Utils;
  */
 public class SNR extends IntensityMeasurement {
     protected SiblingStructureParameter backgroundObject = new SiblingStructureParameter("Background Object", true).setAutoConfiguration(true);
-    
-    @Override public Parameter[] getParameters() {return new Parameter[]{intensity, backgroundObject};}
+    protected BoundedNumberParameter dilateExcluded = new BoundedNumberParameter("Radius for excluded structure dillatation", 1, 1, 0, null);
+    protected BoundedNumberParameter erodeBorders = new BoundedNumberParameter("Radius for border erosion", 1, 1, 0, null);
+    @Override public Parameter[] getParameters() {return new Parameter[]{intensity, backgroundObject, dilateExcluded, erodeBorders};}
     HashMap<Object3D, Object3D> childrenParentMap;
     BoundingBox childrenOffset;
     BoundingBox parentOffsetRev;
@@ -54,6 +60,11 @@ public class SNR extends IntensityMeasurement {
     }
     public SNR setBackgroundObjectStructureIdx(int structureIdx) {
         backgroundObject.setSelectedStructureIdx(structureIdx);
+        return this;
+    }
+    public SNR setRadii(double dilateRadius, double erodeRadius) {
+        this.dilateExcluded.setValue(dilateRadius);
+        this.erodeBorders.setValue(erodeRadius);
         return this;
     }
     @Override public IntensityMeasurement setUp(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation) {
@@ -71,18 +82,20 @@ public class SNR extends IntensityMeasurement {
             parents = new ArrayList<Object3D>(1);
             parents.add(parent.getObject());
         }
-        
+        double erodeRad= this.erodeBorders.getValue().doubleValue();
+        double dilRad = this.dilateExcluded.getValue().doubleValue();
         // assign parents to children by inclusion
-        HashMap<Object3D, ArrayList<Object3D>> parentChildrenMap = new HashMap<Object3D, ArrayList<Object3D>>(parents.size());
+        HashMapGetCreate<Object3D, List<Pair<Object3D, Object3D>>> parentChildrenMap = new HashMapGetCreate<>(parents.size(), new HashMapGetCreate.ListFactory());
         for (Object3D o : childPopulation.getObjects()) {
             Object3D p = StructureObjectUtils.getInclusionParent(o, parents, childrenOffset, null);
             if (p!=null) {
-                ArrayList<Object3D> children = parentChildrenMap.get(p);
-                if (children==null) {
-                    children = new ArrayList<Object3D>();
-                    parentChildrenMap.put(p, children);
+                Object3D oDil = o;
+                if (dilRad>0)  {
+                    ImageInteger oMask = o.getMask();
+                    oMask = Filters.binaryMax(oMask, null, Filters.getNeighborhood(dilRad, dilRad, oMask), false, true);
+                    oDil = new Object3D(oMask, 1);
                 }
-                children.add(o);
+                parentChildrenMap.getAndCreateIfNecessary(p).add(new Pair(o, oDil));
             }
         }
         
@@ -90,21 +103,25 @@ public class SNR extends IntensityMeasurement {
         childrenParentMap = new HashMap<Object3D, Object3D>();
         for (Object3D p : parents) {
             ImageMask ref = p.getMask();
-            ArrayList<Object3D> children = parentChildrenMap.get(p);
+            List<Pair<Object3D, Object3D>> children = parentChildrenMap.get(p);
             if (children!=null) {
-                ImageByte mask  = TypeConverter.toByteMask(ref, null, 1).setName("mask:");
-                if (backgroundObject.getSelectedStructureIdx()==super.parent.getStructureIdx()) {
+                ImageByte mask  = TypeConverter.toByteMask(ref, null, 1).setName("SNR mask");
+                for (Pair<Object3D, Object3D> o : parentChildrenMap.get(p)) o.value.draw(mask, 0, childrenOffset);
+                /*if (backgroundObject.getSelectedStructureIdx()==super.parent.getStructureIdx()) {
                     for (Object3D o : parentChildrenMap.get(p)) o.draw(mask, 0);
                 } else {
                     for (Object3D o : parentChildrenMap.get(p)) o.draw(mask, 0, childrenOffset);
+                }*/
+                if (erodeRad>0) {
+                    ImageByte maskErode = Filters.binaryMin(mask, null, Filters.getNeighborhood(erodeRad, erodeRad, mask), true); // erode mask // TODO dillate objects?
+                    if (maskErode.count()>0) mask = maskErode;
                 }
-            
-                ImageByte maskErode = Filters.binaryMin(mask, null, Filters.getNeighborhood(1.5, 1.5, mask), true); // erode mask // TODO dillate objects?
-                if (maskErode.count()==0) maskErode = mask;
-                Object3D parentObject = new Object3D(maskErode, 1);
-                for (Object3D o : children) childrenParentMap.put(o, parentObject);
+                Object3D parentObject = new Object3D(mask, 1);
+                for (Pair<Object3D, Object3D> o : children) childrenParentMap.put(o.key, parentObject);
+                
+                //ImageWindowManagerFactory.showImage( mask);
             }
-            //new IJImageDisplayer().showImage(maskErode);
+            
         }
         return this;
     }

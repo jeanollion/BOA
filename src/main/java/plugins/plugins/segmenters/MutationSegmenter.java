@@ -18,6 +18,7 @@
 package plugins.plugins.segmenters;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
@@ -30,6 +31,7 @@ import dataStructure.objects.ObjectPopulation.Overlap;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectProcessing;
 import dataStructure.objects.Voxel;
+import image.BoundingBox;
 import image.Image;
 import image.ImageByte;
 import image.ImageFloat;
@@ -44,6 +46,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import jj2000.j2k.util.ArrayUtil;
+import measurement.BasicMeasurements;
 import plugins.Segmenter;
 import plugins.Thresholder;
 import plugins.plugins.preFilter.IJSubtractBackground;
@@ -118,6 +121,15 @@ public class MutationSegmenter implements Segmenter {
     }
     
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
+        /*List<Object3D> list = new ArrayList<>();
+        for (StructureObject o : ((StructureObject)parent).getChildren(1)) {
+            BoundingBox localTrans = o.getRelativeBoundingBox((StructureObject)parent);
+            Image localIn = input.crop(localTrans);
+            ObjectPopulation localPop = run(localIn, o, scale.getValue().doubleValue(), subtractBackgroundScale.getValue().doubleValue(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), intensityThreshold.getValue().doubleValue(), intermediateImages);
+            localPop.translate(localTrans, false);
+            list.addAll(localPop.getObjects());
+        }
+        return new ObjectPopulation(list, parent.getMask());*/
         return run(input, parent, scale.getValue().doubleValue(), subtractBackgroundScale.getValue().doubleValue(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), intensityThreshold.getValue().doubleValue(), intermediateImages);
     }
     
@@ -141,27 +153,41 @@ public class MutationSegmenter implements Segmenter {
     
     public static ObjectPopulation runPlane(Image input, StructureObjectProcessing parent, double scale, double subtractBackgroundScale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, double intensityThreshold, List<Image> intermediateImages) {
         if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
-        //Image sub  = IJSubtractBackground.filter(input, subtractBackgroundScale, true, false, true, false);
-        Image sub = input;
+        //parent mask = bacteria
+        //ImageInteger parentMask = ((StructureObject)parent).getObjectPopulation(1).getLabelMap();
         
-        //Image lap = ImageFeatures.getLaplacian(sub, scale, true, false).setName("laplacian: "+scale);
-        //ImageOperations.divide(lap, smooth, lap);
+        //Image sub  = IJSubtractBackground.filter(input, subtractBackgroundScale, true, false, true, false);
+        Image sub = input.duplicate();
+        
         if (intermediateImages!=null) intermediateImages.add(sub.duplicate("sub before scale"));
-        Image smooth = ImageFeatures.gaussianSmooth(sub, scale, scale, false);
+        
         //final double thld = new ObjectCountThresholder(20).runThresholder(smooth, parent);
         //double[] ms = ImageOperations.getMeanAndSigma(sub, parent.getMask(), d -> d<thld); //TODO : test with always true
-        double[] ms = ImageOperations.getMeanAndSigma(sub, parent.getMask());
-        //double[] ms = ImageOperations.getMeanAndSigma(sub, parent.getMask(), d -> true);
-        if (intermediateImages!=null) intermediateImages.add(smooth.duplicate("smooth before scale"));
-        ImageOperations.affineOperation2(smooth, smooth, 1/ms[1], -ms[0]);
-        ImageOperations.affineOperation2(sub, sub, 1/ms[1], -ms[0]);
-        //thresholdPropagation = (thresholdPropagation-ms[0]) / ms[1];
         
+        final double thld = new ObjectCountThresholder(20).runThresholder(sub, parent);
+        double[] ms = ImageOperations.getMeanAndSigmaWithOffset(sub, parent.getMask(), v->v<=thld);
+        ImageOperations.affineOperation2WithOffset(sub, sub, 1/ms[1], -ms[0]);
+        /*
+        int nbObjects = ((StructureObject)parent).getChildren(1).size();
+        for (StructureObject o : ((StructureObject)parent).getChildren(1)) {
+            final double thld = new ObjectCountThresholder(20).runThresholder(sub, bMask);
+            double[] ms = ImageOperations.getMeanAndSigmaWithOffset(sub, o.getMask(), v->v<=thld);
+            ImageOperations.affineOperation2WithOffset(sub, sub, localMask, 1/ms[1], -ms[0]);
+            logger.debug("bact: {}, ms: {}", o, ms);
+            if (o.getIdx()<nbObjects) ImageOperations.xorWithOffset(bMask, bounds.getImageProperties(1, 1), bMask);
+        }
+        */
+        
+        //double[] ms = ImageOperations.getMeanAndSigma(sub, parentMask);
+        //ImageOperations.affineOperation2(sub, sub, 1/ms[1], -ms[0]);
+        //thresholdPropagation = (thresholdPropagation-ms[0]) / ms[1];
+        Image smooth = ImageFeatures.gaussianSmooth(sub, scale, scale, false);
         Image lap = ImageFeatures.getLaplacian(sub, scale, true, false).setName("laplacian: "+scale);
         //if (debug) logger.debug("mutation segmenter: seed thld: {}, propagation thld: {} ({}), scale: {}", thresholdSeeds, thresholdPropagation, thld, ms);
         //new ObjectCountThresholder().setMaxObjectNumber(10).runThresholder(smooth, null);
         //new ObjectCountThresholder().setMaxObjectNumber(10).runThresholder(lap, null); //-> seuil propagation ? 
         if (intermediateImages!=null) {
+            //intermediateImages.add((ImageInteger)parent.getMask());
             intermediateImages.add(smooth.setName("smooth"));
             intermediateImages.add(lap.setName("lap"));
             intermediateImages.add(sub.setName("sub"));
@@ -177,6 +203,8 @@ public class MutationSegmenter implements Segmenter {
         //seedPop.filter(new Overlap(seedsHess, 1.5));
         //seedPop.filter(new Or(new ObjectPopulation.GaussianFit(norm, 3, 3, 5, 0.2, 0.010, 6), new MeanIntensity(-0.2, false, hess)));
         ObjectPopulation pop =  watershed(lap, parent.getMask(), seedPop.getObjects(), true, new ThresholdPropagationOnWatershedMap(thresholdPropagation), new SizeFusionCriterion(minSpotSize), false);
+        for (Object3D o : pop.getObjects()) o.setQuality(o.getQuality() * BasicMeasurements.getMaxValue(o, smooth, false)); // multiply by max of smooth to get quality criterion
+        
         pop.filter(new ObjectPopulation.RemoveFlatObjects(input));
         pop.filter(new ObjectPopulation.Size().setMin(minSpotSize));
         return pop;

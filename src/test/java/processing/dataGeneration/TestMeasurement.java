@@ -17,6 +17,7 @@
  */
 package processing.dataGeneration;
 
+import boa.gui.GUI;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import dataStructure.objects.MasterDAO;
@@ -25,8 +26,10 @@ import dataStructure.objects.StructureObject;
 import ij.ImageJ;
 import plugins.Measurement;
 import plugins.PluginFactory;
+import plugins.plugins.measurements.ObjectFeatures;
 import plugins.plugins.measurements.SimpleIntensityMeasurement;
 import plugins.plugins.measurements.SimpleIntensityMeasurementStructureExclusion;
+import plugins.plugins.measurements.objectFeatures.LocalSNR;
 
 /**
  *
@@ -34,19 +37,22 @@ import plugins.plugins.measurements.SimpleIntensityMeasurementStructureExclusion
  */
 public class TestMeasurement {
     public static void main(String[] args) {
-        PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
         String dbName = "boa_fluo170207_150ms";
-        int fIdx = 0;
+        int fIdx = 103;
         int frame =0;
         int dispStructure = 2;
-        MasterDAO db = new MorphiumMasterDAO(dbName);
-        
+        //MasterDAO db = new MorphiumMasterDAO(dbName);
+        GUI.getInstance().setDBConnection(dbName, null);
+        MasterDAO db = GUI.getDBConnection();
         //Measurement m  = new SimpleIntensityMeasurementStructureExclusion(1, 2, 2).setRadii(4, 0).setPrefix("YFPExcl");
-        Measurement m  = new SimpleIntensityMeasurement(1, 2);
-        testMeasurementOnSingleObject(m, db, fIdx, frame, 3, dispStructure);
+        //Measurement m  = new SimpleIntensityMeasurement(1, 2);
+        Measurement m = new ObjectFeatures(2).addFeature(new LocalSNR(1), "Local SNR");
+        LocalSNR.debug=true;
+        testMeasurementOnSingleObject(m, db, fIdx, frame, 0, dispStructure);
     }
     public static void testMeasurementOnSingleObject(Measurement m, MasterDAO db, int fIdx, int frame, int cIdx, int dispStructure) {
+        db.getExperiment().addMeasurement(m); // in case experiment is needed
         int s = m.getCallStructure();
         
         StructureObject root = db.getDao(db.getExperiment().getPosition(fIdx).getName()).getRoot(frame);
@@ -56,7 +62,7 @@ public class TestMeasurement {
         
         ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(o.getParent(), s, true);
         ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(dispStructure), i, dispStructure, false, true);
-        ImageWindowManagerFactory.getImageManager().setInteractiveStructure(s);
+        ImageWindowManagerFactory.getImageManager().setInteractiveStructure(2);
         
     }
 }

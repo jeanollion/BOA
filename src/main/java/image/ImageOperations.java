@@ -253,6 +253,14 @@ public class ImageOperations {
         }
         return output;
     }
+    /**
+     * 
+     * @param source1
+     * @param output
+     * @param multiplicativeCoefficient
+     * @param additiveCoefficient
+     * @return multiplicative then additive
+     */
     public static Image affineOperation(Image source1, Image output, double multiplicativeCoefficient, double additiveCoefficient) {
         String name = source1.getName()+" x "+multiplicativeCoefficient + " + "+additiveCoefficient;
         if (output==null) {
@@ -316,6 +324,23 @@ public class ImageOperations {
                 }
             } 
         }
+        return output;
+    }
+    
+    public static Image affineOperation2WithOffset(final Image source1, Image output, final double multiplicativeCoefficient, final double additiveCoefficient) {
+        String name = "("+source1.getName()+ " + "+additiveCoefficient+") "+" x "+multiplicativeCoefficient ;
+        if (output==null) {
+            if (multiplicativeCoefficient<0 || (int)multiplicativeCoefficient != multiplicativeCoefficient || additiveCoefficient<0) output = new ImageFloat(name, source1);
+            else output = Image.createEmptyImage(name, source1, source1);
+        } else if (!output.sameSize(source1)) output = Image.createEmptyImage(name, output, source1);
+        final double end = output instanceof ImageInteger?0.5:0;
+        final Image out = output;
+        source1.getBoundingBox().loop(new LoopFunction() {
+            @Override
+            public void loop(int x, int y, int z) {
+                out.setPixelWithOffset(x, y, z, (source1.getPixelWithOffset(x, y, z)+additiveCoefficient)*multiplicativeCoefficient+end);
+            }
+        });
         return output;
     }
     
@@ -733,19 +758,32 @@ public class ImageOperations {
         return new double[]{mean, Math.sqrt(values2 - mean * mean), count};
     }
     
-    public static double[] getMeanAndSigmaWithOffset(Image image, ImageMask mask) {
+    public static double[] getMeanAndSigmaWithOffset(Image image, ImageMask mask, Function<Double, Boolean> useValue) {
         if (mask==null) mask = new BlankMask(image);
         final ImageMask mask2 = mask;
         double[] vv2c = new double[3];
         BoundingBox intersect = mask.getBoundingBox().getIntersection(image.getBoundingBox());
-        intersect.loop((int x, int y, int z) -> {
-            if (mask2.insideMaskWithOffset(x, y, z)) {
-                double tmp = image.getPixelWithOffset(x, y, z);
-                vv2c[0] += tmp;
-                vv2c[1] += tmp * tmp;
-                ++vv2c[2];
-            }
-        });
+        if (useValue==null) {
+            intersect.loop((int x, int y, int z) -> {
+                if (mask2.insideMaskWithOffset(x, y, z)) {
+                    double tmp = image.getPixelWithOffset(x, y, z);
+                    vv2c[0] += tmp;
+                    vv2c[1] += tmp * tmp;
+                    ++vv2c[2];
+                }
+            });
+        } else {
+            intersect.loop((int x, int y, int z) -> {
+                if (mask2.insideMaskWithOffset(x, y, z)) {
+                    double tmp = image.getPixelWithOffset(x, y, z);
+                    if (useValue.apply(tmp)) {
+                        vv2c[0] += tmp;
+                        vv2c[1] += tmp * tmp;
+                        ++vv2c[2];
+                    }
+                }
+            });
+        }
         double mean = vv2c[0] / vv2c[2];
         double values2 = vv2c[1] / vv2c[2];
         return new double[]{mean, Math.sqrt(values2 - mean * mean), vv2c[2]};

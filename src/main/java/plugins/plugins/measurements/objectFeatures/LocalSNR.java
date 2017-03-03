@@ -31,6 +31,7 @@ import dataStructure.objects.Voxel;
 import image.BoundingBox;
 import image.ImageByte;
 import image.ImageMask;
+import image.ImageOperations;
 import image.TypeConverter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,14 +46,18 @@ import utils.Utils;
  * @author jollion
  */
 public class LocalSNR extends SNR {
-    protected BoundedNumberParameter backgroundProportion = new BoundedNumberParameter("Background proportion", 1, 2, 1, null);
-    @Override public Parameter[] getParameters() {return new Parameter[]{intensity, backgroundObject, backgroundProportion};}
+    protected BoundedNumberParameter localBackgroundRadius = new BoundedNumberParameter("Local background radius", 1, 8, 0, null);
+    public static boolean debug;
+    @Override public Parameter[] getParameters() {return new Parameter[]{intensity, backgroundObject, dilateExcluded, erodeBorders, localBackgroundRadius};}
     public LocalSNR() {}
     
     public LocalSNR(int backgroundStructureIdx) {
         super(backgroundStructureIdx);
     }
-    
+    public LocalSNR setLocalBackgroundRadius(double backgroundRadius) {
+        localBackgroundRadius.setValue(backgroundRadius);
+        return this;
+    }
     @Override public double performMeasurement(final Object3D object, BoundingBox offset) {
         if (core==null) synchronized(this) {setUpOrAddCore(null);}
         if (offset==null) offset=new BoundingBox(0, 0, 0);
@@ -62,13 +67,22 @@ public class LocalSNR extends SNR {
         if (parentObject==null) return 0;
         
         // create mask
-        //ImageByte innerMask  = TypeConverter.toByteMask(object.getMask(), null, 1).setName("mask:");
-        //innerMask.addOffset(offset);
-        //innerMask = Filters.binaryMax(innerMask, null, Filters.getNeighborhood(2, 2, innerMask), true, true);
+        ImageByte bckMask  = TypeConverter.toByteMask(object.getMask(), null, 1).setName("mask:");
+        bckMask.addOffset(offset);
+        bckMask = Filters.binaryMax(bckMask, null, Filters.getNeighborhood(localBackgroundRadius.getValue().doubleValue(), localBackgroundRadius.getValue().doubleValue(), bckMask), false, true);
+        ImageOperations.andWithOffset(bckMask, parentObject.getMask(), bckMask);
+        double[] meanSdBck = ImageOperations.getMeanAndSigmaWithOffset(intensityMap, bckMask, null);
+        IntensityMeasurements fore = super.core.getIntensityMeasurements(object, offset);
         
-        // TODO...
         
-        // iterate into parent to get local background values
+        double d = (fore.mean-meanSdBck[0]) / meanSdBck[1];
+        if (debug) {
+            logger.debug("SNR local object: {}, value: {}, rad: {}, count: {}, objectCount: {}, fore: {}, sd:{}, back: {}, sd: {}", object.getLabel(), d, localBackgroundRadius.getValue().doubleValue(), bckMask.count(), object.getMask().count(), fore.mean, fore.sd, meanSdBck[0], meanSdBck[1]);
+            ImageWindowManagerFactory.showImage(bckMask);
+        }
+        //
+        return d;
+        /*
         final double[] objectCenter = object.getCenter(intensityMap, false);
         objectCenter[0]+=offset.getxMin();
         objectCenter[1]+=offset.getyMin();
@@ -104,6 +118,8 @@ public class LocalSNR extends SNR {
         double d = (fore.mean-back.mean) / back.sd;
         //logger.debug("SNR local object: {}, value: {}, rad: {}, count: {}, objectCount: {}, fore: {}, sd:{}, back: {}, sd: {}", object.getLabel(), d, rad, localBack.size(), object.getMask().count(), fore.mean, fore.sd, back.mean, back.sd);
         return d;
+        */
+        
     }
     private static double getDistSq(double[] center, int x, int y, int z) {
         return Math.pow(center[0]-x, 2)+Math.pow(center[1]-y, 2)+Math.pow(center[2]-z, 2);

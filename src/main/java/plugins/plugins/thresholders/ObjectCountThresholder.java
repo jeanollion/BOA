@@ -61,11 +61,14 @@ public class ObjectCountThresholder implements Thresholder {
         this.maxObjectNumber.setValue(max);
         return this;
     }
-    
-    
     @Override
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
         ImageMask mask = structureObject!=null ? structureObject.getMask() : new BlankMask("", input);
+        return runThresholder(input, mask);
+    }
+    
+    public double runThresholder(Image input, ImageMask mask) {
+        
         ImageByte seeds = Filters.localExtrema(input, null, descendingIntensities.getSelected(), descendingIntensities.getSelected() ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY, Filters.getNeighborhood(1.5, 1.5, input));
         boolean bright = descendingIntensities.getSelected();
         if (debug) ImageWindowManagerFactory.showImage(seeds);
