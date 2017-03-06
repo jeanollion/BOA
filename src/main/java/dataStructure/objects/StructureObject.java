@@ -233,7 +233,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     @Override public List<StructureObject> setChildrenObjects(ObjectPopulation population, int structureIdx) {
         population.relabel();
-        population.translate(getBounds(), true); // from parent-relative coordinates to absolute coordinates
+        if (!population.isAbsoluteLandmark()) population.translate(getBounds(), true); // from parent-relative coordinates to absolute coordinates
         ArrayList<StructureObject> res = new ArrayList<StructureObject>(population.getObjects().size());
         childrenSM.set(res, structureIdx);
         int i = 0;

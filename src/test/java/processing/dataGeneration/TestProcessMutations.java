@@ -71,7 +71,7 @@ public class TestProcessMutations {
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
-        t.testSegMutationsFromXP(fIdx, mcIdx, true, 0,10);
+        t.testSegMutationsFromXP(fIdx, mcIdx, false, 0,30);
     }
     
     public void testSegMutation(StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
@@ -120,11 +120,13 @@ public class TestProcessMutations {
         if (root==null) return;
         //logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(mcIdx);
-        if (mcMask_!=null) mcMask_.add(mc.getMask());
+        
         if (parentMC) {
+            if (mcMask_!=null) mcMask_.add(mc.getMask());
             testSegMutation(mc, parentMask_, input_, outputLabel, intermediateImages_);
         } else {
             for (StructureObject bact : mc.getChildren(1)) {
+                if (mcMask_!=null) mcMask_.add(mc.getMask());
                 testSegMutation(bact, parentMask_, input_, outputLabel, intermediateImages_);
             }
         }
@@ -160,14 +162,16 @@ public class TestProcessMutations {
         for (int i = 0; i<intermediateImages.get(0).size(); ++i) intermediateImagesList.add(Image.createEmptyImage(intermediateImages.get(0).get(i).getName(), intermediateImages.get(0).get(i), new BlankMask("", xSize, ySize, intermediateImages.get(0).get(i).getSizeZ(), 0, 0, 0, 1, 1)));
         BoundingBox offset = new BoundingBox(0, 0, 0);
         ImageInteger lastMask = mcMask.get(0);
+        BoundingBox mcOffInv = lastMask.getBoundingBox().reverseOffset();
         pasteImage(lastMask, maskPaste, offset);
         for (int i = 0; i<parentMask.size(); ++i) {
             if (!mcMask.get(i).equals(lastMask)) {
+                mcOffInv = lastMask.getBoundingBox().reverseOffset();
                 offset.translate(mcMask.get(i).getSizeX()+intervalX , 0, 0);
                 //pasteImage(mcMask.get(i), maskPaste, offset); logger.debug("past mask: sizeX: {}, off: {}", mcMask.get(i).getSizeX(), offset);
             }
             
-            BoundingBox localOffset= parentMC? offset : parentMask.get(i).getBoundingBox().translate(offset.getxMin(), 0, 0);
+            BoundingBox localOffset= parentMC? offset : parentMask.get(i).getBoundingBox().translate(offset.getxMin(), 0, 0).translate(mcOffInv);
             pasteImage(input.get(i), inputPaste, localOffset);
             pasteImage(outputLabel.get(i), outputLabelPaste, localOffset);
             for (int interIdx = 0; interIdx<intermediateImages.get(i).size(); ++interIdx) pasteImage(intermediateImages.get(i).get(interIdx), intermediateImagesList.get(interIdx), localOffset);

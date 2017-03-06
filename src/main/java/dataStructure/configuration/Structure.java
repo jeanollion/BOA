@@ -89,12 +89,22 @@ public class Structure extends SimpleContainerParameter {
                 else logger.debug("no model found..");
             }
         });
+        segmentationParent.addListener(new ParameterListener() {
+            @Override public void fire(Parameter source) {
+                logger.debug("segmentation parent structure listener fired: parent: {}, seg parent: {}", parentStructure.getSelectedIndex(), segmentationParent.getSelectedIndex());
+                setSegmentationParentStructure(segmentationParent.getSelectedIndex());
+                //update tree
+                ConfigurationTreeModel model = ParameterUtils.getModel(segmentationParent);
+                if (model!=null) model.nodeChanged(segmentationParent);
+                else logger.debug("no model found..");
+            }
+        });
         // for retro-compatibility only, to remove later
         if (processingScheme==null) processingScheme = new PluginParameter<ProcessingScheme>("Processing Scheme", ProcessingScheme.class, true); // for retro-compatibility only, to remove later
         if (manualSegmenter==null) manualSegmenter = new PluginParameter<ManualSegmenter>("Manual Segmenter", ManualSegmenter.class, new WatershedManualSegmenter(), false);
         if (allowSplit==null) allowSplit = new BooleanParameter("Allow Split", "yes", "no", false);
         if (allowMerge==null) allowMerge = new BooleanParameter("Allow Merge", "yes", "no", false);
-        initChildren(parentStructure, channelImage, processingScheme, objectSplitter, manualSegmenter, allowMerge, allowSplit); //segmentationParent
+        initChildren(parentStructure, segmentationParent, channelImage, processingScheme, objectSplitter, manualSegmenter, allowMerge, allowSplit); //segmentationParent
     }
     
     public boolean allowSplit() {
@@ -160,16 +170,20 @@ public class Structure extends SimpleContainerParameter {
     }
     
     public int getSegmentationParentStructure() {
-        
-        return this.segmentationParent.getSelectedIndex();
+        return segmentationParent.getSelectedIndex()<parentStructure.getSelectedIndex() ? parentStructure.getSelectedIndex() : segmentationParent.getSelectedIndex();
     }
     
     public void setParentStructure(int parentIdx) {
         parentStructure.setSelectedIndex(parentIdx);
         segmentationParent.setMaxStructureIdx(parentIdx+1);
         int segParent = segmentationParent.getSelectedIndex();
-        if (segParent<0) segmentationParent.setSelectedIndex(parentIdx);
+        if (segParent<parentIdx) segmentationParent.setSelectedIndex(parentIdx);
     }
+    public void setSegmentationParentStructure(int segmentationParentStructureIdx) {
+        if (segmentationParentStructureIdx<parentStructure.getSelectedStructureIdx()) segmentationParentStructureIdx = parentStructure.getSelectedStructureIdx();
+        segmentationParent.setSelectedIndex(segmentationParentStructureIdx);
+    }
+    
     
     public int getChannelImage() {
         return channelImage.getSelectedIndex();

@@ -41,6 +41,7 @@ import javax.swing.JMenuItem;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import org.bson.types.ObjectId;
+import utils.Pair;
 import utils.ThreadRunner;
 import utils.ThreadRunner.ThreadAction;
 
@@ -314,7 +315,9 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                             */
                             ThreadRunner.execute(root.generator.getSelectedTrackNodes(), new ThreadAction<TrackNode>() {
                                 @Override public void run(TrackNode n, int idx, int threadIdx) {
-                                    Processor.executeProcessingScheme(n.getTrack(), structureIdx, false, true);
+                                    List<Pair<String, Exception>> errors = Processor.executeProcessingScheme(n.getTrack(), structureIdx, false, true);
+                                    logger.debug("errors: {}", errors.size());
+                                    for (Pair<String, Exception> e : errors) logger.error(e.key, e.value);
                                 }
                             });
                             // reload tree
@@ -342,7 +345,8 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                             */
                             ThreadRunner.execute(root.generator.getSelectedTrackNodes(), new ThreadAction<TrackNode>() {
                                 @Override public void run(TrackNode n, int idx, int threadIdx) {
-                                    Processor.executeProcessingScheme(n.getTrack(), structureIdx, true, false);
+                                    List<Pair<String, Exception>> errors = Processor.executeProcessingScheme(n.getTrack(), structureIdx, true, false);
+                                    for (Pair<String, Exception> e : errors) logger.error(e.key, e.value);
                                 }
                             });
                             // reload tree

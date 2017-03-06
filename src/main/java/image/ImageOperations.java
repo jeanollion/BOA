@@ -180,7 +180,7 @@ public class ImageOperations {
     public static void pasteImage(Image source, Image dest, BoundingBox offset) {
         if (source.getClass()!=dest.getClass()) throw new IllegalArgumentException("Paste Image: source and destination should be of the same type (source: "+source.getClass().getSimpleName()+ " destination: "+dest.getClass().getSimpleName()+")");
         if (offset == null) offset = new BoundingBox(0, 0, 0);
-        if (source.getSizeX()+offset.xMin>dest.sizeX || source.getSizeY()+offset.yMin>dest.sizeY || source.getSizeZ()+offset.zMin>dest.sizeZ) throw new IllegalArgumentException("Paste Image: source does not fit in destination");
+        if (source.getSizeX()+offset.xMin>dest.sizeX || source.getSizeY()+offset.yMin>dest.sizeY || source.getSizeZ()+offset.zMin>dest.sizeZ) throw new IllegalArgumentException("Paste Image: source ("+source.getBoundingBox()+") does not fit in destination ("+dest.getBoundingBox()+")");
         Object[] sourceP = source.getPixelArray();
         Object[] destP = dest.getPixelArray();
         final int offDestFinal = dest.sizeX*offset.yMin+offset.xMin;

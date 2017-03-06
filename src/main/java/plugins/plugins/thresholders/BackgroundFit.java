@@ -66,6 +66,8 @@ public class BackgroundFit implements Thresholder {
         if (meanSigma!=null) {
             meanSigma[0] = fit[0] * binSize + min;
             meanSigma[1] = fit[1] * binSize;
+            if (meanSigma.length>2) meanSigma[2] = threshold;
+            if (meanSigma.length>3) meanSigma[3] = fit[0] - sigmaFactor * fit[0];
         }
         //logger.debug("gaussian fit histo: modal value: {}, sigma: {}, threshold: {}", meanSigma[0], meanSigma[1], threshold);
         return threshold;

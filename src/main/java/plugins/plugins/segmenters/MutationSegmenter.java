@@ -163,9 +163,12 @@ public class MutationSegmenter implements Segmenter {
         
         //final double thld = new ObjectCountThresholder(20).runThresholder(smooth, parent);
         //double[] ms = ImageOperations.getMeanAndSigma(sub, parent.getMask(), d -> d<thld); //TODO : test with always true
-        
-        final double thld = new ObjectCountThresholder(20).runThresholder(sub, parent);
+        //ObjectCountThresholder.debug=true;
+        //final double thld = new ObjectCountThresholder(20).runThresholder(sub, parent);
+        final double thld = BackgroundFit.backgroundFit(sub, parent.getMask(), 2, null);
+        //final double thld= Double.POSITIVE_INFINITY;
         double[] ms = ImageOperations.getMeanAndSigmaWithOffset(sub, parent.getMask(), v->v<=thld);
+        logger.debug("mut seg thld: {}, ms: {}", thld, ms);
         ImageOperations.affineOperation2WithOffset(sub, sub, 1/ms[1], -ms[0]);
         /*
         int nbObjects = ((StructureObject)parent).getChildren(1).size();

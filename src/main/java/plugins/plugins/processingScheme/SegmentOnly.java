@@ -21,9 +21,12 @@ import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
 import configuration.parameters.PostFilterSequence;
 import configuration.parameters.PreFilterSequence;
+import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
+import image.BoundingBox;
 import image.Image;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import plugins.PostFilter;
@@ -32,6 +35,7 @@ import plugins.ProcessingScheme;
 import plugins.Segmenter;
 import utils.ThreadRunner;
 import utils.ThreadRunner.ThreadAction;
+import utils.Utils;
 
 /**
  *
@@ -79,25 +83,39 @@ public class SegmentOnly implements ProcessingScheme {
             return;
         }
         if (parentTrack.isEmpty()) return;
+        int segParentStructureIdx = parentTrack.get(0).getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
         if (parentTrack.get(0).getMicroscopyField().singleFrame(structureIdx)) {
-            ObjectPopulation pop = segment(parentTrack.get(0), structureIdx);
+            ObjectPopulation pop = segment(parentTrack.get(0), structureIdx, segParentStructureIdx);
             for (StructureObject parent : parentTrack) parent.setChildrenObjects(pop.duplicate(), structureIdx);
         } else {
             ThreadAction<StructureObject> ta = new ThreadAction<StructureObject>() {
                 @Override public void run(StructureObject parent, int idx, int threadIdx) {
-                    parent.setChildrenObjects(segment(parent, structureIdx), structureIdx);
+                    parent.setChildrenObjects(segment(parent, structureIdx, segParentStructureIdx), structureIdx);
                 }
             };
             ThreadRunner.execute(parentTrack, ta);
             //for (StructureObject parent : parentTrack) parent.setChildrenObjects(segment(parent, structureIdx), structureIdx);
         }
+        
     }
     
-    private ObjectPopulation segment(StructureObject parent, int structureIdx) {
-        Segmenter s = segmenter.instanciatePlugin();
+    private ObjectPopulation segment(StructureObject parent, int structureIdx, int segmentationStructureIdx) { // TODO mieux gérer threads -> faire liste. Option filtres avant ou après découpage.. 
         Image input = preFilters.filter(parent.getRawImage(structureIdx), parent);
-        ObjectPopulation pop = s.runSegmenter(input, structureIdx, parent);
-        return postFilters.filter(pop, structureIdx, parent);
+        if (segmentationStructureIdx>parent.getStructureIdx()) {
+            List<Object3D> objects = new ArrayList<>();
+            BoundingBox inputBBRev = input.getBoundingBox().reverseOffset();
+            for (StructureObject subParent : parent.getChildren(segmentationStructureIdx)) {
+                ObjectPopulation pop = segmenter.instanciatePlugin().runSegmenter(input.crop(subParent.getBounds().duplicate().translate(inputBBRev)), structureIdx, subParent);
+                pop = postFilters.filter(pop, structureIdx, parent);
+                pop.translate(subParent.getBounds(), true);
+                objects.addAll(pop.getObjects());
+            }
+            //logger.debug("Segment: Parent: {}, subParents: {}, totalChildren: {}, subPBound: {}, {}, {}, pBOunds: {}", parent, parent.getChildren(segmentationStructureIdx).size(), objects.size(), Utils.toStringList(parent.getChildren(segmentationStructureIdx).subList(0,1), o -> o.getBounds().toString()), Utils.toStringList(parent.getChildren(segmentationStructureIdx).subList(0,1), o -> o.getRelativeBoundingBox(parent).toString()), Utils.toStringList(parent.getChildren(segmentationStructureIdx).subList(0,1), o -> o.getRelativeBoundingBox(parent.getRoot()).toString()), parent.getBounds());
+            return new ObjectPopulation(objects, input, true);
+        } else {
+            ObjectPopulation pop = segmenter.instanciatePlugin().runSegmenter(input, structureIdx, parent);
+            return postFilters.filter(pop, structureIdx, parent);
+        }
     }
 
     @Override public void trackOnly(int structureIdx, List<StructureObject> parentTrack) {}

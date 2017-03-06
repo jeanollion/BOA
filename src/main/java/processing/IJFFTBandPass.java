@@ -33,13 +33,17 @@ public class IJFFTBandPass {
         FftBandPassFilter fftBandPassFilter = new FftBandPassFilter(ip, min, max, stripes, stripeTolerance);
         
         ImageProcessor imp=fftBandPassFilter.run(ip.getProcessor());
-        return IJImageWrapper.wrap(new ImagePlus("FFT of "+input.getName(), imp));
+        Image res = IJImageWrapper.wrap(new ImagePlus("FFT of "+input.getName(), imp));
+        res.setCalibration(input).resetOffset().addOffset(input);
+        return res;
     }
     public static Image suppressHorizontalStripes(Image input) {
         ImagePlus ip = IJImageWrapper.getImagePlus(input);
         FftBandPassFilter fftBandPassFilter = new FftBandPassFilter(ip, 0, 200, 1, 0);
         
         ImageProcessor imp=fftBandPassFilter.run(ip.getProcessor());
-        return IJImageWrapper.wrap(new ImagePlus("FFT of "+input.getName(), imp));
+        Image res= IJImageWrapper.wrap(new ImagePlus("FFT of "+input.getName(), imp));
+        res.setCalibration(input).resetOffset().addOffset(input);
+        return res;
     }
 }
