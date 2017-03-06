@@ -42,7 +42,7 @@ public class SegmentThenTrack implements ProcessingScheme {
     protected PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters");
     protected PostFilterSequence postFilters = new PostFilterSequence("Post-Filters");
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, false);
-    protected Parameter[] parameters= new Parameter[]{preFilters, segmenter, postFilters, tracker};
+    protected Parameter[] parameters;
     public SegmentThenTrack() {}
     public SegmentThenTrack(Segmenter segmenter, Tracker tracker) {
         this.segmenter.setPlugin(segmenter);
@@ -73,6 +73,14 @@ public class SegmentThenTrack implements ProcessingScheme {
     @Override public PostFilterSequence getPostFilters() {
         return postFilters;
     }
+    public SegmentThenTrack setPreFilters(PreFilterSequence preFilters) {
+        this.preFilters=preFilters;
+        return this;
+    }
+    public SegmentThenTrack setPostFilters(PostFilterSequence postFilters) {
+        this.postFilters=postFilters;
+        return this;
+    }
     @Override
     public Segmenter getSegmenter() {return segmenter.instanciatePlugin();}
     public Tracker getTracker() {return tracker.instanciatePlugin();}
@@ -98,7 +106,7 @@ public class SegmentThenTrack implements ProcessingScheme {
             return;
         }
         if (parentTrack.isEmpty()) return;
-        SegmentOnly seg = new SegmentOnly(segmenter.instanciatePlugin());
+        SegmentOnly seg = new SegmentOnly(segmenter.instanciatePlugin()).setPreFilters(preFilters).setPostFilters(postFilters);
         seg.segmentAndTrack(structureIdx, parentTrack);
     }
 
@@ -117,7 +125,7 @@ public class SegmentThenTrack implements ProcessingScheme {
 
     @Override
     public Parameter[] getParameters() {
-        return parameters;
+        return new Parameter[]{preFilters, segmenter, postFilters, tracker};
     }
     
 }

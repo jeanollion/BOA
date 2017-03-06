@@ -162,9 +162,9 @@ public class GenerateMutationDynamicsXP {
         bacteria.setProcessingScheme(new SegmentThenTrack(new BacteriaFluo(), new BacteriaClosedMicrochannelTrackerLocalCorrections().setCostParameters(0.1, 0.5)));
         mutation.setProcessingScheme(new SegmentAndTrack(
                 new LAPTracker().setCompartimentStructure(1).setSegmenter(
-                        new MutationSegmenter(0.7, 0.5, 0.45).setScale(2.5) // was 0.6 0.5 0.45
-                ).setSpotQualityThreshold(0.7).setLinkingMaxDistance(0.4, 0.5).setGapParameters(0.4, 0.1, 3).setTrackLength(10, 0)
-        ).addPreFilters(new BandPass(0, 10, 2, 5)));
+                        new MutationSegmenter(0.6, 0.5, 0.35).setScale(2.5) 
+                ).setSpotQualityThreshold(0.7).setLinkingMaxDistance(0.4, 0.5).setGapParameters(0.4, 0.05, 3).setTrackLength(10, 0)
+        ).addPreFilters(new BandPass(0, 7, 0, 5))); // was 10
         
         xp.addMeasurement(new SimpleTrackMeasurements(1));
         xp.addMeasurement(new SimpleTrackMeasurements(2));
@@ -197,8 +197,8 @@ public class GenerateMutationDynamicsXP {
             xp.getPreProcessingTemplate().addTransformation(bactChan, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
             xp.getPreProcessingTemplate().addTransformation(bactChan, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
             xp.getPreProcessingTemplate().addTransformation(bactChan, null, new CropMicroChannelFluo2D(30, 45, 200, 0.6, 5));
-            if (!stabilizer) xp.getPreProcessingTemplate().addTransformation(bactChan, new int[]{bactChan}, new SimpleTranslation(0.477, 0.362, 0)); // 0.19 microns en Z
-            if (stabilizer) xp.getPreProcessingTemplate().addTransformation(bactChan, null, new ImageStabilizerXY(4, 2000, 1e-12, 5).setAdditionalTranslation(bactChan, 0.477, 0.362)); // additional translation to correct chromatic shift
+            if (!stabilizer) xp.getPreProcessingTemplate().addTransformation(bactChan, new int[]{bactChan}, new SimpleTranslation(-1, -1, 0)); // 0.19 microns en Z
+            if (stabilizer) xp.getPreProcessingTemplate().addTransformation(bactChan, null, new ImageStabilizerXY(4, 2000, 1e-12, 5).setAdditionalTranslation(bactChan, -1, -1)); // additional translation to correct chromatic shift
         }
         return xp;
     }

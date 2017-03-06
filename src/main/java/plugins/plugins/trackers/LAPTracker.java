@@ -104,9 +104,7 @@ public class LAPTracker implements TrackerSegmenter {
         return this;
     }
     @Override public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
-        SegmentThenTrack stt = new SegmentThenTrack(segmenter.instanciatePlugin(), this);
-        if (preFilters!=null) stt.addPreFilters(preFilters.get());
-        if (postFilters!=null) stt.addPostFilters(postFilters.get());
+        SegmentThenTrack stt = new SegmentThenTrack(segmenter.instanciatePlugin(), this).setPreFilters(preFilters).setPostFilters(postFilters);
         stt.segmentOnly(structureIdx, parentTrack);
         track(structureIdx, parentTrack, true);
     }

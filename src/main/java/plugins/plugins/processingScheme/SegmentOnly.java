@@ -45,12 +45,15 @@ public class SegmentOnly implements ProcessingScheme {
     protected PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters");
     protected PostFilterSequence postFilters = new PostFilterSequence("Post-Filters");
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, false);
-    Parameter[] parameters= new Parameter[]{preFilters, segmenter, postFilters};
+    Parameter[] parameters;
     
     public SegmentOnly() {}
     
     public SegmentOnly(Segmenter segmenter) {
         this.segmenter.setPlugin(segmenter);
+    }
+    protected SegmentOnly(PluginParameter<Segmenter> segmenter) {
+        this.segmenter=segmenter;
     }
     @Override public SegmentOnly addPreFilters(PreFilter... preFilter) {
         preFilters.add(preFilter);
@@ -68,7 +71,14 @@ public class SegmentOnly implements ProcessingScheme {
         postFilters.add(postFilter);
         return this;
     }
-    
+    public SegmentOnly setPreFilters(PreFilterSequence preFilters) {
+        this.preFilters=preFilters;
+        return this;
+    }
+    public SegmentOnly setPostFilters(PostFilterSequence postFilters) {
+        this.postFilters=postFilters;
+        return this;
+    }
     @Override public PreFilterSequence getPreFilters() {
         return preFilters;
     }
@@ -122,7 +132,7 @@ public class SegmentOnly implements ProcessingScheme {
 
     @Override
     public Parameter[] getParameters() {
-        return parameters;
+        return new Parameter[]{preFilters, segmenter, postFilters};
     }
     @Override public Segmenter getSegmenter() {return segmenter.instanciatePlugin();}
 }

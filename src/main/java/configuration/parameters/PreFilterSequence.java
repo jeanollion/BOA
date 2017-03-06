@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.List;
 import plugins.PostFilter;
 import plugins.PreFilter;
+import utils.Utils;
 
 /**
  *
@@ -56,5 +57,8 @@ public class PreFilterSequence extends PluginParameterList<PreFilter> {
     @Override public PreFilterSequence add(Collection<PreFilter> instances) {
         super.add(instances);
         return this;
+    }
+    public String toStringElements() {
+        return Utils.toStringList(children, p -> p.pluginName);
     }
 }

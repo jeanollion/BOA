@@ -66,37 +66,37 @@ public class TestProcessMutations {
         new ImageJ();
         String dbName = "boa_fluo170207_150ms";
         //final String dbName = "boa_fluo151127_test";
-        int fIdx = 103;
-        int mcIdx =0;
+        int fIdx = 86;
+        int mcIdx =1;
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
         t.testSegMutationsFromXP(fIdx, mcIdx, false, 0,30);
     }
     
-    public void testSegMutation(StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
-        Image input = parent.getRawImage(2);
-        input = parent.getExperiment().getStructure(2).getProcessingScheme().getPreFilters().filter(input, parent);
+    public void testSegMutation(Image input, StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
+        
         ImageInteger parentMask = parent.getMask();
+        Image localInput = input.sameSize(parent.getMask()) ? input : input.crop(parent.getBounds().duplicate().translate(input.getBoundingBox().reverseOffset()));
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
         //MutationSegmenterScaleSpace seg = new MutationSegmenterScaleSpace().setIntensityThreshold(90);
         MutationSegmenter.debug=true;
         //LocalSNR.debug=true;
-        MutationSegmenter seg = new MutationSegmenter().setIntensityThreshold(0.45).setThresholdSeeds(0.7).setThresholdPropagation(0.5).setSubtractBackgroundScale(6).setScale(2.5);
+        MutationSegmenter seg = new MutationSegmenter().setIntensityThreshold(0.35).setThresholdSeeds(0.6).setThresholdPropagation(0.5).setScale(2.5);
         //seg.getPostFilters().removeAllElements();
         
         seg.intermediateImages=intermediateImages;
-        ObjectPopulation pop = seg.runSegmenter(input, 2, parent);
+        ObjectPopulation pop = seg.runSegmenter(localInput, 2, parent);
         
         PostFilterSequence pf = new PostFilterSequence("pf"); 
-        pf.add(new FeatureFilter(new LocalSNR().setLocalBackgroundRadius(6).setBackgroundObjectStructureIdx(1).setRadii(2, 2), 1, true, true));
+        //pf.add(new FeatureFilter(new LocalSNR().setLocalBackgroundRadius(6).setBackgroundObjectStructureIdx(1).setRadii(2, 2), 1, true, true));
         //pf.add(new FeatureFilter(new SNR().setBackgroundObjectStructureIdx(1).setRadii(2, 2), 1, true, true));
         //ObjectPopulation popPF = pf.filter(pop.duplicate(), 2, parent);
         
         
         //ObjectPopulation pop = MutationSegmenterScaleSpace.runPlane(input.getZPlane(0), parentMask, 5, 4, 0.75, intermediateImages);
         if (parentMask_!=null) parentMask_.add(parentMask);
-        if (input_!=null) input_.add(input);
+        if (input_!=null) input_.add(localInput);
         if (outputLabel!=null) outputLabel.add(pop.getLabelMap().setName("before PF"));
         //if (outputLabel!=null) outputLabel.add(popPF.getLabelMap().setName("after PF"));
         if (intermediateImages_!=null) {
@@ -120,14 +120,16 @@ public class TestProcessMutations {
         if (root==null) return;
         //logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(mcIdx);
-        
+        Image input = mc.getRawImage(2);
+        input = mc.getExperiment().getStructure(2).getProcessingScheme().getPreFilters().filter(input, mc);
+        logger.debug("prefilters: {}", mc.getExperiment().getStructure(2).getProcessingScheme().getPreFilters());
         if (parentMC) {
             if (mcMask_!=null) mcMask_.add(mc.getMask());
-            testSegMutation(mc, parentMask_, input_, outputLabel, intermediateImages_);
+            testSegMutation(input, mc, parentMask_, input_, outputLabel, intermediateImages_);
         } else {
             for (StructureObject bact : mc.getChildren(1)) {
                 if (mcMask_!=null) mcMask_.add(mc.getMask());
-                testSegMutation(bact, parentMask_, input_, outputLabel, intermediateImages_);
+                testSegMutation(input, bact, parentMask_, input_, outputLabel, intermediateImages_);
             }
         }
     }
