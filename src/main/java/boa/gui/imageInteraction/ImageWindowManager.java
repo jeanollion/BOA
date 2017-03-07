@@ -117,6 +117,14 @@ public abstract class ImageWindowManager<T, U, V> {
         isLabelImage.clear();
         trackHeadTrackMap.clear();
     }
+    /*public void flushAllButCurrent() {
+        ImageObjectInterface i = this.getCurrentImageObjectInterface();
+        List<StructureObject> parents = i.getParents();
+        
+        Image im = this.displayer.getCurrentImage2();
+        Boolean isLI = this.isLabelImage.get(im);
+        
+    }*/
     
     public ImageDisplayer<T> getDisplayer() {return displayer;}
     

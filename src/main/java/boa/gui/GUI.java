@@ -1555,15 +1555,21 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             if (navigateCount>1) { // open next/prev image containig objects
                 List<StructureObject> l;
                 if (nextPosition || position==null) {
-                    do {
+                    String selPos = null;
+                    if (position==null) selPos = this.trackTreeController.getSelectedPosition();
+                    if (selPos!=null) position = selPos;
+                    else position = SelectionUtils.getNextPosition(sels, position, next);
+                    l = position==null ? null : SelectionUtils.getStructureObjects(sels, position);
+                    while (position!=null && (l==null || l.isEmpty())) {
                         position = SelectionUtils.getNextPosition(sels, position, next); 
                         l = position==null ? null : SelectionUtils.getStructureObjects(sels, position);
-                    } while (position!=null && (l==null || l.isEmpty()));
+                    }
                     i=null;
                     logger.debug("changing position");
                 } else l = SelectionUtils.getStructureObjects(sels, position);
                 logger.debug("position: {}, #objects: {}, nav: {}, NextPosition? {}", position, position!=null ? l.size() : 0, navigateCount, nextPosition);
                 if (position==null) return;
+                this.trackTreeController.selectPosition(position);
                 Map<StructureObject, List<StructureObject>> objectsByParent = StructureObjectUtils.splitByParentTrackHead(l);
                 List<StructureObject> parents = new ArrayList<>(objectsByParent.keySet());
                 Collections.sort(parents);

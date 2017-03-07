@@ -62,13 +62,16 @@ public class PythonGateway {
         
         if (GUI.getDBConnection()==null || !GUI.getDBConnection().getDBName().equals(dbName)) {
             if (GUI.getDBConnection()!=null) logger.debug("current xp name : {} vs {}", GUI.getDBConnection().getDBName(), dbName);
+            logger.info("Connection to {}....", dbName);
             GUI.getInstance().setDBConnection(dbName, null);
+            logger.info("Selection tab....");
             GUI.getInstance().setSelectedTab(2);
+            logger.info("Tab selected");
         }
         GUI.getDBConnection().getSelectionDAO().store(res);
-        logger.debug("pop sels..");
+        logger.info("pop sels..");
         GUI.getInstance().populateSelections();
-        logger.debug("sel sel..");
+        logger.info("sel sel..");
         GUI.getInstance().setSelectedSelection(res);
         if (openWholeSelection) {
             SelectionUtils.displaySelection(res, -2, structureDisplay);

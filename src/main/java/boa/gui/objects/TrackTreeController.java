@@ -167,4 +167,16 @@ public class TrackTreeController {
         for (TrackTreeGenerator t : allGeneratorS.values()) t.resetHighlightedObjects();
         for (TrackTreeGenerator t : this.displayedGeneratorS.values()) if (t.tree!=null) t.tree.updateUI();
     }
+    public String getSelectedPosition() {
+        if (displayedGeneratorS.isEmpty()) return null;
+        int count = displayedGeneratorS.get(0).tree.getSelectionCount();
+        if (count!=1) return null;
+        return displayedGeneratorS.get(0).getSelectedPosition();
+    }
+    public void selectPosition(String position) {
+        if (displayedGeneratorS.isEmpty()) return;
+        int count = displayedGeneratorS.get(0).tree.getSelectionCount();
+        if (count>1) return;
+        displayedGeneratorS.get(0).selectTracks(new ArrayList<StructureObject>(){{add(displayedGeneratorS.get(0).getObjectDAO(position).getRoot(0));}}, false);
+    }
 }

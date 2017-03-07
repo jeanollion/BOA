@@ -106,6 +106,13 @@ public class TrackTreeGenerator {
         if (hasSelection() && tree.getSelectionPath().getLastPathComponent() instanceof TrackNode) return ((TrackNode)tree.getSelectionPath().getLastPathComponent()).trackHead;
         else return null;
     }
+    public String getSelectedPosition() {
+        if (hasSelection()) {
+            if (treeModel.getRoot() instanceof RootTrackNode) return ((RootTrackNode)tree.getSelectionPath().getPathComponent(0)).fieldName;
+            else if (treeModel.getRoot() instanceof TrackExperimentNode) return ((RootTrackNode)tree.getSelectionPath().getPathComponent(1)).fieldName;
+        }
+        return null;
+    }
     
     public boolean hasSelection() {return tree!=null?tree.getSelectionCount()>0:false;}
     
@@ -268,20 +275,22 @@ public class TrackTreeGenerator {
         } else throw new RuntimeException("Invalid root");
         
         path.add(root);
-        ArrayList<StructureObject> objectPathIndices = getObjectPath(object);
-        TrackNode t = root.getChild(objectPathIndices.get(objectPathIndices.size()-1));
-        if (t==null) {
-            logger.debug("object: {} was not found in tree, last element found: {}", object, null);
-            return null;
-        }
-        path.add(t);
-        for (int i = objectPathIndices.size()-2; i>=0; --i) {
-            t=t.getChild(objectPathIndices.get(i));
+        if (!object.isRoot()) {
+            ArrayList<StructureObject> objectPathIndices = getObjectPath(object);
+            TrackNode t = root.getChild(objectPathIndices.get(objectPathIndices.size()-1));
             if (t==null) {
-                logger.debug("object: {} was not found in tree, last element found: {}", object, objectPathIndices.get(i+1));
+                logger.debug("object: {} was not found in tree, last element found: {}", object, null);
                 return null;
             }
             path.add(t);
+            for (int i = objectPathIndices.size()-2; i>=0; --i) {
+                t=t.getChild(objectPathIndices.get(i));
+                if (t==null) {
+                    logger.debug("object: {} was not found in tree, last element found: {}", object, objectPathIndices.get(i+1));
+                    return null;
+                }
+                path.add(t);
+            }
         }
         return new TreePath(path.toArray(new TreeNode[path.size()]));
     }
