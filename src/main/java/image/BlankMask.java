@@ -137,6 +137,11 @@ public class BlankMask extends ImageInteger implements ImageMask {
         return (BlankMask) cropI(bounds);
     }
     
+    @Override
+    public BlankMask cropWithOffset(BoundingBox bounds) {
+        return (BlankMask) cropIWithOffset(bounds);
+    }
+    
     // ImageInteger metods
     @Override
     public int getPixelInt(int x, int y, int z) {

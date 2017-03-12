@@ -78,7 +78,7 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
     
     @Override
     public boolean singleFrame(int channel) {
-        return this.singleFrameC[channel];
+        return singleFrameC!=null? this.singleFrameC[channel] : false;
     }
     
     @Override

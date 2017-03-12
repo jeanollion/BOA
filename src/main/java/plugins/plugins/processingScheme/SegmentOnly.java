@@ -33,6 +33,7 @@ import plugins.PostFilter;
 import plugins.PreFilter;
 import plugins.ProcessingScheme;
 import plugins.Segmenter;
+import plugins.UseMaps;
 import utils.ThreadRunner;
 import utils.ThreadRunner.ThreadAction;
 import utils.Utils;
@@ -112,10 +113,14 @@ public class SegmentOnly implements ProcessingScheme {
     private ObjectPopulation segment(StructureObject parent, int structureIdx, int segmentationStructureIdx) { // TODO mieux gérer threads -> faire liste. Option filtres avant ou après découpage.. 
         Image input = preFilters.filter(parent.getRawImage(structureIdx), parent);
         if (segmentationStructureIdx>parent.getStructureIdx()) {
+            Segmenter seg = segmenter.instanciatePlugin();
+            Image[] maps=null;
+            if (seg instanceof UseMaps) maps = ((UseMaps)seg).computeMaps(parent.getRawImage(structureIdx), input);
             List<Object3D> objects = new ArrayList<>();
-            BoundingBox inputBBRev = input.getBoundingBox().reverseOffset();
             for (StructureObject subParent : parent.getChildren(segmentationStructureIdx)) {
-                ObjectPopulation pop = segmenter.instanciatePlugin().runSegmenter(input.crop(subParent.getBounds().duplicate().translate(inputBBRev)), structureIdx, subParent);
+                seg = segmenter.instanciatePlugin();
+                if (maps!=null) ((UseMaps)seg).setMaps(Utils.apply(maps, i -> i.cropWithOffset(subParent.getBounds())));
+                ObjectPopulation pop = seg.runSegmenter(input.cropWithOffset(subParent.getBounds()), structureIdx, subParent);
                 pop = postFilters.filter(pop, structureIdx, parent);
                 pop.translate(subParent.getBounds(), true);
                 objects.addAll(pop.getObjects());
