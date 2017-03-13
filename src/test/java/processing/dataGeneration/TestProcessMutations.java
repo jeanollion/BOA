@@ -66,12 +66,12 @@ public class TestProcessMutations {
         new ImageJ();
         String dbName = "boa_fluo170207_150ms";
         //final String dbName = "boa_fluo151127_test";
-        int fIdx = 86;
-        int mcIdx =1;
+        int fIdx = 32;
+        int mcIdx =6;
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
-        t.testSegMutationsFromXP(fIdx, mcIdx, false, 0,30);
+        t.testSegMutationsFromXP(fIdx, mcIdx, false, 37,37);
     }
     
     public void testSegMutation(Image input, StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
@@ -80,7 +80,8 @@ public class TestProcessMutations {
         Image localInput = input.sameSize(parent.getMask()) ? input : input.crop(parent.getBounds().duplicate().translate(input.getBoundingBox().reverseOffset()));
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
         //MutationSegmenterScaleSpace seg = new MutationSegmenterScaleSpace().setIntensityThreshold(90);
-        MutationSegmenter.debug=true;
+        if (parent.getIdx()==2) MutationSegmenter.debug=true;
+        else MutationSegmenter.debug=false;
         //LocalSNR.debug=true;
         MutationSegmenter seg = new MutationSegmenter().setIntensityThreshold(0.35).setThresholdSeeds(0.6).setThresholdPropagation(0.5).setScale(2.5);
         //seg.getPostFilters().removeAllElements();
