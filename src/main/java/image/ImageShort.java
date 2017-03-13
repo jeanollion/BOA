@@ -178,6 +178,11 @@ public class ImageShort extends ImageInteger {
     }
     
     @Override
+    public ImageShort cropWithOffset(BoundingBox bounds) {
+        return (ImageShort) cropIWithOffset(bounds);
+    }
+    
+    @Override
     public void invert() {
         double[] minAndMax = this.getMinAndMax(null);
         int off = (int) (minAndMax[1] + minAndMax[0]);

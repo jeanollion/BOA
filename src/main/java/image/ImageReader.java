@@ -165,12 +165,11 @@ public class ImageReader {
         if (coords.getBounds()!=null) {
             zMin=Math.max(coords.getBounds().getzMin(), 0);
             zMax=Math.min(coords.getBounds().getzMax(), sizeZ-1);
-            if (zMin>=zMax) {zMin=0; zMax=sizeZ-1;}
+            if (zMin>zMax) {zMin=0; zMax=sizeZ-1;}
             if (this.supportView) {
                 sizeX = coords.getBounds().getSizeX();
                 sizeY = coords.getBounds().getSizeY();
             }
-            
         } else {
             zMin=0; zMax=sizeZ-1;
         }

@@ -37,6 +37,7 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -568,4 +569,19 @@ public class Utils {
         for (Collection<V> c : map.values()) l.addAll(c);
         return l;
     }
+    
+    public static <T> List<T> apply(List<T> list, Function<T, T> func) {
+        if (list==null) return null;
+        if (list.isEmpty()) return Collections.EMPTY_LIST;
+        List<T> res = new ArrayList<>(list.size());
+        for (T t : list)  res.add(func.apply(t));
+        return res;
+    }
+    public static <T> T[] apply(T[] array, Function<T, T> func) {
+        if (array==null) return null;
+        Object[] res = new Object[array.length];
+        for (int i = 0; i<array.length; ++i) res[i] = func.apply(array[i]);
+        return (T[]) res;
+    }
+    
 }

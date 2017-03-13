@@ -49,6 +49,7 @@ import jj2000.j2k.util.ArrayUtil;
 import measurement.BasicMeasurements;
 import plugins.Segmenter;
 import plugins.Thresholder;
+import plugins.UseMaps;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.thresholders.BackgroundFit;
 import plugins.plugins.thresholders.ConstantValue;
@@ -73,7 +74,7 @@ import utils.Utils;
  *
  * @author jollion
  */
-public class MutationSegmenter implements Segmenter {
+public class MutationSegmenter implements Segmenter, UseMaps {
     public List<Image> intermediateImages;
     public static boolean debug = false;
     public static boolean displayImages = false;
@@ -118,7 +119,7 @@ public class MutationSegmenter implements Segmenter {
         return run(input, parent, scale.getValue().doubleValue(), minSpotSize.getValue().intValue(), thresholdHigh.getValue().doubleValue(), thresholdLow.getValue().doubleValue(), intensityThreshold.getValue().doubleValue(), intermediateImages);
     }
     
-    public static ObjectPopulation run(Image input, StructureObjectProcessing parent, double scale, int minSpotSize, double thresholdHigh , double thresholdLow, double intensityThreshold, List<Image> intermediateImages) {
+    public ObjectPopulation run(Image input, StructureObjectProcessing parent, double scale, int minSpotSize, double thresholdHigh , double thresholdLow, double intensityThreshold, List<Image> intermediateImages) {
         if (input.getSizeZ()>1) {
             // tester sur average, max, ou plan par plan
             ArrayList<Image> planes = input.splitZPlanes();
@@ -136,7 +137,7 @@ public class MutationSegmenter implements Segmenter {
         } else return runPlane(input, parent, scale, minSpotSize, thresholdHigh, thresholdLow, intensityThreshold, intermediateImages);
     }
     
-    public static ObjectPopulation runPlane(Image input, StructureObjectProcessing parent, double scale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, double intensityThreshold, List<Image> intermediateImages) {
+    public ObjectPopulation runPlane(Image input, StructureObjectProcessing parent, double scale, int minSpotSize, double thresholdSeeds, double thresholdPropagation, double intensityThreshold, List<Image> intermediateImages) {
         if (input.getSizeZ()>1) throw new Error("MutationSegmenter: should be run on a 2D image");
         Image sub = input.duplicate();
         
@@ -151,8 +152,17 @@ public class MutationSegmenter implements Segmenter {
         if (debug) logger.debug("thld: {} mean & sigma: {}", thld, ms);
         ImageOperations.affineOperation2WithOffset(sub, sub, 1/ms[1], -ms[0]);
         
-        Image smooth = ImageFeatures.gaussianSmooth(sub, scale, scale, false);
-        Image lap = ImageFeatures.getLaplacian(sub, scale, true, false).setName("laplacian: "+scale);
+        // TODO: test is Use Scale is taken into acount.
+        //Image smooth = ImageFeatures.gaussianSmooth(sub, scale, scale, false);
+        //Image lap = ImageFeatures.getLaplacian(sub, scale, true, false).setName("laplacian: "+scale);
+        
+        Image smooth = getSmoothedMap(input);
+        this.smooth=null; // avoid several scaling
+        ImageOperations.affineOperation2WithOffset(smooth, smooth, 1/ms[1], -ms[0]);
+        Image lap = getLaplacianMap(input);
+        this.lap=null; // avoid several scaling
+        ImageOperations.affineOperation2WithOffset(lap, lap, 1/ms[1], 0); // no additive coefficient
+        
         
         if (intermediateImages!=null) {
             //intermediateImages.add((ImageInteger)parent.getMask());
@@ -182,5 +192,34 @@ public class MutationSegmenter implements Segmenter {
     public Parameter[] getParameters() {
         return parameters;
     }
-    
+
+    @Override
+    public Image[] computeMaps(Image rawSource, Image filteredSource) {
+        double scale = this.scale.getValue().doubleValue();
+        Image smooth = ImageFeatures.gaussianSmooth(filteredSource, scale, scale, false).setName("gaussian: "+scale);
+        Image lap = ImageFeatures.getLaplacian(filteredSource, scale, true, false).setName("laplacian: "+scale);
+        return new Image[]{smooth, lap};
+    }
+    Image smooth, lap;
+    @Override
+    public void setMaps(Image[] maps) {
+        if (maps==null) return;
+        if (maps.length!=2) throw new IllegalArgumentException("Maps should be of length 2 and contain smooth & laplacian of gaussian");
+        this.smooth=maps[0];
+        this.lap=maps[1];
+    }
+    protected Image getSmoothedMap(Image source) {
+        if (smooth==null) {
+            double scale = this.scale.getValue().doubleValue();
+            smooth = ImageFeatures.gaussianSmooth(source, scale, scale, false).setName("gaussian: "+scale);
+        }
+        return smooth;
+    }
+    protected Image getLaplacianMap(Image source) {
+        if (lap==null) {
+            double scale = this.scale.getValue().doubleValue();
+            lap = ImageFeatures.getLaplacian(source, scale, true, false).setName("laplacian: "+scale);
+        }
+        return lap;
+    }
 }

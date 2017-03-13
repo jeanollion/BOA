@@ -150,6 +150,8 @@ public abstract class Image implements ImageProperties {
     public <T extends Image> T duplicate() {return duplicate(name);}
     public abstract Image newImage(String name, ImageProperties properties);
     public abstract <T extends Image> T crop(BoundingBox bounds);
+    public abstract <T extends Image> T cropWithOffset(BoundingBox bounds);
+    
     /**
      * 
      * @param <T> image type
@@ -251,7 +253,9 @@ public abstract class Image implements ImageProperties {
     public int[] getHisto256(ImageMask mask) {return getHisto256(mask, null);}
     public abstract int[] getHisto256(double min, double max, ImageMask mask, BoundingBox limit);
     
-    
+    protected Image cropIWithOffset(BoundingBox bounds) {
+        return cropI(bounds.duplicate().translate(getBoundingBox().reverseOffset()));
+    }
     
     protected Image cropI(BoundingBox bounds) {
         //bounds.trimToImage(this);

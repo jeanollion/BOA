@@ -27,6 +27,8 @@ import utils.ArrayUtil;
  * @author jollion
  */
 public class TestArrayUtil {
+    
+
     //@Test
     public void testRegionalExtrema() {
         float[] values = new float[]{0, 0, 0, 0, 1, 2, 3, 4, 4, 3, 2, 3, 4, 3, 5};

@@ -24,12 +24,16 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.Prefs;
 import image.BlankMask;
+import image.BoundingBox;
 import image.IJImageWrapper;
 import image.Image;
 import image.ImageByte;
 import image.ImageFloat;
+import image.ImageIOCoordinates;
 import image.ImageInt;
 import image.ImageInteger;
+import image.ImageOperations;
+import image.ImageReader;
 import image.ImageShort;
 import org.junit.Test;
 import processing.neighborhood.EllipsoidalNeighborhood;
@@ -41,7 +45,28 @@ import processing.neighborhood.Neighborhood;
  */
 public class TestFilters {
     public static void main(String[] args) {
-        new TestFilters().testMedian();
+        new TestFilters().testScale();
+    }
+    
+    public void testScale() {
+        String path = "/home/jollion/Documents/LJP/DataLJP/testsub60/imagesTest.ome.tiff";
+        Image source = ImageReader.openImage(path, new ImageIOCoordinates(0, 0, 0, new BoundingBox(17, 78, 242, 613, 0, 0)));
+        double[] ms = ImageOperations.getMeanAndSigma(source, null, null);
+        double scale = 2.5;
+        //Image smoothThenScale = ImageFeatures.gaussianSmooth(source, scale, scale, false).setName("gaussian then scale");
+        Image lap = ImageFeatures.getLaplacian(source, scale, true, false).setName("laplacian");
+        //ImageOperations.affineOperation2WithOffset(smoothThenScale, smoothThenScale, 1/ms[1], -ms[0]);
+        Image lapThenScale = ImageOperations.affineOperation2WithOffset(lap, null, 1/ms[1], 0);
+        
+        ImageOperations.affineOperation2WithOffset(source, source, 1/ms[1], -ms[0]);
+        //Image scaleTheSmooth = ImageFeatures.gaussianSmooth(source, scale, scale, false).setName("scale the gaussian");
+        Image scaleThenLap = ImageFeatures.getLaplacian(source, scale, true, false).setName("scale then laplacian");
+        
+        //ImageWindowManagerFactory.showImage(smoothThenScale);
+        ImageWindowManagerFactory.showImage(lap);
+        ImageWindowManagerFactory.showImage(lapThenScale);
+        //ImageWindowManagerFactory.showImage(scaleTheSmooth);
+        ImageWindowManagerFactory.showImage(scaleThenLap);
     }
     
     @Test

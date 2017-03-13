@@ -176,6 +176,11 @@ public class ImageByte extends ImageInteger {
     }
     
     @Override
+    public ImageByte cropWithOffset(BoundingBox bounds) {
+        return (ImageByte) cropIWithOffset(bounds);
+    }
+    
+    @Override
     public void invert() {
         for (int z = 0; z < sizeZ; z++) {
             for (int xy = 0; xy<sizeXY; ++xy) {

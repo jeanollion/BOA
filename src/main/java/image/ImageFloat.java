@@ -124,6 +124,11 @@ public class ImageFloat extends Image {
     }
     
     @Override
+    public ImageFloat cropWithOffset(BoundingBox bounds) {
+        return (ImageFloat) cropIWithOffset(bounds);
+    }
+    
+    @Override
     public void invert() {
         double[] minAndMax = this.getMinAndMax(null);
         float off = (float)(minAndMax[1] + minAndMax[0]);
