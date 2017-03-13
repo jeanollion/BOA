@@ -142,9 +142,13 @@ public class MutationSegmenter implements Segmenter {
         
         //ObjectCountThresholder.debug=true;
         //final double thld = new ObjectCountThresholder(20).runThresholder(sub, parent);
+        //BackgroundFit.debug=debug;
         final double thld = BackgroundFit.backgroundFit(sub, parent.getMask(), 2, null);
         //final double thld= Double.POSITIVE_INFINITY;
+        
         double[] ms = ImageOperations.getMeanAndSigmaWithOffset(sub, parent.getMask(), v->v<=thld);
+        if (ms[2]==0) ms = ImageOperations.getMeanAndSigmaWithOffset(sub, parent.getMask(), v -> true);
+        if (debug) logger.debug("thld: {} mean & sigma: {}", thld, ms);
         ImageOperations.affineOperation2WithOffset(sub, sub, 1/ms[1], -ms[0]);
         
         Image smooth = ImageFeatures.gaussianSmooth(sub, scale, scale, false);

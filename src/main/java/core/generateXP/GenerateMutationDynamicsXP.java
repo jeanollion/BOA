@@ -39,6 +39,7 @@ import plugins.ObjectFeature;
 import plugins.PluginFactory;
 import plugins.Transformation;
 import plugins.plugins.measurements.BacteriaLineageIndex;
+import plugins.plugins.measurements.GetAttribute;
 import plugins.plugins.measurements.SimpleTrackMeasurements;
 import plugins.plugins.measurements.InclusionObjectIdx;
 import plugins.plugins.measurements.MutationTrackMeasurements;
@@ -170,6 +171,7 @@ public class GenerateMutationDynamicsXP {
         xp.addMeasurement(new SimpleTrackMeasurements(2));
         xp.addMeasurement(new InclusionObjectIdx(2, 1).setMeasurementName("BacteriaIdx"));
         xp.addMeasurement(new ObjectInclusionCount(1, 2, 10).setMeasurementName("MutationCount"));
+        xp.addMeasurement(new GetAttribute(2).addAttributes("Quality"));
         xp.addMeasurement(new SimpleIntensityMeasurementStructureExclusion(0, 2, 1).setPrefix("YfpBactExcl").setRadii(2, 0));
         xp.addMeasurement(new SimpleIntensityMeasurement(1, 2).setPrefix("Yfp"));
         xp.addMeasurement(new SimpleIntensityMeasurement(1, 1).setPrefix("Rfp"));

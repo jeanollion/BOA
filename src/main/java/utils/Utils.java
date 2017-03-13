@@ -331,6 +331,18 @@ public class Utils {
         new Plot(image.getName(), "coord", "value", x, y).show();
     }
     
+    public static void plotProfile(String title, int[] values) {
+        if (values.length<=1) return;
+        double[] doubleValues = ArrayUtil.toDouble(values);
+        double v = doubleValues[0];
+        int idx = 0; 
+        while (idx<doubleValues.length && doubleValues[idx]==v) ++idx;
+        if (idx==doubleValues.length) return;
+        double[] x=new double[doubleValues.length];
+        for (int i = 0; i<x.length; ++i) x[i]=i;
+        new Plot(title, "coord", "value", x, doubleValues).show();
+    }
+    
     public static void plotProfile(String title, float[] values) {
         if (values.length<=1) return;
         float v = values[0];

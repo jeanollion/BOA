@@ -381,6 +381,11 @@ public class ArrayUtil {
         for (int i = 0; i<array.length; ++i) res[i] = Math.round(array[i]);
         return res;
     }
+    public static double[] toDouble(int[] array) {
+        double[] res= new double[array.length];
+        for (int i = 0; i<array.length; ++i) res[i] = (double)array[i];
+        return res;
+    }
     public static double[] toPrimitive(List<Double> coll) {
         double[] res = new double[coll.size()];
         for (int i = 0; i<res.length; ++i) res[i] = coll.get(i);

@@ -71,7 +71,7 @@ public class ScaleHistogram implements Transformation {
     
     private static Image scaleGF(Image image, double scaleFactor) {
         double[] meanSigma = new double[2];
-        BackgroundFit.backgroundFit(image, null, 1, meanSigma);
+        BackgroundFit.backgroundFitHalf(image, null, 1, meanSigma);
         double scale = scaleFactor / meanSigma[0];
         return ImageOperations.affineOperation(image, null, scale, 0);
     }
@@ -102,7 +102,7 @@ public class ScaleHistogram implements Transformation {
     
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         double[] meanSigma = new double[2];
-        if (method.getSelected()) BackgroundFit.backgroundFit(image, null, 1, meanSigma);
+        if (method.getSelected()) BackgroundFit.backgroundFitHalf(image, null, 1, meanSigma);
         else KappaSigma.kappaSigmaThreshold(image, null, 3, 2, meanSigma);
         double scale = scaleFactor.getValue().doubleValue() / meanSigma[0];
         logger.debug("timePoint: {} estimated background : {}, scale value: {}, method: {}", timePoint, meanSigma[0], scale, method.getSelectedItem());
