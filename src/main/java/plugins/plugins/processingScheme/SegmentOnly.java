@@ -119,7 +119,7 @@ public class SegmentOnly implements ProcessingScheme {
             List<Object3D> objects = new ArrayList<>();
             for (StructureObject subParent : parent.getChildren(segmentationStructureIdx)) {
                 seg = segmenter.instanciatePlugin();
-                if (maps!=null) ((UseMaps)seg).setMaps(Utils.apply(maps, i -> i.cropWithOffset(subParent.getBounds())));
+                if (maps!=null) ((UseMaps)seg).setMaps(Utils.apply(maps, new Image[maps.length], i -> i.cropWithOffset(subParent.getBounds())));
                 ObjectPopulation pop = seg.runSegmenter(input.cropWithOffset(subParent.getBounds()), structureIdx, subParent);
                 pop = postFilters.filter(pop, structureIdx, parent);
                 pop.translate(subParent.getBounds(), true);

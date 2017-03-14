@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -61,6 +62,20 @@ public class HashMapGetCreate<K, V> extends HashMap<K, V> {
     public static class SetFactory<K, V> implements Factory<K, Set<V>>{
         @Override public Set<V> create(K key) {
             return new HashSet<>();
+        }
+    }
+    public static class MapFactory<K, L, V> implements Factory<K, Map<L, V>>{
+        @Override public Map<L, V> create(K key) {
+            return new HashMap<>();
+        }
+    }
+    public static class HashMapGetCreateFactory<K, L, V> implements Factory<K, HashMapGetCreate<L, V>> {
+        final Factory<L, V> factory;
+        public HashMapGetCreateFactory(Factory<L, V> factory) {
+            this.factory=factory;
+        }
+        @Override public HashMapGetCreate<L, V> create(K key) {
+            return new HashMapGetCreate<>(factory);
         }
     }
 }

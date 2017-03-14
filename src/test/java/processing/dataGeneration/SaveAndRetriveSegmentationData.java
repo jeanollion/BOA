@@ -266,7 +266,7 @@ public class SaveAndRetriveSegmentationData {
         ArrayList<double[]> res=  new ArrayList<double[]>();
         for (int i = 0; i<objects.size(); ++i) {
             Object3D o = objects.get(i);
-            double[] d = o.getCenter(image, false);
+            double[] d = o.getMassCenter(image, false);
             Voxel v = getVoxel(d);
             if (mask==null || (mask.contains(v.x, v.y, v.z) && mask.insideMask(v.x, v.y, v.z))) res.add(d);
         }

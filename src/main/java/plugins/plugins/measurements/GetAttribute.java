@@ -17,6 +17,7 @@
  */
 package plugins.plugins.measurements;
 
+import configuration.parameters.BooleanParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.SimpleListParameter;
 import configuration.parameters.StructureParameter;
@@ -34,8 +35,9 @@ import plugins.Measurement;
  */
 public class GetAttribute implements Measurement {
     StructureParameter structure = new StructureParameter("Structure", -1, false, false);
+    BooleanParameter parseArraysAsCoordinates = new BooleanParameter("Parse arrays as coordinates", true);
     SimpleListParameter<TextParameter> attributes = new SimpleListParameter("Attributes", new TextParameter("Attribute Key", "", false));
-    Parameter[] parameters = new Parameter[]{structure, attributes};
+    Parameter[] parameters = new Parameter[]{structure, parseArraysAsCoordinates, attributes};
     
     public GetAttribute() {}
     
@@ -78,7 +80,14 @@ public class GetAttribute implements Measurement {
             Object value = object.getAttribute(key);
             if (value ==null) continue;
             if (value instanceof Number) object.getMeasurements().setValue(key, (Number)value);
-            else if (value instanceof double[]) object.getMeasurements().setValue(key, (double[])value);
+            else if (value instanceof double[]) {
+                double[] v = (double[]) value;
+                if (v.length<=3 && v.length>0 && parseArraysAsCoordinates.getSelected()) {
+                    object.getMeasurements().setValue(key+"X", v[0]);
+                    if (v.length>1) object.getMeasurements().setValue(key+"Y", v[1]);
+                    if (v.length>2) object.getMeasurements().setValue(key+"Z", v[2]);
+                } else object.getMeasurements().setValue(key, v);
+            }
             else if (value instanceof String) object.getMeasurements().setValue(key, (String)value);
             else if (value instanceof Boolean) object.getMeasurements().setValue(key, (Boolean)value);
         }

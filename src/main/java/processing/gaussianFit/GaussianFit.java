@@ -94,7 +94,7 @@ public class GaussianFit {
         Map<Localizable, Object3D> locObj = new HashMap<Localizable, Object3D>(peaks.size());
         List<Localizable> peaksLoc = new ArrayList<Localizable>(peaks.size());
         for (Object3D o : peaks) {
-            double[] center = o.getCenter(false);
+            double[] center = o.getGeomCenter(false);
             if (o.isAbsoluteLandMark()) {
                 center[0]-=image.getBoundingBox().getxMin();
                 center[1]-=image.getBoundingBox().getyMin();
@@ -200,7 +200,7 @@ public class GaussianFit {
                 ar = sx / sy; 
         }
         //logger.debug("gaussian fit on seed: {}; center: {}, x: {}, y: {}, I: {}, sigmaX: {}, sigmaY: {}, error: {}", o.getLabel(), o.getCenter(),x, y, Ar, sx, sy, error);
-        logger.debug("gaussian fit on seed: {}; center: {}, sigmaX: {}, A: {}, C:{}, error: {}", o.getLabel(), o.getCenter(false), sx, Ar, C, error);
+        logger.debug("gaussian fit on seed: {}; center: {}, sigmaX: {}, A: {}, C:{}, error: {}", o.getLabel(), o.getGeomCenter(false), sx, Ar, C, error);
         return new EllipseRoi(x1, y1, x2, y2, ar);
     }
 }

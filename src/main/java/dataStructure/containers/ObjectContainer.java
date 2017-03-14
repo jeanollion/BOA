@@ -36,12 +36,10 @@ public abstract class ObjectContainer {
     @Transient public static final int MAX_VOX_2D_EMB = 120;
     @Transient protected StructureObject structureObject;
     BoundingBox bounds;
-    protected double quality;
     
     public ObjectContainer(StructureObject structureObject) {
         this.structureObject=structureObject;
         this.bounds=structureObject.getBounds();
-        this.quality=structureObject.getObject().getQuality();
     }
     public void setStructureObject(StructureObject structureObject) {
         this.structureObject=structureObject;

@@ -122,21 +122,27 @@ public class GenerateMutationDynamicsXP {
         invertChannels = false;
         mutThld = 90;
         
+        boolean onlyUpdateMeasurements = true;
         boolean performProcessing = false;
         
         MasterDAO mDAO = new MorphiumMasterDAO(dbName);
-        mDAO.reset();
-        Experiment xp = generateXPFluo(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, trimStart, trimEnd, cropXYdXdY);
-        mDAO.setExperiment(xp);
-        Processor.importFiles(xp, true, inputDir);
-        for (MicroscopyField f : xp.getPositions()) f.setDefaultFrame(0);
-        GenerateXP.setFlip(xp, flipArray);
-        if (performProcessing) {
-            Processor.preProcessImages(mDAO, true);
-            Processor.processAndTrackStructures(mDAO, true, 0);
+        if (onlyUpdateMeasurements) {
+            setMeasurements(mDAO.getExperiment());
+        } else {
+            mDAO.reset();
+            Experiment xp = generateXPFluo(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, trimStart, trimEnd, cropXYdXdY);
+            mDAO.setExperiment(xp);
+            Processor.importFiles(xp, true, inputDir);
+            for (MicroscopyField f : xp.getPositions()) f.setDefaultFrame(0);
+            GenerateXP.setFlip(xp, flipArray);
+            if (performProcessing) {
+                Processor.preProcessImages(mDAO, true);
+                Processor.processAndTrackStructures(mDAO, true, 0);
+            }
         }
         mDAO.updateExperiment(); // save changes
     }
+    
     public static Experiment generateXPFluo(String name, String outputDir, boolean setUpPreProcessing, int trimFramesStart, int trimFramesEnd, int[] crop) {
         
         Experiment xp = new Experiment(name);
@@ -167,26 +173,7 @@ public class GenerateMutationDynamicsXP {
                 ).setSpotQualityThreshold(0.7).setLinkingMaxDistance(0.4, 0.5).setGapParameters(0.4, 0.05, 3).setTrackLength(10, 0)
         ).addPreFilters(new BandPass(0, 7, 0, 5))); // was 10
         
-        xp.addMeasurement(new SimpleTrackMeasurements(1));
-        xp.addMeasurement(new SimpleTrackMeasurements(2));
-        xp.addMeasurement(new InclusionObjectIdx(2, 1).setMeasurementName("BacteriaIdx"));
-        xp.addMeasurement(new ObjectInclusionCount(1, 2, 10).setMeasurementName("MutationCount"));
-        xp.addMeasurement(new GetAttribute(2).addAttributes("Quality"));
-        xp.addMeasurement(new SimpleIntensityMeasurementStructureExclusion(0, 2, 1).setPrefix("YfpBactExcl").setRadii(2, 0));
-        xp.addMeasurement(new SimpleIntensityMeasurement(1, 2).setPrefix("Yfp"));
-        xp.addMeasurement(new SimpleIntensityMeasurement(1, 1).setPrefix("Rfp"));
-        xp.addMeasurement(new SimpleIntensityMeasurementStructureExclusion(1, 2, 2).setPrefix("YfpMutExcl").setRadii(2, 2));
-        xp.addMeasurement(new SimpleIntensityMeasurement(2, 2).setPrefix("Yfp"));
-        xp.addMeasurement(new ObjectFeatures(2).addFeature(new SNR(1), "Snr").addFeature(new LocalSNR(1), "LocalSnr"));
-        xp.addMeasurement(new RelativePosition(2, 1, true, 0).setMeasurementName("CoordMassToBacteriaMass"));
-        xp.addMeasurement(new RelativePosition(2, 1, true, 1).setMeasurementName("CoordMassToBacteriaGeom"));
-        xp.addMeasurement(new RelativePosition(2, 0, true, 2).setMeasurementName("CoordMassToMC"));
-        xp.addMeasurement(new RelativePosition(2, 0, false, 2).setMeasurementName("CoordGeomToMC"));
-        xp.addMeasurement(new RelativePosition(2, -1, true, 2).setMeasurementName("CoordMass"));
-        xp.addMeasurement(new RelativePosition(2, -1, false, 2).setMeasurementName("CoordGeom"));
-        xp.addMeasurement(new RelativePosition(1, -1, false, 2).setMeasurementName("CoordGeom"));
-        xp.addMeasurement(new RelativePosition(1, -1, true, 2).setMeasurementName("CoordMass"));
-        xp.addMeasurement(new RelativePosition(1, 0, true, 2).setMeasurementName("CoordMassToMC"));
+        setMeasurements(xp);
         
         if (setUpPreProcessing) {// preProcessing 
             //xp.getPreProcessingTemplate().addTransformation(0, null, new SuppressCentralHorizontalLine(6)).setActivated(false);
@@ -203,6 +190,32 @@ public class GenerateMutationDynamicsXP {
             if (stabilizer) xp.getPreProcessingTemplate().addTransformation(bactChan, null, new ImageStabilizerXY(4, 2000, 1e-12, 5).setAdditionalTranslation(bactChan, -1, -1)); // additional translation to correct chromatic shift
         }
         return xp;
+    }
+    
+    protected static void setMeasurements(Experiment xp) {
+        xp.clearMeasurements();
+        xp.addMeasurement(new SimpleTrackMeasurements(1));
+        xp.addMeasurement(new SimpleTrackMeasurements(2));
+        xp.addMeasurement(new InclusionObjectIdx(2, 1).setMeasurementName("BacteriaIdx"));
+        xp.addMeasurement(new ObjectInclusionCount(1, 2, 10).setMeasurementName("MutationCount"));
+        xp.addMeasurement(new GetAttribute(2).addAttributes("Quality"));
+        xp.addMeasurement(new SimpleIntensityMeasurementStructureExclusion(0, 2, 1).setPrefix("YfpBactExcl").setRadii(2, 0));
+        xp.addMeasurement(new SimpleIntensityMeasurement(1, 2).setPrefix("Yfp"));
+        xp.addMeasurement(new SimpleIntensityMeasurement(1, 1).setPrefix("Rfp"));
+        xp.addMeasurement(new SimpleIntensityMeasurementStructureExclusion(1, 2, 2).setPrefix("YfpMutExcl").setRadii(2, 2));
+        xp.addMeasurement(new SimpleIntensityMeasurement(2, 2).setPrefix("Yfp"));
+        xp.addMeasurement(new ObjectFeatures(2).addFeature(new SNR(1), "Snr").addFeature(new LocalSNR(1), "LocalSnr"));
+        xp.addMeasurement(new RelativePosition(2, 1, 0, 0).setMeasurementName("CoordMassToBacteriaMass"));
+        xp.addMeasurement(new RelativePosition(2, 1, 0, 1).setMeasurementName("CoordMassToBacteriaGeom"));
+        xp.addMeasurement(new RelativePosition(2, 1, 2, 1).setMeasurementName("CoordToBacteriaGeom"));
+        xp.addMeasurement(new RelativePosition(2, 0, 0, 2).setMeasurementName("CoordMassToMC"));
+        xp.addMeasurement(new RelativePosition(2, 0, 1, 2).setMeasurementName("CoordGeomToMC"));
+        xp.addMeasurement(new RelativePosition(2, 0, 2, 2).setMeasurementName("CoordToMC"));
+        xp.addMeasurement(new RelativePosition(2, -1, 0, 2).setMeasurementName("CoordMass"));
+        xp.addMeasurement(new RelativePosition(2, -1, 1, 2).setMeasurementName("CoordGeom"));
+        xp.addMeasurement(new RelativePosition(1, -1, 1, 2).setMeasurementName("CoordGeom"));
+        xp.addMeasurement(new RelativePosition(1, -1, 0, 2).setMeasurementName("CoordMass"));
+        xp.addMeasurement(new RelativePosition(1, 0, 0, 2).setMeasurementName("CoordMassToMC"));
     }
     
     /*public static Experiment generateXPSingleChannel(String name, String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd, int[] crop) {

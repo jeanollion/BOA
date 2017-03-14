@@ -125,6 +125,7 @@ public abstract class Image implements ImageProperties {
     public abstract float getPixelWithOffset(int x, int y, int z);
     public abstract float getPixelLinInterX(int x, int y, int z, float dx);
     public float getPixelLinInterXY(int x, int y, int z, float dx, float dy) {
+        if (dy==0) return getPixelLinInterX(x, y, z, dx);
         return getPixelLinInterX(x, y, z, dx) * (1 - dy) + dy * getPixelLinInterX(x, y+1, z, dx);
     }
     public float getPixelLinInter(int x, int y, int z, float dx, float dy, float dz) {

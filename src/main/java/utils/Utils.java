@@ -63,6 +63,7 @@ import javax.swing.JTree;
 import javax.swing.ListModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import measurement.extraction.DataExtractor;
 
 /**
  *
@@ -191,15 +192,40 @@ public class Utils {
         return res;
     }
     public static <T> String toStringArray(int[] array) {
-        return toStringArray(array, "[", "]", "; ");
+        return toStringArray(array, "[", "]", "; ").toString();
     }
     
-    public static <T> String toStringArray(int[] array, String init, String end, String sep) {
-        if (array.length==0) return init+end;
-        String res = init;
-        for (int i = 0; i<array.length-1; ++i) res+=array[i]+sep;
-        res+=array[array.length-1]+end;
-        return res;
+    public static <T> String toStringArray(double[] array) {
+        return toStringArray(array, "[", "]", "; ", DataExtractor.numberFormater).toString();
+    }
+
+    public static <T> StringBuilder toStringArray(double[] array, String init, String end, String sep, Function<Number, String> numberFormatter) {
+        StringBuilder sb = new StringBuilder(init);
+        if (array.length==0) {
+            sb.append(end);
+            return sb;
+        }
+        for (int i = 0; i<array.length-1; ++i) {
+            sb.append(numberFormatter.apply(array[i]));
+            sb.append(sep);
+        }
+        sb.append(numberFormatter.apply(array[array.length-1]));
+        sb.append(end);
+        return sb;
+    }
+    public static <T> StringBuilder toStringArray(int[] array, String init, String end, String sep) {
+        StringBuilder sb = new StringBuilder(init);
+        if (array.length==0) {
+            sb.append(end);
+            return sb;
+        }
+        for (int i = 0; i<array.length-1; ++i) {
+            sb.append(array[i]);
+            sb.append(sep);
+        }
+        sb.append(array[array.length-1]);
+        sb.append(end);
+        return sb;
     }
     
     public static<T> ArrayList<T> reverseOrder(ArrayList<T> arrayList) {
@@ -540,11 +566,25 @@ public class Utils {
             return n.toString();
         } else {
             double abs = Math.abs(n.doubleValue());
+            if (Double.isInfinite(abs) || Double.isNaN(abs)) return DataExtractor.NaN;
             double pow = Math.pow(10, digits);
             if (abs > 1000 || (abs<0.1 && ((int)(abs*pow))/pow!=abs)) {
                 return String.format(java.util.Locale.US, "%."+ digits+ "E", n);
             } else {
                 return String.format(java.util.Locale.US, "%."+ digits+"f", n);
+            }
+        }
+    }
+    public static String format4(Number n) {
+        if (n instanceof Integer) {
+            return n.toString();
+        } else {
+            double abs = Math.abs(n.doubleValue());
+            if (Double.isInfinite(abs) || Double.isNaN(abs)) return DataExtractor.NaN;
+            if (abs > 1000 || (abs<0.1 && ((int)(abs*10000))/10000!=abs)) {
+                return String.format(java.util.Locale.US, "%.4E", n);
+            } else {
+                return String.format(java.util.Locale.US, "%.4f", n);
             }
         }
     }
@@ -577,11 +617,10 @@ public class Utils {
         for (T t : list)  res.add(func.apply(t));
         return res;
     }
-    public static <T> T[] apply(T[] array, Function<T, T> func) {
+    public static <T> T[] apply(T[] array, T[] outputArray, Function<T, T> func) {
         if (array==null) return null;
-        Object[] res = new Object[array.length];
-        for (int i = 0; i<array.length; ++i) res[i] = func.apply(array[i]);
-        return (T[]) res;
+        for (int i = 0; i<array.length; ++i) outputArray[i] = func.apply(array[i]);
+        return outputArray;
     }
     
 }

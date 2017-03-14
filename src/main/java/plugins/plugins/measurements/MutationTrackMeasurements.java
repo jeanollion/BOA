@@ -103,9 +103,9 @@ public class MutationTrackMeasurements implements Measurement {
         object.getMeasurements().setValue("NextDivisionFrame", nextTP>=0?nextTP:null );
         object.getMeasurements().setValue("TrackHeadIndices", StructureObjectUtils.getIndices(object.getTrackHead()));
         Image intensities = object.getRawImage(mutation.getSelectedStructureIdx());
-        double[] objectCenter = object.getObject().getCenter(intensities, false);
+        double[] objectCenter = object.getObject().getMassCenter(intensities, false);
         object.getMeasurements().setValue("YCoordProportional", getYProportionalPositionWithinContainer(parentBacteria.getObject(), objectCenter[1]));
-        double[] parentCenter = parentBacteria.getObject().getCenter(false);
+        double[] parentCenter = parentBacteria.getObject().getGeomCenter(false);
         object.getMeasurements().setValue("YCoordRelToCenter", (objectCenter[1]-parentCenter[1]));
         object.getMeasurements().setValue("XCoordRelToCenter", (objectCenter[0]-parentCenter[0]));
         object.getMeasurements().setValue("MeanIntensity", BasicMeasurements.getMeanValue(object.getObject(), intensities, true));

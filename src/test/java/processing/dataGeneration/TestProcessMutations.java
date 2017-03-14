@@ -53,6 +53,7 @@ import plugins.plugins.segmenters.SpotFluo2D5;
 import processing.neighborhood.CylindricalNeighborhood;
 import processing.neighborhood.EllipsoidalNeighborhood;
 import utils.MorphiumUtils;
+import utils.Utils;
 
 /**
  *
@@ -66,28 +67,39 @@ public class TestProcessMutations {
         new ImageJ();
         String dbName = "boa_fluo170207_150ms";
         //final String dbName = "boa_fluo151127_test";
-        int fIdx = 32;
-        int mcIdx =6;
+        int fIdx = 0;
+        int mcIdx =0;
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
         t.init(dbName);
-        t.testSegMutationsFromXP(fIdx, mcIdx, false, 37,37);
+        t.testSegMutationsFromXP(fIdx, mcIdx, false, 1,1);
     }
     
     public void testSegMutation(Image input, StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
         
         ImageInteger parentMask = parent.getMask();
-        Image localInput = input.sameSize(parent.getMask()) ? input : input.crop(parent.getBounds().duplicate().translate(input.getBoundingBox().reverseOffset()));
+        Image localInput = input.sameSize(parent.getMask()) ? input : input.cropWithOffset(parent.getBounds());
+        
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
         //MutationSegmenterScaleSpace seg = new MutationSegmenterScaleSpace().setIntensityThreshold(90);
-        if (parent.getIdx()==2) MutationSegmenter.debug=true;
-        else MutationSegmenter.debug=false;
+        //if (parent.getIdx()==2) MutationSegmenter.debug=true;
+        //else MutationSegmenter.debug=false;
         //LocalSNR.debug=true;
-        MutationSegmenter seg = new MutationSegmenter().setIntensityThreshold(0.35).setThresholdSeeds(0.6).setThresholdPropagation(0.5).setScale(2.5);
+        MutationSegmenter seg = new MutationSegmenter().setIntensityThreshold(0.4).setThresholdSeeds(0.65).setThresholdPropagation(0.5).setScale(2.5);
         //seg.getPostFilters().removeAllElements();
+        
+        Image[] maps = seg.computeMaps(input, input);
+        if (!input.sameSize(parent.getMask())) maps = Utils.apply(maps, new Image[maps.length], i -> i.cropWithOffset(parent.getBounds()));
+        seg.setMaps(maps);
         
         seg.intermediateImages=intermediateImages;
         ObjectPopulation pop = seg.runSegmenter(localInput, 2, parent);
+        
+        if (false && parent.getIdx()==3) {
+            seg.printSubLoc("input", localInput, maps[0], maps[1], pop, input.getBoundingBox() );
+            seg.printSubLoc("smooth", maps[0], maps[0], maps[1], pop , input.getBoundingBox());
+            seg.printSubLoc("lap", maps[1], maps[0], maps[1], pop, input.getBoundingBox() );
+        }
         
         PostFilterSequence pf = new PostFilterSequence("pf"); 
         //pf.add(new FeatureFilter(new LocalSNR().setLocalBackgroundRadius(6).setBackgroundObjectStructureIdx(1).setRadii(2, 2), 1, true, true));

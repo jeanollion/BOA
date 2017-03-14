@@ -29,6 +29,7 @@ import java.util.List;
 import measurement.MeasurementKey;
 import measurement.MeasurementKeyObject;
 import plugins.Measurement;
+import utils.ArrayUtil;
 
 /**
  *
@@ -37,17 +38,17 @@ import plugins.Measurement;
 public class RelativePosition implements Measurement {
     protected StructureParameter objects = new StructureParameter("Structure", -1, false, false);
     protected StructureParameter reference = new StructureParameter("Reference Structure", -1, true, false);
-    BooleanParameter objectMassCenter = new BooleanParameter("Use Mass center for object", true);
+    ChoiceParameter objectCenter= new ChoiceParameter("Object center", new String[]{"Mass", "Geometrical", "From segmentation"}, "Mass", false);
     ChoiceParameter refPoint = new ChoiceParameter("Reference Point", new String[]{"Center of Mass", "Geometrical Center", "Corner"}, "Center of Mass", false);
     TextParameter key = new TextParameter("Key Name", "RelativeCoord", false);
-    protected Parameter[] parameters = new Parameter[]{objects, reference, objectMassCenter, refPoint, key};
+    protected Parameter[] parameters = new Parameter[]{objects, reference, objectCenter, refPoint, key};
     
     public RelativePosition() {}
     
-    public RelativePosition(int objectStructure, int referenceStructure, boolean objectMassCenter, int refPointType) {
+    public RelativePosition(int objectStructure, int referenceStructure, int objectCenterType, int refPointType) {
         this.objects.setSelectedStructureIdx(objectStructure);
         this.reference.setSelectedStructureIdx(referenceStructure);
-        this.objectMassCenter.setSelected(objectMassCenter);
+        this.objectCenter.setSelectedIndex(objectCenterType);
         this.refPoint.setSelectedIndex(refPointType);
     }
     
@@ -92,21 +93,31 @@ public class RelativePosition implements Measurement {
             }
         }
         if (refObject == null && reference.getSelectedStructureIdx()>=0) return;
-        double[] objectCenter = objectMassCenter.getSelected() ? object.getObject().getCenter(object.getParent().getRawImage(object.getStructureIdx()), true) : object.getObject().getCenter(true);
+        double[] objectCenter=null;
+        int ctype= this.objectCenter.getSelectedIndex();
+        if (ctype==0) objectCenter = object.getObject().getMassCenter(object.getParent().getRawImage(object.getStructureIdx()), true);
+        else if (ctype==1) objectCenter = object.getObject().getGeomCenter(true);
+        else if (ctype==2) {
+            objectCenter = ArrayUtil.duplicate(object.getObject().getCenter());
+            objectCenter[0]*=object.getObject().getScaleXY();
+            objectCenter[1]*=object.getObject().getScaleXY();
+            if (objectCenter.length>2) objectCenter[2]*=object.getObject().getScaleZ();
+        }
+        if (objectCenter==null) return;
         double[] refPoint;
         if (refObject!=null) {
-            if (this.refPoint.getSelectedIndex()==0) refPoint = refObject.getObject().getCenter(refObject.isRoot() ? refObject.getRawImage(refObject.getStructureIdx()) : refObject.getParent().getRawImage(refObject.getStructureIdx()), true);
-            else if (this.refPoint.getSelectedIndex()==1) refPoint = refObject.getObject().getCenter(true);
+            if (this.refPoint.getSelectedIndex()==0) refPoint = refObject.getObject().getMassCenter(refObject.isRoot() ? refObject.getRawImage(refObject.getStructureIdx()) : refObject.getParent().getRawImage(refObject.getStructureIdx()), true);
+            else if (this.refPoint.getSelectedIndex()==1) refPoint = refObject.getObject().getGeomCenter(true);
             else { // corner
-                refPoint = new double[3];
+                refPoint = new double[objectCenter.length];
                 refPoint[0] = refObject.getBounds().getxMin() * refObject.getScaleXY();
                 refPoint[1] = refObject.getBounds().getyMin() * refObject.getScaleXY();
-                refPoint[2] = refObject.getBounds().getzMin() * refObject.getScaleZ();
+                if (objectCenter.length>2) refPoint[2] = refObject.getBounds().getzMin() * refObject.getScaleZ();
             }
         } else refPoint = new double[3];
         object.getMeasurements().setValue(getKey("X"), (objectCenter[0]-refPoint[0]));
         object.getMeasurements().setValue(getKey("Y"), (objectCenter[1]-refPoint[1]));
-        object.getMeasurements().setValue(getKey("Z"), (objectCenter[2]-refPoint[2]));
+        if (objectCenter.length>2) object.getMeasurements().setValue(getKey("Z"), (objectCenter[2]-refPoint[2]));
         
     }
 

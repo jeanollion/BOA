@@ -194,7 +194,7 @@ public class SpotCompartiment {
                 this.offsetDivisionMiddle = SpotCompartiment.getYPositionWithinCompartimentByCount(object.getObject(), upperCompartimentCount); 
             } 
         } 
-        if (offsetDivisionMiddle==null) offsetDivisionMiddle = object.getObject().getCenter(true);
+        if (offsetDivisionMiddle==null) offsetDivisionMiddle = object.getObject().getGeomCenter(true);
         
         // upper and lower bounds for the middle area
         int upperMiddleUpLimit = (int) (upperCompartimentCount/2 - middleAreaProportion/2d * upperCompartimentCount+0.5);

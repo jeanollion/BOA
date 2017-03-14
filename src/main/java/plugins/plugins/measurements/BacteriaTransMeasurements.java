@@ -77,7 +77,7 @@ public class BacteriaTransMeasurements implements Measurement {
     @Override public void performMeasurement(StructureObject object) {
         Object3D bactObject = object.getObject();
         BoundingBox parentOffset = object.getParent().getBounds();
-        double[] center=bactObject.getCenter(true);
+        double[] center=bactObject.getGeomCenter(true);
         center[0]-=parentOffset.getxMin()*object.getScaleXY();
         center[1]-=parentOffset.getyMin()*object.getScaleXY();
         //if (object.getTimePoint()==0) logger.debug("object: {} center: {}, parentOffset: {}, objectoffset: {} bactImageOffset: {}, mutImageOffset: {}", object, center, parentOffset, object.getBounds(), bactImage.getBoundingBox(), mutImage.getBoundingBox());

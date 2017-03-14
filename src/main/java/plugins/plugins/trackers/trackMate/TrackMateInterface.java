@@ -250,7 +250,7 @@ public class TrackMateInterface<S extends Spot> {
     public static class DefaultObject3DSpotFactory implements SpotFactory<Spot> {
         @Override
         public Spot toSpot(Object3D o, int frame) {
-            double[] center = o.getCenter(true);
+            double[] center = o.getGeomCenter(true);
             Spot s = new Spot(center[0], center[1], center[2], 1, 1);
             s.getFeatures().put(Spot.FRAME, (double)frame);
             return s;

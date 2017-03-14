@@ -96,7 +96,7 @@ public class ObjectContainerVoxels extends ObjectContainer {
     }
 
     public Object3D getObject() {
-        return new Object3D(getVoxels(), structureObject.getIdx() + 1, bounds, structureObject.getScaleXY(), structureObject.getScaleZ()).setQuality(quality);
+        return new Object3D(getVoxels(), structureObject.getIdx() + 1, bounds, structureObject.getScaleXY(), structureObject.getScaleZ());
     }
 
     @Override

@@ -71,7 +71,7 @@ public class BackgroundFit implements Thresholder {
         float[] histoSmooth = smooth(histo, 3); //2 ou 3
         
         // fit on whole histogram
-        double[] fit = ArrayUtil.gaussianFit(histoSmooth);
+        double[] fit = ArrayUtil.gaussianFit(histoSmooth, 0);
         int mode = (int)(fit[0]+0.5);
         if (debug) logger.debug("first fit: {}", fit);
         //int mode = ArrayUtil.max(histo);
@@ -82,7 +82,7 @@ public class BackgroundFit implements Thresholder {
             Utils.plotProfile("gauss fit: histo smooth", histoSmooth);
             Utils.plotProfile("gauss fit: histo smooth sub", subset);
         }
-        fit = ArrayUtil.gaussianFit(subset);
+        fit = ArrayUtil.gaussianFit(subset, 2);
         if (debug) logger.debug("second fit: {}", fit);
         double threshold = mode + sigmaFactor * fit[1];
         
@@ -108,7 +108,7 @@ public class BackgroundFit implements Thresholder {
         float[] histoSmooth = smooth(histo, 3); //2 ou 3
         
         // fit on whole histogram
-        double[] fit = ArrayUtil.gaussianFit(histoSmooth);
+        double[] fit = ArrayUtil.gaussianFit(histoSmooth, 0);
         int mode = (int)(fit[0]+0.5);
         if (debug) logger.debug("first fit: {}", fit);
         //int mode = ArrayUtil.max(histo);

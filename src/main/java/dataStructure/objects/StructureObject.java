@@ -82,6 +82,9 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         this.parent=parent;
         this.parentId=parent.getId();
         if (this.parent!=null) this.dao=parent.dao;
+        // attributes
+        if (!Double.isNaN(object.getQuality())) setAttribute("Quality", object.getQuality());
+        if (object.getCenter()!=null) setAttributeArray("Center", object.getCenter());
     }
     /**
      * Constructor for root objects only.
@@ -667,6 +670,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                 if (object==null) {
                     object=objectContainer.getObject();
                     object.setIsAbsoluteLandmark(true);
+                    if (attributes!=null) {
+                        if (attributes.containsKey("Quality")) object.setQuality((Double)attributes.get("Quality"));
+                        if (attributes.containsKey("Center")) object.setCenter((double[])attributes.get("Center"));
+                    }
                 }
             }
         }
@@ -837,12 +844,16 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public ObjectPopulation getObjectPopulation(int structureIdx) {
         List<StructureObject> child = this.getChildren(structureIdx);
-        if (child==null || child.size()==0) return new ObjectPopulation(new ArrayList<Object3D>(0), this.getMaskProperties());
+        if (child==null || child.isEmpty()) return new ObjectPopulation(new ArrayList<>(0), this.getMaskProperties());
         else {
-            ArrayList<Object3D> objects = new ArrayList<Object3D>(child.size());
+            ArrayList<Object3D> objects = new ArrayList<>(child.size());
             for (StructureObject s : child) objects.add(s.getObject());
             return new ObjectPopulation(objects, this.getMaskProperties(), true);
         }
+    }
+    public void setAttributeArray(String key, double[] value) {
+        if (this.attributes==null) attributes = new HashMap<>();
+        attributes.put(key, value);
     }
     public void setAttribute(String key, boolean value) {
         if (this.attributes==null) attributes = new HashMap<>();

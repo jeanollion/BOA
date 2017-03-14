@@ -292,48 +292,46 @@ public class ArrayUtil {
         System.arraycopy(array, 0, res, 0, array.length);
         return res;
     }
-    
-    public static double[] gaussianFit(int[] data) {
-        double[] data2 = new double[data.length];
-        for (int i = 0; i<data.length; ++i) data2[i] = data[i];
-        return gaussianFit(data2);
+    public static double[] duplicate(double[] array) {
+        double[] res = new double[array.length];
+        System.arraycopy(array, 0, res, 0, array.length);
+        return res;
     }
-    public static double[] gaussianFit(float[] data) {
+    
+    public static double[] gaussianFit(int[] data, int replicate) {
+        return gaussianFit(ArrayUtil.toDouble(data), replicate);
+    }
+    public static double[] gaussianFit(float[] data, int replicate) {
         double[] data2 = new double[data.length];
         for (int i = 0; i<data.length; ++i) data2[i] = data[i];
-        return gaussianFit(data2);
+        return gaussianFit(data2, replicate);
     }
     /**
      * Gaussian Fit using ImageJ's curveFitter
      * @param data
-     * @param halfData
+     * @param replicate : 0 no replicate, 1 replicate left, 2 replicate right
      * @return fit parameters: 0=MEAN / 1=sigma
      */
-    public static double[] gaussianFit(double[] data) {
+    public static double[] gaussianFit(double[] data, int replicate) {
         //int maxIdx = max(data);
         //double maxValue = data[maxIdx];
-        double[] xData;
-        /*if (halfData) { // replicate data
+        if (replicate>0) { // replicate data
             double[] data2 = new double[data.length * 2 -1];
-            xData = new double[data2.length];
-            if (maxIdx<data.length/2) { //replicate left
+            if (replicate==1) { //replicate left
                 for (int i = 0; i<data.length; ++i) {
                     data2[i] = data[data.length-i-1];
                     data2[i+data.length-1]=data[i];
-                    //xData[i]=i-data.length+1;
                 }
             } else { // replicate right
                 for (int i = 0; i<data.length; ++i) {
                     data2[i] = data[i];
                     data2[i+data.length-1]=data[data.length-i-1];
-                    //xData[i]=i-data.length+1;
                 }
             }
             data=data2;
-        }*/ //else {
-            xData = new double[data.length];
-            for (int i = 0; i<data.length; ++i) xData[i] = i;
-        //}
+        }
+        double[] xData = new double[data.length];
+        for (int i = 0; i<data.length; ++i) xData[i] = i;
         
         CurveFitter fit = new CurveFitter(xData, data);
         fit.setMaxIterations(10000);

@@ -53,7 +53,7 @@ public class TestTracker {
         //String dbName = "boa_phase150616wt";
         //String dbName = "boa_phase141107wt";
         String dbName = "boa_fluo170207_150ms";
-        int fIdx = 98;
+        int fIdx = 0;
         int mcIdx =0;
         int structureIdx = 2;
         MasterDAO db = new MorphiumMasterDAO(dbName);

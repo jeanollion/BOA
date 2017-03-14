@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import processing.Filters;
 import processing.neighborhood.EllipsoidalNeighborhood;
 import processing.neighborhood.Neighborhood;
+import utils.ArrayUtil;
 import utils.Utils;
 /**
  * 
@@ -46,6 +47,7 @@ public class Object3D {
     protected float scaleXY=1, scaleZ=1;
     protected boolean absoluteLandmark=false; // false = coordinates relative to the direct parent
     protected double quality=Double.NaN;
+    protected double[] center;
     
     /**
      * Voxel
@@ -91,12 +93,12 @@ public class Object3D {
     }
     
     public Object3D duplicate() {
-        if (this.mask!=null) return new Object3D((ImageInteger)mask.duplicate(""), label).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality);
+        if (this.mask!=null) return new Object3D((ImageInteger)mask.duplicate(""), label).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(ArrayUtil.duplicate(center));
         else if (this.voxels!=null) {
             ArrayList<Voxel> vox = new ArrayList<> (voxels.size());
             for (Voxel v : voxels) vox.add(v.duplicate());
-            if (bounds==null) return new Object3D(vox, label, scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality);
-            else return new Object3D(vox, label, bounds.duplicate(), scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality);
+            if (bounds==null) return new Object3D(vox, label, scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(ArrayUtil.duplicate(center));
+            else return new Object3D(vox, label, bounds.duplicate(), scaleXY, scaleZ).setIsAbsoluteLandmark(absoluteLandmark).setQuality(quality).setCenter(ArrayUtil.duplicate(center));
         }
         return null;
     }
@@ -163,7 +165,16 @@ public class Object3D {
         return resList;
     }
     
-    public double[] getCenter(boolean scaled) {
+    public Object3D setCenter(double[] center) {
+        this.center=center;
+        return this;
+    }
+    
+    public double[] getCenter() {
+        return center;
+    }
+    
+    public double[] getGeomCenter(boolean scaled) {
         double[] center = new double[3];
         if (mask instanceof BlankMask) {
             center[0] = mask.getBoundingBox().getXMean();
@@ -187,7 +198,7 @@ public class Object3D {
         }
         return center;
     }
-    public double[] getCenter(Image image, boolean scaled) {
+    public double[] getMassCenter(Image image, boolean scaled) {
         getVoxels();
         synchronized(voxels) {
             double[] center = new double[3];
@@ -616,6 +627,11 @@ public class Object3D {
         if (mask!=null) mask.addOffset(offsetX, offsetY, offsetZ);
         if (bounds!=null) bounds.translate(offsetX, offsetY, offsetZ);
         if (voxels!=null) for (Voxel v : voxels) v.translate(offsetX, offsetY, offsetZ);
+        if (center!=null) {
+            center[0]+=offsetX;
+            center[1]+=offsetY;
+            if (center.length>2) center[2]+=offsetZ;
+        }
         return this;
     }
     public Object3D translate(BoundingBox bounds) {

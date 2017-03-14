@@ -19,6 +19,7 @@ package boa.gui.imageInteraction;
 
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
+import static dataStructure.objects.Measurements.asString;
 import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
@@ -51,6 +52,7 @@ import java.util.TreeMap;
 import javax.swing.AbstractAction;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
+import measurement.extraction.DataExtractor;
 import utils.ArrayFileWriter;
 import utils.HashMapGetCreate;
 import utils.HashMapGetCreate.Factory;
@@ -978,6 +980,7 @@ public abstract class ImageWindowManager<T, U, V> {
         }
     }
     private static String toString(Object o) {
-        return o instanceof Number ? Utils.format((Number) o, 3) : o.toString();
+        return asString(o, DataExtractor.numberFormater);
+        //return o instanceof Number ? Utils.format((Number) o, 3) : o.toString();
     }   
 }

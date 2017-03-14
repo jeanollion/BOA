@@ -60,6 +60,7 @@ import processing.gaussianFit.GaussianFit;
 import processing.IJFFTBandPass;
 import processing.ImageFeatures;
 import processing.LoG;
+import processing.SubPixelLocalizator;
 import processing.WatershedTransform;
 import processing.WatershedTransform.MonotonalPropagation;
 import processing.WatershedTransform.MultiplePropagationCriteria;
@@ -144,7 +145,7 @@ public class MutationSegmenter implements Segmenter, UseMaps {
         //ObjectCountThresholder.debug=true;
         //final double thld = new ObjectCountThresholder(20).runThresholder(sub, parent);
         //BackgroundFit.debug=debug;
-        final double thld = BackgroundFit.backgroundFit(sub, parent.getMask(), 2, null);
+        final double thld = BackgroundFit.backgroundFitHalf(sub, parent.getMask(), 2, null);
         //final double thld= Double.POSITIVE_INFINITY;
         
         double[] ms = ImageOperations.getMeanAndSigmaWithOffset(sub, parent.getMask(), v->v<=thld);
@@ -181,13 +182,44 @@ public class MutationSegmenter implements Segmenter, UseMaps {
         //seedPop.filter(new Overlap(seedsHess, 1.5));
         //seedPop.filter(new Or(new ObjectPopulation.GaussianFit(norm, 3, 3, 5, 0.2, 0.010, 6), new MeanIntensity(-0.2, false, hess)));
         ObjectPopulation pop =  watershed(lap, parent.getMask(), seedPop.getObjects(), true, new ThresholdPropagationOnWatershedMap(thresholdPropagation), new SizeFusionCriterion(minSpotSize), false);
-        for (Object3D o : pop.getObjects()) o.setQuality(Math.sqrt(o.getQuality() * BasicMeasurements.getMaxValue(o, smooth, false))); // multiply by max of smooth to get quality criterion
+        //for (Object3D o : pop.getObjects()) o.setQuality(Math.sqrt(o.getQuality() * BasicMeasurements.getMaxValue(o, smooth, false))); // multiply by max of smooth to get quality criterion
+        
+        
+        SubPixelLocalizator.setSubPixelCenter(smooth, pop.getObjects(), true);
+        for (Object3D o : pop.getObjects()) { // quality criterion : smooth * lap
+            o.setQuality(Math.sqrt(o.getQuality() * lap.getPixel(o.getCenter()[0], o.getCenter()[1], o.getCenter().length>2?o.getCenter()[2]:0)));
+        }
+        //logger.debug("quality: {}", Utils.toStringList(pop.getObjects(), o->""+o.getQuality()));
         pop.filter(new ObjectPopulation.RemoveFlatObjects(input));
         pop.filter(new ObjectPopulation.Size().setMin(minSpotSize));
         return pop;
     }
     
-    
+    public void printSubLoc(String name, Image locMap, Image smooth, Image lap, ObjectPopulation pop, BoundingBox globBound) {
+        BoundingBox b = locMap.getBoundingBox().translate(globBound.reverseOffset());
+        List<Object3D> objects = pop.getObjects();
+        
+        for(Object3D o : objects) o.setCenter(o.getMassCenter(locMap, false));
+        pop.translate(b, false);
+        logger.debug("mass center: centers: {}", Utils.toStringList(objects, o -> Utils.toStringArray(o.getCenter())+" value: "+o.getQuality()));
+        pop.translate(b.duplicate().reverseOffset(), false);
+        
+        for(Object3D o : objects) o.setCenter(o.getGeomCenter(false));
+        pop.translate(b, false);
+        logger.debug("geom center {}: centers: {}", name, Utils.toStringList(objects, o -> Utils.toStringArray(o.getCenter())+" value: "+o.getQuality()));
+        pop.translate(b.duplicate().reverseOffset(), false);
+        
+        
+        SubPixelLocalizator.setSubPixelCenter(locMap, objects, true);
+        pop.translate(b, false);
+        logger.debug("locMap: {}, centers: {}", name, Utils.toStringList(objects, o -> Utils.toStringArray(o.getCenter())+" value: "+o.getQuality()));
+        pop.translate(b.duplicate().reverseOffset(), false);
+        logger.debug("smooth values: {}", Utils.toStringList(objects, o->""+smooth.getPixel(o.getCenter()[0], o.getCenter()[1], o.getCenter().length>2?o.getCenter()[2]:0)) );
+        logger.debug("lap values: {}", Utils.toStringList(objects, o->""+lap.getPixel(o.getCenter()[0], o.getCenter()[1], o.getCenter().length>2?o.getCenter()[2]:0)) );
+        
+        
+        
+    }
 
     public Parameter[] getParameters() {
         return parameters;

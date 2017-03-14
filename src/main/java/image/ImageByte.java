@@ -64,6 +64,7 @@ public class ImageByte extends ImageInteger {
     
     @Override
     public float getPixelLinInterX(int x, int y, int z, float dx) {
+        if (dx==0) return (float) (pixels[z][x + y * sizeX] & 0xff);
         return (float) ((pixels[z][x + y * sizeX] & 0xff) * (1-dx) + dx * (pixels[z][x + 1 + y * sizeX] & 0xff));
     }
 

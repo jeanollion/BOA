@@ -98,7 +98,7 @@ public class SpotPopulation {
             }
             SpotCompartiment compartiment = compartimentMap.getAndCreateIfNecessary(parent);
             compartimentMap.put(parent, compartiment);
-            double[] center = intensityMap!=null ? o.getCenter(intensityMap, true) : o.getCenter(true);
+            double[] center = intensityMap!=null ? o.getMassCenter(intensityMap, true) : o.getGeomCenter(true);
             SpotWithinCompartment s = new SpotWithinCompartment(o, container.getFrame(), compartiment, center, distanceParameters);
             collection.add(s, container.getFrame());
             if (!s.lowQuality) collectionHQ.add(s, container.getFrame());

@@ -119,9 +119,12 @@ public class Measurements implements Comparable<Measurements>{
     }
     
     public String getValueAsString(String name, Function<Number, String> numberFormater) {
-        Object o = values.get(name);
+        return asString(values.get(name), numberFormater);
+    }
+    public static String asString(Object o, Function<Number, String> numberFormater) {
         if (o instanceof Number) return numberFormater.apply((Number)o);
         else if (o instanceof String || o instanceof Boolean) return o.toString();
+        else if (o instanceof double[]) return Utils.toStringArray((double[])o, "", "", "-", numberFormater).toString();
         else return NA_STRING;
     }
     

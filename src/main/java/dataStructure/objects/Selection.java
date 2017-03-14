@@ -253,7 +253,7 @@ public class Selection implements Comparable<Selection> {
     }
     
     public static String indicesToString(int[] indicies) {
-        return Utils.toStringArray(indicies, "", "", indexSeparator);
+        return Utils.toStringArray(indicies, "", "", indexSeparator).toString();
     }
     
     public synchronized void updateElementList(String fieldName) {

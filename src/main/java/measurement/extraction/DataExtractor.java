@@ -47,39 +47,61 @@ import utils.Utils;
 public class DataExtractor {
     
     final static String separator =";";
-    final static String NaN = "NaN";
+    public final static String NaN = "NaN";
     int structureIdx;
     MasterDAO db;
     public static Function<Number, String> numberFormater = (Number n) -> { // precision
-        if (n.doubleValue()==0) return "0";
-        else return Utils.format(n, 4);
+        return Utils.format4(n);
     };
     public DataExtractor(MasterDAO db, int structureIdx) {
         this.db=db;
         this.structureIdx=structureIdx;
     }
-    protected String getBaseHeader() { //TODO split Indicies column ...
+    protected StringBuilder getBaseHeader() { //TODO split Indicies column ...
         int[] path = db.getExperiment().getPathToRoot(structureIdx);
         String[] structureNames = db.getExperiment().getStructureNames(path);
-        String res =  "Position"+separator+"PositionIdx"+separator+"Indices"+separator+"Frame";
-        for (String s : structureNames) res+=separator+s+"Idx";
-        res+=separator+"Time";
-        return res;
+        StringBuilder sb = new StringBuilder(50+20*structureNames.length);
+        sb.append("Position");
+        sb.append(separator);
+        sb.append("PositionIdx");
+        sb.append(separator);
+        sb.append("Indices");
+        sb.append(separator);
+        sb.append("Frame");
+        for (String s : structureNames) {
+            sb.append(separator);
+            sb.append(s);
+            sb.append("Idx");
+        }
+        sb.append(separator);
+        sb.append("Time");
+        return sb;
+
     }
-    protected String getBaseLine(Measurements m) { // if add one key -> also add in the retrieved keys in DAO
-        String line = m.getFieldName()+separator+db.getExperiment().getPositionIdx(m.getFieldName());
+    protected StringBuilder getBaseLine(Measurements m) { // if add one key -> also add in the retrieved keys in DAO
+        StringBuilder sb = new StringBuilder();
+        sb.append(m.getFieldName());
+        sb.append(separator);
+        sb.append(db.getExperiment().getPositionIdx(m.getFieldName()));
         int[] idx = m.getIndices();
-        line+= Utils.toStringArray(idx, separator, "", Selection.indexSeparator);
-        for (int i : idx) line+=separator+i; // separated columns ..
-        line+=separator+numberFormater.apply(m.getCalibratedTimePoint());
-        return line;
+        sb.append(Utils.toStringArray(idx, separator, "", Selection.indexSeparator));
+        for (int i : idx) { // also add in separated columns
+            sb.append(separator);
+            sb.append(i);
+        }
+        sb.append(separator);
+        sb.append(numberFormater.apply(m.getCalibratedTimePoint()));
+        return sb;
     }
     
     protected String getHeader(ArrayList<String> measurements) {
-        String header = getBaseHeader();
-        for (String m : measurements) header+=separator+m;
+        StringBuilder header = getBaseHeader();
+        for (String m : measurements) {
+            header.append(separator);
+            header.append(m);
+        }
         //logger.debug("extract data: header: {}", header);
-        return header;
+        return header.toString();
     }
     protected static ArrayList<String> getAllMeasurements(Map<Integer, String[]> measurements) {
         ArrayList<String> l = new ArrayList<String>();
@@ -127,21 +149,32 @@ public class DataExtractor {
                 for (Entry<Integer, String[]> e : allMeasurementsSort.entrySet()) parentMeasurements.put(e.getKey(), dao.getMeasurements(e.getKey(), e.getValue()));
                 List<Measurements> currentMeasurements = dao.getMeasurements(currentStructureIdx, currentMeasurementNames);
                 for (Measurements m : currentMeasurements) {
-                    String line = getBaseLine(m);
+                    StringBuilder line = getBaseLine(m);
                     // add measurements from parents of the the current structure
                     for (Entry<Integer, List<Measurements>> e : parentMeasurements.entrySet()) {
                         Measurements key = m.getParentMeasurementKey(parentOrder[e.getKey()]);
                         int pIdx = e.getValue().indexOf(key);
-                        if (pIdx==-1) for (String pMeasName : allMeasurementsSort.get(e.getKey())) line+=separator+NaN; // parent not found, adds only NaN
+                        if (pIdx==-1) {
+                            for (String pMeasName : allMeasurementsSort.get(e.getKey())) {
+                                line.append(separator);
+                                line.append(NaN);
+                            } 
+                        }
                         else {
                             key = e.getValue().get(pIdx);
-                            for (String pMeasName : allMeasurementsSort.get(e.getKey())) line+=separator+key.getValueAsString(pMeasName, numberFormater);
+                            for (String pMeasName : allMeasurementsSort.get(e.getKey())) {
+                                line.append(separator);
+                                line.append(key.getValueAsString(pMeasName, numberFormater));
+                            }
                         }
                     }
                     //add measurements from the current structure
-                    for (String mName : currentMeasurementNames) line+=separator+m.getValueAsString(mName, numberFormater);
+                    for (String mName : currentMeasurementNames) {
+                        line.append(separator);
+                        line.append(m.getValueAsString(mName, numberFormater));
+                    }
                     out.newLine();
-                    out.write(line);
+                    out.write(line.toString());
                     ++count;
                 }
             }
