@@ -183,7 +183,7 @@ public class GenerateMutationDynamicsXP {
             if (!Double.isNaN(scaleXY)) xp.getPreProcessingTemplate().setCustomScale(scaleXY, 1);
             if (crop!=null) xp.getPreProcessingTemplate().addTransformation(0, null, new SimpleCrop(crop));
             xp.getPreProcessingTemplate().setTrimFrames(trimFramesStart, trimFramesEnd);
-            xp.getPreProcessingTemplate().addTransformation(bactChan, null, new SaturateHistogramAuto().setSigmas(1, 2));
+            xp.getPreProcessingTemplate().addTransformation(bactChan, null, new SaturateHistogramAuto().setSigmas(2, 4));
             xp.getPreProcessingTemplate().addTransformation(mutChan, null, new BandPass(0, 40, 1, 0)); // remove horizontal lines
             xp.getPreProcessingTemplate().addTransformation(bactChan, null, new IJSubtractBackground(20, true, false, true, false));
             xp.getPreProcessingTemplate().addTransformation(bactChan, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
