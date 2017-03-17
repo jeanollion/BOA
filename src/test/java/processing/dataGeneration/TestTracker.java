@@ -53,13 +53,13 @@ public class TestTracker {
         //String dbName = "boa_phase150616wt";
         //String dbName = "boa_phase141107wt";
         String dbName = "boa_fluo170207_150ms";
-        int fIdx = 0;
-        int mcIdx =0;
+        int fIdx = 44;
+        int mcIdx =8;
         int structureIdx = 2;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 10);
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 50);
         
         //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 37, 38); // 91 to test rearrange objects 
         

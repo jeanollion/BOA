@@ -20,6 +20,7 @@ package plugins.plugins.measurements.objectFeatures;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import configuration.parameters.BoundedNumberParameter;
+import configuration.parameters.ChoiceParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.SiblingStructureParameter;
 import configuration.parameters.StructureParameter;
@@ -50,7 +51,9 @@ public class SNR extends IntensityMeasurement {
     protected SiblingStructureParameter backgroundObject = new SiblingStructureParameter("Background Object", true).setAutoConfiguration(true);
     protected BoundedNumberParameter dilateExcluded = new BoundedNumberParameter("Radius for excluded structure dillatation", 1, 1, 0, null);
     protected BoundedNumberParameter erodeBorders = new BoundedNumberParameter("Radius for border erosion", 1, 1, 0, null);
-    @Override public Parameter[] getParameters() {return new Parameter[]{intensity, backgroundObject, dilateExcluded, erodeBorders};}
+    protected ChoiceParameter formula = new ChoiceParameter("Formula", new String[]{"(F-B)/sd(B)", "F-B"}, "(F-B)/sd(B)", false);
+    protected ChoiceParameter foregroundFormula = new ChoiceParameter("Foreground", new String[]{"mean", "max", "value at center"}, "mean", false);
+    @Override public Parameter[] getParameters() {return new Parameter[]{intensity, backgroundObject, formula, foregroundFormula, dilateExcluded, erodeBorders};}
     HashMap<Object3D, Object3D> childrenParentMap;
     BoundingBox childrenOffset;
     BoundingBox parentOffsetRev;
@@ -65,6 +68,11 @@ public class SNR extends IntensityMeasurement {
     public SNR setRadii(double dilateRadius, double erodeRadius) {
         this.dilateExcluded.setValue(dilateRadius);
         this.erodeBorders.setValue(erodeRadius);
+        return this;
+    }
+    public SNR setFormula(int formula, int foreground) {
+        this.formula.setSelectedIndex(formula);
+        this.foregroundFormula.setSelectedIndex(foreground);
         return this;
     }
     @Override public IntensityMeasurement setUp(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation) {
@@ -125,16 +133,32 @@ public class SNR extends IntensityMeasurement {
         }
         return this;
     }
+    @Override
     public double performMeasurement(Object3D object, BoundingBox offset) {
+        
         if (core==null) synchronized(this) {setUpOrAddCore(null);}
         Object3D parentObject; 
         if (childrenParentMap==null) parentObject = super.parent.getObject();
         else parentObject=this.childrenParentMap.get(object);
         if (parentObject==null) return 0;
         IntensityMeasurements iParent = super.core.getIntensityMeasurements(parentObject, null);
-        double fore = super.core.getIntensityMeasurements(object, offset).mean;
+        IntensityMeasurements fore = super.core.getIntensityMeasurements(object, offset);
         //logger.debug("SNR: object: {}, value: {}, fore:{}, back I: {} back SD: {}", object.getLabel(), (fore-iParent.mean ) / iParent.sd, fore, iParent.mean, iParent.sd);
-        return ( fore-iParent.mean ) / iParent.sd;
+        return getValue(getForeValue(fore), iParent.mean, iParent.sd);
+    }
+    
+    protected double getForeValue(IntensityMeasurements fore) {
+        switch (foregroundFormula.getSelectedIndex()) {
+            case 0: return fore.mean;
+            case 1: return fore.max;
+            case 2: return fore.getValueAtCenter();
+            default: return fore.mean;
+        }     
+    }
+    
+    protected double getValue(double fore, double back, double backSd) {
+        if (this.formula.getSelectedIndex()==0) return (fore-back)/backSd;
+        else return fore-back;
     }
 
     public String getDefaultName() {

@@ -296,9 +296,10 @@ public class Selection implements Comparable<Selection> {
             }
         }
     }
-    public synchronized void addElements(Collection<StructureObject> elementsToAdd) {
-        if (elementsToAdd==null || elementsToAdd.isEmpty()) return;
+    public synchronized Selection addElements(Collection<StructureObject> elementsToAdd) {
+        if (elementsToAdd==null || elementsToAdd.isEmpty()) return this;
         for (StructureObject o : elementsToAdd) addElement(o);
+        return this;
     }
     
     public boolean removeElement(StructureObject elementToRemove) {

@@ -25,9 +25,11 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.Vector;
@@ -44,6 +46,7 @@ public class PluginFactory {
 
     private final static TreeMap<String, Class> plugins = new TreeMap<String, Class>();
     private final static Logger logger = LoggerFactory.getLogger(PluginFactory.class);
+    private final static Map<String, String> refactoredNames = new HashMap<String, String>(){{put("BacteriaLineageIndex", "BacteriaLineageMeasurements");}};
     
     public static void findPlugins(String packageName) {
         logger.info("looking for plugin in package: {}", packageName);
@@ -212,7 +215,8 @@ public class PluginFactory {
             Object res = null;
             if (plugins.containsKey(s)) {
                 res = plugins.get(s).newInstance();
-            }
+            } else if (refactoredNames.containsKey(s)) return getPlugin(refactoredNames.get(s));
+            
             if (res != null && res instanceof Plugin) {
                 return ((Plugin) res);
             }

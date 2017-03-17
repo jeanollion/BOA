@@ -59,15 +59,17 @@ public class Structure extends SimpleContainerParameter {
     BooleanParameter allowMerge;
     @Transient NameEditorUI ui;
     
-    
     public Structure(String name, int parentStructure, int channelImage) {
+        this(name, parentStructure, parentStructure, channelImage);
+    }
+    public Structure(String name, int parentStructure, int segmentationParentStructure, int channelImage) {
         super(name);
         this.parentStructure =  new ParentStructureParameter("Parent Structure", parentStructure, -1);
-        segmentationParent =  new ParentStructureParameter("Segmentation Parent", -1, -1);
+        segmentationParent =  new ParentStructureParameter("Segmentation Parent", segmentationParentStructure, -1);
         this.channelImage = new ChannelImageParameter("Channel Image", channelImage);
-        objectSplitter = new PluginParameter<ObjectSplitter>("Object Splitter", ObjectSplitter.class, true);
-        processingScheme = new PluginParameter<ProcessingScheme>("Processing Scheme", ProcessingScheme.class, true);
-        manualSegmenter = new PluginParameter<ManualSegmenter>("Manual Segmenter", ManualSegmenter.class, true);
+        objectSplitter = new PluginParameter<>("Object Splitter", ObjectSplitter.class, true);
+        processingScheme = new PluginParameter<>("Processing Scheme", ProcessingScheme.class, true);
+        manualSegmenter = new PluginParameter<>("Manual Segmenter", ManualSegmenter.class, true);
         initChildList();
     }
     

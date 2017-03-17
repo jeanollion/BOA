@@ -41,19 +41,19 @@ import utils.LinearRegression;
  *
  * @author jollion
  */
-public class BacteriaLineageIndex implements Measurement {
+public class BacteriaLineageMeasurements implements Measurement {
     protected StructureParameter structure = new StructureParameter("Bacteria Structure", 1, false, false);
     protected TextParameter keyName = new TextParameter("Lineage Index Name", "LineageIndex", false);
     protected Parameter[] parameters = new Parameter[]{structure, keyName};
     public static char[] lineageName = new char[]{'H', 'T'};
     public static char lineageError = '*';
-    public BacteriaLineageIndex() {}
+    public BacteriaLineageMeasurements() {}
     
-    public BacteriaLineageIndex(int structureIdx) {
+    public BacteriaLineageMeasurements(int structureIdx) {
         structure.setSelectedIndex(structureIdx);
     }
     
-    public BacteriaLineageIndex(int structureIdx, String keyName) {
+    public BacteriaLineageMeasurements(int structureIdx, String keyName) {
         structure.setSelectedIndex(structureIdx);
         this.keyName.setValue(keyName);
     }

@@ -27,6 +27,7 @@ import image.ImageInteger;
 import java.util.HashMap;
 import measurement.BasicMeasurements;
 import plugins.objectFeature.ObjectFeatureCore;
+import plugins.plugins.measurements.objectFeatures.LocalSNR;
 
 /**
  *
@@ -52,7 +53,7 @@ public class IntensityMeasurementCore implements ObjectFeatureCore {
     }
     
     public class IntensityMeasurements {
-        public double mean=0, sd=0, min=Double.MAX_VALUE, max=-Double.MAX_VALUE, count=0;
+        public double mean=0, sd=0, min=Double.MAX_VALUE, max=-Double.MAX_VALUE, valueAtCenter=Double.NaN, count=0;
         int[] maxCoords = new int[3];
         BoundingBox offset;
         Object3D o;
@@ -70,6 +71,7 @@ public class IntensityMeasurementCore implements ObjectFeatureCore {
                 maxCoords[0]+=offset.getxMin();
                 maxCoords[1]+=offset.getyMin();
                 maxCoords[2]+=offset.getzMin();
+                
             } else {
                 ImageInteger mask = o.getMask();
                 int offX = offset.getxMin()+mask.getOffsetX()-intensityMap.getOffsetX();
@@ -96,6 +98,19 @@ public class IntensityMeasurementCore implements ObjectFeatureCore {
                 mean/=count;
                 sd = Math.sqrt(sd/count-mean*mean);
             }
+        }
+        
+        public double getValueAtCenter() {
+            if (Double.isNaN(valueAtCenter)) {
+                double[] center = o.getCenter();
+                if (center==null) center = o.getGeomCenter(false);
+                int offX=offset.getxMin()-intensityMap.getOffsetX();
+                int offY=offset.getyMin()-intensityMap.getOffsetY();
+                int offZ=offset.getzMin()-intensityMap.getOffsetZ();
+                this.valueAtCenter = intensityMap.getPixel(center[0]+offX, center[1]+offY, center.length>=3 ? center[2]+offZ : 0);
+                if (LocalSNR.debug) logger.debug("center: {}, off: {};{};{}, value: {}", center, offX, offY, offZ, this.valueAtCenter);
+            }
+            return valueAtCenter;
         }
         private void increment(double value, int x, int y , int z) {
             mean+=value;

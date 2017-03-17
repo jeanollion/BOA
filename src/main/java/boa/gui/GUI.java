@@ -40,6 +40,7 @@ import configuration.parameters.FileChooser;
 import configuration.parameters.NumberParameter;
 import core.Processor;
 import core.PythonGateway;
+import core.Task;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.MorphiumMasterDAO;
@@ -1955,7 +1956,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         }
         int[] microscopyFields = this.getSelectedMicroscopyFields();
         int[] selectedStructures = this.getSelectedStructures(true);
-        boolean allStructures = selectedStructures.length==db.getExperiment().getStructureCount();
+        Task t = new Task(this.db.getDBName()).setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements).setStructures(selectedStructures).setPositions(microscopyFields);
+        t.run();
+        t.printErrors();
+        /*boolean allStructures = selectedStructures.length==db.getExperiment().getStructureCount();
         boolean needToDeleteObjects = preProcess || reRunPreProcess || segmentAndTrack;
         boolean deleteAll =  needToDeleteObjects && allStructures && microscopyFields.length==db.getExperiment().getPositionCount();
         if (deleteAll) db.deleteAllObjects();
@@ -1969,7 +1973,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             db.getDao(fieldName).clearCache();
             db.getExperiment().getPosition(fieldName).flushImages(true, true);
         }
-        if (needToDeleteObjects) this.reloadObjectTrees=true;
+        */
+        if (preProcess || reRunPreProcess || segmentAndTrack) this.reloadObjectTrees=true;
     }//GEN-LAST:event_runSelectedActionsMenuItemActionPerformed
 
     private void importImagesMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importImagesMenuItemActionPerformed

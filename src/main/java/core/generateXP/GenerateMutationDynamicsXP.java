@@ -38,7 +38,7 @@ import java.util.List;
 import plugins.ObjectFeature;
 import plugins.PluginFactory;
 import plugins.Transformation;
-import plugins.plugins.measurements.BacteriaLineageIndex;
+import plugins.plugins.measurements.BacteriaLineageMeasurements;
 import plugins.plugins.measurements.GetAttribute;
 import plugins.plugins.measurements.SimpleTrackMeasurements;
 import plugins.plugins.measurements.InclusionObjectIdx;
@@ -49,7 +49,9 @@ import plugins.plugins.measurements.RelativePosition;
 import plugins.plugins.measurements.SimpleIntensityMeasurement;
 import plugins.plugins.measurements.SimpleIntensityMeasurementStructureExclusion;
 import plugins.plugins.measurements.objectFeatures.LocalSNR;
+import plugins.plugins.measurements.objectFeatures.Quality;
 import plugins.plugins.measurements.objectFeatures.SNR;
+import plugins.plugins.postFilters.FeatureFilter;
 import plugins.plugins.preFilter.BandPass;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.preFilter.Median;
@@ -169,9 +171,10 @@ public class GenerateMutationDynamicsXP {
         bacteria.setProcessingScheme(new SegmentThenTrack(new BacteriaFluo(), new BacteriaClosedMicrochannelTrackerLocalCorrections().setCostParameters(0.1, 0.5)));
         mutation.setProcessingScheme(new SegmentAndTrack(
                 new LAPTracker().setCompartimentStructure(1).setSegmenter(
-                        new MutationSegmenter(0.6, 0.5, 0.35).setScale(2.5) 
-                ).setSpotQualityThreshold(0.7).setLinkingMaxDistance(0.4, 0.5).setGapParameters(0.4, 0.05, 3).setTrackLength(10, 0)
-        ).addPreFilters(new BandPass(0, 7, 0, 5))); // was 10
+                        new MutationSegmenter(0.65, 0.5, 0.55).setScale(2.5) 
+                ).setSpotQualityThreshold(1).setLinkingMaxDistance(0.4, 0.41).setGapParameters(0.4, 0.1, 3).setTrackLength(10, 0)
+        ).addPreFilters(new BandPass(0, 8, 0, 5) // was 10
+        ).addPostFilters(new FeatureFilter(new Quality(), 0.6, true, true))); 
         
         setMeasurements(xp);
         
