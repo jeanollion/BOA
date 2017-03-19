@@ -102,13 +102,14 @@ public class GenerateXP {
         boolean[] deletePositions = null;
         //////// FLUO
         
+        /*
         String dbName = "boa_fluo170120_wt";
         String inputDir = "/data/Images/Fluo/film170120/me120rc2-laser1-lbiptg-20012017/";
         String outputDir = "/data/Images/Fluo/film170120/Output";
         boolean flip = false; 
         boolean fluo = true;
         importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD;
-        
+        */
         
         /*String dbName = "boa_fluo170117_GammeMutTrack";
         String inputDir = "/data/Images/FastMutTrack/170117GammeMutTrack/input";
@@ -294,9 +295,18 @@ public class GenerateXP {
         flipArray = fillRange(getBooleanArray(96, false), 61, 95, true); //pos 62 - 96 -> flip = true
         deletePositions = setValues(getBooleanArray(96, false), true, 5, 11, 14, 29, 43, 45, 47, 61, 65); // xy06 xy44 xy48 xy62  -> seulement un frame OOF, les autres beaucoup de frames
         */
-        /*
+        
         ////////////////////////////
         // Ordi Portable
+        
+        String dbName = "boa_fluo170120_wt";
+        String inputDir = "/home/jollion/Documents/LJP/DataLJP/Fluo1701/me120rc2-laser1-lbiptg-20012017";
+        String outputDir = "/home/jollion/Documents/LJP/DataLJP/Fluo1701/Output";
+        boolean flip = false; 
+        boolean fluo = true;
+        importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD;
+        
+        /*
         String dbName = "testSub";
         String outputDir = "/home/jollion/Documents/LJP/DataLJP/TestOutput";
         String inputDir = "/home/jollion/Documents/LJP/DataLJP/testsub"; 

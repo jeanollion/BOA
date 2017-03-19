@@ -62,11 +62,14 @@ public class BackgroundFit implements Thresholder {
             }
         }
     }
-    
     public static double backgroundFitHalf(Image input, ImageMask mask, double sigmaFactor, double[] meanSigma) {
-        if (meanSigma!=null && meanSigma.length<2) throw new IllegalArgumentException("Argument Mean Sigma should be null or of size 2 to recieve mean and sigma values");
         if (mask==null) mask = new BlankMask(input);
         int[] histo = input.getHisto256(mask);
+        double[] mm = input.getMinAndMax(mask, null);
+        return backgroundFitHalf(histo, mm, input instanceof ImageByte, sigmaFactor, meanSigma);
+    }
+    public static double backgroundFitHalf(int[] histo, double[] minAndMax, boolean byteImage, double sigmaFactor, double[] meanSigma) {
+        if (meanSigma!=null && meanSigma.length<2) throw new IllegalArgumentException("Argument Mean Sigma should be null or of size 2 to recieve mean and sigma values");
         //fillZeros(histo);
         float[] histoSmooth = smooth(histo, 3); //2 ou 3
         
@@ -86,9 +89,9 @@ public class BackgroundFit implements Thresholder {
         if (debug) logger.debug("second fit: {}", fit);
         double threshold = mode + sigmaFactor * fit[1];
         
-        double[] mm = input.getMinAndMax(mask, null);
-        double binSize = (input instanceof ImageByte) ? 1 : (mm[1] - mm[0]) / 256.0;
-        double min = (input instanceof ImageByte) ? 0 : mm[0];
+        
+        double binSize = byteImage ? 1 : (minAndMax[1] - minAndMax[0]) / 256.0;
+        double min = byteImage ? 0 : minAndMax[0];
         threshold = threshold * binSize + min;
         if (meanSigma!=null) {
             meanSigma[0] = fit[0] * binSize + min;

@@ -142,7 +142,8 @@ public class ArrayUtil {
         return idxMin;
     }
     
-    public static void meanSigma(float[] array, int start, int stop, double[] res) {
+    public static double[] meanSigma(float[] array, int start, int stop, double[] res) {
+        if (res==null) res= new double[2];
         res[0]=0; // sum
         res[1]=0; // sum2
         for (int i = start; i<stop; ++i) {
@@ -151,6 +152,19 @@ public class ArrayUtil {
         }
         res[0] /= (double)(stop-start);
         res[1] = Math.sqrt(res[1] / (float)(stop-start) - res[0] * res[0]);
+        return res;
+    }
+    public static double[] meanSigma(double[] array, int start, int stop, double[] res) {
+        if (res==null) res= new double[2];
+        res[0]=0; // sum
+        res[1]=0; // sum2
+        for (int i = start; i<stop; ++i) {
+            res[0]+=array[i];
+            res[1]+=array[i]*array[i];
+        }
+        res[0] /= (double)(stop-start);
+        res[1] = Math.sqrt(res[1] / (float)(stop-start) - res[0] * res[0]);
+        return res;
     }
     public static int getFirstOccurence(double[] array, int start, int stop, Function<Number, Boolean> verify) {
         if (start<0) start=0;

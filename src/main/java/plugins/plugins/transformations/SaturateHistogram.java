@@ -51,7 +51,7 @@ public class SaturateHistogram implements Transformation {
     public static void saturate(double thld, double thldMax, Image image) {
         if (thldMax<thld) throw new IllegalArgumentException("Saturate histogram transformation: configuration error: Maximum value should be superior to threhsold value");
         double maxObs = image.getMinAndMax(null)[1];
-        if (maxObs<=thld) return;
+        if (maxObs<=thldMax || maxObs<=thld) return;
         
         final double factor = (thldMax - thld) / (maxObs - thld);
         final double add = thld * (1 - factor);
