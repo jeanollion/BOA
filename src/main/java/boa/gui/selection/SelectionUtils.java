@@ -336,7 +336,7 @@ public class SelectionUtils {
         menu.add(remove);
         
         
-        JMenuItem addObjectTree = new JMenuItem("Add objects selected in ObjectTree");
+        /*JMenuItem addObjectTree = new JMenuItem("Add objects selected in ObjectTree");
         addObjectTree.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 if (selectedValues.isEmpty()) return;
@@ -368,7 +368,7 @@ public class SelectionUtils {
             }
         });
         menu.add(removeObjectTree);
-        
+        */
         JMenuItem clear = new JMenuItem("Clear");
         clear.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {

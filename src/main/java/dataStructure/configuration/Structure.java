@@ -201,7 +201,6 @@ public class Structure extends SimpleContainerParameter {
         parentStructure.setMaxStructureIdx(parent.getIndex(this));
         //retro compatibility: //TO BE REMOVED LATER
         if (segmentationParent==null) segmentationParent =  new ParentStructureParameter("Segmentation Parent", parentStructure.getSelectedIndex(), -1);
-        
         segmentationParent.setMaxStructureIdx(parent.getIndex(this));
     }
     

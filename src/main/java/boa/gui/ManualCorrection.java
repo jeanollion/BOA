@@ -309,7 +309,7 @@ public class ManualCorrection {
             return;
         }
         int structureIdx = key.displayedStructureIdx;
-        int parentStructureIdx = db.getExperiment().getStructure(structureIdx).getParentStructure();
+        int parentStructureIdx = db.getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
         ManualSegmenter segmenter = db.getExperiment().getStructure(structureIdx).getManualSegmenter();
         
         if (segmenter==null) {
@@ -352,11 +352,11 @@ public class ManualCorrection {
                     db.getDao(e.getKey().getPositionName()).store(modified, true);
                     
                     //Update tree
-                    ObjectNode node = GUI.getInstance().objectTreeGenerator.getObjectNode(e.getKey());
+                    /*ObjectNode node = GUI.getInstance().objectTreeGenerator.getObjectNode(e.getKey());
                     if (node!=null && node.getParent()!=null) {
                         node.getParent().createChildren();
                         GUI.getInstance().objectTreeGenerator.reload(node.getParent());
-                    }
+                    }*/
                     //Update all opened images & objectImageInteraction
                     ImageWindowManagerFactory.getImageManager().reloadObjects(e.getKey(), structureIdx, false);
                 }
@@ -426,16 +426,16 @@ public class ManualCorrection {
                 ImageWindowManagerFactory.getImageManager().removeObjects(objects, true);
                 
                 Set<StructureObject> parents = StructureObjectUtils.getParents(newObjects);
-                if (GUI.hasInstance() && GUI.getInstance().objectTreeGenerator!=null) {
+                //if (GUI.hasInstance() && GUI.getInstance().objectTreeGenerator!=null) {
                     for (StructureObject p : parents) {
                         //Update tree
-                        StructureNode node = GUI.getInstance().objectTreeGenerator.getObjectNode(p).getStructureNode(structureIdx);
-                        node.createChildren();
-                        GUI.getInstance().objectTreeGenerator.reload(node);
+                        //StructureNode node = GUI.getInstance().objectTreeGenerator.getObjectNode(p).getStructureNode(structureIdx);
+                        //node.createChildren();
+                        //GUI.getInstance().objectTreeGenerator.reload(node);
                         //Update all opened images & objectImageInteraction
                         ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
                     }
-                }
+                //}
                 // update selection
                 ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null, structureIdx);
                 if (i!=null) {
@@ -507,12 +507,12 @@ public class ManualCorrection {
         if (updateDisplay) {
             ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
             ImageWindowManagerFactory.getImageManager().removeObjects(objects, true);
-            for (StructureObject newObject: newObjects) {
+            /*for (StructureObject newObject: newObjects) {
                 //Update object tree
                 ObjectNode node = GUI.getInstance().objectTreeGenerator.getObjectNode(newObject);
                 node.getParent().createChildren();
                 GUI.getInstance().objectTreeGenerator.reload(node.getParent());
-            }
+            }*/
             Set<StructureObject> parents = StructureObjectUtils.getParentTrackHeads(newObjects);
             //Update all opened images & objectImageInteraction
             for (StructureObject p : parents) ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
@@ -549,7 +549,7 @@ public class ManualCorrection {
                 ImageWindowManagerFactory.getImageManager().removeObjects(toDelete, true);
                 List<StructureObject> selTh = ImageWindowManagerFactory.getImageManager().getSelectedLabileTrackHeads(null);
                 //Update object tree
-                for (StructureObject s : parents) {
+                /*for (StructureObject s : parents) {
                     if (GUI.getInstance().objectTreeGenerator.getObjectNode(s)==null) {
                         //logger.error("Node not found for parent object: {}", s);
                     }
@@ -558,7 +558,7 @@ public class ManualCorrection {
                         node.createChildren();
                         GUI.getInstance().objectTreeGenerator.reload(node);
                     }
-                }
+                }*/
                 //Update all opened images & objectImageInteraction
                 for (StructureObject p : parentTH) ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
                 ImageWindowManagerFactory.getImageManager().displayTracks(null, null, StructureObjectUtils.getTracks(selTh, true), true);

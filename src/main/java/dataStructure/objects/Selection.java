@@ -215,7 +215,7 @@ public class Selection implements Comparable<Selection> {
         }
         long t1 = System.currentTimeMillis();
         //logger.debug("Selection: {}, #{} elements retrieved in: {}", this.id, res.size(), t1-t0);
-        if (notFound!=null && !notFound.isEmpty()) logger.warn("Selection: {} objects not found: {}", getName(), Utils.toStringList(notFound, array -> Utils.toStringArray(array)));
+        if (notFound!=null && !notFound.isEmpty()) logger.debug("Selection: {} objects not found: {}", getName(), Utils.toStringList(notFound, array -> Utils.toStringArray(array)));
         return res;
     }
     

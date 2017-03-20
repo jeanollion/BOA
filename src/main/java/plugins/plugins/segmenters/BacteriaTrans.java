@@ -504,6 +504,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         List<Object3D> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());
         ImageOperations.and(segmentationMask, pv.getSegmentationMask(), pv.getSegmentationMask());
         ObjectPopulation pop = WatershedTransform.watershed(pv.getIntensityMap(), pv.getSegmentationMask(), seedObjects, false, null, null, true);
+        
         if (verboseManualSeg) {
             Image seedMap = new ImageByte("seeds from: "+input.getName(), input);
             for (int[] seed : seedsXYZ) seedMap.setPixel(seed[0], seed[1], seed[2], 1);
@@ -528,6 +529,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         ImageInteger mask = object.getMask();
         if (!input.sameSize(mask)) {
             input = input.crop(object.getBounds());
+            //input = object.isAbsoluteLandMark()? input.cropWithOffset(object.getBounds()) : input.crop(object.getBounds());
             //mask = mask.crop(input.getBoundingBox()); // problem with crop & offsets when bb is larger & has an offset
         }
         pv = getProcessingVariables(input, mask);
@@ -606,15 +608,32 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             //return input;
         }
         private ObjectPopulation splitSegmentationMask(ImageInteger maskToSplit, int minSize) {
+            
+            
+            
+            ObjectPopulation res =  WatershedTransform.watershed(getEDM(), maskToSplit, true, null, new WatershedTransform.SizeFusionCriterion(minSize), true);
+            if (res.getObjects().size()==1) { // relabel with low connectivity -> if not contour will fail
+                List<Object3D> list = ImageLabeller.labelImageListLowConnectivity(maskToSplit);
+                return new ObjectPopulation(new ArrayList<>(list), maskToSplit);
+            } else return res;
+            /*   
             ObjectPopulation res = WatershedTransform.watershed(getIntensityMap(), maskToSplit, false, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation), true);
+            if (splitVerbose) logger.debug("splitMask: {}", res.getObjects().size());
             if (res.getObjects().size()>1) {
                 res.setVoxelIntensities(getEDM()); // for getExtremaSeedList method called just afterwards. // offset of objects needs to be relative to EDM map because EDM offset is not taken into acount
-                return WatershedTransform.watershed(getEDM(), maskToSplit, res.getExtremaSeedList(true), true, null, new WatershedTransform.SizeFusionCriterion(minSize), true);
+                ObjectPopulation res2 = WatershedTransform.watershed(getEDM(), maskToSplit, res.getExtremaSeedList(true), true, null, new WatershedTransform.SizeFusionCriterion(minSize), true);
+                if (res2.getObjects().size()>1) return res2;
+                else {
+                    res =  WatershedTransform.watershed(getEDM(), maskToSplit, true, null, new WatershedTransform.SizeFusionCriterion(minSize), true);
+                    res.setVoxelIntensities(getEDM());
+                    return res;
+                }
             } else {
                 res =  WatershedTransform.watershed(getEDM(), maskToSplit, true, null, new WatershedTransform.SizeFusionCriterion(minSize), true);
                 res.setVoxelIntensities(getEDM());
                 return res;
             }
+            */
         }
         private ImageInteger getSegmentationMask() {
             if (segMask == null) {
@@ -704,13 +723,12 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         }
         protected ObjectPopulation splitAndMergeObjects(ImageInteger segmentationMask, int minSize, int objectMergeLimit, boolean endOfChannel, boolean debug) {
             //if (BacteriaTrans.debug) debug=true;
-            IJImageDisplayer disp=debug?new IJImageDisplayer():null;
             ObjectPopulation res = splitSegmentationMask(segmentationMask, minSizePropagation);
             if (res.getObjects().isEmpty()) return res;
-            if (debug) disp.showImage(getEDM());
+            if (debug) ImageWindowManagerFactory.showImage(getEDM());
             if (debug) {
-                disp.showImage(res.getLabelMap().duplicate("labelMap - shape re-split"));
-                disp.showImage(getCurvatureImage(new ObjectPopulation(segmentationMask, true), curvatureScale));
+                ImageWindowManagerFactory.showImage(res.getLabelMap().duplicate("labelMap - shape re-split"));
+                ImageWindowManagerFactory.showImage(getCurvatureImage(new ObjectPopulation(segmentationMask, true), curvatureScale));
             }
             if (endOfChannel && !res.getObjects().isEmpty()) yLimLastObject = res.getObjects().get(res.getObjects().size()-1).getBounds().getyMax();
             // merge using the criterion

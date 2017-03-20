@@ -346,9 +346,9 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     }
 
     @Override public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
-        if (pv==null) initializeVariables(input);
+        if (pv==null) pv=initializeVariables(input);
         List<Object3D> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());
-        ObjectPopulation pop =  WatershedTransform.watershed(pv.hessian, segmentationMask, seedObjects, false, new WatershedTransform.ThresholdPropagation(pv.getNormalizedHessian(), this.manualSegPropagationHessianThreshold.getValue().doubleValue(), false), new WatershedTransform.SizeFusionCriterion(this.minSize.getValue().intValue()), false);
+        ObjectPopulation pop =  WatershedTransform.watershed(pv.getHessian(), segmentationMask, seedObjects, false, new WatershedTransform.ThresholdPropagation(pv.getNormalizedHessian(), this.manualSegPropagationHessianThreshold.getValue().doubleValue(), false), new WatershedTransform.SizeFusionCriterion(this.minSize.getValue().intValue()), false);
         
         if (verboseManualSeg) {
             Image seedMap = new ImageByte("seeds from: "+input.getName(), input);
@@ -440,7 +440,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         private Image getNormalizedHessian() {
             if (normalizedHessian==null) {
                 Image gauss = ImageFeatures.gaussianSmooth(rawIntensityMap, smoothScale, smoothScale*rawIntensityMap.getScaleXY()/rawIntensityMap.getScaleZ(), false);
-                normalizedHessian=ImageOperations.divide(hessian, gauss, null).setName("NormalizedHessian");
+                normalizedHessian=ImageOperations.divide(getHessian(), gauss, null).setName("NormalizedHessian");
             } 
             return normalizedHessian;
         }

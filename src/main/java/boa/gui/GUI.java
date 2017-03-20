@@ -133,7 +133,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     boolean reloadObjectTrees=false;
     
     // structure-related attributes
-    StructureObjectTreeGenerator objectTreeGenerator;
+    //StructureObjectTreeGenerator objectTreeGenerator;
     DefaultListModel<String> structureModel;
     DefaultListModel<String> experimentModel = new DefaultListModel();
     DefaultListModel<String> actionMicroscopyFieldModel;
@@ -184,6 +184,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 if (reloadObjectTrees && tabs.getSelectedComponent()==dataPanel) {
                     reloadObjectTrees=false;
                     loadObjectTrees();
+                    displayTrackTrees();
                 }
                 if (tabs.getSelectedComponent()==actionPanel) {
                     populateActionStructureList();
@@ -313,7 +314,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
           });
     }
     
-    public StructureObjectTreeGenerator getObjectTree() {return this.objectTreeGenerator;}
+    //public StructureObjectTreeGenerator getObjectTree() {return this.objectTreeGenerator;}
     public TrackTreeController getTrackTrees() {return this.trackTreeController;}
     
     /*public static boolean isDisplayingObject(StructureObject object) {
@@ -380,8 +381,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }*/
         }
         // look in object list
-        List<StructureObject> selectedObjects = instance.objectTreeGenerator.getSelectedObjects(true, i.getChildStructureIdx());
-        iwm.displayObjects(image, i.pairWithOffset(selectedObjects), null, true, false);
+        //List<StructureObject> selectedObjects = instance.objectTreeGenerator.getSelectedObjects(true, i.getChildStructureIdx());
+        //iwm.displayObjects(image, i.pairWithOffset(selectedObjects), null, true, false);
         // unselect objects that cannot be selected ?
         
         // labile objects
@@ -515,10 +516,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     protected void loadObjectTrees() {
         //TODO remember treepath if existing and set them in the new trees
         
-        objectTreeGenerator = new StructureObjectTreeGenerator(db);
-        structureJSP.setViewportView(objectTreeGenerator.getTree());
+        //objectTreeGenerator = new StructureObjectTreeGenerator(db);
+        //structureJSP.setViewportView(objectTreeGenerator.getTree());
         
-        trackTreeController = new TrackTreeController(db, objectTreeGenerator);
+        trackTreeController = new TrackTreeController(db);
         setTrackTreeStructures(db.getExperiment().getStructuresAsString());
         resetSelectionHighlight();
     }
@@ -603,15 +604,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     
     // ImageObjectListener implementation
     @Override public void fireObjectSelected(List<StructureObject> selectedObjects, boolean addToSelection) {
-        objectTreeGenerator.setUpdateRoiDisplayWhenSelectionChange(false);
+        /*objectTreeGenerator.setUpdateRoiDisplayWhenSelectionChange(false);
         objectTreeGenerator.selectObjects(selectedObjects, addToSelection);    
-        objectTreeGenerator.setUpdateRoiDisplayWhenSelectionChange(true);
+        objectTreeGenerator.setUpdateRoiDisplayWhenSelectionChange(true);*/
     }
     
     @Override public void fireObjectDeselected(List<StructureObject> deselectedObject) {
-        objectTreeGenerator.setUpdateRoiDisplayWhenSelectionChange(false);
+        /*objectTreeGenerator.setUpdateRoiDisplayWhenSelectionChange(false);
         objectTreeGenerator.unSelectObjects(deselectedObject);
-        objectTreeGenerator.setUpdateRoiDisplayWhenSelectionChange(true);
+        objectTreeGenerator.setUpdateRoiDisplayWhenSelectionChange(true);*/
     }
     
     @Override public void fireTracksSelected(List<StructureObject> selectedTrackHeads, boolean addToSelection) {
@@ -633,9 +634,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }
 
     public void fireDeselectAllObjects(int structureIdx) {
-        objectTreeGenerator.setUpdateRoiDisplayWhenSelectionChange(false);
+        /*objectTreeGenerator.setUpdateRoiDisplayWhenSelectionChange(false);
         objectTreeGenerator.unselectAllObjects();
-        objectTreeGenerator.setUpdateRoiDisplayWhenSelectionChange(true);
+        objectTreeGenerator.setUpdateRoiDisplayWhenSelectionChange(true);*/
     }
     
     private void setTrackTreeStructures(String[] structureNames) {
@@ -788,7 +789,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         ControlPanel = new javax.swing.JPanel();
         trackStructureJCB = new javax.swing.JComboBox();
         selectAllTracksButton = new javax.swing.JButton();
-        collapseAllObjectButton = new javax.swing.JButton();
         nextTrackErrorButton = new javax.swing.JButton();
         splitObjectsButton = new javax.swing.JButton();
         mergeObjectsButton = new javax.swing.JButton();
@@ -805,9 +805,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         unlinkObjectsButton = new javax.swing.JButton();
         resetLinksButton = new javax.swing.JButton();
         testSplitButton = new javax.swing.JButton();
-        ObjectTreeJSP = new javax.swing.JSplitPane();
-        StructurePanel = new javax.swing.JPanel();
-        structureJSP = new javax.swing.JScrollPane();
         trackPanel = new javax.swing.JPanel();
         TimeJSP = new javax.swing.JScrollPane();
         trackSubPanel = new javax.swing.JPanel();
@@ -949,13 +946,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
-        collapseAllObjectButton.setText("Collapse Object-tree");
-        collapseAllObjectButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                collapseAllObjectButtonActionPerformed(evt);
-            }
-        });
-
         nextTrackErrorButton.setText("Navigate Next (X)");
         nextTrackErrorButton.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -1067,7 +1057,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         ControlPanelLayout.setHorizontalGroup(
             ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(trackStructureJCB, 0, 162, Short.MAX_VALUE)
-            .addComponent(collapseAllObjectButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(selectAllTracksButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(nextTrackErrorButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(mergeObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
@@ -1131,26 +1120,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addComponent(unlinkObjectsButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(resetLinksButton)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(collapseAllObjectButton)
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
-
-        StructurePanel.setBorder(javax.swing.BorderFactory.createTitledBorder("SegmentedObjects"));
-
-        javax.swing.GroupLayout StructurePanelLayout = new javax.swing.GroupLayout(StructurePanel);
-        StructurePanel.setLayout(StructurePanelLayout);
-        StructurePanelLayout.setHorizontalGroup(
-            StructurePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(structureJSP, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 100, Short.MAX_VALUE)
-        );
-        StructurePanelLayout.setVerticalGroup(
-            StructurePanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(structureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 643, Short.MAX_VALUE)
-        );
-
-        ObjectTreeJSP.setLeftComponent(StructurePanel);
-        StructurePanel.getAccessibleContext().setAccessibleName("Segmented Objects");
 
         trackPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Tracks"));
 
@@ -1161,14 +1132,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         trackPanel.setLayout(trackPanelLayout);
         trackPanelLayout.setHorizontalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 209, Short.MAX_VALUE)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 337, Short.MAX_VALUE)
         );
         trackPanelLayout.setVerticalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 643, Short.MAX_VALUE)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 641, Short.MAX_VALUE)
         );
-
-        ObjectTreeJSP.setRightComponent(trackPanel);
 
         selectionPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Selections"));
 
@@ -1216,19 +1185,19 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(selectionPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(ObjectTreeJSP)
-                .addContainerGap())
+                .addComponent(trackPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         dataPanelLayout.setVerticalGroup(
             dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(dataPanelLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(dataPanelLayout.createSequentialGroup()
+                        .addComponent(trackPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 14, Short.MAX_VALUE))
                     .addComponent(ControlPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(dataPanelLayout.createSequentialGroup()
-                        .addGroup(dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(ObjectTreeJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                            .addComponent(selectionPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                        .addComponent(selectionPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                         .addContainerGap())))
         );
 
@@ -1508,27 +1477,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (segmentAndTrack || trackOnly) populateSelections();
     }
     
-    private void trackStructureJCBActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_trackStructureJCBActionPerformed
-        if (!checkConnection()) return;
-        logger.debug("trackStructureJCBActionPerformed: selected index: {} action event: {}", trackStructureJCB.getSelectedIndex(), evt);
-        this.setStructure(this.trackStructureJCB.getSelectedIndex());
-    }//GEN-LAST:event_trackStructureJCBActionPerformed
-
     private String getHostName() {
         String host = this.hostName.getText();
         if (host==null || host.length()==0) host = "localhost";
         return host;
     }
-    
-    private void collapseAllObjectButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_collapseAllObjectButtonActionPerformed
-        this.objectTreeGenerator.collapseAll();
-    }//GEN-LAST:event_collapseAllObjectButtonActionPerformed
-
-    private void selectAllTracksButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllTracksButtonActionPerformed
-        ImageWindowManagerFactory.getImageManager().displayAllTracks(null);
-        //GUI.updateRoiDisplayForSelections(null, null);
-    }//GEN-LAST:event_selectAllTracksButtonActionPerformed
-    private int navigateCount = 0;
+        private int navigateCount = 0;
     public void navigateToNextObjects(boolean next, boolean nextPosition, int structureDisplay, boolean setInteractiveStructure) {
         List<Selection> sels = selectionList.getSelectedValuesList();
         if (sels.isEmpty()) ImageWindowManagerFactory.getImageManager().goToNextTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads(), next);
@@ -1609,95 +1563,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         }
     }
-    private void nextTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextTrackErrorButtonActionPerformed
-        if (!checkConnection()) return;
-        navigateToNextObjects(true, false, -1, true);
-    }//GEN-LAST:event_nextTrackErrorButtonActionPerformed
-
-    private void splitObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_splitObjectsButtonActionPerformed
-        List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        if (selList.isEmpty()) logger.warn("Select at least one object to Split first!");
-        else ManualCorrection.splitObjects(db, selList, true, false);
-    }//GEN-LAST:event_splitObjectsButtonActionPerformed
-
-    private void mergeObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mergeObjectsButtonActionPerformed
-        if (!checkConnection()) return;
-        List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        if (selList.isEmpty()) logger.warn("Select at least two objects to Merge first!");
-        else ManualCorrection.mergeObjects(db, selList, true);
-    }//GEN-LAST:event_mergeObjectsButtonActionPerformed
-
-    private void previousTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_previousTrackErrorButtonActionPerformed
-        if (!checkConnection()) return;
-        navigateToNextObjects(false, false, -1, true);
-    }//GEN-LAST:event_previousTrackErrorButtonActionPerformed
-
-    private void interactiveStructureActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_interactiveStructureActionPerformed
-        if (!checkConnection()) return;
-        getImageManager().setInteractiveStructure(interactiveStructure.getSelectedIndex());
-    }//GEN-LAST:event_interactiveStructureActionPerformed
-
-    private void selectAllObjectsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllObjectsActionPerformed
-        getImageManager().displayAllObjects(null);
-        //GUI.updateRoiDisplayForSelections(null, null);
-        
-    }//GEN-LAST:event_selectAllObjectsActionPerformed
-
-    private void deleteObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteObjectsButtonActionPerformed
-        if (!checkConnection()) return;
-        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        ManualCorrection.deleteObjects(db, sel, true);
-    }//GEN-LAST:event_deleteObjectsButtonActionPerformed
-
-    private void reloadSelectionsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_reloadSelectionsButtonActionPerformed
-        populateSelections();
-    }//GEN-LAST:event_reloadSelectionsButtonActionPerformed
-
-    private void createSelectionButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_createSelectionButtonActionPerformed
-        if (!checkConnection()) return;
-        String name = JOptionPane.showInputDialog("New Selection name:");
-        if (!Utils.isValid(name, false)) {
-            logger.error("Name should not contain special characters");
-            return;
-        }
-        List<String> structures = Arrays.asList(db.getExperiment().getStructuresAsString());
-        if (structures.contains(name)) {
-            logger.error("Name should not be a Structure's name");
-            return;
-        }
-        populateSelections();
-        for (int i = 0; i<selectionModel.size(); ++i) if (selectionModel.get(i).getName().equals(name)) {
-            logger.error("Selection name already exists");
-            return;
-        }
-        Selection sel = new Selection(name, db);
-        this.db.getSelectionDAO().store(sel);
-        this.selectionModel.addElement(sel);
-        
-    }//GEN-LAST:event_createSelectionButtonActionPerformed
-
-    private void updateRoiDisplayButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_updateRoiDisplayButtonActionPerformed
-        GUI.updateRoiDisplay(null);
-    }//GEN-LAST:event_updateRoiDisplayButtonActionPerformed
-
-    private void manualSegmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_manualSegmentButtonActionPerformed
-        ManualCorrection.manualSegmentation(db, null, false);
-    }//GEN-LAST:event_manualSegmentButtonActionPerformed
-
-    private void testManualSegmentationButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_testManualSegmentationButtonActionPerformed
-        ManualCorrection.manualSegmentation(db, null, true);
-    }//GEN-LAST:event_testManualSegmentationButtonActionPerformed
-
-    private void linkObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_linkObjectsButtonActionPerformed
-        if (!checkConnection()) return;
-        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        if (sel.isEmpty()) {
-            logger.warn("Select at least one object to modify its links");
-            return;
-        }
-        ManualCorrection.modifyObjectLinks(db, sel, false, true);
-    }//GEN-LAST:event_linkObjectsButtonActionPerformed
-
     private void setMongoBinDirectoryMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_setMongoBinDirectoryMenuActionPerformed
         File[] f = Utils.chooseFiles("Choose Directory containing MongoDB Binary Files", null, FileChooser.FileChooserOption.FILE_OR_DIRECTORY, this);
         if (f.length==1 && f[0].exists() && f[0].isDirectory()) {
@@ -1759,6 +1624,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             MorphiumMasterDAO db1 = new MorphiumMasterDAO(getSelectedExperiment());
             MorphiumMasterDAO db2 = new MorphiumMasterDAO(name);
             Experiment xp2 = db1.getExperiment().duplicate();
+            xp2.clearPositions();
             xp2.setName(name);
             db2.setExperiment(xp2);
             populateExperimentList();
@@ -2021,33 +1887,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         //PropertyUtils.set(PropertyUtils.EXPORT_FORMAT, this.jsonFormatMenuItem.isSelected()?"json":"bson");
     }//GEN-LAST:event_bsonFormatMenuItemActionPerformed
 
-    private void unlinkObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_unlinkObjectsButtonActionPerformed
-        if (!checkConnection()) return;
-        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        if (sel.isEmpty()) {
-            logger.warn("Select at least one object to modify its links");
-            return;
-        }
-        ManualCorrection.modifyObjectLinks(db, sel, true, true);
-    }//GEN-LAST:event_unlinkObjectsButtonActionPerformed
-
-    private void resetLinksButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resetLinksButtonActionPerformed
-        if (!checkConnection()) return;
-        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        if (sel.isEmpty()) {
-            logger.warn("Select at least one object to modify its links");
-            return;
-        }
-        ManualCorrection.resetObjectLinks(db, sel, true);
-    }//GEN-LAST:event_resetLinksButtonActionPerformed
-
-    private void testSplitButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_testSplitButtonActionPerformed
-        if (!checkConnection()) return;
-        List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-        if (selList.isEmpty()) logger.warn("Select at least one object to Split first!");
-        else ManualCorrection.splitObjects(db, selList, false, true);
-    }//GEN-LAST:event_testSplitButtonActionPerformed
-
     private void eraseCollectionCheckboxActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_eraseCollectionCheckboxActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_eraseCollectionCheckboxActionPerformed
@@ -2087,6 +1926,92 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         }
     }//GEN-LAST:event_runActionAllXPMenuItemActionPerformed
 
+    private void closeAllWindowsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeAllWindowsMenuItemActionPerformed
+        ImageWindowManagerFactory.getImageManager().flush();
+    }//GEN-LAST:event_closeAllWindowsMenuItemActionPerformed
+
+    private void reloadSelectionsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_reloadSelectionsButtonActionPerformed
+        populateSelections();
+    }//GEN-LAST:event_reloadSelectionsButtonActionPerformed
+
+    private void createSelectionButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_createSelectionButtonActionPerformed
+        if (!checkConnection()) return;
+        String name = JOptionPane.showInputDialog("New Selection name:");
+        if (!Utils.isValid(name, false)) {
+            logger.error("Name should not contain special characters");
+            return;
+        }
+        List<String> structures = Arrays.asList(db.getExperiment().getStructuresAsString());
+        if (structures.contains(name)) {
+            logger.error("Name should not be a Structure's name");
+            return;
+        }
+        populateSelections();
+        for (int i = 0; i<selectionModel.size(); ++i) if (selectionModel.get(i).getName().equals(name)) {
+            logger.error("Selection name already exists");
+            return;
+        }
+        Selection sel = new Selection(name, db);
+        this.db.getSelectionDAO().store(sel);
+        this.selectionModel.addElement(sel);
+
+    }//GEN-LAST:event_createSelectionButtonActionPerformed
+
+    private void testSplitButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_testSplitButtonActionPerformed
+        if (!checkConnection()) return;
+        List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        if (selList.isEmpty()) logger.warn("Select at least one object to Split first!");
+        else ManualCorrection.splitObjects(db, selList, false, true);
+    }//GEN-LAST:event_testSplitButtonActionPerformed
+
+    private void resetLinksButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_resetLinksButtonActionPerformed
+        if (!checkConnection()) return;
+        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        if (sel.isEmpty()) {
+            logger.warn("Select at least one object to modify its links");
+            return;
+        }
+        ManualCorrection.resetObjectLinks(db, sel, true);
+    }//GEN-LAST:event_resetLinksButtonActionPerformed
+
+    private void unlinkObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_unlinkObjectsButtonActionPerformed
+        if (!checkConnection()) return;
+        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        if (sel.isEmpty()) {
+            logger.warn("Select at least one object to modify its links");
+            return;
+        }
+        ManualCorrection.modifyObjectLinks(db, sel, true, true);
+    }//GEN-LAST:event_unlinkObjectsButtonActionPerformed
+
+    private void linkObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_linkObjectsButtonActionPerformed
+        if (!checkConnection()) return;
+        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        if (sel.isEmpty()) {
+            logger.warn("Select at least one object to modify its links");
+            return;
+        }
+        ManualCorrection.modifyObjectLinks(db, sel, false, true);
+    }//GEN-LAST:event_linkObjectsButtonActionPerformed
+
+    private void testManualSegmentationButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_testManualSegmentationButtonActionPerformed
+        ManualCorrection.manualSegmentation(db, null, true);
+    }//GEN-LAST:event_testManualSegmentationButtonActionPerformed
+
+    private void manualSegmentButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_manualSegmentButtonActionPerformed
+        ManualCorrection.manualSegmentation(db, null, false);
+    }//GEN-LAST:event_manualSegmentButtonActionPerformed
+
+    private void updateRoiDisplayButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_updateRoiDisplayButtonActionPerformed
+        GUI.updateRoiDisplay(null);
+    }//GEN-LAST:event_updateRoiDisplayButtonActionPerformed
+
+    private void deleteObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_deleteObjectsButtonActionPerformed
+        if (!checkConnection()) return;
+        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        ManualCorrection.deleteObjects(db, sel, true);
+    }//GEN-LAST:event_deleteObjectsButtonActionPerformed
+
     private void deleteObjectsButtonMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_deleteObjectsButtonMousePressed
         if (SwingUtilities.isRightMouseButton(evt)) {
             JPopupMenu menu = new JPopupMenu();
@@ -2110,9 +2035,50 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         }
     }//GEN-LAST:event_deleteObjectsButtonMousePressed
 
-    private void closeAllWindowsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeAllWindowsMenuItemActionPerformed
-        ImageWindowManagerFactory.getImageManager().flush();
-    }//GEN-LAST:event_closeAllWindowsMenuItemActionPerformed
+    private void selectAllObjectsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllObjectsActionPerformed
+        getImageManager().displayAllObjects(null);
+        //GUI.updateRoiDisplayForSelections(null, null);
+
+    }//GEN-LAST:event_selectAllObjectsActionPerformed
+
+    private void interactiveStructureActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_interactiveStructureActionPerformed
+        if (!checkConnection()) return;
+        getImageManager().setInteractiveStructure(interactiveStructure.getSelectedIndex());
+    }//GEN-LAST:event_interactiveStructureActionPerformed
+
+    private void previousTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_previousTrackErrorButtonActionPerformed
+        if (!checkConnection()) return;
+        navigateToNextObjects(false, false, -1, true);
+    }//GEN-LAST:event_previousTrackErrorButtonActionPerformed
+
+    private void mergeObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mergeObjectsButtonActionPerformed
+        if (!checkConnection()) return;
+        List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        if (selList.isEmpty()) logger.warn("Select at least two objects to Merge first!");
+        else ManualCorrection.mergeObjects(db, selList, true);
+    }//GEN-LAST:event_mergeObjectsButtonActionPerformed
+
+    private void splitObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_splitObjectsButtonActionPerformed
+        List<StructureObject> selList = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        if (selList.isEmpty()) logger.warn("Select at least one object to Split first!");
+        else ManualCorrection.splitObjects(db, selList, true, false);
+    }//GEN-LAST:event_splitObjectsButtonActionPerformed
+
+    private void nextTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextTrackErrorButtonActionPerformed
+        if (!checkConnection()) return;
+        navigateToNextObjects(true, false, -1, true);
+    }//GEN-LAST:event_nextTrackErrorButtonActionPerformed
+
+    private void selectAllTracksButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllTracksButtonActionPerformed
+        ImageWindowManagerFactory.getImageManager().displayAllTracks(null);
+        //GUI.updateRoiDisplayForSelections(null, null);
+    }//GEN-LAST:event_selectAllTracksButtonActionPerformed
+
+    private void trackStructureJCBActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_trackStructureJCBActionPerformed
+        if (!checkConnection()) return;
+        logger.debug("trackStructureJCBActionPerformed: selected index: {} action event: {}", trackStructureJCB.getSelectedIndex(), evt);
+        this.setStructure(this.trackStructureJCB.getSelectedIndex());
+    }//GEN-LAST:event_trackStructureJCBActionPerformed
     private void updateMongoDBBinActions() {
         boolean enableDump = false, enableRestore = false;
         String mPath = PropertyUtils.get(PropertyUtils.MONGO_BIN_PATH);
@@ -2210,8 +2176,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel ControlPanel;
-    private javax.swing.JSplitPane ObjectTreeJSP;
-    private javax.swing.JPanel StructurePanel;
     private javax.swing.JScrollPane TimeJSP;
     private javax.swing.JScrollPane actionJSP;
     private javax.swing.JScrollPane actionMicroscopyFieldJSP;
@@ -2219,7 +2183,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JScrollPane actionStructureJSP;
     private javax.swing.JRadioButtonMenuItem bsonFormatMenuItem;
     private javax.swing.JMenuItem closeAllWindowsMenuItem;
-    private javax.swing.JButton collapseAllObjectButton;
     private javax.swing.JScrollPane configurationJSP;
     private javax.swing.JPanel configurationPanel;
     private javax.swing.JButton createSelectionButton;
@@ -2280,7 +2243,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JMenuItem setMongoBinDirectoryMenu;
     private javax.swing.JMenuItem setSelectedExperimentMenuItem;
     private javax.swing.JButton splitObjectsButton;
-    private javax.swing.JScrollPane structureJSP;
     private javax.swing.JList structureList;
     private javax.swing.JTabbedPane tabs;
     private javax.swing.JButton testManualSegmentationButton;

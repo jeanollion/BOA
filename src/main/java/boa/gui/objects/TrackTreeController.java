@@ -47,12 +47,12 @@ public class TrackTreeController {
     TreeMap<Integer, TrackTreeGenerator> displayedGeneratorS;
     HashMap<Integer, TrackTreeGenerator> allGeneratorS;
     int[] structurePathToRoot;
-    StructureObjectTreeGenerator objectGenerator;
+    //StructureObjectTreeGenerator objectGenerator;
     boolean updateRoiDisplayWhenSelectionChange = true;
     
-    public TrackTreeController(MasterDAO db, StructureObjectTreeGenerator objectGenerator) {
+    public TrackTreeController(MasterDAO db) {
         this.db = db;
-        this.objectGenerator=objectGenerator;
+        //this.objectGenerator=objectGenerator;
         allGeneratorS = new HashMap<Integer, TrackTreeGenerator>();
         for (int s = 0; s<db.getExperiment().getStructureCount(); ++s) allGeneratorS.put(s, new TrackTreeGenerator(db, this));
         displayedGeneratorS=new TreeMap<Integer, TrackTreeGenerator>();

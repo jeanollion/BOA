@@ -183,15 +183,15 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
     public Enumeration children() {
         return Collections.enumeration(getChildren());
     }
-    
+    /*
     public void loadAllObjects(StructureObject object, int [] pathToChildStructureIdx) {
-        root.generator.controller.objectGenerator.getObjectNode(object).loadAllChildObjects(pathToChildStructureIdx, 0);
+        //root.generator.controller.objectGenerator.getObjectNode(object).loadAllChildObjects(pathToChildStructureIdx, 0);
     }
     
     public void loadAllTrackObjects(int[] pathToChildStructureIdx) {
         for (StructureObject o : getTrack()) loadAllObjects(o, pathToChildStructureIdx);
     }
-
+    */
     // mutable tree node interface
     public void insert(MutableTreeNode child, int index) {
         getChildren().add(index, (TrackNode)child);

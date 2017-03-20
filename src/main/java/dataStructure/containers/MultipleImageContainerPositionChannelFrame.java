@@ -35,6 +35,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import utils.ArrayUtil;
 
 /**
  *
@@ -116,7 +117,9 @@ public class MultipleImageContainerPositionChannelFrame extends MultipleImageCon
 
     @Override
     public MultipleImageContainer duplicate() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        MultipleImageContainerPositionChannelFrame res = new MultipleImageContainerPositionChannelFrame(inputDir, extension, positionKey, timeKeyword, ArrayUtil.duplicate(channelKeywords), frameNumber, scaleXY, scaleZ);
+        if (sizeZC!=null) res.sizeZC=ArrayUtil.duplicate(sizeZC);
+        return res;
     }
     
     private void createFileMap() {

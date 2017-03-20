@@ -252,10 +252,12 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
     // manual segmenter implementation
     
     protected boolean verboseManualSeg;
+    @Override
     public void setManualSegmentationVerboseMode(boolean verbose) {
         this.verboseManualSeg=verbose;
     }
-
+    
+    @Override
     public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
         Image smooth = ImageFeatures.gaussianSmooth(input, 2, 2, false);
         Image scaleSpace = getScaleSpace(input, smooth, new double[]{2}).setName("WatershedMap from: "+input.getName());
@@ -264,20 +266,21 @@ public class MutationSegmenterScaleSpace implements Segmenter, ManualSegmenter, 
         
         if (verboseManualSeg) {
             Image seedMap = new ImageByte("seeds from: "+input.getName(), input);
-            for (int[] seed : seedsXYZ) seedMap.setPixelWithOffset(seed[0], seed[1], seed[2], 1);
+            for (int[] seed : seedsXYZ) seedMap.setPixel(seed[0], seed[1], seed[2], 1);
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(seedMap);
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(scaleSpace);
             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage(pop.getLabelMap().setName("segmented from: "+input.getName()));
         }
-        
         return pop;
     }
     // object splitter implementation
+    @Override
     public ObjectPopulation splitObject(Image input, Object3D object) {
         ImageFloat wsMap = ImageFeatures.getHessian(input, 1.5, false)[0];
         return WatershedObjectSplitter.splitInTwo(wsMap, object.getMask(), false, true, manualSplitVerbose);
     }
     boolean manualSplitVerbose;
+    @Override
     public void setSplitVerboseMode(boolean verbose) {
         manualSplitVerbose=verbose;
     }

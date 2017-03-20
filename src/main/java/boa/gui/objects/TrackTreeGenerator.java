@@ -132,6 +132,7 @@ public class TrackTreeGenerator {
     public JTree getTree() {return tree;}
     
     public void setParentTrack(StructureObject parentTrack, int structureIdx) {
+        if (parentTrack==null) return;
         generateTree(new RootTrackNode(this, parentTrack, structureIdx));
         if (tree!=null) {
             tree.updateUI();
@@ -234,7 +235,7 @@ public class TrackTreeGenerator {
         }
         
         // reload object tree
-        for (StructureObject t : track) this.controller.objectGenerator.reload(t);
+        //for (StructureObject t : track) this.controller.objectGenerator.reload(t);
         
     }
 

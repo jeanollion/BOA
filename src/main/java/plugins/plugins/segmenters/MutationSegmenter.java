@@ -22,6 +22,7 @@ import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
+import configuration.parameters.ParameterUtils;
 import configuration.parameters.PluginParameter;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
@@ -40,6 +41,7 @@ import image.ImageLabeller;
 import image.ImageMask;
 import image.ImageOperations;
 import image.ImageShort;
+import image.ObjectFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -47,9 +49,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import jj2000.j2k.util.ArrayUtil;
 import measurement.BasicMeasurements;
+import plugins.ManualSegmenter;
+import plugins.ObjectSplitter;
 import plugins.Segmenter;
 import plugins.Thresholder;
 import plugins.UseMaps;
+import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.thresholders.BackgroundFit;
 import plugins.plugins.thresholders.ConstantValue;
@@ -75,7 +80,7 @@ import utils.Utils;
  *
  * @author jollion
  */
-public class MutationSegmenter implements Segmenter, UseMaps {
+public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, ObjectSplitter {
     public List<Image> intermediateImages;
     public static boolean debug = false;
     public static boolean displayImages = false;
@@ -253,5 +258,48 @@ public class MutationSegmenter implements Segmenter, UseMaps {
             lap = ImageFeatures.getLaplacian(source, scale, true, false).setName("laplacian: "+scale);
         }
         return lap;
+    }
+
+    protected boolean verboseManualSeg;
+    public void setManualSegmentationVerboseMode(boolean verbose) {
+        this.verboseManualSeg=verbose;
+    }
+
+    @Override
+    public ObjectPopulation manualSegment(Image input, StructureObject parent, ImageMask segmentationMask, int structureIdx, List<int[]> seedsXYZ) {
+        List<Object3D> seedObjects = ObjectFactory.createSeedObjectsFromSeeds(seedsXYZ, input.getScaleXY(), input.getScaleZ());
+        final double thld = BackgroundFit.backgroundFitHalf(input, parent.getMask(), 2, null);
+        double[] ms = ImageOperations.getMeanAndSigmaWithOffset(input, parent.getMask(), v->v<=thld);
+        if (ms[2]==0) ms = ImageOperations.getMeanAndSigmaWithOffset(input, parent.getMask(), v -> true);
+        if (verboseManualSeg) logger.debug("thld: {} mean & sigma: {}", thld, ms);
+        Image scaledInput = ImageOperations.affineOperation2WithOffset(input, null, 1/ms[1], -ms[0]);
+        Image lap = ImageFeatures.getLaplacian(scaledInput, scale.getValue().doubleValue(), true, false).setName("laplacian: "+scale);
+        Image smooth = ImageFeatures.gaussianSmooth(scaledInput, scale.getValue().doubleValue(), scale.getValue().doubleValue(), false).setName("gaussian: "+scale.getValue().doubleValue());
+        ObjectPopulation pop =  watershed(lap, parent.getMask(), seedObjects, true, new ThresholdPropagationOnWatershedMap(this.thresholdLow.getValue().doubleValue()), new SizeFusionCriterion(minSpotSize.getValue().intValue()), false);
+        SubPixelLocalizator.setSubPixelCenter(smooth, pop.getObjects(), true);
+        for (Object3D o : pop.getObjects()) { // quality criterion : smooth * lap
+            o.setQuality(Math.sqrt(o.getQuality() * lap.getPixel(o.getCenter()[0], o.getCenter()[1], o.getCenter().length>2?o.getCenter()[2]:0)));
+        }
+        if (verboseManualSeg) {
+            Image seedMap = new ImageByte("seeds from: "+input.getName(), input);
+            for (int[] seed : seedsXYZ) seedMap.setPixel(seed[0], seed[1], seed[2], 1);
+            ImageWindowManagerFactory.showImage(seedMap);
+            ImageWindowManagerFactory.showImage(lap.setName("Laplacian (watershedMap). Scale: "+scale.getValue().doubleValue()));
+            ImageWindowManagerFactory.showImage(smooth.setName("Smmothed Scale: "+scale.getValue().doubleValue()));
+            ImageWindowManagerFactory.showImage(pop.getLabelMap().setName("segmented from: "+input.getName()));
+        }
+        return pop;
+    }
+
+    @Override
+    public ObjectPopulation splitObject(Image input, Object3D object) {
+        ImageFloat wsMap = ImageFeatures.getLaplacian(input, 1.5, false, false);
+        return WatershedObjectSplitter.splitInTwo(wsMap, object.getMask(), true, true, manualSplitVerbose);
+    }
+
+    boolean manualSplitVerbose;
+    @Override
+    public void setSplitVerboseMode(boolean verbose) {
+        manualSplitVerbose=verbose;
     }
 }
