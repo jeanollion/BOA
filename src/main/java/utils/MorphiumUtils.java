@@ -107,4 +107,20 @@ public class MorphiumUtils {
     public static Morphium createMorphium(String dbName) {
         return createMorphium("localhost", 27017, dbName);
     }
+    public static Morphium createOfflineMorphium() {
+        try {
+            Morphium m = new Morphium();
+            MorphiumConfig cfg = new MorphiumConfig();
+            Field config = Morphium.class.getDeclaredField("config");
+            config.setAccessible(true);
+            config.set(m, cfg);
+            Field annotationHelper = Morphium.class.getDeclaredField("annotationHelper");
+            annotationHelper.setAccessible(true);
+            annotationHelper.set(m, new AnnotationAndReflectionHelper(cfg.isCamelCaseConversionEnabled()));
+            return m;
+        } catch (Exception ex) {
+            logger.debug("create offline morphium: ", ex);
+        } 
+        return null;
+    }
 }

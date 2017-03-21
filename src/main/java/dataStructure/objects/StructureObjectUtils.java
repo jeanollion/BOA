@@ -38,6 +38,7 @@ import net.imglib2.RealPoint;
 import net.imglib2.neighborsearch.RadiusNeighborSearchOnKDTree;
 import org.bson.types.ObjectId;
 import utils.HashMapGetCreate;
+import utils.Pair;
 import utils.Utils;
 
 /**
@@ -370,6 +371,13 @@ public class StructureObjectUtils {
     public static Map<StructureObject, List<StructureObject>> splitByParentTrackHead(Collection<StructureObject> list) {
         if (list.isEmpty()) return Collections.EMPTY_MAP;
         return list.stream().collect(Collectors.groupingBy(o -> o.getParent().getTrackHead()));
+    }
+    
+    
+    
+    public static Map<StructureObject, List<StructureObject>> splitByTrackHead(Collection<StructureObject> list) {
+        if (list.isEmpty()) return Collections.EMPTY_MAP;
+        return list.stream().collect(Collectors.groupingBy(o -> o.getTrackHead()));
     }
     
     public static Map<Integer, List<StructureObject>> splitByStructureIdx(Collection<StructureObject> list) {
