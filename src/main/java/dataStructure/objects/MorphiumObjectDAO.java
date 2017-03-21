@@ -455,7 +455,6 @@ public class MorphiumObjectDAO implements ObjectDAO {
     }
     
     
-    // TODO for faster retrieve:  retrieve only: timepoint, idx, structureIdx, parent + set dao & set trackHead as this -> ATTENTION object retrieved incompletely..
     public List<StructureObject> getTrackHeads(StructureObject parentTrack, int structureIdx) {
         if (parentTrack==null) return new ArrayList<StructureObject>(0);
         Query<StructureObject> q = getQuery().f("is_track_head").eq(true).f("parent_track_head_id").eq(parentTrack.getTrackHeadId()).f("structure_idx").eq(structureIdx).sort("time_point", "idx");

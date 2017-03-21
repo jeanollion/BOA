@@ -62,8 +62,8 @@ import static utils.Utils.toArray;
 public class Experiment extends SimpleContainerParameter implements TreeModelContainer {
     @Id protected ObjectId id;
     protected FileChooser imagePath;
-    SimpleListParameter<Structure> structures;
     SimpleListParameter<ChannelImage> channelImages;
+    SimpleListParameter<Structure> structures;
     SimpleListParameter<PluginParameter<Measurement>> measurements;
     SimpleListParameter<MicroscopyField> fields;
     PreProcessingChain template;
@@ -164,6 +164,9 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     public void setOutputImageDirectory(String outputPath) {
         imagePath.setSelectedFilePath(outputPath);
     }
+    public void clearPositions() {
+        this.fields.removeAllElements();
+    }
     public void clearMeasurements() {
         this.measurements.removeAllElements();
     }
@@ -187,6 +190,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     public int getStructureCount() {
+        checkInit();
         return structures.getChildCount();
     }
     

@@ -51,11 +51,11 @@ public class TestTracker {
         //final String dbName = "boa_phase140115mutH";
         //final String dbName = "boa_phase150324mutH";
         //String dbName = "boa_phase150616wt";
-        //String dbName = "boa_phase141107wt";
-        String dbName = "boa_fluo170207_150ms";
-        int fIdx = 44;
-        int mcIdx =8;
-        int structureIdx = 2;
+        String dbName = "boa_phase141107wt";
+        //String dbName = "boa_fluo170207_150ms";
+        int fIdx = 0;
+        int mcIdx =0;
+        int structureIdx = 1;
         MasterDAO db = new MorphiumMasterDAO(dbName);
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
@@ -88,6 +88,7 @@ public class TestTracker {
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;
+        
         ps.segmentAndTrack(structureIdx, parentTrack);
         logger.debug("children: {}", StructureObjectUtils.getAllTracks(parentTrack, 0));
         //ps.trackOnly(structureIdx, parentTrack);

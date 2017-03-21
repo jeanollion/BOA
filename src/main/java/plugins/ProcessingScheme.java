@@ -35,6 +35,7 @@ public interface ProcessingScheme extends Plugin { //Multithreaded
     public PreFilterSequence getPreFilters();
     public PostFilterSequence getPostFilters();
     public Segmenter getSegmenter();
+    //public void segmentThenTrack(int structureIdx, List<StructureObject> parentTrack);
     public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack);
     public void trackOnly(int structureIdx, List<StructureObject> parentTrack);
 }

@@ -87,6 +87,11 @@ public class SegmentThenTrack implements ProcessingScheme {
 
     @Override
     public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack) {
+        segmentThenTrack(structureIdx, parentTrack);
+    }
+    
+    //@Override
+    public void segmentThenTrack(final int structureIdx, final List<StructureObject> parentTrack) {
         if (parentTrack.isEmpty()) return;
         if (!segmenter.isOnePluginSet()) {
             logger.info("No segmenter set for structure: {}", structureIdx);

@@ -400,8 +400,8 @@ public class GenerateXP {
             if (!Double.isNaN(scaleXY)) xp.getPreProcessingTemplate().setCustomScale(scaleXY, 1);
             if (crop!=null) xp.getPreProcessingTemplate().addTransformation(0, null, new SimpleCrop(crop));
             xp.getPreProcessingTemplate().setTrimFrames(trimFramesStart, trimFramesEnd);
-            xp.getPreProcessingTemplate().addTransformation(0, null, new SaturateHistogramAuto().setSigmas(1, 2));
-            //xp.getPreProcessingTemplate().addTransformation(0, null, new SaturateHistogram(350, 450));
+            //xp.getPreProcessingTemplate().addTransformation(0, null, new SaturateHistogramAuto().setSigmas(1, 2));
+            xp.getPreProcessingTemplate().addTransformation(0, null, new SaturateHistogram(800, 1000));
             xp.getPreProcessingTemplate().addTransformation(1, null, new BandPass(0, 40, 1, 0)); // remove horizontal lines // min ==1 ? 
             //xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1, 0)).setActivated(true); // to remove salt and pepper noise before rotation
             //xp.getPreProcessingTemplate().addTransformation(0, null, new BandPass(0, 40, 1)); // remplacer le subtractBackground..-> determiner l'echelle

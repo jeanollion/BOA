@@ -176,11 +176,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         init(parentTrack, structureIdx, true);
         segmentAndTrack(true);
     }
-    
-    public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, boolean performCorrection) {
-        init(parentTrack, structureIdx, true);
-        segmentAndTrack(performCorrection);
-    }
+
     public static boolean correctionStep;
     public static Map<String, List<StructureObject>> stepParents;
     private static int step = 0;
@@ -200,7 +196,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             int[] fr = getFrameRangeContainingCells();
             if (fr !=null) {
                 threshold.setFrameRange(fr);
-                ((ThresholdLocalContrast)threshold).setAdaptativeByFY(adaptativeThresholdHalfWindow, 30);
+                ((ThresholdLocalContrast)threshold).setAdaptativeByFY(adaptativeThresholdHalfWindow, 30); // TODO parametrer!
                 /*if (false && adaptativeThreshold && adaptativeCoefficient>0) {
                     threshold.setAdaptativeThreshold(adaptativeCoefficient, adaptativeThresholdHalfWindow);
                     threshold.setAdaptativeByY(30); // 40 pour seuillage histogram
@@ -246,41 +242,40 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (correctionStep) step(null, true);
         
         // correct beheaded cells bias
-        correctBeheadedCells();
+        if (correction) correctBeheadedCells();
         if (correctionStep) step("after correct beheaded cells", true);
         // 2) perform corrections idx-wise
-        
-        ///if (true) return;
-        
-        int idxMax=0;
-        int idxLim = populations[minT].size();
-        for (int t = minT+1; t<maxT; ++t) if (populations[t].size()>idxLim) idxLim=populations[t].size();
-        List<int[]> corrRanges = new ArrayList<>();
-        List<int[]> corrRanges2 = new ArrayList<>(1);
-        while(idxMax<idxLim) {
-            boolean corr = performCorrectionsByIdx(minT+1, maxT-1, idxMax, corrRanges, false);
-            if (corr && idxMax>0) { // corrections have been performed : run correction from 0 to idxMax within each time range// TODO: necessaire?
-                for (int[] tRange : corrRanges) {
-                    int nLoop=1;
-                    for (int idx = 0; idx<=idxMax; ++idx) {
-                        boolean corr2 = performCorrectionsByIdx(tRange[0], tRange[1], idx, corrRanges2, true);
-                        //if (stepParents.size()>=12) return;
-                        if (corr2) {
-                            int[] tRange2 = corrRanges2.get(0);
-                            if (tRange2[0]<tRange[0]) tRange[0] = tRange2[0];
-                            if (tRange2[1]>tRange[1]) tRange[1] = tRange2[1];
+        if (correction) {
+            int idxMax=0;
+            int idxLim = populations[minT].size();
+            for (int t = minT+1; t<maxT; ++t) if (populations[t].size()>idxLim) idxLim=populations[t].size();
+            List<int[]> corrRanges = new ArrayList<>();
+            List<int[]> corrRanges2 = new ArrayList<>(1);
+            while(idxMax<idxLim) {
+                boolean corr = performCorrectionsByIdx(minT+1, maxT-1, idxMax, corrRanges, false);
+                if (corr && idxMax>0) { // corrections have been performed : run correction from 0 to idxMax within each time range// TODO: necessaire?
+                    for (int[] tRange : corrRanges) {
+                        int nLoop=1;
+                        for (int idx = 0; idx<=idxMax; ++idx) {
+                            boolean corr2 = performCorrectionsByIdx(tRange[0], tRange[1], idx, corrRanges2, true);
+                            //if (stepParents.size()>=12) return;
+                            if (corr2) {
+                                int[] tRange2 = corrRanges2.get(0);
+                                if (tRange2[0]<tRange[0]) tRange[0] = tRange2[0];
+                                if (tRange2[1]>tRange[1]) tRange[1] = tRange2[1];
+                            }
+                            if (idx>0 && corr2 && nLoop<=loopLimit) { // corrections have been performed : reset idx
+                                idx = 0;
+                                nLoop++;
+                            } 
                         }
-                        if (idx>0 && corr2 && nLoop<=loopLimit) { // corrections have been performed : reset idx
-                            idx = 0;
-                            nLoop++;
-                        } 
+                        for (int t = tRange[0]; t<=tRange[1]; ++t) if (populations[t].size()>idxLim) idxLim=populations[t].size();
                     }
-                    for (int t = tRange[0]; t<=tRange[1]; ++t) if (populations[t].size()>idxLim) idxLim=populations[t].size();
                 }
+                idxMax++;
             }
-            idxMax++;
+            if (correctionStep) step("End of process", false);
         }
-        if (correctionStep) step("End of process", false);
         // 3) final assignement without correction, noticing all errors
         for (int t = minT+1; t<maxT; ++t)  setAssignmentToTrackAttributes(t, true);
         applyLinksToParents(parents);

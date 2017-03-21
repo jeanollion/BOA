@@ -300,7 +300,16 @@ public class ArrayUtil {
         ImageFloat im = new ImageFloat("array", array.length, new float[][]{array});
         ImageFeatures.gaussianSmooth(im, scale, scale, true);
     }
-    
+    public static String[] duplicate(String[] array) {
+        String[] res = new String[array.length];
+        System.arraycopy(array, 0, res, 0, array.length);
+        return res;
+    }
+    public static int[] duplicate(int[] array) {
+        int[] res = new int[array.length];
+        System.arraycopy(array, 0, res, 0, array.length);
+        return res;
+    }
     public static float[] duplicate(float[] array) {
         float[] res = new float[array.length];
         System.arraycopy(array, 0, res, 0, array.length);

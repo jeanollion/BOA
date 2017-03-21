@@ -53,15 +53,17 @@ public class TestPreProcessPhase {
         new ImageJ();
         PluginFactory.findPlugins("plugins.plugins");
         //String dbName= "boa_phase140115mutH";
-        String dbName = "boa_phase150616wt";
+        //String dbName = "boa_phase150616wt";
+        String dbName = "boa_phase141107wt";
+        
         boolean flip = false;
         int field = 0;
         String fieldName = "xy01";
-        int time = 998;
+        int time = 795;
         //testRotation(dbName, 0, 0, time);
         //CropMicroChannelBF2D.debug=true;
-        //testPreProcessing(dbName, field, 0, -1, 0, 2);
-        testCrop(dbName, field, fieldName, time, flip);
+        testPreProcessing(dbName, field, 0, time, 0, 2);
+        //testCrop(dbName, field, fieldName, time, flip);
         //testStabilizer(dbName, field, 0, 20, 19, flip);
     }
     
@@ -120,7 +122,7 @@ public class TestPreProcessPhase {
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         InputImagesImpl images = f.getInputImages();
         if (time>=tStart) time -=tStart;
-        images.subSetTimePoints(tStart, tEnd);
+        if (time<0) images.subSetTimePoints(tStart, tEnd);
         IJImageDisplayer disp = new IJImageDisplayer();
         if (time>=0) {
             Image input = images.getImage(channelIdx, time).duplicate("input");
