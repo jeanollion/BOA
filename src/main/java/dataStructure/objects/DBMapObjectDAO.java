@@ -81,7 +81,7 @@ public class DBMapObjectDAO implements ObjectDAO {
         if (res==null) {
             synchronized(dbS) {
                 if (!dbS.containsKey(structureIdx)) {
-                    res = DBMaker.fileDB(getDBFile(structureIdx)).fileMmapEnable().transactionEnable().make();
+                    res = DBMaker.fileDB(getDBFile(structureIdx)).transactionEnable().make(); // concurency ? close on shutdown?
                     dbS.put(structureIdx, res);
                 } else {
                     res = dbS.get(structureIdx);
@@ -263,6 +263,9 @@ public class DBMapObjectDAO implements ObjectDAO {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
+    // measurements
+    // store by structureIdx in another folder. Id = same as objectId
+    
     @Override
     public void upsertMeasurements(Collection<StructureObject> objects) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.

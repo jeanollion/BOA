@@ -70,7 +70,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     //@Transient protected SmallArray<Image> preProcessedImageS=new SmallArray<Image>();
     
     // measurement-related attributes
-    protected ObjectId measurementsId;
+    protected ObjectId measurementsId; // todo : same id as objectId. comment indique si a des mesures? measurements=!null le crée à la première demande
     @Transient Measurements measurements;
     
     public StructureObject(int timePoint, int structureIdx, int idx, Object3D object, StructureObject parent) {
