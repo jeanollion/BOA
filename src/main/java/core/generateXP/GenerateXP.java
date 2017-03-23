@@ -26,6 +26,7 @@ import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.MasterDAO;
+import dataStructure.objects.MasterDAOFactory;
 import dataStructure.objects.MorphiumMasterDAO;
 import java.io.File;
 import java.util.ArrayList;
@@ -365,8 +366,9 @@ public class GenerateXP {
         deletePositions = fillRange(getBooleanArray(991, true), 120, 990, false);
         */
         boolean performProcessing = false;
-        
-        MasterDAO mDAO = new MorphiumMasterDAO(dbName);
+        // ici outputDir parent = config dir si DBMap, sinon null
+        String configDir = MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap) ? new File(outputDir).getParent() : "localhost";
+        MasterDAO mDAO = MasterDAOFactory.createDAO(dbName, configDir);
         mDAO.reset();
         Experiment xp = fluo ? generateXPFluo(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, flip, trimStart, trimEnd, scaleXY, cropXYdXdY) : generateXPTrans(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, flip, trimStart, trimEnd, scaleXY); 
         mDAO.setExperiment(xp);
