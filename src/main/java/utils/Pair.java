@@ -56,6 +56,10 @@ public class Pair<K, V> {
             return true;
         } else return false;
     }
+    @Override 
+    public String toString() {
+        return "{"+key==null?"null":key.toString()+"-"+value==null?"null":value.toString()+"}";
+    }
     public static <K, V> List<V> unpairValues(Collection<Pair<K, V>> list) {
         if (list == null) {
             return null;

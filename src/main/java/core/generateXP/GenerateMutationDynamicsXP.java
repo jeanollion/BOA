@@ -31,6 +31,7 @@ import dataStructure.configuration.Experiment;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.MasterDAO;
+import dataStructure.objects.MasterDAOFactory;
 import dataStructure.objects.MorphiumMasterDAO;
 import java.io.File;
 import java.util.ArrayList;
@@ -91,7 +92,8 @@ public class GenerateMutationDynamicsXP {
     static boolean stabilizer = false;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-
+        MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.DBMap);
+        
         int trimStart=0, trimEnd=0;
         int[] cropXYdXdY=null;
         boolean[] flipArray;
@@ -127,7 +129,10 @@ public class GenerateMutationDynamicsXP {
         boolean onlyUpdateMeasurements = true;
         boolean performProcessing = false;
         
-        MasterDAO mDAO = new MorphiumMasterDAO(dbName);
+        String configDir = MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap) ? new File(outputDir).getParent() : "localhost";
+        if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) DBUtil.removePrefix(dbName, GUI.DBprefix);
+        MasterDAO mDAO = MasterDAOFactory.createDAO(dbName, configDir);
+        
         if (onlyUpdateMeasurements) {
             setMeasurements(mDAO.getExperiment());
         } else {

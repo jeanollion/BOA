@@ -168,8 +168,16 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         dbGroup.add(this.LocalFileSystemDatabaseRadioButton);
         dbGroup.add(this.MongoDBDatabaseRadioButton);
         String dbType = PropertyUtils.get(PropertyUtils.DATABASE_TYPE, MasterDAOFactory.DAOType.Morphium.toString());
-        if (dbType.equals(MasterDAOFactory.DAOType.Morphium.toString())) MongoDBDatabaseRadioButton.setSelected(true);
-        else if (dbType.equals(MasterDAOFactory.DAOType.DBMap.toString())) LocalFileSystemDatabaseRadioButton.setSelected(true);
+        if (dbType.equals(MasterDAOFactory.DAOType.Morphium.toString())) {
+            MongoDBDatabaseRadioButton.setSelected(true);
+            MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.Morphium);
+        }
+        else if (dbType.equals(MasterDAOFactory.DAOType.DBMap.toString())) {
+            LocalFileSystemDatabaseRadioButton.setSelected(true);
+            String path = PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH);
+            if (path!=null) hostName.setText(path);
+            MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.DBMap);
+        }
         
         logger.debug("del meas: {}, {} isSel: {}", PropertyUtils.get(PropertyUtils.DELETE_MEASUREMENTS, true), PropertyUtils.get(PropertyUtils.DELETE_MEASUREMENTS, "true"), deleteMeasurementsCheckBox.isSelected());
         PluginFactory.findPlugins("plugins.plugins");
@@ -423,7 +431,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             if (s.isDisplayingObjects()) SelectionUtils.displayObjects(s, i);
         }
     }
-   
+
     public void setDBConnection(String dbName, String hostnameOrDir) {
         //long t0 = System.currentTimeMillis();
         if (hostnameOrDir==null) hostnameOrDir = getHostNameOrDir();
@@ -452,6 +460,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }
     
     private void unsetXP() {
+        if (db!=null) db.clearCache();
         db=null;
         reloadObjectTrees=true;
         populateActionStructureList();

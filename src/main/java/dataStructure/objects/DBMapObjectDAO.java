@@ -430,6 +430,7 @@ public class DBMapObjectDAO implements ObjectDAO {
         Map<Pair<ObjectId, Integer>, List<StructureObject>> splitByPTH = splitByParentTrackHeadIdAndStructureIdx(objects);
         for (Pair<ObjectId, Integer> key : splitByPTH.keySet()) {
             List<StructureObject> toStore = splitByPTH.get(key);
+            logger.debug("storing: {} objects under key: {}", toStore.size(), key.toString());
             Map<ObjectId, StructureObject> cacheMap = cache.getAndCreateIfNecessary(key);
             HTreeMap<String, String> dbMap = getDBMap(key);
             for (StructureObject object : toStore) {

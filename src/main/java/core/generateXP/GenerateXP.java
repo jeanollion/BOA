@@ -90,6 +90,8 @@ public class GenerateXP {
     static Experiment.ImportImageMethod importMethod = Experiment.ImportImageMethod.SINGLE_FILE;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
+        MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.DBMap);
+        
         /*String dbName = "dummyXP";
         String inputDir = "!!not a directory";
         String outputDir = "!!not a directory";
@@ -366,8 +368,9 @@ public class GenerateXP {
         deletePositions = fillRange(getBooleanArray(991, true), 120, 990, false);
         */
         boolean performProcessing = false;
-        // ici outputDir parent = config dir si DBMap, sinon null
+        
         String configDir = MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap) ? new File(outputDir).getParent() : "localhost";
+        if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) DBUtil.removePrefix(dbName, GUI.DBprefix);
         MasterDAO mDAO = MasterDAOFactory.createDAO(dbName, configDir);
         mDAO.reset();
         Experiment xp = fluo ? generateXPFluo(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, flip, trimStart, trimEnd, scaleXY, cropXYdXdY) : generateXPTrans(DBUtil.removePrefix(dbName, GUI.DBprefix), outputDir, true, flip, trimStart, trimEnd, scaleXY); 

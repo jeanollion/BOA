@@ -117,6 +117,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
     
     public TreeMap<Integer, List<StructureObject>> getRemainingTrackHeads() {
         if (remainingTrackHeadsTM==null) {
+            if (getParentTrackHead()==null) return new TreeMap<>();
             List<StructureObject> trackHeads = generator.getObjectDAO(fieldName).getTrackHeads(getParentTrackHead(), structureIdx);
             //List<StructureObject> trackHeads = new ArrayList<StructureObject> (StructureObjectUtils.getAllTracks(getParentTrack(), structureIdx).keySet());
             //Collections.sort(trackHeads);
