@@ -1,5 +1,6 @@
 package dataStructure.objects;
 
+import configuration.parameters.PostLoadable;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.containers.ObjectContainer;
@@ -42,7 +43,7 @@ import utils.SmallArray;
 @Lifecycle
 @Entity
 @Index(value={"structure_idx, parent_id"})
-public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker, StructureObjectTrackCorrection, Comparable<StructureObject> {
+public class StructureObject implements StructureObjectPostProcessing, StructureObjectTracker, StructureObjectTrackCorrection, Comparable<StructureObject>, PostLoadable {
     public final static Logger logger = LoggerFactory.getLogger(StructureObject.class);
     //structure-related attributes
     @Id protected ObjectId id;
@@ -69,7 +70,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     //@Transient protected SmallArray<Image> preProcessedImageS=new SmallArray<Image>();
     
     // measurement-related attributes
-    protected ObjectId measurementsId;
+    protected ObjectId measurementsId; // todo : same id as objectId. comment indique si a des mesures? measurements=!null le crée à la première demande
     @Transient Measurements measurements;
     
     public StructureObject(int timePoint, int structureIdx, int idx, Object3D object, StructureObject parent) {
@@ -131,7 +132,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof StructureObject) {
-            return id==((StructureObject)obj).id;
+            return id.equals(((StructureObject)obj).id);
         }
         return false;
     }

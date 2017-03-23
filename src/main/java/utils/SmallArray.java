@@ -18,6 +18,7 @@
 package utils;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -28,6 +29,11 @@ public class SmallArray<T> {
     public SmallArray(){}
     public SmallArray(int bucketSize){array=new Object[bucketSize];}
     
+    public List<T> asList() {
+        List<T> res = new ArrayList<>(array.length);
+        for (int i = 0; i<array.length; ++i) if (array[i]!=null) res.add((T)array[i]);
+        return res;
+    }
     public boolean has(int idx) {
         if (array==null) return false;
         else if (array.length<=idx) return false;
