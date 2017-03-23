@@ -24,12 +24,12 @@ import java.util.List;
  * @author jollion
  */
 public interface SelectionDAO {
+    public void clearCache();
+    
     public Selection getOrCreate(String name, boolean clearIfExisting);
     
     public List<Selection> getSelections();
-    
-    public Selection getObject(String id);
-    
+        
     public void store(Selection s);
     
     public void delete(String id);

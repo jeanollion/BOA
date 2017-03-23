@@ -22,10 +22,14 @@ import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -82,5 +86,22 @@ public class DBUtil {
         if (name==null) return null;
         if (!name.startsWith(prefix)) name= prefix+name;
         return name;
+    }
+    public static Map<String, File> listExperiments(String path) {
+        File f = new File(path);
+        Map<String, File> configs = new HashMap<>();
+        if (f.exists() && f.isDirectory()) {
+            addConfig(f, configs);
+            File[] sub = f.listFiles(subF -> subF.isDirectory());
+            for (File subF : sub) addConfig(subF, configs);
+        }
+        return configs;
+    }
+    private static void addConfig(File f, Map<String, File> configs) {
+        File[] dbs = f.listFiles(subF -> subF.getName().endsWith("_config.db"));
+        for (File c : dbs) configs.put(removeConfig(c.getName()), c);
+    }
+    private static String removeConfig(String name) {
+        return name.substring(0, name.length()-10);
     }
 }

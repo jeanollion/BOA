@@ -17,15 +17,20 @@
  */
 package dataStructure;
 
+import static TestUtils.Utils.logger;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
+import dataStructure.objects.MasterDAO;
+import dataStructure.objects.MasterDAOFactory;
+import dataStructure.objects.MasterDAOFactory.DAOType;
 import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.MorphiumObjectDAO;
+import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import static dataStructure.objects.StructureObjectUtils.setTrackLinks;
 import de.caluga.morphium.Morphium;
@@ -38,19 +43,32 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import static junit.framework.Assert.assertEquals;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import utils.MorphiumUtils;
+import utils.Utils;
 
 /**
  *
  * @author nasique
  */
 public class TestTrackStructure {
+    @Rule
+    public TemporaryFolder testFolder = new TemporaryFolder();
+    
     @Test
     public void testTrackStructure() {
-        MorphiumMasterDAO masterDAO = new MorphiumMasterDAO("testTrack");
+        //testTrackStructure(DAOType.Morphium);
+        testTrackStructure(DAOType.DBMap);
+    }
+    
+    public void testTrackStructure(DAOType daoType) {
+        MasterDAO masterDAO = MasterDAOFactory.createDAO("testTrack", testFolder.newFolder("testTrack").getAbsolutePath(), daoType); //
         masterDAO.reset();
         Experiment xp = new Experiment("test");
+        //xp.setOutputImageDirectory("/data/Images/Test/");
+        xp.setOutputImageDirectory(testFolder.newFolder("testTrackOuput").getAbsolutePath());
         ChannelImage image = new ChannelImage("ChannelImage");
         xp.getChannelImages().insert(image);
         Structure microChannel = new Structure("MicroChannel", -1, 0);
@@ -59,16 +77,16 @@ public class TestTrackStructure {
         bacteries.setParentStructure(0);
         xp.createPosition("field1");
         masterDAO.setExperiment(xp);
-        MorphiumObjectDAO dao = masterDAO.getDao("field1");
+        ObjectDAO dao = masterDAO.getDao("field1");
         StructureObject[] rootT = new StructureObject[5];
         for (int i = 0; i<rootT.length; ++i) rootT[i] = new StructureObject(i, new BlankMask("", 1, 1, 1), dao);
         
         setTrackLinks(Arrays.asList(rootT));
-        dao.storeSequentially(Arrays.asList(rootT), true);
+        dao.store(Arrays.asList(rootT), true);
         StructureObject[] mcT = new StructureObject[5];
         for (int i = 0; i<mcT.length; ++i) mcT[i] = new StructureObject(i, 0, 0, new Object3D(new BlankMask("", 1, 1, 1), 1), rootT[i]);
         setTrackLinks(Arrays.asList(mcT));
-        dao.storeSequentially(Arrays.asList(mcT), true);
+        dao.store(Arrays.asList(mcT), true);
         StructureObject[][] bTM = new StructureObject[5][3];
         for (int t = 0; t<bTM.length; ++t) {
             for (int j = 0; j<3; ++j) bTM[t][j] = new StructureObject(t, 1, j, new Object3D(new BlankMask("", 1, 1, 1), j+1), mcT[t]);
@@ -105,34 +123,36 @@ public class TestTrackStructure {
         List<StructureObject> mcHeads = dao.getTrackHeads(rootT[0], 0);
         
         assertEquals("number of heads for microChannels", 1, mcHeads.size());
-        assertEquals("head is in idCache", mcHeads.get(0), dao.getFromCache(mcHeads.get(0).getId()));
+        //assertEquals("head is in idCache", mcHeads.get(0), dao.getFromCache(mcHeads.get(0).getId()));
         assertEquals("head for microChannel", mcT[0].getId(), mcHeads.get(0).getId());
-        assertEquals("head for microChannel (unique instanciation)", dao.getById(mcT[0].getId()), mcHeads.get(0));
+        assertEquals("head for microChannel (unique instanciation)", dao.getById(mcT[0].getParentTrackHeadId(), mcT[0].getStructureIdx(), mcT[0].getFrame(), mcT[0].getId()), mcHeads.get(0));
 
         // retrieve microChannel track
         List<StructureObject> mcTrack = dao.getTrack(mcHeads.get(0));
         assertEquals("number of elements in microChannel track", 5, mcTrack.size());
         for (int i = 0; i<mcTrack.size(); ++i) assertEquals("microChannel track element: "+i, mcT[i].getId(), mcTrack.get(i).getId());
         assertEquals("head of microChannel track (unique instanciation)", mcHeads.get(0), mcTrack.get(0));
-        for (int i = 0; i<mcTrack.size(); ++i) assertEquals("microChannel track element: "+i+ " unique instanciation", dao.getById(mcT[i].getId()), mcTrack.get(i));
+        for (int i = 0; i<mcTrack.size(); ++i) assertEquals("microChannel track element: "+i+ " unique instanciation", dao.getById(mcT[i].getParentTrackHeadId(), mcT[i].getStructureIdx(), mcT[i].getFrame(), mcT[i].getId()), mcTrack.get(i));
 
         // retrive tracks head for bacteries
-        List<StructureObject> bHeads = dao.getTrackHeads(mcT[0], 1);
-        assertEquals("number of heads for bacteries", 5, bHeads.size());
-        assertEquals("head for bacteries (0)", bTM[0][0].getId(), bHeads.get(0).getId());
-        assertEquals("head for bacteries (1)", bTM[0][1].getId(), bHeads.get(1).getId());
-        assertEquals("head for bacteries (2)", bTM[0][2].getId(), bHeads.get(2).getId());
-        assertEquals("head for bacteries (3)", bTM[1][1].getId(), bHeads.get(3).getId());
-        assertEquals("head for bacteries (4)", bTM[3][2].getId(), bHeads.get(4).getId());
-        assertEquals("head for bacteries (0, unique instanciation)", dao.getById(bTM[0][0].getId()), bHeads.get(0));
+        List<StructureObject> bHeadsRetrive = dao.getTrackHeads(mcT[0], 1);
+        List<StructureObject> bHeads = new ArrayList<StructureObject>(5){{add(bTM[0][0]);add(bTM[0][1]);add(bTM[0][2]);add(bTM[1][1]);add(bTM[3][2]);}};
+        logger.debug("retrived bacts: {}", Utils.toStringList(bHeadsRetrive, b->b.toString()));
+        assertEquals("number of heads for bacteries", 5, bHeadsRetrive.size());
+        for (int i = 0; i<bHeads.size(); ++i) {
+            logger.debug("compare: {} and {}",bHeads.get(i), bHeadsRetrive.get(i) );
+            assertEquals("head for bacteries :"+i, bHeads.get(i).getId(), bHeadsRetrive.get(i).getId());
+        }
+        assertEquals("head for bacteries (0, unique instanciation)", dao.getById(bTM[0][0].getParentTrackHeadId(), bTM[0][0].getStructureIdx(), bTM[0][0].getFrame(), bTM[0][0].getId()), bHeadsRetrive.get(0));
 
         // retrieve bacteries track
-        List<StructureObject> bTrack0 = dao.getTrack(bHeads.get(0));
+        List<StructureObject> bTrack0 = dao.getTrack(bHeadsRetrive.get(0));
         assertEquals("number of elements in bacteries track (0)", 5, bTrack0.size());
         for (int i = 0; i<mcTrack.size(); ++i) assertEquals("bacteries track element: "+i, bTM[i][0].getId(), bTrack0.get(i).getId());
-        assertEquals("head of bacteria track (unique instanciation)", bHeads.get(0), bTrack0.get(0));
-        for (int i = 0; i<mcTrack.size(); ++i) assertEquals("bacteries track element: "+i+ " unique instanciation", dao.getById(bTM[i][0].getId()), bTrack0.get(i));
+        assertEquals("head of bacteria track (unique instanciation)", bHeadsRetrive.get(0), bTrack0.get(0));
+        for (int i = 0; i<mcTrack.size(); ++i) assertEquals("bacteries track element: "+i+ " unique instanciation", dao.getById(bTM[i][0].getParentTrackHeadId(), bTM[i][0].getStructureIdx(), bTM[i][0].getFrame(), bTM[i][0].getId()), bTrack0.get(i));
 
+        masterDAO.clearCache();
         
     }
 

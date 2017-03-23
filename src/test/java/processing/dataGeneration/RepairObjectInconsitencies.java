@@ -82,8 +82,7 @@ public class RepairObjectInconsitencies {
             Map<StructureObject, List<StructureObject>> uncorrByParentTH = StructureObjectUtils.splitByParentTrackHead(uncorrected);
             for (StructureObject parentTh : uncorrByParentTH.keySet()) {
                 String selectionName = "P:"+posIdx+"_objectError_ParentIdx:"+parentTh.getIdx();
-                Selection sel = db.getSelectionDAO().getObject(selectionName);
-                if (sel == null) sel = new Selection(selectionName, db);
+                Selection sel = db.getSelectionDAO().getOrCreate(selectionName, false);
                 sel.addElements(uncorrByParentTH.get(parentTh));
                 sel.setIsDisplayingObjects(true);
                 sel.setIsDisplayingTracks(true);

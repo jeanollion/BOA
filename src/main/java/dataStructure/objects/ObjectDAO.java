@@ -32,6 +32,7 @@ public interface ObjectDAO {
     public Experiment getExperiment();
     public String getPositionName();
     public void clearCache();
+    StructureObject getById(ObjectId parentTrackHeadId, int structureIdx, int frame, ObjectId id);
     public List<StructureObject> getChildren(StructureObject parent, int structureIdx); // needs indicies: structureIdx & parent
     /**
      * Deletes the children of {@param parent} of structure {@param structureIdx}

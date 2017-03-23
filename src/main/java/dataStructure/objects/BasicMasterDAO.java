@@ -72,5 +72,11 @@ public class BasicMasterDAO implements MasterDAO {
     public SelectionDAO getSelectionDAO() {
         throw new UnsupportedOperationException("No selection DAO with BasicMaster DAO"); 
     }
+
+    @Override
+    public void clearCache() {
+        this.DAOs.clear();
+        this.xp=null;
+    }
     
 }

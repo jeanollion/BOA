@@ -57,8 +57,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     // track-related attributes
     protected int timePoint;
     @Transient protected StructureObject previous, next; 
-    private ObjectId nextId, previousId;
-    private ObjectId parentTrackHeadId, trackHeadId; // TODO remove parentTrackHeadId ? useful for getTrackHeads
+    ObjectId nextId, previousId;
+    ObjectId parentTrackHeadId, trackHeadId; // TODO remove parentTrackHeadId ? useful for getTrackHeads
     @Transient protected StructureObject trackHead;
     protected boolean isTrackHead=true;
     protected Map<String, Object> attributes;
@@ -144,12 +144,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public MicroscopyField getMicroscopyField() {return getExperiment()!=null?getExperiment().getPosition(getPositionName()):null;}
     public float getScaleXY() {return getMicroscopyField()!=null?getMicroscopyField().getScaleXY():1;}
     public float getScaleZ() {return getMicroscopyField()!=null?getMicroscopyField().getScaleZ():1;}
-    public StructureObject getParent() {
-        if (parent==null) {
-            if (parentId!=null && dao instanceof MorphiumObjectDAO) {
-                parent = ((MorphiumObjectDAO)dao).getById(parentId);
-            }
-        }
+    @Override public StructureObject getParent() {
+        if (parent==null && parentId!=null) parent = dao.getById(null, getExperiment().getStructure(structureIdx).getParentStructure(), timePoint, parentId);
         return parent;
     }
     public StructureObject getParent(int parentStructureIdx) {
@@ -349,21 +345,15 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
     }
 
+    @Override
     public StructureObject getPrevious() {
-        if (previous==null) {
-            if (previousId!=null && dao instanceof MorphiumObjectDAO) {
-                previous = ((MorphiumObjectDAO)dao).getById(previousId);
-            }
-        }
+        if (previous==null && previousId!=null) previous = dao.getById(parentTrackHeadId, structureIdx, -1, previousId);
         return previous;
     }
 
+    @Override
     public StructureObject getNext() {
-        if (next==null) {
-            if (nextId!=null && dao instanceof MorphiumObjectDAO) {
-                next = ((MorphiumObjectDAO)dao).getById(nextId);
-            }
-        }
+        if (next==null && nextId!=null) next = dao.getById(parentTrackHeadId, structureIdx, -1, nextId);
         return next;
     }
     
@@ -397,8 +387,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             if (isTrackHead) {
                 this.trackHead=this;
                 this.trackHeadId=this.id;
-            } else if (trackHeadId!=null && dao instanceof MorphiumObjectDAO) {
-                trackHead = ((MorphiumObjectDAO)dao).getById(trackHeadId);
+            } else if (trackHeadId!=null ) {
+                trackHead = dao.getById(parentTrackHeadId, structureIdx, -1, trackHeadId);
             } else if (getPrevious()!=null) {
                 if (previous.isTrackHead) this.trackHead=previous;
                 else if (previous.trackHead!=null) this.trackHead=previous.trackHead;
@@ -907,13 +897,17 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public boolean hasMeasurements() {
         return measurementsId!=null || measurements!=null;
     }
-    
-    void updateMeasurementsIfNecessary() {
+    boolean hasMeasurementModifications() {
+        return measurements!=null && measurements.modifications;
+    }
+    boolean updateMeasurementsIfNecessary() {
         if (measurements!=null) {
             if (measurements.modifications) dao.upsertMeasurement(this);
-            else measurements.updateObjectProperties(this);
+            else measurements.updateObjectProperties(this); // upsert always update objectProperties
             this.measurementsId=measurements.id;
+            return measurements.modifications;
         }
+        return false;
     }
     
     @Override

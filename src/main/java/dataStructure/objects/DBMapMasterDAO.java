@@ -40,22 +40,31 @@ public class DBMapMasterDAO implements MasterDAO {
 
     protected final String configDir;
     protected final ObjectMapper mapper;
-    protected final DB xpDB;
+    
     protected final String dbName;
     final HashMap<String, DBMapObjectDAO> DAOs = new HashMap<>();
-    protected final KeySet<String> xpSet;
+    protected KeySet<String> xpSet;
+    protected DB xpDB;
     protected Experiment xp;
     DBMapSelectionDAO selectionDAO;
     
     public DBMapMasterDAO(String dir, String dbName) {
+        if (dir==null) throw new IllegalArgumentException("Invalid directory: "+ dir);
+        if (dbName==null) throw new IllegalArgumentException("Invalid DbName: "+ dbName);
         configDir = dir;
+        new File(configDir).mkdirs();
         this.dbName = dbName;
         mapper = new ObjectMapperImpl();
         mapper.setMorphium(createOfflineMorphium());
-        xpDB = DBMaker.fileDB(configDir+"/config.db").transactionEnable().make();
+        makeXPDB();
+    }
+    private void makeXPDB() {
+        xpDB = DBMaker.fileDB(getConfigFile(dbName)).transactionEnable().make();
         xpSet = xpDB.hashSet("experiment", Serializer.STRING).createOrOpen();
     }
-    
+    private String getConfigFile(String dbName) {
+        return configDir + File.separator + dbName + "_config.db";
+    }
     protected String marshall(Object o) {
         DBObject dbo = mapper.marshall(o);
         return serialize(dbo);
@@ -86,17 +95,47 @@ public class DBMapMasterDAO implements MasterDAO {
 
     @Override
     public void deleteAllObjects() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        for (String s : getExperiment().getPositionsAsString()) {
+            getDao(s).deleteAllObjects(); // also deletes measurements
+        }
     }
 
     @Override
     public void reset() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        this.xpSet.clear();
+        if (!xpDB.isClosed()) this.xpDB.commit();
+        if (this.getOutputPath()!=null) {
+            deleteAllObjects();
+            getSelectionDAO().deleteAllObjects();
+        }
+    }
+    
+    @Override
+    public void clearCache() {
+        for (DBMapObjectDAO dao : DAOs.values()) dao.clearCache();
+        if (selectionDAO!=null) {
+            getSelectionDAO().clearCache();
+            selectionDAO=null;
+        }
+        if (!xpDB.isClosed()) {
+            xpDB.close();
+            this.xpSet=null;
+        }
+        this.xp=null;
+    }
+    
+    public void compact() {
+        for (String s : getExperiment().getPositionsAsString()) {
+            getDao(s).compactDBs(true);
+        }
+        getSelectionDAO().compact(true);
+        if (!xpDB.isClosed()) xpDB.compact();
     }
 
     @Override
     public Experiment getExperiment() {
         if (this.xp==null) {
+            if (xpDB.isClosed()) makeXPDB();
             if (xpSet.isEmpty()) return null;
             String xpString = xpSet.iterator().next();
             xp = this.unmarshall(Experiment.class, xpString);
@@ -106,8 +145,9 @@ public class DBMapMasterDAO implements MasterDAO {
 
     @Override
     public void updateExperiment() {
+        if (xpDB.isClosed()) makeXPDB();
         xpSet.clear();
-        xpSet.add(marshall(xp));
+        if (xp!=null) xpSet.add(marshall(xp));
         xpDB.commit();
     }
 
@@ -130,7 +170,7 @@ public class DBMapMasterDAO implements MasterDAO {
     }
     
     @Override
-    public SelectionDAO getSelectionDAO() {
+    public DBMapSelectionDAO getSelectionDAO() {
         if (this.selectionDAO==null) {
             String op = getOutputPath();
             if (op!=null) {

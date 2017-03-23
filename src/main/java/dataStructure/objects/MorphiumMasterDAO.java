@@ -48,6 +48,10 @@ public class MorphiumMasterDAO implements MasterDAO {
     public MorphiumMasterDAO(String dbName) {
         this(MorphiumUtils.createMorphium(dbName));
     }
+    
+    public MorphiumMasterDAO(String dbName, String hostName) {
+        this(MorphiumUtils.createMorphium(dbName, 27017, hostName));
+    }
 
     @Override public String getDBName() {
         return m.getDatabase().getName();
@@ -59,6 +63,13 @@ public class MorphiumMasterDAO implements MasterDAO {
     
     @Override public Experiment getExperiment() {
         return xpDAO.getExperiment();
+    }
+    
+    @Override
+    public void clearCache() {
+        for (MorphiumObjectDAO dao : this.DAOs.values()) dao.clearCache();
+        this.getSelectionDAO().clearCache();
+        this.xpDAO.clearCache();
     }
     
     @Override public void deleteAllObjects() {
@@ -96,9 +107,12 @@ public class MorphiumMasterDAO implements MasterDAO {
     
     public ExperimentDAO getXpDAO() {return this.xpDAO;}
 
-    public SelectionDAO getSelectionDAO() {
+    @Override
+    public MorphiumSelectionDAO getSelectionDAO() {
         return this.selectionDAO;
     }
+
+    
 
     
 

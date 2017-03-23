@@ -128,14 +128,6 @@ public class SelectionUtils {
         return p.get(idx);
     }
     
-    public static Selection getSelection(MasterDAO db, String name, boolean createIfNonExisting) {
-        Selection res = db.getSelectionDAO().getObject(name);
-        if (res==null && createIfNonExisting) res = new Selection(name, db);
-        return res;
-    }
-    
-    
-    
     public static void displayObjects(Selection s, ImageObjectInterface i) {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (i==null) i = iwm.getCurrentImageObjectInterface();

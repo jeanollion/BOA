@@ -49,7 +49,7 @@ public class MorphiumUtils {
             public void wouldDereference(StructureObject entityIncludingReference, String fieldInEntity, ObjectId id, Class typeReferenced, boolean lazy) throws MorphiumAccessVetoException {
                 //if (logger.isTraceEnabled()) logger.trace("would dereference: {} refrence: {} lazy: {} field: {}", entityIncludingReference.getFieldName(), typeReferenced.getSimpleName(), lazy, fieldInEntity);
                 Object o = null;
-                if (StructureObject.class.equals(typeReferenced)) o = ((MorphiumObjectDAO)entityIncludingReference.getDAO()).getById(id);
+                if (StructureObject.class.equals(typeReferenced)) o = ((MorphiumObjectDAO)entityIncludingReference.getDAO()).getById(null, -1, -1, id);
                 else if (Experiment.class.equals(typeReferenced)) o = xpDAO.getExperiment();
                 if (o != null) {
                     //logger.trace("would dereference: object found");

@@ -237,5 +237,16 @@ public class BasicObjectDAO implements ObjectDAO {
         for (int i = 0; i<roots.size(); ++i) rootTrack.setQuick(roots.get(i), i);
     }
 
+    @Override
+    public StructureObject getById(ObjectId parentTrackHeadId, int structureIdx, int frame, ObjectId id) {
+        if (frame>=0) {
+            for (StructureObject o : this.getRoot(frame).getChildren(structureIdx)) if (o.id.equals(id)) return o;
+            return null;
+        } else if (parentTrackHeadId!=null) {
+            throw new UnsupportedOperationException("not supported");
+        }
+        throw new UnsupportedOperationException("not supported");
+    }
+
     
 }

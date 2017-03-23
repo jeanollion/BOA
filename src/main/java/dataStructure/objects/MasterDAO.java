@@ -26,6 +26,9 @@ import java.util.List;
  * @author jollion
  */
 public interface MasterDAO {
+    
+    public void clearCache();
+    
     public ObjectDAO getDao(String fieldName);
     public String getDBName();
     public void deleteAllObjects();

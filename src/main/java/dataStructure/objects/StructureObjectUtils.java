@@ -127,7 +127,7 @@ public class StructureObjectUtils {
         return getAllParentObjects(referenceStructutre, pathToStructure, null);
     }
     
-    public static ArrayList<StructureObject> getAllParentObjects(StructureObject referenceStructutre, int[] pathToStructure, MorphiumObjectDAO dao) {
+    public static ArrayList<StructureObject> getAllParentObjects(StructureObject referenceStructutre, int[] pathToStructure, ObjectDAO dao) {
         if (pathToStructure.length==0) return new ArrayList<StructureObject>(0);
         else if (pathToStructure.length==1) {
             ArrayList<StructureObject> res = new ArrayList<StructureObject>(1);

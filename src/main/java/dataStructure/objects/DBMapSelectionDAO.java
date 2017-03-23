@@ -18,7 +18,15 @@
 package dataStructure.objects;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import org.mapdb.DB;
+import org.mapdb.DBMaker;
+import org.mapdb.HTreeMap;
+import org.mapdb.Serializer;
 
 /**
  *
@@ -28,44 +36,94 @@ public class DBMapSelectionDAO implements SelectionDAO {
     
     final String dir;
     final DBMapMasterDAO mDAO;
-    
+    DB db;
+    HTreeMap<String, String> dbMap;
+    private final Map<String, Selection> idCache = new HashMap<>();
     public DBMapSelectionDAO(DBMapMasterDAO mDAO, String dir) {
         this.mDAO=mDAO;
         this.dir= dir+File.separator+"Selections"+File.separator;
+        new File(this.dir).mkdirs();
+        makeDB();
+    }
+    private void makeDB() {
+        db = DBMaker.fileDB(getSelectionFile()).transactionEnable().make();
+        dbMap = db.hashMap("selections", Serializer.STRING, Serializer.STRING).createOrOpen();
+    }
+    private String getSelectionFile() {
+        return dir+File.separator+"selections.db";
     }
     @Override
     public Selection getOrCreate(String name, boolean clearIfExisting) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        if (idCache.isEmpty()) retrieveAllSelections();
+        Selection res = idCache.get(name);
+        if (res==null) {
+            res = new Selection(name, mDAO);
+            idCache.put(name, res);
+        } else if (clearIfExisting) {
+            res.clear();
+            // TODO: commit ?
+        }
+        return res;
     }
-
-    @Override
-    public List<Selection> getSelections() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    
+    private void retrieveAllSelections() {
+        idCache.clear();
+        if (db.isClosed()) makeDB();
+        for (String s : dbMap.getValues()) {
+            Selection sel = mDAO.unmarshall(Selection.class, s);
+            idCache.put(sel.getName(), sel);
+        }
     }
-
     @Override
-    public Selection getObject(String id) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public List<Selection> getSelections() { // todo: inspect file in directory and generate selections
+        if (idCache.isEmpty()) retrieveAllSelections();
+        List<Selection> res = new ArrayList<>(idCache.values());
+        Collections.sort(res);
+        return res;
     }
 
     @Override
     public void store(Selection s) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        idCache.put(s.getName(), s);
+        if (db.isClosed()) makeDB();
+        this.dbMap.put(s.getName(), mDAO.marshall(s));
+        db.commit();
     }
 
     @Override
     public void delete(String id) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        idCache.remove(id);
+        if (db.isClosed()) makeDB();
+        dbMap.remove(id);
+        db.commit();
     }
 
     @Override
     public void delete(Selection o) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        delete(o.getName());
     }
 
     @Override
     public void deleteAllObjects() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        idCache.clear();
+        if (db.isClosed()) makeDB();
+        dbMap.clear();
+        db.commit();
     }
-    
+    public void compact(boolean commit) {
+        if (db.isClosed()) makeDB();
+        if (commit) this.db.commit();
+        this.db.compact();
+    }
+    private void close(boolean commit) {
+        if (db.isClosed()) return;
+        if (commit) this.db.commit();
+        this.db.close();
+    }
+
+    @Override
+    public void clearCache() {
+        this.idCache.clear();
+        close(true);
+    }
 }

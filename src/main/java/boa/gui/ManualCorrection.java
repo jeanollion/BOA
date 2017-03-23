@@ -241,7 +241,7 @@ public class ManualCorrection {
                 if (o.getNext()!=null && o.getNext().getPrevious()!=o) {
                     if (o.getNext().getPrevious()==null) linkObjects(o, o.getNext(), modifiedObjects);
                     else {
-                        if (sel ==null) sel = SelectionUtils.getSelection(db, selName, true);
+                        if (sel ==null) sel = db.getSelectionDAO().getOrCreate(selName, false);
                         sel.addElement(o);
                         sel.addElement(o.getNext());
                     }
@@ -249,7 +249,7 @@ public class ManualCorrection {
                 if (o.getPrevious()!=null && o.getPrevious().getNext()!=o) {
                     if (o.getPrevious().getNext()==null) linkObjects(o.getPrevious(), o, modifiedObjects);
                     else {
-                        if (sel ==null) sel = SelectionUtils.getSelection(db, selName, true);
+                        if (sel ==null) sel = db.getSelectionDAO().getOrCreate(selName, false);
                         sel.addElement(o);
                         sel.addElement(o.getPrevious());
                     }
@@ -625,8 +625,7 @@ public class ManualCorrection {
         // create selection of uncorrected
         for (StructureObject parentTh : uncorrByParentTH.keySet()) {
             String selectionName = "linkError_pIdx"+parentTh.getIdx()+"_Position"+fieldName;
-            Selection sel = db.getSelectionDAO().getObject(selectionName);
-            if (sel == null) sel = new Selection(selectionName, db);
+            Selection sel = db.getSelectionDAO().getOrCreate(selectionName, false);
             sel.addElements(uncorrByParentTH.get(parentTh));
             sel.setIsDisplayingObjects(true);
             sel.setIsDisplayingTracks(true);

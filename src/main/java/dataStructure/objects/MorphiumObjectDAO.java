@@ -95,8 +95,8 @@ public class MorphiumObjectDAO implements ObjectDAO {
         // voir si la query est optimisée pour index composé
         return getQuery().f("parent_id").eq(parent.getId()).f("structure_idx").eq(structureIdx);
     }
-    
-    public StructureObject getById(ObjectId id) {
+    @Override 
+    public StructureObject getById(ObjectId pthId, int structureIdx, int frame, ObjectId id) {
         if (id==null) return null;
         StructureObject res = idCache.get(id);
         if (res==null)  {
@@ -125,6 +125,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
         } else return res;
     }
     
+    @Override
     public void clearCache() {
         this.idCache.clear();
         if (roots!=null) {
@@ -325,7 +326,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
     @Override
     public void store(StructureObject object, boolean updateTrackAttributes) {
         object.updateObjectContainer();
-        object.updateMeasurementsIfNecessary(); // TODO: regrouper ttes les mesures si plusieurs objects sont stockés à la suite?
+        if (object.hasMeasurementModifications()) this.upsertMeasurement(object);
         if (updateTrackAttributes) {
             object.getParentTrackHeadId();
             object.getTrackHeadId();

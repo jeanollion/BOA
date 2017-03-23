@@ -57,19 +57,6 @@ public class MorphiumSelectionDAO implements SelectionDAO {
         return sel;
     }
     
-    @Override public synchronized Selection getObject(String id) {
-        Selection s = idCache.get(id);
-        if (s==null) {
-            s =  getQuery().getById(id);
-            if (s!=null) {
-                s.setMasterDAO(masterDAO);
-                idCache.put(id, s);
-            }
-        }
-        return s;
-        
-    }
-    
     @Override public synchronized void store(Selection s) {
         s.setMasterDAO(masterDAO);
         long t0 = System.currentTimeMillis();
@@ -117,6 +104,11 @@ public class MorphiumSelectionDAO implements SelectionDAO {
         }
         idCache.put(name, res);
         return res;
+    }
+
+    @Override
+    public void clearCache() {
+        idCache.clear();
     }
     
 }
