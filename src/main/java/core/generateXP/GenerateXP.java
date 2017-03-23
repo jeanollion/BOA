@@ -458,6 +458,7 @@ public class GenerateXP {
             xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
             xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannelBF2D());
             if (subTransPre) xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(0.3, true, false, true, false)); // subtract after crop because subtract alter optical aberation detection. Optimization: paraboloid = true / range=03-05 best = 0.3 
+            xp.getPreProcessingTemplate().addTransformation(0, null, new BandPass(0, 20, 0, 0)); // TODO optimize low bound [10-50]
             xp.getPreProcessingTemplate().setTrimFrames(trimFramesStart, trimFramesEnd);
         }
         return xp;
