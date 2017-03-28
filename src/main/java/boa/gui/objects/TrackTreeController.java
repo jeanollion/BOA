@@ -17,7 +17,6 @@
  */
 package boa.gui.objects;
 
-import dataStructure.objects.MorphiumMasterDAO;
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
 import dataStructure.configuration.ExperimentDAO;

@@ -160,7 +160,7 @@ public class ProcessingTest {
         ChannelImage ci1 = xp.getChannelImages().createChildInstance();
         ChannelImage ci2 = xp.getChannelImages().createChildInstance();
         xp.getChannelImages().insert(ci1, ci2);
-        xp.setOutputImageDirectory(daoFolder.getAbsolutePath());
+        xp.setOutputDirectory(daoFolder.getAbsolutePath());
         //xp.setOutputImageDirectory("/tmp");
         xp.setImageDAOType(Experiment.ImageDAOTypes.LocalFileSystem);
         

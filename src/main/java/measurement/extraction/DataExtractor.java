@@ -17,12 +17,11 @@
  */
 package measurement.extraction;
 
-import dataStructure.objects.MorphiumMasterDAO;
 import static core.Processor.logger;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.Measurements;
-import dataStructure.objects.MeasurementsDAO;
+import dataStructure.objects.MorphiumMeasurementsDAO;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.Selection;
 import java.io.BufferedWriter;
@@ -108,7 +107,7 @@ public class DataExtractor {
         for (String[] s : measurements.values()) l.addAll(Arrays.asList(s));
         return l;
     }
-    public static void extractMeasurementObjects(MorphiumMasterDAO db, String outputFile, int structureIdx,  List<String> positions, String... measurements) {
+    public static void extractMeasurementObjects(MasterDAO db, String outputFile, int structureIdx,  List<String> positions, String... measurements) {
         Map<Integer, String[]> map = new HashMap<Integer, String[]>(1);
         map.put(structureIdx, measurements);
         DataExtractor de= new DataExtractor(db, structureIdx);

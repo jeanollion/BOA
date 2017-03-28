@@ -35,6 +35,7 @@ import de.caluga.morphium.annotations.Entity;
 import de.caluga.morphium.annotations.Id;
 import de.caluga.morphium.annotations.Index;
 import de.caluga.morphium.annotations.Transient;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -161,8 +162,10 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         return imagePath.getFirstSelectedFilePath();
     }
     
-    public void setOutputImageDirectory(String outputPath) {
+    public void setOutputDirectory(String outputPath) {
         imagePath.setSelectedFilePath(outputPath);
+        File f = new File(outputPath);
+        f.mkdirs();
     }
     public void clearPositions() {
         this.fields.removeAllElements();

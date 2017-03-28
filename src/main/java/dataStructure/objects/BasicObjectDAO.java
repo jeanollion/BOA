@@ -62,8 +62,14 @@ public class BasicObjectDAO implements ObjectDAO {
         // no cache..
     }
 
+    @Override
     public List<StructureObject> getChildren(StructureObject parent, int structureIdx) {
         return this.rootTrack.get(parent.getFrame()).getChildren(structureIdx);
+    }
+    
+    @Override
+    public void setAllChildren(List<StructureObject> parentTrack, int childStructureIdx) {
+        for (StructureObject p : parentTrack) p.setChildren(getChildren(p, childStructureIdx), childStructureIdx);
     }
     
     @Override 
@@ -247,6 +253,8 @@ public class BasicObjectDAO implements ObjectDAO {
         }
         throw new UnsupportedOperationException("not supported");
     }
+
+    
 
     
 }

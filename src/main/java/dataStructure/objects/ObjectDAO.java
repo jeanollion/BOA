@@ -35,6 +35,12 @@ public interface ObjectDAO {
     StructureObject getById(ObjectId parentTrackHeadId, int structureIdx, int frame, ObjectId id);
     public List<StructureObject> getChildren(StructureObject parent, int structureIdx); // needs indicies: structureIdx & parent
     /**
+     * Sets children for each parent in parent Track
+     * @param parentTrack object with same trackHead id
+     * @param structureIdx direct child of parent
+     */
+    public void setAllChildren(List<StructureObject> parentTrack, int structureIdx);
+    /**
      * Deletes the children of {@param parent} of structure {@param structureIdx}
      * @param parent
      * @param structureIdx 

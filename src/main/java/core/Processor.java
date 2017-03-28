@@ -163,27 +163,27 @@ public class Processor {
         final ObjectDAO dao = parentTrack.get(0).getDAO();
         Experiment xp = parentTrack.get(0).getExperiment();
         final ProcessingScheme ps = xp.getStructure(structureIdx).getProcessingScheme();
-        int parentStructure = xp.getStructure(structureIdx).getParentStructure();
+        int directParentStructure = xp.getStructure(structureIdx).getParentStructure();
         if (trackOnly && ps instanceof SegmentOnly) return Collections.EMPTY_LIST;
-        
+        StructureObjectUtils.setAllChildren(parentTrack, structureIdx);
         Map<StructureObject, List<StructureObject>> allParentTracks;
-        if (parentStructure==-1 || parentTrack.get(0).getStructureIdx()==parentStructure) { // parents = roots
+        if (directParentStructure==-1 || parentTrack.get(0).getStructureIdx()==directParentStructure) { // parents = roots
             allParentTracks = new HashMap<>(1);
             allParentTracks.put(parentTrack.get(0), parentTrack);
         } else {
-            allParentTracks = StructureObjectUtils.getAllTracks(parentTrack, parentStructure);
+            allParentTracks = StructureObjectUtils.getAllTracks(parentTrack, directParentStructure);
         }
         logger.debug("ex ps: structure: {}, allParentTracks: {}", structureIdx, allParentTracks.size());
         // one thread per track
-        ThreadAction<List<StructureObject>> ta = new ThreadAction<List<StructureObject>>() {
-            @Override
-            public void run(List<StructureObject> pt, int idx, int threadIdx) {execute(xp.getStructure(structureIdx).getProcessingScheme(), structureIdx, pt, trackOnly, deleteChildren, dao);}
+        ThreadAction<List<StructureObject>> ta = (List<StructureObject> pt, int idx, int threadIdx) -> {
+            execute(xp.getStructure(structureIdx).getProcessingScheme(), structureIdx, pt, trackOnly, deleteChildren, dao);
         };
         List<Pair<String, Exception>> exceptions = ThreadRunner.execute(new ArrayList<List<StructureObject>> (allParentTracks.values()), ta);
         
         ArrayList<StructureObject> children = new ArrayList<StructureObject>();
         for (StructureObject p : parentTrack) children.addAll(p.getChildren(structureIdx));
         dao.store(children, !(ps instanceof SegmentOnly));
+        logger.debug("total objects: {}, dao type: {}", children.size(), dao.getClass().getSimpleName());
         // create error selection
         Selection errors = dao.getMasterDAO().getSelectionDAO().getOrCreate(dao.getExperiment().getStructure(structureIdx).getName()+"_TrackingErrors", false);
         boolean hadObjectsBefore=errors.count(dao.getPositionName())>0;

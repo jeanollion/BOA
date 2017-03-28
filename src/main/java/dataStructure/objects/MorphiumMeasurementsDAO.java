@@ -35,10 +35,10 @@ import org.bson.types.ObjectId;
  *
  * @author jollion
  */
-public class MeasurementsDAO {
+public class MorphiumMeasurementsDAO {
     final MorphiumMasterDAO masterDAO;
     public final String fieldName, collectionName;
-    public MeasurementsDAO(MorphiumMasterDAO masterDAO, String fieldName) {
+    public MorphiumMeasurementsDAO(MorphiumMasterDAO masterDAO, String fieldName) {
         this.fieldName=fieldName;
         this.collectionName=getCollectionName(fieldName);
         this.masterDAO=masterDAO;

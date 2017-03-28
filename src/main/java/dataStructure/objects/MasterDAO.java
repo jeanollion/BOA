@@ -31,6 +31,7 @@ public interface MasterDAO {
     
     public ObjectDAO getDao(String fieldName);
     public String getDBName();
+    public String getDir();
     public void deleteAllObjects();
     public void reset();
     

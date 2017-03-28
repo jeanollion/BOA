@@ -20,10 +20,10 @@ package boa.gui.imageInteraction;
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
 import static dataStructure.objects.Measurements.asString;
-import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import static dataStructure.objects.StructureObjectUtils.frameComparator;
+import static dataStructure.objects.StructureObjectUtils.setAllChildren;
 import ij.ImagePlus;
 import image.BoundingBox;
 import image.Image;
@@ -190,6 +190,7 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parentTrack, childStructureIdx, true));
         if (i==null) {
+            setAllChildren(parentTrack, childStructureIdx);
             i = new TrackMask(parentTrack, childStructureIdx);
             imageObjectInterfaces.put(i.getKey(), i);
             trackHeadTrackMap.getAndCreateIfNecessary(parentTrack.get(0)).add(parentTrack);

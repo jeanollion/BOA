@@ -17,9 +17,10 @@
  */
 package core;
 
+import boa.gui.PropertyUtils;
 import static core.TaskRunner.logger;
 import dataStructure.objects.MasterDAO;
-import dataStructure.objects.MorphiumMasterDAO;
+import dataStructure.objects.MasterDAOFactory;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,16 +37,42 @@ import utils.Utils;
  * @author jollion
  */
 public class Task {
-        final String dbName;
+        final String dbName, dir;
         boolean preProcess, segmentAndTrack, trackOnly, measurements;
         int[] positions;
         int[] structures;
         List<Pair<String, int[]>> extrackMeasurementDir = new ArrayList<>();
         List<Pair<String, Exception>> errors = new ArrayList<>();
         MasterDAO db;
-        
+        public Task(MasterDAO db) {
+            this.db=db;
+            this.dbName=db.getDBName();
+            this.dir=db.getDir();
+        }
         public Task(String dbName) {
+            this(dbName, null);
+        }
+        public Task(String dbName, String dir) {
             this.dbName=dbName;
+            if (dir!=null && !"".equals(dir)) this.dir=dir;
+            else {
+                if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.Morphium)) this.dir="hostname";
+                else if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) {
+                    String defPath = PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH);
+                        if (defPath!=null) {
+                        File config = Utils.seach(defPath, dbName+"_config.db", 2);
+                        if (config!=null) this.dir = config.getParent();
+                        else {
+                            config = Utils.seach(new File(defPath).getParent(), dbName+"_config.db", 2);
+                            if (config!=null) this.dir = config.getParent();
+                            else this.dir=null;
+                        }
+                    } else this.dir=null;
+                    if (this.dir==null) throw new IllegalArgumentException("no config file found for db: "+dbName);
+                } else {
+                    this.dir=null;
+                }
+            }
         }
         public Task setAllActions() {
             this.preProcess=true;
@@ -67,7 +94,7 @@ public class Task {
             return this;
         }
         private void initDB() {
-            db = new MorphiumMasterDAO(dbName);
+            if (db==null) db = MasterDAOFactory.createDAO(dbName, dir);
         }
         public Task setPositions(String... positions) {
             if (positions!=null && positions.length>0) {

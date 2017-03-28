@@ -81,6 +81,7 @@ public class StructureObjectMask extends ImageObjectInterface {
     }
 
     @Override public ArrayList<Pair<StructureObject, BoundingBox>> getObjects() {
+        if (objects == null) reloadObjects();
         getOffsets();
         ArrayList<Pair<StructureObject, BoundingBox>> res = new ArrayList<Pair<StructureObject, BoundingBox>>(objects.size());
         for (int i = 0; i < offsets.length; ++i) {
@@ -110,7 +111,11 @@ public class StructureObjectMask extends ImageObjectInterface {
     public void addClickedObjects(BoundingBox selection, List<Pair<StructureObject, BoundingBox>> list) {
         if (is2D && selection.getSizeZ()>0) selection=new BoundingBox(selection.getxMin(), selection.getxMax(), selection.getyMin(), selection.getyMax(), 0, 0);
         getOffsets();
-        for (int i = 0; i < offsets.length; ++i) if (offsets[i].hasIntersection(selection)) list.add(new Pair(objects.get(i), offsets[i]));
+        for (int i = 0; i < offsets.length; ++i) {
+            if (offsets[i].hasIntersection(selection)) {
+                list.add(new Pair(objects.get(i), offsets[i]));
+            }
+        }
     }
 
     @Override

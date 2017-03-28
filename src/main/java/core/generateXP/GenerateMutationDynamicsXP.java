@@ -32,7 +32,6 @@ import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
-import dataStructure.objects.MorphiumMasterDAO;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -164,7 +163,7 @@ public class GenerateMutationDynamicsXP {
             mutChan = 0;
             xp.getChannelImages().insert(new ChannelImage("YFP", ""), new ChannelImage("RFP", "_REF"));
         } else  xp.getChannelImages().insert(new ChannelImage("RFP", "_REF"), new ChannelImage("YFP", ""));
-        xp.setOutputImageDirectory(outputDir);
+        xp.setOutputDirectory(outputDir);
         File f =  new File(outputDir); f.mkdirs(); //deleteDirectory(f);
         Structure mc = new Structure("Microchannel", -1, bactChan);
         Structure bacteria = new Structure("Bacteria", 0, bactChan).setAllowSplit(true);

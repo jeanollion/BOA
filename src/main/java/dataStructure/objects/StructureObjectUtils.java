@@ -250,8 +250,28 @@ public class StructureObjectUtils {
     public static String getIndices(StructureObject o) {
         return Selection.indicesToString(getIndexTree(o));
     }
+    public static void setAllChildren(List<StructureObject> parentTrack, int structureIdx) {
+        ObjectDAO dao = parentTrack.get(0).getDAO();
+        logger.debug("set all children: parent: {}, structure: {}", parentTrack.get(0).getTrackHead(), structureIdx);
+        if (dao.getExperiment().isDirectChildOf(parentTrack.get(0).getStructureIdx(), structureIdx)) {
+            List<StructureObject> parentWithNoChildren = new ArrayList<>(parentTrack.size());
+            for (StructureObject p : parentTrack) if (!p.childrenSM.has(structureIdx)) parentWithNoChildren.add(p);
+            if (parentWithNoChildren.isEmpty()) return;
+            dao.setAllChildren(parentWithNoChildren, structureIdx);
+        }
+        else if (!dao.getExperiment().isChildOf(parentTrack.get(0).getStructureIdx(), structureIdx)) return;
+        else { // indirect child
+            int pIdx = dao.getExperiment().getStructure(structureIdx).getParentStructure();
+            setAllChildren(parentTrack, pIdx);
+            Map<StructureObject, List<StructureObject>> allParentTrack = getAllTracks(parentTrack, pIdx);
+            for (List<StructureObject> pTrack: allParentTrack.values()) setAllChildren(pTrack, structureIdx);
+        }
+    }
     public static Map<StructureObject, List<StructureObject>> getAllTracks(List<StructureObject> parentTrack, int structureIdx) {
+        if (parentTrack.isEmpty()) return Collections.EMPTY_MAP;
         HashMap<StructureObject, List<StructureObject>>  res = new HashMap<StructureObject, List<StructureObject>>();
+        // set all children
+        setAllChildren(parentTrack, structureIdx);
         for (StructureObject p : parentTrack) {
             List<StructureObject> children = p.getChildren(structureIdx);
             for (StructureObject c : children) {

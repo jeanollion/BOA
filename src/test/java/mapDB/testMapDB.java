@@ -25,12 +25,19 @@ import dataStructure.objects.StructureObject;
 import de.caluga.morphium.AnnotationAndReflectionHelper;
 import de.caluga.morphium.ObjectMapperImpl;
 import de.caluga.morphium.writer.MorphiumWriterImpl;
+import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;
 import org.apache.commons.lang.ArrayUtils;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.mapdb.BTreeMap;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -38,6 +45,8 @@ import org.mapdb.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import static utils.MorphiumUtils.createOfflineMorphium;
+import static utils.MorphiumUtils.marshall;
+import static utils.MorphiumUtils.unmarshall;
 import utils.Utils;
 
 /**
@@ -45,12 +54,9 @@ import utils.Utils;
  * @author jollion
  */
 public class testMapDB {
+    @Rule
+    public TemporaryFolder testFolder = new TemporaryFolder();
     public static final Logger logger = LoggerFactory.getLogger(testMapDB.class);
-    public static void main(String[] args) {
-        //testFileDB();
-        //testStoreJSON();
-        acceptNullKey();
-    }
     
     public static void acceptNullKey() {
         HashMap<String, String> test = new HashMap<>();
@@ -61,51 +67,60 @@ public class testMapDB {
     // 
     // concurrency
     // multiple indexes
-    public static void testFileDB(boolean close) {
-        DB db = DBMaker.fileDB("/home/jollion/Documents/LJP/DataLJP/testFileDB/file.db").fileMmapEnable().make();
+    //@Test
+    public void testFileDB() {
+        boolean close = true;
+        String path = testFolder.newFolder("testDB").getAbsolutePath()+File.separator+"_testDB.db";
+        DB db = DBMaker.fileDB(path).transactionEnable().make();
         BTreeMap<String, String> map = db.treeMap("collection", Serializer.STRING, Serializer.STRING).createOrOpen();
         map.put("something", "here");
         logger.info("read before commit: {}", map.get("something"));
         db.commit();
         logger.info("read after commit: {}", map.get("something"));
         if (close) db.close();
-        db = DBMaker.fileDB("/home/jollion/Documents/LJP/DataLJP/testFileDB/file.db").fileMmapEnable().make();
+        db = DBMaker.fileDB(path).transactionEnable().make();
         map = db.treeMap("collection", Serializer.STRING, Serializer.STRING).createOrOpen();
         logger.info("read: {}", map.get("something"));
+        db.close();
     }
-    public static void testStoreJSON() {
+    
+    @Test
+    public void testStoreJSON() {
+        String path = testFolder.newFolder("testDB").getAbsolutePath()+File.separator+"_testDB.db";
         String dbName = "boa_fluo170120_wt";
         MorphiumMasterDAO mdb = new MorphiumMasterDAO(dbName);
         String f = mdb.getExperiment().getPosition(1).getName();
         
-        ObjectMapperImpl mapper = new ObjectMapperImpl();
-        mapper.setMorphium(createOfflineMorphium()); // to be able to marshall maps
+        //ObjectMapperImpl mapper = new ObjectMapperImpl();
+        //mapper.setMorphium(createOfflineMorphium()); // to be able to marshall maps
         AnnotationAndReflectionHelper annotationHelper = new AnnotationAndReflectionHelper(true);
-        DBObject xpMash = mapper.marshall(mdb.getExperiment());
-        StructureObject o  = mdb.getDao(f).getRoot(0).getChildren(2).get(0);
+        DBObject xpMash = marshall(mdb.getExperiment());
+        StructureObject o  = mdb.getDao(f).getRoot(0).getChildren(1).get(0);
         logger.debug("object: {}, entity: {}", o, annotationHelper.isEntity(o));
-        DBObject oMarsh = mapper.marshall(o);
+        DBObject oMarsh = marshall(o);
         logger.debug("object: marsh {}", oMarsh); 
-        DB db = DBMaker.fileDB("/home/jollion/Documents/LJP/DataLJP/testFileDB/file.db").fileMmapEnable().transactionEnable().make();
+        DB db = DBMaker.fileDB(path).transactionEnable().make();
         BTreeMap<String, String> map = db.treeMap("xp", Serializer.STRING, Serializer.STRING).createOrOpen();
         
         map.put(mdb.getExperiment().getName(), com.mongodb.util.JSON.serialize(xpMash));
         map.put("object", com.mongodb.util.JSON.serialize(oMarsh));
         db.commit();
         db.close();
-        db = DBMaker.fileDB("/home/jollion/Documents/LJP/DataLJP/testFileDB/file.db").fileMmapEnable().make();
+        db = DBMaker.fileDB(path).transactionEnable().make();
         map = db.treeMap("xp", Serializer.STRING, Serializer.STRING).createOrOpen();
         String xpString = map.get(mdb.getExperiment().getName());
         DBObject dboXP = (DBObject)com.mongodb.util.JSON.parse(xpString);
         DBObject dboOb = (DBObject)com.mongodb.util.JSON.parse(map.get("object"));
-        Experiment xp = mapper.unmarshall(Experiment.class, dboXP);
+        Experiment xp = unmarshall(Experiment.class, dboXP);
         xp.postLoad();
         logger.info("xp create: {}, positions: {}", xp.getName(), xp.getPositionsAsString().length); 
-        StructureObject o2 = mapper.unmarshall(StructureObject.class, dboOb);
+        StructureObject o2 = unmarshall(StructureObject.class, dboOb);
         o2.postLoad();
         o2.setParent(o.getParent()); // for toString
-        logger.info("object create: {} ({}), id: {} ({}), equals: {}", o2, o, o2.getId(), o.getId(), o.equals(o2));
-        logger.info("object center: {} ({})", ArrayUtils.toString(o2.getObject().getCenter()), ArrayUtils.toString(o.getObject().getCenter()));
+        assertEquals("object id", o.getId(), o2.getId());
+        assertArrayEquals("object center", o.getObject().getCenter(), o2.getObject().getCenter(), 0.0001);
+        assertEquals("object voxels size", o.getObject().getVoxels().size(), o2.getObject().getVoxels().size());
+        assertArrayEquals("object voxels", o.getObject().getVoxels().toArray(), o2.getObject().getVoxels().toArray());
         db.close();
     }
 }

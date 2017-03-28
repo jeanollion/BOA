@@ -19,7 +19,7 @@ package utils;
 
 import boa.gui.PropertyUtils;
 import boa.gui.DBUtil;
-import dataStructure.objects.MeasurementsDAO;
+import dataStructure.objects.MorphiumMeasurementsDAO;
 import dataStructure.objects.MorphiumObjectDAO;
 import java.io.BufferedReader;
 import java.io.File;
@@ -285,10 +285,10 @@ public class CommandExecuter {
         return map;
     }
     private static boolean isExportedObjectCollection(String string) {
-        return ( (string.startsWith(MorphiumObjectDAO.getCollectionName("")) || string.startsWith(MeasurementsDAO.getCollectionName(""))) && (string.endsWith(".bson") || string.endsWith(".json")) &&  !string.endsWith(".metadata.json"));
+        return ( (string.startsWith(MorphiumObjectDAO.getCollectionName("")) || string.startsWith(MorphiumMeasurementsDAO.getCollectionName(""))) && (string.endsWith(".bson") || string.endsWith(".json")) &&  !string.endsWith(".metadata.json"));
     }
     private static String trimExportedObjectCollectionFileName(String fieldName) {
         if (fieldName.startsWith(MorphiumObjectDAO.getCollectionName(""))) return fieldName.substring(MorphiumObjectDAO.getCollectionName("").length(), fieldName.length()-5);
-        else return fieldName.substring(MeasurementsDAO.getCollectionName("").length(), fieldName.length()-5);
+        else return fieldName.substring(MorphiumMeasurementsDAO.getCollectionName("").length(), fieldName.length()-5);
     }
 }

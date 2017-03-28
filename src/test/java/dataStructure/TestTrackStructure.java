@@ -68,7 +68,7 @@ public class TestTrackStructure {
         masterDAO.reset();
         Experiment xp = new Experiment("test");
         //xp.setOutputImageDirectory("/data/Images/Test/");
-        xp.setOutputImageDirectory(testFolder.newFolder("testTrackOuput").getAbsolutePath());
+        xp.setOutputDirectory(testFolder.newFolder("testTrackOuput").getAbsolutePath());
         ChannelImage image = new ChannelImage("ChannelImage");
         xp.getChannelImages().insert(image);
         Structure microChannel = new Structure("MicroChannel", -1, 0);

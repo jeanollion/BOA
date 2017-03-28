@@ -23,7 +23,6 @@ import boa.gui.ManualCorrection;
 import boa.gui.imageInteraction.IJImageWindowManager.Roi3D;
 import boa.gui.imageInteraction.IJImageWindowManager.TrackRoi;
 import static boa.gui.imageInteraction.ImageWindowManager.displayTrackMode;
-import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import dataStructure.objects.Voxel;
@@ -175,7 +174,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                     int offscreenX = canvas.offScreenX(x);
                     int offscreenY = canvas.offScreenY(y);
                     Pair<StructureObject, BoundingBox> o = i.getClickedObject(offscreenX, offscreenY, ip.getSlice()-1);
-                    //logger.debug("click {}, {}, object: {}, ctlr:{}", x, y, o, ctrl);
+                    //logger.debug("click {}, {}, object: {} (total: {}, parent: {}), ctlr:{}", x, y, o, i.getObjects().size(), ctrl);
                     if (o!=null) {
                         selectedObjects.add(o);
                         //logger.debug("selected object: "+o.key);

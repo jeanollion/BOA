@@ -29,7 +29,9 @@ import java.awt.Component;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.DecimalFormat;
@@ -400,6 +402,27 @@ public class Utils {
             for (File f : dir.listFiles()) deleteDirectory(f);
             dir.delete();
         }
+    }
+    
+    public static File seach(String path, String fileName, int recLevels) {
+        File f= new File(path);
+        if (!f.exists()) return null;
+        if (f.isDirectory()) return search(new ArrayList<File>(1){{add(f);}}, fileName, recLevels, 0);
+        else if (f.getName().equals(fileName)) return f;
+        else return null;
+    }
+    private static File search(List<File> files, String fileName, int recLevels, int currentLevel) {
+        for (File f : files) {
+            File[] ff = f.listFiles((dir, name) -> fileName.equals(name));
+            if (ff.length>0) return ff[0];
+        }
+        if (currentLevel==recLevels) return null;
+        List<File> nextFiles = new ArrayList<>();
+        for (File f : files) {
+            File[] ff = f.listFiles(file -> file.isDirectory());
+            if (ff.length>0) nextFiles.addAll(Arrays.asList(ff));
+        }
+        return search(nextFiles, fileName, recLevels, currentLevel+1);
     }
     
     public static File[] chooseFiles(String dialogTitle, String directory, FileChooser.FileChooserOption option, Component parent) {

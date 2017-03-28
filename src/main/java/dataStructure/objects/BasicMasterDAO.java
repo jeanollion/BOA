@@ -48,6 +48,10 @@ public class BasicMasterDAO implements MasterDAO {
     public String getDBName() {
         return "VirtualDB";
     }
+    @Override
+    public String getDir() {
+        return "VirtualDB";
+    }
 
     public void deleteAllObjects() {
         for (BasicObjectDAO d : DAOs.values()) d.deleteAllObjects();

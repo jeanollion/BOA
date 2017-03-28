@@ -63,7 +63,7 @@ public class TestDataStructure {
         MasterDAO db = MasterDAOFactory.createDAO("testdb", testFolder.newFolder("testDB").getAbsolutePath(), daoType);
         db.reset();
         Experiment xp = new Experiment("test");
-        xp.setOutputImageDirectory(testFolder.newFolder("testDB").getAbsolutePath());
+        xp.setOutputDirectory(testFolder.newFolder("testDB").getAbsolutePath());
         db.setExperiment(xp);
         String f = "test";
         StructureObject r = new StructureObject(0, new BlankMask("", 1, 2, 3, 0, 0, 0, 1, 1), db.getDao(f));
@@ -96,7 +96,7 @@ public class TestDataStructure {
         
         // set-up experiment structure
         Experiment xp = new Experiment("test");
-        xp.setOutputImageDirectory(testFolder.newFolder("testDB").getAbsolutePath());
+        xp.setOutputDirectory(testFolder.newFolder("testDB").getAbsolutePath());
         ChannelImage image = new ChannelImage("ChannelImage");
         xp.getChannelImages().insert(image);
         xp.getStructures().removeAllElements();
@@ -122,8 +122,8 @@ public class TestDataStructure {
         ImageWriter.writeToFile(folder.getAbsolutePath(), fieldName, ImageFormat.OMETIF, images);
         Processor.importFiles(xp, true, folder.getAbsolutePath());
         File outputFolder = testFolder.newFolder("TestOutputImagesStructureObject");
-        xp.setOutputImageDirectory(outputFolder.getAbsolutePath());
-        xp.setOutputImageDirectory("/tmp");
+        xp.setOutputDirectory(outputFolder.getAbsolutePath());
+        xp.setOutputDirectory("/tmp");
         //save to morphium
         
         db.reset();

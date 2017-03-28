@@ -107,6 +107,7 @@ public class TrackMask extends ImageObjectInterface {
         // recherche du parent: 
         int i = Arrays.binarySearch(trackOffset, new BoundingBox(x, x, 0, 0, 0, 0), new bbComparatorX());
         if (i<0) i=-i-2; // element inférieur à x puisqu'on compare les xmin des bounding box
+        //logger.debug("getClicked object: index: {}, parent: {}, #children: {}", i, i>=0?trackObjects[i]:"", i>=0? trackObjects[i].getObjects().size():"");
         if (i>=0 && trackOffset[i].contains(x, y, z)) return trackObjects[i].getClickedObject(x, y, z);
         else return null;
     }

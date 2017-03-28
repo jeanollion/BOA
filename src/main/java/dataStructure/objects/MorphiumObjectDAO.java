@@ -59,7 +59,7 @@ import utils.Utils;
  */
 public class MorphiumObjectDAO implements ObjectDAO {
     final MorphiumMasterDAO masterDAO;
-    MeasurementsDAO measurementsDAO;
+    MorphiumMeasurementsDAO measurementsDAO;
     ConcurrentHashMap<ObjectId, StructureObject> idCache;
     public List<StructureObject> roots;
     public final String fieldName, collectionName;
@@ -70,7 +70,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
         masterDAO.m.ensureIndicesFor(StructureObject.class, collectionName);
         idCache = new ConcurrentHashMap<ObjectId, StructureObject>();
         //rootArray = new StructureObject[masterDAO.getExperiment().getMicroscopyField(fieldName).getTimePointNumber(false)];
-        measurementsDAO = new MeasurementsDAO(masterDAO, fieldName);
+        measurementsDAO = new MorphiumMeasurementsDAO(masterDAO, fieldName);
     }
     
     public static String getCollectionName(String name) {
@@ -139,12 +139,16 @@ public class MorphiumObjectDAO implements ObjectDAO {
         for (StructureObject o : list) res.add(checkAgainstCache(o));
         return res;
     }
-    
+    @Override
     public List<StructureObject> getChildren(StructureObject parent, int structureIdx) {
         List<StructureObject> list = this.getChildrenQuery(parent, structureIdx).sort("idx").asList();
         list = checkAgainstCache(list);
         //Collections.sort(list);
         return list;
+    }
+    @Override
+    public void setAllChildren(List<StructureObject> parentTrack, int childStructureIdx) {
+        for (StructureObject p : parentTrack) p.setChildren(getChildren(p, childStructureIdx), childStructureIdx);
     }
     @Override 
     public void deleteChildren(Collection<StructureObject> parents, int structureIdx) {
@@ -623,7 +627,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
     }
     
     
-    public MeasurementsDAO getMeasurementsDAO() {return this.measurementsDAO;}
+    public MorphiumMeasurementsDAO getMeasurementsDAO() {return this.measurementsDAO;}
 
     public List<Measurements> getMeasurements(int structureIdx, String... measurements) {
         return measurementsDAO.getMeasurements(structureIdx, measurements);

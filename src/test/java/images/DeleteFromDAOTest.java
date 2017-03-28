@@ -113,7 +113,7 @@ public class DeleteFromDAOTest {
         generateImages("field4", inputImage.getAbsolutePath(), 1, 2, 1);
         Processor.importFiles(xp, true, inputImage.getAbsolutePath());
         assertEquals("number fields", 5, xp.getPositionCount());
-        xp.setOutputImageDirectory(testFolder.newFolder().getAbsolutePath());
+        xp.setOutputDirectory(testFolder.newFolder().getAbsolutePath());
         //xp.setOutputImageDirectory("/tmp/test"); new File(xp.getOutputImageDirectory()).mkdirs();
         // save to morphium
         masterDAO.setExperiment(xp);

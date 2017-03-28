@@ -22,24 +22,23 @@ import static com.mongodb.util.JSON.parse;
 import static com.mongodb.util.JSON.serialize;
 import configuration.parameters.PostLoadable;
 import dataStructure.configuration.Experiment;
-import de.caluga.morphium.ObjectMapper;
-import de.caluga.morphium.ObjectMapperImpl;
 import java.io.File;
 import java.util.HashMap;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap.KeySet;
 import org.mapdb.Serializer;
-import static utils.MorphiumUtils.createOfflineMorphium;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import utils.MorphiumUtils;
 
 /**
  *
  * @author jollion
  */
 public class DBMapMasterDAO implements MasterDAO {
-
+    public static final Logger logger = LoggerFactory.getLogger(DBMapMasterDAO.class);
     protected final String configDir;
-    protected final ObjectMapper mapper;
     
     protected final String dbName;
     final HashMap<String, DBMapObjectDAO> DAOs = new HashMap<>();
@@ -54,8 +53,6 @@ public class DBMapMasterDAO implements MasterDAO {
         configDir = dir;
         new File(configDir).mkdirs();
         this.dbName = dbName;
-        mapper = new ObjectMapperImpl();
-        mapper.setMorphium(createOfflineMorphium());
         makeXPDB();
     }
     private void makeXPDB() {
@@ -66,12 +63,12 @@ public class DBMapMasterDAO implements MasterDAO {
         return configDir + File.separator + dbName + "_config.db";
     }
     protected String marshall(Object o) {
-        DBObject dbo = mapper.marshall(o);
+        DBObject dbo = MorphiumUtils.marshall(o);
         return serialize(dbo);
     }
     protected <E> E unmarshall(Class<E> clazz, String s) {
         DBObject dbo = (DBObject)parse(s);
-        E res= mapper.unmarshall(clazz, dbo);
+        E res= MorphiumUtils.unmarshall(clazz, dbo);
         if (res instanceof PostLoadable) ((PostLoadable)res).postLoad();
         return res;
     }
@@ -91,6 +88,10 @@ public class DBMapMasterDAO implements MasterDAO {
     @Override
     public String getDBName() {
         return dbName;
+    }
+    @Override
+    public String getDir() {
+        return this.configDir;
     }
 
     @Override
@@ -113,12 +114,14 @@ public class DBMapMasterDAO implements MasterDAO {
     @Override
     public void clearCache() {
         for (DBMapObjectDAO dao : DAOs.values()) dao.clearCache();
+        DAOs.clear();
         if (selectionDAO!=null) {
             getSelectionDAO().clearCache();
             selectionDAO=null;
         }
         if (!xpDB.isClosed()) {
             xpDB.close();
+            logger.debug("closing: {}", this.getConfigFile(dbName));
             this.xpSet=null;
         }
         this.xp=null;

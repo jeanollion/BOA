@@ -56,6 +56,10 @@ public class MorphiumMasterDAO implements MasterDAO {
     @Override public String getDBName() {
         return m.getDatabase().getName();
     }
+    @Override
+    public String getDir() {
+        return m.getConfig().getAdr().get(0).getHost();
+    }
     
     @Override public void updateExperiment() {
         xpDAO.store(getExperiment());

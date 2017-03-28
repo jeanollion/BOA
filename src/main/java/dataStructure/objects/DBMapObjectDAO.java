@@ -190,8 +190,8 @@ public class DBMapObjectDAO implements ObjectDAO {
         }
         return null;
     }
-    
-    public void setChildren(List<StructureObject> parentTrack, int childStructureIdx) {
+    @Override
+    public void setAllChildren(List<StructureObject> parentTrack, int childStructureIdx) {
         if (parentTrack.isEmpty()) return;
         Map<ObjectId, StructureObject> children = getChildren(new Pair(parentTrack.get(0).getTrackHeadId(), childStructureIdx));
         Map<StructureObject, List<StructureObject>> byParent = StructureObjectUtils.splitByParent(children.values());
@@ -201,7 +201,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     @Override
     public List<StructureObject> getChildren(StructureObject parent, int structureIdx) {
         List<StructureObject> res = new ArrayList<>();
-        for (StructureObject o : ((Map<ObjectId, StructureObject>)getChildren(new Pair(parent.getParentTrackHeadId(), structureIdx))).values()) {
+        for (StructureObject o : ((Map<ObjectId, StructureObject>)getChildren(new Pair(parent.getTrackHeadId(), structureIdx))).values()) {
             if (o.parentId.equals(parent.getId())) {
                 o.parent=parent;
                 res.add(o);
@@ -277,7 +277,10 @@ public class DBMapObjectDAO implements ObjectDAO {
     @Override
     public synchronized void deleteObjectsByStructureIdx(int... structures) {
         for (int structureIdx : structures) {
-            if (this.dbS.containsKey(structureIdx)) dbS.get(structureIdx).close();
+            if (this.dbS.containsKey(structureIdx)) {
+                dbS.remove(structureIdx).close();
+                dbMaps.entrySet().removeIf(k -> k.getKey().value==structureIdx);
+            }
             File f = new File(getDBFile(structureIdx));
             f.delete();
         }
@@ -426,8 +429,10 @@ public class DBMapObjectDAO implements ObjectDAO {
         getDB(object.getStructureIdx()).commit();
     }
     protected void store(Collection<StructureObject> objects, boolean updateTrackAttributes, boolean commit) {
+        logger.debug("storing: {} commit: {}", objects.size(), commit);
         List<StructureObject> upserMeas = new ArrayList<>(objects.size());
         Map<Pair<ObjectId, Integer>, List<StructureObject>> splitByPTH = splitByParentTrackHeadIdAndStructureIdx(objects);
+        logger.debug("storing: {} under #keys: {} commit: {}", objects.size(), splitByPTH.size(), commit);
         for (Pair<ObjectId, Integer> key : splitByPTH.keySet()) {
             List<StructureObject> toStore = splitByPTH.get(key);
             logger.debug("storing: {} objects under key: {}", toStore.size(), key.toString());

@@ -43,7 +43,6 @@ import core.PythonGateway;
 import core.Task;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Structure;
-import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
 import dataStructure.objects.MorphiumObjectDAO;
@@ -433,8 +432,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }
 
     public void setDBConnection(String dbName, String hostnameOrDir) {
+        if (db!=null) unsetXP();
         //long t0 = System.currentTimeMillis();
-        if (hostnameOrDir==null) hostnameOrDir = getHostNameOrDir();
+        if (hostnameOrDir==null) hostnameOrDir = getHostNameOrDir(dbName);
         db = MasterDAOFactory.createDAO(dbName, hostnameOrDir);
         if (db==null || db.getExperiment()==null) {
             logger.warn("no experiment found in DB");
@@ -488,6 +488,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         this.selectionModel.removeAllElements();
         if (!checkConnection()) return;
         SelectionDAO dao = this.db.getSelectionDAO();
+        if (dao==null) {
+            logger.error("No selection DAO. Output Directory set ? ");
+            return;
+        }
         List<Selection> sels = dao.getSelections();
         for (Selection sel : sels) {
             selectionModel.addElement(sel);
@@ -1508,15 +1512,19 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (segmentAndTrack || trackOnly) populateSelections();
     }
     
-    private String getHostNameOrDir() {
+    private String getCurrentHostNameOrDir() {
+        return getHostNameOrDir(getSelectedExperiment());
+    }
+    private String getHostNameOrDir(String xpName) {
         String host = this.hostName.getText();
         if (this.MongoDBDatabaseRadioButton.isSelected() && host==null || host.length()==0) host = "localhost";
         if (this.LocalFileSystemDatabaseRadioButton.isSelected()) {
-            File f = this.dbFiles.get(this.getSelectedExperiment());
+            File f = this.dbFiles.get(xpName);
             if (f!=null) host = f.getParent();
         }
         return host;
     }
+    
     private int navigateCount = 0;
     public void navigateToNextObjects(boolean next, boolean nextPosition, int structureDisplay, boolean setInteractiveStructure) {
         List<Selection> sels = selectionList.getSelectedValuesList();
@@ -1598,6 +1606,20 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         }
     }
+    private static String createSubdir(String path, String dbName) {
+        if (!new File(path).isDirectory()) return null;
+        File newDBDir = new File(path+File.separator+DBUtil.removePrefix(dbName, DBprefix));
+        if (newDBDir.exists()) {
+            logger.error("folder : {}, already exists", newDBDir.getAbsolutePath());
+            return null;
+        }
+        newDBDir.mkdir();
+        if (!newDBDir.isDirectory()) {
+            logger.error("folder : {}, couldn't be created", newDBDir.getAbsolutePath());
+            return null;
+        }
+        return newDBDir.getAbsolutePath();
+    }
     private void setMongoBinDirectoryMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_setMongoBinDirectoryMenuActionPerformed
         File[] f = Utils.chooseFiles("Choose Directory containing MongoDB Binary Files", null, FileChooser.FileChooserOption.FILE_OR_DIRECTORY, this);
         if (f.length==1 && f[0].exists() && f[0].isDirectory()) {
@@ -1611,7 +1633,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }//GEN-LAST:event_refreshExperimentListMenuItemActionPerformed
 
     private void setSelectedExperimentMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_setSelectedExperimentMenuItemActionPerformed
-        String host = getHostNameOrDir();
+        String host = getCurrentHostNameOrDir();
         String dbName = getSelectedExperiment();
         if (dbName==null || (this.db!=null && db.getDBName().equals(dbName))) unsetXP();
         else {
@@ -1627,12 +1649,20 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
         else if (getDBNames().contains(name)) logger.error("XP name already exists");
         else {
-            MorphiumMasterDAO db2 = new MorphiumMasterDAO(name);
+            String adress = null;
+            if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) { // create directory
+                File dir = new File(hostName.getText());
+                adress = createSubdir(dir.getAbsolutePath(), name);
+                logger.debug("new xp dir: {}", adress);
+                if (adress==null) return;
+            }
+            MasterDAO db2 = MasterDAOFactory.createDAO(name, adress);
             Experiment xp2 = new Experiment(name);
             xp2.setName(name);
+            if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) xp2.setOutputDirectory(adress+File.separator+"Output");
             db2.setExperiment(xp2);
-            this.setDBConnection(name, getHostNameOrDir());
             populateExperimentList();
+            this.setDBConnection(name, null);
             if (this.db!=null) setSelectedExperiment(name);
         }
     }//GEN-LAST:event_newXPMenuItemActionPerformed
@@ -1644,7 +1674,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (response == JOptionPane.NO_OPTION || response == JOptionPane.CLOSED_OPTION) {
         } else if (response == JOptionPane.YES_OPTION) {
-            for (String xpName : xps) DBUtil.dropDatabase(xpName, getHostNameOrDir());
+            for (String xpName : xps) DBUtil.dropDatabase(xpName, getCurrentHostNameOrDir());
             populateExperimentList();
             if (db!=null && xps.contains(db.getDBName())) unsetXP();
         }
@@ -1656,11 +1686,20 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
         else if (getDBNames().contains(name)) logger.error("DB name already exists");
         else {
-            MorphiumMasterDAO db1 = new MorphiumMasterDAO(getSelectedExperiment());
-            MorphiumMasterDAO db2 = new MorphiumMasterDAO(name);
+            unsetXP();
+            MasterDAO db1 = MasterDAOFactory.createDAO(getSelectedExperiment(), this.getCurrentHostNameOrDir());
+            String adress = null;
+            if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) { // create directory
+                File dir = new File(this.getCurrentHostNameOrDir()).getParentFile();
+                adress = createSubdir(dir.getAbsolutePath(), name);
+                logger.debug("duplicate xp dir: {}", adress);
+                if (adress==null) return;
+            }
+            MasterDAO db2 = MasterDAOFactory.createDAO(name, adress);
             Experiment xp2 = db1.getExperiment().duplicate();
             xp2.clearPositions();
             xp2.setName(name);
+            if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) xp2.setOutputDirectory(adress+File.separator+"Output");
             db2.setExperiment(xp2);
             populateExperimentList();
         }
@@ -1685,7 +1724,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         int count=0;
         for (String xp : xpToExport) {
             logger.info("Exporting whole XP : {}/{}", ++count, xpToExport.size());
-            CommandExecuter.dumpDB(getHostNameOrDir(), xp, dir, jsonFormatMenuItem.isSelected());
+            CommandExecuter.dumpDB(getCurrentHostNameOrDir(), xp, dir, jsonFormatMenuItem.isSelected());
         }
         PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
     }//GEN-LAST:event_exportWholeXPMenuItemActionPerformed
@@ -1698,7 +1737,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         int[] sel  = getSelectedMicroscopyFields();
         String[] fNames = db.getExperiment().getPositionsAsString();
         String dbName = db.getDBName();
-        String hostname = getHostNameOrDir();
+        String hostname = getCurrentHostNameOrDir();
         int count = 0;
         for (int f : sel) {
             String cName = MorphiumObjectDAO.getCollectionName(fNames[f]);
@@ -1713,7 +1752,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
         String dir = promptDir("Choose output directory", defDir);
         if (dir==null) return;
-        CommandExecuter.dump(getHostNameOrDir(), db.getDBName(), "Experiment", dir, jsonFormatMenuItem.isSelected());
+        CommandExecuter.dump(getCurrentHostNameOrDir(), db.getDBName(), "Experiment", dir, jsonFormatMenuItem.isSelected());
         PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
     }//GEN-LAST:event_exportXPConfigMenuItemActionPerformed
 
@@ -1747,7 +1786,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             while (it.hasNext()) { if (db.getExperiment().getPosition(it.next())!=null) it.remove();}
         }
         String dbName = db.getDBName();
-        String hostname = getHostNameOrDir();
+        String hostname = getCurrentHostNameOrDir();
         int count = 0;
         boolean fieldsCreated = false;
         for (String f : fields.keySet()) {
@@ -1817,7 +1856,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             Iterator<File> it = subDirs.iterator();
             while (it.hasNext()) { if (dbNames.contains(it.next().getName())) it.remove();}
         }
-        String hostname = getHostNameOrDir();
+        String hostname = getCurrentHostNameOrDir();
         int count = 0;
         for (File f : subDirs) {
             logger.info("Importing XP: {}/{}", ++count, subDirs.size());
@@ -1832,10 +1871,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
         File outputFile = Utils.chooseFile("Select Experiment.bson of Experiment.json file (WARNING: current configuration will be lost)", defDir, FileChooser.FileChooserOption.FILE_OR_DIRECTORY, this);
         if (outputFile!=null && outputFile.getName().equals("Experiment.bson") || outputFile.getName().equals("Experiment.json")) {
-            CommandExecuter.restore(getHostNameOrDir(), db.getDBName(), "Experiment", outputFile.getAbsolutePath(), true);
+            CommandExecuter.restore(getCurrentHostNameOrDir(), db.getDBName(), "Experiment", outputFile.getAbsolutePath(), true);
             String dbName = db.getDBName();
             unsetXP();
-            setDBConnection(dbName, getHostNameOrDir());
+            setDBConnection(dbName, getCurrentHostNameOrDir());
             PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, outputFile.getAbsolutePath());
         }
         
@@ -1857,7 +1896,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         }
         int[] microscopyFields = this.getSelectedMicroscopyFields();
         int[] selectedStructures = this.getSelectedStructures(true);
-        Task t = new Task(this.db.getDBName()).setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements).setStructures(selectedStructures).setPositions(microscopyFields);
+        Task t = new Task(db).setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements).setStructures(selectedStructures).setPositions(microscopyFields);
         t.run();
         t.printErrors();
         /*boolean allStructures = selectedStructures.length==db.getExperiment().getStructureCount();
@@ -1946,7 +1985,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         boolean deleteAll =  preProcess || reRunPreProcess || segmentAndTrack;
         logger.debug("Will run on XP: {} / Run actions: preProcess: {}, rePreProcess: {}, segmentAndTrack: {}, trackOnly: {}, runMeasurements: {}, delete all: {}", getSelectedExperiments(), preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements,  deleteAll);
         for (String xpName : getSelectedExperiments()) {
-            setDBConnection(xpName, getHostNameOrDir());
+            setDBConnection(xpName, getCurrentHostNameOrDir());
             if (db!=null) {
                 if (deleteAll) db.deleteAllObjects();
                 logger.debug("XP: {} / Run actions: preProcess: {}, rePreProcess: {}, segmentAndTrack: {}, trackOnly: {}, runMeasurements: {}, delete all: {}", xpName, preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements,  deleteAll);
@@ -1987,6 +2026,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             return;
         }
         Selection sel = new Selection(name, db);
+        if (this.db.getSelectionDAO()==null) {
+            logger.error("No selection DAO. Output Directory set ? ");
+            return;
+        }
         this.db.getSelectionDAO().store(sel);
         this.selectionModel.addElement(sel);
 
@@ -2183,7 +2226,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     Map<String, File> dbFiles;
     
     private List<String> getDBNames() {
-        if (this.MongoDBDatabaseRadioButton.isSelected()) return DBUtil.getDBNames(getHostNameOrDir(), DBprefix);
+        if (this.MongoDBDatabaseRadioButton.isSelected()) return DBUtil.getDBNames(getCurrentHostNameOrDir(), DBprefix);
         else if (this.LocalFileSystemDatabaseRadioButton.isSelected()) {
             dbFiles = DBUtil.listExperiments(hostName.getText());
             List<String> res = new ArrayList<>(dbFiles.keySet());

@@ -26,6 +26,8 @@ import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
+import dataStructure.objects.MasterDAO;
+import dataStructure.objects.MasterDAOFactory;
 import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectTrackCorrection;
@@ -60,7 +62,7 @@ import utils.MorphiumUtils;
  * @author jollion
  */
 public class TestTrackCorrectionNew {
-    MorphiumMasterDAO db;
+    MasterDAO db;
     @Rule
     public TemporaryFolder testFolder = new TemporaryFolder();
 
@@ -71,7 +73,11 @@ public class TestTrackCorrectionNew {
     }
     
     public void setUpDB() {
-        if (db==null) db = new MorphiumMasterDAO(MorphiumUtils.createMorphium("testTrackCorrection"));
+        if (db==null) {
+            String dir = null;
+            if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) dir = testFolder.newFolder("testTrackCorrectionNew").getAbsolutePath();
+            db = MasterDAOFactory.createDAO("testTrackCorrection", dir);
+        }
         db.reset();
     }
 
@@ -201,7 +207,7 @@ public class TestTrackCorrectionNew {
         }
     }
     
-    public static List<StructureObject> generateData(File input, File output, MorphiumMasterDAO db, int objectSize, int... numberOfObjectsT) {
+    public static List<StructureObject> generateData(File input, File output, MasterDAO db, int objectSize, int... numberOfObjectsT) {
         Image[][] testImage = generateImageTC(objectSize, numberOfObjectsT);
         ImageWriter.writeToFile(input.getAbsolutePath(), "field1", ImageFormat.OMETIF, testImage);
         Experiment xp = generateXP(output.getAbsolutePath());
@@ -218,7 +224,7 @@ public class TestTrackCorrectionNew {
     private static Experiment generateXP(String outputDir) {
         Experiment xp = new Experiment("testTrackCorrection");
         xp.getChannelImages().insert(new ChannelImage("channel"));
-        xp.setOutputImageDirectory(outputDir);
+        xp.setOutputDirectory(outputDir);
         Structure s = new Structure("Structure", -1, 0);
         xp.getStructures().insert(s);
         s.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new DummySegmenterSplitAndMerge(), 0.9, 1.1 , 1.5, 10, 100)));
