@@ -44,7 +44,10 @@ public class BasicMasterDAO implements MasterDAO {
         }
         return dao;
     }
-
+    
+    @Override
+    public void delete() {}
+    
     public String getDBName() {
         return "VirtualDB";
     }

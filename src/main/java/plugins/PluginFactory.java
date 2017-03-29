@@ -35,6 +35,7 @@ import java.util.TreeMap;
 import java.util.Vector;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.logging.Level;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -253,5 +254,15 @@ public class PluginFactory {
             }
         }
         return res;
+    }
+    
+    public static boolean checkClass(String clazz) {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            classLoader.loadClass(clazz);
+        } catch (ClassNotFoundException ex) {
+            return false;
+        }
+        return true;
     }
 }

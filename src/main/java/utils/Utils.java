@@ -394,7 +394,9 @@ public class Utils {
         new Plot(title, "coord", "value", x, values).show();
     }
     
-    
+    public static void deleteDirectory(String dir) {
+        if (dir!=null) deleteDirectory(new File(dir));
+    }
     public static void deleteDirectory(File dir) { //recursive delete, because java's native function wants the dir to be empty to delete it
         if (dir==null || !dir.exists()) return;
         if (dir.isFile()) dir.delete();

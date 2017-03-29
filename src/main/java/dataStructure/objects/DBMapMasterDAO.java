@@ -31,6 +31,7 @@ import org.mapdb.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.MorphiumUtils;
+import utils.Utils;
 
 /**
  *
@@ -55,6 +56,17 @@ public class DBMapMasterDAO implements MasterDAO {
         this.dbName = dbName;
         makeXPDB();
     }
+    
+    @Override
+    public void delete() {
+        String outputPath = getExperiment()!=null ? getExperiment().getOutputImageDirectory() : null;
+        clearCache();
+        Utils.deleteDirectory(outputPath);
+        new File(this.getConfigFile(dbName)).delete();
+        File f = new File(configDir).getParentFile();
+        f.delete(); // deletes only if void. 
+    }
+    
     private void makeXPDB() {
         xpDB = DBMaker.fileDB(getConfigFile(dbName)).transactionEnable().make();
         xpSet = xpDB.hashSet("experiment", Serializer.STRING).createOrOpen();

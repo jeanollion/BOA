@@ -24,6 +24,9 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -66,7 +69,11 @@ public class PropertyUtils {
         return getProps().getProperty(key, defaultValue);
     }
     public static void set(String key, String value) {
-        getProps().setProperty(key, value);
+        if (value!=null) getProps().setProperty(key, value);
+        saveParamChanges();
+    }
+    public static void remove(String key) {
+        getProps().remove(key);
         saveParamChanges();
     }
     public static boolean get(String key, boolean defaultValue) {
@@ -76,7 +83,29 @@ public class PropertyUtils {
         getProps().setProperty(key, Boolean.toString(value));
         saveParamChanges();
     }
-    
+    public static void setStrings(String key, List<String> values) {
+        if (values==null) values=Collections.EMPTY_LIST;
+        for (int i = 0; i<values.size(); ++i) {
+            getProps().setProperty(key+"_"+i, values.get(i));
+        }
+        int idx = values.size();
+        while(getProps().containsKey(key+"_"+idx)) {
+            getProps().remove(key+"_"+idx);
+            ++idx;
+        }
+        saveParamChanges();
+    }
+    public static List<String> getStrings(String key) {
+        List<String> res = new ArrayList<>();
+        int idx = 0;
+        String next = get(key+"_"+idx);
+        while(next!=null) {
+            res.add(next);
+            ++idx;
+            next = get(key+"_"+idx);
+        }
+        return res;
+    }
     public static synchronized void saveParamChanges() {
         try {
             File f = getFile();

@@ -17,6 +17,7 @@
  */
 package dataStructure.objects;
 
+import com.mongodb.MongoClient;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import de.caluga.morphium.DereferencingListener;
@@ -25,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 import utils.MorphiumUtils;
+import utils.Utils;
 
 /**
  *
@@ -53,6 +55,14 @@ public class MorphiumMasterDAO implements MasterDAO {
         this(MorphiumUtils.createMorphium(dbName, 27017, hostName));
     }
 
+    @Override
+    public void delete() {
+        String outputPath = this.getExperiment().getOutputImageDirectory();
+        Utils.deleteDirectory(outputPath);
+        MongoClient mongoClient = new MongoClient(getDir(), 27017);
+        mongoClient.dropDatabase(getDBName());
+    }
+    
     @Override public String getDBName() {
         return m.getDatabase().getName();
     }

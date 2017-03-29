@@ -30,15 +30,20 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import utils.MorphiumUtils;
 
 /**
  *
  * @author jollion
  */
 public class DBUtil {
-    public static void dropDatabase(String dbName, String hostName) {
+    public static void dropMongoDatabase(String dbName, String hostName) {
         MongoClient mongoClient = new MongoClient(hostName, 27017);
         mongoClient.dropDatabase(dbName);
+        
+    }
+    public static void dropLocaldatabase(String dbName, String dir) {
+        
     }
     public static List<String> listCollections(String dbName, String hostName) {
         MongoClient mongoClient = new MongoClient(hostName, 27017);
