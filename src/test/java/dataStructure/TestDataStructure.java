@@ -123,8 +123,7 @@ public class TestDataStructure {
         Processor.importFiles(xp, true, folder.getAbsolutePath());
         File outputFolder = testFolder.newFolder("TestOutputImagesStructureObject");
         xp.setOutputDirectory(outputFolder.getAbsolutePath());
-        xp.setOutputDirectory("/tmp");
-        //save to morphium
+        //save to db
         
         db.reset();
         db.setExperiment(xp);

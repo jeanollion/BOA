@@ -37,6 +37,10 @@ import org.mapdb.HTreeMap;
 import org.mapdb.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.DBMapUtils;
+import static utils.DBMapUtils.createFileDB;
+import static utils.DBMapUtils.getEntrySet;
+import static utils.DBMapUtils.getValues;
 import utils.HashMapGetCreate;
 import utils.Pair;
 import utils.Utils;
@@ -90,7 +94,7 @@ public class DBMapObjectDAO implements ObjectDAO {
         if (res==null) {
             synchronized(dbS) {
                 if (!dbS.containsKey(structureIdx)) {
-                    res = DBMaker.fileDB(getDBFile(structureIdx)).transactionEnable().make(); // concurency ? close on shutdown?
+                    res = createFileDB(getDBFile(structureIdx));
                     dbS.put(structureIdx, res);
                 } else {
                     res = dbS.get(structureIdx);
@@ -106,7 +110,7 @@ public class DBMapObjectDAO implements ObjectDAO {
                 if (dbMaps.containsKey(key)) res=dbMaps.get(key);
                 else {
                     DB db = getDB(key.value);
-                    res = db.hashMap(key.key!=null? key.key.toHexString() : "root", Serializer.STRING, Serializer.STRING).createOrOpen(); // case of roots: no parent
+                    res = DBMapUtils.createHTreeMap(db, key.key!=null? key.key.toHexString() : "root");
                     dbMaps.put(key, res);
                 }
             }
@@ -122,7 +126,8 @@ public class DBMapObjectDAO implements ObjectDAO {
             if (cacheAlreadyPresent) {
                 Set<String> alreadyInCache = new HashSet<>(objectMap.size());
                 for (ObjectId id : objectMap.keySet()) alreadyInCache.add(id.toHexString());
-                for (Entry<String, String> e : dbm.getEntries()) {
+                
+                for (Entry<String, String> e : getEntrySet(dbm)) {
                     if (!alreadyInCache.contains(e.getKey())) {
                         StructureObject o = this.mDAO.unmarshall(StructureObject.class, e.getValue());
                         o.dao=this;
@@ -130,7 +135,7 @@ public class DBMapObjectDAO implements ObjectDAO {
                     }
                 }
             } else {
-                for (String s : dbm.getValues()) {
+                for (String s : getValues(dbm)) {
                     StructureObject o = this.mDAO.unmarshall(StructureObject.class, s);
                     o.dao=this;
                     objectMap.put(o.id, o);
@@ -183,7 +188,7 @@ public class DBMapObjectDAO implements ObjectDAO {
             Map<ObjectId, StructureObject> map = getChildren(new Pair(null, structureIdx));
             if (map.containsKey(id)) return map;
         } else {
-            for (String parentTHId : getDB(structureIdx).getAllNames()) {
+            for (String parentTHId : DBMapUtils.getNames(getDB(structureIdx))) {
                 Map<ObjectId, StructureObject> map = getChildren(new Pair(new ObjectId(parentTHId), structureIdx)); //"root".equals(parentTHId) ?  null : 
                 if (map.containsKey(id)) return map;
             }
@@ -429,13 +434,13 @@ public class DBMapObjectDAO implements ObjectDAO {
         getDB(object.getStructureIdx()).commit();
     }
     protected void store(Collection<StructureObject> objects, boolean updateTrackAttributes, boolean commit) {
-        logger.debug("storing: {} commit: {}", objects.size(), commit);
+        //logger.debug("storing: {} commit: {}", objects.size(), commit);
         List<StructureObject> upserMeas = new ArrayList<>(objects.size());
         Map<Pair<ObjectId, Integer>, List<StructureObject>> splitByPTH = splitByParentTrackHeadIdAndStructureIdx(objects);
-        logger.debug("storing: {} under #keys: {} commit: {}", objects.size(), splitByPTH.size(), commit);
+        //logger.debug("storing: {} under #keys: {} commit: {}", objects.size(), splitByPTH.size(), commit);
         for (Pair<ObjectId, Integer> key : splitByPTH.keySet()) {
             List<StructureObject> toStore = splitByPTH.get(key);
-            logger.debug("storing: {} objects under key: {}", toStore.size(), key.toString());
+            //logger.debug("storing: {} objects under key: {}", toStore.size(), key.toString());
             Map<ObjectId, StructureObject> cacheMap = cache.getAndCreateIfNecessary(key);
             HTreeMap<String, String> dbMap = getDBMap(key);
             for (StructureObject object : toStore) {
@@ -517,9 +522,9 @@ public class DBMapObjectDAO implements ObjectDAO {
         Pair<DB, HTreeMap<String, String>> res = this.measurementdbS.get(structureIdx);
         if (res==null) {
             synchronized(measurementdbS) {
-                if (!dbS.containsKey(structureIdx)) {
-                    DB db = DBMaker.fileDB(getMeasurementDBFile(structureIdx)).transactionEnable().make(); // concurency ? close on shutdown?
-                    HTreeMap<String, String> dbMap = db.hashMap("measurements", Serializer.STRING, Serializer.STRING).createOrOpen();
+                if (!measurementdbS.containsKey(structureIdx)) {
+                    DB db = DBMapUtils.createFileDB(getMeasurementDBFile(structureIdx));
+                    HTreeMap<String, String> dbMap = DBMapUtils.createHTreeMap(db, "measurements");
                     res = new Pair(db, dbMap);
                     measurementdbS.put(structureIdx, res);
                 } else {
@@ -557,7 +562,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     public List<Measurements> getMeasurements(int structureIdx, String... measurements) {
         Pair<DB, HTreeMap<String, String>> mDB = getMeasurementDB(structureIdx);
         List<Measurements> res = new ArrayList<>();
-        for (String s : mDB.value.getValues()) {
+        for (String s : getValues(mDB.value)) {
             Measurements m = this.mDAO.unmarshall(Measurements.class, s);
             res.add(m);
         }
@@ -586,4 +591,5 @@ public class DBMapObjectDAO implements ObjectDAO {
         if (list.isEmpty()) return Collections.EMPTY_MAP;
         return list.stream().collect(Collectors.groupingBy(o -> new Pair(o.isRoot()? null : o.getParent().getTrackHeadId(), o.getStructureIdx())));
     }
+
 }

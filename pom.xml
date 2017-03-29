@@ -7,7 +7,7 @@
 
     <groupId>ljp</groupId>
     <artifactId>functional_bioimage-core</artifactId>
-    <version>0.3.4-SNAPSHOT</version>
+    <version>0.3.5-SNAPSHOT</version>
 
     <name>functional_bioimage-core</name>
     <description>Bacteria Analyzer</description>
@@ -49,7 +49,7 @@
         <dependency>
             <groupId>org.mapdb</groupId>
             <artifactId>mapdb</artifactId>
-            <version>3.1.0-SNAPSHOT</version>
+            <version>1.0.3</version>
         </dependency>
         <dependency>
             <groupId>de.caluga</groupId>

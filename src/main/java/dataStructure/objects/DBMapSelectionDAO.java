@@ -17,6 +17,7 @@
  */
 package dataStructure.objects;
 
+import static dataStructure.objects.DBMapMasterDAO.logger;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,6 +28,7 @@ import org.mapdb.DB;
 import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
 import org.mapdb.Serializer;
+import utils.DBMapUtils;
 
 /**
  *
@@ -46,11 +48,12 @@ public class DBMapSelectionDAO implements SelectionDAO {
         makeDB();
     }
     private void makeDB() {
-        db = DBMaker.fileDB(getSelectionFile()).transactionEnable().make();
-        dbMap = db.hashMap("selections", Serializer.STRING, Serializer.STRING).createOrOpen();
+        db = DBMapUtils.createFileDB(getSelectionFile());
+        dbMap = DBMapUtils.createHTreeMap(db, "selections");
     }
+    
     private String getSelectionFile() {
-        return dir+File.separator+"selections.db";
+        return dir+"selections.db";
     }
     @Override
     public Selection getOrCreate(String name, boolean clearIfExisting) {
@@ -69,7 +72,7 @@ public class DBMapSelectionDAO implements SelectionDAO {
     private void retrieveAllSelections() {
         idCache.clear();
         if (db.isClosed()) makeDB();
-        for (String s : dbMap.getValues()) {
+        for (String s : DBMapUtils.getValues(dbMap)) {
             Selection sel = mDAO.unmarshall(Selection.class, s);
             idCache.put(sel.getName(), sel);
         }

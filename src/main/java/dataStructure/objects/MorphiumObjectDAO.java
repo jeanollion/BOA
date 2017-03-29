@@ -595,7 +595,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
             }
         });
         long t2 = System.currentTimeMillis();
-        Processor.logger.debug("measurements on field: {}: upsert time: {} ({} objects)", getPositionName(), t2-t1, objects.size());
+        Processor.logger.debug("measurements of field: {}: upsert time: {} ({} objects)", getPositionName(), t2-t1, objects.size());
     }
     
     @Override public void upsertMeasurement(StructureObject o) {

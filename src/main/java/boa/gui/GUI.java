@@ -1646,6 +1646,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         else {
             setDBConnection(dbName, host);
             PropertyUtils.set(PropertyUtils.LAST_SELECTED_EXPERIMENT, dbName);
+            if (mongoDBDatabaseRadioButton.isSelected()) PropertyUtils.set(PropertyUtils.HOSTNAME, hostName.getText());
         }
     }//GEN-LAST:event_setSelectedExperimentMenuItemActionPerformed
 
@@ -2171,7 +2172,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }//GEN-LAST:event_trackStructureJCBActionPerformed
 
     private void hostNameMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_hostNameMousePressed
-        if (SwingUtilities.isRightMouseButton(evt)) {
+        if (SwingUtilities.isRightMouseButton(evt) && localFileSystemDatabaseRadioButton.isSelected()) {
             JPopupMenu menu = new JPopupMenu();
             Action chooseFile = new AbstractAction("Choose local data folder") {
                 @Override
@@ -2227,6 +2228,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.Morphium);
         PropertyUtils.set(PropertyUtils.DATABASE_TYPE, MasterDAOFactory.DAOType.Morphium.toString());
         mongoDBImportExportMenu.setEnabled(true);
+        hostName.setText(PropertyUtils.get(PropertyUtils.HOSTNAME, "localhost"));
         populateExperimentList();
     }//GEN-LAST:event_mongoDBDatabaseRadioButtonActionPerformed
 
@@ -2235,6 +2237,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.DBMap);
         PropertyUtils.set(PropertyUtils.DATABASE_TYPE, MasterDAOFactory.DAOType.DBMap.toString());
         mongoDBImportExportMenu.setEnabled(false);
+        hostName.setText(PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH, ""));
         populateExperimentList();
     }//GEN-LAST:event_localFileSystemDatabaseRadioButtonActionPerformed
     private void updateMongoDBBinActions() {

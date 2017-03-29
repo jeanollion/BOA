@@ -185,18 +185,20 @@ public class Processor {
         dao.store(children, !(ps instanceof SegmentOnly));
         logger.debug("total objects: {}, dao type: {}", children.size(), dao.getClass().getSimpleName());
         // create error selection
-        Selection errors = dao.getMasterDAO().getSelectionDAO().getOrCreate(dao.getExperiment().getStructure(structureIdx).getName()+"_TrackingErrors", false);
-        boolean hadObjectsBefore=errors.count(dao.getPositionName())>0;
-        if (hadObjectsBefore) {
-            int nBefore = errors.count(dao.getPositionName());
-            errors.removeChildrenOf(parentTrack);
-            logger.debug("remove childre: count before: {} after: {}", nBefore, errors.count(dao.getPositionName()));
-        } // if selection already exists: remove children of parentTrack
-        children.removeIf(o -> !o.hasTrackLinkError(true, true));
-        logger.debug("errors: {}", children.size());
-        if (hadObjectsBefore || !children.isEmpty()) {
-            errors.addElements(children);
-            dao.getMasterDAO().getSelectionDAO().store(errors);
+        if (dao.getMasterDAO().getSelectionDAO()!=null) {
+            Selection errors = dao.getMasterDAO().getSelectionDAO().getOrCreate(dao.getExperiment().getStructure(structureIdx).getName()+"_TrackingErrors", false);
+            boolean hadObjectsBefore=errors.count(dao.getPositionName())>0;
+            if (hadObjectsBefore) {
+                int nBefore = errors.count(dao.getPositionName());
+                errors.removeChildrenOf(parentTrack);
+                logger.debug("remove childre: count before: {} after: {}", nBefore, errors.count(dao.getPositionName()));
+            } // if selection already exists: remove children of parentTrack
+            children.removeIf(o -> !o.hasTrackLinkError(true, true));
+            logger.debug("errors: {}", children.size());
+            if (hadObjectsBefore || !children.isEmpty()) {
+                errors.addElements(children);
+                dao.getMasterDAO().getSelectionDAO().store(errors);
+            }
         }
         return exceptions;
     }

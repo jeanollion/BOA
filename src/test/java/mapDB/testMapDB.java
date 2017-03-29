@@ -36,9 +36,11 @@ import org.junit.rules.TemporaryFolder;
 import org.mapdb.BTreeMap;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
+import org.mapdb.HTreeMap;
 import org.mapdb.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.DBMapUtils;
 import static utils.MorphiumUtils.createOfflineMorphium;
 import static utils.MorphiumUtils.marshall;
 import static utils.MorphiumUtils.unmarshall;
@@ -66,15 +68,15 @@ public class testMapDB {
     public void testFileDB() {
         boolean close = true;
         String path = testFolder.newFolder("testDB").getAbsolutePath()+File.separator+"_testDB.db";
-        DB db = DBMaker.fileDB(path).transactionEnable().make();
-        BTreeMap<String, String> map = db.treeMap("collection", Serializer.STRING, Serializer.STRING).createOrOpen();
+        DB db = DBMapUtils.createFileDB(path);
+        HTreeMap<String, String> map = DBMapUtils.createHTreeMap(db, "collection");
         map.put("something", "here");
         logger.info("read before commit: {}", map.get("something"));
         db.commit();
         logger.info("read after commit: {}", map.get("something"));
         if (close) db.close();
-        db = DBMaker.fileDB(path).transactionEnable().make();
-        map = db.treeMap("collection", Serializer.STRING, Serializer.STRING).createOrOpen();
+        db = DBMapUtils.createFileDB(path);
+        map = DBMapUtils.createHTreeMap(db, "collection");
         logger.info("read: {}", map.get("something"));
         db.close();
     }
@@ -94,15 +96,15 @@ public class testMapDB {
         logger.debug("object: {}, entity: {}", o, annotationHelper.isEntity(o));
         DBObject oMarsh = marshall(o);
         logger.debug("object: marsh {}", oMarsh); 
-        DB db = DBMaker.fileDB(path).transactionEnable().make();
-        BTreeMap<String, String> map = db.treeMap("xp", Serializer.STRING, Serializer.STRING).createOrOpen();
+        DB db = DBMapUtils.createFileDB(path);
+        HTreeMap<String, String> map = DBMapUtils.createHTreeMap(db, "xp");
         
         map.put(mdb.getExperiment().getName(), com.mongodb.util.JSON.serialize(xpMash));
         map.put("object", com.mongodb.util.JSON.serialize(oMarsh));
         db.commit();
         db.close();
-        db = DBMaker.fileDB(path).transactionEnable().make();
-        map = db.treeMap("xp", Serializer.STRING, Serializer.STRING).createOrOpen();
+        db = DBMapUtils.createFileDB(path);
+        map = DBMapUtils.createHTreeMap(db, "xp");
         String xpString = map.get(mdb.getExperiment().getName());
         DBObject dboXP = (DBObject)com.mongodb.util.JSON.parse(xpString);
         DBObject dboOb = (DBObject)com.mongodb.util.JSON.parse(map.get("object"));

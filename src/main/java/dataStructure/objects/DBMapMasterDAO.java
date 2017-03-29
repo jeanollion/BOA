@@ -26,10 +26,10 @@ import java.io.File;
 import java.util.HashMap;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
-import org.mapdb.HTreeMap.KeySet;
-import org.mapdb.Serializer;
+import org.mapdb.HTreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.DBMapUtils;
 import utils.MorphiumUtils;
 import utils.Utils;
 
@@ -43,7 +43,7 @@ public class DBMapMasterDAO implements MasterDAO {
     
     protected final String dbName;
     final HashMap<String, DBMapObjectDAO> DAOs = new HashMap<>();
-    protected KeySet<String> xpSet;
+    protected HTreeMap<String, String> xpMap;
     protected DB xpDB;
     protected Experiment xp;
     DBMapSelectionDAO selectionDAO;
@@ -68,8 +68,8 @@ public class DBMapMasterDAO implements MasterDAO {
     }
     
     private void makeXPDB() {
-        xpDB = DBMaker.fileDB(getConfigFile(dbName)).transactionEnable().make();
-        xpSet = xpDB.hashSet("experiment", Serializer.STRING).createOrOpen();
+        xpDB = DBMapUtils.createFileDB(getConfigFile(dbName));
+        xpMap = DBMapUtils.createHTreeMap(xpDB, "experiment");
     }
     private String getConfigFile(String dbName) {
         return configDir + File.separator + dbName + "_config.db";
@@ -115,7 +115,7 @@ public class DBMapMasterDAO implements MasterDAO {
 
     @Override
     public void reset() {
-        this.xpSet.clear();
+        this.xpMap.clear();
         if (!xpDB.isClosed()) this.xpDB.commit();
         if (this.getOutputPath()!=null) {
             deleteAllObjects();
@@ -134,7 +134,7 @@ public class DBMapMasterDAO implements MasterDAO {
         if (!xpDB.isClosed()) {
             xpDB.close();
             logger.debug("closing: {}", this.getConfigFile(dbName));
-            this.xpSet=null;
+            this.xpMap=null;
         }
         this.xp=null;
     }
@@ -151,8 +151,8 @@ public class DBMapMasterDAO implements MasterDAO {
     public Experiment getExperiment() {
         if (this.xp==null) {
             if (xpDB.isClosed()) makeXPDB();
-            if (xpSet.isEmpty()) return null;
-            String xpString = xpSet.iterator().next();
+            if (xpMap.isEmpty()) return null;
+            String xpString = xpMap.get("config");
             xp = this.unmarshall(Experiment.class, xpString);
         }
         return xp;
@@ -161,8 +161,8 @@ public class DBMapMasterDAO implements MasterDAO {
     @Override
     public void updateExperiment() {
         if (xpDB.isClosed()) makeXPDB();
-        xpSet.clear();
-        if (xp!=null) xpSet.add(marshall(xp));
+        xpMap.clear();
+        if (xp!=null) xpMap.put("config", marshall(xp));
         xpDB.commit();
     }
 
@@ -188,7 +188,7 @@ public class DBMapMasterDAO implements MasterDAO {
     public DBMapSelectionDAO getSelectionDAO() {
         if (this.selectionDAO==null) {
             String op = getOutputPath();
-            if (op!=null) {
+            if (op!=null && new File(op).isDirectory()) {
                 selectionDAO = new DBMapSelectionDAO(this, op);
             }
         }

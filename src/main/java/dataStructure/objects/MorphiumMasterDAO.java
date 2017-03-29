@@ -52,7 +52,7 @@ public class MorphiumMasterDAO implements MasterDAO {
     }
     
     public MorphiumMasterDAO(String dbName, String hostName) {
-        this(MorphiumUtils.createMorphium(dbName, 27017, hostName));
+        this(MorphiumUtils.createMorphium(hostName, 27017, dbName));
     }
 
     @Override

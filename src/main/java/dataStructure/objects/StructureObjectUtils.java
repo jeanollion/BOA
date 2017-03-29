@@ -252,7 +252,7 @@ public class StructureObjectUtils {
     }
     public static void setAllChildren(List<StructureObject> parentTrack, int structureIdx) {
         ObjectDAO dao = parentTrack.get(0).getDAO();
-        logger.debug("set all children: parent: {}, structure: {}", parentTrack.get(0).getTrackHead(), structureIdx);
+        //logger.debug("set all children: parent: {}, structure: {}", parentTrack.get(0).getTrackHead(), structureIdx);
         if (dao.getExperiment().isDirectChildOf(parentTrack.get(0).getStructureIdx(), structureIdx)) {
             List<StructureObject> parentWithNoChildren = new ArrayList<>(parentTrack.size());
             for (StructureObject p : parentTrack) if (!p.childrenSM.has(structureIdx)) parentWithNoChildren.add(p);
