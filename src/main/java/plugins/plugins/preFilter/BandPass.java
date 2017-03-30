@@ -57,7 +57,7 @@ public class BandPass implements PreFilter, Filter {
         return filter(input, min.getValue().doubleValue(), max.getValue().doubleValue(), removeStripes.getSelectedIndex(), stripeTolerance.getValue().doubleValue());
     }
     
-    private static Image filter(Image input, double min, double max, int stripes, double stripeTolerance) {
+    public static Image filter(Image input, double min, double max, int stripes, double stripeTolerance) {
         return IJFFTBandPass.bandPass(input, min, max, stripes, stripeTolerance);
     }
 

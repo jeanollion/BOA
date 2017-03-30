@@ -23,8 +23,12 @@ import boa.gui.configuration.ConfigurationTreeModel;
 import boa.gui.configuration.TreeModelContainer;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import static configuration.parameters.Parameter.logger;
+import core.Processor;
 import dataStructure.configuration.MicroscopyField;
+import dataStructure.configuration.PreProcessingChain;
 import dataStructure.configuration.Structure;
+import dataStructure.containers.InputImages;
+import dataStructure.containers.InputImagesImpl;
 import dataStructure.objects.StructureObject;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
@@ -33,6 +37,7 @@ import javax.swing.AbstractAction;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import plugins.ParameterSetup;
+import plugins.Transformation;
 import utils.Utils;
 
 /**
@@ -315,5 +320,32 @@ public class ParameterUtils {
         }
         for (JMenuItem i : items) subMenu.add(i);
         return subMenu;
+    }
+
+    public static JMenuItem getTransformationTest(MicroscopyField position, int transfoIdx) {
+        JMenuItem item = new JMenuItem("Test Transformation");
+        item.setAction(new AbstractAction(item.getActionCommand()) {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                InputImagesImpl images = position.getInputImages();
+                PreProcessingChain ppc = position.getPreProcessingChain();
+                int idx = 0;
+                List<TransformationPluginParameter<Transformation>> transList = ppc.getTransformations(false);
+                for (int i = 0; i<transfoIdx; ++i) {
+                    TransformationPluginParameter<Transformation> tpp = transList.get(i);
+                    if (tpp.isActivated()) {
+                        Transformation transfo = tpp.instanciatePlugin();
+                        logger.debug("adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}, isConfigured?: {}", transfo, transfo.getClass(), position.getName(), tpp.getInputChannel(), tpp.getOutputChannels(), transfo.isConfigured(images.getChannelNumber(), images.getTimePointNumber()));
+                        transfo.computeConfigurationData(tpp.getInputChannel(), images);
+                        tpp.setConfigurationData(transfo.getConfigurationData());
+                        images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
+                    }
+                }
+                ..getImages and show
+                .. add current transformation 
+                .. getImages and show
+            }
+        });
+        return item;
     }
 }

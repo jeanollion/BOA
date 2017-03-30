@@ -53,6 +53,7 @@ import plugins.ParameterSetup;
 import plugins.Segmenter;
 import plugins.SegmenterSplitAndMerge;
 import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
+import plugins.plugins.preFilter.BandPass;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import processing.Filters;
@@ -399,13 +400,18 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
 
     @Override public void test(Parameter p, Image input, int structureIdx, StructureObjectProcessing parent) {
         if (p==splitThreshold) {
-            logger.debug("test split threshold");
+            ProcessingVariables pv = initializeVariables(input);
+            Image hess = pv.getHessian();
+            hess = ImageOperations.divide(hess, input, null);
+            ImageWindowManagerFactory.showImage(hess.setName("Split map"));
+            ObjectPopulation pop = runSegmenter(input, structureIdx, parent);
+            ImageWindowManagerFactory.showImage(pop.getLabelMap().setName("splitThreshold: "+splitThreshold.getValue().doubleValue()));
         } else if (p==dogScale) {
-            logger.debug("dogScale");
+            //ImageWindowManagerFactory.showImage(BandPass.filter(input, 0, dogScale.getValue().doubleValue(), 0, 0).setName("DoG scale: "+dogScale.getValue().doubleValue()));
         }
     }
     
-    private  static class ProcessingVariables {
+    private static class ProcessingVariables {
         Image hessian;
         final Image rawIntensityMap;
         Image intensityMap;
@@ -424,6 +430,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         public Image getIntensityMap() {
             if (intensityMap == null) {
                 ImageFloat dog = ImageFeatures.differenceOfGaussians(rawIntensityMap, 0, dogScale, 1, false).setName("DoG");
+                //Image dog = BandPass.filter(rawIntensityMap, 0, dogScale, 0, 0);
                 intensityMap= Filters.median(dog, dog, Filters.getNeighborhood(smoothScale, smoothScale, dog)).setName("DoG+Smoothed");
             }
             return intensityMap;

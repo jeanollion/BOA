@@ -17,10 +17,19 @@
  */
 package configuration.parameters;
 
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import static configuration.parameters.Parameter.logger;
+import configuration.parameters.ui.ChoiceParameterUI;
 import dataStructure.configuration.Experiment;
+import dataStructure.configuration.MicroscopyField;
+import dataStructure.objects.StructureObject;
 import de.caluga.morphium.annotations.lifecycle.Lifecycle;
+import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import javax.swing.AbstractAction;
+import javax.swing.JMenuItem;
 import plugins.Transformation;
 import plugins.Transformation.SelectionMode;
 import plugins.TransformationTimeIndependent;
@@ -132,5 +141,17 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         TransformationPluginParameter res = new TransformationPluginParameter(name, getPluginType(), allowNoSelection);
         res.setContentFrom(this);
         return res;
+    }
+    @Override
+    public ChoiceParameterUI getUI() {
+        ChoiceParameterUI ui = super.getUI();
+        if (super.isOnePluginSet()) {
+            MicroscopyField f = ParameterUtils.getFirstParameterFromParents(MicroscopyField.class, this, false);
+            if (f!=null) {
+                int idx = this.getParent().getIndex(this);
+                ui.addActions(ParameterUtils.getTransformationTest(f, idx));
+            }            
+        }
+        return ui;
     }
 }

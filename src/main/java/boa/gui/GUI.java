@@ -176,7 +176,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         ButtonGroup dbGroup = new ButtonGroup();
         dbGroup.add(this.localFileSystemDatabaseRadioButton);
         dbGroup.add(this.mongoDBDatabaseRadioButton);
-        String dbType = PropertyUtils.get(PropertyUtils.DATABASE_TYPE, MasterDAOFactory.DAOType.Morphium.toString());
+        String dbType = PropertyUtils.get(PropertyUtils.DATABASE_TYPE, MasterDAOFactory.DAOType.DBMap.toString());
         if (dbType.equals(MasterDAOFactory.DAOType.Morphium.toString())) {
             mongoDBDatabaseRadioButton.setSelected(true);
             MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.Morphium);
