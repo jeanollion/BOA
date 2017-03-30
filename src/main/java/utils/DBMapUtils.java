@@ -53,4 +53,9 @@ public class DBMapUtils {
         return db.getAll().keySet(); // v1
         //return db.getAllNames(); //v3
     }
+    public static void deleteDBFile(String path) {
+        new File(path).delete();
+        new File(path+".p").delete(); // v1
+        new File(path+".t").delete(); // v1 
+    }
 }

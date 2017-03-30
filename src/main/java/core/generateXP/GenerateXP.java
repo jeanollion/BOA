@@ -107,7 +107,7 @@ public class GenerateXP {
         
         String dbName = "boa_fluo170120_wt";
         String inputDir = "/data/Images/Fluo/film170120/me120rc2-laser1-lbiptg-20012017/";
-        String outputDir = "/data/Images/Fluo/film170120/Output";
+        String outputDir = "/data/Images/Fluo/film170120_test/Output";
         boolean flip = false; 
         boolean fluo = true;
         importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD;

@@ -876,7 +876,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (this.attributes==null) attributes = new HashMap<>();
         return attributes;
     }
-
+    public void setMeasurements(Measurements m) {
+        this.measurements=m;
+        this.measurementsId=m.id;
+    }
     public Measurements getMeasurements() {
         if (measurements==null) {
             synchronized(this) {

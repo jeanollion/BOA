@@ -42,6 +42,7 @@ import static utils.DBMapUtils.createFileDB;
 import static utils.DBMapUtils.getEntrySet;
 import static utils.DBMapUtils.getValues;
 import utils.HashMapGetCreate;
+import utils.JSONUtils;
 import utils.Pair;
 import utils.Utils;
 
@@ -129,14 +130,14 @@ public class DBMapObjectDAO implements ObjectDAO {
                 
                 for (Entry<String, String> e : getEntrySet(dbm)) {
                     if (!alreadyInCache.contains(e.getKey())) {
-                        StructureObject o = this.mDAO.unmarshall(StructureObject.class, e.getValue());
+                        StructureObject o = JSONUtils.parse(StructureObject.class, e.getValue());
                         o.dao=this;
                         objectMap.put(o.id, o);
                     }
                 }
             } else {
                 for (String s : getValues(dbm)) {
-                    StructureObject o = this.mDAO.unmarshall(StructureObject.class, s);
+                    StructureObject o = JSONUtils.parse(StructureObject.class, s);
                     o.dao=this;
                     objectMap.put(o.id, o);
                 }
@@ -286,8 +287,7 @@ public class DBMapObjectDAO implements ObjectDAO {
                 dbS.remove(structureIdx).close();
                 dbMaps.entrySet().removeIf(k -> k.getKey().value==structureIdx);
             }
-            File f = new File(getDBFile(structureIdx));
-            f.delete();
+            DBMapUtils.deleteDBFile(getDBFile(structureIdx));
         }
         
     }
@@ -430,12 +430,13 @@ public class DBMapObjectDAO implements ObjectDAO {
             object.getNext();
         }
         cache.getAndCreateIfNecessary(key).put(object.getId(), object);
-        getDBMap(key).put(object.getId().toHexString(), mDAO.marshall(object));
+        getDBMap(key).put(object.getId().toHexString(), JSONUtils.serialize(object));
         getDB(object.getStructureIdx()).commit();
     }
     protected void store(Collection<StructureObject> objects, boolean updateTrackAttributes, boolean commit) {
         //logger.debug("storing: {} commit: {}", objects.size(), commit);
         List<StructureObject> upserMeas = new ArrayList<>(objects.size());
+        for (StructureObject o : objects) o.dao=this;
         Map<Pair<ObjectId, Integer>, List<StructureObject>> splitByPTH = splitByParentTrackHeadIdAndStructureIdx(objects);
         //logger.debug("storing: {} under #keys: {} commit: {}", objects.size(), splitByPTH.size(), commit);
         for (Pair<ObjectId, Integer> key : splitByPTH.keySet()) {
@@ -444,6 +445,7 @@ public class DBMapObjectDAO implements ObjectDAO {
             Map<ObjectId, StructureObject> cacheMap = cache.getAndCreateIfNecessary(key);
             HTreeMap<String, String> dbMap = getDBMap(key);
             for (StructureObject object : toStore) {
+                
                 object.updateObjectContainer();
                 if (updateTrackAttributes) {
                     object.getParentTrackHeadId();
@@ -453,7 +455,7 @@ public class DBMapObjectDAO implements ObjectDAO {
                 }
                 if (object.hasMeasurementModifications()) upserMeas.add(object);
                 cacheMap.put(object.getId(), object);
-                dbMap.put(object.getId().toHexString(), mDAO.marshall(object));
+                dbMap.put(object.getId().toHexString(),JSONUtils.serialize(object));
             }
             if (commit) this.getDB(key.value).commit();            
         }
@@ -542,7 +544,7 @@ public class DBMapObjectDAO implements ObjectDAO {
             Pair<DB, HTreeMap<String, String>> mDB = getMeasurementDB(i);
             for (StructureObject o : bySIdx.get(i)) {
                 o.getMeasurements().updateObjectProperties(o);
-                mDB.value.put(o.getId().toHexString(), mDAO.marshall(o.getMeasurements()));
+                mDB.value.put(o.getId().toHexString(), JSONUtils.serialize(o.getMeasurements()));
                 o.getMeasurements().modifications=false;
             }
             mDB.key.commit();
@@ -553,7 +555,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     public void upsertMeasurement(StructureObject o) {
         o.getMeasurements().updateObjectProperties(o);
         Pair<DB, HTreeMap<String, String>> mDB = getMeasurementDB(o.getStructureIdx());
-        mDB.value.put(o.getId().toHexString(), mDAO.marshall(o.getMeasurements()));
+        mDB.value.put(o.getId().toHexString(), JSONUtils.serialize(o.getMeasurements()));
         mDB.key.commit();
         o.getMeasurements().modifications=false;
     }
@@ -563,7 +565,7 @@ public class DBMapObjectDAO implements ObjectDAO {
         Pair<DB, HTreeMap<String, String>> mDB = getMeasurementDB(structureIdx);
         List<Measurements> res = new ArrayList<>();
         for (String s : getValues(mDB.value)) {
-            Measurements m = this.mDAO.unmarshall(Measurements.class, s);
+            Measurements m = JSONUtils.parse(Measurements.class, s);
             res.add(m);
         }
         return res;
@@ -572,11 +574,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     @Override
     public void deleteAllMeasurements() {
         closeAllMeasurementFiles(false);
-        for (int s = 0; s<getExperiment().getStructureCount(); ++s) {
-            String d = this.getMeasurementDBFile(s);
-            File f = new File(d);
-            f.delete();
-        }
+        for (int s = 0; s<getExperiment().getStructureCount(); ++s) DBMapUtils.deleteDBFile(getMeasurementDBFile(s));
     }
     
     private synchronized void closeAllMeasurementFiles(boolean commit) {
@@ -589,7 +587,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     
     public static Map<Pair<ObjectId, Integer>, List<StructureObject>> splitByParentTrackHeadIdAndStructureIdx(Collection<StructureObject> list) {
         if (list.isEmpty()) return Collections.EMPTY_MAP;
-        return list.stream().collect(Collectors.groupingBy(o -> new Pair(o.isRoot()? null : o.getParent().getTrackHeadId(), o.getStructureIdx())));
+        return list.stream().collect(Collectors.groupingBy(o -> new Pair(o.isRoot()? null : o.getParentTrackHeadId(), o.getStructureIdx())));
     }
 
 }

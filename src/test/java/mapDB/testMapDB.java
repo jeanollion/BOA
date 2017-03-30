@@ -42,8 +42,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.DBMapUtils;
 import static utils.MorphiumUtils.createOfflineMorphium;
-import static utils.MorphiumUtils.marshall;
-import static utils.MorphiumUtils.unmarshall;
+import static utils.JSONUtils.marshall;
+import static utils.JSONUtils.unmarshall;
 import utils.Utils;
 
 /**

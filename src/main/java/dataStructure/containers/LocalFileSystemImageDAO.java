@@ -30,7 +30,13 @@ import image.ImageInteger;
 import image.ImageReader;
 import image.ImageWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
+import java.io.InputStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import utils.FileIO;
 import utils.Utils;
 
 /**
@@ -43,7 +49,17 @@ public class LocalFileSystemImageDAO implements ImageDAO {
     public LocalFileSystemImageDAO(String localDirectory) {
         this.directory=localDirectory;
     }
-    
+    @Override
+    public InputStream openStream(int channelImageIdx, int timePoint, String microscopyFieldName) {
+        String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName, directory);
+        File f = new File(path);
+        try {
+            return new FileInputStream(f);
+        } catch (FileNotFoundException ex) {
+            logger.trace("Opening pre-processed image:  channel: {} timePoint: {} fieldName: {}", channelImageIdx, timePoint, microscopyFieldName);
+        }
+        return null;
+    }
     public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName) {
         String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName, directory);
         File f = new File(path);
@@ -97,6 +113,16 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         logger.trace("writing preprocessed image to path: {}", path);
         //if (f.exists()) f.delete();
         ImageWriter.writeToFile(image, path, ImageFormat.TIF);
+    }
+    
+    public void writePreProcessedImage(InputStream image, int channelImageIdx, int timePoint, String microscopyFieldName) {
+        String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName, directory);
+        File f = new File(path);
+        f.delete();
+        f.getParentFile().mkdirs();
+        logger.trace("writing preprocessed image to path: {}", path);
+        //if (f.exists()) f.delete();
+        FileIO.writeFile(image, path);
     }
 
     public ImageInteger openMask(StructureObject object) {

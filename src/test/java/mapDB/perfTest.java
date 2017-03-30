@@ -17,8 +17,8 @@
  */
 package mapDB;
 
-import static core.generateXP.DbConverter.copy;
-import static core.generateXP.DbConverter.logger;
+import static core.DbConverter.copy;
+import static core.DbConverter.logger;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
 import dataStructure.objects.ObjectDAO;

@@ -29,6 +29,7 @@ import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
 import org.mapdb.Serializer;
 import utils.DBMapUtils;
+import utils.JSONUtils;
 
 /**
  *
@@ -73,7 +74,7 @@ public class DBMapSelectionDAO implements SelectionDAO {
         idCache.clear();
         if (db.isClosed()) makeDB();
         for (String s : DBMapUtils.getValues(dbMap)) {
-            Selection sel = mDAO.unmarshall(Selection.class, s);
+            Selection sel = JSONUtils.parse(Selection.class, s);
             idCache.put(sel.getName(), sel);
         }
     }
@@ -89,7 +90,7 @@ public class DBMapSelectionDAO implements SelectionDAO {
     public void store(Selection s) {
         idCache.put(s.getName(), s);
         if (db.isClosed()) makeDB();
-        this.dbMap.put(s.getName(), mDAO.marshall(s));
+        this.dbMap.put(s.getName(), JSONUtils.serialize(s));
         db.commit();
     }
 
@@ -109,9 +110,10 @@ public class DBMapSelectionDAO implements SelectionDAO {
     @Override
     public void deleteAllObjects() {
         idCache.clear();
-        if (db.isClosed()) makeDB();
-        dbMap.clear();
-        db.commit();
+        db.close();
+        db=null;
+        dbMap=null;
+        DBMapUtils.deleteDBFile(getSelectionFile());
     }
     public void compact(boolean commit) {
         if (db.isClosed()) makeDB();

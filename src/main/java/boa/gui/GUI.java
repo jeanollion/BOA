@@ -43,6 +43,7 @@ import core.PythonGateway;
 import core.Task;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Structure;
+import dataStructure.objects.DBMapMasterDAO;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
 import dataStructure.objects.MorphiumObjectDAO;
@@ -106,6 +107,8 @@ import plugins.ObjectSplitter;
 import plugins.PluginFactory;
 import static plugins.PluginFactory.checkClass;
 import utils.CommandExecuter;
+import utils.FileIO.ZipWriter;
+import utils.ImportExportJSON;
 import utils.MorphiumUtils;
 import utils.Pair;
 import utils.Utils;
@@ -591,7 +594,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         }
         return res;
     }
-    public List<String> getSelectedMicroscopyFieldNames(boolean returnAllIfNoneSelected) {
+    public List<String> getSelectedPositions(boolean returnAllIfNoneSelected) {
         if (returnAllIfNoneSelected && microscopyFieldList.getSelectedIndex()<0) return new ArrayList<String>(Arrays.asList(db.getExperiment().getPositionsAsString()));
         else return microscopyFieldList.getSelectedValuesList();
     }
@@ -862,6 +865,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         importOptionsSubMenu = new javax.swing.JMenu();
         eraseCollectionCheckbox = new javax.swing.JCheckBoxMenuItem();
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
+        localDBMenu = new javax.swing.JMenu();
+        compactLocalDBMenuItem = new javax.swing.JMenuItem();
         miscMenu = new javax.swing.JMenu();
         closeAllWindowsMenuItem = new javax.swing.JMenuItem();
 
@@ -1471,6 +1476,18 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
         optionMenu.add(mongoDBImportExportMenu);
 
+        localDBMenu.setText("Local DataBase");
+
+        compactLocalDBMenuItem.setText("Compact");
+        compactLocalDBMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                compactLocalDBMenuItemActionPerformed(evt);
+            }
+        });
+        localDBMenu.add(compactLocalDBMenuItem);
+
+        optionMenu.add(localDBMenu);
+
         jMenuBar1.add(optionMenu);
 
         miscMenu.setText("Misc");
@@ -1526,8 +1543,19 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         String host = this.hostName.getText();
         if (this.mongoDBDatabaseRadioButton.isSelected() && host==null || host.length()==0) host = "localhost";
         if (this.localFileSystemDatabaseRadioButton.isSelected()) {
+            if (xpName==null) return null;
             File f = this.dbFiles.get(xpName);
-            if (f!=null) host = f.getParent();
+            if (f!=null) {
+                host = f.isFile() ? f.getParent() : f.getAbsolutePath();
+                logger.debug("xp: {} fir {}", xpName, host, f.getAbsolutePath());
+            }
+            else {
+                f = new File(host+File.separator+xpName);
+                f.mkdirs();
+                logger.debug("create dir for xp: {} -> {} (is Dir: {})", xpName, f.getAbsolutePath(), f.isDirectory());
+                dbFiles.put(xpName, f);
+                host = f.getAbsolutePath();
+            }
         }
         return host;
     }
@@ -1732,12 +1760,19 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
         String dir = promptDir("Choose output directory", defDir);
         if (dir==null) return;
-        List<String> xpToExport = this.getSelectedExperiments();
+        List<String> xpToExport = getSelectedExperiments();
+        unsetXP();
         int count=0;
         for (String xp : xpToExport) {
             logger.info("Exporting whole XP : {}/{}", ++count, xpToExport.size());
-            CommandExecuter.dumpDB(getCurrentHostNameOrDir(), xp, dir, jsonFormatMenuItem.isSelected());
+            //CommandExecuter.dumpDB(getCurrentHostNameOrDir(), xp, dir, jsonFormatMenuItem.isSelected());
+            MasterDAO mDAO = MasterDAOFactory.createDAO(xp, this.getHostNameOrDir(xp));
+            ZipWriter w = new ZipWriter(dir+File.separator+mDAO.getDBName()+".zip");
+            ImportExportJSON.exportConfig(w, mDAO);
+            ImportExportJSON.exportPositions(w, mDAO, true);
+            w.close();
         }
+        logger.info("export done!");
         PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
     }//GEN-LAST:event_exportWholeXPMenuItemActionPerformed
 
@@ -1746,6 +1781,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
         String dir = promptDir("Choose output directory", defDir);
         if (dir==null) return;
+        List<String> sel = getSelectedPositions(false);
+        if (sel.isEmpty()) return;
+        ZipWriter w = new ZipWriter(dir+File.separator+db.getDBName()+".zip");
+        ImportExportJSON.exportPositions(w, db, true, sel);
+        w.close();
+        /*
         int[] sel  = getSelectedMicroscopyFields();
         String[] fNames = db.getExperiment().getPositionsAsString();
         String dbName = db.getDBName();
@@ -1753,9 +1794,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         int count = 0;
         for (int f : sel) {
             String cName = MorphiumObjectDAO.getCollectionName(fNames[f]);
-            logger.info("Exporting: {}/{}", ++count, sel.length);
-            CommandExecuter.dump(hostname, dbName, cName, dir, jsonFormatMenuItem.isSelected());
-        }
+            CommandExecuter.dump(hostname, dbName, cName, dir, jsonFormatMenuItem.isSelected()); 
+        }*/
         PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
     }//GEN-LAST:event_exportSelectedFieldsMenuItemActionPerformed
 
@@ -1764,13 +1804,16 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
         String dir = promptDir("Choose output directory", defDir);
         if (dir==null) return;
-        CommandExecuter.dump(getCurrentHostNameOrDir(), db.getDBName(), "Experiment", dir, jsonFormatMenuItem.isSelected());
+        //CommandExecuter.dump(getCurrentHostNameOrDir(), db.getDBName(), "Experiment", dir, jsonFormatMenuItem.isSelected());
+        ZipWriter w = new ZipWriter(dir+File.separator+db.getDBName()+".zip");
+        ImportExportJSON.exportConfig(w, db);
+        w.close();
         PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
     }//GEN-LAST:event_exportXPConfigMenuItemActionPerformed
 
     private void importFieldsToCurrentExperimentMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importFieldsToCurrentExperimentMenuItemActionPerformed
         if (!checkConnection()) return;
-        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
+        /*String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
         File[] selectedFiles = Utils.chooseFiles("Select directory containing exported files OR directly exported files", defDir, FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, this);
         if (selectedFiles==null || selectedFiles.length==0) return;
         Map<String, String> fields = CommandExecuter.getObjectDumpedCollections(selectedFiles);
@@ -1820,6 +1863,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         
         File f = Utils.getOneDir(selectedFiles);
         if (f!=null) PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, f.getAbsolutePath());
+        */
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
+        File f = Utils.chooseFile("Select exported archive", defDir, FileChooser.FileChooserOption.FILES_ONLY, jLabel1);
+        if (f==null) return;
+        ImportExportJSON.importFromZip(f.getAbsolutePath(), db, false, false, true);
+        db.updateExperiment();
+        populateActionMicroscopyFieldList();
+        loadObjectTrees();
+        PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, f.getAbsolutePath());
     }//GEN-LAST:event_importFieldsToCurrentExperimentMenuItemActionPerformed
 
     private void importConfigurationForSelectedPositionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importConfigurationForSelectedPositionsMenuItemActionPerformed
@@ -1837,6 +1889,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         String dir = promptDir("Select folder containing experiment folders", defDir);
         if (dir==null) return;
         File directory = new File(dir);
+        List<String> dbNames = getDBNames();
+        /*
         // whole xp are located in sub directories
         FileFilter filter = new FileFilter() {
             @Override public boolean accept(File file) {
@@ -1850,7 +1904,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         };
         List<File> subDirs = new ArrayList<File>(Arrays.asList(directory.listFiles(filter)));
         if (filter.accept(directory)) subDirs.add(directory);
-        List<String> dbNames = getDBNames();
+        
+        
+        
         boolean someDBAlreadyExist = false;
         for (File f : subDirs) {
             if (dbNames.contains(DBUtil.addPrefix(f.getName(), DBprefix))) {
@@ -1858,6 +1914,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 break;
             }
         }
+        
         boolean ignoreExisting=false;
         if (someDBAlreadyExist) {
             Object[] options = {"Override existig experiments (data loss)", "Ignore existing experiments"};
@@ -1876,11 +1933,32 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         }
         populateExperimentList();
         PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
+        */
+        Map<String, File> allXps = ImportExportJSON.listExperiments(directory.getAbsolutePath());
+        Set<String> xpNotPresent = new HashSet<>(allXps.keySet());
+        xpNotPresent.removeAll(dbNames);
+        Set<String> xpsToImport = allXps.keySet();
+        if (xpNotPresent.size()!=allXps.size()) {
+            List<String> xpPresent = new ArrayList<>(allXps.keySet());
+            xpPresent.retainAll(dbNames);
+            Object[] options = {"Override existig experiments (data loss)", "Ignore existing experiments"};
+            int n = JOptionPane.showOptionDialog(this, "Some experiments found in the directory are already present: "+Utils.toStringList(xpPresent), "Import Whole Experiment", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+            if (n==1) xpsToImport = xpNotPresent;
+        }
+        unsetXP();
+        for (String xp : xpsToImport) {
+            File zip = allXps.get(xp);
+            MasterDAO mDAO = MasterDAOFactory.createDAO(xp, getHostNameOrDir(xp));
+            mDAO.deleteAllObjects();
+            ImportExportJSON.importFromZip(zip.getAbsolutePath(), mDAO, true, true, true);
+        }
+        populateExperimentList();
+        PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
     }//GEN-LAST:event_importNewExperimentMenuItemActionPerformed
 
     private void importConfigToCurrentExperimentMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importConfigToCurrentExperimentMenuItemActionPerformed
         if (!checkConnection()) return;
-        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
+        /*String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
         File outputFile = Utils.chooseFile("Select Experiment.bson of Experiment.json file (WARNING: current configuration will be lost)", defDir, FileChooser.FileChooserOption.FILE_OR_DIRECTORY, this);
         if (outputFile!=null && outputFile.getName().equals("Experiment.bson") || outputFile.getName().equals("Experiment.json")) {
             CommandExecuter.restore(getCurrentHostNameOrDir(), db.getDBName(), "Experiment", outputFile.getAbsolutePath(), true);
@@ -1888,8 +1966,15 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             unsetXP();
             setDBConnection(dbName, getCurrentHostNameOrDir());
             PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, outputFile.getAbsolutePath());
-        }
-        
+        }*/
+        String outDir = db.getExperiment().getOutputImageDirectory();
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
+        File f = Utils.chooseFile("Select exported archive", defDir, FileChooser.FileChooserOption.FILES_ONLY, jLabel1);
+        if (f==null) return;
+        ImportExportJSON.importFromZip(f.getAbsolutePath(), db, true, false, false);
+        db.getExperiment().setOutputDirectory(outDir);
+        db.updateExperiment();
+        PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, f.getAbsolutePath());
     }//GEN-LAST:event_importConfigToCurrentExperimentMenuItemActionPerformed
 
     private void runSelectedActionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runSelectedActionsMenuItemActionPerformed
@@ -1953,7 +2038,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             String file = outputDir.getAbsolutePath()+File.separator+db.getDBName()+Utils.toStringArray(selectedStructures, "_", "", "_")+".xls";
             logger.info("measurements will be extracted to: {}", file);
             Map<Integer, String[]> keys = db.getExperiment().getAllMeasurementNamesByStructureIdx(MeasurementKeyObject.class, selectedStructures);
-            DataExtractor.extractMeasurementObjects(db, file, getSelectedMicroscopyFieldNames(true), keys);
+            DataExtractor.extractMeasurementObjects(db, file, getSelectedPositions(true), keys);
             if (outputDir!=null) {
                 PropertyUtils.set(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR+"_"+db.getDBName(), outputDir.getAbsolutePath());
                 PropertyUtils.set(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR, outputDir.getAbsolutePath());
@@ -2240,6 +2325,17 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         hostName.setText(PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH, ""));
         populateExperimentList();
     }//GEN-LAST:event_localFileSystemDatabaseRadioButtonActionPerformed
+
+    private void compactLocalDBMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_compactLocalDBMenuItemActionPerformed
+        if (this.localFileSystemDatabaseRadioButton.isSelected()) {
+            unsetXP();
+            for (String xp : getSelectedExperiments()) {
+                DBMapMasterDAO dao = (DBMapMasterDAO)MasterDAOFactory.createDAO(xp, this.getHostNameOrDir(xp));
+                dao.compact();
+                dao.clearCache();
+            }
+        }
+    }//GEN-LAST:event_compactLocalDBMenuItemActionPerformed
     private void updateMongoDBBinActions() {
         boolean enableDump = false, enableRestore = false;
         String mPath = PropertyUtils.get(PropertyUtils.MONGO_BIN_PATH);
@@ -2351,6 +2447,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JScrollPane actionStructureJSP;
     private javax.swing.JRadioButtonMenuItem bsonFormatMenuItem;
     private javax.swing.JMenuItem closeAllWindowsMenuItem;
+    private javax.swing.JMenuItem compactLocalDBMenuItem;
     private javax.swing.JScrollPane configurationJSP;
     private javax.swing.JPanel configurationPanel;
     private javax.swing.JButton createSelectionButton;
@@ -2387,6 +2484,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JRadioButtonMenuItem jsonFormatMenuItem;
     private javax.swing.JButton linkObjectsButton;
+    private javax.swing.JMenu localDBMenu;
     private javax.swing.JRadioButtonMenuItem localFileSystemDatabaseRadioButton;
     private javax.swing.JButton manualSegmentButton;
     private javax.swing.JButton mergeObjectsButton;

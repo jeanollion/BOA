@@ -17,10 +17,6 @@
  */
 package dataStructure.objects;
 
-import com.mongodb.DBObject;
-import static com.mongodb.util.JSON.parse;
-import static com.mongodb.util.JSON.serialize;
-import configuration.parameters.PostLoadable;
 import dataStructure.configuration.Experiment;
 import java.io.File;
 import java.util.HashMap;
@@ -30,6 +26,7 @@ import org.mapdb.HTreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.DBMapUtils;
+import utils.JSONUtils;
 import utils.MorphiumUtils;
 import utils.Utils;
 
@@ -62,9 +59,10 @@ public class DBMapMasterDAO implements MasterDAO {
         String outputPath = getExperiment()!=null ? getExperiment().getOutputImageDirectory() : null;
         clearCache();
         Utils.deleteDirectory(outputPath);
-        new File(this.getConfigFile(dbName)).delete();
+        DBMapUtils.deleteDBFile(getConfigFile(dbName));
         File f = new File(configDir).getParentFile();
-        f.delete(); // deletes only if void. 
+        logger.debug("deleting dir: {}... (empty? {})", f.getAbsolutePath(), f.listFiles().length==0);
+        f.delete(); // deletes directory only if void. 
     }
     
     private void makeXPDB() {
@@ -73,16 +71,6 @@ public class DBMapMasterDAO implements MasterDAO {
     }
     private String getConfigFile(String dbName) {
         return configDir + File.separator + dbName + "_config.db";
-    }
-    protected String marshall(Object o) {
-        DBObject dbo = MorphiumUtils.marshall(o);
-        return serialize(dbo);
-    }
-    protected <E> E unmarshall(Class<E> clazz, String s) {
-        DBObject dbo = (DBObject)parse(s);
-        E res= MorphiumUtils.unmarshall(clazz, dbo);
-        if (res instanceof PostLoadable) ((PostLoadable)res).postLoad();
-        return res;
     }
     
     @Override
@@ -108,6 +96,7 @@ public class DBMapMasterDAO implements MasterDAO {
 
     @Override
     public void deleteAllObjects() {
+        if (getExperiment()==null) return;
         for (String s : getExperiment().getPositionsAsString()) {
             getDao(s).deleteAllObjects(); // also deletes measurements
         }
@@ -143,7 +132,7 @@ public class DBMapMasterDAO implements MasterDAO {
         for (String s : getExperiment().getPositionsAsString()) {
             getDao(s).compactDBs(true);
         }
-        getSelectionDAO().compact(true);
+        if (getSelectionDAO()!=null) getSelectionDAO().compact(true);
         if (!xpDB.isClosed()) xpDB.compact();
     }
 
@@ -153,7 +142,7 @@ public class DBMapMasterDAO implements MasterDAO {
             if (xpDB.isClosed()) makeXPDB();
             if (xpMap.isEmpty()) return null;
             String xpString = xpMap.get("config");
-            xp = this.unmarshall(Experiment.class, xpString);
+            xp = JSONUtils.parse(Experiment.class, xpString);
         }
         return xp;
     }
@@ -162,7 +151,7 @@ public class DBMapMasterDAO implements MasterDAO {
     public void updateExperiment() {
         if (xpDB.isClosed()) makeXPDB();
         xpMap.clear();
-        if (xp!=null) xpMap.put("config", marshall(xp));
+        if (xp!=null) xpMap.put("config", JSONUtils.serialize(xp));
         xpDB.commit();
     }
 

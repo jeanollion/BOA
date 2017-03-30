@@ -23,6 +23,7 @@ import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
 import image.ImageInteger;
+import java.io.InputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,9 +32,11 @@ import org.slf4j.LoggerFactory;
  * @author jollion
  */
 public interface ImageDAO {
+    public InputStream openStream(int channelImageIdx, int timePoint, String microscopyFieldName);
     public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName);
     public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName, BoundingBox bounds);
     public BlankMask getPreProcessedImageProperties(String microscopyFieldName);
     public void writePreProcessedImage(Image image, int channelImageIdx, int timePoint, String microscopyFieldName);
+    public void writePreProcessedImage(InputStream image, int channelImageIdx, int timePoint, String microscopyFieldName);
     public void deletePreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName);
 }
