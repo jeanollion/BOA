@@ -99,7 +99,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         if (preProcessingChain.trimFramesEnd.getSelectedTimePoint()==0) preProcessingChain.trimFramesEnd.setTimePoint(images.getFrameNumber()-1);
         return preProcessingChain.trimFramesEnd.getSelectedTimePoint();
     }
-    private int getStartTrimFrame() {
+    public int getStartTrimFrame() {
         if (preProcessingChain.trimFramesEnd.getSelectedTimePoint()==0) preProcessingChain.trimFramesEnd.setTimePoint(images.getFrameNumber()-1);
         if (preProcessingChain.trimFramesStart.getSelectedTimePoint()>preProcessingChain.trimFramesEnd.getSelectedTimePoint()) preProcessingChain.trimFramesStart.setTimePoint(preProcessingChain.trimFramesEnd.getSelectedTimePoint());
         return preProcessingChain.trimFramesStart.getSelectedTimePoint();
@@ -113,14 +113,15 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         return images.singleFrame(channelIdx);
     }
     public InputImagesImpl getInputImages() {
-        if (inputImages==null) {
+        if (inputImages==null || inputImages.getTimePointNumber()!=getTimePointNumber(false)) {
+            logger.debug("generate input images with {} frames (old: {}) ", getTimePointNumber(false), inputImages!=null?inputImages.getTimePointNumber() : "null");
             ImageDAO dao = getExperiment().getImageDAO();
             if (dao==null || images==null) return null;
             int tpOff = getStartTrimFrame();
             int tpNp = getEndTrimFrame() - tpOff+1;
             InputImage[][] res = new InputImage[images.getChannelNumber()][];
             for (int c = 0; c<images.getChannelNumber(); ++c) {
-                res[c] = images.singleFrame(c) ? new InputImage[1] : new InputImage[images.getFrameNumber()];
+                res[c] = images.singleFrame(c) ? new InputImage[1] : new InputImage[tpNp-tpOff];
                 for (int t = 0; t<res[c].length; ++t) {
                     res[c][t] = new InputImage(c, t+tpOff, t, name, images, dao);
                 } 
@@ -259,12 +260,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     getExperiment().flushImages(true, true, name);
-                    int channels = getExperiment().getChannelImageCount();
-                    Image[][] imagesTC = new Image[1][channels];
-                    for (int channelIdx = 0; channelIdx<channels; ++channelIdx) {
-                        imagesTC[0][channelIdx] = getInputImages().getImage(channelIdx, defaultTimePoint.getSelectedTimePoint()).setName("Channel: "+channelIdx+" Frame: "+defaultTimePoint.getSelectedTimePoint());
-                        if (imagesTC[0][channelIdx]==null) return;
-                    }
+                    Image[][] imagesTC = getInputImages().getImagesTC(defaultTimePoint.getSelectedTimePoint(), defaultTimePoint.getSelectedTimePoint()+1);
                     ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Raw Image of Position: "+name+ " Frame: "+defaultTimePoint.getSelectedTimePoint(), imagesTC);
                 }
             }
@@ -276,19 +272,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     getExperiment().flushImages(true, true, name);
-                    int channels = getExperiment().getChannelImageCount();
-                    int frames = getTimePointNumber(false);
-                    Image[][] imagesTC = new Image[frames][channels];
-                    int start = getStartTrimFrame();
-                    for (int channelIdx = 0; channelIdx<channels; ++channelIdx) {
-                        for (int frame =  0; frame<frames; ++frame) {
-                            imagesTC[frame][channelIdx] = images.getImage(frame+start, channelIdx);
-                            if (imagesTC[frame][channelIdx]==null) {
-                                logger.error("Could not open image: channel: {} frame: {}", channelIdx, frame);
-                                return;
-                            }
-                        }
-                    }
+                    Image[][] imagesTC = getInputImages().getImagesTC();
                     ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Raw Image of Position: "+name, imagesTC);
                 }
             }

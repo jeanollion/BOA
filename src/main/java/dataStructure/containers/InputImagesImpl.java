@@ -21,6 +21,7 @@ import image.Image;
 import static image.Image.logger;
 import plugins.Transformation;
 import plugins.TransformationTimeIndependent;
+import utils.ArrayUtil;
 import utils.ThreadRunner;
 import utils.ThreadRunner.ThreadAction;
 import utils.ThreadRunner.ThreadAction2;
@@ -38,6 +39,15 @@ public class InputImagesImpl implements InputImages {
         this.imageCT = imageTC;
         this.defaultTimePoint= defaultTimePoint;
         for (int c = 0; c<imageTC.length; ++c) if (imageTC[c].length>frameNumber) frameNumber = imageTC[c].length;
+    }
+    
+    public InputImagesImpl duplicate() {
+        InputImage[][] imageCTDup = new InputImage[imageCT.length][];
+        for (int i = 0; i<imageCT.length; ++i) {
+            imageCTDup[i] = new InputImage[imageCT[i].length];
+            for (int j = 0; j<imageCT[i].length; ++j) imageCTDup[i][j] = imageCT[i][j].duplicate();
+        }
+        return new InputImagesImpl(imageCTDup, defaultTimePoint);
     }
     
     @Override public int getTimePointNumber() {return frameNumber;}
@@ -74,7 +84,30 @@ public class InputImagesImpl implements InputImages {
         if (imageCT[channelIdx].length==1) timePoint = 0;
         return imageCT[channelIdx][timePoint].getImage();
     }
-    
+    public Image[][] getImagesTC() {
+        return getImagesTC(0, this.getTimePointNumber());
+    }
+    public Image[][] getImagesTC(int frameMin, int frameMaxExcluded, int... channels) {
+        if (channels==null || channels.length==0) channels = ArrayUtil.generateIntegerArray(this.getChannelNumber());
+        if (frameMaxExcluded<frameMin) {
+            frameMin = 0;
+            frameMaxExcluded = getTimePointNumber();
+        } else if (frameMaxExcluded==frameMin) frameMaxExcluded+=1;
+        if (frameMaxExcluded>=this.getTimePointNumber()) frameMaxExcluded = this.getTimePointNumber();
+        Image[][] imagesTC = new Image[frameMaxExcluded-frameMin][channels.length];
+        int cIdx = 0;
+        for (int channelIdx : channels) {
+            for (int f = frameMin; f<frameMaxExcluded; ++f) {
+                imagesTC[f][cIdx] = getImage(channelIdx, f).setName("Channel: "+channelIdx+" Frame: "+f);
+                if (imagesTC[f][cIdx]==null) {
+                    logger.debug("could not open image: channel:{} frame:{}", channelIdx, f);
+                    return null;
+                }
+            }
+            ++cIdx;
+        }
+        return imagesTC;
+    }
     public void applyTranformationsSaveAndClose() {
         long tStart = System.currentTimeMillis();
         final int cCount = getChannelNumber();

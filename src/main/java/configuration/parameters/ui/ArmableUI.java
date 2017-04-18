@@ -21,6 +21,6 @@ package configuration.parameters.ui;
  *
  * @author jollion
  */
-public interface ArmableUI extends ParameterUI{
+public interface ArmableUI extends ParameterUI {
     public void refreshArming();
 }

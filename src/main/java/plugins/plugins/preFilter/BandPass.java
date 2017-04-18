@@ -38,7 +38,7 @@ import processing.neighborhood.EllipsoidalNeighborhood;
  * @author jollion
  */
 public class BandPass implements PreFilter, Filter {
-    NumberParameter min = new BoundedNumberParameter("Remove structures under size (pixels)", 1, 0, 1, null);
+    NumberParameter min = new BoundedNumberParameter("Remove structures under size (pixels)", 1, 0, 0, null);
     NumberParameter max = new BoundedNumberParameter("Remove structures over size (pixels)", 1, 100, 0, null); //TODO: conditional parameter that allow to automatically take in account z-anisotropy
     ChoiceParameter removeStripes = new ChoiceParameter("Remove Stripes", new String[]{"None", "Horizontal", "Vertical"}, "None", false);
     NumberParameter stripeTolerance = new BoundedNumberParameter("Stripes tolerance (%)", 1, 100, 0, 100);

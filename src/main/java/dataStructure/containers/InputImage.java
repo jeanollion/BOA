@@ -52,6 +52,15 @@ public class InputImage {
         transformationsToApply=new ArrayList<Transformation>();
     }
     
+    public InputImage duplicate() {
+        InputImage res = new InputImage(channelIdx, inputTimePoint, timePoint, microscopyFieldName, imageSources, dao);
+        if (image!=null) {
+            res.image = image.duplicate();
+            res.originalImageType=originalImageType.duplicate();
+        }
+        return res;
+    }
+    
     public void addTransformation(Transformation t) {
         transformationsToApply.add(t);
     }

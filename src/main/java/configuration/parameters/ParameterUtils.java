@@ -30,6 +30,7 @@ import dataStructure.configuration.Structure;
 import dataStructure.containers.InputImages;
 import dataStructure.containers.InputImagesImpl;
 import dataStructure.objects.StructureObject;
+import image.Image;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import plugins.ParameterSetup;
 import plugins.Transformation;
+import utils.ArrayUtil;
 import utils.Utils;
 
 /**
@@ -322,28 +324,47 @@ public class ParameterUtils {
         return subMenu;
     }
 
-    public static JMenuItem getTransformationTest(MicroscopyField position, int transfoIdx) {
-        JMenuItem item = new JMenuItem("Test Transformation");
+    public static JMenuItem getTransformationTest(String name, MicroscopyField position, int transfoIdx, boolean showAllSteps) {
+        JMenuItem item = new JMenuItem(name);
         item.setAction(new AbstractAction(item.getActionCommand()) {
             @Override
             public void actionPerformed(ActionEvent ae) {
-                InputImagesImpl images = position.getInputImages();
+                InputImagesImpl images = position.getInputImages().duplicate();
+                
                 PreProcessingChain ppc = position.getPreProcessingChain();
-                int idx = 0;
                 List<TransformationPluginParameter<Transformation>> transList = ppc.getTransformations(false);
-                for (int i = 0; i<transfoIdx; ++i) {
+                for (int i = 0; i<=transfoIdx; ++i) {
                     TransformationPluginParameter<Transformation> tpp = transList.get(i);
-                    if (tpp.isActivated()) {
+                    if (tpp.isActivated() || i==transfoIdx) {
+                        if ((i==0 && showAllSteps) || (i==transfoIdx && !showAllSteps)) { // show before
+                            int[] channels =null;
+                            if (!showAllSteps) {
+                                channels = tpp.getOutputChannels();
+                                if (channels==null) channels = new int[]{tpp.getInputChannel()};
+                            }
+                            Image[][] imagesTC = images.getImagesTC(0, position.getTimePointNumber(false), channels);
+                            ArrayUtil.apply(imagesTC, a -> ArrayUtil.apply(a, im -> im.duplicate()));
+                            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("before: "+tpp.getPluginName(), imagesTC);
+                        }
                         Transformation transfo = tpp.instanciatePlugin();
-                        logger.debug("adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}, isConfigured?: {}", transfo, transfo.getClass(), position.getName(), tpp.getInputChannel(), tpp.getOutputChannels(), transfo.isConfigured(images.getChannelNumber(), images.getTimePointNumber()));
+                        logger.debug("Test Transfo: adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}, isConfigured?: {}", transfo, transfo.getClass(), position.getName(), tpp.getInputChannel(), tpp.getOutputChannels(), transfo.isConfigured(images.getChannelNumber(), images.getTimePointNumber()));
                         transfo.computeConfigurationData(tpp.getInputChannel(), images);
                         tpp.setConfigurationData(transfo.getConfigurationData());
                         images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
+                        
+                        if (showAllSteps || i==transfoIdx) {
+                            int[] channels =null;
+                            if (!showAllSteps) {
+                                channels = tpp.getOutputChannels();
+                                if (channels==null) channels = new int[]{tpp.getInputChannel()};
+                            }
+                            Image[][] imagesTC = images.getImagesTC(0, position.getTimePointNumber(false), channels);
+                            if (i!=transfoIdx) ArrayUtil.apply(imagesTC, a -> ArrayUtil.apply(a, im -> im.duplicate()));
+                            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("after: "+tpp.getPluginName(), imagesTC);
+                        }
                     }
                 }
-                ..getImages and show
-                .. add current transformation 
-                .. getImages and show
+                
             }
         });
         return item;

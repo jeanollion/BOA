@@ -192,14 +192,14 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     
     @Override
     public ChoiceParameterUI getUI(){
-        ChoiceParameterUI ui =  new ChoiceParameterUI(this, false);
+        ChoiceParameterUI ui =  new ChoiceParameterUI(this, false, "Plugins");
         if (this.isOnePluginSet()) {
             // get structureIdx
             Structure s = ParameterUtils.getFirstParameterFromParents(Structure.class, this, false);
             if (s!=null) {
                 Plugin pl = this.instanciatePlugin();
                 if (pl instanceof ParameterSetup) {
-                    ui.addActions(ParameterUtils.getTestMenu("Test Parameters", (ParameterSetup)pl, pl.getParameters(), s.getIndex()));
+                    ui.addActions(ParameterUtils.getTestMenu("Test Parameters", (ParameterSetup)pl, pl.getParameters(), s.getIndex()), true);
                 }
             }
         }

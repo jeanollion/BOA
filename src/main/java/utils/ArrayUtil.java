@@ -412,4 +412,15 @@ public class ArrayUtil {
         for (int i = 0; i<res.length; ++i) res[i] = coll.get(i);
         return res;
     }
+    /**
+     * Apply function {@param func} to each element of array {@param array}
+     * @param <T> type 
+     * @param array
+     * @param func
+     * @return {@param array} for convinience
+     */
+    public static <T> T[] apply(T[] array, Function<T, T> func) {
+        for (int i = 0; i<array.length; ++i) array[i] = func.apply(array[i]);
+        return array;
+    }
 }

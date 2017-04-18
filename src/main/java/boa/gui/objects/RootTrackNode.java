@@ -262,12 +262,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     MicroscopyField f = generator.db.getExperiment().getPosition(fieldName);
-                    int channels = generator.db.getExperiment().getChannelImageCount();
-                    Image[][] imagesTC = new Image[1][channels];
-                    for (int channelIdx = 0; channelIdx<channels; ++channelIdx) {
-                        imagesTC[0][channelIdx] = f.getInputImages().getImage(channelIdx, f.getDefaultTimePoint()).setName("Channel: "+channelIdx+" Frame: "+f.getDefaultTimePoint());
-                        if (imagesTC[0][channelIdx]==null) return;
-                    }
+                    Image[][] imagesTC = f.getInputImages().getImagesTC(f.getDefaultTimePoint(), f.getDefaultTimePoint()+1);
                     ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Raw Image of Position: "+f.getName()+ " Frame: "+f.getDefaultTimePoint(), imagesTC);
                 }
             }
@@ -280,19 +275,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
                 public void actionPerformed(ActionEvent ae) {
                     MicroscopyField f = generator.db.getExperiment().getPosition(fieldName);
                     generator.db.getExperiment().flushImages(true, true, f.getName());
-                    int channels = generator.db.getExperiment().getChannelImageCount();
-                    InputImages in = f.getInputImages();
-                    int frames = in.getTimePointNumber();
-                    Image[][] imagesTC = new Image[frames][channels];
-                    for (int channelIdx = 0; channelIdx<channels; ++channelIdx) {
-                        for (int frame =  0; frame<frames; ++frame) {
-                            imagesTC[frame][channelIdx] = in.getImage(channelIdx, frame);
-                            if (imagesTC[frame][channelIdx]==null) {
-                                logger.error("Could not open image: channel: {} frame: {}", channelIdx, frame);
-                                return;
-                            }
-                        }
-                    }
+                    Image[][] imagesTC = f.getInputImages().getImagesTC();
                     ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Raw Image of Position: "+f.getName(), imagesTC);
                 }
             }

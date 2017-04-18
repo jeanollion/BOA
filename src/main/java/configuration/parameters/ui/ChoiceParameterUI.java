@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import javax.swing.AbstractAction;
+import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
 
@@ -47,6 +48,10 @@ public class ChoiceParameterUI implements ArmableUI {
     public static String NO_SELECTION="no selection";
     //double modulo;
     public ChoiceParameterUI(ChoosableParameter choice_, boolean limitChoice) {
+        this(choice_, limitChoice, null);
+    } 
+    
+    public ChoiceParameterUI(ChoosableParameter choice_, boolean limitChoice, String subMenuTitle) {
         this.choice = choice_;
         this.limitChoice=limitChoice;
         if (choice.isAllowNoSelection()) inc=1;
@@ -82,11 +87,15 @@ public class ChoiceParameterUI implements ArmableUI {
                 }
             );
         }
-        allActions = new ArrayList(Arrays.asList(actionChoice));
+        if (subMenuTitle!=null) {
+            JMenu subMenu = new JMenu(subMenuTitle);
+            for (JMenuItem a : actionChoice) subMenu.add(a);
+            allActions = new ArrayList(){{add(subMenu);}};
+        } else allActions = new ArrayList(Arrays.asList(actionChoice));
         refreshArming();
     }
-    public void addActions(JMenuItem action) {
-        if (this.actionChoice.length==this.allActions.size()) allActions.add(new JSeparator());
+    public void addActions(JMenuItem action, boolean addSeparator) {
+        if (addSeparator) allActions.add(new JSeparator());
         allActions.add(action);
     }
     public void updateUIFromParameter() {

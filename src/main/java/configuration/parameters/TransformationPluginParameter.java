@@ -149,7 +149,8 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
             MicroscopyField f = ParameterUtils.getFirstParameterFromParents(MicroscopyField.class, this, false);
             if (f!=null) {
                 int idx = this.getParent().getIndex(this);
-                ui.addActions(ParameterUtils.getTransformationTest(f, idx));
+                ui.addActions(ParameterUtils.getTransformationTest("Test Transformation", f, idx, false), true);
+                ui.addActions(ParameterUtils.getTransformationTest("Test Transformation (show all steps)", f, idx, true), false);
             }            
         }
         return ui;
