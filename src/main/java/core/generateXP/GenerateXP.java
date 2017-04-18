@@ -112,7 +112,6 @@ public class GenerateXP {
         boolean fluo = true;
         importMethod = Experiment.ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD;
         
-        
         /*String dbName = "boa_fluo170117_GammeMutTrack";
         String inputDir = "/data/Images/FastMutTrack/170117GammeMutTrack/input";
         String outputDir = "/data/Images/FastMutTrack/170117GammeMutTrack/output";
@@ -392,7 +391,6 @@ public class GenerateXP {
         xp.setImportImageMethod(importMethod);
         xp.getChannelImages().insert(new ChannelImage("RFP", "_REF"), new ChannelImage("YFP", ""));
         xp.setOutputDirectory(outputDir);
-        File f =  new File(outputDir); f.mkdirs(); //deleteDirectory(f);
         Structure mc = new Structure("Microchannel", -1, 0);
         Structure bacteria = new Structure("Bacteria", 0, 0).setAllowSplit(true);
         Structure mutation = new Structure("Mutation", 0, 1, 1);
@@ -452,7 +450,6 @@ public class GenerateXP {
         xp.setImportImageMethod(importMethod);
         xp.getChannelImages().insert(new ChannelImage("BF", "c1"));
         xp.setOutputDirectory(outputDir);
-        File f =  new File(outputDir); f.mkdirs(); //deleteDirectory(f);
         Structure mc = new Structure("Microchannel", -1, 0);
         Structure bacteria = new Structure("Bacteria", 0, 0).setAllowSplit(true);
         xp.getStructures().insert(mc, bacteria);

@@ -142,9 +142,38 @@ public class ImportExportJSON {
     public static void exportConfig(ZipWriter w, MasterDAO dao) {
         if (!w.isValid()) return;
         w.write("config.txt", new ArrayList<Experiment>(1){{add(dao.getExperiment());}}, o->JSONUtils.serialize(o));
+    }
+    
+    public static void exportSelections(ZipWriter w, MasterDAO dao) {
+        if (!w.isValid()) return;
         if (dao.getSelectionDAO()!=null) w.write("selections.txt", dao.getSelectionDAO().getSelections(), o -> JSONUtils.serialize(o));
     }
-
+    public static Experiment readConfig(File f) {
+        if (f.getName().endsWith(".txt")) {
+            List<Experiment> xp = FileIO.readFromFile(f.getAbsolutePath(), o->JSONUtils.parse(Experiment.class, o));
+            if (xp.size()==1) return xp.get(0);
+        } else if (f.getName().endsWith(".zip")) {
+            ZipReader r = new ZipReader(f.getAbsolutePath());
+            if (r.valid()) {
+                List<Experiment> xp = r.readObjects("config.txt", o->JSONUtils.parse(Experiment.class, o));
+                if (xp.size()==1) return xp.get(0);
+            }
+        }
+        return null;
+    }
+    public static void importFromFile(String path, MasterDAO dao, boolean config, boolean selections, boolean objects) {
+        File f = new File(path);
+        if (f.getName().endsWith(".txt")) {
+            if (config) {
+                List<Experiment> xp = FileIO.readFromFile(path, o->JSONUtils.parse(Experiment.class, o));
+                if (xp.size()==1) {
+                    xp.get(0).setOutputDirectory(dao.getDir()+File.separator+"Output");
+                    dao.setExperiment(xp.get(0));
+                    logger.debug("XP: {} from file: {} set to db: {}", dao.getExperiment().getName(), path, dao.getDBName());
+                }
+            }
+        } else if (f.getName().endsWith(".zip")) importFromZip(path, dao, config, selections, objects);
+    }
     public static void importFromZip(String path, MasterDAO dao, boolean config, boolean selections, boolean objects) {
         ZipReader r = new ZipReader(path);
         if (r.valid()) {
@@ -178,24 +207,71 @@ public class ImportExportJSON {
         File fDir = new File(dir);
         Map<String, File> res= new HashMap<>();
         listExperiments(fDir, res);
-        for (File subF : fDir.listFiles(f ->f.isDirectory())) listExperiments(subF, res);
+        if (fDir.isDirectory()) {
+            for (File subF : fDir.listFiles(f ->f.isDirectory())) listExperiments(subF, res);
+        }
         return res;
     }
     private static void listExperiments(File dir, Map<String, File> res) {
         if (dir.isDirectory()) {
-            for (File subF : dir.listFiles((f, n) -> n.endsWith(".zip"))) {
-                ZipReader r = new ZipReader(subF.getAbsolutePath());
-                if (r.valid()) {
-                    List<Experiment> xpList = r.readObjects("config.txt", o->JSONUtils.parse(Experiment.class, o));
-                    if (xpList.size()==1) res.put(Utils.removeExtension(subF.getName()), subF); //xpList.get(0).getName()
-                }
-            }
-        } else if (dir.getName().endsWith(".zip")) {
-            ZipReader r = new ZipReader(dir.getAbsolutePath());
-            if (r.valid()) {
-                List<Experiment> xpList = r.readObjects("config.txt", o->JSONUtils.parse(Experiment.class, o));
-                if (xpList.size()==1) res.put(Utils.removeExtension(dir.getName()), dir); //xpList.get(0).getName()
-            }
+            for (File subF : dir.listFiles()) addXP(subF, res);
+        } else addXP(dir, res);
+    }
+    private static void addXP(File file , Map<String, File> res) {
+        Experiment xp = readConfig(file);
+        if (xp==null) return;
+        if (file.getName().endsWith(".zip")) {
+            res.put(Utils.removeExtension(file.getName()), file);
+        } else if (file.getName().endsWith(".txt")) {
+            String name = file.getName();
+            name = Utils.removeExtension(name);
+            if (name.endsWith("config") || name.endsWith("Config")) name = name.substring(name.length()-6, name.length());
+            if (name.length()==0) name = "xp";
+            res.put(name, file);
         }
     }
+    
+    /*
+        // MONGODB IMPORT LEGACY
+        // whole xp are located in sub directories
+        FileFilter filter = new FileFilter() {
+            @Override public boolean accept(File file) {
+                if (file.isDirectory()) { // contains at least experiment collection
+                    for (String fName : file.list()) {
+                        if (fName.equals("Experiment.bson") || fName.equals("Experiment.json")) return true;
+                    }
+                } 
+                return false;
+            }
+        };
+        List<File> subDirs = new ArrayList<File>(Arrays.asList(directory.listFiles(filter)));
+        if (filter.accept(directory)) subDirs.add(directory);
+        
+        boolean someDBAlreadyExist = false;
+        for (File f : subDirs) {
+            if (dbNames.contains(DBUtil.addPrefix(f.getName(), DBprefix))) {
+                someDBAlreadyExist=true;
+                break;
+            }
+        }
+        
+        boolean ignoreExisting=false;
+        if (someDBAlreadyExist) {
+            Object[] options = {"Override existig experiments (data loss)", "Ignore existing experiments"};
+            int n = JOptionPane.showOptionDialog(this, "Some experiments found in the directory are already present", "Import Whole Experiment", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
+            ignoreExisting = n==1;
+        }
+        if (ignoreExisting) {
+            Iterator<File> it = subDirs.iterator();
+            while (it.hasNext()) { if (dbNames.contains(it.next().getName())) it.remove();}
+        }
+        String hostname = getCurrentHostNameOrDir();
+        int count = 0;
+        for (File f : subDirs) {
+            logger.info("Importing XP: {}/{}", ++count, subDirs.size());
+            CommandExecuter.restoreDB(hostname, DBUtil.addPrefix(f.getName(), DBprefix), f.getAbsolutePath());
+        }
+        populateExperimentList();
+        PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
+        */
 }

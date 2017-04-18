@@ -159,6 +159,7 @@ public class Utils {
     }
     
     public static <T> String toStringArray(T[] array) {
+        if (array.length==0) return "[]";
         String res = "[";
         for (int i = 0; i<array.length-1; ++i) res+=array[i].toString()+"; ";
         res+=array[array.length-1]+"]";

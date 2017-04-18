@@ -42,6 +42,7 @@ import core.Processor;
 import core.PythonGateway;
 import core.Task;
 import dataStructure.configuration.ChannelImage;
+import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.DBMapMasterDAO;
 import dataStructure.objects.MasterDAO;
@@ -180,15 +181,16 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (dbType.equals(MasterDAOFactory.DAOType.Morphium.toString())) {
             mongoDBDatabaseRadioButton.setSelected(true);
             MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.Morphium);
+            localDBMenu.setEnabled(false);
         }
         else if (dbType.equals(MasterDAOFactory.DAOType.DBMap.toString())) {
             localFileSystemDatabaseRadioButton.setSelected(true);
             String path = PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH);
             if (path!=null) hostName.setText(path);
             MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.DBMap);
+            localDBMenu.setEnabled(true);
         }
         
-        logger.debug("del meas: {}, {} isSel: {}", PropertyUtils.get(PropertyUtils.DELETE_MEASUREMENTS, true), PropertyUtils.get(PropertyUtils.DELETE_MEASUREMENTS, "true"), deleteMeasurementsCheckBox.isSelected());
         PluginFactory.findPlugins("plugins.plugins");
         
         pyGtw = new PythonGateway();
@@ -845,9 +847,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         jMenu2 = new javax.swing.JMenu();
         deleteMeasurementsCheckBox = new javax.swing.JCheckBoxMenuItem();
         dataBaseMenu = new javax.swing.JMenu();
-        mongoDBDatabaseRadioButton = new javax.swing.JRadioButtonMenuItem();
         localFileSystemDatabaseRadioButton = new javax.swing.JRadioButtonMenuItem();
-        mongoDBImportExportMenu = new javax.swing.JMenu();
+        mongoDBDatabaseRadioButton = new javax.swing.JRadioButtonMenuItem();
+        localDBMenu = new javax.swing.JMenu();
+        compactLocalDBMenuItem = new javax.swing.JMenuItem();
+        importExportMenu = new javax.swing.JMenu();
         exportSubMenu = new javax.swing.JMenu();
         exportSelectedFieldsMenuItem = new javax.swing.JMenuItem();
         exportXPConfigMenuItem = new javax.swing.JMenuItem();
@@ -865,8 +869,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         importOptionsSubMenu = new javax.swing.JMenu();
         eraseCollectionCheckbox = new javax.swing.JCheckBoxMenuItem();
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
-        localDBMenu = new javax.swing.JMenu();
-        compactLocalDBMenuItem = new javax.swing.JMenuItem();
         miscMenu = new javax.swing.JMenu();
         closeAllWindowsMenuItem = new javax.swing.JMenuItem();
 
@@ -1333,15 +1335,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
         dataBaseMenu.setText("Database Type");
 
-        mongoDBDatabaseRadioButton.setSelected(true);
-        mongoDBDatabaseRadioButton.setText("MongoDB");
-        mongoDBDatabaseRadioButton.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                mongoDBDatabaseRadioButtonActionPerformed(evt);
-            }
-        });
-        dataBaseMenu.add(mongoDBDatabaseRadioButton);
-
         localFileSystemDatabaseRadioButton.setSelected(true);
         localFileSystemDatabaseRadioButton.setText("Local file system");
         localFileSystemDatabaseRadioButton.addActionListener(new java.awt.event.ActionListener() {
@@ -1351,9 +1344,32 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         });
         dataBaseMenu.add(localFileSystemDatabaseRadioButton);
 
+        mongoDBDatabaseRadioButton.setSelected(true);
+        mongoDBDatabaseRadioButton.setText("MongoDB");
+        mongoDBDatabaseRadioButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                mongoDBDatabaseRadioButtonActionPerformed(evt);
+            }
+        });
+        dataBaseMenu.add(mongoDBDatabaseRadioButton);
+
         optionMenu.add(dataBaseMenu);
 
-        mongoDBImportExportMenu.setText("MongoDB Import/Export");
+        localDBMenu.setText("Local DataBase");
+
+        compactLocalDBMenuItem.setText("Compact Selected Experiment(s)");
+        compactLocalDBMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                compactLocalDBMenuItemActionPerformed(evt);
+            }
+        });
+        localDBMenu.add(compactLocalDBMenuItem);
+
+        optionMenu.add(localDBMenu);
+
+        jMenuBar1.add(optionMenu);
+
+        importExportMenu.setText("Import/Export");
 
         exportSubMenu.setText("Export");
 
@@ -1381,7 +1397,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         });
         exportSubMenu.add(exportWholeXPMenuItem);
 
-        mongoDBImportExportMenu.add(exportSubMenu);
+        importExportMenu.add(exportSubMenu);
 
         importSubMenu.setText("Import");
 
@@ -1427,7 +1443,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         });
         importSubMenu.add(importNewExperimentMenuItem);
 
-        mongoDBImportExportMenu.add(importSubMenu);
+        importExportMenu.add(importSubMenu);
 
         setMongoBinDirectoryMenu.setText("Set MongoDB Bin Directory");
         setMongoBinDirectoryMenu.addActionListener(new java.awt.event.ActionListener() {
@@ -1435,7 +1451,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 setMongoBinDirectoryMenuActionPerformed(evt);
             }
         });
-        mongoDBImportExportMenu.add(setMongoBinDirectoryMenu);
+        importExportMenu.add(setMongoBinDirectoryMenu);
 
         jMenu1.setText("Set Export Format");
 
@@ -1457,7 +1473,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         });
         jMenu1.add(jsonFormatMenuItem);
 
-        mongoDBImportExportMenu.add(jMenu1);
+        importExportMenu.add(jMenu1);
 
         importOptionsSubMenu.setText("Import Options");
 
@@ -1471,24 +1487,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         });
         importOptionsSubMenu.add(eraseCollectionCheckbox);
 
-        mongoDBImportExportMenu.add(importOptionsSubMenu);
-        mongoDBImportExportMenu.add(jSeparator1);
+        importExportMenu.add(importOptionsSubMenu);
+        importExportMenu.add(jSeparator1);
 
-        optionMenu.add(mongoDBImportExportMenu);
-
-        localDBMenu.setText("Local DataBase");
-
-        compactLocalDBMenuItem.setText("Compact");
-        compactLocalDBMenuItem.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                compactLocalDBMenuItemActionPerformed(evt);
-            }
-        });
-        localDBMenu.add(compactLocalDBMenuItem);
-
-        optionMenu.add(localDBMenu);
-
-        jMenuBar1.add(optionMenu);
+        jMenuBar1.add(importExportMenu);
 
         miscMenu.setText("Misc");
 
@@ -1749,16 +1751,16 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (!checkConnection()) return;
         db.updateExperiment();
     }//GEN-LAST:event_saveXPMenuItemActionPerformed
-    private String promptDir(String message, String def) {
+    private String promptDir(String message, String def, boolean onlyDir) {
         if (message==null) message = "Choose Directory";
         File outputFile = Utils.chooseFile(message, def, FileChooser.FileChooserOption.FILE_OR_DIRECTORY, this);
         if (outputFile ==null) return null;
-        if (!outputFile.isDirectory()) outputFile=outputFile.getParentFile();
+        if (onlyDir && !outputFile.isDirectory()) outputFile=outputFile.getParentFile();
         return outputFile.getAbsolutePath();
     }
     private void exportWholeXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exportWholeXPMenuItemActionPerformed
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
-        String dir = promptDir("Choose output directory", defDir);
+        String dir = promptDir("Choose output directory", defDir, true);
         if (dir==null) return;
         List<String> xpToExport = getSelectedExperiments();
         unsetXP();
@@ -1769,6 +1771,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             MasterDAO mDAO = MasterDAOFactory.createDAO(xp, this.getHostNameOrDir(xp));
             ZipWriter w = new ZipWriter(dir+File.separator+mDAO.getDBName()+".zip");
             ImportExportJSON.exportConfig(w, mDAO);
+            ImportExportJSON.exportSelections(w, mDAO);
             ImportExportJSON.exportPositions(w, mDAO, true);
             w.close();
         }
@@ -1779,7 +1782,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void exportSelectedFieldsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exportSelectedFieldsMenuItemActionPerformed
         if (!checkConnection()) return;
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
-        String dir = promptDir("Choose output directory", defDir);
+        String dir = promptDir("Choose output directory", defDir, true);
         if (dir==null) return;
         List<String> sel = getSelectedPositions(false);
         if (sel.isEmpty()) return;
@@ -1802,7 +1805,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void exportXPConfigMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exportXPConfigMenuItemActionPerformed
         if (!checkConnection()) return;
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
-        String dir = promptDir("Choose output directory", defDir);
+        String dir = promptDir("Choose output directory", defDir, true);
         if (dir==null) return;
         //CommandExecuter.dump(getCurrentHostNameOrDir(), db.getDBName(), "Experiment", dir, jsonFormatMenuItem.isSelected());
         ZipWriter w = new ZipWriter(dir+File.separator+db.getDBName()+".zip");
@@ -1875,66 +1878,61 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }//GEN-LAST:event_importFieldsToCurrentExperimentMenuItemActionPerformed
 
     private void importConfigurationForSelectedPositionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importConfigurationForSelectedPositionsMenuItemActionPerformed
-        // TODO add your handling code here:
-        // import vers une nouvelle db, read XP et override seulement la config des positions selectionnées sur l'xp courante
+        if (!checkConnection()) return;
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
+        File f = Utils.chooseFile("Choose config file", defDir, FileChooser.FileChooserOption.FILES_ONLY, jLabel1);
+        if (f==null || !f.isFile()) return;
+        Experiment xp = ImportExportJSON.readConfig(f);
+        if (xp==null) return;
+        int response = JOptionPane.showConfirmDialog(this, "This will erase configutation on current xp", "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        if (response != JOptionPane.YES_OPTION) return;
+        for (String p : getSelectedPositions(true)) {
+            MicroscopyField m = xp.getPosition(p);
+            if (m!=null) {
+                db.getExperiment().getPosition(p).setPreProcessingChains(m.getPreProcessingChain());
+            }
+        }
+        db.updateExperiment();
+        updateConfigurationTree();
     }//GEN-LAST:event_importConfigurationForSelectedPositionsMenuItemActionPerformed
 
     private void importConfigurationForSelectedStructuresMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importConfigurationForSelectedStructuresMenuItemActionPerformed
-        // TODO add your handling code here:
-        // import vers une nouvelle db, read XP et override seulement la config des structure sel sur l'xp courante. Attention a check qu'il y ai le bon nombre de structures
+        if (!checkConnection()) return;
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
+        File f = Utils.chooseFile("Choose config file", defDir, FileChooser.FileChooserOption.FILES_ONLY, jLabel1);
+        if (f==null || !f.isFile()) return;
+        Experiment xp = ImportExportJSON.readConfig(f);
+        if (xp==null) return;
+        if (xp.getStructureCount()!=db.getExperiment().getStructureCount()) logger.error("Selected config to import should have same stucture count as current xp");
+        int response = JOptionPane.showConfirmDialog(this, "This will erase configutation on current xp", "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        if (response != JOptionPane.YES_OPTION) return;
+        for (int s : getSelectedStructures(true)) {
+            db.getExperiment().getStructure(s).setContentFrom(xp.getStructure(s));
+        }
+        db.updateExperiment();
+        updateConfigurationTree();
     }//GEN-LAST:event_importConfigurationForSelectedStructuresMenuItemActionPerformed
 
     private void importNewExperimentMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importNewExperimentMenuItemActionPerformed
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
-        String dir = promptDir("Select folder containing experiment folders", defDir);
+        String dir = promptDir("Select folder containing experiment or experiments", defDir, false);
         if (dir==null) return;
         File directory = new File(dir);
         List<String> dbNames = getDBNames();
-        /*
-        // whole xp are located in sub directories
-        FileFilter filter = new FileFilter() {
-            @Override public boolean accept(File file) {
-                if (file.isDirectory()) { // contains at least experiment collection
-                    for (String fName : file.list()) {
-                        if (fName.equals("Experiment.bson") || fName.equals("Experiment.json")) return true;
-                    }
-                } 
-                return false;
-            }
-        };
-        List<File> subDirs = new ArrayList<File>(Arrays.asList(directory.listFiles(filter)));
-        if (filter.accept(directory)) subDirs.add(directory);
-        
-        
-        
-        boolean someDBAlreadyExist = false;
-        for (File f : subDirs) {
-            if (dbNames.contains(DBUtil.addPrefix(f.getName(), DBprefix))) {
-                someDBAlreadyExist=true;
-                break;
-            }
-        }
-        
-        boolean ignoreExisting=false;
-        if (someDBAlreadyExist) {
-            Object[] options = {"Override existig experiments (data loss)", "Ignore existing experiments"};
-            int n = JOptionPane.showOptionDialog(this, "Some experiments found in the directory are already present", "Import Whole Experiment", JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, options, options[0]);
-            ignoreExisting = n==1;
-        }
-        if (ignoreExisting) {
-            Iterator<File> it = subDirs.iterator();
-            while (it.hasNext()) { if (dbNames.contains(it.next().getName())) it.remove();}
-        }
-        String hostname = getCurrentHostNameOrDir();
-        int count = 0;
-        for (File f : subDirs) {
-            logger.info("Importing XP: {}/{}", ++count, subDirs.size());
-            CommandExecuter.restoreDB(hostname, DBUtil.addPrefix(f.getName(), DBprefix), f.getAbsolutePath());
-        }
-        populateExperimentList();
-        PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
-        */
         Map<String, File> allXps = ImportExportJSON.listExperiments(directory.getAbsolutePath());
+        if (allXps.size()==1) {
+            String name = JOptionPane.showInputDialog("New XP name:");
+            if (name==null) return;
+            name = DBUtil.addPrefix(name, DBprefix);
+            if (!Utils.isValid(name, false)) {
+                logger.error("Name should not contain special characters");
+                return;
+            } else {
+                File f = allXps.values().iterator().next();
+                allXps.clear();
+                allXps.put(name, f);
+            }
+        }
         Set<String> xpNotPresent = new HashSet<>(allXps.keySet());
         xpNotPresent.removeAll(dbNames);
         Set<String> xpsToImport = allXps.keySet();
@@ -1950,7 +1948,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             File zip = allXps.get(xp);
             MasterDAO mDAO = MasterDAOFactory.createDAO(xp, getHostNameOrDir(xp));
             mDAO.deleteAllObjects();
-            ImportExportJSON.importFromZip(zip.getAbsolutePath(), mDAO, true, true, true);
+            ImportExportJSON.importFromFile(zip.getAbsolutePath(), mDAO, true, true, true);
         }
         populateExperimentList();
         PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, dir);
@@ -1969,11 +1967,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         }*/
         String outDir = db.getExperiment().getOutputImageDirectory();
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
-        File f = Utils.chooseFile("Select exported archive", defDir, FileChooser.FileChooserOption.FILES_ONLY, jLabel1);
+        File f = Utils.chooseFile("Select exported file", defDir, FileChooser.FileChooserOption.FILES_ONLY, jLabel1);
         if (f==null) return;
-        ImportExportJSON.importFromZip(f.getAbsolutePath(), db, true, false, false);
+        int response = JOptionPane.showConfirmDialog(this, "This will erase configutation on current xp", "Confirm", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        if (response != JOptionPane.YES_OPTION) return;
+        ImportExportJSON.importFromFile(f.getAbsolutePath(), db, true, false, false);
         db.getExperiment().setOutputDirectory(outDir);
         db.updateExperiment();
+        updateConfigurationTree();
         PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, f.getAbsolutePath());
     }//GEN-LAST:event_importConfigToCurrentExperimentMenuItemActionPerformed
 
@@ -2312,7 +2313,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         unsetXP();
         MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.Morphium);
         PropertyUtils.set(PropertyUtils.DATABASE_TYPE, MasterDAOFactory.DAOType.Morphium.toString());
-        mongoDBImportExportMenu.setEnabled(true);
+        importExportMenu.setEnabled(true);
+        localDBMenu.setEnabled(false);
         hostName.setText(PropertyUtils.get(PropertyUtils.HOSTNAME, "localhost"));
         populateExperimentList();
     }//GEN-LAST:event_mongoDBDatabaseRadioButtonActionPerformed
@@ -2321,8 +2323,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         unsetXP();
         MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.DBMap);
         PropertyUtils.set(PropertyUtils.DATABASE_TYPE, MasterDAOFactory.DAOType.DBMap.toString());
-        mongoDBImportExportMenu.setEnabled(false);
+        importExportMenu.setEnabled(false);
         hostName.setText(PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH, ""));
+        localDBMenu.setEnabled(true);
         populateExperimentList();
     }//GEN-LAST:event_localFileSystemDatabaseRadioButtonActionPerformed
 
@@ -2469,6 +2472,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JMenuItem importConfigToCurrentExperimentMenuItem;
     private javax.swing.JMenuItem importConfigurationForSelectedPositionsMenuItem;
     private javax.swing.JMenuItem importConfigurationForSelectedStructuresMenuItem;
+    private javax.swing.JMenu importExportMenu;
     private javax.swing.JMenuItem importFieldsToCurrentExperimentMenuItem;
     private javax.swing.JMenuItem importImagesMenuItem;
     private javax.swing.JMenuItem importNewExperimentMenuItem;
@@ -2491,7 +2495,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JList microscopyFieldList;
     private javax.swing.JMenu miscMenu;
     private javax.swing.JRadioButtonMenuItem mongoDBDatabaseRadioButton;
-    private javax.swing.JMenu mongoDBImportExportMenu;
     private javax.swing.JMenuItem newXPMenuItem;
     private javax.swing.JButton nextTrackErrorButton;
     private javax.swing.JMenu optionMenu;

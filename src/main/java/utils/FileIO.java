@@ -64,7 +64,7 @@ public class FileIO {
             BufferedWriter out;
             File output = new File(outputFile);
             output.delete();
-            output.mkdirs();
+            output.getParentFile().mkdirs();
             if (objects.isEmpty()) return;
             fstream = new java.io.FileWriter(output);
             out = new BufferedWriter(fstream);

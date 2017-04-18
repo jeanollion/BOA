@@ -60,9 +60,7 @@ public class DBMapMasterDAO implements MasterDAO {
         clearCache();
         Utils.deleteDirectory(outputPath);
         DBMapUtils.deleteDBFile(getConfigFile(dbName));
-        File f = new File(configDir).getParentFile();
-        logger.debug("deleting dir: {}... (empty? {})", f.getAbsolutePath(), f.listFiles().length==0);
-        f.delete(); // deletes directory only if void. 
+        new File(configDir).delete(); // deletes directory only if void. 
     }
     
     private void makeXPDB() {

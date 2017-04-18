@@ -403,6 +403,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
             ProcessingVariables pv = initializeVariables(input);
             Image hess = pv.getHessian();
             hess = ImageOperations.divide(hess, input, null);
+            ImageOperations.trim(hess, parent.getMask(), hess);
             ImageWindowManagerFactory.showImage(hess.setName("Split map"));
             ObjectPopulation pop = runSegmenter(input, structureIdx, parent);
             ImageWindowManagerFactory.showImage(pop.getLabelMap().setName("splitThreshold: "+splitThreshold.getValue().doubleValue()));

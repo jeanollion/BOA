@@ -442,6 +442,18 @@ public class ImageOperations {
         return out;
     }*/
     
+    public static <T extends Image> T trim(T source, ImageMask mask, T output) {
+        if (output==null) output = (T)Image.createEmptyImage(source.getName(), source, source);
+        if (!output.sameSize(source)) output = Image.createEmptyImage("not", source, source);
+        for (int z = 0; z<source.getSizeZ(); ++z) {
+            for (int xy=0; xy<source.getSizeXY(); ++xy) {
+                if (!mask.insideMask(xy, z)) output.setPixel(xy, z, 0);
+                else if (output!=source) output.setPixel(xy, z, source.getPixel(xy, z));
+            }
+        }
+        return output;
+    }
+    
     public static <T extends ImageInteger> T not(ImageMask source1, T output) {
         if (output==null) output = (T)new ImageByte("not", source1);
         if (!output.sameSize(source1)) output = Image.createEmptyImage("not", output, source1);

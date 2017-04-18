@@ -185,7 +185,6 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         if (res==null) {
             res=PluginFactory.getPluginNames(clazz);
             pluginNames.put(clazz, res);
-            System.out.println("put :"+res.size()+ " plugins of type:"+clazz);
         }
         return res;
     }

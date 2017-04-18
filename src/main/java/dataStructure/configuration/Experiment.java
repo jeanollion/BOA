@@ -76,10 +76,10 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     public Experiment(String name) {
         super(name);
         structures= new SimpleListParameter<Structure>("Structures", -1 , Structure.class);
-        imagePath = new FileChooser("Output Image Path", FileChooserOption.DIRECTORIES_ONLY);
+        imagePath = new FileChooser("Output Path", FileChooserOption.DIRECTORIES_ONLY);
         channelImages= new SimpleListParameter<ChannelImage>("Channel Images", 0 , ChannelImage.class);
-        measurements = new SimpleListParameter<PluginParameter<Measurement>>("Measurements", -1 , new PluginParameter<Measurement>("Measurement", Measurement.class, true));
-        fields= new SimpleListParameter<MicroscopyField>("Fields", -1 , MicroscopyField.class);
+        measurements = new SimpleListParameter<PluginParameter<Measurement>>("Measurements", -1 , new PluginParameter<Measurement>("Measurements", Measurement.class, true));
+        fields= new SimpleListParameter<MicroscopyField>("Positions", -1 , MicroscopyField.class);
         template = new PreProcessingChain("Pre-Processing chain template");
         importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), ImportImageMethod.SINGLE_FILE.getMethod(), false);
         initChildList();
@@ -164,8 +164,10 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     public void setOutputDirectory(String outputPath) {
         imagePath.setSelectedFilePath(outputPath);
-        File f = new File(outputPath);
-        f.mkdirs();
+        if (outputPath!=null) {
+            File f = new File(outputPath);
+            f.mkdirs();
+        }
     }
     public void clearPositions() {
         this.fields.removeAllElements();
