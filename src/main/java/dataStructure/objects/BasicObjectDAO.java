@@ -226,7 +226,6 @@ public class BasicObjectDAO implements ObjectDAO {
             for (int sIdx = 0; sIdx<structureCount; ++sIdx) {
                 for(StructureObject o : root.getChildren(sIdx)) {
                     o.measurements=null;
-                    o.measurementsId=null;
                 }
             }
         } 
@@ -252,6 +251,11 @@ public class BasicObjectDAO implements ObjectDAO {
             throw new UnsupportedOperationException("not supported");
         }
         throw new UnsupportedOperationException("not supported");
+    }
+
+    @Override
+    public Measurements getMeasurements(StructureObject o) {
+        return o.measurements;
     }
 
     

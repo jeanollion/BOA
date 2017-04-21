@@ -58,7 +58,7 @@ public class ExtractTransformationParameter implements Measurement{
     }
 
     public void performMeasurement(StructureObject root) {
-        ArrayList data=null;
+        List data=null;
         Transformation t=null;
         List<TransformationPluginParameter<Transformation>> l = root.getExperiment().getPosition(root.getPositionName()).getPreProcessingChain().getTransformations(true);
         for (TransformationPluginParameter<Transformation> tpp : l) {

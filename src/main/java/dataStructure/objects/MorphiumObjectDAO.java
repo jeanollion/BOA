@@ -199,7 +199,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
         if (children!=null) {
             for (StructureObject o : children) {
                 masterDAO.m.delete(o, collectionName, null);
-                if (o.measurementsId!=null) measurementsDAO.delete(o.measurementsId);
+                measurementsDAO.delete(o.id);
                 this.idCache.remove(o.getId()); // delete in cache
                 for (int s : directChildren) deleteChildren(o, s); // also delete all direct chilren (recursive call)
             }
@@ -268,7 +268,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
             if (masterDAO.m.getDatabase().getCollection(collectionName).findOne(db)!=null) logger.debug("undeletedObject: {}, write result: {}", o, r);
             idCache.remove(o.getId());
         }
-        if (o.measurementsId!=null) measurementsDAO.delete(o.measurementsId);
+        measurementsDAO.delete(o.id);
         if (deleteFromParent) {
             if (o.getParent().getChildren(o.getStructureIdx()).remove(o) && relabelSiblings) {
                 List<StructureObject> modified = new ArrayList<StructureObject>(o.getParent().getChildren(o.getStructureIdx()).size());
@@ -329,6 +329,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
     
     @Override
     public void store(StructureObject object, boolean updateTrackAttributes) {
+        object.dao=this;
         object.updateObjectContainer();
         if (object.hasMeasurementModifications()) this.upsertMeasurement(object);
         if (updateTrackAttributes) {
@@ -610,34 +611,23 @@ public class MorphiumObjectDAO implements ObjectDAO {
             return;
         }
         o.getMeasurements().modifications=false;
-        
-        //logger.debug("store meas: id: {}, id in object: {}: {}", o.measurements.id, o, o.measurementsId);
-        if (!o.getMeasurements().getId().equals(o.measurementsId)) {
-            o.measurementsId=o.getMeasurements().getId();
-            
-            // when morphium bug solved -> update
-            DBObject find = new BasicDBObject("_id", o.getId());
-            DBObject update = new BasicDBObject("measurements_id", o.measurementsId);
-            update = new BasicDBObject("$set", update);
-            this.masterDAO.m.getDatabase().getCollection(collectionName).update(find, update, false, false);
-            /*AsyncOperationCallback cb = null;
-            masterDAO.m.updateUsingFields(o, collectionName, cb, "measurements_id");*/
-        
-        }
     }
     
     
     public MorphiumMeasurementsDAO getMeasurementsDAO() {return this.measurementsDAO;}
-
+    @Override
     public List<Measurements> getMeasurements(int structureIdx, String... measurements) {
         return measurementsDAO.getMeasurements(structureIdx, measurements);
+    }
+    @Override
+    public Measurements getMeasurements(StructureObject o) {
+        return measurementsDAO.getObject(o.id);
     }
     @Override
     public void deleteAllMeasurements() {
         measurementsDAO.deleteAllObjects();
         for (StructureObject o : this.idCache.values()) { // TODO: need to update measurementId field in all objects?
             o.measurements=null;
-            o.measurementsId=null;
         }
     }
 

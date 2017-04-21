@@ -473,6 +473,9 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     // morphium
-    public Experiment(){}
+    public Experiment(){
+        importMethod = new ChoiceParameter("Import Method", ImportImageMethod.getChoices(), importMethod.getSelectedItem(), false);
+        
+    }
     public void callLazyLoading(){}
 }

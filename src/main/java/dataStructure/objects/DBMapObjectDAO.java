@@ -251,6 +251,7 @@ public class DBMapObjectDAO implements ObjectDAO {
         for (StructureObject o : objects) res.add(o.getId());
         return res;
     }
+
     public static Map<ObjectId, StructureObject> toIdMap(Collection<StructureObject> objects) {
         Map<ObjectId, StructureObject> res= new HashMap<>(objects.size());
         for (StructureObject o : objects) res.put(o.getId(), o);
@@ -569,6 +570,24 @@ public class DBMapObjectDAO implements ObjectDAO {
             res.add(m);
         }
         return res;
+    }
+    @Override
+    public Measurements getMeasurements(StructureObject o) {
+        Pair<DB, HTreeMap<String, String>> mDB = getMeasurementDB(o.getStructureIdx());
+        String mS = mDB.value.get(o.getId().toHexString());
+        Measurements m = JSONUtils.parse(Measurements.class, mS);
+        return m;
+    }
+    
+    public void retrieveMeasurements(Collection<StructureObject> objects) {
+        Map<Integer, List<StructureObject>> bySIdx = StructureObjectUtils.splitByStructureIdx(objects);
+        for (int i : bySIdx.keySet()) {
+            Pair<DB, HTreeMap<String, String>> mDB = getMeasurementDB(i);
+            for (StructureObject o : bySIdx.get(i)) {
+                String mS = mDB.value.get(o.getId().toHexString());
+                o.measurements=JSONUtils.parse(Measurements.class, mS);
+            }
+        }
     }
 
     @Override

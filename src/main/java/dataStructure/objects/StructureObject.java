@@ -70,7 +70,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     //@Transient protected SmallArray<Image> preProcessedImageS=new SmallArray<Image>();
     
     // measurement-related attributes
-    protected ObjectId measurementsId; // todo : same id as objectId. comment indique si a des mesures? measurements=!null le crée à la première demande
     @Transient Measurements measurements;
     
     public StructureObject(int timePoint, int structureIdx, int idx, Object3D object, StructureObject parent) {
@@ -878,19 +877,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     public void setMeasurements(Measurements m) {
         this.measurements=m;
-        this.measurementsId=m.id;
     }
     public Measurements getMeasurements() {
         if (measurements==null) {
             synchronized(this) {
                 if (measurements==null) {
-                    if (measurementsId!=null && dao instanceof MorphiumObjectDAO) {
-                        measurements=((MorphiumObjectDAO)dao).getMeasurementsDAO().getObject(measurementsId);
-                        if (measurements==null) {
-                            measurementsId=null;
-                            measurements = new Measurements(this);
-                        }
-                    } else measurements = new Measurements(this);
+                    measurements = dao.getMeasurements(this);
+                    if (measurements==null) measurements = new Measurements(this);
                 }
             }
         }
@@ -898,7 +891,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     public boolean hasMeasurements() {
-        return measurementsId!=null || measurements!=null;
+        return !getMeasurements().values.isEmpty();
     }
     boolean hasMeasurementModifications() {
         return measurements!=null && measurements.modifications;
@@ -907,7 +900,6 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (measurements!=null) {
             if (measurements.modifications) dao.upsertMeasurement(this);
             else measurements.updateObjectProperties(this); // upsert always update objectProperties
-            this.measurementsId=measurements.id;
             return measurements.modifications;
         }
         return false;

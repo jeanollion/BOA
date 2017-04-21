@@ -75,6 +75,10 @@ public class Task {
                 }
             }
         }
+        public MasterDAO getDB() {
+            initDB();
+            return db;
+        }
         private String getLocalDirForDB(String dbName, String dir) {
             File config = Utils.seach(dir, dbName+"_config.db", 2);
             if (config!=null) return config.getParent();

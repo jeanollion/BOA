@@ -1787,6 +1787,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         List<String> sel = getSelectedPositions(false);
         if (sel.isEmpty()) return;
         ZipWriter w = new ZipWriter(dir+File.separator+db.getDBName()+".zip");
+        ImportExportJSON.exportConfig(w, db);
+        ImportExportJSON.exportSelections(w, db);
         ImportExportJSON.exportPositions(w, db, true, sel);
         w.close();
         /*
@@ -2313,7 +2315,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         unsetXP();
         MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.Morphium);
         PropertyUtils.set(PropertyUtils.DATABASE_TYPE, MasterDAOFactory.DAOType.Morphium.toString());
-        importExportMenu.setEnabled(true);
         localDBMenu.setEnabled(false);
         hostName.setText(PropertyUtils.get(PropertyUtils.HOSTNAME, "localhost"));
         populateExperimentList();
@@ -2323,7 +2324,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         unsetXP();
         MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.DBMap);
         PropertyUtils.set(PropertyUtils.DATABASE_TYPE, MasterDAOFactory.DAOType.DBMap.toString());
-        importExportMenu.setEnabled(false);
         hostName.setText(PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH, ""));
         localDBMenu.setEnabled(true);
         populateExperimentList();

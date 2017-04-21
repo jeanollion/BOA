@@ -901,7 +901,7 @@ public abstract class ImageWindowManager<T, U, V> {
         menu.add(new JMenuItem("Prev:"+o.getPrevious()));
         menu.add(new JMenuItem("Next:"+o.getNext()));
         menu.add(new JMenuItem("TrackHead:"+o.getTrackHead()));
-        menu.add(new JMenuItem("Time: "+toString(o.hasMeasurements() ? o.getMeasurements().getCalibratedTimePoint() : o.getCalibratedTimePoint())));
+        menu.add(new JMenuItem("Time: "+toString(o.getMeasurements().getCalibratedTimePoint())));
         menu.add(new JMenuItem("IsTrackHead: "+o.isTrackHead()));
         //DecimalFormat df = new DecimalFormat("#.####");
         if (o.getAttributes()!=null && !o.getAttributes().isEmpty()) {
@@ -919,36 +919,36 @@ public abstract class ImageWindowManager<T, U, V> {
                 });
             }
         }
-        if (o.hasMeasurements()) {
-            menu.addSeparator();
-            for (Entry<String, Object> en : new TreeMap<>(o.getMeasurements().getValues()).entrySet()) {
-                JMenuItem item = new JMenuItem(en.getKey()+": "+toString(en.getValue()));
-                menu.add(item);
-                item.setAction(new AbstractAction(item.getActionCommand()) {
-                    @Override
-                        public void actionPerformed(ActionEvent ae) {
-                            java.awt.datatransfer.Transferable stringSelection = new StringSelection(en.getValue().toString());
-                            Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-                            clipboard.setContents(stringSelection, null);
-                        }
-                });
-            }
+
+        menu.addSeparator();
+        for (Entry<String, Object> en : new TreeMap<>(o.getMeasurements().getValues()).entrySet()) {
+            JMenuItem item = new JMenuItem(en.getKey()+": "+toString(en.getValue()));
+            menu.add(item);
+            item.setAction(new AbstractAction(item.getActionCommand()) {
+                @Override
+                    public void actionPerformed(ActionEvent ae) {
+                        java.awt.datatransfer.Transferable stringSelection = new StringSelection(en.getValue().toString());
+                        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                        clipboard.setContents(stringSelection, null);
+                    }
+            });
         }
+        
         return menu;
     }
     private JPopupMenu getMenu(List<StructureObject> list) {
         JPopupMenu menu = new JPopupMenu();
         menu.add(new JMenuItem(Utils.toStringList(list)));
-        menu.add("Prev:"+new JMenuItem(Utils.toStringList(list, o->o.getPrevious().toString())));
-        menu.add(new JMenuItem("Next:"+Utils.toStringList(list, o->o.getNext().toString())));
-        menu.add(new JMenuItem("TrackHead:"+Utils.toStringList(list, o->o.getTrackHead().toString())));
+        menu.add(new JMenuItem("Prev:"+Utils.toStringList(list, o->o.getPrevious()==null?"NA":o.getPrevious().toString())));
+        menu.add(new JMenuItem("Next:"+Utils.toStringList(list, o->o.getNext()==null?"NA":o.getNext().toString())));
+        menu.add(new JMenuItem("TrackHead:"+Utils.toStringList(list, o->o.getTrackHead()==null?"NA":o.getTrackHead().toString())));
         //DecimalFormat df = new DecimalFormat("#.####E0");
         // getAllAttributeKeys
         Collection<String> attributeKeys = new HashSet();
         Collection<String> mesKeys = new HashSet();
         for (StructureObject o : list) {
             if (o.getAttributes()!=null && !o.getAttributes().isEmpty()) attributeKeys.addAll(o.getAttributes().keySet());
-            if (o.hasMeasurements()) mesKeys.addAll(o.getMeasurements().getValues().keySet());
+            mesKeys.addAll(o.getMeasurements().getValues().keySet());
         }
         attributeKeys=new ArrayList(attributeKeys);
         Collections.sort((List)attributeKeys);

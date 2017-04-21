@@ -46,8 +46,13 @@ import utils.Utils;
 public class LocalFileSystemImageDAO implements ImageDAO {
     String directory;
     static final int idxZeros = 5;
+    
     public LocalFileSystemImageDAO(String localDirectory) {
         this.directory=localDirectory;
+    }
+    @Override
+    public String getImageExtension() {
+        return ".tif";
     }
     @Override
     public InputStream openStream(int channelImageIdx, int timePoint, String microscopyFieldName) {
@@ -115,6 +120,7 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         ImageWriter.writeToFile(image, path, ImageFormat.TIF);
     }
     
+    @Override
     public void writePreProcessedImage(InputStream image, int channelImageIdx, int timePoint, String microscopyFieldName) {
         String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName, directory);
         File f = new File(path);

@@ -93,11 +93,10 @@ public class ManualCorrection {
         //logger.debug("unlinking: {}", o);
     }
     private static void removeError(StructureObject o, boolean next, boolean prev) {
-        if (o.hasMeasurements()) {
-            String value = null;
-            if (prev) o.getMeasurements().setValue(trackErrorPrev, value);
-            if (next) o.getMeasurements().setValue(trackErrorNext, value);
-        }
+        String value = null;
+        if (prev) o.getMeasurements().setValue(trackErrorPrev, value);
+        if (next) o.getMeasurements().setValue(trackErrorNext, value);
+        
     }
     public static void unlinkObjects(StructureObject prev, StructureObject next, Collection<StructureObject> modifiedObjects) {
         if (next.getFrame()<prev.getFrame()) unlinkObjects(next, prev, modifiedObjects);

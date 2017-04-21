@@ -70,12 +70,12 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
             else outputChannel=null;
         }
         super.setPlugin(pluginInstance);
-        configurationData = ParameterUtils.duplicateConfigurationDataArrayList(pluginInstance.getConfigurationData());
+        configurationData = ParameterUtils.duplicateConfigurationDataList(pluginInstance.getConfigurationData());
         return this;
     }
     
-    public void setConfigurationData(ArrayList configurationData) {
-        this.configurationData = ParameterUtils.duplicateConfigurationDataArrayList(configurationData);
+    public void setConfigurationData(List configurationData) {
+        this.configurationData = ParameterUtils.duplicateConfigurationDataList(configurationData);
     }
     
     public void setOutputChannel(int... channelIdx) { // null -> all selected OR same channel selected
@@ -117,7 +117,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
     public T instanciatePlugin() {
         T instance = super.instanciatePlugin();
         if (instance!=null) {
-            ArrayList target = instance.getConfigurationData();
+            List target = instance.getConfigurationData();
             if (target!=null && configurationData!=null) for (Object o : configurationData) target.add(ParameterUtils.duplicateConfigurationData(o));
             //logger.debug("copied configuration data to transformation: {}: config:{}", instance.getClass().getSimpleName(), instance.getConfigurationData());
         }
@@ -129,7 +129,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
         super.setContentFrom(other);
         if (other instanceof TransformationPluginParameter && ((TransformationPluginParameter)other).getPluginType().equals(getPluginType())) {
             TransformationPluginParameter otherPP = (TransformationPluginParameter) other;
-            this.configurationData=ParameterUtils.duplicateConfigurationDataArrayList(otherPP.configurationData);
+            this.configurationData=ParameterUtils.duplicateConfigurationDataList(otherPP.configurationData);
             if (otherPP.outputChannel==null) this.outputChannel=null;
             else this.outputChannel=otherPP.outputChannel.duplicate();
             inputChannel.setContentFrom(otherPP.inputChannel);

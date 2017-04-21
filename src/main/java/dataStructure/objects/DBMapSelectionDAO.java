@@ -76,6 +76,7 @@ public class DBMapSelectionDAO implements SelectionDAO {
         if (db.isClosed()) makeDB();
         for (String s : DBMapUtils.getValues(dbMap)) {
             Selection sel = JSONUtils.parse(Selection.class, s);
+            sel.setMasterDAO(mDAO);
             idCache.put(sel.getName(), sel);
         }
         // local files

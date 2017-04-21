@@ -377,13 +377,13 @@ public class StructureObjectUtils {
     }
     
     public static List<ObjectId> getIdList(Collection<StructureObject> objects) {
-        List<ObjectId> ids = new ArrayList<ObjectId>(objects.size());
+        List<ObjectId> ids = new ArrayList<>(objects.size());
         for (StructureObject o : objects) ids.add(o.id);
         return ids;
     }
     public static List<ObjectId> getMeasurementIdList(Collection<StructureObject> objects) {
-        List<ObjectId> ids = new ArrayList<ObjectId>(objects.size());
-        for (StructureObject o : objects) if (o.measurementsId!=null) ids.add(o.measurementsId);
+        List<ObjectId> ids = new ArrayList<>(objects.size());
+        for (StructureObject o : objects) ids.add(o.id);
         return ids;
     }
 

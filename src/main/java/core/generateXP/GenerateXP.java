@@ -24,6 +24,7 @@ import core.Processor;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
+import dataStructure.configuration.PreProcessingChain;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
@@ -400,27 +401,28 @@ public class GenerateXP {
         xp.getStructures().insert(mc, bacteria, mutation);
         setParametersFluo(xp, true, true);
         
-        if (setUpPreProcessing) {// preProcessing 
-            //xp.getPreProcessingTemplate().addTransformation(0, null, new SuppressCentralHorizontalLine(6)).setActivated(false);
-            if (!Double.isNaN(scaleXY)) xp.getPreProcessingTemplate().setCustomScale(scaleXY, 1);
-            if (crop!=null) xp.getPreProcessingTemplate().addTransformation(0, null, new SimpleCrop(crop));
-            xp.getPreProcessingTemplate().setTrimFrames(trimFramesStart, trimFramesEnd);
-            //xp.getPreProcessingTemplate().addTransformation(0, null, new SaturateHistogramAuto().setSigmas(1, 2));
-            xp.getPreProcessingTemplate().addTransformation(0, null, new SaturateHistogram(800, 1000));
-            xp.getPreProcessingTemplate().addTransformation(1, null, new SaturateHistogram(500, 500));
-            xp.getPreProcessingTemplate().addTransformation(1, null, new BandPass(0, 40, 1, 0)); // remove horizontal lines // min ==1 ? 
-            //xp.getPreProcessingTemplate().addTransformation(1, null, new Median(1, 0)).setActivated(true); // to remove salt and pepper noise before rotation
-            //xp.getPreProcessingTemplate().addTransformation(0, null, new BandPass(0, 40, 1)); // remplacer le subtractBackground..-> determiner l'echelle
-            xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false)); 
-            xp.getPreProcessingTemplate().addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
-            xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
-            xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannelFluo2D(30, 45, 200, 0.6, 5));
-            //xp.getPreProcessingTemplate().addTransformation(1, null, new ScaleHistogramSignalExclusionY().setExclusionChannel(0)); // to remove blinking / homogenize on Y direction
-            xp.getPreProcessingTemplate().addTransformation(0, null, new ImageStabilizerXY(0, 1000, 5e-8, 20).setAdditionalTranslation(1, 1, 1)); // additional translation to correct chromatic shift
-        }
+        if (setUpPreProcessing) setPreprocessingFluo(xp.getPreProcessingTemplate(), flip, trimFramesStart, trimFramesEnd, scaleXY, crop);
         return xp;
     }
-    
+    public static void setPreprocessingFluo(PreProcessingChain ps, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY, int[] crop) {
+            ps.removeAllTransformations();
+            //ps.addTransformation(0, null, new SuppressCentralHorizontalLine(6)).setActivated(false);
+            if (!Double.isNaN(scaleXY)) ps.setCustomScale(scaleXY, 1);
+            if (crop!=null) ps.addTransformation(0, null, new SimpleCrop(crop));
+            ps.setTrimFrames(trimFramesStart, trimFramesEnd);
+            //ps.addTransformation(0, null, new SaturateHistogramAuto().setSigmas(1, 2));
+            ps.addTransformation(0, null, new SaturateHistogram(800, 1000));
+            ps.addTransformation(1, null, new SaturateHistogram(500, 500));
+            ps.addTransformation(1, null, new BandPass(0, 40, 1, 0)); // remove horizontal lines // min ==1 ? 
+            //ps.addTransformation(1, null, new Median(1, 0)).setActivated(true); // to remove salt and pepper noise before rotation
+            //ps.addTransformation(0, null, new BandPass(0, 40, 1)); // remplacer le subtractBackground..-> determiner l'echelle
+            ps.addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false)); 
+            ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
+            ps.addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
+            ps.addTransformation(0, null, new CropMicroChannelFluo2D(30, 45, 200, 0.6, 5));
+            //ps.addTransformation(1, null, new ScaleHistogramSignalExclusionY().setExclusionChannel(0)); // to remove blinking / homogenize on Y direction
+            ps.addTransformation(0, null, new ImageStabilizerXY(0, 1000, 5e-8, 20).setAdditionalTranslation(1, 1, 1)); // additional translation to correct chromatic shift
+    }
     public static void setParametersFluo(Experiment xp, boolean processing, boolean measurements) {
         Structure mc = xp.getStructure(0);
         Structure bacteria = xp.getStructure(1);
@@ -431,10 +433,10 @@ public class GenerateXP {
             //mutation.setProcessingScheme(new SegmentAndTrack(new LAPTracker().setCompartimentStructure(1)));
             mutation.setProcessingScheme(new SegmentAndTrack(
                     new LAPTracker().setCompartimentStructure(1).setSegmenter(
-                            new MutationSegmenter(0.65, 0.5, 0.55).setScale(2.5) 
-                    ).setSpotQualityThreshold(1).setLinkingMaxDistance(0.6, 0.61).setGapParameters(0.6, 0.1, 3).setTrackLength(10, 0)
+                        new MutationSegmenter(0.65, 0.5, 0.55).setScale(2.5) 
+                ).setSpotQualityThreshold(1).setLinkingMaxDistance(0.4, 0.41).setGapParameters(0.4, 0.1, 3).setTrackLength(8, 14)
             ).addPreFilters(new BandPass(0, 8, 0, 5) 
-            ).addPostFilters(new FeatureFilter(new Quality(), 0.85, true, true)));
+            ).addPostFilters(new FeatureFilter(new Quality(), 0.6, true, true)));
         }
         if (measurements) {
             xp.addMeasurement(new BacteriaLineageMeasurements(1, "BacteriaLineage"));

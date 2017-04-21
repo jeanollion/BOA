@@ -62,7 +62,7 @@ public class ImportExportJSON {
             for (StructureObject r : roots) allObjects.addAll(r.getChildren(sIdx));
         }
         writer.write(dao.getPositionName()+File.separator+"objects.txt", allObjects, o -> serialize(o));
-        allObjects.removeIf(o -> !o.hasMeasurements());
+        allObjects.removeIf(o -> o.getMeasurements().getValues().isEmpty());
         writer.write(dao.getPositionName()+File.separator+"measurements.txt", allObjects, o -> serialize(o.getMeasurements()));
     }
     public static void writeImages(ZipWriter writer, ObjectDAO dao) {
@@ -73,9 +73,7 @@ public class ImportExportJSON {
         for (int c = 0; c<ch; ++c) {
             for (int f = 0; f<fr; ++f) {
                 InputStream is = iDao.openStream(c, f, dao.getPositionName());
-                if (is!=null) {
-                    writer.appendFile(dir+f+"_"+c, is);
-                }
+                if (is!=null) writer.appendFile(dir+f+"_"+c, is); //closes is
             }
         }
     }
@@ -92,7 +90,7 @@ public class ImportExportJSON {
             int channel = Integer.parseInt(fc[1]);
             InputStream is = reader.readFile(f);
             if (is!=null) {
-                logger.debug("read images: f={}, c={} pos: {}", frame, channel, pos);
+                //logger.debug("read images: f={}, c={} pos: {}", frame, channel, pos);
                 iDao.writePreProcessedImage(is, channel, frame, pos);
             }
         }
@@ -138,6 +136,7 @@ public class ImportExportJSON {
             writeObjects(w, oDAO);
             if (images) writeImages(w, oDAO);
         }
+        logger.info("Exporting position done!");
     }
     public static void exportConfig(ZipWriter w, MasterDAO dao) {
         if (!w.isValid()) return;

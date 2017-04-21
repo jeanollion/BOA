@@ -294,7 +294,7 @@ public class DeleteFromDAOTest {
                  return allObjects.size();
             } else if (clazz == Measurements.class) {
                 int count = 0;
-                for (StructureObject o : allObjects) if (o.hasMeasurements()) ++count;
+                for (StructureObject o : allObjects) if (!o.getMeasurements().getValues().isEmpty()) ++count;
                 return count;
             }
         } else throw new IllegalArgumentException("MasterDAO of class: "+db.getClass()+" no managed by test");

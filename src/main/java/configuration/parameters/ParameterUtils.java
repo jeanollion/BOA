@@ -193,7 +193,7 @@ public class ParameterUtils {
                     return duplicateConfigurationDataArray((Object[]) in);
                 }
             } else if (in.getClass()==ArrayList.class) {
-                return duplicateConfigurationDataArrayList((ArrayList)in);
+                return duplicateConfigurationDataList((ArrayList)in);
             }
         }
         return null;
@@ -221,7 +221,7 @@ public class ParameterUtils {
             return null;
         }
     }
-    public static ArrayList duplicateConfigurationDataArrayList(ArrayList in) {
+    public static ArrayList duplicateConfigurationDataList(List in) {
         if (in != null) {
             ArrayList res = new ArrayList(in.size());
             for (Object o : in) {
