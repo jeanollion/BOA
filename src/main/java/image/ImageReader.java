@@ -230,6 +230,7 @@ public class ImageReader {
                 int deconvIdx = getImagePath().indexOf("_D3D");
                 String logPath = deconvIdx>0 ? getImagePath().substring(0, deconvIdx)+".dv.log" : getImagePath()+".log";
                 timePoints = paseDVLogFile(logPath, "Time Point: ");
+                logger.debug("timePoints: {}", timePoints);
             }
         }
         if (timePoints!=null) {

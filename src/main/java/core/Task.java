@@ -56,22 +56,32 @@ public class Task {
             this.dbName=dbName;
             if (dir!=null && !"".equals(dir)) this.dir=dir;
             else {
-                if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.Morphium)) this.dir="hostname";
+                if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.Morphium)) this.dir="localhost";
                 else if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) {
                     String defPath = PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH);
-                        if (defPath!=null) {
-                        File config = Utils.seach(defPath, dbName+"_config.db", 2);
-                        if (config!=null) this.dir = config.getParent();
-                        else {
-                            config = Utils.seach(new File(defPath).getParent(), dbName+"_config.db", 2);
-                            if (config!=null) this.dir = config.getParent();
-                            else this.dir=null;
+                    String d = null;
+                    if (defPath!=null) d = getLocalDirForDB(dbName, defPath);
+                    if (d==null) {
+                        for (String path : PropertyUtils.getStrings(PropertyUtils.LOCAL_DATA_PATH)) {
+                            if (path.equals(defPath)) continue;
+                            d = getLocalDirForDB(dbName, path);
+                            if (d!=null) break;
                         }
-                    } else this.dir=null;
+                    }
+                    this.dir = d;
                     if (this.dir==null) throw new IllegalArgumentException("no config file found for db: "+dbName);
                 } else {
                     this.dir=null;
                 }
+            }
+        }
+        private String getLocalDirForDB(String dbName, String dir) {
+            File config = Utils.seach(dir, dbName+"_config.db", 2);
+            if (config!=null) return config.getParent();
+            else {
+                config = Utils.seach(new File(dir).getParent(), dbName+"_config.db", 2);
+                if (config!=null) return config.getParent();
+                else return null;
             }
         }
         public Task setAllActions() {
@@ -94,7 +104,10 @@ public class Task {
             return this;
         }
         private void initDB() {
-            if (db==null) db = MasterDAOFactory.createDAO(dbName, dir);
+            if (db==null) {
+                if (!"localhost".equals(dir) && new File(dir).exists()) db = MasterDAOFactory.createDAO(dbName, dir, MasterDAOFactory.DAOType.DBMap);
+                else db = MasterDAOFactory.createDAO(dbName, dir, MasterDAOFactory.DAOType.Morphium);
+            }
         }
         public Task setPositions(String... positions) {
             if (positions!=null && positions.length>0) {

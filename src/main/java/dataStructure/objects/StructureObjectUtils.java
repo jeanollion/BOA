@@ -298,6 +298,10 @@ public class StructureObjectUtils {
             StructureObject th = o.getPrevious().getNext();
             if (!res.containsKey(th)) {
                 List<StructureObject> track = res.get(o.getPrevious().getTrackHead());
+                if (track==null) {
+                    logger.error("getAllTrackSPlitDiv: no track for: {}", o.getPrevious().getTrackHead());
+                    continue;
+                }
                 int i = track.indexOf(th);
                 if (i>=0) {
                     res.put(th, track.subList(i, track.size()));

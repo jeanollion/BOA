@@ -29,6 +29,7 @@ import org.mapdb.DBMaker;
 import org.mapdb.HTreeMap;
 import org.mapdb.Serializer;
 import utils.DBMapUtils;
+import utils.FileIO;
 import utils.JSONUtils;
 
 /**
@@ -76,6 +77,18 @@ public class DBMapSelectionDAO implements SelectionDAO {
         for (String s : DBMapUtils.getValues(dbMap)) {
             Selection sel = JSONUtils.parse(Selection.class, s);
             idCache.put(sel.getName(), sel);
+        }
+        // local files
+        File dirFile = new File(dir);
+        for (File f : dirFile.listFiles((f, n)-> n.endsWith(".txt"))) {
+            List<Selection> sels = FileIO.readFromFile(f.getAbsolutePath(), s -> JSONUtils.parse(Selection.class, s));
+            for (Selection s : sels) {
+                s.setMasterDAO(mDAO);
+                if (idCache.containsKey(s.getName())) logger.warn("Selection: {} found in file: {} will be overriden in local database", s.getName(), f.getAbsolutePath());
+                idCache.put(s.getName(), s);
+                store(s);
+                f.delete();
+            }
         }
     }
     @Override

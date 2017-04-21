@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import plugins.ObjectFeature;
 import plugins.PluginFactory;
 import plugins.Transformation;
 import plugins.plugins.measurements.BacteriaFluoMeasurements;
@@ -44,8 +45,10 @@ import plugins.plugins.measurements.MutationMeasurements;
 import plugins.plugins.measurements.MutationTrackMeasurements;
 import plugins.plugins.measurements.ObjectInclusionCount;
 import plugins.plugins.measurements.TrackLength;
+import plugins.plugins.measurements.objectFeatures.FeretMax;
 import plugins.plugins.measurements.objectFeatures.Quality;
 import plugins.plugins.measurements.objectFeatures.SNR;
+import plugins.plugins.measurements.objectFeatures.Size;
 import plugins.plugins.postFilters.FeatureFilter;
 import plugins.plugins.preFilter.BandPass;
 import plugins.plugins.preFilter.IJSubtractBackground;
@@ -435,6 +438,7 @@ public class GenerateXP {
         }
         if (measurements) {
             xp.addMeasurement(new BacteriaLineageMeasurements(1, "BacteriaLineage"));
+            xp.addMeasurement(new ObjectFeatures(1).addFeatures(new Size().setScale(true), new FeretMax().setScale(true)));
             //xp.addMeasurement(new BacteriaFluoMeasurements(1, 2));
             //xp.addMeasurement(new MutationMeasurements(1, 2));
             xp.addMeasurement(new MutationTrackMeasurements(1, 2));

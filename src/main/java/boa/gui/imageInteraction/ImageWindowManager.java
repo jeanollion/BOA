@@ -898,7 +898,10 @@ public abstract class ImageWindowManager<T, U, V> {
     private JPopupMenu getMenu(StructureObject o) {
         JPopupMenu menu = new JPopupMenu();
         menu.add(new JMenuItem(o.toString()));
-        menu.add(new JMenuItem("Time: "+toString(o.hasMeasurements() ? o.getMeasurements().getCalibratedTimePoint() : o.getCalibratedTimePoint())+"ms"));
+        menu.add(new JMenuItem("Prev:"+o.getPrevious()));
+        menu.add(new JMenuItem("Next:"+o.getNext()));
+        menu.add(new JMenuItem("TrackHead:"+o.getTrackHead()));
+        menu.add(new JMenuItem("Time: "+toString(o.hasMeasurements() ? o.getMeasurements().getCalibratedTimePoint() : o.getCalibratedTimePoint())));
         menu.add(new JMenuItem("IsTrackHead: "+o.isTrackHead()));
         //DecimalFormat df = new DecimalFormat("#.####");
         if (o.getAttributes()!=null && !o.getAttributes().isEmpty()) {
@@ -936,6 +939,9 @@ public abstract class ImageWindowManager<T, U, V> {
     private JPopupMenu getMenu(List<StructureObject> list) {
         JPopupMenu menu = new JPopupMenu();
         menu.add(new JMenuItem(Utils.toStringList(list)));
+        menu.add("Prev:"+new JMenuItem(Utils.toStringList(list, o->o.getPrevious().toString())));
+        menu.add(new JMenuItem("Next:"+Utils.toStringList(list, o->o.getNext().toString())));
+        menu.add(new JMenuItem("TrackHead:"+Utils.toStringList(list, o->o.getTrackHead().toString())));
         //DecimalFormat df = new DecimalFormat("#.####E0");
         // getAllAttributeKeys
         Collection<String> attributeKeys = new HashSet();

@@ -23,15 +23,16 @@ import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import image.BoundingBox;
+import measurement.GeometricalMeasurements;
 import plugins.ObjectFeature;
 
 /**
  *
  * @author jollion
  */
-public class Size implements ObjectFeature {
-    ChoiceParameter scaled = new ChoiceParameter("Scale", new String[]{"Pixel", "Unit"}, "Pixel", false);
-    public Size setScale(boolean unit) {
+public class FeretMax implements ObjectFeature {
+    ChoiceParameter scaled = new ChoiceParameter("Scale", new String[]{"Pixel", "Unit"}, "Unit", false);
+    public FeretMax setScale(boolean unit) {
         scaled.setSelectedIndex(unit?1:0);
         return this;
     }
@@ -47,17 +48,14 @@ public class Size implements ObjectFeature {
 
     @Override
     public double performMeasurement(Object3D object, BoundingBox offset) {
-        double size = object.getSize();
-        if (scaled.getSelectedIndex()==1) {
-            size*=Math.pow(object.getScaleXY(), 2);
-            if (object.is3D()) size*=object.getScaleZ();
-        }
-        return size;
+        double feret = GeometricalMeasurements.getFeretMax(object);
+        if (scaled.getSelectedIndex()==0) feret/=object.getScaleXY();
+        return feret;
     }
 
     @Override
     public String getDefaultName() {
-        return "Size";
+        return "FeretMax";
     }
     
 }

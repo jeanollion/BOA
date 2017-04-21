@@ -56,9 +56,21 @@ public class InputImagesImpl implements InputImages {
     @Override public int getSizeZ(int channelIdx) {return imageCT[channelIdx][0].imageSources.getSizeZ(channelIdx);}
     @Override public double getCalibratedTimePoint(int c, int t, int z) {
         if (singleFrameChannel(c)) { // adjecent channel
-            if (c>0) c--;
-            else c++;
-            if (imageCT.length<=c) return Double.NaN;
+            int c2=c;
+            if (c>0) c2--;
+            else {
+                c2++;
+                if (imageCT.length<=c2) return Double.NaN;
+            }
+            if (singleFrameChannel(c2)) {
+                if (c>1) c2=c-2;
+                else {
+                    c2=c+2;
+                    if (imageCT.length<=c2) return Double.NaN;
+                }
+                if (singleFrameChannel(c2)) return Double.NaN;
+            }
+            c=c2;
         }
         return imageCT[c][t].imageSources.getCalibratedTimePoint(t, c, z);
     }

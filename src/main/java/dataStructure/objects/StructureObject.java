@@ -333,7 +333,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     private void unSetTrackLinksOneWay(boolean prev, boolean next) {
         if (prev) {
-            if (this.previous!=null && this.previous.next==this)
+            if (this.previous!=null && this.equals(this.previous.next))
             setPrevious(null);
             setTrackHead(this, false, false, null);
             setAttribute(trackErrorPrev, null);

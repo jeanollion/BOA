@@ -44,8 +44,8 @@ public class TaskRunner {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         
-        //List<Task> tasks = extractMeasurementOnFluoXP(true);
-        List<Task> tasks = getFastTrackTasks();
+        List<Task> tasks = extractMeasurementOnFluoXP(true);
+        //List<Task> tasks = getFastTrackTasks();
         //List<Task> tasks = getTasks();
         //List<Task> tasks = getFluoTasks();
         //for (Task t : tasks) t.isValid();
@@ -83,9 +83,9 @@ public class TaskRunner {
     
     public static List<Task> extractMeasurementOnFluoXP(boolean runMeas) {
         List<Task> tasks = new ArrayList<Task>() {{
-            add(new Task("boa_fluo151127").setActions(false, false, false, runMeas).setPositions(1, 2, 3, 4).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 1).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 2));
-            add(new Task("boa_fluo160428").setActions(false, false, false, runMeas).setPositions(1, 2, 23, 3, 4, 5, 6).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 1).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 2));
-            add(new Task("boa_fluo160501").setActions(false, false, false, runMeas).setPositions(1, 2, 4).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 1).addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/MutationTracks", 2));
+            add(new Task("boa_fluo151127", "localhost").setActions(false, false, false, runMeas).setPositions(0, 1, 2, 3).addExtractMeasurementDir("/data/Images/Fluo/film151127", 1).addExtractMeasurementDir("/data/Images/Fluo/film151127", 2));
+            add(new Task("boa_fluo160428", "localhost").setActions(false, false, false, runMeas).setPositions(0, 1, 22, 2, 3, 4, 5).addExtractMeasurementDir("/data/Images/Fluo/film160428", 1).addExtractMeasurementDir("/data/Images/Fluo/film160428", 2));
+            add(new Task("boa_fluo160501", "localhost").setActions(false, false, false, runMeas).setPositions(0, 1, 3).addExtractMeasurementDir("/data/Images/Fluo/film160501", 1).addExtractMeasurementDir("/data/Images/Fluo/film160501", 2));
         }};
         return tasks;
     }

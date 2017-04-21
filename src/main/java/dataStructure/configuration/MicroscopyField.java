@@ -114,22 +114,26 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     }
     public InputImagesImpl getInputImages() {
         if (inputImages==null || inputImages.getTimePointNumber()!=getTimePointNumber(false)) {
-            logger.debug("generate input images with {} frames (old: {}) ", getTimePointNumber(false), inputImages!=null?inputImages.getTimePointNumber() : "null");
-            ImageDAO dao = getExperiment().getImageDAO();
-            if (dao==null || images==null) return null;
-            int tpOff = getStartTrimFrame();
-            int tpNp = getEndTrimFrame() - tpOff+1;
-            InputImage[][] res = new InputImage[images.getChannelNumber()][];
-            for (int c = 0; c<images.getChannelNumber(); ++c) {
-                res[c] = images.singleFrame(c) ? new InputImage[1] : new InputImage[tpNp-tpOff];
-                for (int t = 0; t<res[c].length; ++t) {
-                    res[c][t] = new InputImage(c, t+tpOff, t, name, images, dao);
-                } 
+            synchronized(this) {
+                if (inputImages==null || inputImages.getTimePointNumber()!=getTimePointNumber(false)) {
+                    logger.debug("generate input images with {} frames (old: {}) ", getTimePointNumber(false), inputImages!=null?inputImages.getTimePointNumber() : "null");
+                    ImageDAO dao = getExperiment().getImageDAO();
+                    if (dao==null || images==null) return null;
+                    int tpOff = getStartTrimFrame();
+                    int tpNp = getEndTrimFrame() - tpOff+1;
+                    InputImage[][] res = new InputImage[images.getChannelNumber()][];
+                    for (int c = 0; c<images.getChannelNumber(); ++c) {
+                        res[c] = images.singleFrame(c) ? new InputImage[1] : new InputImage[tpNp];
+                        for (int t = 0; t<res[c].length; ++t) {
+                            res[c][t] = new InputImage(c, t+tpOff, t, name, images, dao);
+                        } 
+                    }
+                    int defTp = defaultTimePoint.getSelectedTimePoint()-tpOff;
+                    if (defTp<0) defTp=0;
+                    if (defTp>=tpNp) defTp=tpNp-1;   
+                    inputImages = new InputImagesImpl(res, defTp);
+                }
             }
-            int defTp = defaultTimePoint.getSelectedTimePoint()-tpOff;
-            if (defTp<0) defTp=0;
-            if (defTp>=tpNp) defTp=tpNp-1;   
-            inputImages = new InputImagesImpl(res, defTp);
             //logger.debug("creation input images: def tp: {}, total: {}, tp: {}",defaultTimePoint.getSelectedTimePoint(),images.getTimePointNumber(), inputImages.getDefaultTimePoint());
         }
         return inputImages;

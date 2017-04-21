@@ -22,11 +22,15 @@ import static dataStructure.objects.StructureObject.logger;
 import de.caluga.morphium.DAO;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.query.Query;
+import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.bson.types.ObjectId;
+import utils.FileIO;
+import utils.JSONUtils;
 
 /**
  *
@@ -52,8 +56,25 @@ public class MorphiumSelectionDAO implements SelectionDAO {
     @Override public synchronized List<Selection> getSelections() {
         idCache.clear();
         List<Selection> sel = getQuery().asList();
+        for (Selection s : sel) {
+            idCache.put(s.getName(), s);
+            s.setMasterDAO(masterDAO);
+        }
+        // local files
+        File dirFile = new File(masterDAO.getExperiment().getOutputImageDirectory()+File.separator+"Selections");
+        if (dirFile.isDirectory()) {
+            for (File f : dirFile.listFiles((f, n)-> n.endsWith(".txt"))) {
+                List<Selection> sels = FileIO.readFromFile(f.getAbsolutePath(), s -> JSONUtils.parse(Selection.class, s));
+                for (Selection s : sels) {
+                    s.setMasterDAO(masterDAO);
+                    if (idCache.containsKey(s.getName())) logger.warn("Selection: {}({}) found in file: {} will be overriden in local database", s.getName(), s.count(), f.getAbsolutePath());
+                    store(s); // puts in cache
+                    f.delete();
+                }
+            }
+        }
+        sel = new ArrayList<>(idCache.values());
         Collections.sort(sel);
-        for (Selection s : sel) s.setMasterDAO(masterDAO);
         return sel;
     }
     
@@ -63,7 +84,7 @@ public class MorphiumSelectionDAO implements SelectionDAO {
         masterDAO.m.storeNoCache(s, collectionName, null);
         long t1 = System.currentTimeMillis();
         logger.debug("Stored selection: {} in {}ms", s.getName(), t1-t0);
-        idCache.remove(s.getName());
+        idCache.put(s.getName(), s);
     }
     
     @Override public synchronized void delete(String id) {

@@ -61,27 +61,32 @@ import utils.Utils;
  */
 public class ManualCorrection {
     private static List<StructureObject> getNext(StructureObject o) {
-        if (o.getParent().getNext()==null) return Collections.EMPTY_LIST;
-        List<StructureObject> res = new ArrayList(o.getParent().getNext().getChildren(o.getStructureIdx()));
+        StructureObject nextParent = o.getNext()==null ? o.getParent().getNext() : o.getNext().getParent();
+        if (nextParent==null) return Collections.EMPTY_LIST;
+        List<StructureObject> res = new ArrayList(nextParent.getChildren(o.getStructureIdx()));
         res.removeIf(e -> e.getPrevious()!=o && o.getNext()!=e);
         //logger.debug("next of : {} = {}", o, res);
         return res;
     }
     private static List<StructureObject> getPrevious(StructureObject o) {
-        if (o.getParent().getPrevious()==null) return Collections.EMPTY_LIST;
-        List<StructureObject> res = new ArrayList(o.getParent().getPrevious().getChildren(o.getStructureIdx()));
+        StructureObject nextParent = o.getPrevious()==null ? o.getParent().getPrevious() : o.getPrevious().getParent();
+        if (nextParent==null) return Collections.EMPTY_LIST;
+        List<StructureObject> res = new ArrayList(nextParent.getChildren(o.getStructureIdx()));
         res.removeIf(e -> e.getNext()!=o && o.getPrevious()!=e);
         //logger.debug("prev of : {} = {}", o, res);
         return res;
     }
     public static void unlinkObject(StructureObject o, Collection<StructureObject> modifiedObjects) {
+        if (o==null) return;
         for (StructureObject n : getNext(o) ) {
             n.resetTrackLinks(true, false);
             n.setTrackHead(n, true, true, modifiedObjects);
         }
-        for (StructureObject p : getPrevious(o) ) if (p.getNext()==o) {
-            p.resetTrackLinks(false, true);
-            modifiedObjects.add(p);
+        for (StructureObject p : getPrevious(o) ) {
+            if (o.equals(p.getNext())) {
+                p.resetTrackLinks(false, true);
+                modifiedObjects.add(p);
+            }
         }
         o.resetTrackLinks(true, true);
         modifiedObjects.add(o);

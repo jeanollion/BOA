@@ -117,7 +117,7 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
         if (singleFrame(channel)) timePoint=0;
         ImageIOCoordinates ioCoordinates = getImageIOCoordinates(timePoint);
         if (bounds!=null) ioCoordinates.setBounds(bounds);
-        if (singleFrameC[channel]) {
+        if (singleFrame(channel)) {
             if (singleFrameImages==null) {
                 synchronized(this) {
                     if (singleFrameImages==null) singleFrameImages = new Image[filePathC.length];

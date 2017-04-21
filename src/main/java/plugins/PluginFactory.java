@@ -232,6 +232,7 @@ public class PluginFactory {
     public static <T extends Plugin> T getPlugin(Class<T> clazz, String className) {
         try {
             Class plugClass = plugins.get(className);
+            if (plugClass==null && refactoredNames.containsKey(className)) plugClass = plugins.get(refactoredNames.get(className));
             if (plugClass==null) {
                 logger.error("plugin :{} of class: {} not found", className, clazz);
                 return null;
