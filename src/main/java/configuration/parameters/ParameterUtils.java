@@ -144,7 +144,7 @@ public class ParameterUtils {
         return res;
     }
     
-    public static List<Parameter> duplicateArray(List<Parameter> parameters) {
+    public static List<Parameter> duplicateList(List<Parameter> parameters) {
         if (parameters==null) return null;
         ArrayList<Parameter> res = new ArrayList<Parameter>(parameters.size());
         for (Parameter p : parameters) res.add(p.duplicate());

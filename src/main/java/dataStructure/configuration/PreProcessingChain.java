@@ -143,7 +143,7 @@ public class PreProcessingChain extends SimpleContainerParameter {
         tpp.setOutputChannel(outputChannel);
         return tpp;
     }
-    
+    /*
     @Override 
     public void postLoad() {
         if (!postLoaded) {
@@ -152,7 +152,7 @@ public class PreProcessingChain extends SimpleContainerParameter {
             super.postLoad();
         }
     }
-    
+    */
     @Override public ParameterUI getUI() {
         return new PreProcessingChainUI(this);
     }

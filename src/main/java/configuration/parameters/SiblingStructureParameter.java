@@ -113,7 +113,7 @@ public class SiblingStructureParameter extends StructureParameter {
             SiblingStructureParameter otherP = (SiblingStructureParameter) other;
             parentStructureIdx=otherP.parentStructureIdx;
             selectedStructureIdx = otherP.selectedStructureIdx;
-            includeParent=otherP.includeParent;
+            //includeParent=otherP.includeParent;
         } else throw new IllegalArgumentException("wrong parameter type");
     }
     @Override public SiblingStructureParameter setAutoConfiguration(boolean autoConfiguration) {

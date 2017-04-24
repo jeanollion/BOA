@@ -21,13 +21,14 @@ import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import dataStructure.objects.StructureObjectProcessing;
 import image.Image;
+import plugins.SimpleThresholder;
 import plugins.Thresholder;
 
 /**
  *
  * @author jollion
  */
-public class ConstantValue implements Thresholder {
+public class ConstantValue implements SimpleThresholder, Thresholder {
     NumberParameter value = new NumberParameter("Value:", 8, 1);
     
     public ConstantValue() {}
@@ -42,9 +43,12 @@ public class ConstantValue implements Thresholder {
     public boolean does3D() {
         return true;
     }
-
+    @Override
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
         return value.getValue().doubleValue();
     }
-    
+    @Override
+    public double runThresholder(Image input) {
+        return value.getValue().doubleValue();
+    }
 }

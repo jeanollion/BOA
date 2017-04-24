@@ -22,12 +22,12 @@ public class ImageInt extends ImageInteger {
     }
     
     public ImageInt(String name, int sizeX, int[][] pixels) {
-        super(name, sizeX, pixels[0].length/sizeX, pixels.length);
+        super(name, sizeX, sizeX>0?pixels[0].length/sizeX:0, pixels.length);
         this.pixels=pixels;
     }
     
     public ImageInt(String name, int sizeX, int[] pixels) {
-        super(name, sizeX, pixels.length/sizeX, 1);
+        super(name, sizeX, sizeX>0?pixels.length/sizeX:0, 1);
         this.pixels=new int[][]{pixels};
     }
     

@@ -36,13 +36,13 @@ import javax.swing.tree.TreeNode;
  *
  * @author jollion
  */
-@Lifecycle
+
 @Embedded(polymorph = true)
-public abstract class SimpleContainerParameter implements ContainerParameter, PostLoadable {
+public abstract class SimpleContainerParameter implements ContainerParameter {
     protected String name;
     @Transient protected ContainerParameter parent;
     @Transient protected List<Parameter> children;
-    @Transient protected boolean postLoaded=false;
+    //@Transient protected boolean postLoaded=false;
     public SimpleContainerParameter(String name) {
         this.name=name;
     }
@@ -78,7 +78,11 @@ public abstract class SimpleContainerParameter implements ContainerParameter, Po
         if (other instanceof SimpleContainerParameter) {
             SimpleContainerParameter otherP = (SimpleContainerParameter) other;
             if (getChildren().size()==otherP.getChildCount()) for (int i = 0; i<getChildren().size(); i++) children.get(i).setContentFrom((Parameter)otherP.getChildAt(i));
-            //else return false;
+            else {
+                this.children.clear();
+                this.children.addAll(ParameterUtils.duplicateList(otherP.getChildren()));
+                for (Parameter p : children) p.setParent(this);
+            }
         } else {
             throw new IllegalArgumentException("wrong parameter type");
         }
@@ -226,7 +230,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter, Po
     
     // morphium
 
-    @PostLoad public void postLoad() {
+    /*public void postLoad() {
         //logger.debug("post load on : {}, of class: {}, alreadyPostLoaded: {}, parent: {}", name, this.getClass().getSimpleName(), postLoaded, parent!=null? parent.getName():null);
         if (postLoaded) return;
         initChildList();
@@ -234,5 +238,5 @@ public abstract class SimpleContainerParameter implements ContainerParameter, Po
             if (p instanceof PostLoadable) ((PostLoadable)p).postLoad();
         }
         postLoaded=true;
-    }
+    }*/
 }

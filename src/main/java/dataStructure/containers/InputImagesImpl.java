@@ -101,6 +101,10 @@ public class InputImagesImpl implements InputImages {
     }
     public Image[][] getImagesTC(int frameMin, int frameMaxExcluded, int... channels) {
         if (channels==null || channels.length==0) channels = ArrayUtil.generateIntegerArray(this.getChannelNumber());
+        if (frameMin>=this.getTimePointNumber()) {
+            frameMin=this.getTimePointNumber()-1;
+            frameMaxExcluded = this.getTimePointNumber();
+        }
         if (frameMaxExcluded<frameMin) {
             frameMin = 0;
             frameMaxExcluded = getTimePointNumber();

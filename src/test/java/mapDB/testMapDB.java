@@ -109,10 +109,10 @@ public class testMapDB {
         DBObject dboXP = (DBObject)com.mongodb.util.JSON.parse(xpString);
         DBObject dboOb = (DBObject)com.mongodb.util.JSON.parse(map.get("object"));
         Experiment xp = unmarshall(Experiment.class, dboXP);
-        xp.postLoad();
+        //xp.postLoad();
         logger.info("xp create: {}, positions: {}", xp.getName(), xp.getPositionsAsString().length); 
         StructureObject o2 = unmarshall(StructureObject.class, dboOb);
-        o2.postLoad();
+        //o2.postLoad();
         o2.setParent(o.getParent()); // for toString
         assertEquals("object id", o.getId(), o2.getId());
         assertArrayEquals("object center", o.getObject().getCenter(), o2.getObject().getCenter(), 0.0001);

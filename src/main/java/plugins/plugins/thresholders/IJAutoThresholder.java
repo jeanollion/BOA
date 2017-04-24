@@ -28,6 +28,7 @@ import image.Image;
 import image.ImageByte;
 import image.ImageInteger;
 import image.ImageMask;
+import plugins.SimpleThresholder;
 import plugins.Thresholder;
 import utils.Utils;
 
@@ -35,13 +36,19 @@ import utils.Utils;
  *
  * @author jollion
  */
-public class IJAutoThresholder implements Thresholder {
+public class IJAutoThresholder implements SimpleThresholder, Thresholder {
     ChoiceParameter method = new ChoiceParameter("Method", AutoThresholder.getMethods(), AutoThresholder.Method.Otsu.toString(), false);
     
     public IJAutoThresholder setMethod(AutoThresholder.Method method) {
         this.method.setValue(method.toString());
         return this;
     }
+    
+    @Override 
+    public double runThresholder(Image input) {
+        return runThresholder(input, null);
+    }
+    @Override
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
         ImageMask mask = structureObject!=null?structureObject.getMask():new BlankMask(input);
         return runThresholder(input, mask, Method.valueOf(method.getSelectedItem()));

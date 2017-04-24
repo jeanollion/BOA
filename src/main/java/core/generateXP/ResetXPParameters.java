@@ -39,11 +39,11 @@ public class ResetXPParameters {
         //String[] dbs = new String[]{"boa_fluo151127"};
         //for (String db:dbs) resetParametersFluo(db, true, true);
         
-        resetPreProcessingFluo("boa_fluo151127", true, 4);
+        resetPreProcessingFluo("fluo151127", null, true, 4);
         logger.debug("done!");
     }
-    public static void resetParametersTrans(String dbName, boolean processing, boolean measurements) {
-        MasterDAO db = new Task(dbName).getDB();
+    public static void resetParametersTrans(String dbName, String dir, boolean processing, boolean measurements) {
+        MasterDAO db = new Task(dbName, dir).getDB();
         if (db==null) {
             logger.error("DB {} not found", dbName);
             return;
@@ -51,7 +51,7 @@ public class ResetXPParameters {
         GenerateXP.setParametersTrans(db.getExperiment(), processing, measurements);
         db.updateExperiment();
     }
-    public static void resetParametersFluo(String dbName, boolean processing, boolean measurements) {
+    public static void resetParametersFluo(String dbName, String dir, boolean processing, boolean measurements) {
         MasterDAO db = new Task(dbName).getDB();
         if (db==null) {
             logger.error("DB {} not found", dbName);
@@ -60,11 +60,11 @@ public class ResetXPParameters {
         GenerateXP.setParametersFluo(db.getExperiment(), processing, measurements);
         db.updateExperiment();
     }
-    public static void resetPreProcessingFluo(String dbName, boolean flip, int... positionIndices) {
-        resetPreProcessingFluo(dbName, flip, 0, 0, Double.NaN, positionIndices);
+    public static void resetPreProcessingFluo(String dbName, String dir, boolean flip, int... positionIndices) {
+        resetPreProcessingFluo(dbName, dir, flip, 0, 0, Double.NaN, positionIndices);
     }
-    public static void resetPreProcessingFluo(String dbName, boolean flip, int trimeStart, int trimEnd, double scaleXY, int... positionIndices) {
-        MasterDAO db = new Task(dbName).getDB();
+    public static void resetPreProcessingFluo(String dbName, String dir, boolean flip, int trimeStart, int trimEnd, double scaleXY, int... positionIndices) {
+        MasterDAO db = new Task(dbName, dir).getDB();
         if (db==null) {
             logger.error("DB {} not found", dbName);
             return;

@@ -23,12 +23,12 @@ public class ImageShort extends ImageInteger {
     }
     
     public ImageShort(String name, int sizeX, short[][] pixels) {
-        super(name, sizeX, pixels[0].length/sizeX, pixels.length);
+        super(name, sizeX, sizeX>0?pixels[0].length/sizeX:0, pixels.length);
         this.pixels=pixels;
     }
     
     public ImageShort(String name, int sizeX, short[] pixels) {
-        super(name, sizeX, pixels.length/sizeX, 1);
+        super(name, sizeX, sizeX>0?pixels.length/sizeX:0, 1);
         this.pixels=new short[][]{pixels};
     }
     

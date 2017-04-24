@@ -26,6 +26,7 @@ import image.Image;
 import image.ImageByte;
 import image.ImageFloat;
 import image.ImageMask;
+import plugins.SimpleThresholder;
 import plugins.Thresholder;
 import processing.ImageFeatures;
 import utils.ArrayUtil;
@@ -34,13 +35,18 @@ import utils.Utils;
 /**
  * @author jollion
  */
-public class BackgroundFit implements Thresholder {
+public class BackgroundFit implements SimpleThresholder, Thresholder {
     public static boolean debug;
     
     NumberParameter sigmaFactor = new BoundedNumberParameter("Sigma factor", 2, 3, 0.01, null);
     
+    @Override
+    public double runThresholder(Image input) {
+        return runThresholder(input, null);
+    }
+    @Override
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
-        return backgroundFitHalf(input, structureObject.getMask(), sigmaFactor.getValue().doubleValue(), null);
+        return backgroundFitHalf(input, structureObject!=null?structureObject.getMask():null, sigmaFactor.getValue().doubleValue(), null);
     }
     public static float[] smooth(int[] data, double scale) {
         ImageFloat image = new ImageFloat("", data.length, 1, 1);

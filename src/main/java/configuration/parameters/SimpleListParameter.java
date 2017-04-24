@@ -37,9 +37,9 @@ import javax.swing.tree.TreeNode;
  * @author jollion
  */
 
-@Lifecycle
+
 @Embedded(polymorph = true)
-public class SimpleListParameter<T extends Parameter> implements ListParameter<T>, PostLoadable {
+public class SimpleListParameter<T extends Parameter> implements ListParameter<T> {
 
     protected String name;
     protected ArrayList<T> children;
@@ -178,8 +178,9 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
         return res;
     }
     
-    public ArrayList<T> getChildren() {
-        postLoad();
+    @Override
+    public List<T> getChildren() {
+        //postLoad();
         return children;
     }
     
@@ -217,10 +218,11 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
             ListParameter otherLP = (ListParameter)other;
             if (otherLP.getChildClass()!=this.getChildClass()) throw new IllegalArgumentException("setContentFrom: wrong parameter type : child class is:"+getChildClass() + " but should be: "+otherLP.getChildClass());
             else {
-                this.unMutableIndex = otherLP.getUnMutableIndex();
-                this.name=otherLP.getName();
-                this.children=new ArrayList<T>(otherLP.getChildCount());
-                for (int i = 0; i<otherLP.getChildCount(); i++) this.children.add((T)(((Parameter)otherLP.getChildAt(i)).duplicate()));
+                //this.unMutableIndex = otherLP.getUnMutableIndex();
+                //this.name=otherLP.getName();
+                this.children.clear();
+                this.children.addAll(ParameterUtils.duplicateList(otherLP.getChildren()));
+                //for (int i = 0; i<otherLP.getChildCount(); i++) this.children.add((T)(((Parameter)otherLP.getChildAt(i)).duplicate()));
                 for (Parameter p : children) p.setParent(this);
                 ui=null;
             }
@@ -341,7 +343,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     
     // morphium
 
-    @PostLoad public void postLoad() {
+    /*public void postLoad() {
         if (postLoaded) return;
         //logger.debug("LIST post load on : {}, of class: {}, alreadyPostLoaded: {}, parent: {}", name, this.getClass().getSimpleName(), postLoaded, parent!=null? parent.getName():null);
         for (Parameter p : children) {
@@ -353,5 +355,5 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
         }
         postLoaded=true;
     }
-
+    */
 }

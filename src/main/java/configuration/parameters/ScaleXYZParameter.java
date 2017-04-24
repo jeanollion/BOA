@@ -87,7 +87,7 @@ public class ScaleXYZParameter extends SimpleContainerParameter {
         }
     }
     
-    @Override 
+    /*@Override 
     @PostLoad  public void postLoad() {
         //logger.debug("ScaleXXY postLoad call for : {}", this.hashCode());
         if (!postLoaded) {
@@ -95,7 +95,7 @@ public class ScaleXYZParameter extends SimpleContainerParameter {
             initChildList();
             postLoaded=true;
         }
-    }
+    }*/
     public ScaleXYZParameter() {
         super(); 
         //logger.debug("init null constructor scaleXYZParameter:{} XY:{}, Z:{}, use: {}", this.hashCode(), scaleXY.getValue(), scaleZ.getValue(), useImageCalibration.getValue());

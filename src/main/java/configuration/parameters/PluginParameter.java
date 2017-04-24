@@ -41,7 +41,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     protected String pluginName=NO_SELECTION;
     @Transient private Class<T> pluginType;
     protected String pluginTypeName;
-    protected boolean allowNoSelection;
+    @Transient protected boolean allowNoSelection;
     protected boolean activated=true;
     protected List<Parameter> additionalParameters;
     
@@ -150,23 +150,23 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
             PluginParameter otherPP = (PluginParameter) other;
             //logger.debug("set content PP: type: {} current: {} other: {}",this.pluginTypeName, this.pluginName, otherPP.pluginName);
             this.activated=otherPP.activated;
-            this.allowNoSelection=otherPP.allowNoSelection;
+            //this.allowNoSelection=otherPP.allowNoSelection;
             boolean toInit = false;
             if (otherPP.additionalParameters!=null) {
                 if (!ParameterUtils.setContent(additionalParameters, otherPP.additionalParameters)) {
-                    additionalParameters=ParameterUtils.duplicateArray(otherPP.additionalParameters);
+                    additionalParameters=ParameterUtils.duplicateList(otherPP.additionalParameters);
                     toInit=true;
                 }
             }
             if (otherPP.pluginName != null && otherPP.pluginName.equals(this.pluginName) && pluginParameters!=null) {
                 if (!ParameterUtils.setContent(pluginParameters, otherPP.pluginParameters)) {
-                    pluginParameters=ParameterUtils.duplicateArray(otherPP.pluginParameters);
+                    pluginParameters=ParameterUtils.duplicateList(otherPP.pluginParameters);
                     toInit=true;
                 }
             } else {
                 toInit = true;
                 this.pluginName = otherPP.pluginName;
-                this.pluginParameters = ParameterUtils.duplicateArray(otherPP.pluginParameters);
+                this.pluginParameters = ParameterUtils.duplicateList(otherPP.pluginParameters);
             }
             if (toInit) initChildList();
             this.setListeners(otherPP.listeners);

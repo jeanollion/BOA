@@ -48,7 +48,7 @@ public class GroupParameter extends SimpleContainerParameter {
     
     @Override
     public GroupParameter duplicate() {
-        List<Parameter> dup = ParameterUtils.duplicateArray(parameters);
+        List<Parameter> dup = ParameterUtils.duplicateList(parameters);
         return new GroupParameter(name, dup);
     }
     

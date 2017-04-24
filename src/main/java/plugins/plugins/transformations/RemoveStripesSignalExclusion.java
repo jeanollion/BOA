@@ -22,7 +22,9 @@ import configuration.parameters.BooleanParameter;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ChannelImageParameter;
 import configuration.parameters.Parameter;
+import configuration.parameters.PluginParameter;
 import dataStructure.containers.InputImages;
+import ij.process.AutoThresholder;
 import image.BlankMask;
 import image.Image;
 import image.ImageByte;
@@ -35,7 +37,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 import static plugins.Plugin.logger;
+import plugins.SimpleThresholder;
+import plugins.Thresholder;
 import plugins.Transformation;
+import plugins.plugins.thresholders.ConstantValue;
+import plugins.plugins.thresholders.IJAutoThresholder;
 import utils.ThreadRunner;
 
 /**
@@ -44,21 +50,26 @@ import utils.ThreadRunner;
  */
 public class RemoveStripesSignalExclusion implements Transformation {
     ChannelImageParameter signalExclusion = new ChannelImageParameter("Channel for Signal Exclusion", -1, true);
-    BoundedNumberParameter signalExclusionThreshold = new BoundedNumberParameter("Signal Exclusion Threshold", 1, 50, 0, null);
+    PluginParameter<SimpleThresholder> signalExclusionThreshold = new PluginParameter<>("Signal Exclusion Threshold", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false); //new ConstantValue(150)
     Parameter[] parameters = new Parameter[]{signalExclusion, signalExclusionThreshold};
     List<List<List<Double>>> meanTZY = new ArrayList<>();
     
     public RemoveStripesSignalExclusion() {}
     
-    public RemoveStripesSignalExclusion(int signalExclusion, double signalExclusionThreshold) {
+    public RemoveStripesSignalExclusion(int signalExclusion) {
         if (signalExclusion>=0) this.signalExclusion.setSelectedIndex(signalExclusion);
-        this.signalExclusionThreshold.setValue(signalExclusionThreshold);
+    }
+    
+    public RemoveStripesSignalExclusion setMethod(SimpleThresholder thlder) {
+        this.signalExclusionThreshold.setPlugin(thlder);
+        return this;
     }
     
     @Override
     public void computeConfigurationData(final int channelIdx, final InputImages inputImages) {
         final int chExcl = signalExclusion.getSelectedIndex();
-        final double exclThld = signalExclusionThreshold.getValue().doubleValue();
+        final double exclThld = signalExclusionThreshold.instanciatePlugin().runThresholder(inputImages.getImage(chExcl, inputImages.getDefaultTimePoint()));
+        logger.debug("remove stripes thld: {}", exclThld);
         final ThreadRunner tr = new ThreadRunner(0, inputImages.getTimePointNumber());
         final ImageInteger[] exclusionMasks = (chExcl>=0) ?  new ImageInteger[tr.size()] : null;
         Double[][][] meanX = new Double[inputImages.getTimePointNumber()][][];
@@ -95,6 +106,7 @@ public class RemoveStripesSignalExclusion implements Transformation {
         if (exclusionMask!=null && !image.sameSize(exclusionMask)) throw new Error("Image and exclusion mask should have same dimensions");
         if (exclusionMask!=null) ImageOperations.threshold(exclusionSignal, exclusionThreshold, false, true, true, exclusionMask);
         else exclusionMask = new BlankMask(image);
+        //ImageWindowManagerFactory.showImage(exclusionMask.duplicate("excl mask"));
         Double[][] res = new Double[image.getSizeZ()][image.getSizeY()];
         for (int z=0; z<image.getSizeZ(); ++z) {
             for (int y = 0; y<image.getSizeY(); ++y) {
@@ -117,18 +129,18 @@ public class RemoveStripesSignalExclusion implements Transformation {
         if (meanTZY==null || meanTZY.isEmpty() || meanTZY.size()<timePoint) throw new Error("RemoveStripes transformation not configured: "+ (meanTZY==null?"null":  meanTZY.size()));
         List<List<Double>> muZY = meanTZY.get(timePoint);
         ImageFloat im = new ImageFloat("removeStripes", image);
-        ImageFloat imTest = new ImageFloat("removeStripes", image);
+        //ImageFloat imTest = new ImageFloat("removeStripes", image);
         for (int z = 0; z<image.getSizeZ(); ++z) {
             List<Double> muY = muZY.get(z);
-            for (int y = 0; z<image.getSizeY(); ++y) {
+            for (int y = 0; y<image.getSizeY(); ++y) {
                 double mu = muY.get(y);
                 for (int x = 0; x<image.getSizeX(); ++x) {
                     im.setPixel(x, y, z, image.getPixel(x, y, z)-mu);
-                    imTest.setPixel(x, y, z, mu);
+                    //imTest.setPixel(x, y, z, mu);
                 }
             }
         }
-        ImageWindowManagerFactory.showImage(imTest);
+        //ImageWindowManagerFactory.showImage(imTest);
         return im;
     }
     

@@ -17,6 +17,7 @@
  */
 package core;
 
+import boa.gui.DBUtil;
 import boa.gui.PropertyUtils;
 import static core.TaskRunner.logger;
 import dataStructure.objects.MasterDAO;
@@ -55,24 +56,23 @@ public class Task {
         public Task(String dbName, String dir) {
             this.dbName=dbName;
             if (dir!=null && !"".equals(dir)) this.dir=dir;
-            else {
-                if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.Morphium)) this.dir="localhost";
-                else if (MasterDAOFactory.getCurrentType().equals(MasterDAOFactory.DAOType.DBMap)) {
-                    String defPath = PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH);
-                    String d = null;
-                    if (defPath!=null) d = getLocalDirForDB(dbName, defPath);
-                    if (d==null) {
-                        for (String path : PropertyUtils.getStrings(PropertyUtils.LOCAL_DATA_PATH)) {
-                            if (path.equals(defPath)) continue;
-                            d = getLocalDirForDB(dbName, path);
-                            if (d!=null) break;
-                        }
+            else { // look in local path
+                String defPath = PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH);
+                String d = null;
+                if (defPath!=null) d = getLocalDirForDB(dbName, defPath);
+                if (d==null) {
+                    for (String path : PropertyUtils.getStrings(PropertyUtils.LOCAL_DATA_PATH)) {
+                        if (path.equals(defPath)) continue;
+                        d = getLocalDirForDB(dbName, path);
+                        if (d!=null) break;
                     }
-                    this.dir = d;
-                    if (this.dir==null) throw new IllegalArgumentException("no config file found for db: "+dbName);
-                } else {
-                    this.dir=null;
                 }
+                this.dir=d;
+                if (this.dir==null) throw new IllegalArgumentException("no config file found for db: "+dbName);
+                else {
+                    //DBUtil.listExperiments("localhost");
+                }
+                
             }
         }
         public MasterDAO getDB() {

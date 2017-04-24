@@ -23,12 +23,12 @@ public class ImageFloat extends Image {
     }
     
     public ImageFloat(String name, int sizeX, float[][] pixels) {
-        super(name, sizeX, pixels[0].length/sizeX, pixels.length);
+        super(name, sizeX, sizeX>0?pixels[0].length/sizeX:0, pixels.length);
         this.pixels=pixels;
     }
     
     public ImageFloat(String name, int sizeX, float[] pixels) {
-        super(name, sizeX, pixels.length/sizeX, 1);
+        super(name, sizeX, sizeX>0?pixels.length/sizeX:0, 1);
         this.pixels=new float[][]{pixels};
     }
     

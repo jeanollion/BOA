@@ -73,7 +73,7 @@ public class FileChooser extends SimpleParameter {
 
     public void setContentFrom(Parameter other) {
         if (other instanceof FileChooser) {
-            this.option=((FileChooser)other).option;
+            //this.option=((FileChooser)other).option;
             this.selectedFiles=Arrays.copyOf(((FileChooser)other).selectedFiles, ((FileChooser)other).selectedFiles.length);
         } else throw new IllegalArgumentException("wrong parameter type");
     }

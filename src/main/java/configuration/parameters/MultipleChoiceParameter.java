@@ -101,7 +101,7 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
 
     public void setContentFrom(Parameter other) {
         if (other instanceof ChoosableParameterMultiple) {
-            this.listChoice=((ChoosableParameterMultiple)other).getChoiceList();
+            //this.listChoice=((ChoosableParameterMultiple)other).getChoiceList();
             this.setSelectedIndicies(((ChoosableParameterMultiple)other).getSelectedItems());
         } else if (other instanceof ChoosableParameter) {
             String sel = ((ChoosableParameter)other).getChoiceList()[((ChoosableParameter)other).getSelectedIndex()];

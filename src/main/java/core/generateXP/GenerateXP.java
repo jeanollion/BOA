@@ -73,6 +73,7 @@ import plugins.plugins.transformations.CropMicroChannelFluo2D;
 import plugins.plugins.transformations.CropMicroChannels2D;
 import plugins.plugins.transformations.Flip;
 import plugins.plugins.transformations.ImageStabilizerXY;
+import plugins.plugins.transformations.RemoveStripesSignalExclusion;
 import plugins.plugins.transformations.SaturateHistogram;
 import plugins.plugins.transformations.SaturateHistogramAuto;
 import plugins.plugins.transformations.ScaleHistogramSignalExclusion;
@@ -412,8 +413,8 @@ public class GenerateXP {
             ps.setTrimFrames(trimFramesStart, trimFramesEnd);
             //ps.addTransformation(0, null, new SaturateHistogramAuto().setSigmas(1, 2));
             ps.addTransformation(0, null, new SaturateHistogram(800, 1000));
-            ps.addTransformation(1, null, new SaturateHistogram(500, 500));
-            ps.addTransformation(1, null, new BandPass(0, 40, 1, 0)); // remove horizontal lines // min ==1 ? 
+            ps.addTransformation(1, null, new RemoveStripesSignalExclusion(0));
+            ps.addTransformation(1, null, new BandPass(0, 40, 0, 0)); // remove horizontal lines // min ==1 ? 
             //ps.addTransformation(1, null, new Median(1, 0)).setActivated(true); // to remove salt and pepper noise before rotation
             //ps.addTransformation(0, null, new BandPass(0, 40, 1)); // remplacer le subtractBackground..-> determiner l'echelle
             ps.addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false)); 

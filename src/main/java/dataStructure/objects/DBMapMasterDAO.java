@@ -140,7 +140,9 @@ public class DBMapMasterDAO implements MasterDAO {
             if (xpDB.isClosed()) makeXPDB();
             if (xpMap.isEmpty()) return null;
             String xpString = xpMap.get("config");
-            xp = JSONUtils.parse(Experiment.class, xpString);
+            Experiment xpr = JSONUtils.parse(Experiment.class, xpString);
+            xp = new Experiment(xpr.getName());
+            xp.setContentFrom(xpr);
         }
         return xp;
     }

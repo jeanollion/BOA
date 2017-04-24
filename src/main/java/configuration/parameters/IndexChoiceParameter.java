@@ -63,8 +63,8 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
         if (other instanceof IndexChoiceParameter) {
             IndexChoiceParameter otherP = (IndexChoiceParameter) other;
             if (otherP.selectedIndicies!=null) this.setSelectedIndicies(Utils.copyArray(otherP.selectedIndicies));
-            this.allowNoSelection=otherP.allowNoSelection;
-            this.multipleSelection=otherP.multipleSelection;
+            //this.allowNoSelection=otherP.allowNoSelection;
+            //this.multipleSelection=otherP.multipleSelection;
         } else throw new IllegalArgumentException("wrong parameter type");
     }
 

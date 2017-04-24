@@ -24,6 +24,7 @@ import dataStructure.objects.StructureObjectProcessing;
 import image.BlankMask;
 import image.Image;
 import image.ImageMask;
+import plugins.SimpleThresholder;
 import plugins.Thresholder;
 
 /**
@@ -36,12 +37,18 @@ import plugins.Thresholder;
  *
  * @author jollion
  */
-public class KappaSigma implements Thresholder {
+public class KappaSigma implements SimpleThresholder, Thresholder {
     NumberParameter sigmaFactor = new BoundedNumberParameter("Sigma factor", 2, 3, 0.01, null);
     NumberParameter iterations = new BoundedNumberParameter("Iteration number", 0, 2, 1, null);
     Parameter[] parameters = new Parameter[]{sigmaFactor, iterations};
+    
+    @Override 
+    public double runThresholder(Image input) {
+        return runThresholder(input, null);
+    }
+    @Override
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
-        return kappaSigmaThreshold(input, structureObject.getMask(), sigmaFactor.getValue().doubleValue(), iterations.getValue().intValue(), null);
+        return kappaSigmaThreshold(input, structureObject!=null?structureObject.getMask():null, sigmaFactor.getValue().doubleValue(), iterations.getValue().intValue(), null);
     }
 
     public static double kappaSigmaThreshold(Image input, ImageMask mask, double sigmaFactor, int iterations, double[] meanSigma) {
