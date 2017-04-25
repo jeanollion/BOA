@@ -80,7 +80,7 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
             if (getChildren().size()==otherP.getChildCount()) for (int i = 0; i<getChildren().size(); i++) children.get(i).setContentFrom((Parameter)otherP.getChildAt(i));
             else {
                 logger.warn("SCP: {}({}): parameters could not be loaded: c:{}/s:{}", name, this.getClass().getSimpleName(), children.size(), otherP.children.size());
-                this.children.clear();
+                this.children=new ArrayList<>();
                 this.children.addAll(ParameterUtils.duplicateList(otherP.getChildren()));
                 for (Parameter p : children) p.setParent(this);
             }
