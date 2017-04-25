@@ -226,11 +226,15 @@ public class ImageReader {
     
     public double getTimePoint(int c, int t, int z) {
         if (timePoints==null) {
-            if (this.extension == ImageFormat.DV) { // look for log file
-                int deconvIdx = getImagePath().indexOf("_D3D");
-                String logPath = deconvIdx>0 ? getImagePath().substring(0, deconvIdx)+".dv.log" : getImagePath()+".log";
-                timePoints = paseDVLogFile(logPath, "Time Point: ");
-                logger.debug("timePoints: {}", timePoints);
+            synchronized(this) {
+                if (timePoints==null) {
+                    if (this.extension == ImageFormat.DV) { // look for log file
+                        int deconvIdx = getImagePath().indexOf("_D3D");
+                        String logPath = deconvIdx>0 ? getImagePath().substring(0, deconvIdx)+".dv.log" : getImagePath()+".log";
+                        timePoints = paseDVLogFile(logPath, "Time Point: ");
+                        logger.debug("timePoints: {}", timePoints);
+                    }
+                }
             }
         }
         if (timePoints!=null) {

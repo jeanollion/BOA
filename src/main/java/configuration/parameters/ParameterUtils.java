@@ -30,15 +30,21 @@ import dataStructure.configuration.Structure;
 import dataStructure.containers.InputImages;
 import dataStructure.containers.InputImagesImpl;
 import dataStructure.objects.StructureObject;
+import image.BoundingBox;
 import image.Image;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.swing.AbstractAction;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import plugins.ParameterSetup;
+import plugins.ProcessingScheme;
 import plugins.Transformation;
+import plugins.UseMaps;
 import utils.ArrayUtil;
 import utils.Utils;
 
@@ -123,7 +129,10 @@ public class ParameterUtils {
     }
     
     public static boolean setContent(List<Parameter> recieve, List<Parameter> give) {
-        if (recieve==null || give== null || recieve.size()!=give.size()) return false;
+        if (recieve==null || give== null || recieve.size()!=give.size()) {
+            setContentMap(recieve, give);
+            return false;
+        }
         for (int i = 0; i < recieve.size(); i++) {
             try {
                 recieve.get(i).setContentFrom(give.get(i));
@@ -133,6 +142,16 @@ public class ParameterUtils {
             }
         }
         return true;
+    }
+    private static void setContentMap(List<Parameter> recieve, List<Parameter> give) {
+        if (recieve==null || recieve.isEmpty() || give==null || give.isEmpty()) return;
+        Map<String, Parameter> recieveMap = recieve.stream().collect(Collectors.toMap(Parameter::getName, Function.identity()));
+        for (Parameter p : give) {
+            if (recieveMap.containsKey(p.getName())) {
+                Parameter r = recieveMap.get(p.getName());
+                if (r.getClass()==p.getClass()) r.setContentFrom(r);
+            }
+        }
     }
 
     public static Parameter[] duplicateArray(Parameter[] parameters) {
@@ -290,7 +309,7 @@ public class ParameterUtils {
         public boolean isConfigurable(Parameter p);
     }
     
-    public static JMenu getTestMenu(String name, final ParameterSetup ps, final Parameter[] parameters, int structureIdx) {
+    public static JMenu getTestMenu(String name, final ParameterSetup ps, Parameter parameter, final Parameter[] parameters, int structureIdx) {
         JMenu subMenu = new JMenu(name);
         List<JMenuItem> items = new ArrayList<>();
         for (int i = 0; i<parameters.length; ++i) { // todo: case of parameters with subparameters -> plain...
@@ -303,20 +322,40 @@ public class ParameterUtils {
                         List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
                         if (sel == null || sel.isEmpty()) logger.info("Select an object to test parameter");
                         else {
+                            ProcessingScheme psc=null;
+                            PluginParameter pp = ParameterUtils.getFirstParameterFromParents(PluginParameter.class, parameter, false);
+                            if (pp.instanciatePlugin() instanceof ProcessingScheme) psc = (ProcessingScheme)pp.instanciatePlugin();
+                            else pp = ParameterUtils.getFirstParameterFromParents(PluginParameter.class, pp, false);
+                            if (pp.instanciatePlugin() instanceof ProcessingScheme) psc = (ProcessingScheme)pp.instanciatePlugin();
+                            
                             StructureObject o = sel.get(0);
+                            int segParentStrutureIdx = o.getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
+                            if (o.getStructureIdx()>segParentStrutureIdx) o = o.getParent(segParentStrutureIdx);
+                            else o=o.getChildren(segParentStrutureIdx).get(0);
                             int parentStrutureIdx = o.getExperiment().getStructure(structureIdx).getParentStructure();
-                            o = o.getParent(parentStrutureIdx);
-                            ps.test(parameters[idx], o.getRawImage(structureIdx), structureIdx, o);
+                            StructureObject p = o.getParent(parentStrutureIdx);
+                            logger.debug("testing parent: {}, seg parent: {}", p, o);
+                            Image raw = p.getRawImage(structureIdx);
+                            Image filtered = psc!=null ? psc.getPreFilters().filter(raw, p) : raw;
+                            logger.debug("prefilters: {}", psc!=null ? psc.getPreFilters().getChildCount(): "null");
+                            Image[] maps = null;
+                            final BoundingBox bds = o.getBounds();
+                            if (ps instanceof UseMaps) {
+                                maps = ((UseMaps)ps).computeMaps(raw, filtered);
+                                ((UseMaps)ps).setMaps(Utils.apply(maps, new Image[maps.length], i -> i.cropWithOffset(bds)));
+                                logger.debug("testing with use maps");
+                            }
+                            ps.test(parameters[idx], filtered.cropWithOffset(bds), structureIdx, o);
                         }
                     }
                 });
                 items.add(item);
             }
             if (parameters[i] instanceof SimpleContainerParameter) {
-                JMenu m = getTestMenu(parameters[i].getName(), ps, ((SimpleContainerParameter)parameters[i]).getChildren().toArray(new Parameter[0]), structureIdx);
+                JMenu m = getTestMenu(parameters[i].getName(), ps, parameter, ((SimpleContainerParameter)parameters[i]).getChildren().toArray(new Parameter[0]), structureIdx);
                 if (m.getItemCount()>0) items.add(m);
             } else if (parameters[i] instanceof SimpleListParameter) {
-                JMenu m = getTestMenu(parameters[i].getName(), ps, ((ArrayList<? extends Parameter>)((SimpleListParameter)parameters[i]).getChildren()).toArray(new Parameter[0]), structureIdx);
+                JMenu m = getTestMenu(parameters[i].getName(), ps, parameter, ((ArrayList<? extends Parameter>)((SimpleListParameter)parameters[i]).getChildren()).toArray(new Parameter[0]), structureIdx);
                 if (m.getItemCount()>0) items.add(m);
             }
         }

@@ -215,15 +215,19 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     @Override
     public void setContentFrom(Parameter other) {
         if (other instanceof ListParameter) {
-            ListParameter otherLP = (ListParameter)other;
+            ListParameter<? extends Parameter> otherLP = (ListParameter)other;
             if (otherLP.getChildClass()!=this.getChildClass()) throw new IllegalArgumentException("setContentFrom: wrong parameter type : child class is:"+getChildClass() + " but should be: "+otherLP.getChildClass());
             else {
                 //this.unMutableIndex = otherLP.getUnMutableIndex();
                 //this.name=otherLP.getName();
                 this.children.clear();
-                this.children.addAll(ParameterUtils.duplicateList(otherLP.getChildren()));
-                //for (int i = 0; i<otherLP.getChildCount(); i++) this.children.add((T)(((Parameter)otherLP.getChildAt(i)).duplicate()));
-                for (Parameter p : children) p.setParent(this);
+                for (Parameter p : otherLP.getChildren()) {
+                    T newP = createChildInstance(p.getName());
+                    newP.setContentFrom(p);
+                    insert(newP);
+                }
+                //for (int i = 0; i<otherLP.getChildCount(); i++) this.children.add((T)((otherLP.getChildAt(i)).duplicate()));
+                //for (Parameter p : children) p.setParent(this);
                 ui=null;
             }
         } else throw new IllegalArgumentException("wrong parameter type");

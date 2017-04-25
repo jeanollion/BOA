@@ -414,7 +414,7 @@ public class GenerateXP {
             //ps.addTransformation(0, null, new SaturateHistogramAuto().setSigmas(1, 2));
             ps.addTransformation(0, null, new SaturateHistogram(800, 1000));
             ps.addTransformation(1, null, new RemoveStripesSignalExclusion(0));
-            ps.addTransformation(1, null, new BandPass(0, 40, 0, 0)); // remove horizontal lines // min ==1 ? 
+            //ps.addTransformation(1, null, new BandPass(0, 40, 0, 0)); // remove horizontal lines // min ==1 ? 
             //ps.addTransformation(1, null, new Median(1, 0)).setActivated(true); // to remove salt and pepper noise before rotation
             //ps.addTransformation(0, null, new BandPass(0, 40, 1)); // remplacer le subtractBackground..-> determiner l'echelle
             ps.addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false)); 
@@ -428,26 +428,23 @@ public class GenerateXP {
         Structure mc = xp.getStructure(0);
         Structure bacteria = xp.getStructure(1);
         Structure mutation = xp.getStructure(2);
+        mutation.setSegmentationParentStructure(1);
         if (processing) {
             mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessor()));
             bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo()).setCostParameters(0.1, 0.5)));
             //mutation.setProcessingScheme(new SegmentAndTrack(new LAPTracker().setCompartimentStructure(1)));
             mutation.setProcessingScheme(new SegmentAndTrack(
                     new LAPTracker().setCompartimentStructure(1).setSegmenter(
-                        new MutationSegmenter(0.65, 0.5, 0.55).setScale(2.5) 
-                ).setSpotQualityThreshold(1).setLinkingMaxDistance(0.4, 0.41).setGapParameters(0.4, 0.1, 3).setTrackLength(8, 14)
+                        new MutationSegmenter(1.5, 1, 1.25).setScale(2) 
+                ).setSpotQualityThreshold(2).setLinkingMaxDistance(0.7, 0.71).setGapParameters(0.7, 0.3, 3).setTrackLength(8, 14)
             ).addPreFilters(new BandPass(0, 8, 0, 5) 
-            ).addPostFilters(new FeatureFilter(new Quality(), 0.6, true, true)));
+            ).addPostFilters(new FeatureFilter(new Quality(), 1.5, true, true)));
         }
         if (measurements) {
             xp.addMeasurement(new BacteriaLineageMeasurements(1, "BacteriaLineage"));
             xp.addMeasurement(new ObjectFeatures(1).addFeatures(new Size().setScale(true), new FeretMax().setScale(true)));
-            //xp.addMeasurement(new BacteriaFluoMeasurements(1, 2));
-            //xp.addMeasurement(new MutationMeasurements(1, 2));
             xp.addMeasurement(new MutationTrackMeasurements(1, 2));
             xp.addMeasurement(new ObjectInclusionCount(1, 2, 10).setMeasurementName("MutationNumber"));
-            //xp.addMeasurement(new MeasurementObject(2).addFeature(new SNR().setBackgroundObjectStructureIdx(1).setIntensityStructure(2), "MutationSNR"));
-            //xp.addMeasurement(new BacteriaMeasurementsWoleMC(1, 2));
         }
     }
     

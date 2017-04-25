@@ -21,6 +21,8 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import static core.Processor.logger;
 import image.BlankMask;
 import image.Image;
+import image.ImageFloat;
+import image.ImageShort;
 import image.TypeConverter;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -118,9 +120,23 @@ public class InputImage {
         
     }
     
-    public void closeImage() {
+    public void closeImage() { // si modification du bitDepth -> le faire pour toutes les images.
         // cast to initial type
-        if (originalImageType!=null) image = TypeConverter.cast(image, originalImageType);
+        if (originalImageType!=null && originalImageType.getBitDepth()!=image.getBitDepth()) {
+            double[] mm = image.getMinAndMax(null);
+            if (mm[0]<0) {
+                logger.warn("PreprocessedImage Pos:{}/Fr:{}, original bitDepth:{}, has negative values ({}) -> will be trimmed", microscopyFieldName, this.timePoint, originalImageType.getBitDepth(), mm[0]);
+                //originalImageType = new ImageFloat("", 0, 0 ,0);
+            }
+            else if (mm[1]>255 && originalImageType.getBitDepth()==8) {
+                logger.warn("PreprocessedImage Pos:{}/Fr:{}, original bitDepth:{}, has high values ({}) -> will be trimmed", microscopyFieldName, this.timePoint, originalImageType.getBitDepth(), mm[1]);
+                //if (mm[1]<65535) originalImageType = new ImageShort("", 0, 0 ,0);
+                //else originalImageType = new ImageFloat("", 0, 0 ,0);
+            } else if (mm[1]<=1) {
+                //originalImageType = new ImageFloat("", 0, 0 ,0);
+            }
+            image = TypeConverter.cast(image, originalImageType);
+        }
         dao.writePreProcessedImage(image, channelIdx, timePoint, microscopyFieldName);
         image=null;
     }

@@ -39,8 +39,8 @@ import plugins.objectFeature.ObjectFeatureWithCore;
  */
 public class ObjectFeatures implements Measurement {
     StructureParameter structure = new StructureParameter("Structure", -1, false, false);
-    PluginParameter<ObjectFeature> def = new PluginParameter<ObjectFeature>("Feature", ObjectFeature.class, false).setAdditionalParameters(new TextParameter("Key", "", false));
-    SimpleListParameter<PluginParameter<ObjectFeature>> features = new SimpleListParameter<PluginParameter<ObjectFeature>>("Features", 0, def);
+    PluginParameter<ObjectFeature> def = new PluginParameter<>("Feature", ObjectFeature.class, false).setAdditionalParameters(new TextParameter("Key", "", false));
+    SimpleListParameter<PluginParameter<ObjectFeature>> features = new SimpleListParameter<>("Features", 0, def);
     Parameter[] parameters = new Parameter[]{structure, features};
     public ObjectFeatures() {
         def.addListener(new ParameterListener() {

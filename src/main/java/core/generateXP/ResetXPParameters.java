@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import plugins.PluginFactory;
+import utils.ArrayUtil;
 
 /**
  *
@@ -33,13 +35,14 @@ import org.slf4j.LoggerFactory;
 public class ResetXPParameters {
     public static final Logger logger = LoggerFactory.getLogger(ResetXPParameters.class);
     public static void main(String[] args) {
+        PluginFactory.findPlugins("plugins.plugins");
         //String[] dbs = new String[]{"boa_phase150616wt", "boa_phase141107wt", "boa_phase150324mutH"};
         //for (String db:dbs) resetParametersTrans(db, true, true);
         //String[] dbs = new String[]{"boa_phase150616wtBis", "boa_phase141107wtBis"};
         //String[] dbs = new String[]{"boa_fluo151127"};
         //for (String db:dbs) resetParametersFluo(db, true, true);
-        
-        resetPreProcessingFluo("fluo151127", null, true, 4);
+        resetParametersFluo("fluo151127", null, true, true);
+        //resetPreProcessingFluo("fluo151127", null, true, 0, -1);
         logger.debug("done!");
     }
     public static void resetParametersTrans(String dbName, String dir, boolean processing, boolean measurements) {
@@ -69,6 +72,9 @@ public class ResetXPParameters {
             logger.error("DB {} not found", dbName);
             return;
         }
+        if (positionIndices.length==2 && positionIndices[1]<0) {
+            positionIndices = ArrayUtil.generateIntegerArray(positionIndices[0], db.getExperiment().getPositionCount());
+        } 
         if (positionIndices.length==0) GenerateXP.setPreprocessingFluo(db.getExperiment().getPreProcessingTemplate(), flip, trimeStart, trimEnd, scaleXY, null);
         else {
             for (int i : positionIndices) GenerateXP.setPreprocessingFluo(db.getExperiment().getPosition(i).getPreProcessingChain(), flip, trimeStart, trimEnd, scaleXY, null);

@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 import plugins.ObjectSplitter;
 import processing.ImageFeatures;
 import utils.SmallArray;
+import utils.Utils;
 
 @Lifecycle
 @Entity
@@ -151,7 +152,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (structureIdx==parentStructureIdx) return this;
         if (parentStructureIdx<0) return getRoot();
         StructureObject p = this;
-        while (p!=null && p.getStructureIdx()!=parentStructureIdx) p = p.getParent();
+        while (p!=null && p.getStructureIdx()!=parentStructureIdx) {
+            p = p.getParent();
+            if (p.getStructureIdx()<parentStructureIdx) {
+                List<StructureObject> candidates = p.getChildren(parentStructureIdx);
+                return StructureObjectUtils.getInclusionParent(object, candidates, null);
+            }
+        }
         if (p==null || p.structureIdx!=parentStructureIdx) {
             //logger.error("Structure: {} is not in parent-tree of structure: {}", parentStructureIdx, this.structureIdx);
             return null;

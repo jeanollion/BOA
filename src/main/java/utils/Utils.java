@@ -159,14 +159,14 @@ public class Utils {
     }
     
     public static <T> String toStringArray(T[] array) {
-        if (array.length==0) return "[]";
+        if (array==null||array.length==0) return "[]";
         String res = "[";
         for (int i = 0; i<array.length-1; ++i) res+=array[i].toString()+"; ";
         res+=array[array.length-1]+"]";
         return res;
     }
     public static <T> String toStringList(List<T> array) {
-        if (array.isEmpty()) return "[]";
+        if (array==null|| array.isEmpty()) return "[]";
         String res = "[";
         for (int i = 0; i<array.size()-1; ++i) {
             if (array.get(i)!=null) res+=array.get(i).toString()+"; ";

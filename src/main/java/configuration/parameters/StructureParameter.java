@@ -27,7 +27,7 @@ import de.caluga.morphium.annotations.Transient;
  */
 public class StructureParameter extends IndexChoiceParameter {
     @Transient protected Experiment xp;
-    boolean autoConfiguration;
+    @Transient boolean autoConfiguration;
     
     public StructureParameter(String name) {
         super(name);

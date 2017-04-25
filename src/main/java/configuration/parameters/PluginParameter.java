@@ -28,6 +28,7 @@ import java.util.List;
 import plugins.ParameterSetup;
 import plugins.Plugin;
 import plugins.PluginFactory;
+import utils.Utils;
 
 /**
  *
@@ -86,7 +87,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     public PluginParameter<T> setPlugin(T pluginInstance) {
         if (pluginInstance==null) setPlugin(NO_SELECTION);
         else {
-            this.pluginParameters=new ArrayList<Parameter>(Arrays.asList(pluginInstance.getParameters()));
+            this.pluginParameters=new ArrayList<>(Arrays.asList(pluginInstance.getParameters()));
             initChildList();
             this.pluginName=pluginInstance.getClass().getSimpleName();
         }
@@ -154,19 +155,24 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
             boolean toInit = false;
             if (otherPP.additionalParameters!=null) {
                 if (!ParameterUtils.setContent(additionalParameters, otherPP.additionalParameters)) {
-                    additionalParameters=ParameterUtils.duplicateList(otherPP.additionalParameters);
+                    //logger.warn("PP ({}) additional parameters for: {} could not be loaded (cur:{}/src:{})",pluginTypeName, name, Utils.toStringList(additionalParameters), Utils.toStringList(otherPP.additionalParameters));
+                    additionalParameters=ParameterUtils.duplicateList(otherPP.additionalParameters); // 
                     toInit=true;
                 }
-            }
+            } else this.additionalParameters=null;
+            
+            boolean setPlug = false;
             if (otherPP.pluginName != null && otherPP.pluginName.equals(this.pluginName) && pluginParameters!=null) {
                 if (!ParameterUtils.setContent(pluginParameters, otherPP.pluginParameters)) {
-                    pluginParameters=ParameterUtils.duplicateList(otherPP.pluginParameters);
-                    toInit=true;
+                    setPlug=true;
                 }
-            } else {
-                toInit = true;
-                this.pluginName = otherPP.pluginName;
-                this.pluginParameters = ParameterUtils.duplicateList(otherPP.pluginParameters);
+            } else setPlug=true;
+            if (setPlug) {
+                toInit = false;
+                this.setPlugin(otherPP.pluginName);
+                if (isOnePluginSet() && !ParameterUtils.setContent(pluginParameters, otherPP.pluginParameters)) {
+                    logger.warn("pluginParameter ({}): parameters for: {}({}) could not be loaded (current: {}/source:{}) (c:{}/s:{})", pluginTypeName, name, otherPP.pluginName, pluginParameters!=null?pluginParameters.size():null, otherPP.pluginParameters!=null?otherPP.pluginParameters.size():null, Utils.toStringList(pluginParameters), Utils.toStringList(otherPP.pluginParameters));
+                }
             }
             if (toInit) initChildList();
             this.setListeners(otherPP.listeners);
@@ -198,7 +204,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
             if (s!=null) {
                 Plugin pl = this.instanciatePlugin();
                 if (pl instanceof ParameterSetup) {
-                    ui.addActions(ParameterUtils.getTestMenu("Test Parameters", (ParameterSetup)pl, pl.getParameters(), s.getIndex()), true);
+                    ui.addActions(ParameterUtils.getTestMenu("Test Parameters", (ParameterSetup)pl, this, pl.getParameters(), s.getIndex()), true);
                 }
             }
         }

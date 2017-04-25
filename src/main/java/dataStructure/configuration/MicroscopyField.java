@@ -26,6 +26,7 @@ import configuration.parameters.BooleanParameter;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ConditionalParameter;
 import configuration.parameters.ListElementErasable;
+import configuration.parameters.Parameter;
 import configuration.parameters.SimpleContainerParameter;
 import configuration.parameters.SimpleListParameter;
 import configuration.parameters.StructureParameter;
@@ -226,6 +227,15 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     public void removeFromParent() { // when removed from GUI
         super.removeFromParent();
         
+    }
+    
+    @Override 
+    public void setContentFrom(Parameter other) {
+        super.setContentFrom(other);
+        if (other instanceof MicroscopyField) {
+            MicroscopyField otherP = (MicroscopyField) other;
+            images = otherP.images.duplicate();
+        }
     }
     
     @Override

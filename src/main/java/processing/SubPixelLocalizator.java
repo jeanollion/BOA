@@ -44,6 +44,7 @@ import utils.Utils;
  * @author jollion
  */
 public class SubPixelLocalizator {
+    public static boolean debug;
     public final static Logger logger = LoggerFactory.getLogger(SubPixelLocalizator.class);
     public static List<Point> getPeaks(Image img, List<Object3D> objects) {
         List<Point> peaks = new ArrayList<>(objects.size());
@@ -78,9 +79,11 @@ public class SubPixelLocalizator {
         if (objects.isEmpty()) return;
         List<Point> peaks = getPeaks(img, objects);
         List<RefinedPeak< Point >> refined = getSubLocPeaks(img, peaks);
-        //logger.debug("num peaks: {}, refined: {}", peaks.size(), refined.size());
-        //logger.debug("peaks: {}", Utils.toStringList(peaks, p->p.toString()));
-        //logger.debug("refined: {}", Utils.toStringList(refined, p->p.toString()));
+        if (debug) {
+            logger.debug("num peaks: {}, refined: {}", peaks.size(), refined.size());
+            logger.debug("peaks: {}", Utils.toStringList(peaks, p->p.toString()));
+            logger.debug("refined: {}", Utils.toStringList(refined, p->p.toString()));
+        }
         for (RefinedPeak< Point > r : refined) {
             Object3D o = objects.get(peaks.indexOf(r.getOriginalPeak()));
             double[] position= new double[img.getSizeZ()>1?3 : 2];

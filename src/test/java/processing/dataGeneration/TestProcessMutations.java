@@ -21,10 +21,12 @@ import static TestUtils.Utils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
 import configuration.parameters.PostFilterSequence;
+import core.Task;
 import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.MicroscopyField;
+import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
@@ -60,19 +62,19 @@ import utils.Utils;
  * @author jollion
  */
 public class TestProcessMutations {
-    MorphiumMasterDAO db;
+    MasterDAO db;
     static int intervalX = 0;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
-        String dbName = "boa_fluo170207_150ms";
+        String dbName = "fluo151127";
         //final String dbName = "boa_fluo151127_test";
-        int fIdx = 0;
-        int mcIdx =0;
+        int fIdx = 4;
+        int mcIdx =1;
         //String dbName = "fluo151130_Output";
         TestProcessMutations t = new TestProcessMutations();
-        t.init(dbName);
-        t.testSegMutationsFromXP(fIdx, mcIdx, false, 0,50);
+        t.init(dbName, null);
+        t.testSegMutationsFromXP(fIdx, mcIdx, false, 307,307);
     }
     
     public void testSegMutation(Image input, StructureObject parent, ArrayList<ImageInteger> parentMask_, ArrayList<Image> input_,  ArrayList<ImageInteger> outputLabel, ArrayList<ArrayList<Image>> intermediateImages_) {
@@ -81,11 +83,12 @@ public class TestProcessMutations {
         Image localInput = input.sameSize(parent.getMask()) ? input : input.cropWithOffset(parent.getBounds());
         
         ArrayList<Image> intermediateImages = intermediateImages_==null? null:new ArrayList<Image>();
+        MutationSegmenter.debug=true;
         //MutationSegmenterScaleSpace seg = new MutationSegmenterScaleSpace().setIntensityThreshold(90);
         //if (parent.getIdx()==2) MutationSegmenter.debug=true;
         //else MutationSegmenter.debug=false;
         //LocalSNR.debug=true;
-        MutationSegmenter seg = new MutationSegmenter().setIntensityThreshold(0.4).setThresholdSeeds(0.65).setThresholdPropagation(0.5).setScale(2.5);
+        MutationSegmenter seg = new MutationSegmenter().setIntensityThreshold(1.25).setThresholdSeeds(1).setThresholdPropagation(1.5).setScale(2);
         //seg.getPostFilters().removeAllElements();
         
         Image[] maps = seg.computeMaps(input, input);
@@ -120,8 +123,8 @@ public class TestProcessMutations {
     }
     
     
-    public void init(String dbName) {
-        db = new MorphiumMasterDAO(dbName);
+    public void init(String dbName, String dir) {
+        db = new Task(dbName, dir).getDB();
         logger.info("Experiment: {} retrieved from db: {}", db.getExperiment().getName(), dbName);
     }
     public void testSegMutationsFromXP(int fieldIdx, int mcIdx, int time) {

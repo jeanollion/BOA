@@ -51,7 +51,8 @@ import utils.ThreadRunner;
 public class RemoveStripesSignalExclusion implements Transformation {
     ChannelImageParameter signalExclusion = new ChannelImageParameter("Channel for Signal Exclusion", -1, true);
     PluginParameter<SimpleThresholder> signalExclusionThreshold = new PluginParameter<>("Signal Exclusion Threshold", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false); //new ConstantValue(150)
-    Parameter[] parameters = new Parameter[]{signalExclusion, signalExclusionThreshold};
+    BooleanParameter addGlobalMean = new BooleanParameter("Add global mean (avoid negative values)", true);
+    Parameter[] parameters = new Parameter[]{signalExclusion, signalExclusionThreshold, addGlobalMean};
     List<List<List<Double>>> meanTZY = new ArrayList<>();
     
     public RemoveStripesSignalExclusion() {}
@@ -69,7 +70,8 @@ public class RemoveStripesSignalExclusion implements Transformation {
     public void computeConfigurationData(final int channelIdx, final InputImages inputImages) {
         final int chExcl = signalExclusion.getSelectedIndex();
         final double exclThld = signalExclusionThreshold.instanciatePlugin().runThresholder(inputImages.getImage(chExcl, inputImages.getDefaultTimePoint()));
-        logger.debug("remove stripes thld: {}", exclThld);
+        final boolean addGlobalMean = this.addGlobalMean.getSelected();
+        //logger.debug("remove stripes thld: {}", exclThld);
         final ThreadRunner tr = new ThreadRunner(0, inputImages.getTimePointNumber());
         final ImageInteger[] exclusionMasks = (chExcl>=0) ?  new ImageInteger[tr.size()] : null;
         Double[][][] meanX = new Double[inputImages.getTimePointNumber()][][];
@@ -86,7 +88,7 @@ public class RemoveStripesSignalExclusion implements Transformation {
                                 if (exclusionMasks[trIdx]==null) exclusionMasks[trIdx] = new ImageByte("", signalExclusion);
                                 exclusionMask = exclusionMasks[trIdx];
                             }
-                            meanX[idx] = computeMeanX(inputImages.getImage(channelIdx, idx), signalExclusion, exclThld, exclusionMask);
+                            meanX[idx] = computeMeanX(inputImages.getImage(channelIdx, idx), signalExclusion, exclThld, addGlobalMean, exclusionMask);
                         }
                     }
                 }
@@ -101,13 +103,15 @@ public class RemoveStripesSignalExclusion implements Transformation {
         }
     }
     
-    public static Double[][] computeMeanX(Image image, Image exclusionSignal, double exclusionThreshold, ImageInteger exclusionMask) {
+    public static Double[][] computeMeanX(Image image, Image exclusionSignal, double exclusionThreshold, boolean addGlobalMean, ImageInteger exclusionMask) {
         if (exclusionSignal!=null && !image.sameSize(exclusionSignal)) throw new Error("Image and exclusion signal should have same dimensions");
         if (exclusionMask!=null && !image.sameSize(exclusionMask)) throw new Error("Image and exclusion mask should have same dimensions");
         if (exclusionMask!=null) ImageOperations.threshold(exclusionSignal, exclusionThreshold, false, true, true, exclusionMask);
         else exclusionMask = new BlankMask(image);
         //ImageWindowManagerFactory.showImage(exclusionMask.duplicate("excl mask"));
         Double[][] res = new Double[image.getSizeZ()][image.getSizeY()];
+        double globalSum=0;
+        double globalCount=0;
         for (int z=0; z<image.getSizeZ(); ++z) {
             for (int y = 0; y<image.getSizeY(); ++y) {
                 double sum = 0;
@@ -118,7 +122,17 @@ public class RemoveStripesSignalExclusion implements Transformation {
                         sum+=image.getPixel(x, y, z);
                     }
                 }
-                res[z][y] = count>0 ? sum/count : 1;
+                res[z][y] = count>0 ? sum/count : 0;
+                globalSum+=sum;
+                globalCount+=count;
+            }
+        }
+        if (addGlobalMean) {
+            double globalMean = globalCount>0?globalSum/globalCount : 0;
+            for (int z=0; z<image.getSizeZ(); ++z) {
+                for (int y = 0; y<image.getSizeY(); ++y) {
+                    res[z][y]-=globalMean;
+                }
             }
         }
         return res;

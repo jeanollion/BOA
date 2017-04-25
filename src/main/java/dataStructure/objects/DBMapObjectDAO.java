@@ -272,7 +272,13 @@ public class DBMapObjectDAO implements ObjectDAO {
         Iterator<ObjectId> it = cacheMap.keySet().iterator();
         while(it.hasNext()) {
             ObjectId id = it.next();
-            if (parentIds.contains(cacheMap.get(id).parentId)) {
+            StructureObject o = cacheMap.get(id);
+            if (o==null) {
+                logger.warn("DBMap remove error: structure: {}, parents {}", structureIdx, Utils.toStringList(new ArrayList<>(parents)));
+                continue;
+            }
+            else if (o.parentId==null) logger.warn("DBMap remove error: no parent for: {}", o);
+            if (parentIds.contains(o.parentId)) {
                 it.remove();
                 dbMap.remove(id.toHexString());
             }
@@ -575,6 +581,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     public Measurements getMeasurements(StructureObject o) {
         Pair<DB, HTreeMap<String, String>> mDB = getMeasurementDB(o.getStructureIdx());
         String mS = mDB.value.get(o.getId().toHexString());
+        if (mS==null) return null;
         Measurements m = JSONUtils.parse(Measurements.class, mS);
         return m;
     }

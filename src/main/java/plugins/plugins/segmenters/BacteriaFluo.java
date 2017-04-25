@@ -401,12 +401,12 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
     @Override public void test(Parameter p, Image input, int structureIdx, StructureObjectProcessing parent) {
         if (p==splitThreshold) {
             ProcessingVariables pv = initializeVariables(input);
-            Image hess = pv.getHessian();
+            Image hess = pv.getHessian().duplicate("hessian");
             hess = ImageOperations.divide(hess, input, null);
-            ImageOperations.trim(hess, parent.getMask(), hess);
-            ImageWindowManagerFactory.showImage(hess.setName("Split map"));
             ObjectPopulation pop = runSegmenter(input, structureIdx, parent);
             ImageWindowManagerFactory.showImage(pop.getLabelMap().setName("splitThreshold: "+splitThreshold.getValue().doubleValue()));
+            ImageOperations.trim(hess, pop.getLabelMap(), hess);
+            ImageWindowManagerFactory.showImage(hess.setName("Split map"));
         } else if (p==dogScale) {
             //ImageWindowManagerFactory.showImage(BandPass.filter(input, 0, dogScale.getValue().doubleValue(), 0, 0).setName("DoG scale: "+dogScale.getValue().doubleValue()));
         }

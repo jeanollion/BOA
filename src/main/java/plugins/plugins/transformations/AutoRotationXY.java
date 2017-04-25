@@ -49,7 +49,6 @@ import utils.Utils;
  * @author jollion
  */
 public class AutoRotationXY implements TransformationTimeIndependent {
-    //PreFilterSequence prefilters = new PreFilterSequence("Pre-Filters");
     NumberParameter minAngle = new BoundedNumberParameter("Minimal Angle for search", 2, -10, -90, 90);
     NumberParameter maxAngle = new BoundedNumberParameter("Maximal Angle for search", 2, 10, -90, 90);
     NumberParameter precision1 = new BoundedNumberParameter("Angular Precision of first seach", 2, 1, 0, null);
@@ -178,8 +177,8 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     }
     
     public static enum SearchMethod {
-        MAXVAR("Fluorecence Bactery Micro Channel"), // cherche le maximum variance. necessite de supprimer le bruit de fond
-        MAXARTEFACT("Trans Bactery Micro Channel"); // se base sur l'artecfact d'imagerie, cherche la valeur max qui est a +90. 
+        MAXVAR("Fluo Microchannel"), // cherche le maximum variance. necessite de supprimer le bruit de fond
+        MAXARTEFACT("Phase Microchannel Artifact"); // se base sur l'artecfact d'imagerie, cherche la valeur max qui est a +90. 
         private final String name;
         SearchMethod(String name){this.name=name;}
         public static String[] getValues() {

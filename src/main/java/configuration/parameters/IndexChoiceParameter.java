@@ -30,7 +30,7 @@ import utils.Utils;
  */
 public abstract class IndexChoiceParameter extends SimpleParameter implements ChoosableParameter, ChoosableParameterMultiple {
     protected int[] selectedIndicies;
-    protected boolean allowNoSelection, multipleSelection;
+    @Transient protected boolean allowNoSelection, multipleSelection;
     //@Transient ParameterUI ui;
     
     public IndexChoiceParameter(String name) {
@@ -51,28 +51,29 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
         this.allowNoSelection=allowNoSelection;
         this.multipleSelection=true;
     }
-    
+    @Override
     public boolean sameContent(Parameter other) {
         if (other instanceof StructureParameter) {
             StructureParameter otherP = (StructureParameter) other;
             return ParameterUtils.arraysEqual(selectedIndicies, otherP.selectedIndicies);
         } else return false;
     }
-
+    @Override
     public void setContentFrom(Parameter other) {
         if (other instanceof IndexChoiceParameter) {
             IndexChoiceParameter otherP = (IndexChoiceParameter) other;
             if (otherP.selectedIndicies!=null) this.setSelectedIndicies(Utils.copyArray(otherP.selectedIndicies));
+            else this.setSelectedIndex(-1);
             //this.allowNoSelection=otherP.allowNoSelection;
             //this.multipleSelection=otherP.multipleSelection;
         } else throw new IllegalArgumentException("wrong parameter type");
     }
-
+    @Override
     public int getSelectedIndex() {
         if (selectedIndicies==null) return -1;
         return selectedIndicies[0];
     }
-
+    @Override
     public boolean isAllowNoSelection() {
         return allowNoSelection;
     }
@@ -126,17 +127,19 @@ public abstract class IndexChoiceParameter extends SimpleParameter implements Ch
     }
     
     // choosable parameter
+    @Override
     public void setSelectedItem(String item) {
         setSelectedIndex(Utils.getIndex(this.getChoiceList(), item));
     }
-    
+    @Override
     public abstract String[] getChoiceList();
 
     // choosable parameter multiple
+    @Override
     public void setSelectedIndicies(int[] selectedItems) {
         this.selectedIndicies=selectedItems;
     }
-
+    @Override
     public int[] getSelectedItems() {
         if (selectedIndicies==null) {
             String[] list = getChoiceList();

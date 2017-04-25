@@ -19,6 +19,7 @@ package core;
 
 import boa.gui.DBUtil;
 import boa.gui.PropertyUtils;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import static core.TaskRunner.logger;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
@@ -167,6 +168,9 @@ public class Task {
         }
         public void run() {
             initDB();
+            db.clearCache();
+            ImageWindowManagerFactory.getImageManager().flush();
+            
             if (positions==null) positions=ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount());
             if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
             
@@ -211,6 +215,7 @@ public class Task {
             if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field
             db.getDao(position).clearCache();
             db.getExperiment().getPosition(position).flushImages(true, true);
+            
             System.gc();
         }
         private void extract(String dir, int[] structures) {

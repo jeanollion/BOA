@@ -39,6 +39,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import plugins.SimpleThresholder;
 import plugins.Thresholder;
 import plugins.TransformationTimeIndependent;
 import plugins.plugins.thresholders.ConstantValue;
@@ -63,7 +64,7 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
     
     NumberParameter minObjectSize = new BoundedNumberParameter("Object Size Filter", 0, 200, 1, null);
     NumberParameter fillingProportion = new BoundedNumberParameter("Filling proportion of Microchannel", 2, 0.6, 0.05, 1);
-    NumberParameter threshold = new BoundedNumberParameter("Intensity Threshold", 2, 50, 0, null);
+    PluginParameter<SimpleThresholder> threshold = new PluginParameter<>("Intensity Threshold", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false); //new ConstantValue(50)
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Intensity Threshold", Thresholder.class, new ConstantValue(50), false);
     Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, minObjectSize, threshold, fillingProportion, xStart, xStop, yStart, yStop, number, refAverage};
     
@@ -86,7 +87,8 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
     }
 
     protected BoundingBox getBoundingBox(Image image) {
-        return getBoundingBox(image, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), threshold.getValue().doubleValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue());
+        double thld = this.threshold.instanciatePlugin().runThresholder(image);
+        return getBoundingBox(image, cropMargin.getValue().intValue(), margin.getValue().intValue(), channelHeight.getValue().intValue(), thld, fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue(), xStart.getValue().intValue(), xStop.getValue().intValue(), yStart.getValue().intValue(), yStop.getValue().intValue());
     }
     
     public static BoundingBox getBoundingBox(Image image, int cropMargin, int margin, int channelHeight, double threshold, double fillingProportion, int minObjectSize, int xStart, int xStop, int yStart, int yStop) {

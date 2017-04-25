@@ -444,7 +444,7 @@ public class ImageOperations {
     
     public static <T extends Image> T trim(T source, ImageMask mask, T output) {
         if (output==null) output = (T)Image.createEmptyImage(source.getName(), source, source);
-        if (!output.sameSize(source)) output = Image.createEmptyImage("not", source, source);
+        if (!output.sameSize(source)) output = Image.createEmptyImage("outside", source, source);
         for (int z = 0; z<source.getSizeZ(); ++z) {
             for (int xy=0; xy<source.getSizeXY(); ++xy) {
                 if (!mask.insideMask(xy, z)) output.setPixel(xy, z, 0);
