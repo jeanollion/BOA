@@ -95,13 +95,17 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
     }
     
     private static void zoom(ImagePlus image, double magnitude) {
-        SwingUtilities.invokeLater(new Runnable() { // invoke later -> if not, linux bug display, bad window size
+        Thread t = new Thread(new Runnable() { // invoke later -> if not, linux bug display, bad window size
             @Override
             public void run() {
+                //Thread.sleep(10000);
+                try {Thread.sleep(500);}
+                catch(Exception e) {}
                 ImageCanvas ic = image.getCanvas();
                 if (ic==null) return;
+                logger.debug("zooming to : {}", magnitude);
                 ic.zoom100Percent();
-                IJ.runPlugIn("ij.plugin.Zoom", null);
+                //IJ.runPlugIn("ij.plugin.Zoom", null);
                 if (magnitude > 1) {
                     for (int i = 0; i < (int) (magnitude + 0.5); i++) {
                         ic.zoomIn(image.getWidth() / 2, image.getHeight() / 2);
@@ -111,10 +115,12 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                         ic.zoomOut(image.getWidth() / 2, image.getHeight() / 2);
                     }
                 }
-
-                image.updateAndDraw();
+                image.repaintWindow();
             }
         });
+        t.start();
+        try{t.join();}
+        catch(Exception e) {}
         /*
         Dimension d = image.getWindow().getSize();
         //Dimension d = image.getCanvas().getSize();
