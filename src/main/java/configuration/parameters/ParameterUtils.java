@@ -320,8 +320,12 @@ public class ParameterUtils {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
                         List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
-                        if (sel == null || sel.isEmpty()) logger.info("Select an object to test parameter");
+                        if (sel == null || sel.isEmpty() || GUI.getInstance().getSelectedPositions(false).isEmpty()) {
+                            logger.info("Select an object OR position to test parameter");
+                        }
                         else {
+                            if (sel==null) sel = new ArrayList<>(1);
+                            if (sel.isEmpty()) sel.add(GUI.getDBConnection().getDao(GUI.getInstance().getSelectedPositions(false).get(0)).getRoot(0));
                             ProcessingScheme psc=null;
                             PluginParameter pp = ParameterUtils.getFirstParameterFromParents(PluginParameter.class, parameter, false);
                             if (pp.instanciatePlugin() instanceof ProcessingScheme) psc = (ProcessingScheme)pp.instanciatePlugin();

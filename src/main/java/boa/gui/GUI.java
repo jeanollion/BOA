@@ -1564,6 +1564,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     
     private int navigateCount = 0;
     public void navigateToNextObjects(boolean next, boolean nextPosition, int structureDisplay, boolean setInteractiveStructure) {
+        if (trackTreeController==null) this.loadObjectTrees();
         List<Selection> sels = selectionList.getSelectedValuesList();
         if (sels.isEmpty()) ImageWindowManagerFactory.getImageManager().goToNextTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads(), next);
         else {

@@ -101,7 +101,8 @@ public class ImageTransformation {
         return ImagescienceWrapper.wrap((new Embed()).run(ImagescienceWrapper.getImagescience(image), dim, pos, 0)).setCalibration(image);
     }
     
-    public static void flip(Image image, Axis axis) {
+    public static Image flip(Image image, Axis axis) {
         new Mirror().run(ImagescienceWrapper.getImagescience(image), Axis.getAxes(axis));
+        return image;
     }
 }

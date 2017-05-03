@@ -31,6 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
+import utils.Utils;
 
 /**
  * 
@@ -220,6 +221,7 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
             else {
                 //this.unMutableIndex = otherLP.getUnMutableIndex();
                 //this.name=otherLP.getName();
+                if (children==null) children = new ArrayList<>();
                 this.children.clear();
                 for (Parameter p : otherLP.getChildren()) {
                     T newP = createChildInstance(p.getName());
@@ -244,6 +246,9 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     
     @Override
     public String toString() {return name;}
+    
+    @Override
+    public String toStringFull() {return name+":"+Utils.toStringList(children, p->p.toStringFull());}
     
     @Override
     public void insert(MutableTreeNode child, int index) {
@@ -296,7 +301,12 @@ public class SimpleListParameter<T extends Parameter> implements ListParameter<T
     
     @Override
     public T getChildByName(String name) { // returns the first occurence..
-        for (T child : getChildren()) if (name.equals(child.getName())) return child;
+        if (children==null) {
+            logger.error("no children for list: {}( child type:{})", name, this.childClassName);
+        }
+        for (T child : getChildren()) {
+            if (name.equals(child.getName())) return child;
+        }
         return null;
     }
     public int getIndex(String name) {

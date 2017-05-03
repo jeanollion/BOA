@@ -31,6 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
+import utils.Utils;
 
 /**
  *
@@ -77,13 +78,14 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     public void setContentFrom(Parameter other) {
         if (other instanceof SimpleContainerParameter) {
             SimpleContainerParameter otherP = (SimpleContainerParameter) other;
-            if (getChildren().size()==otherP.getChildCount()) for (int i = 0; i<getChildren().size(); i++) children.get(i).setContentFrom((Parameter)otherP.getChildAt(i));
+            if (!ParameterUtils.setContent(getChildren(), otherP.getChildren())) logger.warn("SCP: {}({}): different parameter length, they might not be well set: c:{}/src:{}", name, this.getClass().getSimpleName(), children.size(), otherP.children.size());
+            /*if (getChildren().size()==otherP.getChildCount()) for (int i = 0; i<getChildren().size(); i++) children.get(i).setContentFrom((Parameter)otherP.getChildAt(i));
             else {
                 logger.warn("SCP: {}({}): parameters could not be loaded: c:{}/s:{}", name, this.getClass().getSimpleName(), children.size(), otherP.children.size());
                 this.children=new ArrayList<>();
                 this.children.addAll(ParameterUtils.duplicateList(otherP.getChildren()));
                 for (Parameter p : children) p.setParent(this);
-            }
+            }*/
         } else {
             throw new IllegalArgumentException("wrong parameter type");
         }
@@ -178,6 +180,9 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
     
     @Override
     public String toString() {return name;}
+    
+    @Override
+    public String toStringFull() {return name+":"+Utils.toStringList(children, p->p.toStringFull());}
     
     @Override
     public ParameterUI getUI() {

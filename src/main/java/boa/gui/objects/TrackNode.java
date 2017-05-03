@@ -230,24 +230,24 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
         public TrackNodeUI(TrackNode tn) {
             this.trackNode=tn;
             String[] childStructureNames = trackNode.trackHead.getExperiment().getChildStructuresAsString(trackNode.trackHead.getStructureIdx());
-            this.actions = new JMenuItem[8];
+            this.actions = new JMenuItem[7];
             JMenu segSubMenu = new JMenu("Open Segmented Track Image");
-            actions[0] = segSubMenu;
+            //actions[0] = segSubMenu;
             JMenu rawSubMenu = new JMenu("Open Raw Track Image");
-            actions[1] = rawSubMenu;
+            actions[0] = rawSubMenu;
             String[] structureNames = trackNode.trackHead.getExperiment().getStructuresAsString();
             JMenu runSegAndTrackingSubMenu = new JMenu("Run segmentation and tracking");
-            actions[2] = runSegAndTrackingSubMenu;
+            actions[1] = runSegAndTrackingSubMenu;
             JMenu runTrackingSubMenu = new JMenu("Run tracking");
-            actions[3] = runTrackingSubMenu;
+            actions[2] = runTrackingSubMenu;
             JMenu createSelectionSubMenu = new JMenu("Create Selection");
-            actions[4] = createSelectionSubMenu;
+            actions[3] = createSelectionSubMenu;
             addToSelection = new JMenuItem("Add to Selected Selection(s)");
-            actions[5] = addToSelection;
+            actions[4] = addToSelection;
             removeFromSelection = new JMenuItem("Remove from Selected Selection(s)");
-            actions[6] = removeFromSelection;
+            actions[5] = removeFromSelection;
             delete = new JMenuItem("Delete");
-            actions[7] = delete;
+            actions[6] = delete;
             //delete.setEnabled(false);
             delete.setAction(new AbstractAction("Delete") {
                 @Override public void actionPerformed(ActionEvent e) {

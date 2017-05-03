@@ -156,6 +156,7 @@ public abstract class ImageWindowManager<T, U, V> {
     public abstract void setActive(Image image);
     
     public void addImage(Image image, ImageObjectInterface i, int displayedStructureIdx, boolean labelImage, boolean displayImage) {
+        if (image==null) return;
         //ImageObjectInterface i = getImageObjectInterface(parent, childStructureIdx, timeImage);
         if (!imageObjectInterfaces.containsValue(i)) throw new RuntimeException("image object interface should be created through the manager");
         //T dispImage = getImage(image);

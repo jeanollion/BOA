@@ -24,6 +24,7 @@ import boa.gui.imageInteraction.ImageDisplayer;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import core.Task;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;
@@ -69,15 +70,14 @@ public class TestProcessBacteriaPhase {
         int time =796;
         thld = 265;
         */
-        String dbName = "boa_phase150324mutH";
+        String dbName = "boa_PHASE";
         int field = 0;
         int microChannel =0;
-        int time =47;
+        int time =609;
         thld = 312;
         
-        
         testSegBacteriesFromXP(dbName, field, time, microChannel);
-        //testSegBacteriesFromXP(dbName, field, microChannel, 0, 400);
+        //testSegBacteriesFromXP(dbName, field, microChannel, 0, 100);
         //testSplit(dbName, field, time, microChannel, 1, true);
     }
     
@@ -115,14 +115,19 @@ public class TestProcessBacteriaPhase {
     }
     
     public static void testSegBacteriesFromXP(String dbName, int fieldNumber, int timePoint, int microChannel) {
-        MasterDAO mDAO = new MorphiumMasterDAO(dbName);
+        MasterDAO mDAO = new Task(dbName).getDB();
         MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         StructureObject root = mDAO.getDao(f.getName()).getRoots().get(timePoint);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         StructureObject mc = root.getChildren(0).get(microChannel);
         Image input = mc.getRawImage(1);
         BacteriaTrans.debug=true;
+        
         BacteriaTrans seg = new BacteriaTrans();
+        if (mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter() instanceof BacteriaTrans) {
+            seg = (BacteriaTrans) mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter();
+        }
+        
         if (!Double.isNaN(thld)) seg.setThresholdValue(thld);
         ObjectPopulation pop = seg.runSegmenter(input, 1, mc);
         ImageDisplayer disp = new IJImageDisplayer();
@@ -130,7 +135,7 @@ public class TestProcessBacteriaPhase {
     }
     
     public static void testSegBacteriesFromXP(String dbName, int fieldNumber, int microChannel, int timePointMin, int timePointMax) {
-        MasterDAO mDAO = new MorphiumMasterDAO(dbName);
+        MasterDAO mDAO = new Task(dbName).getDB();
         MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         List<StructureObject> rootTrack = mDAO.getDao(f.getName()).getRoots();
         rootTrack.removeIf(o -> o.getFrame()<timePointMin || o.getFrame()>timePointMax);
@@ -141,6 +146,10 @@ public class TestProcessBacteriaPhase {
             Image input = mc.getRawImage(1);
             BacteriaTrans.debug=false;
             BacteriaTrans seg = new BacteriaTrans();
+            if (mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter() instanceof BacteriaTrans) {
+                seg = (BacteriaTrans) mDAO.getExperiment().getStructure(1).getProcessingScheme().getSegmenter();
+                logger.debug("using seg from XP: {}", seg);
+            }
             if (!Double.isNaN(thld)) seg.setThresholdValue(thld);
             mc.setChildrenObjects(seg.runSegmenter(input, 1, mc), 1);
             logger.debug("seg: tp {}, #objects: {}", mc.getFrame(), mc.getChildren(1).size());

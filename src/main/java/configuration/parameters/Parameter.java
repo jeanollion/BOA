@@ -35,4 +35,5 @@ public interface Parameter extends MutableTreeNode {
     public <T extends Parameter> T duplicate();
     public String getName();
     public void setName(String name);
+    public String toStringFull();
 }

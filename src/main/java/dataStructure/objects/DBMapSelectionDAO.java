@@ -102,6 +102,7 @@ public class DBMapSelectionDAO implements SelectionDAO {
 
     @Override
     public void store(Selection s) {
+        s.mDAO=this.mDAO;
         idCache.put(s.getName(), s);
         if (db.isClosed()) makeDB();
         this.dbMap.put(s.getName(), JSONUtils.serialize(s));

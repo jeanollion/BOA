@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import utils.Utils;
 
 /**
  *
@@ -51,5 +52,9 @@ public class GroupParameter extends SimpleContainerParameter {
         List<Parameter> dup = ParameterUtils.duplicateList(parameters);
         return new GroupParameter(name, dup);
     }
+    /*@Override
+    public String toString() {
+        return name + ":" + Utils.toStringList(children);
+    }*/
     
 }

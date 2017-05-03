@@ -435,10 +435,11 @@ public class GenerateXP {
             //mutation.setProcessingScheme(new SegmentAndTrack(new LAPTracker().setCompartimentStructure(1)));
             mutation.setProcessingScheme(new SegmentAndTrack(
                     new LAPTracker().setCompartimentStructure(1).setSegmenter(
-                        new MutationSegmenter(1.5, 1, 1.25).setScale(2) 
-                ).setSpotQualityThreshold(2).setLinkingMaxDistance(0.7, 0.71).setGapParameters(0.7, 0.3, 3).setTrackLength(8, 14)
+                        new MutationSegmenter(0.9, 0.75, 0.9).setScale(2)  // was 1.5, 1, 1.25
+                ).setSpotQualityThreshold(1.3) // was 2
+                            .setLinkingMaxDistance(0.7, 0.71).setGapParameters(0.7, 0.3, 3).setTrackLength(8, 14)
             ).addPreFilters(new BandPass(0, 8, 0, 5) 
-            ).addPostFilters(new FeatureFilter(new Quality(), 1.5, true, true)));
+            ).addPostFilters(new FeatureFilter(new Quality(), 0.8, true, true))); // was 1.5
         }
         if (measurements) {
             xp.addMeasurement(new BacteriaLineageMeasurements(1, "BacteriaLineage"));
@@ -464,7 +465,7 @@ public class GenerateXP {
             xp.getPreProcessingTemplate().addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
             xp.getPreProcessingTemplate().addTransformation(0, null, new CropMicroChannelBF2D());
             if (subTransPre) xp.getPreProcessingTemplate().addTransformation(0, null, new IJSubtractBackground(0.3, true, false, true, false)); // subtract after crop because subtract alter optical aberation detection. Optimization: paraboloid = true / range=03-05 best = 0.3 
-            xp.getPreProcessingTemplate().addTransformation(0, null, new BandPass(0, 20, 0, 0)); // TODO optimize low bound [10-50]
+            xp.getPreProcessingTemplate().addTransformation(0, null, new BandPass(0, 20, 0, 0)).setActivated(false); // TODO optimize low bound [10-50]
             xp.getPreProcessingTemplate().setTrimFrames(trimFramesStart, trimFramesEnd);
         }
         return xp;

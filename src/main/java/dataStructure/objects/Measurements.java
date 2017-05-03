@@ -40,7 +40,7 @@ import utils.Utils;
 @Index(value={"structure_idx"})
 public class Measurements implements Comparable<Measurements>{
     protected @Id ObjectId id;
-    @Transient protected String fieldName;
+    @Transient protected String positionName;
     protected int timePoint, structureIdx;
     protected double calibratedTimePoint;
     boolean isTrackHead;
@@ -51,7 +51,7 @@ public class Measurements implements Comparable<Measurements>{
     public Measurements(StructureObject o) {
         this.id=o.id;
         this.calibratedTimePoint=o.getCalibratedTimePoint();
-        this.fieldName=o.getPositionName();
+        this.positionName=o.getPositionName();
         this.timePoint=o.getFrame();
         this.structureIdx=o.getStructureIdx();
         this.isTrackHead=o.isTrackHead;
@@ -66,7 +66,7 @@ public class Measurements implements Comparable<Measurements>{
     }
 
     public String getFieldName() {
-        return fieldName;
+        return positionName;
     }
 
     public int getFrame() {
@@ -153,8 +153,8 @@ public class Measurements implements Comparable<Measurements>{
         modifications=true;
     }
     
-    public int compareTo(Measurements o) { // fieldName / structureIdx / timePoint / indices
-        int f = fieldName.compareTo(o.fieldName);
+    public int compareTo(Measurements o) { // positionName / structureIdx / timePoint / indices
+        int f = positionName.compareTo(o.positionName);
         if (f!=0) return f;
         if (structureIdx<o.structureIdx) return -1;
         else if (structureIdx>o.structureIdx) return 1;
@@ -173,7 +173,7 @@ public class Measurements implements Comparable<Measurements>{
     public boolean equals(Object o) {
         if (o instanceof Measurements) {
             Measurements m = (Measurements)o;
-            if (!fieldName.equals(m.fieldName)) return false;
+            if (!positionName.equals(m.positionName)) return false;
             if (structureIdx!=m.structureIdx) return false;
             if (timePoint!=m.timePoint) return false;
             return Arrays.equals(indices, m.indices);
@@ -183,17 +183,17 @@ public class Measurements implements Comparable<Measurements>{
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 83 * hash + this.fieldName.hashCode();
+        hash = 83 * hash + this.positionName.hashCode();
         hash = 83 * hash + this.timePoint;
         hash = 83 * hash + this.structureIdx;
         hash = 83 * hash + Arrays.hashCode(this.indices);
         return hash;
     }
     @Override public String toString() {
-        return "P:"+fieldName+"/F:"+timePoint+"/S:"+structureIdx;
+        return "P:"+positionName+"/F:"+timePoint+"/S:"+structureIdx;
     }
     private Measurements(String fieldName, int timePoint, int structureIdx, int[] indices) { // only for getParentMeasurementKey
-        this.fieldName = fieldName;
+        this.positionName = fieldName;
         this.timePoint = timePoint;
         this.structureIdx = structureIdx;
         this.indices = indices;
@@ -205,7 +205,7 @@ public class Measurements implements Comparable<Measurements>{
             return null;
             //throw new IllegalArgumentException("parent order should be >0 & <="+indicies.length+ "current value: "+parentOrder);
         } 
-        return new Measurements(fieldName, timePoint, structureIdx, Arrays.copyOfRange(indices, 0, indices.length-parentOrder));
+        return new Measurements(positionName, timePoint, structureIdx, Arrays.copyOfRange(indices, 0, indices.length-parentOrder));
     }
     public Map<String, Object> getValues() {return values;}
 }

@@ -43,6 +43,7 @@ import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.awt.image.ColorModel;
 import java.util.HashMap;
+import javax.swing.SwingUtilities;
 
 /**
  *
@@ -73,6 +74,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
             }
         }
         ip.setDisplayRange(displayRange[0], displayRange[1]);
+        //logger.debug("show image:w={}, h={}, disp: {}", ip.getWidth(), ip.getHeight(), displayRange);
         ip.show();
         if (displayRange.length>=3) zoom(ip, displayRange[2]);
         else zoom(ip, ImageDisplayer.zoomMagnitude);
@@ -93,29 +95,48 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
     }
     
     private static void zoom(ImagePlus image, double magnitude) {
-        ImageCanvas ic = image.getCanvas();
-        if (ic==null) return;
-        ic.zoom100Percent();
-        IJ.runPlugIn("ij.plugin.Zoom", null);
-        if (magnitude > 1) {
-            for (int i = 0; i < (int) (magnitude + 0.5); i++) {
-                ic.zoomIn(image.getWidth() / 2, image.getHeight() / 2);
+        SwingUtilities.invokeLater(new Runnable() { // invoke later -> if not, linux bug display, bad window size
+            @Override
+            public void run() {
+                ImageCanvas ic = image.getCanvas();
+                if (ic==null) return;
+                ic.zoom100Percent();
+                IJ.runPlugIn("ij.plugin.Zoom", null);
+                if (magnitude > 1) {
+                    for (int i = 0; i < (int) (magnitude + 0.5); i++) {
+                        ic.zoomIn(image.getWidth() / 2, image.getHeight() / 2);
+                    }
+                } else if (magnitude > 0 && magnitude < 1) {
+                    for (int i = 0; i < (int) (1 / magnitude + 0.5); i++) {
+                        ic.zoomOut(image.getWidth() / 2, image.getHeight() / 2);
+                    }
+                }
+
+                image.updateAndDraw();
             }
-        } else if (magnitude > 0 && magnitude < 1) {
-            for (int i = 0; i < (int) (1 / magnitude + 0.5); i++) {
-                ic.zoomOut(image.getWidth() / 2, image.getHeight() / 2);
-            }
-        }
-        
-        /*Dimension d = image.getCanvas().getSize();
+        });
+        /*
+        Dimension d = image.getWindow().getSize();
+        //Dimension d = image.getCanvas().getSize();
         Rectangle max = GUI.getMaxWindowBounds();
-        logger.debug("zoom: max height: {}, image height: {}, current height: {}", max.height, image.getHeight(), d.height);
+        logger.debug("window size: {}, canvas size: {}, maxSize: {}", image.getWindow().getSize(), image.getCanvas().getSize(), max);
         if (d.width < image.getWidth()) d.width=Math.min(max.width, image.getWidth());
-        if (d.height < image.getHeight()) d.width=Math.min(max.height, image.getHeight());
+        if (d.height < image.getHeight()+40) d.height=Math.min(max.height, image.getHeight()+40);
         
-        image.getCanvas().setSize(d.width, d.height);*/
-        image.updateAndDraw();
-        //logger.debug("window: {}", image.getWindow().getSize());
+        //image.getCanvas().setSize(d.width, d.height);
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                image.getWindow().setSize(d.width, d.height+100);
+                image.updateAndRepaintWindow();
+                logger.debug("window size after set: {}, window shape: {}, canvas size: {}", image.getWindow().getSize(), image.getWindow().getShape(), image.getCanvas().getSize());
+        
+            }
+        });
+        */
+       
+        //image.updateAndDraw();
+        //image.updateAndRepaintWindow();
         //image.getWindow().repaint();
         
     }

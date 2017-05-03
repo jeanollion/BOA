@@ -30,6 +30,7 @@ public interface MasterDAO {
     public void clearCache();
     
     public ObjectDAO getDao(String fieldName);
+    
     public String getDBName();
     public String getDir();
     public void deleteAllObjects();
@@ -42,4 +43,10 @@ public interface MasterDAO {
     
     // selections
     public SelectionDAO getSelectionDAO();
+    
+    // static methods
+    public static ObjectDAO getDao(MasterDAO db, int positionIdx) {
+        String p = db.getExperiment().getPosition(positionIdx).getName();
+        return db.getDao(p);
+    }
 }

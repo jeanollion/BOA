@@ -573,6 +573,7 @@ public class DBMapObjectDAO implements ObjectDAO {
         List<Measurements> res = new ArrayList<>();
         for (String s : getValues(mDB.value)) {
             Measurements m = JSONUtils.parse(Measurements.class, s);
+            m.positionName=this.positionName;
             res.add(m);
         }
         return res;
@@ -583,6 +584,7 @@ public class DBMapObjectDAO implements ObjectDAO {
         String mS = mDB.value.get(o.getId().toHexString());
         if (mS==null) return null;
         Measurements m = JSONUtils.parse(Measurements.class, mS);
+        m.positionName=this.positionName;
         return m;
     }
     

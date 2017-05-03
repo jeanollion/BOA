@@ -20,11 +20,15 @@ package processing.dataGeneration;
 import static TestUtils.Utils.logger;
 import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.ImageDisplayer;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import core.Task;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.containers.InputImages;
+import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectUtils;
 import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
@@ -33,8 +37,11 @@ import image.ImageOperations;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import plugins.plugins.preFilter.IJSubtractBackground;
+import processing.ImageTransformation;
 import utils.ArrayUtil;
+import utils.Utils;
 
 /**
  *
@@ -67,7 +74,7 @@ public class GenerateFilms {
         BoundingBox cropBB = new BoundingBox(18, 936, 26, 396, 0, 0);
         float saturateChannel1 = 0.4f;
         */
-        String dbName = "boa_fluo160428";
+        /*String dbName = "boa_fluo160428";
         int[] fields = new int[]{6};
         int tStart = 0;
         int tEnd = 680;
@@ -83,6 +90,11 @@ public class GenerateFilms {
         //for (int f : fields) disp.showImage5D(dbName+" field: "+f, imageFTC[count++]);
         
         arrangeFilm(imageFTC[0], cropBB, saturateChannel1);
+        */
+        
+        Image[][] film = generateMicrochannelFilm("boa_PHASE", 0, 8, new BoundingBox(-45, 80, -60, 615, 0, 1));
+        Utils.apply(film, film, a -> Utils.apply(a, a, i -> ImageTransformation.flip(i, ImageTransformation.Axis.X)));
+        ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("mc8", film);
     }
     
     
@@ -152,5 +164,40 @@ public class GenerateFilms {
             count++;
         }
         return resTF;
+    }
+    
+    public static Image[][] generateMicrochannelFilm(String dbName, int positionIdx, int mcIdx, BoundingBox bb) {
+        MasterDAO db = new Task(dbName).getDB();
+        ObjectDAO dao = MasterDAO.getDao(db, positionIdx);
+        List<StructureObject> roots = dao.getRoots();
+        Map<StructureObject, List<StructureObject>> mcs = StructureObjectUtils.getAllTracks(roots, 0);
+        
+        for (StructureObject o : mcs.keySet()) if (o.getIdx()==mcIdx) {
+            List<StructureObject> mc = mcs.get(o);
+            Image[][] resTC = new Image[mc.size()][db.getExperiment().getChannelImageCount()];
+            for (int s = 0; s<db.getExperiment().getStructureCount(); ++s) {
+                int c = db.getExperiment().getStructure(s).getChannelImage();
+                for (StructureObject m : mc) {
+                    Image rootImage = m.getRoot().getRawImage(s);
+                    resTC[m.getFrame()][c] = rootImage.crop(bb.duplicate().translate(m.getBounds()));
+                }
+            }
+            return resTC;
+        }
+        return null;
+    }
+    public static void homogenizeBB(Image[][] image) {
+        BoundingBox bb = image[0][0].getBoundingBox().translateToOrigin();
+        for (int i = 0; i<image.length; ++i) {
+            for (int j = 0; j<image[0].length; ++j) {
+                BoundingBox otherBB = image[i][j].getBoundingBox();
+                bb = bb.expand(otherBB.getSizeX(), otherBB.getSizeY(), otherBB.getSizeZ());
+            }
+        }
+        for (int i = 0; i<image.length; ++i) {
+            for (int j = 0; j<image[0].length; ++j) {
+                image[i][j] = image[i][j].crop(bb);
+            }
+        }
     }
 }

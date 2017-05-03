@@ -131,16 +131,17 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     GroupParameter thicknessParameters = new GroupParameter("Constaint on thickness", relativeThicknessMaxDistance, relativeThicknessThreshold);
     
     NumberParameter curvatureThreshold = new BoundedNumberParameter("Curvature Threshold (lower merge more)", 2, -1, null, 0);
+    NumberParameter curvatureThreshold2 = new BoundedNumberParameter("Curvature Threshold2 (lower merge more)", 2, -0.6, null, 0);
     NumberParameter curvatureScale = new BoundedNumberParameter("Curvature scale", 0, 6, 3, null);
     NumberParameter curvatureSearchRadius = new BoundedNumberParameter("Radius for min. search", 1, 2.5, 1, null);
-    GroupParameter curvatureParameters = new GroupParameter("Constaint on curvature", curvatureScale, curvatureThreshold, curvatureSearchRadius);
+    GroupParameter curvatureParameters = new GroupParameter("Constaint on curvature", curvatureScale, curvatureThreshold, curvatureThreshold2, curvatureSearchRadius);
     
     /*NumberParameter aspectRatioThreshold = new BoundedNumberParameter("Aspect Ratio Threshold", 2, 1.5, 1, null);
     NumberParameter angleThreshold = new BoundedNumberParameter("Angle Threshold", 1, 20, 0, 90);
     GroupParameter angleParameters = new GroupParameter("Constaint on angles", aspectRatioThreshold, angleThreshold);
     */
     NumberParameter contactLimit = new BoundedNumberParameter("Contact Threshold with X border", 0, 5, 0, null);
-    NumberParameter minSizeFusionCost = new BoundedNumberParameter("Minimum Object size (fusion cost)", 0, 300, 5, null); 
+    NumberParameter minSizeFusionCost = new BoundedNumberParameter("Minimum Object size (split & merge)", 0, 300, 5, null); 
     NumberParameter minSizeFusion = new BoundedNumberParameter("Minimum Object size (fusion)", 0, 200, 5, null);
     NumberParameter minSize = new BoundedNumberParameter("Minimum Object size", 0, 100, 5, null);
     NumberParameter minSizeChannelEnd = new BoundedNumberParameter("Minimum Object size (end of channel)", 0, 300, 5, null);
@@ -152,7 +153,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     private final static double maxMergeDistanceBB = 3; // distance in pixel for merging small objects during main process
     // ParameterSetup interface
     @Override public boolean canBeTested(Parameter p) {
-        List canBeTested = new ArrayList(){{add(threshold); add(curvatureScale); add(subBackScale); add(relativeThicknessThreshold);}};
+        List canBeTested = new ArrayList(){{add(curvatureThreshold); add(curvatureThreshold2); add(threshold); add(curvatureScale); add(subBackScale); add(relativeThicknessThreshold);}};
         return canBeTested.contains(p);
     }
     public BacteriaTrans setThreshold(Thresholder t) {
@@ -172,7 +173,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             disp.showImage(pv.getSegmentationMask().duplicate("before merging"));
             disp.showImage(pop.getLabelMap().duplicate("after merging"));
         }
-        else if (p==curvatureScale) {
+        else if (p==curvatureScale|| p==curvatureThreshold || p == curvatureThreshold2) {
             logger.debug("cur test");
             disp.showImage(pv.getSegmentationMask().duplicate("segmentation mask"));
             
@@ -234,7 +235,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
     
     @Override
     public String toString() {
-        return "Bacteria Trans: " + Utils.toStringArray(parameters);
+        return "Bacteria Trans: " + Utils.toStringArray(parameters, p->p.toStringFull());
     }   
     
     public ProcessingVariables getProcessingVariables(Image input, ImageMask segmentationMask) {
@@ -243,7 +244,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 relativeThicknessThreshold.getValue().doubleValue(), relativeThicknessMaxDistance.getValue().doubleValue(), 
                 subBackScale.getValue().doubleValue(), openRadius.getValue().doubleValue(), closeRadius.getValue().doubleValue(), this.fillHolesBackgroundContactProportion.getValue().doubleValue(),
                 minSize.getValue().intValue(), minXSize.getValue().intValue(), minSizePropagation.getValue().intValue(), minSizeFusion.getValue().intValue(),
-                curvatureScale.getValue().intValue(), curvatureThreshold.getValue().doubleValue(), curvatureSearchRadius.getValue().doubleValue());
+                curvatureScale.getValue().intValue(), curvatureThreshold.getValue().doubleValue(), curvatureThreshold2.getValue().doubleValue(), curvatureSearchRadius.getValue().doubleValue());
     }
     
     @Override public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
@@ -555,12 +556,12 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         final int curvatureScale, minSizePropagation, minSize, minXSize;
         int minSizeFusion;
         final double curvatureSearchScale;
-        final double curvatureThreshold;
+        final double curvatureThreshold, curvatureThreshold2;
         final double contrastThreshold, contrastRadius;
         Object3DCluster.InterfaceFactory<Object3D, InterfaceBT> factory;
         protected final HashMap<Object3D, KDTree<Double>> curvatureMap = new HashMap<>();
         private double yLimLastObject = Double.NaN;
-        private ProcessingVariables(Image input, ImageMask mask, double contrastThreshold, double contrastRadius, double splitThresholdValue, double relativeThicknessMaxDistance, double dogScale, double openRadius, double closeRadius, double fillHolesBckProp, int minSize, int minXSize, int minSizePropagation, int minSizeFusion, int curvatureScale, double curvatureThreshold, double curvatureSearchRadius) {
+        private ProcessingVariables(Image input, ImageMask mask, double contrastThreshold, double contrastRadius, double splitThresholdValue, double relativeThicknessMaxDistance, double dogScale, double openRadius, double closeRadius, double fillHolesBckProp, int minSize, int minXSize, int minSizePropagation, int minSizeFusion, int curvatureScale, double curvatureThreshold, double curvatureThreshold2, double curvatureSearchRadius) {
             this.input=input;
             this.mask=mask;
             this.contrastRadius=contrastRadius;
@@ -577,6 +578,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             this.curvatureScale = curvatureScale;
             curvatureSearchScale = curvatureSearchRadius;
             this.curvatureThreshold=curvatureThreshold;
+            this.curvatureThreshold2=curvatureThreshold2;
             this.minSize=minSize;
             this.minXSize=minXSize;
             this.closeRadius=closeRadius;
@@ -757,6 +759,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
         protected class InterfaceBT extends InterfaceObject3DImpl<InterfaceBT> implements InterfaceVoxels<InterfaceBT> {
             double maxDistance=Double.NEGATIVE_INFINITY;
             double curvatureValue=Double.POSITIVE_INFINITY;
+            double curvL=Double.NaN, curvR=Double.NaN;
             double relativeThickNess = Double.NEGATIVE_INFINITY;
             Voxel maxVoxel=null;
             double value=Double.NaN;
@@ -823,9 +826,9 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 
                 // criterion on curvature
                 // curvature has been computed @ upadateSortValue
-                if (debug| ProcessingVariables.this.splitVerbose) logger.debug("interface: {}+{}, Mean curvature: {}, Threshold: {}", e1.getLabel(), e2.getLabel(), curvatureValue, curvatureThreshold);
-                if (curvatureValue<curvatureThreshold) return false;
-                
+                if (debug| ProcessingVariables.this.splitVerbose) logger.debug("interface: {}+{}, Mean curvature: {} ({} & {}), Threshold: {} & {}", e1.getLabel(), e2.getLabel(), curvatureValue, curvL, curvR, curvatureThreshold, curvatureThreshold2);
+                if (curvatureValue<curvatureThreshold || (curvL<curvatureThreshold2 && curvR<curvatureThreshold2)) return false;
+                //else if (true) return true;
                 double max1 = Double.NEGATIVE_INFINITY;
                 double max2 = Double.NEGATIVE_INFINITY;
                 for (Voxel v : e1.getVoxels()) if (v.value>max1 && v.getDistance(maxVoxel, e1.getScaleXY(), e1.getScaleZ())<relativeThicknessMaxDistance) max1 = v.value;
@@ -833,7 +836,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 
                 double norm = Math.min(max1, max2);
                 value = maxDistance/norm;
-                if (Object3DCluster.verbose) logger.debug("interface: {}+{}, norm: {} maxInter: {}, criterion: {} threshold: {} fusion: {}, scale: {}", e1.getLabel(), e2.getLabel(), norm, maxDistance,value, relativeThicknessThreshold, value>relativeThicknessThreshold, e1.getScaleXY() );
+                if (debug| ProcessingVariables.this.splitVerbose) logger.debug("Thickness criterioninterface: {}+{}, norm: {} maxInter: {}, criterion value: {} threshold: {} fusion: {}, scale: {}", e1.getLabel(), e2.getLabel(), norm, maxDistance,value, relativeThicknessThreshold, value>relativeThicknessThreshold, e1.getScaleXY() );
                 return  value>relativeThicknessThreshold;
             }
             
@@ -867,6 +870,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                 return min;
             }
             public double getMeanOfMinCurvature() {
+                curvL=Double.NaN;
+                curvR=Double.NaN;
                 if (borderVoxels.isEmpty() && borderVoxels2.isEmpty()) {
                     if (debug| ProcessingVariables.this.splitVerbose) logger.debug("{} : NO BORDER VOXELS");
                     if (voxels.isEmpty()) return Double.NEGATIVE_INFINITY;
@@ -882,6 +887,8 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                         //return 0.5 * (getMinCurvature(borderVoxels)+ getMinCurvature(borderVoxels2));
                         double min1 = getMinCurvature(borderVoxels);
                         double min2 = getMinCurvature(borderVoxels2);
+                        this.curvL=min1;
+                        this.curvR=min2;
                         double res = (Math.abs(min1-min2)>2*Math.abs(curvatureThreshold)) ? Math.max(min1, min2) : 0.5 * (min1 + min2); // when one side has a curvature very different from the other -> hole -> do not take into acount // TODO: check generality of criterion. put parameter? 
                         if (debug | ProcessingVariables.this.splitVerbose) logger.debug("{}, GET CURV: {}&{} -> {} , borderVoxels: {}&{}", this, min1, min2, res, borderVoxels.size(), borderVoxels2.size());
                         return res;
@@ -901,6 +908,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
                     maxVoxel = v;
                 }
                 voxels.add(v);
+                //v.value=(float)pixVal;
             }
             private void setBorderVoxels() {
                 borderVoxels.clear();

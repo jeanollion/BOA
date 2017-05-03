@@ -736,7 +736,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return rawImagesC.get(channelIdx);
     }
     private void extendBoundsInZIfNecessary(int channelIdx, BoundingBox bounds) { //when the current structure is 2D but channel is 3D 
-        //logger.debug("extends bounds if necessary: is2D: {}, bounds 2D: {}, sizeZ of image to open: {}", is2D(), bounds.getSizeZ(), getExperiment().getMicroscopyField(fieldName).getSizeZ(channelIdx));
+        //logger.debug("extends bounds if necessary: is2D: {}, bounds 2D: {}, sizeZ of image to open: {}", is2D(), bounds.getSizeZ(), getExperiment().getMicroscopyField(positionName).getSizeZ(channelIdx));
         if (bounds.getSizeZ()==1 && is2D() && channelIdx!=this.getExperiment().getChannelImageIdx(structureIdx)) { 
             int sizeZ = getExperiment().getPosition(getPositionName()).getSizeZ(channelIdx); //TODO no reliable if a transformation removes planes -> need to record the dimensions of the preProcessed Images
             if (sizeZ>1) {
@@ -745,7 +745,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
     }
     public boolean is2D() {
-        //return getExperiment().getMicroscopyField(fieldName).getSizeZ(getExperiment().getChannelImageIdx(structureIdx))==1; //TODO no reliable if a transformation removes planes
+        //return getExperiment().getMicroscopyField(positionName).getSizeZ(getExperiment().getChannelImageIdx(structureIdx))==1; //TODO no reliable if a transformation removes planes
         return this.getMask().getSizeZ()==1;
     }
     
@@ -833,7 +833,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             seg.relabel();
             ArrayList<StructureObject> res = new ArrayList<StructureObject>(seg.getChildren().size());
             childrenSM.set(res, structureIdx);
-            for (int i = 0; i<seg.getChildren().size(); ++i) res.add(new StructureObject(fieldName, timePoint, structureIdx, i, seg.getChildren().get(i), this));
+            for (int i = 0; i<seg.getChildren().size(); ++i) res.add(new StructureObject(positionName, timePoint, structureIdx, i, seg.getChildren().get(i), this));
         }
     }*/
     

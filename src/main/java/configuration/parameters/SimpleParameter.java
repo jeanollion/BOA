@@ -55,6 +55,9 @@ public abstract class SimpleParameter implements Parameter {
     }
     
     @Override
+    public String toStringFull() {return toString();}
+    
+    @Override
     public <T extends Parameter> T duplicate() {
         try {
                 Parameter p = this.getClass().getDeclaredConstructor(String.class).newInstance(name);

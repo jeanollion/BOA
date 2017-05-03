@@ -39,6 +39,7 @@ public class ExperimentDAO extends DAO<Experiment>{
         if (cache!=null) return cache;
         else {
             Experiment xp = this.getQuery().get();
+            if (xp==null) return null;
             cache = new Experiment(xp.getName());
             cache.setContentFrom(xp);
             return cache;

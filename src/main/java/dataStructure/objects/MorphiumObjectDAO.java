@@ -69,7 +69,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
         this.collectionName=getCollectionName(fieldName);
         masterDAO.m.ensureIndicesFor(StructureObject.class, collectionName);
         idCache = new ConcurrentHashMap<ObjectId, StructureObject>();
-        //rootArray = new StructureObject[masterDAO.getExperiment().getMicroscopyField(fieldName).getTimePointNumber(false)];
+        //rootArray = new StructureObject[masterDAO.getExperiment().getMicroscopyField(positionName).getTimePointNumber(false)];
         measurementsDAO = new MorphiumMeasurementsDAO(masterDAO, fieldName);
     }
     
@@ -523,8 +523,8 @@ public class MorphiumObjectDAO implements ObjectDAO {
         if (timePoint<0) throw new IllegalArgumentException("TimePoint should be >=0");
         else return getQuery().f("time_point").eq(timePoint).f("structure_idx").eq(-1);
     }
-    /*private ObjectId getRootId(String fieldName, int timePoint) {
-        Query<StructureObject> q = getRootQuery(fieldName, timePoint);
+    /*private ObjectId getRootId(String positionName, int timePoint) {
+        Query<StructureObject> q = getRootQuery(positionName, timePoint);
         q.setReturnedFields("_id");
         return q.get().id;
     }*/
@@ -607,7 +607,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
         } catch (Exception e) {
             logger.debug("Error while storing measurement: {}", e);
             Measurements m = o.getMeasurements();
-            logger.debug("Object: {}, meas: {}, {}, {}, {}", o, m.fieldName, m.id, m.indices, m.values);
+            logger.debug("Object: {}, meas: {}, {}, {}, {}", o, m.positionName, m.id, m.indices, m.values);
             return;
         }
         o.getMeasurements().modifications=false;

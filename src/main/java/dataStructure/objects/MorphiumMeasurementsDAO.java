@@ -57,7 +57,7 @@ public class MorphiumMeasurementsDAO {
     
     public Measurements getObject(ObjectId id) {
         Measurements m =  getQuery().getById(id);
-        if (m!=null) m.fieldName=fieldName;
+        if (m!=null) m.positionName=fieldName;
         return m;
     }
     
@@ -103,7 +103,7 @@ public class MorphiumMeasurementsDAO {
     }
     public List<Measurements> getMeasurements(int structureIdx, String... measurements) {
         List<Measurements> res = getQuery(structureIdx, measurements).asList();
-        for (Measurements m : res) m.fieldName=fieldName;
+        for (Measurements m : res) m.positionName=fieldName;
         Collections.sort(res);
         return res;
     }

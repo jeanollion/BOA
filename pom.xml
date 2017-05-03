@@ -79,7 +79,7 @@
         <dependency>
             <groupId>net.imagej</groupId>
             <artifactId>ij</artifactId>
-            <version>RELEASE</version>
+            <version>1.51k</version>
         </dependency>  
         <dependency>
             <groupId>ome</groupId>

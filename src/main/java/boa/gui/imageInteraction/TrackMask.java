@@ -213,7 +213,7 @@ public class TrackMask extends ImageObjectInterface {
         String structureName;
         if (GUI.hasInstance() && GUI.getDBConnection()!=null && GUI.getDBConnection().getExperiment()!=null) structureName = GUI.getDBConnection().getExperiment().getStructure(structureIdx).getName(); 
         else structureName= structureIdx+"";
-        final Image displayImage =  Image.createEmptyImage("Track: Parent:"+parents+" Raw Image of"+structureName, image0, new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, Math.max(image0.getSizeZ(), this.maxParentZ)).setCalibration(parents.get(0).getMaskProperties().getScaleXY(), parents.get(0).getMaskProperties().getScaleZ()));
+        final Image displayImage =  Image.createEmptyImage("Track: Parent:"+parents.get(0)+" Raw Image of"+structureName, image0, new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, Math.max(image0.getSizeZ(), this.maxParentZ)).setCalibration(parents.get(0).getMaskProperties().getScaleXY(), parents.get(0).getMaskProperties().getScaleZ()));
         pasteImage(image0, displayImage, trackOffset[0]);
         final double[] minAndMax = image0.getMinAndMax(null);
         // draw image in another thread..
@@ -237,12 +237,14 @@ public class TrackMask extends ImageObjectInterface {
                 ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage, minAndMax[0], (float)((1-displayMinMaxFraction) * minAndMax[0] + displayMinMaxFraction*minAndMax[1]));
             }
         });
+        
         t.start();
         if (!guiMode) try {
             t.join();
         } catch (InterruptedException ex) {
             logger.error("generateRawImage error", ex);
         }
+        
         return displayImage;
     }
     
