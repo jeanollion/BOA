@@ -136,11 +136,17 @@ public class DBMapObjectDAO implements ObjectDAO {
                     }
                 }
             } else {
-                for (String s : getValues(dbm)) {
+                long t0 = System.currentTimeMillis();
+                Collection<String> allStrings = getValues(dbm);
+                allStrings.size();
+                long t1 = System.currentTimeMillis();
+                for (String s : allStrings) {
                     StructureObject o = JSONUtils.parse(StructureObject.class, s);
                     o.dao=this;
                     objectMap.put(o.id, o);
                 }
+                long t2 = System.currentTimeMillis();
+                logger.debug("#{} objects from structure: {}, time to retrieve: {}, time to parse: {}", allStrings.size(), key.value, t1-t0, t2-t1);
             }
             allObjectsRetrievedInCache.put(key, true);
             // set prev, next & trackHead
@@ -216,6 +222,7 @@ public class DBMapObjectDAO implements ObjectDAO {
         Collections.sort(res);
         return res;
     }
+    
     /*public List<StructureObject> getChildren(Collection<StructureObject> parents, int structureIdx) {
         List<StructureObject> res = new ArrayList<>();
         Map<ObjectId, StructureObject> parentIds = toIdMap(parents);
@@ -514,7 +521,10 @@ public class DBMapObjectDAO implements ObjectDAO {
 
     @Override
     public List<StructureObject> getTrackHeads(StructureObject parentTrack, int structureIdx) {
+        long t0 = System.currentTimeMillis();
         Map<ObjectId, StructureObject> allObjects = getChildren(new Pair(parentTrack.id, structureIdx));
+        long t1 = System.currentTimeMillis();
+        logger.debug("parent: {}, structure: {}, {}# objects in {}", parentTrack, structureIdx, allObjects.size(), t1-t0);
         List<StructureObject> list = new ArrayList<>();
         for (StructureObject o : allObjects.values()) if (o.isTrackHead) list.add(o);
         Collections.sort(list); //, (o1, o2)-> Integer.compare(o1.getFrame(), o2.getFrame())

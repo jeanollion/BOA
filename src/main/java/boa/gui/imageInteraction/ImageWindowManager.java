@@ -400,8 +400,8 @@ public abstract class ImageWindowManager<T, U, V> {
     protected abstract U generateObjectRoi(Pair<StructureObject, BoundingBox> object, boolean image2D, Color color);
     protected abstract void setObjectColor(U roi, Color color);
     
-    public void displayObjects(Image image, List<Pair<StructureObject, BoundingBox>> objectsToDisplay, Color color, boolean labileObjects, boolean hideIfAlreadyDisplayed) {
-        if (objectsToDisplay.isEmpty() || (objectsToDisplay.get(0)==null)) return;
+    public void displayObjects(Image image, Collection<Pair<StructureObject, BoundingBox>> objectsToDisplay, Color color, boolean labileObjects, boolean hideIfAlreadyDisplayed) {
+        if (objectsToDisplay.isEmpty() || (objectsToDisplay.iterator().next()==null)) return;
         if (color==null) color = ImageWindowManager.defaultRoiColor;
         T dispImage;
         if (image==null) {
@@ -447,7 +447,7 @@ public abstract class ImageWindowManager<T, U, V> {
         displayer.updateImageRoiDisplay(image);
     }
     
-    public void hideObjects(Image image, List<Pair<StructureObject, BoundingBox>> objects, boolean labileObjects) {
+    public void hideObjects(Image image, Collection<Pair<StructureObject, BoundingBox>> objects, boolean labileObjects) {
         T dispImage;
         if (image==null) {
             image = getDisplayer().getCurrentImage2();

@@ -50,6 +50,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -186,12 +187,21 @@ public class Utils {
     public static <T> String toStringList(List<T> array, Function<T, String> toString) {
         if (array.isEmpty()) return "[]";
         String res = "[";
-        for (int i = 0; i<array.size()-1; ++i) {
-            if (array.get(i)!=null) res+=toString.apply(array.get(i))+"; ";
-            else res+="NA; ";
+        Iterator<T> it = array.iterator();
+        while(it.hasNext()) {
+            T t = it.next();
+            res+=(t==null?"NA":toString.apply(t))+(it.hasNext()?";":"]");
         }
-        if (array.get(array.size()-1)!=null) res+=toString.apply(array.get(array.size()-1))+"]";
-        else res+="NA]";
+        return res;
+    }
+    public static <K, V> String toStringMap(Map<K, V> map, Function<K, String> toStringKey, Function<V, String> toStringValue) {
+        if (map.isEmpty()) return "[]";
+        String res = "[";
+        Iterator<Entry<K, V>> it = map.entrySet().iterator();
+        while(it.hasNext()) {
+            Entry<K, V> e = it.next();
+            res+=(e.getKey()==null?"NA" : toStringKey.apply(e.getKey()))+"->"+(e.getValue()==null?"NA":toStringValue.apply(e.getValue()))+(it.hasNext() ? ";":"]");
+        }
         return res;
     }
     public static <T> String toStringArray(int[] array) {
@@ -635,12 +645,27 @@ public class Utils {
         for (Collection<V> c : map.values()) l.addAll(c);
         return l;
     }
+    public static <V> Set<V> flattenMapSet(Map<?, ? extends Collection<V>> map) {
+        Set<V> l = new HashSet<>();
+        for (Collection<V> c : map.values()) l.addAll(c);
+        return l;
+    }
     
-    public static <T> List<T> apply(List<T> list, Function<T, T> func) {
+    public static <T, K> List<K> apply(Collection<T> list, Function<T, K> func) {
         if (list==null) return null;
         if (list.isEmpty()) return Collections.EMPTY_LIST;
-        List<T> res = new ArrayList<>(list.size());
+        List<K> res = new ArrayList<>(list.size());
         for (T t : list)  res.add(func.apply(t));
+        return res;
+    }
+    public static <T, K> List<K> applyWithNullCheck(Collection<T> list, Function<T, K> func) {
+        if (list==null) return null;
+        if (list.isEmpty()) return Collections.EMPTY_LIST;
+        List<K> res = new ArrayList<>(list.size());
+        for (T t : list)  {
+            K k = func.apply(t);
+            if (k!=null) res.add(k);
+        }
         return res;
     }
     public static <T> T[] apply(T[] array, T[] outputArray, Function<T, T> func) {

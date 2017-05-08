@@ -937,6 +937,14 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return Integer.compare(getIdx(), other.getIdx());
     }
     
+    public String toJSON() {
+        
+    }
+    
+    public StructureObject(String json) {
+        
+    }
+    
     // morphium-related methods
     /*@PreStore public void preStore() {
         logger.debug("prestore run for object: {}", this);

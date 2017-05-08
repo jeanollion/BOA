@@ -36,8 +36,10 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import utils.Utils;
 
 /**
@@ -115,6 +117,19 @@ public class Selection implements Comparable<Selection> {
     
     public int getStructureIdx() {
         return structureIdx;
+    }
+    
+    public Set<String> getElementStrings(String position) {
+        if (elements.containsKey(position)) return new HashSet(this.elements.get(position));
+        else return Collections.EMPTY_SET;
+    }
+    public Set<String> getElementStrings(Collection<String> positions) {
+        Set<String> res = new HashSet<>();
+        for (String f : positions) if (elements.containsKey(f)) res.addAll(elements.get(f));
+        return res;
+    }
+    public Set<String> getAllElementStrings() {
+        return Utils.flattenMapSet(elements);
     }
     
     public Set<StructureObject> getAllElements() {
@@ -203,6 +218,8 @@ public class Selection implements Comparable<Selection> {
         List<StructureObject> roots = dao.getRoots();
         long t0 = System.currentTimeMillis();
         List<int[]> notFound = logger.isWarnEnabled() ? new ArrayList<>() : null;
+        List<int[]> indices = new ArrayList<>(indiciesList.size());
+        
         for (String s : indiciesList) {
             int[] indicies = parseIndicies(s);
             if (indicies.length-1!=pathToRoot.length) {
@@ -212,11 +229,43 @@ public class Selection implements Comparable<Selection> {
             StructureObject elem = getObject(indicies, pathToRoot, roots);
             if (elem!=null) res.add(elem);
             else if (notFound!=null) notFound.add(indicies); 
+            indices.add(indicies);
         }
-        long t1 = System.currentTimeMillis();
-        //logger.debug("Selection: {}, #{} elements retrieved in: {}", this.id, res.size(), t1-t0);
+        /*
+        Map<Integer, List<int[]>> iByFrame = indices.stream().collect(Collectors.groupingBy(i -> i[0]));
+        Map<StructureObject, List<int[]>> iByParent = new HashMap<>(iByFrame.size());
+        for (Entry<Integer, List<int[]>> e : iByFrame.entrySet()) {
+            if (roots==null || roots.size()<=e.getKey()) continue;
+            StructureObject root = roots.get(e.getKey());
+            iByParent.put(root, e.getValue());
+        }
+        for (int i = 1; i<pathToRoot.length; i++) iByParent = nextChildren(iByParent, pathToRoot, i);
+        int i = pathToRoot.length;
+        for (Entry<StructureObject, List<int[]>> e : iByParent.entrySet()) {
+            List<StructureObject> candidates = e.getKey().getChildren(pathToRoot[i-1]);
+            for (int[] idx : e.getValue()) {
+                StructureObject o = getChild(candidates, idx[i]);
+                if (o!=null) res.add(o);
+                else if (notFound!=null) notFound.add(idx);
+            }
+        }*/
+        long t2 = System.currentTimeMillis();
+        logger.debug("Selection: {}, position: {}, #{} elements retrieved in: {}", this.id, fieldName, res.size(), t2-t0);
         if (notFound!=null && !notFound.isEmpty()) logger.debug("Selection: {} objects not found: {}", getName(), Utils.toStringList(notFound, array -> Utils.toStringArray(array)));
         return res;
+    }
+    private static Map<StructureObject, List<int[]>> nextChildren(Map<StructureObject, List<int[]>> iByParent, int[] pathToRoot, int idx) {
+        Map<StructureObject, List<int[]>> res = new HashMap<>(iByParent.size());
+        for (Entry<StructureObject, List<int[]>> e : iByParent.entrySet()) {
+            List<StructureObject> candidates = e.getKey().getChildren(pathToRoot[idx-1]);
+            Map<Integer, List<int[]>> iByFrame = e.getValue().stream().collect(Collectors.groupingBy(i -> i[idx]));
+            for (Entry<Integer, List<int[]>> e2 : iByFrame.entrySet()) {
+                StructureObject parent = getChild(candidates, e2.getKey());
+                res.put(parent, e2.getValue());
+            }
+        }
+        return res;
+        
     }
     
     private StructureObject getObject(int[] indices, int[] pathToRoot, List<StructureObject> roots) {
@@ -237,6 +286,10 @@ public class Selection implements Comparable<Selection> {
         return elem;
     }
     private static StructureObject getChild(List<StructureObject> list, int idx) {
+        if (list.size()>idx) {
+            StructureObject res= list.get(idx);
+            if (res.idx==idx) return res;
+        }
         for (StructureObject o : list) if (o.getIdx()==idx) return o;
         return null;
     }

@@ -45,6 +45,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.swing.DefaultListModel;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JList;
@@ -75,6 +76,29 @@ public class SelectionUtils {
         put("Cyan", new Color(0, 139, 139));
         put("Green", new Color(0, 100, 0));
     }};
+    
+    public static List<StructureObject> getStructureObjects(ImageObjectInterface i, List<Selection> selections) {
+        if (i==null) ImageWindowManagerFactory.getImageManager().getCurrentImageObjectInterface();
+        if (i==null) return Collections.EMPTY_LIST;
+        String fieldName = i.getParent().getPositionName();
+        if (selections==null || selections.isEmpty()) return Collections.EMPTY_LIST;
+        selections.removeIf(s -> s.getStructureIdx()!=selections.get(0).getStructureIdx());
+        List<String> allStrings=  new ArrayList<>();
+        for (Selection s : selections) allStrings.addAll(s.getElementStrings(fieldName));
+        return Pair.unpairKeys(filter(i.getObjects(), allStrings));
+    }
+    
+    public static List<String> getElements(List<Selection> selections, String fieldName) {
+        if (selections==null || selections.isEmpty()) return Collections.EMPTY_LIST;
+        selections.removeIf(s -> s.getStructureIdx()!=selections.get(0).getStructureIdx());
+        List<String> res=  new ArrayList<>();
+        if (fieldName!=null) for (Selection s : selections) {
+            res.addAll(s.getElementStrings(fieldName));
+        } else for (Selection s : selections) {
+            if (s.getAllElementStrings()!=null) res.addAll(s.getAllElementStrings());
+        }
+        return res;
+    }
     
     public static List<StructureObject> getStructureObjects(List<Selection> selections, String fieldName) {
         if (selections==null || selections.isEmpty()) return Collections.EMPTY_LIST;
@@ -127,15 +151,22 @@ public class SelectionUtils {
         }
         return p.get(idx);
     }
-    
+    public static Collection<Pair<StructureObject, BoundingBox>> filter(List<Pair<StructureObject, BoundingBox>> objects, Collection<String> indices) {
+        Map<String, Pair<StructureObject, BoundingBox>> map = new HashMap<>(objects.size());
+        for (Pair<StructureObject, BoundingBox> o : objects) map.put(Selection.indicesString(o.key), o);
+        map.keySet().retainAll(indices);
+        return map.values();
+    }
     public static void displayObjects(Selection s, ImageObjectInterface i) {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (i==null) i = iwm.getCurrentImageObjectInterface();
         if (i!=null) {
-            Set<StructureObject> objects = s.getElements(StructureObjectUtils.getPositions(i.getParents()));
+            Collection<Pair<StructureObject, BoundingBox>> objects = filter(i.getObjects(), s.getElementStrings(StructureObjectUtils.getPositions(i.getParents())));
+            //Set<StructureObject> objects = s.getElements(StructureObjectUtils.getPositions(i.getParents()));
             //logger.debug("disp objects: #positions: {}, #objects: {}", StructureObjectUtils.getPositions(i.getParents()).size(), objects.size() );
             if (objects!=null) {
-                iwm.displayObjects(null, i.pairWithOffset(objects), s.getColor(true), false, false);
+                //iwm.displayObjects(null, i.pairWithOffset(objects), s.getColor(true), false, false);
+                iwm.displayObjects(null, objects, s.getColor(true), false, false);
             }
         }
     }
@@ -144,9 +175,11 @@ public class SelectionUtils {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (i==null) i = iwm.getCurrentImageObjectInterface();
         if (i!=null) {
-            Set<StructureObject> objects = s.getElements(StructureObjectUtils.getPositions(i.getParents()));
+            //Set<StructureObject> objects = s.getElements(StructureObjectUtils.getPositions(i.getParents()));
+            Collection<Pair<StructureObject, BoundingBox>> objects = filter(i.getObjects(), s.getElementStrings(StructureObjectUtils.getPositions(i.getParents())));
             if (objects!=null) {
-                iwm.hideObjects(null, i.pairWithOffset(objects), false);
+                iwm.hideObjects(null, objects, false);
+                //iwm.hideObjects(null, i.pairWithOffset(objects), false);
             }
         }
     }
@@ -154,6 +187,11 @@ public class SelectionUtils {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         if (i==null) i = iwm.getCurrentImageObjectInterface();
         if (i!=null) {
+            //Collection<Pair<StructureObject, BoundingBox>> allObjects = i.getObjects();
+            //allObjects.stream().collect(Collectors.groupingBy(o -> o.getTrackHead()));
+            //StructureObjectUtils.splitByTrackHead(Pair.unpairKeys(null))
+            //tracks.removeIf(o -> !o.key.isTrackHead()); 
+            // TODO: split all objects pair by trackHead, filter (do not contain at least an object), and display
             Set<StructureObject> tracks = s.getTrackHeads(StructureObjectUtils.getPositions(i.getParents()));
             if (tracks==null) return;
             for (StructureObject trackHead : tracks) {

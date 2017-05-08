@@ -118,14 +118,17 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
     public TreeMap<Integer, List<StructureObject>> getRemainingTrackHeads() {
         if (remainingTrackHeadsTM==null) {
             if (getParentTrackHead()==null) return new TreeMap<>();
+            long t0 = System.currentTimeMillis();
             List<StructureObject> trackHeads = generator.getObjectDAO(fieldName).getTrackHeads(getParentTrackHead(), structureIdx);
+            long t1 = System.currentTimeMillis();
+            
             //List<StructureObject> trackHeads = new ArrayList<StructureObject> (StructureObjectUtils.getAllTracks(getParentTrack(), structureIdx).keySet());
             //Collections.sort(trackHeads);
             if (trackHeads.isEmpty()) {
                 remainingTrackHeadsTM = new TreeMap<Integer, List<StructureObject>>();
                 logger.debug("structure: {} no trackHeads found", structureIdx);
             } else {
-                logger.debug("structure: {} nb trackHeads found: {}", structureIdx, trackHeads.size());
+                logger.debug("structure: {} nb trackHeads found: {} in {}ms", structureIdx, trackHeads.size(), t1-t0);
                 HashMap<Integer, List<StructureObject>> map  = new HashMap<Integer, List<StructureObject>> (trackHeads.get(trackHeads.size()-1).getFrame()-trackHeads.get(0).getFrame()+1);
                 int currentTimePoint = trackHeads.get(0).getFrame();
                 int lastIdx = 0;
