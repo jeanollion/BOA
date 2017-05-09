@@ -114,8 +114,8 @@ public class InputImagesImpl implements InputImages {
         int cIdx = 0;
         for (int channelIdx : channels) {
             for (int f = frameMin; f<frameMaxExcluded; ++f) {
-                imagesTC[f][cIdx] = getImage(channelIdx, f).setName("Channel: "+channelIdx+" Frame: "+f);
-                if (imagesTC[f][cIdx]==null) {
+                imagesTC[f-frameMin][cIdx] = getImage(channelIdx, f).setName("Channel: "+channelIdx+" Frame: "+f);
+                if (imagesTC[f-frameMin][cIdx]==null) {
                     logger.debug("could not open image: channel:{} frame:{}", channelIdx, f);
                     return null;
                 }

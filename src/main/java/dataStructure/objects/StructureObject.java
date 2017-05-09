@@ -31,13 +31,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import measurement.MeasurementKey;
 import org.bson.types.ObjectId;
+import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plugins.ObjectSplitter;
 import processing.ImageFeatures;
+import utils.JSONUtils;
 import utils.SmallArray;
 import utils.Utils;
 
@@ -937,13 +940,42 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return Integer.compare(getIdx(), other.getIdx());
     }
     
-    /*public String toJSON() {
-        
+    public JSONObject toJSON() {
+        JSONObject obj1=new JSONObject();
+        obj1.put("id", id.toHexString());
+        obj1.put("parent_id", parentId.toHexString());
+        obj1.put("structure_idx", structureIdx);
+        obj1.put("idx", idx);
+        obj1.put("next_id", nextId.toHexString());
+        obj1.put("previous_id", previousId.toHexString());
+        obj1.put("parent_track_head_id", parentTrackHeadId.toHexString());
+        obj1.put("track_head_id", trackHeadId.toHexString());
+        obj1.put("is_track_head", isTrackHead);
+        if (attributes!=null && !attributes.isEmpty()) obj1.put("attributes", JSONUtils.toJSONObject(attributes));
+        if (objectContainer!=null) obj1.put("object", objectContainer.toJSON());
+        return obj1;
     }
     
-    public StructureObject(String json) {
+    public StructureObject(JSONObject json) {
         
-    }*/
+        id = new ObjectId((String)json.get("id"));
+        parentId = new ObjectId((String)json.get("parent_id"));
+        
+        structureIdx = ((Number)json.get("structure_idx")).intValue();
+        idx = ((Number)json.get("idx")).intValue();
+        
+        nextId = new ObjectId((String)json.get("next_id"));
+        previousId = new ObjectId((String)json.get("previous_id"));
+        parentTrackHeadId = new ObjectId((String)json.get("parent_track_head_id"));
+        trackHeadId = new ObjectId((String)json.get("track_head_id"));
+        isTrackHead = (Boolean)json.get("is_track_head");
+        
+        if (json.containsKey("attributes")) attributes = JSONUtils.toMap((JSONObject)json.get("attributes"));
+        if (json.containsKey("object")) {
+            JSONObject objectJ = (JSONObject)json.get("object");
+            objectContainer = ObjectContainer.createFromJSON(this, objectJ);
+        }
+    }
     
     // morphium-related methods
     /*@PreStore public void preStore() {

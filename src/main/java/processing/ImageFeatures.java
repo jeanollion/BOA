@@ -34,8 +34,6 @@ import imagescience.feature.Laplacian;
 import imagescience.feature.Structure;
 import imagescience.image.FloatImage;
 import imagescience.segment.Thresholder;
-import imageware.Builder;
-import imageware.ImageWare;
 import java.util.ArrayList;
 import java.util.Vector;
 import utils.ThreadRunner;
@@ -347,7 +345,7 @@ public class ImageFeatures {
         return res;
     }
     
-    public static ImageFloat LoG(Image image, double radX, double radZ) {
+    /*public static ImageFloat LoG(Image image, double radX, double radZ) {
         ImageWare in = Builder.create(IJImageWrapper.getImagePlus(image), 3);
             ImageWare res;
             if (image.getSizeZ() > 1) {
@@ -357,6 +355,6 @@ public class ImageFeatures {
             }
             res.invert();
         return (ImageFloat)IJImageWrapper.wrap(new ImagePlus("LoG of "+image.getName(), res.buildImageStack())).setCalibration(image).resetOffset().addOffset(image);
-    }
+    }*/
     
 }

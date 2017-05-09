@@ -2,14 +2,14 @@
 package processing;
 
 
-import imageware.Builder;
-import imageware.ImageWare;
+//import imageware.Builder;
+//import imageware.ImageWare;
 
 public class LoG
 {
   private static boolean showKernel = false;
 
-  public static ImageWare doLoG(ImageWare paramImageWare, double paramDouble1, double paramDouble2)
+  /*public static ImageWare doLoG(ImageWare paramImageWare, double paramDouble1, double paramDouble2)
   {
     if (paramImageWare == null)
       return null;
@@ -368,6 +368,6 @@ public class LoG
       arrayOfDouble[i1] = d;
     }
     return arrayOfDouble;
-  }
+  }*/
 }
 

@@ -124,7 +124,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     public static final Logger logger = LoggerFactory.getLogger(GUI.class);
     // check if mapDB is present
     
-    
     public final static String DBprefix = "boa_";
     private static GUI instance;
     
@@ -240,6 +239,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             public void actionPerformed(ActionEvent e) {
                 deleteObjectsButtonActionPerformed(e);
                 logger.debug("D pressed: " + e);
+            }
+        });
+        actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_P, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Prune Track") {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                pruneTrackActionPerformed(e);
+                logger.debug("P pressed: " + e);
             }
         });
         actionMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_M, KeyEvent.CTRL_DOWN_MASK), new AbstractAction("Merge") {
@@ -1998,7 +2004,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         int[] microscopyFields = this.getSelectedMicroscopyFields();
         int[] selectedStructures = this.getSelectedStructures(true);
         Task t = new Task(db).setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements).setStructures(selectedStructures).setPositions(microscopyFields);
-        t.run();
+        SwingUtilities.invokeLater(t);
         t.printErrors();
         /*boolean allStructures = selectedStructures.length==db.getExperiment().getStructureCount();
         boolean needToDeleteObjects = preProcess || reRunPreProcess || segmentAndTrack;
@@ -2191,10 +2197,22 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         ManualCorrection.deleteObjects(db, sel, true);
     }//GEN-LAST:event_deleteObjectsButtonActionPerformed
 
+    private void pruneTrackActionPerformed(java.awt.event.ActionEvent evt) {
+        if (!checkConnection()) return;
+        List<StructureObject> sel = ImageWindowManagerFactory.getImageManager().getSelectedLabileObjects(null);
+        ManualCorrection.prune(db, sel, true);
+        logger.debug("prune: {}", Utils.toStringList(sel));
+    }
     
     private void deleteObjectsButtonMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_deleteObjectsButtonMousePressed
         if (SwingUtilities.isRightMouseButton(evt)) {
             JPopupMenu menu = new JPopupMenu();
+            Action prune = new AbstractAction("Prune track (P)") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    pruneTrackActionPerformed(null);
+                }
+            };
             Action delAfter = new AbstractAction("Delete All objects after first selected object") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
@@ -2209,6 +2227,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                     logger.debug("will delete all after");
                 }
             };
+            menu.add(prune);
             menu.add(delAfter);
             menu.add(delBefore);
             menu.show(this.deleteObjectsButton, evt.getX(), evt.getY());

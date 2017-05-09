@@ -25,6 +25,8 @@ import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import measurement.MeasurementKeyObject;
@@ -38,10 +40,10 @@ import utils.Utils;
  *
  * @author jollion
  */
-public class Task {
+public class Task implements Runnable {
         final String dbName, dir;
         boolean preProcess, segmentAndTrack, trackOnly, measurements;
-        int[] positions;
+        List<Integer> positions;
         int[] structures;
         List<Pair<String, int[]>> extrackMeasurementDir = new ArrayList<>();
         List<Pair<String, Exception>> errors = new ArrayList<>();
@@ -105,7 +107,14 @@ public class Task {
             return this;
         }
         public Task setPositions(int... positions) {
-            if (positions!=null && positions.length>0) this.positions=positions;
+            if (positions!=null && positions.length>0) this.positions=Utils.toList(positions);
+            return this;
+        }
+        public Task unsetPositions(int... positions) {
+            initDB();
+            if (this.positions==null) this.positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
+            for (int p : positions) this.positions.remove((Integer)p);
+            logger.debug("positions: {}", this.positions);
             return this;
         }
         private void initDB() {
@@ -117,8 +126,8 @@ public class Task {
         public Task setPositions(String... positions) {
             if (positions!=null && positions.length>0) {
                 initDB();
-                this.positions=new int[positions.length];
-                for (int i = 0; i<positions.length; ++i) this.positions[i] =  db.getExperiment().getPositionIdx(positions[i]);
+                this.positions=new ArrayList<>(positions.length);
+                for (int i = 0; i<positions.length; ++i) this.positions.add(db.getExperiment().getPositionIdx(positions[i]));
                 db=null;
             }
             return this;
@@ -162,20 +171,25 @@ public class Task {
             if (array[ArrayUtil.max(array)]>=maxValue) errors.add(new Pair(dbName, new Exception(message + array[ArrayUtil.max(array)]+ " not found, max value: "+maxValue)));
             if (array[ArrayUtil.min(array)]<0) errors.add(new Pair(dbName, new Exception(message + array[ArrayUtil.min(array)]+ " not found")));
         }
+        private void checkArray(List<Integer> array, int maxValue, String message) {
+            if (Collections.max(array)>=maxValue) errors.add(new Pair(dbName, new Exception(message + Collections.max(array)+ " not found, max value: "+maxValue)));
+            if (Collections.min(array)<0) errors.add(new Pair(dbName, new Exception(message + Collections.min(array)+ " not found")));
+        }
         public void printErrors() {
             if (!errors.isEmpty()) logger.error("Errors for Task: {}", toString());
             for (Pair<String, Exception> e : errors) logger.error(e.key, e.value);
         }
+        @Override
         public void run() {
             initDB();
             db.clearCache();
             ImageWindowManagerFactory.getImageManager().flush();
             
-            if (positions==null) positions=ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount());
+            if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
             if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
             
             boolean needToDeleteObjects = preProcess || segmentAndTrack;
-            boolean deleteAll =  needToDeleteObjects && structures.length==db.getExperiment().getStructureCount() && positions.length==db.getExperiment().getPositionCount();
+            boolean deleteAll =  needToDeleteObjects && structures.length==db.getExperiment().getStructureCount() && positions.size()==db.getExperiment().getPositionCount();
             if (deleteAll) db.deleteAllObjects();
             boolean deleteAllField = needToDeleteObjects && structures.length==db.getExperiment().getStructureCount() && !deleteAll;
             logger.info("Run task: db: {} preProcess: {}, segmentAndTrack: {}, trackOnly: {}, runMeasurements: {}, need to delete objects: {}, delete all: {}, delete all by field: {}", dbName, preProcess, segmentAndTrack, trackOnly, measurements, needToDeleteObjects, deleteAll, deleteAllField);
@@ -215,7 +229,6 @@ public class Task {
             if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field
             db.getDao(position).clearCache();
             db.getExperiment().getPosition(position).flushImages(true, true);
-            
             System.gc();
         }
         private void extract(String dir, int[] structures) {
@@ -226,9 +239,9 @@ public class Task {
             DataExtractor.extractMeasurementObjects(db, file, getPositionNames(), keys);
         }
         private List<String> getPositionNames() {
-            if (positions==null) positions=ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount());
-            List<String> res = new ArrayList<>(positions.length);
-            for (int i = 0; i<positions.length; ++i) res.add(db.getExperiment().getPosition(positions[i]).getName());
+            if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
+            List<String> res = new ArrayList<>(positions.size());
+            for (int i : positions) res.add(db.getExperiment().getPosition(i).getName());
             return res;
         }
         @Override public String toString() {

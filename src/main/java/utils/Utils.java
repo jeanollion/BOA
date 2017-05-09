@@ -135,6 +135,12 @@ public class Utils {
         } else for (int i = 0; i<res.length; ++i) res[i] = arrayList.get(i);
         return res;
     }
+    public static List<Integer> toList(int[] array) {
+        if (array==null || array.length==0) return new ArrayList<Integer>();
+        ArrayList<Integer> res = new ArrayList<>(array.length);
+        for (int i : array) res.add(i);
+        return res;
+    }
     
     public static double[] toDoubleArray(List<? extends Number> arrayList, boolean reverseOrder) {
         double[] res=new double[arrayList.size()];
@@ -177,20 +183,32 @@ public class Utils {
         else res+="NA]";
         return res;
     }
-    public static <T> String toStringArray(T[] array, Function<T, String> toString) {
+    public static <T> String toStringArray(T[] array, Function<T, Object> toString) {
         if (array.length==0) return "[]";
         String res = "[";
-        for (int i = 0; i<array.length-1; ++i) res+=toString.apply(array[i])+"; ";
-        res+=toString.apply(array[array.length-1])+"]";
+        for (int i = 0; i<array.length; ++i) {
+            String s=null;
+            if (array[i]!=null) {
+                Object o = toString.apply(array[i]);
+                if (o!=null) s = o.toString();
+            }
+            res+=s+ (i<array.length-1 ? "; " : "]");
+        }
         return res;
     }
-    public static <T> String toStringList(List<T> array, Function<T, String> toString) {
+    public static <T> String toStringList(List<T> array, Function<T, Object> toString) {
         if (array.isEmpty()) return "[]";
         String res = "[";
         Iterator<T> it = array.iterator();
         while(it.hasNext()) {
             T t = it.next();
-            res+=(t==null?"NA":toString.apply(t))+(it.hasNext()?";":"]");
+            String s=null;
+            if (t!=null) {
+                Object o = toString.apply(t);
+                if (o!=null) s = o.toString();
+            }
+            if (s==null) s = "NA";
+            res+=s+(it.hasNext()?";":"]");
         }
         return res;
     }

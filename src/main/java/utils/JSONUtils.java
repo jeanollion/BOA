@@ -53,9 +53,12 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import org.bson.types.ObjectId;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 import sun.reflect.ReflectionFactory;
@@ -66,8 +69,52 @@ import static utils.MorphiumUtils.logger;
  * @author jollion
  */
 public class JSONUtils {
+    public static JSONObject toJSONObject(Map<String, Object> map) {
+        JSONObject res=  new JSONObject();
+        for (Map.Entry<String, Object> e : map.entrySet()) {
+            if (e.getValue() instanceof double[]) res.put(e.getKey(), toJSONArray((double[])e.getValue()));
+            if (e.getValue() instanceof int[]) res.put(e.getKey(), toJSONArray((int[])e.getValue()));
+            else if (e.getValue() instanceof Number) res.put(e.getKey(), e.getValue());
+            else if (e.getValue() instanceof Boolean) res.put(e.getKey(), e.getValue());
+            else if (e.getValue() instanceof String) res.put(e.getKey(), e.getValue());
+        }
+        return res;
+    }
+    public static Map<String, Object> toMap(JSONObject map) {
+        HashMap<String, Object> res= new HashMap<>(map.size());
+        for (Object o : map.entrySet()) {
+            String key = (String)((Entry)o).getKey();
+            Object value = ((Entry)o).getValue();
+            if (o instanceof JSONArray) {
+                JSONArray array = (JSONArray)value;
+                if (!array.isEmpty() && array.get(0) instanceof Integer) map.put(key, fromIntArray(array));
+                else map.put(key, fromDoubleArray(array));
+            } else map.put(key, value);
+        }
+        return res;
+    }
     
     
+    public static double[] fromDoubleArray(JSONArray array) {
+        double[] res = new double[array.size()];
+        for (int i = 0; i<res.length; ++i) res[i]=((Number)array.get(i)).doubleValue();
+        return res;
+    }
+    public static JSONArray toJSONArray(double[] array) {
+        JSONArray res = new JSONArray();
+        for (double d : array) res.add(d);
+        return res;
+    }
+    public static int[] fromIntArray(JSONArray array) {
+        int[] res = new int[array.size()];
+        for (int i = 0; i<res.length; ++i) res[i]=((Number)array.get(i)).intValue();
+        return res;
+    }
+    public static JSONArray toJSONArray(int[] array) {
+        JSONArray res = new JSONArray();
+        for (int d : array) res.add(d);
+        return res;
+    }
     
     public static String serialize(Object o) {
         DBObject oMarsh = marshall(o);

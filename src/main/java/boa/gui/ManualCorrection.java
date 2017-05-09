@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import plugins.ManualSegmenter;
 import plugins.ObjectSplitter;
 import utils.Pair;
@@ -178,41 +179,69 @@ public class ManualCorrection {
             }
         }
     }
-    
+    public static void prune(MasterDAO db, List<StructureObject> objects, boolean updateDisplay) {
+        if (objects.isEmpty()) return;
+        TreeSet<StructureObject> queue = new TreeSet<>(objects);
+        List<StructureObject> toDel = new ArrayList<>();
+        while(!queue.isEmpty()) {
+            StructureObject o = queue.pollFirst();
+            toDel.add(o);
+            List<StructureObject> next = getNext(o);
+            toDel.addAll(next);
+            queue.addAll(next);
+        }
+        Utils.removeDuplicates(toDel, false);
+        deleteObjects(db, toDel, updateDisplay);
+    }
     public static void modifyObjectLinks(MasterDAO db, List<StructureObject> objects, boolean unlink, boolean updateDisplay) {
         StructureObjectUtils.keepOnlyObjectsFromSameMicroscopyField(objects);
         StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(objects);
         if (objects.size()<=1) return;
         
         if (updateDisplay) ImageWindowManagerFactory.getImageManager().removeTracks(StructureObjectUtils.getTrackHeads(objects));
+        int structureIdx = objects.get(0).getStructureIdx();
+        boolean merge = db.getExperiment().getStructure(structureIdx).allowMerge();
+        boolean split = db.getExperiment().getStructure(structureIdx).allowSplit();
         
         List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
         TreeMap<StructureObject, List<StructureObject>> objectsByParent = new TreeMap(StructureObjectUtils.splitByParent(objects)); // sorted by time point
         StructureObject prevParent = null;
-        StructureObject prev = null;
+        List<StructureObject> prev = null;
         logger.debug("modify: unlink: {}, #objects: {}, #parents: {}", unlink, objects.size(), objectsByParent.keySet().size());
         for (StructureObject currentParent : objectsByParent.keySet()) {
-            List<StructureObject> l = objectsByParent.get(currentParent);
-            logger.debug("prevParent: {}, currentParent: {}, #objects: {}", prevParent, currentParent, l.size());
-            if (l.size()==1 && (prevParent==null || prevParent.getFrame()<currentParent.getFrame())) {
-                if (prev!=null) logger.debug("prev: {}, prevTh: {}, prevIsTh: {}, prevPrev: {}, prevNext: {}", prev, prev.getTrackHead(), prev.isTrackHead(), prev.getPrevious(), prev.getNext());
-                if (prevParent!=null && prev!=null) {
-                    StructureObject current = l.get(0);
-                    logger.debug("current: {}, currentTh: {}, currentIsTh: {}, currentPrev: {}, currentNext: {}", current, current.getTrackHead(), current.isTrackHead(), current.getPrevious(), current.getNext());
+            List<StructureObject> current = objectsByParent.get(currentParent);
+            Collections.sort(current);
+            logger.debug("prevParent: {}, currentParent: {}, #objects: {}", prevParent, currentParent, current.size());
+            if (prevParent!=null && prevParent.getFrame()<currentParent.getFrame()) {
+                if (prev!=null) logger.debug("prev: {}, prevTh: {}, prevIsTh: {}, prevPrev: {}, prevNext: {}", Utils.toStringList(prev), Utils.toStringList(prev, o->o.getTrackHead()), Utils.toStringList(prev, o->o.isTrackHead()), Utils.toStringList(prev, o->o.getPrevious()), Utils.toStringList(prev, o->o.getNext()));
+                logger.debug("current: {}, currentTh: {}, currentIsTh: {}, currentPrev: {}, currentNext: {}", Utils.toStringList(current), Utils.toStringList(current, o->o.getTrackHead()), Utils.toStringList(current, o->o.isTrackHead()), Utils.toStringList(current, o->o.getPrevious()), Utils.toStringList(current, o->o.getNext()));
+                if (prev.size()==1 && current.size()==1) {
                     if (unlink) {
-                        if (current.getPrevious()==prev || prev.getNext()==current) { //unlink the 2 spots
-                            ManualCorrection.unlinkObjects(prev, current, modifiedObjects);
+                        if (current.get(0).getPrevious()==prev.get(0) || prev.get(0).getNext()==current) { //unlink the 2 spots
+                            ManualCorrection.unlinkObjects(prev.get(0), current.get(0), modifiedObjects);
                         } 
-                    } else ManualCorrection.linkObjects(prev, current, modifiedObjects);
-
-                } //else if (unlink) ManualCorrection.unlinkObject(l.get(0), modifiedObjects);
-                prevParent=currentParent;
-                prev = l.get(0);
-            } else {
-                prev=null;
-                prevParent=null;
-                //if (unlink) for (StructureObject o : l) ManualCorrection.unlinkObject(o, modifiedObjects);
-            }   
+                    } else ManualCorrection.linkObjects(prev.get(0), current.get(0), modifiedObjects);
+                } else if (prev.size()==1 && split && !merge) {
+                    for (StructureObject c : current) {
+                        if (unlink) {
+                            if (c.getPrevious()==prev.get(0) || prev.get(0).getNext()==c) { //unlink the 2 spots
+                                ManualCorrection.unlinkObjects(prev.get(0), c, modifiedObjects);
+                            } 
+                        } else ManualCorrection.linkObjects(prev.get(0), c, modifiedObjects);
+                    }
+                } else if (current.size()==1 && !split && merge) {
+                    for (StructureObject p : prev) {
+                        if (unlink) {
+                            if (current.get(0).getPrevious()==p || p.getNext()==current.get(0)) { //unlink the 2 spots
+                                ManualCorrection.unlinkObjects(p, current.get(0), modifiedObjects);
+                            } 
+                        } else ManualCorrection.linkObjects(p, current.get(0), modifiedObjects);
+                    }
+                }
+                
+            } 
+            prevParent=currentParent;
+            prev = current;
         }
         //repairLinkInconsistencies(db, modifiedObjects, modifiedObjects);
         Utils.removeDuplicates(modifiedObjects, false);

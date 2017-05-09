@@ -39,10 +39,13 @@ import image.ImageByte;
 import image.ImageOperations;
 import java.awt.Rectangle;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 /**
  *
@@ -110,4 +113,31 @@ public class ObjectContainerIjRoi extends ObjectContainer {
     @Override
     public void relabelObject(int newIdx) {
     }
+    @Override
+    public void initFromJSON(JSONObject json) {
+        super.initFromJSON(json);
+        if (json.containsKey("roi")) {
+            roiZ = new ArrayList<>(1);
+            Base64.getDecoder().decode((String)json.get("roi"));
+        } else if (json.containsKey("roiZ")) {
+            JSONArray rois = (JSONArray)json.get(("roiZ"));
+            roiZ = new ArrayList<>(rois.size());
+            for (int i = 0; i<rois.size(); ++i) roiZ.add(Base64.getDecoder().decode((String)rois.get(i)));
+        }
+    }
+    @Override
+    public JSONObject toJSON() {
+        JSONObject res = super.toJSON();
+        if (roiZ.size()>1) {
+            JSONArray rois = new JSONArray();
+            for (byte[] bytes: this.roiZ) {
+                rois.add(Base64.getEncoder().encodeToString(bytes));
+            }
+            res.put("roiZ", rois);
+        } else if (roiZ.size()==1) {
+            res.put("roi", Base64.getEncoder().encodeToString(roiZ.get(0)));
+        }
+        return res;
+    }
+    protected ObjectContainerIjRoi() {}
 }

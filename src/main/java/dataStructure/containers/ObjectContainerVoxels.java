@@ -23,7 +23,11 @@ import dataStructure.objects.StructureObject;
 import dataStructure.objects.Voxel;
 import de.caluga.morphium.annotations.Embedded;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import utils.JSONUtils;
 
 /**
  *
@@ -33,7 +37,7 @@ import java.util.List;
 public class ObjectContainerVoxels extends ObjectContainer {
 
     int[] x, y, z;
-
+    
     public ObjectContainerVoxels(StructureObject structureObject) {
         super(structureObject);
         createCoordsArrays(structureObject.getObject());
@@ -110,4 +114,25 @@ public class ObjectContainerVoxels extends ObjectContainer {
     @Override
     public void relabelObject(int newIdx) {
     }
+    
+    @Override 
+    public JSONObject toJSON() {
+        JSONObject res = super.toJSON();
+        if (x!=null) res.put("x", JSONUtils.toJSONArray(x));
+        if (y!=null) res.put("y", JSONUtils.toJSONArray(y));
+        if (z!=null) res.put("z", JSONUtils.toJSONArray(z));
+        return res;
+    }
+    @Override 
+    public void initFromJSON(JSONObject json) {
+        if (!json.containsKey("x") || !json.containsKey("y")) throw new IllegalArgumentException("JSON object do no contain x & y values");
+        JSONArray xJ = (JSONArray)json.get("x");
+        JSONArray yJ = (JSONArray)json.get("y");
+        JSONArray zJ = json.containsKey("z") ? (JSONArray)json.get("z") : null;
+        if (xJ.size()!=yJ.size() || (zJ!=null && zJ.size()!=xJ.size())) throw new IllegalArgumentException("JSON object arrays of different sizes");
+        x = JSONUtils.fromIntArray(xJ);
+        y = JSONUtils.fromIntArray(yJ);
+        if (zJ!=null) z = JSONUtils.fromIntArray(zJ);
+    }
+    protected ObjectContainerVoxels() {}
 }

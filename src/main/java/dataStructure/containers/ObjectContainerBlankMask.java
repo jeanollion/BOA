@@ -22,6 +22,8 @@ import static dataStructure.objects.Object3D.logger;
 import dataStructure.objects.StructureObject;
 import image.BlankMask;
 import image.BoundingBox;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 /**
  *
@@ -54,4 +56,5 @@ public class ObjectContainerBlankMask extends ObjectContainer {
     public void relabelObject(int newIdx) {
         
     }
+    protected ObjectContainerBlankMask() {}
 }

@@ -22,6 +22,8 @@ import dataStructure.objects.StructureObject;
 import de.caluga.morphium.annotations.Embedded;
 import de.caluga.morphium.annotations.Transient;
 import image.BoundingBox;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 /**
  *
@@ -32,8 +34,8 @@ import image.BoundingBox;
 public abstract class ObjectContainer {
     @Transient public static int MAX_VOX_3D = 1200000; //(1 vox = 12B)
     @Transient public static int MAX_VOX_2D = 1900000; //(1 vox =8B)
-    @Transient public static final int MAX_VOX_3D_EMB = 80;
-    @Transient public static final int MAX_VOX_2D_EMB = 120;
+    @Transient public static final int MAX_VOX_3D_EMB = 20;
+    @Transient public static final int MAX_VOX_2D_EMB = 30;
     @Transient protected StructureObject structureObject;
     BoundingBox bounds;
     
@@ -50,4 +52,40 @@ public abstract class ObjectContainer {
     public abstract void updateObject();
     public abstract void deleteObject();
     public abstract void relabelObject(int newIdx);
+    public void initFromJSON(JSONObject json) {
+        JSONArray bds =  (JSONArray)json.get("bounds");
+        this.bounds=new BoundingBox();
+        bounds.setxMin((int)bds.get(0));
+        bounds.setxMax((int)bds.get(1));
+        bounds.setyMin((int)bds.get(2));
+        bounds.setyMax((int)bds.get(3));
+        if (bds.size()>=6) {
+            bounds.setzMin((int)bds.get(4));
+            bounds.setzMax((int)bds.get(5));
+        }
+    }
+    public JSONObject toJSON() {
+        JSONArray bds =  new JSONArray();
+        bds.add(bounds.getxMin());
+        bds.add(bounds.getxMax());
+        bds.add(bounds.getyMin());
+        bds.add(bounds.getyMax());
+        if (bounds.getSizeZ()>1 || bounds.getzMin()>0) {
+            bds.add(bounds.getzMin());
+            bds.add(bounds.getzMax());
+        }
+        JSONObject res = new JSONObject();
+        res.put("bounds", bds);
+        return res;
+    }
+    protected ObjectContainer() {}
+    public static ObjectContainer createFromJSON(StructureObject o, JSONObject json) {
+        ObjectContainer res;
+        if (json.containsKey("x")) res = new ObjectContainerVoxels();
+        else if (json.containsKey("roi")||json.containsKey("roiZ")) res = new ObjectContainerIjRoi();
+        else res = new ObjectContainerBlankMask();
+        res.setStructureObject(o);
+        res.initFromJSON(json);
+        return res;
+    }
 }
