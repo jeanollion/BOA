@@ -162,18 +162,15 @@ public class MorphiumObjectDAO implements ObjectDAO {
         ArrayList<Integer> directChildren = alsoDeleteDirectChildren ? this.getExperiment().getAllDirectChildStructures(structureIdx) : null;
         DBCursor cur = masterDAO.m.getDatabase().getCollection(collectionName).find(query, new BasicDBObject("_id", 1).append("measurements_id", 1));
         List<ObjectId> childrenIds = new ArrayList<ObjectId>();
-        List<ObjectId> childrenMeasIds = new ArrayList<ObjectId>();
         while (cur.hasNext()) {
             DBObject o = cur.next();
             childrenIds.add((ObjectId)o.get("_id"));
-            Object mId = o.get("measurements_id");
-            if (mId!=null) childrenMeasIds.add((ObjectId)mId);
         }
         cur.close();
         masterDAO.m.getDatabase().getCollection(collectionName).remove(QueryBuilder.start("_id").in(childrenIds).get(), WriteConcern.ACKNOWLEDGED);
         long t1 = System.currentTimeMillis();
         logger.debug("delete {} objects of structure: {} from {} parents in : {}", childrenIds.size(), structureIdx, parentIds.size(), t1-t0);
-        measurementsDAO.delete(childrenMeasIds);
+        measurementsDAO.delete(childrenIds);
         if (alsoDeleteDirectChildren && !directChildren.isEmpty()) {
             for (int childStructure : directChildren) deleteChildren(childrenIds, childStructure, true);
         }

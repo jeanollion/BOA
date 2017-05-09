@@ -898,7 +898,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     public boolean hasMeasurements() {
-        return !getMeasurements().values.isEmpty();
+        return measurements!=null && !getMeasurements().values.isEmpty();
     }
     boolean hasMeasurementModifications() {
         return measurements!=null && measurements.modifications;
@@ -937,13 +937,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return Integer.compare(getIdx(), other.getIdx());
     }
     
-    public String toJSON() {
+    /*public String toJSON() {
         
     }
     
     public StructureObject(String json) {
         
-    }
+    }*/
     
     // morphium-related methods
     /*@PreStore public void preStore() {

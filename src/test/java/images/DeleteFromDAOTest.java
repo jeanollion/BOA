@@ -28,6 +28,7 @@ import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.Structure;
 import dataStructure.containers.ObjectContainer;
 import dataStructure.objects.BasicMasterDAO;
+import dataStructure.objects.DBMapObjectDAO;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.Measurements;
 import dataStructure.objects.MorphiumObjectDAO;
@@ -297,7 +298,12 @@ public class DeleteFromDAOTest {
                 for (StructureObject o : allObjects) if (!o.getMeasurements().getValues().isEmpty()) ++count;
                 return count;
             }
+        } else if (db instanceof DBMapObjectDAO) {
+            if (clazz == StructureObject.class) {
+            
+            }
         } else throw new IllegalArgumentException("MasterDAO of class: "+db.getClass()+" no managed by test");
+        
         return -1;
     }
     
