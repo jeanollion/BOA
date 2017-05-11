@@ -26,6 +26,7 @@ import boa.gui.objects.StructureObjectTreeGenerator;
 import boa.gui.objects.TrackTreeController;
 import boa.gui.objects.TrackTreeGenerator;
 import dataStructure.objects.MasterDAO;
+import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.Selection;
 import dataStructure.objects.SelectionDAO;
 import dataStructure.objects.StructureObject;
@@ -85,7 +86,7 @@ public class SelectionUtils {
         selections.removeIf(s -> s.getStructureIdx()!=selections.get(0).getStructureIdx());
         List<String> allStrings=  new ArrayList<>();
         for (Selection s : selections) allStrings.addAll(s.getElementStrings(fieldName));
-        return Pair.unpairKeys(filter(i.getObjects(), allStrings));
+        return Pair.unpairKeys(filterPairs(i.getObjects(), allStrings));
     }
     
     public static List<String> getElements(List<Selection> selections, String fieldName) {
@@ -126,8 +127,8 @@ public class SelectionUtils {
         for (Selection s: selections) res.addAll(s.getAllPositions());
         return res;
     }
-    public static String getNextPosition(List<Selection> selections, String position, boolean next) {
-        List<String> p = new ArrayList<>(getPositions(selections));
+    public static String getNextPosition(Selection selection, String position, boolean next) {
+        List<String> p = new ArrayList<>(selection.getAllPositions());
         Collections.sort(p);
         int idx = position ==null ? -1 : Collections.binarySearch(p, position);
         logger.debug("getNext pos: {}, cur: {}, idx: {}", p, position, idx);
@@ -151,17 +152,45 @@ public class SelectionUtils {
         }
         return p.get(idx);
     }
-    public static Collection<Pair<StructureObject, BoundingBox>> filter(List<Pair<StructureObject, BoundingBox>> objects, Collection<String> indices) {
+    public static Collection<Pair<StructureObject, BoundingBox>> filterPairs(List<Pair<StructureObject, BoundingBox>> objects, Collection<String> indices) {
         Map<String, Pair<StructureObject, BoundingBox>> map = new HashMap<>(objects.size());
         for (Pair<StructureObject, BoundingBox> o : objects) map.put(Selection.indicesString(o.key), o);
         map.keySet().retainAll(indices);
         return map.values();
     }
+    public static Collection<StructureObject> filter(List<StructureObject> objects, Collection<String> indices) {
+        Map<String, StructureObject> map = new HashMap<>(objects.size());
+        for (StructureObject o : objects) map.put(Selection.indicesString(o), o);
+        map.keySet().retainAll(indices);
+        return map.values();
+    }
+    public static List<StructureObject> getParents(Selection sel, String position, MasterDAO db) {
+        List<String> parentStrings = Utils.apply(sel.getElementStrings(position), s->Selection.getParent(s));
+        Utils.removeDuplicates(parentStrings, false);
+        return new ArrayList<>(SelectionUtils.filter(StructureObjectUtils.getAllObjects(db.getDao(position), db.getExperiment().getStructure(sel.getStructureIdx()).getParentStructure()), parentStrings));
+    }
+    public static List<StructureObject> getParents(Selection sel, String position, int parentStructureIdx, MasterDAO db) {
+        if (!db.getExperiment().isChildOf(parentStructureIdx, sel.getStructureIdx())) return Collections.EMPTY_LIST;
+        int[] path = db.getExperiment().getPathToStructure(parentStructureIdx, sel.getStructureIdx());
+        List<String> parentStrings = Utils.apply(sel.getElementStrings(position), s->Selection.getParent(s, path.length));
+        Utils.removeDuplicates(parentStrings, false);
+        List<StructureObject> allObjects = StructureObjectUtils.getAllObjects(db.getDao(position), parentStructureIdx);
+        return new ArrayList<>(SelectionUtils.filter(allObjects, parentStrings));
+    }
+    public static ImageObjectInterface fixIOI(ImageObjectInterface i, int structureIdx) {
+        ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
+        if (i!=null && i.getChildStructureIdx()!=structureIdx) {
+            Image im = iwm.getImage(i, false);
+            i = iwm.getImageObjectInterface(im, structureIdx);
+        }
+        if (i==null) i = iwm.getImageObjectInterface(null, structureIdx);
+        return i;
+    }
     public static void displayObjects(Selection s, ImageObjectInterface i) {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
-        if (i==null) i = iwm.getCurrentImageObjectInterface();
+        i = fixIOI(i, s.getStructureIdx());
         if (i!=null) {
-            Collection<Pair<StructureObject, BoundingBox>> objects = filter(i.getObjects(), s.getElementStrings(StructureObjectUtils.getPositions(i.getParents())));
+            Collection<Pair<StructureObject, BoundingBox>> objects = filterPairs(i.getObjects(), s.getElementStrings(StructureObjectUtils.getPositions(i.getParents())));
             //Set<StructureObject> objects = s.getElements(StructureObjectUtils.getPositions(i.getParents()));
             //logger.debug("disp objects: #positions: {}, #objects: {}", StructureObjectUtils.getPositions(i.getParents()).size(), objects.size() );
             if (objects!=null) {
@@ -173,10 +202,10 @@ public class SelectionUtils {
     
     public static void hideObjects(Selection s, ImageObjectInterface i) {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
-        if (i==null) i = iwm.getCurrentImageObjectInterface();
+        i = fixIOI(i, s.getStructureIdx());
         if (i!=null) {
             //Set<StructureObject> objects = s.getElements(StructureObjectUtils.getPositions(i.getParents()));
-            Collection<Pair<StructureObject, BoundingBox>> objects = filter(i.getObjects(), s.getElementStrings(StructureObjectUtils.getPositions(i.getParents())));
+            Collection<Pair<StructureObject, BoundingBox>> objects = filterPairs(i.getObjects(), s.getElementStrings(StructureObjectUtils.getPositions(i.getParents())));
             if (objects!=null) {
                 iwm.hideObjects(null, objects, false);
                 //iwm.hideObjects(null, i.pairWithOffset(objects), false);
@@ -185,15 +214,12 @@ public class SelectionUtils {
     }
     public static void displayTracks(Selection s, ImageObjectInterface i) {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
-        if (i==null) i = iwm.getCurrentImageObjectInterface();
+        i = fixIOI(i, s.getStructureIdx());
         if (i!=null) {
-            //Collection<Pair<StructureObject, BoundingBox>> allObjects = i.getObjects();
-            //allObjects.stream().collect(Collectors.groupingBy(o -> o.getTrackHead()));
-            //StructureObjectUtils.splitByTrackHead(Pair.unpairKeys(null))
-            //tracks.removeIf(o -> !o.key.isTrackHead()); 
-            // TODO: split all objects pair by trackHead, filter (do not contain at least an object), and display
-            Set<StructureObject> tracks = s.getTrackHeads(StructureObjectUtils.getPositions(i.getParents()));
-            if (tracks==null) return;
+            Collection<Pair<StructureObject, BoundingBox>> objects = filterPairs(i.getObjects(), s.getElementStrings(StructureObjectUtils.getPositions(i.getParents())));
+            List<StructureObject> tracks = Pair.unpairKeys(objects);
+            tracks.removeIf(o->!o.isTrackHead());
+            if (tracks.isEmpty()) return;
             for (StructureObject trackHead : tracks) {
                 List<StructureObject> track = StructureObjectUtils.getTrack(trackHead, true);
                 iwm.displayTrack(null, i, i.pairWithOffset(track), s.getColor(true), false);
@@ -202,10 +228,12 @@ public class SelectionUtils {
     }
     public static void hideTracks(Selection s, ImageObjectInterface i) {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
-        if (i==null)  i = iwm.getCurrentImageObjectInterface();
+        i = fixIOI(i, s.getStructureIdx());
         if (i!=null) {
-            Set<StructureObject> tracks = s.getTrackHeads(StructureObjectUtils.getPositions(i.getParents()));
-            if (tracks==null) return;
+            Collection<Pair<StructureObject, BoundingBox>> objects = filterPairs(i.getObjects(), s.getElementStrings(StructureObjectUtils.getPositions(i.getParents())));
+            List<StructureObject> tracks = Pair.unpairKeys(objects);
+            tracks.removeIf(o->!o.isTrackHead());
+            if (tracks.isEmpty()) return;
             iwm.hideTracks(null, i, tracks, false);
         }
     }

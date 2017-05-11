@@ -267,9 +267,18 @@ public class StructureObjectUtils {
             for (List<StructureObject> pTrack: allParentTrack.values()) setAllChildren(pTrack, structureIdx);
         }
     }
+    public static List<StructureObject> getAllObjects(ObjectDAO dao, int structureIdx) {
+        List<StructureObject> roots= dao.getRoots();
+        return getAllChildren(roots, structureIdx);
+    }
+    public static List<StructureObject> getAllChildren(List<StructureObject> parentTrack, int structureIdx) {
+        List<StructureObject> res = new ArrayList<>();
+        for (StructureObject p : parentTrack) res.addAll(p.getChildren(structureIdx));
+        return res;
+    }
     public static Map<StructureObject, List<StructureObject>> getAllTracks(List<StructureObject> parentTrack, int structureIdx) {
         if (parentTrack.isEmpty()) return Collections.EMPTY_MAP;
-        HashMap<StructureObject, List<StructureObject>>  res = new HashMap<StructureObject, List<StructureObject>>();
+        HashMap<StructureObject, List<StructureObject>>  res = new HashMap<>();
         // set all children
         setAllChildren(parentTrack, structureIdx);
         for (StructureObject p : parentTrack) {

@@ -77,7 +77,7 @@ public class TrackMask extends ImageObjectInterface {
             currentOffsetX+=intervalX+trackOffset[i].getSizeX();
             logger.trace("current index: {}, current bounds: {} current offsetX: {}", i, trackOffset[i], currentOffsetX);
         }
-        if (guiMode) {
+        /*if (guiMode) {
             //load objects in another thread 
             Thread t = new Thread(new Runnable() {
                 @Override public void run() {
@@ -85,7 +85,7 @@ public class TrackMask extends ImageObjectInterface {
                 }
             });
             t.start();
-        } else for (StructureObjectMask m : trackObjects) m.getObjects();
+        } else */for (StructureObjectMask m : trackObjects) m.getObjects();
     }
     
     @Override public List<StructureObject> getParents() {
@@ -260,7 +260,7 @@ public class TrackMask extends ImageObjectInterface {
 
     @Override
     public ArrayList<Pair<StructureObject, BoundingBox>> getObjects() {
-        ArrayList<Pair<StructureObject, BoundingBox>> res = new ArrayList<Pair<StructureObject, BoundingBox>>();
+        ArrayList<Pair<StructureObject, BoundingBox>> res = new ArrayList<>();
         for (StructureObjectMask m : trackObjects) res.addAll(m.getObjects());
         return res;
     }

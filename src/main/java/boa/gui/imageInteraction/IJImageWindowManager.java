@@ -87,7 +87,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
            
     public IJImageWindowManager(ImageObjectListener listener) {
         super(listener, new IJImageDisplayer());
-        new ImageJ();
+        //new ImageJ();
     }
     /*@Override
     protected ImagePlus getImage(Image image) {
@@ -305,6 +305,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 Rectangle bds = roi.getBounds();
                 if (offset==null) logger.error("ROI creation : offset null for mask: {}", mask.getName());
                 if (bds==null) logger.error("ROI creation : bounds null for mask: {}", mask.getName());
+                if (offset==null || bds==null) continue;
                 roi.setLocation(bds.x+offset.getxMin(), bds.y+offset.getyMin());
                 if (is3D) roi.setPosition(z+1+offset.getzMin());
                 res.put(z+mask.getOffsetZ(), roi);

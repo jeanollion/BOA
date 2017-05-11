@@ -33,6 +33,7 @@ import boa.gui.objects.TrackTreeGenerator;
 import boa.gui.selection.SelectionUtils;
 import static boa.gui.selection.SelectionUtils.setMouseAdapter;
 import boa.gui.selection.SelectionRenderer;
+import static boa.gui.selection.SelectionUtils.fixIOI;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoIterable;
 import com.sun.java.swing.plaf.motif.MotifMenuItemUI;
@@ -71,6 +72,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -695,7 +697,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                         @Override
                         public void valueChanged(TreeSelectionEvent e) {
                             if (logger.isDebugEnabled()) {
-                                logger.debug("selection changed on tree of structure: {} event: {}", entry.getKey(), e);
+                                //logger.debug("selection changed on tree of structure: {} event: {}", entry.getKey(), e);
                             }
                             if (trackTreeController == null) {
                                 return;
@@ -1571,9 +1573,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private int navigateCount = 0;
     public void navigateToNextObjects(boolean next, boolean nextPosition, int structureDisplay, boolean setInteractiveStructure) {
         if (trackTreeController==null) this.loadObjectTrees();
-        List<Selection> sels = selectionList.getSelectedValuesList();
-        if (sels.isEmpty()) ImageWindowManagerFactory.getImageManager().goToNextTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads(), next);
+        if (selectionList.getSelectedIndex()<0) ImageWindowManagerFactory.getImageManager().goToNextTrackError(null, this.trackTreeController.getLastTreeGenerator().getSelectedTrackHeads(), next);
         else {
+            Selection sel = (Selection)selectionList.getSelectedValue();
             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null);
             if (i!=null && i.getParent().getExperiment()!=db.getExperiment()) i=null;
             if (structureDisplay==-1 && i!=null) {
@@ -1588,32 +1590,34 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             String position = i==null? null:i.getParent().getPositionName();
             if (i==null || nextPosition) navigateCount=2;
             else {
-                boolean move = ImageWindowManagerFactory.getImageManager().goToNextObject(null, SelectionUtils.getStructureObjects(sels, position), next);
+                i = fixIOI(i, sel.getStructureIdx());
+                List<StructureObject> objects = Pair.unpairKeys(SelectionUtils.filterPairs(i.getObjects(), sel.getElementStrings(position)));
+                boolean move = ImageWindowManagerFactory.getImageManager().goToNextObject(null, objects, next);
                 if (move) {
                     navigateCount=0;
                 }
                 else navigateCount++;
             }
             if (navigateCount>1) { // open next/prev image containig objects
-                List<StructureObject> l;
+                Collection<String> l;
                 if (nextPosition || position==null) {
                     String selPos = null;
                     if (position==null) selPos = this.trackTreeController.getSelectedPosition();
                     if (selPos!=null) position = selPos;
-                    else position = SelectionUtils.getNextPosition(sels, position, next);
-                    l = position==null ? null : SelectionUtils.getStructureObjects(sels, position);
+                    else position = SelectionUtils.getNextPosition(sel, position, next);
+                    l = position==null ? null : sel.getElementStrings(position);
                     while (position!=null && (l==null || l.isEmpty())) {
-                        position = SelectionUtils.getNextPosition(sels, position, next); 
-                        l = position==null ? null : SelectionUtils.getStructureObjects(sels, position);
+                        position = SelectionUtils.getNextPosition(sel, position, next); 
+                        l = position==null ? null : sel.getElementStrings(position);
                     }
                     i=null;
                     logger.debug("changing position");
-                } else l = SelectionUtils.getStructureObjects(sels, position);
+                } else l = sel.getElementStrings(position);
                 logger.debug("position: {}, #objects: {}, nav: {}, NextPosition? {}", position, position!=null ? l.size() : 0, navigateCount, nextPosition);
                 if (position==null) return;
                 this.trackTreeController.selectPosition(position);
-                Map<StructureObject, List<StructureObject>> objectsByParent = StructureObjectUtils.splitByParentTrackHead(l);
-                List<StructureObject> parents = new ArrayList<>(objectsByParent.keySet());
+                List<StructureObject> parents = SelectionUtils.getParents(sel, position, db);
+                parents.removeIf(p->!p.isTrackHead());
                 Collections.sort(parents);
                 int nextParentIdx = 0;
                 if (i!=null && !nextPosition) {
@@ -1625,8 +1629,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 } else if (nextPosition) {
                     nextParentIdx = next ? 0 : parents.size()-1;
                 }
-                int childStructureIdx = i==null? l.get(0).getStructureIdx() : i.getChildStructureIdx();
-                if (structureDisplay<0) structureDisplay = childStructureIdx;
+                if (structureDisplay<0) structureDisplay = sel.getStructureIdx();
                 if ((nextParentIdx<0 || nextParentIdx>=parents.size())) {
                     logger.warn("current parent {} not found in objects parents: {}", i==null?null : i.getParent(), parents);
                     navigateToNextObjects(next, true, structureDisplay, setInteractiveStructure);
@@ -1635,14 +1638,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                     logger.debug("next parent: {}", nextParent);
                     List track = db.getDao(nextParent.getPositionName()).getTrack(nextParent);
                     ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
-                    ImageObjectInterface nextI = iwm.getImageTrackObjectInterface(track, childStructureIdx);
+                    ImageObjectInterface nextI = iwm.getImageTrackObjectInterface(track, sel.getStructureIdx());
                     Image im = iwm.getImage(nextI, false);
                     if (im==null) iwm.addImage(nextI.generateRawImage(structureDisplay), nextI, structureDisplay, false, true);
                     else ImageWindowManagerFactory.getImageManager().setActive(im);
                     navigateCount=0;
                     if (i==null && setInteractiveStructure) { // new image open -> set interactive structure & navigate to next object in newly opened image
-                        setInteractiveStructureIdx(childStructureIdx);
-                        interactiveStructure.setSelectedIndex(childStructureIdx);
+                        setInteractiveStructureIdx(sel.getStructureIdx());
+                        interactiveStructure.setSelectedIndex(sel.getStructureIdx());
                         interactiveStructureActionPerformed(null);
                     }
                     if (im==null) navigateToNextObjects(next, false, structureDisplay, setInteractiveStructure);
@@ -2454,6 +2457,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         }
         //</editor-fold>
         /* Create and display the form */
+        new ImageJ();
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 new GUI().setVisible(true);

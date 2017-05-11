@@ -96,7 +96,7 @@ public class TrackTreeController {
      * @param lastSelectedTreeIdx 
      */
     public void updateParentTracks(int lastSelectedTreeIdx) {
-        logger.debug("update parent track lastSelectedIdx: {} number of structures: {}", lastSelectedTreeIdx, structurePathToRoot.length);
+        //logger.debug("update parent track lastSelectedIdx: {} number of structures: {}", lastSelectedTreeIdx, structurePathToRoot.length);
         if (lastSelectedTreeIdx==-1) setParentTrackOnRootTree();
         else if (lastSelectedTreeIdx+1<structurePathToRoot.length) {
             //logger.debug("setting parent track on tree for structure: {}", structurePathToRoot[lastSelectedTreeIdx+1]);

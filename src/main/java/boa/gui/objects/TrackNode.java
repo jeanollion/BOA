@@ -415,7 +415,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
         }
         public Object[] getDisplayComponent(boolean multipleSelection) {
             if (multipleSelection) {
-                return new JMenuItem[]{actions[2], actions[3], actions[4], actions[5], actions[6], actions[7]};
+                return new JMenuItem[]{actions[1], actions[2], actions[3], actions[4], actions[5], actions[6]};
             } else return actions;
         }
         private int getStructureIdx(String name, JMenuItem[] actions) {

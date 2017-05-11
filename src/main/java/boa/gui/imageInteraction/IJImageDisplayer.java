@@ -53,10 +53,10 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
     protected HashMap<Image, ImagePlus> displayedImages=new HashMap<Image, ImagePlus>();
     protected HashMap<ImagePlus, Image> displayedImagesInv=new HashMap<ImagePlus, Image>();
     @Override public ImagePlus showImage(Image image, double... displayRange) {
-        if (IJ.getInstance()==null) {
+        /*if (IJ.getInstance()==null) {
             ij.ImageJ.main(new String[0]);
             //new ImageJ();
-        }
+        }*/
         if (imageExistsButHasBeenClosed(image)) {
             displayedImagesInv.remove(displayedImages.get(image));
             displayedImages.remove(image);
@@ -103,7 +103,6 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                 catch(Exception e) {}
                 ImageCanvas ic = image.getCanvas();
                 if (ic==null) return;
-                logger.debug("zooming to : {}", magnitude);
                 ic.zoom100Percent();
                 //IJ.runPlugIn("ij.plugin.Zoom", null);
                 if (magnitude > 1) {
@@ -118,9 +117,10 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                 image.repaintWindow();
             }
         });
-        t.start();
+        SwingUtilities.invokeLater(t);
+        /*t.start();
         try{t.join();}
-        catch(Exception e) {}
+        catch(Exception e) {}*/
         /*
         Dimension d = image.getWindow().getSize();
         //Dimension d = image.getCanvas().getSize();

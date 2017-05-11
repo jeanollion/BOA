@@ -59,6 +59,7 @@ public class TestProcessBacteriaPhase {
     static double thld = Double.NaN;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
+        new ImageJ();
         //String dbName = "boa_mutH_140115";
         //String dbName = "boa_phase140115mutH";
         //String dbName = "boa_phase150324mutH";
@@ -70,14 +71,14 @@ public class TestProcessBacteriaPhase {
         int time =796;
         thld = 265;
         */
-        String dbName = "boa_PHASE";
+        String dbName = "boa_lydia_test";
         int field = 0;
-        int microChannel =0;
-        int time =609;
+        int microChannel =8;
+        int time =0;
         thld = 312;
         
-        testSegBacteriesFromXP(dbName, field, time, microChannel);
-        //testSegBacteriesFromXP(dbName, field, microChannel, 0, 100);
+        //testSegBacteriesFromXP(dbName, field, time, microChannel);
+        testSegBacteriesFromXP(dbName, field, microChannel, 0, 20);
         //testSplit(dbName, field, time, microChannel, 1, true);
     }
     

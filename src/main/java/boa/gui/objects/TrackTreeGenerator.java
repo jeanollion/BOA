@@ -42,6 +42,7 @@ import boa.gui.configuration.TransparentTreeCellRenderer;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import boa.gui.selection.SelectionUtils;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.ObjectDAO;
@@ -86,7 +87,12 @@ public class TrackTreeGenerator {
         if (!highlightedObjects.containsKey(position)) {
             if (GUI.getInstance()==null) return Collections.EMPTY_SET;     
             for (Selection s: GUI.getInstance().getSelections()) {
-                if (s.isHighlightingTracks()) highlightedObjects.getAndCreateIfNecessary(position).addAll(StructureObjectUtils.getParentTrackHeads(s.getElements(position), getStructureIdx(), false));
+                if (s.isHighlightingTracks()) {
+                    List<StructureObject> parents = SelectionUtils.getParents(s, position, getStructureIdx(), db);
+                    parents.removeIf(o->!o.isTrackHead());
+                    logger.debug("highlight: parents for sel: {} structure: {}, eg:{}, tot: {}", s.getName(), getStructureIdx(), parents.isEmpty()?null:parents.get(0), parents.size());
+                    if (!parents.isEmpty()) highlightedObjects.getAndCreateIfNecessary(position).addAll(parents);
+                }
             }
             logger.debug("Structure: {}, position: {}, #{} highlighted objects", getStructureIdx(), position, highlightedObjects.getAndCreateIfNecessary(position).size());
         }

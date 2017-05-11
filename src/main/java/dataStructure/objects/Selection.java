@@ -58,7 +58,6 @@ public class Selection implements Comparable<Selection> {
     
     @Transient public final static String indexSeparator ="-";
     @Transient Map<String, Set<StructureObject>> retrievedElements= new HashMap<>();
-    @Transient Map<String, Set<StructureObject>> retrievedTrackHeads = new HashMap<>();
     @Transient MasterDAO mDAO;
     
     public Selection(String name, MasterDAO mDAO) {
@@ -157,28 +156,7 @@ public class Selection implements Comparable<Selection> {
         for (String f : positions) res.addAll(getElements(f));
         return res;
     }
-    
-    public Set<StructureObject> getTrackHeads(String fieldName) {
-        Set<StructureObject> res = this.retrievedTrackHeads.get(fieldName);
-        if (res==null) {
-            Set<StructureObject> els = getElements(fieldName);
-            if (els!=null) {
-                res = new HashSet<StructureObject>(els.size());
-                for (StructureObject o : els) res.add(o.getTrackHead());
-                retrievedTrackHeads.put(fieldName, res);
-            }
-        }
-        return res;
-    }
-    
-    public Set<StructureObject> getTrackHeads(Collection<String> positions) {
-        Set<StructureObject> res = new HashSet<>();
-        positions = new ArrayList<>(positions);
-        positions.retainAll(elements.keySet());
-        for (String p : positions) res.addAll(getTrackHeads(p));
-        return res;
-    }
-    
+        
     protected Collection<String> get(String fieldName, boolean createIfNull) {
         Object indiciesList = elements.get(fieldName);
         if (indiciesList==null) {
@@ -214,14 +192,13 @@ public class Selection implements Comparable<Selection> {
         int[] pathToRoot = mDAO.getExperiment().getPathToRoot(structureIdx);
         Set<StructureObject> res = new HashSet<>(indiciesList.size());
         retrievedElements.put(fieldName, res);
-        retrievedTrackHeads.remove(fieldName);
         List<StructureObject> roots = dao.getRoots();
         long t0 = System.currentTimeMillis();
         List<int[]> notFound = logger.isWarnEnabled() ? new ArrayList<>() : null;
         List<int[]> indices = new ArrayList<>(indiciesList.size());
         
         for (String s : indiciesList) {
-            int[] indicies = parseIndicies(s);
+            int[] indicies = parseIndices(s);
             if (indicies.length-1!=pathToRoot.length) {
                 logger.warn("Selection: Object: {} has wrong number of indicies (expected: {})", indicies, pathToRoot.length);
                 continue;
@@ -294,7 +271,7 @@ public class Selection implements Comparable<Selection> {
         return null;
     }
     
-    public static int[] parseIndicies(String indicies) {
+    public static int[] parseIndices(String indicies) {
         String[] split = indicies.split(indexSeparator);
         int[] res = new int[split.length];
         for (int i = 0; i<res.length; ++i) res[i] = Integer.parseInt(split[i]);
@@ -332,11 +309,7 @@ public class Selection implements Comparable<Selection> {
         }
         if (!list.contains(elementToAdd)) {
             list.add(elementToAdd);
-            // update trackHeads
-            if (retrievedTrackHeads.containsKey(elementToAdd.getPositionName())) {
-                Set<StructureObject> th = this.getTrackHeads(elementToAdd.getPositionName());
-                if (!th.contains(elementToAdd.getTrackHead())) th.add(elementToAdd.getTrackHead());
-            }
+            
             // update DB refs
             Collection<String> els = get(elementToAdd.getPositionName(), true);
             els.add(indicesString(elementToAdd));
@@ -382,7 +355,6 @@ public class Selection implements Comparable<Selection> {
     public synchronized void clear() {
         elements.clear();
         if (retrievedElements!=null) retrievedElements.clear();
-        if (retrievedTrackHeads!=null) retrievedTrackHeads.clear();
     }
     @Override 
     public String toString() {
@@ -426,5 +398,27 @@ public class Selection implements Comparable<Selection> {
         res.elements=elements;
         return res;
     }
-    
+    public static String getParent(String idx) {
+        int[] i = parseIndices(idx);
+        if (i.length==2) {
+            i[1]=0;
+            return indicesToString(i);
+        } else {
+            int[] ii = new int[i.length-1];
+            System.arraycopy(i, 0, ii, 0, ii.length);
+            return indicesToString(ii);
+        }
+    }
+    public static String getParent(String idx, int n) {
+        int[] i = parseIndices(idx);
+        if (i.length==2) {
+            i[1]=0;
+            return indicesToString(i);
+        } else {
+            n = Math.min(i.length-2, n);
+            int[] ii = new int[i.length-n];
+            System.arraycopy(i, 0, ii, 0, ii.length);
+            return indicesToString(ii);
+        }
+    }
 }

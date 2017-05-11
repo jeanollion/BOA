@@ -141,6 +141,10 @@ public abstract class ImageWindowManager<T, U, V> {
     }
     
     public Image getImage(ImageObjectInterface i, boolean labelImage) {
+        if (i==null) {
+            logger.error("cannot get image if IOI null");
+            return null;
+        }
         List<Image> list = Utils.getKeys(imageObjectInterfaceMap, new ImageObjectInterfaceKey(i.parents, i.childStructureIdx, i.isTimeImage()));
         list.removeIf(im -> isLabelImage.get(im)!=labelImage);
         if (list.isEmpty()) return null;
@@ -295,16 +299,16 @@ public abstract class ImageWindowManager<T, U, V> {
         if (key==null) return null;
         if (key.parent.get(0).getStructureIdx()>structureIdx) return null;
         ImageObjectInterface i = this.imageObjectInterfaces.get(key.getKey(structureIdx));
+        
         if (i==null) {
             ImageObjectInterface ref = ImageObjectInterfaceKey.getOneElementEqualsNoStructure(key, imageObjectInterfaces);
-            if (ref==null) {
-                logger.error("IOI not found: ref: {} ({}), all IOI: {}", key, key.getKey(-1), imageObjectInterfaces.keySet());
-            }
+            if (ref==null) logger.error("IOI not found: ref: {} ({}), all IOI: {}", key, key.getKey(-1), imageObjectInterfaces.keySet());
+            else logger.debug("creating IOI: ref: {}", ref);
             // create imageObjectInterface
             if (ref.isTimeImage()) i = this.getImageTrackObjectInterface(((TrackMask)ref).parents, structureIdx);
             else i = this.getImageObjectInterface(ref.parents.get(0), structureIdx, true);
             this.imageObjectInterfaces.put(i.getKey(), i);
-        }
+        } 
         return i;
     }
     

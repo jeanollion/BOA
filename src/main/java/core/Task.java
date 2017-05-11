@@ -205,7 +205,7 @@ public class Task implements Runnable {
             
             for (Pair<String, int[]> e  : this.extrackMeasurementDir) extract(e.key, e.value);
             
-            db=null;
+            //db=null;
         }
         private void run(String position, boolean deleteAllField) {
             
@@ -229,6 +229,7 @@ public class Task implements Runnable {
             if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field
             db.getDao(position).clearCache();
             db.getExperiment().getPosition(position).flushImages(true, true);
+            db.getSelectionDAO().clearCache();
             System.gc();
         }
         private void extract(String dir, int[] structures) {
