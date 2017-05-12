@@ -55,7 +55,7 @@ public class FeretMax implements ObjectFeature {
 
     @Override
     public String getDefaultName() {
-        return "FeretMax";
+        return "Length";
     }
     
 }

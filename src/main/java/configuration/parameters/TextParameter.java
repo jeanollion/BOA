@@ -35,7 +35,7 @@ import javax.swing.text.AbstractDocument;
  */
 public class TextParameter extends SimpleParameter {
     @Transient TextEditorUI ui;
-    boolean allowSpecialCharacters;
+    @Transient boolean allowSpecialCharacters;
     String value;
     
     public TextParameter(String name) {
@@ -47,16 +47,17 @@ public class TextParameter extends SimpleParameter {
         this.value=defaultText;
         this.allowSpecialCharacters=allowSpecialCharacters;
     }
+    @Override 
     public ParameterUI getUI() {
         if (ui==null) ui=new TextEditorUI(this, allowSpecialCharacters);
         return ui;
     }
-
+    @Override
     public boolean sameContent(Parameter other) {
         if (other instanceof TextParameter) return this.value.equals(((TextParameter)other).getValue());
         else return false;
     }
-
+    @Override
     public void setContentFrom(Parameter other) {
         if (other instanceof TextParameter) this.value=((TextParameter)other).getValue();
         else throw new IllegalArgumentException("wrong parameter type");

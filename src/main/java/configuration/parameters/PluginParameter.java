@@ -64,7 +64,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
         setPlugin(pluginInstance);
     }
     
-    public PluginParameter<T> setAdditionalParameters(ArrayList<Parameter> additionalParameters) {
+    public PluginParameter<T> setAdditionalParameters(List<Parameter> additionalParameters) {
         if (additionalParameters.isEmpty()) return this;
         this.additionalParameters=additionalParameters;
         initChildList();
@@ -156,7 +156,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
             if (otherPP.additionalParameters!=null) {
                 if (!ParameterUtils.setContent(additionalParameters, otherPP.additionalParameters)) {
                     //logger.warn("PP ({}) additional parameters for: {} could not be loaded (cur:{}/src:{})",pluginTypeName, name, Utils.toStringList(additionalParameters), Utils.toStringList(otherPP.additionalParameters));
-                    additionalParameters=ParameterUtils.duplicateList(otherPP.additionalParameters); // 
+                    //additionalParameters=ParameterUtils.duplicateList(otherPP.additionalParameters); // 
                     toInit=true;
                 }
             } else this.additionalParameters=null;
@@ -182,6 +182,7 @@ public class PluginParameter<T extends Plugin> extends SimpleContainerParameter 
     @Override
     public PluginParameter<T> duplicate() {
         PluginParameter res = new PluginParameter(name, getPluginType(), allowNoSelection);
+        if (additionalParameters!=null) res.setAdditionalParameters(ParameterUtils.duplicateList(additionalParameters));
         res.setContentFrom(this);
         return res;
     }

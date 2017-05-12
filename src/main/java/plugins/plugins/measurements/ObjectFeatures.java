@@ -58,7 +58,11 @@ public class ObjectFeatures implements Measurement {
     }
     public ObjectFeatures addFeatures(ObjectFeature... features) {
         if (features==null) return this;
-        for (ObjectFeature f : features) this.features.insert(def.duplicate().setPlugin(f));
+        for (ObjectFeature f : features) {
+            PluginParameter<ObjectFeature> dup = def.duplicate().setPlugin(f);
+            ((TextParameter)dup.getAdditionalParameters().get(0)).setValue(f.getDefaultName());
+            this.features.insert(dup);
+        }
         return this;
     }
     public ObjectFeatures addFeature(ObjectFeature feature, String key) {
