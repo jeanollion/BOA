@@ -2292,12 +2292,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                     File f = Utils.chooseFile("Choose local data folder", path, FileChooser.FileChooserOption.DIRECTORIES_ONLY, hostName);
                     if (f!=null) {
                         PropertyUtils.set(PropertyUtils.LOCAL_DATA_PATH, f.getAbsolutePath());
-                        List<String> allRecent = PropertyUtils.getStrings(PropertyUtils.LOCAL_DATA_PATH);
-                        if (!allRecent.contains(f.getAbsolutePath())) {
-                            allRecent.add(f.getAbsolutePath());
-                            Collections.sort(allRecent);
-                            PropertyUtils.setStrings(PropertyUtils.LOCAL_DATA_PATH, allRecent);
-                        }
+                        PropertyUtils.addStringToList(PropertyUtils.LOCAL_DATA_PATH, f.getAbsolutePath());
                         hostName.setText(f.getAbsolutePath());
                         localFileSystemDatabaseRadioButton.setSelected(true);
                     }
@@ -2315,6 +2310,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                         File f = new File(s);
                         if (f.exists() && f.isDirectory()) {
                             hostName.setText(s);
+                            PropertyUtils.set(PropertyUtils.LOCAL_DATA_PATH, s);
                             localFileSystemDatabaseRadioButton.setSelected(true);
                             populateExperimentList();
                         }

@@ -96,6 +96,20 @@ public class PropertyUtils {
         }
         saveParamChanges();
     }
+    public static void addStringToList(String key, String... values) {
+        List<String> allStrings = PropertyUtils.getStrings(key);
+        boolean store = false;
+        for (String v : values) {
+            if (!allStrings.contains(v)) {
+                allStrings.add(v);
+                store = true;
+            }
+        }
+        if (store) {
+            Collections.sort(allStrings);
+            PropertyUtils.setStrings(key, allStrings);
+        }
+    }
     public static List<String> getStrings(String key) {
         List<String> res = new ArrayList<>();
         int idx = 0;
