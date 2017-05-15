@@ -92,7 +92,7 @@ public class TaskRunner {
     }
     public static List<Task> runOnuncorrectedFluoXP() {
         List<Task> tasks = new ArrayList<Task>() {{
-            add(new Task("fluo151127").setAllActions().unsetPositions(0, 1, 2, 3));//.addExtractMeasurementDir("/data/Images/Fluo/film151127/uncorrectedData", 1).addExtractMeasurementDir("/data/Images/Fluo/film151127/uncorrectedData", 2));
+            add(new Task("fluo151127").setActions(false, false, false, false).unsetPositions(0, 1, 2, 3).addExtractMeasurementDir("/data/Images/Fluo/film151127/uncorrectedData", 1).addExtractMeasurementDir("/data/Images/Fluo/film151127/uncorrectedData", 2));
             //add(new Task("boa_fluo160428", "localhost").setAllActions().unsetPositions(0, 1, 22, 2, 3, 4, 5).addExtractMeasurementDir("/data/Images/Fluo/film160428/uncorrectedData", 1).addExtractMeasurementDir("/data/Images/Fluo/film160428/uncorrectedData", 2));
             //add(new Task("boa_fluo160501", "localhost").setAllActions().unsetPositions(0, 1, 3).addExtractMeasurementDir("/data/Images/Fluo/film160501/uncorrectedData", 1).addExtractMeasurementDir("/data/Images/Fluo/film160501/uncorrectedData", 2));
         }};

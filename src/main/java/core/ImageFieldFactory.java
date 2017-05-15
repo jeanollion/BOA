@@ -74,7 +74,16 @@ public class ImageFieldFactory {
             int nb = xp.getChannelImages().getChildCount();
             String[] keyWords = new String[nb];
             int idx = 0;
-            for (ChannelImage i : xp.getChannelImages().getChildren()) keyWords[idx++] = i.getImportImageChannelKeyword();
+            int countBlank = 0;
+            for (ChannelImage i : xp.getChannelImages().getChildren()) {
+                keyWords[idx] = i.getImportImageChannelKeyword();
+                if ("".equals(keyWords[idx])) ++countBlank;
+                ++idx;
+            }
+            if (countBlank>1) {
+                logger.error("When Experiement has several channels, one must specify channel keyword for this import method");
+                return res;
+            }
             for (String p : path) ImageFieldFactory.importImagesCTP(new File(p), xp, keyWords, res);
         }
         Collections.sort(res, (MultipleImageContainer arg0, MultipleImageContainer arg1) -> arg0.getName().compareToIgnoreCase(arg1.getName()));
@@ -177,7 +186,7 @@ public class ImageFieldFactory {
             files = filesByExtension.entrySet().iterator().next().getValue();
             extension = filesByExtension.keySet().iterator().next();
         } else return;
-        
+        logger.debug("extension: {}, #files: {}", extension, files.size());
         // get other channels
         
         // 2/ get maximum common part at start

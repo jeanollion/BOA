@@ -28,7 +28,7 @@ import image.BoundingBox;
  * @author jollion
  */
 public interface ObjectFeature extends Plugin {
-    public Parameter[] getParameters();
+    @Override public Parameter[] getParameters();
     public ObjectFeature setUp(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation);
     public double performMeasurement(Object3D object, BoundingBox offset);
     public String getDefaultName();

@@ -57,7 +57,7 @@ public class MorphiumMasterDAO implements MasterDAO {
 
     @Override
     public void delete() {
-        String outputPath = this.getExperiment().getOutputImageDirectory();
+        String outputPath = this.getExperiment().getOutputDirectory();
         Utils.deleteDirectory(outputPath);
         MongoClient mongoClient = new MongoClient(getDir(), 27017);
         mongoClient.dropDatabase(getDBName());

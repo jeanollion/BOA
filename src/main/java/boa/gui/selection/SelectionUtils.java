@@ -169,6 +169,12 @@ public class SelectionUtils {
         Utils.removeDuplicates(parentStrings, false);
         return new ArrayList<>(SelectionUtils.filter(StructureObjectUtils.getAllObjects(db.getDao(position), db.getExperiment().getStructure(sel.getStructureIdx()).getParentStructure()), parentStrings));
     }
+    public static List<StructureObject> getParentTrackHeads(Selection sel, String position, MasterDAO db) {
+        List<StructureObject> parents = SelectionUtils.getParents(sel, position, db);
+        parents = Utils.apply(parents, o -> o.getTrackHead());
+        Utils.removeDuplicates(parents, false);
+        return parents;
+    }
     public static List<StructureObject> getParents(Selection sel, String position, int parentStructureIdx, MasterDAO db) {
         if (!db.getExperiment().isChildOf(parentStructureIdx, sel.getStructureIdx())) return Collections.EMPTY_LIST;
         int[] path = db.getExperiment().getPathToStructure(parentStructureIdx, sel.getStructureIdx());
@@ -176,6 +182,12 @@ public class SelectionUtils {
         Utils.removeDuplicates(parentStrings, false);
         List<StructureObject> allObjects = StructureObjectUtils.getAllObjects(db.getDao(position), parentStructureIdx);
         return new ArrayList<>(SelectionUtils.filter(allObjects, parentStrings));
+    }
+    public static List<StructureObject> getParentTrackHeads(Selection sel, String position, int parentStructureIdx, MasterDAO db) {
+        List<StructureObject> parents = SelectionUtils.getParents(sel, position, parentStructureIdx, db);
+        parents = Utils.apply(parents, o -> o.getTrackHead());
+        Utils.removeDuplicates(parents, false);
+        return parents;
     }
     public static ImageObjectInterface fixIOI(ImageObjectInterface i, int structureIdx) {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();

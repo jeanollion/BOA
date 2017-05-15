@@ -56,7 +56,7 @@ public class DBMapMasterDAO implements MasterDAO {
     
     @Override
     public void delete() {
-        String outputPath = getExperiment()!=null ? getExperiment().getOutputImageDirectory() : null;
+        String outputPath = getExperiment()!=null ? getExperiment().getOutputDirectory() : null;
         clearCache();
         Utils.deleteDirectory(outputPath);
         DBMapUtils.deleteDBFile(getConfigFile(dbName));
@@ -167,7 +167,7 @@ public class DBMapMasterDAO implements MasterDAO {
     protected String getOutputPath() {
         getExperiment();
         if (xp==null) return null;
-        String res = xp.getOutputImageDirectory();
+        String res = xp.getOutputDirectory();
         File f = new File(res);
         if (f.exists() && f.isDirectory()) return res;
         else {

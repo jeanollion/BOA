@@ -61,7 +61,7 @@ public class MorphiumSelectionDAO implements SelectionDAO {
             s.setMasterDAO(masterDAO);
         }
         // local files
-        File dirFile = new File(masterDAO.getExperiment().getOutputImageDirectory()+File.separator+"Selections");
+        File dirFile = new File(masterDAO.getExperiment().getOutputDirectory()+File.separator+"Selections");
         if (dirFile.isDirectory()) {
             for (File f : dirFile.listFiles((f, n)-> n.endsWith(".txt"))) {
                 List<Selection> sels = FileIO.readFromFile(f.getAbsolutePath(), s -> JSONUtils.parse(Selection.class, s));

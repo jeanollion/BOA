@@ -46,7 +46,7 @@ public class DbConverter {
     public static void mongoToDBmap(String dbName, String hostname, String dir) {
         MasterDAO mongo = MasterDAOFactory.createDAO(dbName, hostname, MasterDAOFactory.DAOType.Morphium);
         if (dir==null) {
-            String out = mongo.getExperiment().getOutputImageDirectory();
+            String out = mongo.getExperiment().getOutputDirectory();
             dir = new File(out).getParent();
         }
         MasterDAO dbMap = MasterDAOFactory.createDAO(dbName, dir, MasterDAOFactory.DAOType.DBMap);

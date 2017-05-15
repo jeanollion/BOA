@@ -453,7 +453,7 @@ public class GenerateXP {
         
         Experiment xp = new Experiment(name);
         xp.setImportImageMethod(importMethod);
-        xp.getChannelImages().insert(new ChannelImage("BF", "c1"));
+        xp.getChannelImages().insert(new ChannelImage("BF", ""));
         xp.setOutputDirectory(outputDir);
         Structure mc = new Structure("Microchannel", -1, 0);
         Structure bacteria = new Structure("Bacteria", 0, 0).setAllowSplit(true);

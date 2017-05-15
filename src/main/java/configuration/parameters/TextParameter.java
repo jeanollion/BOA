@@ -102,7 +102,7 @@ public class TextParameter extends SimpleParameter {
                 }
 
                 private void updateText() {
-                    if (text.getText() == null || text.getText().length() == 0) {
+                    if (text.getText() == null) {
                         return;
                     }
                     p.setValue(text.getText());

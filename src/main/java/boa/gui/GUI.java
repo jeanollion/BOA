@@ -68,6 +68,8 @@ import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileFilter;
 import java.util.ArrayList;
@@ -125,8 +127,8 @@ import static utils.Utils.addHorizontalScrollBar;
 public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     public static final Logger logger = LoggerFactory.getLogger(GUI.class);
     // check if mapDB is present
-    
-    public final static String DBprefix = "boa_";
+    public static final String DBprefix = "boa_";
+    public String currentDBPrefix = "";
     private static GUI instance;
     
     // db-related attributes
@@ -164,6 +166,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         logger.info("Creating GUI instance...");
         this.instance=this;
         initComponents();
+        this.addWindowListener(new WindowAdapter() {
+            @Override 
+            public void windowClosing(WindowEvent evt) {
+                if (db!=null) db.clearCache();
+                logger.debug("Closed successfully");
+            }
+        });
         experimentList.setModel(experimentModel);
         relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importFieldsToCurrentExperimentMenuItem);add(importConfigToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(extractMeasurementMenuItem);}};
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -180,11 +189,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         dbGroup.add(this.mongoDBDatabaseRadioButton);
         String dbType = PropertyUtils.get(PropertyUtils.DATABASE_TYPE, MasterDAOFactory.DAOType.DBMap.toString());
         if (dbType.equals(MasterDAOFactory.DAOType.Morphium.toString())) {
+            currentDBPrefix=GUI.DBprefix;
             mongoDBDatabaseRadioButton.setSelected(true);
             MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.Morphium);
             localDBMenu.setEnabled(false);
         }
         else if (dbType.equals(MasterDAOFactory.DAOType.DBMap.toString())) {
+            currentDBPrefix="";
             localFileSystemDatabaseRadioButton.setSelected(true);
             String path = PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH);
             if (path!=null) hostName.setText(path);
@@ -880,7 +891,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         miscMenu = new javax.swing.JMenu();
         closeAllWindowsMenuItem = new javax.swing.JMenuItem();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
 
         hostName.setText("localhost");
         hostName.setBorder(javax.swing.BorderFactory.createTitledBorder("DataBase URL"));
@@ -1616,8 +1627,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 logger.debug("position: {}, #objects: {}, nav: {}, NextPosition? {}", position, position!=null ? l.size() : 0, navigateCount, nextPosition);
                 if (position==null) return;
                 this.trackTreeController.selectPosition(position);
-                List<StructureObject> parents = SelectionUtils.getParents(sel, position, db);
-                parents.removeIf(p->!p.isTrackHead());
+                List<StructureObject> parents = SelectionUtils.getParentTrackHeads(sel, position, db);
                 Collections.sort(parents);
                 int nextParentIdx = 0;
                 if (i!=null && !nextPosition) {
@@ -1655,7 +1665,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }
     private static String createSubdir(String path, String dbName) {
         if (!new File(path).isDirectory()) return null;
-        File newDBDir = new File(path+File.separator+DBUtil.removePrefix(dbName, DBprefix));
+        File newDBDir = new File(path+File.separator+DBUtil.removePrefix(dbName, GUI.DBprefix));
         if (newDBDir.exists()) {
             logger.error("folder : {}, already exists", newDBDir.getAbsolutePath());
             return null;
@@ -1693,7 +1703,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private void newXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_newXPMenuItemActionPerformed
         String name = JOptionPane.showInputDialog("New XP name:");
         if (name==null) return;
-        name = DBUtil.addPrefix(name, DBprefix);
+        name = DBUtil.addPrefix(name, currentDBPrefix);
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
         else if (getDBNames().contains(name)) logger.error("XP name already exists");
         else {
@@ -1731,7 +1741,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void duplicateXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_duplicateXPMenuItemActionPerformed
         String name = JOptionPane.showInputDialog("New DB name:", getSelectedExperiment());
-        name = DBUtil.addPrefix(name, DBprefix);
+        name = DBUtil.addPrefix(name, currentDBPrefix);
         if (!Utils.isValid(name, false)) logger.error("Name should not contain special characters");
         else if (getDBNames().contains(name)) logger.error("DB name already exists");
         else {
@@ -1935,7 +1945,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         if (allXps.size()==1) {
             String name = JOptionPane.showInputDialog("New XP name:");
             if (name==null) return;
-            name = DBUtil.addPrefix(name, DBprefix);
+            name = DBUtil.addPrefix(name, currentDBPrefix);
             if (!Utils.isValid(name, false)) {
                 logger.error("Name should not contain special characters");
                 return;
@@ -1977,7 +1987,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             setDBConnection(dbName, getCurrentHostNameOrDir());
             PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, outputFile.getAbsolutePath());
         }*/
-        String outDir = db.getExperiment().getOutputImageDirectory();
+        String outDir = db.getExperiment().getOutputDirectory();
         String defDir = PropertyUtils.get(PropertyUtils.LAST_IO_DATA_DIR);
         File f = Utils.chooseFile("Select exported file", defDir, FileChooser.FileChooserOption.FILES_ONLY, jLabel1);
         if (f==null) return;
@@ -2044,21 +2054,26 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
 
     private void extractMeasurementMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_extractMeasurementMenuItemActionPerformed
         if (!checkConnection()) return;
-        int[] selectedStructures = this.getSelectedStructures(true);
-        String defDir = PropertyUtils.get(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR+"_"+db.getDBName(), PropertyUtils.get(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR));
+        int[] selectedStructures = this.getSelectedStructures(false);
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR+"_"+db.getDBName(), db.getExperiment().getOutputDirectory());
         File outputDir = Utils.chooseFile("Choose directory", defDir, FileChooser.FileChooserOption.DIRECTORIES_ONLY, this);
         if (outputDir!=null) {
-            String file = outputDir.getAbsolutePath()+File.separator+db.getDBName()+Utils.toStringArray(selectedStructures, "_", "", "_")+".xls";
-            logger.info("measurements will be extracted to: {}", file);
-            Map<Integer, String[]> keys = db.getExperiment().getAllMeasurementNamesByStructureIdx(MeasurementKeyObject.class, selectedStructures);
-            DataExtractor.extractMeasurementObjects(db, file, getSelectedPositions(true), keys);
+            if (selectedStructures.length==0) {
+                selectedStructures = this.getSelectedStructures(true);
+                for (int i : selectedStructures) extractMeasurements(outputDir.getAbsolutePath(), i);
+            } else extractMeasurements(outputDir.getAbsolutePath(), selectedStructures);
             if (outputDir!=null) {
                 PropertyUtils.set(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR+"_"+db.getDBName(), outputDir.getAbsolutePath());
                 PropertyUtils.set(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR, outputDir.getAbsolutePath());
             }
         }
     }//GEN-LAST:event_extractMeasurementMenuItemActionPerformed
-
+    private void extractMeasurements(String dir, int... structureIdx) {
+        String file = dir+File.separator+db.getDBName()+Utils.toStringArray(structureIdx, "_", "", "_")+".xls";
+        logger.info("measurements will be extracted to: {}", file);
+        Map<Integer, String[]> keys = db.getExperiment().getAllMeasurementNamesByStructureIdx(MeasurementKeyObject.class, structureIdx);
+        DataExtractor.extractMeasurementObjects(db, file, getSelectedPositions(true), keys);
+    }
     private void hostNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_hostNameActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_hostNameActionPerformed
@@ -2389,7 +2404,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     Map<String, File> dbFiles;
     
     private List<String> getDBNames() {
-        if (this.mongoDBDatabaseRadioButton.isSelected()) return DBUtil.getDBNames(getCurrentHostNameOrDir(), DBprefix);
+        if (this.mongoDBDatabaseRadioButton.isSelected()) return DBUtil.getDBNames(getCurrentHostNameOrDir(), currentDBPrefix);
         else if (this.localFileSystemDatabaseRadioButton.isSelected()) {
             dbFiles = DBUtil.listExperiments(hostName.getText());
             List<String> res = new ArrayList<>(dbFiles.keySet());

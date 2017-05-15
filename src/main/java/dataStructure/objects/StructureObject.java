@@ -117,10 +117,12 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public int getStructureIdx() {return structureIdx;}
     @Override public int getFrame() {return timePoint;}
     public double getCalibratedTimePoint() {
+        
         if (getExperiment()==null) return Double.NaN;
         MicroscopyField f = getExperiment().getPosition(getPositionName());
         int z = (int)Math.round(getObject().getBounds().getZMean());
-        double res  = f.getInputImages()==null ? Double.NaN : f.getInputImages().getCalibratedTimePoint(getExperiment().getChannelImageIdx(structureIdx), timePoint, z);
+        //double res  = f.getInputImages()==null ? Double.NaN : f.getInputImages().getCalibratedTimePoint(getExperiment().getChannelImageIdx(structureIdx), timePoint, z);
+        double res = Double.NaN; // for old xp TODO change
         if (Double.isNaN(res)) res = timePoint * f.getFrameDuration();
         return res;
     }

@@ -98,7 +98,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         this.imageDAOType=type;
     }
     public ImageDAO getImageDAO() {
-        return ImageDAOFactory.getLocalFileSystemImageDAO(getOutputImageDirectory()); //if (imageDAOType.equals(ImageDAOTypes.LocalFileSystem))
+        return ImageDAOFactory.getLocalFileSystemImageDAO(getOutputDirectory()); //if (imageDAOType.equals(ImageDAOTypes.LocalFileSystem))
     }
     
     protected void initChildList() {
@@ -158,7 +158,7 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         return ImportImageMethod.getValueOf(this.importMethod.getSelectedItem());
     }
     
-    public String getOutputImageDirectory() {
+    public String getOutputDirectory() {
         return imagePath.getFirstSelectedFilePath();
     }
     
