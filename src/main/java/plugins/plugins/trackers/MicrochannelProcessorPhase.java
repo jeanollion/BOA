@@ -59,16 +59,21 @@ import utils.Utils;
 public class MicrochannelProcessorPhase implements TrackerSegmenter {
     Parameter[] segmenterParams = new MicroChannelPhase2D().getParameters();
     NumberParameter maxShift = new BoundedNumberParameter("Maximal Shift (pixels)", 0, 100, 1, null);
+    NumberParameter maxDistanceWidthFactor = new BoundedNumberParameter("Maximal Distance for Tracking (x mean channel width)", 1, 2, 1, 3);
     public static boolean debug = false;
     @Override public void track(int structureIdx, List<StructureObject> parentTrack) {
         if (parentTrack.isEmpty()) return;
         TrackMateInterface<Spot> tmi = new TrackMateInterface(TrackMateInterface.defaultFactory());
         tmi.addObjects(parentTrack, structureIdx);
+        double meanWidth = 0;
+        double count = 0;
+        for (StructureObject p : parentTrack) for (StructureObject o : p.getChildren(structureIdx)) {meanWidth+=o.getBounds().getSizeX(); ++count;}
+        meanWidth = parentTrack.get(0).getScaleXY() * meanWidth/count;
         double maxDistance = maxShift.getValue().doubleValue()*parentTrack.get(0).getScaleXY();
-        boolean ok = tmi.processFTF(maxDistance);
-        //if (ok) ok = tmi.processGC(maxDistance, parentTrack.size());
+        boolean ok = tmi.processFTF(maxDistanceWidthFactor.getValue().doubleValue() *meanWidth);
+        if (ok) ok = tmi.processGC(maxDistance, parentTrack.size());
         if (ok) tmi.setTrackLinks(parentTrack, structureIdx);
-        //closeGaps(structureIdx, parentTrack);
+        closeGaps(structureIdx, parentTrack);
     }
 
     @Override
@@ -226,7 +231,7 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
 
     @Override
     public Parameter[] getParameters() {
-        Parameter[] res=  ParameterUtils.aggregate(segmenterParams, maxShift);
+        Parameter[] res=  ParameterUtils.aggregate(segmenterParams, maxShift, maxDistanceWidthFactor);
         return res;
     }
 }
