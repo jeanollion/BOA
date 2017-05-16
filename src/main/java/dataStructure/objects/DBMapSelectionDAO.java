@@ -85,7 +85,15 @@ public class DBMapSelectionDAO implements SelectionDAO {
             List<Selection> sels = FileIO.readFromFile(f.getAbsolutePath(), s -> JSONUtils.parse(Selection.class, s));
             for (Selection s : sels) {
                 s.setMasterDAO(mDAO);
-                if (idCache.containsKey(s.getName())) logger.warn("Selection: {} found in file: {} will be overriden in local database", s.getName(), f.getAbsolutePath());
+                if (idCache.containsKey(s.getName())) {
+                    logger.info("Selection: {} found in file: {} will be overriden in local database", s.getName(), f.getAbsolutePath());
+                    // copy metadata
+                    Selection source = idCache.get(s.getName());
+                    s.setHighlightingTracks(source.isHighlightingTracks());
+                    s.setColor(source.color);
+                    s.setIsDisplayingObjects(source.isDisplayingObjects());
+                    s.setIsDisplayingTracks(source.isHighlightingTracks());
+                }
                 idCache.put(s.getName(), s);
                 store(s);
                 f.delete();
@@ -93,8 +101,8 @@ public class DBMapSelectionDAO implements SelectionDAO {
         }
     }
     @Override
-    public List<Selection> getSelections() { // todo: inspect file in directory and generate selections
-        if (idCache.isEmpty()) retrieveAllSelections();
+    public List<Selection> getSelections() {
+        retrieveAllSelections();
         List<Selection> res = new ArrayList<>(idCache.values());
         Collections.sort(res);
         return res;

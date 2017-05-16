@@ -114,7 +114,7 @@ public class Task implements Runnable {
             initDB();
             if (this.positions==null) this.positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
             for (int p : positions) this.positions.remove((Integer)p);
-            logger.debug("positions: {}", this.positions);
+            logger.debug("positions: {} ({})", this.positions, Utils.apply(this.positions, i->db.getExperiment().getPositionsAsString()[i]));
             return this;
         }
         private void initDB() {
@@ -205,7 +205,8 @@ public class Task implements Runnable {
             
             for (Pair<String, int[]> e  : this.extrackMeasurementDir) extract(e.key, e.value);
             
-            //db=null;
+            db.clearCache();
+            db=null;
         }
         private void run(String position, boolean deleteAllField) {
             

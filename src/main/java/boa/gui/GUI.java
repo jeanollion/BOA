@@ -841,6 +841,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         unlinkObjectsButton = new javax.swing.JButton();
         resetLinksButton = new javax.swing.JButton();
         testSplitButton = new javax.swing.JButton();
+        pruneTrackButton = new javax.swing.JButton();
         trackPanel = new javax.swing.JPanel();
         TimeJSP = new javax.swing.JScrollPane();
         trackSubPanel = new javax.swing.JPanel();
@@ -1098,6 +1099,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
 
+        pruneTrackButton.setText("Prune Track (P)");
+        pruneTrackButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                pruneTrackButtonActionPerformed(evt);
+            }
+        });
+
         javax.swing.GroupLayout ControlPanelLayout = new javax.swing.GroupLayout(ControlPanel);
         ControlPanel.setLayout(ControlPanelLayout);
         ControlPanelLayout.setHorizontalGroup(
@@ -1113,11 +1121,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             .addComponent(updateRoiDisplayButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(linkObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(unlinkObjectsButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addGroup(ControlPanelLayout.createSequentialGroup()
-                .addGroup(ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(jLabel1)
-                    .addComponent(jLabel2))
-                .addGap(0, 0, Short.MAX_VALUE))
             .addComponent(resetLinksButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, ControlPanelLayout.createSequentialGroup()
                 .addGroup(ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
@@ -1127,6 +1130,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addGroup(ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(testManualSegmentationButton, javax.swing.GroupLayout.DEFAULT_SIZE, 59, Short.MAX_VALUE)
                     .addComponent(testSplitButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+            .addGroup(ControlPanelLayout.createSequentialGroup()
+                .addGroup(ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(jLabel1)
+                    .addComponent(jLabel2))
+                .addGap(0, 0, Short.MAX_VALUE))
+            .addComponent(pruneTrackButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         ControlPanelLayout.setVerticalGroup(
             ControlPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1160,6 +1169,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addComponent(mergeObjectsButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(deleteObjectsButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(pruneTrackButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(linkObjectsButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -1658,7 +1669,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                         interactiveStructure.setSelectedIndex(sel.getStructureIdx());
                         interactiveStructureActionPerformed(null);
                     }
-                    if (im==null) navigateToNextObjects(next, false, structureDisplay, setInteractiveStructure);
+                    navigateToNextObjects(next, false, structureDisplay, setInteractiveStructure);
                 }
             }
         }
@@ -2373,6 +2384,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         }
     }//GEN-LAST:event_compactLocalDBMenuItemActionPerformed
+
+    private void pruneTrackButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pruneTrackButtonActionPerformed
+        if (!checkConnection()) return;
+        pruneTrackActionPerformed(evt);
+    }//GEN-LAST:event_pruneTrackButtonActionPerformed
     private void updateMongoDBBinActions() {
         boolean enableDump = false, enableRestore = false;
         String mPath = PropertyUtils.get(PropertyUtils.MONGO_BIN_PATH);
@@ -2534,6 +2550,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JButton nextTrackErrorButton;
     private javax.swing.JMenu optionMenu;
     private javax.swing.JButton previousTrackErrorButton;
+    private javax.swing.JButton pruneTrackButton;
     private javax.swing.JMenuItem refreshExperimentListMenuItem;
     private javax.swing.JButton reloadSelectionsButton;
     private javax.swing.JButton resetLinksButton;

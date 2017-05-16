@@ -92,9 +92,11 @@ public class TaskRunner {
     }
     public static List<Task> runOnuncorrectedFluoXP() {
         List<Task> tasks = new ArrayList<Task>() {{
-            add(new Task("fluo151127").setActions(false, false, false, false).unsetPositions(0, 1, 2, 3).addExtractMeasurementDir("/data/Images/Fluo/film151127/uncorrectedData", 1).addExtractMeasurementDir("/data/Images/Fluo/film151127/uncorrectedData", 2));
-            //add(new Task("boa_fluo160428", "localhost").setAllActions().unsetPositions(0, 1, 22, 2, 3, 4, 5).addExtractMeasurementDir("/data/Images/Fluo/film160428/uncorrectedData", 1).addExtractMeasurementDir("/data/Images/Fluo/film160428/uncorrectedData", 2));
-            //add(new Task("boa_fluo160501", "localhost").setAllActions().unsetPositions(0, 1, 3).addExtractMeasurementDir("/data/Images/Fluo/film160501/uncorrectedData", 1).addExtractMeasurementDir("/data/Images/Fluo/film160501/uncorrectedData", 2));
+            //add(new Task("fluo151127").setActions(false, false, false, true).unsetPositions(0, 1, 2, 3).addExtractMeasurementDir("/data/Images/Fluo/fluo151127/uncorrectedData", 1).addExtractMeasurementDir("/data/Images/Fluo/fluo151127/uncorrectedData", 2));
+            add(new Task("fluo160428").setAllActions().unsetPositions(0, 1, 23, 2, 3, 4, 5).addExtractMeasurementDir("/data/Images/Fluo/fluo160428/uncorrectedData", 1).addExtractMeasurementDir("/data/Images/Fluo/fluo160428/uncorrectedData", 2));
+            add(new Task("fluo160428").setActions(false, false, false, true).setPositions(0, 1, 23, 2, 3, 4, 5).addExtractMeasurementDir("/data/Images/Fluo/fluo160428", 1).addExtractMeasurementDir("/data/Images/Fluo/fluo160428", 2));
+            add(new Task("fluo160501").setAllActions().unsetPositions(0, 1, 3).addExtractMeasurementDir("/data/Images/Fluo/fluo160501/uncorrectedData", 1).addExtractMeasurementDir("/data/Images/Fluo/fluo160501/uncorrectedData", 2));
+            add(new Task("fluo160501").setActions(false, false, false, true).setPositions(0, 1, 3).addExtractMeasurementDir("/data/Images/Fluo/fluo160501", 1).addExtractMeasurementDir("/data/Images/Fluo/fluo160501", 2));
         }};
         return tasks;
     }

@@ -42,7 +42,7 @@ public class ResetXPParameters {
         //String[] dbs = new String[]{"boa_fluo151127"};
         //for (String db:dbs) resetParametersFluo(db, true, true);
         //resetParametersFluo("fluo151127", null, true, true);
-        //resetPreProcessingFluo("fluo151127", null, true, 0, -1);
+        resetPreProcessingFluo("fluo151127", null, true);
         logger.debug("done!");
     }
     public static void resetParametersTrans(String dbName, String dir, boolean processing, boolean measurements) {
