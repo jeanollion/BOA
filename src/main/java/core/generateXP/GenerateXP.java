@@ -47,6 +47,7 @@ import plugins.plugins.measurements.MutationTrackMeasurements;
 import plugins.plugins.measurements.ObjectInclusionCount;
 import plugins.plugins.measurements.TrackLength;
 import plugins.plugins.measurements.objectFeatures.FeretMax;
+import plugins.plugins.measurements.objectFeatures.Mean;
 import plugins.plugins.measurements.objectFeatures.Quality;
 import plugins.plugins.measurements.objectFeatures.SNR;
 import plugins.plugins.measurements.objectFeatures.Size;
@@ -412,7 +413,7 @@ public class GenerateXP {
             if (crop!=null) ps.addTransformation(0, null, new SimpleCrop(crop));
             ps.setTrimFrames(trimFramesStart, trimFramesEnd);
             //ps.addTransformation(0, null, new SaturateHistogramAuto().setSigmas(1, 2));
-            ps.addTransformation(0, null, new SaturateHistogram(500, 500));
+            ps.addTransformation(0, null, new SaturateHistogram(350, 350));
             ps.addTransformation(1, null, new RemoveStripesSignalExclusion(0));
             //ps.addTransformation(1, null, new BandPass(0, 40, 0, 0)); // remove horizontal lines // min ==1 ? 
             //ps.addTransformation(1, null, new Median(1, 0)).setActivated(true); // to remove salt and pepper noise before rotation
@@ -443,9 +444,10 @@ public class GenerateXP {
         }
         if (measurements) {
             xp.addMeasurement(new BacteriaLineageMeasurements(1, "BacteriaLineage"));
-            xp.addMeasurement(new ObjectFeatures(1).addFeatures(new Size().setScale(true), new FeretMax().setScale(true)));
+            xp.addMeasurement(new ObjectFeatures(1).addFeatures(new Size().setScale(true), new FeretMax().setScale(true), new Mean().setIntensityStructure(1)));
             xp.addMeasurement(new MutationTrackMeasurements(1, 2));
             xp.addMeasurement(new ObjectInclusionCount(1, 2, 10).setMeasurementName("MutationNumber"));
+            xp.addMeasurement(new ObjectFeatures(2).addFeatures(new Quality()));
         }
     }
     

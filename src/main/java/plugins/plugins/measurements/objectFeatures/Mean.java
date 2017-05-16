@@ -26,13 +26,13 @@ import image.BoundingBox;
  * @author jollion
  */
 public class Mean extends IntensityMeasurement {
-
+    @Override
     public double performMeasurement(Object3D object, BoundingBox offset) {
         return core.getIntensityMeasurements(object, offset).mean;
     }
-
+    @Override
     public String getDefaultName() {
-        return "mean";
+        return "MeanIntensity";
     }
     
 }

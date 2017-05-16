@@ -196,7 +196,8 @@ public abstract class ImageWindowManager<T, U, V> {
         ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parentTrack, childStructureIdx, true));
         if (i==null) {
             setAllChildren(parentTrack, childStructureIdx);
-            i = new TrackMask(parentTrack, childStructureIdx);
+            BoundingBox bb = parentTrack.get(0).getBounds();
+            i = bb.getSizeY()>=bb.getSizeX() ? new TrackMaskX(parentTrack, childStructureIdx) : new TrackMaskY(parentTrack, childStructureIdx);
             imageObjectInterfaces.put(i.getKey(), i);
             trackHeadTrackMap.getAndCreateIfNecessary(parentTrack.get(0)).add(parentTrack);
             i.setGUIMode(GUI.hasInstance());
@@ -730,8 +731,8 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         if (trackHeads==null || trackHeads.isEmpty()) return;
         BoundingBox currentDisplayRange = this.displayer.getDisplayRange(trackImage);
-        int minTimePoint = tm.getClosestFrame(currentDisplayRange.getxMin());
-        int maxTimePoint = tm.getClosestFrame(currentDisplayRange.getxMax());
+        int minTimePoint = tm.getClosestFrame(currentDisplayRange.getxMin(), currentDisplayRange.getyMin());
+        int maxTimePoint = tm.getClosestFrame(currentDisplayRange.getxMax(), currentDisplayRange.getyMax());
         if (next) {
             if (maxTimePoint>minTimePoint+2) maxTimePoint-=2;
             else maxTimePoint--;
@@ -782,8 +783,8 @@ public abstract class ImageWindowManager<T, U, V> {
         if (objects==null || objects.isEmpty()) objects = Pair.unpairKeys(i.getObjects());
         if (objects==null || objects.isEmpty()) return false;
         BoundingBox currentDisplayRange = this.displayer.getDisplayRange(trackImage);
-        int minTimePoint = tm.getClosestFrame(currentDisplayRange.getxMin());
-        int maxTimePoint = tm.getClosestFrame(currentDisplayRange.getxMax());
+        int minTimePoint = tm.getClosestFrame(currentDisplayRange.getxMin(), currentDisplayRange.getyMin());
+        int maxTimePoint = tm.getClosestFrame(currentDisplayRange.getxMax(), currentDisplayRange.getyMax());
         if (next) {
             if (maxTimePoint>minTimePoint+2) maxTimePoint-=2;
             else maxTimePoint--;

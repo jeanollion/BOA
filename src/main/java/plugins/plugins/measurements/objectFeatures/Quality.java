@@ -42,7 +42,7 @@ public class Quality implements ObjectFeature {
     @Override
     public double performMeasurement(Object3D object, BoundingBox offset) {
         double quality = object.getQuality();
-        if (Double.isNaN(quality)) return Double.POSITIVE_INFINITY; // not measured
+        if (Double.isInfinite(quality)) return Double.NaN; // not measured
         return quality;
     }
 

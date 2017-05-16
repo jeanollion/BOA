@@ -598,13 +598,15 @@ public class ObjectPopulation {
             this.keepOverThreshold=keepOverThreshold;
             this.strict=strict;
         }
-        
+        @Override
         public void init(ObjectPopulation population) {
             this.offset= population.absoluteLandmark ? null : population.getObjectOffset();
         }
 
+        @Override
         public boolean keepObject(Object3D object) {
             double testValue = feature.performMeasurement(object, offset);
+            if (Double.isNaN(testValue)) return true;
             //logger.debug("FeatureFilter: {}, object: {}, testValue: {}, threshold: {}", feature.getClass().getSimpleName(), object.getLabel(), testValue, threshold);
             if (keepOverThreshold) {
                 if (strict) return testValue>threshold;

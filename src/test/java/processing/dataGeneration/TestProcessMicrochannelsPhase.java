@@ -24,6 +24,7 @@ import boa.gui.imageInteraction.ImageDisplayer;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import configuration.parameters.PostFilterSequence;
 import configuration.parameters.PreFilterSequence;
+import core.Task;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;
@@ -32,6 +33,7 @@ import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.Morphium;
+import ij.ImageJ;
 import image.Image;
 import image.ImageMask;
 import java.util.ArrayList;
@@ -39,14 +41,17 @@ import java.util.Iterator;
 import java.util.List;
 import plugins.PluginFactory;
 import plugins.ProcessingScheme;
+import plugins.Segmenter;
 import plugins.plugins.processingScheme.SegmentThenTrack;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.MicroChannelPhase2D;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.trackers.MicrochannelProcessor;
+import plugins.plugins.trackers.MicrochannelProcessorPhase;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import static processing.dataGeneration.TestLAPTrackerMutations.mutationIdx;
 import utils.MorphiumUtils;
+import utils.Utils;
 
 /**
  *
@@ -55,26 +60,27 @@ import utils.MorphiumUtils;
 public class TestProcessMicrochannelsPhase {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        int time =1;
+        new ImageJ();
+        int time =534;
         int field = 0;
         //String dbName = "boa_phase150616wt";
         //String dbName = "boa_phase141129wt";
-        String dbName = "boa_phase140115mutH";
-        testSegMicrochannelsFromXP(dbName, field, time);
-        //testSegAndTrackMicrochannelsFromXP(dbName, field, 518, 530);
+        String dbName = "ProblemeTracking";
+        //testSegMicrochannelsFromXP(dbName, field, time);
+        testSegAndTrackMicrochannelsFromXP(dbName, field, 532, 535);
     }
     
     public static void testSegMicrochannelsFromXP(String dbName, int fieldNumber, int timePoint) {
-        MasterDAO mDAO = new MorphiumMasterDAO(dbName);
+        MasterDAO mDAO =new Task(dbName).getDB();
         MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         StructureObject root = mDAO.getDao(f.getName()).getRoot(timePoint);
         if (root==null) root = f.createRootObjects(mDAO.getDao(f.getName())).get(timePoint);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         Image input = root.getRawImage(0);
         MicroChannelPhase2D.debug=true;
-        MicroChannelPhase2D seg = new MicroChannelPhase2D().setyStartAdjustWindow(5);
-        //ObjectPopulation pop = MicroChannelPhase2D.run(input, 26, 0.15, 2, 6, 6);
-        ObjectPopulation pop = seg.runSegmenter(input, 0, root);
+        //MicroChannelPhase2D seg = new MicroChannelPhase2D().setyStartAdjustWindow(5);
+        Segmenter s = mDAO.getExperiment().getStructure(0).getProcessingScheme().getSegmenter();
+        ObjectPopulation pop = s.runSegmenter(input, 0, root);
         //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
@@ -86,7 +92,7 @@ public class TestProcessMicrochannelsPhase {
     }
     
     public static void testSegAndTrackMicrochannelsFromXP(String dbName, int fieldNumber, int timePointMin, int timePointMax) {
-        MasterDAO mDAO = new MorphiumMasterDAO(dbName);
+        MasterDAO mDAO =new Task(dbName).getDB();
         MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         List<StructureObject> rootTrack = mDAO.getDao(f.getName()).getRoots();
         Iterator<StructureObject> it = rootTrack.iterator();
@@ -95,10 +101,8 @@ public class TestProcessMicrochannelsPhase {
             if (o.getFrame()<timePointMin) it.remove();
             if (o.getFrame()>timePointMax) it.remove();
         }
-        ProcessingScheme ps = new SegmentThenTrack(
-                new MicroChannelPhase2D(), 
-                new ObjectIdxTracker()
-        );
+        MicrochannelProcessorPhase.debug=true;
+        ProcessingScheme ps = mDAO.getExperiment().getStructure(0).getProcessingScheme();
         ps.segmentAndTrack(0, rootTrack);
         Image[][] raw = new Image[rootTrack.size()][1];
         Image[][] seg = new Image[rootTrack.size()][1];

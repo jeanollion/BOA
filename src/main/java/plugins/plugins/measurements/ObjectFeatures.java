@@ -85,11 +85,11 @@ public class ObjectFeatures implements Measurement {
         for (PluginParameter<ObjectFeature> ofp : features.getActivatedChildren()) res.add(new MeasurementKeyObject(((TextParameter)ofp.getAdditionalParameters().get(0)).getValue(), structure.getSelectedIndex()));
         return res;
     }
-
+    @Override
     public void performMeasurement(StructureObject object) {
         int structureIdx = structure.getSelectedIndex();
         //logger.debug("performing features on object: {} (children: {})", object, object.getChildren(structureIdx).size());
-        ArrayList<ObjectFeatureCore> cores = new ArrayList<ObjectFeatureCore>();
+        ArrayList<ObjectFeatureCore> cores = new ArrayList<>();
         for (PluginParameter<ObjectFeature> ofp : features.getActivatedChildren()) {
             ObjectFeature f = ofp.instanciatePlugin();
             if (f!=null) {
@@ -102,7 +102,7 @@ public class ObjectFeatures implements Measurement {
             }
         }
     }
-
+    @Override
     public Parameter[] getParameters() {
         return parameters;
     }

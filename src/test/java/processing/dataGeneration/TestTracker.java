@@ -22,6 +22,7 @@ import boa.gui.GUI;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import core.Task;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MorphiumMasterDAO;
@@ -51,15 +52,15 @@ public class TestTracker {
         //final String dbName = "boa_phase140115mutH";
         //final String dbName = "boa_phase150324mutH";
         //String dbName = "boa_phase150616wt";
-        String dbName = "boa_phase141107wt";
+        String dbName = "ProblemeTracking";
         //String dbName = "boa_fluo170207_150ms";
         int fIdx = 0;
         int mcIdx =0;
-        int structureIdx = 1;
-        MasterDAO db = new MorphiumMasterDAO(dbName);
+        int structureIdx = 0;
+        MasterDAO db = new Task(dbName).getDB();
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 50);
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 532, 535);
         
         //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 37, 38); // 91 to test rearrange objects 
         

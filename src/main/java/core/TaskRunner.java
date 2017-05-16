@@ -44,13 +44,13 @@ public class TaskRunner {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         
-        //List<Task> tasks = extractMeasurementOnFluoXP(true);
-        List<Task> tasks = runOnuncorrectedFluoXP();
+        List<Task> tasks = extractMeasurementOnFluoXP(true, false, true);
+        //List<Task> tasks = runOnuncorrectedFluoXP();
         //List<Task> tasks = getFastTrackTasks();
         //List<Task> tasks = getTasks();
         //List<Task> tasks = getFluoTasks();
         //for (Task t : tasks) t.isValid();
-        for (Task t : tasks) if (t.isValid()) t.run();
+        //for (Task t : tasks) if (t.isValid()) t.run();
         logger.info("All tasks performed! See errors below:");
         for (Task t : tasks) t.printErrors();
     }
@@ -82,11 +82,18 @@ public class TaskRunner {
         return tasks;
     }
     
-    public static List<Task> extractMeasurementOnFluoXP(boolean runMeas) {
+    public static List<Task> extractMeasurementOnFluoXP(boolean runMeas, boolean corr, boolean uncorr) {
         List<Task> tasks = new ArrayList<Task>() {{
-            add(new Task("boa_fluo151127", "localhost").setActions(false, false, false, runMeas).setPositions(0, 1, 2, 3).addExtractMeasurementDir("/data/Images/Fluo/film151127", 1).addExtractMeasurementDir("/data/Images/Fluo/film151127", 2));
-            add(new Task("boa_fluo160428", "localhost").setActions(false, false, false, runMeas).setPositions(0, 1, 22, 2, 3, 4, 5).addExtractMeasurementDir("/data/Images/Fluo/film160428", 1).addExtractMeasurementDir("/data/Images/Fluo/film160428", 2));
-            add(new Task("boa_fluo160501", "localhost").setActions(false, false, false, runMeas).setPositions(0, 1, 3).addExtractMeasurementDir("/data/Images/Fluo/film160501", 1).addExtractMeasurementDir("/data/Images/Fluo/film160501", 2));
+            if (corr) {
+                add(new Task("fluo151127").setActions(false, false, false, runMeas).setPositions(0, 1, 2, 3).addExtractMeasurementDir("/data/Images/Fluo/fluo151127", 1).addExtractMeasurementDir("/data/Images/Fluo/fluo151127", 2));
+                add(new Task("fluo160428").setActions(false, false, false, runMeas).setPositions(0, 1, 23, 2, 3, 4, 5).addExtractMeasurementDir("/data/Images/Fluo/fluo160428", 1).addExtractMeasurementDir("/data/Images/Fluo/fluo160428", 2));
+                add(new Task("fluo160501").setActions(false, false, false, runMeas).setPositions(0, 1, 3).addExtractMeasurementDir("/data/Images/Fluo/fluo160501", 1).addExtractMeasurementDir("/data/Images/Fluo/fluo160501", 2));
+            }
+            if (uncorr) {
+                add(new Task("fluo151127").setActions(false, false, false, runMeas).unsetPositions(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10).addExtractMeasurementDir("/data/Images/Fluo/fluo151127/uncorrectedData", 1).addExtractMeasurementDir("/data/Images/Fluo/fluo151127/uncorrectedData", 2));
+                add(new Task("fluo160428").setActions(false, false, false, runMeas).unsetPositions(0, 1, 23, 2, 3, 4, 5).addExtractMeasurementDir("/data/Images/Fluo/fluo160428/uncorrectedData", 1).addExtractMeasurementDir("/data/Images/Fluo/fluo160428/uncorrectedData", 2));
+                add(new Task("fluo160501").setActions(false, false, false, runMeas).unsetPositions(0, 1, 3).addExtractMeasurementDir("/data/Images/Fluo/fluo160501/uncorrectedData", 1).addExtractMeasurementDir("/data/Images/Fluo/fluo160501/uncorrectedData", 2));
+            }
         }};
         return tasks;
     }

@@ -50,13 +50,14 @@ import utils.SlidingOperator;
 import static utils.SlidingOperator.performSlide;
 import utils.ThreadRunner;
 import utils.ThreadRunner.ThreadAction;
+import utils.Utils;
 
 /**
  *
  * @author jollion
  */
 public class MicrochannelProcessorPhase implements TrackerSegmenter {
-    MicroChannelPhase2D segmenter = new MicroChannelPhase2D();
+    Parameter[] segmenterParams = new MicroChannelPhase2D().getParameters();
     NumberParameter maxShift = new BoundedNumberParameter("Maximal Shift (pixels)", 0, 100, 1, null);
     public static boolean debug = false;
     @Override public void track(int structureIdx, List<StructureObject> parentTrack) {
@@ -65,9 +66,9 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
         tmi.addObjects(parentTrack, structureIdx);
         double maxDistance = maxShift.getValue().doubleValue()*parentTrack.get(0).getScaleXY();
         boolean ok = tmi.processFTF(maxDistance);
-        if (ok) ok = tmi.processGC(maxDistance, parentTrack.size());
+        //if (ok) ok = tmi.processGC(maxDistance, parentTrack.size());
         if (ok) tmi.setTrackLinks(parentTrack, structureIdx);
-        closeGaps(structureIdx, parentTrack);
+        //closeGaps(structureIdx, parentTrack);
     }
 
     @Override
@@ -77,7 +78,7 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
         ThreadAction<StructureObject> ta = new ThreadAction<StructureObject>() {
             @Override
             public void run(StructureObject parent, int idx, int threadIdx) {
-                boundingBoxes[idx] = segmenter.segment(preFilters.filter(parent.getRawImage(structureIdx), parent));
+                boundingBoxes[idx] = getSegmenter().segment(preFilters.filter(parent.getRawImage(structureIdx), parent));
                 parent.setChildrenObjects(postFilters.filter(boundingBoxes[idx].getObjectPopulation(parent.getRawImage(structureIdx), false), structureIdx, parent), structureIdx); // no Y - shift here because the mean shift is added afterwards
             }
         };
@@ -217,12 +218,15 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
     }
     
     @Override
-    public Segmenter getSegmenter() {
+    public MicroChannelPhase2D getSegmenter() {
+        MicroChannelPhase2D segmenter = new MicroChannelPhase2D();
+        ParameterUtils.setContent(segmenter.getParameters(), segmenterParams);
         return segmenter;
     }
 
     @Override
     public Parameter[] getParameters() {
-        return ParameterUtils.aggregate(segmenter.getParameters(), maxShift);
+        Parameter[] res=  ParameterUtils.aggregate(segmenterParams, maxShift);
+        return res;
     }
 }

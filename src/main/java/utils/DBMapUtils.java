@@ -34,7 +34,7 @@ import org.mapdb.Serializer;
 public class DBMapUtils {
     public static DB createFileDB(String path) {
         //logger.debug("creating file db: {}, is dir: {}, exists: {}", path, new File(path).isDirectory(),new File(path).exists());
-        return DBMaker.newFileDB(new File(path)).make(); // v1        
+        return DBMaker.newFileDB(new File(path)).cacheDisable().closeOnJvmShutdown().make(); // v1        //
         //return DBMaker.fileDB(path).transactionEnable().make(); // v3
     }
     public static HTreeMap<String, String> createHTreeMap(DB db, String key) {
