@@ -57,25 +57,28 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
     private StructureObject parentTrackHead;
     int structureIdx;
     TrackExperimentNode parent;
-    String fieldName;
+    String position;
     Boolean containsErrors;
+    final boolean root;
     public RootTrackNode(TrackTreeGenerator generator, StructureObject parentTrackHead, int structureIdx) {
         this.generator = generator;
         this.parentTrackHead=parentTrackHead;
         this.structureIdx=structureIdx;
-        this.fieldName=parentTrackHead.getPositionName();
+        this.position=parentTrackHead.getPositionName();
+        root = false;
     }
     
-    public RootTrackNode(TrackExperimentNode parent, String fieldName, int structureIdx) { // constructor when parent == root
+    public RootTrackNode(TrackExperimentNode parent, String position, int structureIdx) { // constructor when parent == root
         this.generator = parent.generator;
         this.parent = parent;
-        this.fieldName=fieldName;
+        this.position=position;
         this.structureIdx=structureIdx;
-        logger.trace("creating root track node for field: {} structure: {}", fieldName, structureIdx);
+        root = true;
+        logger.trace("creating root track node for field: {} structure: {}", position, structureIdx);
     }
 
     public String getFieldName() {
-        return fieldName;
+        return position;
     }
     
     public void refresh() {
@@ -100,26 +103,26 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
     
     public StructureObject getParentTrackHead() {
         if (parentTrackHead==null) {
-            if (fieldName==null) {
+            if (position==null) {
                 logger.warn("No track head or fieldName defined for RootTrackNode instance");
                 return null;
             }
-            List<StructureObject> roots = generator.getObjectDAO(fieldName).getRoots();
-            if (roots==null || roots.isEmpty()) logger.error("No root found for position: {}, please run pre-processing", fieldName);
+            List<StructureObject> roots = generator.getObjectDAO(position).getRoots();
+            if (roots==null || roots.isEmpty()) logger.error("No root found for position: {}, please run pre-processing", position);
             else parentTrackHead = roots.get(0);
             if (parentTrackHead!=null) logger.trace("parentTrackHead id:"+parentTrackHead.getId());
         }
         return parentTrackHead;
     }
     private List<StructureObject> getParentTrack() {
-        return generator.getObjectDAO(fieldName).getRoots();
+        return generator.getObjectDAO(position).getRoots();
     }
     
     public TreeMap<Integer, List<StructureObject>> getRemainingTrackHeads() {
         if (remainingTrackHeadsTM==null) {
             if (getParentTrackHead()==null) return new TreeMap<>();
             long t0 = System.currentTimeMillis();
-            List<StructureObject> trackHeads = generator.getObjectDAO(fieldName).getTrackHeads(getParentTrackHead(), structureIdx);
+            List<StructureObject> trackHeads = generator.getObjectDAO(position).getTrackHeads(getParentTrackHead(), structureIdx);
             long t1 = System.currentTimeMillis();
             
             //List<StructureObject> trackHeads = new ArrayList<StructureObject> (StructureObjectUtils.getAllTracks(getParentTrack(), structureIdx).keySet());
@@ -189,7 +192,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
     
     // TreeNode implementation
     @Override public String toString() {
-        return (parent!=null?fieldName+"::": "")+(structureIdx>=0?generator.getExperiment().getStructure(structureIdx).getName():"Root");
+        return (parent!=null?position+"::": "")+(structureIdx>=0?generator.getExperiment().getStructure(structureIdx).getName():"Root");
     }
     
     public TrackNode getChildAt(int childIndex) {
@@ -249,22 +252,22 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
     
     // UIContainer implementation
     @Override public Object[] getDisplayComponent(boolean multipleSelection) {
+        if (!root) return null;
         return (new RootTrackNodeUI()).getDisplayComponent(multipleSelection);
     }
     
     class RootTrackNodeUI {
         JMenuItem openRawFrame, openRawAllFrames, openPreprocessedFrame, openPreprocessedAllFrames;
         Object[] actions;
-        
+        JMenuItem[] openRaw;
         public RootTrackNodeUI() {
-            this.actions = new JMenuItem[4];
-            
+            this.actions = new JMenuItem[5];
             openRawFrame = new JMenuItem("Open Raw Input Image (default frame)");
             actions[0] = openRawFrame;
             openRawFrame.setAction(new AbstractAction(openRawFrame.getActionCommand()) {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    MicroscopyField f = generator.db.getExperiment().getPosition(fieldName);
+                    MicroscopyField f = generator.db.getExperiment().getPosition(position);
                     Image[][] imagesTC = f.getInputImages().getImagesTC(f.getDefaultTimePoint(), f.getDefaultTimePoint()+1);
                     ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Raw Image of Position: "+f.getName()+ " Frame: "+f.getDefaultTimePoint(), imagesTC);
                 }
@@ -276,7 +279,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
             openRawAllFrames.setAction(new AbstractAction(openRawAllFrames.getActionCommand()) {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    MicroscopyField f = generator.db.getExperiment().getPosition(fieldName);
+                    MicroscopyField f = generator.db.getExperiment().getPosition(position);
                     generator.db.getExperiment().flushImages(true, true, f.getName());
                     Image[][] imagesTC = f.getInputImages().getImagesTC();
                     ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Raw Image of Position: "+f.getName(), imagesTC);
@@ -288,16 +291,16 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
             openPreprocessedFrame.setAction(new AbstractAction(openPreprocessedFrame.getActionCommand()) {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
-                        generator.db.getExperiment().flushImages(true, true, fieldName);
+                        generator.db.getExperiment().flushImages(true, true, position);
                         int channels = generator.db.getExperiment().getChannelImageCount();
                         Image[][] imagesTC = new Image[1][channels];
-                        MicroscopyField f = generator.db.getExperiment().getPosition(fieldName);
+                        MicroscopyField f = generator.db.getExperiment().getPosition(position);
                         for (int channel = 0; channel<channels; ++channel) {
                             int fr = f.singleFrameChannel(channel) ? 0 : f.getDefaultTimePoint();
-                            imagesTC[0][channel] = generator.db.getExperiment().getImageDAO().openPreProcessedImage(channel, fr, fieldName);
+                            imagesTC[0][channel] = generator.db.getExperiment().getImageDAO().openPreProcessedImage(channel, fr, position);
                             if (imagesTC[0][channel]==null) return;
                         }
-                        ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("PreProcessed Image of Position: "+fieldName+ " Frame: "+f.getDefaultTimePoint(), imagesTC);
+                        ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("PreProcessed Image of Position: "+position+ " Frame: "+f.getDefaultTimePoint(), imagesTC);
                     }
                 }
             );
@@ -306,28 +309,52 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
             openPreprocessedAllFrames.setAction(new AbstractAction(openPreprocessedAllFrames.getActionCommand()) {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
-                        generator.db.getExperiment().flushImages(true, true, fieldName);
-                        MicroscopyField f = generator.db.getExperiment().getPosition(fieldName);
+                        generator.db.getExperiment().flushImages(true, true, position);
+                        MicroscopyField f = generator.db.getExperiment().getPosition(position);
                         int channels = generator.db.getExperiment().getChannelImageCount();
                         int frames = f.getTimePointNumber(false);
                         Image[][] imagesTC = new Image[frames][channels];
                         for (int channel = 0; channel<channels; ++channel) {
                             for (int frame = 0; frame<frames; ++frame) {
                                 int fr = f.singleFrameChannel(channel) ? 0 : frame;
-                                imagesTC[frame][channel] = generator.db.getExperiment().getImageDAO().openPreProcessedImage(channel, fr, fieldName);
+                                imagesTC[frame][channel] = generator.db.getExperiment().getImageDAO().openPreProcessedImage(channel, fr, position);
                                 if (imagesTC[frame][channel]==null) return;
                             }
                         }
-                        ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("PreProcessed Images of Position: "+fieldName, imagesTC);
+                        ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("PreProcessed Images of Position: "+position, imagesTC);
                     }
                 }
             );
             actions[3] = openPreprocessedAllFrames;
+            JMenu rawSubMenu = new JMenu("Open Raw Track Image");
+            actions[4] = rawSubMenu;
+            List<String> directRootChild = new ArrayList<String>();
+            for (int sIdx = 0; sIdx<generator.db.getExperiment().getStructureCount(); ++sIdx) {
+                if (generator.db.getExperiment().getStructure(sIdx).getParentStructure()==-1) directRootChild.add(generator.db.getExperiment().getStructure(sIdx).getName());
+            }
+            openRaw=new JMenuItem[directRootChild.size()];
+            for (int i = 0; i < openRaw.length; i++) {
+                openRaw[i] = new JMenuItem(directRootChild.get(i));
+                openRaw[i].setAction(new AbstractAction(directRootChild.get(i)) {
+                        @Override
+                        public void actionPerformed(ActionEvent ae) {
+                            int structureIdx = generator.getExperiment().getStructureIdx(ae.getActionCommand());
+                            if (logger.isDebugEnabled()) logger.debug("opening track raw image for structure: {} of idx: {}", ae.getActionCommand(), structureIdx);
+                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(generator.db.getDao(position).getRoots(), structureIdx);
+                            if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(structureIdx), i, structureIdx, false, true);
+                            GUI.getInstance().setInteractiveStructureIdx(structureIdx);
+                            GUI.getInstance().setTrackStructureIdx(structureIdx);
+                        }
+                    }
+                );
+                rawSubMenu.add(openRaw[i]);
+            }
         }
         public Object[] getDisplayComponent(boolean multipleSelection) {
             if (multipleSelection) {
                 return new JMenuItem[]{};
             } else return actions;
         }
+        
     }
 }

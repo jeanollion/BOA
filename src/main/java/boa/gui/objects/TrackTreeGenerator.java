@@ -113,8 +113,8 @@ public class TrackTreeGenerator {
     }
     public String getSelectedPosition() {
         if (hasSelection()) {
-            if (treeModel.getRoot() instanceof RootTrackNode) return ((RootTrackNode)tree.getSelectionPath().getPathComponent(0)).fieldName;
-            else if (treeModel.getRoot() instanceof TrackExperimentNode) return ((RootTrackNode)tree.getSelectionPath().getPathComponent(1)).fieldName;
+            if (treeModel.getRoot() instanceof RootTrackNode) return ((RootTrackNode)tree.getSelectionPath().getPathComponent(0)).position;
+            else if (treeModel.getRoot() instanceof TrackExperimentNode) return ((RootTrackNode)tree.getSelectionPath().getPathComponent(1)).position;
         }
         return null;
     }

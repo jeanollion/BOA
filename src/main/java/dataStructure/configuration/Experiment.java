@@ -199,6 +199,16 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         return structures.getChildCount();
     }
     
+    public int getStructureIdx(String name) {
+        checkInit();
+        int i = 0;
+        for (Structure s: structures.getChildren()) {
+            if (s.getName().equals(name)) return i;
+            i++;
+        }
+        return -2;
+    }
+    
     public int getChannelImageCount() {
         return channelImages.getChildCount();
     }
