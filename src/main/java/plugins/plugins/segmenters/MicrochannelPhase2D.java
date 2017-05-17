@@ -49,7 +49,7 @@ import static utils.Utils.plotProfile;
  *
  * @author jollion
  */
-public class MicroChannelPhase2D implements Segmenter {
+public class MicrochannelPhase2D implements Segmenter {
     
     NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Width (pixels)", 0, 20, 5, null);
     NumberParameter channelWidthMin = new BoundedNumberParameter("MicroChannel Width Min(pixels)", 0, 15, 5, null);
@@ -59,14 +59,14 @@ public class MicroChannelPhase2D implements Segmenter {
     Parameter[] parameters = new Parameter[]{channelWidth, channelWidthMin, channelWidthMax, localDerExtremaThld};
     public static boolean debug = false;
 
-    public MicroChannelPhase2D() {
+    public MicrochannelPhase2D() {
     }
 
-    public MicroChannelPhase2D(int channelWidth) {
+    public MicrochannelPhase2D(int channelWidth) {
         this.channelWidth.setValue(channelWidth);
     }
 
-    public MicroChannelPhase2D setyStartAdjustWindow(int yStartAdjustWindow) {
+    public MicrochannelPhase2D setyStartAdjustWindow(int yStartAdjustWindow) {
         this.yStartAdjustWindow.setValue(yStartAdjustWindow);
         return this;
     }

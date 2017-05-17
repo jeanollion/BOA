@@ -60,7 +60,7 @@ import plugins.plugins.processingScheme.SegmentOnly;
 import plugins.plugins.processingScheme.SegmentThenTrack;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.BacteriaTrans;
-import plugins.plugins.segmenters.MicroChannelPhase2D;
+import plugins.plugins.segmenters.MicrochannelPhase2D;
 import plugins.plugins.segmenters.MutationSegmenter;
 import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
 import plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections;

@@ -42,7 +42,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import plugins.Segmenter;
 import plugins.TrackerSegmenter;
-import plugins.plugins.segmenters.MicroChannelPhase2D;
+import plugins.plugins.segmenters.MicrochannelPhase2D;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparator;
 import plugins.plugins.trackers.trackMate.TrackMateInterface;
 import plugins.plugins.transformations.CropMicroChannels.Result;
@@ -57,7 +57,7 @@ import utils.Utils;
  * @author jollion
  */
 public class MicrochannelProcessorPhase implements TrackerSegmenter {
-    Parameter[] segmenterParams = new MicroChannelPhase2D().getParameters();
+    Parameter[] segmenterParams = new MicrochannelPhase2D().getParameters();
     NumberParameter maxShift = new BoundedNumberParameter("Maximal Shift (pixels)", 0, 100, 1, null);
     NumberParameter maxDistanceWidthFactor = new BoundedNumberParameter("Maximal Distance for Tracking (x mean channel width)", 1, 2, 1, 3);
     public static boolean debug = false;
@@ -114,7 +114,8 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
             Collections.sort(shifts);
             int shift = shifts.get(shifts.size()/2); // median shift
             double mean = 0, c=0; for (Double d : widths) if (d!=null) {mean+=d; ++c;} // global mean value
-            widths = performSlide(widths, 10, SlidingOperator.slidingMean(mean/c)); // sliding and not global mean because if channels gets empty -> width too small 
+            mean/=c;
+            widths = performSlide(widths, 10, SlidingOperator.slidingMean(mean)); // sliding and not global mean because if channels gets empty -> width too small 
             if (debug) {
                 logger.debug("track: {} ymin-shift: {}, width: {}", track.get(0), shift, widths);
             }
@@ -223,8 +224,8 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
     }
     
     @Override
-    public MicroChannelPhase2D getSegmenter() {
-        MicroChannelPhase2D segmenter = new MicroChannelPhase2D();
+    public MicrochannelPhase2D getSegmenter() {
+        MicrochannelPhase2D segmenter = new MicrochannelPhase2D();
         ParameterUtils.setContent(segmenter.getParameters(), segmenterParams);
         return segmenter;
     }

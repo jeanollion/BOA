@@ -44,7 +44,7 @@ import plugins.ProcessingScheme;
 import plugins.Segmenter;
 import plugins.plugins.processingScheme.SegmentThenTrack;
 import plugins.plugins.segmenters.BacteriaFluo;
-import plugins.plugins.segmenters.MicroChannelPhase2D;
+import plugins.plugins.segmenters.MicrochannelPhase2D;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.trackers.MicrochannelProcessor;
 import plugins.plugins.trackers.MicrochannelProcessorPhase;
@@ -77,7 +77,7 @@ public class TestProcessMicrochannelsPhase {
         if (root==null) root = f.createRootObjects(mDAO.getDao(f.getName())).get(timePoint);
         logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
         Image input = root.getRawImage(0);
-        MicroChannelPhase2D.debug=true;
+        MicrochannelPhase2D.debug=true;
         //MicroChannelPhase2D seg = new MicroChannelPhase2D().setyStartAdjustWindow(5);
         Segmenter s = mDAO.getExperiment().getStructure(0).getProcessingScheme().getSegmenter();
         ObjectPopulation pop = s.runSegmenter(input, 0, root);

@@ -40,7 +40,7 @@ import plugins.Plugin;
 import static plugins.Plugin.logger;
 import plugins.Segmenter;
 import plugins.TrackerSegmenter;
-import plugins.plugins.segmenters.MicroChannelPhase2D;
+import plugins.plugins.segmenters.MicrochannelPhase2D;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparator;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
@@ -70,7 +70,7 @@ public class MicrochannelProcessor implements TrackerSegmenter {
     public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
         if (debug) {
             MicroChannelFluo2D.debug=true;
-            MicroChannelPhase2D.debug=true;
+            MicrochannelPhase2D.debug=true;
         }
         int refTimePoint = 50;
         Segmenter segAlgo = segmenter.instanciatePlugin();
