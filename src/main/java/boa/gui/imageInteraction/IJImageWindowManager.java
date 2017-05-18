@@ -141,7 +141,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                     }
                     hideAllRois(image, true, false);
                 }
-                List<Pair<StructureObject, BoundingBox>> selectedObjects = new ArrayList<Pair<StructureObject, BoundingBox>>();
+                List<Pair<StructureObject, BoundingBox>> selectedObjects = new ArrayList<>();
                 Roi r = ip.getRoi();
                 boolean fromSelection = false;
                 if (r!=null) {

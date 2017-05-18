@@ -400,9 +400,8 @@ public class Selection implements Comparable<Selection> {
     }
     public static String getParent(String idx) {
         int[] i = parseIndices(idx);
-        if (i.length==2) {
-            i[1]=0;
-            return indicesToString(i);
+        if (i.length==1) {
+            return idx;
         } else {
             int[] ii = new int[i.length-1];
             System.arraycopy(i, 0, ii, 0, ii.length);

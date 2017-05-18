@@ -752,11 +752,16 @@ public abstract class ImageWindowManager<T, U, V> {
                 if (nextError==null) return;
                 off = tm.getObjectOffset(nextError);
             }
-            int mid = (int)off.getXMean();
-            if (mid+currentDisplayRange.getSizeX()/2>=trackImage.getSizeX()) mid = trackImage.getSizeX()-currentDisplayRange.getSizeX()/2;
-            if (mid-currentDisplayRange.getSizeX()/2<0) mid = currentDisplayRange.getSizeX()/2;
-            BoundingBox nextDisplayRange = new BoundingBox(mid-currentDisplayRange.getSizeX()/2, mid+currentDisplayRange.getSizeX()/2, currentDisplayRange.getyMin(), currentDisplayRange.getyMax(), currentDisplayRange.getzMin(), currentDisplayRange.getzMax());
-            logger.info("Error detected @ timepoint: {}, xMid: {}, update display range: {}", nextError.getFrame(), mid,  nextDisplayRange);
+            int midX = (int)off.getXMean();
+            if (midX+currentDisplayRange.getSizeX()/2>=trackImage.getSizeX()) midX = trackImage.getSizeX()-currentDisplayRange.getSizeX()/2;
+            if (midX-currentDisplayRange.getSizeX()/2<0) midX = currentDisplayRange.getSizeX()/2;
+            
+            int midY = (int)off.getYMean();
+            if (midY+currentDisplayRange.getSizeY()/2>=trackImage.getSizeY()) midY = trackImage.getSizeY()-currentDisplayRange.getSizeY()/2;
+            if (midY-currentDisplayRange.getSizeY()/2<0) midY = currentDisplayRange.getSizeY()/2;
+            
+            BoundingBox nextDisplayRange = new BoundingBox(midX-currentDisplayRange.getSizeX()/2, midX+currentDisplayRange.getSizeX()/2, midY-currentDisplayRange.getSizeY()/2, midY+currentDisplayRange.getSizeY()/2, currentDisplayRange.getzMin(), currentDisplayRange.getzMax());
+            logger.info("Error detected @ timepoint: {}, xMid: {}, update display range: {}", nextError.getFrame(), midX,  nextDisplayRange);
             displayer.setDisplayRange(nextDisplayRange, trackImage);
         }
     }
@@ -812,12 +817,17 @@ public abstract class ImageWindowManager<T, U, V> {
                 }
                 off = tm.getObjectOffset(nextObject);
             }
-            int mid = (int)off.getXMean();
-            if (mid+currentDisplayRange.getSizeX()/2>=trackImage.getSizeX()) mid = trackImage.getSizeX()-currentDisplayRange.getSizeX()/2;
-            if (mid-currentDisplayRange.getSizeX()/2<0) mid = currentDisplayRange.getSizeX()/2;
-            BoundingBox nextDisplayRange = new BoundingBox(mid-currentDisplayRange.getSizeX()/2, mid+currentDisplayRange.getSizeX()/2, currentDisplayRange.getyMin(), currentDisplayRange.getyMax(), currentDisplayRange.getzMin(), currentDisplayRange.getzMax());
+            int midX = (int)off.getXMean();
+            if (midX+currentDisplayRange.getSizeX()/2>=trackImage.getSizeX()) midX = trackImage.getSizeX()-currentDisplayRange.getSizeX()/2;
+            if (midX-currentDisplayRange.getSizeX()/2<0) midX = currentDisplayRange.getSizeX()/2;
+            
+            int midY = (int)off.getYMean();
+            if (midY+currentDisplayRange.getSizeY()/2>=trackImage.getSizeY()) midY = trackImage.getSizeY()-currentDisplayRange.getSizeY()/2;
+            if (midY-currentDisplayRange.getSizeY()/2<0) midY = currentDisplayRange.getSizeY()/2;
+            
+            BoundingBox nextDisplayRange = new BoundingBox(midX-currentDisplayRange.getSizeX()/2, midX+currentDisplayRange.getSizeX()/2, midY-currentDisplayRange.getSizeY()/2, midY+currentDisplayRange.getSizeY()/2, currentDisplayRange.getzMin(), currentDisplayRange.getzMax());
             if (!nextDisplayRange.equals(currentDisplayRange)) {
-                logger.info("Object detected @ timepoint: {}, xMid: {}, update display range: {}", nextObject.getFrame(), mid,  nextDisplayRange);
+                logger.info("Object detected @ timepoint: {}, xMid: {}, update display range: {}", nextObject.getFrame(), midX,  nextDisplayRange);
                 displayer.setDisplayRange(nextDisplayRange, trackImage);
                 return true;
             } return false;

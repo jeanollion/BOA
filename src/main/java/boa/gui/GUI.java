@@ -1652,7 +1652,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 }
                 if (structureDisplay<0) structureDisplay = sel.getStructureIdx();
                 if ((nextParentIdx<0 || nextParentIdx>=parents.size())) {
-                    logger.warn("current parent {} not found in objects parents: {}", i==null?null : i.getParent(), parents);
+                    logger.warn("no next parent found in objects parents: {}", parents);
                     navigateToNextObjects(next, true, structureDisplay, setInteractiveStructure);
                 } else {
                     StructureObject nextParent = parents.get(nextParentIdx);
