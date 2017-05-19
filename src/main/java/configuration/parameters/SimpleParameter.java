@@ -162,7 +162,7 @@ public abstract class SimpleParameter implements Parameter {
     // listenable
     @Transient ArrayList<ParameterListener> listeners;
     public void addListener(ParameterListener listener) {
-        if (listeners == null) listeners = new ArrayList<ParameterListener>();
+        if (listeners == null) listeners = new ArrayList<>();
         listeners.add(listener);
     }
     public void removeListener(ParameterListener listener) {

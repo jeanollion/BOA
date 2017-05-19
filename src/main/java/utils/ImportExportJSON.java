@@ -167,6 +167,7 @@ public class ImportExportJSON {
                 List<Experiment> xp = FileIO.readFromFile(path, o->JSONUtils.parse(Experiment.class, o));
                 if (xp.size()==1) {
                     xp.get(0).setOutputDirectory(dao.getDir()+File.separator+"Output");
+                    xp.get(0).setOutputImageDirectory(xp.get(0).getOutputDirectory());
                     dao.setExperiment(xp.get(0));
                     logger.debug("XP: {} from file: {} set to db: {}", dao.getExperiment().getName(), path, dao.getDBName());
                 }
@@ -180,6 +181,7 @@ public class ImportExportJSON {
                 List<Experiment> xp = r.readObjects("config.txt", o->JSONUtils.parse(Experiment.class, o));
                 if (xp.size()==1) {
                     xp.get(0).setOutputDirectory(dao.getDir()+File.separator+"Output");
+                    xp.get(0).setOutputImageDirectory(xp.get(0).getOutputDirectory());
                     dao.setExperiment(xp.get(0));
                     logger.debug("XP: {} from file: {} set to db: {}", dao.getExperiment().getName(), path, dao.getDBName());
                 }

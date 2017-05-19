@@ -36,7 +36,7 @@ import utils.Utils;
  *
  * @author jollion
  */
-public class IJAutoThresholder implements SimpleThresholder, Thresholder {
+public class IJAutoThresholder implements SimpleThresholder {
     ChoiceParameter method = new ChoiceParameter("Method", AutoThresholder.getMethods(), AutoThresholder.Method.Otsu.toString(), false);
     
     public IJAutoThresholder setMethod(AutoThresholder.Method method) {

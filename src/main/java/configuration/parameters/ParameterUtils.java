@@ -121,7 +121,7 @@ public class ParameterUtils {
             try {
                 recieve[i].setContentFrom(give[i]);
             } catch (Error e) {
-                logger.error("set content error : {}", e);
+                logger.error("set content error :"+e.getMessage(), e);
                 return false;
             }
         }

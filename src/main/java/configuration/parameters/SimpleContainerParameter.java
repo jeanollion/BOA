@@ -56,8 +56,9 @@ public abstract class SimpleContainerParameter implements ContainerParameter {
             children=parameters;
             int idx = 0;
             for (Parameter p : parameters) {
-                if (p==null) logger.warn("SCP: {} initChildren error: param null: {}, name: {}, type: {}", this.hashCode(), idx, name, getClass().getSimpleName());
-                p.setParent(this);
+                if (p!=null) p.setParent(this);
+                else logger.warn("SCP: {} initChildren error: param null: {}, name: {}, type: {}", this.hashCode(), idx, name, getClass().getSimpleName());
+                
                 //if (p instanceof SimpleContainerParameter) ((SimpleContainerParameter)p).initChildList(); -> cf postLoad
                 idx++;
             }

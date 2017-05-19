@@ -21,6 +21,7 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
+import configuration.parameters.PluginParameter;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
@@ -41,6 +42,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import plugins.Segmenter;
+import plugins.Thresholder;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
@@ -58,10 +60,10 @@ import static utils.Utils.plotProfile;
  */
 public class MicroChannelFluo2D implements Segmenter {
 
-    NumberParameter channelHeight = new BoundedNumberParameter("MicroChannel Height (pixels)", 0, 375, 5, null);
-    NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Width (pixels)", 0, 40, 5, null);
+    NumberParameter channelHeight = new BoundedNumberParameter("Microchannel Height (pixels)", 0, 350, 5, null);
+    NumberParameter channelWidth = new BoundedNumberParameter("Microchannel Width (pixels)", 0, 40, 5, null);
     NumberParameter yMargin = new BoundedNumberParameter("y-margin", 0, 20, 0, null);
-    NumberParameter threshold = new BoundedNumberParameter("Intensity Threshold", 2, 50, 0, null);
+    PluginParameter<Thresholder> threshold= new PluginParameter<>("Threshold", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
     NumberParameter fillingProportion = new BoundedNumberParameter("Microchannel filling proportion", 2, 0.5, 0.05, 1);
     NumberParameter minObjectSize = new BoundedNumberParameter("Min. Object Size", 0, 100, 1, null);
     Parameter[] parameters = new Parameter[]{channelHeight, channelWidth, yMargin, threshold, fillingProportion, minObjectSize};
@@ -70,8 +72,7 @@ public class MicroChannelFluo2D implements Segmenter {
     public MicroChannelFluo2D() {
     }
 
-    public MicroChannelFluo2D(int channelHeight, int channelWidth, int yMargin, double intensityThreshold, double fillingProportion, int minObjectSize) {
-        this.threshold.setValue(intensityThreshold);
+    public MicroChannelFluo2D(int channelHeight, int channelWidth, int yMargin, double fillingProportion, int minObjectSize) {
         this.channelHeight.setValue(channelHeight);
         this.channelWidth.setValue(channelWidth);
         this.yMargin.setValue(yMargin);
@@ -81,7 +82,8 @@ public class MicroChannelFluo2D implements Segmenter {
 
     @Override
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        ObjectPopulation objects = run(input, channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), yMargin.getValue().intValue(), threshold.getValue().doubleValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue());
+        double thld = this.threshold.instanciatePlugin().runThresholder(input, parent);
+        ObjectPopulation objects = run(input, channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), yMargin.getValue().intValue(), thld, fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue());
         return objects;
     }
 

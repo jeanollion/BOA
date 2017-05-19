@@ -120,9 +120,9 @@ public class DeleteFromDAOTest {
         masterDAO.setExperiment(xp);
         long t0 = System.currentTimeMillis();
         // process
-        assertEquals("number of files before preProcess", 0, countFiles(new File(xp.getOutputDirectory())));
+        assertEquals("number of files before preProcess", 0, countFiles(new File(xp.getOutputImageDirectory())));
         Processor.preProcessImages(masterDAO, true);
-        assertEquals("number of files after preProcess",10, countFiles(new File(xp.getOutputDirectory())));
+        assertEquals("number of files after preProcess",10, countFiles(new File(xp.getOutputImageDirectory())));
         Processor.processAndTrackStructures(masterDAO, true);
         
         xp.addMeasurement(new ObjectInclusionCount(1, 1, 50));

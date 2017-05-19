@@ -106,25 +106,26 @@ public class ImageFieldFactory {
         try {
             reader = new ImageReader(image.getAbsolutePath());
         } catch(Exception e) {
-            Logger.getLogger(ImageFieldFactory.class.getName()).log(Level.WARNING, "Image could not be read: {0}", image.getAbsolutePath());
+            logger.warn("Image : {} could not be read", image.getAbsolutePath());
+            return;
         }
-        if (reader!=null) {
-            int[][] stc = reader.getSTCXYZNumbers();
-            int s = 0;
-            String end = "";
-            int digits=(int)(Math.log10(stc.length)+0.5);
-            for (int[] tc:stc) {
-                if (stc.length>1) end = seriesSeparator+Utils.formatInteger(digits, s);
-                if (tc[1]==xp.getChannelImageCount()) {
-                    double[] scaleXYZ = reader.getScaleXYZ(1);
-                    containersTC.add(new MultipleImageContainerSingleFile(Utils.removeExtension(image.getName())+end, image.getAbsolutePath(),s, tc[0], tc[1], tc[4], scaleXYZ[0], scaleXYZ[2]));
-                    logger.info("image {} imported successfully", image.getAbsolutePath());
-                } else {
-                    logger.warn("Invalid Image: {} has: {} channels instead of: {}", image.getAbsolutePath(), tc[1], xp.getChannelImageCount());
-                }
-                ++s;
+        
+        int[][] stc = reader.getSTCXYZNumbers();
+        int s = 0;
+        String end = "";
+        int digits=(int)(Math.log10(stc.length)+0.5);
+        for (int[] tc:stc) {
+            if (stc.length>1) end = seriesSeparator+Utils.formatInteger(digits, s);
+            if (tc[1]==xp.getChannelImageCount()) {
+                double[] scaleXYZ = reader.getScaleXYZ(1);
+                containersTC.add(new MultipleImageContainerSingleFile(Utils.removeExtension(image.getName())+end, image.getAbsolutePath(),s, tc[0], tc[1], tc[4], scaleXYZ[0], scaleXYZ[2]));
+                logger.info("image {} imported successfully", image.getAbsolutePath());
+            } else {
+                logger.warn("Invalid Image: {} has: {} channels instead of: {}", image.getAbsolutePath(), tc[1], xp.getChannelImageCount());
             }
+            ++s;
         }
+        
     }
     
     protected static void importImagesChannel(File input, Experiment xp, String[] channelKeywords, ArrayList<MultipleImageContainer> containersTC) {

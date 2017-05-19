@@ -43,7 +43,7 @@ public class FileChooserUI implements ParameterUI {
         fc.setFileSelectionMode(fcParam.getOption().getOption());
         //fc.setFileHidingEnabled(false);
         fc.setMultiSelectionEnabled(fcParam.getOption().getMultipleSelectionEnabled());
-        if (curDir != null) fc.setCurrentDirectory(new File(curDir));
+        if (curDir != null) fc.setCurrentDirectory(new File(curDir).getParentFile());
         fc.setDialogTitle(fcParam.getName());
         int returnval = fc.showOpenDialog(model.getTree());
         logger.debug("file chooser: {}: returned value? {}", fcParam.getName(), returnval == JFileChooser.APPROVE_OPTION);

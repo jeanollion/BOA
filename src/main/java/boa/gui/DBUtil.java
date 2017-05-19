@@ -102,7 +102,7 @@ public class DBUtil {
         }
         return configs;
     }
-    private static void addConfig(File f, Map<String, File> configs) {
+    public static void addConfig(File f, Map<String, File> configs) {
         File[] dbs = f.listFiles(subF -> subF.getName().endsWith("_config.db"));
         if (dbs==null) return;
         for (File c : dbs) configs.put(removeConfig(c.getName()), c);

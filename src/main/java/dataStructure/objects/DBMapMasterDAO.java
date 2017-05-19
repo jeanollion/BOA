@@ -57,8 +57,10 @@ public class DBMapMasterDAO implements MasterDAO {
     @Override
     public void delete() {
         String outputPath = getExperiment()!=null ? getExperiment().getOutputDirectory() : null;
+        String outputImagePath = getExperiment()!=null ? getExperiment().getOutputImageDirectory() : null;
         clearCache();
         Utils.deleteDirectory(outputPath);
+        Utils.deleteDirectory(outputImagePath);
         DBMapUtils.deleteDBFile(getConfigFile(dbName));
         new File(configDir).delete(); // deletes XP directory only if void. 
     }
@@ -109,24 +111,32 @@ public class DBMapMasterDAO implements MasterDAO {
             getSelectionDAO().deleteAllObjects();
         }
     }
-    
     @Override
     public void clearCache() {
-        for (DBMapObjectDAO dao : DAOs.values()) {
-            dao.clearCache();
-            getExperiment().getPosition(dao.getPositionName()).flushImages(true, true);
+        clearCache(true, true , true);
+    }
+    
+    public void clearCache(boolean xpDAO, boolean objectDAO, boolean selectionDAO) {
+        if (objectDAO) {
+            for (DBMapObjectDAO dao : DAOs.values()) {
+                dao.clearCache();
+                getExperiment().getPosition(dao.getPositionName()).flushImages(true, true);
+            }
+            DAOs.clear();
         }
-        DAOs.clear();
-        if (selectionDAO!=null) {
+        
+        if (selectionDAO && this.selectionDAO!=null) {
             getSelectionDAO().clearCache();
-            selectionDAO=null;
+            this.selectionDAO=null;
         }
-        if (!xpDB.isClosed()) {
-            xpDB.close();
-            logger.debug("closing: {}", this.getConfigFile(dbName));
-            this.xpMap=null;
+        if (xpDAO) {
+            if (!xpDB.isClosed()) {
+                xpDB.close();
+                logger.debug("closing: {}", this.getConfigFile(dbName));
+                this.xpMap=null;
+            }
+            this.xp=null;
         }
-        this.xp=null;
     }
     
     public void compact() {
@@ -147,8 +157,9 @@ public class DBMapMasterDAO implements MasterDAO {
             xp = new Experiment(xpr.getName());
             xp.setContentFrom(xpr);
             // check output dir
-            File out = new File(xp.getOutputDirectory());
-            if (!out.exists() || !out.isDirectory()) { // look for default output dir and set it up if exists
+            String outS = xp.getOutputDirectory();
+            File out = outS!=null ? new File(outS) : null;
+            if (out==null || !out.exists() || !out.isDirectory()) { // look for default output dir and set it up if exists
                 out = new File(configDir + File.separator + "Output");
                 if (out.isDirectory()) {
                     xp.setOutputDirectory(out.getAbsolutePath());
@@ -182,6 +193,7 @@ public class DBMapMasterDAO implements MasterDAO {
         getExperiment();
         if (xp==null) return null;
         String res = xp.getOutputDirectory();
+        if (res==null) return null;
         File f = new File(res);
         if (f.exists() && f.isDirectory()) return res;
         else {
@@ -194,7 +206,7 @@ public class DBMapMasterDAO implements MasterDAO {
     public DBMapSelectionDAO getSelectionDAO() {
         if (this.selectionDAO==null) {
             String op = getOutputPath();
-            if (op!=null && new File(op).isDirectory()) {
+            if (op!=null) {
                 selectionDAO = new DBMapSelectionDAO(this, op);
             }
         }

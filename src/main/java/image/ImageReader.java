@@ -284,6 +284,7 @@ public class ImageReader {
      * @return dimensions of the image: first dimension of the matrix: series, second dimension: dimensions of the images of the serie: 0=timePoint number, 1 = channel number, 2=sizeX, 3=sizeY, 4=sizeZ
      */
     public int[][] getSTCXYZNumbers() {
+        if (reader==null) return new int[0][5];
         int[][] res = new int[reader.getSeriesCount()][5];
         for (int i = 0; i<res.length; i++) {
             reader.setSeries(i);

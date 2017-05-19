@@ -17,8 +17,8 @@
  */
 package boa.gui.imageInteraction;
 
-import boa.gui.DefaultWorker;
-import boa.gui.DefaultWorker.WorkerTask;
+import core.DefaultWorker;
+import core.DefaultWorker.WorkerTask;
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
 import com.google.common.collect.BiMap;

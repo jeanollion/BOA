@@ -29,7 +29,7 @@ import utils.Utils;
  *
  * @author jollion
  */
-public class FileChooser extends SimpleParameter {
+public class FileChooser extends SimpleParameter implements Listenable {
     protected String[] selectedFiles=new String[0];
     protected FileChooserOption option = FileChooserOption.DIRECTORIES_ONLY;
     @Transient FileChooserUI ui;
@@ -55,11 +55,13 @@ public class FileChooser extends SimpleParameter {
     
     public void setSelectedFilePath(String... filePath) {
         selectedFiles=filePath;
+        fireListeners();
     }
     public void setSelectedFiles(File... filePath ) {
         selectedFiles = new String[filePath.length];
         int i = 0;
         for (File f : filePath) selectedFiles[i++]=f.getAbsolutePath();
+        fireListeners();
     }
 
     public boolean sameContent(Parameter other) {

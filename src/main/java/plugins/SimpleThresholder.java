@@ -23,6 +23,6 @@ import image.Image;
  *
  * @author jollion
  */
-public interface SimpleThresholder extends Plugin{
+public interface SimpleThresholder extends Thresholder {
     public double runThresholder(Image image);
 }

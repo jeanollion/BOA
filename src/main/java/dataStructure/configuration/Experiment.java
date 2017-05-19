@@ -15,6 +15,7 @@
  */
 package dataStructure.configuration;
 
+import boa.gui.GUI;
 import configuration.parameters.ChoiceParameter;
 import configuration.parameters.ContainerParameter;
 import configuration.parameters.FileChooser;
@@ -27,6 +28,7 @@ import configuration.parameters.SimpleParameter;
 import configuration.parameters.ui.ParameterUI;
 import boa.gui.configuration.ConfigurationTreeModel;
 import boa.gui.configuration.TreeModelContainer;
+import configuration.parameters.ParameterListener;
 import configuration.parameters.PluginParameter;
 import dataStructure.containers.ImageDAO;
 import dataStructure.containers.ImageDAOFactory;
@@ -62,7 +64,8 @@ import static utils.Utils.toArray;
 @Index(value="name", options="unique:1")
 public class Experiment extends SimpleContainerParameter implements TreeModelContainer {
     @Id protected ObjectId id;
-    protected FileChooser imagePath;
+    protected FileChooser imagePath = new FileChooser("Output Image Path", FileChooserOption.DIRECTORIES_ONLY);
+    protected FileChooser outputPath = new FileChooser("Output Path", FileChooserOption.DIRECTORIES_ONLY);
     SimpleListParameter<ChannelImage> channelImages;
     SimpleListParameter<Structure> structures;
     SimpleListParameter<PluginParameter<Measurement>> measurements;
@@ -75,8 +78,15 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     
     public Experiment(String name) {
         super(name);
-        structures= new SimpleListParameter<Structure>("Structures", -1 , Structure.class);
-        imagePath = new FileChooser("Output Path", FileChooserOption.DIRECTORIES_ONLY);
+        structures= new SimpleListParameter<>("Structures", -1 , Structure.class);
+        outputPath.addListener((Parameter sourceParameter) -> {
+            if (outputPath.getFirstSelectedFilePath()==null) return;
+            if (imagePath.getFirstSelectedFilePath()==null) imagePath.setSelectedFilePath(outputPath.getFirstSelectedFilePath());
+            if (GUI.hasInstance()) {
+                logger.debug("new output directory set : {}", outputPath.getFirstSelectedFilePath());
+                GUI.getInstance().outputDirectoryUpdated();
+            }
+        });
         channelImages= new SimpleListParameter<ChannelImage>("Channel Images", 0 , ChannelImage.class);
         measurements = new SimpleListParameter<PluginParameter<Measurement>>("Measurements", -1 , new PluginParameter<Measurement>("Measurements", Measurement.class, true));
         fields= new SimpleListParameter<MicroscopyField>("Positions", -1 , MicroscopyField.class);
@@ -98,11 +108,11 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
         this.imageDAOType=type;
     }
     public ImageDAO getImageDAO() {
-        return ImageDAOFactory.getLocalFileSystemImageDAO(getOutputDirectory()); //if (imageDAOType.equals(ImageDAOTypes.LocalFileSystem))
+        return ImageDAOFactory.getLocalFileSystemImageDAO(getOutputImageDirectory()); //if (imageDAOType.equals(ImageDAOTypes.LocalFileSystem))
     }
     
     protected void initChildList() {
-        super.initChildren(importMethod, template, fields, channelImages, structures, measurements, imagePath);
+        super.initChildren(importMethod, template, fields, channelImages, structures, measurements, outputPath, imagePath);
     }
     
     protected void checkInit() {
@@ -159,16 +169,31 @@ public class Experiment extends SimpleContainerParameter implements TreeModelCon
     }
     
     public String getOutputDirectory() {
-        return imagePath.getFirstSelectedFilePath();
+        return outputPath.getFirstSelectedFilePath();
     }
     
     public void setOutputDirectory(String outputPath) {
+        this.outputPath.setSelectedFilePath(outputPath);
+        if (outputPath!=null) {
+            File f = new File(outputPath);
+            f.mkdirs();
+        }
+    }
+    
+    public String getOutputImageDirectory() {
+        return imagePath.getFirstSelectedFilePath();
+    }
+    
+    public void setOutputImageDirectory(String outputPath) {
         imagePath.setSelectedFilePath(outputPath);
         if (outputPath!=null) {
             File f = new File(outputPath);
             f.mkdirs();
         }
     }
+    
+    
+    
     public void clearPositions() {
         this.fields.removeAllElements();
     }

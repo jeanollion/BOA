@@ -192,7 +192,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
     
     // TreeNode implementation
     @Override public String toString() {
-        return (parent!=null?position+"::": "")+(structureIdx>=0?generator.getExperiment().getStructure(structureIdx).getName():"Root");
+        return (parent!=null?position+"::": "")+(structureIdx>=0? generator.getExperiment().getStructure(structureIdx).getName():"Root");
     }
     
     public TrackNode getChildAt(int childIndex) {
