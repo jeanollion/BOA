@@ -116,46 +116,11 @@ public class TrackMaskY extends TrackMask {
         draw(displayImage);
         return displayImage;
     }
-        
-    @Override public Image generateRawImage(final int structureIdx) {
-        Image image0 = trackObjects[0].generateRawImage(structureIdx);
-        String structureName;
-        if (GUI.hasInstance() && GUI.getDBConnection()!=null && GUI.getDBConnection().getExperiment()!=null) structureName = GUI.getDBConnection().getExperiment().getStructure(structureIdx).getName(); 
-        else structureName= structureIdx+"";
-        final Image displayImage =  Image.createEmptyImage("Track: Parent:"+parents.get(0)+" Raw Image of"+structureName, image0, new BlankMask("", this.maxParentX, trackOffset[trackOffset.length-1].getyMax()+1, Math.max(image0.getSizeZ(), this.maxParentZ)).setCalibration(parents.get(0).getMaskProperties().getScaleXY(), parents.get(0).getMaskProperties().getScaleZ()));
-        pasteImage(image0, displayImage, trackOffset[0]);
-        final double[] minAndMax = image0.getMinAndMax(null);
-        // draw image in another thread..
-        // update display every X paste...
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                int count = 0;
-                for (int i = 1; i<trackObjects.length; ++i) {
-                    Image image = trackObjects[i].generateRawImage(structureIdx);
-                    double[] mm = image.getMinAndMax(null);
-                    if (mm[0]<minAndMax[0]) minAndMax[0]=mm[0];
-                    if (mm[1]>minAndMax[1]) minAndMax[1]=mm[1];
-                    pasteImage(image, displayImage, trackOffset[i]);
-                    if (count>=updateImageFrequency) {
-                        ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage, minAndMax[0], (float)((1-displayMinMaxFraction) * minAndMax[0] + displayMinMaxFraction*minAndMax[1]));
-                        count=0;
-                    } else count++;
-                }
-                // autodisplay
-                ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage, minAndMax[0], (float)((1-displayMinMaxFraction) * minAndMax[0] + displayMinMaxFraction*minAndMax[1]));
-            }
-        });
-        
-        t.start();
-        if (!guiMode) try {
-            t.join();
-        } catch (InterruptedException ex) {
-            logger.error("generateRawImage error", ex);
-        }
-        
-        return displayImage;
+    @Override 
+    public Image generateEmptyImage(String name, Image type) {
+        return Image.createEmptyImage(name, type, new BlankMask("", this.maxParentX, trackOffset[trackOffset.length-1].getyMax()+1, Math.max(type.getSizeZ(), this.maxParentZ)).setCalibration(parents.get(0).getMaskProperties().getScaleXY(), parents.get(0).getMaskProperties().getScaleZ()));
     }
+    
     
     class bbComparatorY implements Comparator<BoundingBox>{
         @Override

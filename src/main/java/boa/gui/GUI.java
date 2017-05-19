@@ -56,6 +56,7 @@ import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import de.caluga.morphium.Morphium;
 import de.caluga.morphium.MorphiumConfig;
+import ij.IJ;
 import ij.ImageJ;
 import image.BoundingBox;
 import image.Image;
@@ -64,6 +65,7 @@ import image.ImageInteger;
 import image.TypeConverter;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Graphics;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
@@ -85,15 +87,18 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.logging.Level;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ButtonGroup;
 import javax.swing.DefaultListModel;
+import javax.swing.Icon;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
+import javax.swing.JProgressBar;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JTree;
 import javax.swing.KeyStroke;
@@ -103,6 +108,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
+import javax.swing.text.BadLocationException;
 import measurement.MeasurementKeyObject;
 import measurement.extraction.DataExtractor;
 import org.slf4j.Logger;
@@ -124,7 +130,7 @@ import static utils.Utils.addHorizontalScrollBar;
  *
  * @author jollion
  */
-public class GUI extends javax.swing.JFrame implements ImageObjectListener {
+public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUIInterface {
     public static final Logger logger = LoggerFactory.getLogger(GUI.class);
     // check if mapDB is present
     public static final String DBprefix = "boa_";
@@ -154,8 +160,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     // shortcuts
     private HashMap<KeyStroke, Action> actionMap = new HashMap<KeyStroke, Action>();
     KeyboardFocusManager kfm;
-    
+    //JProgressBar progressBar;
+    //private static int progressBarTabIndex = 3;
     // enable/disable components
+    private ProgressIcon progressBar;
+    
     final private List<Component> relatedToXPSet;
     /**
      * Creates new form GUI
@@ -166,6 +175,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         logger.info("Creating GUI instance...");
         this.instance=this;
         initComponents();
+        
         this.addWindowListener(new WindowAdapter() {
             @Override 
             public void windowClosing(WindowEvent evt) {
@@ -218,8 +228,21 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         populateExperimentList();
         updateDisplayRelatedToXPSet();
         //updateMongoDBBinActions();
+        progressBar = new ProgressIcon(Color.darkGray, tabs);
+        Component progressComponent =  new ColorPanel(progressBar);
+        tabs.addTab("Progress: ", progressBar, progressComponent);
+        //tabs.setEnabledAt(3, false);
+        //progressBar = new javax.swing.JProgressBar(0, 100);
+        //progressBar.setValue(0);
+        //progressBar.setStringPainted(true);
+        //tabs.setComponentAt(progressBarTabIndex, progressBar);
         tabs.addChangeListener(new ChangeListener() {
+            int lastSelTab=0;
             public void stateChanged(ChangeEvent e) {
+                if (tabs.getSelectedComponent()==progressComponent) {
+                    logger.debug("pb");
+                    tabs.setSelectedIndex(lastSelTab);
+                } else lastSelTab=tabs.getSelectedIndex();
                 if (reloadObjectTrees && tabs.getSelectedComponent()==dataPanel) {
                     reloadObjectTrees=false;
                     loadObjectTrees();
@@ -359,7 +382,51 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
           });
     }
-    
+    boolean running = false;
+    @Override
+    public void setRunning(boolean running) {
+        this.running=running;
+        logger.debug("set running: "+running);
+        progressBar.setValue(progressBar.getMinimum());
+        this.experimentMenu.setEnabled(!running);
+        this.runMenu.setEnabled(!running);
+        this.optionMenu.setEnabled(!running);
+        this.importExportMenu.setEnabled(!running);
+        this.miscMenu.setEnabled(!running);
+        
+        // action tab
+        this.hostName.setEditable(!running);
+        this.experimentList.setEnabled(!running);
+        this.structureList.setEnabled(!running);
+        this.runActionList.setEnabled(!running);
+        this.microscopyFieldList.setEnabled(!running);
+        
+        //config tab
+        this.configurationPanel.setEnabled(!running);
+        if (configurationTreeGenerator!=null && configurationTreeGenerator.getTree()!=null) this.configurationTreeGenerator.getTree().setEnabled(!running);
+        // browsing tab
+        if (trackTreeController!=null) this.trackTreeController.setEnabled(!running);
+        trackStructureJCB.setEnabled(!running);
+        tabs.setEnabledAt(2, !running);
+    }
+    // gui interface method
+    @Override
+    public void setProgress(int i) {
+        //this.progressBar.setM
+        this.progressBar.setValue(i);
+        //logger.info("Progress: {}/{}", i, 100);
+    }
+    @Override
+    public void setMessage(String message) {
+        try {
+            //logger.info(message);
+            this.console.getStyledDocument().insertString(console.getStyledDocument().getLength(), message+"\n", null);
+        } catch (BadLocationException ex) {
+            
+        }
+
+    }
+
     //public StructureObjectTreeGenerator getObjectTree() {return this.objectTreeGenerator;}
     public TrackTreeController getTrackTrees() {return this.trackTreeController;}
     
@@ -819,6 +886,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         runActionList = new javax.swing.JList();
         jScrollPane1 = new javax.swing.JScrollPane();
         experimentList = new javax.swing.JList();
+        jPanel1 = new javax.swing.JPanel();
+        jScrollPane2 = new javax.swing.JScrollPane();
+        console = new javax.swing.JTextPane();
         configurationPanel = new javax.swing.JPanel();
         configurationJSP = new javax.swing.JScrollPane();
         dataPanel = new javax.swing.JPanel();
@@ -929,6 +999,20 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         experimentList.setBorder(javax.swing.BorderFactory.createTitledBorder("Experiments"));
         jScrollPane1.setViewportView(experimentList);
 
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGap(0, 0, Short.MAX_VALUE)
+        );
+
+        console.setBorder(javax.swing.BorderFactory.createTitledBorder("Console:"));
+        jScrollPane2.setViewportView(console);
+
         javax.swing.GroupLayout actionPanelLayout = new javax.swing.GroupLayout(actionPanel);
         actionPanel.setLayout(actionPanelLayout);
         actionPanelLayout.setHorizontalGroup(
@@ -939,11 +1023,18 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                     .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 227, Short.MAX_VALUE)
                     .addComponent(hostName))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(actionJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 161, Short.MAX_VALUE)
-                    .addComponent(actionStructureJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE))
+                .addComponent(actionMicroscopyFieldJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 240, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(actionMicroscopyFieldJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 227, Short.MAX_VALUE)
+                .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addComponent(actionStructureJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                    .addGroup(actionPanelLayout.createSequentialGroup()
+                        .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(actionPanelLayout.createSequentialGroup()
+                                .addComponent(jScrollPane2)
+                                .addGap(6, 6, 6))
+                            .addComponent(actionJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 179, Short.MAX_VALUE))))
                 .addContainerGap())
         );
         actionPanelLayout.setVerticalGroup(
@@ -953,13 +1044,17 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
                 .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(actionMicroscopyFieldJSP)
                     .addGroup(actionPanelLayout.createSequentialGroup()
-                        .addComponent(actionStructureJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 498, Short.MAX_VALUE)
+                        .addComponent(actionStructureJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 175, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(actionJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 163, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(actionJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 163, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jScrollPane2)))
                     .addGroup(actionPanelLayout.createSequentialGroup()
                         .addComponent(hostName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(jScrollPane1)))
+                        .addComponent(jScrollPane1, javax.swing.GroupLayout.DEFAULT_SIZE, 622, Short.MAX_VALUE)))
                 .addContainerGap())
         );
 
@@ -969,7 +1064,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         configurationPanel.setLayout(configurationPanelLayout);
         configurationPanelLayout.setHorizontalGroup(
             configurationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 651, Short.MAX_VALUE)
+            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 688, Short.MAX_VALUE)
         );
         configurationPanelLayout.setVerticalGroup(
             configurationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1189,7 +1284,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         trackPanel.setLayout(trackPanelLayout);
         trackPanelLayout.setHorizontalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 337, Short.MAX_VALUE)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 374, Short.MAX_VALUE)
         );
         trackPanelLayout.setVerticalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -2028,23 +2123,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
         int[] microscopyFields = this.getSelectedMicroscopyFields();
         int[] selectedStructures = this.getSelectedStructures(true);
         Task t = new Task(db).setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements).setStructures(selectedStructures).setPositions(microscopyFields);
-        SwingUtilities.invokeLater(t);
-        t.printErrors();
-        /*boolean allStructures = selectedStructures.length==db.getExperiment().getStructureCount();
-        boolean needToDeleteObjects = preProcess || reRunPreProcess || segmentAndTrack;
-        boolean deleteAll =  needToDeleteObjects && allStructures && microscopyFields.length==db.getExperiment().getPositionCount();
-        if (deleteAll) db.deleteAllObjects();
-        boolean deleteAllField = needToDeleteObjects && allStructures && !deleteAll;
-        logger.debug("Run actions: preProcess: {}, rePreProcess: {}, segmentAndTrack: {}, trackOnly: {}, runMeasurements: {}, need to delete objects: {}, delete all: {}, delete all by field: {}", preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements, needToDeleteObjects, deleteAll, deleteAllField);
-        for (int f : microscopyFields) {
-            String fieldName = db.getExperiment().getPosition(f).getName();
-            if (deleteAllField) db.getDao(fieldName).deleteAllObjects();
-            this.runAction(fieldName, preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements, needToDeleteObjects && !deleteAllField && !deleteAll);
-            if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field
-            db.getDao(fieldName).clearCache();
-            db.getExperiment().getPosition(fieldName).flushImages(true, true);
-        }
-        */
+        t.execute();
+        
         if (preProcess || reRunPreProcess || segmentAndTrack) this.reloadObjectTrees=true;
     }//GEN-LAST:event_runSelectedActionsMenuItemActionPerformed
 
@@ -2309,6 +2389,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     }//GEN-LAST:event_trackStructureJCBActionPerformed
 
     private void hostNameMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_hostNameMousePressed
+        if (this.running) return;
         if (SwingUtilities.isRightMouseButton(evt) && localFileSystemDatabaseRadioButton.isSelected()) {
             JPopupMenu menu = new JPopupMenu();
             Action chooseFile = new AbstractAction("Choose local data folder") {
@@ -2491,6 +2572,57 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
             }
         });
     }
+    
+    class ColorPanel extends javax.swing.JPanel {
+        javax.swing.JLabel label = new javax.swing.JLabel("OK!");
+        ProgressIcon icon;
+        int mask;
+        int count;
+
+        public ColorPanel(ProgressIcon icon) {
+            super(true);
+            this.icon = icon;
+            this.mask = icon.color.getRGB();
+            this.setBackground(icon.color);
+            label.setForeground(icon.color);
+            this.add(label);
+        }
+    }
+
+    class ProgressIcon implements Icon {
+        int H = 12;
+        int W = 100;
+        Color color;
+        int w;
+        Component parent;
+        
+        public ProgressIcon(Color color, javax.swing.JTabbedPane parent) {
+            this.color = color;
+            this.parent=parent;
+        }
+
+        public void setValue(int i) {
+            w = i % W;
+            parent.repaint();
+        }
+        
+        public int getMinimum() {
+            return 0;
+        }
+
+        public void paintIcon(Component c, Graphics g, int x, int y) {
+            g.setColor(color);
+            g.fillRect(x, y, w, H);
+        }
+
+        public int getIconWidth() {
+            return W;
+        }
+
+        public int getIconHeight() {
+            return H;
+        }
+    }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JPanel ControlPanel;
@@ -2504,6 +2636,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JMenuItem compactLocalDBMenuItem;
     private javax.swing.JScrollPane configurationJSP;
     private javax.swing.JPanel configurationPanel;
+    private javax.swing.JTextPane console;
     private javax.swing.JButton createSelectionButton;
     private javax.swing.JMenu dataBaseMenu;
     private javax.swing.JPanel dataPanel;
@@ -2535,7 +2668,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener {
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
+    private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane1;
+    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JRadioButtonMenuItem jsonFormatMenuItem;
     private javax.swing.JButton linkObjectsButton;

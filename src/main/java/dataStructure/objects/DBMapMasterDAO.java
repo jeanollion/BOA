@@ -60,7 +60,7 @@ public class DBMapMasterDAO implements MasterDAO {
         clearCache();
         Utils.deleteDirectory(outputPath);
         DBMapUtils.deleteDBFile(getConfigFile(dbName));
-        new File(configDir).delete(); // deletes directory only if void. 
+        new File(configDir).delete(); // deletes XP directory only if void. 
     }
     
     private void makeXPDB() {
@@ -146,6 +146,20 @@ public class DBMapMasterDAO implements MasterDAO {
             Experiment xpr = JSONUtils.parse(Experiment.class, xpString);
             xp = new Experiment(xpr.getName());
             xp.setContentFrom(xpr);
+            // check output dir
+            File out = new File(xp.getOutputDirectory());
+            if (!out.exists() || !out.isDirectory()) { // look for default output dir and set it up if exists
+                out = new File(configDir + File.separator + "Output");
+                if (out.isDirectory()) {
+                    xp.setOutputDirectory(out.getAbsolutePath());
+                    updateExperiment();
+                }
+                logger.debug("default output dir: {}, exists: {}, is Dir: {}", out.getAbsolutePath(), out.exists(), out.isDirectory());
+                
+            } 
+            if (!out.exists() || !out.isDirectory()) { // warn
+                logger.warn("No Output Directory found!");
+            }
         }
         return xp;
     }

@@ -18,6 +18,7 @@
 package boa.gui;
 
 import ij.plugin.PlugIn;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import loci.common.DebugTools;
@@ -48,14 +49,19 @@ public class IJ1_plugin implements PlugIn {
            // handle exception
         }
         System.setProperty("scijava.log.level", "warn");
+        
+        // TODO find other plugins...
+        
         //DebugTools.enableIJLogging(false);
         new GUI().setVisible(true);
-        // find other plugins...
-        /*java.awt.EventQueue.invokeLater(new Runnable() {
+        /*
+        Thread t = new Thread(new Runnable() {
             public void run() {
                 new GUI().setVisible(true);
             }
-        });*/
+        });
+        SwingUtilities.invokeLater(t);
+                */
     }
     
 }

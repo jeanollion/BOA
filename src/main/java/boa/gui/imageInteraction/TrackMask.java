@@ -17,6 +17,8 @@
  */
 package boa.gui.imageInteraction;
 
+import boa.gui.DefaultWorker;
+import boa.gui.DefaultWorker.WorkerTask;
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
 import com.google.common.collect.BiMap;
@@ -41,6 +43,7 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import utils.Pair;
 
 /**
@@ -108,6 +111,37 @@ public abstract class TrackMask extends ImageObjectInterface {
         int tpMin = parents.get(0).getFrame();
         int tpMax = parents.get(parents.size()-1).getFrame();
         track.removeIf(o -> o.key.getFrame()<tpMin || o.key.getFrame()>tpMax);
+    }
+    public abstract Image generateEmptyImage(String name, Image type);
+    
+    @Override public Image generateRawImage(final int structureIdx) {
+        Image image0 = trackObjects[0].generateRawImage(structureIdx);
+        String structureName;
+        if (GUI.hasInstance() && GUI.getDBConnection()!=null && GUI.getDBConnection().getExperiment()!=null) structureName = GUI.getDBConnection().getExperiment().getStructure(structureIdx).getName(); 
+        else structureName= structureIdx+"";
+        final Image displayImage =  generateEmptyImage("Track: Parent:"+parents.get(0)+" Raw Image of"+structureName, image0);
+        pasteImage(image0, displayImage, trackOffset[0]);
+        final double[] minAndMax = image0.getMinAndMax(null);
+        // draw image in another thread..
+        // update display every paste...
+        WorkerTask t= new WorkerTask() {
+            int count = 0;
+            @Override
+            public void run(int i) {
+                Image image = trackObjects[i].generateRawImage(structureIdx);
+                double[] mm = image.getMinAndMax(null);
+                if (mm[0]<minAndMax[0]) minAndMax[0]=mm[0];
+                if (mm[1]>minAndMax[1]) minAndMax[1]=mm[1];
+                pasteImage(image, displayImage, trackOffset[i]);
+                if (count>=updateImageFrequency || count==trackObjects.length) {
+                    ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage, minAndMax[0], (float)((1-displayMinMaxFraction) * minAndMax[0] + displayMinMaxFraction*minAndMax[1]));
+                    count=0;
+                } else count++;
+            }
+        };
+        DefaultWorker.execute(t, trackObjects.length);
+        
+        return displayImage;
     }
 
     

@@ -7,7 +7,7 @@
 
     <groupId>ljp</groupId>
     <artifactId>functional_bioimage-core</artifactId>
-    <version>0.4.7-SNAPSHOT</version>
+    <version>0.5.1-SNAPSHOT</version>
 
     <name>functional_bioimage-core</name>
     <description>Bacteria Analyzer</description>
@@ -280,14 +280,14 @@
                     </archive>
                 </configuration>
             </plugin>
-            <!--plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>2.19.1</version>
                     <configuration>
                       <skipTests>true</skipTests>
                     </configuration>
-              </plugin-->
+              </plugin>
         </plugins>
         <directory>target</directory>
         <outputDirectory>target/classes</outputDirectory>

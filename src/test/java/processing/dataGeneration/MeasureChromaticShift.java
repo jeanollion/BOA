@@ -45,7 +45,7 @@ public class MeasureChromaticShift {
         db.reset();
         db.setExperiment(xp);
         Task t = new Task("chromaticShift").setAllActions().addExtractMeasurementDir("/home/jollion/Documents/LJP/Analyse/ChromaticShift", 0);
-        t.run();
+        t.runTask();
     }
     private static Experiment generateXP(final double[] thresholds, String inputDirectory, String outputDirectory) {
         Experiment xp = new Experiment("Chromatic Shift");

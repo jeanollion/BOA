@@ -56,7 +56,9 @@ public class TrackTreeController {
         for (int s = 0; s<db.getExperiment().getStructureCount(); ++s) allGeneratorS.put(s, new TrackTreeGenerator(db, this));
         displayedGeneratorS=new TreeMap<Integer, TrackTreeGenerator>();
     }
-
+    public void setEnabled(boolean enabled) {
+        for (TrackTreeGenerator t : allGeneratorS.values()) t.setEnabled(enabled);
+    }
     public boolean isUpdateRoiDisplayWhenSelectionChange() {
         return updateRoiDisplayWhenSelectionChange;
     }

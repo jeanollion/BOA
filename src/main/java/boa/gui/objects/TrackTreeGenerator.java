@@ -74,7 +74,9 @@ public class TrackTreeGenerator {
         this.db = db;
         this.controller=controller;
     }
-    
+    public void setEnabled(boolean enabled) {
+        if (tree!=null) tree.setEnabled(enabled);
+    }
     public ObjectDAO getObjectDAO(String fieldName) {
         return db.getDao(fieldName);
     }

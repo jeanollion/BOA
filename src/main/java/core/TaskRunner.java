@@ -50,7 +50,7 @@ public class TaskRunner {
         //List<Task> tasks = getTasks();
         //List<Task> tasks = getFluoTasks();
         //for (Task t : tasks) t.isValid();
-        for (Task t : tasks) if (t.isValid()) t.run();
+        for (Task t : tasks) if (t.isValid()) t.runTask();
         logger.info("All tasks performed! See errors below:");
         for (Task t : tasks) t.printErrors();
     }

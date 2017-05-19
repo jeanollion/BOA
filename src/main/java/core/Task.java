@@ -18,17 +18,23 @@
 package core;
 
 import boa.gui.DBUtil;
+import boa.gui.GUI;
+import boa.gui.GUIInterface;
 import boa.gui.PropertyUtils;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import static core.TaskRunner.logger;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
+import ij.IJ;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import javax.swing.SwingWorker;
 import measurement.MeasurementKeyObject;
 import measurement.extraction.DataExtractor;
 import org.apache.commons.lang.ArrayUtils;
@@ -40,15 +46,37 @@ import utils.Utils;
  *
  * @author jollion
  */
-public class Task implements Runnable {
-        final String dbName, dir;
+public class Task extends SwingWorker<Integer, String> {
+        String dbName, dir;
         boolean preProcess, segmentAndTrack, trackOnly, measurements;
         List<Integer> positions;
         int[] structures;
         List<Pair<String, int[]>> extrackMeasurementDir = new ArrayList<>();
         List<Pair<String, Exception>> errors = new ArrayList<>();
         MasterDAO db;
+        int subTaskCounter = 0;
+        int subTaskNumber;
+        GUIInterface gui;
+        private Task() {
+            if (GUI.hasInstance()) gui = GUI.getInstance();
+            if (gui!=null) {
+                addPropertyChangeListener(new PropertyChangeListener() {
+                    @Override    
+                    public void propertyChange(PropertyChangeEvent evt) {
+                        if ("progress".equals(evt.getPropertyName())) {
+                            int progress = (Integer) evt.getNewValue();
+                            gui.setProgress(progress);
+                            
+                            //if (IJ.getInstance()!=null) IJ.getInstance().getProgressBar().show(progress, 100);
+                            //logger.ingo("progress: {}%", i);
+                                //gui.setProgress((Integer) evt.getNewValue());
+                        }
+                    }
+                });
+            }
+        }
         public Task(MasterDAO db) {
+            this();
             this.db=db;
             this.dbName=db.getDBName();
             this.dir=db.getDir();
@@ -57,6 +85,7 @@ public class Task implements Runnable {
             this(dbName, null);
         }
         public Task(String dbName, String dir) {
+            this();
             this.dbName=dbName;
             if (dir!=null && !"".equals(dir)) this.dir=dir;
             else { // look in local path
@@ -106,6 +135,7 @@ public class Task implements Runnable {
             this.measurements=measurements;
             return this;
         }
+        
         public Task setPositions(int... positions) {
             if (positions!=null && positions.length>0) this.positions=Utils.toList(positions);
             return this;
@@ -179,23 +209,36 @@ public class Task implements Runnable {
             if (!errors.isEmpty()) logger.error("Errors for Task: {}", toString());
             for (Pair<String, Exception> e : errors) logger.error(e.key, e.value);
         }
-        @Override
-        public void run() {
+        private void countSubTasks() {
+            this.subTaskNumber=0;
+            // preProcess: 
+            if (preProcess) subTaskNumber += positions.size();
+            if (this.segmentAndTrack || this.trackOnly) subTaskNumber += positions.size() * structures.length;
+            if (this.measurements) subTaskNumber += positions.size();
+            subTaskNumber+=extrackMeasurementDir.size();
+        }
+        public void runTask() {
+            if (gui!=null) gui.setRunning(true);
+            publish("init db...");
             initDB();
+            publish("clering cache...");
             db.clearCache();
             ImageWindowManagerFactory.getImageManager().flush();
             
             if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
             if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
-            
+            publish("deleting objects...");
             boolean needToDeleteObjects = preProcess || segmentAndTrack;
             boolean deleteAll =  needToDeleteObjects && structures.length==db.getExperiment().getStructureCount() && positions.size()==db.getExperiment().getPositionCount();
             if (deleteAll) db.deleteAllObjects();
             boolean deleteAllField = needToDeleteObjects && structures.length==db.getExperiment().getStructureCount() && !deleteAll;
             logger.info("Run task: db: {} preProcess: {}, segmentAndTrack: {}, trackOnly: {}, runMeasurements: {}, need to delete objects: {}, delete all: {}, delete all by field: {}", dbName, preProcess, segmentAndTrack, trackOnly, measurements, needToDeleteObjects, deleteAll, deleteAllField);
             
+            countSubTasks();
+            publish("number of subtasks "+subTaskNumber);
             for (int pIdx : positions) {
                 String position = db.getExperiment().getPosition(pIdx).getName();
+                
                 try {
                     run(position, deleteAllField);
                 } catch (Exception e) {
@@ -208,57 +251,86 @@ public class Task implements Runnable {
             db.clearCache();
             db=null;
         }
-        private void run(String position, boolean deleteAllField) {
-            
-            if (deleteAllField) db.getDao(position).deleteAllObjects();
-            if (preProcess) {
-                logger.info("Pre-Processing: DB: {}, Position: {}", dbName, position);
-                Processor.preProcessImages(db.getExperiment().getPosition(position), db.getDao(position), true, preProcess);
-                db.getExperiment().getPosition(position).flushImages(true, false);
-            }
-            if (segmentAndTrack || trackOnly) {
-                logger.info("Processing: DB: {}, Position: {}", dbName, position);
-                List<Pair<String, Exception>> e = Processor.processAndTrackStructures(db.getDao(position), true, trackOnly, structures);
-                errors.addAll(e);
-            }
-            if (measurements) {
-                logger.info("Measurements: DB: {}, Field: {}", dbName, position);
-                db.getDao(position).deleteAllMeasurements();
-                List<Pair<String, Exception>> e = Processor.performMeasurements(db.getDao(position));
-                errors.addAll(e);
-            }
-            if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field
-            db.getDao(position).clearCache();
-            db.getExperiment().getPosition(position).flushImages(true, true);
-            db.getSelectionDAO().clearCache();
-            System.gc();
+    private void run(String position, boolean deleteAllField) {
+        publish("Position: "+position);
+        if (deleteAllField) db.getDao(position).deleteAllObjects();
+        if (preProcess) {
+            publish("Pre-Processing: DB: "+dbName+"Position: "+position);
+            logger.info("Pre-Processing: DB: {}, Position: {}", dbName, position);
+            Processor.preProcessImages(db.getExperiment().getPosition(position), db.getDao(position), true, preProcess);
+            db.getExperiment().getPosition(position).flushImages(true, false);
+            incrementProgress();
         }
-        private void extract(String dir, int[] structures) {
-            if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
-            String file = dir+File.separator+db.getDBName()+Utils.toStringArray(structures, "_", "", "_")+".xls";
-            logger.info("measurements will be extracted to: {}", file);
-            Map<Integer, String[]> keys = db.getExperiment().getAllMeasurementNamesByStructureIdx(MeasurementKeyObject.class, structures);
-            DataExtractor.extractMeasurementObjects(db, file, getPositionNames(), keys);
+        if (segmentAndTrack || trackOnly) {
+            logger.info("Processing: DB: {}, Position: {}", dbName, position);
+            for (int s : structures) { // TODO take code from processor
+                publish("Processing structure: "+s);
+                List<Pair<String, Exception>> e = Processor.processAndTrackStructures(db.getDao(position), true, trackOnly, s);
+                errors.addAll(e);
+                incrementProgress();
+            }
         }
+        if (measurements) {
+            publish("Measurements...");
+            logger.info("Measurements: DB: {}, Field: {}", dbName, position);
+            db.getDao(position).deleteAllMeasurements();
+            List<Pair<String, Exception>> e = Processor.performMeasurements(db.getDao(position));
+            errors.addAll(e);
+            incrementProgress();
+        }
+        if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field
+        db.getDao(position).clearCache();
+        db.getExperiment().getPosition(position).flushImages(true, true);
+        db.getSelectionDAO().clearCache();
+        System.gc();
+    }
+    private void extract(String dir, int[] structures) {
+        if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
+        String file = dir+File.separator+db.getDBName()+Utils.toStringArray(structures, "_", "", "_")+".xls";
+        publish("extracting measurements from structures: "+Utils.toStringArray(structures));
+        logger.info("measurements will be extracted to: {}", file);
+        Map<Integer, String[]> keys = db.getExperiment().getAllMeasurementNamesByStructureIdx(MeasurementKeyObject.class, structures);
+        DataExtractor.extractMeasurementObjects(db, file, getPositionNames(), keys);
+        incrementProgress();
+    }
         private List<String> getPositionNames() {
             if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
             List<String> res = new ArrayList<>(positions.size());
             for (int i : positions) res.add(db.getExperiment().getPosition(i).getName());
             return res;
         }
-        @Override public String toString() {
-            String res =  "db: "+dbName;
-            if (preProcess) res+="/preProcess/";
-            if (segmentAndTrack) res+="/segmentAndTrack/";
-            else if (trackOnly) res+="/trackOnly/";
-            if (measurements) res+="/measurements/";
-            if (structures!=null) res+="/structures:"+ArrayUtils.toString(structures)+"/";
-            if (positions!=null) res+="/positions:"+ArrayUtils.toString(positions)+"/";
-            if (!extrackMeasurementDir.isEmpty()) {
-                res+= "/Extract: ";
-                for (Pair<String, int[]> p : this.extrackMeasurementDir) res+=p.key+ "="+ArrayUtils.toString(res);
-                res+="/";
-            }
-            return res;
+    @Override public String toString() {
+        String res =  "db: "+dbName;
+        if (preProcess) res+="/preProcess/";
+        if (segmentAndTrack) res+="/segmentAndTrack/";
+        else if (trackOnly) res+="/trackOnly/";
+        if (measurements) res+="/measurements/";
+        if (structures!=null) res+="/structures:"+ArrayUtils.toString(structures)+"/";
+        if (positions!=null) res+="/positions:"+ArrayUtils.toString(positions)+"/";
+        if (!extrackMeasurementDir.isEmpty()) {
+            res+= "/Extract: ";
+            for (Pair<String, int[]> p : this.extrackMeasurementDir) res+=p.key+ "="+ArrayUtils.toString(res);
+            res+="/";
         }
+        return res;
     }
+    private void incrementProgress() {
+        setProgress(100*(++subTaskCounter)/subTaskNumber);
+    }
+    @Override
+    protected Integer doInBackground() throws Exception {
+        this.runTask();
+        return this.errors.size();
+    }
+    @Override
+    protected void process(List<String> strings) {
+        if (gui!=null) for (String s : strings) gui.setMessage(s);
+        for (String s : strings) logger.info(s);
+    }
+    @Override 
+    public void done() {
+        this.publish("Job done. Errors: "+this.errors.size());
+        this.printErrors();
+        if (gui!=null) gui.setRunning(false);
+    }
+}
