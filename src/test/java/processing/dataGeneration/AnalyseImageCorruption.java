@@ -88,7 +88,7 @@ public class AnalyseImageCorruption {
     private static int[] getCorruptedFrames(Experiment xp, String position) {
         InputImages in = xp.getPosition(position).getInputImages();
         List<Integer> corrupted = new ArrayList<>();
-        for (int t = 0; t<in.getTimePointNumber(); ++t) {
+        for (int t = 0; t<in.getFrameNumber(); ++t) {
             for (int c = 0; c<in.getChannelNumber(); ++c) {
                 try {
                     Image im = in.getImage(c, t);
@@ -103,7 +103,7 @@ public class AnalyseImageCorruption {
                 }
             }
         }
-        corrupted.add(in.getTimePointNumber());
+        corrupted.add(in.getFrameNumber());
         in.flush();
         return Utils.toArray(corrupted, false);
     }

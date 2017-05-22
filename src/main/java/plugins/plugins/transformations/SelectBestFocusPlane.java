@@ -49,7 +49,7 @@ public class SelectBestFocusPlane implements Transformation {
 
     public void computeConfigurationData(final int channelIdx, final InputImages inputImages) {
         final double scale = gradientScale.getValue().doubleValue();
-        final Integer[] conf = new Integer[inputImages.getTimePointNumber()];
+        final Integer[] conf = new Integer[inputImages.getFrameNumber()];
         if (inputImages.getSizeZ(channelIdx)>1) {
             final ThreadRunner tr = new ThreadRunner(0, conf.length, 0);
             for (int i = 0; i<tr.threads.length; i++) {

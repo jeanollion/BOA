@@ -18,7 +18,12 @@
 package boa.gui.imageInteraction;
 
 import image.BoundingBox;
+import static image.IJImageWrapper.getStackIndex;
 import image.Image;
+import static image.Image.logger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiFunction;
 
 /**
  *
@@ -36,6 +41,28 @@ public interface ImageDisplayer<T> {
     public void setDisplayRange(BoundingBox bounds, Image image);
     public T getCurrentImage();
     public Image getCurrentImage2();
+    public Image[][] getCurrentImageCT();
     public void flush();
+    //public int[] getFCZCount(T image);
     //public boolean isVisible(Image image);
+    //public Image[][] reslice(Image image, int[] FCZCount);
+    
+    static Image[][] reslice(Image image, int[] FCZCount, BiFunction<int[], int[], Integer> getStackIndex) {
+        if (image.getSizeZ()!=FCZCount[0]*FCZCount[1]*FCZCount[2]) {
+            ImageWindowManagerFactory.showImage(image.setName("slices: "+image.getSizeZ()));
+            throw new IllegalArgumentException("Wrong number of images ("+image.getSizeZ()+" instead of "+FCZCount[0]*FCZCount[1]*FCZCount[2]);
+        }
+        logger.debug("reslice: FCZ:{}", FCZCount);
+        Image[][] resTC = new Image[FCZCount[1]][FCZCount[0]];
+        for (int f = 0; f<FCZCount[0]; ++f) {
+            for (int c = 0; c<FCZCount[1]; ++c) {
+                List<Image> imageSlices = new ArrayList<>(FCZCount[2]);
+                for (int z = 0; z<FCZCount[2]; ++z) {
+                    imageSlices.add(image.getZPlane(getStackIndex.apply(new int[]{f, c, z}, FCZCount)));
+                }
+                resTC[c][f] = Image.mergeZPlanes(imageSlices);
+            }
+        }
+        return resTC;
+    }
 }

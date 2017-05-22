@@ -151,9 +151,13 @@ public class DBMapMasterDAO implements MasterDAO {
     public Experiment getExperiment() {
         if (this.xp==null) {
             if (xpDB.isClosed()) makeXPDB();
-            if (xpMap.isEmpty()) return null;
+            if (xpMap.isEmpty()) {
+                logger.warn("Empty map");
+                return null;
+            }
             String xpString = xpMap.get("config");
             Experiment xpr = JSONUtils.parse(Experiment.class, xpString);
+            
             xp = new Experiment(xpr.getName());
             xp.setContentFrom(xpr);
             // check output dir

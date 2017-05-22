@@ -29,7 +29,7 @@ import java.util.List;
  */
 public interface InputImages {
     public Image getImage(int channelIdx, int timePoint);
-    public int getTimePointNumber();
+    public int getFrameNumber();
     public int getChannelNumber();
     public int getDefaultTimePoint();
     public int getSizeZ(int channelIdx);
@@ -40,7 +40,7 @@ public interface InputImages {
         if (numberOfFramesToAverage<=1) return images.getImage(channelIdx, frame);
         List<Image> imagesToAv = new ArrayList<>(numberOfFramesToAverage);
         int fMin = Math.max(0, frame-numberOfFramesToAverage/2);
-        int fMax = Math.min(images.getTimePointNumber(), fMin+numberOfFramesToAverage);
+        int fMax = Math.min(images.getFrameNumber(), fMin+numberOfFramesToAverage);
         if (fMax-fMin<numberOfFramesToAverage) fMin = Math.max(0, fMax-numberOfFramesToAverage);
         for (int f = fMin; f<fMax; ++f) imagesToAv.add(images.getImage(channelIdx, f));
         return ImageOperations.meanZProjection(Image.mergeZPlanes(imagesToAv));

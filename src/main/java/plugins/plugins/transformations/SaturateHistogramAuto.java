@@ -58,7 +58,7 @@ public class SaturateHistogramAuto implements Transformation {
     
     @Override
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
-        int tpMax = inputImages.getTimePointNumber();
+        int tpMax = inputImages.getFrameNumber();
         double[] back = new double[3];
         double[] fore = new double[3];
         for (int t = 0; t<tpMax; ++t) {

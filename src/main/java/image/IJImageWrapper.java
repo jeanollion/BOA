@@ -20,6 +20,9 @@ package image;
 import ij.ImagePlus;
 import ij.ImageStack;
 import ij.measure.Calibration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiFunction;
 
 /**
  *
@@ -28,9 +31,10 @@ import ij.measure.Calibration;
 public class IJImageWrapper {
     
     public static Image wrap(ImagePlus img) {
+        int slices = img.getNSlices() * img.getNFrames() * img.getNChannels();
         switch(img.getBitDepth()) {
             case 8:
-                byte[][] pix8 = new byte[img.getNSlices()][];
+                byte[][] pix8 = new byte[slices][];
                 if (img.getImageStack() != null) {
                     for (int i = 0; i < pix8.length; ++i) {
                         pix8[i] = (byte[]) img.getImageStack().getPixels(i + 1);
@@ -40,7 +44,7 @@ public class IJImageWrapper {
                 }
                 return new ImageByte(img.getTitle(), img.getWidth(), pix8);
             case 16:
-                short[][] pix16 = new short[img.getNSlices()][];
+                short[][] pix16 = new short[slices][];
                 if (img.getImageStack() != null) {
                     for (int i = 0; i < pix16.length; ++i) {
                         pix16[i] = (short[]) img.getImageStack().getPixels(i + 1);
@@ -50,7 +54,7 @@ public class IJImageWrapper {
                 }
                 return new ImageShort(img.getTitle(), img.getWidth(), pix16);
             case 32:
-                float[][] pix32 = new float[img.getNSlices()][];
+                float[][] pix32 = new float[slices][];
                 if (img.getImageStack() != null) {
                     for (int i = 0; i < pix32.length; ++i) {
                         pix32[i] = (float[]) img.getImageStack().getPixels(i + 1);
@@ -103,5 +107,25 @@ public class IJImageWrapper {
         //cal.zOrigin=image.getOffsetZ();
         ip.setCalibration(cal);
         return ip;
+    }
+    /**
+     * 
+     * @param channel 0-based index
+     * @param slice
+     * @param frame
+     * @param FCZCount
+     * @return 
+     */
+    public static int getStackIndex(int channel, int slice, int frame, int[] FCZCount) {	
+        if (channel<0) channel = 0;
+    	if (channel>=FCZCount[1]) channel = FCZCount[1]-1;
+    	if (slice<0) slice = 0;
+    	if (slice>=FCZCount[2]) slice = FCZCount[2]-1;
+    	if (frame<0) frame = 0;
+    	if (frame>=FCZCount[0]) frame = FCZCount[0]-1;
+        return frame*FCZCount[1]*FCZCount[2] + slice*FCZCount[1] + channel;
+    }
+    public static BiFunction<int[], int[], Integer> getStackIndexFunction() {
+        return (idx, count) -> getStackIndex(idx[1], idx[2], idx[0], count);
     }
 }

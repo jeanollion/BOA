@@ -110,10 +110,10 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         return images.singleFrame(channelIdx);
     }
     public InputImagesImpl getInputImages() {
-        if (inputImages==null || inputImages.getTimePointNumber()!=getTimePointNumber(false)) {
+        if (inputImages==null || inputImages.getFrameNumber()!=getTimePointNumber(false)) {
             synchronized(this) {
-                if (inputImages==null || inputImages.getTimePointNumber()!=getTimePointNumber(false)) {
-                    logger.debug("generate input images with {} frames (old: {}) ", getTimePointNumber(false), inputImages!=null?inputImages.getTimePointNumber() : "null");
+                if (inputImages==null || inputImages.getFrameNumber()!=getTimePointNumber(false)) {
+                    logger.debug("generate input images with {} frames (old: {}) ", getTimePointNumber(false), inputImages!=null?inputImages.getFrameNumber() : "null");
                     ImageDAO dao = getExperiment().getImageDAO();
                     if (dao==null || images==null) return null;
                     int tpOff = getStartTrimFrame();

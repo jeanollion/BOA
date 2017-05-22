@@ -50,7 +50,7 @@ public class InputImagesImpl implements InputImages {
         return new InputImagesImpl(imageCTDup, defaultTimePoint);
     }
     
-    @Override public int getTimePointNumber() {return frameNumber;}
+    @Override public int getFrameNumber() {return frameNumber;}
     @Override public int getChannelNumber() {return imageCT.length;}
     @Override public int getDefaultTimePoint() {return defaultTimePoint;}
     @Override public int getSizeZ(int channelIdx) {return imageCT[channelIdx][0].imageSources.getSizeZ(channelIdx);}
@@ -80,7 +80,7 @@ public class InputImagesImpl implements InputImages {
     public void addTransformation(int inputChannel, int[] channelIndicies, Transformation transfo) {
         if (channelIndicies!=null) for (int c : channelIndicies) addTransformation(c, transfo);
         else {
-            if (transfo instanceof Transformation &&  ((Transformation)transfo).getOutputChannelSelectionMode()==Transformation.SelectionMode.SAME) addTransformation(inputChannel, transfo);
+            if (transfo.getOutputChannelSelectionMode()==Transformation.SelectionMode.SAME) addTransformation(inputChannel, transfo);
             else for (int c = 0; c<getChannelNumber(); ++c) addTransformation(c, transfo);
         }
     }
@@ -97,19 +97,19 @@ public class InputImagesImpl implements InputImages {
         return imageCT[channelIdx][timePoint].getImage();
     }
     public Image[][] getImagesTC() {
-        return getImagesTC(0, this.getTimePointNumber());
+        return getImagesTC(0, this.getFrameNumber());
     }
     public Image[][] getImagesTC(int frameMin, int frameMaxExcluded, int... channels) {
         if (channels==null || channels.length==0) channels = ArrayUtil.generateIntegerArray(this.getChannelNumber());
-        if (frameMin>=this.getTimePointNumber()) {
-            frameMin=this.getTimePointNumber()-1;
-            frameMaxExcluded = this.getTimePointNumber();
+        if (frameMin>=this.getFrameNumber()) {
+            frameMin=this.getFrameNumber()-1;
+            frameMaxExcluded = this.getFrameNumber();
         }
         if (frameMaxExcluded<frameMin) {
             frameMin = 0;
-            frameMaxExcluded = getTimePointNumber();
+            frameMaxExcluded = getFrameNumber();
         } else if (frameMaxExcluded==frameMin) frameMaxExcluded+=1;
-        if (frameMaxExcluded>=this.getTimePointNumber()) frameMaxExcluded = this.getTimePointNumber();
+        if (frameMaxExcluded>=this.getFrameNumber()) frameMaxExcluded = this.getFrameNumber();
         Image[][] imagesTC = new Image[frameMaxExcluded-frameMin][channels.length];
         int cIdx = 0;
         for (int channelIdx : channels) {
@@ -156,7 +156,7 @@ public class InputImagesImpl implements InputImages {
         }
         */
         long tEnd = System.currentTimeMillis();
-        logger.debug("apply transformation & save: total time: {}, for {} time points and {} channels", tEnd-tStart, getTimePointNumber(), cCount );
+        logger.debug("apply transformation & save: total time: {}, for {} time points and {} channels", tEnd-tStart, getFrameNumber(), cCount );
     }
     
     public void deleteFromDAO() {
@@ -182,7 +182,7 @@ public class InputImagesImpl implements InputImages {
      */
     public void subSetTimePoints(int tStart, int tEnd) {
         if (tStart<0) tStart=0; 
-        if (tEnd>=getTimePointNumber()) tEnd = getTimePointNumber()-1;
+        if (tEnd>=getFrameNumber()) tEnd = getFrameNumber()-1;
         InputImage[][] newImageCT = new InputImage[this.getChannelNumber()][];
         
         for (int c=0; c<getChannelNumber(); ++c) {

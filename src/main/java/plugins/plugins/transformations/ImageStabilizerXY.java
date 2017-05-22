@@ -112,7 +112,7 @@ public class ImageStabilizerXY implements Transformation {
         
         //new IJImageDisplayer().showImage(imageRef.setName("ref image"));
         //if (true) return;
-        final Double[][] translationTXYArray = new Double[inputImages.getTimePointNumber()][];
+        final Double[][] translationTXYArray = new Double[inputImages.getFrameNumber()][];
       
         ccdSegments(channelIdx, inputImages, segmentLength.getValue().intValue(), tRef, translationTXYArray, maxIterations, tolerance);
         
@@ -124,13 +124,13 @@ public class ImageStabilizerXY implements Transformation {
     
     protected void ccdSegments(final int channelIdx, final InputImages inputImages, int segmentLength, int tRef, final Double[][] translationTXYArray, final int maxIterations, final double tolerance) {
         if (segmentLength<2) segmentLength = 2;
-        int nSegments = (int)(0.5 +(double)(inputImages.getTimePointNumber()-1) / (double)segmentLength) ;
+        int nSegments = (int)(0.5 +(double)(inputImages.getFrameNumber()-1) / (double)segmentLength) ;
         if (nSegments<1) nSegments=1;
         int[][] segments = new int[nSegments][4]; // tStart, tEnd, tRef, nThreads
         if (debug) logger.debug("n segment: {}, {}", segments.length);
         for (int i = 0; i<nSegments; ++i) {
             segments[i][0] = i==0 ? 0 : segments[i-1][1]+1;
-            segments[i][1] = i==segments.length-1 ? inputImages.getTimePointNumber()-1 : segments[i][0]+segmentLength-1;
+            segments[i][1] = i==segments.length-1 ? inputImages.getFrameNumber()-1 : segments[i][0]+segmentLength-1;
             segments[i][2] = i==0 ? Math.min(Math.max(0, tRef), segments[i][1]) : segments[i-1][1]; 
             if (debug) logger.debug("segment: {}, {}", i, segments[i]);
         }
@@ -211,7 +211,7 @@ public class ImageStabilizerXY implements Transformation {
         if (a<1) trans  = new FloatProcessor(imageRef.getSizeX(), imageRef.getSizeY());
         for (int t = tRef-1; t>=0; --t) translationTXYArray[t] = performCorrectionWithTemplateUpdate(channelIdx, inputImages, t, ipFloatRef, pyramids, trans, maxIterations, tolerance, a, translationTXYArray[t+1]);
         if (a<1 && tRef>0) ipFloatRef = getFloatProcessor(imageRef, true); // reset template
-        for (int t = tRef+1; t<inputImages.getTimePointNumber(); ++t) translationTXYArray[t] = performCorrectionWithTemplateUpdate(channelIdx, inputImages, t, ipFloatRef, pyramids, trans, maxIterations, tolerance, a, translationTXYArray[t-1]);
+        for (int t = tRef+1; t<inputImages.getFrameNumber(); ++t) translationTXYArray[t] = performCorrectionWithTemplateUpdate(channelIdx, inputImages, t, ipFloatRef, pyramids, trans, maxIterations, tolerance, a, translationTXYArray[t-1]);
         
     }
     
@@ -251,11 +251,11 @@ public class ImageStabilizerXY implements Transformation {
         // multithreaded version: 
         // cut in time segments
         int nThreads = ThreadRunner.getMaxCPUs();
-        int length = (int)((double)inputImages.getTimePointNumber() / (double)nThreads) ;
+        int length = (int)((double)inputImages.getFrameNumber() / (double)nThreads) ;
         int[][] segments = new int[nThreads][2];
         for (int i = 0; i<nThreads; ++i) {
             segments[i][0] = i==0 ? 0 : segments[i-1][1]+1;
-            segments[i][1] = i==segments.length-1 ? inputImages.getTimePointNumber()-1 : segments[i][0]+length;
+            segments[i][1] = i==segments.length-1 ? inputImages.getFrameNumber()-1 : segments[i][0]+length;
             //logger.debug("segment: {}, {}", i, segments[i]);
         }
         ThreadRunner.execute(segments, false, new ThreadAction<int[]>() {
@@ -282,12 +282,12 @@ public class ImageStabilizerXY implements Transformation {
             }
         });
         // cumulative shift
-        for (int t = 1; t<inputImages.getTimePointNumber(); ++t) {
+        for (int t = 1; t<inputImages.getFrameNumber(); ++t) {
             translationTXYArray[t][0]+=translationTXYArray[t-1][0];
             translationTXYArray[t][1]+=translationTXYArray[t-1][1];
         }
         double[] shiftRef = new double[]{translationTXYArray[tRef][0], translationTXYArray[tRef][1]};
-        for (int t = 0; t<inputImages.getTimePointNumber(); ++t) {
+        for (int t = 0; t<inputImages.getFrameNumber(); ++t) {
             translationTXYArray[t][0]-=shiftRef[0];
             translationTXYArray[t][1]-=shiftRef[1];
         }

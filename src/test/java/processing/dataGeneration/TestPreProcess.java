@@ -166,7 +166,7 @@ public class TestPreProcess {
         IJImageDisplayer disp = new IJImageDisplayer();
         int channelIdx = db.getExperiment().getStructure(structureIdx).getChannelImage();
         List<Image> input = new ArrayList<Image>(tEnd-tStart+1);
-        for (int t = 0; t<images.getTimePointNumber(); ++t) input.add(images.getImage(channelIdx, t).duplicate("input"+t));
+        for (int t = 0; t<images.getFrameNumber(); ++t) input.add(images.getImage(channelIdx, t).duplicate("input"+t));
         
         List<StructureObject> roots = db.getDao(f.getName()).getRoots();
         List<Image> output = new ArrayList<Image>(tEnd-tStart+1);

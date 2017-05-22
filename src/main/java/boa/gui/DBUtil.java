@@ -18,10 +18,12 @@
 package boa.gui;
 
 import static boa.gui.GUI.logger;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
+import dataStructure.objects.MasterDAO;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -96,7 +98,7 @@ public class DBUtil {
         File f = new File(path);
         Map<String, File> configs = new HashMap<>();
         if (f.exists() && f.isDirectory()) {
-            addConfig(f, configs);
+            //addConfig(f, configs);
             File[] sub = f.listFiles(subF -> subF.isDirectory());
             for (File subF : sub) addConfig(subF, configs);
         }
@@ -109,5 +111,18 @@ public class DBUtil {
     }
     private static String removeConfig(String name) {
         return name.substring(0, name.length()-10);
+    }
+    static long minMem = 2000000000;
+    public static void checkMemoryAndFlushIfNecessary(String... exceptPositions) {
+        long freeMem= Runtime.getRuntime().freeMemory();
+        long usedMem = Runtime.getRuntime().totalMemory();
+        long totalMem = freeMem + usedMem;
+        if (freeMem<minMem || usedMem>2*minMem) {
+            
+        }
+    }
+    public static void clearMemory(MasterDAO db, String... exceptPositions) {
+        db.getSelectionDAO().clearCache();
+        ImageWindowManagerFactory.getImageManager().flush();
     }
 }

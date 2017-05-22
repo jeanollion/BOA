@@ -80,9 +80,9 @@ public class ScaleHistogramSignalExclusionY implements Transformation {
         final boolean underThreshold = this.underThreshold.getSelected();
         final boolean includeZero = !this.excludeZero.getSelected();
         final int windowSize = this.slidingWindowSize.getValue().intValue();
-        final ThreadRunner tr = new ThreadRunner(0, inputImages.getTimePointNumber());
+        final ThreadRunner tr = new ThreadRunner(0, inputImages.getFrameNumber());
         final ImageInteger[] exclusionMasks = (chExcl>=0) ?  new ImageInteger[tr.size()] : null;
-        final Double[][][] muSigmaTY = new Double[inputImages.getTimePointNumber()][][];
+        final Double[][][] muSigmaTY = new Double[inputImages.getFrameNumber()][][];
         for (int i = 0; i<tr.threads.length; i++) {
             final int trIdx = i;
             tr.threads[i] = new Thread(

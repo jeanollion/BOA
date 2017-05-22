@@ -174,6 +174,7 @@ public class ImportExportJSON {
             }
         } else if (f.getName().endsWith(".zip")) importFromZip(path, dao, config, selections, objects);
     }
+    
     public static void importFromZip(String path, MasterDAO dao, boolean config, boolean selections, boolean objects) {
         ZipReader r = new ZipReader(path);
         if (r.valid()) {

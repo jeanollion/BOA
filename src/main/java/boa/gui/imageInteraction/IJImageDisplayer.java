@@ -168,6 +168,8 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         }
         return im;
     }
+    
+    
 
     /*public void showImage(ImagePlus image) {
         if (IJ.getInstance()==null) new ImageJ();
@@ -320,9 +322,21 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         //logger.trace("get current image: {}", WindowManager.getCurrentImage());
         return WindowManager.getCurrentImage();
     }
-
+    @Override
     public Image getCurrentImage2() {
        ImagePlus curr = getCurrentImage();
        return this.getImage(curr);
+    }
+    
+    public int[] getFCZCount(ImagePlus image) {
+        return new int[]{image.getNFrames(), image.getNChannels(), image.getNSlices()};
+    }
+    
+    @Override
+    public Image[][] getCurrentImageCT() {
+        ImagePlus ip = this.getCurrentImage();
+        Image image = this.getCurrentImage2();
+        int[] FCZCount = getFCZCount(ip);
+        return ImageDisplayer.reslice(image, FCZCount, IJImageWrapper.getStackIndexFunction());
     }
 }

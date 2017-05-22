@@ -151,6 +151,7 @@ public class TransformationPluginParameter<T extends Transformation> extends Plu
                 int idx = this.getParent().getIndex(this);
                 ui.addActions(ParameterUtils.getTransformationTest("Test Transformation", f, idx, false), true);
                 ui.addActions(ParameterUtils.getTransformationTest("Test Transformation (show all steps)", f, idx, true), false);
+                ui.addActions(ParameterUtils.getTransformationTestOnCurrentImage("Test Transformation on current Image", f, idx), false);
             }            
         }
         return ui;

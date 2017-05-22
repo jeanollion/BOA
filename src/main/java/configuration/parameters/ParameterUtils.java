@@ -27,8 +27,10 @@ import core.Processor;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.PreProcessingChain;
 import dataStructure.configuration.Structure;
+import dataStructure.containers.InputImage;
 import dataStructure.containers.InputImages;
 import dataStructure.containers.InputImagesImpl;
+import dataStructure.containers.MemoryImageContainer;
 import dataStructure.objects.StructureObject;
 import image.BoundingBox;
 import image.Image;
@@ -44,6 +46,7 @@ import javax.swing.JMenuItem;
 import plugins.ParameterSetup;
 import plugins.ProcessingScheme;
 import plugins.Transformation;
+import static plugins.Transformation.SelectionMode.SAME;
 import plugins.UseMaps;
 import utils.ArrayUtil;
 import utils.Utils;
@@ -390,7 +393,7 @@ public class ParameterUtils {
                             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("before: "+tpp.getPluginName(), imagesTC);
                         }
                         Transformation transfo = tpp.instanciatePlugin();
-                        logger.debug("Test Transfo: adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}, isConfigured?: {}", transfo, transfo.getClass(), position.getName(), tpp.getInputChannel(), tpp.getOutputChannels(), transfo.isConfigured(images.getChannelNumber(), images.getTimePointNumber()));
+                        logger.debug("Test Transfo: adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}, isConfigured?: {}", transfo, transfo.getClass(), position.getName(), tpp.getInputChannel(), tpp.getOutputChannels(), transfo.isConfigured(images.getChannelNumber(), images.getFrameNumber()));
                         transfo.computeConfigurationData(tpp.getInputChannel(), images);
                         tpp.setConfigurationData(transfo.getConfigurationData());
                         images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
@@ -408,6 +411,60 @@ public class ParameterUtils {
                     }
                 }
                 
+            }
+        });
+        return item;
+    }
+    public static JMenuItem getTransformationTestOnCurrentImage(String name, MicroscopyField position, int transfoIdx) {
+        JMenuItem item = new JMenuItem(name);
+        item.setAction(new AbstractAction(item.getActionCommand()) {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                Image[][] imCT = ImageWindowManagerFactory.getImageManager().getDisplayer().getCurrentImageCT();
+                logger.debug("current image has: {} frames, {} channels, {} slices", imCT[0].length, imCT.length, imCT[0][0].getSizeZ());
+                MemoryImageContainer cont = new MemoryImageContainer(imCT);
+                logger.debug("container: {} frames, {} channels", cont.getFrameNumber(), cont.getChannelNumber());
+                InputImage[][] inputCT = new InputImage[cont.getChannelNumber()][cont.getFrameNumber()];
+                for (int t = 0; t<cont.getFrameNumber(); ++t) {
+                    for (int c = 0; c<cont.getChannelNumber(); ++c) {
+                        inputCT[c][t] = new InputImage(c, t, t, position.getName(), cont, null);
+                    }
+                }
+                InputImagesImpl images = new InputImagesImpl(inputCT, 0);
+                logger.debug("images: {} frames, {} channels", images.getFrameNumber(), images.getChannelNumber());
+                
+                PreProcessingChain ppc = position.getPreProcessingChain();
+                List<TransformationPluginParameter<Transformation>> transList = ppc.getTransformations(false);
+                TransformationPluginParameter<Transformation> tpp = transList.get(transfoIdx);
+                Transformation transfo = tpp.instanciatePlugin();
+
+                int input = tpp.getInputChannel();
+                if (images.getChannelNumber()<=input) {
+                    if (images.getChannelNumber()==1) input=0;
+                    else {
+                        logger.debug("transformation need to be applied on channel: {}, be only {} channels in current image", input, images.getChannelNumber());
+                        return;
+                    }
+                }
+                int[] output = tpp.getOutputChannels();
+                if (output!=null && output[ArrayUtil.max(output)]>=images.getChannelNumber()) {
+                    List<Integer> outputL = Utils.toList(output);
+                    outputL.removeIf(idx -> idx>=images.getChannelNumber());
+                    output = Utils.toArray(outputL, false);
+                } else if (output == null ) {
+                    if (transfo.getOutputChannelSelectionMode()==SAME) output = ArrayUtil.generateIntegerArray(images.getChannelNumber());
+                    else output = new int[]{input};
+                }
+
+                logger.debug("Test Transfo: adding transformation: {} of class: {} to field: {}, input channel:{}, output channel: {}, isConfigured?: {}", transfo, transfo.getClass(), position.getName(), input, output, transfo.isConfigured(images.getChannelNumber(), images.getFrameNumber()));
+
+                transfo.computeConfigurationData(input, images);
+                tpp.setConfigurationData(transfo.getConfigurationData());
+                images.addTransformation(input, output, transfo);
+
+                Image[][] imagesTC = images.getImagesTC(0, images.getFrameNumber(), ArrayUtil.generateIntegerArray(images.getChannelNumber()));
+                //ArrayUtil.apply(imagesTC, a -> ArrayUtil.apply(a, im -> im.duplicate()));
+                ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("after: "+tpp.getPluginName(), imagesTC);
             }
         });
         return item;
