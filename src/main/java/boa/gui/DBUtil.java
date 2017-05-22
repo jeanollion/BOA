@@ -121,8 +121,12 @@ public class DBUtil {
             
         }
     }
-    public static void clearMemory(MasterDAO db, String... exceptPositions) {
+    public static void clearMemory(MasterDAO db, String... excludedPositions) {
         db.getSelectionDAO().clearCache();
         ImageWindowManagerFactory.getImageManager().flush();
+        db.getExperiment().flushImages(true, true, excludedPositions);
+        List<String> positions = new ArrayList<>(Arrays.asList(db.getExperiment().getPositionsAsString()));
+        positions.removeAll(Arrays.asList(excludedPositions));
+        for (String p : positions) db.getDao(p).clearCache();
     }
 }

@@ -19,6 +19,7 @@ package dataStructure.configuration;
 
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
+import boa.gui.imageInteraction.IJVirtualStack;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import com.mongodb.MongoClient;
@@ -262,87 +263,27 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         JMenuItem openRawFrame, openRawAllFrames, openPreprocessedFrame, openPreprocessedAllFrames;
         Object[] actions;
         public MicroscopyFieldUI() {
-            actions = new Object[4];
-            final String[] channelNames = getExperiment().getChannelImagesAsString();
-            openRawFrame = new JMenuItem("Open Raw Input Image (default frame)");
-            actions[0] = openRawFrame;
-            openRawFrame.setAction(new AbstractAction(openRawFrame.getActionCommand()) {
-                @Override
-                public void actionPerformed(ActionEvent ae) {
-                    getExperiment().flushImages(true, true, name);
-                    Image[][] imagesTC = getInputImages().getImagesTC(defaultTimePoint.getSelectedTimePoint(), defaultTimePoint.getSelectedTimePoint()+1);
-                    ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Raw Image of Position: "+name+ " Frame: "+defaultTimePoint.getSelectedTimePoint(), imagesTC);
-                }
-            }
-            );
-            
+            actions = new Object[2];
             openRawAllFrames = new JMenuItem("Open Raw Input Frames");
-            actions[1] = openRawAllFrames;
+            actions[0] = openRawAllFrames;
             openRawAllFrames.setAction(new AbstractAction(openRawAllFrames.getActionCommand()) {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
                     getExperiment().flushImages(true, true, name);
-                    Image[][] imagesTC = getInputImages().getImagesTC();
-                    ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Raw Image of Position: "+name, imagesTC);
+                    IJVirtualStack.openVirtual(getExperiment(), name, false);
                 }
             }
             );
-            
-            /*JMenu rawInputSubMenuAll = new JMenu("Open Raw Input Images");
-            actions[1] = rawInputSubMenuAll;
-            openRawInputAll=new JMenuItem[channelNames.length];
-            for (int i = 0; i < openRawInputAll.length; i++) {
-                openRawInputAll[i] = new JMenuItem(channelNames[i]);
-                openRawInputAll[i].setAction(new AbstractAction(channelNames[i]) {
-                        @Override
-                        public void actionPerformed(ActionEvent ae) {
-                            int channelIdx = getStructureIdx(ae.getActionCommand(), channelNames);
-                            int frames = getTimePointNumber(true);
-                            Image[][] imagesTC = new Image[frames][1];
-                            for (int frame = 0; frame<frames; ++frame) imagesTC[frame][0] = getInputImages().getImage(channelIdx, frame);
-                            ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Position: "+name+" Channel: "+ae.getActionCommand(), imagesTC);
-                        }
-                    }
-                );
-                rawInputSubMenuAll.add(openRawInputAll[i]);
-            }*/
-            openPreprocessedFrame = new JMenuItem("Open Pre-processed (Default Frame)");
-            openPreprocessedFrame.setAction(new AbstractAction(openPreprocessedFrame.getActionCommand()) {
-                    @Override
-                    public void actionPerformed(ActionEvent ae) {
-                        getExperiment().flushImages(true, true, name);
-                        int channels = getExperiment().getChannelImageCount();
-                        Image[][] imagesTC = new Image[1][channels];
-                        for (int channel = 0; channel<channels; ++channel) {
-                            int frame = singleFrameChannel(channel) ? 0 :defaultTimePoint.getSelectedTimePoint();
-                            imagesTC[0][channel] = getExperiment().getImageDAO().openPreProcessedImage(channel, frame, name);
-                            if (imagesTC[0][channel]==null) return;
-                        }
-                        ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("PreProcessed Image of Position: "+name+ " Frame: "+defaultTimePoint.getSelectedTimePoint(), imagesTC);
-                    }
-                }
-            );
-            actions[2] = openPreprocessedFrame;
             openPreprocessedAllFrames = new JMenuItem("Open Pre-processed Frames");
+            actions[1] = openPreprocessedAllFrames;
             openPreprocessedAllFrames.setAction(new AbstractAction(openPreprocessedAllFrames.getActionCommand()) {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
                         getExperiment().flushImages(true, true, name);
-                        int channels = getExperiment().getChannelImageCount();
-                        int frames = getTimePointNumber(false);
-                        Image[][] imagesTC = new Image[frames][channels];
-                        for (int channel = 0; channel<channels; ++channel) {
-                            for (int frame = 0; frame<frames; ++frame) {
-                                int fr = singleFrameChannel(channel) ? 0 :frame;
-                                imagesTC[frame][channel] = getExperiment().getImageDAO().openPreProcessedImage(channel, fr, name);
-                                if (imagesTC[frame][channel]==null) return;
-                            }
-                        }
-                        ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("PreProcessed Images of Position: "+name, imagesTC);
+                        IJVirtualStack.openVirtual(getExperiment(), name, true);
                     }
                 }
             );
-            actions[3] = openPreprocessedAllFrames;
         }
         public Object[] getDisplayComponent() {
             return actions;

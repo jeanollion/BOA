@@ -19,6 +19,8 @@ package boa.gui.objects;
 
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
+import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.imageInteraction.IJVirtualStack;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import core.Processor;
@@ -257,77 +259,35 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
     }
     
     class RootTrackNodeUI {
-        JMenuItem openRawFrame, openRawAllFrames, openPreprocessedFrame, openPreprocessedAllFrames;
+        JMenuItem openRawAllFrames, openPreprocessedAllFrames;
         Object[] actions;
         JMenuItem[] openRaw;
         public RootTrackNodeUI() {
-            this.actions = new JMenuItem[5];
-            openRawFrame = new JMenuItem("Open Raw Input Image (default frame)");
-            actions[0] = openRawFrame;
-            openRawFrame.setAction(new AbstractAction(openRawFrame.getActionCommand()) {
-                @Override
-                public void actionPerformed(ActionEvent ae) {
-                    MicroscopyField f = generator.db.getExperiment().getPosition(position);
-                    Image[][] imagesTC = f.getInputImages().getImagesTC(f.getDefaultTimePoint(), f.getDefaultTimePoint()+1);
-                    ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Raw Image of Position: "+f.getName()+ " Frame: "+f.getDefaultTimePoint(), imagesTC);
-                }
-            }
-            );
+            this.actions = new JMenuItem[3];
             
             openRawAllFrames = new JMenuItem("Open Raw Input Frames");
-            actions[1] = openRawAllFrames;
+            actions[0] = openRawAllFrames;
             openRawAllFrames.setAction(new AbstractAction(openRawAllFrames.getActionCommand()) {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    MicroscopyField f = generator.db.getExperiment().getPosition(position);
-                    generator.db.getExperiment().flushImages(true, true, f.getName());
-                    Image[][] imagesTC = f.getInputImages().getImagesTC();
-                    ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("Raw Image of Position: "+f.getName(), imagesTC);
+                    generator.db.getExperiment().flushImages(true, true, position);
+                    IJVirtualStack.openVirtual(generator.getExperiment(), position, false);
                 }
             }
             );
-            
-            openPreprocessedFrame = new JMenuItem("Open Pre-processed (Default Frame)");
-            openPreprocessedFrame.setAction(new AbstractAction(openPreprocessedFrame.getActionCommand()) {
-                    @Override
-                    public void actionPerformed(ActionEvent ae) {
-                        generator.db.getExperiment().flushImages(true, true, position);
-                        int channels = generator.db.getExperiment().getChannelImageCount();
-                        Image[][] imagesTC = new Image[1][channels];
-                        MicroscopyField f = generator.db.getExperiment().getPosition(position);
-                        for (int channel = 0; channel<channels; ++channel) {
-                            int fr = f.singleFrameChannel(channel) ? 0 : f.getDefaultTimePoint();
-                            imagesTC[0][channel] = generator.db.getExperiment().getImageDAO().openPreProcessedImage(channel, fr, position);
-                            if (imagesTC[0][channel]==null) return;
-                        }
-                        ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("PreProcessed Image of Position: "+position+ " Frame: "+f.getDefaultTimePoint(), imagesTC);
-                    }
-                }
-            );
-            actions[2] = openPreprocessedFrame;
             openPreprocessedAllFrames = new JMenuItem("Open Pre-processed Frames");
+            actions[1] = openPreprocessedAllFrames;
             openPreprocessedAllFrames.setAction(new AbstractAction(openPreprocessedAllFrames.getActionCommand()) {
                     @Override
                     public void actionPerformed(ActionEvent ae) {
                         generator.db.getExperiment().flushImages(true, true, position);
-                        MicroscopyField f = generator.db.getExperiment().getPosition(position);
-                        int channels = generator.db.getExperiment().getChannelImageCount();
-                        int frames = f.getTimePointNumber(false);
-                        Image[][] imagesTC = new Image[frames][channels];
-                        for (int channel = 0; channel<channels; ++channel) {
-                            for (int frame = 0; frame<frames; ++frame) {
-                                int fr = f.singleFrameChannel(channel) ? 0 : frame;
-                                imagesTC[frame][channel] = generator.db.getExperiment().getImageDAO().openPreProcessedImage(channel, fr, position);
-                                if (imagesTC[frame][channel]==null) return;
-                            }
-                        }
-                        ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("PreProcessed Images of Position: "+position, imagesTC);
+                        IJVirtualStack.openVirtual(generator.getExperiment(), position, true);
                     }
                 }
             );
-            actions[3] = openPreprocessedAllFrames;
+            
             JMenu rawSubMenu = new JMenu("Open Raw Track Image");
-            actions[4] = rawSubMenu;
+            actions[2] = rawSubMenu;
             List<String> directRootChild = new ArrayList<String>();
             for (int sIdx = 0; sIdx<generator.db.getExperiment().getStructureCount(); ++sIdx) {
                 if (generator.db.getExperiment().getStructure(sIdx).getParentStructure()==-1) directRootChild.add(generator.db.getExperiment().getStructure(sIdx).getName());

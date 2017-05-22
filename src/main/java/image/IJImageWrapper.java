@@ -23,6 +23,7 @@ import ij.measure.Calibration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  *
@@ -125,7 +126,17 @@ public class IJImageWrapper {
     	if (frame>=FCZCount[0]) frame = FCZCount[0]-1;
         return frame*FCZCount[1]*FCZCount[2] + slice*FCZCount[1] + channel;
     }
-    public static BiFunction<int[], int[], Integer> getStackIndexFunction() {
-        return (idx, count) -> getStackIndex(idx[1], idx[2], idx[0], count);
+    public static int[] convertIndex(int n, int[] FCZCount) {
+        int[] fcz = new int[3];
+        fcz[1] = ((n-1)%FCZCount[1]);
+        fcz[2] = (((n-1)/FCZCount[1])%FCZCount[2]);
+        fcz[0] = (((n-1)/(FCZCount[1]*FCZCount[2]))%FCZCount[0]);
+        return fcz;
+    }
+    public static Function<int[], Integer> getStackIndexFunction(final int[] FCZCount) {
+        return (idx) -> getStackIndex(idx[1], idx[2], idx[0], FCZCount);
+    }
+    public static Function<Integer, int[]> getStackIndexFunctionRev(final int[] FCZCount) {
+        return idx -> convertIndex(idx, FCZCount);
     }
 }

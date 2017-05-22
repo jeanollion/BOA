@@ -29,6 +29,7 @@ import i5d.Image5D;
 import i5d.cal.ChannelDisplayProperties;
 import i5d.gui.ChannelControl;
 import ij.ImageStack;
+import ij.VirtualStack;
 import ij.WindowManager;
 import ij.gui.GUI;
 import ij.gui.ImageCanvas;
@@ -337,6 +338,6 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         ImagePlus ip = this.getCurrentImage();
         Image image = this.getCurrentImage2();
         int[] FCZCount = getFCZCount(ip);
-        return ImageDisplayer.reslice(image, FCZCount, IJImageWrapper.getStackIndexFunction());
+        return ImageDisplayer.reslice(image, FCZCount, IJImageWrapper.getStackIndexFunction(FCZCount));
     }
 }

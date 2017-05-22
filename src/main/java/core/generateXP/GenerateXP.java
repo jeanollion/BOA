@@ -414,6 +414,7 @@ public class GenerateXP {
             ps.setTrimFrames(trimFramesStart, trimFramesEnd);
             //ps.addTransformation(0, null, new SaturateHistogramAuto().setSigmas(1, 2));
             ps.addTransformation(0, null, new SaturateHistogram(350, 350));
+            ps.addTransformation(0, null, new RemoveStripesSignalExclusion(0));
             ps.addTransformation(1, null, new RemoveStripesSignalExclusion(0));
             //ps.addTransformation(1, null, new BandPass(0, 40, 0, 0)); // remove horizontal lines // min ==1 ? 
             //ps.addTransformation(1, null, new Median(1, 0)).setActivated(true); // to remove salt and pepper noise before rotation
@@ -423,7 +424,7 @@ public class GenerateXP {
             ps.addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
             ps.addTransformation(0, null, new CropMicroChannelFluo2D(30, 45, 200, 0.6, 5));
             //ps.addTransformation(1, null, new ScaleHistogramSignalExclusionY().setExclusionChannel(0)); // to remove blinking / homogenize on Y direction
-            ps.addTransformation(0, null, new ImageStabilizerXY(0, 1000, 5e-8, 20).setAdditionalTranslation(1, 1, 1)); // additional translation to correct chromatic shift
+            ps.addTransformation(0, null, new ImageStabilizerXY(1, 1000, 1e-9, 20).setAdditionalTranslation(1, 1, 1)); // additional translation to correct chromatic shift
     }
     public static void setParametersFluo(Experiment xp, boolean processing, boolean measurements) {
         Structure mc = xp.getStructure(0);
