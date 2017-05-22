@@ -111,6 +111,7 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.text.BadLocationException;
 import measurement.MeasurementKeyObject;
 import measurement.extraction.DataExtractor;
+import measurement.extraction.SelectionExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plugins.ManualSegmenter;
@@ -574,8 +575,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         trackTreeController.resetHighlight();
     }
     
-    public List<Selection> getSelectedSelections() {
-        return selectionList.getSelectedValuesList();
+    public List<Selection> getSelectedSelections(boolean returnAllIfNoneIsSelected) {
+        List<Selection> res = selectionList.getSelectedValuesList();
+        if (returnAllIfNoneIsSelected && res.isEmpty()) return db.getSelectionDAO().getSelections();
+        else return res;
     }
     
     public void setSelectedSelection(Selection sel) {
@@ -902,6 +905,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         runSelectedActionsMenuItem = new javax.swing.JMenuItem();
         runActionAllXPMenuItem = new javax.swing.JMenuItem();
         extractMeasurementMenuItem = new javax.swing.JMenuItem();
+        extractSelectionMenuItem = new javax.swing.JMenuItem();
         optionMenu = new javax.swing.JMenu();
         jMenu2 = new javax.swing.JMenu();
         deleteMeasurementsCheckBox = new javax.swing.JCheckBoxMenuItem();
@@ -1398,6 +1402,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         });
         runMenu.add(extractMeasurementMenuItem);
 
+        extractSelectionMenuItem.setText("Extract Selections");
+        extractSelectionMenuItem.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                extractSelectionMenuItemActionPerformed(evt);
+            }
+        });
+        runMenu.add(extractSelectionMenuItem);
+
         jMenuBar1.add(runMenu);
 
         optionMenu.setText("Options");
@@ -1604,7 +1616,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(tabs, javax.swing.GroupLayout.DEFAULT_SIZE, 736, Short.MAX_VALUE)
+            .addComponent(tabs)
         );
 
         pack();
@@ -2118,7 +2130,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
     private void extractMeasurementMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_extractMeasurementMenuItemActionPerformed
         if (!checkConnection()) return;
         int[] selectedStructures = this.getSelectedStructures(false);
-        String defDir = PropertyUtils.get(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR+"_"+db.getDBName(), db.getExperiment().getOutputDirectory());
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR+"_"+db.getDBName(), new File(db.getExperiment().getOutputDirectory()).getParent());
         File outputDir = Utils.chooseFile("Choose directory", defDir, FileChooser.FileChooserOption.DIRECTORIES_ONLY, this);
         if (outputDir!=null) {
             if (selectedStructures.length==0) {
@@ -2447,6 +2459,18 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         if (!checkConnection()) return;
         DBUtil.clearMemory(db);
     }//GEN-LAST:event_clearMemoryMenuItemActionPerformed
+
+    private void extractSelectionMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_extractSelectionMenuItemActionPerformed
+        if (!checkConnection()) return;
+        String defDir = PropertyUtils.get(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR+"_"+db.getDBName(), new File(db.getExperiment().getOutputDirectory()).getParent());
+        File outputDir = Utils.chooseFile("Choose directory", defDir, FileChooser.FileChooserOption.DIRECTORIES_ONLY, this);
+        if (outputDir!=null) {
+            String file = outputDir.getAbsolutePath()+File.separator+db.getDBName()+"_Selections.xls";
+            SelectionExtractor.extractSelections(db, getSelectedSelections(true), file);
+            PropertyUtils.set(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR+"_"+db.getDBName(), outputDir.getAbsolutePath());
+            PropertyUtils.set(PropertyUtils.LAST_EXTRACT_MEASUREMENTS_DIR, outputDir.getAbsolutePath());
+        }
+    }//GEN-LAST:event_extractSelectionMenuItemActionPerformed
     private void updateMongoDBBinActions() {
         boolean enableDump = false, enableRestore = false;
         String mPath = PropertyUtils.get(PropertyUtils.MONGO_BIN_PATH);
@@ -2632,6 +2656,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
     private javax.swing.JMenuItem exportWholeXPMenuItem;
     private javax.swing.JMenuItem exportXPConfigMenuItem;
     private javax.swing.JMenuItem extractMeasurementMenuItem;
+    private javax.swing.JMenuItem extractSelectionMenuItem;
     private javax.swing.JTextField hostName;
     private javax.swing.JMenuItem importConfigToCurrentExperimentMenuItem;
     private javax.swing.JMenuItem importConfigurationForSelectedPositionsMenuItem;

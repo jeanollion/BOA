@@ -390,7 +390,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                 @Override public void actionPerformed(ActionEvent e) {
                     List<StructureObject> sel = trackNode.root.generator.controller.getTreeGenerator(trackHead.getStructureIdx()).getSelectedTrackHeads();
                     SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
-                    for (Selection s : GUI.getInstance().getSelectedSelections()) {
+                    for (Selection s : GUI.getInstance().getSelectedSelections(false)) {
                         if (s.getStructureIdx()==-1 || s.getStructureIdx()==trackHead.getStructureIdx()) {
                             s.addElements(sel);
                             dao.store(s);
@@ -403,7 +403,7 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                 @Override public void actionPerformed(ActionEvent e) {
                     List<StructureObject> sel = trackNode.root.generator.controller.getTreeGenerator(trackHead.getStructureIdx()).getSelectedTrackHeads();
                     SelectionDAO dao = GUI.getDBConnection().getSelectionDAO();
-                    for (Selection s : GUI.getInstance().getSelectedSelections()) {
+                    for (Selection s : GUI.getInstance().getSelectedSelections(false)) {
                         if (s.getStructureIdx()==-1 || s.getStructureIdx()==trackHead.getStructureIdx()) {
                             s.removeElements(sel);
                             dao.store(s);

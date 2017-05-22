@@ -75,13 +75,12 @@ public class DataExtractor {
         sb.append(separator);
         sb.append("Time");
         return sb;
-
     }
-    protected StringBuilder getBaseLine(Measurements m) { // if add one key -> also add in the retrieved keys in DAO
+    protected StringBuilder getBaseLine(Measurements m, int pIdx) { // if add one key -> also add in the retrieved keys in DAO
         StringBuilder sb = new StringBuilder();
         sb.append(m.getFieldName());
         sb.append(separator);
-        sb.append(db.getExperiment().getPositionIdx(m.getFieldName()));
+        sb.append(pIdx);
         int[] idx = m.getIndices();
         sb.append(Utils.toStringArray(idx, separator, "", Selection.indexSeparator));
         for (int i : idx) { // also add in separated columns
@@ -143,12 +142,13 @@ public class DataExtractor {
             }
             String[] currentMeasurementNames = allMeasurementsSort.pollLastEntry().getValue();
             for (String fieldName : positions) {
+                int posIdx = db.getExperiment().getPositionIdx(fieldName);
                 ObjectDAO dao = db.getDao(fieldName);
                 TreeMap<Integer, List<Measurements>> parentMeasurements = new TreeMap<Integer, List<Measurements>>();
                 for (Entry<Integer, String[]> e : allMeasurementsSort.entrySet()) parentMeasurements.put(e.getKey(), dao.getMeasurements(e.getKey(), e.getValue()));
                 List<Measurements> currentMeasurements = dao.getMeasurements(currentStructureIdx, currentMeasurementNames);
                 for (Measurements m : currentMeasurements) {
-                    StringBuilder line = getBaseLine(m);
+                    StringBuilder line = getBaseLine(m, posIdx);
                     // add measurements from parents of the the current structure
                     for (Entry<Integer, List<Measurements>> e : parentMeasurements.entrySet()) {
                         Measurements key = m.getParentMeasurementKey(parentOrder[e.getKey()]);
