@@ -265,14 +265,9 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
                 double[] minAndMax = image.getMinAndMax(null);
                 minAndMax[0] = displayRange[0];
                 displayRange = minAndMax;
-            } else if (displayRange.length >= 2) {
-                if (displayRange[1] <= displayRange[0]) {
-                    double[] minAndMax = image.getMinAndMax(null);
-                    displayRange[1] = minAndMax[1];
-                }
             }
             ImagePlus ip = displayedImages.get(image);
-            ip.setDisplayRange(displayRange[0], displayRange[1]);
+            if (displayRange[0]<displayRange[1]) ip.setDisplayRange(displayRange[0], displayRange[1]);
             ip.updateAndDraw();
         }
     }

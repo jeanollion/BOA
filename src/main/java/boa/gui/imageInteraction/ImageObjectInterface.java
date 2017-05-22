@@ -55,8 +55,8 @@ public abstract class ImageObjectInterface {
     public abstract Pair<StructureObject, BoundingBox> getClickedObject(int x, int y, int z);
     public abstract void addClickedObjects(BoundingBox selection, List<Pair<StructureObject, BoundingBox>> list);
     public abstract BoundingBox getObjectOffset(StructureObject object);
-    public abstract ImageInteger generateImage();
-    public abstract void draw(ImageInteger image);
+    public abstract ImageInteger generateLabelImage();
+    public abstract void drawObjects(ImageInteger image);
     public abstract Image generateRawImage(int structureIdx);
     public abstract boolean isTimeImage();
     public int getChildStructureIdx() {return childStructureIdx;}

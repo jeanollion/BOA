@@ -135,9 +135,9 @@ public class StructureObjectMask extends ImageObjectInterface {
     }
 
     @Override
-    public ImageInteger generateImage() {
+    public ImageInteger generateLabelImage() {
         ImageInteger displayImage = ImageInteger.createEmptyLabelImage("Segmented Image of structure: " + childStructureIdx, getMaxLabel(), parent.getMaskProperties());
-        draw(displayImage);
+        drawObjects(displayImage);
         return displayImage;
     }
 
@@ -147,7 +147,7 @@ public class StructureObjectMask extends ImageObjectInterface {
     }
 
     @Override
-    public void draw(ImageInteger image) {
+    public void drawObjects(ImageInteger image) {
         if (objects == null) reloadObjects();
         for (int i = 0; i < getOffsets().length; ++i) {
             objects.get(i).getObject().drawWithoutObjectOffset(image, objects.get(i).getObject().getLabel(), offsets[i]);

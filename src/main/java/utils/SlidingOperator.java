@@ -56,6 +56,7 @@ public interface SlidingOperator<E, A, R> {
             }
         };
     }
+    
     public static <E, A, R> List<R> performSlide(List<E> list, int halfWindow, SlidingOperator<E, A, R> operator) {
         if (list.isEmpty()) return Collections.EMPTY_LIST;
         A acc = operator.instanciateAccumulator();

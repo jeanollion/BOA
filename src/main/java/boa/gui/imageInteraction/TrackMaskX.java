@@ -64,7 +64,7 @@ public class TrackMaskX extends TrackMask {
             //trackOffset[i].translate(currentOffsetX, (int)(maxParentY/2.0-trackOffset[i].getSizeY()/2.0), (int)(maxParentZ/2.0-trackOffset[i].getSizeZ()/2.0)); // Y & Z middle of parent track
             trackOffset[i].translate(currentOffsetX, 0, 0); // Y & Z up of parent track
             trackObjects[i] = new StructureObjectMask(parentTrack.get(i), childStructureIdx, trackOffset[i]);
-            currentOffsetX+=intervalX+trackOffset[i].getSizeX();
+            currentOffsetX+=interval+trackOffset[i].getSizeX();
             logger.trace("current index: {}, current bounds: {} current offsetX: {}", i, trackOffset[i], currentOffsetX);
         }
         for (StructureObjectMask m : trackObjects) m.getObjects();
@@ -100,7 +100,7 @@ public class TrackMaskX extends TrackMask {
     }
 
     @Override
-    public ImageInteger generateImage() {
+    public ImageInteger generateLabelImage() {
         int maxLabel = 0; 
         for (StructureObjectMask o : trackObjects) {
             int label = o.getMaxLabel();
@@ -110,7 +110,7 @@ public class TrackMaskX extends TrackMask {
         if (GUI.hasInstance() && GUI.getDBConnection()!=null && GUI.getDBConnection().getExperiment()!=null) structureName = GUI.getDBConnection().getExperiment().getStructure(childStructureIdx).getName(); 
         else structureName= childStructureIdx+"";
         final ImageInteger displayImage = ImageInteger.createEmptyLabelImage("Track: Parent:"+parents+" Segmented Image of: "+structureName, maxLabel, new BlankMask("", trackOffset[trackOffset.length-1].getxMax()+1, this.maxParentY, this.maxParentZ).setCalibration(parents.get(0).getMaskProperties().getScaleXY(), parents.get(0).getMaskProperties().getScaleZ()));
-        draw(displayImage);
+        drawObjects(displayImage);
         return displayImage;
     }
     @Override 

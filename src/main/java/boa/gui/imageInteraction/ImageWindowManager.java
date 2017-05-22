@@ -234,7 +234,7 @@ public abstract class ImageWindowManager<T, U, V> {
                 //logger.debug("updating image: {}", e.getKey().getName());
                 if (isLabelImage.get(e.getKey())) {
                     ImageOperations.fill(((ImageInteger)e.getKey()), 0, null);
-                    i.draw((ImageInteger)e.getKey());
+                    i.drawObjects((ImageInteger)e.getKey());
                 }
                 hideAllRois(null, true, true);
                 if (!track) getDisplayer().updateImageDisplay(e.getKey());

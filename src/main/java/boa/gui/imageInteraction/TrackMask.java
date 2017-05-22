@@ -54,7 +54,7 @@ public abstract class TrackMask extends ImageObjectInterface {
     BoundingBox[] trackOffset;
     StructureObjectMask[] trackObjects;
     static final int updateImageFrequency=10;
-    static final int intervalX=0; //5
+    static final int interval=0; 
     static final float displayMinMaxFraction = 0.9f;
     
     public TrackMask(List<StructureObject> parentTrack, int childStructureIdx) {
@@ -115,6 +115,12 @@ public abstract class TrackMask extends ImageObjectInterface {
     public abstract Image generateEmptyImage(String name, Image type);
     
     @Override public Image generateRawImage(final int structureIdx) {
+        /*long t00 = System.currentTimeMillis();
+        for (int i =0; i<trackObjects.length; ++i) {
+            trackObjects[i].generateRawImage(structureIdx);
+        }
+        long t01 = System.currentTimeMillis();
+        logger.debug("total loading time: {}", t01-t00);*/
         Image image0 = trackObjects[0].generateRawImage(structureIdx);
         String structureName;
         if (GUI.hasInstance() && GUI.getDBConnection()!=null && GUI.getDBConnection().getExperiment()!=null) structureName = GUI.getDBConnection().getExperiment().getStructure(structureIdx).getName(); 
@@ -122,21 +128,31 @@ public abstract class TrackMask extends ImageObjectInterface {
         final Image displayImage =  generateEmptyImage("Track: Parent:"+parents.get(0)+" Raw Image of"+structureName, image0);
         pasteImage(image0, displayImage, trackOffset[0]);
         final double[] minAndMax = image0.getMinAndMax(null);
+        //long[] totalTime = new long[1];
         // draw image in another thread..
         // update display every paste...
         WorkerTask t= new WorkerTask() {
             int count = 0;
             @Override
             public void run(int i) {
+                //long t0 = System.currentTimeMillis();
                 Image image = trackObjects[i].generateRawImage(structureIdx);
+                //long t1 = System.currentTimeMillis();
                 double[] mm = image.getMinAndMax(null);
                 if (mm[0]<minAndMax[0]) minAndMax[0]=mm[0];
                 if (mm[1]>minAndMax[1]) minAndMax[1]=mm[1];
+                //long t2 = System.currentTimeMillis();
                 pasteImage(image, displayImage, trackOffset[i]);
-                if (count>=updateImageFrequency || count==trackObjects.length) {
+                //long t3 = System.currentTimeMillis();
+                //long t4=t3;
+                if (count>=updateImageFrequency || i==trackObjects.length-1) {
                     ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(displayImage, minAndMax[0], (float)((1-displayMinMaxFraction) * minAndMax[0] + displayMinMaxFraction*minAndMax[1]));
+                    //t4 = System.currentTimeMillis();
                     count=0;
                 } else count++;
+                //logger.debug("i: {}, count: {}, open: {}, min&max: {}, paste: {}, update: {}", i, count, t1-t0, t2-t1, t3-t2, t4-t3);
+                //totalTime[0]+=t4-t0;
+                //if (i==trackObjects.length-1) logger.debug("total time: {}", totalTime[0]);
             }
         };
         DefaultWorker.execute(t, trackObjects.length);
@@ -145,23 +161,25 @@ public abstract class TrackMask extends ImageObjectInterface {
     }
 
     
-    @Override public void draw(final ImageInteger image) {
-        trackObjects[0].draw(image);
-        
+    @Override public void drawObjects(final ImageInteger image) {
+        trackObjects[0].drawObjects(image);
+        double[] mm = image.getMinAndMax(null, trackObjects[0].parent.getBounds());
         // draw image in another thread..
         Thread t = new Thread(new Runnable() {
             @Override
             public void run() {
                 int count = 0;
                 for (int i = 1; i<trackObjects.length; ++i) {
-                    trackObjects[i].draw(image);
+                    trackObjects[i].drawObjects(image);
+                    //double[] mm2 = image.getMinAndMax(null, trackObjects[0].parent.getBounds());
+                    //if (mm[0]>mm2[0]) mm[0] = mm2[0];
+                    //if (mm[1]<mm2[1]) mm[1] = mm2[1];
                     if (count>=updateImageFrequency) {
-                        ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(image);
+                        ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(image, mm[0], mm[1]); // do not cmopute min and max. Keep track of min and max?
                         count=0;
                     } else count++;
-                    ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(image);
                 }
-                
+                ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(image);
             }
         });
         t.start();

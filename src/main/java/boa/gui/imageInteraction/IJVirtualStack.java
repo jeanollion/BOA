@@ -17,6 +17,7 @@
  */
 package boa.gui.imageInteraction;
 
+import boa.gui.GUI;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.containers.ImageDAO;
@@ -28,6 +29,7 @@ import image.BlankMask;
 import image.BoundingBox;
 import image.IJImageWrapper;
 import image.Image;
+import static image.Image.logger;
 import java.awt.Font;
 import java.awt.image.ColorModel;
 import java.io.File;
@@ -64,13 +66,16 @@ public class IJVirtualStack extends VirtualStack {
         MicroscopyField f = xp.getPosition(position);
         int channels = xp.getChannelImageCount();
         int frames = f.getTimePointNumber(false);
-        BlankMask bds= xp.getImageDAO().getPreProcessedImageProperties(position);
+        Image bds= output ? xp.getImageDAO().getPreProcessedImageProperties(position) : f.getInputImages().getImage(0, 0);
+        if (bds==null) {
+            GUI.log("No "+(output ? "preprocessed " : "input")+" images found for position: "+position);
+            return;
+        }
         int[] fcz = new int[]{frames, channels, bds.getSizeZ()};
         BiFunction<Integer, Integer, Image> imageOpenerCT  = output ? (c, t) -> xp.getImageDAO().openPreProcessedImage(c, t, position) : (c, t) -> f.getInputImages().getImage(c, t);
         IJVirtualStack s = new IJVirtualStack(bds.getSizeX(), bds.getSizeY(), fcz, IJImageWrapper.getStackIndexFunctionRev(fcz), imageOpenerCT);
-        
         ImagePlus ip = new ImagePlus();
-        ip.setTitle("PreProcessed of "+position);
+        ip.setTitle((output ? "PreProcessed Images of position: " : "Input Images of position: ")+position);
         ip.setStack(s, channels, bds.getSizeZ(), frames);
         ip.setOpenAsHyperStack(true);
         Calibration cal = new Calibration();

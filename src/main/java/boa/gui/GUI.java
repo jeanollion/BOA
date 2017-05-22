@@ -387,7 +387,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
     @Override
     public void setRunning(boolean running) {
         this.running=running;
-        if (!running) this.setMessage("-----------");
         logger.debug("set running: "+running);
         progressBar.setValue(progressBar.getMinimum());
         this.experimentMenu.setEnabled(!running);
@@ -425,6 +424,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
             this.console.getStyledDocument().insertString(console.getStyledDocument().getLength(), message+"\n", null);
         } catch (BadLocationException ex) {            
         }
+    }
+    public static void log(String message) {
+        if (hasInstance()) getInstance().setMessage(message);
     }
     public void outputDirectoryUpdated() {
         this.reloadObjectTrees=true;
@@ -1623,23 +1625,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
     }// </editor-fold>//GEN-END:initComponents
 
     
-    private void runAction(String fieldName, boolean preProcess, boolean reProcess, boolean segmentAndTrack, boolean trackOnly, boolean measurements, boolean deleteObjects) {
-        if (preProcess || reProcess) {
-            logger.info("Pre-Processing: Field: {}", fieldName);
-            Processor.preProcessImages(db.getExperiment().getPosition(fieldName), db.getDao(fieldName), true, preProcess);
-        }
-        if (segmentAndTrack || trackOnly) {
-            int[] selectedStructures = this.getSelectedStructures(true);
-            Processor.processAndTrackStructures(db.getDao(fieldName), true, trackOnly, selectedStructures);
-        }
-        if (measurements) {
-            logger.info("Measurements: Field: {}", fieldName);
-            if (deleteMeasurementsCheckBox.isSelected()) db.getDao(fieldName).deleteAllMeasurements();
-            Processor.performMeasurements(db.getDao(fieldName));
-        }
-        if (segmentAndTrack || trackOnly) populateSelections();
-    }
-    
     private String getCurrentHostNameOrDir() {
         return getHostNameOrDir(getSelectedExperiment());
     }
@@ -2170,6 +2155,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
     }//GEN-LAST:event_deleteMeasurementsCheckBoxActionPerformed
 
     private void runActionAllXPMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runActionAllXPMenuItemActionPerformed
+        
         boolean preProcess=false;
         boolean reRunPreProcess=false;
         boolean segmentAndTrack = false;
@@ -2182,21 +2168,23 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
             if (i==3) trackOnly = !segmentAndTrack;
             if (i==4) runMeasurements=true;
         }
-        boolean deleteAll =  preProcess || reRunPreProcess || segmentAndTrack;
-        logger.debug("Will run on XP: {} / Run actions: preProcess: {}, rePreProcess: {}, segmentAndTrack: {}, trackOnly: {}, runMeasurements: {}, delete all: {}", getSelectedExperiments(), preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements,  deleteAll);
-        for (String xpName : getSelectedExperiments()) {
-            setDBConnection(xpName, getCurrentHostNameOrDir());
-            if (db!=null) {
-                if (deleteAll) db.deleteAllObjects();
-                logger.debug("XP: {} / Run actions: preProcess: {}, rePreProcess: {}, segmentAndTrack: {}, trackOnly: {}, runMeasurements: {}, delete all: {}", xpName, preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements,  deleteAll);
-                
-                for (String fieldName : Utils.asList(actionMicroscopyFieldModel)) {
-                    runAction(fieldName, preProcess, reRunPreProcess, segmentAndTrack, trackOnly, runMeasurements, !deleteAll);
-                    if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field
-                    db.getDao(fieldName).clearCache();
-                    db.getExperiment().getPosition(fieldName).flushImages(true, true);
-                }
-            }
+        List<String> xps = this.getSelectedExperiments();
+        List<Task> tasks = new ArrayList<>(xps.size());
+        for (String xp : xps) tasks.add(new Task(xp).setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements));
+        int totalSubtasks = 0;
+        for (Task t : tasks) {
+            if (!t.isValid()) {
+                setMessage("Invalid task: "+t.toString());
+                return;
+            } 
+            totalSubtasks+=t.countSubtasks();
+        }
+        setMessage("Total subTasks: "+totalSubtasks);
+        int currentSubTask = 0;
+        for (Task t : tasks) {
+            t.setSubtaskNumber(currentSubTask, totalSubtasks);
+            t.execute();
+            currentSubTask+=t.countSubtasks();
         }
     }//GEN-LAST:event_runActionAllXPMenuItemActionPerformed
 

@@ -60,6 +60,7 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
     Parameter[] segmenterParams = new MicrochannelPhase2D().getParameters();
     NumberParameter maxShift = new BoundedNumberParameter("Maximal Shift (pixels)", 0, 100, 1, null);
     NumberParameter maxDistanceWidthFactor = new BoundedNumberParameter("Maximal Distance for Tracking (x mean channel width)", 1, 2, 1, 3);
+    private static double widthQuantile = 0.9;
     public static boolean debug = false;
     @Override public void track(int structureIdx, List<StructureObject> parentTrack) {
         if (parentTrack.isEmpty()) return;
@@ -113,17 +114,19 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
             }
             Collections.sort(shifts);
             int shift = shifts.get(shifts.size()/2); // median shift
-            double mean = 0, c=0; for (Double d : widths) if (d!=null) {mean+=d; ++c;} // global mean value
-            mean/=c;
-            widths = performSlide(widths, 10, SlidingOperator.slidingMean(mean)); // sliding and not global mean because if channels gets empty -> width too small 
+            double meanWidth = 0, c=0; for (Double d : widths) if (d!=null) {meanWidth+=d; ++c;} // global mean value
+            meanWidth/=c;
+            Collections.sort(widths);
+            int width = (int)Math.round(widths.get((int)(widths.size()*widthQuantile)));
+            //widths = performSlide(widths, 10, SlidingOperator.slidingMean(mean)); // sliding and not global mean because if channels gets empty -> width too small 
             if (debug) {
-                logger.debug("track: {} ymin-shift: {}, width: {}", track.get(0), shift, widths);
+                logger.debug("track: {} ymin-shift: {}, width: {} (max: {}, mean: {})", track.get(0), shift, width, widths.get(widths.size()-1), meanWidth);
             }
             // modify all objects of the track with the shift
             for (int i = 0; i<track.size(); ++i) {
                 StructureObject o = track.get(i);
                 BoundingBox b = o.getBounds();
-                int width = (int)Math.round(widths.get(i));
+                //int width = (int)Math.round(widths.get(i));
                 int offX = b.getxMin() + (int)Math.round((b.getSizeX()-width)/2d + Double.MIN_VALUE); // if width change -> offset X change
                 int offY = b.getyMin() + shift; // shift was not included before
                 BoundingBox parentBounds = o.getParent().getBounds();
@@ -235,4 +238,6 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
         Parameter[] res=  ParameterUtils.aggregate(segmenterParams, maxShift, maxDistanceWidthFactor);
         return res;
     }
+    
+    
 }

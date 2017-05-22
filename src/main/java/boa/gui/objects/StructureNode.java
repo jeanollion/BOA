@@ -176,7 +176,7 @@ public class StructureNode implements TreeNode, UIContainer {
                             //parent.loadAllChildObjects(path, 0);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(getParentObject(), structureIdx, true);
                             //logger.debug("IO-Interface: {}, parent: {}, number of children: {}", i, getParentObject(), getParentObject().getChildren(structureIdx).size());
-                            ImageWindowManagerFactory.getImageManager().addImage(i.generateImage(), i, i.getChildStructureIdx(), true, true);
+                            ImageWindowManagerFactory.getImageManager().addImage(i.generateLabelImage(), i, i.getChildStructureIdx(), true, true);
                         }
                     }
                 );
