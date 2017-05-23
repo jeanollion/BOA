@@ -316,6 +316,7 @@ public class ArrayUtil {
         return res;
     }
     public static double[] duplicate(double[] array) {
+        if (array==null) return null;
         double[] res = new double[array.length];
         System.arraycopy(array, 0, res, 0, array.length);
         return res;

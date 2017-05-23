@@ -686,6 +686,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             objectContainer=null;
             object=o;
             object.label=idx+1;
+            flushImages();
+            
         }
     }
     public ImageProperties getMaskProperties() {return getObject().getImageProperties();}

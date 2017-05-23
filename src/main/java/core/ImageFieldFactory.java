@@ -103,14 +103,16 @@ public class ImageFieldFactory {
     
     protected static void addContainerSingleFile(File image, Experiment xp, ArrayList<MultipleImageContainer> containersTC) {
         ImageReader reader=null;
+        long t0 = System.currentTimeMillis();
         try {
             reader = new ImageReader(image.getAbsolutePath());
         } catch(Exception e) {
             logger.warn("Image : {} could not be read", image.getAbsolutePath());
             return;
         }
-        
+        long t1 = System.currentTimeMillis();
         int[][] stc = reader.getSTCXYZNumbers();
+        long t2 = System.currentTimeMillis();
         int s = 0;
         String end = "";
         int digits=(int)(Math.log10(stc.length)+0.5);
@@ -125,7 +127,8 @@ public class ImageFieldFactory {
             }
             ++s;
         }
-        
+        long t3 = System.currentTimeMillis();
+        logger.debug("import image: {}, open reader: {}, getSTC: {}, create image containers: {}", t1-t0, t2-t1, t3-t2);
     }
     
     protected static void importImagesChannel(File input, Experiment xp, String[] channelKeywords, ArrayList<MultipleImageContainer> containersTC) {
@@ -272,8 +275,14 @@ public class ImageFieldFactory {
             }
             if (reader != null) {
                 int[][] stc = reader.getSTCXYZNumbers();
-                if (stc.length>1) logger.warn("Import method selected = one file per channel and per microscopy field, but file: {} contains {} series", imageC[c], stc.length);
-                if (stc[0][1]>1) logger.warn("Import method selected = one file per channel and per microscopy field, but file: {} contains {} channels", imageC[c], stc[0][1]);
+                if (stc.length>1) {
+                    logger.warn("Import method selected = one file per channel and per microscopy field, but file: {} contains {} series", imageC[c], stc.length);
+                    return;
+                }
+                if (stc.length==0) return;
+                if (stc[0][1]>1) {
+                    logger.warn("Import method selected = one file per channel and per microscopy field, but file: {} contains {} channels", imageC[c], stc[0][1]);
+                }
                 if (c==0) timePointNumber=stc[0][0];
                 else {
                     if (timePointNumber==1 && stc[0][0]>1) timePointNumber = stc[0][0];

@@ -294,7 +294,9 @@ public abstract class ImageWindowManager<T, U, V> {
     public ImageObjectInterface getImageObjectInterface(Image image, int structureIdx) {
         if (image==null) {
             image = getDisplayer().getCurrentImage2();
-            if (image==null) return null;
+            if (image==null) {
+                return null;
+            }
         }
         ImageObjectInterfaceKey key = imageObjectInterfaceMap.get(image);
         if (key==null) return null;

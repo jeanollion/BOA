@@ -427,9 +427,9 @@ public class GenerateXP {
             ps.addTransformation(0, null, new ImageStabilizerXY(1, 1000, 1e-9, 20).setAdditionalTranslation(1, 1, 1)); // additional translation to correct chromatic shift
     }
     public static void setParametersFluo(Experiment xp, boolean processing, boolean measurements) {
-        Structure mc = xp.getStructure(0);
-        Structure bacteria = xp.getStructure(1);
-        Structure mutation = xp.getStructure(2);
+        Structure mc = xp.getStructure(0).setBrightObject(true);
+        Structure bacteria = xp.getStructure(1).setBrightObject(true).setAllowSplit(true);
+        Structure mutation = xp.getStructure(2).setBrightObject(true);
         mutation.setSegmentationParentStructure(1);
         if (processing) {
             mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessor()));

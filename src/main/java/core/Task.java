@@ -228,6 +228,7 @@ public class Task extends SwingWorker<Integer, String> {
             initDB();
             publish("clering cache...");
             db.clearCache();
+            publish("db cache cleared...");
             ImageWindowManagerFactory.getImageManager().flush();
             
             if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
