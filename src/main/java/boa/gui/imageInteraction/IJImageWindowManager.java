@@ -123,11 +123,18 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 if (IJ.getToolName().equals("zoom") || IJ.getToolName().equals("hand") || IJ.getToolName().equals("multipoint") || IJ.getToolName().equals("point")) return;            
                 boolean ctrl = e.isControlDown();
                 boolean freeHandSplit = ( IJ.getToolName().equals("freeline")) && ctrl;
+                boolean strechObjects = (IJ.getToolName().equals("line")) && ctrl;
                 //logger.debug("ctrl: {}, tool : {}, freeHandSplit: {}", ctrl, IJ.getToolName(), freeHandSplit);
-                boolean addToSelection = e.isShiftDown() && !freeHandSplit;
+                boolean addToSelection = e.isShiftDown() && (!freeHandSplit || !strechObjects);
                 boolean displayTrack = displayTrackMode;
                 //logger.debug("button ctrl: {}, shift: {}, alt: {}, meta: {}, altGraph: {}, alt: {}", e.isControlDown(), e.isShiftDown(), e.isAltDown(), e.isMetaDown(), e.isAltGraphDown(), displayTrackMode);
                 ImageObjectInterface i = getImageObjectInterface(image);
+                int completionStructureIdx;
+                if (strechObjects) { // select parents
+                    completionStructureIdx = i.getChildStructureIdx();
+                    if (i.getChildStructureIdx()!=i.parentStructureIdx) i = IJImageWindowManager.super.getImageObjectInterface(image, i.parentStructureIdx);
+                    logger.debug("Strech: children: {}, current IOI: {}", completionStructureIdx, i.getChildStructureIdx());
+                }
                 if (i==null) {
                     logger.trace("no image interface found");
                     return;
@@ -144,16 +151,17 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 List<Pair<StructureObject, BoundingBox>> selectedObjects = new ArrayList<>();
                 Roi r = ip.getRoi();
                 boolean fromSelection = false;
+                // get all objects with intersection with ROI
                 if (r!=null) {
                     boolean removeAfterwards = r.getType()==Roi.FREELINE || r.getType()==Roi.FREEROI || (r.getType()==Roi.POLYGON && r.getState()==Roi.NORMAL);
-                    //logger.debug("Roi: {}/{}, rem: {}", r.getTypeAsString(), r.getClass(), removeAfterwards);
+                    logger.debug("Roi: {}/{}, rem: {}", r.getTypeAsString(), r.getClass(), removeAfterwards);
                     if (r.getType()==Roi.RECTANGLE || removeAfterwards) {
                         fromSelection=true;
                         Rectangle rect = r.getBounds();
                         BoundingBox selection = new BoundingBox(rect.x, rect.x+rect.width, rect.y, rect.y+rect.height, ip.getSlice()-1, ip.getSlice());
                         if (selection.getSizeX()==0 && selection.getSizeY()==0) selection=null;
                         i.addClickedObjects(selection, selectedObjects);
-                        //logger.debug("before remove, contained: {}", selectedObjects.size());
+                        logger.debug("before remove, contained: {}", selectedObjects.size());
                         if (removeAfterwards) {
                             Iterator<Pair<StructureObject, BoundingBox>> it = selectedObjects.iterator();
                             while (it.hasNext()) {
@@ -164,11 +172,11 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                             }
                             //logger.debug("after remove, contained: {}", selectedObjects.size());
                         }
-                        if (!freeHandSplit) ip.deleteRoi();
+                        if (!freeHandSplit || !strechObjects) ip.deleteRoi();
                     }
                 }
-                //if (fromSelection || r==null) 
-                if (!fromSelection) {
+                // get clicked object
+                if (!fromSelection && !strechObjects) {
                     int x = e.getX();
                     int y = e.getY();
                     int offscreenX = canvas.offScreenX(x);
@@ -184,14 +192,14 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                         if (!freeHandSplit) ip.deleteRoi();
                     }
                 }
-                if (!displayTrack) {
+                if (!displayTrack && !strechObjects) {
                     displayObjects(image, selectedObjects, ImageWindowManager.defaultRoiColor, true, true);
                     if (listener!=null) {
                         //List<Pair<StructureObject, BoundingBox>> labiles = getSelectedLabileObjects(image);
                         //fire deselected objects
                         listener.fireObjectSelected(Pair.unpairKeys(selectedObjects), true);
                     }
-                } else {
+                } else if (!strechObjects) {
                     List<StructureObject> trackHeads = new ArrayList<StructureObject>();
                     for (Pair<StructureObject, BoundingBox> p : selectedObjects) trackHeads.add(p.key.getTrackHead());
                     Utils.removeDuplicates(trackHeads, false);
@@ -210,7 +218,10 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                     FloatPolygon p = r.getInterpolatedPolygon(1, false);
                     ObjectSplitter splitter = new FreeLineSplitter(selectedObjects, ArrayUtil.toInt(p.xpoints), ArrayUtil.toInt(p.ypoints));
                     ManualCorrection.splitObjects(GUI.getDBConnection(), objects, true, false, splitter);
-                    
+                }
+                if (strechObjects && r!=null && !selectedObjects.isEmpty()) {
+                    FloatPolygon p = r.getInterpolatedPolygon(1, false);
+                    ManualObjectStrecher.strechObjects(null, completionStructureIdx, ArrayUtil.toInt(p.xpoints), ArrayUtil.toInt(p.ypoints));
                 }
             }
 
