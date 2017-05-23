@@ -18,9 +18,11 @@
 package boa.gui.imageInteraction;
 
 import dataStructure.objects.StructureObject;
+import image.BoundingBox;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.Pair;
 
 /**
  *
@@ -28,7 +30,10 @@ import org.slf4j.LoggerFactory;
  */
 public class ManualObjectStrecher {
     public static final Logger logger = LoggerFactory.getLogger(ManualObjectStrecher.class);
-    public static void strechObjects(List<StructureObject> parents, int structureIdx, int[] xPoints, int[] yPoints) {
+    public static void strechObjects(List<Pair<StructureObject, BoundingBox>> parents, int structureIdx, int[] xPoints, int[] yPoints) {
         logger.debug("will strech {} objects, of structure: {}, x: {}, y: {}", parents.size(), structureIdx, xPoints, yPoints);
+        // séparer la ligne en voxels par parent 
+        // pour chaque objet: le point le plus à gauche et en haut -> le point le plus proche de la ligne inclut da
+        
     }
 }

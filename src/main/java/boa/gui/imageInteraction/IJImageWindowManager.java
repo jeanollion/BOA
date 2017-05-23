@@ -129,7 +129,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 boolean displayTrack = displayTrackMode;
                 //logger.debug("button ctrl: {}, shift: {}, alt: {}, meta: {}, altGraph: {}, alt: {}", e.isControlDown(), e.isShiftDown(), e.isAltDown(), e.isMetaDown(), e.isAltGraphDown(), displayTrackMode);
                 ImageObjectInterface i = getImageObjectInterface(image);
-                int completionStructureIdx;
+                int completionStructureIdx=-1;
                 if (strechObjects) { // select parents
                     completionStructureIdx = i.getChildStructureIdx();
                     if (i.getChildStructureIdx()!=i.parentStructureIdx) i = IJImageWindowManager.super.getImageObjectInterface(image, i.parentStructureIdx);
@@ -155,7 +155,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 if (r!=null) {
                     boolean removeAfterwards = r.getType()==Roi.FREELINE || r.getType()==Roi.FREEROI || (r.getType()==Roi.POLYGON && r.getState()==Roi.NORMAL);
                     logger.debug("Roi: {}/{}, rem: {}", r.getTypeAsString(), r.getClass(), removeAfterwards);
-                    if (r.getType()==Roi.RECTANGLE || removeAfterwards) {
+                    if (r.getType()==Roi.RECTANGLE || r.getType()==Roi.LINE || removeAfterwards) {
                         fromSelection=true;
                         Rectangle rect = r.getBounds();
                         BoundingBox selection = new BoundingBox(rect.x, rect.x+rect.width, rect.y, rect.y+rect.height, ip.getSlice()-1, ip.getSlice());
@@ -221,7 +221,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 }
                 if (strechObjects && r!=null && !selectedObjects.isEmpty()) {
                     FloatPolygon p = r.getInterpolatedPolygon(1, false);
-                    ManualObjectStrecher.strechObjects(null, completionStructureIdx, ArrayUtil.toInt(p.xpoints), ArrayUtil.toInt(p.ypoints));
+                    ManualObjectStrecher.strechObjects(selectedObjects, completionStructureIdx, ArrayUtil.toInt(p.xpoints), ArrayUtil.toInt(p.ypoints));
                 }
             }
 
