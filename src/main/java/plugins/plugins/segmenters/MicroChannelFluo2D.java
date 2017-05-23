@@ -48,6 +48,8 @@ import plugins.plugins.trackers.ObjectIdxTracker;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
 import plugins.plugins.transformations.CropMicroChannelFluo2D;
 import static plugins.plugins.transformations.CropMicroChannelFluo2D.segmentMicroChannels;
+import plugins.plugins.transformations.CropMicroChannels;
+import plugins.plugins.transformations.CropMicroChannels.Result;
 import processing.Filters;
 import processing.ImageFeatures;
 import processing.neighborhood.EllipsoidalNeighborhood;
@@ -58,7 +60,7 @@ import static utils.Utils.plotProfile;
  *
  * @author jollion
  */
-public class MicroChannelFluo2D implements Segmenter {
+public class MicroChannelFluo2D implements MicrochannelSegmenter {
 
     NumberParameter channelHeight = new BoundedNumberParameter("Microchannel Height (pixels)", 0, 350, 5, null);
     NumberParameter channelWidth = new BoundedNumberParameter("Microchannel Width (pixels)", 0, 40, 5, null);
@@ -89,7 +91,7 @@ public class MicroChannelFluo2D implements Segmenter {
 
     public static ObjectPopulation run(Image image, int channelHeight, int channelWidth, int yMargin, double threshold, double fillingProportion, int minObjectSize) {
         CropMicroChannelFluo2D.debug=debug;
-        CropMicroChannelFluo2D.Result r = segmentMicroChannels(image, 0, channelHeight, fillingProportion, minObjectSize, threshold);
+        Result r = segmentMicroChannels(image, 0, channelHeight, fillingProportion, minObjectSize, threshold);
         if (r==null) return null;
         ArrayList<Object3D> res = new ArrayList<Object3D>(r.xMax.length);
         int yMin = Math.max(r.yMin - yMargin, 0);
@@ -100,7 +102,13 @@ public class MicroChannelFluo2D implements Segmenter {
         return new ObjectPopulation(res, image);
     }
     
-    
+    @Override
+    public CropMicroChannels.Result segment(Image input) {
+        double thld = this.threshold.instanciatePlugin().runThresholder(input, null);
+        Result r = segmentMicroChannels(input, 0, channelHeight.getValue().intValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue(), thld);
+        r.yMin = Math.max(r.yMin - yMargin.getValue().intValue(), 0);
+        return r;
+    }
     
     public static ObjectPopulation run2(Image image, int channelHeight, int channelWidth, int yMargin) {
         // get yStart
@@ -166,6 +174,7 @@ public class MicroChannelFluo2D implements Segmenter {
         return new ObjectPopulation(res, image);
     }
 
+    @Override
     public Parameter[] getParameters() {
         return parameters;
     }

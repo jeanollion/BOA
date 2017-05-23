@@ -49,7 +49,7 @@ import static utils.Utils.plotProfile;
  *
  * @author jollion
  */
-public class MicrochannelPhase2D implements Segmenter {
+public class MicrochannelPhase2D implements MicrochannelSegmenter {
     
     NumberParameter channelWidth = new BoundedNumberParameter("MicroChannel Width (pixels)", 0, 20, 5, null);
     NumberParameter channelWidthMin = new BoundedNumberParameter("MicroChannel Width Min(pixels)", 0, 15, 5, null);
@@ -78,6 +78,7 @@ public class MicrochannelPhase2D implements Segmenter {
         for (int idx = 0; idx<r.xMax.length; ++idx) objects.add(new Object3D(new BlankMask("mask of microchannel:" + idx+1, r.getBounds(idx, true).getImageProperties(input.getScaleXY(), input.getScaleZ())), idx+1));
         return new ObjectPopulation(objects, input);
     }
+    @Override
     public Result segment(Image input) {
         CropMicroChannelBF2D.debug=debug;
         return  CropMicroChannelBF2D.segmentMicroChannels(input, false, 0, channelWidth.getValue().intValue(), channelWidthMin.getValue().intValue(), channelWidthMax.getValue().intValue(), yStartAdjustWindow.getValue().intValue(), localDerExtremaThld.getValue().doubleValue(), 0);
