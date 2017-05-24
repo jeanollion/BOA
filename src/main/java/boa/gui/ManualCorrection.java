@@ -27,6 +27,7 @@ import boa.gui.objects.StructureNode;
 import boa.gui.selection.SelectionUtils;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.MasterDAO;
+import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.Selection;
@@ -48,6 +49,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -124,6 +126,14 @@ public class ManualCorrection {
     }
     public static void saveManualCorrectionSelection(StructureObject o) {
         o.getDAO().getMasterDAO().getSelectionDAO().store(getManualCorrectionSelection(o));
+    }
+    public static void updateObjects(List<Pair<StructureObject, Object3D>> objectsToUpdate, boolean updateDisplay) {
+        if (objectsToUpdate==null || objectsToUpdate.isEmpty()) return;
+        for (Pair<StructureObject, Object3D> p : objectsToUpdate) {
+            p.key.setObject(p.value);
+            p.key.getDAO().store(p.key, false);
+        }
+        if (updateDisplay) updateDisplayAndSelectObjects(Pair.unpairKeys(objectsToUpdate));
     }
     public static void linkObjects(StructureObject prev, StructureObject next, Collection<StructureObject> modifiedObjects) {
         if (next.getFrame()<prev.getFrame()) linkObjects(next, prev, modifiedObjects);
@@ -505,7 +515,6 @@ public class ManualCorrection {
         return next;
     }
     public static void mergeObjects(MasterDAO db, Collection<StructureObject> objects, boolean updateDisplay) {
-        int structureIdx = StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(objects);
         String fieldName = StructureObjectUtils.keepOnlyObjectsFromSameMicroscopyField(objects);
         if (objects.isEmpty()) return;
         ObjectDAO dao = db.getDao(fieldName);
@@ -537,27 +546,33 @@ public class ManualCorrection {
                 dao.store(modifiedObjects, true);
             }
         }
-        if (updateDisplay) {
-            ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
-            ImageWindowManagerFactory.getImageManager().removeObjects(objects, true);
+        if (updateDisplay) updateDisplayAndSelectObjects(newObjects);
+    }
+    public static void updateDisplayAndSelectObjects(List<StructureObject> objects) {
+        ImageWindowManagerFactory.getImageManager().hideLabileObjects(null);
+        ImageWindowManagerFactory.getImageManager().removeObjects(objects, true);
+        Map<Integer, List<StructureObject>> oBySidx = StructureObjectUtils.splitByStructureIdx(objects);
+        for (Entry<Integer, List<StructureObject>> e : oBySidx.entrySet()) {
+            
             /*for (StructureObject newObject: newObjects) {
                 //Update object tree
                 ObjectNode node = GUI.getInstance().objectTreeGenerator.getObjectNode(newObject);
                 node.getParent().createChildren();
                 GUI.getInstance().objectTreeGenerator.reload(node.getParent());
             }*/
-            Set<StructureObject> parents = StructureObjectUtils.getParentTrackHeads(newObjects);
+            Set<StructureObject> parents = StructureObjectUtils.getParentTrackHeads(e.getValue());
             //Update all opened images & objectImageInteraction
-            for (StructureObject p : parents) ImageWindowManagerFactory.getImageManager().reloadObjects(p, structureIdx, false);
+            for (StructureObject p : parents) ImageWindowManagerFactory.getImageManager().reloadObjects(p, e.getKey(), false);
             // update selection
-            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null, structureIdx);
+            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(null, e.getKey());
+            logger.debug("display : {} objects from structure: {}, IOI null ? {}", e.getValue().size(), e.getKey(), i==null);
             if (i!=null) {
-                ImageWindowManagerFactory.getImageManager().displayObjects(null, i.pairWithOffset(newObjects), Color.orange, true, false);
+                ImageWindowManagerFactory.getImageManager().displayObjects(null, i.pairWithOffset(e.getValue()), Color.orange, true, false);
                 GUI.updateRoiDisplayForSelections(null, null);
             }
-            // update trackTree
-            GUI.getInstance().trackTreeController.updateParentTracks();
         }
+        // update trackTree
+        GUI.getInstance().trackTreeController.updateParentTracks();
     }
     public static void deleteObjects(MasterDAO db, Collection<StructureObject> objects, boolean updateDisplay) {
         String fieldName = StructureObjectUtils.keepOnlyObjectsFromSameMicroscopyField(objects);

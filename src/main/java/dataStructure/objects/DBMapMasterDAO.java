@@ -119,8 +119,8 @@ public class DBMapMasterDAO implements MasterDAO {
     public void clearCache(boolean xpDAO, boolean objectDAO, boolean selectionDAO) {
         if (objectDAO) {
             for (DBMapObjectDAO dao : DAOs.values()) {
-                dao.clearCache();
                 getExperiment().getPosition(dao.getPositionName()).flushImages(true, true);
+                dao.clearCache();
             }
             DAOs.clear();
         }

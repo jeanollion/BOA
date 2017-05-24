@@ -23,6 +23,7 @@ import boa.gui.ManualCorrection;
 import boa.gui.imageInteraction.IJImageWindowManager.Roi3D;
 import boa.gui.imageInteraction.IJImageWindowManager.TrackRoi;
 import static boa.gui.imageInteraction.ImageWindowManager.displayTrackMode;
+import dataStructure.configuration.Structure;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import dataStructure.objects.Voxel;
@@ -117,7 +118,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                     }
                 } 
             }
-
+            @Override
             public void mouseReleased(MouseEvent e) {
                 //logger.debug("tool : {}", IJ.getToolName());
                 if (IJ.getToolName().equals("zoom") || IJ.getToolName().equals("hand") || IJ.getToolName().equals("multipoint") || IJ.getToolName().equals("point")) return;            
@@ -133,7 +134,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 if (strechObjects) { // select parents
                     completionStructureIdx = i.getChildStructureIdx();
                     if (i.getChildStructureIdx()!=i.parentStructureIdx) i = IJImageWindowManager.super.getImageObjectInterface(image, i.parentStructureIdx);
-                    logger.debug("Strech: children: {}, current IOI: {}", completionStructureIdx, i.getChildStructureIdx());
+                    //logger.debug("Strech: children: {}, current IOI: {}", completionStructureIdx, i.getChildStructureIdx());
                 }
                 if (i==null) {
                     logger.trace("no image interface found");
@@ -154,14 +155,14 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 // get all objects with intersection with ROI
                 if (r!=null) {
                     boolean removeAfterwards = r.getType()==Roi.FREELINE || r.getType()==Roi.FREEROI || (r.getType()==Roi.POLYGON && r.getState()==Roi.NORMAL);
-                    logger.debug("Roi: {}/{}, rem: {}", r.getTypeAsString(), r.getClass(), removeAfterwards);
+                    //logger.debug("Roi: {}/{}, rem: {}", r.getTypeAsString(), r.getClass(), removeAfterwards);
                     if (r.getType()==Roi.RECTANGLE || r.getType()==Roi.LINE || removeAfterwards) {
                         fromSelection=true;
                         Rectangle rect = r.getBounds();
                         BoundingBox selection = new BoundingBox(rect.x, rect.x+rect.width, rect.y, rect.y+rect.height, ip.getSlice()-1, ip.getSlice());
                         if (selection.getSizeX()==0 && selection.getSizeY()==0) selection=null;
                         i.addClickedObjects(selection, selectedObjects);
-                        logger.debug("before remove, contained: {}", selectedObjects.size());
+                        //logger.debug("before remove, contained: {}", selectedObjects.size());
                         if (removeAfterwards) {
                             Iterator<Pair<StructureObject, BoundingBox>> it = selectedObjects.iterator();
                             while (it.hasNext()) {
@@ -220,8 +221,9 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                     ManualCorrection.splitObjects(GUI.getDBConnection(), objects, true, false, splitter);
                 }
                 if (strechObjects && r!=null && !selectedObjects.isEmpty()) {
+                    Structure s = selectedObjects.get(0).key.getExperiment().getStructure(completionStructureIdx);
                     FloatPolygon p = r.getInterpolatedPolygon(1, false);
-                    ManualObjectStrecher.strechObjects(selectedObjects, completionStructureIdx, ArrayUtil.toInt(p.xpoints), ArrayUtil.toInt(p.ypoints));
+                    ManualObjectStrecher.strechObjects(selectedObjects, completionStructureIdx, ArrayUtil.toInt(p.xpoints), ArrayUtil.toInt(p.ypoints), s.getManualObjectStrechThreshold(), s.isBrightObject());
                 }
             }
 

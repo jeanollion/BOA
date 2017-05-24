@@ -18,6 +18,7 @@ package dataStructure.configuration;
 
 import boa.gui.configuration.ConfigurationTreeModel;
 import configuration.parameters.BooleanParameter;
+import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ChannelImageParameter;
 import configuration.parameters.Parameter;
 import static configuration.parameters.Parameter.logger;
@@ -56,8 +57,10 @@ public class Structure extends SimpleContainerParameter {
     PluginParameter<ObjectSplitter> objectSplitter;
     PluginParameter<ManualSegmenter> manualSegmenter;
     PluginParameter<ProcessingScheme> processingScheme;
-    BooleanParameter allowSplit;
-    BooleanParameter allowMerge;
+    BooleanParameter brightObject = new BooleanParameter("Object Type", "Bright object over dark background", "Dark object over bright background", false);
+    BoundedNumberParameter manualObjectStrechThreshold = new BoundedNumberParameter("Manual Object Streching Threshold", 2, 0.5, 0, 1);
+    BooleanParameter allowSplit = new BooleanParameter("Allow Split", "yes", "no", false);
+    BooleanParameter allowMerge = new BooleanParameter("Allow Merge", "yes", "no", false);
     @Transient NameEditorUI ui;
     
     public Structure(String name, int parentStructure, int channelImage) {
@@ -102,14 +105,22 @@ public class Structure extends SimpleContainerParameter {
                 else logger.debug("no model found..");
             }
         });
-        // for retro-compatibility only, to remove later
-        if (processingScheme==null) processingScheme = new PluginParameter<ProcessingScheme>("Processing Scheme", ProcessingScheme.class, true); // for retro-compatibility only, to remove later
-        if (manualSegmenter==null) manualSegmenter = new PluginParameter<ManualSegmenter>("Manual Segmenter", ManualSegmenter.class, new WatershedManualSegmenter(), false);
-        if (allowSplit==null) allowSplit = new BooleanParameter("Allow Split", "yes", "no", false);
-        if (allowMerge==null) allowMerge = new BooleanParameter("Allow Merge", "yes", "no", false);
-        initChildren(parentStructure, segmentationParent, channelImage, processingScheme, objectSplitter, manualSegmenter, allowMerge, allowSplit); //segmentationParent
+        initChildren(parentStructure, segmentationParent, channelImage, processingScheme, objectSplitter, manualSegmenter, allowMerge, allowSplit, brightObject, manualObjectStrechThreshold); 
     }
-    
+    public Structure setBrightObject(boolean bright) {
+        this.brightObject.setSelected(bright);
+        return this;
+    }
+    public Structure setManualObjectStrechThreshold(double threshold) {
+        this.manualObjectStrechThreshold.setValue(threshold);
+        return this;
+    }
+    public boolean isBrightObject() {
+        return this.brightObject.getSelected();
+    }
+    public double getManualObjectStrechThreshold() {
+        return this.manualObjectStrechThreshold.getValue().doubleValue();
+    }
     public boolean allowSplit() {
         return allowSplit.getSelected();
     }

@@ -428,6 +428,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
     public static void log(String message) {
         if (hasInstance()) getInstance().setMessage(message);
     }
+    public static void setProgression(int percentage) {
+        if (hasInstance()) getInstance().setProgress(percentage);
+    }
+    
     public void outputDirectoryUpdated() {
         this.reloadObjectTrees=true;
         if (this.db==null) return;
