@@ -152,7 +152,7 @@ public class ParameterUtils {
         for (Parameter p : give) {
             if (recieveMap.containsKey(p.getName())) {
                 Parameter r = recieveMap.get(p.getName());
-                if (r.getClass()==p.getClass()) r.setContentFrom(r);
+                if (r.getClass()==p.getClass()) r.setContentFrom(p);
             }
         }
     }

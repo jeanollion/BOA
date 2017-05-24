@@ -76,7 +76,8 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     //BoundedNumberParameter divisionCriterion = new BoundedNumberParameter("Division Criterion", 2, 0.80, 0.01, 1);
     BoundedNumberParameter costLimit = new BoundedNumberParameter("Correction: operation cost limit", 3, 1.5, 0, null);
     BoundedNumberParameter cumCostLimit = new BoundedNumberParameter("Correction: cumulative cost limit", 3, 5, 0, null);
-    Parameter[] parameters = new Parameter[]{segmenter, minGrowthRate, maxGrowthRate, costLimit, cumCostLimit};
+    BoundedNumberParameter endOfChannelContactThreshold = new BoundedNumberParameter("End of channel contact Threshold", 2, 0.45, 0, 1);
+    Parameter[] parameters = new Parameter[]{segmenter, minGrowthRate, maxGrowthRate, costLimit, cumCostLimit, endOfChannelContactThreshold};
 
     @Override public SegmenterSplitAndMerge getSegmenter() {
         SegmenterSplitAndMerge s= segmenter.instanciatePlugin();
@@ -561,7 +562,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             else {
                 if (ta.prev.idx>=childrenPrev.size()) logger.error("t:{} PREV NOT FOUND ta: {}, prev {}", ta.timePoint, ta, ta.prev);
                 else {
-                    childrenPrev.get(ta.prev.idx).setTrackLinks(children.get(i), true, !ta.trackHead);
+                    childrenPrev.get(ta.prev.idx).setTrackLinks(children.get(i), true, !ta.prev.division && !(ta.prev.truncatedDivision&&ta.endOfChannelContact<endOfChannelContactThreshold.getValue().doubleValue())); //!ta.trackHead
                 }
             }
             StructureObject o = children.get(i);
@@ -569,7 +570,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             o.setAttribute(StructureObject.trackErrorPrev, ta.errorPrev);
             o.setAttribute(StructureObject.trackErrorNext, ta.errorCur);
             o.setAttribute("SizeIncrement", ta.sizeIncrement);
-            o.setAttribute("TruncatedDivision", ta.truncatedDivision);
+            o.setAttribute("TruncatedDivision", ta.prev==null?false : ta.prev.truncatedDivision&&ta.endOfChannelContact<endOfChannelContactThreshold.getValue().doubleValue());
             if (ta.endOfChannelContact>0) o.setAttribute("EndOfChannelContact", ta.endOfChannelContact);
         }
     }
@@ -706,7 +707,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
                 double count = 0;
                 for (Voxel v : o.getVoxels()) if (v.y==lim) ++count;
                 endOfChannelContact = count/getWidth();
-                if (endOfChannelContact>0.45) touchEndOfChannel=true;
+                if (endOfChannelContact>endOfChannelContactThreshold.getValue().doubleValue()) touchEndOfChannel=true;
                 else touchEndOfChannel=false; 
             } else  touchEndOfChannel=false; 
         }

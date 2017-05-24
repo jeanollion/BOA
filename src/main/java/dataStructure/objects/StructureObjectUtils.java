@@ -59,6 +59,7 @@ public class StructureObjectUtils {
         return bucket;
     }
     
+    
     public static void setTrackLinks(StructureObject previous, StructureObject next, boolean setPrevious, boolean setNext) {
         if (previous==null && next==null) return;
         else if (previous==null && next!=null) {

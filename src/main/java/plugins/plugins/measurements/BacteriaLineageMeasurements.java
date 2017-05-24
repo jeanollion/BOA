@@ -25,8 +25,10 @@ import configuration.parameters.StructureParameter;
 import configuration.parameters.TextParameter;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
+import static dataStructure.objects.StructureObjectUtils.getAllNext;
 import image.BoundingBox;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -67,13 +69,17 @@ public class BacteriaLineageMeasurements implements Measurement {
     public boolean callOnlyOnTrackHeads() {
         return true;
     }
-    
+    private static List<StructureObject> getAllNextSortedY(StructureObject o, List<StructureObject> bucket) {
+        bucket = getAllNext(o, bucket);
+        Collections.sort(bucket, (o1, o2)->Double.compare(o1.getBounds().getyMin(), o2.getBounds().getyMin()));
+        return bucket;
+    }
     @Override
     public void performMeasurement(StructureObject parentTrackHead) {
         int bIdx = structure.getSelectedIndex();
         String key = this.keyName.getValue();
         
-        HashMapGetCreate<StructureObject, List<StructureObject>> siblings = new HashMapGetCreate<>(o -> StructureObjectUtils.getAllNext(o, null));
+        HashMapGetCreate<StructureObject, List<StructureObject>> siblings = new HashMapGetCreate<>(o -> getAllNextSortedY(o, null));
         StructureObject currentParent = parentTrackHead;
         List<StructureObject> bacteria = currentParent.getChildren(bIdx);
         int trackHeadIdx = 0;
@@ -91,10 +97,11 @@ public class BacteriaLineageMeasurements implements Measurement {
                 else {
                     List<StructureObject> sib = siblings.getAndCreateIfNecessary(o.getPrevious());
                     if (sib.size()==1 && Boolean.FALSE.equals(o.getPrevious().getAttribute("TruncatedDivision", false))) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key));
-                    else if (o.isTrackHead()) {
+                    else {
                         if (sib.size()>2 || sib.isEmpty()) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageError);
+                        if (sib.get(0).equals(o)) o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[0]);
                         else o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[1]);
-                    } else o.getMeasurements().setValue(key, o.getPrevious().getMeasurements().getValueAsString(key)+lineageName[0]);
+                    }
                 }
                 //if (currentParent.getFrame()<=10 && currentParent.getIdx()==0) logger.debug("o: {}, prev: {}, next: {}, lin: {}", o, o.getPrevious(), siblings.getAndCreateIfNecessary(o.getPrevious()), o.getMeasurements().getValueAsString(key));
                 int prevTP = o.getPreviousDivisionTimePoint();
