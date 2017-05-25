@@ -69,15 +69,16 @@ public class MicrochannelTracker implements TrackerSegmenter {
     @Override public void track(int structureIdx, List<StructureObject> parentTrack) {
         if (parentTrack.isEmpty()) return;
         TrackMateInterface<Spot> tmi = new TrackMateInterface(TrackMateInterface.defaultFactory());
-        tmi.addObjects(parentTrack, structureIdx);
+        Map<Integer, List<StructureObject>> map = TrackMateInterface.getChildrenMap(parentTrack, structureIdx);
+        tmi.addObjects(map);
         double meanWidth = 0;
         double count = 0;
         for (StructureObject p : parentTrack) for (StructureObject o : p.getChildren(structureIdx)) {meanWidth+=o.getBounds().getSizeX(); ++count;}
         meanWidth = parentTrack.get(0).getScaleXY() * meanWidth/count;
         double maxDistance = maxShift.getValue().doubleValue()*parentTrack.get(0).getScaleXY();
         boolean ok = tmi.processFTF(maxDistanceWidthFactor.getValue().doubleValue() *meanWidth);
-        if (ok) ok = tmi.processGC(maxDistance, parentTrack.size());
-        if (ok) tmi.setTrackLinks(parentTrack, structureIdx);
+        if (ok) ok = tmi.processGC(maxDistance, parentTrack.size(), false, false);
+        if (ok) tmi.setTrackLinks(map);
         closeGaps(structureIdx, parentTrack);
     }
 

@@ -18,6 +18,7 @@
 package plugins.plugins.trackers.trackMate;
 
 import com.google.common.collect.Sets;
+import configuration.parameters.Parameter;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
@@ -44,9 +45,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 import static plugins.Plugin.logger;
+import utils.Utils;
 /**
  *
  * @author jollion
@@ -77,10 +81,8 @@ public class TrackMateInterface<S extends Spot> {
             addObject(o, frame);
         });
     }
-    public void addObjects(List<StructureObject> parentTrack, int structureIdx) {
-        for (StructureObject p : parentTrack) {
-            for (StructureObject c : p.getChildren(structureIdx)) addObject(c.getObject(), c.getFrame());
-        }
+    public void addObjects(Map<Integer, List<StructureObject>> objectsF) {
+        for (StructureObject c : Utils.flattenMap(objectsF)) addObject(c.getObject(), c.getFrame());
     }
     
     public boolean processFTF(double distanceThreshold) {
@@ -106,7 +108,7 @@ public class TrackMateInterface<S extends Spot> {
         return true;
     }
     
-    public boolean processGC(double distanceThreshold, int maxFrameGap) {
+    public boolean processGC(double distanceThreshold, int maxFrameGap, boolean allowSplitting, boolean allowMerging) {
         long t0 = System.currentTimeMillis();
         Set<S> unlinkedSpots;
         if (graph == null) {
@@ -133,11 +135,11 @@ public class TrackMateInterface<S extends Spot> {
         slSettings.put( KEY_GAP_CLOSING_MAX_DISTANCE, distanceThreshold );
         slSettings.put( KEY_GAP_CLOSING_MAX_FRAME_GAP, maxFrameGap );
 
-        slSettings.put( KEY_ALLOW_TRACK_SPLITTING, false );
+        slSettings.put( KEY_ALLOW_TRACK_SPLITTING, allowSplitting );
         //slSettings.put( KEY_SPLITTING_FEATURE_PENALTIES, settings.get( KEY_SPLITTING_FEATURE_PENALTIES ) );
         slSettings.put( KEY_SPLITTING_MAX_DISTANCE, distanceThreshold );
 
-        slSettings.put( KEY_ALLOW_TRACK_MERGING, false );
+        slSettings.put( KEY_ALLOW_TRACK_MERGING, allowMerging );
         //slSettings.put( KEY_MERGING_FEATURE_PENALTIES, settings.get( KEY_MERGING_FEATURE_PENALTIES ) );
         slSettings.put( KEY_MERGING_MAX_DISTANCE, distanceThreshold );
 
@@ -174,22 +176,21 @@ public class TrackMateInterface<S extends Spot> {
         }
         graph.removeVertex(from);
     }
-    
-    public void setTrackLinks(List<StructureObject> parentTrack, int structureIdx) {
+    public static Map<Integer, List<StructureObject>> getChildrenMap(List<StructureObject> parents, int structureIdx) {
+        return parents.stream().collect(Collectors.toMap(StructureObject::getFrame, p->p.getChildren(structureIdx)));
+    }
+    public void setTrackLinks(Map<Integer, List<StructureObject>> objectsF) {
         if (graph==null) throw new RuntimeException("Graph not initialized");
         logger.debug("number of links: {}", graph.edgeSet().size());
-        HashMap<Integer, StructureObject> parentT = new HashMap<>(parentTrack.size());
-        for (StructureObject p : parentTrack) {
-            parentT.put(p.getFrame(), p);
-            for (StructureObject s : p.getChildren(structureIdx)) s.resetTrackLinks(true, true);
-        }
+        for (StructureObject o : Utils.flattenMap(objectsF)) o.resetTrackLinks(true, true);
+
         TreeSet<DefaultWeightedEdge> nextEdges = new TreeSet(new Comparator<DefaultWeightedEdge>() {
             public int compare(DefaultWeightedEdge arg0, DefaultWeightedEdge arg1) {
                 return Double.compare(graph.getEdgeWeight(arg0), graph.getEdgeWeight(arg1));
             }
         });
-        for (StructureObject parent : parentTrack) {
-            for (StructureObject child : parent.getChildren(structureIdx)) {
+        for (List<StructureObject> children : objectsF.values()) {
+            for (StructureObject child : children) {
                 //logger.debug("settings links for: {}", child);
                 S s = objectSpotMap.get(child.getObject());
                 getSortedEdgesOf(s, graph, false, nextEdges);
@@ -197,8 +198,8 @@ public class TrackMateInterface<S extends Spot> {
                     DefaultWeightedEdge nextEdge = nextEdges.last(); //main edge -> for previous.next
                     for (DefaultWeightedEdge e : nextEdges) {
                         S nextSpot = getOtherSpot(e, s, graph);
-                        StructureObject nextSo = getStructureObject(parentT.get(nextSpot.getFeature(Spot.FRAME).intValue()), structureIdx, nextSpot);
-                        if (nextSo.getPrevious()==null) {
+                        StructureObject nextSo = getStructureObject(objectsF.get(nextSpot.getFeature(Spot.FRAME).intValue()), nextSpot);
+                        if (nextSo!=null && nextSo.getPrevious()==null) {
                             StructureObjectUtils.setTrackLinks(child, nextSo, true, e==nextEdge);
                             //nextSo.setPreviousInTrack(child, e!=nextEdge);
                         }
@@ -232,10 +233,10 @@ public class TrackMateInterface<S extends Spot> {
         else return s;
     }
     
-    private StructureObject getStructureObject(StructureObject parent, int structureIdx, S s) {
-        List<StructureObject> children = parent.getChildren(structureIdx);
+    private StructureObject getStructureObject(List<StructureObject> candidates, S s) {
+        if (candidates==null || candidates.isEmpty()) return null;
         Object3D o = spotObjectMap.get(s);
-        for (StructureObject c : children) if (c.getObject() == o) return c;
+        for (StructureObject c : candidates) if (c.getObject() == o) return c;
         return null;
     }
     

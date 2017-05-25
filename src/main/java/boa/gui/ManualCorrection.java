@@ -37,6 +37,7 @@ import static dataStructure.objects.StructureObject.correctionSplit;
 import static dataStructure.objects.StructureObject.trackErrorNext;
 import static dataStructure.objects.StructureObject.trackErrorPrev;
 import dataStructure.objects.StructureObjectUtils;
+import fiji.plugin.trackmate.Spot;
 import image.BoundingBox;
 import image.Image;
 import image.ImageByte;
@@ -45,6 +46,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -53,8 +55,10 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import measurement.GeometricalMeasurements;
 import plugins.ManualSegmenter;
 import plugins.ObjectSplitter;
+import plugins.plugins.trackers.trackMate.TrackMateInterface;
 import utils.Pair;
 import utils.Utils;
 
@@ -135,22 +139,30 @@ public class ManualCorrection {
         }
         if (updateDisplay) updateDisplayAndSelectObjects(Pair.unpairKeys(objectsToUpdate));
     }
-    public static void linkObjects(StructureObject prev, StructureObject next, Collection<StructureObject> modifiedObjects) {
-        if (next.getFrame()<prev.getFrame()) linkObjects(next, prev, modifiedObjects);
+    public static void linkObjects(StructureObject prev, StructureObject next, boolean allowDoubleLink, Collection<StructureObject> modifiedObjects) {
+        if (next.getFrame()<prev.getFrame()) linkObjects(next, prev, allowDoubleLink, modifiedObjects);
         else {
             boolean allowMerge = prev.getExperiment().getStructure(prev.getStructureIdx()).allowMerge();
             boolean allowSplit = prev.getExperiment().getStructure(prev.getStructureIdx()).allowSplit();
-            boolean doubleLink = true;
+            boolean doubleLink = allowDoubleLink;
+            List<StructureObject> allNext = getNext(prev);
+            if (allowSplit) {
+                if (allNext.contains(next)? allNext.size()>1 : allNext.isEmpty()) doubleLink = false;
+            }
+            List<StructureObject> allPrev = getPrevious(next);
             if (allowMerge) {
-                if (next.getPrevious()!=null && next.getPrevious()!=prev) { // mergeLink
+                if (allPrev.contains(prev) ? allPrev.size()>1 : !allPrev.isEmpty()) doubleLink = false;
+            }
+            if (allowMerge) {
+                if (!allPrev.contains(prev)) { // mergeLink
                     doubleLink = false;
                     boolean allowMergeLink = true;
-                    if (prev.getNext()!=null && prev.getNext()!=next) {
+                    if (!allNext.contains(next)) {
                         if (!allowSplit) {
-                            unlinkObjects(prev, prev.getNext(), modifiedObjects);
+                            for (StructureObject n : allNext) unlinkObjects(prev, n, modifiedObjects);
                         } else allowMergeLink = false;
                     }
-                    if (allowMergeLink && next!=prev.getNext()) {
+                    if (allowMergeLink && !allNext.contains(next)) {
                         prev.setTrackLinks(next, false, true);
                         prev.setAttribute(correctionMerge, true);
                         modifiedObjects.add(prev);
@@ -159,15 +171,15 @@ public class ManualCorrection {
                 }
             }
             if (allowSplit) {
-                if (prev.getNext()!=null && prev.getNext()!=next) { // split link
+                if (!allNext.contains(next)) { // split link
                     doubleLink=false;
                     boolean allowSplitLink = true;
-                    if (next.getPrevious()!=null && next.getPrevious()!=prev) {
+                    if (!allPrev.contains(prev)) {
                         if (!allowMerge) {
-                            unlinkObjects(next.getPrevious(), next, modifiedObjects);
+                            for (StructureObject p : allPrev) unlinkObjects(p, next, modifiedObjects);
                         } else allowSplitLink = false;
                     }
-                    if (allowSplitLink && prev!=next.getPrevious()) {
+                    if (allowSplitLink && !allPrev.contains(prev)) {
                         prev.setTrackLinks(next, true, false);
                         prev.setAttribute(correctionSplit, true);
                         modifiedObjects.add(next);
@@ -218,6 +230,7 @@ public class ManualCorrection {
         StructureObject prevParent = null;
         List<StructureObject> prev = null;
         logger.debug("modify: unlink: {}, #objects: {}, #parents: {}", unlink, objects.size(), objectsByParent.keySet().size());
+        Map<Integer, List<StructureObject>> map = new HashMap<>();
         for (StructureObject currentParent : objectsByParent.keySet()) {
             List<StructureObject> current = objectsByParent.get(currentParent);
             Collections.sort(current);
@@ -230,14 +243,14 @@ public class ManualCorrection {
                         if (current.get(0).getPrevious()==prev.get(0) || prev.get(0).getNext()==current) { //unlink the 2 spots
                             ManualCorrection.unlinkObjects(prev.get(0), current.get(0), modifiedObjects);
                         } 
-                    } else ManualCorrection.linkObjects(prev.get(0), current.get(0), modifiedObjects);
+                    } else ManualCorrection.linkObjects(prev.get(0), current.get(0), true, modifiedObjects);
                 } else if (prev.size()==1 && split && !merge) {
                     for (StructureObject c : current) {
                         if (unlink) {
                             if (c.getPrevious()==prev.get(0) || prev.get(0).getNext()==c) { //unlink the 2 spots
                                 ManualCorrection.unlinkObjects(prev.get(0), c, modifiedObjects);
                             } 
-                        } else ManualCorrection.linkObjects(prev.get(0), c, modifiedObjects);
+                        } else ManualCorrection.linkObjects(prev.get(0), c, false, modifiedObjects);
                     }
                 } else if (current.size()==1 && !split && merge) {
                     for (StructureObject p : prev) {
@@ -245,13 +258,33 @@ public class ManualCorrection {
                             if (current.get(0).getPrevious()==p || p.getNext()==current.get(0)) { //unlink the 2 spots
                                 ManualCorrection.unlinkObjects(p, current.get(0), modifiedObjects);
                             } 
-                        } else ManualCorrection.linkObjects(p, current.get(0), modifiedObjects);
+                        } else ManualCorrection.linkObjects(p, current.get(0), false, modifiedObjects);
+                    }
+                } else { // link closest object
+                    map.put(prevParent.getFrame(), prev);
+                    map.put(currentParent.getFrame(), current);
+                    // unlink objects
+                    for (StructureObject n : current) {
+                        if (prev.contains(n.getPrevious())) ManualCorrection.unlinkObjects(n.getPrevious(), n, modifiedObjects);
+                    }
+                    for (StructureObject p : prev) {
+                        if (current.contains(p.getNext())) ManualCorrection.unlinkObjects(p, p.getNext(), modifiedObjects);
                     }
                 }
                 
             } 
             prevParent=currentParent;
             prev = current;
+        }
+        if (!map.isEmpty() && !unlink) {
+            List<StructureObject> allObjects = Utils.flattenMap(map);
+            TrackMateInterface<Spot> tmi = new TrackMateInterface(TrackMateInterface.defaultFactory());
+            tmi.addObjects(map);
+            double meanLength = allObjects.stream().mapToDouble( s->GeometricalMeasurements.getFeretMax(s.getObject())).average().getAsDouble();
+            tmi.processFTF(meanLength);
+            tmi.processGC(meanLength, 0, split, merge);
+            tmi.setTrackLinks(map);
+            modifiedObjects.addAll(allObjects);
         }
         //repairLinkInconsistencies(db, modifiedObjects, modifiedObjects);
         Utils.removeDuplicates(modifiedObjects, false);
@@ -282,7 +315,7 @@ public class ManualCorrection {
             String selName = "linkError_pIdx"+parentTh.getIdx()+"_Position"+parentTh.getPositionName();
             for (StructureObject o : objectsByParentTh.get(parentTh)) {
                 if (o.getNext()!=null && o.getNext().getPrevious()!=o) {
-                    if (o.getNext().getPrevious()==null) linkObjects(o, o.getNext(), modifiedObjects);
+                    if (o.getNext().getPrevious()==null) linkObjects(o, o.getNext(), true, modifiedObjects);
                     else {
                         if (sel ==null) sel = db.getSelectionDAO().getOrCreate(selName, false);
                         sel.addElement(o);
@@ -290,7 +323,7 @@ public class ManualCorrection {
                     }
                 }
                 if (o.getPrevious()!=null && o.getPrevious().getNext()!=o) {
-                    if (o.getPrevious().getNext()==null) linkObjects(o.getPrevious(), o, modifiedObjects);
+                    if (o.getPrevious().getNext()==null) linkObjects(o.getPrevious(), o, true, modifiedObjects);
                     else {
                         if (sel ==null) sel = db.getSelectionDAO().getOrCreate(selName, false);
                         sel.addElement(o);
@@ -531,8 +564,8 @@ public class ManualCorrection {
                 StructureObject res = objectsToMerge.remove(0);               
                 for (StructureObject toMerge : objectsToMerge) res.merge(toMerge);
                 
-                if (prev!=null) linkObjects(prev, res, modifiedObjects);
-                if (next!=null) linkObjects(res, next, modifiedObjects);
+                if (prev!=null) linkObjects(prev, res, true, modifiedObjects);
+                if (next!=null) linkObjects(res, next, true, modifiedObjects);
                 newObjects.add(res);
                 res.setAttribute(correctionMerge, true);
                 res.setAttribute(trackErrorNext, null);
@@ -635,7 +668,7 @@ public class ManualCorrection {
                 if (o.getNext()!=null) {
                     if (o.getNext().getPrevious()!=o) {
                         logger.debug("inconsitency: o: {}, next: {}, next's previous: {}", o, o.getNext(), o.getNext().getPrevious());
-                        if (o.getNext().getPrevious()==null) ManualCorrection.linkObjects(o, o.getNext(), modifiedObjects);
+                        if (o.getNext().getPrevious()==null) ManualCorrection.linkObjects(o, o.getNext(), true, modifiedObjects);
                         else if (!allowMerge) {
                             uncorrected.add(o);
                             uncorrected.add(o.getNext());
@@ -651,7 +684,7 @@ public class ManualCorrection {
                 }
                 if (o.getPrevious()!=null) {
                     if (o.getPrevious().getNext()!=o) {
-                        if (o.getPrevious().getNext()==null) ManualCorrection.linkObjects(o.getPrevious(), o, modifiedObjects);
+                        if (o.getPrevious().getNext()==null) ManualCorrection.linkObjects(o.getPrevious(), o, true, modifiedObjects);
                         else if (!allowSplit) {
                             uncorrected.add(o);
                             uncorrected.add(o.getPrevious());
