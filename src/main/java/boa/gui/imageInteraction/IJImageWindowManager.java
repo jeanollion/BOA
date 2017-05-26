@@ -302,7 +302,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
      * @param is3D
      * @return maping of Roi to Z-slice (taking into account the provided offset)
      */
-    public static Roi3D createRoi(ImageInteger mask, BoundingBox offset, boolean is3D) {
+    public static Roi3D createRoi(ImageInteger mask, BoundingBox offset, boolean is3D) { // TODO blankMask -> tester et faire un rectangle!
         Roi3D res = new Roi3D(mask.getSizeZ());
         ThresholdToSelection tts = new ThresholdToSelection();
         ImagePlus maskPlus = IJImageWrapper.getImagePlus(mask);

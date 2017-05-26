@@ -402,8 +402,8 @@ public abstract class ImageWindowManager<T, U, V> {
     }
     
     
-    protected abstract void displayObject(T image, U roi);
-    protected abstract void hideObject(T image, U roi);
+    public abstract void displayObject(T image, U roi);
+    public abstract void hideObject(T image, U roi);
     protected abstract U generateObjectRoi(Pair<StructureObject, BoundingBox> object, boolean image2D, Color color);
     protected abstract void setObjectColor(U roi, Color color);
     

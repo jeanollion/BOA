@@ -94,8 +94,14 @@ public class ImageOperations {
     }
     
     public static ImageInteger threshold(Image image, double threshold, boolean overThreshold, boolean strict, boolean setBackground, ImageInteger dest) {
-        if (dest==null) dest=new ImageByte("", image);
-        else if (!dest.sameSize(image)) dest = Image.createEmptyImage(dest.getName(), dest, image);
+        if (dest==null) {
+            dest=new ImageByte("", image);
+            setBackground=false;
+        }
+        else if (!dest.sameSize(image)) {
+            dest = Image.createEmptyImage(dest.getName(), dest, image);
+            setBackground=false;
+        }
         if (setBackground) {
             if (overThreshold) {
                 if (strict) {

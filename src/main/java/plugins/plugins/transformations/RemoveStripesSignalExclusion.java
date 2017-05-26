@@ -40,6 +40,7 @@ import static plugins.Plugin.logger;
 import plugins.SimpleThresholder;
 import plugins.Thresholder;
 import plugins.Transformation;
+import plugins.plugins.thresholders.BackgroundThresholder;
 import plugins.plugins.thresholders.ConstantValue;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import utils.ThreadRunner;
@@ -50,7 +51,7 @@ import utils.ThreadRunner;
  */
 public class RemoveStripesSignalExclusion implements Transformation {
     ChannelImageParameter signalExclusion = new ChannelImageParameter("Channel for Signal Exclusion", -1, true);
-    PluginParameter<SimpleThresholder> signalExclusionThreshold = new PluginParameter<>("Signal Exclusion Threshold", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false); //new ConstantValue(150)
+    PluginParameter<SimpleThresholder> signalExclusionThreshold = new PluginParameter<>("Signal Exclusion Threshold", SimpleThresholder.class, new BackgroundThresholder(2.5, 2.5, 2), false); //new ConstantValue(150)
     BooleanParameter addGlobalMean = new BooleanParameter("Add global mean (avoid negative values)", true);
     Parameter[] parameters = new Parameter[]{signalExclusion, signalExclusionThreshold, addGlobalMean};
     List<List<List<Double>>> meanTZY = new ArrayList<>();

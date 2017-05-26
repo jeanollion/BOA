@@ -49,11 +49,6 @@ import plugins.plugins.measurements.objectFeatures.SNR;
 import plugins.plugins.postFilters.FeatureFilter;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.MutationSegmenter;
-import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
-import plugins.plugins.segmenters.MutationSegmenterScaleSpace2;
-import plugins.plugins.segmenters.SpotFluo2D5;
-import processing.neighborhood.CylindricalNeighborhood;
-import processing.neighborhood.EllipsoidalNeighborhood;
 import utils.MorphiumUtils;
 import utils.Utils;
 

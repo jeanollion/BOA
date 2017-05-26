@@ -61,7 +61,7 @@ import plugins.plugins.manualSegmentation.WatershedObjectSplitter;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import plugins.plugins.thresholders.BackgroundFit;
 import plugins.plugins.thresholders.ConstantValue;
-import plugins.plugins.thresholders.KappaSigma;
+import plugins.plugins.thresholders.BackgroundThresholder;
 import plugins.plugins.thresholders.ObjectCountThresholder;
 import processing.Filters;
 import processing.gaussianFit.GaussianFit;

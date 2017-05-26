@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import plugins.Segmenter;
 import plugins.Thresholder;
+import plugins.plugins.thresholders.BackgroundThresholder;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparatorObject3D;
@@ -65,7 +66,7 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter {
     NumberParameter channelHeight = new BoundedNumberParameter("Microchannel Height (pixels)", 0, 350, 5, null);
     NumberParameter channelWidth = new BoundedNumberParameter("Microchannel Width (pixels)", 0, 40, 5, null);
     NumberParameter yMargin = new BoundedNumberParameter("y-margin", 0, 20, 0, null);
-    PluginParameter<Thresholder> threshold= new PluginParameter<>("Threshold", Thresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false);
+    PluginParameter<Thresholder> threshold= new PluginParameter<>("Threshold", Thresholder.class, new BackgroundThresholder(2.5, 3.5, 3), false);
     NumberParameter fillingProportion = new BoundedNumberParameter("Microchannel filling proportion", 2, 0.5, 0.05, 1);
     NumberParameter minObjectSize = new BoundedNumberParameter("Min. Object Size", 0, 100, 1, null);
     Parameter[] parameters = new Parameter[]{channelHeight, channelWidth, yMargin, threshold, fillingProportion, minObjectSize};

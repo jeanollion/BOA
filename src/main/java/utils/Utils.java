@@ -55,6 +55,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.swing.DefaultListModel;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
@@ -672,19 +673,21 @@ public class Utils {
     public static <T, K> List<K> apply(Collection<T> list, Function<T, K> func) {
         if (list==null) return null;
         if (list.isEmpty()) return Collections.EMPTY_LIST;
-        List<K> res = new ArrayList<>(list.size());
+        return list.stream().map(func).collect(Collectors.toList());
+        /*List<K> res = new ArrayList<>(list.size());
         for (T t : list)  res.add(func.apply(t));
-        return res;
+        return res;*/
     }
     public static <T, K> List<K> applyWithNullCheck(Collection<T> list, Function<T, K> func) {
         if (list==null) return null;
         if (list.isEmpty()) return Collections.EMPTY_LIST;
-        List<K> res = new ArrayList<>(list.size());
+        return list.stream().map(func).filter(e -> e!=null).collect(Collectors.toList());
+        /*List<K> res = new ArrayList<>(list.size());
         for (T t : list)  {
             K k = func.apply(t);
             if (k!=null) res.add(k);
         }
-        return res;
+        return res;*/
     }
     public static <T> T[] apply(T[] array, T[] outputArray, Function<T, T> func) {
         if (array==null) return null;

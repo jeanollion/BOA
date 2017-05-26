@@ -32,7 +32,7 @@ import utils.JSONUtils;
 public class GenerateXPConfig {
     public static void main(String[] args) {
         String path = "/home/jollion/Fiji.app/plugins/BOA";
-        Experiment xpFluo = generateXPFluo("MotherMachineMutation", null, true, false, 0, 0, Double.NaN, null);
+        Experiment xpFluo = generateXPFluo("MotherMachineMutation", null, true, true, 0, 0, Double.NaN, null);
         exportXP(path, xpFluo, false);
         
         Experiment xpTrans = GenerateXP.generateXPTrans("MotherMachinePhaseContrast", null, true, false, 0, 0, Double.NaN);

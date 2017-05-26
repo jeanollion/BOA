@@ -42,6 +42,7 @@ import java.util.List;
 import plugins.SimpleThresholder;
 import plugins.Thresholder;
 import plugins.TransformationTimeIndependent;
+import plugins.plugins.thresholders.BackgroundThresholder;
 import plugins.plugins.thresholders.ConstantValue;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.trackers.ObjectIdxTracker;
@@ -64,7 +65,7 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
     
     NumberParameter minObjectSize = new BoundedNumberParameter("Object Size Filter", 0, 200, 1, null);
     NumberParameter fillingProportion = new BoundedNumberParameter("Filling proportion of Microchannel", 2, 0.6, 0.05, 1);
-    PluginParameter<SimpleThresholder> threshold = new PluginParameter<>("Intensity Threshold", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false); //new ConstantValue(50)
+    PluginParameter<SimpleThresholder> threshold = new PluginParameter<>("Intensity Threshold", SimpleThresholder.class, new BackgroundThresholder(2.5, 3.5, 3), false); //new ConstantValue(50)
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Intensity Threshold", Thresholder.class, new ConstantValue(50), false);
     Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, minObjectSize, threshold, fillingProportion, xStart, xStop, yStart, yStop, number, refAverage};
     
@@ -95,11 +96,15 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         Result r = segmentMicroChannels(image, margin, channelHeight, fillingProportion, minObjectSize, threshold);
         if (r == null) return null;
         int yMin = Math.max(yStart, r.yMin);
-        yStop = Math.min(yStop, yMin+channelHeight);
+        if (yStop==0) yStop = image.getSizeY()-1;
+        if (xStop==0) xStop = image.getSizeX()-1;
+        yStop = Math.min(yStop, yMin+channelHeight + cropMargin);
+        
         yStart = Math.max(yMin-cropMargin, yStart);
         
         xStart = Math.max(xStart, r.getXMin()-cropMargin);
         xStop = Math.min(xStop, r.getXMax() + cropMargin);
+        
         if (debug) logger.debug("Xmin: {}, Xmax: {}", r.getXMin(), r.getXMax());
         return new BoundingBox(xStart, xStop, yStart, yStop, 0, image.getSizeZ()-1);
         
@@ -115,12 +120,12 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         double thldX = channelHeight * fillingProportion; // only take into account roughly filled channels
         thldX /= (double) (image.getSizeY() * image.getSizeZ() ); // mean X projection
         /*
-        1) rough segmentation of cells with autothreshold
+        1) rough segmentation of cells with threshold
         2) selection of filled channels using X-projection & threshold on length
         3) computation of Y start using the minimal Y of objects within the selected channels from step 2 (median value of yMins)
         */
         
-        if (Double.isNaN(thld)) thld = IJAutoThresholder.runThresholder(image, null, AutoThresholder.Method.Triangle); // OTSU / TRIANGLE / YEN 
+        if (Double.isNaN(thld)) thld = BackgroundThresholder.run(image, null, 2.5, 3.5, 3, null);//IJAutoThresholder.runThresholder(image, null, AutoThresholder.Method.Triangle); // OTSU / TRIANGLE / YEN 
         ImageByte mask = ImageOperations.threshold(image, thld, true, true);
         //mask = Filters.binaryClose(mask, new ImageByte("segmentation mask::closed", mask), Filters.getNeighborhood(4, 4, mask));
         float[] xProj = ImageOperations.meanProjection(mask, ImageOperations.Axis.X, null);
@@ -163,8 +168,14 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         int s = yMinsList.size();
         int yMin =  (s%2 == 0) ? (int) (0.5d + (double)(yMinsList.get(s/2-1)+yMinsList.get(s/2)) /2d) : yMinsList.get(s/2);
         if (debug) logger.debug("Ymin: {}, among: {} values : {}", yMin, yMinsList.size(), yMins);
-        
-        return new Result(xObjects, yMin, yMin+channelHeight);
+        List<int[]> sortedMinMaxYShiftList = new ArrayList<>(xObjects.length);
+        for (int i = 0; i<xObjects.length; ++i) {
+            int[] minMaxYShift = new int[]{xObjects[i].getBounds().getxMin(), xObjects[i].getBounds().getxMax(), yMins[i]-yMin};
+            sortedMinMaxYShiftList.add(minMaxYShift);
+        }
+        Collections.sort(sortedMinMaxYShiftList, (i1, i2) -> Integer.compare(i1[0], i2[0]));
+        return new Result(sortedMinMaxYShiftList, yMin, yMin+channelHeight);
+        //return new Result(xObjects, yMin, yMin+channelHeight);
         
     }
 

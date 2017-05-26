@@ -18,13 +18,17 @@
 package processing.dataGeneration;
 
 import static TestUtils.Utils.logger;
+import boa.gui.imageInteraction.IJImageWindowManager;
+import boa.gui.imageInteraction.IJImageWindowManager.Roi3D;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import core.Task;
 import dataStructure.containers.InputImagesImpl;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
+import dataStructure.objects.Object3D;
 import ij.ImageJ;
 import ij.process.AutoThresholder;
+import image.BoundingBox;
 import image.Image;
 import image.ImageByte;
 import image.ImageFormat;
@@ -37,7 +41,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.apache.commons.lang.ArrayUtils;
+import plugins.plugins.thresholders.BacteriaFluoThresholder;
 import plugins.plugins.thresholders.IJAutoThresholder;
+import plugins.plugins.thresholders.BackgroundThresholder;
+import plugins.plugins.transformations.CropMicroChannelFluo2D;
+import plugins.plugins.transformations.Flip;
+import processing.ImageTransformation;
+import processing.ImageTransformation.Axis;
 import utils.Pair;
 import utils.Utils;
 
@@ -52,20 +62,74 @@ public class AnalyseHyperFluoBacterias {
         String path = "/data/Images/MOP/";
         //generateDataSet(path);
         Image[] dataSet = readDataset(path);
+        
+        
+        
+        List<Image> ultra = dataSet[0].splitZPlanes();
+        List<Image> control = dataSet[1].splitZPlanes();
+        Collections.shuffle(control);
+        control = control.subList(0, ultra.size());
+        dataSet[1] = Image.mergeZPlanes(control);
+        
+        dataSet[0]=ImageTransformation.flip(dataSet[0], Axis.Y);
+        dataSet[1]=ImageTransformation.flip(dataSet[1], Axis.Y);
+        
         ImageWindowManagerFactory.showImage(dataSet[0]);
         ImageWindowManagerFactory.showImage(dataSet[1]);
         
-        List<Image> ultra = dataSet[0].splitZPlanes();
         
-        
+        //testThresholder(ultra, control);
+        testCropMicrochannels(dataSet[0], dataSet[1]);
     }
     
-    private static void analyseImage(Image image, ImageInteger mask) {
-        double thld = IJAutoThresholder.runThresholder(image, null, AutoThresholder.Method.Otsu);
-        double[] msc = ImageOperations.getMeanAndSigma(image, null, v->v<thld);
-        mask = ImageOperations.threshold(image, thld, false, true, true, mask);
-        double thld2 = IJAutoThresholder.runThresholder(image, mask, AutoThresholder.Method.Otsu);
-        double[] msc2 = ImageOperations.getMeanAndSigma(image, null, v->v<thld2);
+    private static void testCropMicrochannels(Image ultra, Image control) {
+        IJImageWindowManager iwm = (IJImageWindowManager)ImageWindowManagerFactory.getImageManager();
+        List<Image> ultraZ = ultra.splitZPlanes();
+        List<ImageInteger> utlraCrop = Utils.apply(ultraZ, i->crop(i));
+        Roi3D r = IJImageWindowManager.createRoi(Image.mergeZPlanes(utlraCrop), new BoundingBox(0, 0, 0), true);
+        iwm.displayObject(iwm.getDisplayer().getImage(ultra), r);
+        ImageWindowManagerFactory.showImage(Image.mergeZPlanes(utlraCrop).setName("ultra"));
+        //if (true) return;
+        List<Image> controlZ = control.splitZPlanes();
+        List<ImageInteger> ctrlCrop = Utils.apply(controlZ, i->crop(i));
+        Roi3D rC = IJImageWindowManager.createRoi(Image.mergeZPlanes(ctrlCrop), new BoundingBox(0, 0, 0), true);
+        iwm.displayObject(iwm.getDisplayer().getImage(control), rC);
+        ImageWindowManagerFactory.showImage(Image.mergeZPlanes(ctrlCrop).setName("ctrl"));
+    }
+    
+    private static ImageInteger crop(Image image) {
+        BoundingBox bds = CropMicroChannelFluo2D.getBoundingBox(image, 30, 0, 330, getThreshold(image), 0.6, 200, 0, 0, 0, 0);
+        //logger.debug("Bds: {}", bds);
+        ImageByte res=  new ImageByte("crop", image);
+        ImageOperations.fill(res, 1, bds);
+        return res;
+    }
+     
+    private static void testThresholder(List<Image> ultra, List<Image> control) {
+        
+        logger.debug("images count: {}", ultra.size());
+        List<ImageInteger> masks = new ArrayList<>(ultra.size());
+        List<Double> proportion = Utils.apply(ultra, i -> analyse(i, masks));
+        Utils.plotProfile("Image proportion Utlra", Utils.toDoubleArray(proportion, false));
+        ImageWindowManagerFactory.showImage(Image.mergeZPlanes(masks).setName("Ultra: masks"));
+        logger.debug("Control");
+        
+        masks.clear();
+        List<Double> proportionC = Utils.apply(control, i -> analyse(i, masks));
+        ImageWindowManagerFactory.showImage(Image.mergeZPlanes(masks).setName("Ctrl: masks"));
+        Utils.plotProfile("Image proportion Control", Utils.toDoubleArray(proportionC, false));
+    }
+    private static double getThreshold(Image i) {
+        return BackgroundThresholder.run(i, null, 2.5, 3, 3, null);
+    }
+    
+    private static double analyse(Image i, List<ImageInteger> masks) {
+        double thld = getThreshold(i);
+        ImageInteger tempMask = ImageOperations.threshold(i, thld, false, true, true, null);
+        masks.add(tempMask.duplicate());
+        //double thld = BacteriaFluoThresholder.getThreshold(i, 0.2, null, tempMask, masks, masks2);
+        return ImageOperations.getMeanAndSigma(i, null,  v->v>thld)[2] / i.getSizeXYZ();
+        
     }
     
     private static Image[] readDataset(String path) {

@@ -28,19 +28,28 @@ import plugins.SimpleThresholder;
 import plugins.Thresholder;
 
 /**
- * Implementation of Kappa Sigma Clipping algorithm by Gaëtan Lehmann, http://www.insight-journal.org/browse/publication/132. 
+ * Adapted from Implementation of Kappa Sigma Clipping algorithm by Gaëtan Lehmann, http://www.insight-journal.org/browse/publication/132. 
  * Finds the mean and sigma of the background, and use this two properties to select the pixels significantly different of the background. 
  * Mean and sigma are first computed on the entire image, and a threshold is computed as mean + f * sigma. 
  * This threshold is then used to select the background, and recompute a new threshold with only pixels in the background. 
  * This algorithm shouldn’t converge to a value, so the number of iterations must be provided. 
  * In general, two iterations are used.
- *
+ * Variation : added final sigma for final threshold computation
  * @author jollion
  */
-public class KappaSigma implements SimpleThresholder, Thresholder {
-    NumberParameter sigmaFactor = new BoundedNumberParameter("Sigma factor", 2, 3, 0.01, null);
+public class BackgroundThresholder implements SimpleThresholder {
+    NumberParameter sigmaFactor = new BoundedNumberParameter("Sigma factor", 2, 2.5, 0.01, null);
+    NumberParameter finalSigmaFactor = new BoundedNumberParameter("Final Sigma factor", 2, 4, 0.01, null);
     NumberParameter iterations = new BoundedNumberParameter("Iteration number", 0, 2, 1, null);
-    Parameter[] parameters = new Parameter[]{sigmaFactor, iterations};
+    Parameter[] parameters = new Parameter[]{sigmaFactor, finalSigmaFactor, iterations};
+    
+    public BackgroundThresholder() {}
+    
+    public BackgroundThresholder(double sigmaFactor, double finalSigmaFactor, int iterations) {
+        this.sigmaFactor.setValue(sigmaFactor);
+        this.finalSigmaFactor.setValue(finalSigmaFactor);
+        this.iterations.setValue(iterations);
+    }
     
     @Override 
     public double runThresholder(Image input) {
@@ -48,10 +57,10 @@ public class KappaSigma implements SimpleThresholder, Thresholder {
     }
     @Override
     public double runThresholder(Image input, StructureObjectProcessing structureObject) {
-        return kappaSigmaThreshold(input, structureObject!=null?structureObject.getMask():null, sigmaFactor.getValue().doubleValue(), iterations.getValue().intValue(), null);
+        return run(input, structureObject!=null?structureObject.getMask():null, sigmaFactor.getValue().doubleValue(), finalSigmaFactor.getValue().doubleValue(), iterations.getValue().intValue(), null);
     }
 
-    public static double kappaSigmaThreshold(Image input, ImageMask mask, double sigmaFactor, int iterations, double[] meanSigma) {
+    public static double run(Image input, ImageMask mask, double sigmaFactor, double lastSigmaFactor, int iterations, double[] meanSigma) {
         if (meanSigma!=null && meanSigma.length<2) throw new IllegalArgumentException("Argument Mean Sigma should be null or of size 2 to recieve mean and sigma values");
         if (mask==null) mask = new BlankMask(input);
         double lastThreshold = Double.MAX_VALUE;
@@ -82,7 +91,7 @@ public class KappaSigma implements SimpleThresholder, Thresholder {
                     meanSigma[1]=sigma;
                 }
             }
-            double newThreshold = mean + sigmaFactor * sigma;
+            double newThreshold = i==iterations-1 ? mean + lastSigmaFactor * sigma : mean + sigmaFactor * sigma;
             //logger.trace("Kappa Sigma Thresholder: Iteration:"+ i+" Mean Background Value: "+mean+ " Sigma: "+sigma+ " threshold: "+newThreshold);
             if (newThreshold == lastThreshold) return lastThreshold;
             else lastThreshold = newThreshold;
