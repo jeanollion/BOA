@@ -17,6 +17,7 @@
  */
 package plugins.plugins.trackers.trackMate;
 
+import boa.gui.GUI;
 import com.google.common.collect.Sets;
 import configuration.parameters.Parameter;
 import dataStructure.objects.Object3D;
@@ -49,6 +50,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
+import org.slf4j.LoggerFactory;
 import static plugins.Plugin.logger;
 import utils.Utils;
 /**
@@ -56,6 +58,7 @@ import utils.Utils;
  * @author jollion
  */
 public class TrackMateInterface<S extends Spot> {
+    public static final org.slf4j.Logger logger = LoggerFactory.getLogger(TrackMateInterface.class);
     public final HashMap<Object3D, S>  objectSpotMap = new HashMap<>();
     public final HashMap<S, Object3D>  spotObjectMap = new HashMap<>();
     private final SpotCollection collection = new SpotCollection();
@@ -126,6 +129,7 @@ public class TrackMateInterface<S extends Spot> {
             graph.addVertex(clone);
             clonedSpots.put(clone, s);
             graph.addEdge(s,clone);
+            //logger.debug("unlinked object: f={}, Idx={}", s.getFeature(Spot.FRAME), spotObjectMap.get(s).getLabel()-1);
         }
         // Prepare settings object
         final Map< String, Object > slSettings = new HashMap<>();
@@ -180,33 +184,48 @@ public class TrackMateInterface<S extends Spot> {
         return parents.stream().collect(Collectors.toMap(StructureObject::getFrame, p->p.getChildren(structureIdx)));
     }
     public void setTrackLinks(Map<Integer, List<StructureObject>> objectsF) {
+        setTrackLinks(objectsF, null);
+    }
+    public void setTrackLinks(Map<Integer, List<StructureObject>> objectsF, Collection<StructureObject> modifiedObjects) {
+        if (objectsF==null || objectsF.isEmpty()) return;
         if (graph==null) throw new RuntimeException("Graph not initialized");
         logger.debug("number of links: {}", graph.edgeSet().size());
-        for (StructureObject o : Utils.flattenMap(objectsF)) o.resetTrackLinks(true, true);
+        int minF = objectsF.keySet().stream().min((i1, i2)->Integer.compare(i1, i2)).get();
+        int maxF = objectsF.keySet().stream().max((i1, i2)->Integer.compare(i1, i2)).get();
+        List<StructureObject> objects = Utils.flattenMap(objectsF);
+        for (StructureObject o : objects) o.resetTrackLinks(o.getFrame()>minF, o.getFrame()<maxF, modifiedObjects);
 
-        TreeSet<DefaultWeightedEdge> nextEdges = new TreeSet(new Comparator<DefaultWeightedEdge>() {
+        TreeSet<DefaultWeightedEdge> edgeBucket = new TreeSet(new Comparator<DefaultWeightedEdge>() {
             public int compare(DefaultWeightedEdge arg0, DefaultWeightedEdge arg1) {
                 return Double.compare(graph.getEdgeWeight(arg0), graph.getEdgeWeight(arg1));
             }
         });
-        for (List<StructureObject> children : objectsF.values()) {
-            for (StructureObject child : children) {
-                //logger.debug("settings links for: {}", child);
-                S s = objectSpotMap.get(child.getObject());
-                getSortedEdgesOf(s, graph, false, nextEdges);
-                if (!nextEdges.isEmpty()) {
-                    DefaultWeightedEdge nextEdge = nextEdges.last(); //main edge -> for previous.next
-                    for (DefaultWeightedEdge e : nextEdges) {
-                        S nextSpot = getOtherSpot(e, s, graph);
-                        StructureObject nextSo = getStructureObject(objectsF.get(nextSpot.getFeature(Spot.FRAME).intValue()), nextSpot);
-                        if (nextSo!=null && nextSo.getPrevious()==null) {
-                            StructureObjectUtils.setTrackLinks(child, nextSo, true, e==nextEdge);
-                            //nextSo.setPreviousInTrack(child, e!=nextEdge);
-                        }
-                        else logger.warn("SpotWrapper: next: {}, next of {}, has already a previous assigned: {}", nextSo, child, nextSo.getPrevious());
+        
+        setEdges(objects, objectsF, false, edgeBucket, modifiedObjects);
+        setEdges(objects, objectsF, true, edgeBucket, modifiedObjects);
+    }
+    private void setEdges(List<StructureObject> objects, Map<Integer, List<StructureObject>> objectsByF, boolean prev, TreeSet<DefaultWeightedEdge> edgesBucket, Collection<StructureObject> modifiedObjects) {
+        for (StructureObject child : objects) {
+            edgesBucket.clear();
+            //logger.debug("settings links for: {}", child);
+            S s = objectSpotMap.get(child.getObject());
+            getSortedEdgesOf(s, graph, prev, edgesBucket);
+            if (edgesBucket.size()==1) {
+                DefaultWeightedEdge e = edgesBucket.first();
+                S otherSpot = getOtherSpot(e, s, graph);
+                StructureObject other = getStructureObject(objectsByF.get(otherSpot.getFeature(Spot.FRAME).intValue()), otherSpot);
+                if (other!=null) {
+                    if (prev) {
+                        if (child.getPrevious()!=null && !child.getPrevious().equals(other)) {
+                            logger.warn("warning: {} has already a previous assigned: {}, cannot assign: {}", child, child.getPrevious(), other);
+                        } else StructureObjectUtils.setTrackLinks(other, child, true, false, modifiedObjects);
+                    } else {
+                        if (child.getNext()!=null && !child.getNext().equals(other)) {
+                            logger.warn("warning: {} has already a next assigned: {}, cannot assign: {}", child, child.getNext(), other);
+                        } else StructureObjectUtils.setTrackLinks(child, other, false, true, modifiedObjects);
                     }
-                } 
-                nextEdges.clear();
+                }
+                //else logger.warn("SpotWrapper: next: {}, next of {}, has already a previous assigned: {}", nextSo, child, nextSo.getPrevious());
             }
         }
     }
@@ -251,14 +270,17 @@ public class TrackMateInterface<S extends Spot> {
     public static class DefaultObject3DSpotFactory implements SpotFactory<Spot> {
         @Override
         public Spot toSpot(Object3D o, int frame) {
-            double[] center = o.getGeomCenter(true);
-            Spot s = new Spot(center[0], center[1], center[2], 1, 1);
+            double[] center = o.getCenter();
+            if (center==null) center = o.getGeomCenter(true);
+            Spot s = new Spot(center[0], center[1], center.length>=2 ? center[2] : 0, 1, 1);
             s.getFeatures().put(Spot.FRAME, (double)frame);
+            s.getFeatures().put("Idx", (double)(o.getLabel()-1));
             return s;
         }
         @Override public Spot duplicate(Spot s) {
             Spot res =  new Spot(s.getFeature(Spot.POSITION_X), s.getFeature(Spot.POSITION_Y), s.getFeature(Spot.POSITION_Z), s.getFeature(Spot.RADIUS), s.getFeature(Spot.QUALITY));
             res.getFeatures().put(Spot.FRAME, s.getFeature(Spot.FRAME));
+            res.getFeatures().put("Idx", s.getFeature("Idx"));
             return res;
         }
     }

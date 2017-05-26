@@ -58,9 +58,11 @@ public class StructureObjectUtils {
         for (StructureObject n : nextParent.getChildren(o.getStructureIdx())) if (n.getPrevious()==o) bucket.add(n);
         return bucket;
     }
-    
-    
     public static void setTrackLinks(StructureObject previous, StructureObject next, boolean setPrevious, boolean setNext) {
+        setTrackLinks(previous, next, setPrevious, setNext, null);
+    }
+    
+    public static void setTrackLinks(StructureObject previous, StructureObject next, boolean setPrevious, boolean setNext, Collection<StructureObject> modifiedObjects) {
         if (previous==null && next==null) return;
         else if (previous==null && next!=null) {
             next.resetTrackLinks(setPrevious, false);
@@ -70,14 +72,16 @@ public class StructureObjectUtils {
         else if (next.getFrame()<=previous.getFrame()) throw new RuntimeException("setLink should be of time>= "+(previous.getFrame()+1) +" but is: "+next.getFrame()+ " current: "+previous+", next: "+next);
         else {
             if (setPrevious && setNext) { // double link: set trackHead
-                    previous.setNext(next);
-                    next.setPrevious(previous);
-                    next.setTrackHead(previous.getTrackHead(), false, false, null);
+                previous.setNext(next);
+                next.setPrevious(previous);
+                next.setTrackHead(previous.getTrackHead(), false, modifiedObjects!=null, modifiedObjects);
             } else if (setPrevious) {
                 next.setPrevious(previous);
-                next.setTrackHead(next, false, false, null);
+                if (next.equals(previous.getNext())) next.setTrackHead(previous.getTrackHead(), false, modifiedObjects!=null, modifiedObjects);
+                else next.setTrackHead(next, false, false, null);
             } else if (setNext) {
                 previous.setNext(next);
+                if (previous.equals(next.getPrevious()))  next.setTrackHead(previous.getTrackHead(), false, modifiedObjects!=null, modifiedObjects);
             }
         }
     }

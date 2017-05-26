@@ -71,7 +71,7 @@ public class ManualCorrection {
         StructureObject nextParent = o.getNext()==null ? o.getParent().getNext() : o.getNext().getParent();
         if (nextParent==null) return Collections.EMPTY_LIST;
         List<StructureObject> res = new ArrayList(nextParent.getChildren(o.getStructureIdx()));
-        res.removeIf(e -> e.getPrevious()!=o && o.getNext()!=e);
+        res.removeIf(e -> !o.equals(e.getPrevious()) && !e.equals(o.getNext()));
         //logger.debug("next of : {} = {}", o, res);
         return res;
     }
@@ -79,7 +79,7 @@ public class ManualCorrection {
         StructureObject nextParent = o.getPrevious()==null ? o.getParent().getPrevious() : o.getPrevious().getParent();
         if (nextParent==null) return Collections.EMPTY_LIST;
         List<StructureObject> res = new ArrayList(nextParent.getChildren(o.getStructureIdx()));
-        res.removeIf(e -> e.getNext()!=o && o.getPrevious()!=e);
+        res.removeIf(e -> !o.equals(e.getNext()) && !e.equals(o.getPrevious()));
         //logger.debug("prev of : {} = {}", o, res);
         return res;
     }
@@ -147,45 +147,43 @@ public class ManualCorrection {
             boolean doubleLink = allowDoubleLink;
             List<StructureObject> allNext = getNext(prev);
             if (allowSplit) {
-                if (allNext.contains(next)? allNext.size()>1 : allNext.isEmpty()) doubleLink = false;
+                if (allNext.contains(next)? allNext.size()>1 : !allNext.isEmpty()) doubleLink = false;
             }
             List<StructureObject> allPrev = getPrevious(next);
             if (allowMerge) {
                 if (allPrev.contains(prev) ? allPrev.size()>1 : !allPrev.isEmpty()) doubleLink = false;
             }
-            if (allowMerge) {
-                if (!allPrev.contains(prev)) { // mergeLink
-                    doubleLink = false;
-                    boolean allowMergeLink = true;
-                    if (!allNext.contains(next)) {
-                        if (!allowSplit) {
-                            for (StructureObject n : allNext) unlinkObjects(prev, n, modifiedObjects);
-                        } else allowMergeLink = false;
-                    }
-                    if (allowMergeLink && !allNext.contains(next)) {
-                        prev.setTrackLinks(next, false, true);
-                        prev.setAttribute(correctionMerge, true);
-                        modifiedObjects.add(prev);
-                        logger.debug("split link : {}+{}", prev, next);
-                    }
+            if (allowMerge && !doubleLink) { // mergeLink
+                doubleLink = false;
+                boolean allowMergeLink = true;
+                if (!allNext.contains(next)) {
+                    if (!allowSplit) {
+                        for (StructureObject n : allNext) unlinkObjects(prev, n, modifiedObjects);
+                    } else allowMergeLink = false;
                 }
+                if (allowMergeLink && !allNext.contains(next)) {
+                    prev.setTrackLinks(next, false, true);
+                    prev.setAttribute(correctionMerge, true);
+                    modifiedObjects.add(prev);
+                    //logger.debug("merge link : {}>{}", prev, next);
+                }
+                
             }
-            if (allowSplit) {
-                if (!allNext.contains(next)) { // split link
-                    doubleLink=false;
-                    boolean allowSplitLink = true;
-                    if (!allPrev.contains(prev)) {
-                        if (!allowMerge) {
-                            for (StructureObject p : allPrev) unlinkObjects(p, next, modifiedObjects);
-                        } else allowSplitLink = false;
-                    }
-                    if (allowSplitLink && !allPrev.contains(prev)) {
-                        prev.setTrackLinks(next, true, false);
-                        prev.setAttribute(correctionSplit, true);
-                        modifiedObjects.add(next);
-                        logger.debug("split link : {}+{}", prev, next);
-                    }
+            if (allowSplit && !doubleLink) {
+                doubleLink=false;
+                boolean allowSplitLink = true;
+                if (!allPrev.contains(prev)) {
+                    if (!allowMerge) {
+                        for (StructureObject p : allPrev) unlinkObjects(p, next, modifiedObjects);
+                    } else allowSplitLink = false;
                 }
+                if (allowSplitLink && !allPrev.contains(prev)) {
+                    prev.setTrackLinks(next, true, false);
+                    prev.setAttribute(correctionSplit, true);
+                    modifiedObjects.add(next);
+                    //logger.debug("split link : {}>{}", prev, next);
+                }
+                
             }
             if (doubleLink) {
                 if (prev.getNext()!=null && prev.getNext()!=next) unlinkObjects(prev, prev.getNext(), modifiedObjects);
@@ -196,7 +194,7 @@ public class ManualCorrection {
                     next.setTrackHead(prev.getTrackHead(), false, true, modifiedObjects);
                     modifiedObjects.add(prev);
                     modifiedObjects.add(next);
-                    logger.debug("double link : {}+{}, th:{}", prev, next, prev.getTrackHead());
+                    //logger.debug("double link : {}+{}, th:{}", prev, next, prev.getTrackHead());
                 //}
             }
         }
@@ -225,19 +223,19 @@ public class ManualCorrection {
         boolean merge = db.getExperiment().getStructure(structureIdx).allowMerge();
         boolean split = db.getExperiment().getStructure(structureIdx).allowSplit();
         
-        List<StructureObject> modifiedObjects = new ArrayList<StructureObject>();
+        List<StructureObject> modifiedObjects = new ArrayList<>();
         TreeMap<StructureObject, List<StructureObject>> objectsByParent = new TreeMap(StructureObjectUtils.splitByParent(objects)); // sorted by time point
         StructureObject prevParent = null;
         List<StructureObject> prev = null;
-        logger.debug("modify: unlink: {}, #objects: {}, #parents: {}", unlink, objects.size(), objectsByParent.keySet().size());
+        //logger.debug("modify: unlink: {}, #objects: {}, #parents: {}", unlink, objects.size(), objectsByParent.keySet().size());
         Map<Integer, List<StructureObject>> map = new HashMap<>();
         for (StructureObject currentParent : objectsByParent.keySet()) {
             List<StructureObject> current = objectsByParent.get(currentParent);
             Collections.sort(current);
-            logger.debug("prevParent: {}, currentParent: {}, #objects: {}", prevParent, currentParent, current.size());
+            //logger.debug("prevParent: {}, currentParent: {}, #objects: {}", prevParent, currentParent, current.size());
             if (prevParent!=null && prevParent.getFrame()<currentParent.getFrame()) {
-                if (prev!=null) logger.debug("prev: {}, prevTh: {}, prevIsTh: {}, prevPrev: {}, prevNext: {}", Utils.toStringList(prev), Utils.toStringList(prev, o->o.getTrackHead()), Utils.toStringList(prev, o->o.isTrackHead()), Utils.toStringList(prev, o->o.getPrevious()), Utils.toStringList(prev, o->o.getNext()));
-                logger.debug("current: {}, currentTh: {}, currentIsTh: {}, currentPrev: {}, currentNext: {}", Utils.toStringList(current), Utils.toStringList(current, o->o.getTrackHead()), Utils.toStringList(current, o->o.isTrackHead()), Utils.toStringList(current, o->o.getPrevious()), Utils.toStringList(current, o->o.getNext()));
+                //if (prev!=null) logger.debug("prev: {}, prevTh: {}, prevIsTh: {}, prevPrev: {}, prevNext: {}", Utils.toStringList(prev), Utils.toStringList(prev, o->o.getTrackHead()), Utils.toStringList(prev, o->o.isTrackHead()), Utils.toStringList(prev, o->o.getPrevious()), Utils.toStringList(prev, o->o.getNext()));
+                //logger.debug("current: {}, currentTh: {}, currentIsTh: {}, currentPrev: {}, currentNext: {}", Utils.toStringList(current), Utils.toStringList(current, o->o.getTrackHead()), Utils.toStringList(current, o->o.isTrackHead()), Utils.toStringList(current, o->o.getPrevious()), Utils.toStringList(current, o->o.getNext()));
                 if (prev.size()==1 && current.size()==1) {
                     if (unlink) {
                         if (current.get(0).getPrevious()==prev.get(0) || prev.get(0).getNext()==current) { //unlink the 2 spots
@@ -280,10 +278,11 @@ public class ManualCorrection {
             List<StructureObject> allObjects = Utils.flattenMap(map);
             TrackMateInterface<Spot> tmi = new TrackMateInterface(TrackMateInterface.defaultFactory());
             tmi.addObjects(map);
-            double meanLength = allObjects.stream().mapToDouble( s->GeometricalMeasurements.getFeretMax(s.getObject())).average().getAsDouble();
-            tmi.processFTF(meanLength);
-            tmi.processGC(meanLength, 0, split, merge);
-            tmi.setTrackLinks(map);
+            //double meanLength = allObjects.stream().mapToDouble( s->GeometricalMeasurements.getFeretMax(s.getObject())).average().getAsDouble();
+            //logger.debug("Mean size: {}", meanLength);
+            tmi.processFTF(Math.sqrt(Double.MAX_VALUE)/100); // not Double.MAX_VALUE -> causes trackMate to crash possibly because squared.. 
+            tmi.processGC(Math.sqrt(Double.MAX_VALUE)/100, 0, split, merge);
+            tmi.setTrackLinks(map, modifiedObjects);
             modifiedObjects.addAll(allObjects);
         }
         //repairLinkInconsistencies(db, modifiedObjects, modifiedObjects);
@@ -552,7 +551,7 @@ public class ManualCorrection {
         if (objects.isEmpty()) return;
         ObjectDAO dao = db.getDao(fieldName);
         Map<StructureObject, List<StructureObject>> objectsByParent = StructureObjectUtils.splitByParent(objects);
-        List<StructureObject> newObjects = new ArrayList<StructureObject>();
+        List<StructureObject> newObjects = new ArrayList<>();
         for (StructureObject parent : objectsByParent.keySet()) {
             List<StructureObject> objectsToMerge = objectsByParent.get(parent);
             if (objectsToMerge.size()<=1) logger.warn("Merge Objects: select several objects from same parent!");
@@ -573,6 +572,8 @@ public class ManualCorrection {
                 if (res.getPrevious()!=null) res.getPrevious().setAttribute(trackErrorNext, null);
                 if (res.getNext()!=null) res.getNext().setAttribute(trackErrorPrev, null);
                 dao.delete(objectsToMerge, true, true, true);
+                parent.getChildren(res.getStructureIdx()).removeAll(objectsToMerge);
+                parent.relabelChildren(res.getStructureIdx(), modifiedObjects);
                 modifiedObjects.removeAll(objectsToMerge);
                 modifiedObjects.add(res);
                 Utils.removeDuplicates(modifiedObjects, false);
@@ -619,6 +620,7 @@ public class ManualCorrection {
                 o.getParent().getChildren(o.getStructureIdx()).remove(o);
             }
             Set<StructureObject> parents = StructureObjectUtils.getParents(toDelete);
+            for (StructureObject p : parents) p.relabelChildren(structureIdx, modifiedObjects); // relabel
             Set<StructureObject> parentTH = StructureObjectUtils.getParentTrackHeads(toDelete);
             logger.info("Deleting {} objects, from {} parents", toDelete.size(), parents.size());
             dao.delete(toDelete, true, true, true);

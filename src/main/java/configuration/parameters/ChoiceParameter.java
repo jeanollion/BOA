@@ -91,7 +91,7 @@ public class ChoiceParameter extends SimpleParameter implements ActionableParame
             //this.allowNoSelection=otherC.allowNoSelection;
             setSelectedItem(otherC.getSelectedItem());
             //logger.debug("choice {} set content from: {} current item: {}, current idx {}, other item: {}, other idx : {}", this.hashCode(), otherC.hashCode(), this.getSelectedItem(), this.getSelectedIndex(), otherC.getSelectedItem(), otherC.getSelectedIndex());
-        } else throw new IllegalArgumentException("wrong parameter type");
+        } else throw new IllegalArgumentException("wrong parameter type: "+(other==null? "null":other.getClass()) +" instead of ChoiceParameter");
     }
     
     // choosable parameter

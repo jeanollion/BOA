@@ -52,20 +52,27 @@ public class TestTracker {
         //final String dbName = "boa_phase140115mutH";
         //final String dbName = "boa_phase150324mutH";
         //String dbName = "boa_phase150616wt";
-        String dbName = "ProblemeTracking";
+        String dbName = "fluo170515_MutS";
         //String dbName = "boa_fluo170207_150ms";
         int fIdx = 0;
         int mcIdx =0;
-        int structureIdx = 0;
+        int structureIdx = 1;
         MasterDAO db = new Task(dbName).getDB();
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 532, 535);
-        
+        //testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 5);
+        testTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 5);
         //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 37, 38); // 91 to test rearrange objects 
         
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
+        test(dao, ps, false, structureIdx, mcIdx, tStart, tEnd);
+    }
+    public static void testTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
+        test(dao, ps, true, structureIdx, mcIdx, tStart, tEnd);
+    }
+    
+    public static void test(ObjectDAO dao, ProcessingScheme ps, boolean trackOnly, int structureIdx, int mcIdx, int tStart, int tEnd) {
         List<StructureObject> roots = dao.getRoots();
         
         List<StructureObject> parentTrack=null;
@@ -89,8 +96,8 @@ public class TestTracker {
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;
-        
-        ps.segmentAndTrack(structureIdx, parentTrack);
+        if (trackOnly) ps.trackOnly(structureIdx, parentTrack);
+        else ps.segmentAndTrack(structureIdx, parentTrack);
         logger.debug("children: {}", StructureObjectUtils.getAllTracks(parentTrack, 0));
         //ps.trackOnly(structureIdx, parentTrack);
         GUI.getInstance();

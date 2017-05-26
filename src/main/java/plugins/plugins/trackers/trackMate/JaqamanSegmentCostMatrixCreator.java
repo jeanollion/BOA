@@ -45,12 +45,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.imglib2.algorithm.MultiThreaded;
 import org.jgrapht.UndirectedGraph;
 import org.jgrapht.graph.DefaultWeightedEdge;
+import static plugins.plugins.trackers.trackMate.TrackMateInterface.logger;
 
 /**
  *
@@ -137,16 +141,14 @@ public class JaqamanSegmentCostMatrixCreator implements CostMatrixCreator< Spot,
 		final double mMaxDistance = ( Double ) settings.get( KEY_MERGING_MAX_DISTANCE );
 		final double mCostThreshold = mMaxDistance * mMaxDistance;
 		final boolean allowMerging = ( Boolean ) settings.get( KEY_ALLOW_TRACK_MERGING );
-
-		// Splitting
+                // Splitting
 		@SuppressWarnings( "unchecked" )
 		final Map< String, Double > sFeaturePenalties = ( Map< String, Double > ) settings.get( KEY_SPLITTING_FEATURE_PENALTIES );
 		final CostFunction< Spot, Spot > sCostFunction = getCostFunctionFor( sFeaturePenalties );
 		final boolean allowSplitting = ( Boolean ) settings.get( KEY_ALLOW_TRACK_SPLITTING );
 		final double sMaxDistance = ( Double ) settings.get( KEY_SPLITTING_MAX_DISTANCE );
 		final double sCostThreshold = sMaxDistance * sMaxDistance;
-
-		// Alternative cost
+                // Alternative cost
 		final double alternativeCostFactor = ( Double ) settings.get( KEY_ALTERNATIVE_LINKING_COST_FACTOR );
 		final double percentile = ( Double ) settings.get( KEY_CUTOFF_PERCENTILE );
 
@@ -174,19 +176,34 @@ public class JaqamanSegmentCostMatrixCreator implements CostMatrixCreator< Spot,
 		 * we will sort the unique list of targets, otherwise the SCM will
 		 * complains it does not receive columns in the right order.
 		 */
-		final List< Spot > allMiddles;
+		final List< Spot > allMiddlesMerge;
+                final List< Spot > allMiddlesSplit;
 		if ( mergingOrSplitting )
 		{
 			final List< List< Spot >> segmentMiddles = segmentSplitter.getSegmentMiddles();
-			allMiddles = new ArrayList< Spot >();
+			List<Spot>allMiddles = new ArrayList< Spot >();
 			for ( final List< Spot > segment : segmentMiddles )
 			{
 				allMiddles.addAll( segment );
 			}
+                        // also adds duplicated spots
+                        for (DefaultWeightedEdge e : graph.edgeSet()) {
+                            Spot source = graph.getEdgeSource(e);
+                            Spot target = graph.getEdgeTarget(e);
+                            if (Objects.equals(source.getFeature(Spot.FRAME), target.getFeature(Spot.FRAME))) {
+                                //logger.debug("adding middle: {}-{}", source.getFeature(Spot.FRAME), source.getFeature("Idx"));
+                                allMiddles.add(source);
+                            }
+                        }
+                        allMiddlesMerge = Stream.concat(allMiddles.stream(), segmentEnds.stream()).collect(Collectors.toList());
+                        allMiddlesSplit = Stream.concat(segmentStarts.stream(), allMiddles.stream()).collect(Collectors.toList());
+                        Collections.sort(allMiddlesMerge, Spot.frameComparator);
+                        Collections.sort(allMiddlesSplit, Spot.frameComparator);
 		}
 		else
 		{
-			allMiddles = Collections.emptyList();
+                        allMiddlesMerge = Collections.EMPTY_LIST;
+                        allMiddlesSplit = Collections.EMPTY_LIST;
 		}
 
 		final Object lock = new Object();
@@ -253,7 +270,7 @@ public class JaqamanSegmentCostMatrixCreator implements CostMatrixCreator< Spot,
 
 					if ( allowMerging )
 					{
-						for ( final Spot target : allMiddles )
+						for ( final Spot target : allMiddlesMerge )
 						{
 							// Check frame interval, must be 1.
 							final int targetFrame = target.getFeature( Spot.FRAME ).intValue();
@@ -298,7 +315,7 @@ public class JaqamanSegmentCostMatrixCreator implements CostMatrixCreator< Spot,
 		if ( allowSplitting )
 		{
 			final ExecutorService executorS = Executors.newFixedThreadPool( numThreads );
-			for ( final Spot source : allMiddles )
+			for ( final Spot source : allMiddlesSplit )
 			{
 				executorS.submit( new Runnable()
 				{
@@ -319,9 +336,11 @@ public class JaqamanSegmentCostMatrixCreator implements CostMatrixCreator< Spot,
 
 							// Check max distance
 							final double cost = sCostFunction.linkingCost( source, target );
+                                                        //logger.debug("link: F:{}I:{}+F:{}+I:{} cost: {}, thld: {}", source.getFeature(Spot.FRAME), source.getFeature("Idx"), target.getFeature(Spot.FRAME), target.getFeature("Idx"), target, cost,sCostThreshold );
 							if ( cost > sCostThreshold )
 							{
-								continue;
+								//logger.debug("link: {}+{} not accepted" );
+                                                                continue;
 							}
 							synchronized ( lock )
 							{

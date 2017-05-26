@@ -207,7 +207,12 @@ public class DBMapObjectDAO implements ObjectDAO {
         if (parentTrack.isEmpty()) return;
         Map<ObjectId, StructureObject> children = getChildren(new Pair(parentTrack.get(0).getTrackHeadId(), childStructureIdx));
         Map<StructureObject, List<StructureObject>> byParent = StructureObjectUtils.splitByParent(children.values());
-        for (StructureObject parent : parentTrack) parent.setChildren(byParent.get(parent), childStructureIdx);
+        for (StructureObject parent : parentTrack) {
+            List<StructureObject> c = byParent.get(parent);
+            if (c==null) continue;
+            Collections.sort(c);
+            parent.setChildren(c, childStructureIdx);
+        }
     }
     
     @Override

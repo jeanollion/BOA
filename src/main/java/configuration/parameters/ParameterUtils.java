@@ -120,15 +120,17 @@ public class ParameterUtils {
 
     public static boolean setContent(Parameter[] recieve, Parameter[] give) {
         if (recieve==null || give== null || recieve.length!=give.length) return false;
+        boolean ok = true;
         for (int i = 0; i < recieve.length; i++) {
             try {
                 recieve[i].setContentFrom(give[i]);
             } catch (Error e) {
-                logger.error("set content error :"+e.getMessage(), e);
-                return false;
+                logger.debug("set content list error @ {} : r={} / s={}", i, recieve[i]!=null ? recieve[i].getName() : "null", give[i]!=null ? give[i].getName() : "null");
+                logger.error("set content error :", e);
+                ok = false;
             }
         }
-        return true;
+        return ok;
     }
     
     public static boolean setContent(List<Parameter> recieve, List<Parameter> give) {
@@ -136,15 +138,17 @@ public class ParameterUtils {
             setContentMap(recieve, give);
             return false;
         }
+        boolean ok = true;
         for (int i = 0; i < recieve.size(); i++) {
             try {
                 recieve.get(i).setContentFrom(give.get(i));
             } catch (IllegalArgumentException e) {
-                logger.error("set content error : {}", e);
-                return false;
+                logger.debug("set content list error @ {} : r={} / s={}", i, recieve.get(i)!=null ? recieve.get(i).getName() : "null", give.get(i)!=null ? give.get(i).getName() : "null");
+                logger.error("set content list error : ", e);
+                ok = false;
             }
         }
-        return true;
+        return ok;
     }
     private static void setContentMap(List<Parameter> recieve, List<Parameter> give) {
         if (recieve==null || recieve.isEmpty() || give==null || give.isEmpty()) return;

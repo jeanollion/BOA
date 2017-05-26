@@ -265,23 +265,32 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         return this.getParent().getChildren(structureIdx);
     }
     public void relabelChildren(int structureIdx) {relabelChildren(structureIdx, null);}
-    public void relabelChildren(int structureIdx, List<StructureObject> modifiedObjects) {
-        //logger.debug("relabeling: {} number of children: {}", this, getChildren(structureIdx).size());
-        // in order to avoid overriding some images, the algorithm is in two passes: ascending and descending indices
-        List<StructureObject> c = getChildren(structureIdx);
-        StructureObject current;
+    public void relabelChildren(int structureIdx, Collection<StructureObject> modifiedObjects) {
+        logger.debug("relabeling: {} number of children: {}", this, getChildren(structureIdx).size());
+        
+        List<StructureObject> children = getChildren(structureIdx);
+        int i = 0;
+        for (StructureObject c : children) {
+            if (c.idx!=i) {
+                c.setIdx(i);
+                if (modifiedObjects!=null) modifiedObjects.add(c);
+            }
+            ++i;
+        }
+        // For case where objects are stored in order to avoid overriding some images, the algorithm is in two passes: ascending and descending indices
+        /*
         for (int i = 0; i<c.size(); ++i) {
             current = c.get(i);
             if (current.idx!=i) {
                 if (current.idx>i) { // need to decrease index
                     if (i==0 || c.get(i-1).idx!=i)  {
-                        //logger.debug("relabeling: {}, newIdx: {}", current, i);
+                        logger.debug("relabeling: {}, newIdx: {}", current, i);
                         current.setIdx(i);
                         if (modifiedObjects!=null) modifiedObjects.add(current);
                     }
                 } else { //need to increase idx
                     if (i==c.size()-1 || c.get(i+1).idx!=i)  {
-                        //logger.debug("relabeling: {}, newIdx: {}", current, i);
+                        logger.debug("relabeling: {}, newIdx: {}", current, i);
                         current.setIdx(i);
                         if (modifiedObjects!=null) modifiedObjects.add(current);
                     }
@@ -293,21 +302,20 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             if (current.idx!=i) {
                 if (current.idx>i) { // need to decrease index
                     if (i==0 || c.get(i-1).idx!=i)  {
-                        //logger.debug("relabeling: {}, newIdx: {}", current, i);
+                        logger.debug("relabeling: {}, newIdx: {}", current, i);
                         current.setIdx(i);
                         if (modifiedObjects!=null) modifiedObjects.add(current);
                     }
                 } else { //need to increase idx
                     if (i==c.size()-1 || c.get(i+1).idx!=i)  {
-                        //logger.debug("relabeling: {}, newIdx: {}", current, i);
+                        logger.debug("relabeling: {}, newIdx: {}", current, i);
                         current.setIdx(i);
                         if (modifiedObjects!=null) modifiedObjects.add(current);
                     }
                 }
             } 
         }
-        
-        
+        */
     }
     protected void setIdx(int idx) {
         if (objectContainer!=null) objectContainer.relabelObject(idx);
@@ -335,18 +343,21 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
         if (next!=null && setPrev) next.setAttribute(trackErrorPrev, null);
     }
-    
+    @Override
     public StructureObject resetTrackLinks(boolean prev, boolean next) {
-        if (prev && this.previous!=null && this.previous.next==this) previous.unSetTrackLinksOneWay(false, true);
-        if (next && this.next!=null && this.next.previous==this) this.next.unSetTrackLinksOneWay(true, false);
-        unSetTrackLinksOneWay(prev, next);
+        return resetTrackLinks(prev, next, null);
+    }
+    public StructureObject resetTrackLinks(boolean prev, boolean next, Collection<StructureObject> modifiedObjects) {
+        if (prev && this.previous!=null && this.previous.next==this) previous.unSetTrackLinksOneWay(false, true, modifiedObjects);
+        if (next && this.next!=null && this.next.previous==this) this.next.unSetTrackLinksOneWay(true, false, modifiedObjects);
+        unSetTrackLinksOneWay(prev, next, modifiedObjects);
         return this;
     }
-    private void unSetTrackLinksOneWay(boolean prev, boolean next) {
+    private void unSetTrackLinksOneWay(boolean prev, boolean next, Collection<StructureObject> modifiedObjects) {
         if (prev) {
             if (this.previous!=null && this.equals(this.previous.next))
             setPrevious(null);
-            setTrackHead(this, false, false, null);
+            setTrackHead(this, false, modifiedObjects!=null, modifiedObjects);
             setAttribute(trackErrorPrev, null);
         }
         if (next) {
@@ -937,7 +948,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (comp!=0) return comp;
         comp = Integer.compare(getStructureIdx(), other.getStructureIdx());
         if (comp!=0) return comp;
-        if (getParent() != null && other.getParent() != null) {
+        if (getParent() != null && other.getParent() != null && !getParent().equals(other.getParent())) {
             comp = getParent().compareTo(other.getParent());
             if (comp!=0) return comp;
         }

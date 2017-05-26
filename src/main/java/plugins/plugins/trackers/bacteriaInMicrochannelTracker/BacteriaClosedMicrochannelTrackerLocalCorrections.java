@@ -627,7 +627,6 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             }
             //logger.debug("get object @ {}, size: {}", timePoint, populations[timePoint].size());
             createAttributes(timePoint);
-            Collections.sort(populations[timePoint], (o1, o2)->Integer.compare(o1.getBounds().getyMin(), o2.getBounds().getyMin()));
         }
         return populations[timePoint];
     }
