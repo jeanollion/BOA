@@ -34,6 +34,7 @@ import utils.ArrayUtil;
  */
 public class ResetXPParameters {
     public static final Logger logger = LoggerFactory.getLogger(ResetXPParameters.class);
+    static int trimStart = 0;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         //String[] dbs = new String[]{"boa_phase150616wt", "boa_phase141107wt", "boa_phase150324mutH"};
@@ -42,7 +43,8 @@ public class ResetXPParameters {
         //String[] dbs = new String[]{"boa_fluo151127"};
         //for (String db:dbs) resetParametersFluo(db, true, true);
         //resetParametersFluo("fluo151127", null, true, true);
-        resetPreProcessingFluo("fluo151127", null, true);
+        trimStart=20;
+        resetPreProcessingFluo("fluo170517_MutH", null, true);
         logger.debug("done!");
     }
     public static void resetParametersTrans(String dbName, String dir, boolean processing, boolean measurements) {
@@ -64,7 +66,7 @@ public class ResetXPParameters {
         db.updateExperiment();
     }
     public static void resetPreProcessingFluo(String dbName, String dir, boolean flip, int... positionIndices) {
-        resetPreProcessingFluo(dbName, dir, flip, 0, 0, Double.NaN, positionIndices);
+        resetPreProcessingFluo(dbName, dir, flip, trimStart, 0, Double.NaN, positionIndices);
     }
     public static void resetPreProcessingFluo(String dbName, String dir, boolean flip, int trimeStart, int trimEnd, double scaleXY, int... positionIndices) {
         MasterDAO db = new Task(dbName, dir).getDB();

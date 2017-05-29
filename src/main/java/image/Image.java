@@ -91,6 +91,7 @@ public abstract class Image implements ImageProperties {
     
     public static <T extends Image> T mergeZPlanes(List<T> planes) {
         if (planes==null || planes.isEmpty()) return null;
+        //for (T im : planes) if (im.getSizeZ()>1) throw
         String title = "merged planes";
         T plane0 = planes.get(0);
         if (plane0 instanceof ImageByte) {

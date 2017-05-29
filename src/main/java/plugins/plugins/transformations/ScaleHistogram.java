@@ -78,14 +78,14 @@ public class ScaleHistogram implements Transformation {
     
     private static Image scaleKS(Image image, double scaleFactor, double sigmaFactorKS, int iterationsKS) {
         double[] meanSigma = new double[2];
-        BackgroundThresholder.run(image, null, sigmaFactorKS, sigmaFactorKS, iterationsKS, meanSigma);
+        BackgroundThresholder.runThresholderHisto(image, null, sigmaFactorKS, sigmaFactorKS, iterationsKS, meanSigma);
         double scale = scaleFactor / meanSigma[0];
         return ImageOperations.affineOperation(image, null, scale, 0);
     }
     
     private static double getMean(Image image) {
         double[] meanSigma = new double[2];
-        BackgroundThresholder.run(image, null, 3, 3, 1, meanSigma);
+        BackgroundThresholder.runThresholderHisto(image, null, 3, 3, 1, meanSigma);
         return meanSigma[0];
     }
     
@@ -103,7 +103,7 @@ public class ScaleHistogram implements Transformation {
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         double[] meanSigma = new double[2];
         if (method.getSelected()) BackgroundFit.backgroundFitHalf(image, null, 1, meanSigma);
-        else BackgroundThresholder.run(image, null, 3, 3, 2, meanSigma);
+        else BackgroundThresholder.runThresholderHisto(image, null, 3, 3, 2, meanSigma);
         double scale = scaleFactor.getValue().doubleValue() / meanSigma[0];
         logger.debug("timePoint: {} estimated background : {}, scale value: {}, method: {}", timePoint, meanSigma[0], scale, method.getSelectedItem());
         return ImageOperations.affineOperation(image, image instanceof ImageFloat? image: null, scale, 0);

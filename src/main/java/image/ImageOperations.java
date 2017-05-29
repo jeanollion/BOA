@@ -89,11 +89,11 @@ public class ImageOperations {
     
     public static enum Axis {X, Y, Z;}
     
-    public static ImageByte threshold(Image image, double threshold, boolean overThreshold, boolean strict) {
-        return (ImageByte)threshold(image, threshold, overThreshold, strict, false, null);
+    public static ImageByte threshold(Image image, double threshold, boolean foregroundOverThreshold, boolean strict) {
+        return (ImageByte)threshold(image, threshold, foregroundOverThreshold, strict, false, null);
     }
     
-    public static ImageInteger threshold(Image image, double threshold, boolean overThreshold, boolean strict, boolean setBackground, ImageInteger dest) {
+    public static ImageInteger threshold(Image image, double threshold, boolean foregroundOverThreshold, boolean strict, boolean setBackground, ImageInteger dest) {
         if (dest==null) {
             dest=new ImageByte("", image);
             setBackground=false;
@@ -103,7 +103,7 @@ public class ImageOperations {
             setBackground=false;
         }
         if (setBackground) {
-            if (overThreshold) {
+            if (foregroundOverThreshold) {
                 if (strict) {
                     for (int z = 0; z < image.sizeZ; z++) {
                         for (int xy = 0; xy < image.sizeXY; xy++) {
@@ -141,7 +141,7 @@ public class ImageOperations {
                 }
             }
         } else {
-            if (overThreshold) {
+            if (foregroundOverThreshold) {
                 if (strict) {
                     for (int z = 0; z < image.sizeZ; z++) {
                         for (int xy = 0; xy < image.sizeXY; xy++) {

@@ -131,18 +131,7 @@ public abstract class CropMicroChannels implements Transformation {
         public final int[] xMin;
         public final int[] yMinShift;
         public int yMin, yMax;
-        public Result(Object3D[] xObjects, int yMin, int yMax) {
-            this.yMin = yMin;
-            this.yMax=yMax;
-            this.xMax= new int[xObjects.length];
-            this.xMin=new int[xObjects.length];
-            this.yMinShift= new int[xObjects.length];
-            Arrays.sort(xObjects, getComparatorObject3D(ObjectIdxTracker.IndexingOrder.XZY));
-            for (int i = 0; i<xObjects.length; ++i) {
-                xMax[i] = xObjects[i].getBounds().getxMax();
-                xMin[i] = xObjects[i].getBounds().getxMin();
-            }
-        }
+
         public Result(List<int[]> sortedMinMaxYShiftList, int yMin, int yMax) {
             this.yMin = yMin;
             this.yMax=yMax;

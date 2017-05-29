@@ -24,6 +24,7 @@ import boa.gui.imageInteraction.ImageDisplayer;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import configuration.parameters.PostFilterSequence;
 import configuration.parameters.PreFilterSequence;
+import core.Task;
 import dataStructure.configuration.ExperimentDAO;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.objects.MasterDAO;
@@ -38,9 +39,12 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import plugins.PluginFactory;
+import plugins.Segmenter;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.trackers.MicrochannelProcessor;
+import plugins.plugins.transformations.CropMicroChannelFluo2D;
+import plugins.plugins.transformations.CropMicroChannels;
 import static processing.dataGeneration.TestLAPTrackerMutations.mutationIdx;
 import utils.MorphiumUtils;
 
@@ -51,22 +55,26 @@ import utils.MorphiumUtils;
 public class TestProcessMicrochannels {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        int time =36;
-        int field = 2;
-        String dbName = "fluo160408";
-        //testSegMicrochannelsFromXP(dbName, field, time);
-        testSegAndTrackMicrochannelsFromXP(dbName, field, 0, 700);
+        int time =106;
+        int field = 3;
+        String dbName = "fluo170517_MutH";
+        testSegMicrochannelsFromXP(dbName, field, time);
+        //testSegAndTrackMicrochannelsFromXP(dbName, field, 0, 700);
     }
     
     public static void testSegMicrochannelsFromXP(String dbName, int fieldNumber, int timePoint) {
-        MasterDAO mDAO = new MorphiumMasterDAO(dbName);
+        MasterDAO mDAO = new Task(dbName).getDB();
         MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
         StructureObject root = mDAO.getDao(f.getName()).getRoot(timePoint);
-        logger.debug("field name: {}, root==null? {}", f.getName(), root==null);
+        logger.debug("field name: {}, root==null? {} frame: {}", f.getName(), root==null, root.getFrame());
         Image input = root.getRawImage(0);
         MicroChannelFluo2D.debug=true;
-        ObjectPopulation pop = MicroChannelFluo2D.run(input, 355, 40, 20, 50, 0.6d, 100);
+        CropMicroChannelFluo2D.debug=true;
+        //ObjectPopulation pop = MicroChannelFluo2D.run(input, 355, 40, 20, 50, 0.6d, 100);
         //ObjectPopulation pop = MicroChannelFluo2D.run2(input, 355, 40, 20);
+        Segmenter s = mDAO.getExperiment().getStructure(0).getProcessingScheme().getSegmenter();
+        ObjectPopulation pop=s.runSegmenter(input, 0, root);
+        logger.debug("object count: {}", pop.getObjects().size());
         ImageDisplayer disp = new IJImageDisplayer();
         disp.showImage(input);
         disp.showImage(pop.getLabelMap());

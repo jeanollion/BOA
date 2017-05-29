@@ -173,16 +173,8 @@ public class Utils {
         res+=array[array.length-1]+"]";
         return res;
     }
-    public static <T> String toStringList(List<T> array) {
-        if (array==null|| array.isEmpty()) return "[]";
-        String res = "[";
-        for (int i = 0; i<array.size()-1; ++i) {
-            if (array.get(i)!=null) res+=array.get(i).toString()+"; ";
-            else res+="NA; ";
-        }
-        if (array.get(array.size()-1)!=null) res+=array.get(array.size()-1)+"]";
-        else res+="NA]";
-        return res;
+    public static <T> String toStringList(Collection<T> array) {
+        return toStringList(array, o->o.toString());
     }
     public static <T> String toStringArray(T[] array, Function<T, Object> toString) {
         if (array.length==0) return "[]";
@@ -197,7 +189,7 @@ public class Utils {
         }
         return res;
     }
-    public static <T> String toStringList(List<T> array, Function<T, Object> toString) {
+    public static <T> String toStringList(Collection<T> array, Function<T, Object> toString) {
         if (array.isEmpty()) return "[]";
         String res = "[";
         Iterator<T> it = array.iterator();

@@ -71,17 +71,17 @@ public class MicrochannelTracker implements TrackerSegmenter {
         TrackMateInterface<Spot> tmi = new TrackMateInterface(TrackMateInterface.defaultFactory());
         Map<Integer, List<StructureObject>> map = TrackMateInterface.getChildrenMap(parentTrack, structureIdx);
         tmi.addObjects(map);
-        double meanWidth = 0;
-        double count = 0;
-        for (StructureObject p : parentTrack) for (StructureObject o : p.getChildren(structureIdx)) {meanWidth+=o.getBounds().getSizeX(); ++count;}
-        meanWidth = parentTrack.get(0).getScaleXY() * meanWidth/count;
+        double meanWidth = Utils.flattenMap(map).stream().mapToDouble(o->o.getBounds().getSizeX()).average().getAsDouble();
         double maxDistance = maxShift.getValue().doubleValue()*parentTrack.get(0).getScaleXY();
         boolean ok = tmi.processFTF(maxDistanceWidthFactor.getValue().doubleValue() *meanWidth);
         if (ok) ok = tmi.processGC(maxDistance, parentTrack.size(), false, false);
         if (ok) tmi.setTrackLinks(map);
-        closeGaps(structureIdx, parentTrack);
+        fillGaps(structureIdx, parentTrack);
     }
-
+    public MicrochannelTracker setSegmenter(MicrochannelSegmenter s) {
+        this.segmenter.setPlugin(s);
+        return this;
+    }
     @Override
     public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
         // segmentation
@@ -102,7 +102,7 @@ public class MicrochannelTracker implements TrackerSegmenter {
         
         // compute mean of Y-shifts & width for each microchannel and modify objects
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
-        logger.debug("trackHead number: {}", allTracks.size());
+        logger.debug("Microchannel tracker: trackHead number: {}", allTracks.size());
         for (List<StructureObject> track : allTracks.values()) { // compute median shift on the whole track + mean width
             if (track.isEmpty()) continue;
             List<Integer> shifts = new ArrayList<>(track.size());
@@ -123,7 +123,6 @@ public class MicrochannelTracker implements TrackerSegmenter {
             meanWidth/=c;
             Collections.sort(widths);
             int width = (int)Math.round(widths.get((int)(widths.size()*widthQuantile)));
-            //widths = performSlide(widths, 10, SlidingOperator.slidingMean(mean)); // sliding and not global mean because if channels gets empty -> width too small 
             if (debug) {
                 logger.debug("track: {} ymin-shift: {}, width: {} (max: {}, mean: {})", track.get(0), shift, width, widths.get(widths.size()-1), meanWidth);
             }
@@ -144,7 +143,7 @@ public class MicrochannelTracker implements TrackerSegmenter {
         }
     }
 
-    private static void closeGaps(int structureIdx, List<StructureObject> parentTrack) {
+    private static void fillGaps(int structureIdx, List<StructureObject> parentTrack) {
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         Map<Integer, StructureObject> reference = getOneElementOfSize(allTracks, parentTrack.size());
         int minParentFrame = parentTrack.get(0).getFrame();

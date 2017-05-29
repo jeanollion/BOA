@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import plugins.ParameterSetup;
 import plugins.Segmenter;
 import plugins.Thresholder;
 import plugins.plugins.thresholders.BackgroundThresholder;
@@ -61,15 +62,15 @@ import static utils.Utils.plotProfile;
  *
  * @author jollion
  */
-public class MicroChannelFluo2D implements MicrochannelSegmenter {
+public class MicroChannelFluo2D implements MicrochannelSegmenter, ParameterSetup {
 
     NumberParameter channelHeight = new BoundedNumberParameter("Microchannel Height (pixels)", 0, 350, 5, null);
     NumberParameter channelWidth = new BoundedNumberParameter("Microchannel Width (pixels)", 0, 40, 5, null);
-    NumberParameter yMargin = new BoundedNumberParameter("y-margin", 0, 20, 0, null);
+    NumberParameter yShift = new BoundedNumberParameter("y-shift (start of microchannel)", 0, 20, 0, null);
     PluginParameter<Thresholder> threshold= new PluginParameter<>("Threshold", Thresholder.class, new BackgroundThresholder(2.5, 3.5, 3), false);
     NumberParameter fillingProportion = new BoundedNumberParameter("Microchannel filling proportion", 2, 0.5, 0.05, 1);
     NumberParameter minObjectSize = new BoundedNumberParameter("Min. Object Size", 0, 100, 1, null);
-    Parameter[] parameters = new Parameter[]{channelHeight, channelWidth, yMargin, threshold, fillingProportion, minObjectSize};
+    Parameter[] parameters = new Parameter[]{channelHeight, channelWidth, yShift, threshold, fillingProportion, minObjectSize};
     public static boolean debug = false;
 
     public MicroChannelFluo2D() {
@@ -78,7 +79,7 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter {
     public MicroChannelFluo2D(int channelHeight, int channelWidth, int yMargin, double fillingProportion, int minObjectSize) {
         this.channelHeight.setValue(channelHeight);
         this.channelWidth.setValue(channelWidth);
-        this.yMargin.setValue(yMargin);
+        this.yShift.setValue(yMargin);
         this.fillingProportion.setValue(fillingProportion);
         this.minObjectSize.setValue(minObjectSize);
     }
@@ -86,28 +87,15 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter {
     @Override
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
         double thld = this.threshold.instanciatePlugin().runThresholder(input, parent);
-        ObjectPopulation objects = run(input, channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), yMargin.getValue().intValue(), thld, fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue());
-        return objects;
-    }
-
-    public static ObjectPopulation run(Image image, int channelHeight, int channelWidth, int yMargin, double threshold, double fillingProportion, int minObjectSize) {
-        CropMicroChannelFluo2D.debug=debug;
-        Result r = segmentMicroChannels(image, 0, channelHeight, fillingProportion, minObjectSize, threshold);
+        Result r = segmentMicroChannels(input, 0, yShift.getValue().intValue(), channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue(), thld);
         if (r==null) return null;
-        ArrayList<Object3D> res = new ArrayList<Object3D>(r.xMax.length);
-        int yMin = Math.max(r.yMin - yMargin, 0);
-        for (int i = 0; i < r.xMax.length; ++i) {
-            int xMin = Math.max((int) (r.getXMean(i) - channelWidth / 2.0), 0);
-            res.add(new Object3D(new BlankMask("mask of microchannel:" + (i + 1), channelWidth, Math.min(channelHeight, image.getSizeY()-yMin), image.getSizeZ(), xMin, yMin, 0, image.getScaleXY(), image.getScaleZ()), i + 1));
-        }
-        return new ObjectPopulation(res, image);
+        else return r.getObjectPopulation(input, true);
     }
     
     @Override
-    public CropMicroChannels.Result segment(Image input) {
+    public Result segment(Image input) {
         double thld = this.threshold.instanciatePlugin().runThresholder(input, null);
-        Result r = segmentMicroChannels(input, 0, channelHeight.getValue().intValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue(), thld);
-        r.yMin = Math.max(r.yMin - yMargin.getValue().intValue(), 0);
+        Result r = segmentMicroChannels(input, 0, yShift.getValue().intValue(), channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue(), thld);
         return r;
     }
     
@@ -178,6 +166,18 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter {
     @Override
     public Parameter[] getParameters() {
         return parameters;
+    }
+
+    @Override
+    public boolean canBeTested(Parameter p) {
+        return true;
+    }
+
+    @Override
+    public void test(Parameter p, Image input, int structureIdx, StructureObjectProcessing parent) {
+        debug=true;
+        ObjectPopulation pop = runSegmenter(input, structureIdx, parent);
+        debug = false;
     }
     
 

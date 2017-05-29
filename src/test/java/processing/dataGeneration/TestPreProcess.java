@@ -40,7 +40,7 @@ import plugins.plugins.transformations.ImageStabilizerCore;
 import plugins.plugins.transformations.ImageStabilizerXY;
 import static plugins.plugins.transformations.ImageStabilizerXY.testTranslate;
 import plugins.plugins.transformations.SaturateHistogram;
-import plugins.plugins.transformations.SaturateHistogramAuto;
+import plugins.plugins.transformations.SaturateHistogramHyperfluoBacteria;
 import plugins.plugins.transformations.SimpleRotationXY;
 import processing.ImageTransformation;
 
@@ -182,7 +182,7 @@ public class TestPreProcess {
         MicroscopyField f = db.getExperiment().getPosition(fieldIdx);
         f.getPreProcessingChain().removeAllTransformations();
         int bactChann = 1;
-        f.getPreProcessingChain().addTransformation(bactChann, null, new SaturateHistogramAuto());
+        f.getPreProcessingChain().addTransformation(bactChann, null, new SaturateHistogramHyperfluoBacteria());
         f.getPreProcessingChain().addTransformation(bactChann, null, new IJSubtractBackground(20, true, false, true, false));
         f.getPreProcessingChain().addTransformation(bactChann, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
         if (flip) f.getPreProcessingChain().addTransformation(bactChann, null, new Flip(ImageTransformation.Axis.Y));
