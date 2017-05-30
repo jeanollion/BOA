@@ -21,6 +21,7 @@ import com.mongodb.BasicDBList;
 import com.mongodb.BasicDBObject;
 import com.mongodb.DBObject;
 import com.mongodb.DBRef;
+import com.mongodb.util.JSONParseException;
 import configuration.parameters.PostLoadable;
 import de.caluga.morphium.AnnotationAndReflectionHelper;
 import de.caluga.morphium.BinarySerializedObject;
@@ -120,12 +121,27 @@ public class JSONUtils {
         DBObject oMarsh = marshall(o);
         return com.mongodb.util.JSON.serialize(oMarsh);
     }
-    
+
     public static <T> T parse(Class<T> clazz, String s) {
-        DBObject oParse = (DBObject)com.mongodb.util.JSON.parse(s); 
-        T res = unmarshall(clazz, oParse);
-        if (res instanceof PostLoadable) ((PostLoadable)res).postLoad();
-        return res;
+        try {
+            //s = s.replace("Infinity", "NaN");
+            DBObject oParse = (DBObject)com.mongodb.util.JSON.parse(s); 
+            T res = unmarshall(clazz, oParse);
+            if (res instanceof PostLoadable) ((PostLoadable)res).postLoad();
+            return res;
+        } catch (JSONParseException e) {
+            
+            logger.error("Parse Exception", e);
+            String message = e.getMessage();
+            int idx = message.length()-2;
+            while (idx>0 && message.charAt(idx)==' ') --idx;
+            int idx2 = message.length()-idx;
+            
+            logger.debug("message length: {}, idx:{}/{}", message.length(), idx, idx2);
+            logger.error("problem at: " + message.substring(idx2-10, idx2+10));
+            logger.error("contect: " + message.substring(idx2-200, idx2+200));
+        }
+        return null;
     }
     
     // offline marshall / unmarshall from Morphium

@@ -266,7 +266,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     public void relabelChildren(int structureIdx) {relabelChildren(structureIdx, null);}
     public void relabelChildren(int structureIdx, Collection<StructureObject> modifiedObjects) {
-        logger.debug("relabeling: {} number of children: {}", this, getChildren(structureIdx).size());
+        //logger.debug("relabeling: {} number of children: {}", this, getChildren(structureIdx).size());
         
         List<StructureObject> children = getChildren(structureIdx);
         int i = 0;
@@ -345,23 +345,22 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     @Override
     public StructureObject resetTrackLinks(boolean prev, boolean next) {
-        return resetTrackLinks(prev, next, null);
+        return resetTrackLinks(prev, next, false, null);
     }
-    public StructureObject resetTrackLinks(boolean prev, boolean next, Collection<StructureObject> modifiedObjects) {
-        if (prev && this.previous!=null && this.previous.next==this) previous.unSetTrackLinksOneWay(false, true, modifiedObjects);
-        if (next && this.next!=null && this.next.previous==this) this.next.unSetTrackLinksOneWay(true, false, modifiedObjects);
-        unSetTrackLinksOneWay(prev, next, modifiedObjects);
+    public StructureObject resetTrackLinks(boolean prev, boolean next, boolean propagate, Collection<StructureObject> modifiedObjects) {
+        if (prev && this.previous!=null && this.previous.next==this) previous.unSetTrackLinksOneWay(false, true, propagate, modifiedObjects);
+        if (next && this.next!=null && this.next.previous==this) this.next.unSetTrackLinksOneWay(true, false, propagate, modifiedObjects);
+        unSetTrackLinksOneWay(prev, next, propagate, modifiedObjects);
         return this;
     }
-    private void unSetTrackLinksOneWay(boolean prev, boolean next, Collection<StructureObject> modifiedObjects) {
+    private void unSetTrackLinksOneWay(boolean prev, boolean next, boolean propagate, Collection<StructureObject> modifiedObjects) {
         if (prev) {
             if (this.previous!=null && this.equals(this.previous.next))
             setPrevious(null);
-            setTrackHead(this, false, modifiedObjects!=null, modifiedObjects);
+            setTrackHead(this, false, propagate, modifiedObjects);
             setAttribute(trackErrorPrev, null);
         }
         if (next) {
-            // unset next's previous?
             setNext(null);
             setAttribute(trackErrorNext, null);
         }
@@ -393,7 +392,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     
     public StructureObject getInTrack(int timePoint) {
         StructureObject current;
-        if (timePoint>this.getFrame()) {
+        if (this.getFrame()==timePoint) return this;
+        else if (timePoint>this.getFrame()) {
             current = this;
             while(current!=null && current.getFrame()<timePoint) current=current.getNext();
         } else {
@@ -544,10 +544,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         while(error!=null && !error.hasTrackLinkError(true, true)) error=error.getNext();
         return error;
     }
-    /**
-     * 
-     * @return a list containing the sibling (structureObjects that have the same previous object) at the next division, null if there are no siblings. If there are siblings, the first object of the list is contained in the track.
-     */
+    /*
     public List<StructureObject> getNextDivisionSiblings() {
         List<StructureObject> res= null;
         StructureObject nextDiv = this;
@@ -558,11 +555,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (res!=null) res.add(0, nextDiv);
         return res;
     }
-    
-    /**
-     * 
-     * @return a list containing the sibling (structureObjects that have the same previous object) at the previous division, null if there are no siblings. If there are siblings, the first object of the list is contained in the track.
-     */
+
     public List<StructureObject> getPreviousDivisionSiblings() {
         List<StructureObject> res= null;
         StructureObject prevDiv = this;
@@ -573,11 +566,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         if (res!=null) res.add(0, prevDiv);
         return res;
     }
+    */
     /**
      * 
      * @param includeCurrentObject if true, current instance will be included at first position of the list
      * @return a list containing the sibling (structureObjects that have the same previous object) at the previous division, null if there are no siblings and {@param includeCurrentObject} is false.
      */
+    
     public List<StructureObject> getDivisionSiblings(boolean includeCurrentObject) {
         ArrayList<StructureObject> res=null;
         List<StructureObject> siblings = getSiblings();

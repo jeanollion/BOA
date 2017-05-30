@@ -323,7 +323,25 @@ public class BoundingBox {
      * @return intersection bounding box. If the size in one direction is negative => there are no intersection in this direction
      */
     public BoundingBox getIntersection(BoundingBox other) {
-        return new BoundingBox(Math.max(xMin, other.xMin), Math.min(xMax, other.xMax), Math.max(yMin, other.yMin), Math.min(yMax, other.yMax) , Math.max(zMin, other.zMin), Math.min(zMax, other.zMax));
+        int xm = Math.max(xMin, other.xMin);
+        int xM = Math.min(xMax, other.xMax);
+        if (xm>xM) {
+            xm = (int)(xM+xm)/2;
+            xM=xm-1;
+        }
+        int ym = Math.max(yMin, other.yMin);
+        int yM = Math.min(yMax, other.yMax);
+        if (ym>yM) {
+            ym = (int)(yM+ym)/2;
+            yM=ym-1;
+        }
+        int zm = Math.max(zMin, other.zMin);
+        int zM = Math.min(zMax, other.zMax);
+        if (zm>zM) {
+            zm = (int)(zM+zm)/2;
+            zM=zm-1;
+        }
+        return new BoundingBox(xm, xM, ym, yM, zm, zM);
     }
     
     public boolean isIncluded(BoundingBox container) {
@@ -387,7 +405,7 @@ public class BoundingBox {
     
     @Override
     public String toString() {
-        return "xMin: "+xMin+" xMax: "+xMax+" yMin: "+yMin+" yMax: "+yMax+" zMin: "+zMin+" zMax: "+zMax;
+        return "x:["+xMin+";"+xMax+"], y:["+yMin+";"+yMax+"], z:["+zMin+";"+zMax+"]";
     }
     public void loop(LoopFunction function) {
         if (function instanceof LoopFunction2) ((LoopFunction2)function).setUp();

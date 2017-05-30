@@ -33,6 +33,7 @@ import dataStructure.objects.MorphiumObjectDAO;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.Morphium;
+import ij.ImageJ;
 import image.Image;
 import image.ImageMask;
 import java.util.ArrayList;
@@ -55,8 +56,9 @@ import utils.MorphiumUtils;
 public class TestProcessMicrochannels {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        int time =106;
-        int field = 3;
+        new ImageJ();
+        int time =99;
+        int field = 1;
         String dbName = "fluo170517_MutH";
         testSegMicrochannelsFromXP(dbName, field, time);
         //testSegAndTrackMicrochannelsFromXP(dbName, field, 0, 700);

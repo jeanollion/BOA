@@ -46,11 +46,42 @@ import utils.Utils;
  * @author nasique
  */
 public class StructureObjectUtils {
+    public static List<StructureObject> getObjectsAtNextDivision(StructureObject o) {
+        List<StructureObject> bucket = new ArrayList<>();
+        StructureObject parent = o.getParent();
+        if (parent==null || parent.getNext()==null) return Collections.EMPTY_LIST;
+        while(parent.getNext()!=null && bucket.size()<2) {
+            bucket.clear();
+            parent = parent.getNext();
+            for (StructureObject n : parent.getChildren(o.getStructureIdx())) if (n.getPrevious().getTrackHead()==o.getTrackHead()) bucket.add(n);
+            if (bucket.isEmpty()) return Collections.EMPTY_LIST;
+        }
+        return bucket;
+    }
+    public static List<StructureObject> getObjectsAtPrevDivision(StructureObject o) {
+        List<StructureObject> bucket = new ArrayList<>();
+        StructureObject prev= o;
+        if (prev.getParent()==null) {
+            //logger.debug("prevDiv: {} no parent", o);
+            return Collections.EMPTY_LIST;
+        }
+        while(prev!=null && prev.getPrevious()!=null) {
+            //logger.debug("prevDiv: {} prev: {}", o, prev);
+            if (!prev.getTrackHead().equals(o.getTrackHead())) return Collections.EMPTY_LIST;
+            for (StructureObject n : prev.getParent().getChildren(o.getStructureIdx())) if (!n.equals(prev) && prev.getPrevious().equals(n.getPrevious())) {
+                if (bucket.isEmpty()) bucket.add(prev);
+                bucket.add(n);
+            }
+            if (!bucket.isEmpty()) return bucket;
+            prev = prev.getPrevious();
+        }
+        return bucket;
+    }
     
-    public static List<StructureObject> getAllNext(StructureObject o, List<StructureObject> bucket) { // look only in next timePoint
+    public static List<StructureObject> getDaugtherObjectsAtNextFrame(StructureObject o, List<StructureObject> bucket) { // look only in next timePoint
         if (bucket==null) bucket=new ArrayList<>();
         if (o.getParent()==null) {
-            logger.error("parent null for: {}", o);
+            if (o.getNext()!=null) bucket.add(o.getNext());
             return bucket;
         }
         StructureObject nextParent = o.getParent().getNext();
@@ -77,11 +108,11 @@ public class StructureObjectUtils {
                 next.setTrackHead(previous.getTrackHead(), false, modifiedObjects!=null, modifiedObjects);
             } else if (setPrevious) {
                 next.setPrevious(previous);
-                if (next.equals(previous.getNext())) next.setTrackHead(previous.getTrackHead(), false, modifiedObjects!=null, modifiedObjects);
+                if (next.equals(previous.getNext())) next.setTrackHead(previous.getTrackHead(), false, true, modifiedObjects);
                 else next.setTrackHead(next, false, false, null);
             } else if (setNext) {
                 previous.setNext(next);
-                if (previous.equals(next.getPrevious()))  next.setTrackHead(previous.getTrackHead(), false, modifiedObjects!=null, modifiedObjects);
+                if (previous.equals(next.getPrevious()))  next.setTrackHead(previous.getTrackHead(), false, true, modifiedObjects);
             }
         }
     }

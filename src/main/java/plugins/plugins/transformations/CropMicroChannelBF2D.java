@@ -84,13 +84,15 @@ public class CropMicroChannelBF2D extends CropMicroChannels {
         if (r==null || r.xMax.length==0) return null;
         int yMin = r.getYMin();
         int yMax = r.getYMax();
+        if (yStop==0) yStop = image.getSizeY()-1;
+        if (xStop==0) xStop = image.getSizeX()-1;
         yMax = Math.min(yMin+channelHeight, yMax);
         yMin = Math.max(yStart,yMin);
         yStop = Math.min(yStop, yMax);
         yStart = Math.max(yMin-cropMargin, yStart);
         
-        xStart = Math.max(xStart, r.getXMin()-cropMargin);
-        xStop = Math.min(xStop, r.getXMax() + cropMargin);
+        //xStart = Math.max(xStart, r.getXMin()-cropMargin);
+        //xStop = Math.min(xStop, r.getXMax() + cropMargin);
         if (debug) logger.debug("Xmin: {}, Xmax: {}", r.getXMin(), r.getXMax());
         return new BoundingBox(xStart, xStop, yStart, yStop, 0, image.getSizeZ()-1);
         

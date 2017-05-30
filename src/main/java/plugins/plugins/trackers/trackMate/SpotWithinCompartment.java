@@ -49,7 +49,7 @@ public class SpotWithinCompartment extends Spot {
     protected final DistanceComputationParameters distanceParameters;
     
     public SpotWithinCompartment(Object3D object, int timePoint, SpotCompartiment compartiment, double[] scaledCenter, DistanceComputationParameters distanceParameters) {
-        super(scaledCenter[0], scaledCenter[1], scaledCenter[2], 1, 1);
+        super(scaledCenter[0], scaledCenter[1], scaledCenter.length>2?scaledCenter[2]:0, 1, 1);
         getFeatures().put(Spot.FRAME, (double)compartiment.object.getFrame());
         getFeatures().put(Spot.QUALITY, object.getQuality());
         this.compartiment=compartiment;
@@ -156,8 +156,7 @@ public class SpotWithinCompartment extends Spot {
         }
     }
     protected double getSquareDistanceDivision(SpotWithinCompartment sAfterDivision) {
-        boolean upperDaughterCell = sAfterDivision.compartiment.object.getTrackHead()==this.compartiment.object.getTrackHead(); // daughter cell is in the upper part. TODO change test :: this test is only valid for increasing Y-coords when growing
-        Localization[] offsetType = localization.getOffsetTypeDivision(sAfterDivision.localization, upperDaughterCell);
+        Localization[] offsetType = localization.getOffsetTypeDivision(sAfterDivision.localization, sAfterDivision.compartiment.upperDaughterCell);
         if (offsetType==null) return Double.POSITIVE_INFINITY;
         if (offsetType.length==2) {
             double[] off1  = this.compartiment.getOffset(offsetType[0]);

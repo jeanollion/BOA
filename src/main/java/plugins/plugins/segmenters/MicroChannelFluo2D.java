@@ -68,8 +68,8 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter, ParameterSetup
     NumberParameter channelWidth = new BoundedNumberParameter("Microchannel Width (pixels)", 0, 40, 5, null);
     NumberParameter yShift = new BoundedNumberParameter("y-shift (start of microchannel)", 0, 20, 0, null);
     PluginParameter<Thresholder> threshold= new PluginParameter<>("Threshold", Thresholder.class, new BackgroundThresholder(2.5, 3.5, 3), false);
-    NumberParameter fillingProportion = new BoundedNumberParameter("Microchannel filling proportion", 2, 0.5, 0.05, 1);
-    NumberParameter minObjectSize = new BoundedNumberParameter("Min. Object Size", 0, 100, 1, null);
+    NumberParameter fillingProportion = new BoundedNumberParameter("Microchannel filling proportion", 2, 0.3, 0.05, 1);
+    NumberParameter minObjectSize = new BoundedNumberParameter("Min. Object Size", 0, 50, 1, null);
     Parameter[] parameters = new Parameter[]{channelHeight, channelWidth, yShift, threshold, fillingProportion, minObjectSize};
     public static boolean debug = false;
 

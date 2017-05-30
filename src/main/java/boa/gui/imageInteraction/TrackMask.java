@@ -175,6 +175,7 @@ public abstract class TrackMask extends ImageObjectInterface {
                     //if (mm[0]>mm2[0]) mm[0] = mm2[0];
                     //if (mm[1]<mm2[1]) mm[1] = mm2[1];
                     if (count>=updateImageFrequency) {
+                        
                         ImageWindowManagerFactory.getImageManager().getDisplayer().updateImageDisplay(image, mm[0], mm[1]); // do not cmopute min and max. Keep track of min and max?
                         count=0;
                     } else count++;

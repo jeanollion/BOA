@@ -185,9 +185,10 @@ public class Task extends SwingWorker<Integer, String> {
                 if (positions!=null) checkArray(positions, db.getExperiment().getPositionCount(), "Invalid position: ");
                 // check files
                 for (Pair<String, int[]> e : extrackMeasurementDir) {
-                    File f= new File(e.key);
-                    if (!f.exists()) errors.add(new Pair(dbName, new Exception("File: "+ e.key+ " not found")));
-                    else if (!f.isDirectory()) errors.add(new Pair(dbName, new Exception("File: "+ e.key+ " is not a directory")));
+                    String exDir = e.key==null? db.getDir() : e.key;
+                    File f= new File(exDir);
+                    if (!f.exists()) errors.add(new Pair(dbName, new Exception("File: "+ exDir+ " not found")));
+                    else if (!f.isDirectory()) errors.add(new Pair(dbName, new Exception("File: "+ exDir+ " is not a directory")));
                     else if (e.value!=null) checkArray(e.value, db.getExperiment().getStructureCount(), "Extract structure for dir: "+e.value+": Invalid structure: ");
                 }
             }

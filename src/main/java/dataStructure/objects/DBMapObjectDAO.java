@@ -121,57 +121,58 @@ public class DBMapObjectDAO implements ObjectDAO {
     protected Map<ObjectId, StructureObject> getChildren(Pair<ObjectId, Integer> key) {
         if (cache.containsKey(key) && allObjectsRetrievedInCache.getAndCreateIfNecessary(key)) return cache.get(key);
         else {
-            boolean cacheAlreadyPresent = cache.containsKey(key);
-            Map<ObjectId, StructureObject> objectMap = cache.getAndCreateIfNecessary(key);
-            HTreeMap<String, String> dbm = getDBMap(key);
-            if (cacheAlreadyPresent) {
-                Set<String> alreadyInCache = new HashSet<>(objectMap.size());
-                for (ObjectId id : objectMap.keySet()) alreadyInCache.add(id.toHexString());
-                
-                for (Entry<String, String> e : getEntrySet(dbm)) {
-                    if (!alreadyInCache.contains(e.getKey())) {
-                        StructureObject o = JSONUtils.parse(StructureObject.class, e.getValue());
+            synchronized(this) {
+                if (cache.containsKey(key) && allObjectsRetrievedInCache.getAndCreateIfNecessary(key)) return cache.get(key);
+                boolean cacheAlreadyPresent = cache.containsKey(key);
+                Map<ObjectId, StructureObject> objectMap = cache.getAndCreateIfNecessary(key);
+                HTreeMap<String, String> dbm = getDBMap(key);
+                if (cacheAlreadyPresent) {
+                    Set<String> alreadyInCache = new HashSet<>(objectMap.size());
+                    for (ObjectId id : objectMap.keySet()) alreadyInCache.add(id.toHexString());
+
+                    for (Entry<String, String> e : getEntrySet(dbm)) {
+                        if (!alreadyInCache.contains(e.getKey())) {
+                            StructureObject o = JSONUtils.parse(StructureObject.class, e.getValue());
+                            o.dao=this;
+                            objectMap.put(o.id, o);
+                        }
+                    }
+                } else {
+                    long t0 = System.currentTimeMillis();
+                    Collection<String> allStrings = getValues(dbm);
+                    allStrings.size();
+                    long t1 = System.currentTimeMillis();
+                    for (String s : allStrings) {
+                        StructureObject o = JSONUtils.parse(StructureObject.class, s);
                         o.dao=this;
                         objectMap.put(o.id, o);
                     }
+                    long t2 = System.currentTimeMillis();
+                    logger.debug("#{} objects from structure: {}, time to retrieve: {}, time to parse: {}", allStrings.size(), key.value, t1-t0, t2-t1);
                 }
-            } else {
-                long t0 = System.currentTimeMillis();
-                Collection<String> allStrings = getValues(dbm);
-                allStrings.size();
-                long t1 = System.currentTimeMillis();
-                for (String s : allStrings) {
-                    StructureObject o = JSONUtils.parse(StructureObject.class, s);
-                    o.dao=this;
-                    objectMap.put(o.id, o);
+                allObjectsRetrievedInCache.put(key, true);
+                // set prev, next & trackHead
+                for (StructureObject o : objectMap.values()) {
+                    if (o.nextId!=null) o.next=objectMap.get(o.nextId);
+                    if (o.previousId!=null) o.previous=objectMap.get(o.previousId);
+                    if (o.trackHeadId!=null) o.trackHead=objectMap.get(o.trackHeadId);
                 }
-                long t2 = System.currentTimeMillis();
-                logger.debug("#{} objects from structure: {}, time to retrieve: {}, time to parse: {}", allStrings.size(), key.value, t1-t0, t2-t1);
-            }
-            allObjectsRetrievedInCache.put(key, true);
-            // set prev, next & trackHead
-            for (StructureObject o : objectMap.values()) {
-                if (o.nextId!=null) o.next=objectMap.get(o.nextId);
-                if (o.previousId!=null) o.previous=objectMap.get(o.previousId);
-                if (o.trackHeadId!=null) o.trackHead=objectMap.get(o.trackHeadId);
-            }
-            // set parents ? 
-            if (key.value>=0) {
-                int parentStructureIdx = mDAO.getExperiment().getStructure(key.value).getParentStructure();
-                Map<ObjectId, StructureObject> parents = this.getCacheContaining(key.key, parentStructureIdx);
-                if (parents!=null) {
-                    for (StructureObject o : objectMap.values()) o.parent=parents.get(o.parentId);
-                    Map<StructureObject, List<StructureObject>> byP = StructureObjectUtils.splitByParent(objectMap.values());
-                    for (StructureObject p : byP.keySet()) {
-                        List<StructureObject> children = byP.get(p);
-                        Collections.sort(children);
-                        p.setChildren(children, key.value);
+                // set parents ? 
+                if (key.value>=0) {
+                    int parentStructureIdx = mDAO.getExperiment().getStructure(key.value).getParentStructure();
+                    Map<ObjectId, StructureObject> parents = this.getCacheContaining(key.key, parentStructureIdx);
+                    if (parents!=null) {
+                        for (StructureObject o : objectMap.values()) o.parent=parents.get(o.parentId);
+                        Map<StructureObject, List<StructureObject>> byP = StructureObjectUtils.splitByParent(objectMap.values());
+                        for (StructureObject p : byP.keySet()) {
+                            List<StructureObject> children = byP.get(p);
+                            Collections.sort(children);
+                            p.setChildren(children, key.value);
+                        }
                     }
                 }
+                return objectMap;
             }
-            
-            
-            return objectMap;
         }
     }
     private void setParents(Collection<StructureObject> objects, Pair<ObjectId, Integer> parentKey) {

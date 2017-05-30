@@ -49,6 +49,7 @@ import plugins.plugins.segmenters.MicrochannelSegmenter;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparator;
 import plugins.plugins.trackers.trackMate.TrackMateInterface;
 import plugins.plugins.transformations.CropMicroChannels.Result;
+import utils.Pair;
 import utils.SlidingOperator;
 import static utils.SlidingOperator.performSlide;
 import utils.ThreadRunner;
@@ -62,26 +63,39 @@ import utils.Utils;
 public class MicrochannelTracker implements TrackerSegmenter {
     protected PluginParameter<MicrochannelSegmenter> segmenter = new PluginParameter<MicrochannelSegmenter>("Segmentation algorithm", MicrochannelSegmenter.class, new MicrochannelPhase2D(), false);
     NumberParameter maxShift = new BoundedNumberParameter("Maximal Shift (pixels)", 0, 100, 1, null);
-    NumberParameter maxDistanceWidthFactor = new BoundedNumberParameter("Maximal Distance for Tracking (x mean channel width)", 1, 2, 1, 3);
+    NumberParameter maxDistanceWidthFactor = new BoundedNumberParameter("Maximal Distance for Tracking (x [mean channel width])", 1, 1, 0, null);
     Parameter[] parameters = new Parameter[]{segmenter, maxShift, maxDistanceWidthFactor};
     private static double widthQuantile = 0.9;
     public static boolean debug = false;
+    
+    public MicrochannelTracker setSegmenter(MicrochannelSegmenter s) {
+        this.segmenter.setPlugin(s);
+        return this;
+    }
+    
+    public MicrochannelTracker setTrackingParameters(int maxShift, double maxDistanceWidthFactor) {
+        this.maxShift.setValue(maxShift);
+        this.maxDistanceWidthFactor.setValue(maxDistanceWidthFactor);
+        return this;
+    }
+    
     @Override public void track(int structureIdx, List<StructureObject> parentTrack) {
         if (parentTrack.isEmpty()) return;
         TrackMateInterface<Spot> tmi = new TrackMateInterface(TrackMateInterface.defaultFactory());
         Map<Integer, List<StructureObject>> map = TrackMateInterface.getChildrenMap(parentTrack, structureIdx);
         tmi.addObjects(map);
-        double meanWidth = Utils.flattenMap(map).stream().mapToDouble(o->o.getBounds().getSizeX()).average().getAsDouble();
+        double meanWidth = Utils.flattenMap(map).stream().mapToDouble(o->o.getBounds().getSizeX()).average().getAsDouble()*parentTrack.get(0).getScaleXY();
+        if (debug) logger.debug("mean width {}", meanWidth );
         double maxDistance = maxShift.getValue().doubleValue()*parentTrack.get(0).getScaleXY();
-        boolean ok = tmi.processFTF(maxDistanceWidthFactor.getValue().doubleValue() *meanWidth);
+        double ftfDistance = maxDistanceWidthFactor.getValue().doubleValue() *meanWidth;
+        boolean ok = tmi.processFTF(ftfDistance);
         if (ok) ok = tmi.processGC(maxDistance, parentTrack.size(), false, false);
+        if (ok) tmi.removeCrossingLinksFromGraph(meanWidth/4); 
+        if (ok) ok = tmi.processGC(maxDistance, parentTrack.size(), false, false); // second GC for crossing links!
         if (ok) tmi.setTrackLinks(map);
         fillGaps(structureIdx, parentTrack);
     }
-    public MicrochannelTracker setSegmenter(MicrochannelSegmenter s) {
-        this.segmenter.setPlugin(s);
-        return this;
-    }
+    
     @Override
     public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
         // segmentation
@@ -103,6 +117,7 @@ public class MicrochannelTracker implements TrackerSegmenter {
         // compute mean of Y-shifts & width for each microchannel and modify objects
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         logger.debug("Microchannel tracker: trackHead number: {}", allTracks.size());
+        List<StructureObject> toRemove = new ArrayList<>();
         for (List<StructureObject> track : allTracks.values()) { // compute median shift on the whole track + mean width
             if (track.isEmpty()) continue;
             List<Integer> shifts = new ArrayList<>(track.size());
@@ -117,6 +132,10 @@ public class MicrochannelTracker implements TrackerSegmenter {
                     widths.add((double)r.getXWidth(o.getIdx()));
                 }
             }
+            if (shifts.isEmpty()) {
+                logger.error("no shifts in track : {} length: {}", track.get(0).getTrackHead(), track.size());
+                continue;
+            }
             Collections.sort(shifts);
             int shift = shifts.get(shifts.size()/2); // median shift
             double meanWidth = 0, c=0; for (Double d : widths) if (d!=null) {meanWidth+=d; ++c;} // global mean value
@@ -126,71 +145,106 @@ public class MicrochannelTracker implements TrackerSegmenter {
             if (debug) {
                 logger.debug("track: {} ymin-shift: {}, width: {} (max: {}, mean: {})", track.get(0), shift, width, widths.get(widths.size()-1), meanWidth);
             }
-            // modify all objects of the track with the shift
+            // modify all objects of the track with the y-shift & width
+            
             for (int i = 0; i<track.size(); ++i) {
                 StructureObject o = track.get(i);
                 BoundingBox b = o.getBounds();
                 //int width = (int)Math.round(widths.get(i));
-                int offX = b.getxMin() + (int)Math.round((b.getSizeX()-width)/2d + Double.MIN_VALUE); // if width change -> offset X change
+                int offX = (int)Math.round(b.getXMean()-width/2d + Double.MIN_VALUE); // if width change -> offset X change
                 int offY = b.getyMin() + shift; // shift was not included before
                 BoundingBox parentBounds = o.getParent().getBounds();
-                if (width+offX>parentBounds.getxMax()) width = parentBounds.getxMax()-offX;
+                if (width+offX>parentBounds.getxMax() || offX<0) {
+                    if (debug) logger.debug("remove out of bound track: {}", track.get(0).getTrackHead());
+                    toRemove.addAll(track);
+                    break;
+                    //currentWidth = parentBounds.getxMax()-offX;
+                    //if (currentWidth<0) logger.error("negative wigth: object:{} parent: {}, current: {}, prev: {}, next:{}", o, o.getParent().getBounds(), o.getBounds(), o.getPrevious().getBounds(), o.getNext().getBounds());
+                }
                 int height = b.getSizeY();
                 if (height+offY>parentBounds.getyMax()) height = parentBounds.getyMax()-offY;
                 BlankMask m = new BlankMask("", width, height, b.getSizeZ(), offX, offY, b.getzMin(), o.getScaleXY(), o.getScaleZ());
                 o.setObject(new Object3D(m, o.getIdx()+1));
             }
         }
+        if (!toRemove.isEmpty()) {
+            Map<StructureObject, List<StructureObject>> toRemByParent = StructureObjectUtils.splitByParent(toRemove);
+            for (Entry<StructureObject, List<StructureObject>> e : toRemByParent.entrySet()) {
+                e.getKey().getChildren(structureIdx).removeAll(e.getValue());
+                e.getKey().relabelChildren(structureIdx);
+            }
+        }
     }
 
     private static void fillGaps(int structureIdx, List<StructureObject> parentTrack) {
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
-        Map<Integer, StructureObject> reference = getOneElementOfSize(allTracks, parentTrack.size());
+        Map<Integer, StructureObject> reference = null; //getOneElementOfSize(allTracks, parentTrack.size()); // local reference with minimal MSD
         int minParentFrame = parentTrack.get(0).getFrame();
         for (List<StructureObject> track : allTracks.values()) {
             Iterator<StructureObject> it = track.iterator();
             StructureObject prev = it.next();
             while (it.hasNext()) {
-                StructureObject cur = it.next();
-                if (cur.getFrame()>prev.getFrame()+1) {
-                    if (debug) logger.debug("gap: {}->{}", prev, cur);
-                    Map<Integer, StructureObject> localReference = reference==null? getReference(allTracks,prev.getFrame(), cur.getFrame()) : reference;
+                StructureObject next = it.next();
+                if (next.getFrame()>prev.getFrame()+1) {
+                    if (debug) logger.debug("gap: {}->{}", prev, next);
+                    Map<Integer, StructureObject> localReference = reference==null? getReference(allTracks,prev.getFrame(), next.getFrame()) : reference;
                     if (localReference==null) {
                         prev.resetTrackLinks(false, true);
-                        cur.resetTrackLinks(true, false);
+                        next.resetTrackLinks(true, false, true, null);
                     } else {
                         StructureObject refPrev=localReference.get(prev.getFrame());
-                        StructureObject refNext=localReference.get(cur.getFrame());
-                        int deltaOffX = Math.round((prev.getBounds().getxMin()-refPrev.getBounds().getxMin() + cur.getBounds().getxMin()-refNext.getBounds().getxMin() )/2);
-                        int deltaOffY = Math.round((prev.getBounds().getyMin()-refPrev.getBounds().getyMin() + cur.getBounds().getyMin()-refNext.getBounds().getyMin() ) /2);
-                        int deltaOffZ = Math.round((prev.getBounds().getzMin()-refPrev.getBounds().getzMin() + cur.getBounds().getzMin()-refNext.getBounds().getzMin() ) /2);
-                        int xSize = Math.round((prev.getBounds().getSizeX()+cur.getBounds().getSizeX())/2);
-                        int ySize = Math.round((prev.getBounds().getSizeY()+cur.getBounds().getSizeY())/2);
-                        int zSize = Math.round((prev.getBounds().getSizeZ()+cur.getBounds().getSizeZ())/2);
+                        StructureObject refNext=localReference.get(next.getFrame());
+                        int deltaOffX = Math.round((prev.getBounds().getxMin()-refPrev.getBounds().getxMin() + next.getBounds().getxMin()-refNext.getBounds().getxMin() )/2);
+                        int deltaOffY = Math.round((prev.getBounds().getyMin()-refPrev.getBounds().getyMin() + next.getBounds().getyMin()-refNext.getBounds().getyMin() ) /2);
+                        int deltaOffZ = Math.round((prev.getBounds().getzMin()-refPrev.getBounds().getzMin() + next.getBounds().getzMin()-refNext.getBounds().getzMin() ) /2);
+                        int xSize = Math.round((prev.getBounds().getSizeX()+next.getBounds().getSizeX())/2);
+                        int ySize = Math.round((prev.getBounds().getSizeY()+next.getBounds().getSizeY())/2);
+                        int zSize = Math.round((prev.getBounds().getSizeZ()+next.getBounds().getSizeZ())/2);
                         int startFrame = prev.getFrame()+1;
-                        if (debug) logger.debug("mc close gap between: {}&{}, off: {}/{}/{}, size:{}/{}/{}", prev.getFrame(), cur.getFrame(), deltaOffX, deltaOffY, deltaOffZ, xSize, ySize, zSize);
-                        if (debug) logger.debug("reference: {}", localReference);
-                        for (int f = startFrame; f<cur.getFrame(); ++f) { 
+                        if (debug) logger.debug("mc close gap between: {}&{}, delta off set: [{};{};{}], size:[{};{};{}], prev:{}, next:{}", prev.getFrame(), next.getFrame(), deltaOffX, deltaOffY, deltaOffZ, xSize, ySize, zSize, prev.getBounds(), next.getBounds());
+                        if (debug) logger.debug("references: {}", localReference.size());
+                        StructureObject gcPrev = prev;
+                        for (int f = startFrame; f<next.getFrame(); ++f) { 
+                            StructureObject parent = parentTrack.get(f-minParentFrame);
                             StructureObject ref=localReference.get(f);
-                            if (debug) logger.debug("mc close gap: f:{}, ref: {}", f, ref);
+                            if (debug) logger.debug("mc close gap: f:{}, ref: {}, parent: {}", f, ref, parent);
                             int offX = deltaOffX + ref.getBounds().getxMin();
                             int offY = deltaOffY + ref.getBounds().getyMin();
                             int offZ = deltaOffZ + ref.getBounds().getzMin();
-                            StructureObject parent = parentTrack.get(f-minParentFrame);
+                            
                             BlankMask m = new BlankMask("", xSize, ySize, zSize, offX, offY, offZ, ref.getScaleXY(), ref.getScaleZ());
+                            BoundingBox bds = m.getBoundingBox();
+                            int maxIntersect = parent.getChildren(structureIdx).stream().mapToInt(o->o.getBounds().getIntersection(bds).getSizeXYZ()).max().getAsInt();
+                            if (!bds.isIncluded(parent.getBounds()) || maxIntersect>0) {
+                                if (debug) {
+                                    logger.debug("stop filling gap! parent:{}, gapfilled:{}, maxIntersect: {} erase from: {} to {}", parent.getBounds(), m.getBoundingBox(), maxIntersect, gcPrev, prev);
+                                    logger.debug("ref: {} ({}), prev:{}({})", ref, ref.getBounds(), ref.getPrevious(), ref.getPrevious().getBounds());
+                                }
+                                // stop filling gap 
+                                while(gcPrev!=null && gcPrev.getFrame()>prev.getFrame()) {
+                                    if (debug) logger.debug("erasing: {}, prev: {}", gcPrev, gcPrev.getPrevious());
+                                    gcPrev.resetTrackLinks(true, true);
+                                    gcPrev.getParent().getChildren(structureIdx).remove(gcPrev);
+                                    gcPrev = gcPrev.getPrevious();
+                                }
+                                prev.resetTrackLinks(false, true);
+                                next.resetTrackLinks(true, false, true, null);
+                                gcPrev=null;
+                                break;
+                            }
                             int idx = parent.getChildren(structureIdx).size(); // idx = last element -> in order to be consistent with the bounding box map because objects are adjusted afterwards
                             Object3D o = new Object3D(m, idx+1);
                             StructureObject s = new StructureObject(f, structureIdx, idx, o, parent);
                             parent.getChildren(structureIdx).add(s);
-                            if (debug) logger.debug("add object: {}, bounds: {}", s, s.getBounds());
+                            if (debug) logger.debug("add object: {}, bounds: {}, refBounds: {}", s, s.getBounds(), ref.getBounds());
                             // set links
-                            prev.setTrackLinks(s, true, true);
-                            prev = s;
+                            gcPrev.setTrackLinks(s, true, true);
+                            gcPrev = s;
                         }
-                        prev.setTrackLinks(cur, true, true);
+                        if (gcPrev!=null) gcPrev.setTrackLinks(next, true, true);
                     }
                 }
-                prev = cur;
+                prev = next;
             }
         }
         
@@ -209,12 +263,37 @@ public class MicrochannelTracker implements TrackerSegmenter {
      * @return 
      */
     private static Map<Integer, StructureObject> getReference(Map<StructureObject, List<StructureObject>> allTracks, int fStart, int fEnd) { 
+        List<Pair<List<StructureObject>, Double>> refMSDMap = new ArrayList<>();
         for (Entry<StructureObject, List<StructureObject>> e : allTracks.entrySet()) {
             if (e.getKey().getFrame()<=fStart && e.getValue().get(e.getValue().size()-1).getFrame()>=fEnd) {
-                if (isContinuousBetweenFrames(e.getValue(), fStart, fEnd)) return e.getValue().stream().collect(Collectors.toMap(s->s.getFrame(), s->s));
+                if (isContinuousBetweenFrames(e.getValue(), fStart, fEnd)) {
+                    List<StructureObject> ref = new ArrayList<>(e.getValue());
+                    ref.removeIf(o->o.getFrame()<fStart||o.getFrame()>fEnd);
+                    refMSDMap.add(new Pair<>(ref, msd(ref)));
+                    
+                }
             }
         }
+        if (!refMSDMap.isEmpty()) {
+            List<StructureObject> ref = refMSDMap.stream().min((p1, p2)->Double.compare(p1.value, p2.value)).get().key;
+            return ref.stream().collect(Collectors.toMap(s->s.getFrame(), s->s));
+        }
         return null;
+    }
+    private static double msd(List<StructureObject> list) {
+        if (list.size()<=1) return 0;
+        double res = 0;
+        Iterator<StructureObject> it = list.iterator();
+        StructureObject prev= it.next();
+        while(it.hasNext()) {
+            StructureObject next = it.next();
+            res+=getDistanceSquare(prev.getObject().getGeomCenter(false), next.getObject().getGeomCenter(false));
+            prev = next;
+        }
+        return res/(list.size()-1);
+    }
+    private static double getDistanceSquare(double[] c1, double[] c2) {
+        return Math.pow((c1[0]-c2[0]), 2) + Math.pow((c1[1]-c2[1]), 2) +(c1.length>2 && c2.length>2  ?  Math.pow((c1[2]-c2[2]), 2) : 0);
     }
     private static boolean isContinuousBetweenFrames(List<StructureObject> list, int fStart, int fEnd) {
         Iterator<StructureObject> it = list.iterator();    

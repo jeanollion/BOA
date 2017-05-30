@@ -41,12 +41,12 @@ public interface StructureObjectTrackCorrection extends StructureObjectTracker {
      * 
      * @return a list containing the sibling (structureObjects that have the same previous object) at the next division, null if there are no siblings. If there are siblings, the first object of the list is contained in the track.
      */
-    public List<StructureObject> getNextDivisionSiblings();
+    //public List<StructureObject> getNextDivisionSiblings();
     /**
      * 
      * @return a list containing the sibling (structureObjects that have the same previous object) at the previous division, null if there are no siblings. If there are siblings, the first object of the list is contained in the track.
      */
-    public List<StructureObject> getPreviousDivisionSiblings();
+    //public List<StructureObject> getPreviousDivisionSiblings();
     public void merge(StructureObjectTrackCorrection other);
     public StructureObjectTrackCorrection split(ObjectSplitter splitter);
     public StructureObject resetTrackHead();

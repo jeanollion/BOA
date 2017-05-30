@@ -44,6 +44,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
@@ -186,6 +187,65 @@ public class TrackMateInterface<S extends Spot> {
     public void setTrackLinks(Map<Integer, List<StructureObject>> objectsF) {
         setTrackLinks(objectsF, null);
     }
+    
+    public void  removeCrossingLinksFromGraph(double spatialTolerence) {
+        if (graph==null) return;
+        long t0 = System.currentTimeMillis();
+        HashSet<DefaultWeightedEdge> toRemove = new HashSet<>();
+        HashSet<Spot> toRemSpot = new HashSet<>();
+        for (DefaultWeightedEdge e1 : graph.edgeSet()) {
+            for (DefaultWeightedEdge e2 : graph.edgeSet()) {
+                if (intersect(e1, e2, spatialTolerence, toRemSpot)) {
+                    toRemove.add(e1);
+                    toRemove.add(e2);
+                }
+            }
+        }
+        graph.removeAllEdges(toRemove);
+        
+        for (Spot s : toRemSpot) { // also remove vertex that are not linked anymore
+            if (graph.edgesOf(s).isEmpty()) graph.removeVertex(s);
+        }
+        long t1 = System.currentTimeMillis();
+        logger.debug("number of edges after removing intersecting links: {}, nb of vertices: {}, processing time: {}", graph.edgeSet().size(), graph.vertexSet().size(), t1-t0);
+    }
+    private static String toString(Spot s) {
+        return "F="+s.getFeature(Spot.FRAME)+";Idx="+s.getFeature("Idx");
+    }
+
+    private boolean intersect(DefaultWeightedEdge e1, DefaultWeightedEdge e2, double spatialTolerence, HashSet<Spot> toRemSpot) {
+        if (e1.equals(e2)) return false;
+        Spot s1 = graph.getEdgeSource(e1);
+        Spot s2 = graph.getEdgeSource(e2);
+        Spot t1 = graph.getEdgeTarget(e1);
+        Spot t2 = graph.getEdgeTarget(e2);
+        if (s1.equals(t1) || s2.equals(t2) || s1.equals(s2) || t1.equals(t2)) return false;
+        if (!intersect(s1.getFeature(Spot.FRAME), t1.getFeature(Spot.FRAME), s2.getFeature(Spot.FRAME), t2.getFeature(Spot.FRAME), 0)) return false;
+        for (String f : Spot.POSITION_FEATURES) {
+            if (!intersect(s1.getFeature(f), t1.getFeature(f), s2.getFeature(f), t2.getFeature(f), spatialTolerence)) return false;
+        }
+        toRemSpot.add(s1);
+        toRemSpot.add(s2);
+        toRemSpot.add(t1);
+        toRemSpot.add(t2);
+        return true;
+    }
+    private static boolean intersect(double min1, double max1, double min2, double max2, double tolerance) {
+        if (min1>max1) {
+            double t = max1;
+            max1=min1;
+            min1=t;
+        }
+        if (min2>max2) {
+            double t = max2;
+            max2=min2;
+            min2=t;
+        }
+        double min = Math.max(min1, min2);
+        double max = Math.min(max1, max2);
+        return max>min-tolerance;
+    }
+    
     public void setTrackLinks(Map<Integer, List<StructureObject>> objectsF, Collection<StructureObject> modifiedObjects) {
         if (objectsF==null || objectsF.isEmpty()) return;
         if (graph==null) throw new RuntimeException("Graph not initialized");
@@ -193,10 +253,10 @@ public class TrackMateInterface<S extends Spot> {
         int minF = objectsF.keySet().stream().min((i1, i2)->Integer.compare(i1, i2)).get();
         int maxF = objectsF.keySet().stream().max((i1, i2)->Integer.compare(i1, i2)).get();
         List<StructureObject> objects = Utils.flattenMap(objectsF);
-        for (StructureObject o : objects) o.resetTrackLinks(o.getFrame()>minF, o.getFrame()<maxF, modifiedObjects);
+        for (StructureObject o : objects) o.resetTrackLinks(o.getFrame()>minF, o.getFrame()<maxF, false, modifiedObjects);
 
         TreeSet<DefaultWeightedEdge> edgeBucket = new TreeSet(new Comparator<DefaultWeightedEdge>() {
-            public int compare(DefaultWeightedEdge arg0, DefaultWeightedEdge arg1) {
+            @Override public int compare(DefaultWeightedEdge arg0, DefaultWeightedEdge arg1) {
                 return Double.compare(graph.getEdgeWeight(arg0), graph.getEdgeWeight(arg1));
             }
         });

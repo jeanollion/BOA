@@ -19,6 +19,7 @@ package plugins.plugins.trackers.trackMate;
 
 import dataStructure.objects.Object3D;
 import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectUtils;
 import image.BoundingBox;
 import image.ImageMask;
 import java.util.ArrayList;
@@ -41,6 +42,7 @@ public class SpotCompartiment {
     int nextDivisionTimePoint;
     double[] offsetDivisionMiddle;
     double[] middleYLimits;
+    boolean upperDaughterCell;
     public static double middleAreaProportion = 0.5;
     public SpotCompartiment(StructureObject o) {
         long t0 = System.currentTimeMillis();
@@ -50,6 +52,7 @@ public class SpotCompartiment {
         offsetDown = poles[1];
         nextDivisionTimePoint = object.getNextDivisionTimePoint();
         computeDivisionOffset();
+        computeIsUpperDaughterCell();
         //if (object.getNext()!=null && object.getNext().getDivisionSiblings(false)!=null) divisionAtNextTimePoint = true;
         //previousDivisionTime = object.getPreviousDivisionTimePoint();
         
@@ -175,17 +178,31 @@ public class SpotCompartiment {
         return compartimentOffsetDivisionUp;
     }*/
     
-    private static List<StructureObject> getDivisionSiblings(StructureObject firstDivObject) {
-        List<StructureObject> res = firstDivObject.getDivisionSiblings(true);
-        if (res!=null) Collections.sort(res, getComparator(ObjectIdxTracker.IndexingOrder.YXZ));
+    private void computeIsUpperDaughterCell() {
+        List<StructureObject> prevDC = StructureObjectUtils.getObjectsAtPrevDivision(object);
+        if (prevDC.isEmpty()) return;
+        Collections.sort(prevDC, (o1, o2)->Integer.compare(o1.getBounds().getyMin(), o2.getBounds().getyMin()));
+        this.upperDaughterCell = prevDC.get(0).getTrackHead().equals(object.getTrackHead());
+        logger.debug("object: {}, prev siblings: {}, upper?: {}", object, prevDC, upperDaughterCell);
+        //object.setAttribute("upper daughter cell", upperDaughterCell);
+    }
+    
+    private static List<StructureObject> getDivisionSiblings(StructureObject previous) {
+        if (previous==null || previous.getParent().getNext()==null) return Collections.EMPTY_LIST;
+        List<StructureObject> candidates = previous.getParent().getNext().getChildren(previous.getStructureIdx());
+        List<StructureObject> res= new ArrayList<>(2);
+        for (StructureObject o : candidates) if (previous.equals(o.getPrevious())) res.add(o);
+        Collections.sort(res, (o1, o2) -> Integer.compare(o1.getBounds().getyMin(), o2.getBounds().getyMin()));
         return res;
     }
+    
     private void computeDivisionOffset() {
         int count = this.object.getMask().count();
         int upperCompartimentCount = count/2;
         if (this.nextDivisionTimePoint>0) {
-            StructureObject parent = this.object.getInTrack(nextDivisionTimePoint);
-            List<StructureObject> siblings = getDivisionSiblings(parent);
+            StructureObject beforeDiv = this.object.getInTrack(nextDivisionTimePoint-1);
+            if (beforeDiv==null) logger.debug("no object found before div at frame: {}, for track: {}, object: {}", nextDivisionTimePoint-1, object.getTrackHead(), object);
+            List<StructureObject> siblings = getDivisionSiblings(beforeDiv);
             if (siblings.size()==2) { // cut the object whith the same proportion
                 double c1 = (double) siblings.get(0).getMask().count();
                 double c2 = (double) siblings.get(1).getMask().count();

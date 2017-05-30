@@ -24,6 +24,7 @@ import core.Processor;
 import core.Processor;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.Experiment;
+import dataStructure.configuration.Experiment.ImportImageMethod;
 import dataStructure.configuration.PreProcessingChain;
 import dataStructure.configuration.Structure;
 import dataStructure.objects.MasterDAO;
@@ -60,6 +61,7 @@ import plugins.plugins.processingScheme.SegmentOnly;
 import plugins.plugins.processingScheme.SegmentThenTrack;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.BacteriaTrans;
+import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.segmenters.MicrochannelPhase2D;
 import plugins.plugins.segmenters.MutationSegmenter;
 import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
@@ -395,7 +397,8 @@ public class GenerateXP {
     public static Experiment generateXPFluo(String name, String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY, int[] crop) {
         
         Experiment xp = new Experiment(name);
-        xp.setImportImageMethod(importMethod);
+        if (importMethod==null) xp.setImportImageMethod(ImportImageMethod.ONE_FILE_PER_CHANNEL_AND_FIELD);
+        else xp.setImportImageMethod(importMethod);
         xp.getChannelImages().insert(new ChannelImage("RFP", "_REF"), new ChannelImage("YFP", ""));
         xp.setOutputDirectory(outputDir);
         Structure mc = new Structure("Microchannel", -1, 0);
@@ -433,7 +436,7 @@ public class GenerateXP {
         Structure mutation = xp.getStructure(2).setBrightObject(true);
         mutation.setSegmentationParentStructure(1);
         if (processing) {
-            mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelTracker()));
+            mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicroChannelFluo2D()).setTrackingParameters(40, 0.5)));
             bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo()).setCostParameters(0.1, 0.5)));
             //mutation.setProcessingScheme(new SegmentAndTrack(new LAPTracker().setCompartimentStructure(1)));
             mutation.setProcessingScheme(new SegmentAndTrack(

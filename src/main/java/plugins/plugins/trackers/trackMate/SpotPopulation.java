@@ -85,11 +85,9 @@ public class SpotPopulation {
     public void addSpots(StructureObject container, int spotSturctureIdx, List<Object3D> objects, int compartmentStructureIdx) {
         //ObjectPopulation population = container.getObjectPopulation(spotSturctureIdx);
         List<StructureObject> compartments = container.getChildren(compartmentStructureIdx);
-        Image intensityMap = container.getRawImage(spotSturctureIdx);
+        Image intensityMap = null;// = container.getRawImage(spotSturctureIdx);
         //logger.debug("adding: {} spots from timePoint: {}", population.getObjects().size(), container.getTimePoint());
-        HashMapGetCreate<StructureObject, SpotCompartiment> compartimentMap = new HashMapGetCreate<StructureObject, SpotCompartiment>(new Factory<StructureObject, SpotCompartiment>() {
-            @Override public SpotCompartiment create(StructureObject s) {return new SpotCompartiment(s);}
-        });
+        HashMapGetCreate<StructureObject, SpotCompartiment> compartimentMap = new HashMapGetCreate<>((StructureObject s) -> new SpotCompartiment(s));
         for (Object3D o : objects) {
             StructureObject parent = StructureObjectUtils.getInclusionParent(o, compartments, null); 
             if (parent==null) {
@@ -98,7 +96,15 @@ public class SpotPopulation {
             }
             SpotCompartiment compartiment = compartimentMap.getAndCreateIfNecessary(parent);
             compartimentMap.put(parent, compartiment);
-            double[] center = intensityMap!=null ? o.getMassCenter(intensityMap, true) : o.getGeomCenter(true);
+            double[] center = o.getCenter();
+            if (center==null) {
+                if (intensityMap==null) intensityMap = container.getRawImage(spotSturctureIdx);
+                center = intensityMap!=null ? o.getMassCenter(intensityMap, true) : o.getGeomCenter(true);
+            } else {
+                center[0]*=o.getScaleXY();
+                center[1]*=o.getScaleXY();
+                if (center.length>2) center[2]*=o.getScaleZ();
+            }
             SpotWithinCompartment s = new SpotWithinCompartment(o, container.getFrame(), compartiment, center, distanceParameters);
             collection.add(s, container.getFrame());
             if (!s.lowQuality) collectionHQ.add(s, container.getFrame());

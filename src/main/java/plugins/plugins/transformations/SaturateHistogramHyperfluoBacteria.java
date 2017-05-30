@@ -87,8 +87,8 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
         double thldMin = Arrays.stream(thlds).min((d1, d2)->Double.compare(d1, d2)).get();
         long t1 = System.currentTimeMillis();
         //logger.debug("saturate auto: {}ms", t1-t0);
-        configData.add(thldMin);
-        
+        if (Double.isFinite(thldMin)) configData.add(thldMin);
+        else configData.add(Double.NaN);
         logger.debug("SaturateHistoAuto: {}", Utils.toStringList(configData));
     }
     static boolean shown = false;
@@ -122,7 +122,7 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
 
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
-        if (Double.isInfinite(configData.get(0))) return image;
+        if (Double.isNaN(configData.get(0))) return image;
         SaturateHistogram.saturate(configData.get(0), configData.get(0), image);
         return image;
     }

@@ -43,6 +43,7 @@ import ij.plugin.OverlayLabels;
 import ij.plugin.filter.ThresholdToSelection;
 import ij.process.FloatPolygon;
 import ij.process.ImageProcessor;
+import image.BlankMask;
 import image.BoundingBox;
 import image.IJImageWrapper;
 import image.Image;
@@ -285,6 +286,7 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
 
     @Override
     public Roi3D generateObjectRoi(Pair<StructureObject, BoundingBox> object, boolean image2D, Color color) {
+        if (object.key.getMask().getSizeZ()<=0 || object.key.getMask().getSizeXY()<=0) logger.error("wrong object dim: o:{} {}", object.key, object.key.getBounds());
         Roi3D r =  createRoi(object.key.getMask(), object.value, !image2D);
         setObjectColor(r, color);
         return r;
@@ -302,8 +304,22 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
      * @param is3D
      * @return maping of Roi to Z-slice (taking into account the provided offset)
      */
-    public static Roi3D createRoi(ImageInteger mask, BoundingBox offset, boolean is3D) { // TODO blankMask -> tester et faire un rectangle!
+    public static Roi3D createRoi(ImageInteger mask, BoundingBox offset, boolean is3D) { 
+        if (offset==null) {
+            logger.error("ROI creation : offset null for mask: {}", mask.getName());
+            return null;
+        }
         Roi3D res = new Roi3D(mask.getSizeZ());
+        if (mask instanceof BlankMask) {
+            BoundingBox bds = mask.getBoundingBox();
+            for (int z = 0; z<mask.getSizeZ(); ++z) {
+                Roi rect = new Roi(0, 0, bds.getSizeX(), bds.getSizeY());
+                rect.setLocation(offset.getxMin(), offset.getyMin());
+                if (is3D) rect.setPosition(z+1+offset.getzMin());
+                res.put(z+mask.getOffsetZ(), rect);
+            }
+            return res;
+        }
         ThresholdToSelection tts = new ThresholdToSelection();
         ImagePlus maskPlus = IJImageWrapper.getImagePlus(mask);
         tts.setup("", maskPlus);
@@ -316,9 +332,8 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             if (roi!=null) {
                 //roi.setPosition(z+1+mask.getOffsetZ());
                 Rectangle bds = roi.getBounds();
-                if (offset==null) logger.error("ROI creation : offset null for mask: {}", mask.getName());
                 if (bds==null) logger.error("ROI creation : bounds null for mask: {}", mask.getName());
-                if (offset==null || bds==null) continue;
+                if (bds==null) continue;
                 roi.setLocation(bds.x+offset.getxMin(), bds.y+offset.getyMin());
                 if (is3D) roi.setPosition(z+1+offset.getzMin());
                 res.put(z+mask.getOffsetZ(), roi);
