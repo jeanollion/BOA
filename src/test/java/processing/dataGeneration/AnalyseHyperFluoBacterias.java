@@ -31,11 +31,13 @@ import ij.process.AutoThresholder;
 import image.BoundingBox;
 import image.Image;
 import image.ImageByte;
+import image.ImageFloat;
 import image.ImageFormat;
 import image.ImageInteger;
 import image.ImageOperations;
 import image.ImageReader;
 import image.ImageWriter;
+import image.TypeConverter;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,6 +45,8 @@ import java.util.List;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.thresholders.BackgroundThresholder;
 import plugins.plugins.transformations.CropMicroChannelFluo2D;
+import plugins.plugins.transformations.RemoveStripesSignalExclusion;
+import processing.Filters;
 import processing.ImageTransformation;
 import processing.ImageTransformation.Axis;
 import utils.Pair;
@@ -60,16 +64,20 @@ public class AnalyseHyperFluoBacterias {
         //generateDataSet(path);
         Image[] dataSet = readDataset(path);
         
-        
+        dataSet[0]=ImageTransformation.flip(dataSet[0], Axis.Y);
+        dataSet[1]=ImageTransformation.flip(dataSet[1], Axis.Y);
         
         List<Image> ultra = dataSet[0].splitZPlanes();
         List<Image> control = dataSet[1].splitZPlanes();
         //Collections.shuffle(control);
         control = control.subList(0, ultra.size());
+        
+        ultra = Utils.apply(ultra, i-> removeStripes(i));
+        control = Utils.apply(control, i-> removeStripes(i));
+        dataSet[0] = Image.mergeZPlanes(ultra);
         dataSet[1] = Image.mergeZPlanes(control);
         
-        dataSet[0]=ImageTransformation.flip(dataSet[0], Axis.Y);
-        dataSet[1]=ImageTransformation.flip(dataSet[1], Axis.Y);
+        
         
         ImageWindowManagerFactory.showImage(dataSet[0]);
         ImageWindowManagerFactory.showImage(dataSet[1]);
@@ -79,7 +87,11 @@ public class AnalyseHyperFluoBacterias {
         //testCropMicrochannels(dataSet[0], dataSet[1]);
         //testSaturate();
     }
-    
+    private static Image removeStripes(Image input) {
+        ImageFloat f = TypeConverter.toFloat(input, null);
+        RemoveStripesSignalExclusion.removeStripes(f, f, BackgroundThresholder.runThresholder(f, null, 2.5, 3, 3, null), false);
+        return f;
+    }
     /*private static void testSaturate() {
         String[] xps = new String[]{"fluo160428", "fluo160501", "fluo170515_MutS", "fluo170517_MutH"};
         String xp = xps[0];
@@ -133,26 +145,23 @@ public class AnalyseHyperFluoBacterias {
         Utils.plotProfile("Image proportion Control", Utils.toDoubleArray(proportionC, false));
     }
     private static double getThreshold(Image i) {
-        return BackgroundThresholder.runThresholderHisto(i, null, 2.5, 3, 3, null);
+        return BackgroundThresholder.runThresholderHisto(i, null, 3, 6, 3, null);
         //return BackgroundFit.backgroundFit(i, null, 3, null);
     }
     private static double analyse(Image i, List<ImageInteger> masks, boolean hyper) {
         double thld = getThreshold(i);
         ImageInteger tempMask = ImageOperations.threshold(i, thld, true, true, true, null);
+        //ImageOperations.filterObjects(tempMask, tempMask, o->o.getSize()<5);
+        Filters.open(tempMask, tempMask, Filters.getNeighborhood(2, 0, i));
         if (masks!=null) masks.add(tempMask);
         if (!hyper) {
-            
-            return ImageOperations.getMeanAndSigma(i, null,  v->v>thld)[2] / i.getSizeXYZ();
+            return tempMask.count() / i.getSizeXYZ();
         } else {
-            double[] mm = ImageOperations.getMeanAndSigma(i, tempMask);
+            double count = tempMask.count();
             double thld2 = IJAutoThresholder.runThresholder(i, null, null, AutoThresholder.Method.Otsu, 0);
             ImageOperations.threshold(i, thld2, true, true, true, tempMask);
-            double[] mm2 = ImageOperations.getMeanAndSigma(i, tempMask);
-            return mm2[2]/mm[2];
-            /*
-            double[] under = ImageOperations.getMeanAndSigma(i, tempMask, v->v<thld2&&v>thld);
-            double[] over = ImageOperations.getMeanAndSigma(i, tempMask, v->v>thld2);
-            return over[1]/over[0] - under[1]/under[0];*/
+            double count2 = tempMask.count();
+            return count2/count;
         }
         
     }

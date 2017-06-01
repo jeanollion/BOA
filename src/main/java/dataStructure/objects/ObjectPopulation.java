@@ -89,7 +89,7 @@ public class ObjectPopulation {
         this.properties = image.getProperties();
         labelImage = image;
         if (!isLabeledImage) {
-            objects = new ArrayList<>(ImageLabeller.labelImageList(image));
+            objects = ImageLabeller.labelImageList(image);
             relabel(false); // in order to have consistent labels between image & object list
         }
     }
@@ -98,7 +98,7 @@ public class ObjectPopulation {
         this.lowConnectivity=lowConnectivity;
         labelImage = image;
         if (!isLabeledImage) {
-            objects = new ArrayList<>(lowConnectivity ? ImageLabeller.labelImageListLowConnectivity(image) : ImageLabeller.labelImageList(image));
+            objects = lowConnectivity ? ImageLabeller.labelImageListLowConnectivity(image) : ImageLabeller.labelImageList(image);
             relabel(false); // in order to have consistent labels between image & object list
         } else objects = null;
         return this;

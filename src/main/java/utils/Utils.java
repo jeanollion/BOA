@@ -28,6 +28,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileReader;
@@ -38,9 +39,11 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -65,6 +68,7 @@ import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.ListModel;
+import javax.swing.SwingUtilities;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import measurement.extraction.DataExtractor;
@@ -74,7 +78,23 @@ import measurement.extraction.DataExtractor;
  * @author jollion
  */
 public class Utils {
-    
+    public static String getFormattedTime() {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(new Date());  
+        int hours = cal.get(Calendar.HOUR_OF_DAY);
+        int min = cal.get(Calendar.MINUTE);
+        int s = cal.get(Calendar.SECOND);
+        int ms = cal.get(Calendar.MILLISECOND);
+        StringBuilder sb  = new StringBuilder(13);
+        sb.append(hours);
+        sb.append(":");
+        sb.append(min);
+        sb.append(":");
+        sb.append(s);
+        sb.append(".");
+        sb.append(ms);
+        return sb.toString();
+    }
     private final static Pattern p = Pattern.compile("[^a-z0-9_-]", Pattern.CASE_INSENSITIVE);
     public static String getStringArrayAsString(String... stringArray) {
         if (stringArray==null) return "[]";
@@ -686,5 +706,33 @@ public class Utils {
         for (int i = 0; i<array.length; ++i) outputArray[i] = func.apply(array[i]);
         return outputArray;
     }
-    
+    public static MouseListener getMouseListenerWithInvalidatedRightClick(final MouseListener ml) {
+        MouseListener res = new MouseListener() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (!SwingUtilities.isRightMouseButton(e)) ml.mouseClicked(e);
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (!SwingUtilities.isRightMouseButton(e)) ml.mousePressed(e);
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                if (!SwingUtilities.isRightMouseButton(e)) ml.mouseReleased(e);
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                if (!SwingUtilities.isRightMouseButton(e)) ml.mouseEntered(e);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (!SwingUtilities.isRightMouseButton(e)) ml.mouseExited(e);
+            }
+        };
+        return res;
+    }
 }

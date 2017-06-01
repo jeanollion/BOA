@@ -82,11 +82,11 @@ public class ImageLabeller {
     }
     
     public static List<Object3D> labelImageList(ImageMask mask) {
-        return Arrays.asList(labelImage(mask));
+        return new ArrayList<>(Arrays.asList(labelImage(mask)));
     }
     
     public static List<Object3D> labelImageListLowConnectivity(ImageMask mask) {
-        return Arrays.asList(labelImageLowConnectivity(mask));
+        return new ArrayList<>(Arrays.asList(labelImageLowConnectivity(mask)));
     }
     
     protected Object3D[] getObjects() {

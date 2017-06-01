@@ -93,7 +93,7 @@ public class MicrochannelTracker implements TrackerSegmenter {
         if (ok) tmi.removeCrossingLinksFromGraph(meanWidth/4); 
         if (ok) ok = tmi.processGC(maxDistance, parentTrack.size(), false, false); // second GC for crossing links!
         if (ok) tmi.setTrackLinks(map);
-        fillGaps(structureIdx, parentTrack);
+        //fillGaps(structureIdx, parentTrack);
     }
     
     @Override

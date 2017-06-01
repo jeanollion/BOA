@@ -100,6 +100,9 @@ public class PreProcessingChain extends SimpleContainerParameter {
     public double getScaleXY() {return scaleXY.getValue().doubleValue();}
     public double getScaleZ() {return scaleZ.getValue().doubleValue();}
     public double getFrameDuration() {return frameDuration.getValue().doubleValue();}
+    public void setFrameDuration(double frameDuration) {
+        this.frameDuration.setValue(frameDuration);
+    }
     @Override
     protected void initChildList() {
         //logger.debug("PreProc chain: {}, init list..", name);

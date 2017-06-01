@@ -92,7 +92,6 @@ public class BacteriaLineageMeasurements implements Measurement {
             currentParent = currentParent.getNext();
             bacteria = currentParent.getChildren(bIdx);
             for (StructureObject o : bacteria) {
-                
                 if (o.getPrevious()==null) o.getMeasurements().setValue(key, getTrackHeadName(trackHeadIdx++));
                 else {
                     List<StructureObject> sib = siblings.getAndCreateIfNecessary(o.getPrevious());

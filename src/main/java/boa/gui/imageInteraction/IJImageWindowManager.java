@@ -236,6 +236,12 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                 //logger.trace("mousexited");
             }
         };
+        // remove right click from other MouseListeners to avoid collapse // TODO only mouse released? 
+        MouseListener[] mls = canvas.getMouseListeners();
+        for (MouseListener m : mls) {
+            canvas.removeMouseListener(m);
+            canvas.addMouseListener(Utils.getMouseListenerWithInvalidatedRightClick(m));
+        }
         canvas.addMouseListener(ml);
         //return ml;
     }

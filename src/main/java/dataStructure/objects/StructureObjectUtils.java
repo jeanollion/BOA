@@ -81,12 +81,12 @@ public class StructureObjectUtils {
     public static List<StructureObject> getDaugtherObjectsAtNextFrame(StructureObject o, List<StructureObject> bucket) { // look only in next timePoint
         if (bucket==null) bucket=new ArrayList<>();
         if (o.getParent()==null) {
-            if (o.getNext()!=null) bucket.add(o.getNext());
+            //if (o.getNext()!=null) bucket.add(o.getNext());
             return bucket;
         }
         StructureObject nextParent = o.getParent().getNext();
         if (nextParent==null) return bucket;
-        for (StructureObject n : nextParent.getChildren(o.getStructureIdx())) if (n.getPrevious()==o) bucket.add(n);
+        for (StructureObject n : nextParent.getChildren(o.getStructureIdx())) if (o.equals(n.getPrevious())) bucket.add(n);
         return bucket;
     }
     public static void setTrackLinks(StructureObject previous, StructureObject next, boolean setPrevious, boolean setNext) {

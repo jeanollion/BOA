@@ -616,7 +616,7 @@ public class BacteriaTrans implements SegmenterSplitAndMerge, ManualSegmenter, O
             ObjectPopulation res =  WatershedTransform.watershed(getEDM(), maskToSplit, true, null, new WatershedTransform.SizeFusionCriterion(minSize), true);
             if (res.getObjects().size()==1) { // relabel with low connectivity -> if not contour will fail
                 List<Object3D> list = ImageLabeller.labelImageListLowConnectivity(maskToSplit);
-                return new ObjectPopulation(new ArrayList<>(list), maskToSplit);
+                return new ObjectPopulation(list, maskToSplit);
             } else return res;
             /*   
             ObjectPopulation res = WatershedTransform.watershed(getIntensityMap(), maskToSplit, false, null, new WatershedTransform.SizeFusionCriterion(minSizePropagation), true);

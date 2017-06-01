@@ -78,6 +78,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -417,11 +418,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         this.progressBar.setValue(i);
         //logger.info("Progress: {}/{}", i, 100);
     }
+    
     @Override
     public void setMessage(String message) {
         try {
             //logger.info(message);
-            this.console.getStyledDocument().insertString(console.getStyledDocument().getLength(), message+"\n", null);
+            this.console.getStyledDocument().insertString(console.getStyledDocument().getLength(), Utils.getFormattedTime()+": "+message+"\n", null);
         } catch (BadLocationException ex) {            
         }
     }

@@ -84,10 +84,10 @@ public class WatershedTransform {
     }
     
     public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean invertWatershedMapValues, boolean lowConnectivity) {
-        return watershed(watershedMap, mask, ImageLabeller.labelImageList(seeds), invertWatershedMapValues, null, null, lowConnectivity);
+        return watershed(watershedMap, mask, Arrays.asList(ImageLabeller.labelImage(seeds)), invertWatershedMapValues, null, null, lowConnectivity);
     }
     public static ObjectPopulation watershed(Image watershedMap, ImageMask mask, ImageMask seeds, boolean decreasingPropagation, PropagationCriterion propagationCriterion, FusionCriterion fusionCriterion, boolean lowConnectivity) {
-        return watershed(watershedMap, mask, ImageLabeller.labelImageList(seeds), decreasingPropagation, propagationCriterion, fusionCriterion, lowConnectivity);
+        return watershed(watershedMap, mask, Arrays.asList(ImageLabeller.labelImage(seeds)), decreasingPropagation, propagationCriterion, fusionCriterion, lowConnectivity);
     }
     /**
      * 

@@ -95,7 +95,7 @@ import processing.ImageTransformation;
 public class GenerateXP {
     public static final Logger logger = LoggerFactory.getLogger(GenerateXP.class);
     static boolean subTransPre = true;
-    static Experiment.ImportImageMethod importMethod = Experiment.ImportImageMethod.SINGLE_FILE;
+    static Experiment.ImportImageMethod importMethod;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.DBMap);
@@ -412,6 +412,7 @@ public class GenerateXP {
     }
     public static void setPreprocessingFluo(PreProcessingChain ps, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY, int[] crop) {
             ps.removeAllTransformations();
+            ps.setFrameDuration(120);
             //ps.addTransformation(0, null, new SuppressCentralHorizontalLine(6)).setActivated(false);
             if (!Double.isNaN(scaleXY)) ps.setCustomScale(scaleXY, 1);
             if (crop!=null) ps.addTransformation(0, null, new SimpleCrop(crop));
@@ -445,6 +446,7 @@ public class GenerateXP {
             ).addPostFilters(new FeatureFilter(new Quality(), 0.8, true, true))); // was 1.5
         }
         if (measurements) {
+            xp.clearMeasurements();
             xp.addMeasurement(new BacteriaLineageMeasurements(1, "BacteriaLineage"));
             xp.addMeasurement(new ObjectFeatures(1).addFeatures(new Size().setScale(true), new FeretMax().setScale(true), new Mean().setIntensityStructure(1)));
             xp.addMeasurement(new MutationTrackMeasurements(1, 2));
@@ -456,7 +458,7 @@ public class GenerateXP {
     public static Experiment generateXPTrans(String name, String outputDir, boolean setUpPreProcessing, boolean flip, int trimFramesStart, int trimFramesEnd, double scaleXY) {
         
         Experiment xp = new Experiment(name);
-        xp.setImportImageMethod(importMethod);
+        xp.setImportImageMethod(importMethod==null ? Experiment.ImportImageMethod.SINGLE_FILE : importMethod);
         xp.getChannelImages().insert(new ChannelImage("BF", ""));
         xp.setOutputDirectory(outputDir);
         Structure mc = new Structure("Microchannel", -1, 0);

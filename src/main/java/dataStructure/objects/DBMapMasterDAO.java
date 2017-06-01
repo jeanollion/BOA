@@ -19,6 +19,7 @@ package dataStructure.objects;
 
 import dataStructure.configuration.Experiment;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
@@ -26,6 +27,7 @@ import org.mapdb.HTreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.DBMapUtils;
+import utils.FileIO;
 import utils.JSONUtils;
 import utils.MorphiumUtils;
 import utils.Utils;
@@ -181,10 +183,21 @@ public class DBMapMasterDAO implements MasterDAO {
 
     @Override
     public void updateExperiment() {
+        if (xp==null) return;
         if (xpDB.isClosed()) makeXPDB();
         xpMap.clear();
-        if (xp!=null) xpMap.put("config", JSONUtils.serialize(xp));
+        xpMap.put("config", JSONUtils.serialize(xp));
         xpDB.commit();
+        if (xpMap.isEmpty()) { // safty
+            logger.error("Experiment: {} could not be saved, will try a second time");
+            xpMap.put("config", JSONUtils.serialize(xp));
+            xpDB.commit();
+            if (xpMap.isEmpty()) {
+                logger.error("Experiment: {} could not be saved, will store on separated file");
+                String xpS = JSONUtils.serialize(xp);
+                FileIO.writeToFile(xpS, new ArrayList<Experiment>(1){{add(xp);}}, o->JSONUtils.serialize(o));
+            }
+        }
     }
 
     @Override

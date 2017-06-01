@@ -33,6 +33,7 @@ import image.ImageLabeller;
 import image.ImageMask;
 import image.ImageOperations;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -67,7 +68,7 @@ public class WatershedObjectSplitter implements ObjectSplitter {
         
         ImageByte localMax = Filters.localExtrema(watershedMap, null, decreasingPropagation, Filters.getNeighborhood(1, 1, watershedMap)).setName("Split seeds");
         ImageOperations.and(localMax, mask, localMax); // limit @ seeds within mask
-        List<Object3D> seeds = ImageLabeller.labelImageList(localMax);
+        List<Object3D> seeds = Arrays.asList(ImageLabeller.labelImage(localMax));
         if (seeds.size()<2) {
             //logger.warn("Object splitter : less than 2 seeds found");
             //new IJImageDisplayer().showImage(smoothed.setName("smoothed"));
@@ -107,7 +108,7 @@ public class WatershedObjectSplitter implements ObjectSplitter {
         
         ImageByte localMax = Filters.localExtrema(watershedMap, null, decreasingPropagation, Filters.getNeighborhood(1, 1, watershedMap)).setName("Split seeds");
         ImageOperations.and(localMax, mask, localMax); // limit @ seeds within mask
-        List<Object3D> seeds = new ArrayList<Object3D>(ImageLabeller.labelImageList(localMax));
+        List<Object3D> seeds = ImageLabeller.labelImageList(localMax);
         if (seeds.size()<2) {
             //logger.warn("Object splitter : less than 2 seeds found");
             //new IJImageDisplayer().showImage(smoothed.setName("smoothed"));

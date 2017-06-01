@@ -43,49 +43,52 @@ public class EllipsoidalNeighborhood extends DisplacementNeighborhood {
      * return an array of diplacement from the center
      */
     public EllipsoidalNeighborhood(double radius, double radiusZ, boolean excludeCenter) {
-        this.radius=radius;
-        this.radiusZ=radiusZ;
-        is3D=radiusZ>0;
-        double r = radiusZ>0 ? (double) radius / radiusZ : 0;
-        int rad = (int) (radius + 0.5f);
-        int radZ = (int) (radiusZ + 0.5f);
-        int[][] temp = new int[3][(2 * rad + 1) * (2 * rad + 1) * (2 * radZ + 1)];
-        final float[] tempDist = new float[temp[0].length];
-        int count         = 0;
-        double rad2 = radius * radius;
-        for (int zz = -radZ; zz <= radZ; zz++) {
-            for (int yy = -rad; yy <= rad; yy++) {
-                for (int xx = -rad; xx <= rad; xx++) {
-                    double d2 = zz * r * zz * r + yy * yy + xx * xx;
-                    if (d2 <= rad2 && (!excludeCenter || d2 > 0)) {	//exclusion du point central
-                        temp[0][count] = xx;
-                        temp[1][count] = yy;
-                        temp[2][count] = zz;
-                        tempDist[count] = (float) Math.sqrt(d2);
-                        count++;
+        if (radiusZ<=0) init2D(radius, excludeCenter);
+        else {
+            this.radius=radius;
+            this.radiusZ=radiusZ;
+            is3D=radiusZ>0;
+            double r = radiusZ>0 ? (double) radius / radiusZ : 0;
+            int rad = (int) (radius + 0.5f);
+            int radZ = (int) (radiusZ + 0.5f);
+            int[][] temp = new int[3][(2 * rad + 1) * (2 * rad + 1) * (2 * radZ + 1)];
+            final float[] tempDist = new float[temp[0].length];
+            int count         = 0;
+            double rad2 = radius * radius;
+            for (int zz = -radZ; zz <= radZ; zz++) {
+                for (int yy = -rad; yy <= rad; yy++) {
+                    for (int xx = -rad; xx <= rad; xx++) {
+                        double d2 = zz * r * zz * r + yy * yy + xx * xx;
+                        if (d2 <= rad2 && (!excludeCenter || d2 > 0)) {	//exclusion du point central
+                            temp[0][count] = xx;
+                            temp[1][count] = yy;
+                            temp[2][count] = zz;
+                            tempDist[count] = (float) Math.sqrt(d2);
+                            count++;
+                        }
                     }
                 }
             }
-        }
 
-        
-        Integer[] indicies = new Integer[count]; for (int i = 0; i <indicies.length; i++) indicies[i]=i;
-        Comparator<Integer> compDistance = new Comparator<Integer>() {
-            @Override public int compare(Integer arg0, Integer arg1) {
-                return Float.compare(tempDist[arg0], tempDist[arg1]);
+
+            Integer[] indicies = new Integer[count]; for (int i = 0; i <indicies.length; i++) indicies[i]=i;
+            Comparator<Integer> compDistance = new Comparator<Integer>() {
+                @Override public int compare(Integer arg0, Integer arg1) {
+                    return Float.compare(tempDist[arg0], tempDist[arg1]);
+                }
+            };
+            Arrays.sort(indicies, compDistance);
+            distances = new float[count];
+            dx= new int[count];
+            dy= new int[count];
+            dz= new int[count];
+            values=new float[count];
+            for (int i = 0; i<count; ++i) {
+                dx[i] = temp[0][indicies[i]];
+                dy[i] = temp[1][indicies[i]];
+                dz[i] = temp[2][indicies[i]];
+                distances[i] = tempDist[indicies[i]];
             }
-        };
-        Arrays.sort(indicies, compDistance);
-        distances = new float[count];
-        dx= new int[count];
-        dy= new int[count];
-        dz= new int[count];
-        values=new float[count];
-        for (int i = 0; i<count; ++i) {
-            dx[i] = temp[0][indicies[i]];
-            dy[i] = temp[1][indicies[i]];
-            dz[i] = temp[2][indicies[i]];
-            distances[i] = tempDist[indicies[i]];
         }
     }
     /**
@@ -95,6 +98,9 @@ public class EllipsoidalNeighborhood extends DisplacementNeighborhood {
      * @param excludeCenter if true, central point can excluded
      */
     public EllipsoidalNeighborhood(double radius, boolean excludeCenter) { 
+        init2D(radius, excludeCenter);
+    }
+    private void init2D(double radius, boolean excludeCenter) {
         this.radius = radius;
         this.radiusZ=0;
         is3D=false;
@@ -132,7 +138,6 @@ public class EllipsoidalNeighborhood extends DisplacementNeighborhood {
             distances[i] = tempDist[indicies[i]];
         }
     }
-    
 
     public double getRadiusXY() {
         return radius;

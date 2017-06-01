@@ -67,10 +67,9 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
     
     NumberParameter minObjectSize = new BoundedNumberParameter("Object Size Filter", 0, 200, 1, null);
     NumberParameter fillingProportion = new BoundedNumberParameter("Filling proportion of Microchannel", 2, 0.6, 0.05, 1);
-    PluginParameter<SimpleThresholder> threshold = new PluginParameter<>("Intensity Threshold", SimpleThresholder.class, new BackgroundThresholder(2.5, 3.5, 3), false); //new ConstantValue(50)
+    PluginParameter<SimpleThresholder> threshold = new PluginParameter<>("Intensity Threshold", SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false); //new ConstantValue(50) //new BackgroundThresholder(2.5, 8, 3)
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Intensity Threshold", Thresholder.class, new ConstantValue(50), false);
     Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, minObjectSize, threshold, fillingProportion, xStart, xStop, yStart, yStop, number, refAverage};
-    
     
     public CropMicroChannelFluo2D(int margin, int cropMargin, int minObjectSize, double fillingProportion, int timePointNumber) {
         this.margin.setValue(margin);
@@ -122,9 +121,14 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         */
         
         if (Double.isNaN(thld)) thld = BackgroundThresholder.runThresholderHisto(image, null, 2.5, 3.5, 3, null);//IJAutoThresholder.runThresholder(image, null, AutoThresholder.Method.Triangle); // OTSU / TRIANGLE / YEN 
-        ImageByte mask = ImageOperations.threshold(image, thld, true, true);
-        Filters.close(mask, mask, Filters.getNeighborhood(2, 1, image)); // case of low intensity signal -> noisy
-        //mask = Filters.binaryClose(mask, new ImageByte("segmentation mask::closed", mask), Filters.getNeighborhood(4, 4, mask));
+        if (debug) logger.debug("threshold : {}", thld);
+        ImageInteger mask = ImageOperations.threshold(image, thld, true, true);
+        Filters.close(mask, mask, Filters.getNeighborhood(2, 1, image)); // case of low intensity signal -> noisy. // remove small objects?
+        List<Object3D> l = ImageLabeller.labelImageList(mask);
+        l.removeIf(o->o.getSize()<minObjectSize); // filter before creating objectPopulation because if many objects and short image will be created when relabelling
+        ObjectPopulation bacteria = new ObjectPopulation(l, mask, mask, true);
+        mask = bacteria.getLabelMap();
+        ImageOperations.threshold(mask, 0, true, true, false, mask);
         float[] xProj = ImageOperations.meanProjection(mask, ImageOperations.Axis.X, null);
         ImageFloat imProjX = new ImageFloat("proj(X)", mask.getSizeX(), new float[][]{xProj});
         ImageByte projXThlded = ImageOperations.threshold(imProjX, thldX, true, false).setName("proj(X) thlded: "+thldX);
@@ -133,7 +137,7 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
             Utils.plotProfile(imProjX, 0, 0, true);
             Utils.plotProfile(projXThlded, 0, 0, true);
         }
-        List<Object3D> xObjectList = new ArrayList<Object3D>(ImageLabeller.labelImageList(projXThlded));
+        List<Object3D> xObjectList = ImageLabeller.labelImageList(projXThlded);
         Iterator<Object3D> it = xObjectList.iterator();
         int rightLimit = image.getSizeX() - Xmargin;
         while(it.hasNext()) {
@@ -156,14 +160,12 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         Object3D[] xObjects = xObjectList.toArray(new Object3D[xObjectList.size()]);
         if (xObjects.length==0) return null;
         
-        if (debug) ImageWindowManagerFactory.showImage(new ObjectPopulation(mask, false).filter(new ObjectPopulation.Size().setMin(minObjectSize)).getLabelMap());
-        Object3D[] objects = ImageLabeller.labelImage(mask);
-        if (debug) logger.debug("mc: {}, objects: {}", Utils.toStringArray(xObjects, o->o.getBounds()), objects.length);
-        if (objects.length==0) return null;
+        if (debug) ImageWindowManagerFactory.showImage(bacteria.getLabelMap());
+        if (debug) logger.debug("mc: {}, objects: {}", Utils.toStringArray(xObjects, o->o.getBounds()), bacteria.getObjects().size());
+        if (bacteria.getObjects().isEmpty()) return null;
         int[] yMins = new int[xObjects.length];
         Arrays.fill(yMins, Integer.MAX_VALUE);
-        for (Object3D o : objects) {
-            if (o.getSize()<minObjectSize) continue;
+        for (Object3D o : bacteria.getObjects()) {
             BoundingBox b = o.getBounds();
             //if (debug) logger.debug("object: {}");
             X_SEARCH : for (int i = 0; i<xObjects.length; ++i) {
@@ -186,8 +188,9 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         
         for (int i = 0; i<xObjects.length; ++i) {
             if (yMins[i]==Integer.MAX_VALUE) continue;
-            int xMin = Math.max((int) (xObjects[i].getBounds().getXMean() - channelWidth / 2.0), 0);
-            int xMax = Math.min((int) (xObjects[i].getBounds().getXMean() +  channelWidth / 2.0), image.getSizeX()-1); // mc remains centered
+            int xMin = (int) (xObjects[i].getBounds().getXMean() - channelWidth / 2.0);
+            int xMax = (int) (xObjects[i].getBounds().getXMean() +  channelWidth / 2.0); // mc remains centered
+            if (xMin<0 || xMax>=image.getSizeX()) continue;  // exclude outofbounds objects
             int[] minMaxYShift = new int[]{xMin, xMax, yMins[i]-yMin<yShift ? 0 : yMins[i]-yMin};
             sortedMinMaxYShiftList.add(minMaxYShift);
         }

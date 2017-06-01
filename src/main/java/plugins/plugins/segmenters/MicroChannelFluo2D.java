@@ -69,7 +69,7 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter, ParameterSetup
     NumberParameter yShift = new BoundedNumberParameter("y-shift (start of microchannel)", 0, 20, 0, null);
     PluginParameter<Thresholder> threshold= new PluginParameter<>("Threshold", Thresholder.class, new BackgroundThresholder(2.5, 3.5, 3), false);
     NumberParameter fillingProportion = new BoundedNumberParameter("Microchannel filling proportion", 2, 0.3, 0.05, 1);
-    NumberParameter minObjectSize = new BoundedNumberParameter("Min. Object Size", 0, 50, 1, null);
+    NumberParameter minObjectSize = new BoundedNumberParameter("Min. Object Size", 0, 200, 1, null);
     Parameter[] parameters = new Parameter[]{channelHeight, channelWidth, yShift, threshold, fillingProportion, minObjectSize};
     public static boolean debug = false;
 
@@ -99,7 +99,7 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter, ParameterSetup
         return r;
     }
     
-    public static ObjectPopulation run2(Image image, int channelHeight, int channelWidth, int yMargin) {
+    private static ObjectPopulation run2(Image image, int channelHeight, int channelWidth, int yMargin) {
         // get yStart
         float[] yProj = ImageOperations.meanProjection(image, ImageOperations.Axis.Y, null);
         ImageFloat imProjY = new ImageFloat("proj(Y)", image.getSizeY(), new float[][]{yProj});

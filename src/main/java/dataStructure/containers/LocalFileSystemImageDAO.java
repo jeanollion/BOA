@@ -19,6 +19,7 @@ package dataStructure.containers;
 
 import core.Processor;
 import dataStructure.configuration.Experiment;
+import dataStructure.objects.Selection;
 import dataStructure.objects.StructureObject;
 import image.BlankMask;
 import image.BoundingBox;
@@ -56,7 +57,7 @@ public class LocalFileSystemImageDAO implements ImageDAO {
     }
     @Override
     public InputStream openStream(int channelImageIdx, int timePoint, String microscopyFieldName) {
-        String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName, directory);
+        String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName);
         File f = new File(path);
         try {
             return new FileInputStream(f);
@@ -65,8 +66,9 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         }
         return null;
     }
+    @Override
     public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName) {
-        String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName, directory);
+        String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName);
         File f = new File(path);
         if (f.exists()) {
             logger.trace("Opening pre-processed image:  channel: {} timePoint: {} fieldName: {}", channelImageIdx, timePoint, microscopyFieldName);
@@ -76,9 +78,9 @@ public class LocalFileSystemImageDAO implements ImageDAO {
             return null;
         }
     }
-    
+    @Override
     public Image openPreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName, BoundingBox bounds) {
-        String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName, directory);
+        String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName);
         File f = new File(path);
         if (f.exists()) {
             logger.trace("Opening pre-processed image:  channel: {} timePoint: {} fieldName: {} bounds: {}", channelImageIdx, timePoint, microscopyFieldName, bounds);
@@ -88,15 +90,15 @@ public class LocalFileSystemImageDAO implements ImageDAO {
             return null;
         }
     }
-    
+    @Override
     public void deletePreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName) {
-        String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName, directory);
+        String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName);
         File f = new File(path);
         if (f.exists()) f.delete();
     }
-    
+    @Override
     public BlankMask getPreProcessedImageProperties(String microscopyFieldName) {
-        String path = getPreProcessedImagePath(0, 0, microscopyFieldName, directory);
+        String path = getPreProcessedImagePath(0, 0, microscopyFieldName);
         File f = new File(path);
         if (f.exists()) {
             ImageReader reader = new ImageReader(path);
@@ -110,9 +112,9 @@ public class LocalFileSystemImageDAO implements ImageDAO {
     }
 
     
-
+    @Override
     public void writePreProcessedImage(Image image, int channelImageIdx, int timePoint, String microscopyFieldName) {
-        String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName, directory);
+        String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName);
         File f = new File(path);
         f.mkdirs();
         logger.trace("writing preprocessed image to path: {}", path);
@@ -122,7 +124,7 @@ public class LocalFileSystemImageDAO implements ImageDAO {
     
     @Override
     public void writePreProcessedImage(InputStream image, int channelImageIdx, int timePoint, String microscopyFieldName) {
-        String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName, directory);
+        String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName);
         File f = new File(path);
         f.delete();
         f.getParentFile().mkdirs();
@@ -131,94 +133,42 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         FileIO.writeFile(image, path);
     }
 
-    public ImageInteger openMask(StructureObject object) {
-        String path = getProcessedImageFile(object);
+    protected String getPreProcessedImagePath(int channelImageIdx, int timePoint, String microscopyFieldName) {
+        return directory+File.separator+microscopyFieldName+File.separator+"pre_processed"+File.separator+"t"+Utils.formatInteger(5, timePoint)+"_c"+Utils.formatInteger(2, channelImageIdx)+".tif";
+    }
+    private String getTrackImageFolder(String position, int structureIdx) {
+        return directory+File.separator+position+File.separator+"track_images_"+structureIdx;
+    }
+    private String getTrackImagePath(StructureObject o) {
+        return getTrackImageFolder(o.getPositionName(), o.getStructureIdx())+File.separator+Selection.indicesString(o)+".tif";
+    }
+    
+    @Override
+    public void writeTrackImage(StructureObject trackHead, Image image) {
+        String path = getTrackImagePath(trackHead);
+        File f = new File(path);
+        f.delete();
+        f.getParentFile().mkdirs();
+        logger.trace("writing preprocessed image to path: {}", path);
+        ImageWriter.writeToFile(image, path, ImageFormat.TIF);
+    }
+
+    @Override
+    public Image openTrackImage(StructureObject trackHead) {
+        String path = getTrackImagePath(trackHead);
         File f = new File(path);
         if (f.exists()) {
-            logger.trace("opening mask of object: {}", object);
-            return (ImageInteger)ImageReader.openImage(path);
+            logger.trace("Opening track image:  trackHead: {}", trackHead);
+            return ImageReader.openImage(path);
         } else {
-            logger.error("mask {} not found", path);
             return null;
         }
     }
-    
-    public void writeMask(ImageInteger mask, StructureObject object) {
-        String path = getProcessedImageFile(object);
-        File f = new File(path);
-        f.mkdirs();
-        logger.debug("writing mask image to path: {}", path);
-        //if (f.exists()) f.delete();
-        ImageWriter.writeToFile(mask, path, ImageFormat.PNG);
-    }
-    /*
+
     @Override
-    public void deleteMask(StructureObject object) {
-        String path = getProcessedImageFile(object);
-        File f = new File(path);
-        if (f.exists()) f.delete();
+    public void clearTrackImages(String position, int structureIdx) {
+        String folder = getTrackImageFolder(position, structureIdx);
+        Utils.deleteDirectory(folder);
     }
-    @Override
-    public void deleteFieldMasks(Experiment xp, String fieldName) {
-        String path = getFieldDirectory(xp, fieldName);
-        File f = new File(path);
-        Utils.deleteDirectory(f);
-    }
-    @Override 
-    public void deleteChildren(StructureObject parent, final int structureIdx) {
-        String path = getProcessedImageDirectory(parent);
-        FilenameFilter filter = new FilenameFilter() {
-            @Override
-            public boolean accept(File arg0, String arg1) {
-                return Integer.parseInt(arg1.substring(1, 3))==structureIdx;
-            }
-        };
-        File dir = new File(path);
-        if (dir.exists()) for (File f : dir.listFiles(filter)) Utils.deleteDirectory(f);
-    }
-    @Override 
-    public void renameMask(StructureObject object, int newIdx) {
-        String fileName1 = getProcessedImageFile(object);
-        File file1 = new File (fileName1);
-        String fileName2 = getProcessedImageDirectory(object);
-        File file2 = new File (fileName2);
-        String oldS=null, newS=null;
-        if (file1.exists()) {
-            oldS = "_idx"+Utils.formatInteger(idxZeros, object.getIdx());
-            newS = "_idx"+Utils.formatInteger(idxZeros, newIdx);
-            file1.renameTo(new File(fileName1.replace(oldS, newS)));
-        }
-        if (file2.exists()) {
-            if (oldS==null) {
-                oldS = "_idx"+Utils.formatInteger(idxZeros, object.getIdx());
-                newS = "_idx"+Utils.formatInteger(idxZeros, newIdx);
-            }
-            file2.renameTo(new File(fileName2.replace(oldS, newS)));
-        }
-    }*/
-    protected static String getPreProcessedImagePath(int channelImageIdx, int timePoint, String microscopyFieldName, String imageDirectory) {
-        return imageDirectory+File.separator+microscopyFieldName+File.separator+"pre_processed"+File.separator+"t"+Utils.formatInteger(5, timePoint)+"_c"+Utils.formatInteger(2, channelImageIdx)+".tif";
-    }
-    private static String getFieldDirectory(Experiment xp, String fieldName) {
-        return xp.getOutputImageDirectory()+File.separator+fieldName+File.separator+"processed";
-    }
-    private static String getProcessedImageDirectoryRoot(StructureObject root) {
-        return getFieldDirectory(root.getExperiment(), root.getPositionName())+File.separator+"t"+Utils.formatInteger(5, root.getFrame());
-    }
-    private static String getImageFileName(StructureObject object, int idx) {
-        return "s"+Utils.formatInteger(2, object.getStructureIdx())+"_idx"+Utils.formatInteger(idxZeros, idx);
-    }
-    protected static String getProcessedImageDirectory(StructureObject object) {
-        if (object.isRoot()) return getProcessedImageDirectoryRoot(object);
-        if (object.getParent().isRoot()) return getProcessedImageDirectoryRoot(object.getParent())+File.separator+getImageFileName(object, object.getIdx());
-        else return getProcessedImageDirectory((StructureObject)object.getParent())+File.separator+getImageFileName(object, object.getIdx());
-    }
-    protected static String getProcessedImageFile(StructureObject object) {
-        return getProcessedImageDirectory(object)+".png";
-    }
-    
-    
-    
-    
     
 }

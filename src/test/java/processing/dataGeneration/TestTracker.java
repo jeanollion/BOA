@@ -22,6 +22,7 @@ import boa.gui.GUI;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManager;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import core.Processor;
 import core.Task;
 import dataStructure.configuration.Experiment;
 import dataStructure.objects.MasterDAO;
@@ -49,13 +50,8 @@ public class TestTracker {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
-        //String dbName = "boa_fluo151127_test";
-        //String dbName = "boa_mutH_140115";
-        //final String dbName = "boa_phase140115mutH";
-        //final String dbName = "boa_phase150324mutH";
-        //String dbName = "boa_phase150616wt";
+        //String dbName = "fluo160408_MutH";
         String dbName = "fluo170517_MutH";
-        //String dbName = "boa_fluo170207_150ms";
         int fIdx = 9;
         int mcIdx =0;
         int structureIdx = 0;
@@ -66,7 +62,7 @@ public class TestTracker {
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
         //testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 5);
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 229, 234);
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 800);
         //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 37, 38); // 91 to test rearrange objects 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
@@ -77,8 +73,7 @@ public class TestTracker {
     }
     
     public static void test(ObjectDAO dao, ProcessingScheme ps, boolean trackOnly, int structureIdx, int mcIdx, int tStart, int tEnd) {
-        List<StructureObject> roots = dao.getRoots();
-        
+        List<StructureObject> roots = Processor.getOrCreateRootTrack(dao);
         List<StructureObject> parentTrack=null;
         if (structureIdx==0) {
             parentTrack = roots;

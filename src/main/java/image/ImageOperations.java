@@ -18,6 +18,8 @@
 package image;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
+import dataStructure.objects.Object3D;
+import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.Voxel;
 import image.BoundingBox.LoopFunction;
 import static image.Image.logger;
@@ -33,7 +35,15 @@ import processing.Filters;
  * @author jollion
  */
 public class ImageOperations {
-
+    public static void filterObjects(ImageInteger image, ImageInteger output, Function<Object3D, Boolean> removeObject) {
+        List<Object3D> l = ImageLabeller.labelImageList(image);
+        int tot = l.size();
+        l.removeIf(o->!removeObject.apply(o));
+        int stay = tot-l.size();
+        //logger.debug("count before: {}/ after :{}", tot, stay);
+        if (output==null) output= ImageInteger.createEmptyLabelImage("", l.size(), image);
+        for (Object3D o : l) o.draw(output, 0);
+    }
     /**
      *
      * @param images

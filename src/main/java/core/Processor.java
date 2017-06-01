@@ -17,6 +17,7 @@
  */
 package core;
 
+import boa.gui.GUI;
 import configuration.parameters.TransformationPluginParameter;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.MicroscopyField;
@@ -240,7 +241,8 @@ public class Processor {
                 allParentTracks= rootTrack;
             } else {
                 allParentTracks = StructureObjectUtils.getAllTracks(roots, e.getKey());
-            }    
+            }
+            GUI.log("Performing #"+e.getValue().size()+" measurement"+(e.getValue().size()>1?"s":"")+" on Structure: "+e.getKey()+" (#"+allParentTracks.size()+" tracks)");
             logger.debug("performing: #{} measurements from parent: {} (#{} parentTracks)", e.getValue().size(), e.getKey(), allParentTracks.size());
             ThreadAction<List<StructureObject>> ta = new ThreadAction<List<StructureObject>>() {
                 @Override
