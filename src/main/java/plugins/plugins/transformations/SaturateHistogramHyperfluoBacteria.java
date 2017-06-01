@@ -118,9 +118,7 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
         backThld=ImageOperations.threshold(im, thldBack, true, true, false, backThld);
         ImageMask hyperThld = new ThresholdMask(im, thldHyper, true, true);
         // remove small obejcts (if background is too low isolated pixels)
-        List<Object3D> l = ImageLabeller.labelImageList(backThld);
-        l.removeIf(o->o.getSize()<5);
-        new ObjectPopulation(l, backThld, backThld, true); // relabel -> fill image
+        ImageOperations.filterObjects(backThld, backThld, o->o.getSize()<5);
         
         double countHyper = hyperThld.count();
         double count = backThld.count();
