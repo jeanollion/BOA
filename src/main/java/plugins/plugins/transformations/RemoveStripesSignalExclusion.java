@@ -61,7 +61,10 @@ public class RemoveStripesSignalExclusion implements Transformation {
     public RemoveStripesSignalExclusion(int signalExclusion) {
         if (signalExclusion>=0) this.signalExclusion.setSelectedIndex(signalExclusion);
     }
-    
+    public RemoveStripesSignalExclusion setAddGlobalMean(boolean addGlobalMean) {
+        this.addGlobalMean.setSelected(addGlobalMean);
+        return this;
+    }
     public RemoveStripesSignalExclusion setMethod(SimpleThresholder thlder) {
         this.signalExclusionThreshold.setPlugin(thlder);
         return this;
@@ -74,22 +77,15 @@ public class RemoveStripesSignalExclusion implements Transformation {
         final boolean addGlobalMean = this.addGlobalMean.getSelected();
         //logger.debug("remove stripes thld: {}", exclThld);
         final ThreadRunner tr = new ThreadRunner(0, inputImages.getFrameNumber());
-        final ImageInteger[] exclusionMasks = (chExcl>=0) ?  new ImageInteger[tr.size()] : null;
         Double[][][] meanX = new Double[inputImages.getFrameNumber()][][];
         for (int i = 0; i<tr.threads.length; i++) {
-            final int trIdx = i;
             tr.threads[i] = new Thread(
                     new Runnable() {  
                     public void run() {
                         for (int idx = tr.ai.getAndIncrement(); idx<tr.end; idx = tr.ai.getAndIncrement()) {
                             Image signalExclusion=null;
-                            ImageInteger exclusionMask = null;
-                            if (chExcl>=0) {
-                                signalExclusion = inputImages.getImage(chExcl, idx);
-                                if (exclusionMasks[trIdx]==null) exclusionMasks[trIdx] = new ImageByte("", signalExclusion);
-                                exclusionMask = exclusionMasks[trIdx];
-                            }
-                            meanX[idx] = computeMeanX(inputImages.getImage(channelIdx, idx), signalExclusion, exclThld, addGlobalMean, exclusionMask);
+                            if (chExcl>=0) signalExclusion = inputImages.getImage(chExcl, idx);
+                            meanX[idx] = computeMeanX(inputImages.getImage(channelIdx, idx), signalExclusion, exclThld, addGlobalMean);
                         }
                     }
                 }
@@ -104,21 +100,23 @@ public class RemoveStripesSignalExclusion implements Transformation {
         }
     }
     
-    public static Double[][] computeMeanX(Image image, Image exclusionSignal, double exclusionThreshold, boolean addGlobalMean, ImageInteger exclusionMask) {
+    public static Double[][] computeMeanX(Image image, Image exclusionSignal, double exclusionThreshold, boolean addGlobalMean) {
         if (exclusionSignal!=null && !image.sameSize(exclusionSignal)) throw new Error("Image and exclusion signal should have same dimensions");
-        if (exclusionMask!=null && !image.sameSize(exclusionMask)) throw new Error("Image and exclusion mask should have same dimensions");
-        if (exclusionMask!=null) ImageOperations.threshold(exclusionSignal, exclusionThreshold, false, true, true, exclusionMask);
-        else exclusionMask = new BlankMask(image);
         //ImageWindowManagerFactory.showImage(exclusionMask.duplicate("excl mask"));
+        int[] xyz = new int[3];
+        Function<int[], Boolean> includeCoord = exclusionSignal==null? c->true : c -> exclusionSignal.getPixel(c[0], c[1], c[2])<exclusionThreshold;
         Double[][] res = new Double[image.getSizeZ()][image.getSizeY()];
         double globalSum=0;
         double globalCount=0;
         for (int z=0; z<image.getSizeZ(); ++z) {
+            xyz[2]=z;
             for (int y = 0; y<image.getSizeY(); ++y) {
+                xyz[1]=y;
                 double sum = 0;
                 double count = 0;
                 for (int x = 0; x<image.getSizeX(); ++x) {
-                    if (exclusionMask.insideMask(x, y, z)) {
+                    xyz[0]=x;
+                    if (includeCoord.apply(xyz)) {
                         ++count;
                         sum+=image.getPixel(x, y, z);
                     }

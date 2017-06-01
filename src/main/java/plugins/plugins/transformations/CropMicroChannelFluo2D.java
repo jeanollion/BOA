@@ -147,7 +147,7 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
         Object3D prev = it.next();
         while(it.hasNext()) {
             Object3D next = it.next();
-            if (prev.getBounds().getxMax()+channelWidth>next.getBounds().getxMin()) {
+            if (prev.getBounds().getxMax()+1>next.getBounds().getxMin()) { 
                 prev.addVoxels(next.getVoxels());
                 it.remove();
             } else prev= next;

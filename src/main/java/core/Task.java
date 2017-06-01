@@ -252,7 +252,7 @@ public class Task extends SwingWorker<Integer, String> {
                 }
             }
             
-            for (Pair<String, int[]> e  : this.extrackMeasurementDir) extract(e.key, e.value);
+            for (Pair<String, int[]> e  : this.extrackMeasurementDir) extract(e.key==null?db.getDir():e.key, e.value);
             
             db.clearCache();
             db=null;
