@@ -136,33 +136,36 @@ public class RemoveStripesSignalExclusion implements Transformation {
         }
         return res;
     }
-    public static void removeMeanX(Image image, List<List<Double>> muZY) {
-        for (int z = 0; z<image.getSizeZ(); ++z) {
+    public static Image removeMeanX(Image source, Image output, List<List<Double>> muZY) {
+        if (output==null || !output.sameSize(source)) {
+            output = new ImageFloat("", source);
+        }
+        for (int z = 0; z<output.getSizeZ(); ++z) {
             List<Double> muY = muZY.get(z);
-            for (int y = 0; y<image.getSizeY(); ++y) {
+            for (int y = 0; y<output.getSizeY(); ++y) {
                 double mu = muY.get(y);
-                for (int x = 0; x<image.getSizeX(); ++x) {
-                    image.setPixel(x, y, z, image.getPixel(x, y, z)-mu);
+                for (int x = 0; x<output.getSizeX(); ++x) {
+                    output.setPixel(x, y, z, source.getPixel(x, y, z)-mu);
                     //imTest.setPixel(x, y, z, mu);
                 }
             }
         }
+        
+        return output;
     }
-    public static void removeStripes(Image image, Image exclusionSignal, double exclusionThreshold, boolean addGlobalMean) {
+    public static Image removeStripes(Image image, Image exclusionSignal, double exclusionThreshold, boolean addGlobalMean) {
         Double[][] meanX = computeMeanX(image, exclusionSignal, exclusionThreshold, addGlobalMean);
         List<List<Double>> resL = new ArrayList<>(meanX.length);
         for (Double[] meanY : meanX) resL.add(Arrays.asList(meanY));
-        removeMeanX(image, resL);
+        return removeMeanX(image, image instanceof ImageFloat ? image : null, resL);
     }
     @Override
-    public ImageFloat applyTransformation(int channelIdx, int timePoint, Image image) {
+    public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         if (meanTZY==null || meanTZY.isEmpty() || meanTZY.size()<timePoint) throw new Error("RemoveStripes transformation not configured: "+ (meanTZY==null?"null":  meanTZY.size()));
         List<List<Double>> muZY = meanTZY.get(timePoint);
-        ImageFloat im = new ImageFloat("removeStripes", image);
         //ImageFloat imTest = new ImageFloat("removeStripes", image);
-        removeMeanX(image, muZY);
+        return removeMeanX(image, null, muZY);
         //ImageWindowManagerFactory.showImage(imTest);
-        return im;
     }
     
     @Override

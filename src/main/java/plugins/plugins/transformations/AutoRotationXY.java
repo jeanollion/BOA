@@ -99,16 +99,23 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     public SelectionMode getOutputChannelSelectionMode() {
         return SelectionMode.ALL;
     }
-
-    public void computeConfigurationData(int channelIdx, InputImages inputImages) {        
-        Image image = getAverageFrame(inputImages, channelIdx, inputImages.getDefaultTimePoint(), refAverage.getValue().intValue());
-        image = prefilters.filter(image);
+    public double getAngle(Image image) {
         double angle=0;
         if (this.searchMethod.getSelectedItem().equals(SearchMethod.MAXVAR.getName())) { 
             angle = computeRotationAngleXY(image, image.getSizeZ()/2, minAngle.getValue().doubleValue(), maxAngle.getValue().doubleValue(), precision1.getValue().doubleValue(), precision2.getValue().doubleValue(), true, false, 0);
         } else if (this.searchMethod.getSelectedItem().equals(SearchMethod.MAXARTEFACT.getName())) {
             angle = computeRotationAngleXY(image, image.getSizeZ()/2, minAngle.getValue().doubleValue(), maxAngle.getValue().doubleValue(), precision1.getValue().doubleValue(), precision2.getValue().doubleValue(), false, true, 0);
         }
+        return angle;
+    }
+    public Image rotate(Image image) {
+        return ImageTransformation.rotateXY(TypeConverter.toFloat(image, null), getAngle(image), ImageTransformation.InterpolationScheme.valueOf(interpolation.getSelectedItem()), true);
+    }
+    public void computeConfigurationData(int channelIdx, InputImages inputImages) {     
+        // TODO search for best image to Rotate ... better dispertion of signal ? using spatial moments? average on several frames ?
+        Image image = getAverageFrame(inputImages, channelIdx, inputImages.getDefaultTimePoint(), refAverage.getValue().intValue());
+        image = prefilters.filter(image);
+        double angle=getAngle(image);
         
         //ImageFloat sin = RadonProjection.getSinogram(image, minAngle.getValue().doubleValue()+90, maxAngle.getValue().doubleValue()+90, precision1.getValue().doubleValue(), Math.min(image.getSizeX(), image.getSizeY())); //(int)Math.sqrt(image.getSizeX()*image.getSizeX() + image.getSizeY()*image.getSizeY())
         //new IJImageDisplayer().showImage(sin);

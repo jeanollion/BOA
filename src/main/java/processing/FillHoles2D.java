@@ -49,7 +49,7 @@ public class FillHoles2D {
     public static boolean debug=false;
     
     public static boolean fillHolesClosing(ImageInteger image, double closeRadius, double backgroundProportion, double minSizeFusion) {
-        ImageInteger close = Filters.binaryClose(image, Filters.getNeighborhood(closeRadius, closeRadius, image));
+        ImageInteger close = Filters.binaryCloseExtend(image, Filters.getNeighborhood(closeRadius, closeRadius, image));
         FillHoles2D.fillHoles(close, 2); // binary close generate an image with only 1's
         ImageDisplayer disp = debug ? new IJImageDisplayer() : null;
         ImageOperations.xor(close, image, close);

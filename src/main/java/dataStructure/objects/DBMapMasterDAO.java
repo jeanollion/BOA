@@ -163,24 +163,32 @@ public class DBMapMasterDAO implements MasterDAO {
             xp = new Experiment(xpr.getName());
             xp.setContentFrom(xpr);
             // check output dir
-            String outS = xp.getOutputDirectory();
-            File out = outS!=null ? new File(outS) : null;
-            if (out==null || !out.exists() || !out.isDirectory()) { // look for default output dir and set it up if exists
-                out = new File(configDir + File.separator + "Output");
-                if (out.isDirectory()) {
-                    xp.setOutputDirectory(out.getAbsolutePath());
-                    updateExperiment();
-                }
-                logger.debug("default output dir: {}, exists: {}, is Dir: {}", out.getAbsolutePath(), out.exists(), out.isDirectory());
-                
-            } 
-            if (!out.exists() || !out.isDirectory()) { // warn
-                logger.warn("No Output Directory found!");
-            }
+            boolean modified = checkOutputDirectories(true);
+            modified = modified || checkOutputDirectories(false);
+            if (modified) updateExperiment();
         }
         return xp;
     }
-
+    
+    public boolean checkOutputDirectories(boolean image) {
+        String outS = image ? xp.getOutputImageDirectory() : xp.getOutputDirectory();
+        File out = outS!=null ? new File(outS) : null;
+        if (out==null || !out.exists() || !out.isDirectory()) { // look for default output dir and set it up if exists
+            out = new File(configDir + File.separator + "Output");
+            if (out.isDirectory()) {
+                xp.setOutputDirectory(out.getAbsolutePath());
+                logger.info("Output directory was: {} is now : {}", outS, out.getAbsolutePath());
+                return true;
+            }
+            logger.debug("default output dir: {}, exists: {}, is Dir: {}", out.getAbsolutePath(), out.exists(), out.isDirectory());
+        } 
+        if (!out.exists() || !out.isDirectory()) { // warn
+            logger.warn("No Output Directory found!");
+        }
+        return false;
+    }
+    
+    
     @Override
     public void updateExperiment() {
         if (xp==null) return;
@@ -197,7 +205,7 @@ public class DBMapMasterDAO implements MasterDAO {
                 String xpS = JSONUtils.serialize(xp);
                 FileIO.writeToFile(xpS, new ArrayList<Experiment>(1){{add(xp);}}, o->JSONUtils.serialize(o));
             }
-        }
+        } else logger.debug("changes saved");
     }
 
     @Override

@@ -44,6 +44,7 @@ import java.util.Map;
 import plugins.ParameterSetup;
 import plugins.Segmenter;
 import plugins.Thresholder;
+import plugins.UseThreshold;
 import plugins.plugins.thresholders.BackgroundThresholder;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.trackers.ObjectIdxTracker;
@@ -62,12 +63,12 @@ import static utils.Utils.plotProfile;
  *
  * @author jollion
  */
-public class MicroChannelFluo2D implements MicrochannelSegmenter, ParameterSetup {
+public class MicroChannelFluo2D implements MicrochannelSegmenter, ParameterSetup , UseThreshold {
 
     NumberParameter channelHeight = new BoundedNumberParameter("Microchannel Height (pixels)", 0, 350, 5, null);
     NumberParameter channelWidth = new BoundedNumberParameter("Microchannel Width (pixels)", 0, 40, 5, null);
     NumberParameter yShift = new BoundedNumberParameter("y-shift (start of microchannel)", 0, 20, 0, null);
-    PluginParameter<Thresholder> threshold= new PluginParameter<>("Threshold", Thresholder.class, new BackgroundThresholder(2.5, 3.5, 3), false);
+    PluginParameter<plugins.SimpleThresholder> threshold= new PluginParameter<>("Threshold", plugins.SimpleThresholder.class, new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu), false); //new BackgroundThresholder(3, 6, 3) when background is removed and images saved in 16b, half of background is trimmed -> higher values
     NumberParameter fillingProportion = new BoundedNumberParameter("Microchannel filling proportion", 2, 0.3, 0.05, 1);
     NumberParameter minObjectSize = new BoundedNumberParameter("Min. Object Size", 0, 200, 1, null);
     Parameter[] parameters = new Parameter[]{channelHeight, channelWidth, yShift, threshold, fillingProportion, minObjectSize};
@@ -86,16 +87,17 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter, ParameterSetup
 
     @Override
     public ObjectPopulation runSegmenter(Image input, int structureIdx, StructureObjectProcessing parent) {
-        double thld = this.threshold.instanciatePlugin().runThresholder(input, parent);
-        Result r = segmentMicroChannels(input, 0, yShift.getValue().intValue(), channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue(), thld);
+        double thld = Double.isNaN(thresholdValue) ? this.threshold.instanciatePlugin().runThresholder(input, parent) : thresholdValue;
+        logger.debug("thresholder: {} : {}", threshold.getPluginName(), threshold.getParameters());
+        Result r = segmentMicroChannels(input, thresholdedImage, 0, yShift.getValue().intValue(), channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue(), thld);
         if (r==null) return null;
         else return r.getObjectPopulation(input, true);
     }
     
     @Override
     public Result segment(Image input) {
-        double thld = this.threshold.instanciatePlugin().runThresholder(input, null);
-        Result r = segmentMicroChannels(input, 0, yShift.getValue().intValue(), channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue(), thld);
+        double thld = Double.isNaN(thresholdValue) ? this.threshold.instanciatePlugin().runThresholder(input, null) : thresholdValue;
+        Result r = segmentMicroChannels(input, thresholdedImage, 0, yShift.getValue().intValue(), channelHeight.getValue().intValue(), channelWidth.getValue().intValue(), fillingProportion.getValue().doubleValue(), minObjectSize.getValue().intValue(), thld);
         return r;
     }
     
@@ -179,6 +181,27 @@ public class MicroChannelFluo2D implements MicrochannelSegmenter, ParameterSetup
         ObjectPopulation pop = runSegmenter(input, structureIdx, parent);
         debug = false;
     }
-    
+    // use threshold implementation
+    protected double thresholdValue = Double.NaN;
+    ImageInteger thresholdedImage = null;
+    @Override
+    public plugins.SimpleThresholder getThresholder() {
+        return this.threshold.instanciatePlugin();
+    }
+
+    @Override
+    public void setThresholdValue(double threhsold) {
+        this.thresholdValue=threhsold;
+    }
+
+    @Override
+    public Image getThresholdImage(Image input, int structureIdx, StructureObjectProcessing parent) {
+        return input;
+    }
+
+    @Override
+    public void setThresholdedImage(ImageInteger thresholdedImage) {
+        this.thresholdedImage= thresholdedImage;
+    }
 
 }

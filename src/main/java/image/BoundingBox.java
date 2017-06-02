@@ -149,6 +149,33 @@ public class BoundingBox {
         }
         return this;
     }
+    public BoundingBox contractX(int xm, int xM) {
+        if (xm > xMin) {
+            xMin = xm;
+        } 
+        if (xM < xMax) {
+            xMax = xM;
+        }
+        return this;
+    }
+    public BoundingBox contractY(int ym, int yM) {
+        if (ym > yMin) {
+            yMin = ym;
+        } 
+        if (yM < yMax) {
+            yMax = yM;
+        }
+        return this;
+    }
+    public BoundingBox contractZ(int zm, int zM) {
+        if (zm > zMin) {
+            zMin = zm;
+        } 
+        if (zM < zMax) {
+            zMax = zM;
+        }
+        return this;
+    }
     
     public BoundingBox expand(int x, int y, int z) {
         expandX(x);
@@ -172,6 +199,19 @@ public class BoundingBox {
         expandZ(other.zMin);
         expandZ(other.zMax);
         return this;
+    }
+    public BoundingBox contract(BoundingBox other) {
+        contractX(other.xMin, other.xMax);
+        contractY(other.yMin, other.yMax);
+        contractZ(other.zMin, other.zMax);
+        return this;
+    }
+    
+    public BoundingBox center(BoundingBox other) {
+        int deltaX = (int)(other.getXMean() - this.getXMean());
+        int deltaY = (int)(other.getYMean() - this.getYMean());
+        int deltaZ = (int)(other.getZMean() - this.getZMean());
+        return translate(deltaX, deltaY, deltaZ);
     }
     
     public void addToCounter() {
@@ -227,6 +267,7 @@ public class BoundingBox {
     public boolean sameBounds(ImageProperties properties) {
         return xMin==properties.getOffsetX() && yMin==properties.getOffsetY() && zMin==properties.getOffsetZ() && xMax==(properties.getSizeX()-1+properties.getOffsetX()) && yMax==(properties.getSizeY()-1+properties.getOffsetY()) && zMax==(properties.getSizeZ()-1+properties.getOffsetZ());
     }
+    
     /**
      * Translate the bounding box in the 3 axes
      * @param dX translation in the X-Axis in pixels
@@ -405,7 +446,7 @@ public class BoundingBox {
     
     @Override
     public String toString() {
-        return "x:["+xMin+";"+xMax+"], y:["+yMin+";"+yMax+"], z:["+zMin+";"+zMax+"]";
+        return "[x:["+xMin+";"+xMax+"], y:["+yMin+";"+yMax+"], z:["+zMin+";"+zMax+"]]";
     }
     public void loop(LoopFunction function) {
         if (function instanceof LoopFunction2) ((LoopFunction2)function).setUp();

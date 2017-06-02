@@ -18,6 +18,7 @@
 package processing;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import dataStructure.objects.Voxel;
 import image.BlankMask;
 import image.BoundingBox;
@@ -79,7 +80,6 @@ public class Filters {
     
     public static <T extends Image> T close(Image image, T output, Neighborhood neighborhood) {
         ImageFloat max = applyFilter(image, new ImageFloat("", 0, 0, 0), new Max(), neighborhood);
-        //if (output == image) output = Image.createEmptyImage("close", output, output);
         return applyFilter(max, output, new Min(), neighborhood);
     }
     
@@ -88,13 +88,17 @@ public class Filters {
         //if (output == image) output = Image.createEmptyImage("binary open", output, output);
         return applyFilter(min, output, new BinaryMax(false), neighborhood);
     }
-    
-    public static <T extends ImageInteger> T binaryClose(T image, Neighborhood neighborhood) {
-        BoundingBox extend = neighborhood.getBoundingBox();
-        T resized =  image.extend(extend);
+
+    public static <T extends ImageInteger> T binaryCloseExtend(T image, Neighborhood neighborhood) {
+        BoundingBox extent = neighborhood.getBoundingBox();
+        T resized =  image.extend(extent);
         ImageByte max = applyFilter(resized, new ImageByte("", 0, 0, 0), new BinaryMax(false), neighborhood);
         T min = applyFilter(max, resized, new BinaryMin(false), neighborhood);
-        return min.crop(image.getBoundingBox().translateToOrigin().translate(extend.duplicate().reverseOffset()));
+        return min.crop(image.getBoundingBox().translateToOrigin().translate(extent.duplicate().reverseOffset()));
+    }
+    public static <T extends ImageInteger> T binaryClose(ImageInteger image, T output, Neighborhood neighborhood) {
+        ImageByte max = applyFilter(image, new ImageByte("", 0, 0, 0), new BinaryMax(false), neighborhood);
+        return applyFilter(max, output, new BinaryMin(false), neighborhood);
     }
     
     public static <T extends Image> T tophat(Image image, Image imageForBackground, T output, Neighborhood neighborhood) {

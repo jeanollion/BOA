@@ -31,7 +31,9 @@ import static dataStructure.objects.StructureObjectUtils.setTrackLinks;
 import fiji.plugin.trackmate.Spot;
 import image.BlankMask;
 import image.BoundingBox;
+import image.Image;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -42,13 +44,16 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import plugins.Segmenter;
+import plugins.Thresholder;
 import plugins.TrackerSegmenter;
+import plugins.UseThreshold;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.segmenters.MicrochannelPhase2D;
 import plugins.plugins.segmenters.MicrochannelSegmenter;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparator;
 import plugins.plugins.trackers.trackMate.TrackMateInterface;
 import plugins.plugins.transformations.CropMicroChannels.Result;
+import utils.ArrayUtil;
 import utils.Pair;
 import utils.SlidingOperator;
 import static utils.SlidingOperator.performSlide;
@@ -61,10 +66,13 @@ import utils.Utils;
  * @author jollion
  */
 public class MicrochannelTracker implements TrackerSegmenter {
-    protected PluginParameter<MicrochannelSegmenter> segmenter = new PluginParameter<MicrochannelSegmenter>("Segmentation algorithm", MicrochannelSegmenter.class, new MicrochannelPhase2D(), false);
+    protected PluginParameter<MicrochannelSegmenter> segmenter = new PluginParameter<>("Segmentation algorithm", MicrochannelSegmenter.class, new MicrochannelPhase2D(), false);
     NumberParameter maxShift = new BoundedNumberParameter("Maximal Shift (pixels)", 0, 100, 1, null);
     NumberParameter maxDistanceWidthFactor = new BoundedNumberParameter("Maximal Distance for Tracking (x [mean channel width])", 1, 1, 0, null);
-    Parameter[] parameters = new Parameter[]{segmenter, maxShift, maxDistanceWidthFactor};
+    NumberParameter yShiftQuantile = new BoundedNumberParameter("Y-shift Quantile", 2, 0.5, 0, 1);
+    NumberParameter minTrackLength = new BoundedNumberParameter("Minimum Track Length", 0, 100, 10, null);
+    
+    Parameter[] parameters = new Parameter[]{segmenter, maxShift, maxDistanceWidthFactor, yShiftQuantile, minTrackLength};
     private static double widthQuantile = 0.9;
     public static boolean debug = false;
     
@@ -72,7 +80,10 @@ public class MicrochannelTracker implements TrackerSegmenter {
         this.segmenter.setPlugin(s);
         return this;
     }
-    
+    public MicrochannelTracker setYShiftQuantile(double quantile) {
+        this.yShiftQuantile.setValue(quantile);
+        return this;
+    }
     public MicrochannelTracker setTrackingParameters(int maxShift, double maxDistanceWidthFactor) {
         this.maxShift.setValue(maxShift);
         this.maxDistanceWidthFactor.setValue(maxDistanceWidthFactor);
@@ -83,6 +94,7 @@ public class MicrochannelTracker implements TrackerSegmenter {
         if (parentTrack.isEmpty()) return;
         TrackMateInterface<Spot> tmi = new TrackMateInterface(TrackMateInterface.defaultFactory());
         Map<Integer, List<StructureObject>> map = TrackMateInterface.getChildrenMap(parentTrack, structureIdx);
+        logger.debug("tracking: {}", Utils.toStringList(map.entrySet(), e->"t:"+e.getKey()+"->"+e.getValue().size()));
         tmi.addObjects(map);
         double meanWidth = Utils.flattenMap(map).stream().mapToDouble(o->o.getBounds().getSizeX()).average().getAsDouble()*parentTrack.get(0).getScaleXY();
         if (debug) logger.debug("mean width {}", meanWidth );
@@ -92,34 +104,59 @@ public class MicrochannelTracker implements TrackerSegmenter {
         if (ok) ok = tmi.processGC(maxDistance, parentTrack.size(), false, false);
         if (ok) tmi.removeCrossingLinksFromGraph(meanWidth/4); 
         if (ok) ok = tmi.processGC(maxDistance, parentTrack.size(), false, false); // second GC for crossing links!
-        if (ok) tmi.setTrackLinks(map);
-        //fillGaps(structureIdx, parentTrack);
+        tmi.setTrackLinks(map);
+        fillGaps(structureIdx, parentTrack);
     }
     
     @Override
     public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
+        if (parentTrack.isEmpty()) return;
         // segmentation
         final Result[] boundingBoxes = new Result[parentTrack.size()];
+        
+        Image[] inputImages = new Image[parentTrack.size()];
+        MicrochannelSegmenter[] segmenters = new MicrochannelSegmenter[parentTrack.size()];
+        ThreadRunner.execute(parentTrack, (StructureObject parent, int idx, int threadIdx) -> {
+            inputImages[idx] = preFilters.filter(parent.getRawImage(structureIdx), parent);
+            segmenters[idx] = getSegmenter();
+        });
+        
+        if (segmenters[0] instanceof UseThreshold) {
+            Image[] inputImagesToThld = new Image[inputImages.length];
+            for (int i = 0; i<parentTrack.size(); ++i) {
+                inputImagesToThld[i] = ((UseThreshold)segmenters[i]).getThresholdImage(inputImages[i], structureIdx, parentTrack.get(i));
+            }
+            Image globalImage = Image.mergeZPlanes(Arrays.asList(inputImagesToThld));
+            plugins.SimpleThresholder t = ((UseThreshold)segmenters[0]).getThresholder();
+            double globalThld = globalThld = t.runThresholder(globalImage);
+            for (int i = 0; i<parentTrack.size(); ++i) ((UseThreshold)segmenters[i]).setThresholdValue(globalThld);
+            logger.debug("MicrochannelTracker on {}: global Treshold = {}", parentTrack.get(0).getTrackHead(), globalThld);
+        }
         ThreadAction<StructureObject> ta = new ThreadAction<StructureObject>() {
             @Override
             public void run(StructureObject parent, int idx, int threadIdx) {
-                boundingBoxes[idx] = getSegmenter().segment(preFilters.filter(parent.getRawImage(structureIdx), parent));
-                parent.setChildrenObjects(postFilters.filter(boundingBoxes[idx].getObjectPopulation(parent.getRawImage(structureIdx), false), structureIdx, parent), structureIdx); // no Y - shift here because the mean shift is added afterwards
+                boundingBoxes[idx] = segmenters[idx].segment(inputImages[idx]);
+                if (boundingBoxes[idx]==null) parent.setChildren(new ArrayList<>(), structureIdx); // if not set and call to getChildren() -> DAO will set old children
+                else parent.setChildrenObjects(postFilters.filter(boundingBoxes[idx].getObjectPopulation(inputImages[idx], false), structureIdx, parent), structureIdx); // no Y - shift here because the mean shift is added afterwards
+                inputImages[idx]=null;
+                segmenters[idx]=null;
             }
         };
-        ThreadRunner.execute(parentTrack, ta);
+        List<Pair<String, Exception>> exceptions = ThreadRunner.execute(parentTrack, ta);
+        for (Pair<String, Exception> p : exceptions) logger.debug(p.key, p.value);
         Map<StructureObject, Result> parentBBMap = new HashMap<>(boundingBoxes.length);
         for (int i = 0; i<boundingBoxes.length; ++i) parentBBMap.put(parentTrack.get(i), boundingBoxes[i]);
-        
         // tracking
+        //if (debug) logger.debug("mc2: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
         track(structureIdx, parentTrack);
-        
+        //if (debug) logger.debug("mc3: {}", Utils.toStringList(parentTrack, p->"t:"+p.getFrame()+"->"+p.getChildren(structureIdx).size()));
         // compute mean of Y-shifts & width for each microchannel and modify objects
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         logger.debug("Microchannel tracker: trackHead number: {}", allTracks.size());
         List<StructureObject> toRemove = new ArrayList<>();
         for (List<StructureObject> track : allTracks.values()) { // compute median shift on the whole track + mean width
             if (track.isEmpty()) continue;
+            if (!debug && track.size()<this.minTrackLength.getValue().intValue()) toRemove.addAll(track);
             List<Integer> shifts = new ArrayList<>(track.size());
             List<Double> widths = new ArrayList<>(track.size());
             for (StructureObject o : track) {
@@ -136,12 +173,11 @@ public class MicrochannelTracker implements TrackerSegmenter {
                 logger.error("no shifts in track : {} length: {}", track.get(0).getTrackHead(), track.size());
                 continue;
             }
-            Collections.sort(shifts);
-            int shift = shifts.get(shifts.size()/2); // median shift
+            int shift = (int)Math.round(ArrayUtil.quantileInt(shifts, yShiftQuantile.getValue().doubleValue()));
             double meanWidth = 0, c=0; for (Double d : widths) if (d!=null) {meanWidth+=d; ++c;} // global mean value
             meanWidth/=c;
-            Collections.sort(widths);
-            int width = (int)Math.round(widths.get((int)(widths.size()*widthQuantile)));
+            int width = (int)Math.round(ArrayUtil.quantile(widths, widthQuantile));
+            
             if (debug) {
                 logger.debug("track: {} ymin-shift: {}, width: {} (max: {}, mean: {})", track.get(0), shift, width, widths.get(widths.size()-1), meanWidth);
             }

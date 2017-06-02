@@ -6,6 +6,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import processing.neighborhood.Neighborhood;
+import utils.Utils;
 
 
 public abstract class Image implements ImageProperties {
@@ -88,7 +89,17 @@ public abstract class Image implements ImageProperties {
         for (int i = zMin; i<=zMax; ++i) res.add((T)getZPlane(i));
         return res;
     }
-    
+    public static <T extends Image> T mergeZPlanesResize(List<T> planes, boolean expand) {
+        if (planes==null || planes.isEmpty()) return null;
+        Iterator<T> it = planes.iterator();
+        BoundingBox bds  = it.next().getBoundingBox().translateToOrigin();
+        if (expand) while (it.hasNext()) bds.expand(it.next().getBoundingBox().translateToOrigin());
+        else while(it.hasNext()) bds.contract(it.next().getBoundingBox().translateToOrigin());
+        bds.translateToOrigin();
+        logger.debug("after contract: {}", bds);
+        planes = Utils.apply(planes, p -> p.getBoundingBox().translateToOrigin().equals(bds) ? p : p.crop(bds.duplicate().center(p.getBoundingBox().translateToOrigin())));
+        return mergeZPlanes(planes);
+    }
     public static <T extends Image> T mergeZPlanes(List<T> planes) {
         if (planes==null || planes.isEmpty()) return null;
         //for (T im : planes) if (im.getSizeZ()>1) throw

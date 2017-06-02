@@ -35,8 +35,8 @@ public class ImageWindowManagerFactory {
         }
         return currentImageManager;
     }
-    public static void showImage(Image image) {
-        getImageManager().getDisplayer().showImage(image);
+    public static Object showImage(Image image) {
+        return getImageManager().getDisplayer().showImage(image);
     }
     public static ImageDisplayer instanciateDisplayer() {
         if (currentImageDisplayerType.equals(IJ)) return new IJImageDisplayer();

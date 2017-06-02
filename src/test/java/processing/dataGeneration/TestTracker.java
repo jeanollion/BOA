@@ -52,7 +52,7 @@ public class TestTracker {
         new ImageJ();
         //String dbName = "fluo160408_MutH";
         String dbName = "fluo170517_MutH";
-        int fIdx = 9;
+        int fIdx = 0;
         int mcIdx =0;
         int structureIdx = 0;
         MasterDAO db = new Task(dbName).getDB();

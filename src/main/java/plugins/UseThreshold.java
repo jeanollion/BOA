@@ -26,8 +26,8 @@ import image.ImageInteger;
  * @author jollion
  */
 public interface UseThreshold {
-    public Thresholder getThresholder();
-    public void setThresholdValue(double threhsold);
+    public SimpleThresholder getThresholder();
+    public void setThresholdValue(double threshold);
     public Image getThresholdImage(Image input, int structureIdx, StructureObjectProcessing parent);
     public void setThresholdedImage(ImageInteger thresholdedImage);
 }

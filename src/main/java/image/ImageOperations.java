@@ -35,14 +35,15 @@ import processing.Filters;
  * @author jollion
  */
 public class ImageOperations {
-    public static void filterObjects(ImageInteger image, ImageInteger output, Function<Object3D, Boolean> removeObject) {
+    public static List<Object3D> filterObjects(ImageInteger image, ImageInteger output, Function<Object3D, Boolean> removeObject) {
         List<Object3D> l = ImageLabeller.labelImageList(image);
-        int tot = l.size();
-        l.removeIf(o->!removeObject.apply(o));
-        int stay = tot-l.size();
+        List<Object3D> toRemove = new ArrayList<>(l.size());
+        for (Object3D o : l) if (removeObject.apply(o)) toRemove.add(o);
+        l.removeAll(toRemove);
         //logger.debug("count before: {}/ after :{}", tot, stay);
         if (output==null) output= ImageInteger.createEmptyLabelImage("", l.size(), image);
-        for (Object3D o : l) o.draw(output, 0);
+        for (Object3D o : toRemove) o.draw(output, 0);
+        return l;
     }
     /**
      *

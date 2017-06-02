@@ -68,6 +68,9 @@ public class BackgroundThresholder implements SimpleThresholder {
         int[] histo = input.getHisto256(mm[0], mm[1], mask, null);
         return BackgroundThresholder.runThresholder(histo, mm, input instanceof ImageByte, sigmaFactor, lastSigmaFactor, iterations, meanSigma);
     }
+    public static double runThresholder(Image input, ImageMask mask, double sigmaFactor, double lastSigmaFactor, int iterations) {
+        return runThresholder(input,mask, sigmaFactor, lastSigmaFactor, iterations, null);
+    }
     public static double runThresholder(Image input, ImageMask mask, double sigmaFactor, double lastSigmaFactor, int iterations, double[] meanSigma) {
         if (meanSigma!=null && meanSigma.length<2) throw new IllegalArgumentException("Argument Mean Sigma should be null or of size 2 to recieve mean and sigma values");
         if (mask==null) mask = new BlankMask(input);

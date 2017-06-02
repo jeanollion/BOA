@@ -27,6 +27,7 @@ import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
 import dataStructure.objects.Object3D;
 import ij.ImageJ;
+import ij.ImagePlus;
 import ij.process.AutoThresholder;
 import image.BoundingBox;
 import image.Image;
@@ -37,15 +38,19 @@ import image.ImageInteger;
 import image.ImageOperations;
 import image.ImageReader;
 import image.ImageWriter;
+import image.ThresholdMask;
 import image.TypeConverter;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import plugins.PluginFactory;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.thresholders.BackgroundThresholder;
+import plugins.plugins.transformations.AutoRotationXY;
 import plugins.plugins.transformations.CropMicroChannelFluo2D;
 import plugins.plugins.transformations.RemoveStripesSignalExclusion;
+import plugins.plugins.transformations.SaturateHistogramHyperfluoBacteria;
 import processing.Filters;
 import processing.ImageTransformation;
 import processing.ImageTransformation.Axis;
@@ -60,37 +65,34 @@ public class AnalyseHyperFluoBacterias {
 
     public static void main(String[] args) {
         new ImageJ();
+        PluginFactory.findPlugins("plugins.plugins");
         String path = "/data/Images/MOP/";
-        //generateDataSet(path);
-        Image[] dataSet = readDataset(path);
+        //String[] xps = new String[]{"fluo160428", "fluo160501", "fluo170515_MutS", "fluo170517_MutH"};
+        String[] xps = new String[]{"fluo160408_MutH"};
+        String name = Utils.toStringArray(xps);
+        //generateAndPreprocessDataset(10, path+File.separator+xps[0], xps);
+        //Image dataSet = readDataset(path+File.separator+xps[0], name, true);
         
-        dataSet[0]=ImageTransformation.flip(dataSet[0], Axis.Y);
-        dataSet[1]=ImageTransformation.flip(dataSet[1], Axis.Y);
+        Image dataSet = readDataset(path, "Control", true);
         
-        List<Image> ultra = dataSet[0].splitZPlanes();
-        List<Image> control = dataSet[1].splitZPlanes();
-        //Collections.shuffle(control);
-        control = control.subList(0, ultra.size());
-        
-        ultra = Utils.apply(ultra, i-> removeStripes(i));
-        control = Utils.apply(control, i-> removeStripes(i));
-        dataSet[0] = Image.mergeZPlanes(ultra);
-        dataSet[1] = Image.mergeZPlanes(control);
-        
-        
-        
-        ImageWindowManagerFactory.showImage(dataSet[0]);
-        ImageWindowManagerFactory.showImage(dataSet[1]);
-        
-        
-        testThresholder(ultra, control, true);
-        //testCropMicrochannels(dataSet[0], dataSet[1]);
-        //testSaturate();
+        //testThresholder(ultra, control, true);
+        testCropMicrochannels(dataSet.splitZPlanes(), name);
+        //testSaturate(ultra, control);
     }
+    
+    
     private static Image removeStripes(Image input) {
-        ImageFloat f = TypeConverter.toFloat(input, null);
-        RemoveStripesSignalExclusion.removeStripes(f, f, BackgroundThresholder.runThresholder(f, null, 2.5, 3, 3, null), false);
-        return f;
+        return RemoveStripesSignalExclusion.removeStripes(input, input, BackgroundThresholder.runThresholder(input, null, 2.5, 3, 3, null), false);
+    }
+    private static void testSaturate(List<Image> ultra, String name) {
+        List<ImageByte> ultraThld = Utils.apply(ultra, i->saturateAndThld(i));
+        ImageWindowManagerFactory.showImage(Image.mergeZPlanes(ultraThld).setName(name+" thld"));
+    }
+    private static ImageByte saturateAndThld(Image image) {
+        new SaturateHistogramHyperfluoBacteria().saturateHistogram(image);
+        //double thld = IJAutoThresholder.runThresholder(image, null, null, AutoThresholder.Method.Otsu, 0);
+        double thld = BackgroundThresholder.runThresholder(image, null, 3, 6, 3);
+        return ImageOperations.threshold(image, thld, true, true);
     }
     /*private static void testSaturate() {
         String[] xps = new String[]{"fluo160428", "fluo160501", "fluo170515_MutS", "fluo170517_MutH"};
@@ -107,78 +109,91 @@ public class AnalyseHyperFluoBacterias {
         }
     }*/
     
-    private static void testCropMicrochannels(Image ultra, Image control) {
+    private static void testCropMicrochannels(List<Image> images, String name) {
+        //CropMicroChannelFluo2D.debug=true;
         IJImageWindowManager iwm = (IJImageWindowManager)ImageWindowManagerFactory.getImageManager();
-        List<Image> ultraZ = ultra.splitZPlanes();
-        List<ImageInteger> utlraCrop = Utils.apply(ultraZ, i->crop(i));
-        Roi3D r = IJImageWindowManager.createRoi(Image.mergeZPlanes(utlraCrop), new BoundingBox(0, 0, 0), true);
-        iwm.displayObject(iwm.getDisplayer().getImage(ultra), r);
-        ImageWindowManagerFactory.showImage(Image.mergeZPlanes(utlraCrop).setName("ultra"));
-        //if (true) return;
-        List<Image> controlZ = control.splitZPlanes();
-        List<ImageInteger> ctrlCrop = Utils.apply(controlZ, i->crop(i));
-        Roi3D rC = IJImageWindowManager.createRoi(Image.mergeZPlanes(ctrlCrop), new BoundingBox(0, 0, 0), true);
-        iwm.displayObject(iwm.getDisplayer().getImage(control), rC);
-        ImageWindowManagerFactory.showImage(Image.mergeZPlanes(ctrlCrop).setName("ctrl"));
+        if (images!=null && !images.isEmpty()) {
+            List<ImageInteger> utlraCrop = Utils.apply(images, i->crop(i));
+            Roi3D r = IJImageWindowManager.createRoi(Image.mergeZPlanes(utlraCrop), new BoundingBox(0, 0, 0), true);
+            ImagePlus ip = (ImagePlus) ImageWindowManagerFactory.showImage(Image.mergeZPlanes(images).setName(name));
+            iwm.displayObject(ip, r);
+        }
     }
     
+    private static Image preProcess(List<Image> images, String name) {
+        images = Utils.apply(images, i->preProcess(i));
+        return Image.mergeZPlanesResize(images, false).setName(name+"_PP");
+    }
+    private static Image preProcess(Image image) {
+        image = ImageTransformation.flip(image, Axis.Y);
+        image = removeStripes(image);
+        new SaturateHistogramHyperfluoBacteria().saturateHistogram(image);
+        return new AutoRotationXY().rotate(image);
+    }
     private static ImageInteger crop(Image image) {
-        BoundingBox bds = CropMicroChannelFluo2D.getBoundingBox(image, 30, 0, 330, getThreshold(image), 0.6, 200, 0, 0, 0, 0);
-        //logger.debug("Bds: {}", bds);
+        
+        BoundingBox bds = new CropMicroChannelFluo2D().setThresholder(new BackgroundThresholder(3, 6, 3)).getBoundingBox(image);
+        //BoundingBox bds = CropMicroChannelFluo2D.getBoundingBox(image, 30, 0, 350, thld, 0.6, 200, 0, 0, 0, 0);
+        logger.debug("Bds: {}", bds);
         ImageByte res=  new ImageByte("crop", image);
         ImageOperations.fill(res, 1, bds);
         return res;
     }
      
-    private static void testThresholder(List<Image> ultra, List<Image> control, boolean hyper) {
+    private static void testThresholder(List<Image> images, String name, boolean hyper) {
         
-        logger.debug("images count: {}", ultra.size());
-        List<ImageInteger> masks = new ArrayList<>(ultra.size());
-        List<Double> proportion = Utils.apply(ultra, i -> analyse(i, masks, hyper));
+        logger.debug("images count: {}", images.size());
+        List<ImageInteger> masks = new ArrayList<>(images.size());
+        List<Double> proportion = Utils.apply(images, i -> analyse(i, masks, hyper));
         Utils.plotProfile("Image proportion Utlra", Utils.toDoubleArray(proportion, false));
-        ImageWindowManagerFactory.showImage(Image.mergeZPlanes(masks).setName("Ultra: masks"));
+        ImageWindowManagerFactory.showImage(Image.mergeZPlanes(masks).setName(name+": masks"));
         logger.debug("Control");
         
-        masks.clear();
-        List<Double> proportionC = Utils.apply(control, i -> analyse(i, masks, hyper));
-        ImageWindowManagerFactory.showImage(Image.mergeZPlanes(masks).setName("Ctrl: masks"));
-        Utils.plotProfile("Image proportion Control", Utils.toDoubleArray(proportionC, false));
     }
     private static double getThreshold(Image i) {
-        return BackgroundThresholder.runThresholderHisto(i, null, 3, 6, 3, null);
+        return BackgroundThresholder.runThresholder(i, null, 3, 6, 3, null);
         //return BackgroundFit.backgroundFit(i, null, 3, null);
     }
     private static double analyse(Image i, List<ImageInteger> masks, boolean hyper) {
         double thld = getThreshold(i);
         ImageInteger tempMask = ImageOperations.threshold(i, thld, true, true, true, null);
-        //ImageOperations.filterObjects(tempMask, tempMask, o->o.getSize()<5);
-        Filters.open(tempMask, tempMask, Filters.getNeighborhood(2, 0, i));
+        //Filters.binaryClose(tempMask, false, Filters.getNeighborhood(1, 0, i));
+        ImageOperations.filterObjects(tempMask, tempMask, o->o.getSize()<=1);
+        //Filters.open(tempMask, tempMask, Filters.getNeighborhood(2, 0, i));
         if (masks!=null) masks.add(tempMask);
         if (!hyper) {
             return tempMask.count() / i.getSizeXYZ();
         } else {
             double count = tempMask.count();
             double thld2 = IJAutoThresholder.runThresholder(i, null, null, AutoThresholder.Method.Otsu, 0);
-            ImageOperations.threshold(i, thld2, true, true, true, tempMask);
-            double count2 = tempMask.count();
+            tempMask.getBoundingBox().translateToOrigin().loop((x, y, z)->{if (i.getPixel(x, y, z)>thld2) tempMask.setPixel(x, y, z, 2);});
+            double count2 = new ThresholdMask(i, thld2, true, true).count();
             return count2/count;
         }
         
     }
     
-    private static Image[] readDataset(String path) {
-        Image uf = ImageReader.openIJTif(path+File.separator+"UltraFluo.tif");
-        Image ctrl = ImageReader.openIJTif(path+File.separator+"Control.tif");
-        return new Image[]{uf, ctrl};
+    private static Image readDataset(String path, String name, boolean preProcessed) {
+        String pp = preProcessed ? "_PP" : "";
+        return ImageReader.openIJTif(path+File.separator+name+pp+".tif");
     }
-    private static void generateDataSet(String path) {
-        String[] xps = new String[]{"fluo160428", "fluo160501", "fluo170515_MutS", "fluo170517_MutH"};
+    
+    private static void generateAndPreprocessDataset(int framesPerPosition, String path, String... xps) {
+        String name = Utils.toStringArray(xps);
+        Image input = generateDataSet(framesPerPosition, xps);
+        ImageWriter.writeToFile(input, path, name, ImageFormat.TIF);
+        Image pp = preProcess(input.splitZPlanes(), name);
+        ImageWriter.writeToFile(pp, path, name+"_PP", ImageFormat.TIF);
+    }
+    
+    
+    private static Image generateDataSet(int framesPerPosition, String... xps) {
         List<Pair<Integer, Image>> images = new ArrayList<>();
-        for (String xp : xps) addImages(xp, 10, images);
+        for (String xp : xps) addImages(xp, framesPerPosition, images);
         Collections.sort(images, (p1, p2)->Integer.compare(p1.key, p2.key));
         Image all = Image.mergeZPlanes(Pair.unpairValues(images)).setName("AllImages");
-        ImageWriter.writeToFile(all, path, all.getName(), ImageFormat.TIF);
-        ImageWindowManagerFactory.showImage(all);
+        
+        return all;
     }
     
     private static void addImages(String xp, int framePerPosition, List<Pair<Integer, Image>> images) {
@@ -188,13 +203,13 @@ public class AnalyseHyperFluoBacterias {
             logger.debug("XP: {}, Position: {}", xp, p);
             InputImagesImpl input = dao.getExperiment().getPosition(p).getInputImages();
             int interval = input.getFrameNumber() / framePerPosition;
-            for (int f = 0; f<input.getFrameNumber(); f+=interval) {
+            int off = input.getFrameNumber()%interval / 2;
+            for (int f = off; f<input.getFrameNumber(); f+=interval) {
                 Image im = input.getImage(0, f);
                 double thld = IJAutoThresholder.runThresholder(im, null, AutoThresholder.Method.Otsu);
-                double[] msc = ImageOperations.getMeanAndSigma(im, null, v->v>thld);
-                if (msc[2]>50000) continue;
-                im.setName("t:"+thld+"/count:"+msc[2]);
-                images.add(new Pair<>((int)msc[2], im));
+                int c = new ThresholdMask(im, thld, true, true).count();
+                im.setName("t:"+thld+"/count:"+c);
+                images.add(new Pair<>((int)c, im));
             }
             ++count;
             

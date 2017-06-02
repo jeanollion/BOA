@@ -121,10 +121,10 @@ public class InputImage {
         
     }
     
-    public void closeImage() { // si modification du bitDepth -> le faire pour toutes les images.
+    public void closeImage() { // si modification du bitDepth -> faire la même pour toutes les images. Parfois seulement bruit négatif -> pas besoin
         // cast to initial type
         if (originalImageType!=null && originalImageType.getBitDepth()!=image.getBitDepth()) {
-            double[] mm = image.getMinAndMax(null);
+            /*double[] mm = image.getMinAndMax(null);
             if (mm[0]<0) {
                 logger.warn("PreprocessedImage Pos:{}/Fr:{}, original bitDepth:{}, has negative values ({}) -> will be trimmed", microscopyFieldName, this.timePoint, originalImageType.getBitDepth(), mm[0]);
                 //originalImageType = new ImageFloat("", 0, 0 ,0);
@@ -135,7 +135,7 @@ public class InputImage {
                 //else originalImageType = new ImageFloat("", 0, 0 ,0);
             } else if (mm[1]<=1) {
                 //originalImageType = new ImageFloat("", 0, 0 ,0);
-            }
+            }*/
             image = TypeConverter.cast(image, originalImageType);
         }
         dao.writePreProcessedImage(image, channelIdx, timePoint, microscopyFieldName);

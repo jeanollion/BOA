@@ -182,6 +182,9 @@ public class TrackMateInterface<S extends Spot> {
         graph.removeVertex(from);
     }
     public static Map<Integer, List<StructureObject>> getChildrenMap(List<StructureObject> parents, int structureIdx) {
+        /*Map<Integer, List<StructureObject>> res = new HashMap<>(parents.size());
+        for (StructureObject p : parents) res.put(p.getFrame(), p.getChildren(structureIdx));
+        return res;*/
         return parents.stream().collect(Collectors.toMap(StructureObject::getFrame, p->p.getChildren(structureIdx)));
     }
     public void setTrackLinks(Map<Integer, List<StructureObject>> objectsF) {

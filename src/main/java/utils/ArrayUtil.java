@@ -398,6 +398,29 @@ public class ArrayUtil {
         else res=(list.get(list.size()/2)+list.get(list.size()/2-1))/2.0;
         return res;
     }
+    public static double quantileInt(List<Integer> list, double q) {
+        if (list.isEmpty()) return Double.NaN;
+        if (q<0) q=0;
+        if (q>1) q=1;
+        Collections.sort(list);
+        double idx = (list.size()-1)*q;
+        int idxInf = (int)idx;
+        double delta = idx - idxInf;
+        if (delta==0 || idx==list.size()-1) return list.get(idxInf);
+        else return list.get(idxInf) * (1-delta) + list.get(idxInf+1) * delta;
+    }
+    public static double quantile(List<Double> list, double q) {
+        if (list.isEmpty()) return Double.NaN;
+        if (q<0) q=0;
+        if (q>1) q=1;
+        Collections.sort(list);
+        double idx = (list.size()-1)*q;
+        int idxInf = (int)idx;
+        double delta = idx - idxInf;
+        if (delta==0 || idx==list.size()-1) return list.get(idxInf);
+        else return list.get(idxInf) * (1-delta) + list.get(idxInf+1) * delta;
+    }
+    
     public static int[] toInt(float[] array) {
         int[] res= new int[array.length];
         for (int i = 0; i<array.length; ++i) res[i] = Math.round(array[i]);
