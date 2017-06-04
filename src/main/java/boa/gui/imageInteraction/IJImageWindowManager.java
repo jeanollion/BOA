@@ -34,6 +34,7 @@ import ij.WindowManager;
 import ij.gui.Arrow;
 import ij.gui.ImageCanvas;
 import ij.gui.ImageWindow;
+import ij.gui.Line;
 import ij.gui.Overlay;
 import ij.gui.PointRoi;
 import ij.gui.PolygonRoi;
@@ -160,17 +161,20 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                     if (r.getType()==Roi.RECTANGLE || r.getType()==Roi.LINE || removeAfterwards) {
                         fromSelection=true;
                         Rectangle rect = r.getBounds();
+                        if (rect.height==0 || rect.width==0) removeAfterwards=false;
                         BoundingBox selection = new BoundingBox(rect.x, rect.x+rect.width, rect.y, rect.y+rect.height, ip.getSlice()-1, ip.getSlice());
                         if (selection.getSizeX()==0 && selection.getSizeY()==0) selection=null;
                         i.addClickedObjects(selection, selectedObjects);
-                        //logger.debug("before remove, contained: {}", selectedObjects.size());
+                        //logger.debug("before remove, contained: {}, rect: {}, selection: {}", selectedObjects.size(), rect, selection);
                         if (removeAfterwards) {
                             Iterator<Pair<StructureObject, BoundingBox>> it = selectedObjects.iterator();
                             while (it.hasNext()) {
                                 Pair<StructureObject, BoundingBox> p= it.next();
                                 Polygon poly = r.getPolygon();
+                                //logger.debug("poly {}, nPoints: {}, x:{}, y:{}", poly, poly.npoints, poly.xpoints, poly.ypoints);
                                 Rectangle oRect = new Rectangle(p.value.getxMin(), p.value.getyMin(), p.key.getBounds().getSizeX(), p.key.getBounds().getSizeY());
-                                if (!poly.intersects(oRect)) it.remove();                                
+                                if (!poly.intersects(oRect)) it.remove();
+                                    
                             }
                             //logger.debug("after remove, contained: {}", selectedObjects.size());
                         }
@@ -217,13 +221,13 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
                     Map<StructureObject, List<StructureObject>> byParent = StructureObjectUtils.splitByParent(objects);
                     objects.removeIf(o -> byParent.get(o.getParent()).size()>1);
                     // get line & split
-                    FloatPolygon p = r.getInterpolatedPolygon(1, false);
+                    FloatPolygon p = r.getInterpolatedPolygon(-1, true);
                     ObjectSplitter splitter = new FreeLineSplitter(selectedObjects, ArrayUtil.toInt(p.xpoints), ArrayUtil.toInt(p.ypoints));
                     ManualCorrection.splitObjects(GUI.getDBConnection(), objects, true, false, splitter);
                 }
                 if (strechObjects && r!=null && !selectedObjects.isEmpty()) {
                     Structure s = selectedObjects.get(0).key.getExperiment().getStructure(completionStructureIdx);
-                    FloatPolygon p = r.getInterpolatedPolygon(1, false);
+                    FloatPolygon p = r.getInterpolatedPolygon(-1, true);
                     ManualObjectStrecher.strechObjects(selectedObjects, completionStructureIdx, ArrayUtil.toInt(p.xpoints), ArrayUtil.toInt(p.ypoints), s.getManualObjectStrechThreshold(), s.isBrightObject());
                 }
             }

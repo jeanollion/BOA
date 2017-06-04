@@ -45,6 +45,8 @@ public class FreeLineSplitter implements ObjectSplitter {
     final int[] xPoints, yPoints;
     public FreeLineSplitter(Collection<Pair<StructureObject, BoundingBox>> objects, int[] xPoints, int[] yPoints) {
         if (xPoints.length!=yPoints.length) throw new IllegalArgumentException("xPoints & yPoints should have same length");
+        logger.debug("xPoints: {}", xPoints);
+        logger.debug("yPoints: {}", yPoints);
         this.xPoints=xPoints;
         this.yPoints=yPoints;
         offsetMap = new HashMap<>(objects.size());

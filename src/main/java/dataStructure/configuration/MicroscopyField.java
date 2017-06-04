@@ -108,6 +108,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         return singleFrameChannel(channelIdx);
     }
     public boolean singleFrameChannel(int channelIdx) {
+        if (images==null) return false;
         return images.singleFrame(channelIdx);
     }
     public InputImagesImpl getInputImages() {

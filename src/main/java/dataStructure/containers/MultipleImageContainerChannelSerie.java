@@ -24,6 +24,8 @@ import image.Image;
 import static image.Image.logger;
 import image.ImageIOCoordinates;
 import image.ImageReader;
+import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -39,7 +41,7 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
     @Transient private ImageReader reader[];
     @Transient private Image[] singleFrameImages;
     boolean[] singleFrameC;
-    
+    //Map<Integer, Map<Integer, List<Double>>> timePointZCT;
     public MultipleImageContainerChannelSerie(String name, String[] imagePathC, int frameNumber, boolean[] singleFrameC, int[] sizeZC, double scaleXY, double scaleZ) {
         super(scaleXY, scaleZ);
         this.name = name;
@@ -56,7 +58,8 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
     }
     
     @Override public double getCalibratedTimePoint(int t, int c, int z) {
-        return getReader(c).getTimePoint(0, t, z);
+        if (getReader(c)!=null) return getReader(c).getTimePoint(0, t, z);
+        else return Double.NaN;
     }
     
     public void setImagePath(String[] path) {

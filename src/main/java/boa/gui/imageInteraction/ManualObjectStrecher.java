@@ -129,10 +129,12 @@ public class ManualObjectStrecher {
             }
             offset.reverseOffset();
             strechMap.addOffset(offset);
-            
-            Object3D newObject = ObjectFactory.getObjectsImage(strechMap, false)[0].translate(strechMap.getBoundingBox());
-            objectsToUpdate.add(new Pair(child, newObject));
-            logger.debug("resulting object bounds: {} (old: {})", newObject, child.getObject().getBounds(), newObject);
+            Object3D[] allO = ObjectFactory.getObjectsImage(strechMap, false);
+            if (allO.length>0) {
+                Object3D newObject = allO[0].translate(strechMap.getBoundingBox());
+                objectsToUpdate.add(new Pair(child, newObject));
+                logger.debug("resulting object bounds: {} (old: {})", newObject, child.getObject().getBounds(), newObject);
+            }
             intensityMap.addOffset(offset);
         }
         logger.debug("objects to update: {}", Utils.toStringList(objectsToUpdate, p->p.key.getObject().getVoxels().size()+">"+p.value.getVoxels().size()));
