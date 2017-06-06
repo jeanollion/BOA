@@ -567,6 +567,9 @@
                     </Property>
                     <Property name="opaque" type="boolean" value="false"/>
                   </Properties>
+                  <AuxValues>
+                    <AuxValue name="JavaCodeGenerator_InitCodePost" type="java.lang.String" value="&#xa;JPopupMenu menu = new JPopupMenu();&#xa;Action copy = new DefaultEditorKit.CopyAction();&#xa;copy.putValue(Action.NAME, &quot;Copy&quot;);&#xa;copy.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(&quot;control C&quot;));&#xa;menu.add( copy );&#xa;Action selectAll = new TextAction(&quot;Select All&quot;) {&#xa;    @Override public void actionPerformed(ActionEvent e) {&#xa;        JTextComponent component = getFocusedComponent();&#xa;        component.selectAll();&#xa;        component.requestFocusInWindow();&#xa;    }&#xa;};&#xa;menu.add( selectAll );&#xa;console.setComponentPopupMenu( menu );&#xa;"/>
+                  </AuxValues>
                 </Component>
               </SubComponents>
             </Container>

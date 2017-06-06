@@ -110,6 +110,9 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultEditorKit;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.TextAction;
 import measurement.MeasurementKeyObject;
 import measurement.extraction.DataExtractor;
 import measurement.extraction.SelectionExtractor;
@@ -988,6 +991,21 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         console.setBorder(null);
         console.setFont(new java.awt.Font("TeXGyreCursor", 0, 12)); // NOI18N
         console.setOpaque(false);
+
+        JPopupMenu menu = new JPopupMenu();
+        Action copy = new DefaultEditorKit.CopyAction();
+        copy.putValue(Action.NAME, "Copy");
+        copy.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke("control C"));
+        menu.add( copy );
+        Action selectAll = new TextAction("Select All") {
+            @Override public void actionPerformed(ActionEvent e) {
+                JTextComponent component = getFocusedComponent();
+                component.selectAll();
+                component.requestFocusInWindow();
+            }
+        };
+        menu.add( selectAll );
+        console.setComponentPopupMenu( menu );
         consoleJSP.setViewportView(console);
 
         javax.swing.GroupLayout actionPanelLayout = new javax.swing.GroupLayout(actionPanel);
