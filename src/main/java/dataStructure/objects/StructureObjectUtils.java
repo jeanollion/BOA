@@ -232,6 +232,7 @@ public class StructureObjectUtils {
         int currentIntersection=-1;
         for (StructureObject p : parents) {
             int inter = children.getIntersectionCountMaskMask(p.getObject(), offset, null);
+            //logger.debug("parent: {}, inter: {}", p, inter);
             if (inter>0) {
                 if (currentParent==null) {
                     currentParent = p;

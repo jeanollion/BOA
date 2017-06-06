@@ -30,6 +30,7 @@ import image.Image;
 import image.ImageMask;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import measurement.BasicMeasurements;
 import measurement.GeometricalMeasurements;
 import measurement.MeasurementKey;
@@ -54,14 +55,17 @@ public class MutationTrackMeasurements implements Measurement {
         this.mutation.setSelectedIndex(mutationStructureIdx);
     }
     
+    @Override
     public int getCallStructure() {
-        return mutation.getSelectedStructureIdx();
+        return mutation.getParentStructureIdx();
     }
 
+    @Override
     public boolean callOnlyOnTrackHeads() {
         return false;
     }
 
+    @Override
     public List<MeasurementKey> getMeasurementKeys() {
         int structureIdx = mutation.getSelectedStructureIdx();
         ArrayList<MeasurementKey> res = new ArrayList<MeasurementKey>();
@@ -88,36 +92,43 @@ public class MutationTrackMeasurements implements Measurement {
         return res;
     }
 
-    public void performMeasurement(StructureObject object) {
-        // limit to trackHead of mother bacteria
-        StructureObject parentBacteria;
-        if (bacteria.getSelectedStructureIdx()==object.getParent().getStructureIdx()) parentBacteria = object.getParent();
-        else parentBacteria = StructureObjectUtils.getInclusionParent(object.getObject(), object.getParent().getChildren(bacteria.getSelectedStructureIdx()), null);
-        if (parentBacteria == null) return;
-        object.getMeasurements().setValue("IsTrackHead", object.isTrackHead());
-        object.getMeasurements().setValue("BacteriaIdx", parentBacteria.getIdx());
-        object.getMeasurements().setValue("BacteriaIndices", StructureObjectUtils.getIndices(parentBacteria));
-        int prevTP = parentBacteria.getPreviousDivisionTimePoint();
-        object.getMeasurements().setValue("PreviousDivisionFrame", prevTP>0 ? prevTP : null);
-        int nextTP = parentBacteria.getNextDivisionTimePoint();
-        object.getMeasurements().setValue("NextDivisionFrame", nextTP>=0?nextTP:null );
-        object.getMeasurements().setValue("TrackHeadIndices", StructureObjectUtils.getIndices(object.getTrackHead()));
-        Image intensities = object.getRawImage(mutation.getSelectedStructureIdx());
-        double[] objectCenter = object.getObject().getMassCenter(intensities, false);
-        object.getMeasurements().setValue("YCoordProportional", getYProportionalPositionWithinContainer(parentBacteria.getObject(), objectCenter[1]));
-        double[] parentCenter = parentBacteria.getObject().getGeomCenter(false);
-        object.getMeasurements().setValue("YCoordRelToCenter", (objectCenter[1]-parentCenter[1]));
-        object.getMeasurements().setValue("XCoordRelToCenter", (objectCenter[0]-parentCenter[0]));
-        object.getMeasurements().setValue("MeanIntensity", BasicMeasurements.getMeanValue(object.getObject(), intensities, true));
-        object.getMeasurements().setValue("SumIntensity", BasicMeasurements.getSum(object.getObject(), intensities, true));
-        
-        if (object.isTrackHead()) {
-            List<StructureObject> track = StructureObjectUtils.getTrack(object, false);
-            object.getMeasurements().setValue("TrackLength", track.get(track.size()-1).getFrame() - object.getFrame()+1);
-            object.getMeasurements().setValue("MutationNumber", track.size());
+    @Override
+    public void performMeasurement(StructureObject parent) {
+        for (StructureObject object : parent.getChildren(mutation.getSelectedStructureIdx())) {
+            object.getMeasurements().setValue("IsTrackHead", object.isTrackHead());
+            object.getMeasurements().setValue("TrackHeadIndices", StructureObjectUtils.getIndices(object.getTrackHead()));
+            if (object.isTrackHead()) {
+                List<StructureObject> track = StructureObjectUtils.getTrack(object, false);
+                int tl = track.get(track.size()-1).getFrame() - object.getFrame()+1;
+                int mn = track.size();
+                for (StructureObject o : track) {
+                    o.getMeasurements().setValue("TrackLength", tl );
+                    o.getMeasurements().setValue("MutationNumber", mn);
+                }
+            }
+            Image intensities = parent.getRawImage(mutation.getSelectedStructureIdx());
+            double[] objectCenter = object.getObject().getMassCenter(intensities, false);
+            object.getMeasurements().setValue("MeanIntensity", BasicMeasurements.getMeanValue(object.getObject(), intensities, true));
+            object.getMeasurements().setValue("SumIntensity", BasicMeasurements.getSum(object.getObject(), intensities, true));
+            
+            StructureObject parentBacteria = object.getParent(bacteria.getSelectedStructureIdx());
+            if (parentBacteria!=null) {
+                object.getMeasurements().setValue("BacteriaIdx", parentBacteria.getIdx());
+                object.getMeasurements().setValue("BacteriaIndices", StructureObjectUtils.getIndices(parentBacteria));
+                int prevTP = parentBacteria.getPreviousDivisionTimePoint();
+                object.getMeasurements().setValue("PreviousDivisionFrame", prevTP>0 ? prevTP : null);
+                int nextTP = parentBacteria.getNextDivisionTimePoint();
+                object.getMeasurements().setValue("NextDivisionFrame", nextTP>=0?nextTP:null );
+
+                object.getMeasurements().setValue("YCoordProportional", getYProportionalPositionWithinContainer(parentBacteria.getObject(), objectCenter[1]));
+                double[] parentCenter = parentBacteria.getObject().getGeomCenter(false);
+                object.getMeasurements().setValue("YCoordRelToCenter", (objectCenter[1]-parentCenter[1]));
+                object.getMeasurements().setValue("XCoordRelToCenter", (objectCenter[0]-parentCenter[0]));
+            }
         }
     }
 
+    @Override
     public Parameter[] getParameters() {
         return parameters;
     }

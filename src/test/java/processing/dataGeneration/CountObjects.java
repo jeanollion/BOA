@@ -18,8 +18,11 @@
 package processing.dataGeneration;
 
 import static TestUtils.Utils.logger;
+import core.Task;
+import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.ObjectDAO;
+import dataStructure.objects.StructureObject;
 
 /**
  *
@@ -27,9 +30,17 @@ import dataStructure.objects.ObjectDAO;
  */
 public class CountObjects {
     public static void main(String[] args) {
-        String dbName = "boa_fluo160428";
+        String dbName = "fluo160428";
         //String dbName = "boa_fluo151127";
-        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+        MasterDAO db = new Task(dbName, null).getDB();
+        /*ObjectDAO dao = db.getDao(db.getExperiment().getPositionsAsString()[0]);
+        StructureObject root = dao.getRoot(0);
+        StructureObject mc = root.getChildren(0).get(0);
+        StructureObject bact = mc.getChildren(1).get(0);
+        StructureObject mut = mc.getChildren(2).get(0);
+        logger.debug("mc: {}, bact: {}, mut: {}, mut parent 1: {}, mut parent 0: {}", mc, bact, mut, mut.getParent(1), mut.getParent(0));
+        //mut.getParent(1)
+        */
         for (String f : db.getExperiment().getPositionsAsString()) {
             ObjectDAO dao = db.getDao(f);
             countMicrochannels(dao);

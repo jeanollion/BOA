@@ -156,19 +156,20 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public StructureObject getParent(int parentStructureIdx) {
         if (structureIdx==parentStructureIdx) return this;
         if (parentStructureIdx<0) return getRoot();
-        StructureObject p = this;
-        while (p!=null && p.getStructureIdx()!=parentStructureIdx) {
-            p = p.getParent();
-            if (p.getStructureIdx()<parentStructureIdx) {
-                List<StructureObject> candidates = p.getChildren(parentStructureIdx);
-                return StructureObjectUtils.getInclusionParent(object, candidates, null);
-            }
+        if (parentStructureIdx == this.getParent().getStructureIdx()) return getParent();
+        int common = getExperiment().getFirstCommonParentStructureIdx(structureIdx, parentStructureIdx);
+        //logger.debug("common idx: {}", common);
+        if (common == parentStructureIdx) {
+            StructureObject p = this;
+            while (p!=null && p.getStructureIdx()!=parentStructureIdx) p = p.getParent();
+            return p;
+        } else {
+            StructureObject p = this;
+            while (p.getStructureIdx()!=common) p = p.getParent();
+            List<StructureObject> candidates = p.getChildren(parentStructureIdx);
+            //logger.debug("common parent: {}, candidates: {}", p, candidates);
+            return StructureObjectUtils.getInclusionParent(getObject(), candidates, null);
         }
-        if (p==null || p.structureIdx!=parentStructureIdx) {
-            //logger.error("Structure: {} is not in parent-tree of structure: {}", parentStructureIdx, this.structureIdx);
-            return null;
-        }
-        return p;
     }
     public void setParent(StructureObject parent) {
         this.parent=parent;

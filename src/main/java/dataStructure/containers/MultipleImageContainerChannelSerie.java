@@ -24,6 +24,7 @@ import image.Image;
 import static image.Image.logger;
 import image.ImageIOCoordinates;
 import image.ImageReader;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -41,8 +42,11 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
     @Transient private ImageReader reader[];
     @Transient private Image[] singleFrameImages;
     boolean[] singleFrameC;
-    //Map<Integer, Map<Integer, List<Double>>> timePointZCT;
+    Map<String, Double> timePointCZT;
     public MultipleImageContainerChannelSerie(String name, String[] imagePathC, int frameNumber, boolean[] singleFrameC, int[] sizeZC, double scaleXY, double scaleZ) {
+        this(name, imagePathC, frameNumber, singleFrameC, sizeZC, scaleXY, scaleZ, null);
+    }
+    public MultipleImageContainerChannelSerie(String name, String[] imagePathC, int frameNumber, boolean[] singleFrameC, int[] sizeZC, double scaleXY, double scaleZ, Map<String, Double> timePointCZT) {
         super(scaleXY, scaleZ);
         this.name = name;
         filePathC = imagePathC;
@@ -51,14 +55,38 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
         this.reader=new ImageReader[imagePathC.length];
         this.singleFrameImages = new Image[imagePathC.length];
         this.sizeZC= sizeZC;
+        if (timePointCZT!=null && !timePointCZT.isEmpty()) this.timePointCZT = new HashMap<>(timePointCZT);
+        else initTimePointMap();
+    }
+    
+    private void initTimePointMap() {
+        timePointCZT = new HashMap<>();
+        for (int c = 0; c<filePathC.length; ++c) {
+            ImageReader r = this.getReader(c);
+            if (r==null) continue;
+            for (int z = 0; z<sizeZC[c]; ++z) {
+                for (int t = 0; t<timePointNumber; ++t) {
+                    double tp = r.getTimePoint(0, t, z);
+                    if (!Double.isNaN(tp)) timePointCZT.put(getKey(c, z, t), tp);
+                }
+            }
+        }
+        logger.debug("tpMap: {}", timePointCZT);
+    }
+    private static String getKey(int c, int z, int t) {
+        return new StringBuilder(11).append(c).append(";").append(z).append(";").append(t).toString();
     }
     
     @Override public MultipleImageContainerChannelSerie duplicate() {
-        return new MultipleImageContainerChannelSerie(name, filePathC, timePointNumber, singleFrameC, sizeZC, scaleXY, scaleZ);
+        return new MultipleImageContainerChannelSerie(name, filePathC, timePointNumber, singleFrameC, sizeZC, scaleXY, scaleZ, timePointCZT);
     }
     
     @Override public double getCalibratedTimePoint(int t, int c, int z) {
-        if (getReader(c)!=null) return getReader(c).getTimePoint(0, t, z);
+        if (timePointCZT==null) initTimePointMap();
+        if (timePointCZT.isEmpty()) return Double.NaN;
+        String key = getKey(c, z, t);
+        Double d = timePointCZT.get(key);
+        if (d!=null) return d;
         else return Double.NaN;
     }
     

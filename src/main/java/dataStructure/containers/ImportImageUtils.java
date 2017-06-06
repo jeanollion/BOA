@@ -39,6 +39,7 @@ import java.util.regex.Pattern;
  */
 public class ImportImageUtils {
     public static List<Double> paseDVLogFile(String path, String key) {
+        if (!new File(path).exists()) return null;
         Map<Integer, Double> map = new HashMap<>();
         FileReader input = null;
         Pattern p = Pattern.compile("-?\\d+.?\\d+|-?\\d+");
