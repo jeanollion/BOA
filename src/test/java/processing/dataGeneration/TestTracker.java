@@ -102,7 +102,7 @@ public class TestTracker {
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, structureIdx);
-        Image im = i.generateRawImage(structureIdx);
+        Image im = i.generateRawImage(structureIdx, true);
         iwm.addImage(im, i, structureIdx, false, true);
         iwm.setInteractiveStructure(structureIdx);
         iwm.displayAllObjects(im);
@@ -141,7 +141,7 @@ public class TestTracker {
         for (String name : BacteriaClosedMicrochannelTrackerLocalCorrections.stepParents.keySet()) {
             List<StructureObject> pt = BacteriaClosedMicrochannelTrackerLocalCorrections.stepParents.get(name);
             ImageObjectInterface i = iwm.getImageTrackObjectInterface(pt, structureIdx);
-            Image im = i.generateRawImage(structureIdx);
+            Image im = i.generateRawImage(structureIdx, true);
             im.setName(name);
             iwm.addImage(im, i, structureIdx, false, true);
             iwm.setInteractiveStructure(structureIdx);
@@ -149,5 +149,4 @@ public class TestTracker {
             iwm.displayAllTracks(im);
         }
     }
-    
 }

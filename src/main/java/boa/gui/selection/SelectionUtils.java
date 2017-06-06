@@ -259,7 +259,7 @@ public class SelectionUtils {
         Collections.sort(parentList);
         
         ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(parentList, s.getStructureIdx());
-        ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(displayStructureIdx), i, displayStructureIdx, false, true);
+        ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(displayStructureIdx, true), i, displayStructureIdx, false, true);
     }
         
     public static void setMouseAdapter(final JList list) {

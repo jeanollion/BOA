@@ -247,8 +247,8 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
     
     // listElementErasable
     @Override 
-    public boolean eraseData(boolean callFromGUI) { // do not delete objects if GUI not connected
-        if (callFromGUI) {
+    public boolean eraseData(boolean promptConfirm) { // do not delete objects if GUI not connected
+        if (promptConfirm) {
             // delete all objects..
             int response = JOptionPane.showConfirmDialog(null, "Delete Field: "+name+ "(all data will be lost)", "Confirm",
             JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
@@ -256,6 +256,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         }
         if (GUI.getDBConnection()!=null && GUI.getDBConnection().getDao(name)!=null) GUI.getDBConnection().getDao(name).deleteAllObjects(); //TODO : unsafe if not called from GUI.. // ne pas conditionner par callFromGUI 
         if (getInputImages()!=null) getInputImages().deleteFromDAO();
+        for (int s =0; s<getExperiment().getStructureCount(); ++s) getExperiment().getImageDAO().clearTrackImages(name, s);
         return true;
     }
     

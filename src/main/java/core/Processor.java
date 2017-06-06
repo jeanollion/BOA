@@ -18,10 +18,13 @@
 package core;
 
 import boa.gui.GUI;
+import boa.gui.imageInteraction.ImageObjectInterface;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import configuration.parameters.TransformationPluginParameter;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.PreProcessingChain;
+import dataStructure.containers.ImageDAO;
 import dataStructure.containers.InputImagesImpl;
 import dataStructure.containers.MultipleImageContainer;
 import dataStructure.objects.MasterDAO;
@@ -29,10 +32,13 @@ import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.Selection;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
+import image.Image;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -93,6 +99,7 @@ public class Processor {
         if (!dao.getPositionName().equals(field.getName())) throw new IllegalArgumentException("field name should be equal");
         InputImagesImpl images = field.getInputImages();
         images.deleteFromDAO(); // delete images if existing in imageDAO
+        for (int s =0; s<dao.getExperiment().getStructureCount(); ++s) dao.getExperiment().getImageDAO().clearTrackImages(field.getName(), s);
         setTransformations(field, computeConfigurationData);
         images.applyTranformationsSaveAndClose();
         if (deleteObjects) dao.deleteAllObjects();
@@ -295,5 +302,28 @@ public class Processor {
         Set<Integer> l = new HashSet<Integer>(5);
         for (Measurement m : mList) for (MeasurementKey k : m.getMeasurementKeys()) l.add(k.getStoreStructureIdx());
         return l;
+    }
+    
+    public static void generateTrackImages(ObjectDAO dao, int parentStructureIdx, int... childStructureIdx) {
+        if (dao==null || dao.getExperiment()==null) return;
+        if (childStructureIdx==null || childStructureIdx.length==0) {
+            List<Integer> childStructures =dao.getExperiment().getAllDirectChildStructures(parentStructureIdx);
+            childStructures.add(parentStructureIdx);
+            Utils.removeDuplicates(childStructures, sIdx -> dao.getExperiment().getStructure(sIdx).getChannelImage());
+            childStructureIdx = Utils.toArray(childStructures, false);
+        }
+        final int[] cSI = childStructureIdx;
+        ImageDAO imageDAO = dao.getExperiment().getImageDAO();
+        imageDAO.clearTrackImages(dao.getPositionName(), parentStructureIdx);
+        Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(dao.getRoots(), parentStructureIdx);
+        GUI.log("Generating Image: #tracks: "+allTracks.size()+", child structures: "+Utils.toStringArray(childStructureIdx));
+        ThreadRunner.execute(allTracks.values(), (List<StructureObject> track, int idx, int threadIdx) -> {
+            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, parentStructureIdx);
+            for (int childSIdx : cSI) {
+                //GUI.log("Generating Image for track:"+track.get(0)+", structureIdx:"+childSIdx+" ...");
+                Image im = i.generateRawImage(childSIdx, false);
+                imageDAO.writeTrackImage(track.get(0), childSIdx, im);
+            }
+        });
     }
 }

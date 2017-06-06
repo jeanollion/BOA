@@ -116,7 +116,7 @@ public class SaveAndRetriveSegmentationData {
             logger.debug("processing: {}", th);
             ImageObjectInterface i = windowManager.getImageTrackObjectInterface(track, structureIdx);
             i.setGUIMode(false);
-            Image im = i.generateRawImage(structureIdx);
+            Image im = i.generateRawImage(structureIdx, true);
             if (roiStructureIdx!=null) {
                 for (int roiS : roiStructureIdx) {
                     i = windowManager.getImageTrackObjectInterface(track, roiS);

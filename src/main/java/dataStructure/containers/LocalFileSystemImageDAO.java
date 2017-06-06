@@ -139,13 +139,13 @@ public class LocalFileSystemImageDAO implements ImageDAO {
     private String getTrackImageFolder(String position, int structureIdx) {
         return directory+File.separator+position+File.separator+"track_images_"+structureIdx;
     }
-    private String getTrackImagePath(StructureObject o) {
-        return getTrackImageFolder(o.getPositionName(), o.getStructureIdx())+File.separator+Selection.indicesString(o)+".tif";
+    private String getTrackImagePath(StructureObject o, int structureIdx) {
+        return getTrackImageFolder(o.getPositionName(), o.getStructureIdx())+File.separator+Selection.indicesString(o)+"_"+structureIdx+".tif";
     }
     
     @Override
-    public void writeTrackImage(StructureObject trackHead, Image image) {
-        String path = getTrackImagePath(trackHead);
+    public void writeTrackImage(StructureObject trackHead, int structureIdx, Image image) {
+        String path = getTrackImagePath(trackHead, structureIdx);
         File f = new File(path);
         f.delete();
         f.getParentFile().mkdirs();
@@ -154,8 +154,8 @@ public class LocalFileSystemImageDAO implements ImageDAO {
     }
 
     @Override
-    public Image openTrackImage(StructureObject trackHead) {
-        String path = getTrackImagePath(trackHead);
+    public Image openTrackImage(StructureObject trackHead, int structureIdx) {
+        String path = getTrackImagePath(trackHead, structureIdx);
         File f = new File(path);
         if (f.exists()) {
             logger.trace("Opening track image:  trackHead: {}", trackHead);

@@ -57,7 +57,7 @@ public abstract class ImageObjectInterface {
     public abstract BoundingBox getObjectOffset(StructureObject object);
     public abstract ImageInteger generateLabelImage();
     public abstract void drawObjects(ImageInteger image);
-    public abstract Image generateRawImage(int structureIdx);
+    public abstract Image generateRawImage(int structureIdx, boolean executeInBackground);
     public abstract boolean isTimeImage();
     public int getChildStructureIdx() {return childStructureIdx;}
     public abstract List<Pair<StructureObject, BoundingBox>> getObjects();

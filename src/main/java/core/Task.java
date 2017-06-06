@@ -48,7 +48,7 @@ import utils.Utils;
  */
 public class Task extends SwingWorker<Integer, String> {
         String dbName, dir;
-        boolean preProcess, segmentAndTrack, trackOnly, measurements;
+        boolean preProcess, segmentAndTrack, trackOnly, measurements, generateTrackImages;
         List<Integer> positions;
         int[] structures;
         List<Pair<String, int[]>> extrackMeasurementDir = new ArrayList<>();
@@ -135,6 +135,10 @@ public class Task extends SwingWorker<Integer, String> {
             this.measurements=measurements;
             return this;
         }
+        public Task setGenerateTrackImages(boolean generateTrackImages) {
+            this.generateTrackImages=generateTrackImages;
+            return this;
+        }
         
         public Task setPositions(int... positions) {
             if (positions!=null && positions.length>0) this.positions=Utils.toList(positions);
@@ -216,6 +220,9 @@ public class Task extends SwingWorker<Integer, String> {
             if (preProcess) count += positions.size();
             if (this.segmentAndTrack || this.trackOnly) count += positions.size() * structures.length;
             if (this.measurements) count += positions.size();
+            if (this.generateTrackImages) {
+                count+=positions.size();
+            }
             count+=extrackMeasurementDir.size();
             return count;
         }
@@ -284,6 +291,15 @@ public class Task extends SwingWorker<Integer, String> {
             errors.addAll(e);
             incrementProgress();
         }
+        if (generateTrackImages) {
+            publish("Generating Track Images...");
+            // generate track images for all selected structure that has direct children
+            for (int s : structures) {
+                if (db.getExperiment().getAllDirectChildStructures(s).isEmpty()) continue;
+                Processor.generateTrackImages(db.getDao(position), s);
+            }
+        }
+        
         if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field
         db.getDao(position).clearCache();
         db.getExperiment().getPosition(position).flushImages(true, true);

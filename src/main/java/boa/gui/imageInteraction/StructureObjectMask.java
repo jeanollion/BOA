@@ -142,7 +142,7 @@ public class StructureObjectMask extends ImageObjectInterface {
     }
 
     @Override
-    public Image generateRawImage(int structureIdx) {
+    public Image generateRawImage(int structureIdx, boolean executeInBackground) {
         return parent.getRawImage(structureIdx);
     }
 

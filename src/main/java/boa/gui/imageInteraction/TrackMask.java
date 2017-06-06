@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.logging.Level;
@@ -114,14 +115,16 @@ public abstract class TrackMask extends ImageObjectInterface {
     }
     public abstract Image generateEmptyImage(String name, Image type);
     
-    @Override public Image generateRawImage(final int structureIdx) {
+    @Override public Image generateRawImage(final int structureIdx, boolean executeInBackground) {
+        Image daoImage = trackObjects[0].parent.getExperiment().getImageDAO().openTrackImage(parents.get(0), structureIdx);
+        if (daoImage!=null) return daoImage;
         /*long t00 = System.currentTimeMillis();
         for (int i =0; i<trackObjects.length; ++i) {
             trackObjects[i].generateRawImage(structureIdx);
         }
         long t01 = System.currentTimeMillis();
         logger.debug("total loading time: {}", t01-t00);*/
-        Image image0 = trackObjects[0].generateRawImage(structureIdx);
+        Image image0 = trackObjects[0].generateRawImage(structureIdx, false);
         String structureName;
         if (GUI.hasInstance() && GUI.getDBConnection()!=null && GUI.getDBConnection().getExperiment()!=null) structureName = GUI.getDBConnection().getExperiment().getStructure(structureIdx).getName(); 
         else structureName= structureIdx+"";
@@ -136,7 +139,7 @@ public abstract class TrackMask extends ImageObjectInterface {
             @Override
             public void run(int i) {
                 //long t0 = System.currentTimeMillis();
-                Image image = trackObjects[i].generateRawImage(structureIdx);
+                Image image = trackObjects[i].generateRawImage(structureIdx, false);
                 //long t1 = System.currentTimeMillis();
                 double[] mm = image.getMinAndMax(null);
                 if (mm[0]<minAndMax[0]) minAndMax[0]=mm[0];
@@ -153,10 +156,17 @@ public abstract class TrackMask extends ImageObjectInterface {
                 //logger.debug("i: {}, count: {}, open: {}, min&max: {}, paste: {}, update: {}", i, count, t1-t0, t2-t1, t3-t2, t4-t3);
                 //totalTime[0]+=t4-t0;
                 //if (i==trackObjects.length-1) logger.debug("total time: {}", totalTime[0]);
+                
             }
+
         };
-        DefaultWorker.execute(t, trackObjects.length);
-        
+        if (executeInBackground) {
+            DefaultWorker w = DefaultWorker.execute(t, trackObjects.length);
+            ImageWindowManagerFactory.getImageManager().runningWorkers.put(displayImage, w);
+            w.setEndOfWork(()->{ ImageWindowManagerFactory.getImageManager().runningWorkers.remove(displayImage); });
+        } else {
+            DefaultWorker.executeInForeground(t, trackObjects.length);
+        }
         return displayImage;
     }
 

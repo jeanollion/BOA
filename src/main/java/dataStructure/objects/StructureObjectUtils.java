@@ -314,7 +314,7 @@ public class StructureObjectUtils {
         return res;
     }
     public static Map<StructureObject, List<StructureObject>> getAllTracks(List<StructureObject> parentTrack, int structureIdx) {
-        if (parentTrack.isEmpty()) return Collections.EMPTY_MAP;
+        if (parentTrack==null || parentTrack.isEmpty()) return Collections.EMPTY_MAP;
         HashMap<StructureObject, List<StructureObject>>  res = new HashMap<>();
         // set all children
         setAllChildren(parentTrack, structureIdx);

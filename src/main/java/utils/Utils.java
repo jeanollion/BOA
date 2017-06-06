@@ -553,6 +553,16 @@ public class Utils {
         list.addAll(set);
     }
     
+    public static <T, U> void removeDuplicates(Collection<T> list, Function<T, U> duplicateTestFunction) {
+        Set<U> uniqueValues = new HashSet<>(list.size());
+        Iterator<T> it = list.iterator();
+        while (it.hasNext()) {
+            U duplicateTestValue = duplicateTestFunction.apply(it.next());
+            if (uniqueValues.contains(duplicateTestValue)) it.remove();
+            else uniqueValues.add(duplicateTestValue);
+        }
+    }
+    
     public static <K, V> Entry<K, V> removeFromMap(Map<K, V> map, K key) {
         Iterator<Entry<K, V>> it = map.entrySet().iterator();
         while(it.hasNext()) {

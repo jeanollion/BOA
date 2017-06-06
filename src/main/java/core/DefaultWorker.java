@@ -33,10 +33,16 @@ import utils.ArrayUtil;
  */
 public class DefaultWorker extends SwingWorker<Integer, String>{
     final WorkerTask task;
+    Runnable endOfWork;
     int[] taskIdx;
     GUIInterface gui;
-    public static void execute(WorkerTask t, int maxTaskIdx) {
-        new DefaultWorker(t, maxTaskIdx, GUI.hasInstance()?GUI.getInstance():null).execute();
+    public static DefaultWorker execute(WorkerTask t, int maxTaskIdx) {
+        DefaultWorker res = new DefaultWorker(t, maxTaskIdx, GUI.hasInstance()?GUI.getInstance():null);
+        res.execute();
+        return res;
+    }
+    public static void executeInForeground(WorkerTask t, int maxTaskIdx) {
+        for (int i =0; i<maxTaskIdx; ++i) t.run(i);
     }
     public DefaultWorker(WorkerTask task, int maxTaskIdx, GUIInterface gui) {
         this.task=task;
@@ -70,6 +76,21 @@ public class DefaultWorker extends SwingWorker<Integer, String>{
         } 
     }
 
+    @Override 
+    public void done() {
+        if (this.endOfWork!=null) endOfWork.run();
+        setProgress(0);
+    }
+    public void setEndOfWork(Runnable endOfWork) {
+        this.endOfWork=endOfWork;
+    }
+    public void appendEndOfWork(Runnable endOfWork) {
+        Runnable oldEnd = this.endOfWork;
+        this.endOfWork = () -> {
+            oldEnd.run();
+            endOfWork.run();
+        };
+    }
     public static interface WorkerTask {
         public void run(int i);
     }

@@ -301,7 +301,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
                             int structureIdx = generator.getExperiment().getStructureIdx(ae.getActionCommand());
                             if (logger.isDebugEnabled()) logger.debug("opening track raw image for structure: {} of idx: {}", ae.getActionCommand(), structureIdx);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(generator.db.getDao(position).getRoots(), structureIdx);
-                            if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(structureIdx), i, structureIdx, false, true);
+                            if (i!=null) ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(structureIdx, true), i, structureIdx, false, true);
                             GUI.getInstance().setInteractiveStructureIdx(structureIdx);
                             GUI.getInstance().setTrackStructureIdx(structureIdx);
                         }

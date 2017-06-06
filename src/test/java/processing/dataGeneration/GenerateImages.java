@@ -70,8 +70,8 @@ public class GenerateImages {
         IJImageWindowManager iwm = (IJImageWindowManager)ImageWindowManagerFactory.getImageManager();
         
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(mcTrack, 1);
-        Image imBact = i.generateRawImage(1);
-        Image imMut = i.generateRawImage(2);
+        Image imBact = i.generateRawImage(1, false);
+        Image imMut = i.generateRawImage(2, false);
         BoundingBox crop = new BoundingBox(0, imBact.getSizeX()-1, 0, yMax, 0, 0);
         imBact=imBact.crop(crop);
         imMut=imMut.crop(crop);

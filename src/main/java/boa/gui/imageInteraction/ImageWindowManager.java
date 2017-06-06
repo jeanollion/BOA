@@ -19,6 +19,7 @@ package boa.gui.imageInteraction;
 
 import boa.gui.GUI;
 import static boa.gui.GUI.logger;
+import core.DefaultWorker;
 import static dataStructure.objects.Measurements.asString;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
@@ -34,6 +35,8 @@ import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.lang.reflect.Field;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -52,6 +55,7 @@ import java.util.TreeMap;
 import javax.swing.AbstractAction;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
+import javax.swing.SwingWorker;
 import measurement.extraction.DataExtractor;
 import utils.ArrayFileWriter;
 import utils.HashMapGetCreate;
@@ -97,6 +101,8 @@ public abstract class ImageWindowManager<T, U, V> {
     protected final HashMapGetCreate<Image, Set<U>> displayedLabileObjectRois = new HashMapGetCreate<Image, Set<U>>(new SetFactory<Image, U>());
     protected final HashMapGetCreate<Image, Set<V>> displayedLabileTrackRois = new HashMapGetCreate<Image, Set<V>>(new SetFactory<Image, V>());
     
+    protected final Map<Image, DefaultWorker> runningWorkers = new HashMap<>();
+    
     public ImageWindowManager(ImageObjectListener listener, ImageDisplayer displayer) {
         this.listener=null;
         this.displayer=displayer;
@@ -105,8 +111,15 @@ public abstract class ImageWindowManager<T, U, V> {
         imageObjectInterfaces = new HashMap<ImageObjectInterfaceKey, ImageObjectInterface>();
         trackHeadTrackMap = new HashMapGetCreate<>(new HashMapGetCreate.ListFactory());
     }
-    
+    public Map<Image, DefaultWorker> getRunningWorkers() {
+        return runningWorkers;
+    }
+    public void stopAllRunningWorkers() {
+        for (DefaultWorker w : runningWorkers.values()) w.cancel(true);
+        runningWorkers.clear();
+    }
     public void flush() {
+        stopAllRunningWorkers();
         objectRoiMap.clear();
         parentTrackHeadTrackRoiMap.clear();
         labileObjectRoiMap.clear();
@@ -172,6 +185,29 @@ public abstract class ImageWindowManager<T, U, V> {
     public void displayImage(Image image, ImageObjectInterface i) {
         displayer.showImage(image);
         addMouseListener(image);
+        // if image is being generated -> add a close listener
+        addWindowListener(image, new WindowListener() {
+            @Override
+            public void windowOpened(WindowEvent e) { }
+            @Override
+            public void windowClosing(WindowEvent e) {}
+            @Override
+            public void windowClosed(WindowEvent e) {
+                DefaultWorker w = runningWorkers.get(image);
+                if (w!=null) {
+                    logger.debug("interruptin generation of closed image: {}", image.getName());
+                    w.cancel(true);
+                }
+            }
+            @Override
+            public void windowIconified(WindowEvent e) { }
+            @Override
+            public void windowDeiconified(WindowEvent e) { }
+            @Override
+            public void windowActivated(WindowEvent e) { }
+            @Override
+            public void windowDeactivated(WindowEvent e) { }
+        });
         GUI.updateRoiDisplayForSelections(image, i);
     }
     
@@ -321,6 +357,7 @@ public abstract class ImageWindowManager<T, U, V> {
     }
     
     public abstract void addMouseListener(Image image);
+    public abstract void addWindowListener(Image image, WindowListener wl);
     /**
      * 
      * @param image

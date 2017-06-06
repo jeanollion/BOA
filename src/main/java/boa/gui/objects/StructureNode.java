@@ -195,7 +195,7 @@ public class StructureNode implements TreeNode, UIContainer {
                             int[] path = getGenerator().getExperiment().getPathToStructure(getParentObject().getStructureIdx(), structureIdx);
                             parent.loadAllChildObjects(path, 0);
                             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageObjectInterface(getParentObject(), getStructureIdx(ae.getActionCommand(), openRaw), true);
-                            ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(structureIdx), i, structureIdx, false, true);
+                            ImageWindowManagerFactory.getImageManager().addImage(i.generateRawImage(structureIdx, true), i, structureIdx, false, true);
                             GUI.getInstance().setInteractiveStructureIdx(structureIdx);
                         }
                     }

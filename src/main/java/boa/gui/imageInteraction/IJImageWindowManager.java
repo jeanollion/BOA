@@ -64,6 +64,8 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -96,7 +98,11 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
     protected ImagePlus getImage(Image image) {
         return IJImageWrapper.getImagePlus(image);
     }*/
-    
+    @Override 
+    public void addWindowListener(Image image, WindowListener wl) {
+        final ImagePlus ip = displayer.getImage(image);
+        if (ip!=null) ip.getWindow().addWindowListener(wl);
+    }
     @Override
     public void addMouseListener(final Image image) {
         final ImagePlus ip = displayer.getImage(image);

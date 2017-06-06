@@ -158,7 +158,7 @@ public class TestProcessBacteriaPhase {
         GUI.getInstance(); // for hotkeys...
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, 1);
-        Image im = i.generateRawImage(1);
+        Image im = i.generateRawImage(1, true);
         iwm.addImage(im, i, 1, false, true);
         iwm.setInteractiveStructure(1);
         iwm.displayAllObjects(im);

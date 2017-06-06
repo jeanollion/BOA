@@ -92,7 +92,7 @@ public class TestLAPTrackerMutations {
         IJImageWindowManager windowManager = new IJImageWindowManager(null);
         ImageObjectInterface iB = windowManager.getImageTrackObjectInterface(parentTrack, bacteriaIdx);
         iB.setGUIMode(false);
-        Image im = iB.generateRawImage(mutationIdx);
+        Image im = iB.generateRawImage(mutationIdx, true);
         ImagePlus ip = windowManager.getDisplayer().showImage(im);
         Overlay o = new Overlay(); ip.setOverlay(o);
         SpotWithinCompartment.bacteria=iB;
