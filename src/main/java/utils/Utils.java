@@ -86,12 +86,17 @@ public class Utils {
         int s = cal.get(Calendar.SECOND);
         int ms = cal.get(Calendar.MILLISECOND);
         StringBuilder sb  = new StringBuilder(13);
+        if (hours<10) sb.append("0");
         sb.append(hours);
         sb.append(":");
+        if (min<10) sb.append("0");
         sb.append(min);
         sb.append(":");
+        if (s<10) sb.append("0");
         sb.append(s);
         sb.append(".");
+        if (ms<100) sb.append("0");
+        else if (ms<10) sb.append("00");
         sb.append(ms);
         return sb.toString();
     }

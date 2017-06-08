@@ -2205,11 +2205,10 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
             totalSubtasks+=t.countSubtasks();
         }
         setMessage("Total subTasks: "+totalSubtasks);
-        int currentSubTask = 0;
+        int[] taskCounter = new int[]{0, totalSubtasks};
         for (Task t : tasks) {
-            t.setSubtaskNumber(currentSubTask, totalSubtasks);
+            t.setSubtaskNumber(taskCounter);
             t.execute();
-            currentSubTask+=t.countSubtasks();
         }
     }//GEN-LAST:event_runActionAllXPMenuItemActionPerformed
 
