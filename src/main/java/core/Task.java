@@ -34,6 +34,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.swing.SwingWorker;
 import measurement.MeasurementKeyObject;
 import measurement.extraction.DataExtractor;
@@ -46,7 +50,7 @@ import utils.Utils;
  *
  * @author jollion
  */
-public class Task extends SwingWorker<Integer, String> {
+public class Task extends SwingWorker<Integer, String> implements ProgressCallback {
         String dbName, dir;
         boolean preProcess, segmentAndTrack, trackOnly, measurements, generateTrackImages;
         List<Integer> positions;
@@ -54,9 +58,10 @@ public class Task extends SwingWorker<Integer, String> {
         List<Pair<String, int[]>> extrackMeasurementDir = new ArrayList<>();
         List<Pair<String, Exception>> errors = new ArrayList<>();
         MasterDAO db;
-        int subTaskCounter = 0;
-        int subTaskNumber = 0;
+        int[] taskCounter;
         GUIInterface gui;
+        
+        
         private Task() {
             if (GUI.hasInstance()) gui = GUI.getInstance();
             if (gui!=null) {
@@ -226,9 +231,8 @@ public class Task extends SwingWorker<Integer, String> {
             count+=extrackMeasurementDir.size();
             return count;
         }
-        public void setSubtaskNumber(int currentCount, int totalCount) {
-            this.subTaskNumber = totalCount;
-            this.subTaskCounter = totalCount;
+        public void setSubtaskNumber(int[] taskCounter) {
+            this.taskCounter=taskCounter;
         }
         public void runTask() {
             if (gui!=null) gui.setRunning(true);
@@ -248,7 +252,7 @@ public class Task extends SwingWorker<Integer, String> {
             boolean deleteAllField = needToDeleteObjects && structures.length==db.getExperiment().getStructureCount() && !deleteAll;
             logger.info("Run task: db: {} preProcess: {}, segmentAndTrack: {}, trackOnly: {}, runMeasurements: {}, need to delete objects: {}, delete all: {}, delete all by field: {}", dbName, preProcess, segmentAndTrack, trackOnly, measurements, needToDeleteObjects, deleteAll, deleteAllField);
             
-            if (this.subTaskNumber==0) subTaskNumber = this.countSubtasks();
+            if (this.taskCounter==null) this.taskCounter = new int[]{0, this.countSubtasks()};
             publish("number of subtasks: "+countSubtasks());
             for (int pIdx : positions) {
                 String position = db.getExperiment().getPosition(pIdx).getName();
@@ -336,8 +340,9 @@ public class Task extends SwingWorker<Integer, String> {
         }
         return res;
     }
-    private void incrementProgress() {
-        setProgress(100*(++subTaskCounter)/subTaskNumber);
+    @Override
+    public void incrementProgress() {
+        setProgress(100*(++taskCounter[0])/taskCounter[1]);
     }
     @Override
     protected Integer doInBackground() throws Exception {
@@ -356,4 +361,16 @@ public class Task extends SwingWorker<Integer, String> {
         this.publish("------------------");
         if (gui!=null) gui.setRunning(false);
     }
+
+    @Override
+    public void addSubTask(int subtask) {
+        if (taskCounter!=null) this.taskCounter[1]+=subtask;
+    }
+
+    @Override
+    public void log(String message) {
+        publish(message);
+    }
+
+
 }

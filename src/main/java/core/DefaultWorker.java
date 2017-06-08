@@ -32,10 +32,10 @@ import utils.ArrayUtil;
  * @author jollion
  */
 public class DefaultWorker extends SwingWorker<Integer, String>{
-    final WorkerTask task;
-    Runnable endOfWork;
-    int[] taskIdx;
-    GUIInterface gui;
+    protected final WorkerTask task;
+    protected Runnable endOfWork;
+    protected int[] taskIdx;
+    protected GUIInterface gui;
     public static DefaultWorker execute(WorkerTask t, int maxTaskIdx) {
         DefaultWorker res = new DefaultWorker(t, maxTaskIdx, GUI.hasInstance()?GUI.getInstance():null);
         res.execute();
@@ -63,7 +63,8 @@ public class DefaultWorker extends SwingWorker<Integer, String>{
     protected Integer doInBackground() throws Exception {
         int count = 0;
         for (int i : taskIdx) {
-            task.run(i);
+            String message = task.run(i);
+            if (message!=null) publish(message);
             setProgress(100 * (++count) / taskIdx.length);
         }
         return 0;
@@ -92,6 +93,6 @@ public class DefaultWorker extends SwingWorker<Integer, String>{
         };
     }
     public static interface WorkerTask {
-        public void run(int i);
+        public String run(int i);
     }
 }

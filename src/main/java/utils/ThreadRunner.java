@@ -8,6 +8,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 /**
 Copyright (C) Jean Ollion
@@ -136,7 +140,9 @@ public class ThreadRunner {
             if (action instanceof ThreadAction2) ((ThreadAction2)action).tearDown();
             return errors;
         }
-        
+        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        CompletionService<String> completion = new ExecutorCompletionService<>(executor);
+        ... tester depuis la classe de test!!
         final ThreadRunner tr = new ThreadRunner(0, array.length, nThreadLimit);
         final AtomicInteger count = new AtomicInteger(0);
         for (int i = 0; i<tr.threads.length; i++) {
