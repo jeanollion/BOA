@@ -93,7 +93,7 @@ public class MicrochannelTracker implements TrackerSegmenter {
     @Override public void track(int structureIdx, List<StructureObject> parentTrack) {
         if (parentTrack.isEmpty()) return;
         TrackMateInterface<Spot> tmi = new TrackMateInterface(TrackMateInterface.defaultFactory());
-        Map<Integer, List<StructureObject>> map = TrackMateInterface.getChildrenMap(parentTrack, structureIdx);
+        Map<Integer, List<StructureObject>> map = StructureObjectUtils.getChildrenMap(parentTrack, structureIdx);
         logger.debug("tracking: {}", Utils.toStringList(map.entrySet(), e->"t:"+e.getKey()+"->"+e.getValue().size()));
         tmi.addObjects(map);
         double meanWidth = Utils.flattenMap(map).stream().mapToDouble(o->o.getBounds().getSizeX()).average().getAsDouble()*parentTrack.get(0).getScaleXY();

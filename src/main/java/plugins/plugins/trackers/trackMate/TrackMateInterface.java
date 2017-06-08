@@ -72,6 +72,17 @@ public class TrackMateInterface<S extends Spot> {
     public TrackMateInterface(SpotFactory<S> factory) {
         this.factory = factory;
     }
+    public void resetEdges() {
+        graph=null;
+    }
+    public void removeObject(Object3D o, int frame) {
+        S s = objectSpotMap.remove(o);
+        if (s!=null) {
+            if (graph!=null) graph.removeVertex(s);
+            spotObjectMap.remove(s);
+            collection.remove(s, frame);
+        }
+    }
     
     public void addObject(Object3D o, int frame) {
         S s = factory.toSpot(o, frame);
@@ -181,12 +192,6 @@ public class TrackMateInterface<S extends Spot> {
         }
         graph.removeVertex(from);
     }
-    public static Map<Integer, List<StructureObject>> getChildrenMap(List<StructureObject> parents, int structureIdx) {
-        /*Map<Integer, List<StructureObject>> res = new HashMap<>(parents.size());
-        for (StructureObject p : parents) res.put(p.getFrame(), p.getChildren(structureIdx));
-        return res;*/
-        return parents.stream().collect(Collectors.toMap(StructureObject::getFrame, p->p.getChildren(structureIdx)));
-    }
     public void setTrackLinks(Map<Integer, List<StructureObject>> objectsF) {
         setTrackLinks(objectsF, null);
     }
@@ -251,12 +256,17 @@ public class TrackMateInterface<S extends Spot> {
     
     public void setTrackLinks(Map<Integer, List<StructureObject>> objectsF, Collection<StructureObject> modifiedObjects) {
         if (objectsF==null || objectsF.isEmpty()) return;
-        if (graph==null) throw new RuntimeException("Graph not initialized");
-        logger.debug("number of links: {}", graph.edgeSet().size());
+        List<StructureObject> objects = Utils.flattenMap(objectsF);
         int minF = objectsF.keySet().stream().min((i1, i2)->Integer.compare(i1, i2)).get();
         int maxF = objectsF.keySet().stream().max((i1, i2)->Integer.compare(i1, i2)).get();
-        List<StructureObject> objects = Utils.flattenMap(objectsF);
         for (StructureObject o : objects) o.resetTrackLinks(o.getFrame()>minF, o.getFrame()<maxF, false, modifiedObjects);
+        if (graph==null) {
+            logger.error("Graph not initialized!");
+            return;
+        }
+        logger.debug("number of links: {}", graph.edgeSet().size());
+        
+        
 
         TreeSet<DefaultWeightedEdge> edgeBucket = new TreeSet(new Comparator<DefaultWeightedEdge>() {
             @Override public int compare(DefaultWeightedEdge arg0, DefaultWeightedEdge arg1) {

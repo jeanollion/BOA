@@ -147,6 +147,7 @@ public class DataExtractor {
                 TreeMap<Integer, List<Measurements>> parentMeasurements = new TreeMap<Integer, List<Measurements>>();
                 for (Entry<Integer, String[]> e : allMeasurementsSort.entrySet()) parentMeasurements.put(e.getKey(), dao.getMeasurements(e.getKey(), e.getValue()));
                 List<Measurements> currentMeasurements = dao.getMeasurements(currentStructureIdx, currentMeasurementNames);
+                Collections.sort(currentMeasurements);
                 for (Measurements m : currentMeasurements) {
                     StringBuilder line = getBaseLine(m, posIdx);
                     // add measurements from parents of the the current structure

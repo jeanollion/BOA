@@ -268,9 +268,9 @@ public class TrackLikelyhoodEstimator {
             if (track.size()>1) { 
                 distances = new double[frames.length-1];
                 int lim = track.size();
-                frames[0] = track.get(0).timePoint;
+                frames[0] = track.get(0).frame;
                 for (int i = 1; i<lim; ++i) {
-                    frames[i] = track.get(i).timePoint;
+                    frames[i] = track.get(i).frame;
                     distances[i-1] = Math.sqrt(track.get(i-1).squareDistanceTo(track.get(i)));
                 }
             } else distances = new double[0];

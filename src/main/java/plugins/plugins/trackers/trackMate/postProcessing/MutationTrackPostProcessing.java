@@ -54,17 +54,17 @@ import utils.clustering.InterfaceImpl;
  */
 public class MutationTrackPostProcessing {
     final TreeMap<StructureObject, List<StructureObject>> trackHeadTrackMap; // sorted by timePoint
-    final HashMap<Object3D, SpotWithinCompartment>  objectSpotMap;
+    final Map<Object3D, SpotWithinCompartment>  objectSpotMap;
     final Map<StructureObject, List<SpotWithinCompartment>> trackHeadSpotTrackMap;
     final HashMapGetCreate<List<SpotWithinCompartment>, Track> spotTrackMap;
-    final SpotPopulation pop;
+    final RemoveObjectCallBact removeObject;
     final int spotStructureIdx;
-    public MutationTrackPostProcessing(int structureIdx, List<StructureObject> parentTrack, SpotPopulation pop) {
-        this.pop=pop;
+    public MutationTrackPostProcessing(int structureIdx, List<StructureObject> parentTrack, Map<Object3D, SpotWithinCompartment> objectSpotMap, RemoveObjectCallBact removeObject) {
+        this.removeObject=removeObject;
         this.spotStructureIdx=structureIdx;
         trackHeadTrackMap = new TreeMap<StructureObject, List<StructureObject>>(getStructureObjectComparator());
         trackHeadTrackMap.putAll(StructureObjectUtils.getAllTracks(parentTrack, structureIdx));
-        objectSpotMap = pop.getObjectSpotMap();
+        this.objectSpotMap = objectSpotMap;
         trackHeadSpotTrackMap = new HashMap<StructureObject, List<SpotWithinCompartment>>(trackHeadTrackMap.size());
         for (Entry<StructureObject, List<StructureObject>> e : trackHeadTrackMap.entrySet()) {
             List<SpotWithinCompartment> l = new ArrayList<SpotWithinCompartment>(e.getValue().size());
@@ -75,6 +75,9 @@ public class MutationTrackPostProcessing {
             public Track create(List<SpotWithinCompartment> key) {return new Track(key);}
         });
         
+    }
+    public static interface RemoveObjectCallBact {
+        public void removeObject(StructureObject object);
     }
     
     public void connectShortTracksByDeletingLQSpot(double maxDist) {
@@ -163,7 +166,7 @@ public class MutationTrackPostProcessing {
                 // remove object
                 parentsToRelabel.add(objectToRemove.getParent());
                 objectToRemove.resetTrackLinks(true, true);
-                pop.removeSpot(objectToRemove);
+                removeObject.removeObject(objectToRemove);
                 objectToRemove.getParent().getChildren(spotStructureIdx).remove(objectToRemove);
             }
         }

@@ -118,7 +118,7 @@ public class LAPTrackerCore {
         for (DefaultWeightedEdge e : edgeList) {
             SpotWithinCompartment target = (SpotWithinCompartment)graph.getEdgeTarget(e);
             SpotWithinCompartment source = (SpotWithinCompartment)graph.getEdgeSource(e);
-            if (Math.abs(target.timePoint - source.timePoint)>1) {
+            if (Math.abs(target.frame - source.frame)>1) {
                 graph.removeEdge(e);
             }
             // if vertices become unlinked, remove them from graph
@@ -205,7 +205,7 @@ public class LAPTrackerCore {
         for (DefaultWeightedEdge e : graph.edgeSet()) {
             SpotWithinCompartment s1 = (SpotWithinCompartment)graph.getEdgeSource(e);
             SpotWithinCompartment s2 = (SpotWithinCompartment)graph.getEdgeTarget(e);
-            if ( (Math.abs(s1.timePoint-s2.timePoint)==1) && (!onlyHQHQ || (!s1.lowQuality && !s2.lowQuality)) ) distances.add(s1.squareDistanceTo(s2) );
+            if ( (Math.abs(s1.frame-s2.frame)==1) && (!onlyHQHQ || (!s1.lowQuality && !s2.lowQuality)) ) distances.add(s1.squareDistanceTo(s2) );
         }
         return Utils.toFloatArray(distances, false);
     }

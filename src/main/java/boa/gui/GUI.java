@@ -45,6 +45,7 @@ import core.Task;
 import dataStructure.configuration.ChannelImage;
 import dataStructure.configuration.MicroscopyField;
 import dataStructure.configuration.Structure;
+import dataStructure.containers.ImageDAO;
 import dataStructure.objects.DBMapMasterDAO;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
@@ -599,6 +600,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
     public List<Selection> getSelections() {
         return Utils.asList(selectionModel);
     }
+    public void addSelection(Selection s) {
+        this.selectionModel.addElement(s);
+    }
     
     protected void loadObjectTrees() {
         //TODO remember treepath if existing and set them in the new trees
@@ -946,6 +950,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         miscMenu = new javax.swing.JMenu();
         closeAllWindowsMenuItem = new javax.swing.JMenuItem();
         clearMemoryMenuItem = new javax.swing.JMenuItem();
+        clearTrackImages = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
 
@@ -1018,11 +1023,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
                     .addComponent(experimentJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 227, Short.MAX_VALUE)
                     .addComponent(hostName))
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(actionMicroscopyFieldJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 240, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(actionMicroscopyFieldJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 281, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addComponent(actionStructureJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                    .addComponent(actionJSP, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 199, Short.MAX_VALUE)
+                    .addComponent(actionJSP, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 243, Short.MAX_VALUE)
                     .addComponent(consoleJSP))
                 .addContainerGap())
         );
@@ -1031,18 +1036,17 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
             .addGroup(actionPanelLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(actionMicroscopyFieldJSP)
                     .addGroup(actionPanelLayout.createSequentialGroup()
                         .addComponent(actionStructureJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 175, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(actionJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 195, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(consoleJSP))
+                        .addComponent(consoleJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 299, Short.MAX_VALUE))
                     .addGroup(actionPanelLayout.createSequentialGroup()
                         .addComponent(hostName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(experimentJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 622, Short.MAX_VALUE)))
-                .addContainerGap())
+                        .addComponent(experimentJSP))
+                    .addComponent(actionMicroscopyFieldJSP)))
         );
 
         tabs.addTab("Actions", actionPanel);
@@ -1051,7 +1055,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         configurationPanel.setLayout(configurationPanelLayout);
         configurationPanelLayout.setHorizontalGroup(
             configurationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 702, Short.MAX_VALUE)
+            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 787, Short.MAX_VALUE)
         );
         configurationPanelLayout.setVerticalGroup(
             configurationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1351,7 +1355,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         });
         experimentMenu.add(refreshExperimentListMenuItem);
 
-        setSelectedExperimentMenuItem.setText("Set / Unset Selected");
+        setSelectedExperimentMenuItem.setText("Open / Close Selected Experiment");
         setSelectedExperimentMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 setSelectedExperimentMenuItemActionPerformed(evt);
@@ -1628,6 +1632,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
             }
         });
         miscMenu.add(clearMemoryMenuItem);
+
+        clearTrackImages.setText("Clear Track Images");
+        clearTrackImages.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                clearTrackImagesActionPerformed(evt);
+            }
+        });
+        miscMenu.add(clearTrackImages);
 
         mainMenu.add(miscMenu);
 
@@ -2154,7 +2166,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         }
     }//GEN-LAST:event_extractMeasurementMenuItemActionPerformed
     private void extractMeasurements(String dir, int... structureIdx) {
-        String file = dir+File.separator+db.getDBName()+Utils.toStringArray(structureIdx, "_", "", "_")+".xls";
+        String file = dir+File.separator+db.getDBName()+Utils.toStringArray(structureIdx, "_", "", "_")+".csv";
         logger.info("measurements will be extracted to: {}", file);
         Map<Integer, String[]> keys = db.getExperiment().getAllMeasurementNamesByStructureIdx(MeasurementKeyObject.class, structureIdx);
         DataExtractor.extractMeasurementObjects(db, file, getSelectedPositions(true), keys);
@@ -2482,6 +2494,14 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         logger.debug("trackStructureJCBActionPerformed: selected index: {} action event: {}", trackStructureJCB.getSelectedIndex(), evt);
         this.setStructure(this.trackStructureJCB.getSelectedIndex());
     }//GEN-LAST:event_trackStructureJCBActionPerformed
+
+    private void clearTrackImagesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearTrackImagesActionPerformed
+        if (!checkConnection()) return;
+        ImageDAO iDAO = db.getExperiment().getImageDAO();
+        for (String p : getSelectedPositions(true)) {
+            for (int sIdx = 0; sIdx<db.getExperiment().getStructureCount(); ++sIdx) iDAO.clearTrackImages(p, sIdx);
+        }
+    }//GEN-LAST:event_clearTrackImagesActionPerformed
     private void updateMongoDBBinActions() {
         boolean enableDump = false, enableRestore = false;
         String mPath = PropertyUtils.get(PropertyUtils.MONGO_BIN_PATH);
@@ -2645,6 +2665,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
     private javax.swing.JScrollPane actionStructureJSP;
     private javax.swing.JRadioButtonMenuItem bsonFormatMenuItem;
     private javax.swing.JMenuItem clearMemoryMenuItem;
+    private javax.swing.JMenuItem clearTrackImages;
     private javax.swing.JMenuItem closeAllWindowsMenuItem;
     private javax.swing.JMenuItem compactLocalDBMenuItem;
     private javax.swing.JScrollPane configurationJSP;

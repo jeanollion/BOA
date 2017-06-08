@@ -65,7 +65,7 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
     @Override public void track(int structureIdx, List<StructureObject> parentTrack) {
         if (parentTrack.isEmpty()) return;
         TrackMateInterface<Spot> tmi = new TrackMateInterface(TrackMateInterface.defaultFactory());
-        Map<Integer, List<StructureObject>> map = TrackMateInterface.getChildrenMap(parentTrack, structureIdx);
+        Map<Integer, List<StructureObject>> map = StructureObjectUtils.getChildrenMap(parentTrack, structureIdx);
         tmi.addObjects(map);
         double meanWidth = 0;
         double count = 0;

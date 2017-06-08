@@ -42,8 +42,8 @@ public class SpotWithinCompartment extends Spot {
     public static double poleDistanceFactor = 0; 
     protected Object3D object;
     public final SpotCompartiment compartiment;
-    protected final Localization localization;
-    public final int timePoint;
+    public final Localization localization;
+    public final int frame;
     boolean isLinkable=true;
     public boolean lowQuality=false;
     protected final DistanceComputationParameters distanceParameters;
@@ -54,7 +54,7 @@ public class SpotWithinCompartment extends Spot {
         getFeatures().put(Spot.QUALITY, object.getQuality());
         this.compartiment=compartiment;
         this.object=object;
-        this.timePoint=timePoint;
+        this.frame=timePoint;
         if (scaledCenter[1]<(compartiment.middleYLimits[0])) localization = Localization.UP;
         else if (scaledCenter[1]>=compartiment.middleYLimits[0] && scaledCenter[1]<=compartiment.middleYLimits[1]) localization = Localization.UPPER_MIDDLE;
         else if (scaledCenter[1]>compartiment.middleYLimits[1] && scaledCenter[1]<compartiment.middleYLimits[2]) localization = Localization.MIDDLE;
@@ -76,7 +76,7 @@ public class SpotWithinCompartment extends Spot {
     
     public SpotWithinCompartment duplicate() {
         double[] scaledCenter =  new double[]{getFeature(Spot.POSITION_X), getFeature(Spot.POSITION_Y), getFeature(Spot.POSITION_Z)};
-        SpotWithinCompartment res = new SpotWithinCompartment(object, timePoint, compartiment, scaledCenter, distanceParameters);
+        SpotWithinCompartment res = new SpotWithinCompartment(object, frame, compartiment, scaledCenter, distanceParameters);
         res.getFeatures().put(Spot.QUALITY, getFeature(Spot.QUALITY));
         res.getFeatures().put(Spot.RADIUS, getFeature(Spot.RADIUS));
         return res;
@@ -110,6 +110,7 @@ public class SpotWithinCompartment extends Spot {
     public double squareDistanceTo( final Spot s ) {
         if (s instanceof SpotWithinCompartment) {
             SpotWithinCompartment ss = (SpotWithinCompartment)s;
+            if (!distanceParameters.includeLQ && (lowQuality || ss.lowQuality)) return Double.POSITIVE_INFINITY;
             //if (!isLinkable && !ss.isLinkable) return Double.POSITIVE_INFINITY; // no link allowed between to spots that are not linkable
             if (this.compartiment.object.getFrame()>ss.compartiment.object.getFrame()) return ss.squareDistanceTo(this);
             else {
@@ -188,7 +189,7 @@ public class SpotWithinCompartment extends Spot {
     }*/
     
     @Override public String toString() {
-        return "spot:"+this.object.getLabel()+"t="+timePoint;
+        return "spot:"+this.object.getLabel()+"t="+frame;
     }
     
     protected static double getSquareDistance(SpotWithinCompartment s1, double[] offset1, SpotWithinCompartment s2, double[] offset2) {
@@ -208,7 +209,7 @@ public class SpotWithinCompartment extends Spot {
         double dPole2 = Math.abs(y2-offset2[1]);
         if (dPole2>dPole1) d+=poleDistanceFactor * (dPole2-dPole1);*/
         // additional gap penalty
-        d+= s1.distanceParameters.getSquareDistancePenalty(d, s1.timePoint, s2.timePoint);
+        d+= s1.distanceParameters.getSquareDistancePenalty(d, s1.frame, s2.frame);
         return d;
     }
     

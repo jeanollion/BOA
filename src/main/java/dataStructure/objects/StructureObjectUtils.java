@@ -459,7 +459,11 @@ public class StructureObjectUtils {
         if (list.isEmpty()) return Collections.EMPTY_MAP;
         return list.stream().collect(Collectors.groupingBy(o -> o.getIdx()));
     }
-    
+    public static Map<Integer, StructureObject> splitByFrame(Collection<StructureObject> list) {
+        Map<Integer, StructureObject> res= new HashMap<>(list.size());
+        for (StructureObject o : list) res.put(o.getFrame(), o);
+        return res;
+    }
     
     public static Map<String, List<StructureObject>> splitByFieldName(Collection<StructureObject> list) {
         if (list.isEmpty()) return Collections.EMPTY_MAP;
@@ -552,6 +556,10 @@ public class StructureObjectUtils {
     };
     public static Comparator<StructureObject> frameComparator() {
         return frameComparator;
+    }
+
+    public static Map<Integer, List<StructureObject>> getChildrenMap(List<StructureObject> parents, int structureIdx) {
+        return parents.stream().collect(Collectors.toMap(StructureObject::getFrame, (StructureObject p) -> p.getChildren(structureIdx)));
     }
     
 }

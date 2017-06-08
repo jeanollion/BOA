@@ -19,7 +19,7 @@
             </MenuItem>
             <MenuItem class="javax.swing.JMenuItem" name="setSelectedExperimentMenuItem">
               <Properties>
-                <Property name="text" type="java.lang.String" value="Set / Unset Selected"/>
+                <Property name="text" type="java.lang.String" value="Open / Close Selected Experiment"/>
               </Properties>
               <Events>
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="setSelectedExperimentMenuItemActionPerformed"/>
@@ -329,6 +329,14 @@
                 <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="clearMemoryMenuItemActionPerformed"/>
               </Events>
             </MenuItem>
+            <MenuItem class="javax.swing.JMenuItem" name="clearTrackImages">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="Clear Track Images"/>
+              </Properties>
+              <Events>
+                <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="clearTrackImagesActionPerformed"/>
+              </Events>
+            </MenuItem>
           </SubComponents>
         </Menu>
       </SubComponents>
@@ -390,11 +398,11 @@
                           <Component id="hostName" max="32767" attributes="0"/>
                       </Group>
                       <EmptySpace max="-2" attributes="0"/>
-                      <Component id="actionMicroscopyFieldJSP" min="-2" pref="240" max="-2" attributes="0"/>
+                      <Component id="actionMicroscopyFieldJSP" min="-2" pref="281" max="-2" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
                           <Component id="actionStructureJSP" alignment="0" pref="0" max="32767" attributes="0"/>
-                          <Component id="actionJSP" alignment="1" pref="199" max="32767" attributes="0"/>
+                          <Component id="actionJSP" alignment="1" pref="243" max="32767" attributes="0"/>
                           <Component id="consoleJSP" alignment="0" max="32767" attributes="0"/>
                       </Group>
                       <EmptySpace max="-2" attributes="0"/>
@@ -406,21 +414,20 @@
                   <Group type="102" alignment="0" attributes="0">
                       <EmptySpace max="-2" attributes="0"/>
                       <Group type="103" groupAlignment="0" attributes="0">
-                          <Component id="actionMicroscopyFieldJSP" alignment="0" max="32767" attributes="0"/>
-                          <Group type="102" alignment="0" attributes="0">
+                          <Group type="102" attributes="0">
                               <Component id="actionStructureJSP" min="-2" pref="175" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
                               <Component id="actionJSP" min="-2" pref="195" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
-                              <Component id="consoleJSP" max="32767" attributes="0"/>
+                              <Component id="consoleJSP" pref="299" max="32767" attributes="0"/>
                           </Group>
-                          <Group type="102" alignment="0" attributes="0">
+                          <Group type="102" attributes="0">
                               <Component id="hostName" min="-2" max="-2" attributes="0"/>
                               <EmptySpace max="-2" attributes="0"/>
-                              <Component id="experimentJSP" pref="622" max="32767" attributes="0"/>
+                              <Component id="experimentJSP" max="32767" attributes="0"/>
                           </Group>
+                          <Component id="actionMicroscopyFieldJSP" alignment="0" max="32767" attributes="0"/>
                       </Group>
-                      <EmptySpace max="-2" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -588,7 +595,7 @@
           <Layout>
             <DimensionLayout dim="0">
               <Group type="103" groupAlignment="0" attributes="0">
-                  <Component id="configurationJSP" alignment="0" pref="702" max="32767" attributes="0"/>
+                  <Component id="configurationJSP" alignment="0" pref="787" max="32767" attributes="0"/>
               </Group>
             </DimensionLayout>
             <DimensionLayout dim="1">

@@ -22,8 +22,11 @@ import boa.gui.imageInteraction.IJImageDisplayer;
 import boa.gui.imageInteraction.IJImageWindowManager;
 import boa.gui.imageInteraction.ImageObjectInterface;
 import boa.gui.imageInteraction.ImageWindowManager;
+import core.Task;
+import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.MorphiumObjectDAO;
+import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import ij.ImagePlus;
@@ -48,21 +51,21 @@ import utils.ThreadRunner.ThreadAction;
  * @author jollion
  */
 public class TestLAPTrackerMutations {
-    MorphiumMasterDAO db;
+    MasterDAO db;
     List<StructureObject> parentTrack;
     static final int microchannelIdx = 0;
     static final int bacteriaIdx = 1;
     static final int mutationIdx = 2;
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
-        final String dbName = "boa_fluo170207_150ms";
-        final int fieldIdx = 0;
+        final String dbName = "fluo160408_MutH";
+        final int fieldIdx = 1;
         //final String dbName = "boa_fluo160428";
         //final int fieldIdx = 0;
         final int mcIdx = 0;
         TestLAPTrackerMutations t = new TestLAPTrackerMutations();
         
-        t.init(dbName, fieldIdx, mcIdx, 0, 10);
+        t.init(dbName, fieldIdx, mcIdx, 0, 8000);
         t.testLAPTracking();
         
         // multithread version testing
@@ -116,15 +119,16 @@ public class TestLAPTrackerMutations {
     
     
     public void init(String dbName, int fieldIdx, int mcIdx, int tStart, int tEnd) {
-        db = new MorphiumMasterDAO(dbName);
+        db = new Task(dbName).getDB();
         logger.info("Experiment: {} retrieved from db: {}", db.getExperiment().getName(), dbName);
         //logger.debug("PositionName: {}", db.getExperiment().getMicroscopyField(fieldIdx).getName());
-        MorphiumObjectDAO dao = db.getDao(db.getExperiment().getPosition(fieldIdx).getName());
-        parentTrack = new ArrayList<StructureObject>(tEnd-tStart+1);
-        for (int t = tStart; t<=tEnd; ++t) {
-            StructureObject root = dao.getRoot(t);
-            if (root==null) continue;
-            StructureObject mc = root.getChildren(microchannelIdx).get(mcIdx);
+        ObjectDAO dao = db.getDao(db.getExperiment().getPosition(fieldIdx).getName());
+        
+        List<StructureObject> rootTrack = new ArrayList<>(dao.getRoots());
+        rootTrack.removeIf(o->o.getFrame()<tStart ||o.getFrame()>tEnd);
+        parentTrack = new ArrayList<StructureObject>(rootTrack.size());
+        for (StructureObject r : rootTrack) {
+            StructureObject mc = r.getChildren(microchannelIdx).get(mcIdx);
             parentTrack.add(mc);
             
             // load all the data (for perf evalutation)

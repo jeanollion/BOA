@@ -26,6 +26,7 @@ public class DistanceComputationParameters {
         public double gapDistancePenalty = 0;
         private double gapSquareDistancePenalty;
         public double alternativeDistance;
+        public boolean includeLQ = true;
         public DistanceComputationParameters() {
             
         }

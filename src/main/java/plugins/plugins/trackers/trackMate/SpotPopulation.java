@@ -74,8 +74,8 @@ public class SpotPopulation {
         int max = 0;
         int min = Integer.MAX_VALUE;
         for (SpotWithinCompartment s : objectSpotMap.values()) {
-            if (s.timePoint>max) max = s.timePoint;
-            if (s.timePoint<min) min = s.timePoint;
+            if (s.frame>max) max = s.frame;
+            if (s.frame<min) min = s.frame;
         }
         return new int[]{min, max};
     }
@@ -95,7 +95,6 @@ public class SpotPopulation {
                 continue;
             }
             SpotCompartiment compartiment = compartimentMap.getAndCreateIfNecessary(parent);
-            compartimentMap.put(parent, compartiment);
             double[] center = o.getCenter();
             if (center==null) {
                 if (intensityMap==null) intensityMap = container.getRawImage(spotSturctureIdx);

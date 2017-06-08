@@ -160,10 +160,12 @@ public class Measurements implements Comparable<Measurements>{
         else if (structureIdx>o.structureIdx) return 1;
         else {
             //if (indices==null) logger.error("indices null error: {}", this);
-            for (int i  = 0; i<indices.length; ++i) {
+            int lMin = Math.min(indices.length, o.indices.length);
+            for (int i  = 0; i<lMin; ++i) {
                 if (indices[i]<o.indices[i]) return -1;
                 if (indices[i]>o.indices[i]) return 1;
             }
+            if (indices.length!=o.indices.length) return lMin==indices.length?-1:1;
         }
         return 0;
         

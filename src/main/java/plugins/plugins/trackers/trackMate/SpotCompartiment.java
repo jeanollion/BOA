@@ -183,7 +183,7 @@ public class SpotCompartiment {
         if (prevDC.isEmpty()) return;
         Collections.sort(prevDC, (o1, o2)->Integer.compare(o1.getBounds().getyMin(), o2.getBounds().getyMin()));
         this.upperDaughterCell = prevDC.get(0).getTrackHead().equals(object.getTrackHead());
-        logger.debug("object: {}, prev siblings: {}, upper?: {}", object, prevDC, upperDaughterCell);
+        //logger.debug("object: {}, prev siblings: {}, upper?: {}", object, prevDC, upperDaughterCell);
         //object.setAttribute("upper daughter cell", upperDaughterCell);
     }
     

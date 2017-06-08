@@ -77,9 +77,9 @@ public class MutationTrackMeasurements implements Measurement {
         res.add(new MeasurementKeyObject("TrackHeadIndices", structureIdx));
         
         // localization
-        res.add(new MeasurementKeyObject("YCoordProportional", structureIdx));
-        res.add(new MeasurementKeyObject("XCoordRelToCenter", structureIdx));
-        res.add(new MeasurementKeyObject("YCoordRelToCenter", structureIdx));
+        res.add(new MeasurementKeyObject("CoordProportionalY", structureIdx));
+        res.add(new MeasurementKeyObject("CoordRelToCenterX", structureIdx));
+        res.add(new MeasurementKeyObject("CoordRelToCenterY", structureIdx));
 
         // intensity
         res.add(new MeasurementKeyObject("MeanIntensity", structureIdx));
@@ -107,7 +107,8 @@ public class MutationTrackMeasurements implements Measurement {
                 }
             }
             Image intensities = parent.getRawImage(mutation.getSelectedStructureIdx());
-            double[] objectCenter = object.getObject().getMassCenter(intensities, false);
+            double[] objectCenter = object.getObject().getCenter();
+            if (objectCenter==null) objectCenter = object.getObject().getMassCenter(intensities, false);
             object.getMeasurements().setValue("MeanIntensity", BasicMeasurements.getMeanValue(object.getObject(), intensities, true));
             object.getMeasurements().setValue("SumIntensity", BasicMeasurements.getSum(object.getObject(), intensities, true));
             
@@ -120,10 +121,10 @@ public class MutationTrackMeasurements implements Measurement {
                 int nextTP = parentBacteria.getNextDivisionTimePoint();
                 object.getMeasurements().setValue("NextDivisionFrame", nextTP>=0?nextTP:null );
 
-                object.getMeasurements().setValue("YCoordProportional", getYProportionalPositionWithinContainer(parentBacteria.getObject(), objectCenter[1]));
+                object.getMeasurements().setValue("CoordProportionalY", getYProportionalPositionWithinContainer(parentBacteria.getObject(), objectCenter[1]));
                 double[] parentCenter = parentBacteria.getObject().getGeomCenter(false);
-                object.getMeasurements().setValue("YCoordRelToCenter", (objectCenter[1]-parentCenter[1]));
-                object.getMeasurements().setValue("XCoordRelToCenter", (objectCenter[0]-parentCenter[0]));
+                object.getMeasurements().setValue("CoordRelToCenterY", (objectCenter[1]-parentCenter[1]));
+                object.getMeasurements().setValue("CoordRelToCenterX", (objectCenter[0]-parentCenter[0]));
             }
         }
     }
