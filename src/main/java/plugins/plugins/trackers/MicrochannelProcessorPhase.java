@@ -82,14 +82,11 @@ public class MicrochannelProcessorPhase implements TrackerSegmenter {
     public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
         // segmentation
         final Result[] boundingBoxes = new Result[parentTrack.size()];
-        ThreadAction<StructureObject> ta = new ThreadAction<StructureObject>() {
-            @Override
-            public void run(StructureObject parent, int idx, int threadIdx) {
-                boundingBoxes[idx] = getSegmenter().segment(preFilters.filter(parent.getRawImage(structureIdx), parent));
-                parent.setChildrenObjects(postFilters.filter(boundingBoxes[idx].getObjectPopulation(parent.getRawImage(structureIdx), false), structureIdx, parent), structureIdx); // no Y - shift here because the mean shift is added afterwards
-            }
+        ThreadAction<StructureObject> ta = (StructureObject parent, int idx) -> {
+            boundingBoxes[idx] = getSegmenter().segment(preFilters.filter(parent.getRawImage(structureIdx), parent));
+            parent.setChildrenObjects(postFilters.filter(boundingBoxes[idx].getObjectPopulation(parent.getRawImage(structureIdx), false), structureIdx, parent), structureIdx); // no Y - shift here because the mean shift is added afterwards
         };
-        ThreadRunner.execute(parentTrack, ta);
+        ThreadRunner.execute(parentTrack, false, ta);
         Map<StructureObject, Result> parentBBMap = new HashMap<>(boundingBoxes.length);
         for (int i = 0; i<boundingBoxes.length; ++i) parentBBMap.put(parentTrack.get(i), boundingBoxes[i]);
         

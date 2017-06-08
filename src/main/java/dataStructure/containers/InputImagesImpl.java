@@ -24,7 +24,6 @@ import plugins.TransformationTimeIndependent;
 import utils.ArrayUtil;
 import utils.ThreadRunner;
 import utils.ThreadRunner.ThreadAction;
-import utils.ThreadRunner.ThreadAction2;
 
 /**
  *
@@ -134,13 +133,10 @@ public class InputImagesImpl implements InputImages {
             image.closeImage();
             logger.debug("apply transfo: frame {}", idx);
         };*/
-        ThreadAction<InputImage> ta = new ThreadAction<InputImage>() {
-            @Override
-            public void run(InputImage image, int idx, int threadIdx) {
-                image.getImage();
-                image.closeImage();
-                //logger.debug("apply transfo: frame {}", idx);
-            }
+        ThreadAction<InputImage> ta = (InputImage image, int idx) -> {
+            image.getImage();
+            image.closeImage();
+            //logger.debug("apply transfo: frame {}", idx);
         };
         for (int c = 0; c<getChannelNumber(); ++c) {
             //logger.debug("apply transfo: channel {}", c);

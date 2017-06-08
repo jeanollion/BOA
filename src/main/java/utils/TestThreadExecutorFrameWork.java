@@ -21,6 +21,7 @@ import boa.gui.GUI;
 import boa.gui.GUIInterface;
 import core.DefaultWorker;
 import core.DefaultWorker.WorkerTask;
+import core.ProgressCallback;
 import image.Image;
 import image.ImageFloat;
 import java.beans.PropertyChangeEvent;
@@ -48,20 +49,26 @@ public class TestThreadExecutorFrameWork {
         Worker w2 = new Worker("B", 10);
         w2.execute();
     }
-    public static Callable<String> getTask(int taskNumber) {
+    public static Callable<String> getTask(String name, int taskNumber) {
         return () -> {
-            long t0 = System.currentTimeMillis();
-            Image im = new ImageFloat("", 200, 200, 10);
-            Filters.open(im, im, Filters.getNeighborhood(5, 2, im));
-            long t1 = System.currentTimeMillis();
-            return taskNumber+":"+(t1-t0)+"ms";
+            return runTask(name, taskNumber, null);
         };
     }
-    static class Worker extends SwingWorker<Integer, String> {
+    public static String runTask(String name, int taskNumber, ProgressCallback pcb) {
+        long t0 = System.currentTimeMillis();
+        Image im = new ImageFloat("", 500, 500, 10);
+        Filters.open(im, im, Filters.getNeighborhood(3, 2, im));
+        long t1 = System.currentTimeMillis();
+        String message = name+":"+taskNumber+":"+(t1-t0)+"ms";
+        if (pcb!=null) pcb.log(message);
+        return message;
+    }
+    static class Worker extends SwingWorker<Integer, String> implements ProgressCallback {
         final GUIInterface gui = GUI.getInstance();
-        CompletionService<String> completion;
         final int maxTaskIdx;
         final String name;
+        int totalTasks = 0;
+        int currentTask= 0;
         public Worker(String name, int maxTaskIdx) {
             this.maxTaskIdx=maxTaskIdx;
             this.name = name;
@@ -80,33 +87,13 @@ public class TestThreadExecutorFrameWork {
         
         @Override
         protected Integer doInBackground() throws Exception {
-            completion = new ExecutorCompletionService<>(executor);
-            
-            int count = 0;
-            for (int i = 0; i<maxTaskIdx; ++i) {
-                publish(name+" submiting task: "+i);
-                completion.submit(getTask(i));
-            }
-            for (int i = 0; i<maxTaskIdx; ++i) {
-                publish(name+" retrieving task: "+(i));
-                int p = 100 * (++count) / (maxTaskIdx*2);
-                publish(name+completion.take().get()+"/"+p);
-                //setProgress(p);
-            }
+            List<Integer> tasks = Utils.toList(ArrayUtil.generateIntegerArray(maxTaskIdx));
+            ThreadRunner.execute(tasks, false, (taskIdx, idx)->{runTask(name, taskIdx, this);}, executor, this);
             publish(name+" end of first round");
-            for (int i = maxTaskIdx; i<maxTaskIdx*2; ++i) {
-                publish(name+" submiting task: "+(i));
-                completion.submit(getTask(i));
-            }
-            for (int i = maxTaskIdx; i<maxTaskIdx*2; ++i) {
-                publish(name + " retrieving task: "+(i));
-                int p = 100 * (++count) / (maxTaskIdx*2);
-                publish(name+completion.take().get()+"/p:"+p);
-                
-                //setProgress(p);
-            }
+            ThreadRunner.execute(tasks, false, (taskIdx, idx)->{runTask(name, taskIdx, this);}, executor, this);
             publish(name+" end of second round");
-            return 100;
+            
+            return 0;
         }
         
         @Override
@@ -119,6 +106,21 @@ public class TestThreadExecutorFrameWork {
         @Override 
         public void done() {
             gui.setMessage(name + " all processes done!");
+        }
+
+        @Override
+        public void incrementTaskNumber(int subtask) {
+            this.totalTasks+=subtask;
+        }
+
+        @Override
+        public void incrementProgress() {
+            setProgress(100*(++this.currentTask)/totalTasks);
+        }
+
+        @Override
+        public void log(String message) {
+            publish(message);
         }
     }
 }

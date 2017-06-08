@@ -314,12 +314,10 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                             Processor.processStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.getObjectDAO(), parents, null);
                             Processor.trackStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.getObjectDAO(), true, root.generator.getSelectedTrackHeads());
                             */
-                            ThreadRunner.execute(root.generator.getSelectedTrackNodes(), new ThreadAction<TrackNode>() {
-                                @Override public void run(TrackNode n, int idx, int threadIdx) {
-                                    List<Pair<String, Exception>> errors = Processor.executeProcessingScheme(n.getTrack(), structureIdx, false, true);
-                                    logger.debug("errors: {}", errors.size());
-                                    for (Pair<String, Exception> e : errors) logger.error(e.key, e.value);
-                                }
+                            ThreadRunner.execute(root.generator.getSelectedTrackNodes(), false, (TrackNode n, int idx) -> {
+                                List<Pair<String, Exception>> errors = Processor.executeProcessingScheme(n.getTrack(), structureIdx, false, true);
+                                logger.debug("errors: {}", errors.size());
+                                for (Pair<String, Exception> e : errors) logger.error(e.key, e.value);
                             });
                             // reload tree
                             root.generator.controller.updateParentTracks(root.generator.controller.getTreeIdx(trackHead.getStructureIdx()));
@@ -344,8 +342,8 @@ public class TrackNode implements TrackNodeInterface, UIContainer {
                             /*Experiment xp = root.generator.getExperiment();
                             Processor.trackStructure(structureIdx, xp, xp.getMicroscopyField(trackHead.getFieldName()), root.generator.getObjectDAO(), true, root.generator.getSelectedTrackHeads());
                             */
-                            ThreadRunner.execute(root.generator.getSelectedTrackNodes(), new ThreadAction<TrackNode>() {
-                                @Override public void run(TrackNode n, int idx, int threadIdx) {
+                            ThreadRunner.execute(root.generator.getSelectedTrackNodes(), false, new ThreadAction<TrackNode>() {
+                                @Override public void run(TrackNode n, int idx) {
                                     List<Pair<String, Exception>> errors = Processor.executeProcessingScheme(n.getTrack(), structureIdx, true, false);
                                     for (Pair<String, Exception> e : errors) logger.error(e.key, e.value);
                                 }

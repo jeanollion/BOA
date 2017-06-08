@@ -363,7 +363,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     }
 
     @Override
-    public void addSubTask(int subtask) {
+    public void incrementTaskNumber(int subtask) {
         if (taskCounter!=null) this.taskCounter[1]+=subtask;
     }
 

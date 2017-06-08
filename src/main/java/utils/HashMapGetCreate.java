@@ -46,6 +46,19 @@ public class HashMapGetCreate<K, V> extends HashMap<K, V> {
         }
         return v;
     }
+    public V getAndCreateIfNecessarySync(K key) {
+        V v = super.get(key);
+        if (v==null) {
+            synchronized(this) {
+                v = super.get(key);
+                if (v==null) {
+                    v = factory.create(key);
+                    super.put(key, v);
+                }
+            }
+        }
+        return v;
+    }
     public static interface Factory<K, V> {
         public V create(K key);
     }

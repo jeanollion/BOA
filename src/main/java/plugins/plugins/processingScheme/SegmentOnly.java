@@ -99,12 +99,10 @@ public class SegmentOnly implements ProcessingScheme {
             ObjectPopulation pop = segment(parentTrack.get(0), structureIdx, segParentStructureIdx);
             for (StructureObject parent : parentTrack) parent.setChildrenObjects(pop.duplicate(), structureIdx);
         } else {
-            ThreadAction<StructureObject> ta = new ThreadAction<StructureObject>() {
-                @Override public void run(StructureObject parent, int idx, int threadIdx) {
-                    parent.setChildrenObjects(segment(parent, structureIdx, segParentStructureIdx), structureIdx);
-                }
+            ThreadAction<StructureObject> ta = (StructureObject parent, int idx) -> {
+                parent.setChildrenObjects(segment(parent, structureIdx, segParentStructureIdx), structureIdx);
             };
-            ThreadRunner.execute(parentTrack, ta);
+            ThreadRunner.execute(parentTrack, false, ta);
             //for (StructureObject parent : parentTrack) parent.setChildrenObjects(segment(parent, structureIdx), structureIdx);
         }
         

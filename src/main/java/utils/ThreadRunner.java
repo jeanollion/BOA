@@ -4,15 +4,20 @@
  */
 package utils;
 import static core.Processor.logger;
+import core.ProgressCallback;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 /**
 Copyright (C) Jean Ollion
 
@@ -121,104 +126,133 @@ public class ThreadRunner {
     public static int getMaxCPUs() {
         return Runtime.getRuntime().availableProcessors();
     }
-    
     public static <T> List<Pair<String, Exception>> execute(final T[] array, final boolean setToNull, final ThreadAction<T> action) {
-        return execute(array, setToNull, 0, action);
+        return execute(array, setToNull, action, null, null);
+    }
+    public static <T> List<Pair<String, Exception>> execute(final T[] array, final boolean setToNull, final ThreadAction<T> action, ProgressCallback pcb) {
+        return execute(array, setToNull, action, null, pcb);
     }
     
-    public static <T> List<Pair<String, Exception>> execute(final T[] array, final boolean setToNull, final int nThreadLimit, final ThreadAction<T> action) {
+    public static <T> List<Pair<String, Exception>> execute(T[] array, final boolean setToNull, final ThreadAction<T> action, ExecutorService executor, ProgressCallback pcb) {
         if (array==null) return Collections.EMPTY_LIST;
         if (array.length==0) return Collections.EMPTY_LIST;
         if (array.length==1) {
-            if (action instanceof ThreadAction2) ((ThreadAction2)action).setUp();
             List<Pair<String, Exception>> errors = new ArrayList<>(1);
             try {
-                action.run(array[0], 0, 0);
+                action.run(array[0], 0);
             } catch (Exception e) {
                 errors.add(new Pair(array[0].toString(), e));
             }
-            if (action instanceof ThreadAction2) ((ThreadAction2)action).tearDown();
             return errors;
         }
-        ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
-        CompletionService<String> completion = new ExecutorCompletionService<>(executor);
-        ... tester depuis la classe de test!!
-        final ThreadRunner tr = new ThreadRunner(0, array.length, nThreadLimit);
-        final AtomicInteger count = new AtomicInteger(0);
-        for (int i = 0; i<tr.threads.length; i++) {
-            final int threadIdx = i;
-            //final ThreadAction<T> localAction = action
-            tr.threads[i] = new Thread(
-                new Runnable() {
-                    public void run() { 
-                        if (action instanceof ThreadAction2) ((ThreadAction2)action).setUp();
-                        for (int idx = tr.ai.getAndIncrement(); idx<tr.end; idx = tr.ai.getAndIncrement()) {
-                            try {
-                                action.run(array[idx], idx,threadIdx );
-                            } catch (Exception e) {
-                                //logger.debug("ta {}", e);
-                                synchronized(tr.errors) {
-                                    tr.errors.add(new Pair(array[idx].toString(), e));
-                                }
-                            }
-                            int currentCount = count.incrementAndGet();
-                            //logger.debug("Processed: {}/{}", currentCount, array.length);
-                            if (setToNull) array[idx]=null;
-                        }
-                        if (action instanceof ThreadAction2) ((ThreadAction2)action).tearDown();
-                    }
+        if (executor==null) executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        CompletionService<Pair<String, Exception>> completion = new ExecutorCompletionService<>(executor);
+        final List<Pair<String, Exception>> errors = new ArrayList<>();
+        int idx=0;
+        for (T e : array) {
+            final int i = idx;
+            completion.submit(()->{
+                try {
+                    action.run(e, i);
+                } catch (Exception ex) {
+                    return new Pair(e.toString(), ex);
+                } finally {
+                    return null;
                 }
-            );
+            });
+            if (setToNull) array[idx]=null;
+            ++idx;
         }
-        tr.startAndJoin();
-        return tr.errors;
+        if (pcb!=null) pcb.incrementTaskNumber(idx);
+        for (int i = 0; i<idx; ++i) {
+            Pair<String, Exception> e;
+            try {
+                e = completion.take().get();
+                if (e!=null) errors.add(e);
+            } catch (InterruptedException|ExecutionException ex) {
+                errors.add(new Pair("Execution exception", ex));
+            }
+            if (pcb!=null) pcb.incrementProgress();
+        }
+        return errors;
     }
-    public static <T> List<Pair<String, Exception>> execute(Collection<T> array, final ThreadAction<T> action) {
+    public static <T> List<Pair<String, Exception>> execute(Collection<T> array, boolean removeElements, final ThreadAction<T> action) {
+        return execute(array, removeElements, action, null, null);
+    }
+    public static <T> List<Pair<String, Exception>> execute(Collection<T> array, boolean removeElements, final ThreadAction<T> action, ProgressCallback pcb) {
+        return execute(array, removeElements, action, null, pcb);
+    }
+    public static <T> List<Pair<String, Exception>> execute(Collection<T> array, boolean removeElements, final ThreadAction<T> action,  ExecutorService executor, ProgressCallback pcb) {
         if (array==null) return Collections.EMPTY_LIST;
         if (array.isEmpty()) return Collections.EMPTY_LIST;
         if (array.size()==1) {
-            if (action instanceof ThreadAction2) ((ThreadAction2)action).setUp();
             List<Pair<String, Exception>> errors = new ArrayList<>(1);
+            T e = array.iterator().next();
             try {
-                action.run(array.iterator().next(), 0, 0);
-            } catch (Exception e) {              
-                errors.add(new Pair(array.iterator().next().toString(), e));           
+                action.run(array.iterator().next(), 0);
+            } catch (Exception ex) {              
+                errors.add(new Pair(e.toString(), ex));           
             }
-            if (action instanceof ThreadAction2) ((ThreadAction2)action).tearDown();
             return errors;
         }
-        final List<T> list = (array instanceof List) ? (List)array : new ArrayList(array);
-        final ThreadRunner tr = new ThreadRunner(0, list.size(), 0);
-        for (int i = 0; i<tr.threads.length; i++) {
-            final int threadIdx = i;
-            //final ThreadAction<T> localAction = action
-            tr.threads[i] = new Thread(
-                new Runnable() {
-                    public void run() { 
-                        if (action instanceof ThreadAction2) ((ThreadAction2)action).setUp();
-                        for (int idx = tr.ai.getAndIncrement(); idx<tr.end; idx = tr.ai.getAndIncrement()) {
-                            try {
-                                action.run(list.get(idx), idx, threadIdx);
-                            } catch (Exception e) {
-                                synchronized(tr.errors) {
-                                    tr.errors.add(new Pair(list.get(idx).toString(), e));
-                                }
-                            }
-                        }
-                        if (action instanceof ThreadAction2) ((ThreadAction2)action).tearDown();
-                    }
-                }
-            );
+        if (executor==null) executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+        CompletionService<Pair<String, Exception>> completion = new ExecutorCompletionService<>(executor);
+        final List<Pair<String, Exception>> errors = new ArrayList<>();
+        int count=0;
+        Iterator<T> it = array.iterator();
+        while(it.hasNext()) {
+            T e = it.next();
+            final int i = count;
+            completion.submit(()->{
+                try {
+                    //if (pcb!=null) pcb.log("will run process: "+i+" -> "+e);
+                    action.run(e, i);
+                    //if (pcb!=null) pcb.log("has run process: "+i+" -> "+e);
+                } catch (Exception ex) {
+                    //logger.debug("error on: "+e, ex);
+                    return new Pair(e.toString(), ex);
+                } 
+                return null;
+            });
+            if (removeElements) it.remove();
+            ++count;
         }
-        tr.startAndJoin();
-        return tr.errors;
+        if (pcb!=null) pcb.incrementTaskNumber(count);
+        for (int i = 0; i<count; ++i) {
+            Pair<String, Exception> e;
+            try {
+                e = completion.take().get();
+                if (e!=null) errors.add(e);
+            } catch (InterruptedException|ExecutionException ex) {
+                errors.add(new Pair("Execution exception", ex));
+            }
+            if (pcb!=null) pcb.incrementProgress();
+        }
+        return errors;
     }
     
     public static interface ThreadAction<T> {
-        public void run(T object, int idx, int threadIdx);
+        public void run(T object, int idx);
     }
-    public static interface ThreadAction2<T> extends ThreadAction<T> {
-        public void setUp();
-        public void tearDown();
+    
+    public static ProgressCallback loggerProgressCallback(final org.slf4j.Logger logger) {
+        return new ProgressCallback() {
+            int subTask = 0;
+            int taskCount = 0;
+            @Override
+            public void incrementTaskNumber(int subtask) {
+                this.subTask+=subtask;
+            }
+
+            @Override
+            public void incrementProgress() {
+                logger.debug("Current: {}/{}", ++taskCount, subTask);
+            }
+
+            @Override
+            public void log(String message) {
+                logger.debug(message);
+            }
+        };
     }
 }

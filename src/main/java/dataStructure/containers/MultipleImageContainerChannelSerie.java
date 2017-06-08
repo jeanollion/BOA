@@ -71,7 +71,7 @@ public class MultipleImageContainerChannelSerie extends MultipleImageContainer {
                 }
             }
         }
-        logger.debug("tpMap: {}", timePointCZT);
+        //logger.debug("tpMap: {}", timePointCZT);
     }
     private static String getKey(int c, int z, int t) {
         return new StringBuilder(11).append(c).append(";").append(z).append(";").append(t).toString();

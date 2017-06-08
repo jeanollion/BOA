@@ -183,10 +183,10 @@ public class Processor {
         }
         logger.debug("ex ps: structure: {}, allParentTracks: {}", structureIdx, allParentTracks.size());
         // one thread per track
-        ThreadAction<List<StructureObject>> ta = (List<StructureObject> pt, int idx, int threadIdx) -> {
+        ThreadAction<List<StructureObject>> ta = (List<StructureObject> pt, int idx) -> {
             execute(xp.getStructure(structureIdx).getProcessingScheme(), structureIdx, pt, trackOnly, deleteChildren, dao);
         };
-        List<Pair<String, Exception>> exceptions = ThreadRunner.execute(new ArrayList<List<StructureObject>> (allParentTracks.values()), ta);
+        List<Pair<String, Exception>> exceptions = ThreadRunner.execute(new ArrayList<List<StructureObject>> (allParentTracks.values()), false, ta);
         
         ArrayList<StructureObject> children = new ArrayList<StructureObject>();
         for (StructureObject p : parentTrack) children.addAll(p.getChildren(structureIdx));
@@ -261,7 +261,7 @@ public class Processor {
                     }
                 }
                 GUI.log("Executing: #"+actionPool.size()+" measurements");
-                List<Pair<String, Exception>> errorsLocal = ThreadRunner.execute(actionPool, (Pair<Measurement, StructureObject> p, int idx, int threadIdx) -> p.key.performMeasurement(p.value));
+                List<Pair<String, Exception>> errorsLocal = ThreadRunner.execute(actionPool, false, (Pair<Measurement, StructureObject> p, int idx) -> p.key.performMeasurement(p.value));
                 errors.addAll(errorsLocal);
             /*} else {
                 ThreadAction<List<StructureObject>> ta = new ThreadAction<List<StructureObject>>() {
@@ -317,7 +317,7 @@ public class Processor {
         imageDAO.clearTrackImages(dao.getPositionName(), parentStructureIdx);
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(dao.getRoots(), parentStructureIdx);
         GUI.log("Generating Image: #tracks: "+allTracks.size()+", child structures: "+Utils.toStringArray(childStructureIdx));
-        ThreadRunner.execute(allTracks.values(), (List<StructureObject> track, int idx, int threadIdx) -> {
+        ThreadRunner.execute(allTracks.values(), false, (List<StructureObject> track, int idx) -> {
             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, parentStructureIdx);
             for (int childSIdx : cSI) {
                 //GUI.log("Generating Image for track:"+track.get(0)+", structureIdx:"+childSIdx+" ...");

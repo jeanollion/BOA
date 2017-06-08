@@ -587,8 +587,8 @@ public class MorphiumObjectDAO implements ObjectDAO {
         if (objects.isEmpty()) return;
         long t1 = System.currentTimeMillis();
         if (!(objects instanceof Set)) Utils.removeDuplicates(objects, false);
-        ThreadRunner.execute(objects, new ThreadRunner.ThreadAction<StructureObject>() {
-            public void run(StructureObject object, int idx, int threadIdx) {
+        ThreadRunner.execute(objects, false, new ThreadRunner.ThreadAction<StructureObject>() {
+            public void run(StructureObject object, int idx) {
                 upsertMeasurement(object);
             }
         });

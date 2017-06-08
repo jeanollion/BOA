@@ -116,7 +116,7 @@ public class MicrochannelTracker implements TrackerSegmenter {
         
         Image[] inputImages = new Image[parentTrack.size()];
         MicrochannelSegmenter[] segmenters = new MicrochannelSegmenter[parentTrack.size()];
-        ThreadRunner.execute(parentTrack, (StructureObject parent, int idx, int threadIdx) -> {
+        ThreadRunner.execute(parentTrack, false, (StructureObject parent, int idx) -> {
             inputImages[idx] = preFilters.filter(parent.getRawImage(structureIdx), parent);
             segmenters[idx] = getSegmenter();
         });
@@ -134,7 +134,7 @@ public class MicrochannelTracker implements TrackerSegmenter {
         }
         ThreadAction<StructureObject> ta = new ThreadAction<StructureObject>() {
             @Override
-            public void run(StructureObject parent, int idx, int threadIdx) {
+            public void run(StructureObject parent, int idx) {
                 boundingBoxes[idx] = segmenters[idx].segment(inputImages[idx]);
                 if (boundingBoxes[idx]==null) parent.setChildren(new ArrayList<>(), structureIdx); // if not set and call to getChildren() -> DAO will set old children
                 else parent.setChildrenObjects(postFilters.filter(boundingBoxes[idx].getObjectPopulation(inputImages[idx], false), structureIdx, parent), structureIdx); // no Y - shift here because the mean shift is added afterwards
@@ -142,7 +142,7 @@ public class MicrochannelTracker implements TrackerSegmenter {
                 segmenters[idx]=null;
             }
         };
-        List<Pair<String, Exception>> exceptions = ThreadRunner.execute(parentTrack, ta);
+        List<Pair<String, Exception>> exceptions = ThreadRunner.execute(parentTrack, false, ta);
         for (Pair<String, Exception> p : exceptions) logger.debug(p.key, p.value);
         Map<StructureObject, Result> parentBBMap = new HashMap<>(boundingBoxes.length);
         for (int i = 0; i<boundingBoxes.length; ++i) parentBBMap.put(parentTrack.get(i), boundingBoxes[i]);

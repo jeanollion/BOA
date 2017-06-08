@@ -22,7 +22,7 @@ package core;
  * @author jollion
  */
 public interface ProgressCallback {
-    public void addSubTask(int subtask);
+    public void incrementTaskNumber(int subtask);
     public void incrementProgress();
     public void log(String message);
 }

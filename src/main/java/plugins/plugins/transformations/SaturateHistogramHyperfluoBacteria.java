@@ -50,6 +50,7 @@ import plugins.plugins.thresholders.IJAutoThresholder;
 import processing.Filters;
 import utils.ArrayUtil;
 import utils.Pair;
+import utils.ReusableQueue;
 import utils.ThreadRunner;
 import utils.ThreadRunner.ThreadAction;
 import utils.Utils;
@@ -88,20 +89,21 @@ public class SaturateHistogramHyperfluoBacteria implements Transformation {
                 imageTemp.clear();
             } else ++count;*/
         }
-        
+        if (allImages.isEmpty()) {
+            configData.add(Double.NaN);
+            logger.error("No image");
+            return;
+        }
         double pThld = foregroundProportion.getValue().doubleValue();
         long t0 = System.currentTimeMillis();
-        Image[] images = allImages.toArray(new Image[0]);
         int minimumCount = minimumVolume.getValue().intValue();
-        Double[] thlds = new Double[images.length];
-        ImageByte[] masks = new ImageByte[ThreadRunner.getMaxCPUs()];
-        List<Pair<String, Exception>> exceptions = ThreadRunner.execute(images, false, new ThreadAction<Image>() {
-            @Override
-            public void run(Image image, int idx, int threadIdx) {
-                if (masks[threadIdx]==null) masks[threadIdx] = new ImageByte("", image);
-                else ImageOperations.fill(masks[threadIdx], 0, null);
-                thlds[idx] = getThld(image, pThld, thresholdBck.instanciatePlugin(), thresholdHyper.instanciatePlugin() , masks[threadIdx], minimumCount, idx);
-            }
+        Double[] thlds = new Double[allImages.size()];
+        ReusableQueue.Reset<ImageByte> r = im -> {ImageOperations.fill(im, 0, null); return im;};
+        ReusableQueue<ImageByte> masks = new ReusableQueue<>(()->new ImageByte("", allImages.get(0)), r);
+        List<Pair<String, Exception>> exceptions = ThreadRunner.execute(allImages, false, (Image image, int idx) -> {
+            ImageByte mask = masks.pull();
+            thlds[idx] = getThld(image, pThld, thresholdBck.instanciatePlugin(), thresholdHyper.instanciatePlugin() , mask, minimumCount, idx);
+            masks.push(mask);
         });
         for (Pair<String, Exception> e : exceptions) logger.error(e.key, e.value);
         List<Double> thldsList = new ArrayList<>(Arrays.asList(thlds));
