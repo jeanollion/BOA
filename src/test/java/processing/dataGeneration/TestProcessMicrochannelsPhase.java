@@ -103,7 +103,7 @@ public class TestProcessMicrochannelsPhase {
         }
         MicrochannelProcessorPhase.debug=true;
         ProcessingScheme ps = mDAO.getExperiment().getStructure(0).getProcessingScheme();
-        ps.segmentAndTrack(0, rootTrack);
+        ps.segmentAndTrack(0, rootTrack, null);
         Image[][] raw = new Image[rootTrack.size()][1];
         Image[][] seg = new Image[rootTrack.size()][1];
         int idx = 0;

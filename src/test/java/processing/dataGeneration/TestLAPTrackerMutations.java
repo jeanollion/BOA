@@ -36,10 +36,12 @@ import image.Image;
 import java.awt.Color;
 import java.awt.Font;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import plugins.PluginFactory;
+import plugins.ProcessingScheme;
 import plugins.plugins.segmenters.MutationSegmenterScaleSpace2;
 import plugins.plugins.trackers.LAPTracker;
 import plugins.plugins.trackers.trackMate.SpotWithinCompartment;
@@ -65,7 +67,7 @@ public class TestLAPTrackerMutations {
         final int mcIdx = 0;
         TestLAPTrackerMutations t = new TestLAPTrackerMutations();
         
-        t.init(dbName, fieldIdx, mcIdx, 0, 8000);
+        t.init(dbName, fieldIdx, mcIdx, 0, 10);
         t.testLAPTracking();
         
         // multithread version testing
@@ -102,9 +104,8 @@ public class TestLAPTrackerMutations {
         SpotWithinCompartment.testOverlay=o;
         TextRoi.setFont("SansSerif", 6, Font.PLAIN);
         
-        LAPTracker tracker = new LAPTracker().setCompartimentStructure(bacteriaIdx);
-        tracker.setSegmenter(new MutationSegmenterScaleSpace2()).setSpotQualityThreshold(10);
-        tracker.segmentAndTrack(mutationIdx, parentTrack, null, null);
+        ProcessingScheme ps = db.getExperiment().getStructure(mutationIdx).getProcessingScheme();
+        ps.segmentAndTrack(mutationIdx, parentTrack, null);
         
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, mutationIdx);
         logger.info("LAP tracker number of tracks: {}", allTracks.size());
@@ -126,10 +127,12 @@ public class TestLAPTrackerMutations {
         
         List<StructureObject> rootTrack = new ArrayList<>(dao.getRoots());
         rootTrack.removeIf(o->o.getFrame()<tStart ||o.getFrame()>tEnd);
-        parentTrack = new ArrayList<StructureObject>(rootTrack.size());
+        parentTrack = StructureObjectUtils.getAllChildren(rootTrack, microchannelIdx);
+        parentTrack.removeIf(o->o.getIdx()!=microchannelIdx);
+        Collections.sort(parentTrack);
         for (StructureObject r : rootTrack) {
-            StructureObject mc = r.getChildren(microchannelIdx).get(mcIdx);
-            parentTrack.add(mc);
+            //StructureObject mc = r.getChildren(microchannelIdx).get(mcIdx);
+            //parentTrack.add(mc);
             
             // load all the data (for perf evalutation)
             //mc.getChildren(mutationIdx);

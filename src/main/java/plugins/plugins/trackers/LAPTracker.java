@@ -39,7 +39,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import org.apache.commons.lang.ArrayUtils;
+import plugins.MultiThreaded;
 import plugins.ParameterSetup;
 import plugins.Segmenter;
 import plugins.SegmenterSplitAndMerge;
@@ -64,7 +66,7 @@ import utils.Utils;
  *
  * @author jollion
  */
-public class LAPTracker implements TrackerSegmenter {
+public class LAPTracker implements TrackerSegmenter, MultiThreaded {
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, new MutationSegmenterScaleSpace(), false);
     StructureParameter compartirmentStructure = new StructureParameter("Compartiment Structure", 1, false, false);
     NumberParameter spotQualityThreshold = new NumberParameter("Spot Quality Threshold", 3, 3.5);
@@ -80,6 +82,12 @@ public class LAPTracker implements TrackerSegmenter {
     NumberParameter maximalTrackFrameNumber = new BoundedNumberParameter("Maximal Track Frame Number", 0, 15, 0, null);
     GroupParameter trackSplittingParameters = new GroupParameter("Track Post-Processing", minimalTrackFrameNumber, maximalTrackFrameNumber);
     Parameter[] parameters = new Parameter[]{segmenter, compartirmentStructure, maxLinkingDistance, maxLinkingDistanceGC, maxGap, gapPenalty, alternativeDistance, spotQualityThreshold, trackSplittingParameters};
+    
+    ExecutorService executor;
+    @Override
+    public void setExecutor(ExecutorService executor) {
+        this.executor=executor;
+    }
     
     public LAPTracker setCompartimentStructure(int compartimentStructureIdx) {
         this.compartirmentStructure.setSelectedStructureIdx(compartimentStructureIdx);
@@ -112,7 +120,7 @@ public class LAPTracker implements TrackerSegmenter {
     }
     @Override public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
         SegmentThenTrack stt = new SegmentThenTrack(segmenter.instanciatePlugin(), this).setPreFilters(preFilters).setPostFilters(postFilters);
-        stt.segmentOnly(structureIdx, parentTrack);
+        stt.segmentOnly(structureIdx, parentTrack, executor);
         track(structureIdx, parentTrack, true);
     }
 
@@ -194,15 +202,15 @@ public class LAPTracker implements TrackerSegmenter {
             
         }
         long t2 = System.currentTimeMillis();
-        boolean ok = tmi.processFTF(maxLinkingDistance);
+        boolean ok = true;//tmi.processFTF(maxLinkingDistance);
         if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, false, false);
         if (ok) tmi.setTrackLinks(objectsF);
         
-        SpotWithinCompartment s1 = tmi.objectSpotMap.get(objectsF.get(3).get(2).getObject());
+        /*SpotWithinCompartment s1 = tmi.objectSpotMap.get(objectsF.get(3).get(2).getObject());
         SpotWithinCompartment s2 = tmi.objectSpotMap.get(objectsF.get(4).get(1).getObject());
         logger.debug("o1: {}, o2: {}", objectsF.get(3).get(2), objectsF.get(4).get(1));
         logger.debug("s1-s2 {}, s1Loc: {}, s2Loc: {}", s1.squareDistanceTo(s2), s1.localization, s2.localization);
-        
+        */
         //else for (StructureObject o : Utils.flattenMap(objectsF)) o.resetTrackLinks(true, true);
         // OR: second run with all spots at the same time?
         //boolean ok = tmi.processFTF(maxLinkingDistance);

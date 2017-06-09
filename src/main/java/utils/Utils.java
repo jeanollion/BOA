@@ -162,7 +162,7 @@ public class Utils {
         return res;
     }
     public static List<Integer> toList(int[] array) {
-        if (array==null || array.length==0) return new ArrayList<Integer>();
+        if (array==null || array.length==0) return new ArrayList<>();
         ArrayList<Integer> res = new ArrayList<>(array.length);
         for (int i : array) res.add(i);
         return res;

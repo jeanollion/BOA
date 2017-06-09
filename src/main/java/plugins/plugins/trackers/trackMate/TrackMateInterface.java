@@ -174,7 +174,7 @@ public class TrackMateInterface<S extends Spot> {
         }
         for (Map.Entry<Spot, Spot> e : clonedSpots.entrySet()) transferLinks(e.getKey(), e.getValue());
         long t1 = System.currentTimeMillis();
-        logger.debug("number of edges after GC step: {}, nb of vertices: {}, processing time: {}", graph.edgeSet().size(), graph.vertexSet().size(), t1-t0);
+        logger.debug("number of edges after GC step: {}, nb of vertices: {} (unlinked: {}), processing time: {}", graph.edgeSet().size(), graph.vertexSet().size(), unlinkedSpots.size(), t1-t0);
         return true;
     }
     

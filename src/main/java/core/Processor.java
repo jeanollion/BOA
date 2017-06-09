@@ -43,6 +43,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import measurement.MeasurementKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -175,23 +177,29 @@ public class Processor {
         if (trackOnly && ps instanceof SegmentOnly) return Collections.EMPTY_LIST;
         StructureObjectUtils.setAllChildren(parentTrack, structureIdx);
         Map<StructureObject, List<StructureObject>> allParentTracks;
-        if (directParentStructure==-1 || parentTrack.get(0).getStructureIdx()==directParentStructure) { // parents = roots
+        if (directParentStructure==-1 || parentTrack.get(0).getStructureIdx()==directParentStructure) { // parents = roots or parentTrack is parent structure
             allParentTracks = new HashMap<>(1);
             allParentTracks.put(parentTrack.get(0), parentTrack);
         } else {
             allParentTracks = StructureObjectUtils.getAllTracks(parentTrack, directParentStructure);
         }
         logger.debug("ex ps: structure: {}, allParentTracks: {}", structureIdx, allParentTracks.size());
-        // one thread per track
+        // one thread per track + common executor for processing scheme
+        ExecutorService subExecutor = Executors.newFixedThreadPool(ThreadRunner.getMaxCPUs());
+        //ExecutorService subExecutor = Executors.newSingleThreadExecutor(); // TODO: see what's more effective!
+        final List[] ex = new List[allParentTracks.size()];
         ThreadAction<List<StructureObject>> ta = (List<StructureObject> pt, int idx) -> {
-            execute(xp.getStructure(structureIdx).getProcessingScheme(), structureIdx, pt, trackOnly, deleteChildren, dao);
+            ex[idx] = execute(xp.getStructure(structureIdx).getProcessingScheme(), structureIdx, pt, trackOnly, deleteChildren, dao, subExecutor);
         };
-        List<Pair<String, Exception>> exceptions = ThreadRunner.execute(new ArrayList<List<StructureObject>> (allParentTracks.values()), false, ta);
+        List<Pair<String, Exception>> exceptions = ThreadRunner.execute(allParentTracks.values(), false, ta);
+        for (List l : ex) if (l!=null) exceptions.addAll(l);
         
-        ArrayList<StructureObject> children = new ArrayList<StructureObject>();
+        // store in DAO
+        List<StructureObject> children = new ArrayList<>();
         for (StructureObject p : parentTrack) children.addAll(p.getChildren(structureIdx));
         dao.store(children, !(ps instanceof SegmentOnly));
         logger.debug("total objects: {}, dao type: {}", children.size(), dao.getClass().getSimpleName());
+        
         // create error selection
         if (dao.getMasterDAO().getSelectionDAO()!=null) {
             Selection errors = dao.getMasterDAO().getSelectionDAO().getOrCreate(dao.getExperiment().getStructure(structureIdx).getName()+"_TrackingErrors", false);
@@ -211,10 +219,10 @@ public class Processor {
         return exceptions;
     }
     
-    private static void execute(ProcessingScheme ps, int structureIdx, List<StructureObject> parentTrack, boolean trackOnly, boolean deleteChildren, ObjectDAO dao) {
+    private static List<Pair<String, Exception>> execute(ProcessingScheme ps, int structureIdx, List<StructureObject> parentTrack, boolean trackOnly, boolean deleteChildren, ObjectDAO dao, ExecutorService executor) {
         if (!trackOnly && deleteChildren) dao.deleteChildren(parentTrack, structureIdx);
-        if (trackOnly) ps.trackOnly(structureIdx, parentTrack);
-        else ps.segmentAndTrack(structureIdx, parentTrack);
+        if (trackOnly) return ps.trackOnly(structureIdx, parentTrack, executor);
+        else return ps.segmentAndTrack(structureIdx, parentTrack, executor);
     }
     
     // measurement-related methods
@@ -252,27 +260,17 @@ public class Processor {
             GUI.log("Performing #"+e.getValue().size()+" measurement"+(e.getValue().size()>1?"s":"")+" on Structure: "+e.getKey()+" (#"+allParentTracks.size()+" tracks): "+Utils.toStringList(e.getValue(), m->m.getClass().getSimpleName()));
             logger.debug("performing: #{} measurements from parent: {} (#{} parentTracks) : {}", e.getValue().size(), e.getKey(), allParentTracks.size(), Utils.toStringList(e.getValue(), m->m.getClass().getSimpleName()));
             
-            //if (allParentTracks.size()==1) {
-                List<Pair<Measurement, StructureObject>> actionPool = new ArrayList<>();
-                for (List<StructureObject> parentTrack : allParentTracks.values()) {
-                    for (Measurement m : dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey())) {
-                        if (m.callOnlyOnTrackHeads()) actionPool.add(new Pair<>(m, parentTrack.get(0)));
-                        else for (StructureObject o : parentTrack) actionPool.add(new Pair<>(m, o));
-                    }
+            List<Pair<Measurement, StructureObject>> actionPool = new ArrayList<>();
+            for (List<StructureObject> parentTrack : allParentTracks.values()) {
+                for (Measurement m : dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey())) {
+                    if (m.callOnlyOnTrackHeads()) actionPool.add(new Pair<>(m, parentTrack.get(0)));
+                    else for (StructureObject o : parentTrack) actionPool.add(new Pair<>(m, o));
                 }
-                GUI.log("Executing: #"+actionPool.size()+" measurements");
-                List<Pair<String, Exception>> errorsLocal = ThreadRunner.execute(actionPool, false, (Pair<Measurement, StructureObject> p, int idx) -> p.key.performMeasurement(p.value));
-                errors.addAll(errorsLocal);
-            /*} else {
-                ThreadAction<List<StructureObject>> ta = new ThreadAction<List<StructureObject>>() {
-                    @Override
-                    public void run(List<StructureObject> pt, int idx, int threadIdx) {
-                        executeMeasurementsOnParentTrack(pt, dao.getExperiment().getMeasurementsByCallStructureIdx(e.getKey()).get(e.getKey())); // re-instanciate measurement in case they are not thread safe
-                    } 
-                };
-                List<Pair<String, Exception>> errorsLocal = ThreadRunner.execute(new ArrayList<List<StructureObject>> (allParentTracks.values()), ta);
-                errors.addAll(errorsLocal);
-            }*/
+            }
+            GUI.log("Executing: #"+actionPool.size()+" measurements");
+            List<Pair<String, Exception>> errorsLocal = ThreadRunner.execute(actionPool, false, (Pair<Measurement, StructureObject> p, int idx) -> p.key.performMeasurement(p.value));
+            errors.addAll(errorsLocal);
+
         }
         long t1 = System.currentTimeMillis();
         final Set<StructureObject> allModifiedObjects = new HashSet<>();
@@ -288,15 +286,6 @@ public class Processor {
         return errors;
     }
     
-    private static void executeMeasurementsOnParentTrack(List<StructureObject> parentTrack, List<Measurement> list) {
-        for (Measurement m : list) {
-            if (m.callOnlyOnTrackHeads()) m.performMeasurement(parentTrack.get(0));
-            else {
-                for (StructureObject parent : parentTrack) m.performMeasurement(parent);
-            }
-        }
-    }
-
     
     private static Set<Integer> getOutputStructures(List<Measurement> mList) {
         Set<Integer> l = new HashSet<Integer>(5);

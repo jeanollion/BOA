@@ -17,15 +17,12 @@
  */
 package plugins;
 
+import java.util.concurrent.ExecutorService;
+
 /**
  *
  * @author jollion
  */
-public interface Multithreaded {
-    /**
-     * 
-     * @param numThreads number of threads available for the object
-     * @return the number of threads that it will actually use
-     */
-    public int setThreadNumber(int numThreads);
+public interface MultiThreaded {
+    public void setExecutor(ExecutorService executor);
 }

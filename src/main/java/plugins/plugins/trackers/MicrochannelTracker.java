@@ -41,8 +41,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import plugins.MultiThreaded;
 import plugins.Segmenter;
 import plugins.Thresholder;
 import plugins.TrackerSegmenter;
@@ -65,7 +67,7 @@ import utils.Utils;
  *
  * @author jollion
  */
-public class MicrochannelTracker implements TrackerSegmenter {
+public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
     protected PluginParameter<MicrochannelSegmenter> segmenter = new PluginParameter<>("Segmentation algorithm", MicrochannelSegmenter.class, new MicrochannelPhase2D(), false);
     NumberParameter maxShift = new BoundedNumberParameter("Maximal Shift (pixels)", 0, 100, 1, null);
     NumberParameter maxDistanceWidthFactor = new BoundedNumberParameter("Maximal Distance for Tracking (x [mean channel width])", 1, 1, 0, null);
@@ -119,7 +121,7 @@ public class MicrochannelTracker implements TrackerSegmenter {
         ThreadRunner.execute(parentTrack, false, (StructureObject parent, int idx) -> {
             inputImages[idx] = preFilters.filter(parent.getRawImage(structureIdx), parent);
             segmenters[idx] = getSegmenter();
-        });
+        }, executor, null);
         
         if (segmenters[0] instanceof UseThreshold) {
             Image[] inputImagesToThld = new Image[inputImages.length];
@@ -142,7 +144,7 @@ public class MicrochannelTracker implements TrackerSegmenter {
                 segmenters[idx]=null;
             }
         };
-        List<Pair<String, Exception>> exceptions = ThreadRunner.execute(parentTrack, false, ta);
+        List<Pair<String, Exception>> exceptions = ThreadRunner.execute(parentTrack, false, ta, executor, null);
         for (Pair<String, Exception> p : exceptions) logger.debug(p.key, p.value);
         Map<StructureObject, Result> parentBBMap = new HashMap<>(boundingBoxes.length);
         for (int i = 0; i<boundingBoxes.length; ++i) parentBBMap.put(parentTrack.get(i), boundingBoxes[i]);
@@ -353,6 +355,13 @@ public class MicrochannelTracker implements TrackerSegmenter {
     @Override
     public Parameter[] getParameters() {
         return parameters;
+    }
+    
+    //multithreaded interface
+    ExecutorService executor;
+    @Override
+    public void setExecutor(ExecutorService executor) {
+        this.executor=executor;
     }
     
     

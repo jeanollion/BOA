@@ -64,7 +64,7 @@ public class TestTracker {
         MicrochannelProcessorPhase.debug=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 800);
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 1);
         //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 37, 38); // 91 to test rearrange objects 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
@@ -96,8 +96,8 @@ public class TestTracker {
         
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;
-        if (trackOnly) ps.trackOnly(structureIdx, parentTrack);
-        else ps.segmentAndTrack(structureIdx, parentTrack);
+        if (trackOnly) ps.trackOnly(structureIdx, parentTrack, null);
+        else ps.segmentAndTrack(structureIdx, parentTrack, null);
         logger.debug("children: {} ({})", StructureObjectUtils.getAllTracks(parentTrack, 0).size(), Utils.toStringList( StructureObjectUtils.getAllTracks(parentTrack, 0).values(), o->o.size()));
 
         GUI.getInstance();
@@ -148,7 +148,7 @@ public class TestTracker {
         BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.correctionStep=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;
-        ps.segmentAndTrack(structureIdx, parentTrack);
+        ps.segmentAndTrack(structureIdx, parentTrack, null);
         //ps.trackOnly(structureIdx, parentTrack);
         GUI.getInstance();
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();

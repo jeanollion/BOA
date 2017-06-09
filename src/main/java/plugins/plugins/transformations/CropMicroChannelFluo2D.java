@@ -71,7 +71,7 @@ public class CropMicroChannelFluo2D extends CropMicroChannels {
     NumberParameter fillingProportion = new BoundedNumberParameter("Filling proportion of Microchannel", 2, 0.6, 0.05, 1);
     PluginParameter<SimpleThresholder> threshold = new PluginParameter<>("Intensity Threshold", SimpleThresholder.class, new BackgroundThresholder(3, 6, 3), false);   //new IJAutoThresholder().setMethod(AutoThresholder.Method.Otsu)
     //PluginParameter<Thresholder> threshold = new PluginParameter<Thresholder>("Intensity Threshold", Thresholder.class, new ConstantValue(50), false);
-    Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, minObjectSize, threshold, fillingProportion, xStart, xStop, yStart, yStop, number, refAverage};
+    Parameter[] parameters = new Parameter[]{channelHeight, cropMargin, margin, minObjectSize, threshold, fillingProportion, xStart, xStop, yStart, yStop, number};
     
     public CropMicroChannelFluo2D(int margin, int cropMargin, int minObjectSize, double fillingProportion, int timePointNumber) {
         this.margin.setValue(margin);

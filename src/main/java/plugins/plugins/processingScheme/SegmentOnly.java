@@ -24,16 +24,23 @@ import configuration.parameters.PreFilterSequence;
 import dataStructure.objects.Object3D;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
+import dataStructure.objects.StructureObjectUtils;
 import image.BoundingBox;
 import image.Image;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.concurrent.ExecutorService;
+import java.util.function.BiFunction;
 import plugins.PostFilter;
 import plugins.PreFilter;
 import plugins.ProcessingScheme;
 import plugins.Segmenter;
 import plugins.UseMaps;
+import utils.HashMapGetCreate;
+import utils.Pair;
 import utils.ThreadRunner;
 import utils.ThreadRunner.ThreadAction;
 import utils.Utils;
@@ -43,6 +50,7 @@ import utils.Utils;
  * @author jollion
  */
 public class SegmentOnly implements ProcessingScheme {
+    @FunctionalInterface public static interface ApplyToSegmenter { public void apply(StructureObject o, Segmenter segmenter);}
     protected PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters");
     protected PostFilterSequence postFilters = new PostFilterSequence("Post-Filters");
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, false);
@@ -87,25 +95,73 @@ public class SegmentOnly implements ProcessingScheme {
     @Override public PostFilterSequence getPostFilters() {
         return postFilters;
     }
-    
-    @Override public void segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack) {
+    @Override public List<Pair<String, Exception>> segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack, ExecutorService executor) {
+        return segmentAndTrack(structureIdx, parentTrack, executor, null);
+    }
+    public List<Pair<String, Exception>> segmentAndTrack(final int structureIdx, final List<StructureObject> parentTrack, ExecutorService executor, ApplyToSegmenter applyToSegmenter) {
         if (!segmenter.isOnePluginSet()) {
             logger.info("No segmenter set for structure: {}", structureIdx);
-            return;
+            return Collections.EMPTY_LIST;
         }
-        if (parentTrack.isEmpty()) return;
+        if (parentTrack.isEmpty()) return Collections.EMPTY_LIST;
+        int parentStructureIdx = parentTrack.get(0).getStructureIdx();
         int segParentStructureIdx = parentTrack.get(0).getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
-        if (parentTrack.get(0).getMicroscopyField().singleFrame(structureIdx)) {
-            ObjectPopulation pop = segment(parentTrack.get(0), structureIdx, segParentStructureIdx);
-            for (StructureObject parent : parentTrack) parent.setChildrenObjects(pop.duplicate(), structureIdx);
-        } else {
-            ThreadAction<StructureObject> ta = (StructureObject parent, int idx) -> {
-                parent.setChildrenObjects(segment(parent, structureIdx, segParentStructureIdx), structureIdx);
-            };
-            ThreadRunner.execute(parentTrack, false, ta);
-            //for (StructureObject parent : parentTrack) parent.setChildrenObjects(segment(parent, structureIdx), structureIdx);
-        }
+        boolean subSegmentation = segParentStructureIdx>parentStructureIdx;
+        boolean useMaps =  subSegmentation && segmenter.instanciatePlugin() instanceof UseMaps;
+        boolean singleFrame = parentTrack.get(0).getMicroscopyField().singleFrame(structureIdx); // will semgent only on first frame
         
+        HashMapGetCreate<StructureObject, Image> inputImages =  new HashMapGetCreate<>(parentTrack.size(), parent->preFilters.filter(parent.getRawImage(structureIdx), parent));
+        HashMapGetCreate<StructureObject, Image[]> subMaps = useMaps? new HashMapGetCreate<>(parentTrack.size(), parent->((UseMaps)segmenter.instanciatePlugin()).computeMaps(parent.getRawImage(structureIdx), inputImages.getAndCreateIfNecessarySync(parent))) : null; //
+        
+        // segment in direct parents
+        List<StructureObject> allParents = singleFrame ? StructureObjectUtils.getAllChildren(parentTrack.subList(0, 1), segParentStructureIdx) : StructureObjectUtils.getAllChildren(parentTrack, segParentStructureIdx);
+        Collections.shuffle(allParents); // reduce thread blocking
+        ObjectPopulation[] pops = new ObjectPopulation[allParents.size()];
+        List<Pair<String, Exception>> errors = ThreadRunner.execute(allParents, false, (subParent, idx) -> {
+            StructureObject globalParent = subParent.getParent(segParentStructureIdx);
+            Segmenter seg = segmenter.instanciatePlugin();
+            if (useMaps) {
+                Image[] maps = subMaps.getAndCreateIfNecessarySync(globalParent);
+                ((UseMaps)seg).setMaps(Utils.apply(maps, new Image[maps.length], i -> i.cropWithOffset(subParent.getBounds())));
+            }
+            if (applyToSegmenter!=null) applyToSegmenter.apply(subParent, seg);
+            Image input = inputImages.getAndCreateIfNecessarySync(globalParent);
+            if (subSegmentation) input = input.cropWithOffset(subParent.getBounds());
+            ObjectPopulation pop = seg.runSegmenter(input, structureIdx, subParent);
+            pop = postFilters.filter(pop, structureIdx, subParent);
+            if (subSegmentation && pop!=null) pop.translate(subParent.getBounds(), true);
+            pops[idx] = pop;
+        }, executor, null);
+        inputImages.clear();
+        if (useMaps) subMaps.clear();
+        // collect if necessary and set to parent
+        if (subSegmentation) {
+            HashMapGetCreate<StructureObject, List<Object3D>> mapParentPop = new HashMapGetCreate<>(parentTrack.size(), new HashMapGetCreate.ListFactory());
+            for (int i = 0; i<pops.length; ++i) {
+                StructureObject subParent = allParents.get(i);
+                StructureObject parent = subParent.getParent(parentStructureIdx);
+                if (pops[i]!=null) mapParentPop.getAndCreateIfNecessary(parent).addAll(pops[i].getObjects());
+                else logger.debug("pop null for subParent: {}", allParents.get(i));
+            }
+            ObjectPopulation pop=null;
+            for (Entry<StructureObject, List<Object3D>> e : mapParentPop.entrySet()) {
+                pop = new ObjectPopulation(e.getValue(), e.getKey().getMaskProperties(), true);
+                e.getKey().setChildrenObjects(pop, structureIdx);
+            }
+            if (singleFrame) {
+                if (mapParentPop.size()>1) logger.error("Segmentation of structure: {} from track: {}, single frame but several populations", structureIdx, parentTrack.get(0));
+                else {
+                    for (StructureObject parent : parentTrack.subList(1, parentTrack.size())) parent.setChildrenObjects(pop.duplicate(), structureIdx);
+                }
+            }
+        } else {
+           for (int i = 0; i<pops.length; ++i) allParents.get(i).setChildrenObjects(pops[i], structureIdx);
+           if (singleFrame) {
+               if (pops.length>1) logger.error("Segmentation of structure: {} from track: {}, single frame but several populations", structureIdx, parentTrack.get(0));
+               else for (StructureObject parent : parentTrack.subList(1, parentTrack.size())) parent.setChildrenObjects(pops[0].duplicate(), structureIdx);
+           }
+        }
+        return errors;
     }
     
     private ObjectPopulation segment(StructureObject parent, int structureIdx, int segmentationStructureIdx) { // TODO mieux gérer threads -> faire liste. Option filtres avant ou après découpage.. 
@@ -119,7 +175,7 @@ public class SegmentOnly implements ProcessingScheme {
                 seg = segmenter.instanciatePlugin();
                 if (maps!=null) ((UseMaps)seg).setMaps(Utils.apply(maps, new Image[maps.length], i -> i.cropWithOffset(subParent.getBounds())));
                 ObjectPopulation pop = seg.runSegmenter(input.cropWithOffset(subParent.getBounds()), structureIdx, subParent);
-                pop = postFilters.filter(pop, structureIdx, parent);
+                pop = postFilters.filter(pop, structureIdx, subParent);
                 pop.translate(subParent.getBounds(), true);
                 objects.addAll(pop.getObjects());
             }
@@ -131,7 +187,7 @@ public class SegmentOnly implements ProcessingScheme {
         }
     }
 
-    @Override public void trackOnly(int structureIdx, List<StructureObject> parentTrack) {}
+    @Override public List<Pair<String, Exception>> trackOnly(int structureIdx, List<StructureObject> parentTrack, ExecutorService executor) {return Collections.EMPTY_LIST;}
 
     @Override
     public Parameter[] getParameters() {

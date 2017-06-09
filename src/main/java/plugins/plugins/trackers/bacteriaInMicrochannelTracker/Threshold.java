@@ -38,6 +38,10 @@ public abstract class Threshold {
         this.planes=planes;
     }
     public abstract boolean hasAdaptativeByY();
+    /**
+     * 
+     * @return frame range containing cell, bounds included
+     */
     public abstract int[] getFrameRange();
     public abstract void setFrameRange(int[] frameRange);
     public abstract double getThreshold(int frame);

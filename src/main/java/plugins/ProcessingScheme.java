@@ -22,6 +22,8 @@ import configuration.parameters.PreFilterSequence;
 import dataStructure.objects.StructureObject;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import utils.Pair;
 
 /**
  *
@@ -36,6 +38,6 @@ public interface ProcessingScheme extends Plugin { //Multithreaded
     public PostFilterSequence getPostFilters();
     public Segmenter getSegmenter();
     //public void segmentThenTrack(int structureIdx, List<StructureObject> parentTrack);
-    public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack);
-    public void trackOnly(int structureIdx, List<StructureObject> parentTrack);
+    public List<Pair<String, Exception>> segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, ExecutorService executor);
+    public List<Pair<String, Exception>> trackOnly(int structureIdx, List<StructureObject> parentTrack, ExecutorService executor);
 }

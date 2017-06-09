@@ -100,6 +100,7 @@ public class BackgroundThresholder implements SimpleThresholder {
                 if (meanSigma!=null) {
                     meanSigma[0]=mean;
                     meanSigma[1]=sigma;
+                    if (meanSigma.length>2) meanSigma[2] = count;
                 }
             }
             double newThreshold = i==iterations-1 ? mean + lastSigmaFactor * sigma : mean + sigmaFactor * sigma;

@@ -29,6 +29,7 @@ import dataStructure.objects.MorphiumMasterDAO;
 import dataStructure.objects.ObjectDAO;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
+import ij.ImageJ;
 import image.BlankMask;
 import image.BoundingBox;
 import image.Image;
@@ -49,6 +50,7 @@ import utils.Utils;
  */
 public class GenerateFilms {
     public static void main(String[] args) {
+        new ImageJ();
         // WT
         /*String dbName = "fluo160218";
         int[] fields = ArrayUtil.generateIntegerArray(8, 9);
@@ -80,8 +82,23 @@ public class GenerateFilms {
         int tEnd = 680;
         BoundingBox cropBB = null;
         float saturateChannel1 = 1;
+        */
+        /*String dbName = "fluo170515_MutS";
+        int[] fields = new int[]{7};
+        int tStart = 20;
+        int tEnd = 340;
+        BoundingBox cropBB = new BoundingBox(5, 974, 5, 380, 0, 0);
+        double saturateChannel[]= new double[]{80, 0.99999};
+        */
         
-        ImageDisplayer disp = new IJImageDisplayer();
+        String dbName = "fluo170528_uvrD";
+        int[] fields = new int[]{1};
+        int tStart = 100;
+        int tEnd = 300;
+        BoundingBox cropBB = new BoundingBox(240, 950, 20, 400, 0, 0);
+        double saturateChannel[]= new double[]{50, 100};
+        
+        
         //Image[][] raw = getRawImagesAsFilmTF(dbName, 100, 200, 0, fields);
         //disp.showImage5D(dbName, raw);
         
@@ -89,17 +106,18 @@ public class GenerateFilms {
         //int count=  0;
         //for (int f : fields) disp.showImage5D(dbName+" field: "+f, imageFTC[count++]);
         
-        arrangeFilm(imageFTC[0], cropBB, saturateChannel1);
-        */
+        arrangeFilm(imageFTC[0], cropBB, saturateChannel);
         
-        Image[][] film = generateMicrochannelFilm("boa_PHASE", 0, 8, new BoundingBox(-45, 80, -60, 615, 0, 1));
+        
+        /*Image[][] film = generateMicrochannelFilm("boa_PHASE", 0, 8, new BoundingBox(-45, 80, -60, 615, 0, 1));
         Utils.apply(film, film, a -> Utils.apply(a, a, i -> ImageTransformation.flip(i, ImageTransformation.Axis.X)));
         ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("mc8", film);
+        */
     }
     
     
     
-    private static void arrangeFilm(Image[][] imageTC, BoundingBox cropBB, float saturateChannel1) {
+    private static void arrangeFilm(Image[][] imageTC, BoundingBox cropBB, double[] saturateChannel) {
         
         // normalize intensities 
         for (int c = 0; c<imageTC[0].length; ++c) {
@@ -111,8 +129,15 @@ public class GenerateFilms {
                 if (minAndMaxTemp[0]<minAndMax[0]) minAndMax[0] = minAndMaxTemp[0];
                 if (minAndMaxTemp[1]>minAndMax[1]) minAndMax[1] = minAndMaxTemp[1];
             }
-            double scale = 255 / (minAndMax[1] - minAndMax[0]);
-            if (c==1) scale = 255 / (minAndMax[1]* saturateChannel1 - minAndMax[0]); // sturate image
+            
+            double scale = 255 / (saturateChannel[c] - minAndMax[0]);
+            if (saturateChannel[c]<1) { // sturate image
+                List<Image> planes = new ArrayList<>(imageTC.length);
+                for (int t = 0; t<imageTC.length; ++t) planes.add(imageTC[t][c]);
+                double max = ImageOperations.getPercentile(Image.mergeZPlanes(planes), 1-saturateChannel[c], null, null);
+                logger.debug("percentile:{} value = {}", 1-saturateChannel[c], max);
+                scale = 255 / (max - minAndMax[0]);
+            } 
             double offset = -minAndMax[0] * scale;
             for (int t = 0; t<imageTC.length; ++t) { // normalize & convert to 8 bit
                 imageTC[t][c] = ImageOperations.affineOperation(imageTC[t][c], new ImageByte("", imageTC[t][c]), scale, offset);
@@ -128,11 +153,11 @@ public class GenerateFilms {
             }
             yOff += imageTC[0][0].getSizeY();
         }
-        new IJImageDisplayer().showImage(res);
+        ImageWindowManagerFactory.showImage(res);
     }
     public static Image[][][] getPreProcessedImagesAsFilmFTC(String dbName, int tStart, int tEnd, int[] structureIdx, int... fieldIndices) {
         if (tEnd<=tStart) throw new IllegalArgumentException("TEnds should be > tStart");
-        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+        MasterDAO db = new Task(dbName).getDB();
         if (fieldIndices==null || fieldIndices.length==0) fieldIndices = ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount());
         Image[][][] resFTC = new Image[fieldIndices.length][tEnd-tStart][structureIdx.length];
         int count = 0;
@@ -151,7 +176,7 @@ public class GenerateFilms {
     }
     public static Image[][] getRawImagesAsFilmTF(String dbName, int tStart, int tEnd, int channelIdx, int... fieldIndices) {
         if (tEnd<=tStart) throw new IllegalArgumentException("TEnds should be > tStart");
-        MorphiumMasterDAO db = new MorphiumMasterDAO(dbName);
+        MasterDAO db = new Task(dbName).getDB();
         if (fieldIndices==null || fieldIndices.length==0) fieldIndices = ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount());
         Image[][] resTF = new Image[tEnd-tStart][fieldIndices.length];
         int count = 0;

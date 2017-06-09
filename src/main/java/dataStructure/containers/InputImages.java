@@ -18,10 +18,16 @@
 package dataStructure.containers;
 
 import image.Image;
+import static image.Image.logger;
 import image.ImageFloat;
 import image.ImageOperations;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import plugins.plugins.thresholders.BackgroundThresholder;
+import utils.ArrayUtil;
+import utils.Pair;
+import utils.Utils;
 
 /**
  *
@@ -45,5 +51,29 @@ public interface InputImages {
         for (int f = fMin; f<fMax; ++f) imagesToAv.add(images.getImage(channelIdx, f));
         return ImageOperations.meanZProjection(Image.mergeZPlanes(imagesToAv));
     }
-    
+    public static List<Integer> chooseNImagesWithSignal(InputImages images, int channelidx, int n) {
+        if (n>=images.getFrameNumber()) return Utils.toList(ArrayUtil.generateIntegerArray(images.getFrameNumber()));
+        // signal is measured with BackgroundThresholder
+        long t0 = System.currentTimeMillis();
+        List<Pair<Integer, Double>> signal = new ArrayList<>();
+        double[] count = new double[3];
+        double sTot = images.getImage(channelidx, 0).getSizeXYZ();
+        for (int t = 0; t<images.getFrameNumber(); ++t) {
+            BackgroundThresholder.runThresholder(images.getImage(channelidx, t), null, 2.5, 4, 2, count);
+            signal.add(new Pair(t, (sTot - count[2]) /  sTot ));
+        }
+        Collections.sort(signal, (p1, p2)->Double.compare(p1.value, p2.value));
+        // choose n frames among the X frames with most signal
+        int candidateNumber = Math.max(images.getFrameNumber() /4, n);
+        double delta = (double)candidateNumber / (double)(n+1);
+        signal = signal.subList(0, candidateNumber);
+        List<Pair<Integer, Double>> res = new ArrayList<>(n);
+        for (int i =0; i<n; ++i) {
+            int idx = (int)(delta*i);
+            res.add(signal.get(idx));
+        }
+        long t1 = System.currentTimeMillis();
+        logger.debug("choose {} images: {} t={} (among: {})", n, res, t1-t0, signal);
+        return Pair.unpairKeys(res);
+    }
 }

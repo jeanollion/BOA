@@ -187,7 +187,7 @@ public class BacteriaFluo implements SegmenterSplitAndMerge, ManualSegmenter, Ob
         }*/
         ObjectPopulation res = getSeparatedObjects(pop1.getLabelMap(), pv, minSizePropagation.getValue().intValue(), minSize.getValue().intValue(), 0, debug);
         if (res!=null) {
-            if (contactLimit.getValue().intValue()>0) res.filter(new ObjectPopulation.ContactBorder(contactLimit.getValue().intValue(), parent.getMask(), ObjectPopulation.ContactBorder.Border.YDown));
+            if (contactLimit.getValue().intValue()>0 && res.getObjects().size()>1) res.filter(new ObjectPopulation.ContactBorder(contactLimit.getValue().intValue(), parent.getMask(), ObjectPopulation.ContactBorder.Border.YDown));
             res.relabel(true);
         }
         return res;

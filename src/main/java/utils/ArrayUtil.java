@@ -381,6 +381,7 @@ public class ArrayUtil {
         */
     }
     public static int[] generateIntegerArray(int start, int stopExcl) {
+        if (stopExcl<start) return new int[0];
         int[] res = new int[stopExcl-start];
         for (int i = start; i<stopExcl; ++i) res[i-start]=i;
         return res;

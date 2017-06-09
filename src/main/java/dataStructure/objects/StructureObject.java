@@ -735,18 +735,18 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                     } else { // look in parent
                         StructureObject parentWithImage=getFirstParentWithOpenedRawImage(structureIdx);
                         if (parentWithImage!=null) {
-                            logger.debug("object: {}, channel: {}, open from parent with open image: {}", this, channelIdx, parentWithImage);
+                            //logger.debug("object: {}, channel: {}, open from parent with open image: {}", this, channelIdx, parentWithImage);
                             BoundingBox bb=getRelativeBoundingBox(parentWithImage);
                             extendBoundsInZIfNecessary(channelIdx, bb);
                             rawImagesC.set(parentWithImage.getRawImage(structureIdx).crop(bb), channelIdx);    
                         } else { // check track image
                             Image trackImage = getTrackImage(structureIdx);
                             if (trackImage!=null) {
-                                logger.debug("object: {}, channel: {}, open from trackImage", this, channelIdx);
+                                //logger.debug("object: {}, channel: {}, open from trackImage", this, channelIdx);
                                 Image image = trackImage.crop(getBounds().duplicate().translateToOrigin().translate(offsetInTrackImage));
                                 rawImagesC.set(image, channelIdx);
                             } else { // open root and crop
-                                logger.debug("object: {}, channel: {}, open root and crop", this, channelIdx);
+                                //logger.debug("object: {}, channel: {}, open root and crop", this, channelIdx);
                                 BoundingBox bb = getRelativeBoundingBox(getRoot());
                                 extendBoundsInZIfNecessary(channelIdx, bb);
                                 Image image = getRoot().getRawImage(structureIdx).crop(bb);

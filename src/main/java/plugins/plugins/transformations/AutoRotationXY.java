@@ -34,6 +34,7 @@ import image.Image;
 import image.ImageFloat;
 import image.TypeConverter;
 import java.util.ArrayList;
+import java.util.List;
 import plugins.TransformationTimeIndependent;
 import plugins.plugins.preFilter.IJSubtractBackground;
 import processing.ImageTransformation;
@@ -42,6 +43,7 @@ import processing.RadonProjection;
 import static processing.RadonProjection.getAngleArray;
 import static processing.RadonProjection.radonProject;
 import processing.neighborhood.EllipsoidalNeighborhood;
+import utils.ArrayUtil;
 import utils.Utils;
 
 /**
@@ -56,9 +58,9 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     //NumberParameter filterScale = new BoundedNumberParameter("Object Scale", 0, 15, 2, null); //TODO: conditional parameter
     ChoiceParameter interpolation = new ChoiceParameter("Interpolation", Utils.toStringArray(ImageTransformation.InterpolationScheme.values()), ImageTransformation.InterpolationScheme.BSPLINE5.toString(), false);
     ChoiceParameter searchMethod = new ChoiceParameter("Search method", SearchMethod.getValues(), SearchMethod.MAXVAR.getName(), false);
-    NumberParameter refAverage = new BoundedNumberParameter("Number of frame to average around reference frame", 0, 0, 0, null);
+    NumberParameter frameNumber = new BoundedNumberParameter("Number of frame", 0, 10, 0, null);
     FilterSequence prefilters = new FilterSequence("Pre-Filters");
-    Parameter[] parameters = new Parameter[]{searchMethod, minAngle, maxAngle, precision1, precision2, interpolation, refAverage, prefilters}; // prefilters -> problem : parent?
+    Parameter[] parameters = new Parameter[]{searchMethod, minAngle, maxAngle, precision1, precision2, interpolation, frameNumber, prefilters}; // prefilters -> problem : parent?
     ArrayList<Double> internalParams=new ArrayList<Double>(1);
     public static boolean debug = false;
     public AutoRotationXY(double minAngle, double maxAngle, double precision1, double precision2, InterpolationScheme interpolation, SearchMethod method) {
@@ -74,8 +76,8 @@ public class AutoRotationXY implements TransformationTimeIndependent {
         prefilters.add(filters);
         return this;
     }
-    public AutoRotationXY setAverageReference(int frameNumber) {
-        this.refAverage.setValue(frameNumber);
+    public AutoRotationXY setFrameNumber(int frameNumber) {
+        this.frameNumber.setValue(frameNumber);
         return this;
     }
     public AutoRotationXY() {}
@@ -113,14 +115,24 @@ public class AutoRotationXY implements TransformationTimeIndependent {
     }
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {     
         // TODO search for best image to Rotate ... better dispertion of signal ? using spatial moments? average on several frames ?
-        Image image = getAverageFrame(inputImages, channelIdx, inputImages.getDefaultTimePoint(), refAverage.getValue().intValue());
-        image = prefilters.filter(image);
-        double angle=getAngle(image);
+        int fn = Math.min(frameNumber.getValue().intValue(), inputImages.getFrameNumber());
+        List<Integer> frames;
+        if (fn<=1) frames = new ArrayList<Integer>(1){{add(inputImages.getDefaultTimePoint());}};
+        else frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, fn);
         
+        List<Double> angles = new ArrayList<>(fn);
+        for (int f : frames) {
+            Image image = inputImages.getImage(channelIdx, f);
+            image = prefilters.filter(image);
+            double angle=getAngle(image);
+            angles.add(angle);
+        }
         //ImageFloat sin = RadonProjection.getSinogram(image, minAngle.getValue().doubleValue()+90, maxAngle.getValue().doubleValue()+90, precision1.getValue().doubleValue(), Math.min(image.getSizeX(), image.getSizeY())); //(int)Math.sqrt(image.getSizeX()*image.getSizeX() + image.getSizeY()*image.getSizeY())
         //new IJImageDisplayer().showImage(sin);
+        double medianAngle = ArrayUtil.median(angles);
+        logger.debug("autorotation: median angle: {} among: {}", medianAngle, Utils.toStringList(Utils.toList(ArrayUtil.generateIntegerArray(fn)), i->"f:"+frames.get(i)+"->"+angles.get(i)));
         internalParams = new ArrayList<Double>(1);
-        internalParams.add(angle);
+        internalParams.add(medianAngle);
     }
 
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {

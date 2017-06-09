@@ -52,16 +52,10 @@ public abstract class CropMicroChannels implements Transformation {
     protected NumberParameter margin = new BoundedNumberParameter("X-Margin", 0, 10, 0, null);
     protected NumberParameter channelHeight = new BoundedNumberParameter("Channel Height", 0, 330, 0, null);
     protected NumberParameter cropMargin = new BoundedNumberParameter("Crop Margin", 0, 45, 0, null);
-    protected NumberParameter refAverage = new BoundedNumberParameter("Number of frame to average around reference frame", 0, 0, 0, null);
-    NumberParameter number = new BoundedNumberParameter("Number of Frames", 0, 5, 1, null);
+    NumberParameter number = new BoundedNumberParameter("Number of Frames", 0, 20, 1, null);
     
     public CropMicroChannels setNumberOfFrames(int nb) {
         this.number.setValue(nb);
-        return this;
-    }
-    
-    public CropMicroChannels setAvergeFrameNb(int nb) {
-        this.refAverage.setValue(nb);
         return this;
     }
     
@@ -86,15 +80,14 @@ public abstract class CropMicroChannels implements Transformation {
         BoundingBox b=null;
         int numb = Math.min(number.getValue().intValue(), inputImages.getFrameNumber()-2);
         if (numb>1) {
-            double delta = (double)inputImages.getFrameNumber() / (double)(numb+2);
-            for (int i = 0; i<=numb; ++i) {
-                int time = (int)(i * delta);
-                image = getAverageFrame(inputImages,channelIdx, inputImages.getDefaultTimePoint(), refAverage.getValue().intValue());
+            List<Integer> frames = InputImages.chooseNImagesWithSignal(inputImages, channelIdx, numb);
+            for (int f : frames) {
+                image = inputImages.getImage(channelIdx, f);
                 BoundingBox bb = getBoundingBox(image);
                 if (bb==null) continue;
                 if (b==null) b = bb;
                 else b.expand(bb);
-                if (debug) logger.debug("time: {}, bounds: {}, max bounds: {}", time, bb, b);
+                if (debug) logger.debug("CropMicroChannels: time: {}, bounds: {}, max bounds: {}", f, bb, b);
             }
         } else b = getBoundingBox(image);
         if (b==null) {
