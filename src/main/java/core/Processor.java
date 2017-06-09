@@ -322,7 +322,8 @@ public class Processor {
             for (int childSIdx : cSI) {
                 //GUI.log("Generating Image for track:"+track.get(0)+", structureIdx:"+childSIdx+" ...");
                 Image im = i.generateRawImage(childSIdx, false);
-                imageDAO.writeTrackImage(track.get(0), childSIdx, im);
+                int channelIdx = dao.getExperiment().getChannelImageIdx(childSIdx);
+                imageDAO.writeTrackImage(track.get(0), channelIdx, im);
             }
         });
     }

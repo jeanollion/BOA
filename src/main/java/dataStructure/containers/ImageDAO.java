@@ -42,8 +42,8 @@ public interface ImageDAO {
     public void deletePreProcessedImage(int channelImageIdx, int timePoint, String microscopyFieldName);
     
     // track images
-    public void writeTrackImage(StructureObject trackHead, int structureIdx, Image image);
-    public Image openTrackImage(StructureObject trackHead, int structureIdx);
-    public void clearTrackImages(String position, int structureIdx);
+    public void writeTrackImage(StructureObject trackHead, int channelImageIdx, Image image);
+    public Image openTrackImage(StructureObject trackHead, int channelImageIdx);
+    public void clearTrackImages(String position, int parentStructureIdx);
     
 }

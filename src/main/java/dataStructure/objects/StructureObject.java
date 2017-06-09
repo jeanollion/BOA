@@ -1,5 +1,7 @@
 package dataStructure.objects;
 
+import boa.gui.imageInteraction.ImageObjectInterface;
+import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import configuration.parameters.PostLoadable;
 import dataStructure.configuration.Experiment;
 import dataStructure.configuration.MicroscopyField;
@@ -41,6 +43,7 @@ import org.slf4j.LoggerFactory;
 import plugins.ObjectSplitter;
 import processing.ImageFeatures;
 import utils.JSONUtils;
+import utils.Pair;
 import utils.SmallArray;
 import utils.Utils;
 
@@ -71,6 +74,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     @Transient private boolean objectModified=false;
     protected ObjectContainer objectContainer;
     @Transient protected SmallArray<Image> rawImagesC=new SmallArray<>();
+    @Transient protected SmallArray<Image> trackImagesC=new SmallArray<>();
     //@Transient protected SmallArray<Image> preProcessedImageS=new SmallArray<Image>();
     
     // measurement-related attributes
@@ -716,7 +720,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     //public ObjectContainer getObjectContainer() {return objectContainer;}
     public void deleteMask(){if (objectContainer!=null) objectContainer.deleteObject();};
-    
+    @Override
     public Image getRawImage(int structureIdx) {
         int channelIdx = getExperiment().getChannelImageIdx(structureIdx);
         if (rawImagesC.get(channelIdx)==null) { // chercher l'image chez le parent avec les bounds
@@ -728,17 +732,31 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                                 rawImagesC.set(trackHead.getRawImage(structureIdx), channelIdx);
                             } else rawImagesC.set(getExperiment().getImageDAO().openPreProcessedImage(channelIdx, getMicroscopyField().singleFrame(structureIdx) ? 0 : timePoint, getPositionName()), channelIdx);
                         }
-                    } else {
+                    } else { // look in parent
                         StructureObject parentWithImage=getFirstParentWithOpenedRawImage(structureIdx);
                         if (parentWithImage!=null) {
+                            logger.debug("object: {}, channel: {}, open from parent with open image: {}", this, channelIdx, parentWithImage);
                             BoundingBox bb=getRelativeBoundingBox(parentWithImage);
                             extendBoundsInZIfNecessary(channelIdx, bb);
                             rawImagesC.set(parentWithImage.getRawImage(structureIdx).crop(bb), channelIdx);    
-                        } else { // opens only the bb of the object from the root objects
-                            StructureObject root = getRoot();
+                        } else { // check track image
+                            Image trackImage = getTrackImage(structureIdx);
+                            if (trackImage!=null) {
+                                logger.debug("object: {}, channel: {}, open from trackImage", this, channelIdx);
+                                Image image = trackImage.crop(getBounds().duplicate().translateToOrigin().translate(offsetInTrackImage));
+                                rawImagesC.set(image, channelIdx);
+                            } else { // open root and crop
+                                logger.debug("object: {}, channel: {}, open root and crop", this, channelIdx);
+                                BoundingBox bb = getRelativeBoundingBox(getRoot());
+                                extendBoundsInZIfNecessary(channelIdx, bb);
+                                Image image = getRoot().getRawImage(structureIdx).crop(bb);
+                                rawImagesC.set(image, channelIdx);
+                            }
+                            // no speed gain in opening only tiles
+                            /*StructureObject root = getRoot();
                             BoundingBox bb=getRelativeBoundingBox(root);
                             extendBoundsInZIfNecessary(channelIdx, bb);
-                            rawImagesC.set(root.openRawImage(structureIdx, bb), channelIdx);
+                            rawImagesC.set(root.openRawImage(structureIdx, bb), channelIdx);*/
                         }
                     }
                     rawImagesC.get(channelIdx).setCalibration(getScaleXY(), getScaleZ());
@@ -749,6 +767,32 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
         return rawImagesC.get(channelIdx);
     }
+
+    private BoundingBox offsetInTrackImage;
+    public Image getTrackImage(int structureIdx) {
+        int channelIdx = getExperiment().getChannelImageIdx(structureIdx);
+        if (this.isTrackHead) {
+            if (this.trackImagesC.get(channelIdx)==null) {
+                synchronized(trackImagesC) {
+                    if (trackImagesC.getAndExtend(channelIdx)==null) {
+                        Image im = getExperiment().getImageDAO().openTrackImage(this, channelIdx);
+                        if (im!=null) { // set image && set offsets for all track
+                            im.setCalibration(getScaleXY(), getScaleZ());
+                            trackImagesC.setQuick(im, channelIdx);
+                            List<StructureObject> track = StructureObjectUtils.getTrack(this, false);
+                            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, this.structureIdx);
+                            List<Pair<StructureObject, BoundingBox>> off = i.pairWithOffset(track);
+                            for (Pair<StructureObject, BoundingBox> p : off) p.key.offsetInTrackImage=p.value;
+                        }
+                    }
+                }
+            }
+            return trackImagesC.get(channelIdx);
+        } else {
+            return getTrackHead().getTrackImage(structureIdx);
+        }
+    }
+    
     private void extendBoundsInZIfNecessary(int channelIdx, BoundingBox bounds) { //when the current structure is 2D but channel is 3D 
         //logger.debug("extends bounds if necessary: is2D: {}, bounds 2D: {}, sizeZ of image to open: {}", is2D(), bounds.getSizeZ(), getExperiment().getMicroscopyField(positionName).getSizeZ(channelIdx));
         if (bounds.getSizeZ()==1 && is2D() && channelIdx!=this.getExperiment().getChannelImageIdx(structureIdx)) { 
@@ -834,6 +878,8 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     public void flushImages() {
         //for (int i = 0; i<preProcessedImageS.getBucketSize(); ++i) preProcessedImageS.setQuick(null, i);
         for (int i = 0; i<rawImagesC.getBucketSize(); ++i) rawImagesC.setQuick(null, i);
+        for (int i = 0; i<trackImagesC.getBucketSize(); ++i) trackImagesC.setQuick(null, i);
+        this.offsetInTrackImage=null;
     }
     /*
     public void segmentChildren(int structureIdx) {

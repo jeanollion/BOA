@@ -116,7 +116,7 @@ public abstract class TrackMask extends ImageObjectInterface {
     public abstract Image generateEmptyImage(String name, Image type);
     
     @Override public Image generateRawImage(final int structureIdx, boolean executeInBackground) {
-        Image daoImage = trackObjects[0].parent.getExperiment().getImageDAO().openTrackImage(parents.get(0), structureIdx);
+        Image daoImage = trackObjects[0].parent.getTrackImage(structureIdx);
         if (daoImage!=null) return daoImage;
         /*long t00 = System.currentTimeMillis();
         for (int i =0; i<trackObjects.length; ++i) {

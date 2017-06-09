@@ -71,8 +71,11 @@ public class LocalFileSystemImageDAO implements ImageDAO {
         String path = getPreProcessedImagePath(channelImageIdx, timePoint, microscopyFieldName);
         File f = new File(path);
         if (f.exists()) {
-            logger.trace("Opening pre-processed image:  channel: {} timePoint: {} fieldName: {}", channelImageIdx, timePoint, microscopyFieldName);
-            return ImageReader.openImage(path);
+            //long t0 = System.currentTimeMillis();
+            Image im = ImageReader.openImage(path);
+            //long t1 = System.currentTimeMillis();
+            //logger.debug("Opening pre-processed image:  channel: {} timePoint: {} position: {}, in {}ms", channelImageIdx, timePoint, microscopyFieldName, t1-t0);
+            return im;
         } else {
             logger.trace("pre-processed image: {} not found", path);
             return null;
@@ -136,16 +139,16 @@ public class LocalFileSystemImageDAO implements ImageDAO {
     protected String getPreProcessedImagePath(int channelImageIdx, int timePoint, String microscopyFieldName) {
         return directory+File.separator+microscopyFieldName+File.separator+"pre_processed"+File.separator+"t"+Utils.formatInteger(5, timePoint)+"_c"+Utils.formatInteger(2, channelImageIdx)+".tif";
     }
-    private String getTrackImageFolder(String position, int structureIdx) {
-        return directory+File.separator+position+File.separator+"track_images_"+structureIdx;
+    private String getTrackImageFolder(String position, int parentStructureIdx) {
+        return directory+File.separator+position+File.separator+"track_images_"+parentStructureIdx;
     }
-    private String getTrackImagePath(StructureObject o, int structureIdx) {
-        return getTrackImageFolder(o.getPositionName(), o.getStructureIdx())+File.separator+Selection.indicesString(o)+"_"+structureIdx+".tif";
+    private String getTrackImagePath(StructureObject o, int channelImageIdx) {
+        return getTrackImageFolder(o.getPositionName(), o.getStructureIdx())+File.separator+Selection.indicesString(o)+"_"+channelImageIdx+".tif";
     }
     
     @Override
-    public void writeTrackImage(StructureObject trackHead, int structureIdx, Image image) {
-        String path = getTrackImagePath(trackHead, structureIdx);
+    public void writeTrackImage(StructureObject trackHead, int channelImageIdx, Image image) {
+        String path = getTrackImagePath(trackHead, channelImageIdx);
         File f = new File(path);
         f.delete();
         f.getParentFile().mkdirs();
@@ -154,8 +157,8 @@ public class LocalFileSystemImageDAO implements ImageDAO {
     }
 
     @Override
-    public Image openTrackImage(StructureObject trackHead, int structureIdx) {
-        String path = getTrackImagePath(trackHead, structureIdx);
+    public Image openTrackImage(StructureObject trackHead, int channelImageIdx) {
+        String path = getTrackImagePath(trackHead, channelImageIdx);
         File f = new File(path);
         if (f.exists()) {
             logger.trace("Opening track image:  trackHead: {}", trackHead);
@@ -166,8 +169,8 @@ public class LocalFileSystemImageDAO implements ImageDAO {
     }
 
     @Override
-    public void clearTrackImages(String position, int structureIdx) {
-        String folder = getTrackImageFolder(position, structureIdx);
+    public void clearTrackImages(String position, int parentStructureIdx) {
+        String folder = getTrackImageFolder(position, parentStructureIdx);
         Utils.deleteDirectory(folder);
     }
     
