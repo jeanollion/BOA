@@ -87,7 +87,7 @@ public class TestProcessMutations {
         //seg.getPostFilters().removeAllElements();
         
         Image[] maps = seg.computeMaps(input, input);
-        if (!input.sameSize(parent.getMask())) maps = Utils.apply(maps, new Image[maps.length], i -> i.cropWithOffset(parent.getBounds()));
+        if (!input.sameSize(parent.getMask())) maps = Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(parent.getBounds()));
         seg.setMaps(maps);
         
         seg.intermediateImages=intermediateImages;

@@ -40,6 +40,7 @@ import java.util.HashMap;
 import fiji.plugin.trackmate.tracking.sparselap.SparseLAPFrameToFrameTracker;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -53,6 +54,7 @@ import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
 import org.slf4j.LoggerFactory;
 import static plugins.Plugin.logger;
+import utils.Pair;
 import utils.Utils;
 /**
  *
@@ -195,65 +197,96 @@ public class TrackMateInterface<S extends Spot> {
     public void setTrackLinks(Map<Integer, List<StructureObject>> objectsF) {
         setTrackLinks(objectsF, null);
     }
+    public Set<Pair<DefaultWeightedEdge, DefaultWeightedEdge>> getCrossingLinks(double spatialTolerence, Set<S> involvedSpots) {
+        if (graph==null) return Collections.EMPTY_SET;
+        Set<Pair<DefaultWeightedEdge, DefaultWeightedEdge>> res = new HashSet<>();
+        for (DefaultWeightedEdge e1 : graph.edgeSet()) {
+            for (DefaultWeightedEdge e2 : graph.edgeSet()) {
+                if (e1.equals(e2)) continue;
+                if (intersect(e1, e2, spatialTolerence, involvedSpots)) {
+                    res.add(new Pair(e1, e2));
+                }
+            }
+        }
+        return res;
+    }
+    /**
+     * Removes edges from graph, and spots that not linked to any other spots
+     * @param edges
+     * @param spots can be null 
+     */
+    public void removeFromGraph(Collection<DefaultWeightedEdge> edges, Collection<S> spots) {
+        graph.removeAllEdges(edges);
+        if (spots==null) {
+            spots = new HashSet<S>();
+            for (DefaultWeightedEdge e : edges) {
+                spots.add((S)graph.getEdgeSource(e));
+                spots.add((S)graph.getEdgeTarget(e));
+            }
+        }
+        for (Spot s : spots) { // also remove vertex that are not linked anymore
+            if (graph.edgesOf(s).isEmpty()) graph.removeVertex(s);
+        }
+    }
     
     public void  removeCrossingLinksFromGraph(double spatialTolerence) {
         if (graph==null) return;
         long t0 = System.currentTimeMillis();
-        HashSet<DefaultWeightedEdge> toRemove = new HashSet<>();
-        HashSet<Spot> toRemSpot = new HashSet<>();
-        for (DefaultWeightedEdge e1 : graph.edgeSet()) {
-            for (DefaultWeightedEdge e2 : graph.edgeSet()) {
-                if (intersect(e1, e2, spatialTolerence, toRemSpot)) {
-                    toRemove.add(e1);
-                    toRemove.add(e2);
-                }
-            }
-        }
-        graph.removeAllEdges(toRemove);
-        
-        for (Spot s : toRemSpot) { // also remove vertex that are not linked anymore
-            if (graph.edgesOf(s).isEmpty()) graph.removeVertex(s);
-        }
+        Set<S> toRemSpot = new HashSet<>();
+        Set<Pair<DefaultWeightedEdge, DefaultWeightedEdge>> toRemove = getCrossingLinks(spatialTolerence, toRemSpot);
+        removeFromGraph(Pair.flatten(toRemove, null), toRemSpot);
         long t1 = System.currentTimeMillis();
         logger.debug("number of edges after removing intersecting links: {}, nb of vertices: {}, processing time: {}", graph.edgeSet().size(), graph.vertexSet().size(), t1-t0);
     }
-    private static String toString(Spot s) {
-        return "F="+s.getFeature(Spot.FRAME)+";Idx="+s.getFeature("Idx");
-    }
 
-    private boolean intersect(DefaultWeightedEdge e1, DefaultWeightedEdge e2, double spatialTolerence, HashSet<Spot> toRemSpot) {
+    private boolean intersect(DefaultWeightedEdge e1, DefaultWeightedEdge e2, double spatialTolerence, Set<S> toRemSpot) {
         if (e1.equals(e2)) return false;
-        Spot s1 = graph.getEdgeSource(e1);
-        Spot s2 = graph.getEdgeSource(e2);
-        Spot t1 = graph.getEdgeTarget(e1);
-        Spot t2 = graph.getEdgeTarget(e2);
+        S s1 = (S)graph.getEdgeSource(e1);
+        S s2 = (S)graph.getEdgeSource(e2);
+        S t1 = (S)graph.getEdgeTarget(e1);
+        S t2 = (S)graph.getEdgeTarget(e2);
+        //if (s1.getFeature(Spot.FRAME)>=t1.getFeature(Spot.FRAME)) logger.debug("error source after target {}->{}", s1, t1);
         if (s1.equals(t1) || s2.equals(t2) || s1.equals(s2) || t1.equals(t2)) return false;
-        if (!intersect(s1.getFeature(Spot.FRAME), t1.getFeature(Spot.FRAME), s2.getFeature(Spot.FRAME), t2.getFeature(Spot.FRAME), 0)) return false;
+        if (!overlapTime(s1.getFeature(Spot.FRAME), t1.getFeature(Spot.FRAME), s2.getFeature(Spot.FRAME), t2.getFeature(Spot.FRAME))) return false;
         for (String f : Spot.POSITION_FEATURES) {
             if (!intersect(s1.getFeature(f), t1.getFeature(f), s2.getFeature(f), t2.getFeature(f), spatialTolerence)) return false;
         }
-        toRemSpot.add(s1);
-        toRemSpot.add(s2);
-        toRemSpot.add(t1);
-        toRemSpot.add(t2);
+        if (toRemSpot!=null) {
+            toRemSpot.add(s1);
+            toRemSpot.add(s2);
+            toRemSpot.add(t1);
+            toRemSpot.add(t2);
+        }
         return true;
     }
-    private static boolean intersect(double min1, double max1, double min2, double max2, double tolerance) {
-        if (min1>max1) {
-            double t = max1;
-            max1=min1;
-            min1=t;
-        }
-        if (min2>max2) {
-            double t = max2;
-            max2=min2;
-            min2=t;
-        }
-        double min = Math.max(min1, min2);
-        double max = Math.min(max1, max2);
-        return max>min-tolerance;
+    private static boolean intersect(double aPrev, double aNext, double bPrev, double bNext, double tolerance) {
+        double d1 = aPrev - bPrev;
+        double d2 = aNext - bNext;
+        return d1*d2<=0 || Math.abs(d1)<=tolerance || Math.abs(d2)<=tolerance;
     }
-    
+    private static boolean overlapTime(double aPrev, double aNext, double bPrev, double bNext) {
+        /*if (aPrev>aNext) {
+            double t = aNext;
+            aNext=aPrev;
+            aPrev=t;
+        }
+        if (bPrev>bNext) {
+            double t = bNext;
+            bNext=bPrev;
+            bPrev=t;
+        }*/
+        double min = Math.max(aPrev, bPrev);
+        double max = Math.min(aNext, bNext);
+        return max>min;
+    }
+    public void printLinks() {
+        logger.debug("number of links: {}", graph.edgeSet().size());
+        for (DefaultWeightedEdge e : graph.edgeSet()) {
+            Spot s = graph.getEdgeSource(e);
+            Spot t = graph.getEdgeTarget(e);
+            logger.debug("{}->{}", s, t);
+        }
+    }
     public void setTrackLinks(Map<Integer, List<StructureObject>> objectsF, Collection<StructureObject> modifiedObjects) {
         if (objectsF==null || objectsF.isEmpty()) return;
         List<StructureObject> objects = Utils.flattenMap(objectsF);
@@ -264,10 +297,7 @@ public class TrackMateInterface<S extends Spot> {
             logger.error("Graph not initialized!");
             return;
         }
-        logger.debug("number of links: {}", graph.edgeSet().size());
         
-        
-
         TreeSet<DefaultWeightedEdge> edgeBucket = new TreeSet(new Comparator<DefaultWeightedEdge>() {
             @Override public int compare(DefaultWeightedEdge arg0, DefaultWeightedEdge arg1) {
                 return Double.compare(graph.getEdgeWeight(arg0), graph.getEdgeWeight(arg1));
@@ -282,10 +312,10 @@ public class TrackMateInterface<S extends Spot> {
             edgesBucket.clear();
             //logger.debug("settings links for: {}", child);
             S s = objectSpotMap.get(child.getObject());
-            getSortedEdgesOf(s, graph, prev, edgesBucket);
+            getSortedEdgesOf(s, prev, edgesBucket);
             if (edgesBucket.size()==1) {
                 DefaultWeightedEdge e = edgesBucket.first();
-                S otherSpot = getOtherSpot(e, s, graph);
+                S otherSpot = getOtherSpot(e, s);
                 StructureObject other = getStructureObject(objectsByF.get(otherSpot.getFeature(Spot.FRAME).intValue()), otherSpot);
                 if (other!=null) {
                     if (prev) {
@@ -302,7 +332,7 @@ public class TrackMateInterface<S extends Spot> {
             }
         }
     }
-    private void getSortedEdgesOf(S spot, final SimpleWeightedGraph< Spot, DefaultWeightedEdge > graph, boolean backward, TreeSet<DefaultWeightedEdge> res) {
+    private void getSortedEdgesOf(S spot, boolean backward, TreeSet<DefaultWeightedEdge> res) {
         if (!graph.containsVertex(spot)) return;
         Set<DefaultWeightedEdge> set = graph.edgesOf(spot);
         if (set.isEmpty()) return;
@@ -310,19 +340,73 @@ public class TrackMateInterface<S extends Spot> {
         double tp = spot.getFeature(Spot.FRAME);
         if (backward) {
             for (DefaultWeightedEdge e : set) {
-                if (getOtherSpot(e, spot, graph).getFeature(Spot.FRAME)<tp) res.add(e);
+                if (getOtherSpot(e, spot).getFeature(Spot.FRAME)<tp) res.add(e);
             }
         } else {
             for (DefaultWeightedEdge e : set) {
-                if (getOtherSpot(e, spot, graph).getFeature(Spot.FRAME)>tp) res.add(e);
+                if (getOtherSpot(e, spot).getFeature(Spot.FRAME)>tp) res.add(e);
             }
         }
     }
     
-    private S getOtherSpot(DefaultWeightedEdge e, S spot, SimpleWeightedGraph< Spot, DefaultWeightedEdge > graph ) {
+    private S getOtherSpot(DefaultWeightedEdge e, S spot) {
         S s = (S)graph.getEdgeTarget(e);
         if (s==spot) return (S)graph.getEdgeSource(e);
         else return s;
+    }
+    public void switchLinks(DefaultWeightedEdge e1, DefaultWeightedEdge e2) {
+        S s1 = (S)graph.getEdgeSource(e1);
+        S t1 = (S)graph.getEdgeTarget(e1);
+        S s2 = (S)graph.getEdgeSource(e2);
+        S t2 = (S)graph.getEdgeTarget(e2);
+        graph.removeEdge(e1);
+        graph.removeEdge(e2);
+        graph.addEdge(s1, t2);
+        graph.addEdge(s2, t1);
+    }
+    /**
+     * If allow merge / split -> unpredictible results : return one possible track
+     * @param e
+     * @param after
+     * @param before
+     * @return 
+     */
+    private List<S> getTrack(S e, boolean next, boolean prev) {
+        if (graph==null) return null;
+        List<S> track = new ArrayList<>();
+        track.add(e);
+        if (next) {
+            S n = getNext(e);
+            while(n!=null) {
+                track.add(n);
+                n = getNext(n);
+            }
+        } 
+        if (prev) {
+            S p = getPrevious(e);
+            while(p!=null) {
+                track.add(p);
+                p = getPrevious(p);
+            }
+        } 
+        Collections.sort(track, (s1, s2)->Double.compare(s1.getFeature(Spot.FRAME), s2.getFeature(Spot.FRAME)));
+        return track;
+    }
+    private S getPrevious(S t) {       
+        for (DefaultWeightedEdge e : graph.edgesOf(t)) {
+            Spot s = graph.getEdgeSource(e);
+            if (s.equals(t)) continue;
+            else return (S)s;
+        }
+        return null;
+    }
+    private S getNext(S s) {
+        for (DefaultWeightedEdge e : graph.edgesOf(s)) {
+            Spot t = graph.getEdgeTarget(e);
+            if (s.equals(t)) continue;
+            else return (S)t;
+        }
+        return null;
     }
     
     private StructureObject getStructureObject(List<StructureObject> candidates, S s) {
@@ -347,13 +431,11 @@ public class TrackMateInterface<S extends Spot> {
             if (center==null) center = o.getGeomCenter(true);
             Spot s = new Spot(center[0], center[1], center.length>=2 ? center[2] : 0, 1, 1);
             s.getFeatures().put(Spot.FRAME, (double)frame);
-            s.getFeatures().put("Idx", (double)(o.getLabel()-1));
             return s;
         }
         @Override public Spot duplicate(Spot s) {
             Spot res =  new Spot(s.getFeature(Spot.POSITION_X), s.getFeature(Spot.POSITION_Y), s.getFeature(Spot.POSITION_Z), s.getFeature(Spot.RADIUS), s.getFeature(Spot.QUALITY));
             res.getFeatures().put(Spot.FRAME, s.getFeature(Spot.FRAME));
-            res.getFeatures().put("Idx", s.getFeature("Idx"));
             return res;
         }
     }

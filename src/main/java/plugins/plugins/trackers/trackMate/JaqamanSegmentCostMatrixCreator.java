@@ -54,6 +54,7 @@ import java.util.stream.Stream;
 import net.imglib2.algorithm.MultiThreaded;
 import org.jgrapht.UndirectedGraph;
 import org.jgrapht.graph.DefaultWeightedEdge;
+import plugins.Plugin;
 import static plugins.plugins.trackers.trackMate.TrackMateInterface.logger;
 
 /**
@@ -221,7 +222,7 @@ public class JaqamanSegmentCostMatrixCreator implements CostMatrixCreator< Spot,
 		 * (gap-closing) then the segment middles (merging).
 		 */
 
-		final ExecutorService executorGCM = Executors.newFixedThreadPool( numThreads );
+		final ExecutorService executorGCM = Executors.newFixedThreadPool( 1 );
 		for ( final Spot source : segmentEnds )
 		{
 			executorGCM.submit( new Runnable()
@@ -250,7 +251,7 @@ public class JaqamanSegmentCostMatrixCreator implements CostMatrixCreator< Spot,
 
 							// Check max distance
 							final double cost = gcCostFunction.linkingCost( source, target );
-							if ( cost > gcCostThreshold.linkingCostThreshold(source, target) )
+                                                        if ( cost > gcCostThreshold.linkingCostThreshold(source, target) )
 							{
 								continue;
 							}

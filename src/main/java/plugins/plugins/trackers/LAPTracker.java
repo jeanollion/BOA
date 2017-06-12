@@ -35,12 +35,14 @@ import fiji.plugin.trackmate.Spot;
 import image.Image;
 import image.ImageFloat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import org.apache.commons.lang.ArrayUtils;
+import org.jgrapht.graph.DefaultWeightedEdge;
 import plugins.MultiThreaded;
 import plugins.ParameterSetup;
 import plugins.Segmenter;
@@ -60,6 +62,7 @@ import plugins.plugins.trackers.trackMate.TrackMateInterface;
 import plugins.plugins.trackers.trackMate.TrackMateInterface.SpotFactory;
 import utils.ArrayFileWriter;
 import utils.HashMapGetCreate;
+import utils.Pair;
 import utils.Utils;
 
 /**
@@ -153,8 +156,8 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
             @Override
             public SpotWithinCompartment toSpot(Object3D o, int frame) {
                 StructureObject parent = parentsByF.get(frame);
-                List<StructureObject> compartments = parent.getChildren(compartirmentStructure);
-                StructureObject compartimentSO = StructureObjectUtils.getInclusionParent(o, compartments, null); 
+                List<StructureObject> candidates = parent.getChildren(compartirmentStructure);
+                StructureObject compartimentSO = StructureObjectUtils.getInclusionParent(o, candidates, null); 
                 SpotCompartiment compartiment = compartimentMap.getAndCreateIfNecessary(compartimentSO);
                 if (compartiment==null) return null;
                 double[] center = o.getCenter();
@@ -168,13 +171,14 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
 
             @Override
             public SpotWithinCompartment duplicate(SpotWithinCompartment s) {
-                double[] center = new double[]{s.getFeature(Spot.POSITION_X), s.getFeature(Spot.POSITION_Z), s.getFeature(Spot.POSITION_Z)};
+                double[] center = new double[]{s.getFeature(Spot.POSITION_X), s.getFeature(Spot.POSITION_Y), s.getFeature(Spot.POSITION_Z)};
                 return new SpotWithinCompartment(s.getObject(), s.frame, s.compartiment, center, distParams);
             }
         });
         SpotWithinCompartment.displayPoles=true;
         
         Map<Integer, List<StructureObject>> objectsF = StructureObjectUtils.getChildrenMap(parentTrack, structureIdx);
+        
         long t0 = System.currentTimeMillis();
         tmi.addObjects(objectsF);
         long t1 = System.currentTimeMillis();
@@ -189,14 +193,16 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
             boolean ok = tmi.processFTF(maxLinkingDistance); //FTF only with HQ
             distParams.includeLQ=true;
             if (ok) ok = tmi.processFTF(maxLinkingDistance); // FTF HQ+LQ
-            distParams.includeLQ=false;
-            if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, false, false); // GC HQ
             distParams.includeLQ=true;
-            if (ok) ok = tmi.processGC(maxLinkingDistanceGC, Math.min(2, maxGap), false, false); // GC HQ + LQ // maximum one gap for LQ spots
+            if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, false, false); // GC HQ+LQ (dist param: no gap closing between LQ spots)
             if (ok) {
                 tmi.setTrackLinks(objectsF);
                 tmi.resetEdges();
+                
+                MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, tmi.objectSpotMap, o->{});
+                postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC);
                 removeUnlinkedLQSpots(parentTrack, structureIdx, tmi);
+                
                 objectsF = StructureObjectUtils.getChildrenMap(parentTrack, structureIdx);
             } else return;
             
@@ -204,13 +210,9 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
         long t2 = System.currentTimeMillis();
         boolean ok = true;//tmi.processFTF(maxLinkingDistance);
         if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, false, false);
-        if (ok) tmi.setTrackLinks(objectsF);
+        //if (ok) tmi.setTrackLinks(objectsF);
         
-        /*SpotWithinCompartment s1 = tmi.objectSpotMap.get(objectsF.get(3).get(2).getObject());
-        SpotWithinCompartment s2 = tmi.objectSpotMap.get(objectsF.get(4).get(1).getObject());
-        logger.debug("o1: {}, o2: {}", objectsF.get(3).get(2), objectsF.get(4).get(1));
-        logger.debug("s1-s2 {}, s1Loc: {}, s2Loc: {}", s1.squareDistanceTo(s2), s1.localization, s2.localization);
-        */
+        
         //else for (StructureObject o : Utils.flattenMap(objectsF)) o.resetTrackLinks(true, true);
         // OR: second run with all spots at the same time?
         //boolean ok = tmi.processFTF(maxLinkingDistance);
@@ -218,7 +220,7 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
         //if (ok) tmi.removeCrossingLinksFromGraph(parentTrack.get(0).getScaleXY()*2);
         //if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, false, false);
         //if (ok) tmi.setTrackLinks(objectsF);
-        if (LQSpots) {
+        if (false && LQSpots) {
             tmi.resetEdges();
             removeUnlinkedLQSpots(parentTrack, structureIdx, tmi);
         }
@@ -226,8 +228,8 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
         long t3 = System.currentTimeMillis();
         // post-processing
         //MutationTrackPostProcessing.RemoveObjectCallBact cb= o->tmi.removeObject(o.getObject(), o.getFrame()); // if tmi needs to be reused afterwards
-        //MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, tmi.objectSpotMap, o->{});
-        //postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC);
+        MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, tmi.objectSpotMap, o->{});
+        postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC);
         long t4 = System.currentTimeMillis();
         //postProcessor.flagShortAndLongTracks(minimalTrackFrameNumber.getValue().intValue(), maximalTrackFrameNumber.getValue().intValue());
         
@@ -238,9 +240,23 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
         float[] dHQLQ = core.extractDistanceDistribution(false);
         new ArrayFileWriter().addArray("HQ", dHQ).addArray("HQLQ", dHQLQ).writeToFile("/home/jollion/Documents/LJP/Analyse/SpotDistanceDistribution/SpotDistanceDistribution.csv");
         */
+        
+        // relabel
+        for (StructureObject p: parentTrack) {
+            Collections.sort(p.getChildren(structureIdx), (o1, o2) -> Double.compare(o1.getBounds().getYMean(), o2.getBounds().getYMean()));
+            p.relabelChildren(structureIdx);
+        }
+        
         logger.debug("LAP Tracker: {}, total processing time: {}, create spots: {}, remove LQ: {}, link: {}", parentTrack.get(0), t4-t0, t1-t0, t2-t1, t3-t2, t4-t3);
     }
-
+    
+    private static void switchCrossingLinksWithLQBranches(TrackMateInterface<SpotWithinCompartment> tmi, double spatialTolerance) {
+        Set<Pair<DefaultWeightedEdge, DefaultWeightedEdge>> crossingLinks = tmi.getCrossingLinks(spatialTolerance, null);
+        Map<DefaultWeightedEdge, Set<DefaultWeightedEdge>> map = Pair.toMapSym(crossingLinks);
+        Set<DefaultWeightedEdge> toDelete = new HashSet<>(); // to avoid concurent modification -> add there
+        
+    }
+    
     private static void removeUnlinkedLQSpots(List<StructureObject> parentTrack, int structureIdx, TrackMateInterface<SpotWithinCompartment> tmi) {
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         Set<StructureObject> parentsToRelabel = new HashSet<>();

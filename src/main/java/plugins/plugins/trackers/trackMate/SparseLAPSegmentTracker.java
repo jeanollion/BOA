@@ -35,6 +35,7 @@ import java.util.Map;
 import net.imglib2.algorithm.Benchmark;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import org.jgrapht.graph.SimpleWeightedGraph;
+import plugins.Plugin;
 
 /**
  *

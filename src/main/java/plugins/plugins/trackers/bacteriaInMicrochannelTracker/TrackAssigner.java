@@ -53,10 +53,10 @@ public class TrackAssigner {
     double[] baseSizeIncrement;
     protected boolean truncatedChannel;
     protected TrackAssigner(List<Object3D> prev, List<Object3D> next, double[] baseGrowthRate, boolean truncatedChannel, Function<Object3D, Double> sizeFunction, Function<Object3D, Double> sizeIncrementFunction, BiFunction<Object3D, Object3D, Boolean> areFromSameLine) {
-        idxPrevLim = prev.size();
-        idxNextLim = next.size();
-        this.prev=prev;
-        this.next=next;
+        this.prev= prev!=null ? prev : Collections.EMPTY_LIST;
+        this.next= next!=null ? next : Collections.EMPTY_LIST;
+        idxPrevLim = this.prev.size();
+        idxNextLim = this.next.size();
         this.sizeFunction = sizeFunction;
         this.sizeIncrementFunction=sizeIncrementFunction;
         if (sizeIncrementFunction==null) mode = AssignerMode.RANGE;

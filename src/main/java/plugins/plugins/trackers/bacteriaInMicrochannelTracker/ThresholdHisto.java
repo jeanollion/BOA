@@ -52,7 +52,6 @@ public class ThresholdHisto extends Threshold {
     double[] thresholdF;
     double[] thldCoeffY;
     final List<int[]> histos;
-    int[] frameRange;
     final static AutoThresholder.Method thldMethod = AutoThresholder.Method.Otsu;
     final static AutoThresholder.Method saturateMethod = AutoThresholder.Method.Shanbhag; // Avec sub: shanbhag. Pas de sub: : MaxEntropy / Triangle
     final static double maxSaturationProportion = 0.03;
@@ -61,15 +60,15 @@ public class ThresholdHisto extends Threshold {
     }
     @Override public double getThreshold(int frame) {
         if (thresholdF==null) return thresholdValue;
-        else return thresholdF[frame];
+        else return thresholdF[frame-offsetFrame];
     }
     @Override public double getThreshold(int frame, int y) {
         if (thldCoeffY==null) return getThreshold(frame);
         return getThreshold(frame) * thldCoeffY[y];
     }
     
-    public ThresholdHisto(List<Image> planes) {
-        super(planes);
+    public ThresholdHisto(List<Image> planes, int offsetFrame) {
+        super(planes, offsetFrame);
         this.frameRange=new int[]{0, planes.size()-1};
         byteHisto = planes.get(0) instanceof ImageByte;
         long t0 = System.currentTimeMillis();
@@ -90,9 +89,9 @@ public class ThresholdHisto extends Threshold {
         if (debug || debugCorr) logger.debug("Threshold Value over all time: {}, minAndMax: {}, byte?{}, saturate value: {} ({})", thresholdValue, minAndMax, byteHisto, saturateValue256, saturateValue);
         if (debug || debugCorr) logger.debug("getHistos: {}ms, compute 1st thld: {}ms", t1-t0, t2-t1);
     }
-    @Override public void setFrameRange(int[] frameRange) { // will recompute threshold value, min&max, saturateValue
-        if (frameRange==null) return;
-        this.frameRange=frameRange;
+    @Override public void setFrameRange(int[] fr) { // will recompute threshold value, min&max, saturateValue
+        if (fr==null) return;
+        frameRange=new int[]{fr[0]-offsetFrame, fr[1]-offsetFrame};
         if (debug || debugCorr) logger.debug("set frame range: sat: {}, fr: {}", saturateValue256, frameRange);
         if (saturateValue256<255 || frameRange[0]>0 || frameRange[1]<planes.size()-1) { // update min and max if necessary
             List<Image> planesSub = planes.subList(frameRange[0], frameRange[1]+1);
@@ -182,11 +181,6 @@ public class ThresholdHisto extends Threshold {
             for (int j = 0; j < 256; ++j) histo[j] += h[j];   
         }
         return IJAutoThresholder.runThresholder(thldMethod, histo, minAndMax, byteHisto);
-    }
-
-    @Override
-    public int[] getFrameRange() {
-        return this.frameRange;
     }
 
     @Override

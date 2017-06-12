@@ -122,7 +122,7 @@ public class SegmentOnly implements ProcessingScheme {
             Segmenter seg = segmenter.instanciatePlugin();
             if (useMaps) {
                 Image[] maps = subMaps.getAndCreateIfNecessarySync(globalParent);
-                ((UseMaps)seg).setMaps(Utils.apply(maps, new Image[maps.length], i -> i.cropWithOffset(subParent.getBounds())));
+                ((UseMaps)seg).setMaps(Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(subParent.getBounds())));
             }
             if (applyToSegmenter!=null) applyToSegmenter.apply(subParent, seg);
             Image input = inputImages.getAndCreateIfNecessarySync(globalParent);
@@ -173,7 +173,7 @@ public class SegmentOnly implements ProcessingScheme {
             List<Object3D> objects = new ArrayList<>();
             for (StructureObject subParent : parent.getChildren(segmentationStructureIdx)) {
                 seg = segmenter.instanciatePlugin();
-                if (maps!=null) ((UseMaps)seg).setMaps(Utils.apply(maps, new Image[maps.length], i -> i.cropWithOffset(subParent.getBounds())));
+                if (maps!=null) ((UseMaps)seg).setMaps(Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(subParent.getBounds())));
                 ObjectPopulation pop = seg.runSegmenter(input.cropWithOffset(subParent.getBounds()), structureIdx, subParent);
                 pop = postFilters.filter(pop, structureIdx, subParent);
                 pop.translate(subParent.getBounds(), true);

@@ -97,7 +97,7 @@ public abstract class Image implements ImageProperties {
         else while(it.hasNext()) bds.contract(it.next().getBoundingBox().translateToOrigin());
         bds.translateToOrigin();
         logger.debug("after contract: {}", bds);
-        planes = Utils.apply(planes, p -> p.getBoundingBox().translateToOrigin().equals(bds) ? p : p.crop(bds.duplicate().center(p.getBoundingBox().translateToOrigin())));
+        planes = Utils.transform(planes, p -> p.getBoundingBox().translateToOrigin().equals(bds) ? p : p.crop(bds.duplicate().center(p.getBoundingBox().translateToOrigin())));
         return mergeZPlanes(planes);
     }
     public static <T extends Image> T mergeZPlanes(List<T> planes) {

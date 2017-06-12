@@ -27,6 +27,7 @@ public class DistanceComputationParameters {
         private double gapSquareDistancePenalty;
         public double alternativeDistance;
         public boolean includeLQ = true;
+        public boolean allowGCBetweenLQ = false;
         public DistanceComputationParameters() {
             
         }
@@ -43,7 +44,9 @@ public class DistanceComputationParameters {
             this.alternativeDistance=alternativeDistance;
             return this;
         }
-        public double getSquareDistancePenalty(double distance, int tSource, int tTarget) {
-            return Math.pow(tTarget - tSource-1, 2) * (gapSquareDistancePenalty + 2*gapDistancePenalty*distance); // pow* -> working on square distances
+        public double getSquareDistancePenalty(double distance, SpotWithinCompartment s, SpotWithinCompartment t) {
+            int delta = Math.abs(t.frame-s.frame);
+            if (!allowGCBetweenLQ && delta>1 && s.lowQuality && t.lowQuality) return Double.POSITIVE_INFINITY; // no gap closing between LQ spots
+            return delta*delta * (gapSquareDistancePenalty + 2*gapDistancePenalty*distance); // pow* -> working on square distances
         }
     }

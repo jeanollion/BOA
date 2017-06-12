@@ -153,7 +153,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             initDB();
             if (this.positions==null) this.positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
             for (int p : positions) this.positions.remove((Integer)p);
-            logger.debug("positions: {} ({})", this.positions, Utils.apply(this.positions, i->db.getExperiment().getPositionsAsString()[i]));
+            logger.debug("positions: {} ({})", this.positions, Utils.transform(this.positions, i->db.getExperiment().getPositionsAsString()[i]));
             return this;
         }
         private void initDB() {

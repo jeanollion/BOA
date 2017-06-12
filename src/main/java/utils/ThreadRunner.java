@@ -15,6 +15,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -254,5 +255,35 @@ public class ThreadRunner {
                 logger.debug(message);
             }
         };
+    }
+    public static PriorityThreadFactory priorityThreadFactory(int priority) {return new PriorityThreadFactory(priority);}
+    public static class PriorityThreadFactory implements ThreadFactory {
+        private static final AtomicInteger poolNumber = new AtomicInteger(1);
+        private final ThreadGroup group;
+        private final AtomicInteger threadNumber = new AtomicInteger(1);
+        private final String namePrefix;
+        private final int priority;
+        public PriorityThreadFactory(int priority) {
+            if (priority<Thread.MIN_PRIORITY) priority=Thread.MIN_PRIORITY;
+            if (priority>Thread.MAX_PRIORITY) priority=Thread.MAX_PRIORITY;
+            this.priority=priority;
+            SecurityManager s = System.getSecurityManager();
+            group = (s != null) ? s.getThreadGroup() :
+                                  Thread.currentThread().getThreadGroup();
+            namePrefix = "pool-" +
+                          poolNumber.getAndIncrement() +
+                         "-thread-";
+        }
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread t = new Thread(group, r,
+                                  namePrefix + threadNumber.getAndIncrement(),
+                                  0);
+            if (t.isDaemon())
+                t.setDaemon(false);
+            if (t.getPriority() != priority)
+                t.setPriority(priority);
+            return t;
+        }
     }
 }

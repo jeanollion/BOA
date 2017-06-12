@@ -50,6 +50,7 @@ public class SpotWithinCompartment extends Spot {
     
     public SpotWithinCompartment(Object3D object, int timePoint, SpotCompartiment compartiment, double[] scaledCenter, DistanceComputationParameters distanceParameters) {
         super(scaledCenter[0], scaledCenter[1], scaledCenter.length>2?scaledCenter[2]:0, 1, 1);
+        //logger.debug("create spot: F={}, Idx={}, center={}", timePoint, object.getLabel()-1, Utils.toStringArray(scaledCenter));
         getFeatures().put(Spot.FRAME, (double)compartiment.object.getFrame());
         getFeatures().put(Spot.QUALITY, object.getQuality());
         this.compartiment=compartiment;
@@ -189,7 +190,7 @@ public class SpotWithinCompartment extends Spot {
     }*/
     
     @Override public String toString() {
-        return "spot:"+this.object.getLabel()+"t="+frame;
+        return "{F="+frame+"|S="+(object.getLabel()-1)+"|"+localization+"|LQ="+lowQuality+"C=["+getFeature(POSITION_X)+";"+getFeature(POSITION_Y)+"]}";
     }
     
     protected static double getSquareDistance(SpotWithinCompartment s1, double[] offset1, SpotWithinCompartment s2, double[] offset2) {
@@ -209,7 +210,7 @@ public class SpotWithinCompartment extends Spot {
         double dPole2 = Math.abs(y2-offset2[1]);
         if (dPole2>dPole1) d+=poleDistanceFactor * (dPole2-dPole1);*/
         // additional gap penalty
-        d+= s1.distanceParameters.getSquareDistancePenalty(d, s1.frame, s2.frame);
+        d+= s1.distanceParameters.getSquareDistancePenalty(d, s1, s2);
         return d;
     }
     

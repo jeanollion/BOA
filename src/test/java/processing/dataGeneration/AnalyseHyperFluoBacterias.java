@@ -85,7 +85,7 @@ public class AnalyseHyperFluoBacterias {
         return RemoveStripesSignalExclusion.removeStripes(input, input, BackgroundThresholder.runThresholder(input, null, 2.5, 3, 3, null), false);
     }
     private static void testSaturate(List<Image> ultra, String name) {
-        List<ImageByte> ultraThld = Utils.apply(ultra, i->saturateAndThld(i));
+        List<ImageByte> ultraThld = Utils.transform(ultra, i->saturateAndThld(i));
         ImageWindowManagerFactory.showImage(Image.mergeZPlanes(ultraThld).setName(name+" thld"));
     }
     private static ImageByte saturateAndThld(Image image) {
@@ -113,7 +113,7 @@ public class AnalyseHyperFluoBacterias {
         //CropMicroChannelFluo2D.debug=true;
         IJImageWindowManager iwm = (IJImageWindowManager)ImageWindowManagerFactory.getImageManager();
         if (images!=null && !images.isEmpty()) {
-            List<ImageInteger> utlraCrop = Utils.apply(images, i->crop(i));
+            List<ImageInteger> utlraCrop = Utils.transform(images, i->crop(i));
             Roi3D r = IJImageWindowManager.createRoi(Image.mergeZPlanes(utlraCrop), new BoundingBox(0, 0, 0), true);
             ImagePlus ip = (ImagePlus) ImageWindowManagerFactory.showImage(Image.mergeZPlanes(images).setName(name));
             iwm.displayObject(ip, r);
@@ -121,7 +121,7 @@ public class AnalyseHyperFluoBacterias {
     }
     
     private static Image preProcess(List<Image> images, String name) {
-        images = Utils.apply(images, i->preProcess(i));
+        images = Utils.transform(images, i->preProcess(i));
         return Image.mergeZPlanesResize(images, false).setName(name+"_PP");
     }
     private static Image preProcess(Image image) {
@@ -144,7 +144,7 @@ public class AnalyseHyperFluoBacterias {
         
         logger.debug("images count: {}", images.size());
         List<ImageInteger> masks = new ArrayList<>(images.size());
-        List<Double> proportion = Utils.apply(images, i -> analyse(i, masks, hyper));
+        List<Double> proportion = Utils.transform(images, i -> analyse(i, masks, hyper));
         Utils.plotProfile("Image proportion Utlra", Utils.toDoubleArray(proportion, false));
         ImageWindowManagerFactory.showImage(Image.mergeZPlanes(masks).setName(name+": masks"));
         logger.debug("Control");

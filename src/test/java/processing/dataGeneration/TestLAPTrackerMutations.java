@@ -67,7 +67,7 @@ public class TestLAPTrackerMutations {
         final int mcIdx = 0;
         TestLAPTrackerMutations t = new TestLAPTrackerMutations();
         
-        t.init(dbName, fieldIdx, mcIdx, 0, 10);
+        t.init(dbName, fieldIdx, mcIdx, 0, 1);
         t.testLAPTracking();
         
         // multithread version testing

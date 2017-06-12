@@ -156,12 +156,12 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
 
     @Override
     protected void applyScenario() {
-        for (int i = this.assignment.idxNextEnd()-1; i>=assignment.idxNext; --i) tracker.objectAttributeMap.remove(tracker.populations[timePointMax].remove(i));
+        for (int i = this.assignment.idxNextEnd()-1; i>=assignment.idxNext; --i) tracker.objectAttributeMap.remove(tracker.populations.get(timePointMin).remove(i));
         List<Object3D> allObjects = getObjects(timePointMax);
         sortAndRelabel();
         int idx = assignment.idxNext;
         for (Object3D o : allObjects) {
-            tracker.populations[timePointMax].add(idx, o);
+            tracker.populations.get(timePointMin).add(idx, o);
             tracker.objectAttributeMap.put(o, tracker.new TrackAttribute(o, idx, timePointMax));
             idx++;
         }
@@ -293,7 +293,7 @@ public class RearrangeObjectsFromPrev extends ObjectModifier {
         }
         
         @Override public String toString() {
-            return "RO:["+tracker.populations[timePointMax-1].indexOf(this.prevObject)+"]->["+(objects.isEmpty()? "" : getObjects(timePointMax).indexOf(objects.get(0))+";"+getObjects(timePointMax).indexOf(getLastObject()))+"]/size: "+size+"/cost: "+cost+ "/sizeRange: ["+this.sizeRange[0]+";"+this.sizeRange[1]+"]";
+            return "RO:["+tracker.populations.get(timePointMax-1).indexOf(this.prevObject)+"]->["+(objects.isEmpty()? "" : getObjects(timePointMax).indexOf(objects.get(0))+";"+getObjects(timePointMax).indexOf(getLastObject()))+"]/size: "+size+"/cost: "+cost+ "/sizeRange: ["+this.sizeRange[0]+";"+this.sizeRange[1]+"]";
         }
         
         

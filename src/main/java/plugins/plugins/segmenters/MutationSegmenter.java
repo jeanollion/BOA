@@ -251,8 +251,8 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
             o.setQuality(Math.sqrt(o.getQuality() * smooth.getPixel(o.getCenter()[0], o.getCenter()[1], o.getCenter().length>2?o.getCenter()[2]:0)));
         }
         if (debug) {
-            logger.debug("Q: {}", Utils.toStringList(pop.getObjects(), o->""+o.getQuality()));
-            logger.debug("C: {}", Utils.toStringList(pop.getObjects(), o->""+Utils.toStringArray(o.getCenter())));
+            logger.debug("Parent: {}: Q: {}", parent, Utils.toStringList(pop.getObjects(), o->""+o.getQuality()));
+            logger.debug("Parent: {}: C: {}", parent ,Utils.toStringList(pop.getObjects(), o->""+Utils.toStringArray(o.getCenter())));
         }
         pop.filter(new ObjectPopulation.RemoveFlatObjects(input));
         pop.filter(new ObjectPopulation.Size().setMin(minSpotSize));

@@ -353,7 +353,7 @@ public class ParameterUtils {
                             final BoundingBox bds = o.getBounds();
                             if (ps instanceof UseMaps) {
                                 maps = ((UseMaps)ps).computeMaps(raw, filtered);
-                                ((UseMaps)ps).setMaps(Utils.apply(maps, new Image[maps.length], i -> i.cropWithOffset(bds)));
+                                ((UseMaps)ps).setMaps(Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(bds)));
                                 logger.debug("testing with use maps");
                             }
                             ps.test(parameters[idx], filtered.cropWithOffset(bds), structureIdx, o);

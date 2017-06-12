@@ -34,21 +34,25 @@ import utils.Utils;
  */
 public abstract class Threshold {
     final List<Image> planes;
-    public Threshold(List<Image> planes) {
+    final int offsetFrame;
+    int[] frameRange;
+    public Threshold(List<Image> planes, int offsetFrame) {
         this.planes=planes;
+        this.offsetFrame=offsetFrame;
     }
     public abstract boolean hasAdaptativeByY();
     /**
      * 
      * @return frame range containing cell, bounds included
      */
-    public abstract int[] getFrameRange();
+    public int[] getFrameRange() {return frameRange!=null ? new int[]{frameRange[0]+offsetFrame, frameRange[1]+offsetFrame} : null;}
     public abstract void setFrameRange(int[] frameRange);
     public abstract double getThreshold(int frame);
     public abstract double getThreshold(int frame, int y);
     public abstract void freeMemory();
     public static boolean showOne = false;
-    public ImageByte getThresholdedPlane(int frame, boolean backgroundUnderThreshold) {
+    public ImageByte getThresholdedPlane(int f, boolean backgroundUnderThreshold) {
+        int frame=f-offsetFrame;
         Image im = planes.get(frame);
         ImageByte res=  new ImageByte("thld", im);
         res.getBoundingBox().translateToOrigin().loop((int x, int y, int z) -> {

@@ -185,7 +185,8 @@ public class Processor {
         }
         logger.debug("ex ps: structure: {}, allParentTracks: {}", structureIdx, allParentTracks.size());
         // one thread per track + common executor for processing scheme
-        ExecutorService subExecutor = Executors.newFixedThreadPool(ThreadRunner.getMaxCPUs());
+        ExecutorService subExecutor = Executors.newFixedThreadPool(ThreadRunner.getMaxCPUs(), ThreadRunner.priorityThreadFactory(Thread.MAX_PRIORITY));
+        //ExecutorService subExecutor = Executors.newFixedThreadPool(ThreadRunner.getMaxCPUs());
         //ExecutorService subExecutor = Executors.newSingleThreadExecutor(); // TODO: see what's more effective!
         final List[] ex = new List[allParentTracks.size()];
         ThreadAction<List<StructureObject>> ta = (List<StructureObject> pt, int idx) -> {

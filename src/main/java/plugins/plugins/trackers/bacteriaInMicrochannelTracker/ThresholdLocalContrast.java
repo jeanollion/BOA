@@ -40,12 +40,11 @@ public class ThresholdLocalContrast extends Threshold {
     double[] thresholdF;
     double[] thldCoeffY;
     List<double[]> thldFY;
-    int[] frameRange;
     final double localContrastThreshold;
     List<Image> lcImages;
     double thld;
-    public ThresholdLocalContrast(List<Image> planes, double localContrastThreshold) {
-        super(planes);
+    public ThresholdLocalContrast(List<Image> planes, int offsetFrame, double localContrastThreshold) {
+        super(planes, offsetFrame);
         this.frameRange=new int[]{0, planes.size()-1};
         this.localContrastThreshold=localContrastThreshold;
         long t0 = System.currentTimeMillis();
@@ -69,7 +68,7 @@ public class ThresholdLocalContrast extends Threshold {
     }
     @Override
     public void setFrameRange(int[] frameRange) {
-        this.frameRange=frameRange;
+        this.frameRange= frameRange!=null ? new int[]{frameRange[0]-offsetFrame, frameRange[1]-offsetFrame} : null;
     }
 
     @Override public double getThreshold() {
@@ -77,10 +76,10 @@ public class ThresholdLocalContrast extends Threshold {
     }
     @Override public double getThreshold(int frame) {
         if (thresholdF==null) return thld;
-        else return thresholdF[frame];
+        else return thresholdF[frame-offsetFrame];
     }
     @Override public double getThreshold(int frame, int y) {
-        if (thldFY!=null) return thldFY.get(frame)[y];
+        if (thldFY!=null) return thldFY.get(frame-offsetFrame)[y];
         if (thldCoeffY==null) return getThreshold(frame);
         return getThreshold(frame) * thldCoeffY[y];
     }
@@ -183,10 +182,7 @@ public class ThresholdLocalContrast extends Threshold {
         });
         return ArrayUtil.toPrimitive(res);
     }
-    @Override
-    public int[] getFrameRange() {
-        return this.frameRange;
-    }
+
     public static double[][] getStatisticsLocalContrast(List<Image> images, List<Image> lcImages, boolean alongY, final double localContrastThreshold, boolean raw) {
         int dimLength = 0;
         if (alongY) {

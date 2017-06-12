@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -85,6 +86,15 @@ public class Pair<K, V> {
         }
         return res;
     }
+    public static <K> Collection<K> flatten(Collection<Pair<K, K>> list, Collection<K> output) {
+        if (list == null) return null;
+        if (output==null) output= new HashSet<K>(list.size());
+        for (Pair<K, K> p : list) {
+            if (p.key != null) output.add(p.key);
+            if (p.value!=null) output.add(p.value);
+        }
+        return output;
+    }
     public static <K> List<Pair<K, ?>> pairAsKeys(Collection<K> list) {
         if (list == null) {
             return null;
@@ -99,6 +109,19 @@ public class Pair<K, V> {
         }
         List<Pair<?, V>> res = new ArrayList<Pair<?, V>>(list.size());
         for (V v : list) res.add(new Pair(null, v));
+        return res;
+    }
+    public static <K, V> Map<K, Set<V>> toMap(Collection<Pair<K, V>> pairs) {
+        HashMapGetCreate<K, Set<V>> res = new HashMapGetCreate(new HashMapGetCreate.SetFactory<>());
+        for (Pair<K, V> p : pairs) res.getAndCreateIfNecessary(p.key).add(p.value);
+        return res;
+    }
+    public static <K> Map<K, Set<K>> toMapSym(Collection<Pair<K, K>> pairs) {
+        HashMapGetCreate<K, Set<K>> res = new HashMapGetCreate(new HashMapGetCreate.SetFactory<>());
+        for (Pair<K, K> p : pairs) {
+            res.getAndCreateIfNecessary(p.key).add(p.value);
+            res.getAndCreateIfNecessary(p.value).add(p.key);
+        }
         return res;
     }
 }

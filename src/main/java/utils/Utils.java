@@ -697,7 +697,7 @@ public class Utils {
         return l;
     }
     
-    public static <T, K> List<K> apply(Collection<T> list, Function<T, K> func) {
+    public static <T, K> List<K> transform(Collection<T> list, Function<T, K> func) {
         if (list==null) return null;
         if (list.isEmpty()) return Collections.EMPTY_LIST;
         return list.stream().map(func).collect(Collectors.toList());
@@ -716,7 +716,7 @@ public class Utils {
         }
         return res;*/
     }
-    public static <T> T[] apply(T[] array, T[] outputArray, Function<T, T> func) {
+    public static <T> T[] transform(T[] array, T[] outputArray, Function<T, T> func) {
         if (array==null) return null;
         for (int i = 0; i<array.length; ++i) outputArray[i] = func.apply(array[i]);
         return outputArray;

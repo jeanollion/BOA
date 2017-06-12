@@ -29,6 +29,7 @@ import static plugins.Plugin.logger;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import static plugins.plugins.trackers.ObjectIdxTracker.getComparator;
 import plugins.plugins.trackers.trackMate.SpotWithinCompartment.Localization;
+import utils.Utils;
 
 /**
  *
@@ -57,7 +58,10 @@ public class SpotCompartiment {
         //previousDivisionTime = object.getPreviousDivisionTimePoint();
         
         long t1 = System.currentTimeMillis();
-        //if (o.getTimePoint()<=10) logger.debug("spotCompartimentCreation time: {}", t0-t1);
+        //logger.debug("spotCompartiment: {}, creation time: {}", this, t0-t1);
+    }
+    @Override public String toString() {
+        return "{"+object.toString()+"offX:"+object.getBounds().getxMin()*object.getScaleXY()+";Y="+object.getBounds().getyMin()*object.getScaleZ()+"|isUpperDaugther:"+upperDaughterCell+"|Ylim:"+Utils.toStringArray(middleYLimits)+"|up:"+Utils.toStringArray(offsetUp)+"|down:"+Utils.toStringArray(offsetDown)+"|middle:"+Utils.toStringArray(offsetDivisionMiddle);
     }
     
     public double[] getOffset(Localization localization) {

@@ -448,6 +448,9 @@ public class BoundingBox {
     public String toString() {
         return "[x:["+xMin+";"+xMax+"], y:["+yMin+";"+yMax+"], z:["+zMin+";"+zMax+"]]";
     }
+    public String toStringOffset() {
+        return "[x:"+xMin+";y:"+yMin+";z:"+zMin+"]";
+    }
     public void loop(LoopFunction function) {
         if (function instanceof LoopFunction2) ((LoopFunction2)function).setUp();
         for (int z = zMin; z<=zMax; ++z) {
