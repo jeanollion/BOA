@@ -371,7 +371,7 @@ public class TrackMateInterface<S extends Spot> {
      * @param before
      * @return 
      */
-    private List<S> getTrack(S e, boolean next, boolean prev) {
+    public List<S> getTrack(S e, boolean next, boolean prev) {
         if (graph==null) return null;
         List<S> track = new ArrayList<>();
         track.add(e);
@@ -392,7 +392,7 @@ public class TrackMateInterface<S extends Spot> {
         Collections.sort(track, (s1, s2)->Double.compare(s1.getFeature(Spot.FRAME), s2.getFeature(Spot.FRAME)));
         return track;
     }
-    private S getPrevious(S t) {       
+    public S getPrevious(S t) {       
         for (DefaultWeightedEdge e : graph.edgesOf(t)) {
             Spot s = graph.getEdgeSource(e);
             if (s.equals(t)) continue;
@@ -400,13 +400,16 @@ public class TrackMateInterface<S extends Spot> {
         }
         return null;
     }
-    private S getNext(S s) {
+    public S getNext(S s) {
         for (DefaultWeightedEdge e : graph.edgesOf(s)) {
             Spot t = graph.getEdgeTarget(e);
             if (s.equals(t)) continue;
             else return (S)t;
         }
         return null;
+    }
+    public S getEdge(DefaultWeightedEdge e, boolean source) {
+        return source ? (S)graph.getEdgeSource(e) : (S)graph.getEdgeTarget(e);
     }
     
     private StructureObject getStructureObject(List<StructureObject> candidates, S s) {

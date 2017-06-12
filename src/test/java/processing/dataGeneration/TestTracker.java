@@ -54,8 +54,8 @@ public class TestTracker {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
-        //String dbName = "fluo160408_MutH";
-        String dbName = "fluo170602_uvrD";
+        String dbName = "fluo160408_MutH";
+        //String dbName = "fluo170602_uvrD";
         int fIdx = 0;
         int mcIdx =1;
         int structureIdx = 1;

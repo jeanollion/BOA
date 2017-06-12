@@ -39,8 +39,10 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
 import org.apache.commons.lang.ArrayUtils;
 import org.jgrapht.graph.DefaultWeightedEdge;
 import plugins.MultiThreaded;
@@ -250,13 +252,37 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
         logger.debug("LAP Tracker: {}, total processing time: {}, create spots: {}, remove LQ: {}, link: {}", parentTrack.get(0), t4-t0, t1-t0, t2-t1, t3-t2, t4-t3);
     }
     
-    private static void switchCrossingLinksWithLQBranches(TrackMateInterface<SpotWithinCompartment> tmi, double spatialTolerance) {
+    private static void switchCrossingLinksWithLQBranches(TrackMateInterface<SpotWithinCompartment> tmi, double spatialTolerance, double distanceThld) {
         Set<Pair<DefaultWeightedEdge, DefaultWeightedEdge>> crossingLinks = tmi.getCrossingLinks(spatialTolerance, null);
+        HashMapGetCreate<DefaultWeightedEdge, List<SpotWithinCompartment>> trackBefore = new HashMapGetCreate<>(e -> tmi.getTrack(tmi.getEdge(e, true), true, false));
+        HashMapGetCreate<DefaultWeightedEdge, List<SpotWithinCompartment>> trackAfter = new HashMapGetCreate<>(e -> tmi.getTrack(tmi.getEdge(e, false), false, true));
+        Function<Pair<DefaultWeightedEdge, DefaultWeightedEdge>, Double> distance = p -> {
+            boolean beforeLQ1 = isLowQ(trackBefore.getAndCreateIfNecessary(p.key));
+            boolean afterLQ1 = isLowQ(trackAfter.getAndCreateIfNecessarySync(p.key));
+            if (beforeLQ1!=afterLQ1) return Double.POSITIVE_INFINITY;
+            boolean beforeLQ2 = isLowQ(trackBefore.getAndCreateIfNecessary(p.value));
+            boolean afterLQ2 = isLowQ(trackAfter.getAndCreateIfNecessarySync(p.value));
+            if (beforeLQ2!=afterLQ2 || beforeLQ1==beforeLQ2) return Double.POSITIVE_INFINITY;
+            if (beforeLQ1) { // link before2 and after1 -> negative value
+                return -tmi.getEdge(p.value, true).squareDistanceTo(tmi.getEdge(p.key, false));
+            } else { // link before1 and after2 -> positive value
+                return -tmi.getEdge(p.key, true).squareDistanceTo(tmi.getEdge(p.value, false));
+            }
+        };
+        HashMapGetCreate<Pair<DefaultWeightedEdge, DefaultWeightedEdge>, Double> linkDistance = new HashMapGetCreate<>(p -> distance.apply(p));
+        crossingLinks.removeIf(p -> Math.abs(linkDistance.getAndCreateIfNecessary(p))>distanceThld);
         Map<DefaultWeightedEdge, Set<DefaultWeightedEdge>> map = Pair.toMapSym(crossingLinks);
         Set<DefaultWeightedEdge> toDelete = new HashSet<>(); // to avoid concurent modification -> add there
-        
+        for (Entry<DefaultWeightedEdge, Set<DefaultWeightedEdge>> e : map.entrySet()) {
+            if (toDelete.contains(e)) continue;
+            // si plusieurs candidats ->  prendre la minimale cf map linkDistance + sort avec comparator
+        }
     }
     
+    private static boolean isLowQ(List<SpotWithinCompartment> track) {
+        for (SpotWithinCompartment s : track) if (!s.lowQuality) return false;
+        return true;
+    }
     private static void removeUnlinkedLQSpots(List<StructureObject> parentTrack, int structureIdx, TrackMateInterface<SpotWithinCompartment> tmi) {
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(parentTrack, structureIdx);
         Set<StructureObject> parentsToRelabel = new HashSet<>();
