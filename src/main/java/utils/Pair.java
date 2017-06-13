@@ -29,9 +29,6 @@ import java.util.Set;
  * @author jollion
  */
 public class Pair<K, V> {
-
-    
-    
     public K key;
     public V value;
     public Pair(K key, V value) {
@@ -86,7 +83,7 @@ public class Pair<K, V> {
         }
         return res;
     }
-    public static <K> Collection<K> flatten(Collection<Pair<K, K>> list, Collection<K> output) {
+    public static <K> Collection<K> flatten(Collection<? extends Pair<K, K>> list, Collection<K> output) {
         if (list == null) return null;
         if (output==null) output= new HashSet<K>(list.size());
         for (Pair<K, K> p : list) {
@@ -116,7 +113,7 @@ public class Pair<K, V> {
         for (Pair<K, V> p : pairs) res.getAndCreateIfNecessary(p.key).add(p.value);
         return res;
     }
-    public static <K> Map<K, Set<K>> toMapSym(Collection<Pair<K, K>> pairs) {
+    public static <K> Map<K, Set<K>> toMapSym(Collection<? extends Pair<K, K>> pairs) {
         HashMapGetCreate<K, Set<K>> res = new HashMapGetCreate(new HashMapGetCreate.SetFactory<>());
         for (Pair<K, K> p : pairs) {
             res.getAndCreateIfNecessary(p.key).add(p.value);

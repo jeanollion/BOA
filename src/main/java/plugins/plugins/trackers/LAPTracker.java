@@ -65,6 +65,7 @@ import plugins.plugins.trackers.trackMate.TrackMateInterface.SpotFactory;
 import utils.ArrayFileWriter;
 import utils.HashMapGetCreate;
 import utils.Pair;
+import utils.SymetricalPair;
 import utils.Utils;
 
 /**
@@ -144,7 +145,7 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
         double maxLinkingDistanceGC = this.maxLinkingDistanceGC.getValue().doubleValue();
         double gapPenalty = this.gapPenalty.getValue().doubleValue();
         double alternativeDistance = this.alternativeDistance.getValue().doubleValue();
-        DistanceComputationParameters distParams = new DistanceComputationParameters().setQualityThreshold(spotQualityThreshold).setGapDistancePenalty(gapPenalty).setAlternativeDistance(alternativeDistance);
+        DistanceComputationParameters distParams = new DistanceComputationParameters().setQualityThreshold(spotQualityThreshold).setGapDistancePenalty(gapPenalty).setAlternativeDistance(alternativeDistance).setAllowGCBetweenLQ(true);
         
         //SpotWithinCompartment s1 = (SpotWithinCompartment)spotCollection.getSpotCollection(true, false).iterator(1, false).next();
         //SpotWithinCompartment s2 = (SpotWithinCompartment)spotCollection.getSpotCollection(true, false).iterator(2, false).next();
@@ -177,7 +178,6 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
                 return new SpotWithinCompartment(s.getObject(), s.frame, s.compartiment, center, distParams);
             }
         });
-        SpotWithinCompartment.displayPoles=true;
         
         Map<Integer, List<StructureObject>> objectsF = StructureObjectUtils.getChildrenMap(parentTrack, structureIdx);
         
@@ -212,7 +212,11 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
         long t2 = System.currentTimeMillis();
         boolean ok = true;//tmi.processFTF(maxLinkingDistance);
         if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, false, false);
-        //if (ok) tmi.setTrackLinks(objectsF);
+        if (ok) {
+            switchCrossingLinksWithLQBranches(tmi, maxLinkingDistanceGC/Math.sqrt(2), maxLinkingDistanceGC, maxGap);
+            trimLQExtremityWithGaps(tmi, 0, true, true);
+        }
+        if (ok) tmi.setTrackLinks(objectsF);
         
         
         //else for (StructureObject o : Utils.flattenMap(objectsF)) o.resetTrackLinks(true, true);
@@ -222,7 +226,7 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
         //if (ok) tmi.removeCrossingLinksFromGraph(parentTrack.get(0).getScaleXY()*2);
         //if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, false, false);
         //if (ok) tmi.setTrackLinks(objectsF);
-        if (false && LQSpots) {
+        if (LQSpots) {
             tmi.resetEdges();
             removeUnlinkedLQSpots(parentTrack, structureIdx, tmi);
         }
@@ -251,32 +255,65 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
         
         logger.debug("LAP Tracker: {}, total processing time: {}, create spots: {}, remove LQ: {}, link: {}", parentTrack.get(0), t4-t0, t1-t0, t2-t1, t3-t2, t4-t3);
     }
-    
-    private static void switchCrossingLinksWithLQBranches(TrackMateInterface<SpotWithinCompartment> tmi, double spatialTolerance, double distanceThld) {
-        Set<Pair<DefaultWeightedEdge, DefaultWeightedEdge>> crossingLinks = tmi.getCrossingLinks(spatialTolerance, null);
+    private static void trimLQExtremityWithGaps(TrackMateInterface<SpotWithinCompartment> tmi, double gapTolerance, boolean start, boolean end) {
+        long t0 = System.currentTimeMillis();
+        gapTolerance+=1;
+        Set<DefaultWeightedEdge> toRemove = new HashSet<>();
+        for (DefaultWeightedEdge e : tmi.getEdges()) {
+            SpotWithinCompartment s = tmi.getEdge(e, true);
+            SpotWithinCompartment t = tmi.getEdge(e, false);
+            if (s.frame+gapTolerance>=t.frame) continue; // no gap
+            if (start && s.lowQuality) {
+                if (tmi.getPrevious(s)==null) { // start of track -> remove edge
+                    toRemove.add(e);
+                    continue;
+                } 
+            }
+            if (end && t.lowQuality) {
+                if (tmi.getNext(t)==null) toRemove.add(e);
+            }
+        }
+        tmi.removeFromGraph(toRemove, null);
+        long t1 = System.currentTimeMillis();
+        tmi.logGraphStatus("trim extremities ("+toRemove.size()+")", t1-t0);
+    }
+    private static void switchCrossingLinksWithLQBranches(TrackMateInterface<SpotWithinCompartment> tmi, double spatialTolerance, double distanceThld, int maxGap) {
+        long t0 = System.currentTimeMillis();
+        double distanceSqThld = distanceThld*distanceThld;
+        Set<SymetricalPair<DefaultWeightedEdge>> crossingLinks = tmi.getCrossingLinks(spatialTolerance, null);
         HashMapGetCreate<DefaultWeightedEdge, List<SpotWithinCompartment>> trackBefore = new HashMapGetCreate<>(e -> tmi.getTrack(tmi.getEdge(e, true), true, false));
         HashMapGetCreate<DefaultWeightedEdge, List<SpotWithinCompartment>> trackAfter = new HashMapGetCreate<>(e -> tmi.getTrack(tmi.getEdge(e, false), false, true));
-        Function<Pair<DefaultWeightedEdge, DefaultWeightedEdge>, Double> distance = p -> {
+        Function<SymetricalPair<DefaultWeightedEdge>, Double> distance = p -> {
             boolean beforeLQ1 = isLowQ(trackBefore.getAndCreateIfNecessary(p.key));
             boolean afterLQ1 = isLowQ(trackAfter.getAndCreateIfNecessarySync(p.key));
             if (beforeLQ1!=afterLQ1) return Double.POSITIVE_INFINITY;
             boolean beforeLQ2 = isLowQ(trackBefore.getAndCreateIfNecessary(p.value));
             boolean afterLQ2 = isLowQ(trackAfter.getAndCreateIfNecessarySync(p.value));
             if (beforeLQ2!=afterLQ2 || beforeLQ1==beforeLQ2) return Double.POSITIVE_INFINITY;
-            if (beforeLQ1) { // link before2 and after1 -> negative value
-                return -tmi.getEdge(p.value, true).squareDistanceTo(tmi.getEdge(p.key, false));
-            } else { // link before1 and after2 -> positive value
-                return -tmi.getEdge(p.key, true).squareDistanceTo(tmi.getEdge(p.value, false));
+            if (beforeLQ1) { // link before2 and after1
+                return tmi.getEdge(p.value, true).squareDistanceTo(tmi.getEdge(p.key, false));
+            } else { // link before1 and after2
+                return tmi.getEdge(p.key, true).squareDistanceTo(tmi.getEdge(p.value, false));
             }
         };
-        HashMapGetCreate<Pair<DefaultWeightedEdge, DefaultWeightedEdge>, Double> linkDistance = new HashMapGetCreate<>(p -> distance.apply(p));
-        crossingLinks.removeIf(p -> Math.abs(linkDistance.getAndCreateIfNecessary(p))>distanceThld);
+        HashMapGetCreate<SymetricalPair<DefaultWeightedEdge>, Double> linkDistance = new HashMapGetCreate<>(p -> distance.apply(p));
+        crossingLinks.removeIf(p -> linkDistance.getAndCreateIfNecessary(p)>distanceSqThld);
         Map<DefaultWeightedEdge, Set<DefaultWeightedEdge>> map = Pair.toMapSym(crossingLinks);
         Set<DefaultWeightedEdge> toDelete = new HashSet<>(); // to avoid concurent modification -> add there
         for (Entry<DefaultWeightedEdge, Set<DefaultWeightedEdge>> e : map.entrySet()) {
             if (toDelete.contains(e)) continue;
-            // si plusieurs candidats ->  prendre la minimale cf map linkDistance + sort avec comparator
+            DefaultWeightedEdge closestEdge = Collections.min(e.getValue(), (e1, e2)-> Double.compare(linkDistance.getAndCreateIfNecessary(new SymetricalPair<>(e.getKey(), e1)), linkDistance.getAndCreateIfNecessary(new SymetricalPair<>(e.getKey(), e2))));
+            SpotWithinCompartment e1 = tmi.getEdge(e.getKey(), true);
+            SpotWithinCompartment t1 = tmi.getEdge(e.getKey(), false);
+            SpotWithinCompartment e2 = tmi.getEdge(closestEdge, true);
+            SpotWithinCompartment t2 = tmi.getEdge(closestEdge, false);
+            if (t2.frame>e1.frame && (t2.frame-e1.frame) <=maxGap && e1.squareDistanceTo(t2)<=distanceSqThld)  tmi.addEdge(e1, t2);
+            if (t1.frame>e2.frame && (t1.frame-e2.frame) <=maxGap && e2.squareDistanceTo(t1)<=distanceSqThld)  tmi.addEdge(e2, t1);
+            tmi.removeFromGraph(e.getKey());
+            tmi.removeFromGraph(closestEdge);
         }
+        long t1 = System.currentTimeMillis();
+        tmi.logGraphStatus("switch LQ links", t1-t0);
     }
     
     private static boolean isLowQ(List<SpotWithinCompartment> track) {

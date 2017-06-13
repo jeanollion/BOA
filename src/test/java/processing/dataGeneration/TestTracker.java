@@ -32,8 +32,12 @@ import dataStructure.objects.Selection;
 import dataStructure.objects.StructureObject;
 import dataStructure.objects.StructureObjectUtils;
 import ij.ImageJ;
+import ij.ImagePlus;
+import ij.gui.Overlay;
+import ij.gui.TextRoi;
 import image.Image;
 import java.awt.Color;
+import java.awt.Font;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +47,8 @@ import plugins.ProcessingScheme;
 import plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import plugins.plugins.trackers.MicrochannelProcessorPhase;
 import plugins.plugins.trackers.MicrochannelTracker;
+import plugins.plugins.trackers.trackMate.SpotWithinCompartment;
+import static processing.dataGeneration.TestLAPTrackerMutations.bacteriaIdx;
 import utils.Pair;
 import utils.Utils;
 
@@ -58,14 +64,14 @@ public class TestTracker {
         //String dbName = "fluo170602_uvrD";
         int fIdx = 0;
         int mcIdx =1;
-        int structureIdx = 1;
+        int structureIdx = 2;
         MasterDAO db = new Task(dbName).getDB();
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         MicrochannelTracker.debug=true;
         MicrochannelProcessorPhase.debug=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 800);
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 340, 348);
         //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 37, 38); // 91 to test rearrange objects 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
@@ -93,8 +99,20 @@ public class TestTracker {
                 }
             }
         }
-        
-        
+        ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
+        Image im = null;
+        if (structureIdx == 2) {
+            SpotWithinCompartment.displayPoles=true;
+            ImageObjectInterface iB = iwm.getImageTrackObjectInterface(parentTrack, 1);
+            iB.setGUIMode(false);
+            im = iB.generateRawImage(2, true);
+            ImagePlus ip = (ImagePlus)iwm.getDisplayer().showImage(im);
+            Overlay ov = new Overlay(); 
+            ip.setOverlay(ov);
+            SpotWithinCompartment.bacteria=iB;
+            SpotWithinCompartment.testOverlay=ov;
+            TextRoi.setFont("SansSerif", 6, Font.PLAIN);
+        }
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;
         List<Pair<String, Exception>> l;
@@ -104,26 +122,34 @@ public class TestTracker {
         logger.debug("children: {} ({})", StructureObjectUtils.getAllTracks(parentTrack, 0).size(), Utils.toStringList( StructureObjectUtils.getAllTracks(parentTrack, 0).values(), o->o.size()));
 
         GUI.getInstance();
-        ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
         
+
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, structureIdx);
-        Image im = i.generateRawImage(structureIdx, true);
-        iwm.addImage(im, i, structureIdx, false, true);
+        Image interactiveImage = i.generateRawImage(structureIdx, true);
+        iwm.addImage(interactiveImage, i, structureIdx, false, true);
+        
+        
         if (structureIdx==2) {
             Collection<StructureObject> bact = Utils.flattenMap(StructureObjectUtils.getChildrenMap(parentTrack, 1));
             Selection bactS = new Selection("bact", dao.getMasterDAO());
+            bactS.setColor("Grey");
             bactS.addElements(bact);
             bactS.setIsDisplayingObjects(true);
             GUI.getInstance().addSelection(bactS);
-            GUI.updateRoiDisplayForSelections(im, i);
+            GUI.updateRoiDisplayForSelections(interactiveImage, i);
             //ImageObjectInterface iB = iwm.getImageTrackObjectInterface(parentTrack, 1);
             //GUI.getInstance().getSelections()
             //iwm.displayObjects(im, iB.pairWithOffset(bact), Color.LIGHT_GRAY, false, false); // should remain on overlay! 
         }
         iwm.setInteractiveStructure(structureIdx);
-        iwm.displayAllObjects(im);
-        iwm.displayAllTracks(im);
+        iwm.displayAllObjects(interactiveImage);
+        iwm.displayAllTracks(interactiveImage);
         
+        if (im!=null) {
+            iwm.displayTracks(im, i, StructureObjectUtils.getAllTracks(parentTrack, structureIdx).values(), false);
+            iwm.displayObjects(im, iwm.getImageTrackObjectInterface(parentTrack, 1).getObjects(), null, true, false);
+            iwm.displayObjects(im, i.getObjects(), null, true, false);
+        }
     }
     
     public static void testBCMTLCStep(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {

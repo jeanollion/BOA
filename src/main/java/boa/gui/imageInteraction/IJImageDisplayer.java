@@ -76,7 +76,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
         }
         ip.setDisplayRange(displayRange[0], displayRange[1]);
         //logger.debug("show image:w={}, h={}, disp: {}", ip.getWidth(), ip.getHeight(), displayRange);
-        ip.show();
+        if (!ip.isVisible()) ip.show();
         if (displayRange.length>=3) zoom(ip, displayRange[2]);
         else zoom(ip, ImageDisplayer.zoomMagnitude);
         return ip;

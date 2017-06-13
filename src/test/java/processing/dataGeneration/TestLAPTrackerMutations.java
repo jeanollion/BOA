@@ -100,6 +100,7 @@ public class TestLAPTrackerMutations {
         Image im = iB.generateRawImage(mutationIdx, true);
         ImagePlus ip = windowManager.getDisplayer().showImage(im);
         Overlay o = new Overlay(); ip.setOverlay(o);
+        
         SpotWithinCompartment.bacteria=iB;
         SpotWithinCompartment.testOverlay=o;
         TextRoi.setFont("SansSerif", 6, Font.PLAIN);

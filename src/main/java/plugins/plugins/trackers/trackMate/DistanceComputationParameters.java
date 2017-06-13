@@ -31,6 +31,10 @@ public class DistanceComputationParameters {
         public DistanceComputationParameters() {
             
         }
+        public DistanceComputationParameters setAllowGCBetweenLQ(boolean allow) {
+            this.allowGCBetweenLQ = allow;
+            return this;
+        }
         public DistanceComputationParameters setQualityThreshold(double qualityThreshold) {
             this.qualityThreshold=qualityThreshold;
             return this;

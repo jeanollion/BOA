@@ -61,7 +61,14 @@ public class SpotWithinCompartment extends Spot {
         else if (scaledCenter[1]>compartiment.middleYLimits[1] && scaledCenter[1]<compartiment.middleYLimits[2]) localization = Localization.MIDDLE;
         else if (scaledCenter[1]>compartiment.middleYLimits[3]) localization = Localization.LOW;
         else localization = Localization.LOWER_MIDDLE;
-        if (displayPoles && testOverlay!=null && bacteria!=null) {
+        this.distanceParameters=distanceParameters;
+        this.isLinkable=object.getQuality()>=distanceParameters.qualityThreshold;
+        this.lowQuality=!isLinkable;
+        //if (displayPoles) displayOnOverlay();
+    }
+    
+    public void displayOnOverlay() {
+        if (testOverlay!=null && bacteria!=null) {
             BoundingBox off1 = bacteria.getObjectOffset(this.compartiment.object).duplicate().translate(this.compartiment.object.getBounds().duplicate().reverseOffset());
             int[] c1 = this.getCenterInVoxels();
             c1[0]+=off1.getxMin();
@@ -69,11 +76,7 @@ public class SpotWithinCompartment extends Spot {
             TextRoi position  = new TextRoi(c1[0], c1[1], localization.toString());
             testOverlay.add(position);
         }
-        this.distanceParameters=distanceParameters;
-        this.isLinkable=object.getQuality()>=distanceParameters.qualityThreshold;
-        this.lowQuality=!isLinkable;
     }
-    
     
     public SpotWithinCompartment duplicate() {
         double[] scaledCenter =  new double[]{getFeature(Spot.POSITION_X), getFeature(Spot.POSITION_Y), getFeature(Spot.POSITION_Z)};

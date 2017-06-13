@@ -19,11 +19,13 @@ package TestUtils;
 
 import static TestUtils.Utils.logger;
 import dataStructure.containers.ImportImageUtils;
+import dataStructure.objects.Voxel;
 import image.ImageReader;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -34,6 +36,7 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import testPlugins.dummyPlugins.DummySegmenter;
 import utils.Pair;
+import utils.SymetricalPair;
 import static utils.Utils.removeFromMap;
 
 /**
@@ -41,6 +44,32 @@ import static utils.Utils.removeFromMap;
  * @author jollion
  */
 public class TestClass {
+    @Test
+    public void testSymetricalPair() {
+        Voxel v1 = new Voxel(1, 2, 3);
+        Voxel v2 = new Voxel(2, 2, 5);
+        Voxel v11 = new Voxel(1, 2, 3);
+        Voxel v3 = new Voxel(1, 2, 4);
+        SymetricalPair<Voxel> p1 = new SymetricalPair<>(v1, v2);
+        SymetricalPair<Voxel> p1Inv = new SymetricalPair<>(v2, v1);
+        SymetricalPair<Voxel> p11 = new SymetricalPair<>(v11, v2);
+        SymetricalPair<Voxel> p3 = new SymetricalPair<>(v1, v3);
+        
+        HashSet<SymetricalPair<Voxel>> set = new HashSet<>();
+        set.add(p1);
+        assertTrue("symetrical equals", p1.equals(p1Inv));
+        assertTrue("symetrical equals(2)", p1Inv.equals(p1));
+        assertTrue("other instance with same hash", p1.equals(p11));
+        assertTrue("other voxel", !p1.equals(p3));
+        assertTrue("set contains", set.contains(p1Inv));
+        assertTrue("set contains (2)", set.contains(p11));
+        assertTrue("set do not contains", !set.contains(p3));
+        set.add(p1Inv);
+        set.add(p11);
+        set.add(p3);
+        assertTrue("set has only 2 elements:", set.size()==2);
+    }
+    
     //@Test
     public void testGetTimePoint() {
         String path = "/data/Images/MutationDynamics/180117ZMutTrack/180117ZMutTrack01_R3D.dv";

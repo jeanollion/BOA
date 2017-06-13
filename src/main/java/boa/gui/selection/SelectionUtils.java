@@ -70,12 +70,14 @@ public class SelectionUtils {
         put("Blue", new Color(0, 0, 255, 120));
         put("Cyan", new Color(0, 255, 255, 120));
         put("Green", new Color(0, 255, 0, 120));
+        put("Grey", new Color(192, 192, 192, 120));
     }};
     public static Map<String, Color> colors = new HashMap<String, Color>() {{
         put("Magenta", new Color(255, 0, 255));
         put("Blue", new Color(0, 0, 205));
         put("Cyan", new Color(0, 139, 139));
         put("Green", new Color(0, 100, 0));
+        put("Grey", new Color(192, 192, 192));
     }};
     
     public static List<StructureObject> getStructureObjects(ImageObjectInterface i, List<Selection> selections) {

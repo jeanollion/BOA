@@ -55,6 +55,7 @@ import org.jgrapht.graph.SimpleWeightedGraph;
 import org.slf4j.LoggerFactory;
 import static plugins.Plugin.logger;
 import utils.Pair;
+import utils.SymetricalPair;
 import utils.Utils;
 /**
  *
@@ -180,6 +181,10 @@ public class TrackMateInterface<S extends Spot> {
         return true;
     }
     
+    public void logGraphStatus(String step, long processingTime) {
+        logger.debug("number of edges after {}: {}, nb of vertices: {}, processing time: {}", step, graph.edgeSet().size(), graph.vertexSet().size(),processingTime);
+    }
+    
     private void transferLinks(Spot from, Spot to) {
         List<DefaultWeightedEdge> edgeList = new ArrayList<>(graph.edgesOf(from));
         for (DefaultWeightedEdge e : edgeList) {
@@ -197,14 +202,17 @@ public class TrackMateInterface<S extends Spot> {
     public void setTrackLinks(Map<Integer, List<StructureObject>> objectsF) {
         setTrackLinks(objectsF, null);
     }
-    public Set<Pair<DefaultWeightedEdge, DefaultWeightedEdge>> getCrossingLinks(double spatialTolerence, Set<S> involvedSpots) {
+    public Set<DefaultWeightedEdge> getEdges() {
+        return graph.edgeSet();
+    }
+    public Set<SymetricalPair<DefaultWeightedEdge>> getCrossingLinks(double spatialTolerence, Set<S> involvedSpots) {
         if (graph==null) return Collections.EMPTY_SET;
-        Set<Pair<DefaultWeightedEdge, DefaultWeightedEdge>> res = new HashSet<>();
+        Set<SymetricalPair<DefaultWeightedEdge>> res = new HashSet<>();
         for (DefaultWeightedEdge e1 : graph.edgeSet()) {
             for (DefaultWeightedEdge e2 : graph.edgeSet()) {
                 if (e1.equals(e2)) continue;
                 if (intersect(e1, e2, spatialTolerence, involvedSpots)) {
-                    res.add(new Pair(e1, e2));
+                    res.add(new SymetricalPair<>(e1, e2));
                 }
             }
         }
@@ -228,12 +236,21 @@ public class TrackMateInterface<S extends Spot> {
             if (graph.edgesOf(s).isEmpty()) graph.removeVertex(s);
         }
     }
-    
+    public void addEdge(S s, S t) {
+        graph.addEdge(s, t);
+    }
+    public void removeFromGraph(DefaultWeightedEdge edge) {
+        graph.removeEdge(edge);
+        Spot v1 = graph.getEdgeSource(edge);
+        Spot v2 = graph.getEdgeTarget(edge);
+        if (graph.edgesOf(v1).isEmpty()) graph.removeVertex(v1);
+        if (graph.edgesOf(v2).isEmpty()) graph.removeVertex(v2);
+    }
     public void  removeCrossingLinksFromGraph(double spatialTolerence) {
         if (graph==null) return;
         long t0 = System.currentTimeMillis();
         Set<S> toRemSpot = new HashSet<>();
-        Set<Pair<DefaultWeightedEdge, DefaultWeightedEdge>> toRemove = getCrossingLinks(spatialTolerence, toRemSpot);
+        Set<SymetricalPair<DefaultWeightedEdge>> toRemove = getCrossingLinks(spatialTolerence, toRemSpot);
         removeFromGraph(Pair.flatten(toRemove, null), toRemSpot);
         long t1 = System.currentTimeMillis();
         logger.debug("number of edges after removing intersecting links: {}, nb of vertices: {}, processing time: {}", graph.edgeSet().size(), graph.vertexSet().size(), t1-t0);
