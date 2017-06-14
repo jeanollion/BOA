@@ -73,6 +73,8 @@ import utils.Utils;
  * @author jollion
  */
 public class LAPTracker implements TrackerSegmenter, MultiThreaded {
+    public static boolean registerTMI=false;
+    public static TrackMateInterface<SpotWithinCompartment> debugTMI;
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, new MutationSegmenterScaleSpace(), false);
     StructureParameter compartirmentStructure = new StructureParameter("Compartiment Structure", 1, false, false);
     NumberParameter spotQualityThreshold = new NumberParameter("Spot Quality Threshold", 3, 3.5);
@@ -178,7 +180,7 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
                 return new SpotWithinCompartment(s.getObject(), s.frame, s.compartiment, center, distParams);
             }
         });
-        
+        if (registerTMI) debugTMI=tmi;
         Map<Integer, List<StructureObject>> objectsF = StructureObjectUtils.getChildrenMap(parentTrack, structureIdx);
         
         long t0 = System.currentTimeMillis();
@@ -252,7 +254,11 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
             Collections.sort(p.getChildren(structureIdx), (o1, o2) -> Double.compare(o1.getBounds().getYMean(), o2.getBounds().getYMean()));
             p.relabelChildren(structureIdx);
         }
-        
+        /*List<Object3D> allObjects = new ArrayList<>();
+        for (StructureObject p : parentTrack) allObjects.addAll(Utils.transform(p.getChildren(structureIdx), o->o.getObject()));
+        allObjects.removeAll(tmi.objectSpotMap.keySet());
+        logger.debug("object tmi size {} common: {}", tmi.objectSpotMap.keySet().size(), tmi.objectSpotMap.keySet().size()-allObjects.size());
+        */
         logger.debug("LAP Tracker: {}, total processing time: {}, create spots: {}, remove LQ: {}, link: {}", parentTrack.get(0), t4-t0, t1-t0, t2-t1, t3-t2, t4-t3);
     }
     private static void trimLQExtremityWithGaps(TrackMateInterface<SpotWithinCompartment> tmi, double gapTolerance, boolean start, boolean end) {

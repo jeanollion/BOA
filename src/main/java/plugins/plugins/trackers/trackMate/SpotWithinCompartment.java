@@ -23,9 +23,12 @@ import dataStructure.objects.StructureObject;
 import fiji.plugin.trackmate.Spot;
 import ij.gui.Line;
 import ij.gui.Overlay;
+import ij.gui.Roi;
 import ij.gui.TextRoi;
 import image.BoundingBox;
 import image.Image;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import static plugins.Plugin.logger;
 import utils.Utils;
@@ -38,7 +41,7 @@ public class SpotWithinCompartment extends Spot {
     public static ImageObjectInterface bacteria;
     public static Overlay testOverlay;
     public static boolean displayPoles=false;
-    public static double displayDistanceThreshold = 2; 
+    public static double displayDistanceThreshold = 1.5; 
     public static double poleDistanceFactor = 0; 
     protected Object3D object;
     public final SpotCompartiment compartiment;
@@ -69,13 +72,19 @@ public class SpotWithinCompartment extends Spot {
     
     public void displayOnOverlay() {
         if (testOverlay!=null && bacteria!=null) {
-            BoundingBox off1 = bacteria.getObjectOffset(this.compartiment.object).duplicate().translate(this.compartiment.object.getBounds().duplicate().reverseOffset());
             int[] c1 = this.getCenterInVoxels();
-            c1[0]+=off1.getxMin();
-            c1[1]+=off1.getyMin();
-            TextRoi position  = new TextRoi(c1[0], c1[1], localization.toString());
+            BoundingBox off1 = bacteria.getObjectOffset(this.compartiment.object).duplicate().translate(this.compartiment.object.getBounds().duplicate().reverseOffset());
+            off1.translate(c1[0], c1[1], 0);
+            TextRoi position  = getLocalizationRoi(off1);
             testOverlay.add(position);
         }
+    }
+    public TextRoi getLocalizationRoi(BoundingBox offset) {
+        
+        //logger.debug("get loc Roi for {}: offset: {}, compartiment offset: {}", this, offset.toStringOffset(), compartiment.object.getParent().getBounds().toStringOffset());
+        //offset.duplicate().translate(this.compartiment.object.getBounds().duplicate().reverseOffset());
+        
+        return new TextRoi(offset.getxMax(), offset.getyMax(), localization.toString());
     }
     
     public SpotWithinCompartment duplicate() {
@@ -216,15 +225,20 @@ public class SpotWithinCompartment extends Spot {
         d+= s1.distanceParameters.getSquareDistancePenalty(d, s1, s2);
         return d;
     }
-    
+    public static List<Roi> rois;
+    public static BoundingBox offsetS1, offsetS2;
     private static void displayOffsets(SpotWithinCompartment s1, double[] offset1, SpotWithinCompartment s2, double[] offset2, double distance ) {
-        if (bacteria!=null && testOverlay!=null) {
+        if (rois!=null) {
             if (distance>displayDistanceThreshold) return;
-            BoundingBox off1 = bacteria.getObjectOffset(s1.compartiment.object).duplicate().translate(s1.compartiment.object.getBounds().duplicate().reverseOffset());
-            BoundingBox off2 = bacteria.getObjectOffset(s2.compartiment.object).duplicate().translate(s2.compartiment.object.getBounds().duplicate().reverseOffset());
+            //BoundingBox off1 = bacteria.getObjectOffset(s1.compartiment.object).duplicate().translate(s1.compartiment.object.getBounds().duplicate().reverseOffset());
+            //BoundingBox off2 = bacteria.getObjectOffset(s2.compartiment.object).duplicate().translate(s2.compartiment.object.getBounds().duplicate().reverseOffset());
             
             int[] c1 = s1.getCenterInVoxels();
             int[] c2 = s2.getCenterInVoxels();
+            
+            BoundingBox off1 = offsetS1.duplicate().translate(-c1[0], -c1[1], 0);
+            BoundingBox off2 = offsetS2.duplicate().translate(-c2[0], -c2[1], 0);
+            
             int[] cOff1 = new int[]{(int) (offset1[0] / s1.object.getScaleXY()), (int) (offset1[1] / s1.object.getScaleXY())};
             int[] cOff2 = new int[]{(int) (offset2[0] / s1.object.getScaleXY()), (int) (offset2[1] / s1.object.getScaleXY())};
             c1[0]+=off1.getxMin();
@@ -239,11 +253,11 @@ public class SpotWithinCompartment extends Spot {
             Line l2 = new Line(c2[0], c2[1], cOff2[0], cOff2[1]);
             Line l12 = new Line((c1[0]+cOff1[0])/2d, (c1[1]+cOff1[1])/2d, (c2[0]+cOff2[0])/2d, (c2[1]+cOff2[1]) /2d );
             
-            testOverlay.add(l1);
-            testOverlay.add(l2);
-            testOverlay.add(l12);
+            rois.add(l1);
+            rois.add(l2);
+            rois.add(l12);
             TextRoi position  = new TextRoi((c1[0]+cOff1[0]+c2[0]+cOff2[0])/4d, (c1[1]+cOff1[1]+c2[1]+cOff2[1])/4d, Utils.formatDoubleScientific(1, Math.sqrt(distance)));
-            testOverlay.add(position);
+            rois.add(position);
         }
     }
     public static enum Localization {

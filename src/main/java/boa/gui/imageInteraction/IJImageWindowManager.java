@@ -39,6 +39,7 @@ import ij.gui.Overlay;
 import ij.gui.PointRoi;
 import ij.gui.PolygonRoi;
 import ij.gui.Roi;
+import ij.gui.TextRoi;
 import ij.gui.Toolbar;
 import ij.plugin.OverlayLabels;
 import ij.plugin.filter.ThresholdToSelection;
@@ -292,7 +293,11 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
             o=new Overlay();
             image.setOverlay(o);
         }
-        for (Roi r : roi.values()) o.add(r);
+        for (Roi r : roi.values()) {
+            o.add(r);
+            //if (r instanceof TextRoi) logger.debug("add text roi: {}", ((TextRoi)r).getText());
+            //logger.debug("add Roi loc: [{}, {}], type: {}", r.getBounds().x, r.getBounds().y, r.getTypeAsString());
+        }
     }
 
     @Override
@@ -313,7 +318,10 @@ public class IJImageWindowManager extends ImageWindowManager<ImagePlus, Roi3D, T
     
     @Override
     protected void setObjectColor(Roi3D roi, Color color) {
-        for (Roi r : roi.values()) r.setStrokeColor(color);
+        for (Roi r : roi.values()) {
+            if (r instanceof TextRoi) continue;
+            r.setStrokeColor(color);
+        }
     }
 
     /**
