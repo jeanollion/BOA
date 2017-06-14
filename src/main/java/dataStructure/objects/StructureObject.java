@@ -586,7 +586,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             for (StructureObject o : siblings) {
                 if (o!=this) {
                     if (o.getPrevious()==this.getPrevious()) {
-                        if (res==null) res = new ArrayList<StructureObject>(siblings.size());
+                        if (res==null) res = new ArrayList<>(siblings.size());
                         res.add(o);
                     }
                 } 
@@ -612,7 +612,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }*/
         if (includeCurrentObject) {
             if (res==null) {
-                res = new ArrayList<StructureObject>(1);
+                res = new ArrayList<>(1);
                 res.add(this);
             } else res.add(0, this);
         }

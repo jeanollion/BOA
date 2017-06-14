@@ -48,10 +48,6 @@ import plugins.plugins.segmenters.MicrochannelPhase2D;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.trackers.MicrochannelProcessor;
 import plugins.plugins.trackers.MicrochannelProcessorPhase;
-import plugins.plugins.trackers.ObjectIdxTracker;
-import static processing.dataGeneration.TestLAPTrackerMutations.mutationIdx;
-import utils.MorphiumUtils;
-import utils.Utils;
 
 /**
  *

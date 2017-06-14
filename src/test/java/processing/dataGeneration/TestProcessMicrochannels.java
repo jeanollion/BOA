@@ -46,9 +46,6 @@ import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
 import plugins.plugins.trackers.MicrochannelProcessor;
 import plugins.plugins.transformations.CropMicroChannelFluo2D;
-import plugins.plugins.transformations.CropMicroChannels;
-import static processing.dataGeneration.TestLAPTrackerMutations.mutationIdx;
-import utils.MorphiumUtils;
 
 /**
  *

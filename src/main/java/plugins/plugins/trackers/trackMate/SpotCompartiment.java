@@ -43,7 +43,7 @@ public class SpotCompartiment {
     int nextDivisionTimePoint;
     double[] offsetDivisionMiddle;
     double[] middleYLimits;
-    boolean upperDaughterCell;
+    boolean upperDaughterCell=true;
     public static double middleAreaProportion = 0.5;
     public SpotCompartiment(StructureObject o) {
         long t0 = System.currentTimeMillis();
@@ -69,12 +69,22 @@ public class SpotCompartiment {
         }
         return -1;
     }
+    public static int getPrevDivisionFrame(StructureObject o, double sizeProportion) {
+        while (o.getPrevious()!=null) {
+            if (divisionAtNextFrame(o.getPrevious(), sizeProportion)) return o.getFrame();
+            o=o.getPrevious();
+        }
+        return -1;
+    }
     public static boolean divisionAtNextFrame(StructureObject prev, double sizeProportion) {
+        if (prev.getParent().getNext()==null) return false;
         List<StructureObject> next = new ArrayList<>(prev.getParent().getNext().getChildren(prev.getStructureIdx()));
         next.removeIf(o->!prev.equals(o.getPrevious()));
         if (next.size()>1) return true;
         if (next.size()==1) {
-            //if ((Boolean)next.get(0).getAttribute("TruncatedDivision", false)) return true;
+            //logger.debug("div next frame for {}->{}: attibute: {}, size {}, sizePrev*0.8:{} eocp: {}, eoc:{}", prev, next.get(0), (Boolean)next.get(0).getAttribute("TruncatedDivision"), (double)next.get(0).getObject().getSize() , prev.getObject().getSize() * sizeProportion, isEndOfChannel(prev) , isEndOfChannel(next.get(0)));
+            Object o = next.get(0).getAttribute("TruncatedDivision", false);
+            if (o!=null) return (Boolean)o;
             if (!isEndOfChannel(prev) || !isEndOfChannel(next.get(0))) return false; // only end of channel
             return (double)next.get(0).getObject().getSize() < prev.getObject().getSize() * sizeProportion;
         } else return false;
@@ -205,11 +215,11 @@ public class SpotCompartiment {
     }*/
     
     private void computeIsUpperDaughterCell() {
-        List<StructureObject> prevDC = StructureObjectUtils.getObjectsAtPrevDivision(object);
-        if (prevDC.isEmpty()) return;
-        Collections.sort(prevDC, (o1, o2)->Integer.compare(o1.getBounds().getyMin(), o2.getBounds().getyMin()));
-        this.upperDaughterCell = prevDC.get(0).getTrackHead().equals(object.getTrackHead());
-        //logger.debug("object: {}, prev siblings: {}, upper?: {}", object, prevDC, upperDaughterCell);
+        // suppose div @ trackHead
+        List<StructureObject> siblings = object.getTrackHead().getDivisionSiblings(true);
+        Collections.sort(siblings, (o1, o2)->Integer.compare(o1.getBounds().getyMin(), o2.getBounds().getyMin()));
+        this.upperDaughterCell = siblings.get(0).getTrackHead().equals(object.getTrackHead());
+        //logger.debug("object: {}, prev siblings: {}, upper?: {}", object, siblings, upperDaughterCell);
         //object.setAttribute("upper daughter cell", upperDaughterCell);
     }
     

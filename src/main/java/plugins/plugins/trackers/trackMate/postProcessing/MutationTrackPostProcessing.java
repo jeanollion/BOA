@@ -207,16 +207,7 @@ public class MutationTrackPostProcessing {
             }
         }
     }
-    public void printDistancesOnOverlay() {
-        SpotWithinCompartment.displayPoles=true;
-        if (SpotWithinCompartment.testOverlay==null) throw new RuntimeException("No overlay set: Cannot print distances on overlay");
-        for (List<SpotWithinCompartment> track : this.trackHeadSpotTrackMap.values()) {
-            for (int i = 1; i<track.size(); ++i) {
-                track.get(i-1).squareDistanceTo(track.get(i));
-            }
-        }
-        SpotWithinCompartment.displayPoles=false;
-    }
+
     
     /*public void groupTracks() {
         List<List<StructureObject>> trackHeadGroups = new ArrayList<List<StructureObject>>();

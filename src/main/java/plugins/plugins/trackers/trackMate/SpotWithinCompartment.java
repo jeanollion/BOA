@@ -38,8 +38,6 @@ import utils.Utils;
  * @author jollion
  */
 public class SpotWithinCompartment extends Spot {
-    public static ImageObjectInterface bacteria;
-    public static Overlay testOverlay;
     public static boolean displayPoles=false;
     public static double displayDistanceThreshold = 1.5; 
     public static double poleDistanceFactor = 0; 
@@ -70,15 +68,6 @@ public class SpotWithinCompartment extends Spot {
         //if (displayPoles) displayOnOverlay();
     }
     
-    public void displayOnOverlay() {
-        if (testOverlay!=null && bacteria!=null) {
-            int[] c1 = this.getCenterInVoxels();
-            BoundingBox off1 = bacteria.getObjectOffset(this.compartiment.object).duplicate().translate(this.compartiment.object.getBounds().duplicate().reverseOffset());
-            off1.translate(c1[0], c1[1], 0);
-            TextRoi position  = getLocalizationRoi(off1);
-            testOverlay.add(position);
-        }
-    }
     public TextRoi getLocalizationRoi(BoundingBox offset) {
         
         //logger.debug("get loc Roi for {}: offset: {}, compartiment offset: {}", this, offset.toStringOffset(), compartiment.object.getParent().getBounds().toStringOffset());
@@ -236,19 +225,19 @@ public class SpotWithinCompartment extends Spot {
             int[] c1 = s1.getCenterInVoxels();
             int[] c2 = s2.getCenterInVoxels();
             
-            BoundingBox off1 = offsetS1.duplicate().translate(-c1[0], -c1[1], 0);
-            BoundingBox off2 = offsetS2.duplicate().translate(-c2[0], -c2[1], 0);
+            BoundingBox off1 = offsetS1.duplicate().translate(s1.getObject().getBounds().duplicate().reverseOffset());
+            BoundingBox off2 = offsetS2.duplicate().translate(s2.getObject().getBounds().duplicate().reverseOffset());
             
             int[] cOff1 = new int[]{(int) (offset1[0] / s1.object.getScaleXY()), (int) (offset1[1] / s1.object.getScaleXY())};
             int[] cOff2 = new int[]{(int) (offset2[0] / s1.object.getScaleXY()), (int) (offset2[1] / s1.object.getScaleXY())};
-            c1[0]+=off1.getxMin();
-            c1[1]+=off1.getyMin();
-            c2[0]+=off2.getxMin();
-            c2[1]+=off2.getyMin();
-            cOff1[0]+=off1.getxMin();
-            cOff1[1]+=off1.getyMin();
-            cOff2[0]+=off2.getxMin();
-            cOff2[1]+=off2.getyMin();
+            c1[0]+=off1.getxMin()+0.5;
+            c1[1]+=off1.getyMin()+0.5;
+            c2[0]+=off2.getxMin()+0.5;
+            c2[1]+=off2.getyMin()+0.5;
+            cOff1[0]+=off1.getxMin()+0.5;
+            cOff1[1]+=off1.getyMin()+0.5;
+            cOff2[0]+=off2.getxMin()+0.5;
+            cOff2[1]+=off2.getyMin()+0.5;
             Line l1 = new Line(c1[0], c1[1], cOff1[0], cOff1[1]);
             Line l2 = new Line(c2[0], c2[1], cOff2[0], cOff2[1]);
             Line l12 = new Line((c1[0]+cOff1[0])/2d, (c1[1]+cOff1[1])/2d, (c2[0]+cOff2[0])/2d, (c2[1]+cOff2[1]) /2d );

@@ -45,6 +45,7 @@ public class SpotWithinCompartmentRoiModifier implements ImageWindowManager.RoiM
         Roi r = currentRoi.get(currentObject.value.getzMin());
         currentRoi.clear();
         currentRoi.put(0, r);
+        if (objectsToDisplay.size()>10) return;
         SpotWithinCompartment s = tmi.objectSpotMap.get(currentObject.key.getObject());
         if (s==null) return;
         //else logger.debug("spot found for: {} loc: {}", currentObject.key, s.localization);
