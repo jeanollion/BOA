@@ -17,6 +17,7 @@
  */
 package dataStructure.objects;
 
+import boa.gui.GUI;
 import dataStructure.configuration.Experiment;
 import java.io.File;
 import java.util.ArrayList;
@@ -176,14 +177,17 @@ public class DBMapMasterDAO implements MasterDAO {
         if (out==null || !out.exists() || !out.isDirectory()) { // look for default output dir and set it up if exists
             out = new File(configDir + File.separator + "Output");
             if (out.isDirectory()) {
-                xp.setOutputDirectory(out.getAbsolutePath());
-                logger.info("Output directory was: {} is now : {}", outS, out.getAbsolutePath());
+                if (image) xp.setOutputImageDirectory(out.getAbsolutePath());
+                else xp.setOutputDirectory(out.getAbsolutePath());
+                logger.info("Output {} directory was: {} is now : {}", image? "Image" : "",  outS, out.getAbsolutePath());
                 return true;
             }
             logger.debug("default output dir: {}, exists: {}, is Dir: {}", out.getAbsolutePath(), out.exists(), out.isDirectory());
         } 
         if (!out.exists() || !out.isDirectory()) { // warn
-            logger.warn("No Output Directory found!");
+            String message = "No "+(image?"Image":"")+" Output Directory Found, Please configure it";
+            logger.warn(message);
+            GUI.log(message);
         }
         return false;
     }

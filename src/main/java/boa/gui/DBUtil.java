@@ -97,8 +97,7 @@ public class DBUtil {
     public static Map<String, File> listExperiments(String path) {
         File f = new File(path);
         Map<String, File> configs = new HashMap<>();
-        if (f.exists() && f.isDirectory()) {
-            //addConfig(f, configs);
+        if (f.exists() && f.isDirectory()) { // only in directories included in path
             File[] sub = f.listFiles(subF -> subF.isDirectory());
             for (File subF : sub) addConfig(subF, configs);
         }
