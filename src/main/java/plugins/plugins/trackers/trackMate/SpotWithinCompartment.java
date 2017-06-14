@@ -126,7 +126,8 @@ public class SpotWithinCompartment extends Spot {
     }
     
     protected double getSquareDistanceCompartiments(SpotWithinCompartment s) {
-        Localization offsetType = this.localization.getOffsetType(s.localization);
+        // TODO how to manage truncated cells ?? interpolate GR ??
+        Localization offsetType = (this.compartiment.truncated || s.compartiment.truncated)  ? Localization.UP :  this.localization.getOffsetType(s.localization);
         if (offsetType==null) return Double.POSITIVE_INFINITY;
         else if (Localization.UP.equals(offsetType)) {
             double d=  getSquareDistance(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp);

@@ -45,6 +45,7 @@ public class SpotCompartiment {
     double[] middleYLimits;
     boolean upperDaughterCell=true;
     public static double middleAreaProportion = 0.5;
+    boolean truncated = false;
     public SpotCompartiment(StructureObject o) {
         long t0 = System.currentTimeMillis();
         object = o;
@@ -55,6 +56,7 @@ public class SpotCompartiment {
         nextDivisionTimePoint = getNextDivisionFrame(object, 0.8);
         computeDivisionOffset();
         computeIsUpperDaughterCell();
+        truncated = (Double)object.getAttribute("EndOfChannelContact", 0d)>0.45; // estimate if attribute not present
         //if (object.getNext()!=null && object.getNext().getDivisionSiblings(false)!=null) divisionAtNextTimePoint = true;
         //previousDivisionTime = object.getPreviousDivisionTimePoint();
         
