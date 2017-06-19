@@ -25,12 +25,13 @@ import image.BoundingBox;
 import image.Image;
 import java.util.ArrayList;
 import plugins.Cropper;
+import plugins.Transformation;
 
 /**
  *
  * @author jollion
  */
-public class SimpleCrop implements Cropper {
+public class SimpleCrop implements Transformation {
     NumberParameter xMin = new NumberParameter("X-Min", 0, 0);
     NumberParameter yMin = new NumberParameter("Y-Min", 0, 0);
     NumberParameter zMin = new NumberParameter("Z-Min", 0, 0);

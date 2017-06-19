@@ -424,9 +424,8 @@ public class GenerateXP {
             //ps.addTransformation(0, null, new IJSubtractBackground(20, true, false, true, false)); 
             ps.addTransformation(0, null, new AutoRotationXY(-10, 10, 0.5, 0.05, null, AutoRotationXY.SearchMethod.MAXVAR));
             ps.addTransformation(0, null, new Flip(ImageTransformation.Axis.Y)).setActivated(flip);
-            ps.addTransformation(0, null, new CropMicroChannelFluo2D(30, 45, 200, 0.5, 10));
             //ps.addTransformation(1, null, new ScaleHistogramSignalExclusionY().setExclusionChannel(0)); // to remove blinking / homogenize on Y direction
-            ps.addTransformation(0, null, new ImageStabilizerXY(1, 1000, 1e-8, 20).setAdditionalTranslation(1, 1, 1)); // additional translation to correct chromatic shift
+            ps.addTransformation(0, null, new ImageStabilizerXY(1, 1000, 1e-8, 20).setAdditionalTranslation(1, 1, 1).setCropper(new CropMicroChannelFluo2D(30, 45, 200, 0.5, 10))); // additional translation to correct chromatic shift
     }
     public static void setParametersFluo(Experiment xp, boolean processing, boolean measurements) {
         Structure mc = xp.getStructure(0).setBrightObject(true);

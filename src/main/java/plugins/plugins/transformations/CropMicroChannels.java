@@ -30,6 +30,7 @@ import image.ImageProperties;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import plugins.Cropper;
 import static plugins.Plugin.logger;
 import plugins.Transformation;
 import plugins.TransformationTimeIndependent;
@@ -42,7 +43,7 @@ import utils.ArrayUtil;
  *
  * @author jollion
  */
-public abstract class CropMicroChannels implements Transformation {
+public abstract class CropMicroChannels implements Transformation, Cropper {
     public static boolean debug = false;
     protected ArrayList<Integer> configurationData=new ArrayList<Integer>(4); // xMin/xMax/yMin/yMax
     protected NumberParameter xStart = new BoundedNumberParameter("X start", 0, 0, 0, null);
@@ -58,7 +59,7 @@ public abstract class CropMicroChannels implements Transformation {
         this.number.setValue(nb);
         return this;
     }
-    
+    @Override
     public void computeConfigurationData(int channelIdx, InputImages inputImages) {
         if (channelIdx<0) throw new IllegalArgumentException("Channel no configured");
         Image image = inputImages.getImage(channelIdx, inputImages.getDefaultTimePoint());
@@ -101,20 +102,32 @@ public abstract class CropMicroChannels implements Transformation {
         configurationData.add(b.getyMax());
     }
     
+    @Override
+    public BoundingBox getCropBoundginBox(int channelIdx, InputImages inputImages) {
+        if (!isConfigured(inputImages.getChannelNumber(), inputImages.getFrameNumber())) {
+            computeConfigurationData(channelIdx, inputImages);
+        }
+        return new BoundingBox(configurationData.get(0), configurationData.get(1), configurationData.get(2), configurationData.get(3), 0, inputImages.getSizeZ(channelIdx)-1);
+    }
+    
+    @Override
     public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
         return configurationData!=null && configurationData.size()==4;
     }
     
+    @Override
     public SelectionMode getOutputChannelSelectionMode() {
         return SelectionMode.ALL;
     }
     protected abstract BoundingBox getBoundingBox(Image image);
     
+    @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         BoundingBox bounds = new BoundingBox(configurationData.get(0), configurationData.get(1), configurationData.get(2), configurationData.get(3), 0, image.getSizeZ()-1);
         return image.crop(bounds);
     }
 
+    @Override
     public ArrayList getConfigurationData() {
         return configurationData;
     }

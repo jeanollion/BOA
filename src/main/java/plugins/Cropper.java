@@ -17,10 +17,14 @@
  */
 package plugins;
 
+import dataStructure.containers.InputImages;
+import image.BoundingBox;
+import java.util.HashMap;
+
 /**
  *
  * @author jollion
  */
-public interface Cropper extends TransformationTimeIndependent {
-    
+public interface Cropper extends Plugin {
+    public BoundingBox getCropBoundginBox(int channelIdx, InputImages inputImages);
 }

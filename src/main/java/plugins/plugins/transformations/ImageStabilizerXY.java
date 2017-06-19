@@ -25,6 +25,7 @@ import configuration.parameters.GroupParameter;
 import configuration.parameters.ListParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
+import configuration.parameters.PluginParameter;
 import configuration.parameters.SimpleListParameter;
 import configuration.parameters.TimePointParameter;
 import dataStructure.containers.InputImages;
@@ -32,6 +33,7 @@ import ij.ImagePlus;
 import ij.ImageStack;
 import ij.process.FloatProcessor;
 import ij.process.ImageProcessor;
+import image.BoundingBox;
 import image.IJImageWrapper;
 import image.Image;
 import image.ImageFloat;
@@ -47,8 +49,11 @@ import java.util.Map.Entry;
 import jj2000.j2k.util.ArrayUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import plugins.Cropper;
 import plugins.Plugin;
+import plugins.SimpleThresholder;
 import plugins.Transformation;
+import plugins.plugins.thresholders.BackgroundThresholder;
 import static plugins.plugins.transformations.ImageStabilizerCore.combine;
 import static plugins.plugins.transformations.ImageStabilizerCore.copy;
 import static plugins.plugins.transformations.ImageStabilizerCore.gradient;
@@ -73,8 +78,9 @@ public class ImageStabilizerXY implements Transformation {
     BoundedNumberParameter maxIter = new BoundedNumberParameter("Maximum Iterations", 0, 1000, 1, null);
     BoundedNumberParameter segmentLength = new BoundedNumberParameter("Segment length", 0, 20, 2, null);
     NumberParameter tol = new BoundedNumberParameter("Error Tolerance", 12, 5e-8, 0, null);
+    PluginParameter<Cropper> cropper = new PluginParameter<>("Cropper", Cropper.class, true);
     SimpleListParameter<GroupParameter> additionalTranslation = new SimpleListParameter<GroupParameter>("Additional Translation", new GroupParameter("Channel Translation", new ChannelImageParameter("Channel"), new NumberParameter("dX", 3, 0), new NumberParameter("dY", 3, 0), new NumberParameter("dZ", 3, 0)));
-    Parameter[] parameters = new Parameter[]{maxIter, tol, pyramidLevel, segmentLength, additionalTranslation}; //alpha
+    Parameter[] parameters = new Parameter[]{maxIter, tol, pyramidLevel, segmentLength, cropper, additionalTranslation}; //alpha
     ArrayList<ArrayList<Double>> translationTXY = new ArrayList<ArrayList<Double>>();
     public static boolean debug=false;
     public ImageStabilizerXY(){}
@@ -84,6 +90,11 @@ public class ImageStabilizerXY implements Transformation {
         this.tol.setValue(tolerance);
         this.maxIter.setValue(maxIterations);
         this.segmentLength.setValue(segmentLength);
+    }
+    
+    public ImageStabilizerXY setCropper(Cropper cropper) {
+        this.cropper.setPlugin(cropper);
+        return this;
     }
     
     public ImageStabilizerXY setAdditionalTranslation(int channelIdx, double... deltas) {
@@ -106,16 +117,51 @@ public class ImageStabilizerXY implements Transformation {
         //new IJImageDisplayer().showImage(imageRef.setName("ref image"));
         //if (true) return;
         final Double[][] translationTXYArray = new Double[inputImages.getFrameNumber()][];
-      
-        ccdSegments(channelIdx, inputImages, segmentLength.getValue().intValue(), tRef, translationTXYArray, maxIterations, tolerance);
+        Cropper crop = cropper.instanciatePlugin();
+        BoundingBox cropBB= crop==null? null : crop.getCropBoundginBox(channelIdx, inputImages);
         
-        translationTXY = new ArrayList<ArrayList<Double>>(translationTXYArray.length);
-        for (Double[] d : translationTXYArray) translationTXY.add(new ArrayList<Double>(Arrays.asList(d)));
+        ccdSegments(channelIdx, inputImages, segmentLength.getValue().intValue(), tRef, translationTXYArray, maxIterations, tolerance, cropBB);
+        
+        translationTXY = new ArrayList<>(translationTXYArray.length);
+        for (Double[] d : translationTXYArray) translationTXY.add(new ArrayList<>(Arrays.asList(d)));
+        if (cropBB!=null) { // ensure BB never gets out of the image + store BB parameters
+            double minDX = Collections.min(translationTXY, (l1, l2) -> Double.compare(l1.get(0), l2.get(0))).get(0);
+            double maxDX = Collections.max(translationTXY, (l1, l2) -> Double.compare(l1.get(0), l2.get(0))).get(0);
+            double minDY = Collections.min(translationTXY, (l1, l2) -> Double.compare(l1.get(1), l2.get(1))).get(1);
+            double maxDY = Collections.max(translationTXY, (l1, l2) -> Double.compare(l1.get(1), l2.get(1))).get(1);
+            logger.debug("ImageStabXY : dx:[{};{}], dy:[{};{}]", -maxDX, -minDX, -maxDY, -minDY);
+            double[] addTransMin = this.getAdditionalTranslation(channelIdx);
+            double[] addTransMax = this.getAdditionalTranslation(channelIdx);
+            for (int c = 1; c<inputImages.getChannelNumber(); ++c) {
+                double[] addTrans = this.getAdditionalTranslation(channelIdx);    
+                for (int i = 0; i<3; ++i) {
+                    if (addTransMin[i]>addTrans[i]) addTransMin[i] = addTrans[i]; 
+                    if (addTransMax[i]<addTrans[i]) addTransMax[i] = addTrans[i];
+                }
+            }
+            BoundingBox bds = inputImages.getImage(0, tRef).getBoundingBox().translateToOrigin();
+            // bb translated (int)(-tXY+addTrans)
+            int xUp = (int)(-maxDX+addTransMin[0]);
+            xUp = xUp>0 ? Math.max(0, cropBB.getxMin()-xUp) : cropBB.getxMin();
+            int xDwn = (int)(-minDX+addTransMax[0]);
+            xDwn = xDwn>0 ? Math.min(bds.getxMax(), cropBB.getxMax()+xDwn) : cropBB.getxMax();
+            cropBB.contractX(xUp, xDwn);
+            
+            int yUp = (int)(-maxDY+addTransMin[1]);
+            yUp =  yUp>0 ? Math.max(0, cropBB.getyMin()-yUp): cropBB.getyMin();
+            int yDwn = (int)(-minDY+addTransMax[1]);
+            yDwn = yDwn > 0 ? Math.min(bds.getyMax(), cropBB.getyMax()+yDwn) : cropBB.getyMax();
+            cropBB.contractY(yUp, yDwn);
+            
+            logger.debug("ImageStabXY : contract x:[{};{}], y:[{};{}]", xUp, xDwn, yUp, yDwn);
+            
+            translationTXY.add(new ArrayList<Double>(){{add((double)cropBB.getxMin()); add((double)cropBB.getxMax()); add((double)cropBB.getyMin()); add((double)cropBB.getyMax()); add((double)cropBB.getzMin()); add((double)cropBB.getzMax());}});
+        }   
         long tEnd = System.currentTimeMillis();
         logger.debug("ImageStabilizerXY: total estimation time: {}, reference timePoint: {}", tEnd-tStart, tRef);
     }
     
-    private void ccdSegments(final int channelIdx, final InputImages inputImages, int segmentLength, int tRef, final Double[][] translationTXYArray, final int maxIterations, final double tolerance) {
+    private void ccdSegments(final int channelIdx, final InputImages inputImages, int segmentLength, int tRef, final Double[][] translationTXYArray, final int maxIterations, final double tolerance, BoundingBox cropBB) {
         if (segmentLength<2) segmentLength = 2;
         int nSegments = (int)(0.5 +(double)(inputImages.getFrameNumber()-1) / (double)segmentLength) ;
         if (nSegments<1) nSegments=1;
@@ -130,9 +176,9 @@ public class ImageStabilizerXY implements Transformation {
             if (debug) logger.debug("segment: {}, {}", i, segments[i]);
         }
         if (debug)logger.debug("im to ref map: {}", mapImageToRef);
-        Image refImage = inputImages.getImage(channelIdx, tRef);
+        BoundingBox refBB = cropBB==null ? inputImages.getImage(channelIdx, tRef).getBoundingBox().translateToOrigin() : cropBB;
         // process each segment
-        final HashMapGetCreate<Integer, FloatProcessor> processorMap = new HashMapGetCreate<>(i-> getFloatProcessor(inputImages.getImage(channelIdx, i), false));
+        final HashMapGetCreate<Integer, FloatProcessor> processorMap = new HashMapGetCreate<>(i-> getFloatProcessor(cropBB==null ? inputImages.getImage(channelIdx, i) : inputImages.getImage(channelIdx, i).crop(cropBB), false));
         ReusableQueueWithSourceObject.Reset<Bucket, Integer> r = (bucket, imageRefIdx) -> {
             if (bucket.imageRefIdx!=imageRefIdx) { // only compute gradient if reference image is different
                 gradient(bucket.pyramid[1][0], processorMap.getAndCreateIfNecessarySync(imageRefIdx));
@@ -141,7 +187,7 @@ public class ImageStabilizerXY implements Transformation {
             return bucket;
         };
         ReusableQueueWithSourceObject.Factory<Bucket, Integer> f = (imageRefIdx) -> {
-            Bucket res = new Bucket(refImage, pyramidLevel.getSelectedIndex());
+            Bucket res = new Bucket(refBB, pyramidLevel.getSelectedIndex());
             return r.reset(res, imageRefIdx);
         };
         ReusableQueueWithSourceObject<Bucket, Integer> pyramids = new ReusableQueueWithSourceObject(f, r, true);
@@ -230,16 +276,33 @@ public class ImageStabilizerXY implements Transformation {
         ImagePlus impRef = IJImageWrapper.getImagePlus(image);
         return (FloatProcessor)impRef.getProcessor();
     }
-
+    private BoundingBox getBB() {
+        ArrayList<Double> bds = translationTXY.get(translationTXY.size()-1);
+        return new BoundingBox(bds.get(0).intValue(), bds.get(1).intValue(), bds.get(2).intValue(), bds.get(3).intValue(), bds.get(4).intValue(), bds.get(5).intValue());
+    }
+    
     @Override
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
+        BoundingBox cropBB =  cropper.isOnePluginSet() ? getBB() : null;
         ArrayList<Double> trans = translationTXY.get(timePoint);
         //logger.debug("stabilization time: {}, channel: {}, X:{}, Y:{}", timePoint, channelIdx, trans.get(0), trans.get(1));
-        if (trans.get(0)==0 && trans.get(1)==0) return image;
-        if (!(image instanceof ImageFloat)) image = TypeConverter.toFloat(image, null);
         double[] additionalTranslationValue = getAdditionalTranslation(channelIdx);
+        double dX = -trans.get(0)+additionalTranslationValue[0];
+        double dY = -trans.get(1)+additionalTranslationValue[1];
+        double dZ = additionalTranslationValue[2];
+        if (cropBB!=null) {
+            cropBB.translate((int)dX, (int)dY, (int)dZ);
+            dX-=(int)dX;
+            dY-=(int)dY;
+            dZ-=(int)dZ;
+        }
+        if (dX!=0 || dY!=0 || dZ!=0) {
+            if (!(image instanceof ImageFloat)) image = TypeConverter.toFloat(image, null);
+            image = ImageTransformation.translate(image, dX, dY, dZ, ImageTransformation.InterpolationScheme.BSPLINE5);
+        }
+        if (cropBB!=null) image = image.crop(cropBB);
         //if (timePoint<=0) logger.debug("add trans for channel: {} = {}", channelIdx, additionalTranslationValue);
-        return ImageTransformation.translate(image, -trans.get(0)+additionalTranslationValue[0], -trans.get(1)+additionalTranslationValue[1], +additionalTranslationValue[2], ImageTransformation.InterpolationScheme.BSPLINE5);
+        return image;
     }
     private GroupParameter getAdditionalTranslationParameter(int channelIdx, boolean onlyActivated) {
         List<GroupParameter> list = onlyActivated ? additionalTranslation.getActivatedChildren() : additionalTranslation.getChildren();
@@ -257,12 +320,14 @@ public class ImageStabilizerXY implements Transformation {
         return res;
     }
 
+    @Override
     public ArrayList getConfigurationData() {
         return this.translationTXY;
     }
     
+    @Override
     public boolean isConfigured(int totalChannelNumner, int totalTimePointNumber) {
-        return translationTXY!=null && translationTXY.size()==totalTimePointNumber;
+        return translationTXY!=null && translationTXY.size()==(totalTimePointNumber+(cropper.isOnePluginSet()?1:0));
     } 
 
     public boolean isTimeDependent() {
@@ -283,8 +348,8 @@ public class ImageStabilizerXY implements Transformation {
     private static class Bucket {
         ImageProcessor[][] pyramid;
         int imageRefIdx;
-        public Bucket(Image imageRef, int pyramidLevel) {
-            pyramid = ImageStabilizerCore.initWorkspace(imageRef.getSizeX(), imageRef.getSizeY(), pyramidLevel);
+        public Bucket(BoundingBox refBB, int pyramidLevel) {
+            pyramid = ImageStabilizerCore.initWorkspace(refBB.getSizeX(), refBB.getSizeY(), pyramidLevel);
             this.imageRefIdx=-1;
         }
 

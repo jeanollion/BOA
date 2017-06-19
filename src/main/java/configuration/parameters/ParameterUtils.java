@@ -46,6 +46,7 @@ import javax.swing.JMenuItem;
 import plugins.ParameterSetup;
 import plugins.ProcessingScheme;
 import plugins.Transformation;
+import static plugins.Transformation.SelectionMode.ALL;
 import static plugins.Transformation.SelectionMode.SAME;
 import plugins.UseMaps;
 import utils.ArrayUtil;
@@ -404,12 +405,15 @@ public class ParameterUtils {
                         images.addTransformation(tpp.getInputChannel(), tpp.getOutputChannels(), transfo);
                         
                         if (showAllSteps || i==transfoIdx) {
-                            int[] channels =null;
+                            int[] outputChannels =null;
                             if (!showAllSteps) {
-                                channels = tpp.getOutputChannels();
-                                if (channels==null) channels = new int[]{tpp.getInputChannel()};
+                                outputChannels = tpp.getOutputChannels();
+                                if (outputChannels==null) {
+                                    if (transfo.getOutputChannelSelectionMode()==SAME) outputChannels = new int[]{tpp.getInputChannel()};
+                                    else outputChannels = ArrayUtil.generateIntegerArray(images.getChannelNumber());
+                                }
                             }
-                            Image[][] imagesTC = images.getImagesTC(0, position.getTimePointNumber(false), channels);
+                            Image[][] imagesTC = images.getImagesTC(0, position.getTimePointNumber(false), outputChannels);
                             if (i!=transfoIdx) ArrayUtil.apply(imagesTC, a -> ArrayUtil.apply(a, im -> im.duplicate()));
                             ImageWindowManagerFactory.getImageManager().getDisplayer().showImage5D("after: "+tpp.getPluginName(), imagesTC);
                         }
@@ -457,7 +461,7 @@ public class ParameterUtils {
                     outputL.removeIf(idx -> idx>=images.getChannelNumber());
                     output = Utils.toArray(outputL, false);
                 } else if (output == null ) {
-                    if (transfo.getOutputChannelSelectionMode()==SAME) output = ArrayUtil.generateIntegerArray(images.getChannelNumber());
+                    if (transfo.getOutputChannelSelectionMode()==ALL) output = ArrayUtil.generateIntegerArray(images.getChannelNumber());
                     else output = new int[]{input};
                 }
 
