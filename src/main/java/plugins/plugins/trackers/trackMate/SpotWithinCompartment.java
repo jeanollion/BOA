@@ -126,8 +126,12 @@ public class SpotWithinCompartment extends Spot {
     }
     
     protected double getSquareDistanceCompartiments(SpotWithinCompartment s) {
-        // TODO how to manage truncated cells ?? interpolate GR ??
-        Localization offsetType = (this.compartiment.truncated || s.compartiment.truncated)  ? Localization.UP :  this.localization.getOffsetType(s.localization);
+        if (this.compartiment.truncated || s.compartiment.truncated) {
+            double d=  getSquareDistanceTruncated(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp);
+            if (displayPoles) displayOffsets(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp, d);
+            return d;
+        }
+        Localization offsetType = this.localization.getOffsetType(s.localization);
         if (offsetType==null) return Double.POSITIVE_INFINITY;
         else if (Localization.UP.equals(offsetType)) {
             double d=  getSquareDistance(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp);
@@ -194,7 +198,18 @@ public class SpotWithinCompartment extends Spot {
     @Override public String toString() {
         return "{F="+frame+"|S="+(object.getLabel()-1)+"|"+localization+"|LQ="+lowQuality+"C=["+getFeature(POSITION_X)+";"+getFeature(POSITION_Y)+"]}";
     }
-    
+    protected static double getSquareDistanceTruncated(SpotWithinCompartment s1, double[] offset1, SpotWithinCompartment s2, double[] offset2) {
+        double nextFactorY = Double.isNaN(s1.compartiment.sizeIncrement) ? 1 : s1.compartiment.sizeIncrement;
+        double x1 = s1.getFeature(POSITION_X);
+        double x2 = s2.getFeature(POSITION_X);
+        double y1 = s1.getFeature(POSITION_Y);
+        double y2 = s2.getFeature(POSITION_Y);
+        double z1 = s1.getFeature(POSITION_Z);
+        double z2 = s2.getFeature(POSITION_Z);
+        double d = Math.pow((x1-offset1[0] - x2+offset2[0]), 2) + Math.pow((y1-offset1[1] - (y2-offset2[1]) / nextFactorY), 2) +  Math.pow((z1-offset1[2] - z2+offset2[2]), 2);
+        d+= s1.distanceParameters.getSquareDistancePenalty(d, s1, s2);
+        return d;
+    }
     protected static double getSquareDistance(SpotWithinCompartment s1, double[] offset1, SpotWithinCompartment s2, double[] offset2) {
         if (offset1==null || offset2==null) return Double.POSITIVE_INFINITY; //TODO fix bug -> when reach test's limit timePoint, offset are null
         double x1 = s1.getFeature(POSITION_X);

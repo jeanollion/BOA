@@ -32,12 +32,10 @@ public interface SlidingOperator<E, A, R> {
     
     public static SlidingOperator<Double, double[], Double> slidingMean(double defaultValue) {
         return new SlidingOperator<Double, double[], Double>() {
-
             @Override
             public double[] instanciateAccumulator() {
                 return new double[2];
             }
-
             @Override
             public void slide(Double removeElement, Double addElement, double[] accumulator) {
                 if (removeElement!=null) {
@@ -53,6 +51,33 @@ public interface SlidingOperator<E, A, R> {
             @Override
             public Double compute(double[] accumulator) {
                 return accumulator[1]>0?accumulator[0]/accumulator[1]:defaultValue;
+            }
+        };
+    }
+    
+    public static SlidingOperator<Double, List<Double>, Double> slidingMedian(final int minSize) {
+        return new SlidingOperator<Double, List<Double>, Double>() {
+            @Override
+            public List<Double> instanciateAccumulator() {
+                return new ArrayList<>();
+            }
+            @Override
+            public void slide(Double removeElement, Double addElement, List<Double> accumulator) {
+                if (removeElement!=null && !Double.isNaN(removeElement)) {
+                    int remIdx = Collections.binarySearch(accumulator, removeElement);
+                    accumulator.remove(remIdx);
+                }
+                if (addElement!=null && !Double.isNaN(addElement)) {
+                    int addIdx = Collections.binarySearch(accumulator, addElement);
+                    if (addIdx<0) addIdx = -addIdx-1;
+                    accumulator.add(addIdx, addElement);
+                }
+            }
+
+            @Override
+            public Double compute(List<Double> accumulator) {
+                if (accumulator.size()<minSize) return Double.NaN;
+                return ArrayUtil.median(accumulator);
             }
         };
     }
@@ -76,6 +101,26 @@ public interface SlidingOperator<E, A, R> {
         }
         R end = res.get(res.size()-1);
         for (int i = list.size()-halfWindow; i<list.size(); ++i) res.add(end);
+        return res;
+    }
+    public static <E, A, R> List<R> performSlideLeft(List<E> list, int halfWindow, SlidingOperator<E, A, R> operator) {
+        if (list.isEmpty()) return Collections.EMPTY_LIST;
+        A acc = operator.instanciateAccumulator();
+        List<R> res = new ArrayList<>(list.size());
+        int window = 2*halfWindow + 1;
+        if (list.size()<window) {
+            for (int i = 0; i<list.size(); ++i) operator.slide(null, list.get(i), acc);
+            R start = operator.compute(acc);
+            for (int i = 0; i<list.size(); ++i) res.add(start);
+            return res;
+        }
+        for (int i = 0; i<window; ++i) operator.slide(null, list.get(i), acc);
+        R start = operator.compute(acc);
+        for (int i = 0; i<window; ++i) res.add(start);
+        for (int i = window; i<list.size(); ++i) {
+            operator.slide(list.get(i-window), list.get(i), acc);
+            res.add(operator.compute(acc));
+        }
         return res;
     }
     /*public static <T, A, R> R[] slideArray(T[] list, int halfWindow, SlidingOperator<T, A, R> operator) {

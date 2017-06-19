@@ -744,13 +744,27 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                             if (trackImage!=null) {
                                 //logger.debug("object: {}, channel: {}, open from trackImage", this, channelIdx);
                                 Image image = trackImage.crop(getBounds().duplicate().translateToOrigin().translate(offsetInTrackImage));
+                                image.resetOffset().addOffset(getBounds());
                                 rawImagesC.set(image, channelIdx);
                             } else { // open root and crop
-                                //logger.debug("object: {}, channel: {}, open root and crop", this, channelIdx);
-                                BoundingBox bb = getRelativeBoundingBox(getRoot());
-                                extendBoundsInZIfNecessary(channelIdx, bb);
-                                Image image = getRoot().getRawImage(structureIdx).crop(bb);
-                                rawImagesC.set(image, channelIdx);
+                                Image rootImage = getRoot().getRawImage(structureIdx);
+                                //logger.debug("object: {}, channel: {}, no trackImage try to open root and crop... null ? {}", this, channelIdx, rootImage==null);
+                                if (rootImage!=null) {
+                                    BoundingBox bb = getRelativeBoundingBox(getRoot());
+                                    extendBoundsInZIfNecessary(channelIdx, bb);
+                                    Image image = rootImage.crop(bb);
+                                    rawImagesC.set(image, channelIdx);
+                                } else if (!this.equals(getRoot())) {
+                                    // try to open parent image (if trackImage present...)
+                                    Image pImage = this.getParent().getRawImage(structureIdx);
+                                    //logger.debug("try to open parent image: null?{}", pImage==null);
+                                    if (pImage!=null) {
+                                        BoundingBox bb = getRelativeBoundingBox(getParent());
+                                        extendBoundsInZIfNecessary(channelIdx, bb);
+                                        Image image = pImage.crop(bb);
+                                        rawImagesC.set(image, channelIdx);
+                                    }
+                                }                                
                             }
                             // no speed gain in opening only tiles
                             /*StructureObject root = getRoot();
@@ -759,7 +773,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
                             rawImagesC.set(root.openRawImage(structureIdx, bb), channelIdx);*/
                         }
                     }
-                    rawImagesC.get(channelIdx).setCalibration(getScaleXY(), getScaleZ());
+                    if (rawImagesC.has(channelIdx)) rawImagesC.get(channelIdx).setCalibration(getScaleXY(), getScaleZ());
                     
                     //logger.debug("{} open channel: {}, use scale? {}, scale: {}", this, channelIdx, this.getMicroscopyField().getPreProcessingChain().useCustomScale(), getScaleXY());
                 }
@@ -770,8 +784,10 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
 
     private BoundingBox offsetInTrackImage;
     public Image getTrackImage(int structureIdx) {
-        int channelIdx = getExperiment().getChannelImageIdx(structureIdx);
+        //logger.debug("get Track image for : {}, id: {}, thId: {}, isTH?: {}, th: {}", this, id, this.trackHeadId, isTrackHead, this.trackHead);
+        //logger.debug("get Track Image for: {} th {}", this, getTrackHead());
         if (this.isTrackHead) {
+            int channelIdx = getExperiment().getChannelImageIdx(structureIdx);
             if (this.trackImagesC.get(channelIdx)==null) {
                 synchronized(trackImagesC) {
                     if (trackImagesC.getAndExtend(channelIdx)==null) {

@@ -577,7 +577,7 @@ public class MorphiumObjectDAO implements ObjectDAO {
         return roots;
     }
     
-    @Override public void setRoos(List<StructureObject> roots) {
+    @Override public void setRoots(List<StructureObject> roots) {
         this.roots = roots;
     }
     // measurement-specific methds

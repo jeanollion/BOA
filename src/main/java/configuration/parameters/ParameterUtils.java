@@ -352,6 +352,7 @@ public class ParameterUtils {
                             Image[] maps = null;
                             final BoundingBox bds = o.getBounds();
                             if (ps instanceof UseMaps) {
+                                //logger.debug("input off: {}, bds to crop: {}", raw.getBoundingBox(), bds);
                                 maps = ((UseMaps)ps).computeMaps(raw, filtered);
                                 ((UseMaps)ps).setMaps(Utils.transform(maps, new Image[maps.length], i -> i.cropWithOffset(bds)));
                                 logger.debug("testing with use maps");

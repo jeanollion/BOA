@@ -183,7 +183,10 @@ public class DBMapObjectDAO implements ObjectDAO {
     public StructureObject getById(ObjectId parentTrackHeadId, int structureIdx, int frame, ObjectId id) {
         // parentTrackHeadId can be null in case of parent call -> frame not null
         // frame can be < 
-        if (parentTrackHeadId!=null || structureIdx==-1) return ((Map<ObjectId, StructureObject>)getChildren(new Pair(parentTrackHeadId, structureIdx))).get(id);
+        if (parentTrackHeadId!=null || structureIdx==-1) {
+            logger.debug("getById: sIdx={} f={}, allChilldren: {}", structureIdx, frame, getChildren(new Pair(parentTrackHeadId, structureIdx)).size());
+            return ((Map<ObjectId, StructureObject>)getChildren(new Pair(parentTrackHeadId, structureIdx))).get(id);
+        }
         else { // search in all parentTrackHeadId
             Map<ObjectId, StructureObject> cacheMap = getCacheContaining(id, structureIdx);
             if (cacheMap!=null) return cacheMap.get(id);
@@ -207,6 +210,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     public void setAllChildren(List<StructureObject> parentTrack, int childStructureIdx) {
         if (parentTrack.isEmpty()) return;
         Map<ObjectId, StructureObject> children = getChildren(new Pair(parentTrack.get(0).getTrackHeadId(), childStructureIdx));
+        logger.debug("setting: {} children to {} parents", children.size(), parentTrack.size());
         Map<StructureObject, List<StructureObject>> byParent = StructureObjectUtils.splitByParent(children.values());
         for (StructureObject parent : parentTrack) {
             List<StructureObject> c = byParent.get(parent);
@@ -495,7 +499,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     }
 
     @Override
-    public void setRoos(List<StructureObject> roots) {
+    public void setRoots(List<StructureObject> roots) {
         this.store(roots, true);
     }
 

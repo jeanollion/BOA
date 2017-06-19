@@ -165,7 +165,7 @@ public class DBMapMasterDAO implements MasterDAO {
             xp.setContentFrom(xpr);
             // check output dir
             boolean modified = checkOutputDirectories(true);
-            modified = modified || checkOutputDirectories(false);
+            modified = checkOutputDirectories(false) || modified;
             if (modified) updateExperiment();
         }
         return xp;

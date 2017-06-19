@@ -160,6 +160,7 @@ public class LocalFileSystemImageDAO implements ImageDAO {
     public Image openTrackImage(StructureObject trackHead, int channelImageIdx) {
         String path = getTrackImagePath(trackHead, channelImageIdx);
         File f = new File(path);
+        logger.debug("opening track image: from {} c={}, path: {}, exists? {}", trackHead, channelImageIdx, path, f.exists());
         if (f.exists()) {
             logger.trace("Opening track image:  trackHead: {}", trackHead);
             return ImageReader.openImage(path);

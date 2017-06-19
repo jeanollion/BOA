@@ -66,7 +66,7 @@ public class SpotWithinCompartmentRoiModifier implements ImageWindowManager.RoiM
                 SpotWithinCompartment.offsetS1 = currentObject.value;
             }
             s2.squareDistanceTo(s);
-            logger.debug("distance: {}->{}, rois: {}", p.key, currentObject.key, SpotWithinCompartment.rois);
+            //logger.debug("distance: {}->{}, rois: {}", p.key, currentObject.key, SpotWithinCompartment.rois);
             for (Roi rr : SpotWithinCompartment.rois) currentRoi.put(++idx, rr);
             SpotWithinCompartment.rois.clear();
         }

@@ -237,7 +237,7 @@ public class BasicObjectDAO implements ObjectDAO {
     }
 
     @Override
-    public void setRoos(List<StructureObject> roots) {
+    public void setRoots(List<StructureObject> roots) {
         this.rootTrack=new SmallArray(roots.size());
         for (int i = 0; i<roots.size(); ++i) rootTrack.setQuick(roots.get(i), i);
     }

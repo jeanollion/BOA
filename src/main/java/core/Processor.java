@@ -127,7 +127,7 @@ public class Processor {
         if (res==null || res.isEmpty()) {
             res = dao.getExperiment().getPosition(dao.getPositionName()).createRootObjects(dao);
             dao.store(res, true);
-            dao.setRoos(res);
+            dao.setRoots(res);
         }
         return res;
     }

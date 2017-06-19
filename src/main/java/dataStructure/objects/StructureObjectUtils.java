@@ -46,6 +46,7 @@ import utils.Utils;
  * @author nasique
  */
 public class StructureObjectUtils {
+    
     public static List<StructureObject> getObjectsAtNextDivision(StructureObject o) {
         List<StructureObject> bucket = new ArrayList<>();
         StructureObject parent = o.getParent();
@@ -315,7 +316,11 @@ public class StructureObjectUtils {
         return res;
     }
     public static Map<StructureObject, List<StructureObject>> getAllTracks(List<StructureObject> parentTrack, int structureIdx) {
+        return getAllTracks(parentTrack, structureIdx, true);
+    }
+    public static Map<StructureObject, List<StructureObject>> getAllTracks(List<StructureObject> parentTrack, int structureIdx, boolean allowSearchInPreviousFrames) {
         if (parentTrack==null || parentTrack.isEmpty()) return Collections.EMPTY_MAP;
+        if (allowSearchInPreviousFrames && parentTrack.get(0).equals(parentTrack.get(0).getTrackHead())) allowSearchInPreviousFrames=false;
         HashMap<StructureObject, List<StructureObject>>  res = new HashMap<>();
         // set all children
         setAllChildren(parentTrack, structureIdx);
@@ -330,6 +335,16 @@ public class StructureObjectUtils {
                 } else {
                     l = res.get(c.getTrackHead());
                     if (l!=null) l.add(c);
+                    else if (allowSearchInPreviousFrames) {
+                        l = new ArrayList<>();
+                        StructureObject th = c.getTrackHead();
+                        while (c!=null && c.getTrackHead().equals(th)) {
+                            l.add(c);
+                            c=c.getPrevious();
+                        }
+                        Collections.sort(l, (o1, o2)->Integer.compare(o1.getFrame(), o2.getFrame()));
+                        res.put(th, l);
+                    }
                     else logger.error("getAllTracks: track not found for Object: {}, trackHead: {}", c, c.getTrackHead());
                 }
             }

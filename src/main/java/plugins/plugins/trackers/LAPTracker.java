@@ -36,6 +36,7 @@ import image.Image;
 import image.ImageFloat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -55,8 +56,8 @@ import plugins.plugins.processingScheme.SegmentThenTrack;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
 import plugins.plugins.trackers.trackMate.DistanceComputationParameters;
-import plugins.plugins.trackers.trackMate.LAPTrackerCore;
 import plugins.plugins.trackers.trackMate.SpotCompartiment;
+import static plugins.plugins.trackers.trackMate.SpotCompartiment.isTruncated;
 import plugins.plugins.trackers.trackMate.postProcessing.MutationTrackPostProcessing;
 import plugins.plugins.trackers.trackMate.SpotPopulation;
 import plugins.plugins.trackers.trackMate.SpotWithinCompartment;
@@ -65,6 +66,7 @@ import plugins.plugins.trackers.trackMate.TrackMateInterface.SpotFactory;
 import utils.ArrayFileWriter;
 import utils.HashMapGetCreate;
 import utils.Pair;
+import utils.SlidingOperator;
 import utils.SymetricalPair;
 import utils.Utils;
 
@@ -128,7 +130,8 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
     }
     @Override public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
         SegmentThenTrack stt = new SegmentThenTrack(segmenter.instanciatePlugin(), this).setPreFilters(preFilters).setPostFilters(postFilters);
-        stt.segmentOnly(structureIdx, parentTrack, executor);
+        List<Pair<String, Exception>> ex = stt.segmentOnly(structureIdx, parentTrack, executor);
+        for (Pair<String, Exception> p : ex) logger.debug(p.key, p.value);
         track(structureIdx, parentTrack, true);
     }
 
@@ -155,9 +158,8 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
         logger.debug("distanceFTF: {}, distance GC: {}, gapP: {}, atl: {}", maxLinkingDistance, maxLinkingDistanceGC, gapPenalty, alternativeDistance);
         
         final Map<Integer, StructureObject> parentsByF = StructureObjectUtils.splitByFrame(parentTrack);
-        
+        final HashMapGetCreate<StructureObject, SpotCompartiment> compartimentMap = new HashMapGetCreate<>((StructureObject s) -> new SpotCompartiment(s));
         TrackMateInterface<SpotWithinCompartment> tmi = new TrackMateInterface<>(new SpotFactory<SpotWithinCompartment>() {
-            HashMapGetCreate<StructureObject, SpotCompartiment> compartimentMap = new HashMapGetCreate<>((StructureObject s) -> new SpotCompartiment(s));
             @Override
             public SpotWithinCompartment toSpot(Object3D o, int frame) {
                 StructureObject parent = parentsByF.get(frame);
@@ -190,6 +192,57 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
             int lQCount = 0;
             for (SpotWithinCompartment s : tmi.spotObjectMap.keySet()) if (s.lowQuality) ++lQCount;
             logger.debug("LAP Tracker: {}, spot HQ: {}, #spots LQ: {} (thld: {}), time: {}", parentTrack.get(0), tmi.spotObjectMap.size()-lQCount, lQCount, spotQualityThreshold, t1-t0);
+        }
+        
+        // compute sizeIncrements if truncated cells are present
+        boolean truncated = false;
+        for (SpotCompartiment c : compartimentMap.values()) if (c.truncated) {truncated=true; break;}
+        if (truncated) { // compute only on mother tracks
+            List<StructureObject> pTrack = parentTrack;
+            Map<StructureObject, List<StructureObject>> compartimentTracks = StructureObjectUtils.getAllTracks(pTrack, compartirmentStructure);
+            List<StructureObject> compartimentList = new ArrayList<>();
+            List<Double> SIList=new ArrayList<>();
+            int startMother = 0;
+            while(startMother<parentTrack.size() && parentTrack.get(startMother).getChildren(compartirmentStructure).isEmpty()) ++startMother;
+            Comparator<StructureObject> c = (o1, o2)-> Integer.compare(o1.getBounds().getyMin(), o2.getBounds().getyMin());
+            if (startMother<parentTrack.size()) {
+                List<StructureObject> nexts = new ArrayList<>(5);
+                StructureObject mother = Collections.min( parentTrack.get(startMother).getChildren(compartirmentStructure),  c);
+                List<StructureObject> currentTrack = compartimentTracks.get(mother.getTrackHead());
+                while (currentTrack!=null) {
+                    for (int i = 1; i<currentTrack.size(); ++i) {
+                        compartimentList.add(currentTrack.get(i));
+                        if (isTruncated(currentTrack.get(i)) || isTruncated(currentTrack.get(i-1))) SIList.add(Double.NaN);
+                        else SIList.add((double)currentTrack.get(i).getObject().getSize() / (double)currentTrack.get(i-1).getObject().getSize());
+                    }
+                    putNext(currentTrack.get(currentTrack.size()-1), nexts);
+                    //logger.debug("nexts: {}", nexts);
+                    if (nexts.isEmpty()) break;
+                    else {
+                        Collections.sort(nexts, c);
+                        double sizeNext = 0; for (StructureObject n : nexts) sizeNext+=n.getObject().getSize();
+                        compartimentList.add(nexts.get(0));
+                        if (isTruncated(currentTrack.get(currentTrack.size()-1)) || isTruncated(nexts.get(nexts.size()-1))) SIList.add(Double.NaN);
+                        else SIList.add(sizeNext / currentTrack.get(currentTrack.size()-1).getObject().getSize());
+                        currentTrack = compartimentTracks.get(nexts.get(0));
+                    }
+                }
+            }
+            List<Double> SIMedian = SlidingOperator.performSlideLeft(SIList, 3, SlidingOperator.slidingMedian(5));
+            // Replace values where NaN obseved
+            double lastNonNan=Double.NaN;
+            for (int i = 0; i<SIMedian.size(); ++i) {
+                if (Double.isNaN(SIList.get(i)) || Double.isNaN(SIMedian.get(i))) {
+                    SIMedian.set(i, lastNonNan);
+                } else lastNonNan = SIMedian.get(i);
+            }
+            //logger.debug("Objects sizes: {}", Utils.toStringList(compartimentList, o->o.getObject().getSize()));
+            //logger.debug("Objects SI: {}", SIList);
+            //logger.debug("Object SI Med: {}", SIMedian);
+            for (int i =0; i<compartimentList.size(); ++i) {
+                SpotCompartiment sc = compartimentMap.get(compartimentList.get(i));
+                if (sc!=null) sc.sizeIncrement = SIMedian.get(i);
+            }
         }
         
         if (LQSpots) { // run to remove LQ spots
@@ -350,6 +403,15 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
         }
         for (StructureObject p : parentsToRelabel) p.relabelChildren(structureIdx);
         logger.debug("erased LQ spots: {}", eraseCount);
+    }
+    
+    private static void putNext(StructureObject prev, List<StructureObject> bucket) {
+        bucket.clear();
+        StructureObject nextP = prev.getParent().getNext();
+        if (nextP==null) return;
+        for (StructureObject o : nextP.getChildren(prev.getStructureIdx())) {
+            if (o.getPrevious().equals(prev)) bucket.add(o);
+        }
     }
     
     @Override

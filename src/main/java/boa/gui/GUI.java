@@ -2255,12 +2255,13 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
                     String path = PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH, null);
                     File f = Utils.chooseFile("Choose local data folder", path, FileChooser.FileChooserOption.DIRECTORIES_ONLY, hostName);
                     if (f!=null) {
+                        unsetXP();
                         PropertyUtils.set(PropertyUtils.LOCAL_DATA_PATH, f.getAbsolutePath());
                         PropertyUtils.addStringToList(PropertyUtils.LOCAL_DATA_PATH, f.getAbsolutePath());
                         hostName.setText(f.getAbsolutePath());
                         localFileSystemDatabaseRadioButton.setSelected(true);
+                        populateExperimentList();
                     }
-                    populateExperimentList();
                 }
             };
             menu.add(chooseFile);
@@ -2273,6 +2274,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
                     public void actionPerformed(ActionEvent e) {
                         File f = new File(s);
                         if (f.exists() && f.isDirectory()) {
+                            unsetXP();
                             hostName.setText(s);
                             PropertyUtils.set(PropertyUtils.LOCAL_DATA_PATH, s);
                             localFileSystemDatabaseRadioButton.setSelected(true);
