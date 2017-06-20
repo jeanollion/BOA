@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import static plugins.Plugin.logger;
+import static plugins.plugins.trackers.trackMate.SpotWithinCompartmentRoiModifier.displayPoles;
 import utils.Utils;
 
 /**
@@ -38,8 +39,6 @@ import utils.Utils;
  * @author jollion
  */
 public class SpotWithinCompartment extends Spot {
-    public static boolean displayPoles=false;
-    public static double displayDistanceThreshold = 1.5; 
     public static double poleDistanceFactor = 0; 
     protected Object3D object;
     public final SpotCompartiment compartiment;
@@ -74,6 +73,17 @@ public class SpotWithinCompartment extends Spot {
         //offset.duplicate().translate(this.compartiment.object.getBounds().duplicate().reverseOffset());
         
         return new TextRoi(offset.getxMax(), offset.getyMax(), localization.toString());
+    }
+    
+    public int compareSpots(Spot other) {
+        if (other instanceof SpotWithinCompartment) {
+            SpotWithinCompartment otherS = (SpotWithinCompartment)other;
+            int c1 = Integer.compare(this.frame, otherS.frame);
+            if (c1!=0) return c1;
+            int c2 = Integer.compare(this.object.getLabel(), otherS.object.getLabel());
+            if (c2!=0) return c2;
+            return super.compareTo(other);
+        } else return super.compareTo(other);
     }
     
     public SpotWithinCompartment duplicate() {
@@ -128,6 +138,7 @@ public class SpotWithinCompartment extends Spot {
     protected double getSquareDistanceCompartiments(SpotWithinCompartment s) {
         if (this.compartiment.truncated || s.compartiment.truncated) {
             double d=  getSquareDistanceTruncated(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp);
+            if (displayPoles) logger.debug("truncated distance");
             if (displayPoles) displayOffsets(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp, d);
             return d;
         }
@@ -135,20 +146,20 @@ public class SpotWithinCompartment extends Spot {
         if (offsetType==null) return Double.POSITIVE_INFINITY;
         else if (Localization.UP.equals(offsetType)) {
             double d=  getSquareDistance(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp);
-            if (displayPoles) displayOffsets(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp, d);
+            if (SpotWithinCompartmentRoiModifier.displayPoles) displayOffsets(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp, d);
             return d;
         } else if (Localization.LOW.equals(offsetType)) {
             double d =  getSquareDistance(this, this.compartiment.offsetDown, s, s.compartiment.offsetDown);
-            if (displayPoles) displayOffsets(this, this.compartiment.offsetDown, s, s.compartiment.offsetDown, d);
+            if (SpotWithinCompartmentRoiModifier.displayPoles) displayOffsets(this, this.compartiment.offsetDown, s, s.compartiment.offsetDown, d);
             return d;
         } else if (Localization.MIDDLE.equals(offsetType)) {
            double d=  getSquareDistance(this, this.compartiment.offsetDivisionMiddle, s, s.compartiment.offsetDivisionMiddle);
-            if (displayPoles) displayOffsets(this, this.compartiment.offsetDivisionMiddle, s, s.compartiment.offsetDivisionMiddle, d);
+            if (SpotWithinCompartmentRoiModifier.displayPoles) displayOffsets(this, this.compartiment.offsetDivisionMiddle, s, s.compartiment.offsetDivisionMiddle, d);
             return d;
         }  else if (Localization.UPPER_MIDDLE.equals(offsetType)) {
             double d1 = getSquareDistance(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp);
             double d2 = getSquareDistance(this, this.compartiment.offsetDivisionMiddle, s, s.compartiment.offsetDivisionMiddle);
-            if (displayPoles) {
+            if (SpotWithinCompartmentRoiModifier.displayPoles) {
                 if (d1>d2) displayOffsets(this, this.compartiment.offsetDivisionMiddle, s, s.compartiment.offsetDivisionMiddle, d2);
                 else displayOffsets(this, this.compartiment.offsetUp, s, s.compartiment.offsetUp, d1);
             }
@@ -156,7 +167,7 @@ public class SpotWithinCompartment extends Spot {
         } else { // LOWER_MIDDLE
             double d1 = getSquareDistance(this, this.compartiment.offsetDown, s, s.compartiment.offsetDown);
             double d2 = getSquareDistance(this, this.compartiment.offsetDivisionMiddle, s, s.compartiment.offsetDivisionMiddle);
-            if (displayPoles) {
+            if (SpotWithinCompartmentRoiModifier.displayPoles) {
                 if (d1>d2) displayOffsets(this, this.compartiment.offsetDivisionMiddle, s, s.compartiment.offsetDivisionMiddle, d2);
                 else displayOffsets(this, this.compartiment.offsetDown, s, s.compartiment.offsetDown, d1);
             }
@@ -165,11 +176,12 @@ public class SpotWithinCompartment extends Spot {
     }
     protected double getSquareDistanceDivision(SpotWithinCompartment sAfterDivision) {
         Localization[] offsetType = localization.getOffsetTypeDivision(sAfterDivision.localization, sAfterDivision.compartiment.upperDaughterCell);
+        if (displayPoles) logger.debug("distance division: {}", offsetType==null? "null" : Utils.toStringArray(offsetType, o->o.toString()));
         if (offsetType==null) return Double.POSITIVE_INFINITY;
         if (offsetType.length==2) {
             double[] off1  = this.compartiment.getOffset(offsetType[0]);
             double[] off2  = sAfterDivision.compartiment.getOffset(offsetType[1]);
-            if (displayPoles) displayOffsets(this, off1, sAfterDivision, off2, getSquareDistance(this, off1, sAfterDivision, off2));
+            if (SpotWithinCompartmentRoiModifier.displayPoles) displayOffsets(this, off1, sAfterDivision, off2, getSquareDistance(this, off1, sAfterDivision, off2));
             return getSquareDistance(this, off1, sAfterDivision, off2);
         } else {
             double[] off1  = this.compartiment.getOffset(offsetType[0]);
@@ -179,10 +191,10 @@ public class SpotWithinCompartment extends Spot {
             double[] off22  = sAfterDivision.compartiment.getOffset(offsetType[3]);
             double d2 = getSquareDistance(this, off12, sAfterDivision, off22);
             if (d1>d2) {
-                if (displayPoles) displayOffsets(this, off12, sAfterDivision, off22, d2);
+                if (SpotWithinCompartmentRoiModifier.displayPoles) displayOffsets(this, off12, sAfterDivision, off22, d2);
                 return d2;
             } else {
-                if (displayPoles) displayOffsets(this, off1, sAfterDivision, off2, d1);
+                if (SpotWithinCompartmentRoiModifier.displayPoles) displayOffsets(this, off1, sAfterDivision, off2, d1);
                 return d1;
             }
         }
@@ -196,7 +208,8 @@ public class SpotWithinCompartment extends Spot {
     }*/
     
     @Override public String toString() {
-        return "{F="+frame+"|S="+(object.getLabel()-1)+"|"+localization+"|LQ="+lowQuality+"C=["+getFeature(POSITION_X)+";"+getFeature(POSITION_Y)+"]}";
+        return "{"+frame+"-"+(object.getLabel()-1); //+"["+getFeature(POSITION_X)+";"+getFeature(POSITION_Y)+"]}";
+        //return "{F="+frame+"|Idx="+(object.getLabel()-1)+"|"+localization+"|LQ="+lowQuality+"C=["+getFeature(POSITION_X)+";"+getFeature(POSITION_Y)+"]}";
     }
     protected static double getSquareDistanceTruncated(SpotWithinCompartment s1, double[] offset1, SpotWithinCompartment s2, double[] offset2) {
         double nextFactorY = Double.isNaN(s1.compartiment.sizeIncrement) ? 1 : s1.compartiment.sizeIncrement;
@@ -234,7 +247,7 @@ public class SpotWithinCompartment extends Spot {
     public static BoundingBox offsetS1, offsetS2;
     private static void displayOffsets(SpotWithinCompartment s1, double[] offset1, SpotWithinCompartment s2, double[] offset2, double distance ) {
         if (rois!=null) {
-            if (distance>displayDistanceThreshold) return;
+            //if (distance>SpotWithinCompartmentRoiModifier.displayDistanceThreshold) return;
             //BoundingBox off1 = bacteria.getObjectOffset(s1.compartiment.object).duplicate().translate(s1.compartiment.object.getBounds().duplicate().reverseOffset());
             //BoundingBox off2 = bacteria.getObjectOffset(s2.compartiment.object).duplicate().translate(s2.compartiment.object.getBounds().duplicate().reverseOffset());
             
@@ -296,6 +309,7 @@ public class SpotWithinCompartment extends Spot {
             if (upperDaughterCell) {
                 if (MIDDLE.equals(this)) {
                     if (LOW.equals(otherAfterDivision) || LOWER_MIDDLE.equals(otherAfterDivision) || MIDDLE.equals(otherAfterDivision)) return new Localization[]{MIDDLE, LOW};
+                    else if (UPPER_MIDDLE.equals(otherAfterDivision)) return new Localization[]{MIDDLE, LOW, UP, UP};
                     else return null;
                 } else if (UPPER_MIDDLE.equals(this)) {
                     if (MIDDLE.equals(otherAfterDivision)) return new Localization[]{UP, UP, MIDDLE, LOW};
@@ -309,6 +323,7 @@ public class SpotWithinCompartment extends Spot {
             } else {
                 if (MIDDLE.equals(this)) {
                     if (UP.equals(otherAfterDivision) || UPPER_MIDDLE.equals(otherAfterDivision) || MIDDLE.equals(otherAfterDivision)) return new Localization[]{MIDDLE, UP};
+                    else if (LOWER_MIDDLE.equals(otherAfterDivision)) return new Localization[]{MIDDLE, UP, LOW, LOW};
                     else return null;
                 } else if (LOWER_MIDDLE.equals(this)) {
                     if (MIDDLE.equals(otherAfterDivision)) return new Localization[]{MIDDLE, UP, LOW, LOW};

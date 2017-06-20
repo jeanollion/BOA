@@ -430,6 +430,10 @@ public class ParameterUtils {
             @Override
             public void actionPerformed(ActionEvent ae) {
                 Image[][] imCT = ImageWindowManagerFactory.getImageManager().getDisplayer().getCurrentImageCT();
+                if (imCT==null) {
+                    logger.warn("No active image");
+                    return;
+                }
                 logger.debug("current image has: {} frames, {} channels, {} slices", imCT[0].length, imCT.length, imCT[0][0].getSizeZ());
                 MemoryImageContainer cont = new MemoryImageContainer(imCT);
                 logger.debug("container: {} frames, {} channels", cont.getFrameNumber(), cont.getChannelNumber());

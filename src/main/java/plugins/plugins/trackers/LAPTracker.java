@@ -52,6 +52,7 @@ import plugins.Segmenter;
 import plugins.SegmenterSplitAndMerge;
 import plugins.Tracker;
 import plugins.TrackerSegmenter;
+import plugins.plugins.processingScheme.SegmentOnly;
 import plugins.plugins.processingScheme.SegmentThenTrack;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
@@ -129,8 +130,8 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
         return this;
     }
     @Override public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
-        SegmentThenTrack stt = new SegmentThenTrack(segmenter.instanciatePlugin(), this).setPreFilters(preFilters).setPostFilters(postFilters);
-        List<Pair<String, Exception>> ex = stt.segmentOnly(structureIdx, parentTrack, executor);
+        SegmentOnly ps = new SegmentOnly(segmenter.instanciatePlugin()).setPreFilters(preFilters).setPostFilters(postFilters);
+        List<Pair<String, Exception>> ex = ps.segmentAndTrack(structureIdx, parentTrack, executor);
         for (Pair<String, Exception> p : ex) logger.debug(p.key, p.value);
         track(structureIdx, parentTrack, true);
     }
@@ -143,7 +144,8 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
     }
     
     public void track(int structureIdx, List<StructureObject> parentTrack, boolean LQSpots) {
-        int compartirmentStructure=this.compartirmentStructure.getSelectedIndex();
+        //if (true) return;
+        int compartimentStructure=this.compartirmentStructure.getSelectedIndex();
         int maxGap = this.maxGap.getValue().intValue()+1; // parameter = count only the frames where the spot is missing
         double spotQualityThreshold = LQSpots ? this.spotQualityThreshold.getValue().doubleValue() : Double.NEGATIVE_INFINITY;
         double maxLinkingDistance = this.maxLinkingDistance.getValue().doubleValue();
@@ -163,7 +165,7 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
             @Override
             public SpotWithinCompartment toSpot(Object3D o, int frame) {
                 StructureObject parent = parentsByF.get(frame);
-                List<StructureObject> candidates = parent.getChildren(compartirmentStructure);
+                List<StructureObject> candidates = parent.getChildren(compartimentStructure);
                 StructureObject compartimentSO = StructureObjectUtils.getInclusionParent(o, candidates, null); 
                 SpotCompartiment compartiment = compartimentMap.getAndCreateIfNecessary(compartimentSO);
                 if (compartiment==null) return null;
@@ -184,7 +186,6 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
         });
         if (registerTMI) debugTMI=tmi;
         Map<Integer, List<StructureObject>> objectsF = StructureObjectUtils.getChildrenMap(parentTrack, structureIdx);
-        
         long t0 = System.currentTimeMillis();
         tmi.addObjects(objectsF);
         long t1 = System.currentTimeMillis();
@@ -194,20 +195,92 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
             logger.debug("LAP Tracker: {}, spot HQ: {}, #spots LQ: {} (thld: {}), time: {}", parentTrack.get(0), tmi.spotObjectMap.size()-lQCount, lQCount, spotQualityThreshold, t1-t0);
         }
         
+        setSizeIncrementForTruncatedCells(compartimentMap, parentTrack, compartimentStructure);
+        
+        if (LQSpots) { // run to remove LQ spots
+            distParams.includeLQ=false;
+            boolean ok = tmi.processFTF(maxLinkingDistance); //FTF only with HQ
+            distParams.includeLQ=true;
+            if (ok) ok = tmi.processFTF(maxLinkingDistance); // FTF HQ+LQ
+            distParams.includeLQ=true;
+            if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, false, false); // GC HQ+LQ (dist param: no gap closing between LQ spots)
+            if (ok) {
+                tmi.setTrackLinks(objectsF);
+                tmi.resetEdges();
+                MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, tmi.objectSpotMap, o->tmi.removeObject(o.getObject(), o.getFrame()));
+                postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC);
+                removeUnlinkedLQSpots(parentTrack, structureIdx, tmi);
+                objectsF = StructureObjectUtils.getChildrenMap(parentTrack, structureIdx);
+            } else return;
+        }
+        long t2 = System.currentTimeMillis();
+        boolean ok = true; 
+        if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, false, false);
+        if (ok) {
+            switchCrossingLinksWithLQBranches(tmi, maxLinkingDistanceGC/Math.sqrt(2), maxLinkingDistanceGC, maxGap);
+            tmi.setTrackLinks(objectsF);
+            MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, tmi.objectSpotMap, o->tmi.removeObject(o.getObject(), o.getFrame())); // TODO : do directly in graph
+            postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC);
+            //trimLQExtremityWithGaps(tmi, 0, true, true);
+        }
+        if (ok) {
+            //tmi.printLinks();
+            tmi.setTrackLinks(objectsF);
+        }
+        
+        
+        //else for (StructureObject o : Utils.flattenMap(objectsF)) o.resetTrackLinks(true, true);
+        // OR: second run with all spots at the same time?
+        //boolean ok = tmi.processFTF(maxLinkingDistance);
+        //if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, false, false);
+        //if (ok) tmi.removeCrossingLinksFromGraph(parentTrack.get(0).getScaleXY()*2);
+        //if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, false, false);
+        //if (ok) tmi.setTrackLinks(objectsF);
+        if (LQSpots) {
+            tmi.resetEdges();
+            removeUnlinkedLQSpots(parentTrack, structureIdx, tmi);
+        }
+        
+        long t3 = System.currentTimeMillis();
+        // post-processing
+        //MutationTrackPostProcessing.RemoveObjectCallBact cb= o->tmi.removeObject(o.getObject(), o.getFrame()); // if tmi needs to be reused afterwards
+        
+        long t4 = System.currentTimeMillis();
+        //postProcessor.flagShortAndLongTracks(minimalTrackFrameNumber.getValue().intValue(), maximalTrackFrameNumber.getValue().intValue());
+        
+        // ETUDE DES DEPLACEMENTS EN Y
+        /*
+        // get distance distribution
+        float[] dHQ= core.extractDistanceDistribution(true);
+        float[] dHQLQ = core.extractDistanceDistribution(false);
+        new ArrayFileWriter().addArray("HQ", dHQ).addArray("HQLQ", dHQLQ).writeToFile("/home/jollion/Documents/LJP/Analyse/SpotDistanceDistribution/SpotDistanceDistribution.csv");
+        */
+        
+        // relabel
+        for (StructureObject p: parentTrack) {
+            Collections.sort(p.getChildren(structureIdx), ObjectIdxTracker.getComparator(ObjectIdxTracker.IndexingOrder.YXZ));
+            p.relabelChildren(structureIdx);
+        }
+
+        logger.debug("LAP Tracker: {}, total processing time: {}, create spots: {}, remove LQ: {}, link: {}", parentTrack.get(0), t4-t0, t1-t0, t2-t1, t3-t2, t4-t3);
+    }
+    
+    private static void setSizeIncrementForTruncatedCells(Map<StructureObject, SpotCompartiment> compartimentMap , List<StructureObject> parentTrack, int compartimentStructure) {
         // compute sizeIncrements if truncated cells are present
         boolean truncated = false;
         for (SpotCompartiment c : compartimentMap.values()) if (c.truncated) {truncated=true; break;}
+        if (!truncated) return;
         if (truncated) { // compute only on mother tracks
             List<StructureObject> pTrack = parentTrack;
-            Map<StructureObject, List<StructureObject>> compartimentTracks = StructureObjectUtils.getAllTracks(pTrack, compartirmentStructure);
+            Map<StructureObject, List<StructureObject>> compartimentTracks = StructureObjectUtils.getAllTracks(pTrack, compartimentStructure);
             List<StructureObject> compartimentList = new ArrayList<>();
             List<Double> SIList=new ArrayList<>();
             int startMother = 0;
-            while(startMother<parentTrack.size() && parentTrack.get(startMother).getChildren(compartirmentStructure).isEmpty()) ++startMother;
+            while(startMother<parentTrack.size() && parentTrack.get(startMother).getChildren(compartimentStructure).isEmpty()) ++startMother;
             Comparator<StructureObject> c = (o1, o2)-> Integer.compare(o1.getBounds().getyMin(), o2.getBounds().getyMin());
             if (startMother<parentTrack.size()) {
                 List<StructureObject> nexts = new ArrayList<>(5);
-                StructureObject mother = Collections.min( parentTrack.get(startMother).getChildren(compartirmentStructure),  c);
+                StructureObject mother = Collections.min(parentTrack.get(startMother).getChildren(compartimentStructure),  c);
                 List<StructureObject> currentTrack = compartimentTracks.get(mother.getTrackHead());
                 while (currentTrack!=null) {
                     for (int i = 1; i<currentTrack.size(); ++i) {
@@ -244,104 +317,68 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
                 if (sc!=null) sc.sizeIncrement = SIMedian.get(i);
             }
         }
-        
-        if (LQSpots) { // run to remove LQ spots
-            distParams.includeLQ=false;
-            boolean ok = tmi.processFTF(maxLinkingDistance); //FTF only with HQ
-            distParams.includeLQ=true;
-            if (ok) ok = tmi.processFTF(maxLinkingDistance); // FTF HQ+LQ
-            distParams.includeLQ=true;
-            if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, false, false); // GC HQ+LQ (dist param: no gap closing between LQ spots)
-            if (ok) {
-                tmi.setTrackLinks(objectsF);
-                tmi.resetEdges();
-                
-                MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, tmi.objectSpotMap, o->{});
-                postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC);
-                removeUnlinkedLQSpots(parentTrack, structureIdx, tmi);
-                
-                objectsF = StructureObjectUtils.getChildrenMap(parentTrack, structureIdx);
-            } else return;
-            
-        }
-        long t2 = System.currentTimeMillis();
-        boolean ok = true;//tmi.processFTF(maxLinkingDistance);
-        if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, false, false);
-        if (ok) {
-            switchCrossingLinksWithLQBranches(tmi, maxLinkingDistanceGC/Math.sqrt(2), maxLinkingDistanceGC, maxGap);
-            trimLQExtremityWithGaps(tmi, 0, true, true);
-        }
-        if (ok) tmi.setTrackLinks(objectsF);
-        
-        
-        //else for (StructureObject o : Utils.flattenMap(objectsF)) o.resetTrackLinks(true, true);
-        // OR: second run with all spots at the same time?
-        //boolean ok = tmi.processFTF(maxLinkingDistance);
-        //if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, false, false);
-        //if (ok) tmi.removeCrossingLinksFromGraph(parentTrack.get(0).getScaleXY()*2);
-        //if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, false, false);
-        //if (ok) tmi.setTrackLinks(objectsF);
-        if (LQSpots) {
-            tmi.resetEdges();
-            removeUnlinkedLQSpots(parentTrack, structureIdx, tmi);
-        }
-        
-        long t3 = System.currentTimeMillis();
-        // post-processing
-        //MutationTrackPostProcessing.RemoveObjectCallBact cb= o->tmi.removeObject(o.getObject(), o.getFrame()); // if tmi needs to be reused afterwards
-        MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, tmi.objectSpotMap, o->{});
-        postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC);
-        long t4 = System.currentTimeMillis();
-        //postProcessor.flagShortAndLongTracks(minimalTrackFrameNumber.getValue().intValue(), maximalTrackFrameNumber.getValue().intValue());
-        
-        // ETUDE DES DEPLACEMENTS EN Y
-        /*
-        // get distance distribution
-        float[] dHQ= core.extractDistanceDistribution(true);
-        float[] dHQLQ = core.extractDistanceDistribution(false);
-        new ArrayFileWriter().addArray("HQ", dHQ).addArray("HQLQ", dHQLQ).writeToFile("/home/jollion/Documents/LJP/Analyse/SpotDistanceDistribution/SpotDistanceDistribution.csv");
-        */
-        
-        // relabel
-        for (StructureObject p: parentTrack) {
-            Collections.sort(p.getChildren(structureIdx), (o1, o2) -> Double.compare(o1.getBounds().getYMean(), o2.getBounds().getYMean()));
-            p.relabelChildren(structureIdx);
-        }
-        /*List<Object3D> allObjects = new ArrayList<>();
-        for (StructureObject p : parentTrack) allObjects.addAll(Utils.transform(p.getChildren(structureIdx), o->o.getObject()));
-        allObjects.removeAll(tmi.objectSpotMap.keySet());
-        logger.debug("object tmi size {} common: {}", tmi.objectSpotMap.keySet().size(), tmi.objectSpotMap.keySet().size()-allObjects.size());
-        */
-        logger.debug("LAP Tracker: {}, total processing time: {}, create spots: {}, remove LQ: {}, link: {}", parentTrack.get(0), t4-t0, t1-t0, t2-t1, t3-t2, t4-t3);
     }
+    
     private static void trimLQExtremityWithGaps(TrackMateInterface<SpotWithinCompartment> tmi, double gapTolerance, boolean start, boolean end) {
         long t0 = System.currentTimeMillis();
-        gapTolerance+=1;
+        --gapTolerance;
         Set<DefaultWeightedEdge> toRemove = new HashSet<>();
         for (DefaultWeightedEdge e : tmi.getEdges()) {
-            SpotWithinCompartment s = tmi.getEdge(e, true);
-            SpotWithinCompartment t = tmi.getEdge(e, false);
-            if (s.frame+gapTolerance>=t.frame) continue; // no gap
-            if (start && s.lowQuality) {
-                if (tmi.getPrevious(s)==null) { // start of track -> remove edge
-                    toRemove.add(e);
-                    continue;
-                } 
-            }
-            if (end && t.lowQuality) {
-                if (tmi.getNext(t)==null) toRemove.add(e);
-            }
+            if (toRemove.contains(e)) continue;
+            addLQSpot(tmi, e, gapTolerance, start, end, toRemove, true);
         }
         tmi.removeFromGraph(toRemove, null);
         long t1 = System.currentTimeMillis();
         tmi.logGraphStatus("trim extremities ("+toRemove.size()+")", t1-t0);
     }
+    private static boolean addLQSpot(TrackMateInterface<SpotWithinCompartment> tmi, DefaultWeightedEdge e, double gapTolerance, boolean start, boolean end, Set<DefaultWeightedEdge> toRemove, boolean wholeTrack) {
+        SpotWithinCompartment s = tmi.getObject(e, true);
+        SpotWithinCompartment t = tmi.getObject(e, false);
+        if (t.frame-s.frame-1<=gapTolerance) return false; // no gap
+        if (start && s.lowQuality) {
+            SpotWithinCompartment prev = tmi.getPrevious(s);
+            if (prev==null || toRemove.contains(tmi.getEdge(prev, s))) { // start of track -> remove edge
+                toRemove.add(e);
+                if (wholeTrack) {
+                    // check if following edge verify same conditions
+                    SpotWithinCompartment n = tmi.getNext(t);
+                    DefaultWeightedEdge nextEdge = tmi.getEdge(t, n);
+                    logger.debug("after trim {}->{}, check trim: {}->{} edge null? {}, LQ: {}, np gap{}", s, t, t, n, nextEdge==null, t.lowQuality, n.frame-t.frame-1<=gapTolerance);
+                    while(n!=null && nextEdge!=null && addLQSpot(tmi, nextEdge, gapTolerance, start, end, toRemove, false)) {
+                        SpotWithinCompartment nn = tmi.getNext(n);
+                        nextEdge = tmi.getEdge(n, nn);
+                        logger.debug("after trim {}->{}, check trim: {}->{} edge null? {}", s, t, n, nn, nextEdge==null);
+                        n=nn;
+                    }
+                }
+                return true;
+            } 
+        }
+        if (end && t.lowQuality) {
+            SpotWithinCompartment next = tmi.getNext(s);
+            if (next==null || toRemove.contains(tmi.getEdge(t, next))) {
+                toRemove.add(e);
+                if (wholeTrack) {
+                    // check if previous edge verify same conditions
+                    SpotWithinCompartment p = tmi.getPrevious(s);
+                    DefaultWeightedEdge prevEdge = tmi.getEdge(p, s);
+                    while(p!=null && prevEdge!=null && addLQSpot(tmi, prevEdge, gapTolerance, start, end, toRemove, false)) {
+                        SpotWithinCompartment pp = tmi.getPrevious(p);
+                        prevEdge = tmi.getEdge(pp, p);
+                        p=pp;
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
+    }
     private static void switchCrossingLinksWithLQBranches(TrackMateInterface<SpotWithinCompartment> tmi, double spatialTolerance, double distanceThld, int maxGap) {
         long t0 = System.currentTimeMillis();
         double distanceSqThld = distanceThld*distanceThld;
         Set<SymetricalPair<DefaultWeightedEdge>> crossingLinks = tmi.getCrossingLinks(spatialTolerance, null);
-        HashMapGetCreate<DefaultWeightedEdge, List<SpotWithinCompartment>> trackBefore = new HashMapGetCreate<>(e -> tmi.getTrack(tmi.getEdge(e, true), true, false));
-        HashMapGetCreate<DefaultWeightedEdge, List<SpotWithinCompartment>> trackAfter = new HashMapGetCreate<>(e -> tmi.getTrack(tmi.getEdge(e, false), false, true));
+        HashMapGetCreate<DefaultWeightedEdge, List<SpotWithinCompartment>> trackBefore = new HashMapGetCreate<>(e -> tmi.getTrack(tmi.getObject(e, true), true, false));
+        HashMapGetCreate<DefaultWeightedEdge, List<SpotWithinCompartment>> trackAfter = new HashMapGetCreate<>(e -> tmi.getTrack(tmi.getObject(e, false), false, true));
         Function<SymetricalPair<DefaultWeightedEdge>, Double> distance = p -> {
             boolean beforeLQ1 = isLowQ(trackBefore.getAndCreateIfNecessary(p.key));
             boolean afterLQ1 = isLowQ(trackAfter.getAndCreateIfNecessarySync(p.key));
@@ -350,9 +387,9 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
             boolean afterLQ2 = isLowQ(trackAfter.getAndCreateIfNecessarySync(p.value));
             if (beforeLQ2!=afterLQ2 || beforeLQ1==beforeLQ2) return Double.POSITIVE_INFINITY;
             if (beforeLQ1) { // link before2 and after1
-                return tmi.getEdge(p.value, true).squareDistanceTo(tmi.getEdge(p.key, false));
+                return tmi.getObject(p.value, true).squareDistanceTo(tmi.getObject(p.key, false));
             } else { // link before1 and after2
-                return tmi.getEdge(p.key, true).squareDistanceTo(tmi.getEdge(p.value, false));
+                return tmi.getObject(p.key, true).squareDistanceTo(tmi.getObject(p.value, false));
             }
         };
         HashMapGetCreate<SymetricalPair<DefaultWeightedEdge>, Double> linkDistance = new HashMapGetCreate<>(p -> distance.apply(p));
@@ -362,10 +399,10 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
         for (Entry<DefaultWeightedEdge, Set<DefaultWeightedEdge>> e : map.entrySet()) {
             if (toDelete.contains(e)) continue;
             DefaultWeightedEdge closestEdge = Collections.min(e.getValue(), (e1, e2)-> Double.compare(linkDistance.getAndCreateIfNecessary(new SymetricalPair<>(e.getKey(), e1)), linkDistance.getAndCreateIfNecessary(new SymetricalPair<>(e.getKey(), e2))));
-            SpotWithinCompartment e1 = tmi.getEdge(e.getKey(), true);
-            SpotWithinCompartment t1 = tmi.getEdge(e.getKey(), false);
-            SpotWithinCompartment e2 = tmi.getEdge(closestEdge, true);
-            SpotWithinCompartment t2 = tmi.getEdge(closestEdge, false);
+            SpotWithinCompartment e1 = tmi.getObject(e.getKey(), true);
+            SpotWithinCompartment t1 = tmi.getObject(e.getKey(), false);
+            SpotWithinCompartment e2 = tmi.getObject(closestEdge, true);
+            SpotWithinCompartment t2 = tmi.getObject(closestEdge, false);
             if (t2.frame>e1.frame && (t2.frame-e1.frame) <=maxGap && e1.squareDistanceTo(t2)<=distanceSqThld)  tmi.addEdge(e1, t2);
             if (t1.frame>e2.frame && (t1.frame-e2.frame) <=maxGap && e2.squareDistanceTo(t1)<=distanceSqThld)  tmi.addEdge(e2, t1);
             tmi.removeFromGraph(e.getKey());
@@ -410,7 +447,7 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
         StructureObject nextP = prev.getParent().getNext();
         if (nextP==null) return;
         for (StructureObject o : nextP.getChildren(prev.getStructureIdx())) {
-            if (o.getPrevious().equals(prev)) bucket.add(o);
+            if (prev.equals(o.getPrevious())) bucket.add(o);
         }
     }
     

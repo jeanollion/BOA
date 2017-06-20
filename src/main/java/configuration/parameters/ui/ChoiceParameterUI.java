@@ -105,7 +105,7 @@ public class ChoiceParameterUI implements ArmableUI {
     public void refreshArming() {
         unArm();
         int sel = choice.getSelectedIndex();
-        if (sel>=0) {
+        if (sel>=0 && (sel+inc) < actionChoice.length) {
             //actions[(int)((sel+inc) / modulo+0.5)].setArmed(true);
             actionChoice[sel+inc].setArmed(true);
         }

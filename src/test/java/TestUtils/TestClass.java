@@ -44,7 +44,8 @@ import static utils.Utils.removeFromMap;
  * @author jollion
  */
 public class TestClass {
-    @Test
+
+    //@Test
     public void testSymetricalPair() {
         Voxel v1 = new Voxel(1, 2, 3);
         Voxel v2 = new Voxel(2, 2, 5);

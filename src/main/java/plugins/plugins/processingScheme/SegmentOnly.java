@@ -28,8 +28,10 @@ import dataStructure.objects.StructureObjectUtils;
 import image.BoundingBox;
 import image.Image;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
@@ -136,20 +138,28 @@ public class SegmentOnly implements ProcessingScheme {
         if (useMaps) subMaps.clear();
         // collect if necessary and set to parent
         if (subSegmentation) {
-            HashMapGetCreate<StructureObject, List<Object3D>> mapParentPop = new HashMapGetCreate<>(parentTrack.size(), new HashMapGetCreate.ListFactory());
+            HashMapGetCreate<StructureObject, List<Object3D>> parentObjectMap = new HashMapGetCreate<>(parentTrack.size(), new HashMapGetCreate.ListFactory());
+            HashMap<ObjectPopulation, StructureObject> popParentMap = new HashMap<>(pops.length);
+            for (int i = 0; i<pops.length; ++i) popParentMap.put(pops[i], allParents.get(i));
+            Arrays.sort(pops, (p1, p2)->popParentMap.get(p1).compareTo(popParentMap.get(p2)));
             for (int i = 0; i<pops.length; ++i) {
-                StructureObject subParent = allParents.get(i);
+                StructureObject subParent = popParentMap.get(pops[i]);
                 StructureObject parent = subParent.getParent(parentStructureIdx);
-                if (pops[i]!=null) mapParentPop.getAndCreateIfNecessary(parent).addAll(pops[i].getObjects());
+                if (pops[i]!=null) {
+                    List<Object3D> objects =  parentObjectMap.getAndCreateIfNecessary(parent);
+                    int label = objects.size();
+                    if (label>0) for (Object3D o : pops[i].getObjects()) o.setLabel(label++);
+                    objects.addAll(pops[i].getObjects());
+                }
                 else logger.debug("pop null for subParent: {}", allParents.get(i));
             }
             ObjectPopulation pop=null;
-            for (Entry<StructureObject, List<Object3D>> e : mapParentPop.entrySet()) {
+            for (Entry<StructureObject, List<Object3D>> e : parentObjectMap.entrySet()) {
                 pop = new ObjectPopulation(e.getValue(), e.getKey().getMaskProperties(), true);
                 e.getKey().setChildrenObjects(pop, structureIdx);
             }
             if (singleFrame) {
-                if (mapParentPop.size()>1) logger.error("Segmentation of structure: {} from track: {}, single frame but several populations", structureIdx, parentTrack.get(0));
+                if (parentObjectMap.size()>1) logger.error("Segmentation of structure: {} from track: {}, single frame but several populations", structureIdx, parentTrack.get(0));
                 else {
                     for (StructureObject parent : parentTrack.subList(1, parentTrack.size())) parent.setChildrenObjects(pop.duplicate(), structureIdx);
                 }

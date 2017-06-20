@@ -34,10 +34,10 @@ public class InputImagesImpl implements InputImages {
     int defaultTimePoint;
     int frameNumber;
     
-    public InputImagesImpl(InputImage[][] imageTC, int defaultTimePoint) {
-        this.imageCT = imageTC;
+    public InputImagesImpl(InputImage[][] imageCT, int defaultTimePoint) {
+        this.imageCT = imageCT;
         this.defaultTimePoint= defaultTimePoint;
-        for (int c = 0; c<imageTC.length; ++c) if (imageTC[c].length>frameNumber) frameNumber = imageTC[c].length;
+        for (int c = 0; c<imageCT.length; ++c) if (imageCT[c].length>frameNumber) frameNumber = imageCT[c].length;
     }
     
     public InputImagesImpl duplicate() {
@@ -72,7 +72,7 @@ public class InputImagesImpl implements InputImages {
             }
             c=c2;
         }
-        if (imageCT[c][t].imageSources==null) return Double.NaN;
+        if (imageCT[c][t]==null || imageCT[c][t].imageSources==null) return Double.NaN;
         return imageCT[c][t].imageSources.getCalibratedTimePoint(t, c, z);
     }
     @Override public boolean singleFrameChannel(int channelIdx) {

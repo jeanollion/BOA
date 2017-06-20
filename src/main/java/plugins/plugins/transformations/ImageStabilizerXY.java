@@ -18,6 +18,7 @@
 package plugins.plugins.transformations;
 
 import boa.gui.imageInteraction.IJImageDisplayer;
+import configuration.parameters.BooleanParameter;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ChannelImageParameter;
 import configuration.parameters.ChoiceParameter;
@@ -78,9 +79,10 @@ public class ImageStabilizerXY implements Transformation {
     BoundedNumberParameter maxIter = new BoundedNumberParameter("Maximum Iterations", 0, 1000, 1, null);
     BoundedNumberParameter segmentLength = new BoundedNumberParameter("Segment length", 0, 20, 2, null);
     NumberParameter tol = new BoundedNumberParameter("Error Tolerance", 12, 5e-8, 0, null);
+    BooleanParameter allowInterpolation = new BooleanParameter("Allow non-integer translation (interpolation)", false);
     PluginParameter<Cropper> cropper = new PluginParameter<>("Cropper", Cropper.class, true);
     SimpleListParameter<GroupParameter> additionalTranslation = new SimpleListParameter<GroupParameter>("Additional Translation", new GroupParameter("Channel Translation", new ChannelImageParameter("Channel"), new NumberParameter("dX", 3, 0), new NumberParameter("dY", 3, 0), new NumberParameter("dZ", 3, 0)));
-    Parameter[] parameters = new Parameter[]{maxIter, tol, pyramidLevel, segmentLength, cropper, additionalTranslation}; //alpha
+    Parameter[] parameters = new Parameter[]{maxIter, tol, pyramidLevel, segmentLength, cropper, additionalTranslation, allowInterpolation}; //alpha
     ArrayList<ArrayList<Double>> translationTXY = new ArrayList<ArrayList<Double>>();
     public static boolean debug=false;
     public ImageStabilizerXY(){}
@@ -140,20 +142,20 @@ public class ImageStabilizerXY implements Transformation {
                 }
             }
             BoundingBox bds = inputImages.getImage(0, tRef).getBoundingBox().translateToOrigin();
-            // bb translated (int)(-tXY+addTrans)
-            int xUp = (int)(-maxDX+addTransMin[0]);
-            xUp = xUp>0 ? Math.max(0, cropBB.getxMin()-xUp) : cropBB.getxMin();
-            int xDwn = (int)(-minDX+addTransMax[0]);
-            xDwn = xDwn>0 ? Math.min(bds.getxMax(), cropBB.getxMax()+xDwn) : cropBB.getxMax();
-            cropBB.contractX(xUp, xDwn);
+            // bb translated (int)(tXY-addTrans)
+            int xLeft = (int)Math.round(minDX-addTransMax[0]);
+            xLeft = xLeft<0 ? -Math.min(0, cropBB.getxMin()+xLeft) : cropBB.getxMin();
+            int xRight= (int)Math.round(maxDX-addTransMin[0]);
+            xRight = bds.getxMax() - (xRight>0 ? Math.max(0, cropBB.getxMax()+xRight-bds.getxMax()) : 0);
+            cropBB.contractX(xLeft, xRight);
             
-            int yUp = (int)(-maxDY+addTransMin[1]);
-            yUp =  yUp>0 ? Math.max(0, cropBB.getyMin()-yUp): cropBB.getyMin();
-            int yDwn = (int)(-minDY+addTransMax[1]);
-            yDwn = yDwn > 0 ? Math.min(bds.getyMax(), cropBB.getyMax()+yDwn) : cropBB.getyMax();
-            cropBB.contractY(yUp, yDwn);
+            int yLeft = (int)Math.round(minDY-addTransMax[1]);
+            yLeft = yLeft<0 ? -Math.min(0, cropBB.getyMin()+yLeft) : cropBB.getyMin();
+            int yRight= (int)Math.round(maxDY-addTransMin[1]);
+            yRight = bds.getyMax() - (yRight>0 ? Math.max(0, cropBB.getyMax()+yRight-bds.getyMax()) : 0);
+            cropBB.contractY(yLeft, yRight);
             
-            logger.debug("ImageStabXY : contract x:[{};{}], y:[{};{}]", xUp, xDwn, yUp, yDwn);
+            logger.debug("ImageStabXY : contract x:[{};{}], y:[{};{}]", xLeft, xRight, yLeft, yRight);
             
             translationTXY.add(new ArrayList<Double>(){{add((double)cropBB.getxMin()); add((double)cropBB.getxMax()); add((double)cropBB.getyMin()); add((double)cropBB.getyMax()); add((double)cropBB.getzMin()); add((double)cropBB.getzMax());}});
         }   
@@ -285,20 +287,27 @@ public class ImageStabilizerXY implements Transformation {
     public Image applyTransformation(int channelIdx, int timePoint, Image image) {
         BoundingBox cropBB =  cropper.isOnePluginSet() ? getBB() : null;
         ArrayList<Double> trans = translationTXY.get(timePoint);
+        boolean allowNonInteger = allowInterpolation.getSelected();
         //logger.debug("stabilization time: {}, channel: {}, X:{}, Y:{}", timePoint, channelIdx, trans.get(0), trans.get(1));
         double[] additionalTranslationValue = getAdditionalTranslation(channelIdx);
         double dX = -trans.get(0)+additionalTranslationValue[0];
         double dY = -trans.get(1)+additionalTranslationValue[1];
         double dZ = additionalTranslationValue[2];
         if (cropBB!=null) {
-            cropBB.translate((int)dX, (int)dY, (int)dZ);
-            dX-=(int)dX;
-            dY-=(int)dY;
-            dZ-=(int)dZ;
+            cropBB.translate((int)-Math.round(dX), (int)-Math.round(dY), (int)-Math.round(dZ));
+            dX-=(int)Math.round(dX);
+            dY-=(int)Math.round(dY);
+            dZ-=(int)Math.round(dZ);
         }
+        if (!allowNonInteger) {
+            dX = Math.round(dX);
+            dY = Math.round(dY);
+            dZ = Math.round(dZ);
+        }
+        logger.debug("tp: {} ch: {}, bds: {}, dX:{} dY: {}, dZ: {}", timePoint, channelIdx, cropBB!=null?cropBB : "null", dX, dY, dZ);
         if (dX!=0 || dY!=0 || dZ!=0) {
-            if (!(image instanceof ImageFloat)) image = TypeConverter.toFloat(image, null);
-            image = ImageTransformation.translate(image, dX, dY, dZ, ImageTransformation.InterpolationScheme.BSPLINE5);
+            if (allowNonInteger && !(image instanceof ImageFloat)) image = TypeConverter.toFloat(image, null);
+            image = ImageTransformation.translate(image, dX, dY, dZ, allowNonInteger ? ImageTransformation.InterpolationScheme.BSPLINE5 : ImageTransformation.InterpolationScheme.NEAREST);
         }
         if (cropBB!=null) image = image.crop(cropBB);
         //if (timePoint<=0) logger.debug("add trans for channel: {} = {}", channelIdx, additionalTranslationValue);

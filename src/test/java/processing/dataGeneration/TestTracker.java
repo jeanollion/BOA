@@ -64,7 +64,7 @@ public class TestTracker {
         //String dbName = "fluo160408_MutH";
         String dbName = "fluo170602_uvrD";
         int fIdx = 0;
-        int mcIdx =4;
+        int mcIdx =0;
         int structureIdx = 2;
         MasterDAO db = new Task(dbName).getDB();
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
@@ -72,7 +72,7 @@ public class TestTracker {
         MicrochannelProcessorPhase.debug=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 160, 178);
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 423, 435);
         //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 37, 38); // 91 to test rearrange objects 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
@@ -113,7 +113,7 @@ public class TestTracker {
 
         GUI.getInstance();
         ImageWindowManager iwm = ImageWindowManagerFactory.getImageManager();
-        if (LAPTracker.debugTMI!=null) iwm.setRoiModifier(new SpotWithinCompartmentRoiModifier(LAPTracker.debugTMI));
+        if (LAPTracker.debugTMI!=null) iwm.setRoiModifier(new SpotWithinCompartmentRoiModifier(LAPTracker.debugTMI, 2));
         logger.debug("generating TOI");
         ImageObjectInterface i = iwm.getImageTrackObjectInterface(parentTrack, structureIdx);
         Image interactiveImage = i.generateRawImage(structureIdx, true);

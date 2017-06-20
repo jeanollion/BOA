@@ -245,7 +245,10 @@ public class MutationSegmenter implements Segmenter, UseMaps, ManualSegmenter, O
         SubPixelLocalizator.setSubPixelCenter(lap, pop.getObjects(), true); // lap -> better in case of close objects
         for (Object3D o : pop.getObjects()) { // quality criterion : smooth * lap
             if (o.getQuality()==0) { // localizator didnt work
-                o.setCenter(o.getMassCenter(lap, false));
+                double[] center = o.getMassCenter(lap, false);
+                if (center[0]>lap.getSizeX()-1) center[0] = lap.getSizeX()-1;
+                if (center[1]>lap.getSizeY()-1) center[1] = lap.getSizeY()-1;
+                o.setCenter(center);
                 o.setQuality(lap.getPixel(o.getCenter()[0], o.getCenter()[1], o.getCenter().length>2?o.getCenter()[2]:0));
             }
             o.setQuality(Math.sqrt(o.getQuality() * smooth.getPixel(o.getCenter()[0], o.getCenter()[1], o.getCenter().length>2?o.getCenter()[2]:0)));
