@@ -170,7 +170,7 @@ public class LocalFileSystemImageDAO implements ImageDAO {
     }
 
     @Override
-    public void clearTrackImages(String position, int parentStructureIdx) {
+    public void deleteTrackImages(String position, int parentStructureIdx) {
         String folder = getTrackImageFolder(position, parentStructureIdx);
         Utils.deleteDirectory(folder);
     }

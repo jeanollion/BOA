@@ -951,8 +951,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         miscMenu = new javax.swing.JMenu();
         closeAllWindowsMenuItem = new javax.swing.JMenuItem();
         clearMemoryMenuItem = new javax.swing.JMenuItem();
-        clearTrackImages = new javax.swing.JMenuItem();
-        jMenuItem1 = new javax.swing.JMenuItem();
+        clearPPImageMenuItem = new javax.swing.JMenuItem();
+        clearTrackImagesMenuItem = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
 
@@ -1635,21 +1635,21 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         });
         miscMenu.add(clearMemoryMenuItem);
 
-        clearTrackImages.setText("Clear Track Images");
-        clearTrackImages.addActionListener(new java.awt.event.ActionListener() {
+        clearPPImageMenuItem.setText("Clear Pre-Processed Images");
+        clearPPImageMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                clearTrackImagesActionPerformed(evt);
+                clearPPImageMenuItemActionPerformed(evt);
             }
         });
-        miscMenu.add(clearTrackImages);
+        miscMenu.add(clearPPImageMenuItem);
 
-        jMenuItem1.setText("Test Multithread");
-        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+        clearTrackImagesMenuItem.setText("Clear Track Images");
+        clearTrackImagesMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem1ActionPerformed(evt);
+                clearTrackImagesMenuItemActionPerformed(evt);
             }
         });
-        miscMenu.add(jMenuItem1);
+        miscMenu.add(clearTrackImagesMenuItem);
 
         mainMenu.add(miscMenu);
 
@@ -2506,17 +2506,21 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         this.setStructure(this.trackStructureJCB.getSelectedIndex());
     }//GEN-LAST:event_trackStructureJCBActionPerformed
 
-    private void clearTrackImagesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearTrackImagesActionPerformed
+    private void clearTrackImagesMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearTrackImagesMenuItemActionPerformed
         if (!checkConnection()) return;
         ImageDAO iDAO = db.getExperiment().getImageDAO();
         for (String p : getSelectedPositions(true)) {
-            for (int sIdx = 0; sIdx<db.getExperiment().getStructureCount(); ++sIdx) iDAO.clearTrackImages(p, sIdx);
+            for (int sIdx = 0; sIdx<db.getExperiment().getStructureCount(); ++sIdx) iDAO.deleteTrackImages(p, sIdx);
         }
-    }//GEN-LAST:event_clearTrackImagesActionPerformed
+    }//GEN-LAST:event_clearTrackImagesMenuItemActionPerformed
 
-    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
-        TestThreadExecutorFrameWork.test();
-    }//GEN-LAST:event_jMenuItem1ActionPerformed
+    private void clearPPImageMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearPPImageMenuItemActionPerformed
+        if (!checkConnection()) return;
+        for (String p : getSelectedPositions(true)) {
+            MicroscopyField f = db.getExperiment().getPosition(p);
+            if (f.getInputImages()!=null) f.getInputImages().deleteFromDAO();
+        }
+    }//GEN-LAST:event_clearPPImageMenuItemActionPerformed
     private void updateMongoDBBinActions() {
         boolean enableDump = false, enableRestore = false;
         String mPath = PropertyUtils.get(PropertyUtils.MONGO_BIN_PATH);
@@ -2680,7 +2684,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
     private javax.swing.JScrollPane actionStructureJSP;
     private javax.swing.JRadioButtonMenuItem bsonFormatMenuItem;
     private javax.swing.JMenuItem clearMemoryMenuItem;
-    private javax.swing.JMenuItem clearTrackImages;
+    private javax.swing.JMenuItem clearPPImageMenuItem;
+    private javax.swing.JMenuItem clearTrackImagesMenuItem;
     private javax.swing.JMenuItem closeAllWindowsMenuItem;
     private javax.swing.JMenuItem compactLocalDBMenuItem;
     private javax.swing.JScrollPane configurationJSP;
@@ -2719,7 +2724,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
     private javax.swing.JLabel jLabel2;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
-    private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JRadioButtonMenuItem jsonFormatMenuItem;
     private javax.swing.JButton linkObjectsButton;

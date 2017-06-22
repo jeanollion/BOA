@@ -256,7 +256,7 @@ public class MicroscopyField extends SimpleContainerParameter implements ListEle
         }
         if (GUI.getDBConnection()!=null && GUI.getDBConnection().getDao(name)!=null) GUI.getDBConnection().getDao(name).deleteAllObjects(); //TODO : unsafe if not called from GUI.. // ne pas conditionner par callFromGUI 
         if (getInputImages()!=null) getInputImages().deleteFromDAO();
-        for (int s =0; s<getExperiment().getStructureCount(); ++s) getExperiment().getImageDAO().clearTrackImages(name, s);
+        for (int s =0; s<getExperiment().getStructureCount(); ++s) getExperiment().getImageDAO().deleteTrackImages(name, s);
         return true;
     }
     
