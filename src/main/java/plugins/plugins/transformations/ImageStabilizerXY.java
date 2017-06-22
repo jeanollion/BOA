@@ -131,16 +131,17 @@ public class ImageStabilizerXY implements Transformation {
             double maxDX = Collections.max(translationTXY, (l1, l2) -> Double.compare(l1.get(0), l2.get(0))).get(0);
             double minDY = Collections.min(translationTXY, (l1, l2) -> Double.compare(l1.get(1), l2.get(1))).get(1);
             double maxDY = Collections.max(translationTXY, (l1, l2) -> Double.compare(l1.get(1), l2.get(1))).get(1);
-            logger.debug("ImageStabXY : dx:[{};{}], dy:[{};{}]", -maxDX, -minDX, -maxDY, -minDY);
+            logger.debug("ImageStabXY : dx:[{};{}], dy:[{};{}]", minDX, maxDX, minDY, maxDY);
             double[] addTransMin = this.getAdditionalTranslation(channelIdx);
             double[] addTransMax = this.getAdditionalTranslation(channelIdx);
             for (int c = 1; c<inputImages.getChannelNumber(); ++c) {
-                double[] addTrans = this.getAdditionalTranslation(channelIdx);    
+                double[] addTrans = this.getAdditionalTranslation(c);     
                 for (int i = 0; i<3; ++i) {
                     if (addTransMin[i]>addTrans[i]) addTransMin[i] = addTrans[i]; 
                     if (addTransMax[i]<addTrans[i]) addTransMax[i] = addTrans[i];
                 }
             }
+            logger.debug("transMax: {}, transMin: {}", addTransMax, addTransMin);
             BoundingBox bds = inputImages.getImage(0, tRef).getBoundingBox().translateToOrigin();
             // bb translated (int)(tXY-addTrans)
             int xLeft = (int)Math.round(minDX-addTransMax[0]);

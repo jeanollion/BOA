@@ -208,7 +208,7 @@ public class SpotWithinCompartment extends Spot {
     }*/
     
     @Override public String toString() {
-        return "{"+frame+"-"+(object.getLabel()-1); //+"["+getFeature(POSITION_X)+";"+getFeature(POSITION_Y)+"]}";
+        return "{"+frame+"-"+(object.getLabel()-1)+"}"; //+"["+getFeature(POSITION_X)+";"+getFeature(POSITION_Y)+"]}";
         //return "{F="+frame+"|Idx="+(object.getLabel()-1)+"|"+localization+"|LQ="+lowQuality+"C=["+getFeature(POSITION_X)+";"+getFeature(POSITION_Y)+"]}";
     }
     protected static double getSquareDistanceTruncated(SpotWithinCompartment s1, double[] offset1, SpotWithinCompartment s2, double[] offset2) {

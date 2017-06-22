@@ -120,7 +120,7 @@ public class SegmentOnly implements ProcessingScheme {
         Collections.shuffle(allParents); // reduce thread blocking
         ObjectPopulation[] pops = new ObjectPopulation[allParents.size()];
         List<Pair<String, Exception>> errors = ThreadRunner.execute(allParents, false, (subParent, idx) -> {
-            StructureObject globalParent = subParent.getParent(segParentStructureIdx);
+            StructureObject globalParent = subParent.getParent(parentStructureIdx);
             Segmenter seg = segmenter.instanciatePlugin();
             if (useMaps) {
                 Image[] maps = subMaps.getAndCreateIfNecessarySync(globalParent);

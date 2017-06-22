@@ -46,7 +46,7 @@ public class ImageFeature implements PreFilter {
         String f = feature.getSelectedItem();
         double scaleXY = scale.getScaleXY();
         double scaleZ = scale.getScaleZ(structureObject.getScaleXY(), structureObject.getScaleZ());
-        if ("Gaussian Smooth".equals(f)) return ImageFeatures.gaussianSmoothScaled(input, scaleXY, scaleZ, true);
+        if ("Gaussian Smooth".equals(f)) return ImageFeatures.gaussianSmooth(input, scaleXY, scaleZ, true);
         else if ("Gradient".equals(f)) return ImageFeatures.getGradientMagnitude(input, scaleXY, true);
         else if ("Laplacian".equals(f)) return ImageFeatures.getLaplacian(input, scaleXY, true, true);
         else if ("Hessian Det".equals(f)) return ImageFeatures.getHessianMaxAndDeterminant(input, scaleXY, true)[1];

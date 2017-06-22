@@ -221,21 +221,12 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
             tmi.setTrackLinks(objectsF);
             MutationTrackPostProcessing postProcessor = new MutationTrackPostProcessing(structureIdx, parentTrack, tmi.objectSpotMap, o->tmi.removeObject(o.getObject(), o.getFrame())); // TODO : do directly in graph
             postProcessor.connectShortTracksByDeletingLQSpot(maxLinkingDistanceGC);
-            //trimLQExtremityWithGaps(tmi, 0, true, true);
+            trimLQExtremityWithGaps(tmi, 2, true, true);
         }
         if (ok) {
-            //tmi.printLinks();
             tmi.setTrackLinks(objectsF);
         }
         
-        
-        //else for (StructureObject o : Utils.flattenMap(objectsF)) o.resetTrackLinks(true, true);
-        // OR: second run with all spots at the same time?
-        //boolean ok = tmi.processFTF(maxLinkingDistance);
-        //if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, false, false);
-        //if (ok) tmi.removeCrossingLinksFromGraph(parentTrack.get(0).getScaleXY()*2);
-        //if (ok) ok = tmi.processGC(maxLinkingDistanceGC, maxGap, false, false);
-        //if (ok) tmi.setTrackLinks(objectsF);
         if (LQSpots) {
             tmi.resetEdges();
             removeUnlinkedLQSpots(parentTrack, structureIdx, tmi);
@@ -321,33 +312,37 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
     
     private static void trimLQExtremityWithGaps(TrackMateInterface<SpotWithinCompartment> tmi, double gapTolerance, boolean start, boolean end) {
         long t0 = System.currentTimeMillis();
-        --gapTolerance;
+        //--gapTolerance;
         Set<DefaultWeightedEdge> toRemove = new HashSet<>();
         for (DefaultWeightedEdge e : tmi.getEdges()) {
             if (toRemove.contains(e)) continue;
             addLQSpot(tmi, e, gapTolerance, start, end, toRemove, true);
         }
+        tmi.logGraphStatus("before trim extremities ("+toRemove.size()+")", 0);
         tmi.removeFromGraph(toRemove, null);
         long t1 = System.currentTimeMillis();
         tmi.logGraphStatus("trim extremities ("+toRemove.size()+")", t1-t0);
     }
     private static boolean addLQSpot(TrackMateInterface<SpotWithinCompartment> tmi, DefaultWeightedEdge e, double gapTolerance, boolean start, boolean end, Set<DefaultWeightedEdge> toRemove, boolean wholeTrack) {
+        //if (true) return false;
         SpotWithinCompartment s = tmi.getObject(e, true);
         SpotWithinCompartment t = tmi.getObject(e, false);
-        if (t.frame-s.frame-1<=gapTolerance) return false; // no gap
+        //logger.debug("check trim: {}({})->{}({}) no gap? {}", s, s.lowQuality?"LQ":"HQ", t, t.lowQuality?"LQ":"HQ",t.frame-s.frame-1<gapTolerance );
+        if (t.frame-s.frame-1<gapTolerance) return false; // no gap
         if (start && s.lowQuality) {
             SpotWithinCompartment prev = tmi.getPrevious(s);
             if (prev==null || toRemove.contains(tmi.getEdge(prev, s))) { // start of track -> remove edge
+                //logger.debug("start trim {}->{}", s, t);
                 toRemove.add(e);
                 if (wholeTrack) {
                     // check if following edge verify same conditions
                     SpotWithinCompartment n = tmi.getNext(t);
                     DefaultWeightedEdge nextEdge = tmi.getEdge(t, n);
-                    logger.debug("after trim {}->{}, check trim: {}->{} edge null? {}, LQ: {}, np gap{}", s, t, t, n, nextEdge==null, t.lowQuality, n.frame-t.frame-1<=gapTolerance);
+                    //logger.debug("start trim {}->{}, check trim: {}->{} edge null? {}, LQ: {}, np gap{}", s, t, t, n, nextEdge==null, t.lowQuality, n.frame-t.frame-1<=gapTolerance);
                     while(n!=null && nextEdge!=null && addLQSpot(tmi, nextEdge, gapTolerance, start, end, toRemove, false)) {
                         SpotWithinCompartment nn = tmi.getNext(n);
                         nextEdge = tmi.getEdge(n, nn);
-                        logger.debug("after trim {}->{}, check trim: {}->{} edge null? {}", s, t, n, nn, nextEdge==null);
+                        //logger.debug("start trim {}->{}, check trim: {}->{} edge null? {}", s, t, n, nn, nextEdge==null);
                         n=nn;
                     }
                 }
@@ -355,16 +350,19 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
             } 
         }
         if (end && t.lowQuality) {
-            SpotWithinCompartment next = tmi.getNext(s);
+            SpotWithinCompartment next = tmi.getNext(t);
             if (next==null || toRemove.contains(tmi.getEdge(t, next))) {
+                //logger.debug("end trim {}->{}", s, t);
                 toRemove.add(e);
                 if (wholeTrack) {
                     // check if previous edge verify same conditions
                     SpotWithinCompartment p = tmi.getPrevious(s);
                     DefaultWeightedEdge prevEdge = tmi.getEdge(p, s);
+                    //logger.debug("end trim {}->{}, check trim: {}->{} edge null? {}, LQ: {}, np gap{}", s, t, p, s, prevEdge==null, t.lowQuality, p.frame-s.frame-1<=gapTolerance);
                     while(p!=null && prevEdge!=null && addLQSpot(tmi, prevEdge, gapTolerance, start, end, toRemove, false)) {
                         SpotWithinCompartment pp = tmi.getPrevious(p);
                         prevEdge = tmi.getEdge(pp, p);
+                        //logger.debug("end trim {}->{}, check trim: {}->{} edge null? {}", s, p, s, pp, prevEdge==null);
                         p=pp;
                     }
                 }
@@ -395,10 +393,12 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
         HashMapGetCreate<SymetricalPair<DefaultWeightedEdge>, Double> linkDistance = new HashMapGetCreate<>(p -> distance.apply(p));
         crossingLinks.removeIf(p -> linkDistance.getAndCreateIfNecessary(p)>distanceSqThld);
         Map<DefaultWeightedEdge, Set<DefaultWeightedEdge>> map = Pair.toMapSym(crossingLinks);
-        Set<DefaultWeightedEdge> toDelete = new HashSet<>(); // to avoid concurent modification -> add there
+        Set<DefaultWeightedEdge> deletedEdges = new HashSet<>();
         for (Entry<DefaultWeightedEdge, Set<DefaultWeightedEdge>> e : map.entrySet()) {
-            if (toDelete.contains(e)) continue;
-            DefaultWeightedEdge closestEdge = Collections.min(e.getValue(), (e1, e2)-> Double.compare(linkDistance.getAndCreateIfNecessary(new SymetricalPair<>(e.getKey(), e1)), linkDistance.getAndCreateIfNecessary(new SymetricalPair<>(e.getKey(), e2))));
+            if (deletedEdges.contains(e.getKey())) continue;
+            e.getValue().removeAll(deletedEdges);
+            if (e.getValue().isEmpty()) continue;
+            DefaultWeightedEdge closestEdge = e.getValue().size()==1? e.getValue().iterator().next() : Collections.min(e.getValue(), (e1, e2)-> Double.compare(linkDistance.getAndCreateIfNecessary(new SymetricalPair<>(e.getKey(), e1)), linkDistance.getAndCreateIfNecessary(new SymetricalPair<>(e.getKey(), e2))));
             SpotWithinCompartment e1 = tmi.getObject(e.getKey(), true);
             SpotWithinCompartment t1 = tmi.getObject(e.getKey(), false);
             SpotWithinCompartment e2 = tmi.getObject(closestEdge, true);
@@ -407,6 +407,8 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
             if (t1.frame>e2.frame && (t1.frame-e2.frame) <=maxGap && e2.squareDistanceTo(t1)<=distanceSqThld)  tmi.addEdge(e2, t1);
             tmi.removeFromGraph(e.getKey());
             tmi.removeFromGraph(closestEdge);
+            deletedEdges.add(e.getKey());
+            deletedEdges.add(closestEdge);
         }
         long t1 = System.currentTimeMillis();
         tmi.logGraphStatus("switch LQ links", t1-t0);

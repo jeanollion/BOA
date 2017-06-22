@@ -235,22 +235,32 @@ public class TrackMateInterface<S extends Spot> {
                 spots.add((S)graph.getEdgeTarget(e));
             }
         }
+        logger.debug("edges to remove :{}", Utils.toStringList(edges, e->graph.getEdgeSource(e)+"->"+graph.getEdgeTarget(e)));
         graph.removeAllEdges(edges);
         logger.debug("spots to remove candidates :{}", spots);
+        if (true) return ;
         for (Spot s : spots) { // also remove vertex that are not linked anymore
-            if (graph.edgesOf(s).isEmpty()) graph.removeVertex(s);
-            this.removeObject(spotObjectMap.get((S)s), (int)(double)s.getFeature(Spot.FRAME));
+            if (graph.edgesOf(s).isEmpty()) removeObject(spotObjectMap.get((S)s), (int)(double)s.getFeature(Spot.FRAME));
         }
     }
     public void addEdge(S s, S t) {
         graph.addEdge(s, t);
     }
     public void removeFromGraph(DefaultWeightedEdge edge) {
-        graph.removeEdge(edge);
         Spot v1 = graph.getEdgeSource(edge);
         Spot v2 = graph.getEdgeTarget(edge);
-        if (graph.edgesOf(v1).isEmpty()) graph.removeVertex(v1);
-        if (graph.edgesOf(v2).isEmpty()) graph.removeVertex(v2);
+        graph.removeEdge(edge);
+        try {
+            if (v1!=null && graph.edgesOf(v1).isEmpty()) graph.removeVertex(v1);
+        } catch (Exception e) {
+            logger.debug("vertex: {} not found. contained? {}", v1, graph.containsVertex(v1));
+        }
+        try {
+            if (v2!=null && graph.edgesOf(v2).isEmpty()) graph.removeVertex(v2);
+        } catch (Exception e) {
+            logger.debug("vertex: {} not found. contained? {}", v2, graph.containsVertex(v2));
+        }
+        
     }
     public void  removeCrossingLinksFromGraph(double spatialTolerence) {
         if (graph==null) return;
@@ -319,6 +329,13 @@ public class TrackMateInterface<S extends Spot> {
             Spot t = graph.getEdgeTarget(e);
             logger.debug("{}->{} sourceEdges: {}, targetEdges: {}", s, t, graph.edgesOf(s), graph.edgesOf(t));
         }
+    }
+    public void resetTrackLinks(Map<Integer, List<StructureObject>> objectsF, Collection<StructureObject> modifiedObjects) {
+        List<StructureObject> objects = Utils.flattenMap(objectsF);
+        int minF = objectsF.keySet().stream().min((i1, i2)->Integer.compare(i1, i2)).get();
+        int maxF = objectsF.keySet().stream().max((i1, i2)->Integer.compare(i1, i2)).get();
+        logger.debug("reset track links between {} & {}", minF, maxF);
+        for (StructureObject o : objects) o.resetTrackLinks(o.getFrame()>minF, o.getFrame()<maxF, false, modifiedObjects);
     }
     public void setTrackLinks(Map<Integer, List<StructureObject>> objectsF, Collection<StructureObject> modifiedObjects) {
         if (objectsF==null || objectsF.isEmpty()) return;

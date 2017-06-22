@@ -298,6 +298,13 @@ public class ImageFeatures {
         return Image.mergeZPlanes(planes).setName("Laplacian Scale-Space");
     }
     
+    public static Image getScaleSpaceGaussian(Image plane, double[] scales) {
+        if (plane.getSizeZ()>1) throw new IllegalArgumentException("2D image only");
+        ArrayList<ImageFloat> planes = new ArrayList<ImageFloat>(scales.length);
+        for (double s : scales) planes.add(ImageFeatures.gaussianSmooth(plane, s, 1, false));
+        return Image.mergeZPlanes(planes).setName("Gaussian Scale-Space");
+    }
+    
     public static Image getScaleSpaceLaplacianNorm(Image plane, double[] scales, Image norm, double... multiplicativeCoefficient) {
         if (plane.getSizeZ()>1) throw new IllegalArgumentException("2D image only");
         ArrayList<ImageFloat> planes = new ArrayList<ImageFloat>(scales.length);
@@ -328,12 +335,6 @@ public class ImageFeatures {
         image.setCalibration(old_scaleXY, old_scaleZ);
         res.setCalibration(old_scaleXY, old_scaleZ);
         res.resetOffset().addOffset(image);
-        return res;
-    }
-    
-    public static ImageFloat gaussianSmoothScaled(Image image, double scaleXY, double scaleZ, boolean overrideIfFloat) {
-        ImageFloat res = gaussianSmooth(image, scaleXY, scaleZ, overrideIfFloat);
-        ImageOperations.affineOperation(image, image, scaleXY, 0);
         return res;
     }
     

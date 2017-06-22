@@ -360,7 +360,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     private void unSetTrackLinksOneWay(boolean prev, boolean next, boolean propagate, Collection<StructureObject> modifiedObjects) {
         if (prev) {
-            if (this.previous!=null && this.equals(this.previous.next))
+            //if (this.previous!=null && this.equals(this.previous.next))
             setPrevious(null);
             setTrackHead(this, false, propagate, modifiedObjects);
             setAttribute(trackErrorPrev, null);
