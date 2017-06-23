@@ -59,6 +59,26 @@ public class HashMapGetCreate<K, V> extends HashMap<K, V> {
         }
         return v;
     }
+    /**
+     * synchronization is done on key so that if creation of V is long, the whole map is not blocked during creation of V
+     * @param key
+     * @return 
+     */
+    public V getAndCreateIfNecessarySyncOnKey(K key) {
+        V v = super.get(key);
+        if (v==null) {
+            synchronized(key) {
+                v = super.get(key);
+                if (v==null) {
+                    v = factory.create(key);
+                    synchronized(this){
+                        super.put(key, v);
+                    }
+                }
+            }
+        }
+        return v;
+    }
     public static interface Factory<K, V> {
         public V create(K key);
     }

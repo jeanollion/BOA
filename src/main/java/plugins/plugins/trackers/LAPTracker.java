@@ -131,9 +131,11 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
         return this;
     }
     @Override public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
+        long t0 = System.currentTimeMillis();
         SegmentOnly ps = new SegmentOnly(segmenter.instanciatePlugin()).setPreFilters(preFilters).setPostFilters(postFilters);
         List<Pair<String, Exception>> ex = ps.segmentAndTrack(structureIdx, parentTrack, executor);
         for (Pair<String, Exception> p : ex) logger.debug(p.key, p.value);
+        long t1= System.currentTimeMillis();
         track(structureIdx, parentTrack, true);
     }
 
