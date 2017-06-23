@@ -132,14 +132,6 @@ public abstract class ImageWindowManager<T, U, V> {
         isLabelImage.clear();
         trackHeadTrackMap.clear();
     }
-    /*public void flushAllButCurrent() {
-        ImageObjectInterface i = this.getCurrentImageObjectInterface();
-        List<StructureObject> parents = i.getParents();
-        
-        Image im = this.displayer.getCurrentImage2();
-        Boolean isLI = this.isLabelImage.get(im);
-        
-    }*/
     
     public ImageDisplayer<T> getDisplayer() {return displayer;}
     
@@ -223,7 +215,11 @@ public abstract class ImageWindowManager<T, U, V> {
         } 
         return i;
     }
-    
+    public TrackMask generateTrackMask(List<StructureObject> parentTrack, int childStructureIdx) {
+        setAllChildren(parentTrack, childStructureIdx);
+        BoundingBox bb = parentTrack.get(0).getBounds();
+        return bb.getSizeY()>=bb.getSizeX() ? new TrackMaskX(parentTrack, childStructureIdx) : new TrackMaskY(parentTrack, childStructureIdx);
+    }
     public ImageObjectInterface getImageTrackObjectInterface(List<StructureObject> parentTrack, int childStructureIdx) {
         if (parentTrack.isEmpty()) {
             logger.warn("cannot open track image of length == 0" );
@@ -231,9 +227,7 @@ public abstract class ImageWindowManager<T, U, V> {
         }
         ImageObjectInterface i = imageObjectInterfaces.get(new ImageObjectInterfaceKey(parentTrack, childStructureIdx, true));
         if (i==null) {
-            setAllChildren(parentTrack, childStructureIdx);
-            BoundingBox bb = parentTrack.get(0).getBounds();
-            i = bb.getSizeY()>=bb.getSizeX() ? new TrackMaskX(parentTrack, childStructureIdx) : new TrackMaskY(parentTrack, childStructureIdx);
+            i = generateTrackMask(parentTrack, childStructureIdx);
             imageObjectInterfaces.put(i.getKey(), i);
             trackHeadTrackMap.getAndCreateIfNecessary(parentTrack.get(0)).add(parentTrack);
             i.setGUIMode(GUI.hasInstance());

@@ -235,10 +235,9 @@ public class TrackMateInterface<S extends Spot> {
                 spots.add((S)graph.getEdgeTarget(e));
             }
         }
-        logger.debug("edges to remove :{}", Utils.toStringList(edges, e->graph.getEdgeSource(e)+"->"+graph.getEdgeTarget(e)));
+        //logger.debug("edges to remove :{}", Utils.toStringList(edges, e->graph.getEdgeSource(e)+"->"+graph.getEdgeTarget(e)));
         graph.removeAllEdges(edges);
-        logger.debug("spots to remove candidates :{}", spots);
-        if (true) return ;
+        //logger.debug("spots to remove candidates :{}", spots);
         for (Spot s : spots) { // also remove vertex that are not linked anymore
             if (graph.edgesOf(s).isEmpty()) removeObject(spotObjectMap.get((S)s), (int)(double)s.getFeature(Spot.FRAME));
         }

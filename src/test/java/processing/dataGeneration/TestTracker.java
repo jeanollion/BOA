@@ -63,7 +63,7 @@ public class TestTracker {
         new ImageJ();
         //String dbName = "fluo160408_MutH";
         //String dbName = "fluo170602_uvrD";
-        String dbName = "fluo160501_uncorr";
+        String dbName = "fluo160501";
         int fIdx = 0;
         int mcIdx =1;
         int structureIdx = 2;
@@ -92,6 +92,7 @@ public class TestTracker {
         }
         else {
             Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(roots, 0);
+            logger.debug("all tracks: {}", allTracks.size());
             for (StructureObject th : allTracks.keySet()) {
                 if (th.getIdx()==mcIdx && th.getFrame()<tEnd) {
                     if (parentTrack==null || parentTrack.isEmpty()) {
@@ -102,7 +103,7 @@ public class TestTracker {
                 }
             }
         }
-        
+        logger.debug("parent track: {}", parentTrack.size());
         LAPTracker.registerTMI=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debug=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.verboseLevelLimit=1;

@@ -980,7 +980,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         actionJSP.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createTitledBorder("Actions to Run")));
 
         runActionList.setModel(new javax.swing.AbstractListModel() {
-            String[] strings = { "Pre-Processing", "Re-Run Pre-Processing", "Segment", "Track", "Measurements", "Generate Track Images" };
+            String[] strings = { "Pre-Processing", "Re-Run Pre-Processing", "Segment", "Track", "Generate Track Images", "Measurements", "Extract Measurements" };
             public int getSize() { return strings.length; }
             public Object getElementAt(int i) { return strings[i]; }
         });
@@ -2127,17 +2127,21 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         boolean trackOnly = false;
         boolean runMeasurements=false;
         boolean generateTrackImages = false;
+        boolean extract = false;
         for (int i : this.runActionList.getSelectedIndices()) {
             if (i==0) preProcess=true;
             if (i==1) reRunPreProcess=!preProcess;
             if (i==2) segmentAndTrack=true;
             if (i==3) trackOnly = !segmentAndTrack;
-            if (i==4) runMeasurements=true;
-            if (i==5) generateTrackImages=true;
+            if (i==4) generateTrackImages=true;
+            if (i==5) runMeasurements=true;
+            if (i==6) extract=true;
+            
         }
         int[] microscopyFields = this.getSelectedMicroscopyFields();
         int[] selectedStructures = this.getSelectedStructures(true);
         Task t = new Task(db).setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements).setGenerateTrackImages(generateTrackImages).setStructures(selectedStructures).setPositions(microscopyFields);
+        if (extract) for (int sIdx : selectedStructures) t.addExtractMeasurementDir(new File(db.getExperiment().getOutputDirectory()).getParent(), sIdx);
         t.execute();
         
         if (preProcess || reRunPreProcess || segmentAndTrack) this.reloadObjectTrees=true;
@@ -2208,16 +2212,24 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         boolean segmentAndTrack = false;
         boolean trackOnly = false;
         boolean runMeasurements=false;
+        boolean generateTrackImage = false;
+        boolean extract = false;
         for (int i : this.runActionList.getSelectedIndices()) {
             if (i==0) preProcess=true;
             if (i==1) reRunPreProcess=!preProcess;
             if (i==2) segmentAndTrack=true;
             if (i==3) trackOnly = !segmentAndTrack;
-            if (i==4) runMeasurements=true;
+            if (i==4) generateTrackImage=true;
+            if (i==5) runMeasurements=true;
+            if (i==6) extract = true;
         }
         List<String> xps = this.getSelectedExperiments();
         List<Task> tasks = new ArrayList<>(xps.size());
-        for (String xp : xps) tasks.add(new Task(xp).setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements));
+        for (String xp : xps) {
+            Task t = new Task(xp).setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements).setGenerateTrackImages(generateTrackImage);
+            if (extract) for (int sIdx =0; sIdx< t.getDB().getExperiment().getStructureCount(); ++sIdx) t.addExtractMeasurementDir(new File(t.getDB().getExperiment().getOutputDirectory()).getParent(), sIdx);
+            tasks.add(t);
+        }
         int totalSubtasks = 0;
         for (Task t : tasks) {
             if (!t.isValid()) {

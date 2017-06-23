@@ -321,6 +321,7 @@ public class DBMapObjectDAO implements ObjectDAO {
 
     @Override
     public void clearCache() {
+        for (Map<?, StructureObject> obs : cache.values()) for (StructureObject so : obs.values()) so.flushImages();
         cache.clear();
         allObjectsRetrievedInCache.clear();
         closeAllFiles(true);

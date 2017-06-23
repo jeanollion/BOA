@@ -884,41 +884,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             else return null;
         }
         return null;
-    }
-    
-    /*public Image getFilteredImage(int structureIdx) {
-        if (preProcessedImageS.get(structureIdx)==null) createPreFilterImage(structureIdx);
-        return preProcessedImageS.get(structureIdx);
-    }
-    
-    public void createPreFilterImage(int structureIdx) {
-        Image raw = getRawImage(structureIdx);
-        if (raw!=null) preProcessedImageS.set(preFilterImage(getRawImage(structureIdx), this, getExperiment().getStructure(structureIdx).getProcessingChain().getPrefilters()), structureIdx);
-    }*/
+    } 
     
     public void flushImages() {
-        //for (int i = 0; i<preProcessedImageS.getBucketSize(); ++i) preProcessedImageS.setQuick(null, i);
         for (int i = 0; i<rawImagesC.getBucketSize(); ++i) rawImagesC.setQuick(null, i);
         for (int i = 0; i<trackImagesC.getBucketSize(); ++i) trackImagesC.setQuick(null, i);
         this.offsetInTrackImage=null;
     }
-    /*
-    public void segmentChildren(int structureIdx) {
-        
-        ObjectPopulation seg = segmentImage(getFilteredImage(structureIdx), structureIdx, this, getExperiment().getStructure(structureIdx).getProcessingChain().getSegmenter());
-        if (seg.getChildren().isEmpty()) {
-            childrenSM.set(new ArrayList<StructureObject>(0), structureIdx);
-        }
-        else {
-            seg = postFilterImage(seg, this, getExperiment().getStructure(structureIdx).getProcessingChain().getPostfilters());
-            seg.relabel();
-            ArrayList<StructureObject> res = new ArrayList<StructureObject>(seg.getChildren().size());
-            childrenSM.set(res, structureIdx);
-            for (int i = 0; i<seg.getChildren().size(); ++i) res.add(new StructureObject(positionName, timePoint, structureIdx, i, seg.getChildren().get(i), this));
-        }
-    }*/
-    
-    
     
     public ObjectPopulation getObjectPopulation(int structureIdx) {
         List<StructureObject> child = this.getChildren(structureIdx);

@@ -226,7 +226,9 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             if (this.segmentAndTrack || this.trackOnly) count += positions.size() * structures.length;
             if (this.measurements) count += positions.size();
             if (this.generateTrackImages) {
-                count+=positions.size();
+                int gen = 0;
+                for (int s : structures)  if (!db.getExperiment().getAllDirectChildStructures(s).isEmpty()) ++gen;
+                count+=positions.size()*gen;
             }
             count+=extrackMeasurementDir.size();
             return count;
@@ -242,7 +244,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             db.clearCache();
             publish("db cache cleared...");
             ImageWindowManagerFactory.getImageManager().flush();
-            
+            publishMemoryUsage("Before processing");
             if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
             if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
             publish("deleting objects...");
@@ -278,6 +280,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             db.getExperiment().getPosition(position).flushImages(true, false);
             incrementProgress();
         }
+        //publishMemoryUsage("After PreProcessing:");
         if (segmentAndTrack || trackOnly) {
             logger.info("Processing: DB: {}, Position: {}", dbName, position);
             for (int s : structures) { // TODO take code from processor
@@ -285,8 +288,25 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 List<Pair<String, Exception>> e = Processor.processAndTrackStructures(db.getDao(position), true, trackOnly, s);
                 errors.addAll(e);
                 incrementProgress();
+                
+                if (generateTrackImages && !db.getExperiment().getAllDirectChildStructures(s).isEmpty()) {
+                    publish("Generating Track Images for Structure: "+s);
+                    Processor.generateTrackImages(db.getDao(position), s);
+                    incrementProgress();
+                }
             }
+            //publishMemoryUsage("After Processing:");
+        } else if (generateTrackImages) {
+            publish("Generating Track Images...");
+            // generate track images for all selected structure that has direct children
+            for (int s : structures) {
+                if (db.getExperiment().getAllDirectChildStructures(s).isEmpty()) continue;
+                Processor.generateTrackImages(db.getDao(position), s);
+                incrementProgress();
+            }
+            //publishMemoryUsage("After Generate Track Images:");
         }
+        
         if (measurements) {
             publish("Measurements...");
             logger.info("Measurements: DB: {}, Field: {}", dbName, position);
@@ -294,21 +314,18 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             List<Pair<String, Exception>> e = Processor.performMeasurements(db.getDao(position));
             errors.addAll(e);
             incrementProgress();
-        }
-        if (generateTrackImages) {
-            publish("Generating Track Images...");
-            // generate track images for all selected structure that has direct children
-            for (int s : structures) {
-                if (db.getExperiment().getAllDirectChildStructures(s).isEmpty()) continue;
-                Processor.generateTrackImages(db.getDao(position), s);
-            }
+            //publishMemoryUsage("After Measurements");
         }
         
         if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field
-        db.getDao(position).clearCache();
-        db.getExperiment().getPosition(position).flushImages(true, true);
+        db.clearCache(position); // also flush images
         db.getSelectionDAO().clearCache();
         System.gc();
+        publishMemoryUsage("After clearing cache");
+    }
+    private void publishMemoryUsage(String message) {
+        long used = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
+        publish(message+" Used Memory: "+ (used/1000000)/1000d+"Go ("+ (int)Math.round(100d*used/((double)Runtime.getRuntime().totalMemory())) + "%)");
     }
     private void extract(String dir, int[] structures) {
         if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
