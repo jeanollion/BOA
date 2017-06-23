@@ -440,7 +440,7 @@ public class GenerateXP {
                     new LAPTracker().setCompartimentStructure(1).setSegmenter(
                         new MutationSegmenter(0.9, 0.75, 0.9).setScale(2)  // was 1.5, 1, 1.25
                 ).setSpotQualityThreshold(2) // was 2
-                            .setLinkingMaxDistance(0.7, 0.71).setGapParameters(0.7, 0.2, 3).setTrackLength(8, 14)
+                            .setLinkingMaxDistance(0.8, 0.82).setGapParameters(0.8, 0.15, 3).setTrackLength(8, 14)
             ).addPreFilters(new BandPass(0, 8, 0, 5) 
             ).addPostFilters(new FeatureFilter(new Quality(), 0.8, true, true))); // was 1.5
         }
