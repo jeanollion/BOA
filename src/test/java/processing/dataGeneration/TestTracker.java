@@ -62,9 +62,10 @@ public class TestTracker {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
         //String dbName = "fluo160408_MutH";
-        String dbName = "fluo170602_uvrD";
+        //String dbName = "fluo170602_uvrD";
+        String dbName = "fluo160501_uncorr";
         int fIdx = 0;
-        int mcIdx =0;
+        int mcIdx =1;
         int structureIdx = 2;
         MasterDAO db = new Task(dbName).getDB();
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();

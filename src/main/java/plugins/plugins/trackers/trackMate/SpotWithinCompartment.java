@@ -101,8 +101,8 @@ public class SpotWithinCompartment extends Spot {
     }
     
     private int[] getCenterInVoxels() {
-        int[] center =  new int[]{(int)(getFeature(Spot.POSITION_X)/object.getScaleXY()), (int)(getFeature(Spot.POSITION_Y)/object.getScaleXY()), 0};
-        if (object.getScaleZ()!=0) center[2] = (int)(getFeature(Spot.POSITION_Z)/object.getScaleZ());
+        int[] center =  new int[]{(int)Math.round(getFeature(Spot.POSITION_X)/object.getScaleXY()), (int)Math.round(getFeature(Spot.POSITION_Y)/object.getScaleXY()), 0};
+        if (object.getScaleZ()!=0) center[2] = (int)Math.round(getFeature(Spot.POSITION_Z)/object.getScaleZ());
         return center;
     }
     
@@ -257,8 +257,8 @@ public class SpotWithinCompartment extends Spot {
             BoundingBox off1 = offsetS1.duplicate().translate(s1.getObject().getBounds().duplicate().reverseOffset());
             BoundingBox off2 = offsetS2.duplicate().translate(s2.getObject().getBounds().duplicate().reverseOffset());
             
-            int[] cOff1 = new int[]{(int) (offset1[0] / s1.object.getScaleXY()), (int) (offset1[1] / s1.object.getScaleXY())};
-            int[] cOff2 = new int[]{(int) (offset2[0] / s1.object.getScaleXY()), (int) (offset2[1] / s1.object.getScaleXY())};
+            int[] cOff1 = new int[]{(int) Math.round(offset1[0] / s1.object.getScaleXY()), (int) Math.round(offset1[1] / s1.object.getScaleXY())};
+            int[] cOff2 = new int[]{(int) Math.round(offset2[0] / s1.object.getScaleXY()), (int) Math.round(offset2[1] / s1.object.getScaleXY())};
             c1[0]+=off1.getxMin()+0.5;
             c1[1]+=off1.getyMin()+0.5;
             c2[0]+=off2.getxMin()+0.5;

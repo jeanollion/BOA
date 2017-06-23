@@ -32,6 +32,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
@@ -136,8 +137,8 @@ public class SegmentOnly implements ProcessingScheme {
         }, executor, null);
         inputImages.clear();
         if (useMaps) subMaps.clear();
-        // collect if necessary and set to parent
-        if (subSegmentation) {
+        
+        if (subSegmentation) { // collect if necessary and set to parent
             HashMapGetCreate<StructureObject, List<Object3D>> parentObjectMap = new HashMapGetCreate<>(parentTrack.size(), new HashMapGetCreate.ListFactory());
             HashMap<ObjectPopulation, StructureObject> popParentMap = new HashMap<>(pops.length);
             for (int i = 0; i<pops.length; ++i) popParentMap.put(pops[i], allParents.get(i));
@@ -161,14 +162,18 @@ public class SegmentOnly implements ProcessingScheme {
             if (singleFrame) {
                 if (parentObjectMap.size()>1) logger.error("Segmentation of structure: {} from track: {}, single frame but several populations", structureIdx, parentTrack.get(0));
                 else {
-                    for (StructureObject parent : parentTrack.subList(1, parentTrack.size())) parent.setChildrenObjects(pop.duplicate(), structureIdx);
+                    for (StructureObject parent : parentTrack.subList(1, parentTrack.size())) parent.setChildrenObjects(pop!=null ? pop.duplicate() : null, structureIdx);
                 }
+            } else { // also set no children to remove children already present and avoid access to dao
+                Collection<StructureObject> parentsWithNoChildren = new HashSet<>(parentTrack);
+                parentsWithNoChildren.removeAll(parentObjectMap.keySet());
+                for (StructureObject p : parentsWithNoChildren)  p.setChildrenObjects(null, structureIdx);
             }
         } else {
            for (int i = 0; i<pops.length; ++i) allParents.get(i).setChildrenObjects(pops[i], structureIdx);
            if (singleFrame) {
                if (pops.length>1) logger.error("Segmentation of structure: {} from track: {}, single frame but several populations", structureIdx, parentTrack.get(0));
-               else for (StructureObject parent : parentTrack.subList(1, parentTrack.size())) parent.setChildrenObjects(pops[0].duplicate(), structureIdx);
+               else for (StructureObject parent : parentTrack.subList(1, parentTrack.size())) parent.setChildrenObjects(pops[0]!=null ? pops[0].duplicate(): null, structureIdx);
            }
         }
         return errors;

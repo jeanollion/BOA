@@ -20,6 +20,7 @@ package plugins.plugins.trackers.trackMate;
 import boa.gui.imageInteraction.IJImageWindowManager.Roi3D;
 import boa.gui.imageInteraction.ImageWindowManager;
 import dataStructure.objects.StructureObject;
+import fiji.plugin.trackmate.Spot;
 import ij.gui.Roi;
 import ij.gui.TextRoi;
 import image.BoundingBox;
@@ -55,6 +56,10 @@ public class SpotWithinCompartmentRoiModifier implements ImageWindowManager.RoiM
         SpotWithinCompartment s = tmi.objectSpotMap.get(currentObject.key.getObject());
         if (s==null) return;
         //else logger.debug("spot found for: {} loc: {}", currentObject.key, s.localization);
+        double[] center = new double[2];
+        center[0] = s.getObject().getCenter()[0] - currentObject.key.getParent(0).getBounds().getxMin();//+currentObject.value.getxMin();
+        center[1] = s.getObject().getCenter()[1] - currentObject.key.getParent(0).getBounds().getyMin();//+currentObject.value.getyMin();
+        logger.debug("spot: {} center: {}, off: {};{}", currentObject.key, center, currentObject.value.getxMin(), currentObject.value.getyMin());
         TextRoi txt = s.getLocalizationRoi(currentObject.value);
         int idx = 0;
         currentRoi.put(++idx, txt); // hack .. only for 2D case !
@@ -72,7 +77,8 @@ public class SpotWithinCompartmentRoiModifier implements ImageWindowManager.RoiM
                 SpotWithinCompartment.offsetS1 = currentObject.value;
             }
             s2.squareDistanceTo(s);
-            logger.debug("distance: {}->{}, rois: {}", p.key, currentObject.key, SpotWithinCompartment.rois);
+            logger.debug("distance: {}->{}, rois: {}. upper daugter cell: {}", p.key, currentObject.key, SpotWithinCompartment.rois, s.compartiment.upperDaughterCell);
+            
             for (Roi rr : SpotWithinCompartment.rois) currentRoi.put(++idx, rr);
             SpotWithinCompartment.rois.clear();
         }

@@ -64,6 +64,7 @@ import plugins.plugins.trackers.trackMate.SpotPopulation;
 import plugins.plugins.trackers.trackMate.SpotWithinCompartment;
 import plugins.plugins.trackers.trackMate.TrackMateInterface;
 import plugins.plugins.trackers.trackMate.TrackMateInterface.SpotFactory;
+import static plugins.plugins.trackers.trackMate.TrackMateInterface.logger;
 import utils.ArrayFileWriter;
 import utils.HashMapGetCreate;
 import utils.Pair;
@@ -194,10 +195,8 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
             for (SpotWithinCompartment s : tmi.spotObjectMap.keySet()) if (s.lowQuality) ++lQCount;
             logger.debug("LAP Tracker: {}, spot HQ: {}, #spots LQ: {} (thld: {}), time: {}", parentTrack.get(0), tmi.spotObjectMap.size()-lQCount, lQCount, spotQualityThreshold, t1-t0);
         }
-        
         setSizeIncrementForTruncatedCells(compartimentMap, parentTrack, compartimentStructure);
-        
-        if (LQSpots) { // run to remove LQ spots
+        if (LQSpots) { // sequence to remove LQ spots
             distParams.includeLQ=false;
             boolean ok = tmi.processFTF(maxLinkingDistance); //FTF only with HQ
             distParams.includeLQ=true;
@@ -224,6 +223,7 @@ public class LAPTracker implements TrackerSegmenter, MultiThreaded {
             trimLQExtremityWithGaps(tmi, 2, true, true);
         }
         if (ok) {
+            objectsF = StructureObjectUtils.getChildrenMap(parentTrack, structureIdx);
             tmi.setTrackLinks(objectsF);
         }
         

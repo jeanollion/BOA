@@ -127,6 +127,7 @@ public class DBMapObjectDAO implements ObjectDAO {
                 Map<ObjectId, StructureObject> objectMap = cache.getAndCreateIfNecessary(key);
                 HTreeMap<String, String> dbm = getDBMap(key);
                 if (cacheAlreadyPresent) {
+                    long t0 = System.currentTimeMillis();
                     Set<String> alreadyInCache = new HashSet<>(objectMap.size());
                     for (ObjectId id : objectMap.keySet()) alreadyInCache.add(id.toHexString());
 
@@ -137,6 +138,8 @@ public class DBMapObjectDAO implements ObjectDAO {
                             objectMap.put(o.id, o);
                         }
                     }
+                    long t1 = System.currentTimeMillis();
+                    logger.debug("#{} (already: {}) objects from structure: {}, time {}", objectMap.size(), alreadyInCache.size(), key.value, t1-t0);
                 } else {
                     long t0 = System.currentTimeMillis();
                     Collection<String> allStrings = getValues(dbm);

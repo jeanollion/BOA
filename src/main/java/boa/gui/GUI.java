@@ -2474,7 +2474,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
 
     private void previousTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_previousTrackErrorButtonActionPerformed
         if (!checkConnection()) return;
-        navigateToNextObjects(false, false, -1, true);
+        navigateToNextObjects(false, false, interactiveStructure.getSelectedIndex(), false);
     }//GEN-LAST:event_previousTrackErrorButtonActionPerformed
 
     private void mergeObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mergeObjectsButtonActionPerformed
@@ -2492,7 +2492,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
 
     private void nextTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextTrackErrorButtonActionPerformed
         if (!checkConnection()) return;
-        navigateToNextObjects(true, false, -1, true);
+        navigateToNextObjects(true, false, interactiveStructure.getSelectedIndex(), false);
     }//GEN-LAST:event_nextTrackErrorButtonActionPerformed
 
     private void selectAllTracksButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllTracksButtonActionPerformed

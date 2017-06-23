@@ -248,9 +248,14 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     @Override public List<StructureObject> setChildrenObjects(ObjectPopulation population, int structureIdx) {
+        if (population==null) {
+            ArrayList<StructureObject> res = new ArrayList<>();
+            childrenSM.set(res, structureIdx);
+            return res;
+        }
         population.relabel();
         if (!population.isAbsoluteLandmark()) population.translate(getBounds(), true); // from parent-relative coordinates to absolute coordinates
-        ArrayList<StructureObject> res = new ArrayList<StructureObject>(population.getObjects().size());
+        ArrayList<StructureObject> res = new ArrayList<>(population.getObjects().size());
         childrenSM.set(res, structureIdx);
         int i = 0;
         for (Object3D o : population.getObjects()) res.add(new StructureObject(timePoint, structureIdx, i++, o, this));
