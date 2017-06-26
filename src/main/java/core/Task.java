@@ -320,6 +320,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         if (preProcess) db.updateExperiment(); // save field preProcessing configuration value @ each field
         db.clearCache(position); // also flush images
         db.getSelectionDAO().clearCache();
+        ImageWindowManagerFactory.getImageManager().flush();
         System.gc();
         publishMemoryUsage("After clearing cache");
     }
@@ -329,7 +330,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     }
     private void extract(String dir, int[] structures) {
         if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
-        String file = dir+File.separator+db.getDBName()+Utils.toStringArray(structures, "_", "", "_")+".xls";
+        String file = dir+File.separator+db.getDBName()+Utils.toStringArray(structures, "_", "", "_")+".csv";
         publish("extracting measurements from structures: "+Utils.toStringArray(structures));
         logger.info("measurements will be extracted to: {}", file);
         Map<Integer, String[]> keys = db.getExperiment().getAllMeasurementNamesByStructureIdx(MeasurementKeyObject.class, structures);

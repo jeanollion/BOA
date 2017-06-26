@@ -47,7 +47,7 @@ public class SpotCompartiment {
     public static double middleAreaProportion = 0.5;
     public boolean truncated = false;
     public double sizeIncrement=Double.NaN;
-    public static double yLengthForXMeanComputation = 0.2; // NOT USED ->  more stable using cell's center for x & z 
+    public static double yLengthForXMeanComputation = 0.2; 
     public SpotCompartiment(StructureObject o) {
         long t0 = System.currentTimeMillis();
         object = o;
@@ -91,7 +91,7 @@ public class SpotCompartiment {
         if (next.size()>1) return true;
         if (next.size()==1) {
             //logger.debug("div next frame for {}->{}: attibute: {}, size {}, sizePrev*0.8:{} eocp: {}, eoc:{}", prev, next.get(0), (Boolean)next.get(0).getAttribute("TruncatedDivision"), (double)next.get(0).getObject().getSize() , prev.getObject().getSize() * sizeProportion, isEndOfChannel(prev) , isEndOfChannel(next.get(0)));
-            Object o = next.get(0).getAttribute("TruncatedDivision", false);
+            Object o = next.get(0).getAttribute("TruncatedDivision");
             if (o!=null) return (Boolean)o;
             if (!isEndOfChannel(prev) || !isEndOfChannel(next.get(0))) return false; // only end of channel
             return (double)next.get(0).getObject().getSize() < prev.getObject().getSize() * sizeProportion;
@@ -115,7 +115,7 @@ public class SpotCompartiment {
         double xMean = 0, zMean = 0, count=0;
         ImageMask mask = o.getMask();
         BoundingBox bds = o.getBounds();
-        /*int yMin = marginYUp>=0 ? o.getBounds().getyMin()+marginYUp : o.getBounds().getyMin();
+        int yMin = marginYUp>=0 ? o.getBounds().getyMin()+marginYUp : o.getBounds().getyMin();
         int yMax = o.getBounds().getyMin()+marginYDown;
         if (yMax>o.getBounds().getyMax()) yMax = o.getBounds().getyMax();
         if (yMax-yMin<7) yMin = yMax-7;
@@ -132,15 +132,15 @@ public class SpotCompartiment {
             }
         }
         if (count==0) {
-            xMean = o.getBounds().getXMean();
-            zMean = o.getBounds().getZMean();
+            double[] center = o.getGeomCenter(false); // more stable using cell's center for x & z
+            xMean = center[0];
+            zMean = (center.length>2?center[2]:o.getBounds().getZMean());
         } else {
             xMean/=count;
             zMean/=count;
-        }*/
-        xMean = o.getBounds().getXMean(); // more stable using cell's center for x & z
-        zMean = o.getBounds().getZMean();
-        return new double[]{xMean * o.getScaleXY(), (o.getBounds().getyMin()+margin)* o.getScaleXY(), zMean * o.getScaleZ()};
+        }
+        
+        return new double[]{ xMean * o.getScaleXY(), (o.getBounds().getyMin()+margin)* o.getScaleXY(), zMean * o.getScaleZ()};
     }
     
     private static double[][] getPoles(Object3D o, double proportionOfWidth, double yLenghtForXMean) {

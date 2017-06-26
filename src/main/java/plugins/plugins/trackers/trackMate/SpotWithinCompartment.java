@@ -176,7 +176,7 @@ public class SpotWithinCompartment extends Spot {
     }
     protected double getSquareDistanceDivision(SpotWithinCompartment sAfterDivision) {
         Localization[] offsetType = localization.getOffsetTypeDivision(sAfterDivision.localization, sAfterDivision.compartiment.upperDaughterCell);
-        if (displayPoles) logger.debug("distance division: {}", offsetType==null? "null" : Utils.toStringArray(offsetType, o->o.toString()));
+        if (displayPoles) logger.debug("distance division offsets: {} (upper daughter cells ? : {})", offsetType==null? "null" : Utils.toStringArray(offsetType, o->o.toString()), sAfterDivision.compartiment.upperDaughterCell);
         if (offsetType==null) return Double.POSITIVE_INFINITY;
         if (offsetType.length==2) {
             double[] off1  = this.compartiment.getOffset(offsetType[0]);

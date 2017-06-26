@@ -404,7 +404,7 @@ public class ManualCorrection {
                 Image segImage = e.getKey().getRawImage(structureIdx);
                 
                 // generate image mask without old objects
-                ImageByte mask = TypeConverter.cast(e.getKey().getMask(), new ImageByte("Manual Segmentation Mask", 0, 0, 0));
+                ImageByte mask = TypeConverter.cast(e.getKey().getMask().duplicate(), new ImageByte("Manual Segmentation Mask", 0, 0, 0));
                 List<StructureObject> oldChildren = e.getKey().getChildren(structureIdx);
                 for (StructureObject c : oldChildren) c.getObject().draw(mask, 0, new BoundingBox(0, 0, 0));
                 if (test) iwm.getDisplayer().showImage(mask, 0, 1);

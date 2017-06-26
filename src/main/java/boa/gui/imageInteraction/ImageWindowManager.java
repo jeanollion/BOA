@@ -119,15 +119,19 @@ public abstract class ImageWindowManager<T, U, V> {
         runningWorkers.clear();
     }
     public void flush() {
+        if (!runningWorkers.isEmpty()) logger.debug("flush: will stop {} running workers", runningWorkers.size());
         stopAllRunningWorkers();
+        if (!objectRoiMap.isEmpty()) logger.debug("flush: will remove {} rois", objectRoiMap.size());
         objectRoiMap.clear();
         parentTrackHeadTrackRoiMap.clear();
+        if (!labileObjectRoiMap.isEmpty()) logger.debug("flush: will remove {} rois", labileObjectRoiMap.size());
         labileObjectRoiMap.clear();
         labileParentTrackHeadTrackRoiMap.clear();
         displayedLabileObjectRois.clear();
         displayedLabileTrackRois.clear();
         displayer.flush();
         imageObjectInterfaces.clear();
+        if (!imageObjectInterfaceMap.isEmpty()) logger.debug("flush: will remove {} images", imageObjectInterfaceMap.size());
         imageObjectInterfaceMap.clear();
         isLabelImage.clear();
         trackHeadTrackMap.clear();
