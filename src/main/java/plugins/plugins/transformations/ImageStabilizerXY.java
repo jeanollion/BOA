@@ -305,7 +305,7 @@ public class ImageStabilizerXY implements Transformation {
             dY = Math.round(dY);
             dZ = Math.round(dZ);
         }
-        logger.debug("tp: {} ch: {}, bds: {}, dX:{} dY: {}, dZ: {}", timePoint, channelIdx, cropBB!=null?cropBB : "null", dX, dY, dZ);
+        //logger.debug("tp: {} ch: {}, bds: {}, dX:{} dY: {}, dZ: {}", timePoint, channelIdx, cropBB!=null?cropBB : "null", dX, dY, dZ);
         if (dX!=0 || dY!=0 || dZ!=0) {
             if (allowNonInteger && !(image instanceof ImageFloat)) image = TypeConverter.toFloat(image, null);
             image = ImageTransformation.translate(image, dX, dY, dZ, allowNonInteger ? ImageTransformation.InterpolationScheme.BSPLINE5 : ImageTransformation.InterpolationScheme.NEAREST);

@@ -208,7 +208,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
             //threshold = new ThresholdHisto(planes);
             threshold = new ThresholdLocalContrast(planes, minT, contrastThreshold); // TODO TEST THRESHOLD CLASS: OFFSET HAS BEEN ADDED
             threshold.setAdaptativeThreshold(adaptativeCoefficient, adaptativeThresholdHalfWindow); // global threshold not relevant for cell range computation if some channel are void
-            int[] fr = getFrameRangeContainingCells(so);
+            int[] fr = getFrameRangeContainingCells(so); // will use the global threshold
             if (fr !=null) {
                 threshold.setFrameRange(fr);
                 ((ThresholdLocalContrast)threshold).setAdaptativeByFY(adaptativeThresholdHalfWindow, 30); // TODO parametrer!
