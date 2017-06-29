@@ -56,6 +56,8 @@ import static plugins.plugins.trackers.ObjectIdxTracker.getComparator;
 import plugins.plugins.trackers.trackMate.TrackMateInterface;
 import plugins.plugins.transformations.CropMicroChannels.Result;
 import utils.ArrayUtil;
+import utils.HashMapGetCreate;
+import utils.HashMapGetCreate.Factory;
 import utils.Pair;
 import utils.SlidingOperator;
 import static utils.SlidingOperator.performSlide;
@@ -108,6 +110,22 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         if (ok) ok = tmi.processGC(maxDistance, parentTrack.size(), false, false); // second GC for crossing links!
         tmi.setTrackLinks(map);
         fillGaps(structureIdx, parentTrack);
+        
+        // relabel by trackHead appearance
+        HashMapGetCreate<StructureObject, Integer> trackHeadIdxMap = new HashMapGetCreate(new Factory<StructureObject, Integer>() {
+            int count = -1;
+            @Override
+            public Integer create(StructureObject key) {
+                ++count;
+                return count;
+            }
+        });
+        for (StructureObject p : parentTrack) {
+            for (StructureObject c : p.getChildObjects(structureIdx)) {
+                int idx = trackHeadIdxMap.getAndCreateIfNecessary(c.getTrackHead());
+                if (idx!=c.getIdx()) c.setIdx(idx);
+            }
+        }
     }
     
     @Override

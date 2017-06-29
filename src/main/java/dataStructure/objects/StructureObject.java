@@ -327,7 +327,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
         */
     }
-    protected void setIdx(int idx) {
+    public void setIdx(int idx) {
         if (objectContainer!=null) objectContainer.relabelObject(idx);
         if (this.object!=null) object.setLabel(idx+1);
         this.idx=idx;
