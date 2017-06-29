@@ -336,7 +336,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     }
     private synchronized void closeAllObjectFiles(boolean commit) {
         for (DB db : dbS.values()) {
-            if (commit) db.commit();
+            if (commit&&!db.isClosed()) db.commit();
             db.close();
         }
         dbS.clear();
@@ -631,7 +631,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     
     private synchronized void closeAllMeasurementFiles(boolean commit) {
         for (Pair<DB, HTreeMap<String, String>> p : this.measurementdbS.values()) {
-            if (commit) p.key.commit();
+            if (commit&&!p.key.isClosed()) p.key.commit();
             p.key.close();
         }
         measurementdbS.clear();

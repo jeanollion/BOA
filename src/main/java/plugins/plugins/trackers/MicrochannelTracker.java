@@ -121,7 +121,9 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
             }
         });
         for (StructureObject p : parentTrack) {
-            for (StructureObject c : p.getChildObjects(structureIdx)) {
+            List<StructureObject> children = p.getChildren(structureIdx);
+            Collections.sort(children, ObjectIdxTracker.getComparator(ObjectIdxTracker.IndexingOrder.XYZ));
+            for (StructureObject c : children) {
                 int idx = trackHeadIdxMap.getAndCreateIfNecessary(c.getTrackHead());
                 if (idx!=c.getIdx()) c.setIdx(idx);
             }
