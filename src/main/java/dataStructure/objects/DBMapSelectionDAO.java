@@ -49,7 +49,7 @@ public class DBMapSelectionDAO implements SelectionDAO {
         new File(this.dir).mkdirs();
         makeDB();
     }
-    private void makeDB() {
+    private synchronized void makeDB() {
         db = DBMapUtils.createFileDB(getSelectionFile());
         dbMap = DBMapUtils.createHTreeMap(db, "selections");
     }
@@ -58,7 +58,7 @@ public class DBMapSelectionDAO implements SelectionDAO {
         return dir+"selections.db";
     }
     @Override
-    public Selection getOrCreate(String name, boolean clearIfExisting) {
+    public synchronized Selection getOrCreate(String name, boolean clearIfExisting) {
         if (idCache.isEmpty()) retrieveAllSelections();
         Selection res = idCache.get(name);
         if (res==null) {
@@ -101,7 +101,7 @@ public class DBMapSelectionDAO implements SelectionDAO {
         }
     }
     @Override
-    public List<Selection> getSelections() {
+    public synchronized List<Selection> getSelections() {
         retrieveAllSelections();
         List<Selection> res = new ArrayList<>(idCache.values());
         Collections.sort(res);
@@ -109,7 +109,7 @@ public class DBMapSelectionDAO implements SelectionDAO {
     }
 
     @Override
-    public void store(Selection s) {
+    public synchronized void store(Selection s) {
         s.mDAO=this.mDAO;
         idCache.put(s.getName(), s);
         if (db.isClosed()) makeDB();
@@ -118,7 +118,7 @@ public class DBMapSelectionDAO implements SelectionDAO {
     }
 
     @Override
-    public void delete(String id) {
+    public synchronized void delete(String id) {
         idCache.remove(id);
         if (db.isClosed()) makeDB();
         dbMap.remove(id);
@@ -126,24 +126,24 @@ public class DBMapSelectionDAO implements SelectionDAO {
     }
 
     @Override
-    public void delete(Selection o) {
+    public synchronized void delete(Selection o) {
         delete(o.getName());
     }
 
     @Override
-    public void deleteAllObjects() {
+    public synchronized void deleteAllObjects() {
         idCache.clear();
         db.close();
         db=null;
         dbMap=null;
         DBMapUtils.deleteDBFile(getSelectionFile());
     }
-    public void compact(boolean commit) {
+    public synchronized void compact(boolean commit) {
         if (db.isClosed()) makeDB();
         if (commit) this.db.commit();
         this.db.compact();
     }
-    private void close(boolean commit) {
+    private synchronized void close(boolean commit) {
         if (db.isClosed()) return;
         if (commit) this.db.commit();
         this.db.close();

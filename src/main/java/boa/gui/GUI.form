@@ -637,7 +637,7 @@
                       <EmptySpace max="-2" attributes="0"/>
                       <Component id="selectionPanel" min="-2" max="-2" attributes="0"/>
                       <EmptySpace max="-2" attributes="0"/>
-                      <Component id="trackPanel" min="-2" max="-2" attributes="0"/>
+                      <Component id="trackPanel" max="32767" attributes="0"/>
                   </Group>
               </Group>
             </DimensionLayout>
@@ -751,7 +751,7 @@
                           <Component id="unlinkObjectsButton" min="-2" max="-2" attributes="0"/>
                           <EmptySpace max="-2" attributes="0"/>
                           <Component id="resetLinksButton" min="-2" max="-2" attributes="0"/>
-                          <EmptySpace max="32767" attributes="0"/>
+                          <EmptySpace pref="70" max="32767" attributes="0"/>
                       </Group>
                   </Group>
                 </DimensionLayout>
@@ -922,12 +922,12 @@
               <Layout>
                 <DimensionLayout dim="0">
                   <Group type="103" groupAlignment="0" attributes="0">
-                      <Component id="TimeJSP" alignment="0" pref="374" max="32767" attributes="0"/>
+                      <Component id="TimeJSP" alignment="0" pref="416" max="32767" attributes="0"/>
                   </Group>
                 </DimensionLayout>
                 <DimensionLayout dim="1">
                   <Group type="103" groupAlignment="0" attributes="0">
-                      <Component id="TimeJSP" min="-2" pref="651" max="-2" attributes="0"/>
+                      <Component id="TimeJSP" alignment="0" max="32767" attributes="0"/>
                   </Group>
                 </DimensionLayout>
               </Layout>
@@ -957,7 +957,7 @@
                 <DimensionLayout dim="0">
                   <Group type="103" groupAlignment="0" attributes="0">
                       <Component id="createSelectionButton" max="32767" attributes="0"/>
-                      <Component id="reloadSelectionsButton" pref="124" max="32767" attributes="0"/>
+                      <Component id="reloadSelectionsButton" pref="167" max="32767" attributes="0"/>
                       <Component id="selectionJSP" alignment="1" pref="0" max="32767" attributes="0"/>
                   </Group>
                 </DimensionLayout>

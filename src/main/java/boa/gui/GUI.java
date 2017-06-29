@@ -1265,7 +1265,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
                 .addComponent(unlinkObjectsButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(resetLinksButton)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(70, Short.MAX_VALUE))
         );
 
         trackPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Tracks"));
@@ -1277,11 +1277,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         trackPanel.setLayout(trackPanelLayout);
         trackPanelLayout.setHorizontalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 374, Short.MAX_VALUE)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 416, Short.MAX_VALUE)
         );
         trackPanelLayout.setVerticalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 651, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(TimeJSP)
         );
 
         selectionPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Selections"));
@@ -1308,7 +1308,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         selectionPanelLayout.setHorizontalGroup(
             selectionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(createSelectionButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(reloadSelectionsButton, javax.swing.GroupLayout.DEFAULT_SIZE, 124, Short.MAX_VALUE)
+            .addComponent(reloadSelectionsButton, javax.swing.GroupLayout.DEFAULT_SIZE, 167, Short.MAX_VALUE)
             .addComponent(selectionJSP, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
         );
         selectionPanelLayout.setVerticalGroup(
@@ -1330,7 +1330,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(selectionPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(trackPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(trackPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         dataPanelLayout.setVerticalGroup(
             dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -2357,31 +2357,20 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
     private void reloadSelectionsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_reloadSelectionsButtonActionPerformed
         populateSelections();
     }//GEN-LAST:event_reloadSelectionsButtonActionPerformed
-
+    
+    
+    
     private void createSelectionButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_createSelectionButtonActionPerformed
         if (!checkConnection()) return;
         String name = JOptionPane.showInputDialog("New Selection name:");
-        if (!Utils.isValid(name, false)) {
-            logger.error("Name should not contain special characters");
-            return;
-        }
-        List<String> structures = Arrays.asList(db.getExperiment().getStructuresAsString());
-        if (structures.contains(name)) {
-            logger.error("Name should not be a Structure's name");
-            return;
-        }
-        populateSelections();
-        for (int i = 0; i<selectionModel.size(); ++i) if (selectionModel.get(i).getName().equals(name)) {
-            logger.error("Selection name already exists");
-            return;
-        }
+        if (!SelectionUtils.validSelectionName(db, name)) return;
         Selection sel = new Selection(name, db);
         if (this.db.getSelectionDAO()==null) {
             logger.error("No selection DAO. Output Directory set ? ");
             return;
         }
         this.db.getSelectionDAO().store(sel);
-        this.selectionModel.addElement(sel);
+        populateSelections();
     }//GEN-LAST:event_createSelectionButtonActionPerformed
 
     private void pruneTrackButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pruneTrackButtonActionPerformed

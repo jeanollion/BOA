@@ -39,12 +39,15 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.swing.DefaultListModel;
@@ -52,6 +55,7 @@ import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 import javax.swing.SwingUtilities;
@@ -80,6 +84,21 @@ public class SelectionUtils {
         put("Grey", new Color(192, 192, 192));
     }};
     
+    public static boolean validSelectionName(MasterDAO db, String name) {
+        if (!Utils.isValid(name, false)) {
+            logger.error("Name should not contain special characters");
+            return false;
+        }
+        List<String> structures = Arrays.asList(db.getExperiment().getStructuresAsString());
+        if (structures.contains(name)) {
+            logger.error("Name should not be a Structure's name");
+            return false;
+        }
+        if (db.getSelectionDAO()==null) return false;
+        List<Selection> sel = db.getSelectionDAO().getSelections();
+        return !Utils.transform(sel, s->s.getName()).contains(name);
+    }
+    
     public static List<StructureObject> getStructureObjects(ImageObjectInterface i, List<Selection> selections) {
         if (i==null) ImageWindowManagerFactory.getImageManager().getCurrentImageObjectInterface();
         if (i==null) return Collections.EMPTY_LIST;
@@ -89,6 +108,35 @@ public class SelectionUtils {
         List<String> allStrings=  new ArrayList<>();
         for (Selection s : selections) allStrings.addAll(s.getElementStrings(fieldName));
         return Pair.unpairKeys(filterPairs(i.getObjects(), allStrings));
+    }
+    public static Selection union(String name, Collection<Selection> selections) {
+        if (selections.isEmpty()) return new Selection();
+        Selection model = selections.iterator().next();
+        selections.removeIf(s->s.getStructureIdx()!=model.getStructureIdx());
+        HashMapGetCreate<String, Set<String>> elByPos = new HashMapGetCreate(new HashMapGetCreate.SetFactory());
+        for (Selection sel : selections) {
+            for (String pos : sel.getAllPositions()) elByPos.getAndCreateIfNecessary(pos).addAll(sel.getElementStrings(pos));
+        }
+        Selection res = new Selection(name,model.getStructureIdx(), model.getMasterDAO()); //"union:"+Utils.toStringList(selections, s->s.getName())
+        for (Entry<String, Set<String>> e : elByPos.entrySet()) res.addElements(e.getKey(), e.getValue());
+        return res;
+    }
+    public static Selection intersection(String name, Collection<Selection> selections) {
+        if (selections.isEmpty()) return new Selection();
+        Selection model = selections.iterator().next();
+        selections.removeIf(s->s.getStructureIdx()!=model.getStructureIdx());
+        Set<String> allPos = new HashSet<>();
+        allPos.addAll(model.getAllPositions());
+        for (Selection s : selections) allPos.retainAll(s.getAllPositions());
+        HashMapGetCreate<String, Set<String>> elByPos = new HashMapGetCreate(new HashMapGetCreate.SetFactory());
+        for (String p : allPos) elByPos.put(p, new HashSet<>(model.getElementStrings(p)));
+        for (Selection s : selections) {
+            if (s.equals(model)) continue;
+            for (String p : allPos) elByPos.get(p).retainAll(s.getElementStrings(p));
+        }
+        Selection res = new Selection(name,model.getStructureIdx(), model.getMasterDAO()); //"intersection:"+Utils.toStringList(selections, s->s.getName())
+        for (Entry<String, Set<String>> e : elByPos.entrySet()) res.addElements(e.getKey(), e.getValue());
+        return res;
     }
     
     public static List<String> getElements(List<Selection> selections, String fieldName) {
@@ -407,40 +455,6 @@ public class SelectionUtils {
         });
         menu.add(remove);
         
-        
-        /*JMenuItem addObjectTree = new JMenuItem("Add objects selected in ObjectTree");
-        addObjectTree.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (selectedValues.isEmpty()) return;
-                List<StructureObject> sel = GUI.getInstance().getObjectTree().getSelectedObjects(false);
-                for (Selection s : selectedValues ) {
-                    int[] structureIdx = s.getStructureIdx()==-1 ? new int[0] : new int[]{s.getStructureIdx()};
-                    List<StructureObject> objects = new ArrayList<StructureObject>(sel);
-                    StructureObjectUtils.keepOnlyObjectsFromSameStructureIdx(sel, structureIdx);
-                    s.addElements(objects);
-                    dao.store(s);
-                }
-                list.updateUI();
-                GUI.updateRoiDisplayForSelections(null, null);
-            }
-        });
-        menu.add(addObjectTree);
-        
-        JMenuItem removeObjectTree = new JMenuItem("Remove objects selected in ObjectTree");
-        removeObjectTree.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (selectedValues.isEmpty()) return;
-                List<StructureObject> sel = GUI.getInstance().getObjectTree().getSelectedObjects(false);
-                for (Selection s : selectedValues ) {
-                    s.removeElements(sel);
-                    dao.store(s);
-                }
-                GUI.updateRoiDisplayForSelections(null, null);
-                list.updateUI();
-            }
-        });
-        menu.add(removeObjectTree);
-        */
         JMenuItem clear = new JMenuItem("Clear");
         clear.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -454,7 +468,7 @@ public class SelectionUtils {
             }
         });
         menu.add(clear);
-        menu.add(new JSeparator());
+        
         JMenuItem delete = new JMenuItem("Delete Selection");
         delete.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -467,6 +481,31 @@ public class SelectionUtils {
             }
         });
         menu.add(delete);
+        menu.add(new JSeparator());
+        if (selectedValues.size()>=1) {
+            JMenuItem union = new JMenuItem("Union");
+            union.addActionListener((ActionEvent e) -> {
+                String name = JOptionPane.showInputDialog("Union Selection name:");
+                if (SelectionUtils.validSelectionName(selectedValues.get(0).getMasterDAO(), name)) {
+                    Selection unionSel = SelectionUtils.union(name, selectedValues);
+                    unionSel.getMasterDAO().getSelectionDAO().store(unionSel);
+                    GUI.getInstance().populateSelections();
+                }
+            });
+            menu.add(union);
+        }
+        if (selectedValues.size()>1) {
+            JMenuItem union = new JMenuItem("Intersection");
+            union.addActionListener((ActionEvent e) -> {
+                String name = JOptionPane.showInputDialog("Union Selection name:");
+                if (SelectionUtils.validSelectionName(selectedValues.get(0).getMasterDAO(), name)) {
+                    Selection interSel = SelectionUtils.intersection(name, selectedValues);
+                    interSel.getMasterDAO().getSelectionDAO().store(interSel);
+                    GUI.getInstance().populateSelections();
+                }
+            });
+            menu.add(union);
+        }
         return menu;
     }
     

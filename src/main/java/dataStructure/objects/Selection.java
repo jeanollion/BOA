@@ -61,9 +61,12 @@ public class Selection implements Comparable<Selection> {
     @Transient MasterDAO mDAO;
     
     public Selection(String name, MasterDAO mDAO) {
+        this(name, -1, mDAO);
+    }
+    public Selection(String name, int structureIdx, MasterDAO mDAO) {
         this.id=name;
-        this.structureIdx=-1;
-        elements = new HashMap<String, List<String>>();
+        this.structureIdx=structureIdx;
+        elements = new HashMap<>();
         this.mDAO=mDAO;
     }
     public Set<String> getAllPositions() {
@@ -109,6 +112,8 @@ public class Selection implements Comparable<Selection> {
     public void setColor(String color) {
         this.color=color;
     }
+    
+    public MasterDAO getMasterDAO() {return mDAO;}
     
     protected void setMasterDAO(MasterDAO mDAO) {
         this.mDAO=mDAO;
@@ -325,6 +330,17 @@ public class Selection implements Comparable<Selection> {
     public synchronized Selection addElements(Collection<StructureObject> elementsToAdd) {
         if (elementsToAdd==null || elementsToAdd.isEmpty()) return this;
         for (StructureObject o : elementsToAdd) addElement(o);
+        return this;
+    }
+    
+    public synchronized Selection addElements(String position, Collection<String> elementsToAdd) {
+        if (elementsToAdd==null || elementsToAdd.isEmpty()) return this;
+        List<String> els = this.elements.get(position);
+        if (els==null) elements.put(position, new ArrayList<>(elementsToAdd));
+        else {
+            els.addAll(elementsToAdd);
+            Utils.removeDuplicates(els, false);
+        }
         return this;
     }
     
