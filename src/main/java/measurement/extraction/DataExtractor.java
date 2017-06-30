@@ -165,6 +165,7 @@ public class DataExtractor {
                             for (String pMeasName : allMeasurementsSort.get(e.getKey())) {
                                 line.append(separator);
                                 line.append(key.getValueAsString(pMeasName, numberFormater));
+                                
                             }
                         }
                     }

@@ -375,8 +375,12 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     @Override 
     public void done() {
         this.publish("Job done. Errors: "+this.errors.size());
+        for (Pair<String, Exception> e : errors) {
+            publish("Error: "+e.key);
+            for (StackTraceElement s : e.value.getStackTrace()) publish(s.toString());
+        }
         this.printErrors();
-        this.publish("------------------");
+        this.publish("------------------------------------------------------------------");
         if (gui!=null) gui.setRunning(false);
     }
 
