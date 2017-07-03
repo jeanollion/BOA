@@ -39,6 +39,7 @@ import com.mongodb.client.MongoIterable;
 import com.sun.java.swing.plaf.motif.MotifMenuItemUI;
 import configuration.parameters.FileChooser;
 import configuration.parameters.NumberParameter;
+import core.DefaultWorker;
 import core.Processor;
 import core.PythonGateway;
 import core.Task;
@@ -2240,10 +2241,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         }
         setMessage("Total subTasks: "+totalSubtasks);
         int[] taskCounter = new int[]{0, totalSubtasks};
-        for (Task t : tasks) {
-            t.setSubtaskNumber(taskCounter);
-            t.execute();
-        }
+        for (Task t : tasks) t.setSubtaskNumber(taskCounter);
+        DefaultWorker.execute(i -> {tasks.get(i).run(); return "";}, tasks.size());
+        
     }//GEN-LAST:event_runActionAllXPMenuItemActionPerformed
 
     private void closeAllWindowsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeAllWindowsMenuItemActionPerformed

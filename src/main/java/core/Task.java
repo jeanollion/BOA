@@ -22,6 +22,7 @@ import boa.gui.GUI;
 import boa.gui.GUIInterface;
 import boa.gui.PropertyUtils;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
+import com.mongodb.util.JSON;
 import static core.TaskRunner.logger;
 import dataStructure.objects.MasterDAO;
 import dataStructure.objects.MasterDAOFactory;
@@ -42,7 +43,11 @@ import javax.swing.SwingWorker;
 import measurement.MeasurementKeyObject;
 import measurement.extraction.DataExtractor;
 import org.apache.commons.lang.ArrayUtils;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import utils.ArrayUtil;
+import utils.JSONUtils;
 import utils.Pair;
 import utils.Utils;
 
@@ -55,12 +60,52 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         boolean preProcess, segmentAndTrack, trackOnly, measurements, generateTrackImages;
         List<Integer> positions;
         int[] structures;
-        List<Pair<String, int[]>> extrackMeasurementDir = new ArrayList<>();
+        List<Pair<String, int[]>> extractMeasurementDir = new ArrayList<>();
         List<Pair<String, Exception>> errors = new ArrayList<>();
         MasterDAO db;
         int[] taskCounter;
         GUIInterface gui;
         
+        public JSONObject toJSON() {
+            JSONObject res=  new JSONObject();
+            res.put("dbName", dbName); // put dbPath ?
+            if (this.dir!=null) res.put("dir", dir);
+            res.put("preProcess", preProcess);
+            res.put("segmentAndTrack", segmentAndTrack);
+            res.put("trackOnly", trackOnly);
+            res.put("measurements", measurements);
+            res.put("generateTrackImages", generateTrackImages);
+            if (positions!=null) res.put("positions", positions);
+            if (structures!=null) res.put("structures", JSONUtils.toJSONArray(structures));
+            JSONArray ex = new JSONArray();
+            for (Pair<String, int[]> p : extractMeasurementDir) {
+                JSONObject o = new JSONObject();
+                o.put("dir", p.key);
+                o.put("s", JSONUtils.toJSONArray(p.value));
+                ex.add(o);
+            }
+            res.put("extractMeasurementDir", ex);
+            return res;
+        }
+        public void fromJSON(JSONObject data) {
+            this.dbName = (String)data.getOrDefault("dbName", "");
+            if (data.containsKey("dir")) dir = (String)data.get("dir");
+            this.preProcess = (Boolean)data.getOrDefault("preProcess", false);
+            this.segmentAndTrack = (Boolean)data.getOrDefault("segmentAndTrack", false);
+            this.trackOnly = (Boolean)data.getOrDefault("trackOnly", false);
+            this.measurements = (Boolean)data.getOrDefault("measurements", false);
+            this.generateTrackImages = (Boolean)data.getOrDefault("generateTrackImages", false);
+            if (data.containsKey("positions")) positions = ((JSONArray)data.get("positions"));
+            if (data.containsKey("structures")) structures = JSONUtils.fromIntArray((JSONArray)data.get("structures"));
+            if (data.containsKey("extractMeasurementDir")) {
+                extractMeasurementDir = new ArrayList<>();
+                JSONArray ex = (JSONArray)data.get("extractMeasurementDir");
+                for (Object o : ex) {
+                    JSONObject jo = (JSONObject)(o);
+                    extractMeasurementDir.add(new Pair((String)jo.get("dir"), JSONUtils.fromIntArray((JSONArray)jo.get("s"))));
+                }
+            }
+        }
         
         private Task() {
             if (GUI.hasInstance()) gui = GUI.getInstance();
@@ -112,6 +157,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 
             }
         }
+        
         public MasterDAO getDB() {
             initDB();
             return db;
@@ -179,7 +225,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         
         public Task addExtractMeasurementDir(String dir, int... extractStructures) {
             if (extractStructures!=null && extractStructures.length==0) extractStructures = null;
-            this.extrackMeasurementDir.add(new Pair(dir, extractStructures));
+            this.extractMeasurementDir.add(new Pair(dir, extractStructures));
             return this;
         }
         public boolean isValid() {
@@ -193,7 +239,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 if (structures!=null) checkArray(structures, db.getExperiment().getStructureCount(), "Invalid structure: ");
                 if (positions!=null) checkArray(positions, db.getExperiment().getPositionCount(), "Invalid position: ");
                 // check files
-                for (Pair<String, int[]> e : extrackMeasurementDir) {
+                for (Pair<String, int[]> e : extractMeasurementDir) {
                     String exDir = e.key==null? db.getDir() : e.key;
                     File f= new File(exDir);
                     if (!f.exists()) errors.add(new Pair(dbName, new Exception("File: "+ exDir+ " not found")));
@@ -201,7 +247,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                     else if (e.value!=null) checkArray(e.value, db.getExperiment().getStructureCount(), "Extract structure for dir: "+e.value+": Invalid structure: ");
                 }
             }
-            if (!measurements && !preProcess && !segmentAndTrack && ! trackOnly && extrackMeasurementDir.isEmpty()) errors.add(new Pair(dbName, new Exception("No action to run!")));
+            if (!measurements && !preProcess && !segmentAndTrack && ! trackOnly && extractMeasurementDir.isEmpty()) errors.add(new Pair(dbName, new Exception("No action to run!")));
             db=null;
             printErrors();
             logger.info("task : {}, isValid: {}", dbName, errors.isEmpty());
@@ -220,6 +266,9 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             for (Pair<String, Exception> e : errors) logger.error(e.key, e.value);
         }
         public int countSubtasks() {
+            initDB();
+            if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
+            if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
             int count=0;
             // preProcess: 
             if (preProcess) count += positions.size();
@@ -230,7 +279,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 for (int s : structures)  if (!db.getExperiment().getAllDirectChildStructures(s).isEmpty()) ++gen;
                 count+=positions.size()*gen;
             }
-            count+=extrackMeasurementDir.size();
+            count+=extractMeasurementDir.size();
             return count;
         }
         public void setSubtaskNumber(int[] taskCounter) {
@@ -265,7 +314,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 }
             }
             
-            for (Pair<String, int[]> e  : this.extrackMeasurementDir) extract(e.key==null?db.getDir():e.key, e.value);
+            for (Pair<String, int[]> e  : this.extractMeasurementDir) extract(e.key==null?db.getDir():e.key, e.value);
             
             db.clearCache();
             db=null;
@@ -351,9 +400,9 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         if (measurements) res+="/measurements/";
         if (structures!=null) res+="/structures:"+ArrayUtils.toString(structures)+"/";
         if (positions!=null) res+="/positions:"+ArrayUtils.toString(positions)+"/";
-        if (!extrackMeasurementDir.isEmpty()) {
+        if (!extractMeasurementDir.isEmpty()) {
             res+= "/Extract: ";
-            for (Pair<String, int[]> p : this.extrackMeasurementDir) res+=p.key+ "="+ArrayUtils.toString(res);
+            for (Pair<String, int[]> p : this.extractMeasurementDir) res+=p.key+ "="+ArrayUtils.toString(res);
             res+="/";
         }
         return res;

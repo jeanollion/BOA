@@ -290,7 +290,7 @@ public class RootTrackNode implements TrackNodeInterface, UIContainer {
             actions[2] = rawSubMenu;
             List<String> directRootChild = new ArrayList<String>();
             for (int sIdx = 0; sIdx<generator.db.getExperiment().getStructureCount(); ++sIdx) {
-                if (generator.db.getExperiment().getStructure(sIdx).getParentStructure()==-1) directRootChild.add(generator.db.getExperiment().getStructure(sIdx).getName());
+                if (true ||generator.db.getExperiment().getStructure(sIdx).getParentStructure()==-1) directRootChild.add(generator.db.getExperiment().getStructure(sIdx).getName());
             }
             openRaw=new JMenuItem[directRootChild.size()];
             for (int i = 0; i < openRaw.length; i++) {
