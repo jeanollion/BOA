@@ -34,6 +34,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import plugins.PluginFactory;
+import utils.ArrayUtil;
 import utils.Utils;
 
 /**
@@ -44,10 +45,11 @@ public class Set2TrackHeadAtBacteriaDivision {
     public static void main(String[] args) {
         PluginFactory.findPlugins("plugins.plugins");
         String sourceDBName = "fluo160501";
-        String dbName = "fluo160501_uncorr";
-        int[] positions = new int[]{0, 1, 3};
+        String[] dbNames = new String[]{"fluo160501", "fluo160428", "fluo151127"};
+        //int[] positions = new int[]{5};
+        int[] positions = null;
         //copyObjects(sourceDBName, dbName, positions, 0, 1);
-        for (int pIdx : positions) fixTrackHead(dbName, pIdx);
+        for (String dbName : dbNames) fixTrackHead(dbName, positions);
     }
     private static void copyObjects(String fromXP, String toXP, int[] positions, int... structureIdx) { // TODO : bug!!
         MasterDAO dbSource = new Task(fromXP).getDB();
@@ -73,32 +75,35 @@ public class Set2TrackHeadAtBacteriaDivision {
         }
         
     }
-    private static void fixTrackHead(String xp, int pIdx) {
+    private static void fixTrackHead(String xp, int... pIdces) {
         MasterDAO db = new Task(xp).getDB();
-        ObjectDAO dao = db.getDao(db.getExperiment().getPosition(pIdx).getName());
-        List<StructureObject> roots = dao.getRoots();
-        StructureObjectUtils.setAllChildren(roots, 1);
-        List<StructureObject> bucket = new ArrayList<>(4);
-        Set<StructureObject> modified = new HashSet<>();
-        Map<StructureObject, List<StructureObject>> mcs = StructureObjectUtils.getAllTracks(roots, 0);
-        for (List<StructureObject> mcTrack : mcs.values()) {
-            ListIterator<StructureObject> it = mcTrack.listIterator(mcTrack.size()-2);
-            while (it.hasPrevious()) {
-                StructureObject p = it.previous();
-                for (StructureObject b  : p.getChildObjects(1)) {
-                    StructureObjectUtils.getDaugtherObjectsAtNextFrame(b, bucket);
-                    if (bucket.size()>1) {
-                        Collections.sort(bucket);
-                        for (StructureObject bb : bucket) {
-                            bb.setTrackHead(bb, true, true, modified);
-                            b.setTrackLinks(bb, true, false);
-                            modified.add(b);
+        if (pIdces==null || pIdces.length==0) pIdces = ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount());
+        for (int pIdx : pIdces) {
+            ObjectDAO dao = db.getDao(db.getExperiment().getPosition(pIdx).getName());
+            List<StructureObject> roots = dao.getRoots();
+            StructureObjectUtils.setAllChildren(roots, 1);
+            List<StructureObject> bucket = new ArrayList<>(4);
+            Set<StructureObject> modified = new HashSet<>();
+            Map<StructureObject, List<StructureObject>> mcs = StructureObjectUtils.getAllTracks(roots, 0);
+            for (List<StructureObject> mcTrack : mcs.values()) {
+                ListIterator<StructureObject> it = mcTrack.listIterator(mcTrack.size()-2);
+                while (it.hasPrevious()) {
+                    StructureObject p = it.previous();
+                    for (StructureObject b  : p.getChildObjects(1)) {
+                        StructureObjectUtils.getDaugtherObjectsAtNextFrame(b, bucket);
+                        if (bucket.size()>1) {
+                            Collections.sort(bucket);
+                            for (StructureObject bb : bucket) {
+                                bb.setTrackHead(bb, true, true, modified);
+                                b.setTrackLinks(bb, true, false);
+                                modified.add(b);
+                            }
                         }
                     }
                 }
             }
+            logger.debug("modified objects: {}", modified.size());
+            dao.store(modified, true);
         }
-        logger.debug("modified objects: {}", modified.size());
-        dao.store(modified, true);
     }
 }

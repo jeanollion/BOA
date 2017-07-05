@@ -48,7 +48,6 @@ public class TaskRunner {
         //List<Task> tasks = runOnuncorrectedFluoXP();
         //List<Task> tasks = getFastTrackTasks();
         List<Task> tasks = getTasks();
-        //List<Task> tasks = getFluoTasks();
         //for (Task t : tasks) t.isValid();
         for (Task t : tasks) if (t.isValid()) t.runTask();
         logger.info("All tasks performed! See errors below:");
@@ -72,9 +71,12 @@ public class TaskRunner {
     
     public static List<Task> getTasks() {
         List<Task> tasks = new ArrayList<Task>() {{
-            add(new Task("fluo160501_uncorr_Q15").setActions(false, true, true, true).setPositions(0, 1, 3).setStructures(2).addExtractMeasurementDir(null, 1).addExtractMeasurementDir(null, 2));
-            add(new Task("fluo160501_uncorr_Q25").setActions(false, true, true, true).setPositions(0, 1, 3).setStructures(2).addExtractMeasurementDir(null, 1).addExtractMeasurementDir(null, 2));
-            add(new Task("fluo160501_uncorr_Q3").setActions(false, true, true, true).setPositions(0, 1, 3).setStructures(2).addExtractMeasurementDir(null, 1).addExtractMeasurementDir(null, 2));
+            add(new Task("fluo170515_MutS").setActions(false, true, true, true).setGenerateTrackImages(true).addExtractMeasurementDir(null, 1).addExtractMeasurementDir(null, 2));
+            add(new Task("fluo170517_MutH").setActions(false, true, true, true).setGenerateTrackImages(true).addExtractMeasurementDir(null, 1).addExtractMeasurementDir(null, 2));
+            add(new Task("fluo160408_MutH").setActions(false, true, true, true).setGenerateTrackImages(true).addExtractMeasurementDir(null, 1).addExtractMeasurementDir(null, 2));
+            add(new Task("fluo151127").setActions(false, false, false, true).setGenerateTrackImages(true).addExtractMeasurementDir(null, 1).addExtractMeasurementDir(null, 2));
+            add(new Task("fluo160501").setActions(false, false, false, true).setGenerateTrackImages(true).addExtractMeasurementDir(null, 1).addExtractMeasurementDir(null, 2));
+            add(new Task("fluo160428").setActions(false, false, false, true).setGenerateTrackImages(true).addExtractMeasurementDir(null, 1).addExtractMeasurementDir(null, 2));
             //add(new Task("boa_phase150324mutH").setActions(false, true, true, true).addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 1).addExtractMeasurementDir("/data/Images/Phase/150324_6300_mutH/", 0));
             //add(new Task("boa_phase141107wt").setActions(false, true, true, true).addExtractMeasurementDir("/data/Images/Phase/141107_mg6300_wt/", 1).addExtractMeasurementDir("/data/Images/Phase/141107_mg6300_wt/", 0));
             //add(new Task("boa_phase150616wt").setActions(false, true, true, true).addExtractMeasurementDir("/data/Images/Phase/150616_6300_wt/", 1).addExtractMeasurementDir("/data/Images/Phase/150616_6300_wt/", 0));
