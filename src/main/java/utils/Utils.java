@@ -19,6 +19,7 @@ package utils;
 
 import static boa.gui.GUI.logger;
 import boa.gui.imageInteraction.ImageObjectInterface;
+import com.sun.management.UnixOperatingSystemMXBean;
 import configuration.parameters.FileChooser;
 import dataStructure.objects.StructureObject;
 import de.caluga.morphium.Morphium;
@@ -35,6 +36,8 @@ import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -78,6 +81,14 @@ import measurement.extraction.DataExtractor;
  * @author jollion
  */
 public class Utils {
+    
+    public static String getOpenedFileCount() {
+        OperatingSystemMXBean os = ManagementFactory.getOperatingSystemMXBean();
+        if(os instanceof UnixOperatingSystemMXBean){
+            return ((UnixOperatingSystemMXBean) os).getOpenFileDescriptorCount()+"/"+((UnixOperatingSystemMXBean) os).getMaxFileDescriptorCount();
+        }
+        return "";
+    }
     public static String getFormattedTime() {
         Calendar cal = Calendar.getInstance();
         cal.setTime(new Date());  

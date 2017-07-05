@@ -34,7 +34,7 @@ public class MultipleChoiceParameter extends SimpleParameter implements Choosabl
     int[] selectedItems;
     String[] listChoice;
     @Transient MultipleChoiceParameterUI ui;
-    @Transient int displayTrimSize=50;
+    @Transient int displayTrimSize=50; // for toString method
     
     public MultipleChoiceParameter(String name, String[] listChoice, int[] selectedItems) {
         super(name);

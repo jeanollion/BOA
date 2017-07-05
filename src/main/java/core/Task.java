@@ -375,7 +375,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     }
     private void publishMemoryUsage(String message) {
         long used = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-        publish(message+" Used Memory: "+ (used/1000000)/1000d+"Go ("+ (int)Math.round(100d*used/((double)Runtime.getRuntime().totalMemory())) + "%)");
+        publish(message+" Used Memory: "+ (used/1000000)/1000d+"Go ("+ (int)Math.round(100d*used/((double)Runtime.getRuntime().totalMemory())) + "%)"+" OpenedFiles: "+Utils.getOpenedFileCount());
     }
     private void extract(String dir, int[] structures) {
         if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
@@ -383,15 +383,16 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         publish("extracting measurements from structures: "+Utils.toStringArray(structures));
         logger.info("measurements will be extracted to: {}", file);
         Map<Integer, String[]> keys = db.getExperiment().getAllMeasurementNamesByStructureIdx(MeasurementKeyObject.class, structures);
+        logger.debug("keys: {}", keys);
         DataExtractor.extractMeasurementObjects(db, file, getPositionNames(), keys);
         incrementProgress();
     }
-        private List<String> getPositionNames() {
-            if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
-            List<String> res = new ArrayList<>(positions.size());
-            for (int i : positions) res.add(db.getExperiment().getPosition(i).getName());
-            return res;
-        }
+    private List<String> getPositionNames() {
+        if (positions==null) positions=Utils.toList(ArrayUtil.generateIntegerArray(db.getExperiment().getPositionCount()));
+        List<String> res = new ArrayList<>(positions.size());
+        for (int i : positions) res.add(db.getExperiment().getPosition(i).getName());
+        return res;
+    }
     @Override public String toString() {
         String res =  "db: "+dbName;
         if (preProcess) res+="/preProcess/";

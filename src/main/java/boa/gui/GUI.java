@@ -98,11 +98,13 @@ import javax.swing.DefaultListModel;
 import javax.swing.Icon;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
+import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
 import javax.swing.JRadioButtonMenuItem;
+import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.KeyStroke;
 import javax.swing.MenuSelectionManager;
@@ -178,11 +180,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
      * Creates new form GUI
      */
     public GUI() {
-        logger.info("DBMaker: {}", checkClass("org.mapdb.DBMaker"));
+        //logger.info("DBMaker: {}", checkClass("org.mapdb.DBMaker"));
         
         logger.info("Creating GUI instance...");
         this.instance=this;
         initComponents();
+        
         
         this.addWindowListener(new WindowAdapter() {
             @Override 
@@ -193,7 +196,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         });
         experimentList.setModel(experimentModel);
         relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importFieldsToCurrentExperimentMenuItem);add(importConfigToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(extractMeasurementMenuItem);}};
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        //setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         toFront();
         // format button
         this.bsonFormatMenuItem.setSelected(true);
