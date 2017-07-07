@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2016 jollion
+ * Copyright (C) 2017 jollion
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -17,22 +17,13 @@
  */
 package plugins;
 
-import dataStructure.objects.StructureObjectProcessing;
-import image.Image;
-import image.ImageInteger;
+import dataStructure.objects.StructureObject;
+import java.util.List;
 
 /**
  *
  * @author jollion
  */
-public interface UseThreshold {
-    @FunctionalInterface public static interface ThresholdByPixel { public void getThreshold(int x, int y, int z);}
-    public SimpleThresholder getThresholder();
-    public void setThresholdValue(double threshold);
-    //public void setThresholdFunction(ThresholdByPixel thresholdFunction);
-    public Image getThresholdImage(Image input, int structureIdx, StructureObjectProcessing parent);
-    public void setThresholdedImage(ImageInteger thresholdedImage);
-    /*public static ImageInteger thresholdImage(Image image, ThresholdByPixel thresholdFunction) {
-        
-    }*/
+public interface TrackPostFilter extends Plugin {
+    public void filter(int structureIdx, List<StructureObject> parentTrack);
 }

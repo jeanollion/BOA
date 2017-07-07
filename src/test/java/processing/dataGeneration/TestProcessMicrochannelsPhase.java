@@ -45,9 +45,6 @@ import plugins.Segmenter;
 import plugins.plugins.processingScheme.SegmentThenTrack;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.MicrochannelPhase2D;
-import plugins.plugins.segmenters.MicroChannelFluo2D;
-import plugins.plugins.trackers.MicrochannelProcessor;
-import plugins.plugins.trackers.MicrochannelProcessorPhase;
 
 /**
  *
@@ -62,8 +59,7 @@ public class TestProcessMicrochannelsPhase {
         //String dbName = "boa_phase150616wt";
         //String dbName = "boa_phase141129wt";
         String dbName = "ProblemeTracking";
-        //testSegMicrochannelsFromXP(dbName, field, time);
-        testSegAndTrackMicrochannelsFromXP(dbName, field, 532, 535);
+        testSegMicrochannelsFromXP(dbName, field, time);
     }
     
     public static void testSegMicrochannelsFromXP(String dbName, int fieldNumber, int timePoint) {
@@ -87,27 +83,4 @@ public class TestProcessMicrochannelsPhase {
         //disp.showImage(popSplit.getLabelImage());
     }
     
-    public static void testSegAndTrackMicrochannelsFromXP(String dbName, int fieldNumber, int timePointMin, int timePointMax) {
-        MasterDAO mDAO =new Task(dbName).getDB();
-        MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
-        List<StructureObject> rootTrack = mDAO.getDao(f.getName()).getRoots();
-        Iterator<StructureObject> it = rootTrack.iterator();
-        while(it.hasNext()) {
-            StructureObject o = it.next();
-            if (o.getFrame()<timePointMin) it.remove();
-            if (o.getFrame()>timePointMax) it.remove();
-        }
-        MicrochannelProcessorPhase.debug=true;
-        ProcessingScheme ps = mDAO.getExperiment().getStructure(0).getProcessingScheme();
-        ps.segmentAndTrack(0, rootTrack, null);
-        Image[][] raw = new Image[rootTrack.size()][1];
-        Image[][] seg = new Image[rootTrack.size()][1];
-        int idx = 0;
-        for (StructureObject o : rootTrack) {
-            raw[idx][0] = o.getRawImage(0);
-            seg[idx++][0] = o.getObjectPopulation(0).getLabelMap();
-        }
-        new IJImageDisplayer().showImage5D("Raw", raw);
-        new IJImageDisplayer().showImage5D("Seg", seg);
-    }
 }

@@ -17,6 +17,7 @@
  */
 package plugins.plugins.trackers.bacteriaInMicrochannelTracker;
 
+import dataStructure.objects.StructureObject;
 import ij.process.AutoThresholder;
 import image.BoundingBox;
 import image.Image;
@@ -28,6 +29,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.apache.commons.lang.ArrayUtils;
 import static plugins.Plugin.logger;
+import plugins.Segmenter;
+import plugins.UseThreshold;
 import plugins.plugins.thresholders.IJAutoThresholder;
 import plugins.plugins.thresholders.Percentage;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.adaptativeThresholdHalfWindow;
@@ -191,6 +194,13 @@ public class ThresholdHisto extends Threshold {
     @Override
     public boolean hasAdaptativeByY() {
         return this.thldCoeffY!=null;
+    }
+
+    @Override
+    public void apply(StructureObject o, Segmenter s) {
+        if (!(s instanceof UseThreshold)) return;
+        if (hasAdaptativeByY()) ((UseThreshold)s).setThresholdedImage(getThresholdedPlane(o.getFrame(), false));
+        else ((UseThreshold)s).setThresholdValue(getThreshold(o.getFrame()));
     }
     
     

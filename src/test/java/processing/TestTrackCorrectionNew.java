@@ -227,7 +227,7 @@ public class TestTrackCorrectionNew {
         xp.setOutputDirectory(outputDir);
         Structure s = new Structure("Structure", -1, 0);
         xp.getStructures().insert(s);
-        s.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new DummySegmenterSplitAndMerge(), 0.9, 1.1 , 1.5, 10, 100)));
+        s.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new DummySegmenterSplitAndMerge()).setCostParameters(10, 100))); //0.9, 1.1 , 1.5 //  double divisionCriterion, double minGrowthRate, double maxGrowthRate, double costLimit, double cumulativeCostLimit
         return xp;
     }
      

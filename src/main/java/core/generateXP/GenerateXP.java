@@ -67,8 +67,6 @@ import plugins.plugins.segmenters.MutationSegmenter;
 import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
 import plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import plugins.plugins.trackers.LAPTracker;
-import plugins.plugins.trackers.MicrochannelProcessor;
-import plugins.plugins.trackers.MicrochannelProcessorPhase;
 import plugins.plugins.trackers.MicrochannelTracker;
 import plugins.plugins.trackers.ObjectIdxTracker;
 import plugins.plugins.transformations.AutoRotationXY;
@@ -434,7 +432,7 @@ public class GenerateXP {
                     new MicrochannelTracker().setSegmenter(
                             new MicroChannelFluo2D()
                     ).setTrackingParameters(40, 0.5).setYShiftQuantile(0.05)));
-            bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo()).setCostParameters(0.1, 0.5)));
+            bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections().setSegmenter(new BacteriaFluo()).setCostParameters(0.1, 0.5)));
             //mutation.setProcessingScheme(new SegmentAndTrack(new LAPTracker().setCompartimentStructure(1)));
             mutation.setProcessingScheme(new SegmentAndTrack(
                     new LAPTracker().setCompartimentStructure(1).setSegmenter(
@@ -508,12 +506,12 @@ public class GenerateXP {
         Structure mc = xp.getStructure(0);
         Structure bacteria = xp.getStructure(1);
         if (processing) {
-            if (!subTransPre) mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessorPhase()).addPreFilters(new IJSubtractBackground(0.3, true, false, true, false)));
-            else mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessorPhase()));
+            if (!subTransPre) mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicrochannelPhase2D())).addPreFilters(new IJSubtractBackground(0.3, true, false, true, false)));
+            else mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicrochannelPhase2D())));
             bacteria.setProcessingScheme(
                     new SegmentAndTrack(
                             new BacteriaClosedMicrochannelTrackerLocalCorrections(
-                                    new BacteriaTrans()
+                            ).setSegmenter(new BacteriaTrans()
                             ).setCostParameters(1.5, 3)
                     )
             );

@@ -21,6 +21,7 @@ import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
 import configuration.parameters.PostFilterSequence;
 import configuration.parameters.PreFilterSequence;
+import configuration.parameters.TrackPostFilterSequence;
 import dataStructure.objects.StructureObject;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,7 +46,8 @@ public class SegmentAndTrack implements ProcessingScheme {
     protected PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters");
     protected PostFilterSequence postFilters = new PostFilterSequence("Post-Filters");
     PluginParameter<TrackerSegmenter> tracker = new PluginParameter<TrackerSegmenter>("Tracker", TrackerSegmenter.class, true);
-    Parameter[] parameters= new Parameter[]{tracker, preFilters, postFilters};
+    protected TrackPostFilterSequence trackPostFilters = new TrackPostFilterSequence("Track Post-Filters");
+    Parameter[] parameters= new Parameter[]{tracker, preFilters, postFilters, trackPostFilters};
     
     public SegmentAndTrack(){}
     
@@ -93,6 +95,7 @@ public class SegmentAndTrack implements ProcessingScheme {
             l = new ArrayList<>(1);
             l.add(new Pair(parentTrack.get(0).toString(), ex));
         }
+        trackPostFilters.filter(structureIdx, parentTrack, executor); // TODO return exceptions
         return l;
     }
 
@@ -115,6 +118,7 @@ public class SegmentAndTrack implements ProcessingScheme {
             l = new ArrayList<>(1);
             l.add(new Pair(parentTrack.get(0).toString(), ex));
         }
+        trackPostFilters.filter(structureIdx, parentTrack, executor); // TODO return exceptions
         return l;
     }
 

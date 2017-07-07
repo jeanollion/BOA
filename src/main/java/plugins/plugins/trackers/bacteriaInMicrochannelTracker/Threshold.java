@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import plugins.plugins.processingScheme.SegmentOnly.ApplyToSegmenter;
 import static plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections.logger;
 import utils.Utils;
 
@@ -32,7 +33,7 @@ import utils.Utils;
  *
  * @author jollion
  */
-public abstract class Threshold {
+public abstract class Threshold implements ApplyToSegmenter {
     final List<Image> planes;
     final int offsetFrame;
     int[] frameRange;

@@ -22,39 +22,36 @@ import dataStructure.objects.StructureObject;
 import de.caluga.morphium.annotations.Transient;
 import image.ImageProperties;
 import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import plugins.MultiThreaded;
 import plugins.PostFilter;
 import plugins.PreFilter;
+import plugins.TrackPostFilter;
 import utils.Utils;
 
 /**
  *
  * @author jollion
  */
-public class PostFilterSequence extends PluginParameterList<PostFilter> {
-    @Transient Boolean configured = false;
+public class TrackPostFilterSequence extends PluginParameterList<TrackPostFilter> {
     
-    public PostFilterSequence(String name) {
-        super(name, "Post-Filter", PostFilter.class);
+    public TrackPostFilterSequence(String name) {
+        super(name, "Track Post-Filter", TrackPostFilter.class);
     }
     
-    public ObjectPopulation filter(ObjectPopulation objectPopulation, int structureIdx, StructureObject parent) {
-        if (objectPopulation == null) return null;
-        if (!configured) {
-            synchronized(configured) {
-                if (!configured) ParameterUtils.configureStructureParameters(structureIdx, this);
-            }
+    public void filter(int structureIdx, List<StructureObject> parentTrack, ExecutorService executor) {
+        for (TrackPostFilter p : this.get()) {
+            if (p instanceof MultiThreaded) ((MultiThreaded)p).setExecutor(executor);
+            p.filter(structureIdx, parentTrack);
         }
-        ImageProperties prop = objectPopulation.getImageProperties().getProperties();
-        for (PostFilter p : this.get()) objectPopulation = p.runPostFilter(parent, structureIdx, objectPopulation);
-        objectPopulation.setProperties(prop, true);
-        return objectPopulation;
     }
-    @Override public PostFilterSequence add(PostFilter... instances) {
+    @Override public TrackPostFilterSequence add(TrackPostFilter... instances) {
         super.add(instances);
         return this;
     }
     
-    @Override public PostFilterSequence add(Collection<PostFilter> instances) {
+    @Override public TrackPostFilterSequence add(Collection<TrackPostFilter> instances) {
         super.add(instances);
         return this;
     }

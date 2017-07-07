@@ -126,6 +126,7 @@ import plugins.ManualSegmenter;
 import plugins.ObjectSplitter;
 import plugins.PluginFactory;
 import static plugins.PluginFactory.checkClass;
+import utils.ArrayUtil;
 import utils.CommandExecuter;
 import utils.FileIO.ZipWriter;
 import utils.ImportExportJSON;
@@ -164,6 +165,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
     //StructureObjectTreeGenerator objectTreeGenerator;
     DefaultListModel<String> structureModel;
     DefaultListModel<String> experimentModel = new DefaultListModel();
+    DefaultListModel<String> actionPoolListModel = new DefaultListModel();
     DefaultListModel<String> actionMicroscopyFieldModel;
     DefaultListModel<Selection> selectionModel;
     PythonGateway pyGtw;
@@ -194,6 +196,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
                 logger.debug("Closed successfully");
             }
         });
+        actionPoolList.setModel(actionPoolListModel);
         experimentList.setModel(experimentModel);
         relatedToXPSet = new ArrayList<Component>() {{add(saveXPMenuItem);add(exportSelectedFieldsMenuItem);add(exportXPConfigMenuItem);add(importFieldsToCurrentExperimentMenuItem);add(importConfigToCurrentExperimentMenuItem);add(importConfigurationForSelectedStructuresMenuItem);add(importConfigurationForSelectedPositionsMenuItem);add(importImagesMenuItem);add(runSelectedActionsMenuItem);add(extractMeasurementMenuItem);}};
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -881,6 +884,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         experimentList = new javax.swing.JList();
         consoleJSP = new javax.swing.JScrollPane();
         console = new javax.swing.JTextPane();
+        actionPoolJSP = new javax.swing.JScrollPane();
+        actionPoolList = new javax.swing.JList();
         configurationPanel = new javax.swing.JPanel();
         configurationJSP = new javax.swing.JScrollPane();
         dataPanel = new javax.swing.JPanel();
@@ -981,7 +986,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
 
         actionMicroscopyFieldJSP.setViewportView(microscopyFieldList);
 
-        actionJSP.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createTitledBorder("Actions to Run")));
+        actionJSP.setBorder(javax.swing.BorderFactory.createTitledBorder("Jobs"));
 
         runActionList.setModel(new javax.swing.AbstractListModel() {
             String[] strings = { "Pre-Processing", "Re-Run Pre-Processing", "Segment", "Track", "Generate Track Images", "Measurements", "Extract Measurements" };
@@ -1019,23 +1024,37 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         console.setComponentPopupMenu( consoleMenu );
         consoleJSP.setViewportView(console);
 
+        actionPoolJSP.setBorder(javax.swing.BorderFactory.createTitledBorder("Job Pool"));
+
+        actionPoolList.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mousePressed(java.awt.event.MouseEvent evt) {
+                actionPoolListMousePressed(evt);
+            }
+        });
+        actionPoolJSP.setViewportView(actionPoolList);
+
         javax.swing.GroupLayout actionPanelLayout = new javax.swing.GroupLayout(actionPanel);
         actionPanel.setLayout(actionPanelLayout);
         actionPanelLayout.setHorizontalGroup(
             actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(actionPanelLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(experimentJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 227, Short.MAX_VALUE)
-                    .addComponent(hostName))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(actionMicroscopyFieldJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 281, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addComponent(actionStructureJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                    .addComponent(actionJSP, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 243, Short.MAX_VALUE)
-                    .addComponent(consoleJSP))
-                .addContainerGap())
+                    .addGroup(actionPanelLayout.createSequentialGroup()
+                        .addComponent(consoleJSP)
+                        .addContainerGap())
+                    .addGroup(actionPanelLayout.createSequentialGroup()
+                        .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(experimentJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 227, Short.MAX_VALUE)
+                            .addComponent(hostName))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                            .addComponent(actionMicroscopyFieldJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 320, Short.MAX_VALUE)
+                            .addComponent(actionStructureJSP))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addComponent(actionPoolJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
+                            .addComponent(actionJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 216, Short.MAX_VALUE)))))
         );
         actionPanelLayout.setVerticalGroup(
             actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1043,16 +1062,20 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
                 .addContainerGap()
                 .addGroup(actionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(actionPanelLayout.createSequentialGroup()
-                        .addComponent(actionStructureJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 175, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(actionJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 195, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(consoleJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 299, Short.MAX_VALUE))
+                        .addComponent(actionPoolJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 418, Short.MAX_VALUE))
                     .addGroup(actionPanelLayout.createSequentialGroup()
                         .addComponent(hostName, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addComponent(experimentJSP))
-                    .addComponent(actionMicroscopyFieldJSP)))
+                    .addGroup(actionPanelLayout.createSequentialGroup()
+                        .addComponent(actionMicroscopyFieldJSP)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(actionStructureJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 194, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(consoleJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 150, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap())
         );
 
         tabs.addTab("Actions", actionPanel);
@@ -1065,7 +1088,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         );
         configurationPanelLayout.setVerticalGroup(
             configurationPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 693, Short.MAX_VALUE)
+            .addComponent(configurationJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 799, Short.MAX_VALUE)
         );
 
         tabs.addTab("Configuration", configurationPanel);
@@ -1269,7 +1292,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
                 .addComponent(unlinkObjectsButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(resetLinksButton)
-                .addContainerGap(70, Short.MAX_VALUE))
+                .addContainerGap(176, Short.MAX_VALUE))
         );
 
         trackPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Tracks"));
@@ -1667,7 +1690,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(tabs)
+            .addComponent(tabs, javax.swing.GroupLayout.DEFAULT_SIZE, 842, Short.MAX_VALUE)
         );
 
         pack();
@@ -2122,9 +2145,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         updateConfigurationTree();
         PropertyUtils.set(PropertyUtils.LAST_IO_DATA_DIR, f.getAbsolutePath());
     }//GEN-LAST:event_importConfigToCurrentExperimentMenuItemActionPerformed
-
-    private void runSelectedActionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runSelectedActionsMenuItemActionPerformed
-        if (!checkConnection()) return;
+    private Task getCurrentJob(String dbName) {
+        
         boolean preProcess=false;
         boolean reRunPreProcess=false;
         boolean segmentAndTrack = false;
@@ -2140,15 +2162,29 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
             if (i==4) generateTrackImages=true;
             if (i==5) runMeasurements=true;
             if (i==6) extract=true;
-            
         }
-        int[] microscopyFields = this.getSelectedMicroscopyFields();
-        int[] selectedStructures = this.getSelectedStructures(true);
-        Task t = new Task(db).setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements).setGenerateTrackImages(generateTrackImages).setStructures(selectedStructures).setPositions(microscopyFields);
-        if (extract) for (int sIdx : selectedStructures) t.addExtractMeasurementDir(new File(db.getExperiment().getOutputDirectory()).getParent(), sIdx);
+        Task t;
+        if (dbName==null && db!=null) {
+            int[] microscopyFields = this.getSelectedMicroscopyFields();
+            int[] selectedStructures = this.getSelectedStructures(true);
+            t = new Task(db);
+            t.setStructures(selectedStructures).setPositions(microscopyFields);
+            if (extract) for (int sIdx : selectedStructures) t.addExtractMeasurementDir(null, sIdx);
+        } else if (dbName!=null) {
+            t = new Task(dbName);
+            if (extract && t.getDB()!=null) {
+                int[] selectedStructures = ArrayUtil.generateIntegerArray(t.getDB().getExperiment().getStructureCount());
+                for (int sIdx : selectedStructures) t.addExtractMeasurementDir(null, sIdx);
+            }
+        } else return null;
+        t.setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements).setGenerateTrackImages(generateTrackImages);
+        return t;
+    }
+    private void runSelectedActionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runSelectedActionsMenuItemActionPerformed
+        if (!checkConnection()) return;
+        Task t = getCurrentJob(null);
         t.execute();
-        
-        if (preProcess || reRunPreProcess || segmentAndTrack) this.reloadObjectTrees=true;
+        if (t.isPreProcess()  || t.isSegmentAndTrack()) this.reloadObjectTrees=true; //|| t.reRunPreProcess
     }//GEN-LAST:event_runSelectedActionsMenuItemActionPerformed
 
     private void importImagesMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importImagesMenuItemActionPerformed
@@ -2189,10 +2225,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         Map<Integer, String[]> keys = db.getExperiment().getAllMeasurementNamesByStructureIdx(MeasurementKeyObject.class, structureIdx);
         DataExtractor.extractMeasurementObjects(db, file, getSelectedPositions(true), keys);
     }
-    private void hostNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_hostNameActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_hostNameActionPerformed
-
     private void jsonFormatMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jsonFormatMenuItemActionPerformed
         //PropertyUtils.set(PropertyUtils.EXPORT_FORMAT, this.jsonFormatMenuItem.isSelected()?"json":"bson");
     }//GEN-LAST:event_jsonFormatMenuItemActionPerformed
@@ -2260,57 +2292,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
         logger.debug("prune: {}", Utils.toStringList(sel));
     }
     
-    private void hostNameMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_hostNameMousePressed
-        if (this.running) return;
-        if (SwingUtilities.isRightMouseButton(evt) && localFileSystemDatabaseRadioButton.isSelected()) {
-            JPopupMenu menu = new JPopupMenu();
-            Action chooseFile = new AbstractAction("Choose local data folder") {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    String path = PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH, null);
-                    File f = Utils.chooseFile("Choose local data folder", path, FileChooser.FileChooserOption.DIRECTORIES_ONLY, hostName);
-                    if (f!=null) {
-                        unsetXP();
-                        PropertyUtils.set(PropertyUtils.LOCAL_DATA_PATH, f.getAbsolutePath());
-                        PropertyUtils.addStringToList(PropertyUtils.LOCAL_DATA_PATH, f.getAbsolutePath());
-                        hostName.setText(f.getAbsolutePath());
-                        localFileSystemDatabaseRadioButton.setSelected(true);
-                        populateExperimentList();
-                    }
-                }
-            };
-            menu.add(chooseFile);
-            JMenu recentFiles = new JMenu("Recent");
-            menu.add(recentFiles);
-            List<String> recent = PropertyUtils.getStrings(PropertyUtils.LOCAL_DATA_PATH);
-            for (String s : recent) {
-                Action setRecent = new AbstractAction(s) {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        File f = new File(s);
-                        if (f.exists() && f.isDirectory()) {
-                            unsetXP();
-                            hostName.setText(s);
-                            PropertyUtils.set(PropertyUtils.LOCAL_DATA_PATH, s);
-                            localFileSystemDatabaseRadioButton.setSelected(true);
-                            populateExperimentList();
-                        }
-                    }
-                };
-                recentFiles.add(setRecent);
-            }
-            if (recent.isEmpty()) recentFiles.setEnabled(false);
-            Action delRecent = new AbstractAction("Delete recent list") {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    PropertyUtils.setStrings(PropertyUtils.LOCAL_DATA_PATH, null);
-                }
-            };
-            recentFiles.add(delRecent);
-            menu.show(this.hostName, evt.getX(), evt.getY());
-        }
-    }//GEN-LAST:event_hostNameMousePressed
-
     private void mongoDBDatabaseRadioButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mongoDBDatabaseRadioButtonActionPerformed
         unsetXP();
         MasterDAOFactory.setCurrentType(MasterDAOFactory.DAOType.Morphium);
@@ -2525,6 +2506,126 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
             if (f.getInputImages()!=null) f.getInputImages().deleteFromDAO();
         }
     }//GEN-LAST:event_clearPPImageMenuItemActionPerformed
+
+    private void actionPoolListMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_actionPoolListMousePressed
+        if (this.running) return;
+        if (SwingUtilities.isRightMouseButton(evt)) {
+            JPopupMenu menu = new JPopupMenu();
+            List<String> sel = actionPoolList.getSelectedValuesList();
+            Action addCurrentJob = new AbstractAction("Add Current Job to Job Pool") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    Task t = getCurrentJob(null);
+                    actionPoolListModel.addElement(t.toJSON().toJSONString());
+                }
+            };
+            menu.add(addCurrentJob);
+            Action deleteSelected = new AbstractAction("Delete Selected Jobs") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    for (String s : sel) actionPoolListModel.removeElement(s);
+                }
+            };
+            deleteSelected.setEnabled(!sel.isEmpty());
+            menu.add(deleteSelected);
+            Action up = new AbstractAction("Move Up") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    int[] newIndices = new int[sel.size()];
+                    int idx = 0;
+                    for (String s : sel) {
+                        int i = actionPoolListModel.indexOf(s);
+                        if (i>0) {
+                            actionPoolListModel.removeElement(s);
+                            actionPoolListModel.add(i-1, s);
+                            newIndices[idx++] = i-1;
+                        } else newIndices[idx++] = i;
+                    }
+                    actionPoolList.setSelectedIndices(newIndices);
+                }
+            };
+            up.setEnabled(!sel.isEmpty() && sel.size()<actionPoolListModel.size());
+            menu.add(up);
+            Action down = new AbstractAction("Move Down") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    for (String s : sel) {
+                        int i = actionPoolListModel.indexOf(s);
+                        if (i>=0 && i<actionPoolListModel.size()-1) {
+                            actionPoolListModel.removeElement(s);
+                            actionPoolListModel.add(i+1, s);
+                        }
+                    }
+                }
+            };
+            down.setEnabled(!sel.isEmpty() && sel.size()<actionPoolListModel.size());
+            menu.add(down);
+            Action clearAll = new AbstractAction("Clear All") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    actionPoolListModel.clear();
+                }
+            };
+            menu.add(clearAll);
+            clearAll.setEnabled(!actionPoolListModel.isEmpty());
+            menu.show(this.actionPoolList, evt.getX(), evt.getY());
+        }
+    }//GEN-LAST:event_actionPoolListMousePressed
+
+    private void hostNameActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_hostNameActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_hostNameActionPerformed
+
+    private void hostNameMousePressed(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_hostNameMousePressed
+        if (this.running) return;
+        if (SwingUtilities.isRightMouseButton(evt) && localFileSystemDatabaseRadioButton.isSelected()) {
+            JPopupMenu menu = new JPopupMenu();
+            Action chooseFile = new AbstractAction("Choose local data folder") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String path = PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH, null);
+                    File f = Utils.chooseFile("Choose local data folder", path, FileChooser.FileChooserOption.DIRECTORIES_ONLY, hostName);
+                    if (f!=null) {
+                        unsetXP();
+                        PropertyUtils.set(PropertyUtils.LOCAL_DATA_PATH, f.getAbsolutePath());
+                        PropertyUtils.addStringToList(PropertyUtils.LOCAL_DATA_PATH, f.getAbsolutePath());
+                        hostName.setText(f.getAbsolutePath());
+                        localFileSystemDatabaseRadioButton.setSelected(true);
+                        populateExperimentList();
+                    }
+                }
+            };
+            menu.add(chooseFile);
+            JMenu recentFiles = new JMenu("Recent");
+            menu.add(recentFiles);
+            List<String> recent = PropertyUtils.getStrings(PropertyUtils.LOCAL_DATA_PATH);
+            for (String s : recent) {
+                Action setRecent = new AbstractAction(s) {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        File f = new File(s);
+                        if (f.exists() && f.isDirectory()) {
+                            unsetXP();
+                            hostName.setText(s);
+                            PropertyUtils.set(PropertyUtils.LOCAL_DATA_PATH, s);
+                            localFileSystemDatabaseRadioButton.setSelected(true);
+                            populateExperimentList();
+                        }
+                    }
+                };
+                recentFiles.add(setRecent);
+            }
+            if (recent.isEmpty()) recentFiles.setEnabled(false);
+            Action delRecent = new AbstractAction("Delete recent list") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    PropertyUtils.setStrings(PropertyUtils.LOCAL_DATA_PATH, null);
+                }
+            };
+            recentFiles.add(delRecent);
+            menu.show(this.hostName, evt.getX(), evt.getY());
+        }
+    }//GEN-LAST:event_hostNameMousePressed
     private void updateMongoDBBinActions() {
         boolean enableDump = false, enableRestore = false;
         String mPath = PropertyUtils.get(PropertyUtils.MONGO_BIN_PATH);
@@ -2685,6 +2786,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUII
     private javax.swing.JScrollPane actionJSP;
     private javax.swing.JScrollPane actionMicroscopyFieldJSP;
     private javax.swing.JPanel actionPanel;
+    private javax.swing.JScrollPane actionPoolJSP;
+    private javax.swing.JList actionPoolList;
     private javax.swing.JScrollPane actionStructureJSP;
     private javax.swing.JRadioButtonMenuItem bsonFormatMenuItem;
     private javax.swing.JMenuItem clearMemoryMenuItem;

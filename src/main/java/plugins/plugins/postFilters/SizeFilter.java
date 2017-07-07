@@ -41,7 +41,7 @@ public class SizeFilter implements PostFilter {
         maxSize.setValue(max);
     }
     
-    public ObjectPopulation runPostFilter(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation) {
+    @Override public ObjectPopulation runPostFilter(StructureObject parent, int childStructureIdx, ObjectPopulation childPopulation) {
         Size f = new Size();
         if (minSize.getValue().intValue()>0) f.setMin(minSize.getValue().intValue());
         if (maxSize.getValue().intValue()>0) f.setMax(maxSize.getValue().intValue());

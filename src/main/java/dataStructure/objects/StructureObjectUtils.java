@@ -317,6 +317,18 @@ public class StructureObjectUtils {
         for (StructureObject p : parentTrack) res.addAll(p.getChildren(structureIdx));
         return res;
     }
+    public static Map<StructureObject, List<StructureObject>> getAllTracks(Collection<StructureObject> objects, boolean extend) {
+        HashMapGetCreate<StructureObject, List<StructureObject>> allTracks = new HashMapGetCreate<>(new HashMapGetCreate.ListFactory());
+        for (StructureObject o : objects) allTracks.getAndCreateIfNecessary(o.getTrackHead()).add(o);
+        for (List<StructureObject> track : allTracks.values()) {
+            Collections.sort(track, (o1, o2)->Integer.compare(o1.getFrame(), o2.getFrame()));
+            if (extend) {
+                if (track.get(0).getPrevious()!=null) track.add(0, track.get(0).getPrevious());
+                if (track.get(track.size()-1).getNext()!=null) track.add(track.get(track.size()-1).getNext());
+            }
+        }
+        return allTracks;
+    }
     public static Map<StructureObject, List<StructureObject>> getAllTracks(List<StructureObject> parentTrack, int structureIdx) {
         return getAllTracks(parentTrack, structureIdx, true);
     }
@@ -419,10 +431,9 @@ public class StructureObjectUtils {
         return structureIdx;
     }
     
-    public static List<StructureObject> getTrackHeads(Collection<StructureObject> objects) {
-        List<StructureObject> res = new ArrayList<StructureObject>(objects.size());
+    public static Set<StructureObject> getTrackHeads(Collection<StructureObject> objects) {
+        Set<StructureObject> res = new HashSet<>(objects.size());
         for (StructureObject o : objects) res.add(o.getTrackHead());
-        Utils.removeDuplicates(res, false);
         return res;
     }
     

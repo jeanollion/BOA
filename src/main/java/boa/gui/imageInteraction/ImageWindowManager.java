@@ -428,11 +428,10 @@ public abstract class ImageWindowManager<T, U, V> {
             logger.error("no image object interface found for image: {} and structure: {}", image.getName(), interactiveStructureIdx);
             return;
         }
-        List<StructureObject> objects = Pair.unpairKeys(i.getObjects());
-        objects = StructureObjectUtils.getTrackHeads(objects);
-        List<List<StructureObject>> tracks = new ArrayList<List<StructureObject>>();
-        for (StructureObject th : objects) tracks.add(StructureObjectUtils.getTrack(th, true));
-        displayTracks(image, i, tracks, true);
+        Collection<StructureObject> objects = Pair.unpairKeys(i.getObjects());
+        Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(objects, true);
+        //for (Entry<StructureObject, List<StructureObject>> e : allTracks.entrySet()) logger.debug("th:{}->{}", e.getKey(), e.getValue());
+        displayTracks(image, i, allTracks.values(), true);
         //if (listener!=null) 
     }
     
@@ -584,7 +583,7 @@ public abstract class ImageWindowManager<T, U, V> {
         //GUI.updateRoiDisplayForSelections(image, i);
     }
     public void displayTrack(Image image, ImageObjectInterface i, List<Pair<StructureObject, BoundingBox>> track, Color color, boolean labile) {
-        //logger.debug("display selected track: image: {}, addToCurrentTracks: {}, track length: {} color: {}", image,addToCurrentSelectedTracks, track==null?"null":track.size(), color);
+        //logger.debug("display selected track: image: {}, track length: {} color: {}", image, track==null?"null":track.size(), color);
         if (track==null || track.isEmpty()) return;
         T dispImage;
         if (image==null) {
@@ -770,9 +769,10 @@ public abstract class ImageWindowManager<T, U, V> {
         if (trackHeads==null || trackHeads.isEmpty()) trackHeads = this.getSelectedLabileTrackHeads(trackImage);
         if (trackHeads==null || trackHeads.isEmpty()) {
             List<StructureObject> allObjects = Pair.unpairKeys(i.getObjects());
-            trackHeads = StructureObjectUtils.getTrackHeads(allObjects);
+            trackHeads = new ArrayList<>(StructureObjectUtils.getTrackHeads(allObjects));
         }
         if (trackHeads==null || trackHeads.isEmpty()) return;
+        Collections.sort(trackHeads);
         BoundingBox currentDisplayRange = this.displayer.getDisplayRange(trackImage);
         int minTimePoint = tm.getClosestFrame(currentDisplayRange.getxMin(), currentDisplayRange.getyMin());
         int maxTimePoint = tm.getClosestFrame(currentDisplayRange.getxMax(), currentDisplayRange.getyMax());

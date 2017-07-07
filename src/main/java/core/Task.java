@@ -186,6 +186,27 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             this.measurements=measurements;
             return this;
         }
+
+        public boolean isPreProcess() {
+            return preProcess;
+        }
+
+        public boolean isSegmentAndTrack() {
+            return segmentAndTrack;
+        }
+
+        public boolean isTrackOnly() {
+            return trackOnly;
+        }
+
+        public boolean isMeasurements() {
+            return measurements;
+        }
+
+        public boolean isGenerateTrackImages() {
+            return generateTrackImages;
+        }
+        
         public Task setGenerateTrackImages(boolean generateTrackImages) {
             this.generateTrackImages=generateTrackImages;
             return this;

@@ -63,7 +63,7 @@ import plugins.plugins.segmenters.MutationSegmenter;
 import plugins.plugins.segmenters.MutationSegmenterScaleSpace;
 import plugins.plugins.trackers.FixedObjectsTracker;
 import plugins.plugins.trackers.LAPTracker;
-import plugins.plugins.trackers.MicrochannelProcessor;
+import plugins.plugins.trackers.MicrochannelTracker;
 import plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
 import plugins.plugins.transformations.AutoRotationXY;
 import plugins.plugins.transformations.CropMicroChannelFluo2D;
@@ -170,7 +170,7 @@ public class GenerateMutationDynamicsXP {
         Structure mutation = new Structure("Mutation", 0, mutChan); // parent structure 1 segParentStructure 0
         xp.getStructures().insert(mc, bacteria, mutation);
         
-        mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelProcessor()));
+        mc.setProcessingScheme(new SegmentAndTrack(new MicrochannelTracker().setSegmenter(new MicroChannelFluo2D())));
         //bacteria.setProcessingScheme(new SegmentAndTrack(new BacteriaClosedMicrochannelTrackerLocalCorrections(new BacteriaFluo()).setCostParameters(0.1, 0.5)));
         bacteria.setProcessingScheme(new SegmentThenTrack(new BacteriaFluo(), new BacteriaClosedMicrochannelTrackerLocalCorrections().setCostParameters(0.1, 0.5)));
         mutation.setProcessingScheme(new SegmentAndTrack(

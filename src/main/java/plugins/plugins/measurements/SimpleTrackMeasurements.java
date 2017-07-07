@@ -57,16 +57,13 @@ public class SimpleTrackMeasurements implements Measurement {
     }
 
     @Override public boolean callOnlyOnTrackHeads() {
-        return false;
+        return true;
     }
 
     @Override public List<MeasurementKey> getMeasurementKeys() {
         int structureIdx = structure.getSelectedStructureIdx();
         ArrayList<MeasurementKey> res = new ArrayList<>();
-        res.add(new MeasurementKeyObject("IsTrackHead", structureIdx));
         res.add(new MeasurementKeyObject("TrackHeadIndices", structureIdx));
-        
-        // only computed for trackHeads
         res.add(new MeasurementKeyObject("TrackLength", structureIdx));
         res.add(new MeasurementKeyObject("TrackObjectCount", structureIdx));
 
@@ -74,12 +71,13 @@ public class SimpleTrackMeasurements implements Measurement {
     }
 
     @Override public void performMeasurement(StructureObject object) {
-        object.getMeasurements().setValue("IsTrackHead", object.isTrackHead());
-        object.getMeasurements().setValue("TrackHeadIndices", StructureObjectUtils.getIndices(object.getTrackHead()));
-        if (object.isTrackHead()) {
-            List<StructureObject> track = StructureObjectUtils.getTrack(object, false);
-            object.getMeasurements().setValue("TrackLength", track.get(track.size()-1).getFrame() - object.getFrame()+1);
-            object.getMeasurements().setValue("TrackObjectCount", track.size());
+        String th = StructureObjectUtils.getIndices(object.getTrackHead());
+        List<StructureObject> track = StructureObjectUtils.getTrack(object, false);
+        int tl = track.get(track.size()-1).getFrame() - object.getFrame()+1;
+        for (StructureObject o : track) {
+            o.getMeasurements().setValue("TrackLength", tl);
+            o.getMeasurements().setValue("TrackObjectCount", track.size());
+            o.getMeasurements().setValue("TrackHeadIndices", th);
         }
     }
 

@@ -21,6 +21,7 @@ import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
 import configuration.parameters.PostFilterSequence;
 import configuration.parameters.PreFilterSequence;
+import configuration.parameters.TrackPostFilterSequence;
 import dataStructure.objects.ObjectPopulation;
 import dataStructure.objects.StructureObject;
 import image.Image;
@@ -34,6 +35,7 @@ import plugins.PostFilter;
 import plugins.PreFilter;
 import plugins.ProcessingScheme;
 import plugins.Segmenter;
+import plugins.TrackPostFilter;
 import plugins.Tracker;
 import utils.Pair;
 import utils.ThreadRunner;
@@ -47,6 +49,7 @@ public class SegmentThenTrack implements ProcessingScheme {
     protected PreFilterSequence preFilters = new PreFilterSequence("Pre-Filters");
     protected PostFilterSequence postFilters = new PostFilterSequence("Post-Filters");
     protected PluginParameter<Segmenter> segmenter = new PluginParameter<Segmenter>("Segmentation algorithm", Segmenter.class, false);
+    protected TrackPostFilterSequence trackPostFilters = new TrackPostFilterSequence("Track Post-Filters");
     protected Parameter[] parameters;
     public SegmentThenTrack() {}
     public SegmentThenTrack(Segmenter segmenter, Tracker tracker) {
@@ -108,6 +111,7 @@ public class SegmentThenTrack implements ProcessingScheme {
         }
         List<Pair<String, Exception>> l = segmentOnly(structureIdx, parentTrack, executor);
         List<Pair<String, Exception>> l2 = trackOnly(structureIdx, parentTrack, executor);
+        trackPostFilters.filter(structureIdx, parentTrack, executor); // TODO return exceptions
         if (!l.isEmpty() && !l2.isEmpty()) l.addAll(l2);
         else if (!l2.isEmpty()) return l2;
         return l;
@@ -145,7 +149,7 @@ public class SegmentThenTrack implements ProcessingScheme {
 
     @Override
     public Parameter[] getParameters() {
-        return new Parameter[]{preFilters, segmenter, postFilters, tracker};
+        return new Parameter[]{preFilters, segmenter, postFilters, tracker, trackPostFilters};
     }
     
 }

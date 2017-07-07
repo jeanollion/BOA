@@ -104,12 +104,13 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         if (debug) logger.debug("mean width {}", meanWidth );
         double maxDistance = maxShift.getValue().doubleValue()*parentTrack.get(0).getScaleXY();
         double ftfDistance = maxDistanceWidthFactor.getValue().doubleValue() *meanWidth;
+        logger.debug("ftfDistance: {}", ftfDistance);
         boolean ok = tmi.processFTF(ftfDistance);
         if (ok) ok = tmi.processGC(maxDistance, parentTrack.size(), false, false);
         if (ok) tmi.removeCrossingLinksFromGraph(meanWidth/4); 
         if (ok) ok = tmi.processGC(maxDistance, parentTrack.size(), false, false); // second GC for crossing links!
         tmi.setTrackLinks(map);
-        fillGaps(structureIdx, parentTrack);
+        //fillGaps(structureIdx, parentTrack);
         
     }
     
@@ -188,7 +189,6 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
             for (int i = 0; i<track.size(); ++i) {
                 StructureObject o = track.get(i);
                 BoundingBox b = o.getBounds();
-                //int width = (int)Math.round(widths.get(i));
                 int offX = (int)Math.round(b.getXMean()-width/2d + Double.MIN_VALUE); // if width change -> offset X change
                 int offY = b.getyMin() + shift; // shift was not included before
                 BoundingBox parentBounds = o.getParent().getBounds();

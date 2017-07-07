@@ -18,6 +18,8 @@
 package plugins.plugins.trackers.bacteriaInMicrochannelTracker;
 
 import configuration.parameters.BoundedNumberParameter;
+import configuration.parameters.ChoiceParameter;
+import configuration.parameters.ConditionalParameter;
 import configuration.parameters.NumberParameter;
 import configuration.parameters.Parameter;
 import configuration.parameters.PluginParameter;
@@ -83,7 +85,14 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     BoundedNumberParameter costLimit = new BoundedNumberParameter("Correction: operation cost limit", 3, 1.5, 0, null);
     BoundedNumberParameter cumCostLimit = new BoundedNumberParameter("Correction: cumulative cost limit", 3, 5, 0, null);
     BoundedNumberParameter endOfChannelContactThreshold = new BoundedNumberParameter("End of channel contact Threshold", 2, 0.45, 0, 1);
-    Parameter[] parameters = new Parameter[]{segmenter, minGrowthRate, maxGrowthRate, costLimit, cumCostLimit, endOfChannelContactThreshold};
+    
+    ChoiceParameter thresholdMethod = new ChoiceParameter("Threshold method", new String[]{"From Segmenter", "Adaptative By Frame", "Adaptative By Frame and Y"}, "From Segmenter", false);
+    BoundedNumberParameter adaptativeCoefficient = new BoundedNumberParameter("Adaptative coefficient", 2, 1, 0, 1);
+    BoundedNumberParameter frameHalfWindow = new BoundedNumberParameter("Adaptative by Frame: half-window", 1, 10, 1, null);
+    BoundedNumberParameter yHalfWindow = new BoundedNumberParameter("Adaptative by Y: half-window", 1, 30, 10, null);
+    ConditionalParameter thresholdCond = new ConditionalParameter(thresholdMethod);
+    
+    Parameter[] parameters = new Parameter[]{segmenter, minGrowthRate, maxGrowthRate, costLimit, cumCostLimit, endOfChannelContactThreshold, thresholdCond};
 
     ExecutorService executor;
     @Override
@@ -99,7 +108,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
 
     protected SegmenterSplitAndMerge getSegmenter(int frame, boolean setMask) {
         SegmenterSplitAndMerge s= segmenter.instanciatePlugin();
-        if (applyToSegmenter!=null) applyToSegmenter.apply(frame, setMask, s);
+        if (setMask && applyToSegmenter!=null) applyToSegmenter.apply(frame, s);
         return s;
     }
     
@@ -128,7 +137,6 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     // hidden parameters! 
     // segmentation thld
     final static boolean adaptativeThreshold= true;
-    final static double adaptativeCoefficient = 1;
     final static int adaptativeThresholdHalfWindow = 10;
     final static double contrastThreshold = 0.06;
     // sizeIncrement -> adaptative SI
@@ -149,19 +157,14 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     BiFunction<Object3D, Object3D, Boolean> areFromSameLine;
     
     
-    public BacteriaClosedMicrochannelTrackerLocalCorrections() {}
-    
-    public BacteriaClosedMicrochannelTrackerLocalCorrections(SegmenterSplitAndMerge segmenter) {
-        this.segmenter.setPlugin(segmenter);
+    public BacteriaClosedMicrochannelTrackerLocalCorrections() {
+        thresholdCond.setActionParameters("Adaptative By Frame", new Parameter[]{adaptativeCoefficient, frameHalfWindow});
+        thresholdCond.setActionParameters("Adaptative By Frame and Y", new Parameter[]{adaptativeCoefficient, frameHalfWindow, yHalfWindow});
     }
     
-    public BacteriaClosedMicrochannelTrackerLocalCorrections(SegmenterSplitAndMerge segmenter, double divisionCriterion, double minGrowthRate, double maxGrowthRate, double costLimit, double cumulativeCostLimit) {
-        this.segmenter.setPlugin(segmenter);
-        this.maxGrowthRate.setValue(maxGrowthRate);
-        this.minGrowthRate.setValue(minGrowthRate);
-        //this.divisionCriterion.setValue(divisionCriterion);
-        this.costLimit.setValue(costLimit);
-        this.cumCostLimit.setValue(cumulativeCostLimit);
+    public BacteriaClosedMicrochannelTrackerLocalCorrections setSegmenter(SegmenterSplitAndMerge seg) {
+        this.segmenter.setPlugin(seg);
+        return this;
     }
     
     public BacteriaClosedMicrochannelTrackerLocalCorrections setCostParameters(double operationCostLimit, double cumulativeCostLimit) {
@@ -176,7 +179,10 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     
     @Override public void track(int structureIdx, List<StructureObject> parentTrack) {
         init(parentTrack, structureIdx, false);
-        segmentAndTrack(false);
+        Collections.sort(parentTrack, (o1, o2)->Integer.compare(o1.getFrame(), o2.getFrame()));
+        for (StructureObject p : parentTrack) getObjects(p.getFrame());
+        for (StructureObject p : parentTrack)  setAssignmentToTrackAttributes(p.getFrame(), true);
+        applyLinksToParents(parentTrack);
     }
 
     @Override public void segmentAndTrack(int structureIdx, List<StructureObject> parentTrack, PreFilterSequence preFilters, PostFilterSequence postFilters) {
@@ -191,7 +197,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     private static int step = 0;
     
     
-    @FunctionalInterface public static interface ApplyToSegmenter { public void apply(int frame, boolean setMask, Segmenter segmenter);}
+    @FunctionalInterface public static interface ApplyToSegmenter { public void apply(int frame, Segmenter segmenter);}
     ApplyToSegmenter applyToSegmenter;
     
     protected void segmentAndTrack(boolean performCorrection) {
@@ -202,33 +208,36 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         if (correction) inputImages=new HashMap<>(parentsByF.size());
         // 0) optional compute threshold for all images
         SegmentOnly so = new SegmentOnly(segmenter.instanciatePlugin()).setPostFilters(postFilters).setPreFilters(preFilters);
-        if (Double.isNaN(debugThreshold) && getSegmenter() instanceof UseThreshold) {
+        applyToSegmenter = (frame, s) -> {
+            if (s instanceof UseThreshold) {
+                if (threshold!=null) {
+                    if (threshold.hasAdaptativeByY()) ((UseThreshold)s).setThresholdedImage(threshold.getThresholdedPlane(frame, false));
+                    else ((UseThreshold)s).setThresholdValue(threshold.getThreshold(frame));
+                } else ((UseThreshold)s).setThresholdValue(debugThreshold);
+            }
+        };
+        if (Double.isNaN(debugThreshold) && this.thresholdMethod.getSelectedIndex()>0 && getSegmenter() instanceof UseThreshold) {
             List<Image> planes = new ArrayList<>();
             for (int t = 0; t<parentsByF.size(); ++t) planes.add(((UseThreshold)getSegmenter()).getThresholdImage(getImage(t), structureIdx, parentsByF.get(t)));
             //threshold = new ThresholdHisto(planes);
+            logger.debug("adaptative: coeff: {}, hwf: {}, hwy: {}", adaptativeCoefficient.getValue().doubleValue(), frameHalfWindow.getValue().intValue(), yHalfWindow.getValue().intValue());
             threshold = new ThresholdLocalContrast(planes, minT, contrastThreshold); // TODO TEST THRESHOLD CLASS: OFFSET HAS BEEN ADDED
-            threshold.setAdaptativeThreshold(adaptativeCoefficient, adaptativeThresholdHalfWindow); // global threshold not relevant for cell range computation if some channel are void
+            threshold.setAdaptativeThreshold(adaptativeCoefficient.getValue().doubleValue(), frameHalfWindow.getValue().intValue()); // global threshold not relevant for cell range computation if some channel are void
             int[] fr = getFrameRangeContainingCells(so); // will use the global threshold
-            if (fr !=null) {
+            if (debug) logger.debug("frame range: {}", fr);
+            if (fr !=null && thresholdMethod.getSelectedIndex()==2) { // adaptative by F & Y
                 threshold.setFrameRange(fr);
-                ((ThresholdLocalContrast)threshold).setAdaptativeByFY(adaptativeThresholdHalfWindow, 30); // TODO parametrer!
+                ((ThresholdLocalContrast)threshold).setAdaptativeByFY(frameHalfWindow.getValue().intValue(), yHalfWindow.getValue().intValue()); // TODO parametrer!
             }            
             threshold.freeMemory();
         } else if (!Double.isNaN(debugThreshold)) {
             logger.debug("Threshold used: {}", debugThreshold);
         }
-        applyToSegmenter = (frame, setMask, s) -> {
-            if (s instanceof UseThreshold) {
-                if (threshold!=null) {
-                    if (setMask && threshold.hasAdaptativeByY()) ((UseThreshold)s).setThresholdedImage(threshold.getThresholdedPlane(frame, false));
-                    else ((UseThreshold)s).setThresholdValue(threshold.getThreshold(frame));
-                } else ((UseThreshold)s).setThresholdValue(debugThreshold);
-            }
-        };
+        
         
         //if (true) return;
         // 1) assign all. Limit to first continuous segment of cells
-        if (threshold!=null && threshold.getFrameRange()!=null) {
+        if (true && threshold!=null && threshold.getFrameRange()!=null) {
             maxT = threshold.getFrameRange()[1]+1;
             minT = threshold.getFrameRange()[0];
         }
@@ -238,7 +247,7 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
         List<StructureObject> subParentTrack = new ArrayList<>(parentsByF.values());
         subParentTrack.removeIf(o->o.getFrame()<minT||o.getFrame()>=maxT);
         Collections.sort(subParentTrack, (o1, o2)->Integer.compare(o1.getFrame(), o2.getFrame()));
-        List<Pair<String, Exception>> l = so.segmentAndTrack(structureIdx, subParentTrack, executor, (o, s) -> {applyToSegmenter.apply(o.getFrame(), true, s);});
+        List<Pair<String, Exception>> l = so.segmentAndTrack(structureIdx, subParentTrack, executor, (o, s) -> {applyToSegmenter.apply(o.getFrame(), s);});
         for (Pair<String, Exception> p : l) logger.debug(p.key, p.value);
         //for (StructureObject p : parents.subList(minT, maxT)) populations.get(p.getFrame()) = Utils.transform(p.getChildren(structureIdx), o->o.getObject());
         // trim empty frames
@@ -305,24 +314,24 @@ public class BacteriaClosedMicrochannelTrackerLocalCorrections implements Tracke
     }
     private boolean hasNoObjects(SegmentOnly so, int f) {
         List<StructureObject> before = parentsByF.get(f).getChildren(structureIdx);
-        so.segmentAndTrack(structureIdx, new ArrayList<StructureObject>(1){{add(parentsByF.get(f));}}, executor);
+        so.segmentAndTrack(structureIdx, new ArrayList<StructureObject>(1){{add(parentsByF.get(f));}}, executor, (o, s) -> {applyToSegmenter.apply(o.getFrame(), s);});
         List<StructureObject> after = parentsByF.get(f).getChildren(structureIdx);
         parentsByF.get(f).setChildren(before, structureIdx);
         return after==null || after.isEmpty();
     }
     private int[] getFrameRangeContainingCells(SegmentOnly so) {
         int inc = this.parentsByF.size()<100 ? 1 : 10;
-        int minT = Collections.min(parentsByF.keySet());
-        int maxT = Collections.max(parentsByF.keySet());
-        while (minT<maxT && hasNoObjects(so, minT)) minT+=inc;
-        if (minT>=maxT) return null;
-        if (inc>1) while (minT>0 && !hasNoObjects(so, minT-1)) minT--; // backward
+        int minF = Collections.min(parentsByF.keySet());
+        int maxF = Collections.max(parentsByF.keySet());
+        while (minF<maxF && hasNoObjects(so, minF)) minF+=inc;
+        if (minF>=maxF) return null;
+        if (inc>1) while (minF>0 && !hasNoObjects(so, minF-1)) minF--; // backward 
         
-        while (maxT>minT && hasNoObjects(so, maxT)) maxT-=inc;
-        if (maxT<=minT) return null;
-        if (inc>1) while (maxT<parentsByF.size()-1 && !hasNoObjects(so, maxT+1)) maxT++; // forward
+        while (maxF>minF && hasNoObjects(so, maxF)) maxF-=inc;
+        if (maxF<=minF) return null;
+        if (inc>1) while (maxF<parentsByF.size()-1 && !hasNoObjects(so, maxF+1)) maxF++; // forward 
         
-        return new int[]{minT, maxT};
+        return new int[]{minF, maxF};
     }
     
     private boolean performCorrectionsByIdx(int tMin, int tMax, int idx, List<int[]> outRanges, boolean limitToOneRange) {

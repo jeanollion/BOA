@@ -44,7 +44,6 @@ import plugins.Segmenter;
 import plugins.UseThreshold;
 import plugins.plugins.segmenters.BacteriaFluo;
 import plugins.plugins.segmenters.MicroChannelFluo2D;
-import plugins.plugins.trackers.MicrochannelProcessor;
 import plugins.plugins.transformations.CropMicroChannelFluo2D;
 
 /**
@@ -85,23 +84,5 @@ public class TestProcessMicrochannels {
         //ObjectPopulation popSplit = testObjectSplitter(intensityMap, pop.getChildren().get(0));
         //disp.showImage(popSplit.getLabelImage());
     }
-    
-    public static void testSegAndTrackMicrochannelsFromXP(String dbName, int fieldNumber, int timePointMin, int timePointMax) {
-        MasterDAO mDAO = new MorphiumMasterDAO(dbName);
-        MicroscopyField f = mDAO.getExperiment().getPosition(fieldNumber);
-        List<StructureObject> rootTrack = mDAO.getDao(f.getName()).getRoots();
-        Iterator<StructureObject> it = rootTrack.iterator();
-        while(it.hasNext()) {
-            StructureObject o = it.next();
-            if (o.getFrame()<timePointMin) it.remove();
-            if (o.getFrame()>timePointMax) it.remove();
-        }
-        MicrochannelProcessor.debug=true;
-        MicrochannelProcessor mp = new MicrochannelProcessor(new MicroChannelFluo2D());
-        mp.segmentAndTrack(0, rootTrack, new PreFilterSequence(""), new PostFilterSequence(""));
-        
-        ObjectPopulation pop  = rootTrack.get(0).getObjectPopulation(0);
-        new IJImageDisplayer().showImage(pop.getLabelMap());
-        
-    }
+
 }

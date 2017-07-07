@@ -47,7 +47,6 @@ import plugins.PluginFactory;
 import plugins.ProcessingScheme;
 import plugins.plugins.trackers.LAPTracker;
 import plugins.plugins.trackers.bacteriaInMicrochannelTracker.BacteriaClosedMicrochannelTrackerLocalCorrections;
-import plugins.plugins.trackers.MicrochannelProcessorPhase;
 import plugins.plugins.trackers.MicrochannelTracker;
 import plugins.plugins.trackers.trackMate.SpotWithinCompartmentRoiModifier;
 import utils.Pair;
@@ -62,18 +61,17 @@ public class TestTracker {
         PluginFactory.findPlugins("plugins.plugins");
         new ImageJ();
         //String dbName = "fluo160408_MutH";
-        String dbName = "fluo170602_uvrD";
+        String dbName = "mutd5_12052017";
         //String dbName = "fluo160501";
-        int fIdx = 19;
-        int mcIdx =0;
-        int structureIdx = 0;
+        int pIdx = 0;
+        int mcIdx =17;
+        int structureIdx = 1;
         MasterDAO db = new Task(dbName).getDB();
         ProcessingScheme ps = db.getExperiment().getStructure(structureIdx).getProcessingScheme();
         MicrochannelTracker.debug=true;
-        MicrochannelProcessorPhase.debug=true;
         BacteriaClosedMicrochannelTrackerLocalCorrections.debugCorr=true;
         //BacteriaClosedMicrochannelTrackerLocalCorrections.debugThreshold = 270;
-        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 0, 10);
+        testSegmentationAndTracking(db.getDao(db.getExperiment().getPosition(pIdx).getName()), ps, structureIdx, mcIdx, 0,800);
         //testBCMTLCStep(db.getDao(db.getExperiment().getPosition(fIdx).getName()), ps, structureIdx, mcIdx, 37, 38); // 91 to test rearrange objects 
     }
     public static void testSegmentationAndTracking(ObjectDAO dao, ProcessingScheme ps, int structureIdx, int mcIdx, int tStart, int tEnd) {
