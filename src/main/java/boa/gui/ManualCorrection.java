@@ -384,7 +384,8 @@ public class ManualCorrection {
             return;
         }
         int structureIdx = key.displayedStructureIdx;
-        int parentStructureIdx = db.getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
+        int segmentationParentStructureIdx = db.getExperiment().getStructure(structureIdx).getSegmentationParentStructure();
+        int parentStructureIdx = db.getExperiment().getStructure(structureIdx).getParentStructure();
         ManualSegmenter segmenter = db.getExperiment().getStructure(structureIdx).getManualSegmenter();
         
         if (segmenter==null) {
@@ -392,10 +393,10 @@ public class ManualCorrection {
             return;
         }
         
-        Map<StructureObject, List<int[]>> points = iwm.getParentSelectedPointsMap(image, parentStructureIdx);
+        Map<StructureObject, List<int[]>> points = iwm.getParentSelectedPointsMap(image, segmentationParentStructureIdx);
         if (points!=null) {
-            logger.debug("manual segment: {} distinct parents. Segmentation structure: {}, parent structure: {}", points.size(), structureIdx, parentStructureIdx);
-            List<StructureObject> segmentedObjects = new ArrayList<StructureObject>();
+            logger.debug("manual segment: {} distinct parents. Segmentation structure: {}, parent structure: {}", points.size(), structureIdx, segmentationParentStructureIdx);
+            List<StructureObject> segmentedObjects = new ArrayList<>();
             for (Map.Entry<StructureObject, List<int[]>> e : points.entrySet()) {
                 segmenter = db.getExperiment().getStructure(structureIdx).getManualSegmenter();
                 segmenter.setManualSegmentationVerboseMode(test);
@@ -403,7 +404,7 @@ public class ManualCorrection {
                 Image segImage = e.getKey().getRawImage(structureIdx);
                 
                 // generate image mask without old objects
-                ImageByte mask = TypeConverter.cast(e.getKey().getMask(), new ImageByte("Manual Segmentation Mask", 0, 0, 0));
+                ImageByte mask = TypeConverter.cast(e.getKey().getMask().duplicate(), new ImageByte("Manual Segmentation Mask", 0, 0, 0));
                 List<StructureObject> oldChildren = e.getKey().getChildren(structureIdx);
                 for (StructureObject c : oldChildren) c.getObject().draw(mask, 0, new BoundingBox(0, 0, 0));
                 if (test) iwm.getDisplayer().showImage(mask, 0, 1);
@@ -417,14 +418,17 @@ public class ManualCorrection {
                 //seg.filter(new ObjectPopulation.Size().setMin(2)); // remove seeds
                 logger.debug("{} children segmented in parent: {}", seg.getObjects().size(), e.getKey());
                 if (!test && !seg.getObjects().isEmpty()) {
-                    List<StructureObject> newChildren = e.getKey().setChildrenObjects(seg, structureIdx);
+                    StructureObject parent = e.getKey().getParent(parentStructureIdx);
+                    if (!parent.equals(e.getKey())) seg.translate(e.getKey().getRelativeBoundingBox(parent), false);
+                    oldChildren = parent.getChildren(structureIdx);
+                    List<StructureObject> newChildren = parent.setChildrenObjects(seg, structureIdx);
                     segmentedObjects.addAll(newChildren);
-                    newChildren.addAll(oldChildren);
-                    ArrayList<StructureObject> modified = new ArrayList<StructureObject>();
-                    e.getKey().relabelChildren(structureIdx, modified);
+                    newChildren.addAll(0, oldChildren);
+                    ArrayList<StructureObject> modified = new ArrayList<>();
+                    parent.relabelChildren(structureIdx, modified);
                     modified.addAll(newChildren);
                     Utils.removeDuplicates(modified, false);
-                    db.getDao(e.getKey().getPositionName()).store(modified, true);
+                    db.getDao(parent.getPositionName()).store(modified, true);
                     
                     //Update tree
                     /*ObjectNode node = GUI.getInstance().objectTreeGenerator.getObjectNode(e.getKey());

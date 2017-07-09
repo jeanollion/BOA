@@ -68,7 +68,7 @@ public class TrackMateInterface<S extends Spot> {
     private final SpotCollection collection = new SpotCollection();
     private Logger internalLogger = Logger.VOID_LOGGER;
     int numThreads=1;
-    String errorMessage;
+    public String errorMessage;
     private SimpleWeightedGraph< Spot, DefaultWeightedEdge > graph;
     public final SpotFactory<S> factory;
 
@@ -205,6 +205,10 @@ public class TrackMateInterface<S extends Spot> {
     public Set<DefaultWeightedEdge> getEdges() {
         return graph.edgeSet();
     }
+    public DefaultWeightedEdge getEdge(S s, S t) {
+        if (s==null || t==null) return null;
+        return graph.getEdge(s, t);
+    }
     public Set<SymetricalPair<DefaultWeightedEdge>> getCrossingLinks(double spatialTolerence, Set<S> involvedSpots) {
         if (graph==null) return Collections.EMPTY_SET;
         Set<SymetricalPair<DefaultWeightedEdge>> res = new HashSet<>();
@@ -224,7 +228,6 @@ public class TrackMateInterface<S extends Spot> {
      * @param spots can be null 
      */
     public void removeFromGraph(Collection<DefaultWeightedEdge> edges, Collection<S> spots) {
-        graph.removeAllEdges(edges);
         if (spots==null) {
             spots = new HashSet<S>();
             for (DefaultWeightedEdge e : edges) {
@@ -232,19 +235,31 @@ public class TrackMateInterface<S extends Spot> {
                 spots.add((S)graph.getEdgeTarget(e));
             }
         }
+        //logger.debug("edges to remove :{}", Utils.toStringList(edges, e->graph.getEdgeSource(e)+"->"+graph.getEdgeTarget(e)));
+        graph.removeAllEdges(edges);
+        //logger.debug("spots to remove candidates :{}", spots);
         for (Spot s : spots) { // also remove vertex that are not linked anymore
-            if (graph.edgesOf(s).isEmpty()) graph.removeVertex(s);
+            if (graph.edgesOf(s).isEmpty()) removeObject(spotObjectMap.get((S)s), (int)(double)s.getFeature(Spot.FRAME));
         }
     }
     public void addEdge(S s, S t) {
         graph.addEdge(s, t);
     }
     public void removeFromGraph(DefaultWeightedEdge edge) {
-        graph.removeEdge(edge);
         Spot v1 = graph.getEdgeSource(edge);
         Spot v2 = graph.getEdgeTarget(edge);
-        if (graph.edgesOf(v1).isEmpty()) graph.removeVertex(v1);
-        if (graph.edgesOf(v2).isEmpty()) graph.removeVertex(v2);
+        graph.removeEdge(edge);
+        try {
+            if (v1!=null && graph.edgesOf(v1).isEmpty()) graph.removeVertex(v1);
+        } catch (Exception e) {
+            logger.debug("vertex: {} not found. contained? {}", v1, graph.containsVertex(v1));
+        }
+        try {
+            if (v2!=null && graph.edgesOf(v2).isEmpty()) graph.removeVertex(v2);
+        } catch (Exception e) {
+            logger.debug("vertex: {} not found. contained? {}", v2, graph.containsVertex(v2));
+        }
+        
     }
     public void  removeCrossingLinksFromGraph(double spatialTolerence) {
         if (graph==null) return;
@@ -297,12 +312,29 @@ public class TrackMateInterface<S extends Spot> {
         return max>min;
     }
     public void printLinks() {
+        logger.debug("number of objects: {}", graph.vertexSet().size());
+        List<Spot> sList = new ArrayList<>(graph.vertexSet());
+        Collections.sort(sList);
+        for (Spot s : sList) logger.debug("{}", s);
         logger.debug("number of links: {}", graph.edgeSet().size());
-        for (DefaultWeightedEdge e : graph.edgeSet()) {
+        List<DefaultWeightedEdge> eList = new ArrayList<>(graph.edgeSet());
+        Collections.sort(eList, (e1, e2)->{
+            int c1 = graph.getEdgeSource(e1).compareTo(graph.getEdgeSource(e2));
+            if (c1!=0) return c1;
+            return graph.getEdgeTarget(e1).compareTo(graph.getEdgeTarget(e2));
+        });
+        for (DefaultWeightedEdge e : eList) {
             Spot s = graph.getEdgeSource(e);
             Spot t = graph.getEdgeTarget(e);
-            logger.debug("{}->{}", s, t);
+            logger.debug("{}->{} sourceEdges: {}, targetEdges: {}", s, t, graph.edgesOf(s), graph.edgesOf(t));
         }
+    }
+    public void resetTrackLinks(Map<Integer, List<StructureObject>> objectsF, Collection<StructureObject> modifiedObjects) {
+        List<StructureObject> objects = Utils.flattenMap(objectsF);
+        int minF = objectsF.keySet().stream().min((i1, i2)->Integer.compare(i1, i2)).get();
+        int maxF = objectsF.keySet().stream().max((i1, i2)->Integer.compare(i1, i2)).get();
+        logger.debug("reset track links between {} & {}", minF, maxF);
+        for (StructureObject o : objects) o.resetTrackLinks(o.getFrame()>minF, o.getFrame()<maxF, false, modifiedObjects);
     }
     public void setTrackLinks(Map<Integer, List<StructureObject>> objectsF, Collection<StructureObject> modifiedObjects) {
         if (objectsF==null || objectsF.isEmpty()) return;
@@ -330,6 +362,7 @@ public class TrackMateInterface<S extends Spot> {
             //logger.debug("settings links for: {}", child);
             S s = objectSpotMap.get(child.getObject());
             getSortedEdgesOf(s, prev, edgesBucket);
+            //logger.debug("set {} edge for: {}: links: {}: {}", prev?"prev":"next", s, edgesBucket.size(), edgesBucket);
             if (edgesBucket.size()==1) {
                 DefaultWeightedEdge e = edgesBucket.first();
                 S otherSpot = getOtherSpot(e, s);
@@ -368,7 +401,7 @@ public class TrackMateInterface<S extends Spot> {
     
     private S getOtherSpot(DefaultWeightedEdge e, S spot) {
         S s = (S)graph.getEdgeTarget(e);
-        if (s==spot) return (S)graph.getEdgeSource(e);
+        if (spot.equals(s)) return (S)graph.getEdgeSource(e);
         else return s;
     }
     public void switchLinks(DefaultWeightedEdge e1, DefaultWeightedEdge e2) {
@@ -425,7 +458,7 @@ public class TrackMateInterface<S extends Spot> {
         }
         return null;
     }
-    public S getEdge(DefaultWeightedEdge e, boolean source) {
+    public S getObject(DefaultWeightedEdge e, boolean source) {
         return source ? (S)graph.getEdgeSource(e) : (S)graph.getEdgeTarget(e);
     }
     

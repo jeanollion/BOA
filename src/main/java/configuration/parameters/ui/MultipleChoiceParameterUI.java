@@ -24,14 +24,18 @@ import configuration.parameters.ConditionalParameter;
 import configuration.parameters.ParameterUtils;
 import boa.gui.configuration.ConfigurationTreeModel;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import javax.swing.AbstractAction;
+import javax.swing.DefaultListModel;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
+import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
 import javax.swing.MenuSelectionManager;
 import javax.swing.event.MenuEvent;
 import javax.swing.event.MenuListener;
@@ -47,7 +51,9 @@ import javax.swing.plaf.basic.BasicCheckBoxMenuItemUI;
 public class MultipleChoiceParameterUI implements ParameterUI {
     ChoosableParameterMultiple choice;
     ConfigurationTreeModel model;
-    JCheckBoxMenuItem[] items;
+    JList list;
+    DefaultListModel<String> listModel;
+    JScrollPane listJsp;
     JMenuItem[] menuItems;
     boolean multiple=true;
     JPopupMenu menu;
@@ -56,68 +62,31 @@ public class MultipleChoiceParameterUI implements ParameterUI {
     public MultipleChoiceParameterUI(ChoosableParameterMultiple choice_) {
         this.choice = choice_;
         this.model= ParameterUtils.getModel(choice);
-        final String[] choices=choice.getChoiceList();
-        this.items = new JCheckBoxMenuItem[choices.length];
-        for (int i = 0; i < items.length; i++) {
-            items[i] = new StayOpenCBItem(choices[i], this);
-            
-            //items[i] = new JCheckBoxMenuItem(choices[i]);
-            //items[i].setUI(new StayOpenCheckBoxMenuItemUI());
-        }
+        listModel = new DefaultListModel();
+        for (String c : choice.getChoiceList()) listModel.addElement(c);
+        list = new JList(listModel);
+        listJsp = new JScrollPane(list);
+        listJsp.setMinimumSize(new Dimension(100, 300));
         updateUIFromParameter();
-        menuItems = new JMenuItem[4];
+        menuItems = new JMenuItem[2];
         menuItems[0] = new StayOpenMenuItem("Select All", this);
         menuItems[0].setAction(
             new AbstractAction("Select All") {
                 @Override
                 public void actionPerformed(ActionEvent ae) {
-                    for (JCheckBoxMenuItem i : items) i.setSelected(true);
+                    list.setSelectionInterval(0, listModel.getSize()-1);
                     updateSelectedItemsToParameter();
                 }
             }
         );
-        menuItems[1] = new StayOpenMenuItem("Select None", this);
-        menuItems[1].setAction(
-            new AbstractAction("Select None") {
-                @Override
-                public void actionPerformed(ActionEvent ae) {
-                    for (JCheckBoxMenuItem i : items) i.setSelected(false);
-                    updateSelectedItemsToParameter();
-                }
-            }
-        );
-        menuItems[2] = new StayOpenMenuItem("Select Range", this);
-        menuItems[2].setAction(
-            new AbstractAction("Select Range") {
-                @Override
-                public void actionPerformed(ActionEvent ae) {
-                    int idxMin = items.length;
-                    int idxMax = -1;
-                    for (int i = 0; i<items.length; ++i) {
-                        if (items[i].isSelected()) {
-                            if (i<idxMin) idxMin = i;
-                            if (i>idxMax) idxMax = i;
-                        }
-                    }
-                    if (idxMin<idxMax) {
-                        for (int i = idxMin; i<=idxMax; ++i) items[i].setSelected(true);
-                    }
-                    updateSelectedItemsToParameter();
-                }
-            }
-        );
-        JMenu subMenu = new JMenu("Items");
-        menuItems[3] = subMenu;
-        for (JMenuItem i : items) subMenu.add(i);
         
+        JMenu subMenu = new JMenu("Items");
+        menuItems[1] = subMenu;
+        subMenu.add(listJsp);
     }
     
     public int[] getSelectedItems() {
-        ArrayList<Integer> selectedItems = new ArrayList<Integer>();
-        for (int i = 0; i<items.length; ++i) if (items[i].isSelected()) selectedItems.add(i);
-        int[] sel = new int[selectedItems.size()];
-        for (int i = 0; i<sel.length; ++i) sel[i]=selectedItems.get(i);
-        return sel;
+        return list.getSelectedIndices();
     }
     
     public void updateSelectedItemsToParameter() {
@@ -127,9 +96,10 @@ public class MultipleChoiceParameterUI implements ParameterUI {
     }
     
     public void updateUIFromParameter() {
-        for (int i : choice.getSelectedItems()) items[i].setSelected(true);
+        list.setSelectedIndices(choice.getSelectedItems());
     }
     
+    @Override
     public JMenuItem[] getDisplayComponent() {return menuItems;}
     
     public void addMenuListener(JPopupMenu menu, int X, int Y, Component parent) {

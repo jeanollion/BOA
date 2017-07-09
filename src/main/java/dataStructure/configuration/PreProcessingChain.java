@@ -17,6 +17,7 @@
  */
 package dataStructure.configuration;
 
+import boa.gui.configuration.ConfigurationTreeModel;
 import configuration.parameters.BooleanParameter;
 import configuration.parameters.BoundedNumberParameter;
 import configuration.parameters.ConditionalParameter;
@@ -189,7 +190,11 @@ public class PreProcessingChain extends SimpleContainerParameter {
                         for (int f : fields.getSelectedItems()) {
                             //logger.debug("override pp on field: {}", f);
                             MicroscopyField field = xp.fields.getChildAt(f);
-                            if (field.getPreProcessingChain()!=ppc) field.setPreProcessingChains(ppc);
+                            if (field.getPreProcessingChain()!=ppc) {
+                                field.setPreProcessingChains(ppc);
+                                ConfigurationTreeModel model = ParameterUtils.getModel(xp);
+                                if (model!=null) model.nodeStructureChanged(field);
+                            }
                         }
                     }
                 }

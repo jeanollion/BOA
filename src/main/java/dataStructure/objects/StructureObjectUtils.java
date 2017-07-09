@@ -81,6 +81,7 @@ public class StructureObjectUtils {
     
     public static List<StructureObject> getDaugtherObjectsAtNextFrame(StructureObject o, List<StructureObject> bucket) { // look only in next timePoint
         if (bucket==null) bucket=new ArrayList<>();
+        else bucket.clear();
         if (o.getParent()==null) {
             //if (o.getNext()!=null) bucket.add(o.getNext());
             return bucket;
@@ -308,6 +309,7 @@ public class StructureObjectUtils {
     }
     public static List<StructureObject> getAllObjects(ObjectDAO dao, int structureIdx) {
         List<StructureObject> roots= dao.getRoots();
+        setAllChildren(roots, structureIdx);
         return getAllChildren(roots, structureIdx);
     }
     public static List<StructureObject> getAllChildren(List<StructureObject> parentTrack, int structureIdx) {

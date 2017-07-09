@@ -116,7 +116,16 @@ public class JSONUtils {
         for (int d : array) res.add(d);
         return res;
     }
-    
+    public static JSONArray toJSONArray(Collection<? extends Number> collection) {
+        JSONArray res = new JSONArray();
+        res.addAll(collection);
+        return res;
+    }
+    public static List<Integer> fromIntArrayList(JSONArray array) { // necessaire -> pas directement Integer ? 
+        List<Integer> res = new ArrayList<>(array.size());
+        for (Object o : array) res.add(((Number)o).intValue());
+        return res;
+    }
     public static String serialize(Object o) {
         DBObject oMarsh = marshall(o);
         return com.mongodb.util.JSON.serialize(oMarsh);

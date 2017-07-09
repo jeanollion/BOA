@@ -96,8 +96,11 @@ public class MutationTrackPostProcessing {
             double minDist = Double.POSITIVE_INFINITY;
             StructureObject bestPrevTrackEnd=null;
             boolean deleteNextTrackTH=false;
-            
-            for (StructureObject prevTrackEnd : sNextTrackTH.compartiment.object.getChildObjects(spotStructureIdx)) { // look in spots within same compartiment
+            if (sNextTrackTH==null) {
+                logger.debug("no spot found for: {}, tl : {}", nextTrackTH, nextTrack.size());
+                continue;
+            }
+            for (StructureObject prevTrackEnd : sNextTrackTH.compartiment.object.getChildren(spotStructureIdx)) { // look in spots within same compartiment
                 if (prevTrackEnd.getNext()!=null) continue; // look only within track ends
                 if (prevTrackEnd.getPrevious()==null) continue; // look only wihtin tracks with >=1 element
                 //if (trackHeadTrackMap.get(headTrackTail.getTrackHead()).size()>=maxTrackSize) continue;

@@ -39,6 +39,7 @@ import com.mongodb.client.MongoIterable;
 import com.sun.java.swing.plaf.motif.MotifMenuItemUI;
 import configuration.parameters.FileChooser;
 import configuration.parameters.NumberParameter;
+import core.DefaultWorker;
 import core.Processor;
 import core.PythonGateway;
 import core.Task;
@@ -97,11 +98,13 @@ import javax.swing.DefaultListModel;
 import javax.swing.Icon;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFrame;
+import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JOptionPane;
 import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
 import javax.swing.JRadioButtonMenuItem;
+import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.KeyStroke;
 import javax.swing.MenuSelectionManager;
@@ -177,11 +180,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
      * Creates new form GUI
      */
     public GUI() {
-        logger.info("DBMaker: {}", checkClass("org.mapdb.DBMaker"));
+        //logger.info("DBMaker: {}", checkClass("org.mapdb.DBMaker"));
         
         logger.info("Creating GUI instance...");
         this.instance=this;
         initComponents();
+        
         
         this.addWindowListener(new WindowAdapter() {
             @Override 
@@ -951,8 +955,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         miscMenu = new javax.swing.JMenu();
         closeAllWindowsMenuItem = new javax.swing.JMenuItem();
         clearMemoryMenuItem = new javax.swing.JMenuItem();
-        clearTrackImages = new javax.swing.JMenuItem();
-        jMenuItem1 = new javax.swing.JMenuItem();
+        clearPPImageMenuItem = new javax.swing.JMenuItem();
+        clearTrackImagesMenuItem = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
 
@@ -980,7 +984,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         actionJSP.setBorder(javax.swing.BorderFactory.createTitledBorder(javax.swing.BorderFactory.createTitledBorder("Actions to Run")));
 
         runActionList.setModel(new javax.swing.AbstractListModel() {
-            String[] strings = { "Pre-Processing", "Re-Run Pre-Processing", "Segment", "Track", "Measurements", "Generate Track Images" };
+            String[] strings = { "Pre-Processing", "Re-Run Pre-Processing", "Segment", "Track", "Generate Track Images", "Measurements", "Extract Measurements" };
             public int getSize() { return strings.length; }
             public Object getElementAt(int i) { return strings[i]; }
         });
@@ -1265,7 +1269,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 .addComponent(unlinkObjectsButton)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(resetLinksButton)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap(70, Short.MAX_VALUE))
         );
 
         trackPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Tracks"));
@@ -1277,11 +1281,11 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         trackPanel.setLayout(trackPanelLayout);
         trackPanelLayout.setHorizontalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 374, Short.MAX_VALUE)
+            .addComponent(TimeJSP, javax.swing.GroupLayout.DEFAULT_SIZE, 416, Short.MAX_VALUE)
         );
         trackPanelLayout.setVerticalGroup(
             trackPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(TimeJSP, javax.swing.GroupLayout.PREFERRED_SIZE, 651, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addComponent(TimeJSP)
         );
 
         selectionPanel.setBorder(javax.swing.BorderFactory.createTitledBorder("Selections"));
@@ -1308,7 +1312,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         selectionPanelLayout.setHorizontalGroup(
             selectionPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(createSelectionButton, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(reloadSelectionsButton, javax.swing.GroupLayout.DEFAULT_SIZE, 124, Short.MAX_VALUE)
+            .addComponent(reloadSelectionsButton, javax.swing.GroupLayout.DEFAULT_SIZE, 167, Short.MAX_VALUE)
             .addComponent(selectionJSP, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
         );
         selectionPanelLayout.setVerticalGroup(
@@ -1330,7 +1334,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(selectionPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(trackPanel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addComponent(trackPanel, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         dataPanelLayout.setVerticalGroup(
             dataPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -1635,21 +1639,21 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         });
         miscMenu.add(clearMemoryMenuItem);
 
-        clearTrackImages.setText("Clear Track Images");
-        clearTrackImages.addActionListener(new java.awt.event.ActionListener() {
+        clearPPImageMenuItem.setText("Clear Pre-Processed Images");
+        clearPPImageMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                clearTrackImagesActionPerformed(evt);
+                clearPPImageMenuItemActionPerformed(evt);
             }
         });
-        miscMenu.add(clearTrackImages);
+        miscMenu.add(clearPPImageMenuItem);
 
-        jMenuItem1.setText("Test Multithread");
-        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+        clearTrackImagesMenuItem.setText("Clear Track Images");
+        clearTrackImagesMenuItem.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem1ActionPerformed(evt);
+                clearTrackImagesMenuItemActionPerformed(evt);
             }
         });
-        miscMenu.add(jMenuItem1);
+        miscMenu.add(clearTrackImagesMenuItem);
 
         mainMenu.add(miscMenu);
 
@@ -2127,17 +2131,21 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         boolean trackOnly = false;
         boolean runMeasurements=false;
         boolean generateTrackImages = false;
+        boolean extract = false;
         for (int i : this.runActionList.getSelectedIndices()) {
             if (i==0) preProcess=true;
             if (i==1) reRunPreProcess=!preProcess;
             if (i==2) segmentAndTrack=true;
             if (i==3) trackOnly = !segmentAndTrack;
-            if (i==4) runMeasurements=true;
-            if (i==5) generateTrackImages=true;
+            if (i==4) generateTrackImages=true;
+            if (i==5) runMeasurements=true;
+            if (i==6) extract=true;
+            
         }
         int[] microscopyFields = this.getSelectedMicroscopyFields();
         int[] selectedStructures = this.getSelectedStructures(true);
         Task t = new Task(db).setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements).setGenerateTrackImages(generateTrackImages).setStructures(selectedStructures).setPositions(microscopyFields);
+        if (extract) for (int sIdx : selectedStructures) t.addExtractMeasurementDir(new File(db.getExperiment().getOutputDirectory()).getParent(), sIdx);
         t.execute();
         
         if (preProcess || reRunPreProcess || segmentAndTrack) this.reloadObjectTrees=true;
@@ -2208,16 +2216,24 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         boolean segmentAndTrack = false;
         boolean trackOnly = false;
         boolean runMeasurements=false;
+        boolean generateTrackImage = false;
+        boolean extract = false;
         for (int i : this.runActionList.getSelectedIndices()) {
             if (i==0) preProcess=true;
             if (i==1) reRunPreProcess=!preProcess;
             if (i==2) segmentAndTrack=true;
             if (i==3) trackOnly = !segmentAndTrack;
-            if (i==4) runMeasurements=true;
+            if (i==4) generateTrackImage=true;
+            if (i==5) runMeasurements=true;
+            if (i==6) extract = true;
         }
         List<String> xps = this.getSelectedExperiments();
         List<Task> tasks = new ArrayList<>(xps.size());
-        for (String xp : xps) tasks.add(new Task(xp).setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements));
+        for (String xp : xps) {
+            Task t = new Task(xp).setActions(preProcess, segmentAndTrack, segmentAndTrack || trackOnly, runMeasurements).setGenerateTrackImages(generateTrackImage);
+            if (extract) for (int sIdx =0; sIdx< t.getDB().getExperiment().getStructureCount(); ++sIdx) t.addExtractMeasurementDir(new File(t.getDB().getExperiment().getOutputDirectory()).getParent(), sIdx);
+            tasks.add(t);
+        }
         int totalSubtasks = 0;
         for (Task t : tasks) {
             if (!t.isValid()) {
@@ -2228,10 +2244,9 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         }
         setMessage("Total subTasks: "+totalSubtasks);
         int[] taskCounter = new int[]{0, totalSubtasks};
-        for (Task t : tasks) {
-            t.setSubtaskNumber(taskCounter);
-            t.execute();
-        }
+        for (Task t : tasks) t.setSubtaskNumber(taskCounter);
+        DefaultWorker.execute(i -> {tasks.get(i).run(); return "";}, tasks.size());
+        
     }//GEN-LAST:event_runActionAllXPMenuItemActionPerformed
 
     private void closeAllWindowsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_closeAllWindowsMenuItemActionPerformed
@@ -2345,31 +2360,20 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private void reloadSelectionsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_reloadSelectionsButtonActionPerformed
         populateSelections();
     }//GEN-LAST:event_reloadSelectionsButtonActionPerformed
-
+    
+    
+    
     private void createSelectionButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_createSelectionButtonActionPerformed
         if (!checkConnection()) return;
         String name = JOptionPane.showInputDialog("New Selection name:");
-        if (!Utils.isValid(name, false)) {
-            logger.error("Name should not contain special characters");
-            return;
-        }
-        List<String> structures = Arrays.asList(db.getExperiment().getStructuresAsString());
-        if (structures.contains(name)) {
-            logger.error("Name should not be a Structure's name");
-            return;
-        }
-        populateSelections();
-        for (int i = 0; i<selectionModel.size(); ++i) if (selectionModel.get(i).getName().equals(name)) {
-            logger.error("Selection name already exists");
-            return;
-        }
+        if (!SelectionUtils.validSelectionName(db, name)) return;
         Selection sel = new Selection(name, db);
         if (this.db.getSelectionDAO()==null) {
             logger.error("No selection DAO. Output Directory set ? ");
             return;
         }
         this.db.getSelectionDAO().store(sel);
-        this.selectionModel.addElement(sel);
+        populateSelections();
     }//GEN-LAST:event_createSelectionButtonActionPerformed
 
     private void pruneTrackButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_pruneTrackButtonActionPerformed
@@ -2474,7 +2478,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
     private void previousTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_previousTrackErrorButtonActionPerformed
         if (!checkConnection()) return;
-        navigateToNextObjects(false, false, -1, true);
+        navigateToNextObjects(false, false, interactiveStructure.getSelectedIndex(), false);
     }//GEN-LAST:event_previousTrackErrorButtonActionPerformed
 
     private void mergeObjectsButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mergeObjectsButtonActionPerformed
@@ -2492,7 +2496,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
 
     private void nextTrackErrorButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_nextTrackErrorButtonActionPerformed
         if (!checkConnection()) return;
-        navigateToNextObjects(true, false, -1, true);
+        navigateToNextObjects(true, false, interactiveStructure.getSelectedIndex(), false);
     }//GEN-LAST:event_nextTrackErrorButtonActionPerformed
 
     private void selectAllTracksButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_selectAllTracksButtonActionPerformed
@@ -2506,17 +2510,21 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
         this.setStructure(this.trackStructureJCB.getSelectedIndex());
     }//GEN-LAST:event_trackStructureJCBActionPerformed
 
-    private void clearTrackImagesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearTrackImagesActionPerformed
+    private void clearTrackImagesMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearTrackImagesMenuItemActionPerformed
         if (!checkConnection()) return;
         ImageDAO iDAO = db.getExperiment().getImageDAO();
         for (String p : getSelectedPositions(true)) {
-            for (int sIdx = 0; sIdx<db.getExperiment().getStructureCount(); ++sIdx) iDAO.clearTrackImages(p, sIdx);
+            for (int sIdx = 0; sIdx<db.getExperiment().getStructureCount(); ++sIdx) iDAO.deleteTrackImages(p, sIdx);
         }
-    }//GEN-LAST:event_clearTrackImagesActionPerformed
+    }//GEN-LAST:event_clearTrackImagesMenuItemActionPerformed
 
-    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
-        TestThreadExecutorFrameWork.test();
-    }//GEN-LAST:event_jMenuItem1ActionPerformed
+    private void clearPPImageMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_clearPPImageMenuItemActionPerformed
+        if (!checkConnection()) return;
+        for (String p : getSelectedPositions(true)) {
+            MicroscopyField f = db.getExperiment().getPosition(p);
+            if (f.getInputImages()!=null) f.getInputImages().deleteFromDAO();
+        }
+    }//GEN-LAST:event_clearPPImageMenuItemActionPerformed
     private void updateMongoDBBinActions() {
         boolean enableDump = false, enableRestore = false;
         String mPath = PropertyUtils.get(PropertyUtils.MONGO_BIN_PATH);
@@ -2680,7 +2688,8 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JScrollPane actionStructureJSP;
     private javax.swing.JRadioButtonMenuItem bsonFormatMenuItem;
     private javax.swing.JMenuItem clearMemoryMenuItem;
-    private javax.swing.JMenuItem clearTrackImages;
+    private javax.swing.JMenuItem clearPPImageMenuItem;
+    private javax.swing.JMenuItem clearTrackImagesMenuItem;
     private javax.swing.JMenuItem closeAllWindowsMenuItem;
     private javax.swing.JMenuItem compactLocalDBMenuItem;
     private javax.swing.JScrollPane configurationJSP;
@@ -2719,7 +2728,6 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private javax.swing.JLabel jLabel2;
     private javax.swing.JMenu jMenu1;
     private javax.swing.JMenu jMenu2;
-    private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JRadioButtonMenuItem jsonFormatMenuItem;
     private javax.swing.JButton linkObjectsButton;

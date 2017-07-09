@@ -47,15 +47,16 @@ public class SpotCompartiment {
     public static double middleAreaProportion = 0.5;
     public boolean truncated = false;
     public double sizeIncrement=Double.NaN;
+    public static double yLengthForXMeanComputation = 0.2; 
     public SpotCompartiment(StructureObject o) {
         long t0 = System.currentTimeMillis();
         object = o;
-        double[][] poles = getPoles(object.getObject(), 0.5);
+        double[][] poles = getPoles(object.getObject(), 0.5, yLengthForXMeanComputation);
         offsetUp = poles[0];
         offsetDown = poles[1];
         //nextDivisionTimePoint = object.getNextDivisionTimePoint();
         nextDivisionTimePoint = getNextDivisionFrame(object, 0.8);
-        computeDivisionOffset();
+        computeDivisionOffset(yLengthForXMeanComputation);
         computeIsUpperDaughterCell();
         
         //if (object.getNext()!=null && object.getNext().getDivisionSiblings(false)!=null) divisionAtNextTimePoint = true;
@@ -90,7 +91,7 @@ public class SpotCompartiment {
         if (next.size()>1) return true;
         if (next.size()==1) {
             //logger.debug("div next frame for {}->{}: attibute: {}, size {}, sizePrev*0.8:{} eocp: {}, eoc:{}", prev, next.get(0), (Boolean)next.get(0).getAttribute("TruncatedDivision"), (double)next.get(0).getObject().getSize() , prev.getObject().getSize() * sizeProportion, isEndOfChannel(prev) , isEndOfChannel(next.get(0)));
-            Object o = next.get(0).getAttribute("TruncatedDivision", false);
+            Object o = next.get(0).getAttribute("TruncatedDivision");
             if (o!=null) return (Boolean)o;
             if (!isEndOfChannel(prev) || !isEndOfChannel(next.get(0))) return false; // only end of channel
             return (double)next.get(0).getObject().getSize() < prev.getObject().getSize() * sizeProportion;
@@ -110,31 +111,39 @@ public class SpotCompartiment {
         else return null;
     }
     
-    private static double[] getPole(Object3D o, double margin) {
-        int y =  o.getBounds().getyMin()+(int)margin;
+    private static double[] getPole(Object3D o, double margin, int marginYUp, int marginYDown) {
         double xMean = 0, zMean = 0, count=0;
         ImageMask mask = o.getMask();
         BoundingBox bds = o.getBounds();
-        for (int z = bds.getzMin(); z<=bds.getzMax(); ++z) {
-            for (int x = bds.getxMin(); x<=bds.getxMax(); ++x) {
-                if (mask.insideMaskWithOffset(x, y, z)) {
-                    xMean+=x;
-                    zMean+=z;
-                    count++;
+        int yMin = marginYUp>=0 ? o.getBounds().getyMin()+marginYUp : o.getBounds().getyMin();
+        int yMax = o.getBounds().getyMin()+marginYDown;
+        if (yMax>o.getBounds().getyMax()) yMax = o.getBounds().getyMax();
+        if (yMax-yMin<7) yMin = yMax-7;
+        if (yMin<o.getBounds().getyMin()) yMin = o.getBounds().getyMin();
+        for (int y = yMin; y<=yMax; ++y) {
+            for (int z = bds.getzMin(); z<=bds.getzMax(); ++z) {
+                for (int x = bds.getxMin(); x<=bds.getxMax(); ++x) {
+                    if (mask.insideMaskWithOffset(x, y, z)) {
+                        xMean+=x;
+                        zMean+=z;
+                        count++;
+                    }
                 }
             }
         }
         if (count==0) {
-            xMean = o.getBounds().getYMean();
-            zMean = o.getBounds().getZMean();
+            double[] center = o.getGeomCenter(false); // more stable using cell's center for x & z
+            xMean = center[0];
+            zMean = (center.length>2?center[2]:o.getBounds().getZMean());
         } else {
             xMean/=count;
             zMean/=count;
         }
-        return new double[]{xMean * o.getScaleXY(), y * o.getScaleXY(), zMean * o.getScaleZ()};
+        
+        return new double[]{ xMean * o.getScaleXY(), (o.getBounds().getyMin()+margin)* o.getScaleXY(), zMean * o.getScaleZ()};
     }
     
-    private static double[][] getPoles(Object3D o, double proportionOfWidth) {
+    private static double[][] getPoles(Object3D o, double proportionOfWidth, double yLenghtForXMean) {
         int[] ySize = new int[o.getBounds().getSizeY()];
         double meanYSize = 0;
         ImageMask mask = o.getMask();
@@ -154,14 +163,15 @@ public class SpotCompartiment {
         double minYSize = proportionOfWidth * meanYSize;
         int yUp = 0;
         while(ySize[yUp]<minYSize) yUp++;
-        double[] poleUp = getPole(o, yUp);
+        int yL = (int)Math.round(yLenghtForXMean*bds.getSizeY());
+        double[] poleUp = getPole(o, yUp, 0, yL);
         int yDown = ySize.length-1;
         while(ySize[yDown]<minYSize) yDown--;
-        double[] poleDown = getPole(o, yDown);
+        double[] poleDown = getPole(o, yDown, o.getBounds().getSizeY()-yL-1, o.getBounds().getSizeY()-1);
         return new double[][]{poleUp, poleDown};
     }
     
-    private static double[] getYPositionWithinCompartimentByCount(Object3D o, int limit) {
+    private static double[] getPoleByCount(Object3D o, int limit, int marginYUp, int marginYDown) {
         int count=0, countPrev, countCur=-1;
         ImageMask mask = o.getMask();
         BoundingBox bds = o.getBounds();
@@ -177,8 +187,8 @@ public class SpotCompartiment {
             }
             if (countCur>0) {
                 double p = (countCur-countPrev) / (count - countPrev);
-                double yApprox = y * p + (y+1) * (1-p);
-                return getPole(o, yApprox-bds.getyMin());
+                double yApprox = y * p + (y+1) * (1-p) - bds.getyMin();
+                return getPole(o, yApprox, (int)Math.round(yApprox+marginYUp), (int)Math.round(yApprox+marginYDown));
             }
         }
         throw new Error("get Division middle : limit unreached");
@@ -225,7 +235,7 @@ public class SpotCompartiment {
         // suppose div @ trackHead
         List<StructureObject> siblings = object.getTrackHead().getDivisionSiblings(true);
         Collections.sort(siblings, (o1, o2)->Integer.compare(o1.getBounds().getyMin(), o2.getBounds().getyMin()));
-        this.upperDaughterCell = siblings.get(0).getTrackHead().equals(object.getTrackHead());
+        upperDaughterCell = siblings.get(0).getTrackHead().equals(object.getTrackHead());
         //logger.debug("object: {}, prev siblings: {}, upper?: {}", object, siblings, upperDaughterCell);
         //object.setAttribute("upper daughter cell", upperDaughterCell);
     }
@@ -239,19 +249,22 @@ public class SpotCompartiment {
         return res;
     }
     
-    private void computeDivisionOffset() {
+    private void computeDivisionOffset(double yLengthForXMean) {
         int count = this.object.getMask().count();
         int upperCompartimentCount = count/2;
         if (this.nextDivisionTimePoint>0) {
             StructureObject beforeDiv = this.object.getInTrack(nextDivisionTimePoint-1);
             if (beforeDiv==null) logger.debug("no object found before div at frame: {}, for track: {}, object: {}", nextDivisionTimePoint-1, object.getTrackHead(), object);
-            List<StructureObject> siblings = getDivisionSiblings(beforeDiv);
-            if (siblings.size()==2) { // cut the object whith the same proportion
-                double c1 = (double) siblings.get(0).getMask().count();
-                double c2 = (double) siblings.get(1).getMask().count();
-                double p = c1 / (c1+c2);
-                upperCompartimentCount = (int)(p * count +0.5);
-                this.offsetDivisionMiddle = SpotCompartiment.getYPositionWithinCompartimentByCount(object.getObject(), upperCompartimentCount); 
+            else {
+                int halfyL = (int)Math.round(object.getObject().getBounds().getSizeY()*yLengthForXMean/2d);
+                List<StructureObject> siblings = getDivisionSiblings(beforeDiv);
+                if (siblings.size()==2) { // cut the object whith the same proportion
+                    double c1 = (double) siblings.get(0).getMask().count();
+                    double c2 = (double) siblings.get(1).getMask().count();
+                    double p = c1 / (c1+c2);
+                    upperCompartimentCount = (int)(p * count +0.5);
+                    this.offsetDivisionMiddle = getPoleByCount(object.getObject(), upperCompartimentCount, -halfyL, halfyL); 
+                }
             }
         } 
         if (offsetDivisionMiddle==null) offsetDivisionMiddle = object.getObject().getGeomCenter(true);

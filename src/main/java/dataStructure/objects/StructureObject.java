@@ -248,9 +248,14 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     
     @Override public List<StructureObject> setChildrenObjects(ObjectPopulation population, int structureIdx) {
+        if (population==null) {
+            ArrayList<StructureObject> res = new ArrayList<>();
+            childrenSM.set(res, structureIdx);
+            return res;
+        }
         population.relabel();
         if (!population.isAbsoluteLandmark()) population.translate(getBounds(), true); // from parent-relative coordinates to absolute coordinates
-        ArrayList<StructureObject> res = new ArrayList<StructureObject>(population.getObjects().size());
+        ArrayList<StructureObject> res = new ArrayList<>(population.getObjects().size());
         childrenSM.set(res, structureIdx);
         int i = 0;
         for (Object3D o : population.getObjects()) res.add(new StructureObject(timePoint, structureIdx, i++, o, this));
@@ -322,7 +327,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
         }
         */
     }
-    protected void setIdx(int idx) {
+    public void setIdx(int idx) {
         if (objectContainer!=null) objectContainer.relabelObject(idx);
         if (this.object!=null) object.setLabel(idx+1);
         this.idx=idx;
@@ -360,7 +365,7 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
     }
     private void unSetTrackLinksOneWay(boolean prev, boolean next, boolean propagate, Collection<StructureObject> modifiedObjects) {
         if (prev) {
-            if (this.previous!=null && this.equals(this.previous.next))
+            //if (this.previous!=null && this.equals(this.previous.next))
             setPrevious(null);
             setTrackHead(this, false, propagate, modifiedObjects);
             setAttribute(trackErrorPrev, null);
@@ -879,41 +884,13 @@ public class StructureObject implements StructureObjectPostProcessing, Structure
             else return null;
         }
         return null;
-    }
-    
-    /*public Image getFilteredImage(int structureIdx) {
-        if (preProcessedImageS.get(structureIdx)==null) createPreFilterImage(structureIdx);
-        return preProcessedImageS.get(structureIdx);
-    }
-    
-    public void createPreFilterImage(int structureIdx) {
-        Image raw = getRawImage(structureIdx);
-        if (raw!=null) preProcessedImageS.set(preFilterImage(getRawImage(structureIdx), this, getExperiment().getStructure(structureIdx).getProcessingChain().getPrefilters()), structureIdx);
-    }*/
+    } 
     
     public void flushImages() {
-        //for (int i = 0; i<preProcessedImageS.getBucketSize(); ++i) preProcessedImageS.setQuick(null, i);
         for (int i = 0; i<rawImagesC.getBucketSize(); ++i) rawImagesC.setQuick(null, i);
         for (int i = 0; i<trackImagesC.getBucketSize(); ++i) trackImagesC.setQuick(null, i);
         this.offsetInTrackImage=null;
     }
-    /*
-    public void segmentChildren(int structureIdx) {
-        
-        ObjectPopulation seg = segmentImage(getFilteredImage(structureIdx), structureIdx, this, getExperiment().getStructure(structureIdx).getProcessingChain().getSegmenter());
-        if (seg.getChildren().isEmpty()) {
-            childrenSM.set(new ArrayList<StructureObject>(0), structureIdx);
-        }
-        else {
-            seg = postFilterImage(seg, this, getExperiment().getStructure(structureIdx).getProcessingChain().getPostfilters());
-            seg.relabel();
-            ArrayList<StructureObject> res = new ArrayList<StructureObject>(seg.getChildren().size());
-            childrenSM.set(res, structureIdx);
-            for (int i = 0; i<seg.getChildren().size(); ++i) res.add(new StructureObject(positionName, timePoint, structureIdx, i, seg.getChildren().get(i), this));
-        }
-    }*/
-    
-    
     
     public ObjectPopulation getObjectPopulation(int structureIdx) {
         List<StructureObject> child = this.getChildren(structureIdx);

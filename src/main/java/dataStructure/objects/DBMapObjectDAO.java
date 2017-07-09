@@ -127,6 +127,7 @@ public class DBMapObjectDAO implements ObjectDAO {
                 Map<ObjectId, StructureObject> objectMap = cache.getAndCreateIfNecessary(key);
                 HTreeMap<String, String> dbm = getDBMap(key);
                 if (cacheAlreadyPresent) {
+                    long t0 = System.currentTimeMillis();
                     Set<String> alreadyInCache = new HashSet<>(objectMap.size());
                     for (ObjectId id : objectMap.keySet()) alreadyInCache.add(id.toHexString());
 
@@ -137,6 +138,8 @@ public class DBMapObjectDAO implements ObjectDAO {
                             objectMap.put(o.id, o);
                         }
                     }
+                    long t1 = System.currentTimeMillis();
+                    logger.debug("#{} (already: {}) objects from structure: {}, time {}", objectMap.size(), alreadyInCache.size(), key.value, t1-t0);
                 } else {
                     long t0 = System.currentTimeMillis();
                     Collection<String> allStrings = getValues(dbm);
@@ -318,6 +321,7 @@ public class DBMapObjectDAO implements ObjectDAO {
 
     @Override
     public void clearCache() {
+        for (Map<?, StructureObject> obs : cache.values()) for (StructureObject so : obs.values()) so.flushImages();
         cache.clear();
         allObjectsRetrievedInCache.clear();
         closeAllFiles(true);
@@ -332,7 +336,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     }
     private synchronized void closeAllObjectFiles(boolean commit) {
         for (DB db : dbS.values()) {
-            if (commit) db.commit();
+            if (commit&&!db.isClosed()) db.commit();
             db.close();
         }
         dbS.clear();
@@ -627,7 +631,7 @@ public class DBMapObjectDAO implements ObjectDAO {
     
     private synchronized void closeAllMeasurementFiles(boolean commit) {
         for (Pair<DB, HTreeMap<String, String>> p : this.measurementdbS.values()) {
-            if (commit) p.key.commit();
+            if (commit&&!p.key.isClosed()) p.key.commit();
             p.key.close();
         }
         measurementdbS.clear();

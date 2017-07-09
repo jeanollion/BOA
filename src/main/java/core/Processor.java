@@ -101,7 +101,7 @@ public class Processor {
         if (!dao.getPositionName().equals(field.getName())) throw new IllegalArgumentException("field name should be equal");
         InputImagesImpl images = field.getInputImages();
         images.deleteFromDAO(); // delete images if existing in imageDAO
-        for (int s =0; s<dao.getExperiment().getStructureCount(); ++s) dao.getExperiment().getImageDAO().clearTrackImages(field.getName(), s);
+        for (int s =0; s<dao.getExperiment().getStructureCount(); ++s) dao.getExperiment().getImageDAO().deleteTrackImages(field.getName(), s);
         setTransformations(field, computeConfigurationData);
         images.applyTranformationsSaveAndClose();
         if (deleteObjects) dao.deleteAllObjects();
@@ -304,11 +304,11 @@ public class Processor {
         }
         final int[] cSI = childStructureIdx;
         ImageDAO imageDAO = dao.getExperiment().getImageDAO();
-        imageDAO.clearTrackImages(dao.getPositionName(), parentStructureIdx);
+        imageDAO.deleteTrackImages(dao.getPositionName(), parentStructureIdx);
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(dao.getRoots(), parentStructureIdx);
         GUI.log("Generating Image: #tracks: "+allTracks.size()+", child structures: "+Utils.toStringArray(childStructureIdx));
         ThreadRunner.execute(allTracks.values(), false, (List<StructureObject> track, int idx) -> {
-            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().getImageTrackObjectInterface(track, parentStructureIdx);
+            ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().generateTrackMask(track, parentStructureIdx);
             for (int childSIdx : cSI) {
                 //GUI.log("Generating Image for track:"+track.get(0)+", structureIdx:"+childSIdx+" ...");
                 Image im = i.generateRawImage(childSIdx, false);

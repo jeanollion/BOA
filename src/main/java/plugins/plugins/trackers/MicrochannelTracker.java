@@ -56,6 +56,8 @@ import static plugins.plugins.trackers.ObjectIdxTracker.getComparator;
 import plugins.plugins.trackers.trackMate.TrackMateInterface;
 import plugins.plugins.transformations.CropMicroChannels.Result;
 import utils.ArrayUtil;
+import utils.HashMapGetCreate;
+import utils.HashMapGetCreate.Factory;
 import utils.Pair;
 import utils.SlidingOperator;
 import static utils.SlidingOperator.performSlide;
@@ -108,6 +110,7 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         if (ok) ok = tmi.processGC(maxDistance, parentTrack.size(), false, false); // second GC for crossing links!
         tmi.setTrackLinks(map);
         fillGaps(structureIdx, parentTrack);
+        
     }
     
     @Override
@@ -118,9 +121,9 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
         
         Image[] inputImages = new Image[parentTrack.size()];
         MicrochannelSegmenter[] segmenters = new MicrochannelSegmenter[parentTrack.size()];
+        for (int i = 0; i<parentTrack.size(); ++i) segmenters[i] = getSegmenter();
         ThreadRunner.execute(parentTrack, false, (StructureObject parent, int idx) -> {
             inputImages[idx] = preFilters.filter(parent.getRawImage(structureIdx), parent);
-            segmenters[idx] = getSegmenter();
         }, executor, null);
         
         if (segmenters[0] instanceof UseThreshold) {
@@ -130,19 +133,16 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
             }
             Image globalImage = Image.mergeZPlanes(Arrays.asList(inputImagesToThld));
             plugins.SimpleThresholder t = ((UseThreshold)segmenters[0]).getThresholder();
-            double globalThld = globalThld = t.runThresholder(globalImage);
+            double globalThld = t.runThresholder(globalImage);
             for (int i = 0; i<parentTrack.size(); ++i) ((UseThreshold)segmenters[i]).setThresholdValue(globalThld);
             logger.debug("MicrochannelTracker on {}: global Treshold = {}", parentTrack.get(0).getTrackHead(), globalThld);
         }
-        ThreadAction<StructureObject> ta = new ThreadAction<StructureObject>() {
-            @Override
-            public void run(StructureObject parent, int idx) {
-                boundingBoxes[idx] = segmenters[idx].segment(inputImages[idx]);
-                if (boundingBoxes[idx]==null) parent.setChildren(new ArrayList<>(), structureIdx); // if not set and call to getChildren() -> DAO will set old children
-                else parent.setChildrenObjects(postFilters.filter(boundingBoxes[idx].getObjectPopulation(inputImages[idx], false), structureIdx, parent), structureIdx); // no Y - shift here because the mean shift is added afterwards
-                inputImages[idx]=null;
-                segmenters[idx]=null;
-            }
+        ThreadAction<StructureObject> ta = (StructureObject parent, int idx) -> {
+            boundingBoxes[idx] = segmenters[idx].segment(inputImages[idx]);
+            if (boundingBoxes[idx]==null) parent.setChildren(new ArrayList<>(), structureIdx); // if not set and call to getChildren() -> DAO will set old children
+            else parent.setChildrenObjects(postFilters.filter(boundingBoxes[idx].getObjectPopulation(inputImages[idx], false), structureIdx, parent), structureIdx); // no Y - shift here because the mean shift is added afterwards
+            inputImages[idx]=null;
+            segmenters[idx]=null;
         };
         List<Pair<String, Exception>> exceptions = ThreadRunner.execute(parentTrack, false, ta, executor, null);
         for (Pair<String, Exception> p : exceptions) logger.debug(p.key, p.value);
@@ -210,6 +210,23 @@ public class MicrochannelTracker implements TrackerSegmenter, MultiThreaded {
             for (Entry<StructureObject, List<StructureObject>> e : toRemByParent.entrySet()) {
                 e.getKey().getChildren(structureIdx).removeAll(e.getValue());
                 e.getKey().relabelChildren(structureIdx);
+            }
+        }
+        // relabel by trackHead appearance
+        HashMapGetCreate<StructureObject, Integer> trackHeadIdxMap = new HashMapGetCreate(new Factory<StructureObject, Integer>() {
+            int count = -1;
+            @Override
+            public Integer create(StructureObject key) {
+                ++count;
+                return count;
+            }
+        });
+        for (StructureObject p : parentTrack) {
+            List<StructureObject> children = p.getChildren(structureIdx);
+            Collections.sort(children, ObjectIdxTracker.getComparator(ObjectIdxTracker.IndexingOrder.XYZ));
+            for (StructureObject c : children) {
+                int idx = trackHeadIdxMap.getAndCreateIfNecessary(c.getTrackHead());
+                if (idx!=c.getIdx()) c.setIdx(idx);
             }
         }
     }

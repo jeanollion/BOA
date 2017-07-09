@@ -47,7 +47,7 @@ public class Measurements implements Comparable<Measurements>{
     protected int[] indices;
     protected HashMap<String, Object> values;
     @Transient boolean modifications=false;
-    final static String NA_STRING = "NA";
+    final public static String NA_STRING = "NA";
     public Measurements(StructureObject o) {
         this.id=o.id;
         this.calibratedTimePoint=o.getCalibratedTimePoint();
@@ -130,27 +130,35 @@ public class Measurements implements Comparable<Measurements>{
     }
     
     public void setValue(String key, Number value) {
-        if (value == null || isNA(value)) values.remove(key);
-        else values.put(key, value);
-        modifications=true;
+        synchronized(values) {
+            if (value == null || isNA(value)) values.remove(key);
+            else values.put(key, value);
+            modifications=true;
+        }
     }
     private static boolean isNA(Number value) {
         return (value instanceof Double && ((Double)value).isNaN() ||  value instanceof Float && ((Float)value).isNaN());
     }
     public void setValue(String key, String value) {
-        if (value == null) values.remove(key);
-        else values.put(key, value);
-        modifications=true;
+        synchronized(values) {
+            if (value == null) values.remove(key);
+            else values.put(key, value);
+            modifications=true;
+        }
     }
     
     public void setValue(String key, boolean value) {
-        this.values.put(key, value);
-        modifications=true;
+        synchronized(values) {
+            this.values.put(key, value);
+            modifications=true;
+        }
     }
     
     public void setValue(String key, double[] value) {
-        this.values.put(key, value);
-        modifications=true;
+        synchronized(values) {
+            this.values.put(key, value);
+            modifications=true;
+        }
     }
     
     public int compareTo(Measurements o) { // positionName / structureIdx / timePoint / indices
@@ -192,7 +200,7 @@ public class Measurements implements Comparable<Measurements>{
         return hash;
     }
     @Override public String toString() {
-        return "P:"+positionName+"/F:"+timePoint+"/S:"+structureIdx;
+        return "P:"+positionName+"/"+Selection.indicesToString(indices);
     }
     private Measurements(String fieldName, int timePoint, int structureIdx, int[] indices) { // only for getParentMeasurementKey
         this.positionName = fieldName;

@@ -81,6 +81,12 @@ public class BasicMasterDAO implements MasterDAO {
     }
 
     @Override
+    public void clearCache(String position) {
+        this.DAOs.remove(position);
+        getExperiment().getPosition(position).flushImages(true, true);
+    }
+    
+    @Override
     public void clearCache() {
         this.DAOs.clear();
         this.xp=null;

@@ -84,8 +84,16 @@ public class MorphiumMasterDAO implements MasterDAO {
     @Override
     public void clearCache() {
         for (MorphiumObjectDAO dao : this.DAOs.values()) dao.clearCache();
+        DAOs.clear();
         this.getSelectionDAO().clearCache();
         this.xpDAO.clearCache();
+    }
+    
+    @Override
+    public void clearCache(String position) {
+        MorphiumObjectDAO dao = DAOs.remove(position);
+        if (dao!=null) dao.clearCache();
+        getExperiment().getPosition(position).flushImages(true, true);
     }
     
     @Override public void deleteAllObjects() {

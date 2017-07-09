@@ -28,7 +28,7 @@ import java.util.List;
 public interface MasterDAO {
     public void delete();
     public void clearCache();
-    
+    public void clearCache(String position);
     public ObjectDAO getDao(String fieldName);
     
     public String getDBName();

@@ -20,6 +20,7 @@ package plugins.plugins.trackers.trackMate;
 import boa.gui.imageInteraction.IJImageWindowManager.Roi3D;
 import boa.gui.imageInteraction.ImageWindowManager;
 import dataStructure.objects.StructureObject;
+import fiji.plugin.trackmate.Spot;
 import ij.gui.Roi;
 import ij.gui.TextRoi;
 import image.BoundingBox;
@@ -34,10 +35,13 @@ import utils.Pair;
  * @author jollion
  */
 public class SpotWithinCompartmentRoiModifier implements ImageWindowManager.RoiModifier<Roi3D> {
-    TrackMateInterface<SpotWithinCompartment> tmi;
-    
-    public SpotWithinCompartmentRoiModifier(TrackMateInterface<SpotWithinCompartment> tmi) {
+    public static double displayDistanceThreshold = 1.5;
+    public static boolean displayPoles = false;
+    final TrackMateInterface<SpotWithinCompartment> tmi;
+    final int structureIdx;
+    public SpotWithinCompartmentRoiModifier(TrackMateInterface<SpotWithinCompartment> tmi, int structureIdx) {
         this.tmi=tmi;
+        this.structureIdx=structureIdx;
         TextRoi.setFont("SansSerif", 6, Font.PLAIN);
     }
     @Override
@@ -46,18 +50,25 @@ public class SpotWithinCompartmentRoiModifier implements ImageWindowManager.RoiM
         currentRoi.clear();
         currentRoi.put(0, r);
         if (objectsToDisplay.size()>10) return;
+        double distLim = displayDistanceThreshold;
+        if (objectsToDisplay.size()==2) displayDistanceThreshold = Double.POSITIVE_INFINITY;
+        if (currentObject.key.getStructureIdx()!=structureIdx) return;
         SpotWithinCompartment s = tmi.objectSpotMap.get(currentObject.key.getObject());
         if (s==null) return;
         //else logger.debug("spot found for: {} loc: {}", currentObject.key, s.localization);
+        double[] center = new double[2];
+        center[0] = s.getObject().getCenter()[0] - currentObject.key.getParent(0).getBounds().getxMin();//+currentObject.value.getxMin();
+        center[1] = s.getObject().getCenter()[1] - currentObject.key.getParent(0).getBounds().getyMin();//+currentObject.value.getyMin();
+        logger.debug("spot: {} center: {}, off: {};{}", currentObject.key, center, currentObject.value.getxMin(), currentObject.value.getyMin());
         TextRoi txt = s.getLocalizationRoi(currentObject.value);
         int idx = 0;
-        currentRoi.put(++idx, txt); // hack for 2D case !
-        SpotWithinCompartment.displayPoles=true;
+        currentRoi.put(++idx, txt); // hack .. only for 2D case !
+        displayPoles=true;
         SpotWithinCompartment.rois=new ArrayList<>(6);
         for (Pair<StructureObject, BoundingBox> p : objectsToDisplay) {
             if (p.key.equals(currentObject.key)) continue;
             SpotWithinCompartment s2 = tmi.objectSpotMap.get(p.key.getObject());
-            if (s2==null) continue;
+            if (s2==null || s2.frame>=s.frame) continue;
             if (p.key.getFrame()<currentObject.key.getFrame()) {
                 SpotWithinCompartment.offsetS1 = p.value;
                 SpotWithinCompartment.offsetS2 = currentObject.value;
@@ -66,12 +77,13 @@ public class SpotWithinCompartmentRoiModifier implements ImageWindowManager.RoiM
                 SpotWithinCompartment.offsetS1 = currentObject.value;
             }
             s2.squareDistanceTo(s);
-            //logger.debug("distance: {}->{}, rois: {}", p.key, currentObject.key, SpotWithinCompartment.rois);
+            logger.debug("distance: {}->{}, rois: {}. upper daugter cell: {}", p.key, currentObject.key, SpotWithinCompartment.rois, s.compartiment.upperDaughterCell);
+            
             for (Roi rr : SpotWithinCompartment.rois) currentRoi.put(++idx, rr);
             SpotWithinCompartment.rois.clear();
         }
         SpotWithinCompartment.rois=null;
-        
+        displayDistanceThreshold = distLim;
     }
     
 }

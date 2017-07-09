@@ -331,6 +331,7 @@ public class IJImageDisplayer implements ImageDisplayer<ImagePlus> {
     @Override
     public Image[][] getCurrentImageCT() {
         ImagePlus ip = this.getCurrentImage();
+        if (ip==null) return null;
         int[] FCZCount = getFCZCount(ip);
         return ImageDisplayer.reslice(IJImageWrapper.wrap(ip), FCZCount, IJImageWrapper.getStackIndexFunction(FCZCount));
     }
