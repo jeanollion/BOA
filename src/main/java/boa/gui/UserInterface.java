@@ -21,7 +21,7 @@ package boa.gui;
  *
  * @author jollion
  */
-public interface GUIInterface {
+public interface UserInterface {
     public void setProgress(int i);
     public void setMessage(String message);
     public void setRunning(boolean running);

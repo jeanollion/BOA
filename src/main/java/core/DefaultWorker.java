@@ -18,7 +18,7 @@
 package core;
 
 import boa.gui.GUI;
-import boa.gui.GUIInterface;
+import boa.gui.UserInterface;
 import ij.IJ;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -35,7 +35,7 @@ public class DefaultWorker extends SwingWorker<Integer, String>{
     protected final WorkerTask task;
     protected Runnable endOfWork;
     protected int[] taskIdx;
-    protected GUIInterface gui;
+    protected UserInterface gui;
     public static DefaultWorker execute(WorkerTask t, int maxTaskIdx) {
         DefaultWorker res = new DefaultWorker(t, maxTaskIdx, GUI.hasInstance()?GUI.getInstance():null);
         res.execute();
@@ -44,7 +44,7 @@ public class DefaultWorker extends SwingWorker<Integer, String>{
     public static void executeInForeground(WorkerTask t, int maxTaskIdx) {
         for (int i =0; i<maxTaskIdx; ++i) t.run(i);
     }
-    public DefaultWorker(WorkerTask task, int maxTaskIdx, GUIInterface gui) {
+    public DefaultWorker(WorkerTask task, int maxTaskIdx, UserInterface gui) {
         this.task=task;
         taskIdx = ArrayUtil.generateIntegerArray(0, maxTaskIdx);
         if (gui!=null) {

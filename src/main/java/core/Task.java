@@ -17,9 +17,10 @@
  */
 package core;
 
+import boa.gui.Console;
 import boa.gui.DBUtil;
 import boa.gui.GUI;
-import boa.gui.GUIInterface;
+import boa.gui.UserInterface;
 import boa.gui.PropertyUtils;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import static core.TaskRunner.logger;
@@ -59,18 +60,19 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         List<Pair<String, Exception>> errors = new ArrayList<>();
         MasterDAO db;
         int[] taskCounter;
-        GUIInterface gui;
+        UserInterface ui;
         
         
-        private Task() {
-            if (GUI.hasInstance()) gui = GUI.getInstance();
-            if (gui!=null) {
+        public Task() {
+            if (GUI.hasInstance()) ui = GUI.getInstance();
+            else ui = Console.ui;
+            if (ui!=null) {
                 addPropertyChangeListener(new PropertyChangeListener() {
                     @Override    
                     public void propertyChange(PropertyChangeEvent evt) {
                         if ("progress".equals(evt.getPropertyName())) {
                             int progress = (Integer) evt.getNewValue();
-                            gui.setProgress(progress);
+                            ui.setProgress(progress);
                             
                             //if (IJ.getInstance()!=null) IJ.getInstance().getProgressBar().show(progress, 100);
                             //logger.ingo("progress: {}%", i);
@@ -235,7 +237,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             this.taskCounter=taskCounter;
         }
         public void runTask() {
-            if (gui!=null) gui.setRunning(true);
+            if (ui!=null) ui.setRunning(true);
             publish("init db...");
             initDB();
             publish("clering cache...");
@@ -351,7 +353,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     }
     @Override
     protected void process(List<String> strings) {
-        if (gui!=null) for (String s : strings) gui.setMessage(s);
+        if (ui!=null) for (String s : strings) ui.setMessage(s);
         for (String s : strings) logger.info(s);
     }
     @Override 
@@ -359,7 +361,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         this.publish("Job done. Errors: "+this.errors.size());
         this.printErrors();
         this.publish("------------------");
-        if (gui!=null) gui.setRunning(false);
+        if (ui!=null) ui.setRunning(false);
     }
 
     @Override
