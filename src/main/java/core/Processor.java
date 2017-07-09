@@ -228,18 +228,18 @@ public class Processor {
     
     // measurement-related methods
     
-    public static void performMeasurements(MasterDAO db) {
+    public static void performMeasurements(MasterDAO db, ProgressCallback pcb) {
         Experiment xp = db.getExperiment();
         for (int i = 0; i<xp.getPositionCount(); ++i) {
             String fieldName = xp.getPosition(i).getName();
-            performMeasurements(db.getDao(fieldName));
+            performMeasurements(db.getDao(fieldName), pcb);
             //if (dao!=null) dao.clearCacheLater(xp.getMicroscopyField(i).getName());
             db.getDao(fieldName).clearCache();
             db.getExperiment().getPosition(fieldName).flushImages(true, true);
         }
     }
     
-    public static List<Pair<String, Exception>> performMeasurements(final ObjectDAO dao) {
+    public static List<Pair<String, Exception>> performMeasurements(final ObjectDAO dao, ProgressCallback pcb) {
         long t0 = System.currentTimeMillis();
         List<StructureObject> roots = dao.getRoots();
         logger.debug("{} number of roots: {}", dao.getPositionName(), roots.size());
@@ -258,7 +258,7 @@ public class Processor {
             } else {
                 allParentTracks = StructureObjectUtils.getAllTracks(roots, e.getKey());
             }
-            GUI.log("Performing #"+e.getValue().size()+" measurement"+(e.getValue().size()>1?"s":"")+" on Structure: "+e.getKey()+" (#"+allParentTracks.size()+" tracks): "+Utils.toStringList(e.getValue(), m->m.getClass().getSimpleName()));
+            if (pcb!=null) pcb.log("Performing #"+e.getValue().size()+" measurement"+(e.getValue().size()>1?"s":"")+" on Structure: "+e.getKey()+" (#"+allParentTracks.size()+" tracks): "+Utils.toStringList(e.getValue(), m->m.getClass().getSimpleName()));
             logger.debug("performing: #{} measurements from parent: {} (#{} parentTracks) : {}", e.getValue().size(), e.getKey(), allParentTracks.size(), Utils.toStringList(e.getValue(), m->m.getClass().getSimpleName()));
             
             List<Pair<Measurement, StructureObject>> actionPool = new ArrayList<>();
@@ -268,7 +268,7 @@ public class Processor {
                     else for (StructureObject o : parentTrack) actionPool.add(new Pair<>(m, o));
                 }
             }
-            GUI.log("Executing: #"+actionPool.size()+" measurements");
+            if (pcb!=null) pcb.log("Executing: #"+actionPool.size()+" measurements");
             List<Pair<String, Exception>> errorsLocal = ThreadRunner.execute(actionPool, false, (Pair<Measurement, StructureObject> p, int idx) -> p.key.performMeasurement(p.value));
             errors.addAll(errorsLocal);
 
@@ -294,7 +294,7 @@ public class Processor {
         return l;
     }
     
-    public static void generateTrackImages(ObjectDAO dao, int parentStructureIdx, int... childStructureIdx) {
+    public static void generateTrackImages(ObjectDAO dao, int parentStructureIdx, ProgressCallback pcb, int... childStructureIdx) {
         if (dao==null || dao.getExperiment()==null) return;
         if (childStructureIdx==null || childStructureIdx.length==0) {
             List<Integer> childStructures =dao.getExperiment().getAllDirectChildStructures(parentStructureIdx);
@@ -306,7 +306,7 @@ public class Processor {
         ImageDAO imageDAO = dao.getExperiment().getImageDAO();
         imageDAO.deleteTrackImages(dao.getPositionName(), parentStructureIdx);
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(dao.getRoots(), parentStructureIdx);
-        GUI.log("Generating Image: #tracks: "+allTracks.size()+", child structures: "+Utils.toStringArray(childStructureIdx));
+        if (pcb!=null) pcb.log("Generating Image: #tracks: "+allTracks.size()+", child structures: "+Utils.toStringArray(childStructureIdx));
         ThreadRunner.execute(allTracks.values(), false, (List<StructureObject> track, int idx) -> {
             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().generateTrackMask(track, parentStructureIdx);
             for (int childSIdx : cSI) {

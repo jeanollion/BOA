@@ -19,6 +19,7 @@ package boa.gui;
 
 import com.mongodb.util.JSON;
 import core.Task;
+import ij.plugin.PlugIn;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -34,17 +35,22 @@ import utils.Utils;
  *
  * @author jollion
  */
-public class Console implements UserInterface{
+public class Console implements UserInterface, PlugIn {
     public static UserInterface ui;
+    
+    @Override
     public void run(String args) {
+        setMessage("BOA Shell version: "+Utils.getVersion(this));
+        if (args==null || args.length()==0) return;
         ui = this;
-        System.out.println(">BOA Shell version: "+Utils.getVersion(this));
         Collection<Task> jobs;
-        Function<String, Task> parser = s->new Task();//(JSONObject)JSON.parse(s)
+        Function<String, Task> parser = s->new Task().fromJSON((JSONObject)JSON.parse(s));
         if (args.endsWith(".txt")|args.endsWith(".json")) { // open text file
             jobs = FileIO.readFromFile(args, parser); // TODO fromJSON
         } else { // directly parse command
-            String[] tasksS = args.split("/n");
+            String[] tasksS = args.split("\n");
+            String[] tasksS2 = args.split(";");
+            if (tasksS2.length>tasksS.length) tasksS=tasksS2;
             jobs = new HashSet<>(tasksS.length);
             for (String s : tasksS) jobs.add(parser.apply(s));
         }
@@ -54,25 +60,30 @@ public class Console implements UserInterface{
         if (jobs==null || jobs.isEmpty()) return;
         for (Task t : jobs) {
             if (!t.isValid()) {
-                System.out.println(">Error: job: "+t.toString()+" is not valid" + (t.getDB()==null?"db null": (t.getDB().getExperiment()==null? "xp null":"")));
+                setMessage("Error: job: "+t.toString()+" is not valid" + (t.getDB()==null?"db null": (t.getDB().getExperiment()==null? "xp null":"")));
                 return;
             }
         }
         System.out.println(">Will execute: "+jobs.size()+" jobs");
         for (Task t : jobs) {
-            System.out.println("Running: "+t.toString());
+            setMessage("Running: "+t.toString());
             t.runTask();
-            t.printErrors();
+            
         }
+        int errorCount = 0;
+        for (Task t: jobs) errorCount+=t.getErrors().size();
+        setMessage("All jobs finished. Errors: "+errorCount);
+        for (Task t: jobs) t.printErrors();
     }
+    
     private String prompt(String promptInstruction) {
         if (promptInstruction!=null && promptInstruction.length()>0) System.out.println(promptInstruction);
-        System.out.print(">");
+        setMessage(">");
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         try {
            return(br.readLine());
         } catch (IOException ioe) {
-           System.out.println("IO error trying to read command!");
+           setMessage("IO error trying to read command!");
         }
         return "";
     }
@@ -85,7 +96,7 @@ public class Console implements UserInterface{
 
     @Override
     public void setProgress(int i) {
-        System.out.println("Progress: "+i+"%");
+        setMessage("Progress: "+i+"%");
     }
 
     @Override
