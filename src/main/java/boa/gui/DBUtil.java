@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import utils.MorphiumUtils;
+import utils.Utils;
 
 /**
  *
@@ -93,6 +94,28 @@ public class DBUtil {
         if (name==null) return null;
         if (!name.startsWith(prefix)) name= prefix+name;
         return name;
+    }
+    public static String searchForLocalDir(String dbName) {
+        String defPath = PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH);
+        String d = null;
+        if (defPath!=null) d = searchLocalDirForDB(dbName, defPath);
+        if (d==null) {
+            for (String path : PropertyUtils.getStrings(PropertyUtils.LOCAL_DATA_PATH)) {
+                if (path.equals(defPath)) continue;
+                d = searchLocalDirForDB(dbName, path);
+                if (d!=null) break;
+            }
+        }
+        return d;
+    }
+    public static String searchLocalDirForDB(String dbName, String dir) {
+        File config = Utils.seach(dir, dbName+"_config.db", 2);
+        if (config!=null) return config.getParent();
+        else {
+            config = Utils.seach(new File(dir).getParent(), dbName+"_config.db", 2);
+            if (config!=null) return config.getParent();
+            else return null;
+        }
     }
     public static Map<String, File> listExperiments(String path) {
         File f = new File(path);

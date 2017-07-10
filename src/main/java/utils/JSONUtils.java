@@ -57,9 +57,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.bson.types.ObjectId;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 import sun.reflect.ReflectionFactory;
@@ -106,6 +110,11 @@ public class JSONUtils {
         for (double d : array) res.add(d);
         return res;
     }
+    public static List<Integer> fromIntArrayToList(JSONArray array) {
+        List<Integer> res = new ArrayList<Integer>(array.size());
+        for (Object o : array) res.add(((Number)o).intValue());
+        return res;
+    }
     public static int[] fromIntArray(JSONArray array) {
         int[] res = new int[array.size()];
         for (int i = 0; i<res.length; ++i) res[i]=((Number)array.get(i)).intValue();
@@ -130,7 +139,15 @@ public class JSONUtils {
         DBObject oMarsh = marshall(o);
         return com.mongodb.util.JSON.serialize(oMarsh);
     }
-
+    public static JSONObject parse(String s) {
+        try {
+            Object res= new JSONParser().parse(s);
+            return (JSONObject)res;
+        } catch (ParseException ex) {
+            logger.debug("Could not parse: "+s, ex);
+            return null;
+        }
+    }
     public static <T> T parse(Class<T> clazz, String s) {
         try {
             //s = s.replace("Infinity", "NaN");

@@ -36,6 +36,7 @@ import boa.gui.selection.SelectionRenderer;
 import static boa.gui.selection.SelectionUtils.fixIOI;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoIterable;
+import com.mongodb.util.JSON;
 import com.sun.java.swing.plaf.motif.MotifMenuItemUI;
 import configuration.parameters.FileChooser;
 import configuration.parameters.NumberParameter;
@@ -91,6 +92,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ButtonGroup;
@@ -120,6 +122,8 @@ import javax.swing.text.TextAction;
 import measurement.MeasurementKeyObject;
 import measurement.extraction.DataExtractor;
 import measurement.extraction.SelectionExtractor;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import plugins.ManualSegmenter;
@@ -128,8 +132,10 @@ import plugins.PluginFactory;
 import static plugins.PluginFactory.checkClass;
 import utils.ArrayUtil;
 import utils.CommandExecuter;
+import utils.FileIO;
 import utils.FileIO.ZipWriter;
 import utils.ImportExportJSON;
+import utils.JSONUtils;
 import utils.MorphiumUtils;
 import utils.Pair;
 import utils.TestThreadExecutorFrameWork;
@@ -857,7 +863,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     
     private boolean checkConnection() {
         if (this.db==null) {
-            logger.error("Connect to DB and create experiment first");
+            log("Connect to DB and create experiment first");
             return false;
         } else return true;
     }
@@ -2169,7 +2175,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             int[] selectedStructures = this.getSelectedStructures(true);
             t = new Task(db);
             t.setStructures(selectedStructures).setPositions(microscopyFields);
-            if (extract) for (int sIdx : selectedStructures) t.addExtractMeasurementDir(null, sIdx);
+            if (extract) for (int sIdx : selectedStructures) t.addExtractMeasurementDir(db.getDir(), sIdx);
         } else if (dbName!=null) {
             t = new Task(dbName);
             if (extract && t.getDB()!=null) {
@@ -2183,8 +2189,12 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
     private void runSelectedActionsMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_runSelectedActionsMenuItemActionPerformed
         if (!checkConnection()) return;
         Task t = getCurrentJob(null);
+        if (t==null) {
+            log("Could not define job");
+            return;
+        }
         t.execute();
-        if (t.isPreProcess()  || t.isSegmentAndTrack()) this.reloadObjectTrees=true; //|| t.reRunPreProcess
+        if (t.isPreProcess() || t.isSegmentAndTrack()) this.reloadObjectTrees=true; //|| t.reRunPreProcess
     }//GEN-LAST:event_runSelectedActionsMenuItemActionPerformed
 
     private void importImagesMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_importImagesMenuItemActionPerformed
@@ -2266,18 +2276,7 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             if (extract) for (int sIdx =0; sIdx< t.getDB().getExperiment().getStructureCount(); ++sIdx) t.addExtractMeasurementDir(new File(t.getDB().getExperiment().getOutputDirectory()).getParent(), sIdx);
             tasks.add(t);
         }
-        int totalSubtasks = 0;
-        for (Task t : tasks) {
-            if (!t.isValid()) {
-                setMessage("Invalid task: "+t.toString());
-                return;
-            } 
-            totalSubtasks+=t.countSubtasks();
-        }
-        setMessage("Total subTasks: "+totalSubtasks);
-        int[] taskCounter = new int[]{0, totalSubtasks};
-        for (Task t : tasks) t.setSubtaskNumber(taskCounter);
-        DefaultWorker.execute(i -> {tasks.get(i).run(); return "";}, tasks.size());
+        Task.executeTasks(tasks, this);
         
     }//GEN-LAST:event_runActionAllXPMenuItemActionPerformed
 
@@ -2549,13 +2548,17 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             Action down = new AbstractAction("Move Down") {
                 @Override
                 public void actionPerformed(ActionEvent e) {
+                    int[] newIndices = new int[sel.size()];
+                    int idx = 0;
                     for (String s : sel) {
                         int i = actionPoolListModel.indexOf(s);
                         if (i>=0 && i<actionPoolListModel.size()-1) {
                             actionPoolListModel.removeElement(s);
                             actionPoolListModel.add(i+1, s);
-                        }
+                            newIndices[idx++] = i+1;
+                        } else newIndices[idx++] = i;
                     }
+                    actionPoolList.setSelectedIndices(newIndices);
                 }
             };
             down.setEnabled(!sel.isEmpty() && sel.size()<actionPoolListModel.size());
@@ -2568,6 +2571,76 @@ public class GUI extends javax.swing.JFrame implements ImageObjectListener, User
             };
             menu.add(clearAll);
             clearAll.setEnabled(!actionPoolListModel.isEmpty());
+            Action save = new AbstractAction("Save to File") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    File out = Utils.chooseFile("Save Job list as...", hostName.getText(), FileChooser.FileChooserOption.FILES_AND_DIRECTORIES, jLabel1);
+                    if (out==null || out.isDirectory()) return;
+                    String outS = out.getAbsolutePath();
+                    if (!outS.endsWith(".txt")&&!outS.endsWith(".json")) outS+=".json";
+                    FileIO.writeToFile(outS, Collections.list(actionPoolListModel.elements()), s->s);
+                }
+            };
+            menu.add(save);
+            save.setEnabled(!actionPoolListModel.isEmpty());
+            Action load = new AbstractAction("Load from File") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String dir = hostName.getText();
+                    if (!new File(dir).isDirectory()) dir = null;
+                    File f = Utils.chooseFile("Choose Job list file", dir, FileChooser.FileChooserOption.FILES_ONLY, jLabel1);
+                    if (f!=null && f.exists()) {
+                        List<String> jobs = FileIO.readFromFile(f.getAbsolutePath(), s->s);
+                        for (String j : jobs) actionPoolListModel.addElement(j);
+                    }
+                }
+            };
+            menu.add(load);
+            Action setXP = new AbstractAction("Set selected Experiment to selected Actions") {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    String xp = (String) experimentList.getSelectedValue();
+                    String dir = hostName.getText();
+                    Map<Integer, String> indexSelJobMap = ((List<String>)actionPoolList.getSelectedValuesList()).stream().collect(Collectors.toMap(o->actionPoolListModel.indexOf(o), o->o));
+                    for (Entry<Integer, String> en : indexSelJobMap.entrySet()) {
+                        
+                        JSONObject o = JSONUtils.parse(en.getValue());
+                        if (o==null) log("Error: could not parse task: "+en.getValue());
+                        else {
+                            Task t = new Task().fromJSON(o);
+                            // look for dir in current directory
+                            String d = DBUtil.searchLocalDirForDB(xp, dir);
+                            if (d==null) log("Error: Could not find directory of XP: "+xp);
+                            else {
+                                t.setDBName(xp).setDir(d);
+                                if (!t.isValid()) log("Error: could not set experiment to task: "+en.getValue());
+                                else {
+                                    actionPoolListModel.remove(en.getKey());
+                                    actionPoolListModel.add(en.getKey(), t.toJSON().toJSONString());
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+            menu.add(setXP);
+            setXP.setEnabled(experimentList.getSelectedValuesList().size()==1 && !sel.isEmpty());
+            String runTitle = sel.isEmpty()?"Run All Jobs":"Run Selected Jobs";
+            Action run = new AbstractAction(runTitle) {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    List<Task> jobs = new ArrayList<>();
+                    List<String> jobsS = sel.isEmpty()? Collections.list(actionPoolListModel.elements()) : sel;
+                    for (String s : jobsS) {
+                        JSONObject o = JSONUtils.parse(s);
+                        if (o==null) log("Error: could not parse task: "+s);
+                        else jobs.add(new Task().fromJSON(o));
+                    }
+                    Task.executeTasks(jobs, GUI.getInstance());
+                }
+            };
+            menu.add(run);
+            //Utils.chooseFile("Choose Directory to save Job List", DBprefix, FileChooser.FileChooserOption.FILES_ONLY, jLabel1)
             menu.show(this.actionPoolList, evt.getX(), evt.getY());
         }
     }//GEN-LAST:event_actionPoolListMousePressed

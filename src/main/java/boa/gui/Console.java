@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.function.Function;
 import org.json.simple.JSONObject;
 import utils.FileIO;
+import utils.JSONUtils;
 import utils.Utils;
 
 /**
@@ -44,9 +45,9 @@ public class Console implements UserInterface, PlugIn {
         if (args==null || args.length()==0) return;
         ui = this;
         Collection<Task> jobs;
-        Function<String, Task> parser = s->new Task().fromJSON((JSONObject)JSON.parse(s));
+        Function<String, Task> parser = s->new Task().fromJSON(JSONUtils.parse(s));
         if (args.endsWith(".txt")|args.endsWith(".json")) { // open text file
-            jobs = FileIO.readFromFile(args, parser); // TODO fromJSON
+            jobs = FileIO.readFromFile(args, parser); // TODO -> read JSON File en utilisant content handler de JSON simple
         } else { // directly parse command
             String[] tasksS = args.split("\n");
             String[] tasksS2 = args.split(";");
@@ -59,6 +60,10 @@ public class Console implements UserInterface, PlugIn {
     public void runJobs(Collection<Task> jobs) {
         if (jobs==null || jobs.isEmpty()) return;
         for (Task t : jobs) {
+            if (t==null) {
+                setMessage("Error: job could not be parsed");
+                return;
+            }
             if (!t.isValid()) {
                 setMessage("Error: job: "+t.toString()+" is not valid" + (t.getDB()==null?"db null": (t.getDB().getExperiment()==null? "xp null":"")));
                 return;

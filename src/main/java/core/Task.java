@@ -19,6 +19,8 @@ package core;
 
 import boa.gui.Console;
 import boa.gui.DBUtil;
+import static boa.gui.DBUtil.searchForLocalDir;
+import static boa.gui.DBUtil.searchLocalDirForDB;
 import boa.gui.GUI;
 import boa.gui.UserInterface;
 import boa.gui.PropertyUtils;
@@ -33,6 +35,7 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -89,18 +92,19 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             return res;
         }
         public Task fromJSON(JSONObject data) {
+            if (data==null) return null;
             this.dbName = (String)data.getOrDefault("dbName", "");
             if (data.containsKey("dir")) {
                 dir = (String)data.get("dir");
                 if (!new File(dir).exists()) dir=null;
             }
-            if (dir==null) searchForDir();
+            if (dir==null) searchForLocalDir(dbName);
             this.preProcess = (Boolean)data.getOrDefault("preProcess", false);
             this.segmentAndTrack = (Boolean)data.getOrDefault("segmentAndTrack", false);
             this.trackOnly = (Boolean)data.getOrDefault("trackOnly", false);
             this.measurements = (Boolean)data.getOrDefault("measurements", false);
             this.generateTrackImages = (Boolean)data.getOrDefault("generateTrackImages", false);
-            if (data.containsKey("positions")) positions = ((JSONArray)data.get("positions"));
+            if (data.containsKey("positions")) positions = JSONUtils.fromIntArrayToList((JSONArray)data.get("positions"));
             if (data.containsKey("structures")) structures = JSONUtils.fromIntArray((JSONArray)data.get("structures"));
             if (data.containsKey("extractMeasurementDir")) {
                 extractMeasurementDir = new ArrayList<>();
@@ -145,36 +149,27 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             this();
             this.dbName=dbName;
             if (dir!=null && !"".equals(dir)) this.dir=dir;
-            else searchForDir();
+            else searchForLocalDir(dbName);
         }
-        private void searchForDir() {
-            String defPath = PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH);
-            String d = null;
-            if (defPath!=null) d = getLocalDirForDB(dbName, defPath);
-            if (d==null) {
-                for (String path : PropertyUtils.getStrings(PropertyUtils.LOCAL_DATA_PATH)) {
-                    if (path.equals(defPath)) continue;
-                    d = getLocalDirForDB(dbName, path);
-                    if (d!=null) break;
-                }
-            }
-            this.dir=d;
-            if (this.dir==null) throw new IllegalArgumentException("no config file found for db: "+dbName);
+        public Task setDBName(String dbName) {
+            if (dbName!=null && dbName.equals(this.dbName)) return this;
+            this.db=null;
+            this.dbName=dbName;
+            return this;
         }
+        public Task setDir(String dir) {
+            if (dir!=null && dir.equals(this.dir)) return this;
+            this.db=null;
+            this.dir=dir;
+            return this;
+        }
+        
         public List<Pair<String, Exception>> getErrors() {return errors;}
         public MasterDAO getDB() {
             initDB();
             return db;
         }
-        private String getLocalDirForDB(String dbName, String dir) {
-            File config = Utils.seach(dir, dbName+"_config.db", 2);
-            if (config!=null) return config.getParent();
-            else {
-                config = Utils.seach(new File(dir).getParent(), dbName+"_config.db", 2);
-                if (config!=null) return config.getParent();
-                else return null;
-            }
-        }
+        
         public Task setAllActions() {
             this.preProcess=true;
             this.segmentAndTrack=true;
@@ -312,6 +307,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         }
         public void runTask() {
             if (ui!=null) ui.setRunning(true);
+            publish("Run task: "+this.toString());
             publish("init db...");
             initDB();
             publish("clering cache...");
@@ -338,8 +334,8 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                     errors.add(new Pair(position, e));
                 }
             }
-            
             for (Pair<String, int[]> e  : this.extractMeasurementDir) extract(e.key==null?db.getDir():e.key, e.value);
+            
             
             db.clearCache();
             db=null;
@@ -407,7 +403,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
         String file = dir+File.separator+db.getDBName()+Utils.toStringArray(structures, "_", "", "_")+".csv";
         publish("extracting measurements from structures: "+Utils.toStringArray(structures));
-        logger.info("measurements will be extracted to: {}", file);
+        publish("measurements will be extracted to: {}", file);
         Map<Integer, String[]> keys = db.getExperiment().getAllMeasurementNamesByStructureIdx(MeasurementKeyObject.class, structures);
         logger.debug("keys: {}", keys);
         DataExtractor.extractMeasurementObjects(db, file, getPositionNames(), keys);
@@ -420,7 +416,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         return res;
     }
     @Override public String toString() {
-        String res =  "db: "+dbName;
+        String res =  "db: "+dbName+"/dir:"+dir;
         if (preProcess) res+="/preProcess/";
         if (segmentAndTrack) res+="/segmentAndTrack/";
         else if (trackOnly) res+="/trackOnly/";
@@ -429,7 +425,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         if (positions!=null) res+="/positions:"+ArrayUtils.toString(positions)+"/";
         if (!extractMeasurementDir.isEmpty()) {
             res+= "/Extract: ";
-            for (Pair<String, int[]> p : this.extractMeasurementDir) res+=p.key+ "="+ArrayUtils.toString(res);
+            for (Pair<String, int[]> p : this.extractMeasurementDir) res+=(p.key==null?dir:p.key)+ "="+ArrayUtils.toString(res);
             res+="/";
         }
         return res;
@@ -470,5 +466,18 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         publish(message);
     }
 
-
+    public static void executeTasks(List<Task> tasks, UserInterface ui) {
+        int totalSubtasks = 0;
+        for (Task t : tasks) {
+            if (!t.isValid()) {
+                if (ui!=null) ui.setMessage("Invalid task: "+t.toString());
+                return;
+            } 
+            totalSubtasks+=t.countSubtasks();
+        }
+        if (ui!=null) ui.setMessage("Total subTasks: "+totalSubtasks);
+        int[] taskCounter = new int[]{0, totalSubtasks};
+        for (Task t : tasks) t.setSubtaskNumber(taskCounter);
+        DefaultWorker.execute(i -> {tasks.get(i).run(); return "";}, tasks.size());
+    }
 }

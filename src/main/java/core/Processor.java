@@ -306,7 +306,7 @@ public class Processor {
         ImageDAO imageDAO = dao.getExperiment().getImageDAO();
         imageDAO.deleteTrackImages(dao.getPositionName(), parentStructureIdx);
         Map<StructureObject, List<StructureObject>> allTracks = StructureObjectUtils.getAllTracks(dao.getRoots(), parentStructureIdx);
-        if (pcb!=null) pcb.log("Generating Image: #tracks: "+allTracks.size()+", child structures: "+Utils.toStringArray(childStructureIdx));
+        if (pcb!=null) pcb.log("Generating Image for structure: "+parentStructureIdx+". #tracks: "+allTracks.size()+", child structures: "+Utils.toStringArray(childStructureIdx));
         ThreadRunner.execute(allTracks.values(), false, (List<StructureObject> track, int idx) -> {
             ImageObjectInterface i = ImageWindowManagerFactory.getImageManager().generateTrackMask(track, parentStructureIdx);
             for (int childSIdx : cSI) {
