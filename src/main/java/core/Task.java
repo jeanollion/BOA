@@ -76,7 +76,6 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         int[] taskCounter;
         UserInterface ui;
         File logFile;
-        FileWriter logWriter;
         public JSONObject toJSON() {
             JSONObject res=  new JSONObject();
             res.put("dbName", dbName); 
@@ -317,16 +316,6 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         }
         public void runTask() {
             if (ui!=null) ui.setRunning(true);
-            if (false && this.logFile!=null) {
-                try {
-                    FileWriter fw = new FileWriter(logFile, true);
-                    this.logWriter=fw;
-                    //this.logWriter= new BufferedWriter(fw);
-                } catch (IOException ex) {
-                    logger.warn("Could not initialize log: {}", logFile.getAbsolutePath());
-                    logWriter=null;
-                }
-            }
             publish("Run task: "+this.toString());
             initDB();
             db.clearCache();
@@ -494,14 +483,6 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         this.printErrors();
         this.publish("------------------");
         if (ui!=null) ui.setRunning(false);
-        if (this.logWriter!=null) {
-            try {
-                logWriter.close();
-                logWriter=null;
-            } catch (IOException ex) {
-                logger.debug("could not close log file: "+ logFile.getAbsolutePath(), ex);
-            }
-        }
     }
     
     // Progress Callback
