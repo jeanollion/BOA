@@ -17,9 +17,10 @@
  */
 package core;
 
+import boa.gui.Console;
 import boa.gui.DBUtil;
 import boa.gui.GUI;
-import boa.gui.GUIInterface;
+import boa.gui.UserInterface;
 import boa.gui.PropertyUtils;
 import boa.gui.imageInteraction.ImageWindowManagerFactory;
 import com.mongodb.util.JSON;
@@ -64,12 +65,12 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         List<Pair<String, Exception>> errors = new ArrayList<>();
         MasterDAO db;
         int[] taskCounter;
-        GUIInterface gui;
+        UserInterface ui;
         
         public JSONObject toJSON() {
             JSONObject res=  new JSONObject();
-            res.put("dbName", dbName); // put dbPath ?
-            if (this.dir!=null) res.put("dir", dir);
+            res.put("dbName", dbName); 
+            if (this.dir!=null) res.put("dir", dir); // put dbPath ?
             res.put("preProcess", preProcess);
             res.put("segmentAndTrack", segmentAndTrack);
             res.put("trackOnly", trackOnly);
@@ -87,9 +88,13 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             res.put("extractMeasurementDir", ex);
             return res;
         }
-        public void fromJSON(JSONObject data) {
+        public Task fromJSON(JSONObject data) {
             this.dbName = (String)data.getOrDefault("dbName", "");
-            if (data.containsKey("dir")) dir = (String)data.get("dir");
+            if (data.containsKey("dir")) {
+                dir = (String)data.get("dir");
+                if (!new File(dir).exists()) dir=null;
+            }
+            if (dir==null) searchForDir();
             this.preProcess = (Boolean)data.getOrDefault("preProcess", false);
             this.segmentAndTrack = (Boolean)data.getOrDefault("segmentAndTrack", false);
             this.trackOnly = (Boolean)data.getOrDefault("trackOnly", false);
@@ -105,17 +110,19 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                     extractMeasurementDir.add(new Pair((String)jo.get("dir"), JSONUtils.fromIntArray((JSONArray)jo.get("s"))));
                 }
             }
+            return this;
         }
         
-        private Task() {
-            if (GUI.hasInstance()) gui = GUI.getInstance();
-            if (gui!=null) {
+        public Task() {
+            if (GUI.hasInstance()) ui = GUI.getInstance();
+            else ui = Console.ui;
+            if (ui!=null) {
                 addPropertyChangeListener(new PropertyChangeListener() {
                     @Override    
                     public void propertyChange(PropertyChangeEvent evt) {
                         if ("progress".equals(evt.getPropertyName())) {
                             int progress = (Integer) evt.getNewValue();
-                            gui.setProgress(progress);
+                            ui.setProgress(progress);
                             
                             //if (IJ.getInstance()!=null) IJ.getInstance().getProgressBar().show(progress, 100);
                             //logger.ingo("progress: {}%", i);
@@ -138,26 +145,23 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             this();
             this.dbName=dbName;
             if (dir!=null && !"".equals(dir)) this.dir=dir;
-            else { // look in local path
-                String defPath = PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH);
-                String d = null;
-                if (defPath!=null) d = getLocalDirForDB(dbName, defPath);
-                if (d==null) {
-                    for (String path : PropertyUtils.getStrings(PropertyUtils.LOCAL_DATA_PATH)) {
-                        if (path.equals(defPath)) continue;
-                        d = getLocalDirForDB(dbName, path);
-                        if (d!=null) break;
-                    }
-                }
-                this.dir=d;
-                if (this.dir==null) throw new IllegalArgumentException("no config file found for db: "+dbName);
-                else {
-                    //DBUtil.listExperiments("localhost");
-                }
-                
-            }
+            else searchForDir();
         }
-        
+        private void searchForDir() {
+            String defPath = PropertyUtils.get(PropertyUtils.LOCAL_DATA_PATH);
+            String d = null;
+            if (defPath!=null) d = getLocalDirForDB(dbName, defPath);
+            if (d==null) {
+                for (String path : PropertyUtils.getStrings(PropertyUtils.LOCAL_DATA_PATH)) {
+                    if (path.equals(defPath)) continue;
+                    d = getLocalDirForDB(dbName, path);
+                    if (d!=null) break;
+                }
+            }
+            this.dir=d;
+            if (this.dir==null) throw new IllegalArgumentException("no config file found for db: "+dbName);
+        }
+        public List<Pair<String, Exception>> getErrors() {return errors;}
         public MasterDAO getDB() {
             initDB();
             return db;
@@ -226,7 +230,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
         private void initDB() {
             if (db==null) {
                 if (!"localhost".equals(dir) && new File(dir).exists()) db = MasterDAOFactory.createDAO(dbName, dir, MasterDAOFactory.DAOType.DBMap);
-                else db = MasterDAOFactory.createDAO(dbName, dir, MasterDAOFactory.DAOType.Morphium);
+                //else db = MasterDAOFactory.createDAO(dbName, dir, MasterDAOFactory.DAOType.Morphium);
             }
         }
         public Task setPositions(String... positions) {
@@ -307,7 +311,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             this.taskCounter=taskCounter;
         }
         public void runTask() {
-            if (gui!=null) gui.setRunning(true);
+            if (ui!=null) ui.setRunning(true);
             publish("init db...");
             initDB();
             publish("clering cache...");
@@ -361,7 +365,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
                 
                 if (generateTrackImages && !db.getExperiment().getAllDirectChildStructures(s).isEmpty()) {
                     publish("Generating Track Images for Structure: "+s);
-                    Processor.generateTrackImages(db.getDao(position), s);
+                    Processor.generateTrackImages(db.getDao(position), s, this);
                     incrementProgress();
                 }
             }
@@ -371,7 +375,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             // generate track images for all selected structure that has direct children
             for (int s : structures) {
                 if (db.getExperiment().getAllDirectChildStructures(s).isEmpty()) continue;
-                Processor.generateTrackImages(db.getDao(position), s);
+                Processor.generateTrackImages(db.getDao(position), s, this);
                 incrementProgress();
             }
             //publishMemoryUsage("After Generate Track Images:");
@@ -381,7 +385,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             publish("Measurements...");
             logger.info("Measurements: DB: {}, Field: {}", dbName, position);
             db.getDao(position).deleteAllMeasurements();
-            List<Pair<String, Exception>> e = Processor.performMeasurements(db.getDao(position));
+            List<Pair<String, Exception>> e = Processor.performMeasurements(db.getDao(position), this);
             errors.addAll(e);
             incrementProgress();
             //publishMemoryUsage("After Measurements");
@@ -396,7 +400,8 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     }
     private void publishMemoryUsage(String message) {
         long used = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-        publish(message+" Used Memory: "+ (used/1000000)/1000d+"Go ("+ (int)Math.round(100d*used/((double)Runtime.getRuntime().totalMemory())) + "%)"+" OpenedFiles: "+Utils.getOpenedFileCount());
+        String of = Utils.getOpenedFileCount();
+        publish(message+" Used Memory: "+ (used/1000000)/1000d+"Go ("+ (int)Math.round(100d*used/((double)Runtime.getRuntime().totalMemory())) + "%)"+(of.length()==0?"": " OpenedFiles: "+of));
     }
     private void extract(String dir, int[] structures) {
         if (structures==null) structures = ArrayUtil.generateIntegerArray(db.getExperiment().getStructureCount());
@@ -440,7 +445,7 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
     }
     @Override
     protected void process(List<String> strings) {
-        if (gui!=null) for (String s : strings) gui.setMessage(s);
+        if (ui!=null) for (String s : strings) ui.setMessage(s);
         for (String s : strings) logger.info(s);
     }
     @Override 
@@ -451,8 +456,8 @@ public class Task extends SwingWorker<Integer, String> implements ProgressCallba
             for (StackTraceElement s : e.value.getStackTrace()) publish(s.toString());
         }
         this.printErrors();
-        this.publish("------------------------------------------------------------------");
-        if (gui!=null) gui.setRunning(false);
+        this.publish("------------------");
+        if (ui!=null) ui.setRunning(false);
     }
 
     @Override

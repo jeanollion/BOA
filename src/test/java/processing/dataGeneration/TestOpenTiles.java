@@ -106,7 +106,7 @@ public class TestOpenTiles {
         List<StructureObject> mcs = allTracks.values().iterator().next();
         if (mcs.get(0).getTrackImage(0)==null) {
             // generate track image, save and clear cache
-            Processor.generateTrackImages(dao, 0, 0);
+            Processor.generateTrackImages(dao, 0, null, 0);
             dao.clearCache();
             roots = dao.getRoots();
             roots.removeIf(o->o.getFrame()>frameLimit);

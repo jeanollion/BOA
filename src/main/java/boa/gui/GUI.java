@@ -141,7 +141,7 @@ import static utils.Utils.addHorizontalScrollBar;
  *
  * @author jollion
  */
-public class GUI extends javax.swing.JFrame implements ImageObjectListener, GUIInterface {
+public class GUI extends javax.swing.JFrame implements ImageObjectListener, UserInterface {
     public static final Logger logger = LoggerFactory.getLogger(GUI.class);
     // check if mapDB is present
     public static final String DBprefix = "boa_";

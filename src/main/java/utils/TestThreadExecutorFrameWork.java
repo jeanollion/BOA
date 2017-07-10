@@ -18,7 +18,7 @@
 package utils;
 
 import boa.gui.GUI;
-import boa.gui.GUIInterface;
+import boa.gui.UserInterface;
 import core.DefaultWorker;
 import core.DefaultWorker.WorkerTask;
 import core.ProgressCallback;
@@ -64,7 +64,7 @@ public class TestThreadExecutorFrameWork {
         return message;
     }
     static class Worker extends SwingWorker<Integer, String> implements ProgressCallback {
-        final GUIInterface gui = GUI.getInstance();
+        final UserInterface gui = GUI.getInstance();
         final int maxTaskIdx;
         final String name;
         int totalTasks = 0;

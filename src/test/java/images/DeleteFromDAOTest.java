@@ -126,7 +126,7 @@ public class DeleteFromDAOTest {
         Processor.processAndTrackStructures(masterDAO, true);
         
         xp.addMeasurement(new ObjectInclusionCount(1, 1, 50));
-        Processor.performMeasurements(masterDAO);
+        Processor.performMeasurements(masterDAO, null);
         ObjectDAO dao = masterDAO.getDao("field1");
         ObjectDAO dao11 = masterDAO.getDao("field11");
         StructureObject root = dao.getRoots().get(0);
