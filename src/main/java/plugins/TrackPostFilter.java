@@ -19,6 +19,7 @@ package plugins;
 
 import dataStructure.objects.StructureObject;
 import java.util.List;
+import utils.Pair;
 
 /**
  *

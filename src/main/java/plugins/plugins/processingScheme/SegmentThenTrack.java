@@ -109,12 +109,17 @@ public class SegmentThenTrack implements ProcessingScheme {
             logger.info("No tracker set for structure: {}", structureIdx);
             return Collections.EMPTY_LIST;
         }
+        List<Pair<String, Exception>> res = new ArrayList<>();
         List<Pair<String, Exception>> l = segmentOnly(structureIdx, parentTrack, executor);
         List<Pair<String, Exception>> l2 = trackOnly(structureIdx, parentTrack, executor);
-        trackPostFilters.filter(structureIdx, parentTrack, executor); // TODO return exceptions
-        if (!l.isEmpty() && !l2.isEmpty()) l.addAll(l2);
-        else if (!l2.isEmpty()) return l2;
-        return l;
+        res.addAll(l);
+        res.addAll(l2);
+        try {
+            trackPostFilters.filter(structureIdx, parentTrack, executor); // TODO return exceptions
+        } catch(Exception e) {
+            res.add(new Pair(parentTrack.get(0).toString(), e));
+        }
+        return res;
     }
     public List<Pair<String, Exception>> segmentOnly(final int structureIdx, final List<StructureObject> parentTrack, ExecutorService executor) {
         if (!segmenter.isOnePluginSet()) {

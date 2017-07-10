@@ -91,11 +91,11 @@ public class SegmentAndTrack implements ProcessingScheme {
             TrackerSegmenter t = tracker.instanciatePlugin();
             if (t instanceof MultiThreaded) ((MultiThreaded)t).setExecutor(executor);
             t.segmentAndTrack(structureIdx, parentTrack, preFilters, postFilters);
+            trackPostFilters.filter(structureIdx, parentTrack, executor); // TODO return exceptions
         } catch (Exception ex) {
             l = new ArrayList<>(1);
             l.add(new Pair(parentTrack.get(0).toString(), ex));
         }
-        trackPostFilters.filter(structureIdx, parentTrack, executor); // TODO return exceptions
         return l;
     }
 
@@ -114,11 +114,12 @@ public class SegmentAndTrack implements ProcessingScheme {
             TrackerSegmenter t = tracker.instanciatePlugin();
             if (t instanceof MultiThreaded) ((MultiThreaded)t).setExecutor(executor);
             t.track(structureIdx, parentTrack);
+            trackPostFilters.filter(structureIdx, parentTrack, executor); // TODO return exceptions
         } catch (Exception ex) {
             l = new ArrayList<>(1);
             l.add(new Pair(parentTrack.get(0).toString(), ex));
         }
-        trackPostFilters.filter(structureIdx, parentTrack, executor); // TODO return exceptions
+        
         return l;
     }
 

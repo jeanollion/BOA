@@ -100,7 +100,13 @@ public class Filters {
         ImageByte max = applyFilter(image, new ImageByte("", 0, 0, 0), new BinaryMax(false), neighborhood);
         return applyFilter(max, output, new BinaryMin(false), neighborhood);
     }
-    
+    /*public static <T extends ImageInteger> T labelWiseBinaryCloseExtend(T image, Neighborhood neighborhood) {
+        BoundingBox extent = neighborhood.getBoundingBox();
+        T resized =  image.extend(extent);
+        ImageByte max = applyFilter(resized, new ImageByte("", 0, 0, 0), new BinaryMaxLabelWise(), neighborhood);
+        T min = applyFilter(max, resized, new BinaryMinLabelWise(false), neighborhood);
+        return min.crop(image.getBoundingBox().translateToOrigin().translate(extent.duplicate().reverseOffset()));
+    }*/
     public static <T extends Image> T tophat(Image image, Image imageForBackground, T output, Neighborhood neighborhood) {
         T open =open(imageForBackground, output, neighborhood).setName("Tophat of: "+image.getName());
         ImageOperations.addImage(image, open, open, -1); //1-open
@@ -319,6 +325,7 @@ public class Filters {
             this.outOfBoundIsNull=outOfBoundIsNull;
         }
         @Override public float applyFilter(int x, int y, int z) {
+            if (image.getPixel(x, y, z)==0) return 0;
             return neighborhood.hasNullValue(x, y, z, image, outOfBoundIsNull) ? 0 :1;
         }
     }
@@ -328,8 +335,34 @@ public class Filters {
             this.outOfBoundIsNonNull=outOfBoundIsNonNull;
         }
         @Override public float applyFilter(int x, int y, int z) {
+            if (image.getPixel(x, y, z)!=0) return 1;
             return neighborhood.hasNonNullValue(x, y, z, image, outOfBoundIsNonNull) ? 1 : 0;
         }
     }
+    /*private static class BinaryMaxLabelWise extends Filter {
+        public BinaryMaxLabelWise() {
+        }
+        @Override public float applyFilter(int x, int y, int z) {
+            float centralValue = image.getPixel(x, y, z);
+            if (image.getPixel(x, y, z)!=0) return centralValue;
+            neighborhood.setPixels(x, y, z, image);
+            int idx = 0; // central value == 0, pixels are sorted acording to distance to center -> first non null label = closest
+            while (++idx<neighborhood.getValueCount()) if (neighborhood.getPixelValues()[idx]!=0) return neighborhood.getPixelValues()[idx];
+            return 0;
+        }
+    }*/
+    /*private static class BinaryMinLabelWise extends Filter {
+        final boolean outOfBoundIsNull;
+        public BinaryMinLabelWise(boolean outOfBoundIsNull) {
+            this.outOfBoundIsNull=outOfBoundIsNull;
+        }
+        @Override public float applyFilter(int x, int y, int z) {
+            float centralValue = image.getPixel(x, y, z);
+            if (image.getPixel(x, y, z)==0) return 0;
+            int idx = 0;
+            while (++idx<neighborhood.getValueCount()) if (neighborhood.getPixelValues()[idx]!=centralValue) return 0;
+            return 0;
+        }
+    }*/
     //(low + high) >>> 1 <=> (low + high) / 2
 }
